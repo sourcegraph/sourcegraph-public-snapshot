@@ -108,13 +108,13 @@ You can also integrate Sourcegraph with other Git-based code hosts using [these]
 
 ### Searching repositories, branches, and forks
 
-GitHub allows you to search indexed **repositories**, but not all code is indexed. GitHub’s [current limitations](https://cs.github.com/about/faq#indexed-content) on indexed code are:
+GitHub allows you to search indexed code, but not all code is indexed. GitHub’s [current limitations](https://cs.github.com/about/faq#indexed-content) on indexed code are:
 
 
 
 * Files over 350 KiB and empty files are excluded
 * Only UTF-8 encoded files are included
-* Very large repositories may not be indexed
+* All code inside very large repositories may not be indexed
 * Vendored and generated code is excluded (as determined by [Enry](https://github.com/go-enry/go-enry))
 
 With GitHub, only the default **branch** is searchable (though GitHub is planning to support branch search in the future). 
@@ -127,11 +127,9 @@ Sourcegraph allows you to search indexed and [unindexed](https://docs.sourcegrap
 
 
 
-* Files larger than 1 MB are excluded* 
+* Files larger than 1 MB are excluded unless you explicitly specify them in [search.largeFiles](https://docs.sourcegraph.com/admin/config/site_config#search-largeFile) to be indexed and searched regardless of size 
 * Binary files are excluded 
 * Files other than UTF-8 are excluded 
-
-*You can use the [search.largeFiles](https://docs.sourcegraph.com/admin/config/site_config#search-largeFile) keyword to specify files to be indexed and searched regardless of size.
 
 With Sourcegraph, typically, the latest code on the default **branch** of each repository is indexed (usually the master or main), but Sourcegraph can also index other non-default branches, such as long-running branches like release branches. If you’re searching outside of indexed branches, you can use unindexed search. You should expect slightly slower results when searching unindexed code.  
 
@@ -219,14 +217,12 @@ Sourcegraph allows you to search indexed and unindexed code within forks.
 Limitations for code that is indexed: 
 <ul>
 
-<li>Files larger than 1 MB*
+<li>Files larger than 1 MB are excluded unless you explicitly specify them in [search.largeFiles](https://docs.sourcegraph.com/admin/config/site_config#search-largeFile) to be indexed and searched regardless of size 
 
 <li>Binary files
 
 <li>Files other than UTF-8 
 
-<p>
-*You can use the <a href="https://docs.sourcegraph.com/admin/config/site_config#search-largeFile">search.largeFiles</a> keyword to specify files to be indexed and searched regardless of size.
 </li>
 </ul>
    </td>
@@ -250,7 +246,7 @@ GitHub’s search syntax can be found [here](https://cs.github.com/about/syntax)
 
 In addition to regular expression and literal search, Sourcegraph offers [structural search.](https://docs.sourcegraph.com/code_search/reference/structural) GitHub code search does not offer this search method. Structural search lets you match richer syntax patterns, specifically in code and structured data formats like JSON. Sourcegraph offers structural search on indexed code and uses [Comby syntax](https://comby.dev/docs/syntax-reference) for structural matching of code blocks or nested expressions. For example, the fmt.Sprintf function is a popular print function in Go. [Here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28...%29&patternType=structural&_ga=2.204781593.827352295.1667227568-1057140468.1661198534&_gac=1.118615675.1665776224.CjwKCAjwkaSaBhA4EiwALBgQaJCOc6GlhIDQyg6HQScgfSBQpoFTUf7T_NNqEX5JaobtCS08GUEJuRoCIlIQAvD_BwE&_gl=1*1r2u5zs*_ga*MTA1NzE0MDQ2OC4xNjYxMTk4NTM0*_ga_E82CCDYYS1*MTY2NzUwODExNC4xMTQuMS4xNjY3NTA5NjUyLjAuMC4w) is a pattern that matches all of the arguments in fmt.Sprintf in our code using structural search compared to the [search](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28...%29&patternType=regexp) using regex. 
 
-Regardless of the type of search method you use, GitHub’s search is line-oriented, and Sourcegraph supports multi-line search. This means that Sourcegraph’s search queries can find results that cross multiple lines. For example, here is an [example](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/Parsely/pykafka%24+Not+leader+for+partition&patternType=regexp&_ga=2.114069518.827352295.1667227568-1057140468.1661198534&_gac=1.47310293.1665776224.CjwKCAjwkaSaBhA4EiwALBgQaJCOc6GlhIDQyg6HQScgfSBQpoFTUf7T_NNqEX5JaobtCS08GUEJuRoCIlIQAvD_BwE&_gl=1*zwylx9*_ga*MTA1NzE0MDQ2OC4xNjYxMTk4NTM0*_ga_E82CCDYYS1*MTY2NzU3NDA3OC4xMTcuMS4xNjY3NTc2NjIyLjAuMC4w) of matching multiple text strings in a file using regex.  
+Regardless of the type of search method you use, GitHub’s search is line-oriented, and Sourcegraph supports multi-line search. This means that Sourcegraph’s search queries can find results that cross multiple lines. For example, here is an [example](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/Parsely/pykafka%24+Not+leader+for+partition&patternType=regexp&_ga=2.114069518.827352295.1667227568-1057140468.1661198534&_gac=1.47310293.1665776224.CjwKCAjwkaSaBhA4EiwALBgQaJCOc6GlhIDQyg6HQScgfSBQpoFTUf7T_NNqEX5JaobtCS08GUEJuRoCIlIQAvD_BwE&_gl=1*zwylx9*_ga*MTA1NzE0MDQ2OC4xNjYxMTk4NTM0*_ga_E82CCDYYS1*MTY2NzU3NDA3OC4xMTcuMS4xNjY3NTc2NjIyLjAuMC4w) of matching multiple text strings in a file using regex, and here is a second explicit multi-line search [example](https://sourcegraph.com/search?q=context:global+app.terraform.io/example_corp+%5Cn+version+%3D%28.*%290.9.%5Cd+lang:Terraform&patternType=regexp) for terraform module verisions.   
 
 
 ### Commit diff search and commit message search
@@ -421,7 +417,7 @@ Search contexts are an alternative way to narrow down the scope of your search t
 
 You can create custom search contexts to be simple or advanced with GitHub. Simple search contexts are things such as repository or organization name, and advanced search contexts can mix multiple attributes, including languages. GitHub’s search contexts allow for more personalization than Sourcegraph. 
 
-With Sourcegraph, a [search context](https://docs.sourcegraph.com/code_search/how-to/search_contexts) represents the corpus that will be searched. Search contexts can be private to the user who creates it or shared with other users on the same Sourcegraph instance. [Query-based ](https://docs.sourcegraph.com/code_search/how-to/search_contexts#beta-query-based-search-contexts)search contexts (beta) are an additional way to create search contexts based on variables like repository, rev, file, lang, case, fork, and visibility. Both [OR] and [AND] expressions are allowed to help further narrow the scope of query-based search contexts.
+With Sourcegraph, a [search context](https://docs.sourcegraph.com/code_search/how-to/search_contexts) represents the body of code that will be searched. Search contexts can be private to the user who creates it or shared with other users on the same Sourcegraph instance. [Query-based ](https://docs.sourcegraph.com/code_search/how-to/search_contexts#beta-query-based-search-contexts)search contexts (beta) are an additional way to create search contexts based on variables like repository, rev, file, lang, case, fork, and visibility. Both [OR] and [AND] expressions are allowed to help further narrow the scope of query-based search contexts.
 
 
 <table>
@@ -638,7 +634,7 @@ Sourcegraph offers [in-product analytics](https://docs.sourcegraph.com/admin/ana
    </td>
    <td>✗
 <p>
-Offers dependency insights. Does not offer comprehensive insights about the content of the code
+Offers dependency insights. Does not offer customizable insights about the content of the code
    </td>
    <td>✓ 
    </td>
