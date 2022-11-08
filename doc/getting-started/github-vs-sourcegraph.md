@@ -142,10 +142,9 @@ In addition to searching your organization’s private code, you can use Sourceg
   <tr>
    <td>
    </td>
-   <td>**GitHub**
-
+  <td><strong>GitHub</strong>
    </td>
-   <td>**Sourcegraph**
+   <td><strong>Sourcegraph</strong>
 
    </td>
   </tr>
