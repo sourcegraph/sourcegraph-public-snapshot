@@ -150,7 +150,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 
 	timeExpired := h.clock.After(h.config.interruptAfter)
 
-	itrConfig := iterator.IterationConfig{MaxAttempts: 5}
+	itrConfig := iterator.IterationConfig{MaxFailures: 5}
 
 	type nextFunc func(config iterator.IterationConfig) (api.RepoID, bool, iterator.FinishFunc)
 	itrLoop := func(nextFunc nextFunc) (interrupted bool, _ error) {

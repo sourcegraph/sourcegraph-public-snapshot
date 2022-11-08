@@ -143,7 +143,7 @@ func LoadWithClock(ctx context.Context, store *basestore.Store, id int, clock gl
 }
 
 type IterationConfig struct {
-	MaxAttempts int
+	MaxFailures int
 	OnTerminal  OnTerminalFunc
 }
 
@@ -175,7 +175,7 @@ func (p *PersistentRepoIterator) NextWithFinish(config IterationConfig) (api.Rep
 
 func (p *PersistentRepoIterator) NextRetryWithFinish(config IterationConfig) (api.RepoID, bool, FinishFunc) {
 	if len(p.retryRepos) == 0 {
-		p.resetRetry()
+		p.resetRetry(config)
 	}
 	var current int32
 	var got bool
@@ -185,7 +185,7 @@ func (p *PersistentRepoIterator) NextRetryWithFinish(config IterationConfig) (ap
 			return 0, false, func(ctx context.Context, store *basestore.Store, err error) error {
 				return nil
 			}
-		} else if config.MaxAttempts > 0 && p.errors.FailureCount(current) >= config.MaxAttempts {
+		} else if config.MaxFailures > 0 && p.errors.FailureCount(current) >= config.MaxFailures {
 			// this repo has exceeded its retry count, skip it
 			p.advanceRetry()
 			continue
@@ -286,11 +286,13 @@ func (p *PersistentRepoIterator) insertIterationError(ctx context.Context, store
 func (p *PersistentRepoIterator) doFinish(ctx context.Context, store *basestore.Store, maybeErr error, currentRepo int32, isRetry bool, config IterationConfig) (err error) {
 	didSucceed := 0
 	cursorOffset := 1
-	totalAttemptsForRepo := 1 + p.errors.FailureCount(currentRepo)
+	totalFailures := p.errors.FailureCount(currentRepo)
 
 	if maybeErr == nil {
 		// if this was for a success then we will want to update
 		didSucceed = 1
+	} else {
+		totalFailures += 1
 	}
 	if isRetry {
 		cursorOffset = 0
@@ -303,7 +305,7 @@ func (p *PersistentRepoIterator) doFinish(ctx context.Context, store *basestore.
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if maybeErr != nil && config.MaxAttempts != 0 && totalAttemptsForRepo >= config.MaxAttempts && config.OnTerminal != nil {
+	if maybeErr != nil && config.MaxFailures != 0 && totalFailures >= config.MaxFailures && config.OnTerminal != nil {
 		// the condition is if there was an error, and we have configured both a max attempts + callback, and the total attempts exceeds the config
 		err = config.OnTerminal(ctx, tx, maybeErr)
 		if err != nil {
@@ -392,10 +394,13 @@ func loadRepoIteratorErrors(ctx context.Context, store *basestore.Store, iterato
 	return got, err
 }
 
-func (p *PersistentRepoIterator) resetRetry() {
+func (p *PersistentRepoIterator) resetRetry(config IterationConfig) {
 	p.retryCursor = 0
 	var retry []int32
-	for repo := range p.errors {
+	for repo, val := range p.errors {
+		if config.MaxFailures > 0 && val.FailureCount >= config.MaxFailures {
+			continue
+		}
 		retry = append(retry, repo)
 	}
 	p.retryRepos = retry
