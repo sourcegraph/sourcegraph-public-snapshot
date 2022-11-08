@@ -209,6 +209,7 @@ func (s *BackfillStore) LoadSeriesBackfillsDebugInfo(ctx context.Context, series
 			if err != nil {
 				return nil, err
 			}
+			info.RepoIteratorId = backfill.repoIteratorId
 			info.StartedAt = &it.StartedAt
 			info.CompletedAt = &it.CompletedAt
 			info.PercentComplete = &it.PercentComplete
