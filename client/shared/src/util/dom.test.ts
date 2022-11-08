@@ -38,10 +38,10 @@ describe('createSVGIcon', () => {
     test('create SVG icon without label', () => {
         expect(createSVGIcon('M 10 10')).toMatchInlineSnapshot(`
             <svg
+              aria-hidden="true"
               viewBox="0 0 24 24"
             >
               <path
-                aria-hidden="true"
                 d="M 10 10"
               />
             </svg>
@@ -50,10 +50,10 @@ describe('createSVGIcon', () => {
     test('create SVG icon with label', () => {
         expect(createSVGIcon('M 10 10', 'open')).toMatchInlineSnapshot(`
             <svg
+              aria-label="open"
               viewBox="0 0 24 24"
             >
               <path
-                aria-label="open"
                 d="M 10 10"
               />
             </svg>
@@ -62,10 +62,10 @@ describe('createSVGIcon', () => {
     test('create SVG icon with empty label', () => {
         expect(createSVGIcon('M 10 10', '')).toMatchInlineSnapshot(`
             <svg
+              aria-hidden="true"
               viewBox="0 0 24 24"
             >
               <path
-                aria-hidden="true"
                 d="M 10 10"
               />
             </svg>
