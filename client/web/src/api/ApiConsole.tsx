@@ -168,15 +168,6 @@ export class ApiConsole extends React.PureComponent<Props, State> {
                     <GraphiQL.Logo>GraphQL API console</GraphiQL.Logo>
                     <GraphiQL.Toolbar>
                         <div className="d-flex align-items-center">
-                            {/* TODO: https://github.com/sourcegraph/sourcegraph/issues/44071 */}
-                            {/* <Button
-                                variant="secondary"
-                                title="Prettify Query (Shift-Ctrl-P)"
-                                onClick={this.handlePrettifyQuery}
-                                className={styles.toolbarButton}
-                            >
-                                Prettify
-                            </Button> */}
                             <Button
                                 variant="secondary"
                                 title="Show History"
@@ -227,12 +218,6 @@ export class ApiConsole extends React.PureComponent<Props, State> {
     private setGraphiQLRef = (reference: _graphiqlModule.default | null): void => {
         this.graphiQLRef = reference
     }
-    // private handlePrettifyQuery = (): void => {
-    //     if (!this.graphiQLRef) {
-    //         return
-    //     }
-    //     this.graphiQLRef.handlePrettifyQuery()
-    // }
     private handleToggleHistory = (): void => {
         if (!this.graphiQLRef) {
             return
