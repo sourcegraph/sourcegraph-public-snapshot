@@ -67,7 +67,7 @@ func TestGetUploadsForRanking(t *testing.T) {
 	}
 }
 
-func TestProcessStaleExportedUplods(t *testing.T) {
+func TestProcessStaleExportedUploads(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -123,7 +123,7 @@ func TestProcessStaleExportedUplods(t *testing.T) {
 
 	// Assert that these records will be marked for deletion
 	var deletedObjectPrefixes []string
-	numDeleted, err := store.ProcessStaleExportedUplods(ctx, "test", 100, func(ctx context.Context, objectPrefix string) error {
+	numDeleted, err := store.ProcessStaleExportedUploads(ctx, "test", 100, func(ctx context.Context, objectPrefix string) error {
 		deletedObjectPrefixes = append(deletedObjectPrefixes, objectPrefix)
 		return nil
 	})

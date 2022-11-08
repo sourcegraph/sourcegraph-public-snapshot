@@ -33,10 +33,10 @@ type MockStore struct {
 	// GetUploadsForRankingFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadsForRanking.
 	GetUploadsForRankingFunc *StoreGetUploadsForRankingFunc
-	// ProcessStaleExportedUplodsFunc is an instance of a mock function
+	// ProcessStaleExportedUploadsFunc is an instance of a mock function
 	// object controlling the behavior of the method
-	// ProcessStaleExportedUplods.
-	ProcessStaleExportedUplodsFunc *StoreProcessStaleExportedUplodsFunc
+	// ProcessStaleExportedUploads.
+	ProcessStaleExportedUploadsFunc *StoreProcessStaleExportedUploadsFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
@@ -53,7 +53,7 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		ProcessStaleExportedUplodsFunc: &StoreProcessStaleExportedUplodsFunc{
+		ProcessStaleExportedUploadsFunc: &StoreProcessStaleExportedUploadsFunc{
 			defaultHook: func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (r0 int, r1 error) {
 				return
 			},
@@ -75,9 +75,9 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.GetUploadsForRanking")
 			},
 		},
-		ProcessStaleExportedUplodsFunc: &StoreProcessStaleExportedUplodsFunc{
+		ProcessStaleExportedUploadsFunc: &StoreProcessStaleExportedUploadsFunc{
 			defaultHook: func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error) {
-				panic("unexpected invocation of MockStore.ProcessStaleExportedUplods")
+				panic("unexpected invocation of MockStore.ProcessStaleExportedUploads")
 			},
 		},
 	}
@@ -93,8 +93,8 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		GetUploadsForRankingFunc: &StoreGetUploadsForRankingFunc{
 			defaultHook: i.GetUploadsForRanking,
 		},
-		ProcessStaleExportedUplodsFunc: &StoreProcessStaleExportedUplodsFunc{
-			defaultHook: i.ProcessStaleExportedUplods,
+		ProcessStaleExportedUploadsFunc: &StoreProcessStaleExportedUploadsFunc{
+			defaultHook: i.ProcessStaleExportedUploads,
 		},
 	}
 }
@@ -311,37 +311,37 @@ func (c StoreGetUploadsForRankingFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreProcessStaleExportedUplodsFunc describes the behavior when the
-// ProcessStaleExportedUplods method of the parent MockStore instance is
+// StoreProcessStaleExportedUploadsFunc describes the behavior when the
+// ProcessStaleExportedUploads method of the parent MockStore instance is
 // invoked.
-type StoreProcessStaleExportedUplodsFunc struct {
+type StoreProcessStaleExportedUploadsFunc struct {
 	defaultHook func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error)
 	hooks       []func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error)
-	history     []StoreProcessStaleExportedUplodsFuncCall
+	history     []StoreProcessStaleExportedUploadsFuncCall
 	mutex       sync.Mutex
 }
 
-// ProcessStaleExportedUplods delegates to the next hook function in the
+// ProcessStaleExportedUploads delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) ProcessStaleExportedUplods(v0 context.Context, v1 string, v2 int, v3 func(ctx context.Context, objectPrefix string) error) (int, error) {
-	r0, r1 := m.ProcessStaleExportedUplodsFunc.nextHook()(v0, v1, v2, v3)
-	m.ProcessStaleExportedUplodsFunc.appendCall(StoreProcessStaleExportedUplodsFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockStore) ProcessStaleExportedUploads(v0 context.Context, v1 string, v2 int, v3 func(ctx context.Context, objectPrefix string) error) (int, error) {
+	r0, r1 := m.ProcessStaleExportedUploadsFunc.nextHook()(v0, v1, v2, v3)
+	m.ProcessStaleExportedUploadsFunc.appendCall(StoreProcessStaleExportedUploadsFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// ProcessStaleExportedUplods method of the parent MockStore instance is
+// ProcessStaleExportedUploads method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreProcessStaleExportedUplodsFunc) SetDefaultHook(hook func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error)) {
+func (f *StoreProcessStaleExportedUploadsFunc) SetDefaultHook(hook func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ProcessStaleExportedUplods method of the parent MockStore instance
+// ProcessStaleExportedUploads method of the parent MockStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreProcessStaleExportedUplodsFunc) PushHook(hook func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error)) {
+func (f *StoreProcessStaleExportedUploadsFunc) PushHook(hook func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -349,20 +349,20 @@ func (f *StoreProcessStaleExportedUplodsFunc) PushHook(hook func(context.Context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreProcessStaleExportedUplodsFunc) SetDefaultReturn(r0 int, r1 error) {
+func (f *StoreProcessStaleExportedUploadsFunc) SetDefaultReturn(r0 int, r1 error) {
 	f.SetDefaultHook(func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreProcessStaleExportedUplodsFunc) PushReturn(r0 int, r1 error) {
+func (f *StoreProcessStaleExportedUploadsFunc) PushReturn(r0 int, r1 error) {
 	f.PushHook(func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreProcessStaleExportedUplodsFunc) nextHook() func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error) {
+func (f *StoreProcessStaleExportedUploadsFunc) nextHook() func(context.Context, string, int, func(ctx context.Context, objectPrefix string) error) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -375,27 +375,27 @@ func (f *StoreProcessStaleExportedUplodsFunc) nextHook() func(context.Context, s
 	return hook
 }
 
-func (f *StoreProcessStaleExportedUplodsFunc) appendCall(r0 StoreProcessStaleExportedUplodsFuncCall) {
+func (f *StoreProcessStaleExportedUploadsFunc) appendCall(r0 StoreProcessStaleExportedUploadsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreProcessStaleExportedUplodsFuncCall
+// History returns a sequence of StoreProcessStaleExportedUploadsFuncCall
 // objects describing the invocations of this function.
-func (f *StoreProcessStaleExportedUplodsFunc) History() []StoreProcessStaleExportedUplodsFuncCall {
+func (f *StoreProcessStaleExportedUploadsFunc) History() []StoreProcessStaleExportedUploadsFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreProcessStaleExportedUplodsFuncCall, len(f.history))
+	history := make([]StoreProcessStaleExportedUploadsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreProcessStaleExportedUplodsFuncCall is an object that describes an
-// invocation of method ProcessStaleExportedUplods on an instance of
+// StoreProcessStaleExportedUploadsFuncCall is an object that describes an
+// invocation of method ProcessStaleExportedUploads on an instance of
 // MockStore.
-type StoreProcessStaleExportedUplodsFuncCall struct {
+type StoreProcessStaleExportedUploadsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -418,13 +418,13 @@ type StoreProcessStaleExportedUplodsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreProcessStaleExportedUplodsFuncCall) Args() []interface{} {
+func (c StoreProcessStaleExportedUploadsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreProcessStaleExportedUplodsFuncCall) Results() []interface{} {
+func (c StoreProcessStaleExportedUploadsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

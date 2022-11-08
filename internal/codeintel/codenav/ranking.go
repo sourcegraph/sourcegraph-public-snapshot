@@ -61,7 +61,7 @@ func (s *Service) VacuumRankingGraph(
 		return nil
 	}
 
-	numDeleted, err := s.store.ProcessStaleExportedUplods(ctx, rankingGraphKey, rankingGraphDeleteBatchSize, func(ctx context.Context, objectPrefix string) error {
+	numDeleted, err := s.store.ProcessStaleExportedUploads(ctx, rankingGraphKey, rankingGraphDeleteBatchSize, func(ctx context.Context, objectPrefix string) error {
 		if objectPrefix == "" {
 			// Special case: we haven't backfilled some data on dotcom yet
 			return nil
