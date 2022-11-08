@@ -54,7 +54,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
     const history = useHistory()
 
     const exampleSyntaxColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
-    
+
     const handleTabChange = (selectedTab: number): void => {
         setQueryExampleTabActive(!!selectedTab)
     }
@@ -66,7 +66,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                 telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
                 history.push(slug!)
             }
-            
+
             setQueryState({ query: `${queryState.query} ${query}`.trimStart(), hint: EditorHint.Focus })
 
             telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
@@ -101,7 +101,7 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
             setSelectTipTimeout,
             queryExampleTabActive,
             history,
-            isSourcegraphDotCom
+            isSourcegraphDotCom,
         ]
     )
 
@@ -116,10 +116,16 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                         </TabList>
                         <TabPanels>
                             <TabPanel>
-                                <QueryExamplesLayout queryColumns={exampleSyntaxColumns} onQueryExampleClick={onQueryExampleClick} />
+                                <QueryExamplesLayout
+                                    queryColumns={exampleSyntaxColumns}
+                                    onQueryExampleClick={onQueryExampleClick}
+                                />
                             </TabPanel>
                             <TabPanel>
-                                <QueryExamplesLayout queryColumns={exampleQueryColumns} onQueryExampleClick={onQueryExampleClick} />
+                                <QueryExamplesLayout
+                                    queryColumns={exampleQueryColumns}
+                                    onQueryExampleClick={onQueryExampleClick}
+                                />
                             </TabPanel>
                         </TabPanels>
                     </Tabs>
@@ -164,7 +170,10 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                             </>
                         )}
                     </div>
-                    <QueryExamplesLayout queryColumns={exampleSyntaxColumns} onQueryExampleClick={onQueryExampleClick} />
+                    <QueryExamplesLayout
+                        queryColumns={exampleSyntaxColumns}
+                        onQueryExampleClick={onQueryExampleClick}
+                    />
                 </div>
             )}
         </div>
@@ -176,7 +185,10 @@ interface QueryExamplesLayout {
     onQueryExampleClick: (id: string | undefined, query: string, slug: string | undefined) => void
 }
 
-export const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> = ({ queryColumns, onQueryExampleClick }) => (
+export const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> = ({
+    queryColumns,
+    onQueryExampleClick,
+}) => (
     <div className={styles.queryExamplesSectionsColumns}>
         {queryColumns.map((column, index) => (
             <div key={`column-${queryColumns[0][0].title}`}>
@@ -189,7 +201,7 @@ export const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> =
                     />
                 ))}
                 {/* Add docs link to last column */}
-                {queryColumns.length === (index + 1) && (
+                {queryColumns.length === index + 1 && (
                     <small className="d-block">
                         <Link target="blank" to="/help/code_search/reference/queries">
                             Complete query reference{' '}
