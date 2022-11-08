@@ -35,12 +35,37 @@ describe('isInputElement', () => {
 })
 
 describe('createSVGIcon', () => {
-    test('create SVG icon', () => {
+    test('create SVG icon without label', () => {
         expect(createSVGIcon('M 10 10')).toMatchInlineSnapshot(`
             <svg
               viewBox="0 0 24 24"
             >
               <path
+                aria-hidden="true"
+                d="M 10 10"
+              />
+            </svg>
+        `)
+    })
+    test('create SVG icon with label', () => {
+        expect(createSVGIcon('M 10 10', 'open')).toMatchInlineSnapshot(`
+            <svg
+              viewBox="0 0 24 24"
+            >
+              <path
+                aria-label="open"
+                d="M 10 10"
+              />
+            </svg>
+        `)
+    })
+    test('create SVG icon with empty label', () => {
+        expect(createSVGIcon('M 10 10', '')).toMatchInlineSnapshot(`
+            <svg
+              viewBox="0 0 24 24"
+            >
+              <path
+                aria-hidden="true"
                 d="M 10 10"
               />
             </svg>

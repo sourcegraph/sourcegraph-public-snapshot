@@ -149,11 +149,9 @@ export function searchQueryAutocompletion(
                 const icon = createSVGIcon(
                     completion.type && completion.type in typeIconMap
                         ? typeIconMap[completion.type as CompletionType]
-                        : typeIconMap[SymbolKind.UNKNOWN]
+                        : typeIconMap[SymbolKind.UNKNOWN],
+                    completion.type && completion.type in typeIconMap ? completion.type : ''
                 )
-                if (completion.type && completion.type in typeIconMap) {
-                    icon.setAttribute('aria-label', completion.type)
-                }
                 return icon
             },
             // Per CodeMirror documentation, 20 is the default icon
