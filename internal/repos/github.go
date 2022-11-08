@@ -964,8 +964,11 @@ func (s *GitHubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 		s.logger.Debug("github sync: GetReposByNameWithOwner", log.Strings("repos", batch))
 		for _, r := range repos {
 			if err := ctx.Err(); err != nil {
+				if r != nil {
+					err = errors.Wrapf(err, "context error for repository: %s", r.NameWithOwner)
+				}
+
 				results <- &githubResult{err: err}
-				s.logger.Debug("context error", log.String("repo", fmt.Sprintf("%+v", r)))
 				return err
 			}
 
