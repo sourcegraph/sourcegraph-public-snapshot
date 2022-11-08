@@ -43,6 +43,12 @@ All notable changes to Sourcegraph are documented in this file.
 - Removed support for setting `SRC_ENDPOINTS_CONSISTENT_HASH`. This was an environment variable to support the transition to a new consistent hashing scheme introduced in 3.31.0. [#43528](https://github.com/sourcegraph/sourcegraph/pull/43528)
 - Removed legacy environment variable `ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE` used in old versions of Code Insights to fall back to JSON settings based storage. All data was previously migrated in version 3.35 and this is no longer supported.
 
+## 4.1.3
+
+### Fixed
+
+- Fixed a bug that caused the Phabricator native extension to not load the right CSS assets. [#43868](https://github.com/sourcegraph/sourcegraph/pull/43868)
+
 ## 4.1.2
 
 ### Fixed
