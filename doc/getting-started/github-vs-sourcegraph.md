@@ -149,7 +149,7 @@ In addition to searching your organization’s private code, you can use Sourceg
    </td>
   </tr>
   <tr>
-   <td>**Search across all repositories and forks**
+   <td><strong>Search across all repositories and forks</strong>
 
    </td>
    <td>✓ with limitations 
@@ -160,7 +160,7 @@ In addition to searching your organization’s private code, you can use Sourceg
    </td>
   </tr>
   <tr>
-   <td>**Sarch across files larger than 350 KiB**
+   <td><strong>Search across files larger than 350 KiB</strong>
 
    </td>
    <td>✗
@@ -173,7 +173,7 @@ Using the [search.largeFiles](https://docs.sourcegraph.com/admin/config/site_con
    </td>
   </tr>
   <tr>
-   <td>**Search across all branches**
+   <td><strong>Search across all branches</strong>
 
    </td>
    <td>Only the default branch is searchable
