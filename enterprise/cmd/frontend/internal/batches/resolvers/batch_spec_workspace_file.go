@@ -51,10 +51,6 @@ func createVirtualFile(content []byte, path string) *graphqlbackend.VirtualFileR
 	})
 }
 
-// func NewMockBatchSpecWorkspaceFileResolver() {
-
-// }
-
 func (r *batchSpecWorkspaceFileResolver) ID() graphql.ID {
 	// 🚨 SECURITY: This needs to be the RandID! We can't expose the
 	// sequential, guessable ID.
