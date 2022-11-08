@@ -88,13 +88,13 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 path={[{ text: 'Subscriptions' }]}
                 description={
                     <>
-                        <Text>
+                        <>
                             Search your private code with{' '}
                             <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
                                 Sourcegraph Cloud
                             </Link> or contact us to purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
                             <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
-                        </Text>
+                        </>
                     </>
                 }
                 className="mb-3"
