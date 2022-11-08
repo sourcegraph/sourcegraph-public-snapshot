@@ -36,19 +36,19 @@ export function submitSearch({
     )
 
     const existingParameters = new URLSearchParams(history.location.search)
-    const parameters = new URLSearchParams(searchQueryParameter)
     for (const key of PRESERVED_QUERY_PARAMETERS) {
         const values = existingParameters.getAll(key)
         if (values.length === 0) {
             continue
         }
 
+        const parameters = new URLSearchParams(searchQueryParameter)
         parameters.delete(key)
         for (const value of values) {
             parameters.append(key, value)
         }
+        searchQueryParameter = parameters.toString()
     }
-    searchQueryParameter = parameters.toString()
 
     // Go to search results page
     const path = '/search?' + searchQueryParameter
