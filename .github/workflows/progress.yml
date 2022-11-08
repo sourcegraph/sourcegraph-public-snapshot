@@ -28,6 +28,7 @@ jobs:
       - name: Set up GCP key
         run: |
           echo ${{ secrets.PROGRESS_BOT_GCP_ACCOUNT_KEY }} | base64 -d > progress-bot-credentials.json
+          git config --global --add safe.directory /github/workspace
       - name: Report to Slack
         uses: docker://sourcegraph/progress-bot:latest@sha256:93ceab2a92d8464eccf367d47e8d585307d7ff36ab57e0240c3d68b4349c4e57
         env:
