@@ -7,27 +7,75 @@ import (
 
 	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/memo"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (b *backgroundJob) NewScheduler(
-	interval time.Duration,
-	repositoryProcessDelay time.Duration,
-	repositoryBatchSize int,
-	policyBatchSize int,
-	inferenceConcurrency int,
-) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return b.handleScheduler(ctx, repositoryProcessDelay, repositoryBatchSize, policyBatchSize, inferenceConcurrency)
-	}), b.operations.handleIndexScheduler)
+type IndexSchedulerConfig struct {
+	RepositoryProcessDelay time.Duration
+	RepositoryBatchSize    int
+	PolicyBatchSize        int
+	InferenceConcurrency   int
 }
 
-func (b backgroundJob) handleScheduler(
+type indexSchedulerJob struct {
+	uploadSvc       UploadService
+	policiesSvc     PoliciesService
+	policyMatcher   PolicyMatcher
+	autoindexingSvc AutoIndexingService
+}
+
+var backgroundMetrics = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*metrics.REDMetrics, error) {
+	return metrics.NewREDMetrics(
+		observationContext.Registerer,
+		"codeintel_autoindexing_background",
+		metrics.WithLabels("op"),
+		metrics.WithCountHelp("Total number of method invocations."),
+	), nil
+})
+
+func NewScheduler(
+	uploadSvc UploadService,
+	policiesSvc PoliciesService,
+	policyMatcher PolicyMatcher,
+	autoindexingSvc AutoIndexingService,
+	interval time.Duration,
+	config IndexSchedulerConfig,
+	observationContext *observation.Context,
+) goroutine.BackgroundRoutine {
+	job := indexSchedulerJob{
+		uploadSvc:       uploadSvc,
+		policiesSvc:     policiesSvc,
+		policyMatcher:   policyMatcher,
+		autoindexingSvc: autoindexingSvc,
+	}
+
+	metrics, _ := backgroundMetrics.Init(observationContext)
+
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+		return job.handleScheduler(ctx, config.RepositoryProcessDelay, config.RepositoryBatchSize, config.PolicyBatchSize, config.InferenceConcurrency)
+	}), observationContext.Operation(observation.Op{
+		Name:              "codeintel.indexing.HandleIndexSchedule",
+		MetricLabelValues: []string{"HandleIndexSchedule"},
+		Metrics:           metrics,
+		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+			if errors.As(err, &inference.LimitError{}) {
+				return observation.EmitForDefault.Without(observation.EmitForMetrics)
+			}
+			return observation.EmitForDefault
+		},
+	}))
+}
+
+func (b indexSchedulerJob) handleScheduler(
 	ctx context.Context,
 	repositoryProcessDelay time.Duration,
 	repositoryBatchSize int,
@@ -95,7 +143,7 @@ func (b backgroundJob) handleScheduler(
 	return errs
 }
 
-func (b backgroundJob) handleRepository(ctx context.Context, repositoryID, policyBatchSize int, now time.Time) error {
+func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, policyBatchSize int, now time.Time) error {
 	offset := 0
 
 	for {
@@ -138,12 +186,12 @@ func (b backgroundJob) handleRepository(ctx context.Context, repositoryID, polic
 	}
 }
 
-func (b backgroundJob) NewOnDemandScheduler(interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
+func NewOnDemandScheduler(autoindexingSvc AutoIndexingService, interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
 		if !autoIndexingEnabled() {
 			return nil
 		}
 
-		return b.autoindexingSvc.ProcessRepoRevs(ctx, batchSize)
+		return autoindexingSvc.ProcessRepoRevs(ctx, batchSize)
 	}))
 }
