@@ -1518,7 +1518,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 		// Check if we should pre-emptively refresh
 		if ok && autherWithRefresh.NeedsRefresh() {
 			if err := autherWithRefresh.Refresh(ctx, httpClient); err != nil {
-				logger.Warn("doRequest: refresh token failed", log.Error(err))
+				logger.Warn("doRequest: failed to refresh token", log.Error(err))
 			}
 		}
 		if err := auther.Authenticate(req); err != nil {

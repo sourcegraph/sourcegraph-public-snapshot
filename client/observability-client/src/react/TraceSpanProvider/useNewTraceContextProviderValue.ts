@@ -1,25 +1,26 @@
 import { useMemo, useContext } from 'react'
 
-import { trace, Span, ROOT_CONTEXT, Context, Attributes } from '@opentelemetry/api'
+import { context, trace, Span, Context, Attributes, ROOT_CONTEXT } from '@opentelemetry/api'
 
-import { sharedSpanStore } from '../../sdk'
+import { sharedSpanStore, areOnTheSameTrace } from '../../sdk'
 import { TraceContext, reactManualTracer } from '../constants'
 
 import type { TraceSpanProviderProps } from './TraceSpanProvider'
 
 /**
- * Use `customContext` if provided, otherwise use `parentContext`.
- * If no `parentContext` is available, use the current navigation context.
- *
- * It allows binding of all react spans to the parent span or the recent navigation event.
+ * This function ensures that all React spans are connected to the parent or current navigation context.
  */
-function getRelevantContext(parentContext: Context, customContext?: Context): Context {
-    if (customContext) {
-        return customContext
+function getReactTracerContext(parentContext: Context = context.active()): Context {
+    const currentNavigationContext = sharedSpanStore.getRootNavigationContext() || parentContext
+
+    // If no `parentContext` is available, use the current navigation context.
+    if (parentContext === ROOT_CONTEXT) {
+        return currentNavigationContext
     }
 
-    if (parentContext === ROOT_CONTEXT) {
-        return sharedSpanStore.getRootNavigationContext() || ROOT_CONTEXT
+    // If `parentContext` is linked to the old `PageView` trace, use the current navigation context.
+    if (!areOnTheSameTrace(trace.getSpan(currentNavigationContext), trace.getSpan(parentContext))) {
+        return currentNavigationContext
     }
 
     return parentContext
@@ -28,21 +29,20 @@ function getRelevantContext(parentContext: Context, customContext?: Context): Co
 interface NewTraceContextProviderValue {
     newSpan: Span
     newContext: Context
-    traceContextProviderValue: { context: Context }
 }
 
 /**
  * Creates the new OpenTelemetry tracing span on the first component render call.
- * Uses span provided by the `TraceContext` as a parent span for the new span.
+ * Uses span provided by the `TraceContext` as a parent span for the new one.
  */
 export function useNewTraceContextProviderValue(
     options: Omit<TraceSpanProviderProps, 'children'>
 ): NewTraceContextProviderValue {
-    const { context: providedParentContext } = useContext(TraceContext)
+    const { context: providedParentContext } = useContext(TraceContext).current
 
     return useMemo(() => {
         const { name, attributes, options: spanOptions, context: customContext } = options
-        const parentContext = getRelevantContext(providedParentContext, customContext)
+        const parentContext = getReactTracerContext(customContext || providedParentContext)
 
         const newSpan = reactManualTracer.startSpan(name, spanOptions, parentContext)
         const newContext = trace.setSpan(parentContext, newSpan)
@@ -54,7 +54,6 @@ export function useNewTraceContextProviderValue(
         return {
             newSpan,
             newContext,
-            traceContextProviderValue: { context: newContext },
         }
         // We want to create a new span only on the first component render call.
         // eslint-disable-next-line react-hooks/exhaustive-deps
