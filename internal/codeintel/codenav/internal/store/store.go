@@ -84,12 +84,15 @@ WITH candidates AS (
 		u.id IN (
 			SELECT uvt.upload_id
 			FROM lsif_uploads_visible_at_tip uvt
-			WHERE uvt.is_default_branch
-		) AND
-		u.id NOT IN (
-			SELECT re.upload_id
-			FROM codeintel_ranking_exports re
-			WHERE re.graph_key = %s
+			WHERE
+				uvt.is_default_branch AND
+				NOT EXISTS (
+					SELECT 1
+					FROM codeintel_ranking_exports re
+					WHERE
+						re.graph_key = %s AND
+						re.upload_id = uvt.upload_id
+				)
 		) AND
 		r.deleted_at IS NULL AND
 		r.blocked IS NULL
