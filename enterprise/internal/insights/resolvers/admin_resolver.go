@@ -269,7 +269,7 @@ type insightViewDebugResolver struct {
 	backfillStore   *scheduler.BackfillStore
 }
 
-func (r *insightViewDebugResolver) Series(ctx context.Context) ([]string, error) {
+func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
 
 	type queueDebug struct {
 		types.InsightSeriesStatus

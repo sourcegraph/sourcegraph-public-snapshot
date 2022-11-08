@@ -455,9 +455,9 @@ extend type Query {
 
 type InsightViewDebug {
     """
-    A list debug information in json format about series on the insightview
+    A json dump of debug information for series on the insightview
     """
-    series: [String!]!
+    raw: [String!]!
 }
 
 """
