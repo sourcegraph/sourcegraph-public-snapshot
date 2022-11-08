@@ -24,7 +24,6 @@ import {
     ProductSubscriptionNodeHeader,
     ProductSubscriptionNodeProps,
 } from '../../dotcom/productSubscriptions/ProductSubscriptionNode'
-import { OrDivider } from '../../../auth/OrDivider'
 
 interface Props extends RouteComponentProps<{}> {
     user: UserAreaUserFields
@@ -33,7 +32,7 @@ interface Props extends RouteComponentProps<{}> {
 class FilteredProductSubscriptionConnection extends FilteredConnection<
     ProductSubscriptionFields,
     ProductSubscriptionNodeProps
-> { }
+> {}
 
 /**
  * Displays the product subscriptions associated with this account.
@@ -89,17 +88,13 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 path={[{ text: 'Subscriptions' }]}
                 description={
                     <>
-                        Contact us to purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
-                        <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
-
-                        <OrDivider className="my-2" />
-
-                        <p>
+                        <Text>
                             Search your private code with{' '}
                             <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
                                 Sourcegraph Cloud
-                            </Link>.
-                        </p>
+                            </Link> or contact us to purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
+                            <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
+                        </Text>
                     </>
                 }
                 className="mb-3"
