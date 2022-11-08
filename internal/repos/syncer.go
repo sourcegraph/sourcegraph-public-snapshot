@@ -307,8 +307,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 
 	repo, err = s.Store.RepoStore().GetByName(ctx, name)
 	if err != nil && !errcode.IsNotFound(err) {
-		logger.Debug("repo not found in DB, skipping")
-		return nil, err
+		return nil, errors.Wrapf(err, "GetByName failed for %q", name)
 	}
 
 	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
