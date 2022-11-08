@@ -73,7 +73,11 @@ func (s *store) GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix
 
 const getUploadsForRankingQuery = `
 WITH candidates AS (
-	SELECT u.id
+	SELECT
+		u.id,
+		u.repository_id,
+		r.name AS repository_name,
+		u.root
 	FROM lsif_uploads u
 	JOIN repo r ON r.id = u.repository_id
 	WHERE
@@ -104,14 +108,13 @@ inserted AS (
 	RETURNING upload_id AS id
 )
 SELECT
-	u.id,
-	r.name,
-	u.root,
-	%s || '/' || u.id AS object_prefix
-FROM lsif_uploads u
-JOIN repo r ON r.id = u.repository_id
-WHERE u.id IN (SELECT id FROM inserted)
-ORDER BY u.id
+	c.id,
+	c.repository_name,
+	c.root,
+	%s || '/' || c.id AS object_prefix
+FROM candidates c
+WHERE c.id IN (SELECT id FROM inserted)
+ORDER BY c.id
 `
 
 func (s *store) ProcessStaleExportedUplods(
