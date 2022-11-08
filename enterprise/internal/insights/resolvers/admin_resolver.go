@@ -107,6 +107,7 @@ func (r *Resolver) InsightViewDebug(ctx context.Context, args graphqlbackend.Ins
 		insightViewID:   viewId,
 		viewSeries:      viewSeries,
 		workerBaseStore: r.workerBaseStore,
+		backfillStore:   scheduler.NewBackfillStore(r.insightsDB),
 	}
 	return resolver, nil
 }
@@ -201,7 +202,7 @@ func (i *insightSeriesQueryStatusResolver) Backfills(ctx context.Context) ([]gra
 	for i := 0; i < len(backfillDebugInfo); i++ {
 		resolvers = append(resolvers, &insightBackfillDebugResolver{backfill: backfillDebugInfo[i]})
 	}
-	return nil, nil
+	return resolvers, nil
 }
 
 type insightBackfillDebugResolver struct {
@@ -302,6 +303,7 @@ type insightViewDebugResolver struct {
 	insightViewID   string
 	viewSeries      []types.InsightViewSeries
 	workerBaseStore *basestore.Store
+	backfillStore   *scheduler.BackfillStore
 }
 
 func (r *insightViewDebugResolver) Series(ctx context.Context) ([]graphqlbackend.InsightSeriesQueryStatusResolver, error) {
@@ -318,21 +320,31 @@ func (r *insightViewDebugResolver) Series(ctx context.Context) ([]graphqlbackend
 	}
 
 	// index the metadata by seriesId to perform lookups
-	metadataBySeries := make(map[string]*types.InsightViewSeries)
-	for i, series := range r.viewSeries {
-		metadataBySeries[series.SeriesID] = &r.viewSeries[i]
+	queueStatusBySeries := make(map[string]*types.InsightSeriesStatus)
+	for i, status := range seriesStatus {
+		queueStatusBySeries[status.SeriesId] = &seriesStatus[i]
 	}
 
 	var resolvers []graphqlbackend.InsightSeriesQueryStatusResolver
-	// we will treat the results from the queue as the "primary" and perform a left join on query metadata. That way
-	// we never have a situation where we can't inspect the records in the queue, that's the entire point of this operation.
-	for _, status := range seriesStatus {
-		if series, ok := metadataBySeries[status.SeriesId]; ok {
-			status.Query = series.Query
-			status.Enabled = true //it's true because it's on the insight view enabled == not deleted at
-		}
+	// we will treat the results from the queue as the "secondary" and left join it to the series metadata.
 
-		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{workerBaseStore: r.workerBaseStore, status: status, seriesID: status.SeriesId})
+	for _, series := range r.viewSeries {
+		status := types.InsightSeriesStatus{
+			SeriesId: series.SeriesID,
+			Query:    series.Query,
+			Enabled:  true,
+		}
+		if tmpStatus, ok := queueStatusBySeries[series.SeriesID]; ok {
+			status.Completed = tmpStatus.Completed
+			status.Enabled = tmpStatus.Enabled
+			status.Errored = tmpStatus.Errored
+			status.Failed = tmpStatus.Failed
+			status.Queued = tmpStatus.Queued
+			status.Processing = tmpStatus.Processing
+		}
+		id := series.InsightSeriesID
+
+		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{backfillStore: r.backfillStore, workerBaseStore: r.workerBaseStore, status: status, seriesID: status.SeriesId, id: &id})
 	}
 	return resolvers, nil
 }
