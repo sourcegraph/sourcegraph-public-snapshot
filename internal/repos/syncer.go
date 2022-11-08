@@ -774,7 +774,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		// We must commit the transaction before publishing to s.Synced
 		// so that gitserver finds the repo in the database.
 
-		s.Logger.Debug("syncer: committing transaction")
+		s.Logger.Debug("committing transaction")
 		err = tx.Done(err)
 		if err != nil {
 			s.Logger.Warn("failed to commit transaction", log.Error(err))
@@ -784,9 +784,9 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		if s.Synced != nil && d.Len() > 0 {
 			select {
 			case <-ctx.Done():
-				s.Logger.Debug("syncer: context done")
+				s.Logger.Debug("context done")
 			case s.Synced <- d:
-				s.Logger.Debug("syncer: context done")
+				s.Logger.Debug("diff synced")
 			}
 		}
 	}()
@@ -804,7 +804,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 	switch len(stored) {
 	case 2: // Existing repo with a naming conflict
-		s.Logger.Debug("syncer: naming conflict")
+		s.Logger.Debug("naming conflict")
 
 		// Pick this sourced repo to own the name by deleting the other repo. If it still exists, it'll have a different
 		// name when we source it from the same code host, and it will be re-created.
@@ -825,10 +825,10 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		// We fallthrough to the next case after removing the conflicting repo in order to update
 		// the winner (i.e. existing). This works because we mutate stored to contain it, which the case expects.
 		stored = types.Repos{existing}
-		s.Logger.Debug("syncer: retrieved stored repo, falling through", log.String("stored", fmt.Sprintf("%v", stored)))
+		s.Logger.Debug("retrieved stored repo, falling through", log.String("stored", fmt.Sprintf("%v", stored)))
 		fallthrough
 	case 1: // Existing repo, update.
-		s.Logger.Debug("syncer: exisitng repo")
+		s.Logger.Debug("exisitng repo")
 		modified := stored[0].Update(sourced)
 		if modified == types.RepoUnmodified {
 			d.Unmodified = append(d.Unmodified, stored[0])
@@ -841,20 +841,20 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 		*sourced = *stored[0]
 		d.Modified = append(d.Modified, RepoModified{Repo: stored[0], Modified: modified})
-		s.Logger.Debug("syncer: appended to modified repos")
+		s.Logger.Debug("appended to modified repos")
 	case 0: // New repo, create.
-		s.Logger.Debug("syncer: new repo")
+		s.Logger.Debug("new repo")
 		if err = tx.CreateExternalServiceRepo(ctx, svc, sourced); err != nil {
 			return Diff{}, errors.Wrap(err, "syncer: failed to create external service repo")
 		}
 
 		d.Added = append(d.Added, sourced)
-		s.Logger.Debug("syncer: appended to added repos")
+		s.Logger.Debug("appended to added repos")
 	default: // Impossible since we have two separate unique constraints on name and external repo spec
 		panic("unreachable")
 	}
 
-	s.Logger.Debug("syncer: completed")
+	s.Logger.Debug("completed")
 	return d, nil
 }
 
