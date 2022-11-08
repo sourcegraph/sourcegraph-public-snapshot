@@ -748,25 +748,23 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 
 		if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
 			// Building Docker image located under $REPO_ROOT/docker-images/
-			if app == "gitserver-ms-git" {
-				// experimental, build a git-ms fork flavored version
-				// Hack owners: @jhchabran, @varsanojidan
-				cmds = append(cmds,
-					bk.Cmd("ls -lah "+filepath.Join("docker-images", "gitserver", "build.sh")),
-					bk.Cmd(filepath.Join("docker-images", "gitserver", "build.sh", "--git-server")))
-			} else {
-				cmds = append(cmds,
-					bk.Cmd("ls -lah "+filepath.Join("docker-images", app, "build.sh")),
-					bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
-			}
+			cmds = append(cmds,
+				bk.Cmd("ls -lah "+filepath.Join("docker-images", app, "build.sh")),
+				bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
 		} else {
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {
-				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
-				if _, err := os.Stat(filepath.Join("enterprise/cmd", app)); err != nil {
-					return "cmd/" + app
+				folder := app
+				if app == "gitserver-ms-git" {
+					// experimental, build a git-ms fork flavored version
+					// Hack owners: @jhchabran, @varsanojidan
+					folder = "gitserver"
 				}
-				return "enterprise/cmd/" + app
+				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
+				if _, err := os.Stat(filepath.Join("enterprise/cmd", folder)); err != nil {
+					return "cmd/" + folder
+				}
+				return "enterprise/cmd/" + folder
 			}()
 			preBuildScript := cmdDir + "/pre-build.sh"
 			if _, err := os.Stat(preBuildScript); err == nil {
