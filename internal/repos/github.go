@@ -967,12 +967,12 @@ func (s *GitHubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 		for _, r := range repos {
 			if err := ctx.Err(); err != nil {
 				results <- &githubResult{err: err}
-				s.logger.Debug("context error", log.String("repo", fmt.Sprintf("%v", r)))
+				s.logger.Debug("context error", log.String("repo", fmt.Sprintf("%+v", r)))
 				return err
 			}
 
 			results <- &githubResult{repo: r}
-			s.logger.Debug("sent repo to result", log.String("repo", fmt.Sprintf("%v", r)))
+			s.logger.Debug("sent repo to result", log.String("repo", fmt.Sprintf("%+v", r)))
 		}
 	}
 
