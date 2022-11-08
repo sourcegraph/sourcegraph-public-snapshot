@@ -299,10 +299,10 @@ func (s *GitHubSource) ListRepos(ctx context.Context, results chan SourceResult)
 			continue
 		}
 
-		s.logger.Debug("unfiltered", log.String("repo", fmt.Sprintf("%v", res.repo.NameWithOwner)))
+		s.logger.Debug("unfiltered", log.String("repo", res.repo.NameWithOwner))
 		if !seen[res.repo.DatabaseID] && !s.excludes(res.repo) {
 			results <- SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
-			s.logger.Debug("sent to result", log.String("repo", fmt.Sprintf("%v", res.repo.NameWithOwner)))
+			s.logger.Debug("sent to result", log.String("repo", res.repo.NameWithOwner))
 			seen[res.repo.DatabaseID] = true
 		}
 	}
