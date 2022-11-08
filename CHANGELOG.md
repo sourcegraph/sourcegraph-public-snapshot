@@ -31,6 +31,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 4.1.3
+
+### Fixed
+
+- Fixed a bug that caused the Phabricator native extension to not load the right CSS assets. [#43868](https://github.com/sourcegraph/sourcegraph/pull/43868)
+
 ## 4.1.2
 
 ### Fixed
