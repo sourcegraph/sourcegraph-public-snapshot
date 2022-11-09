@@ -2,6 +2,8 @@ package jobutil
 
 import (
 	"context"
+	"strings"
+	"testing"
 
 	"github.com/grafana/regexp"
 
@@ -11,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
 )
 
 func TestSanitizeJob(t *testing.T) {

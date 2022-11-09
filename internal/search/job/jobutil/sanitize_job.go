@@ -2,6 +2,7 @@ package jobutil
 
 import (
 	"context"
+
 	"github.com/grafana/regexp"
 
 	otlog "github.com/opentracing/opentracing-go/log"
