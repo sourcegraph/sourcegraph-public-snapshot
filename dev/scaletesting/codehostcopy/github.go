@@ -29,7 +29,7 @@ func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GithubCod
 
 	gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create github client")
+		return nil, errors.Wrap(err, "failed to create GitHub client")
 	}
 	return &GithubCodeHost{
 		def: def,
