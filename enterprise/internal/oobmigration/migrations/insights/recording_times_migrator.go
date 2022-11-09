@@ -2,7 +2,6 @@ package insights
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -17,10 +16,10 @@ type recordingTimesMigrator struct {
 	batchSize int
 }
 
-func NewRecordingTimesMigrator(store *basestore.Store) *recordingTimesMigrator {
+func NewRecordingTimesMigrator(store *basestore.Store, batchSize int) *recordingTimesMigrator {
 	return &recordingTimesMigrator{
 		store:     store,
-		batchSize: 500,
+		batchSize: batchSize,
 	}
 }
 
@@ -43,8 +42,6 @@ func (m *recordingTimesMigrator) Progress(ctx context.Context, _ bool) (float64,
 }
 
 func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
-	fmt.Println("UP")
-
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
 		return err

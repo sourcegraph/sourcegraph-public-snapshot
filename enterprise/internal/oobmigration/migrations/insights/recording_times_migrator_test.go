@@ -22,7 +22,7 @@ func TestRecordingTimesMigrator(t *testing.T) {
 	//permStore := store.NewInsightPermissionStore(postgres)
 	insightsStore := basestore.NewWithHandle(insightsDB.Handle())
 
-	migrator := NewRecordingTimesMigrator(insightsStore)
+	migrator := NewRecordingTimesMigrator(insightsStore, 500)
 
 	assertProgress := func(expectedProgress float64) {
 		if progress, err := migrator.Progress(context.Background(), false); err != nil {
