@@ -488,7 +488,7 @@ func getVCSSyncer(
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
-		p4Home := filepath.Join(reposDir, ".p4home")
+		p4Home := filepath.Join(reposDir, server.P4HomeName)
 		return &server.PerforceDepotSyncer{
 			MaxChanges:   int(c.MaxChanges),
 			Client:       c.P4Client,
