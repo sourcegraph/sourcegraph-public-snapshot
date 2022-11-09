@@ -218,6 +218,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     onSubmit={handleSubmitFeedback}
                     modal={true}
                     openByDefault={true}
+                    authenticatedUser={props.authenticatedUser}
                     onClose={() => setFeedbackModalOpen(false)}
                 />
             }
