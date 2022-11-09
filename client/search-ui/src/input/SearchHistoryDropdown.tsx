@@ -78,7 +78,7 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
                         <PopoverTrigger
                             type="button"
                             className={classNames(styles.triggerButton, isOpen ? styles.open : null, className)}
-                            aria-label="Toggle search history"
+                            aria-label="Open search history"
                         >
                             {buttonContent}
                         </PopoverTrigger>
@@ -109,11 +109,11 @@ const SearchHistoryEntries: React.FunctionComponent<SearchHistoryEntriesProps> =
             switch (event.key) {
                 case 'ArrowDown':
                     event.preventDefault()
-                    setSelectedIndex(index => (index + 1) % recentSearches.length)
+                    setSelectedIndex(index => index + (index + 1 < recentSearches.length ? 1 : 0))
                     break
                 case 'ArrowUp':
                     event.preventDefault()
-                    setSelectedIndex(index => (index - 1 + recentSearches.length) % recentSearches.length)
+                    setSelectedIndex(index => index - (index - 1 > -1 ? 1 : 0))
                     break
                 case 'Enter':
                     event.preventDefault()
@@ -172,6 +172,7 @@ const SearchHistoryEntry: React.FunctionComponent<{
     <li role="option" data-index={index} aria-selected={selected}>
         <SyntaxHighlightedSearchQuery query={search.query} tabIndex={-1} />
         <span className="ml-1 text-nowrap text-muted">
+            <span className="sr-only">,</span>
             <Timestamp date={search.timestamp} />
         </span>
     </li>

@@ -108,7 +108,9 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
         [onChange, selectedSearchContextSpec]
     )
 
-    const historyWithoutSelectedContext = useMemo(() => {
+    // Simplify history entries by removing the context filter if it is the same
+    // as the currently selected search context.
+    const recentSearchesWithoutSearchContext = useMemo(() => {
         if (!recentSearches || !selectedSearchContextSpec) {
             return undefined
         }
@@ -172,8 +174,8 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}
                         placeholder={
-                            historyWithoutSelectedContext &&
-                            historyWithoutSelectedContext.length > 0 &&
+                            recentSearchesWithoutSearchContext &&
+                            recentSearchesWithoutSearchContext.length > 0 &&
                             usedInlineHistory === false
                                 ? 'Tip: Use ↑ for previous searches'
                                 : 'Search for code or files'
@@ -195,7 +197,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         queryState={queryState}
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
                         applySuggestionsOnEnter={props.applySuggestionsOnEnter}
-                        searchHistory={historyWithoutSelectedContext}
+                        searchHistory={recentSearchesWithoutSearchContext}
                         onSelectSearchFromHistory={onInlineSearchHistorySelect}
                     />
                     <Toggles

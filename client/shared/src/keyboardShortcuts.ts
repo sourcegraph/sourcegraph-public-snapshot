@@ -26,14 +26,14 @@ export interface Keybinding {
 }
 
 const KEY_TO_NAME: { [P in Key | ModifierKey | string]?: string } = {
-    Mod: ((modKey: string) => (modKey === 'Meta' ? (isMacPlatform() ? '⌘' : 'Cmd') : 'Ctrl'))(getModKey()),
     Meta: isMacPlatform() ? '⌘' : 'Cmd',
     Shift: isMacPlatform() ? '⇧' : 'Shift',
-    Control: 'Ctrl',
+    Control: isMacPlatform() ? '^' : 'Ctrl',
     '†': 't',
     ArrowUp: '↑',
     ArrowDown: '↓',
 }
+KEY_TO_NAME.Mod = KEY_TO_NAME[getModKey()]
 
 const keySeparator = isMacPlatform() ? ' ' : '+'
 
