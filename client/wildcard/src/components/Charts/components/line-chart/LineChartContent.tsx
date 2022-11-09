@@ -108,6 +108,9 @@ export function LineChartContent<Datum>(props: LineChartContentProps<Datum>): Re
             {...attributes}
             {...handlers}
         >
+            {/* Spread the group element in order to track user input events from all visible chart content surface*/}
+            <rect x={0} y={0} opacity={0} width={width} height={height} aria-hidden={true} pointerEvents="none" />
+
             {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
             {activeSeries.map(line => (
