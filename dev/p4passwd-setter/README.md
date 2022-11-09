@@ -8,7 +8,7 @@
 4. Set your `SRC_ACCESS_TOKEN` environment variable to your access token
 5. On your Sourcegraph web UI, go to `user badge` (top-right) | `Site admin` | `Manage code hosts`, then look for your code host, click `Edit` next to it, and copy its ID from the page URL. It'll look like `RXg0YXJuZWxTZXJ3aWNlOjEzOA==`.
 6. Save the script and make it executable.
-7. Run the script: `./p4passwd-setter.sh "CODE_HOST_ID" "NEW_P4_PASSWORD"`
+7. Run [the script](p4passwd-setter.sh): `./p4passwd-setter.sh "CODE_HOST_ID" "NEW_P4_PASSWORD"`
 
 The password will be updated for the code host and the script will give no output.
 
