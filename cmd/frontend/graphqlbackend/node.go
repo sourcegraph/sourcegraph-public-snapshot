@@ -275,13 +275,23 @@ func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToWebhook() (*webhookResolver, bool) {
-	n, ok := r.Node.(*webhookResolver)
+func (r *NodeResolver) ToWebhook() (WebhookResolver, bool) {
+	n, ok := r.Node.(WebhookResolver)
 	return n, ok
 }
 
 func (r *NodeResolver) ToExecutor() (*ExecutorResolver, bool) {
 	n, ok := r.Node.(*ExecutorResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExecutorSecret() (*executorSecretResolver, bool) {
+	n, ok := r.Node.(*executorSecretResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExecutorSecretAccessLog() (*executorSecretAccessLogResolver, bool) {
+	n, ok := r.Node.(*executorSecretAccessLogResolver)
 	return n, ok
 }
 

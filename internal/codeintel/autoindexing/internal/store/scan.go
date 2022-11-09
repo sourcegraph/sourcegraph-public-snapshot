@@ -173,21 +173,6 @@ func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []shared.SourcedCommi
 	return flattened, nil
 }
 
-func scanCount(rows *sql.Rows, queryErr error) (value int, err error) {
-	if queryErr != nil {
-		return 0, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		if err := rows.Scan(&value); err != nil {
-			return 0, err
-		}
-	}
-
-	return value, nil
-}
-
 var ScanRepoRevs = basestore.NewSliceScanner(scanRepoRev)
 
 func scanRepoRev(s dbutil.Scanner) (rr RepoRev, err error) {

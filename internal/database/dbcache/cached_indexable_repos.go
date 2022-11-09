@@ -103,11 +103,11 @@ func (s *IndexableReposLister) refreshCache(ctx context.Context) ([]types.Minima
 		return repos, nil
 	}
 
-	opts := database.ListIndexableReposOptions{
+	opts := database.ListSourcegraphDotComIndexableReposOptions{
 		// Zoekt can only index a repo which has been cloned.
 		CloneStatus: types.CloneStatusCloned,
 	}
-	repos, err := s.store.ListIndexableRepos(ctx, opts)
+	repos, err := s.store.ListSourcegraphDotComIndexableRepos(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "querying for indexable repos")
 	}

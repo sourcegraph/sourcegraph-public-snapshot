@@ -99,6 +99,11 @@ export interface ResultContainerProps {
     repoLastFetched?: string
 
     /**
+     * A string sent down explaining ranking for a file when debug is enabled.
+     */
+    rankingDebug?: string
+
+    /**
      * Click event for when the result is clicked
      */
     onResultClicked?: () => void
@@ -138,6 +143,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     description,
     repoName,
     repoStars,
+    rankingDebug,
     onResultClicked,
     className,
     resultsClassName,
@@ -202,6 +208,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                         </span>
                     )}
                 </div>
+                {rankingDebug && <div>{rankingDebug}</div>}
                 <div className={classNames(styles.collapsibleResults, resultsClassName)}>
                     <div>{expanded ? expandedChildren : collapsedChildren}</div>
                     {collapsible && (

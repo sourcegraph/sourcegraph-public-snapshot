@@ -115,7 +115,7 @@ See [the official documentation](https://kubernetes.io/docs/tasks/administer-clu
 
 ### Google Cloud Platform (GCP)
 
-#### Kubernetes 1.19 and higher
+**For Kubernetes 1.19 and higher**
 
 1. Please read and follow the [official documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for enabling the persistent disk CSI driver on a [new](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_a_new_cluster) or [existing](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_an_existing_cluster) cluster.
 
@@ -142,7 +142,7 @@ volumeBindingMode: WaitForFirstConsumer
 
 ### Amazon Web Services (AWS)
 
-#### Kubernetes 1.19 and higher
+**For Kubernetes 1.19 and higher**
 
 1. Follow the [official instructions](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) to deploy the Amazon Elastic Block Store (Amazon EBS) Container Storage Interface (CSI) driver.
 
@@ -169,7 +169,7 @@ allowVolumeExpansion: true
 
 ### Azure
 
-#### Kubernetes 1.19 and higher
+**For Kubernetes 1.19 and higher**
 
 > WARNING: If you are deploying on Azure, you **must** ensure that your cluster is created with support for CSI storage drivers [(link)](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)). This **can not** be enabled after the fact
 
@@ -197,6 +197,26 @@ allowVolumeExpansion: true
 
 [Additional documentation](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers).
 
+
+### Rancher Kubernetes Engine (RKE)
+
+If you are using Trident as your storage orchestrator, you must have [fsType](https://docs.netapp.com/us-en/trident/trident-reference/objects.html#storage-pool-selection-attributes) defined in your storageClass for it to respect the volume ownership required by Sourcegraph. When [fsType](https://docs.netapp.com/us-en/trident/trident-reference/objects.html#storage-pool-selection-attributes) is not set, all the files within the cluster will be owned by user 99 (NOBODY), resulting in permission issues for all Sourcegraph databases.
+
+```yaml
+apiVersion: storage.k8s.io/v1beta1
+kind: StorageClass
+metadata:
+  name: sourcegraph
+  labels:
+    deploy: sourcegraph
+provisioner: netapp.io/trident
+parameters:
+  <Trident Parameters>
+  fsType: <ext4, ext3, xfs, etc.>
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+```
 
 ### Other cloud providers
 
@@ -289,7 +309,7 @@ work):
 
 Add a network rule that allows ingress traffic to port 30080 (HTTP) on at least one node.
 
-#### [Google Cloud Platform Firewall rules](https://cloud.google.com/compute/docs/vpc/using-firewalls).
+#### Google Cloud Platform Firewall
 
 - Expose the necessary ports.
 
@@ -328,9 +348,31 @@ kubectl get pods -l app=sourcegraph-frontend -o=custom-columns=NODE:.spec.nodeNa
 kubectl get node $NODE -o wide
 ```
 
-#### [AWS Security Group rules](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_SecurityGroups.html).
+Learn more about [Google Cloud Platform Firewall rules](https://cloud.google.com/compute/docs/vpc/using-firewalls).
+
+#### AWS Security Group
 
 Sourcegraph should now be accessible at `$EXTERNAL_ADDR:30080`, where `$EXTERNAL_ADDR` is the address of _any_ node in the cluster.
+
+Learn more about [AWS Security Group rules](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_SecurityGroups.html).
+
+#### Rancher Kubernetes Engine
+
+Make the following changes if your [Rancher Kubernetes Engine (RKE)](https://rancher.com/docs/rke/latest/en/) cluster is configured to use [NodePort](https://docs.ranchermanager.rancher.io/v2.0-v2.4/how-to-guides/new-user-guides/migrate-from-v1.6-v2.x/expose-services#nodeport):
+
+- Change the type of the `sourcegraph-frontend` service in [base/frontend/sourcegraph-frontend.Service.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Service.yaml) from `ClusterIP` to `NodePort`:
+
+```diff
+spec:
+  ports:
+  - name: http
+    port: 30080
++    nodePort: 30080
+-  type: ClusterIP
++  type: NodePort
+```
+
+> NOTE: Check with your upstream admin for the the correct nodePort value.
 
 ### Using NetworkPolicy
 

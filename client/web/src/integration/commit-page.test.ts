@@ -1,3 +1,5 @@
+import { subDays } from 'date-fns'
+
 import {
     DiffHunkLineType,
     ExternalServiceKind,
@@ -16,6 +18,7 @@ import { percySnapshotWithVariants } from './utils'
 describe('RepositoryCommitPage', () => {
     const repositoryName = 'github.com/sourcegraph/sourcegraph'
     const commitID = '1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416'
+    const commitDate = subDays(new Date(), 7).toISOString()
     const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ...commonWebGraphQlResults,
         RepositoryCommit: () => ({
@@ -31,32 +34,38 @@ describe('RepositoryCommitPage', () => {
                     subject: 'Signup copy adjustment (#43435)',
                     body: 'Copy adjustment',
                     author: {
+                        __typename: 'Signature',
                         person: {
+                            __typename: 'Person',
                             avatarURL: null,
                             name: 'st0nebraker',
                             email: 'beccasteinbrecher@gmail.com',
                             displayName: 'Becca Steinbrecher',
                             user: {
+                                __typename: 'User',
                                 id: 'VXNlcjo1MTA5OQ==',
                                 username: 'st0nebraker',
                                 url: '/users/st0nebraker',
                                 displayName: 'Becca Steinbrecher',
                             },
                         },
-                        date: '2022-10-27T21:31:53Z',
+                        date: commitDate,
                     },
                     committer: {
+                        __typename: 'Signature',
                         person: {
+                            __typename: 'Person',
                             avatarURL: null,
                             name: 'GitHub',
                             email: 'noreply@github.com',
                             displayName: 'GitHub',
                             user: null,
                         },
-                        date: '2022-10-27T21:31:53Z',
+                        date: commitDate,
                     },
                     parents: [
                         {
+                            __typename: 'GitCommit',
                             oid: '56ab377d94fe96c87bc8c5e26675c585f9312e64',
                             abbreviatedOID: '56ab377',
                             url:
@@ -68,12 +77,14 @@ describe('RepositoryCommitPage', () => {
                         '/github.com/sourcegraph/sourcegraph/-/commit/1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416',
                     externalURLs: [
                         {
+                            __typename: 'ExternalLink',
                             url:
                                 'https://github.com/sourcegraph/sourcegraph/commit/1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416',
                             serviceKind: ExternalServiceKind.GITHUB,
                         },
                     ],
                     tree: {
+                        __typename: 'GitTree',
                         canonicalURL: '/github.com/sourcegraph/sourcegraph@1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416',
                     },
                 },

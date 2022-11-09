@@ -16,13 +16,13 @@ import (
 // Store provides the interface for codenav storage.
 type Store interface {
 	GetUnsafeDB() database.DB
-	GetUploadsForRanking(ctx context.Context, key string, batchSize int) ([]Upload, error)
+	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]ExportedUpload, error)
 
-	ProcessStaleExportedUplods(
+	ProcessStaleExportedUploads(
 		ctx context.Context,
 		graphKey string,
 		batchSize int,
-		deleter func(ctx context.Context, id int) error,
+		deleter func(ctx context.Context, objectPrefix string) error,
 	) (totalDeleted int, err error)
 }
 
@@ -48,41 +48,51 @@ func (s *store) GetUnsafeDB() database.DB {
 	return database.NewDBWith(s.logger, s.db)
 }
 
-type Upload struct {
-	ID   int
-	Repo string
-	Root string
+type ExportedUpload struct {
+	ID           int
+	Repo         string
+	Root         string
+	ObjectPrefix string
 }
 
-var scanUploads = basestore.NewSliceScanner(func(s dbutil.Scanner) (u Upload, _ error) {
-	err := s.Scan(&u.ID, &u.Repo, &u.Root)
+var scanUploads = basestore.NewSliceScanner(func(s dbutil.Scanner) (u ExportedUpload, _ error) {
+	err := s.Scan(&u.ID, &u.Repo, &u.Root, &u.ObjectPrefix)
 	return u, err
 })
 
-func (s *store) GetUploadsForRanking(ctx context.Context, key string, batchSize int) (_ []Upload, err error) {
+func (s *store) GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) (_ []ExportedUpload, err error) {
 	return scanUploads(s.db.Query(ctx, sqlf.Sprintf(
 		getUploadsForRankingQuery,
-		key,
+		graphKey,
 		batchSize,
-		key,
+		graphKey,
+		objectPrefix+"/"+graphKey,
+		objectPrefix+"/"+graphKey,
 	)))
 }
 
 const getUploadsForRankingQuery = `
 WITH candidates AS (
-	SELECT u.id
+	SELECT
+		u.id,
+		u.repository_id,
+		r.name AS repository_name,
+		u.root
 	FROM lsif_uploads u
 	JOIN repo r ON r.id = u.repository_id
 	WHERE
 		u.id IN (
 			SELECT uvt.upload_id
 			FROM lsif_uploads_visible_at_tip uvt
-			WHERE uvt.is_default_branch
-		) AND
-		u.id NOT IN (
-			SELECT re.upload_id
-			FROM codeintel_ranking_exports re
-			WHERE re.graph_key = %s
+			WHERE
+				uvt.is_default_branch AND
+				NOT EXISTS (
+					SELECT 1
+					FROM codeintel_ranking_exports re
+					WHERE
+						re.graph_key = %s AND
+						re.upload_id = uvt.upload_id
+				)
 		) AND
 		r.deleted_at IS NULL AND
 		r.blocked IS NULL
@@ -91,25 +101,30 @@ WITH candidates AS (
 	FOR UPDATE SKIP LOCKED
 ),
 inserted AS (
-	INSERT INTO codeintel_ranking_exports (upload_id, graph_key)
-	SELECT id, %s AS graph_key FROM candidates
+	INSERT INTO codeintel_ranking_exports (upload_id, graph_key, object_prefix)
+	SELECT
+		id,
+		%s,
+		%s || '/' || id
+	FROM candidates
 	ON CONFLICT (upload_id, graph_key) DO NOTHING
 	RETURNING upload_id AS id
 )
 SELECT
-	u.id,
-	r.name,
-	u.root
-FROM lsif_uploads u
-JOIN repo r ON r.id = u.repository_id
-WHERE u.id IN (SELECT id FROM inserted)
+	c.id,
+	c.repository_name,
+	c.root,
+	%s || '/' || c.id AS object_prefix
+FROM candidates c
+WHERE c.id IN (SELECT id FROM inserted)
+ORDER BY c.id
 `
 
-func (s *store) ProcessStaleExportedUplods(
+func (s *store) ProcessStaleExportedUploads(
 	ctx context.Context,
 	graphKey string,
 	batchSize int,
-	deleter func(ctx context.Context, id int) error,
+	deleter func(ctx context.Context, objectPrefix string) error,
 ) (totalDeleted int, err error) {
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
@@ -117,44 +132,43 @@ func (s *store) ProcessStaleExportedUplods(
 	}
 	defer func() { err = tx.Done(err) }()
 
-	ids, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(selectStaleExportedUploadsQuery, graphKey, batchSize)))
+	prefixByIDs, err := scanIntStringMap(tx.Query(ctx, sqlf.Sprintf(selectStaleExportedUploadsQuery, graphKey, batchSize)))
 	if err != nil {
 		return 0, err
 	}
 
-	for _, id := range ids {
-		if err := deleter(ctx, id); err != nil {
+	ids := make([]int, 0, len(prefixByIDs))
+	for id, prefix := range prefixByIDs {
+		if err := deleter(ctx, prefix); err != nil {
 			return 0, err
 		}
+
+		ids = append(ids, id)
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(deleteStaleExportedUploadsQuery, graphKey, pq.Array(ids))); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(deleteStaleExportedUploadsQuery, pq.Array(ids))); err != nil {
 		return 0, err
 	}
 
 	return len(ids), nil
 }
 
-// Note: should remove the cascade delete on codeintel_ranking_exports
-// from lsif_uploads, as we'd catch it this way without abandoning data
-// in the bucket with no metadata to delete it from.
+var scanIntStringMap = basestore.NewMapScanner(func(s dbutil.Scanner) (k int, v string, _ error) {
+	err := s.Scan(&k, &v)
+	return k, v, err
+})
 
 const selectStaleExportedUploadsQuery = `
-SELECT re.upload_id
+SELECT
+	re.id,
+	re.object_prefix
 FROM codeintel_ranking_exports re
-LEFT JOIN lsif_uploads u ON u.id = re.upload_id
-LEFT JOIN repo r ON r.id = u.repository_id
 WHERE
-	re.graph_key = %s AND NOT (
-		u.id IN (
-			SELECT uvt.upload_id
-			FROM lsif_uploads_visible_at_tip uvt
-			WHERE uvt.is_default_branch
-		) AND
-		r.id IS NOT NULL AND
-		r.deleted_at IS NULL AND
-		r.blocked IS NULL
-	)
+	re.graph_key = %s AND (re.upload_id IS NULL OR re.upload_id NOT IN (
+		SELECT uvt.upload_id
+		FROM lsif_uploads_visible_at_tip uvt
+		WHERE uvt.is_default_branch
+	))
 ORDER BY re.upload_id DESC
 LIMIT %s
 FOR UPDATE OF re SKIP LOCKED
@@ -162,7 +176,5 @@ FOR UPDATE OF re SKIP LOCKED
 
 const deleteStaleExportedUploadsQuery = `
 DELETE FROM codeintel_ranking_exports re
-WHERE
-	re.graph_key = %s AND
-	re.upload_id = ANY(%q)
+WHERE re.id = ANY(%s)
 `

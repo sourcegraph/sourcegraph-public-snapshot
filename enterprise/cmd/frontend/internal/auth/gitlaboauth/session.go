@@ -31,6 +31,14 @@ type sessionIssuerHelper struct {
 	allowGroups []string
 }
 
+func (s *sessionIssuerHelper) AuthSucceededEventName() database.SecurityEventName {
+	return database.SecurityEventGitLabAuthSucceeded
+}
+
+func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
+	return database.SecurityEventGitLabAuthFailed
+}
+
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
 	gUser, err := UserFromContext(ctx)
 	if err != nil {
