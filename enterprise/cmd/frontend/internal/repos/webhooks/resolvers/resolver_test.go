@@ -1,4 +1,4 @@
-package graphqlbackend
+package resolvers
 
 import (
 	"context"
@@ -8,8 +8,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 
 	"github.com/google/uuid"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -82,8 +84,8 @@ func TestListWebhooks(t *testing.T) {
 	db := database.NewMockDB()
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
 	db.UsersFunc.SetDefaultReturn(users)
-	gqlSchema := mustParseGraphQLSchema(t, db)
-	RunTests(t, []*Test{
+	gqlSchema := createGqlSchema(t, db)
+	graphqlbackend.RunTests(t, []*graphqlbackend.Test{
 		{
 			Label:   "basic",
 			Context: ctx,
@@ -259,9 +261,9 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 
 	t.Run("Initial page without a cursor present", func(t *testing.T) {
 		store.ListFunc.SetDefaultReturn(mockWebhooks[0:2], nil)
-		RunTests(t, []*Test{
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: createGqlSchema(t, db),
 				Query:  buildQuery(1, ""),
 				ExpectedResult: `
 				{
@@ -282,8 +284,8 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 	t.Run("Second page", func(t *testing.T) {
 		store.ListFunc.SetDefaultReturn(mockWebhooks[1:], nil)
 
-		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+		graphqlbackend.RunTest(t, &graphqlbackend.Test{
+			Schema: createGqlSchema(t, db),
 			Query:  buildQuery(1, "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIxIiwiRGlyZWN0aW9uIjoibmV4dCJ9"),
 			ExpectedResult: `
 				{
@@ -303,8 +305,8 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 	t.Run("Initial page with no further rows to fetch", func(t *testing.T) {
 		store.ListFunc.SetDefaultReturn(mockWebhooks, nil)
 
-		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+		graphqlbackend.RunTest(t, &graphqlbackend.Test{
+			Schema: createGqlSchema(t, db),
 			Query:  buildQuery(3, ""),
 			ExpectedResult: `
 				{
@@ -328,8 +330,8 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 	t.Run("With no webhooks present", func(t *testing.T) {
 		store.ListFunc.SetDefaultReturn(nil, nil)
 
-		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+		graphqlbackend.RunTest(t, &graphqlbackend.Test{
+			Schema: createGqlSchema(t, db),
 			Query:  buildQuery(1, ""),
 			ExpectedResult: `
 				{
@@ -347,8 +349,8 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 	t.Run("With an invalid cursor provided", func(t *testing.T) {
 		store.ListFunc.SetDefaultReturn(nil, nil)
 
-		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+		graphqlbackend.RunTest(t, &graphqlbackend.Test{
+			Schema:         createGqlSchema(t, db),
 			Query:          buildQuery(1, "invalid-cursor-value"),
 			ExpectedResult: "null",
 			ExpectedErrors: []*errors.QueryError{
@@ -384,13 +386,13 @@ func TestCreateWebhook(t *testing.T) {
 					uuid
 				}
 			}`
-	schema := mustParseGraphQLSchema(t, db)
+	gqlSchema := createGqlSchema(t, db)
 
-	RunTests(t, []*Test{
+	graphqlbackend.RunTests(t, []*graphqlbackend.Test{
 		{
 			Label:   "basic",
 			Context: ctx,
-			Schema:  schema,
+			Schema:  gqlSchema,
 			Query:   queryStr,
 			ExpectedResult: fmt.Sprintf(`
 				{
@@ -408,7 +410,7 @@ func TestCreateWebhook(t *testing.T) {
 		{
 			Label:          "invalid code host",
 			Context:        ctx,
-			Schema:         schema,
+			Schema:         gqlSchema,
 			Query:          queryStr,
 			ExpectedResult: "null",
 			ExpectedErrors: []*errors.QueryError{
@@ -425,7 +427,7 @@ func TestCreateWebhook(t *testing.T) {
 		{
 			Label:          "secrets not supported for code host",
 			Context:        ctx,
-			Schema:         schema,
+			Schema:         gqlSchema,
 			Query:          queryStr,
 			ExpectedResult: "null",
 			ExpectedErrors: []*errors.QueryError{
@@ -444,10 +446,10 @@ func TestCreateWebhook(t *testing.T) {
 
 	// validate error if not site admin
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
-	RunTest(t, &Test{
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
 		Label:          "only site admin can create webhook",
 		Context:        ctx,
-		Schema:         schema,
+		Schema:         gqlSchema,
 		Query:          queryStr,
 		ExpectedResult: "null",
 		ExpectedErrors: []*errors.QueryError{
@@ -501,9 +503,9 @@ func TestGetWebhookWithURL(t *testing.T) {
                     }
                 }
 			}`
-	gqlSchema := mustParseGraphQLSchema(t, db)
+	gqlSchema := createGqlSchema(t, db)
 
-	RunTest(t, &Test{
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
 		Label:   "basic",
 		Context: ctx,
 		Schema:  gqlSchema,
@@ -529,7 +531,7 @@ func TestGetWebhookWithURL(t *testing.T) {
 			},
 		},
 	)
-	RunTest(t, &Test{
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
 		Label:          "error if external URL invalid",
 		Context:        ctx,
 		Schema:         gqlSchema,
@@ -588,13 +590,13 @@ func TestDeleteWebhook(t *testing.T) {
 					alwaysNil
 				}
 			}`
-	schema := mustParseGraphQLSchema(t, db)
+	gqlSchema := createGqlSchema(t, db)
 
 	// validate error if not site admin
-	RunTest(t, &Test{
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
 		Label:          "only site admin can delete webhook",
 		Context:        ctx,
-		Schema:         schema,
+		Schema:         gqlSchema,
 		Query:          queryStr,
 		ExpectedResult: "null",
 		ExpectedErrors: []*errors.QueryError{
@@ -611,10 +613,10 @@ func TestDeleteWebhook(t *testing.T) {
 	// User is site admin
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	RunTest(t, &Test{
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
 		Label:          "database error",
 		Context:        ctx,
-		Schema:         schema,
+		Schema:         gqlSchema,
 		Query:          queryStr,
 		ExpectedResult: "null",
 		ExpectedErrors: []*errors.QueryError{
@@ -631,10 +633,10 @@ func TestDeleteWebhook(t *testing.T) {
 	// database layer behaves
 	webhookStore.DeleteFunc.SetDefaultReturn(nil)
 
-	RunTest(t, &Test{
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
 		Label:   "webhook successfully deleted",
 		Context: ctx,
-		Schema:  schema,
+		Schema:  gqlSchema,
 		Query:   queryStr,
 		ExpectedResult: `
 				{
@@ -647,4 +649,13 @@ func TestDeleteWebhook(t *testing.T) {
 			"id": string(id),
 		},
 	})
+}
+
+func createGqlSchema(t *testing.T, db database.DB) *graphql.Schema {
+	t.Helper()
+	gqlSchema, err := graphqlbackend.NewSchemaWithWebhooksResolver(db, NewWebhooksResolver(db))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return gqlSchema
 }
