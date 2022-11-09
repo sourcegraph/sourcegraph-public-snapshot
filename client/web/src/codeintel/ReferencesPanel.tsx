@@ -217,7 +217,7 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
     if (!tokenResult?.searchToken) {
         return (
             <div>
-                <Text className="text-danger">Could not find hovered token.</Text>
+                <Text className="text-danger">Could not find token.</Text>
             </div>
         )
     }

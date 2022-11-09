@@ -527,8 +527,7 @@ export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
     caseSensitive: boolean,
-    searchContextSpec?: string,
-    searchParametersList?: { key: string; value: string }[]
+    searchContextSpec?: string
 ): string {
     const searchParameters = new URLSearchParams()
     let queryParameter = query
@@ -558,12 +557,6 @@ export function buildSearchURLQuery(
 
     if (caseParameter === 'yes') {
         searchParameters.set('case', caseParameter)
-    }
-
-    if (searchParametersList) {
-        for (const queryParameter of searchParametersList) {
-            searchParameters.set(queryParameter.key, queryParameter.value)
-        }
     }
 
     return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')

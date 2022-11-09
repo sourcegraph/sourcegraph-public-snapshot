@@ -1,6 +1,6 @@
-import { PropsWithChildren, useEffect, FunctionComponent } from 'react'
+import { PropsWithChildren, useEffect, FunctionComponent, useRef } from 'react'
 
-import { SpanOptions, Context } from '@opentelemetry/api'
+import { SpanOptions, Context, ROOT_CONTEXT } from '@opentelemetry/api'
 
 import { IS_OPEN_TELEMETRY_TRACING_ENABLED } from '../../constants'
 import { TraceContext } from '../constants'
@@ -39,7 +39,11 @@ export type TraceSpanProviderProps = PropsWithChildren<{
 let TraceSpanProvider: FunctionComponent<TraceSpanProviderProps> = props => {
     const { children, ...restProps } = props
 
-    const { newSpan, traceContextProviderValue } = useNewTraceContextProviderValue(restProps)
+    // Store trace context in React ref to avoid re-rendering wrapped components on trace context change.
+    const traceContextProviderValueRef = useRef({ context: ROOT_CONTEXT })
+
+    const { newSpan, newContext } = useNewTraceContextProviderValue(restProps)
+    traceContextProviderValueRef.current = { context: newContext }
 
     useEffect(() => {
         newSpan.end()
@@ -47,7 +51,7 @@ let TraceSpanProvider: FunctionComponent<TraceSpanProviderProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    return <TraceContext.Provider value={traceContextProviderValue}>{children}</TraceContext.Provider>
+    return <TraceContext.Provider value={traceContextProviderValueRef}>{children}</TraceContext.Provider>
 }
 
 if (!IS_OPEN_TELEMETRY_TRACING_ENABLED) {

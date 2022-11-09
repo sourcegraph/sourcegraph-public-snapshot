@@ -896,7 +896,7 @@ Associates a repository-commit pair with the set of repository-level dependencie
 Indexes:
     "codeintel_path_rank_inputs_pkey" PRIMARY KEY, btree (id)
     "codeintel_path_rank_inputs_graph_key_input_filename_reposit_key" UNIQUE CONSTRAINT, btree (graph_key, input_filename, repository_name)
-    "codeintel_path_rank_graph_key_id_repository_name_processed" btree (graph_key, id, repository_name) WHERE NOT processed
+    "codeintel_path_rank_inputs_graph_key_repository_name_id_process" btree (graph_key, repository_name, id) WHERE NOT processed
 
 ```
 
@@ -930,7 +930,7 @@ Triggers:
  object_prefix | text                     |           |          | 
 Indexes:
     "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (id)
-    "codeintel_ranking_exports_upload_id_graph_key" UNIQUE, btree (upload_id, graph_key)
+    "codeintel_ranking_exports_graph_key_upload_id" UNIQUE, btree (graph_key, upload_id)
 Foreign-key constraints:
     "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
 
@@ -1475,6 +1475,7 @@ Indexes:
     "gitserver_repos_cloning_status_idx" btree (repo_id) WHERE clone_status = 'cloning'::text
     "gitserver_repos_last_error_idx" btree (repo_id) WHERE last_error IS NOT NULL
     "gitserver_repos_not_cloned_status_idx" btree (repo_id) WHERE clone_status = 'not_cloned'::text
+    "gitserver_repos_not_explicitly_cloned_idx" btree (repo_id) WHERE clone_status <> 'cloned'::text
     "gitserver_repos_shard_id" btree (shard_id, repo_id)
 Foreign-key constraints:
     "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -2631,6 +2632,7 @@ Indexes:
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_created_at" btree (created_at)
     "repo_description_trgm_idx" gin (lower(description) gin_trgm_ops)
+    "repo_dotcom_indexable_repos_idx" btree (stars DESC NULLS LAST) INCLUDE (id, name) WHERE deleted_at IS NULL AND blocked IS NULL AND (stars >= 5 AND NOT COALESCE(fork, false) AND NOT archived OR lower(name::text) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'::text)
     "repo_fork" btree (fork)
     "repo_hashed_name_idx" btree (sha256(lower(name::text)::bytea)) WHERE deleted_at IS NULL
     "repo_is_not_blocked_idx" btree ((blocked IS NULL))
