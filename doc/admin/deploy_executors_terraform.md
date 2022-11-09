@@ -292,9 +292,21 @@ and [Google](https://sourcegraph.com/github.com/sourcegraph/terraform-google-exe
 executor modules exists for that purpose. When used, the `credentials` module sets up the credentials on the cloud
 provider and returns them in the Terraform outputs.
 
-Here's an example of how one would use the `credentials` submodule:
+Here's an example of how one would configure auto-scaling.
 
 ```terraform
+module "executors" {
+  source  = "sourcegraph/executors/<aws | google>"
+  version = "<version>"
+  
+  # Basic configuration...
+
+  # Auto-scaling
+  executor_min_replicas              = 0 # Spin down when not in use
+  executor_max_replicas              = 30
+  executor_jobs_per_instance_scaling = 20
+}
+
 module "my-credentials" {
   source  = "sourcegraph/executors/<aws | google>//modules/credentials"
   version = "<version>"
