@@ -121,7 +121,7 @@ With GitHub, only the default **branch** is searchable (though GitHub is plannin
 
 **Forks** are included in the index, but they are subject to the same limitations as other repositories, so not all forks are indexed.
 
-In addition to searching your private code, GitHub has indexed over 25 million public GitHub repositories which are also searchable.
+In addition to searching your private code, GitHub has indexed over 7 million public GitHub repositories which are also searchable.
 
 Sourcegraph allows you to search indexed and [unindexed](https://docs.sourcegraph.com/code_search/how-to/exhaustive#non-indexed-backends) code. Sourcegraph’s [current limitations](https://docs.sourcegraph.com/admin/search) on indexed code are: 
 
