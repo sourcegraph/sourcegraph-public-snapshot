@@ -65,7 +65,8 @@ func WithTimeout(n time.Duration) ClientOpt {
 
 // NewBasicAuthClient creates a Client that uses Basic Authentication. By default the FetchLimit is set to 150.
 // To set the Timeout, use WithTimeout and pass it as a ClientOpt to this method. This is the preferred client
-// interacting with the REST API as it has more power. For a more restrictive client, use the Token based client.
+// interacting with the REST API, since it is able to perform some calls the Token based client is not allowed
+// to do by the Bitbucket API ie. CreateRepo
 func NewBasicAuthClient(username, password string, url *url.URL, opts ...ClientOpt) *Client {
 	client := &Client{
 		apiURL:     url,
@@ -247,6 +248,7 @@ func (c *Client) GetProjectByKey(ctx context.Context, key string) (*Project, err
 	return &p, nil
 }
 
+// CreateRepo creates a repo within the given project with the given name.
 func (c *Client) CreateRepo(ctx context.Context, p *Project, repoName string) (*Repo, error) {
 	url := c.url(fmt.Sprintf("/rest/api/latest/projects/%s/repos", p.Key))
 
@@ -278,6 +280,13 @@ func (c *Client) CreateRepo(ctx context.Context, p *Project, repoName string) (*
 	return &result, nil
 }
 
+// CreateProject creates a Project. The PROJECT_CREATE permission is required for this call, which one cannot
+// assign to a Token in the Bitbucket admin interface. The only available Token permissions are PROJECT_ADMIN,
+// PROJECT_READ, PROJECT_WRITE.
+//
+// PROJECT_ADMIN does not imply PROJECT_CREATE which is only associated with a
+// authenticated user. Therefore, it is strongly recommended, that if you want to create a project to use the
+// BasicAuth client.
 func (c *Client) CreateProject(ctx context.Context, p *Project) (*Project, error) {
 	url := c.url("/rest/api/latest/projects")
 
