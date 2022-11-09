@@ -6,10 +6,10 @@ import (
 )
 
 func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, interval timeInterval, existingPoints []time.Time) []time.Time {
-	referenceTimes := buildRecordingTimes(12, interval, createdAt)
+	referenceTimes := buildRecordingTimes(12, interval, createdAt.Truncate(time.Hour*24))
 	if !lastRecordedAt.IsZero() {
 		// If we've had recordings since we need to step through them.
-		referenceTimes = append(referenceTimes, buildRecordingTimesBetween(createdAt, lastRecordedAt, interval)[1:]...)
+		referenceTimes = append(referenceTimes, buildRecordingTimesBetween(createdAt.Truncate(time.Hour*24), lastRecordedAt, interval)[1:]...)
 	}
 
 	if len(existingPoints) == 0 {
