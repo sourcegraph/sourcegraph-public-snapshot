@@ -158,5 +158,4 @@ export interface BuildSearchQueryURLParameters {
     patternType?: SearchPatternType
     caseSensitive?: boolean
     searchContextSpec?: string
-    searchParametersList?: { key: string; value: string }[]
 }
