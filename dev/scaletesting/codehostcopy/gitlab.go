@@ -22,7 +22,7 @@ func NewGitLabCodeHost(ctx context.Context, def *CodeHostDefinition) (*GitLabCod
 
 	gl, err := gitlab.NewClient(def.Token, gitlab.WithBaseURL(baseURL.String()))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create gitlab client")
+		return nil, errors.Wrap(err, "failed to create GitLab client")
 	}
 	return &GitLabCodeHost{
 		def: def,
