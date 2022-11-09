@@ -420,7 +420,7 @@ Repository-based and query-based
 
 Both GitHub and Sourcegraph offer out-of-the-box, search-based code navigation. This version of code navigation uses search-based heuristics to find references and definitions across a codebase without any setup required. It is powerful and convenient, but it can sometimes present inaccurate results. For example, it can return false positive references for symbols with common names. It is limited to returning definitions and references within a single repository (it won’t track references across multiple repositories).
 
-GitHub’s [search-based code navigation](https://docs.github.com/en/repositories/working-with-files/using-files/navigating-code-on-github) supports 10 languages. Sourcegraph’s [search-based code navigation](https://docs.sourcegraph.com/code_navigation/explanations/search_based_code_navigation) supports 40 languages.
+GitHub’s [search-based code navigation](https://docs.github.com/en/repositories/working-with-files/using-files/navigating-code-on-github) officially supports 10 languages according to the documentation, but more languages are supported in the latest beta preview. Sourcegraph’s [search-based code navigation](https://docs.sourcegraph.com/code_navigation/explanations/search_based_code_navigation) supports 40 languages.
 
 
 <table>
