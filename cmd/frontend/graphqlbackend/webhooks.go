@@ -21,8 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// TODO: Tests
-
 var _ WebhookResolver = &webhookResolver{}
 
 type WebhookResolver interface {
