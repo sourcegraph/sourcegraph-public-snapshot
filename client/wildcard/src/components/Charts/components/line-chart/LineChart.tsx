@@ -20,6 +20,19 @@ import { getSeriesData, getMinMaxBoundaries } from './utils'
  */
 const formatDateTick = timeFormat('%d %b')
 
+interface GetScaleTicksInput {
+    scale: AnyD3Scale
+    space: number
+    pixelsPerTick?: number
+}
+
+export function getXScaleTicks<T>(input: GetScaleTicksInput): T[] {
+    const { scale, space, pixelsPerTick = 80 } = input
+    // Calculate desirable number of ticks
+    const numberTicks = Math.max(2, Math.floor(space / pixelsPerTick))
+    return getTicks(scale, numberTicks) as T[]
+}
+
 interface GetLineGroupStyleOptions {
     /** Whether this series contains the active point */
     id: string
@@ -56,21 +69,6 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
 }
 
 const identity = <T,>(argument: T): T => argument
-
-interface GetScaleTicksInput {
-    scale: AnyD3Scale
-    space: number
-    pixelsPerTick?: number
-}
-
-export function getXScaleTicks<T>(input: GetScaleTicksInput): T[] {
-    const { scale, space, pixelsPerTick = 80 } = input
-
-    // Calculate desirable number of ticks
-    const numberTicks = Math.max(2, Math.floor(space / pixelsPerTick))
-
-    return getTicks(scale, numberTicks) as T[]
-}
 
 /**
  * Visual component that renders svg line chart with pre-defined sizes, tooltip,
@@ -120,7 +118,14 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
     return (
         <SvgRoot {...attributes} width={width} height={height} xScale={xScale} yScale={yScale} role="group">
             <SvgAxisLeft />
-            <SvgAxisBottom pixelsPerTick={40} minRotateAngle={20} maxRotateAngle={60} tickFormat={formatDateTick} />
+
+            <SvgAxisBottom
+                pixelsPerTick={60}
+                minRotateAngle={20}
+                maxRotateAngle={60}
+                tickFormat={formatDateTick}
+                getScaleTicks={getXScaleTicks}
+            />
 
             <SvgContent>
                 {({ xScale, yScale, content }) => (
