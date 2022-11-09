@@ -272,22 +272,24 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         </>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
-                    {props.authenticatedUser && (
-                        <NavAction>
-                            <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
-                                <PopoverTrigger
-                                    as={Button}
-                                    aria-label="Feedback"
-                                    variant="secondary"
-                                    outline={true}
-                                    size="sm"
-                                    className={styles.feedbackTrigger}
-                                >
-                                    <span>Feedback</span>
-                                </PopoverTrigger>
-                            </FeedbackPrompt>
-                        </NavAction>
-                    )}
+                    <NavAction>
+                        <FeedbackPrompt
+                            onSubmit={handleSubmitFeedback}
+                            productResearchEnabled={true}
+                            authenticatedUser={props.authenticatedUser}
+                        >
+                            <PopoverTrigger
+                                as={Button}
+                                aria-label="Feedback"
+                                variant="secondary"
+                                outline={true}
+                                size="sm"
+                                className={styles.feedbackTrigger}
+                            >
+                                <span>Feedback</span>
+                            </PopoverTrigger>
+                        </FeedbackPrompt>
+                    </NavAction>
                     {props.authenticatedUser && extensionsController !== null && enableLegacyExtensions && (
                         <NavAction>
                             <WebCommandListPopoverButton

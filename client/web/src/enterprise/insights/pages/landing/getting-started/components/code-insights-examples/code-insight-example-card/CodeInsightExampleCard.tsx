@@ -7,7 +7,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, Link, LegendItem, LegendList, ParentSize } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../../../../insights/utils/use-series-toggle'
-import { useCodeInsightsState } from '../../../../../../../../stores'
 import {
     InsightCard,
     InsightCardHeader,
@@ -16,7 +15,6 @@ import {
     SeriesChart,
 } from '../../../../../../components'
 import { InsightType } from '../../../../../../core'
-import { useUiFeatures } from '../../../../../../hooks'
 import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../../pings'
 import {
     CodeInsightsLandingPageContext,
@@ -53,7 +51,6 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
     const seriesToggleState = useSeriesToggle()
 
     const { mode } = useContext(CodeInsightsLandingPageContext)
-    const { licensed } = useUiFeatures()
 
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')
 
@@ -90,7 +87,7 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
                         to={templateLink}
                         onClick={handleTemplateLinkClick}
                     >
-                        {licensed ? 'Use as template' : 'Explore template'}
+                        Use as template
                     </Button>
                 )}
             </InsightCardHeader>
@@ -135,8 +132,6 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
     } = props
     const seriesToggleState = useSeriesToggle()
 
-    const { licensed } = useCodeInsightsState()
-
     const { mode } = useContext(CodeInsightsLandingPageContext)
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')
 
@@ -169,7 +164,7 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
                         to={templateLink}
                         onClick={handleTemplateLinkClick}
                     >
-                        {licensed ? 'Use as template' : 'Explore template'}
+                        Use as template
                     </Button>
                 )}
             </InsightCardHeader>
