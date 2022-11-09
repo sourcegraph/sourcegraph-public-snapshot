@@ -1,46 +1,56 @@
-import React, { LiHTMLAttributes } from 'react'
+import { forwardRef } from 'react'
 
 import classNames from 'classnames'
 
+import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
+
 import styles from './LegendList.module.scss'
 
-interface LegendListProps extends React.HTMLAttributes<HTMLUListElement> {
-    className?: string
-}
-
-export const LegendList: React.FunctionComponent<React.PropsWithChildren<LegendListProps>> = props => {
-    const { className, ...attributes } = props
+export const LegendList = forwardRef(function LegendList(props, ref) {
+    const { as: Component = 'ul', 'aria-label': ariaLabel = 'Chart legend', className, ...attributes } = props
 
     return (
-        <ul {...attributes} className={classNames(styles.legendList, className)}>
-            {props.children}
-        </ul>
-    )
-}
-
-interface LegendItemProps extends LiHTMLAttributes<HTMLLIElement> {
-    name: string
-    color?: string
-    selected?: boolean
-    hovered?: boolean
-}
-
-export const LegendItem: React.FunctionComponent<React.PropsWithChildren<LegendItemProps>> = ({
-    color = 'var(--gray-07)',
-    name,
-    selected = true,
-    hovered,
-    className,
-    children,
-    ...attributes
-}) => (
-    <li {...attributes} className={classNames({ 'text-muted': !selected && !hovered }, styles.legendItem, className)}>
-        <span
-            aria-hidden={true}
-            /* eslint-disable-next-line react/forbid-dom-props */
-            style={{ backgroundColor: selected || hovered ? color : undefined }}
-            className={classNames([styles.legendMark, { [styles.unselected]: !selected }])}
+        <Component
+            {...attributes}
+            ref={ref}
+            aria-label={ariaLabel}
+            className={classNames(styles.legendList, className)}
         />
-        {children || name}
-    </li>
-)
+    )
+}) as ForwardReferenceComponent<'ul'>
+
+interface LegendItemProps {
+    name: string
+    hovered?: boolean
+    selected?: boolean
+    color?: string
+}
+
+export const LegendItem = forwardRef(function LegendItem(props, ref) {
+    const {
+        name,
+        hovered,
+        selected = true,
+        color = 'var(--gray-07)',
+        className,
+        children,
+        as: Component = 'li',
+        ...attributes
+    } = props
+
+    return (
+        <Component
+            {...attributes}
+            ref={ref}
+            className={classNames(styles.legendItem, className, { 'text-muted': !selected && !hovered })}
+        >
+            <span
+                aria-hidden={true}
+                /* eslint-disable-next-line react/forbid-dom-props */
+                style={{ backgroundColor: selected || hovered ? color : undefined }}
+                className={classNames([styles.legendMark, { [styles.unselected]: !selected }])}
+            />
+            {children || name}
+        </Component>
+    )
+}) as ForwardReferenceComponent<'li', LegendItemProps>
