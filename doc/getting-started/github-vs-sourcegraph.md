@@ -1,8 +1,8 @@
-Please note: this page was last updated 2022-11-08, and we will continue to make updates as offerings from both GitHub and Sourcegraph evolve.
+Please note: this page was last updated 2022-11-09, and we will continue to make updates as offerings from both GitHub and Sourcegraph evolve.
 
 # GitHub code search vs. Sourcegraph
 
-GitHub code search is the next iteration of GitHub’s native code search and navigation functionality that can be used to search code stored in GitHub. It’s currently in technical preview and is separate from GitHub’s primary UI (GitHub will eventually [integrate this functionality](https://cs.github.com/about/faq#new-ui) into the primary UI). 
+GitHub code search is the next iteration of GitHub’s native code search and navigation functionality that can be used to search code stored in GitHub. It’s currently in beta preview and search is embedded into the main GitHub.com UI. 
 
 Sourcegraph is a code intelligence platform that makes codebases intelligible by semantically indexing and analyzing all of an organization’s code, providing developers and engineering leaders with a complete understanding of their codebase. In addition to universal code search across every code host, Sourcegraph has features to help developers find code, understand and answer questions about code, and fix code faster.
 
@@ -16,7 +16,7 @@ If you have a small codebase hosted exclusively in GitHub, GitHub's native code 
 
 **Who should use Sourcegraph?**
 
-As your codebase grows in complexity, the value of code search quickly increases. Sourcegraph may be a good fit for your team if:
+If you're brand new to code search and you want to try it with open soure repositories, visit sourcegraph.com/search. As your codebase grows in complexity, the value of code search quickly increases. Sourcegraph may be a good fit for your team if:
 
 
 * You have a large number of repositories or a large and complex monorepo
@@ -120,7 +120,7 @@ With GitHub, only the default **branch** is searchable (though GitHub is plannin
 
 **Forks** are included in the index, but they are subject to the same limitations as other repositories, so not all forks are indexed.
 
-In addition to searching your private code, GitHub has indexed over 7 million public GitHub repositories which are also searchable.
+In addition to searching your private code, GitHub has indexed over 7 million public GitHub repositories which are also searchable from within the same search bar within the UI. 
 
 Sourcegraph allows you to search indexed and [unindexed](https://docs.sourcegraph.com/code_search/how-to/exhaustive#non-indexed-backends) code. Sourcegraph’s [current limitations](https://docs.sourcegraph.com/admin/search) on indexed code are: 
 
@@ -137,52 +137,52 @@ With Sourcegraph, typically, the latest code on the default **branch** of each r
 In addition to searching your organization’s private code, you can use Sourcegraph.com to search across 2.8 million public repositories from multiple code hosts. 
 
 
+
 <table>
   <tr>
    <td>
    </td>
-  <td><strong>GitHub</strong>
+   <td><strong>GitHub</strong>
    </td>
    <td><strong>Sourcegraph</strong>
-
    </td>
   </tr>
   <tr>
    <td><strong>Search across all repositories and forks</strong>
-
    </td>
    <td>✓ with limitations 
-
    </td>
    <td>✓ with limitations 
-
    </td>
   </tr>
   <tr>
-   <td><strong>Search across files larger than 350 KiB</strong>
-
+   <td><strong>Sarch across files larger than 350 KiB</strong>
    </td>
    <td>✗
-
    </td>
    <td>✓ 
-
-Using the search.largeFiles keyword
-
+<p>
+Using the <a href="https://docs.sourcegraph.com/admin/config/site_config#search-largeFile">search.largeFiles</a> keyword
    </td>
   </tr>
   <tr>
    <td><strong>Search across all branches</strong>
-
    </td>
    <td>Only the default branch is searchable
-
    </td>
    <td>✓
-
+   </td>
+  </tr>
+  <tr>
+   <td><strong>Search across public and private repositories from a single location </strong>
+   </td>
+   <td>✓
+   </td>
+   <td>✗
    </td>
   </tr>
 </table>
+
 
 ### Search syntax
 
@@ -282,6 +282,8 @@ GitHub only returns the first 10 pages of search results. You cannot currently g
 
 Sourcegraph can retrieve all search results. By default, Sourcegraph returns 500 search results, but this number can be increased by increasing the ‘count’ value. Sourcegraph can display a maximum of 1,500 matches, but all matches can be fetched using the [src CLI](https://docs.sourcegraph.com/cli/quickstart), the [Stream API](https://docs.sourcegraph.com/api/stream_api), or [GraphQL API](https://docs.sourcegraph.com/api/graphql). You can also export the results via CSV. 
 
+GitHub code search includes suggestions, completions, and the ability to save your searches. Sourcegraph offers suggestions through search query examples and [saved searches](https://docs.sourcegraph.com/code_search/how-to/saved_searches#creating-saved-searches). 
+
 GitHub code search returns a list of repositories and files. Sourcegraph results can include repositories, files, diffs, commits, and symbols; however, you must use the ‘type’ filter to return anything outside of repositories and files. 
 
 **Ranking**
@@ -352,9 +354,9 @@ GitHub code search does not currently offer this functionality.
 
 Code search filters help you refine and narrow search query results to be more relevant. Both GitHub code search and Sourcegraph include filters.
 
-GitHub code search includes filters such as language, repository, path, and file size. GitHub automatically suggests filters to apply to your search based on your search history and information about you, such as your organization. 
+GitHub code search includes filters such as language, repository, path, and file size. GitHub automatically suggests filters to apply to your search based on your search history and information about you, such as your organization. GitHub also offers a fuzzy finder using filters to complete a code search query. 
 
-Sourcegraph filters reduce the scope of search query results by language, repository, path, author, message, content, timeframe, visibility, and more. Sourcegraph does not automatically suggest filters.
+Sourcegraph filters reduce the scope of search query results by language, repository, path, author, message, content, timeframe, visibility, and more. Sourcegraph does not automatically suggest filters, and does not have the ability to complete a fuzzy find using filters. 
 
 **Search contexts**
 
@@ -719,6 +721,6 @@ Sourceraph OSS is Apache 2 licensed and allows any developer to use, modify, and
 
 ## Availability
 
-GitHub code search is currently available through a technical preview (you can sign up for their [waitlist](https://cs.github.com/about) to request access). This technical preview is not yet available for GitHub Enterprise. 
+GitHub code search is currently available through a Public Beta (you can sign up for their [waitlist](https://github.com/features/code-search-code-view/signup) to request access). This technical preview is not yet available for GitHub Enterprise. 
 
 Sourcegraph’s code intelligence platform is generally available, and you can sign up for a free trial for your team [here](https://signup.sourcegraph.com/).
