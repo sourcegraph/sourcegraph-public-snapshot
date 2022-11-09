@@ -13,11 +13,11 @@ import (
 
 	regexp "github.com/grafana/regexp"
 	sqlf "github.com/keegancsmith/sqlf"
-	shared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/dependencies/shared"
 	enterprise "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	shared1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"

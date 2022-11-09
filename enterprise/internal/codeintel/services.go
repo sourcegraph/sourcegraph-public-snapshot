@@ -3,12 +3,12 @@ package codeintel
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"

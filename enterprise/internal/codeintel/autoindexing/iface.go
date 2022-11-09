@@ -6,12 +6,12 @@ import (
 
 	"github.com/grafana/regexp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/dependencies"
 	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"

@@ -8,14 +8,13 @@ import (
 	"os"
 	"path"
 
+	"github.com/sourcegraph/log"
 	"golang.org/x/mod/module"
 	modzip "golang.org/x/mod/zip"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
-	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"

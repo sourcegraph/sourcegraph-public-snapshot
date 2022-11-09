@@ -17,8 +17,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
 	"github.com/sourcegraph/sourcegraph/lib/errors"

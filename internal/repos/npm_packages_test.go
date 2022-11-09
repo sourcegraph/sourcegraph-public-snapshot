@@ -5,11 +5,10 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
