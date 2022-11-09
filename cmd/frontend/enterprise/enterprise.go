@@ -41,6 +41,7 @@ type Services struct {
 	NotebooksResolver               graphqlbackend.NotebooksResolver
 	ComputeResolver                 graphqlbackend.ComputeResolver
 	InsightsAggregationResolver     graphqlbackend.InsightsAggregationResolver
+	WebhooksResolver                graphqlbackend.WebhooksResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
