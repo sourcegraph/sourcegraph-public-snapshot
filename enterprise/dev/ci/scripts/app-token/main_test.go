@@ -49,11 +49,11 @@ func newTestGitHubClient(ctx context.Context, t *testing.T) (ghc *github.Client,
 		jwt, err := genJwtToken(appID, keyPath)
 		if err != nil {
 			t.Fatal(err)
-			httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-				&oauth2.Token{AccessToken: jwt},
-			))
-			recorder.SetTransport(httpClient.Transport)
 		}
+		httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: jwt},
+		))
+		recorder.SetTransport(httpClient.Transport)
 	}
 	return github.NewClient(&http.Client{Transport: recorder}), recorder.Stop
 
