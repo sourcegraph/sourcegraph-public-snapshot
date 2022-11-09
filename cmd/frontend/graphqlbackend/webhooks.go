@@ -36,21 +36,6 @@ type WebhookResolver interface {
 	UpdatedBy(ctx context.Context) (*UserResolver, error)
 }
 
-var _ WebhookResolver = &webhookResolver{}
-
-type WebhookResolver interface {
-	ID() graphql.ID
-	UUID() string
-	URL() (string, error)
-	CodeHostURN() string
-	CodeHostKind() string
-	Secret(ctx context.Context) (*string, error)
-	CreatedAt() gqlutil.DateTime
-	UpdatedAt() gqlutil.DateTime
-	CreatedBy(ctx context.Context) (*UserResolver, error)
-	UpdatedBy(ctx context.Context) (*UserResolver, error)
-}
-
 type webhookResolver struct {
 	db   database.DB
 	hook *types.Webhook
