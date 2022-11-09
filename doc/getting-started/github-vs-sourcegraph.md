@@ -183,14 +183,6 @@ Using the <a href="https://docs.sourcegraph.com/admin/config/site_config#search-
    <td>2.8 million 
    </td>
   </tr>
-  <tr>
-   <td><strong>Search across your repositories and open source repositories at the same time</strong>
-   </td>
-   <td>✓
-   </td>
-   <td>Private instance + [sourcegraph.com](https://sourcegraph.com/search) 
-   </td>
-  </tr>
 </table>
 
 
