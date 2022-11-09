@@ -26,3 +26,4 @@
 - [How to Set a password for Redis using a ConfigMap](redis_configmap.md)
 - [How to import a set of internal repositories to Sourcegraph](internal_github_repos.md)
 - [How to identify and resolve index corruption in postgres 14](postgres14-index-corruption.md)
+- [How to use a static endpoint for updates and pings](static-ip-for-updates-and-pings.md)

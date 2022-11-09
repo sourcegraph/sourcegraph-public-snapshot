@@ -63,7 +63,7 @@ export const Simple = () => {
                 value={selected}
                 label="Input error"
                 onChange={handleChange}
-                error="a message with error"
+                error="An error message that can contain `code` or other **Markdown** _formatting_. [Learn more](https://docs.sourcegraph.com)"
                 status="error"
                 placeholder="error status input"
             />

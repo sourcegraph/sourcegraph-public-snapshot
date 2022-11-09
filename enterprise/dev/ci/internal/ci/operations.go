@@ -754,18 +754,28 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 		} else {
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {
-				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
-				if _, err := os.Stat(filepath.Join("enterprise/cmd", app)); err != nil {
-					return "cmd/" + app
+				folder := app
+				if app == "gitserver-ms-git" {
+					// experimental, build a git-ms fork flavored version
+					// Hack owners: @jhchabran, @varsanojidan
+					folder = "gitserver"
 				}
-				return "enterprise/cmd/" + app
+				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
+				if _, err := os.Stat(filepath.Join("enterprise/cmd", folder)); err != nil {
+					return "cmd/" + folder
+				}
+				return "enterprise/cmd/" + folder
 			}()
 			preBuildScript := cmdDir + "/pre-build.sh"
 			if _, err := os.Stat(preBuildScript); err == nil {
 				// Allow all
 				cmds = append(cmds, bk.AnnotatedCmd(preBuildScript, buildAnnotationOptions))
 			}
-			cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh", buildAnnotationOptions))
+			if app == "gitserver-ms-git" {
+				cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh --microsoft-git", buildAnnotationOptions))
+			} else {
+				cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh", buildAnnotationOptions))
+			}
 		}
 
 		devImage := images.DevRegistryImage(app, tag)
@@ -825,6 +835,11 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		devImage := images.DevRegistryImage(app, "")
 		publishImage := images.PublishedRegistryImage(app, "")
+
+		if app == "gitserver-ms-git" && !c.RunType.Is(runtype.MainBranch) {
+			// Just NOP if we're not on main, we don't want to publish anything involving this experiment.
+			return
+		}
 
 		var images []string
 		for _, image := range []string{publishImage, devImage} {

@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -511,14 +512,10 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 
 	seriesFillStrategy := makeFillSeriesStrategy(ctx, insightTx, backfiller, r.scheduler, r.insightEnqueuer)
 
-	var scoped []types.InsightSeries
 	for _, series := range args.Input.DataSeries {
-		c, err := createAndAttachSeries(ctx, insightTx, seriesFillStrategy, view, series)
+		_, err := createAndAttachSeries(ctx, insightTx, seriesFillStrategy, view, series)
 		if err != nil {
 			return nil, errors.Wrap(err, "createAndAttachSeries")
-		}
-		if len(c.Repositories) > 0 {
-			scoped = append(scoped, *c)
 		}
 	}
 
@@ -1002,7 +999,8 @@ type fillSeriesStrategy func(context.Context, types.InsightSeries) error
 func makeFillSeriesStrategy(ctx context.Context, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller, scheduler *scheduler.Scheduler, insightEnqueuer *background.InsightEnqueuer) fillSeriesStrategy {
 	flags := featureflag.FromContext(ctx)
 	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
-	v2BackfillEnabled := flags.GetBoolOr("insights-backfiller-v2", false)
+	v2BackfillEnabled := conf.Get().ExperimentalFeatures.InsightsBackfillerV2
+
 	return func(ctx context.Context, series types.InsightSeries) error {
 		if series.GroupBy != nil {
 			return groupBySeriesFill(ctx, series, tx, insightEnqueuer)
@@ -1300,7 +1298,7 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 	// First sort lexicographically (ascending) to make sure the ordering is consistent even if some result counts are equal.
 	sort.SliceStable(resolvers, func(i, j int) bool {
 		hasSemVar, result := ascLexSort(resolvers[i].Label(), resolvers[j].Label())
-		if hasSemVar == true {
+		if hasSemVar {
 			return result
 		}
 		return strings.Compare(resolvers[i].Label(), resolvers[j].Label()) < 0
@@ -1324,7 +1322,7 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 		} else {
 			sort.SliceStable(resolvers, func(i, j int) bool {
 				hasSemVar, result := ascLexSort(resolvers[i].Label(), resolvers[j].Label())
-				if hasSemVar == true {
+				if hasSemVar {
 					return !result
 				}
 				return strings.Compare(resolvers[i].Label(), resolvers[j].Label()) > 0

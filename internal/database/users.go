@@ -568,6 +568,10 @@ func (u *userStore) HardDelete(ctx context.Context, id int32) (err error) {
 
 // HardDeleteList performs a bulk "HardDelete" action.
 func (u *userStore) HardDeleteList(ctx context.Context, ids []int32) (err error) {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := u.Transact(ctx)
 	if err != nil {
@@ -802,6 +806,8 @@ type UsersListOptions struct {
 	Query string
 	// UserIDs specifies a list of user IDs to include.
 	UserIDs []int32
+	// Only show users inside this org
+	OrgID int32
 
 	Tag string // only include users with this tag
 
@@ -870,6 +876,14 @@ const listUsersInactiveCond = `
 		timestamp >= %s
 ))
 `
+const orgMembershipCond = `
+EXISTS (
+	SELECT 1
+	FROM org_members
+	WHERE
+		org_members.user_id = u.id
+		AND org_members.org_id = %d)
+`
 
 func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
@@ -889,6 +903,9 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 			}
 			conds = append(conds, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
 		}
+	}
+	if opt.OrgID != 0 {
+		conds = append(conds, sqlf.Sprintf(orgMembershipCond, opt.OrgID))
 	}
 	if opt.Tag != "" {
 		conds = append(conds, sqlf.Sprintf("%s::text = ANY(u.tags)", opt.Tag))

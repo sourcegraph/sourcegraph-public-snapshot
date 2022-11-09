@@ -22,13 +22,6 @@ export function formatYTick(number: number): string {
  */
 export const formatDateTick = timeFormat('%d %b')
 
-/**
- * Returns a formatted date text for points aria labels.
- *
- * Example: 2021 January 21 Thursday
- */
-export const formatXLabel = timeFormat('%d %B %A')
-
 const MINIMUM_NUMBER_OF_TICKS = 2
 
 export interface GetScaleTicksOptions {

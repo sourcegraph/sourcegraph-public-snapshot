@@ -34,6 +34,9 @@ type MockStore struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *StoreDoneFunc
+	// ExportRankPayloadForFunc is an instance of a mock function object
+	// controlling the behavior of the method ExportRankPayloadFor.
+	ExportRankPayloadForFunc *StoreExportRankPayloadForFunc
 	// GetDocumentRanksFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDocumentRanks.
 	GetDocumentRanksFunc *StoreGetDocumentRanksFunc
@@ -74,6 +77,11 @@ func NewMockStore() *MockStore {
 		},
 		DoneFunc: &StoreDoneFunc{
 			defaultHook: func(error) (r0 error) {
+				return
+			},
+		},
+		ExportRankPayloadForFunc: &StoreExportRankPayloadForFunc{
+			defaultHook: func(context.Context, api.RepoName) (r0 time.Time, r1 []byte, r2 error) {
 				return
 			},
 		},
@@ -139,6 +147,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.Done")
 			},
 		},
+		ExportRankPayloadForFunc: &StoreExportRankPayloadForFunc{
+			defaultHook: func(context.Context, api.RepoName) (time.Time, []byte, error) {
+				panic("unexpected invocation of MockStore.ExportRankPayloadFor")
+			},
+		},
 		GetDocumentRanksFunc: &StoreGetDocumentRanksFunc{
 			defaultHook: func(context.Context, api.RepoName) (map[string][2]float64, bool, error) {
 				panic("unexpected invocation of MockStore.GetDocumentRanks")
@@ -196,6 +209,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		},
 		DoneFunc: &StoreDoneFunc{
 			defaultHook: i.Done,
+		},
+		ExportRankPayloadForFunc: &StoreExportRankPayloadForFunc{
+			defaultHook: i.ExportRankPayloadFor,
 		},
 		GetDocumentRanksFunc: &StoreGetDocumentRanksFunc{
 			defaultHook: i.GetDocumentRanks,
@@ -440,6 +456,117 @@ func (c StoreDoneFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// StoreExportRankPayloadForFunc describes the behavior when the
+// ExportRankPayloadFor method of the parent MockStore instance is invoked.
+type StoreExportRankPayloadForFunc struct {
+	defaultHook func(context.Context, api.RepoName) (time.Time, []byte, error)
+	hooks       []func(context.Context, api.RepoName) (time.Time, []byte, error)
+	history     []StoreExportRankPayloadForFuncCall
+	mutex       sync.Mutex
+}
+
+// ExportRankPayloadFor delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) ExportRankPayloadFor(v0 context.Context, v1 api.RepoName) (time.Time, []byte, error) {
+	r0, r1, r2 := m.ExportRankPayloadForFunc.nextHook()(v0, v1)
+	m.ExportRankPayloadForFunc.appendCall(StoreExportRankPayloadForFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the ExportRankPayloadFor
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreExportRankPayloadForFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (time.Time, []byte, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ExportRankPayloadFor method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreExportRankPayloadForFunc) PushHook(hook func(context.Context, api.RepoName) (time.Time, []byte, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreExportRankPayloadForFunc) SetDefaultReturn(r0 time.Time, r1 []byte, r2 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (time.Time, []byte, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreExportRankPayloadForFunc) PushReturn(r0 time.Time, r1 []byte, r2 error) {
+	f.PushHook(func(context.Context, api.RepoName) (time.Time, []byte, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *StoreExportRankPayloadForFunc) nextHook() func(context.Context, api.RepoName) (time.Time, []byte, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreExportRankPayloadForFunc) appendCall(r0 StoreExportRankPayloadForFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreExportRankPayloadForFuncCall objects
+// describing the invocations of this function.
+func (f *StoreExportRankPayloadForFunc) History() []StoreExportRankPayloadForFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreExportRankPayloadForFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreExportRankPayloadForFuncCall is an object that describes an
+// invocation of method ExportRankPayloadFor on an instance of MockStore.
+type StoreExportRankPayloadForFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 time.Time
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 []byte
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreExportRankPayloadForFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreExportRankPayloadForFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreGetDocumentRanksFunc describes the behavior when the

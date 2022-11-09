@@ -39,11 +39,11 @@ export const CodeInsightsExamplesPicker: FunctionComponent<CodeInsightsExamplesP
     return (
         <Card as={CardBody} className={classNames(styles.root, { [styles.rootMobile]: isMobileLayout })}>
             <div className={styles.section}>
-                <H2>How engineering teams and leaders use Code Insights</H2>
+                <H2>Common uses for Code Insights</H2>
 
                 <Text className="text-muted">
-                    We've created a few common simple insights to show you what the tool can do.{' '}
-                    <Link to="/help/code_insights">Explore more use cases.</Link>
+                    Here's what it'd look like if you used Code Insights for these common use cases.{' '}
+                    <Link to="/help/code_insights/references/common_use_cases">See more use cases.</Link>
                 </Text>
 
                 {!isMobileLayout && (

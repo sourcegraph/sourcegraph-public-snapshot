@@ -18,7 +18,6 @@ import { DefaultExtensionIcon, DefaultSourcegraphExtensionIcon, SourcegraphExten
 import { extensionsQuery, urlToExtensionsQuery, validCategories } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionReadme } from './RegistryExtensionReadme'
-import { SourcegraphExtensionFeedback } from './SourcegraphExtensionFeedback'
 
 import styles from './RegistryExtensionOverviewPage.module.scss'
 
@@ -220,13 +219,6 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                             </ul>
                         </div>
                     )}
-                {/* Rating widget will go here */}
-                {/* Message the author */}
-                {isSourcegraphExtension && (
-                    <div className={styles.sidebarSection}>
-                        <SourcegraphExtensionFeedback extensionID={extension.id} />
-                    </div>
-                )}
             </aside>
         </div>
     )

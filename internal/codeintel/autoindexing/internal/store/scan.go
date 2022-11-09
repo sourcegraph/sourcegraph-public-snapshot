@@ -110,9 +110,7 @@ func scanIndexWithCount(s dbutil.Scanner) (index types.Index, count int, err err
 		return index, 0, err
 	}
 
-	for _, entry := range executionLogs {
-		index.ExecutionLogs = append(index.ExecutionLogs, entry)
-	}
+	index.ExecutionLogs = append(index.ExecutionLogs, executionLogs...)
 
 	return index, count, nil
 }
@@ -173,21 +171,6 @@ func scanSourcedCommits(rows *sql.Rows, queryErr error) (_ []shared.SourcedCommi
 		return flattened[i].RepositoryID < flattened[j].RepositoryID
 	})
 	return flattened, nil
-}
-
-func scanCount(rows *sql.Rows, queryErr error) (value int, err error) {
-	if queryErr != nil {
-		return 0, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		if err := rows.Scan(&value); err != nil {
-			return 0, err
-		}
-	}
-
-	return value, nil
 }
 
 var ScanRepoRevs = basestore.NewSliceScanner(scanRepoRev)

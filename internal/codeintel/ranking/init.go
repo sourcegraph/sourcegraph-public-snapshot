@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/memo"
@@ -40,19 +41,21 @@ type serviceDependencies struct {
 }
 
 var (
-	bucketName                   = env.Get("CODEINTEL_RANKING_RESULTS_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")
-	rankingGraphKey              = env.Get("CODEINTEL_RANKING_RESULTS_GRAPH_KEY", "dev", "An identifier of the graph export. Change to start a new import from the configured bucket.")
-	resultsBucketObjectKeyPrefix = env.Get("CODEINTEL_RANKING_RESULTS_OBJECT_KEY_PREFIX", "ranks/", "The object key prefix that holds results of the last PageRank batch job.")
-	resultsBucketCredentialsFile = env.Get("CODEINTEL_RANKING_RESULTS_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")
+	resultsBucketName             = env.Get("CODEINTEL_RANKING_RESULTS_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")
+	resultsGraphKey               = env.Get("CODEINTEL_RANKING_RESULTS_GRAPH_KEY", "dev", "An identifier of the graph export. Change to start a new import from the configured bucket.")
+	resultsObjectKeyPrefix        = env.Get("CODEINTEL_RANKING_RESULTS_OBJECT_KEY_PREFIX", "ranks/", "The object key prefix that holds results of the last PageRank batch job.")
+	resultsBucketCredentialsFile  = env.Get("CODEINTEL_RANKING_RESULTS_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")
+	exportObjectKeyPrefix         = env.Get("CODEINTEL_RANKING_DEVELOPMENT_EXPORT_OBJECT_KEY_PREFIX", "", "The object key prefix that should be used for development exports.")
+	developmentExportRepositories = env.Get("CODEINTEL_RANKING_DEVELOPMENT_EXPORT_REPOSITORIES", "github.com/sourcegraph/sourcegraph,github.com/sourcegraph/lsif-go", "Comma-separated list of repositories whose ranks should be exported for development.")
 
 	// Backdoor tuning for dotcom
-	inputFileBatchSize = env.MustGetInt("CODEINTEL_RANKING_RESULTS_INPUT_FILE_BATCH_SIZE", 5000, "")
+	mergeBatchSize = env.MustGetInt("CODEINTEL_RANKING_MERGE_BATCH_SIZE", 5000, "")
 )
 
 var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
-	if rankingGraphKey == "" {
+	if resultsGraphKey == "" {
 		// The codenav default
-		rankingGraphKey = "dev"
+		resultsGraphKey = "dev"
 	}
 
 	resultsBucket := func() *storage.BucketHandle {
@@ -71,7 +74,7 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 			return nil
 		}
 
-		return client.Bucket(bucketName)
+		return client.Bucket(resultsBucketName)
 	}()
 
 	return newService(
@@ -79,7 +82,7 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 		deps.uploadsService,
 		deps.gitserverClient,
 		symbols.DefaultClient,
-		siteConfigQuerier{},
+		conf.DefaultClient(),
 		resultsBucket,
 		scopedContext("service"),
 	), nil

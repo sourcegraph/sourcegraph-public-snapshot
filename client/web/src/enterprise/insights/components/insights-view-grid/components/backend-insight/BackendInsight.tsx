@@ -41,7 +41,7 @@ interface BackendInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement
 }
 
 export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((props, ref) => {
-    const { telemetryService, insight, resizing, children, ...otherProps } = props
+    const { telemetryService, insight, resizing, children, className, ...attributes } = props
 
     const { currentDashboard, dashboards } = useContext(InsightContext)
     const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
@@ -50,9 +50,11 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
     const { wasEverVisible, isVisible } = useVisibility(cardElementRef)
 
     const seriesToggleState = useSeriesToggle()
+
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
     const [originalInsightFilters, setOriginalInsightFilters] = useState(insight.filters)
+
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
@@ -160,11 +162,12 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
 
     return (
         <InsightCard
-            {...otherProps}
+            {...attributes}
             ref={cardElementRef}
             data-testid={`insight-card.${insight.id}`}
-            aria-label="Insight card"
-            className={classNames(otherProps.className, { [styles.cardWithFilters]: isFiltersOpen })}
+            aria-label={`${insight.title} insight`}
+            role="listitem"
+            className={classNames(className, { [styles.cardWithFilters]: isFiltersOpen })}
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
         >
@@ -174,7 +177,6 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                         to={`${window.location.origin}/insights/insight/${insight.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        aria-label="Go to the insight page"
                     >
                         {insight.title}
                     </Link>

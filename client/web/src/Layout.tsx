@@ -27,7 +27,7 @@ import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { FuzzyFinderContainer } from './components/fuzzyFinder/FuzzyFinder'
+import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
@@ -117,7 +117,6 @@ export interface LayoutProps
     isSourcegraphDotCom: boolean
     children?: never
 }
-
 /**
  * Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
  * https://github.com/sourcegraph/sourcegraph/issues/36251
@@ -211,7 +210,9 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 settingsCascade={props.settingsCascade}
                 isSourcegraphDotCom={props.isSourcegraphDotCom}
             />
-            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && (
+                <SurveyToast authenticatedUser={props.authenticatedUser} />
+            )}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
@@ -288,7 +289,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
             )}
             {fuzzyFinder && (
-                <FuzzyFinderContainer
+                <LazyFuzzyFinder
                     isVisible={isFuzzyFinderVisible}
                     setIsVisible={setFuzzyFinderVisible}
                     themeState={themeStateRef}

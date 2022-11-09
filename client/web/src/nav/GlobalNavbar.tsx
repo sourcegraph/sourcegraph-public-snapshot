@@ -28,7 +28,6 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { renderShortcutKey } from '../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { WebCommandListPopoverButton } from '../components/shared'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
@@ -122,21 +121,6 @@ function FuzzyFinderNavItem(setFuzzyFinderVisible: React.Dispatch<SetStateAction
                     {isMacPlatform() ? renderShortcutKey('Mod') + 'K' : [renderShortcutKey('Mod'), 'K'].join('+')}
                 </span>
             </Button>
-        </NavAction>
-    )
-}
-const AnalyticsNavItem: React.FunctionComponent = () => {
-    const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
-
-    if (isAdminAnalyticsDisabled) {
-        return null
-    }
-
-    return (
-        <NavAction className="d-none d-sm-flex">
-            <Link to="/site-admin" className={styles.link}>
-                Analytics
-            </Link>
         </NavAction>
     )
 }
@@ -287,24 +271,25 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             )}
                         </>
                     )}
-                    {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
-                    {props.authenticatedUser && (
-                        <NavAction>
-                            <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
-                                <PopoverTrigger
-                                    as={Button}
-                                    aria-label="Feedback"
-                                    variant="secondary"
-                                    outline={true}
-                                    size="sm"
-                                    className={styles.feedbackTrigger}
-                                >
-                                    <span>Feedback</span>
-                                </PopoverTrigger>
-                            </FeedbackPrompt>
-                        </NavAction>
-                    )}
+                    <NavAction>
+                        <FeedbackPrompt
+                            onSubmit={handleSubmitFeedback}
+                            productResearchEnabled={true}
+                            authenticatedUser={props.authenticatedUser}
+                        >
+                            <PopoverTrigger
+                                as={Button}
+                                aria-label="Feedback"
+                                variant="secondary"
+                                outline={true}
+                                size="sm"
+                                className={styles.feedbackTrigger}
+                            >
+                                <span>Feedback</span>
+                            </PopoverTrigger>
+                        </FeedbackPrompt>
+                    </NavAction>
                     {props.authenticatedUser && extensionsController !== null && enableLegacyExtensions && (
                         <NavAction>
                             <WebCommandListPopoverButton
@@ -328,7 +313,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         className="mr-1"
                                         to={
                                             '/sign-in?returnTo=' +
-                                            encodeURI(history.location.pathname + history.location.search)
+                                            encodeURI(
+                                                history.location.pathname +
+                                                    history.location.search +
+                                                    history.location.hash
+                                            )
                                         }
                                         variant="secondary"
                                         outline={true}

@@ -186,3 +186,145 @@ func TestNew(t *testing.T) {
 	}
 	require.Equal(t, itr, load)
 }
+
+func TestForNextRetryAndFinish(t *testing.T) {
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	store := basestore.NewWithHandle(insightsDB.Handle())
+
+	ctx := context.Background()
+
+	t.Run("iterate retry with one error", func(t *testing.T) {
+		clock := glock.NewMockClock()
+		clock.SetCurrent(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
+		repos := []int32{1, 5, 6, 14, 17}
+		itr, _ := NewWithClock(ctx, store, clock, repos)
+		var seen []api.RepoID
+
+		addError(ctx, itr, store, t)
+		require.Equal(t, 1, itr.Cursor)
+		require.Equal(t, 1, len(itr.errors))
+		require.Equal(t, float64(0), itr.PercentComplete)
+
+		got, _ := testForNextRetryAndFinish(t, itr, seen, func(ctx context.Context, id api.RepoID, fn FinishFunc) bool {
+			clock.Advance(time.Second * 1)
+			err := fn(ctx, store, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return true
+		})
+		jsonify, _ := json.Marshal(got)
+		autogold.Want("iterate retry with one error after retry iterator", `{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":1000000000,"PercentComplete":0.2,"TotalCount":5,"SuccessCount":1,"Cursor":1}`).Equal(t, string(jsonify))
+	})
+
+	t.Run("ensure retries are reloaded", func(t *testing.T) {
+		clock := glock.NewMockClock()
+		clock.SetCurrent(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
+		repos := []int32{1, 5}
+		itr, _ := NewWithClock(ctx, store, clock, repos)
+		var seen []api.RepoID
+
+		addError(ctx, itr, store, t)
+		addError(ctx, itr, store, t)
+		require.Equal(t, 2, itr.Cursor)
+		require.Equal(t, 2, len(itr.errors))
+		require.Equal(t, float64(0), itr.PercentComplete)
+
+		testForNextRetryAndFinish(t, itr, seen, func(ctx context.Context, id api.RepoID, fn FinishFunc) bool {
+			clock.Advance(time.Second * 1)
+			if id == 1 {
+				// we will not retry repo 1 (implying it was successfully retried)
+				fn(ctx, store, nil)
+				return true
+			}
+			err := fn(ctx, store, errors.New("fake err"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			return true
+		})
+		require.Equal(t, 1, len(itr.errors))
+		require.Equal(t, 2, itr.Cursor)
+		require.Equal(t, 0.5, itr.PercentComplete)
+
+		reloaded, err := Load(ctx, store, itr.Id)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		require.Equal(t, 1, len(reloaded.errors))
+		require.Equal(t, 2, reloaded.Cursor)
+		require.Equal(t, 0.5, reloaded.PercentComplete)
+
+		var currentErrors []IterationError
+		for _, val := range reloaded.errors {
+			v := val
+			currentErrors = append(currentErrors, *v)
+		}
+		require.Equal(t, 1, len(currentErrors))
+		require.Equal(t, int32(5), currentErrors[0].RepoId)
+		require.Equal(t, 2, currentErrors[0].FailureCount)
+
+		jsonify, _ := json.Marshal(reloaded)
+		autogold.Want("ensure retries are reloaded after reload", `{"Id":2,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":0.5,"TotalCount":2,"SuccessCount":1,"Cursor":2}`).Equal(t, string(jsonify))
+	})
+	t.Run("ensure retries complete", func(t *testing.T) {
+		clock := glock.NewMockClock()
+		clock.SetCurrent(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC))
+		repos := []int32{1, 5}
+		itr, _ := NewWithClock(ctx, store, clock, repos)
+		var seen []api.RepoID
+
+		addError(ctx, itr, store, t)
+		addError(ctx, itr, store, t)
+		require.Equal(t, 2, itr.Cursor)
+		require.Equal(t, 2, len(itr.errors))
+		require.Equal(t, float64(0), itr.PercentComplete)
+
+		testForNextRetryAndFinish(t, itr, seen, func(ctx context.Context, id api.RepoID, fn FinishFunc) bool {
+			clock.Advance(time.Second * 1)
+
+			err := fn(ctx, store, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return true
+		})
+		require.Equal(t, 0, len(itr.errors))
+		require.Equal(t, 2, itr.Cursor)
+		require.Equal(t, float64(1), itr.PercentComplete)
+		require.Equal(t, 0, len(itr.errors))
+
+		jsonify, _ := json.Marshal(itr)
+		autogold.Want("ensure retries complete", `{"Id":3,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"2021-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":2000000000,"PercentComplete":1,"TotalCount":2,"SuccessCount":2,"Cursor":2}`).Equal(t, string(jsonify))
+	})
+}
+
+func addError(ctx context.Context, itr *PersistentRepoIterator, store *basestore.Store, t *testing.T) {
+	// create an error
+	_, _, finish := itr.NextWithFinish()
+	err := finish(ctx, store, errors.New("fake err"))
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func testForNextRetryAndFinish(t *testing.T, itr *PersistentRepoIterator, seen []api.RepoID, do testFunc) (*PersistentRepoIterator, []api.RepoID) {
+	ctx := context.Background()
+
+	for true {
+		repoId, more, finish := itr.NextRetryWithFinish()
+		if !more {
+			break
+		}
+		shouldNext := do(ctx, repoId, finish)
+		if !shouldNext {
+			return itr, seen
+		}
+		seen = append(seen, repoId)
+	}
+
+	require.Equal(t, fmt.Sprintf("%v", itr.retryRepos), fmt.Sprintf("%v", seen))
+	return itr, seen
+}
