@@ -5104,6 +5104,9 @@ type GitBlob implements TreeEntry & File2 {
     lfs: LFS
 }
 
+"""
+Information about a blob stored in Git Large File Storage (LFS).
+"""
 type LFS {
     """
     The size of the file in LFS in bytes.
