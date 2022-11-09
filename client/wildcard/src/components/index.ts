@@ -33,7 +33,6 @@ export { Text, Code, Heading, Label, H1, H2, H3, H4, H5, H6 } from './Typography
 export { AnchorLink, RouterLink, setLinkComponent, Link, createLinkUrl } from './Link'
 export { Modal } from './Modal'
 export { FeedbackBadge, FeedbackText, FeedbackPrompt } from './Feedback'
-export type { FeedbackPromptAuthenticatedUserProps } from './Feedback'
 export {
     Popover,
     PopoverTrigger,
@@ -79,6 +78,7 @@ export type { TooltipProps, TooltipOpenEvent } from './Tooltip'
 export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
 export type { ModalProps } from './Modal'
+export type { FeedbackPromptAuthenticatedUserProps } from './Feedback'
 
 /**
  * Class name helpers to be used with plain DOM nodes.
