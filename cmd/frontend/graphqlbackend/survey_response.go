@@ -145,7 +145,6 @@ type HappinessFeedbackSubmissionInput struct {
 type happinessFeedbackSubmissionForHubSpot struct {
 	Email       *string `url:"email"`
 	Username    *string `url:"happiness_username"`
-	Score       int32   `url:"happiness_score"`
 	Feedback    *string `url:"happiness_feedback"`
 	CurrentPath *string `url:"happiness_current_url"`
 	IsTest      bool    `url:"happiness_is_test"`
@@ -156,12 +155,7 @@ type happinessFeedbackSubmissionForHubSpot struct {
 func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *struct {
 	Input *HappinessFeedbackSubmissionInput
 }) (*EmptyResponse, error) {
-	if args.Input.Score < 1 || args.Input.Score > 4 {
-		return nil, errors.New("Score must be a value between 1 and 4")
-	}
-
 	data := happinessFeedbackSubmissionForHubSpot{
-		Score:       args.Input.Score,
 		Feedback:    args.Input.Feedback,
 		CurrentPath: args.Input.CurrentPath,
 		IsTest:      env.InsecureDev,
