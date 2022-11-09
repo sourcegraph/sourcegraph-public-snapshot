@@ -47,7 +47,7 @@ func compareSchemaDescriptions(rawOut *output.Output, schemaName, version string
 	}
 
 	if err == nil {
-		out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "No drift detected"))
+		rawOut.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "No drift detected"))
 	}
 	return err
 }
