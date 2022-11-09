@@ -139,6 +139,7 @@ In addition to searching your organization’s private code, you can use Sourceg
 
 
 
+
 <table>
   <tr>
    <td>
@@ -157,7 +158,7 @@ In addition to searching your organization’s private code, you can use Sourceg
    </td>
   </tr>
   <tr>
-   <td><strong>Search across files larger than 350 KiB</strong>
+   <td><strong>Sarch across files larger than 350 KiB</strong>
    </td>
    <td>✗
    </td>
@@ -175,14 +176,23 @@ Using the <a href="https://docs.sourcegraph.com/admin/config/site_config#search-
    </td>
   </tr>
   <tr>
-   <td><strong>Search across public and private repositories from a single location </strong>
+   <td><strong>Number of open source repositories indexed</strong>
+   </td>
+   <td>7 million 
+   </td>
+   <td>2.8 million 
+   </td>
+  </tr>
+  <tr>
+   <td><strong>Search across your repositories and open source repositories at the same time</strong>
    </td>
    <td>✓
    </td>
-   <td>✗
+   <td>Private instance + [sourcegraph.com](https://sourcegraph.com/search) 
    </td>
   </tr>
 </table>
+
 
 
 ### Search syntax
