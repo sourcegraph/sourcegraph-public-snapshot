@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/dependencies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )

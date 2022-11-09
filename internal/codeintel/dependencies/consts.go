@@ -1,6 +1,6 @@
 package dependencies
 
-import "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/dependencies/shared"
+import "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 
 const (
 	JVMPackagesScheme    = shared.JVMPackagesScheme

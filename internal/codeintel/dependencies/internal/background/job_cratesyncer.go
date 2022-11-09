@@ -11,8 +11,8 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
