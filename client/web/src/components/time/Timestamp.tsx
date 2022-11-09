@@ -60,7 +60,6 @@ export const Timestamp: React.FunctionComponent<React.PropsWithChildren<Props>> 
         }
     }, [date, noAbout, now, strict])
 
-
     const tooltip = useMemo(() => {
         let parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date)
         if (utc) {
@@ -68,7 +67,7 @@ export const Timestamp: React.FunctionComponent<React.PropsWithChildren<Props>> 
         }
         const dateHasTime = date.toString().includes('T')
         const defaultFormat = dateHasTime ? TimestampFormat.FULL_DATE_TIME : TimestampFormat.FULL_DATE
-        return format(parsedDate, timestampFormat ?? defaultFormat) + (utc ? " UTC" : "")
+        return format(parsedDate, timestampFormat ?? defaultFormat) + (utc ? ' UTC' : '')
     }, [date, timestampFormat, utc])
 
     return (
