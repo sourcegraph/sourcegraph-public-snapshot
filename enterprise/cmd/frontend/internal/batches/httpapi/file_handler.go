@@ -137,16 +137,6 @@ func (h *FileHandler) exists(r *http.Request) (statusCode int, err error) {
 	}
 }
 
-func unmarshalWorkspaceFileRandID(id graphql.ID) (batchWorkspaceFileRandID string, err error) {
-	err = relay.UnmarshalSpec(id, &batchWorkspaceFileRandID)
-	return
-}
-
-func unmarshalBatchSpecRandID(id graphql.ID) (batchSpecRandID string, err error) {
-	err = relay.UnmarshalSpec(id, &batchSpecRandID)
-	return
-}
-
 func getPathParts(r *http.Request) (string, string, error) {
 	rawBatchSpecRandID := mux.Vars(r)["spec"]
 	if rawBatchSpecRandID == "" {
@@ -171,6 +161,16 @@ func getPathParts(r *http.Request) (string, string, error) {
 	}
 
 	return batchSpecRandID, batchSpecWorkspaceFileRandID, nil
+}
+
+func unmarshalWorkspaceFileRandID(id graphql.ID) (batchWorkspaceFileRandID string, err error) {
+	err = relay.UnmarshalSpec(id, &batchWorkspaceFileRandID)
+	return
+}
+
+func unmarshalBatchSpecRandID(id graphql.ID) (batchSpecRandID string, err error) {
+	err = relay.UnmarshalSpec(id, &batchSpecRandID)
+	return
 }
 
 const maxUploadSize = 10 << 20 // 10MB

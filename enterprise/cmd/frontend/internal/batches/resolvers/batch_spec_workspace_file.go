@@ -32,8 +32,9 @@ type batchSpecWorkspaceFileResolver struct {
 
 	/*
 	 * Added this to the struct, so it's easy to mock in tests.
+	 * We expect `createVirtualFile` to return an interface so it's mockable.
 	 */
-	createVirtualFile func(content []byte, path string) *graphqlbackend.VirtualFileResolver
+	createVirtualFile func(content []byte, path string) graphqlbackend.FileResolver
 }
 
 func newBatchSpecWorkspaceFileResolver(batchSpecRandID string, file *btypes.BatchSpecWorkspaceFile) *batchSpecWorkspaceFileResolver {
@@ -44,7 +45,7 @@ func newBatchSpecWorkspaceFileResolver(batchSpecRandID string, file *btypes.Batc
 	}
 }
 
-func createVirtualFile(content []byte, path string) *graphqlbackend.VirtualFileResolver {
+func createVirtualFile(content []byte, path string) graphqlbackend.FileResolver {
 	fileInfo := graphqlbackend.CreateFileInfo(path, false)
 	return graphqlbackend.NewVirtualFileResolver(fileInfo, func(ctx context.Context) (string, error) {
 		return string(content), nil
