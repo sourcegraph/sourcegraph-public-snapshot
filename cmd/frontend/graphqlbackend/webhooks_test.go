@@ -26,25 +26,38 @@ import (
 func TestListWebhooks(t *testing.T) {
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	// There is only a user with ID = 1. User with ID = 2 doesn't exist.
+	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
+		if id == 1 {
+			return &types.User{Username: "alice"}, nil
+		}
+		return nil, database.NewUserNotFoundError(id)
+	})
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	webhookStore := database.NewMockWebhookStore()
 	webhooks := []*types.Webhook{
 		{
-			ID:           1,
-			CodeHostKind: extsvc.KindGitHub,
+			ID:              1,
+			CodeHostKind:    extsvc.KindGitHub,
+			CreatedByUserID: 1,
 		},
 		{
-			ID:           2,
-			CodeHostKind: extsvc.KindGitLab,
+			ID:              2,
+			CodeHostKind:    extsvc.KindGitLab,
+			CreatedByUserID: 1,
 		},
 		{
-			ID:           3,
-			CodeHostKind: extsvc.KindGitHub,
+			ID:              3,
+			CodeHostKind:    extsvc.KindGitHub,
+			CreatedByUserID: 1,
+			UpdatedByUserID: 1,
 		},
 		{
-			ID:           4,
-			CodeHostKind: extsvc.KindGitHub,
+			ID:              4,
+			CodeHostKind:    extsvc.KindGitHub,
+			CreatedByUserID: 1,
+			UpdatedByUserID: 2,
 		},
 	}
 	webhookStore.ListFunc.SetDefaultHook(func(ctx2 context.Context, options database.WebhookListOptions) ([]*types.Webhook, error) {
@@ -78,7 +91,15 @@ func TestListWebhooks(t *testing.T) {
 			Query: `
 				{
 					webhooks {
-						nodes { id }
+						nodes {
+							id
+							updatedBy {
+								username
+							}
+							createdBy {
+								username
+							}
+						}
 						totalCount
 						pageInfo { hasNextPage }
 					}
@@ -87,10 +108,36 @@ func TestListWebhooks(t *testing.T) {
 			ExpectedResult: `{"webhooks":
 				{
 					"nodes":[
-						{"id":"V2ViaG9vazox"},
-						{"id":"V2ViaG9vazoy"},
-						{"id":"V2ViaG9vazoz"},
-						{"id":"V2ViaG9vazo0"}
+						{
+							"id":"V2ViaG9vazox",
+							"createdBy": {
+								"username": "alice"
+							},
+							"updatedBy": null
+						},
+						{
+							"id":"V2ViaG9vazoy",
+							"createdBy": {
+								"username": "alice"
+							},
+							"updatedBy": null
+						},
+						{
+							"id":"V2ViaG9vazoz",
+							"createdBy": {
+								"username": "alice"
+							},
+							"updatedBy": {
+								"username": "alice"
+							}
+						},
+						{
+							"id":"V2ViaG9vazo0",
+							"createdBy": {
+								"username": "alice"
+							},
+							"updatedBy": null
+						}
 					],
 					"totalCount":4,
 					"pageInfo":{"hasNextPage":false}
