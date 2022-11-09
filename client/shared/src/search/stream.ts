@@ -132,6 +132,8 @@ export interface CommitMatch {
     message: string
     authorName: string
     authorDate: string
+    committerName: string
+    committerDate: string
     repoStars?: number
     repoLastFetched?: string
 
