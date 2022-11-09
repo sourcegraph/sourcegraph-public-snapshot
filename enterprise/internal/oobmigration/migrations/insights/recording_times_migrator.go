@@ -2,6 +2,7 @@ package insights
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -42,6 +43,8 @@ func (m *recordingTimesMigrator) Progress(ctx context.Context, _ bool) (float64,
 }
 
 func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
+	fmt.Println("UP")
+
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
 		return err
@@ -55,7 +58,6 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	series := make(map[int]seriesMetadata) // id -> metadata
 	for rows.Next() {
@@ -82,6 +84,9 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 			},
 		}
 	}
+	if err = basestore.CloseRows(rows, err); err != nil {
+		return err
+	}
 
 	for id, metadata := range series {
 		recordingTimesRows, err := tx.Query(ctx, sqlf.Sprintf(
@@ -90,7 +95,6 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 		if err != nil {
 			return err
 		}
-		defer func() { err = basestore.CloseRows(recordingTimesRows, err) }()
 		var recordingTimes []time.Time
 		for rows.Next() {
 			var record time.Time
@@ -98,6 +102,9 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 				return err
 			}
 			recordingTimes = append(recordingTimes, record)
+		}
+		if err = basestore.CloseRows(recordingTimesRows, err); err != nil {
+			return err
 		}
 		metadata.existingTimes = recordingTimes
 	}
