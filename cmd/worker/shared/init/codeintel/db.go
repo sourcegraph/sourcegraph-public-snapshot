@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
+	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"

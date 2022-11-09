@@ -21,8 +21,8 @@ import (
 	"go.opentelemetry.io/otel"
 
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	stores "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
+	stores "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 
 	sglog "github.com/sourcegraph/log"
 

@@ -4,7 +4,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 )
 
 // InitServices initializes and returns code intelligence services.
