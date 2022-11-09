@@ -12,6 +12,7 @@ import (
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-github/v47/github"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 )
@@ -45,10 +46,14 @@ func newTestGitHubClient(ctx context.Context, t *testing.T) (ghc *github.Client,
 		require.NotEmpty(t, appID, "GITHUB_APP_ID must be set.")
 		keyPath := os.Getenv("KEY_PATH")
 		require.NotEmpty(t, keyPath, "KEY_PATH must be set.")
-		_, err := genJwtToken(appID, keyPath)
+		jwt, err := genJwtToken(appID, keyPath)
 		if err != nil {
 			t.Fatal(err)
 		}
+		httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: jwt},
+		))
+		recorder.SetTransport(httpClient.Transport)
 	}
 	return github.NewClient(&http.Client{Transport: recorder}), recorder.Stop
 
