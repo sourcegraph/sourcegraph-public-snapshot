@@ -19,5 +19,5 @@ export function getBrowserName(): 'chrome' | 'safari' | 'firefox' | 'other' {
  * is accessed only when the function is called
  */
 export function isMacPlatform(): boolean {
-    return window.navigator.platform.includes('Mac')
+    return navigator?.userAgentData?.platform?.includes('macOS') ?? window.navigator.platform.includes('Mac')
 }
