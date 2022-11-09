@@ -31,7 +31,7 @@ describe('search/helpers', () => {
                 source: 'home',
             })
             expect(history.location.search).toMatchInlineSnapshot(
-                '"?q=context%3Aglobal+querystring&patternType=standard&trace=1"'
+                '"?q=context:global+querystring&patternType=standard&trace=1"'
             )
         })
     })
