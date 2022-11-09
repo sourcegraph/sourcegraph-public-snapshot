@@ -29,24 +29,35 @@ import (
 
 // NewDependencyIndexingScheduler returns a new worker instance that processes
 // records from lsif_dependency_indexing_jobs.
-func (b *backgroundJob) NewDependencyIndexingScheduler(pollInterval time.Duration, numHandlers int) *workerutil.Worker {
+func NewDependencyIndexingScheduler(
+	dependencyIndexingStore dbworkerstore.Store,
+	uploadSvc UploadService,
+	repoStore ReposStore,
+	externalServiceStore ExternalServiceStore,
+	gitserverRepoStore GitserverRepoStore,
+	autoindexingSvc AutoIndexingService,
+	repoUpdater RepoUpdaterClient,
+	metrics workerutil.WorkerObservability,
+	pollInterval time.Duration,
+	numHandlers int,
+) *workerutil.Worker {
 	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := &dependencyIndexingSchedulerHandler{
-		uploadsSvc:         b.uploadSvc,
-		repoStore:          b.repoStore,
-		extsvcStore:        b.externalServiceStore,
-		gitserverRepoStore: b.gitserverRepoStore,
-		indexEnqueuer:      b.autoindexingSvc,
-		workerStore:        b.dependencyIndexingStore,
-		repoUpdater:        b.repoUpdater,
+		uploadsSvc:         uploadSvc,
+		repoStore:          repoStore,
+		extsvcStore:        externalServiceStore,
+		gitserverRepoStore: gitserverRepoStore,
+		indexEnqueuer:      autoindexingSvc,
+		workerStore:        dependencyIndexingStore,
+		repoUpdater:        repoUpdater,
 	}
 
-	return dbworker.NewWorker(rootContext, b.dependencyIndexingStore, handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker(rootContext, dependencyIndexingStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_indexing_scheduler_worker",
 		NumHandlers:       numHandlers,
 		Interval:          pollInterval,
-		Metrics:           b.depencencyIndexMetrics,
+		Metrics:           metrics,
 		HeartbeatInterval: 1 * time.Second,
 	})
 }

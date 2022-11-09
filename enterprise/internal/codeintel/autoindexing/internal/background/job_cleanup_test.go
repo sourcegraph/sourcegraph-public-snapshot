@@ -90,9 +90,11 @@ func testShouldDeleteUploadsForCommit(t *testing.T, resolveRevisionFunc func(com
 		return api.CommitID(spec), resolveRevisionFunc(spec)
 	})
 
+	job := janitorJob{gitserverClient: gitserverClient}
+
 	for _, sc := range testSourcedCommits {
 		for _, commit := range sc.Commits {
-			shouldDelete, err := shouldDeleteUploadsForCommit(context.Background(), gitserverClient, sc.RepositoryID, commit)
+			shouldDelete, err := job.shouldDeleteUploadsForCommit(context.Background(), sc.RepositoryID, commit)
 			if err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}

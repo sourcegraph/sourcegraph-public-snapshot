@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -233,7 +234,7 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 		return nil, err
 	}
 
-	return repositoryResolver.CommitFromID(ctx, &RepositoryCommitArgs{Rev: commit}, commitID)
+	return repositoryResolver.CommitFromID(ctx, &resolverstubs.RepositoryCommitArgs{Rev: commit}, commitID)
 }
 
 // Path resolves the git tree entry with the given commit resolver and relative path. This method must be

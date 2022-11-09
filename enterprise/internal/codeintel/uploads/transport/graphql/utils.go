@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -43,7 +44,7 @@ const DefaultUploadPageSize = 50
 
 // makeGetUploadsOptions translates the given GraphQL arguments into options defined by the
 // store.GetUploads operations.
-func makeGetUploadsOptions(args *LSIFRepositoryUploadsQueryArgs) (shared.GetUploadsOptions, error) {
+func makeGetUploadsOptions(args *resolverstubs.LSIFRepositoryUploadsQueryArgs) (shared.GetUploadsOptions, error) {
 	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
 		return shared.GetUploadsOptions{}, err
@@ -86,7 +87,7 @@ func makeGetUploadsOptions(args *LSIFRepositoryUploadsQueryArgs) (shared.GetUplo
 
 // makeDeleteUploadsOptions translates the given GraphQL arguments into options defined by the
 // store.DeleteUploads operations.
-func makeDeleteUploadsOptions(args *DeleteLSIFUploadsArgs) (shared.DeleteUploadsOptions, error) {
+func makeDeleteUploadsOptions(args *resolverstubs.DeleteLSIFUploadsArgs) (shared.DeleteUploadsOptions, error) {
 	var repository int
 	if args.Repository != nil {
 		var err error

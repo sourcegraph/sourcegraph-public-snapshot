@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -19,12 +20,12 @@ type lsifUploadsAuditLogResolver struct {
 	log types.UploadLog
 }
 
-func NewLSIFUploadsAuditLogsResolver(log types.UploadLog) LSIFUploadsAuditLogsResolver {
+func NewLSIFUploadsAuditLogsResolver(log types.UploadLog) resolverstubs.LSIFUploadsAuditLogsResolver {
 	return &lsifUploadsAuditLogResolver{log: log}
 }
 
 func (r *lsifUploadsAuditLogResolver) Reason() *string { return r.log.Reason }
-func (r *lsifUploadsAuditLogResolver) ChangedColumns() (values []AuditLogColumnChange) {
+func (r *lsifUploadsAuditLogResolver) ChangedColumns() (values []resolverstubs.AuditLogColumnChange) {
 	for _, transition := range r.log.TransitionColumns {
 		values = append(values, &auditLogColumnChangeResolver{transition})
 	}

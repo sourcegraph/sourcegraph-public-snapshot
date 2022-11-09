@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/background/indexer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/background/loader"

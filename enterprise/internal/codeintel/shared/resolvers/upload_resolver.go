@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -31,9 +32,9 @@ type LSIFUploadResolver interface {
 	PlaceInQueue() *int32
 	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
-	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
-	DocumentPaths(ctx context.Context, args *LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error)
-	AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error)
+	RetentionPolicyOverview(ctx context.Context, args *resolverstubs.LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
+	DocumentPaths(ctx context.Context, args *resolverstubs.LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error)
+	AuditLogs(ctx context.Context) (*[]resolverstubs.LSIFUploadsAuditLogsResolver, error)
 }
 
 type UploadResolver struct {
@@ -129,7 +130,7 @@ func (r *UploadResolver) ProjectRoot(ctx context.Context) (*GitTreeEntryResolver
 
 const DefaultRetentionPolicyMatchesPageSize = 50
 
-func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (_ CodeIntelligenceRetentionPolicyMatchesConnectionResolver, err error) {
+func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *resolverstubs.LSIFUploadRetentionPolicyMatchesArgs) (_ CodeIntelligenceRetentionPolicyMatchesConnectionResolver, err error) {
 	var afterID int64
 	if args.After != nil {
 		afterID, err = unmarshalConfigurationPolicyGQLID(graphql.ID(*args.After))
@@ -166,7 +167,7 @@ func (r *UploadResolver) Indexer() types.CodeIntelIndexerResolver {
 	return types.NewCodeIntelIndexerResolver(r.upload.Indexer)
 }
 
-func (r *UploadResolver) DocumentPaths(ctx context.Context, args *LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error) {
+func (r *UploadResolver) DocumentPaths(ctx context.Context, args *resolverstubs.LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error) {
 	pattern := "%%"
 	if args.Pattern != "" {
 		pattern = args.Pattern
@@ -180,13 +181,13 @@ func (r *UploadResolver) DocumentPaths(ctx context.Context, args *LSIFUploadDocu
 	return NewUploadDocumentPathsConnectionResolver(totalCount, documents), nil
 }
 
-func (r *UploadResolver) AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error) {
+func (r *UploadResolver) AuditLogs(ctx context.Context) (*[]resolverstubs.LSIFUploadsAuditLogsResolver, error) {
 	logs, err := r.uploadsSvc.GetAuditLogsForUpload(ctx, r.upload.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]LSIFUploadsAuditLogsResolver, 0, len(logs))
+	resolvers := make([]resolverstubs.LSIFUploadsAuditLogsResolver, 0, len(logs))
 	for _, log := range logs {
 		resolvers = append(resolvers, NewLSIFUploadsAuditLogsResolver(log))
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 
 // strPtr creates a pointer to the given value. If the value is an
@@ -41,7 +42,7 @@ const DefaultIndexPageSize = 50
 
 // makeGetIndexesOptions translates the given GraphQL arguments into options defined by the
 // store.GetIndexes operations.
-func makeGetIndexesOptions(args *LSIFRepositoryIndexesQueryArgs) (shared.GetIndexesOptions, error) {
+func makeGetIndexesOptions(args *resolverstubs.LSIFRepositoryIndexesQueryArgs) (shared.GetIndexesOptions, error) {
 	repositoryID, err := resolveRepositoryID(args.RepositoryID)
 	if err != nil {
 		return shared.GetIndexesOptions{}, err
@@ -187,7 +188,7 @@ func EncodeCursor(val *string) *PageInfo {
 
 // makeDeleteIndexesOptions translates the given GraphQL arguments into options defined by the
 // store.DeleteIndexes operations.
-func makeDeleteIndexesOptions(args *DeleteLSIFIndexesArgs) (shared.DeleteIndexesOptions, error) {
+func makeDeleteIndexesOptions(args *resolverstubs.DeleteLSIFIndexesArgs) (shared.DeleteIndexesOptions, error) {
 	var repository int
 	if args.Repository != nil {
 		var err error
@@ -206,7 +207,7 @@ func makeDeleteIndexesOptions(args *DeleteLSIFIndexesArgs) (shared.DeleteIndexes
 
 // makeReindexIndexesOptions translates the given GraphQL arguments into options defined by the
 // store.ReindexIndexes operations.
-func makeReindexIndexesOptions(args *ReindexLSIFIndexesArgs) (shared.ReindexIndexesOptions, error) {
+func makeReindexIndexesOptions(args *resolverstubs.ReindexLSIFIndexesArgs) (shared.ReindexIndexesOptions, error) {
 	var repository int
 	if args.Repository != nil {
 		var err error

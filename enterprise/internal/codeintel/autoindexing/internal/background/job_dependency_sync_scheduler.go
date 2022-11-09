@@ -24,24 +24,30 @@ import (
 
 // NewDependencySyncScheduler returns a new worker instance that processes
 // records from lsif_dependency_syncing_jobs.
-func (b *backgroundJob) NewDependencySyncScheduler(pollInterval time.Duration) *workerutil.Worker {
+func NewDependencySyncScheduler(
+	dependencySyncStore dbworkerstore.Store,
+	uploadSvc UploadService,
+	depsSvc DependenciesService,
+	autoindexingSvc AutoIndexingService,
+	externalServiceStore ExternalServiceStore,
+	metrics workerutil.WorkerObservability,
+	pollInterval time.Duration,
+) *workerutil.Worker {
 	rootContext := actor.WithInternalActor(context.Background())
-	workerStore := b.dependencySyncStore
-
 	handler := &dependencySyncSchedulerHandler{
-		uploadsSvc:      b.uploadSvc,
-		depsSvc:         b.depsSvc,
-		autoindexingSvc: b.autoindexingSvc,
-		workerStore:     workerStore,
-		extsvcStore:     b.externalServiceStore,
+		uploadsSvc:      uploadSvc,
+		depsSvc:         depsSvc,
+		autoindexingSvc: autoindexingSvc,
+		workerStore:     dependencySyncStore,
+		extsvcStore:     externalServiceStore,
 	}
 
-	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker(rootContext, dependencySyncStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_sync_scheduler_worker",
 		NumHandlers:       1,
 		Interval:          pollInterval,
 		HeartbeatInterval: 1 * time.Second,
-		Metrics:           b.depencencySyncMetrics,
+		Metrics:           metrics,
 	})
 }
 

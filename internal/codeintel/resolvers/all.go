@@ -13,24 +13,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-
 type RootResolver interface {
-	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
-	GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (_ GitBlobCodeIntelSupportResolver, err error)
-	GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (resolver GitTreeCodeIntelSupportResolver, err error)
-	RequestLanguageSupport(ctx context.Context, args *RequestLanguageSupportArgs) (*EmptyResponse, error)
-	RequestedLanguageSupport(ctx context.Context) ([]string, error)
-
-	NodeResolvers() map[string]func(ctx context.Context, id graphql.ID) (Node, error)
-
+	CodeNavServiceResolver
 	AutoindexingServiceResolver
 	UploadsServiceResolver
 	PoliciesServiceResolver
 }
 
-type Node interface {
-	ID() graphql.ID
+type CodeNavServiceResolver interface {
+	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
+	GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (_ GitBlobCodeIntelSupportResolver, err error)
+	GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (resolver GitTreeCodeIntelSupportResolver, err error)
+	RequestLanguageSupport(ctx context.Context, args *RequestLanguageSupportArgs) (*EmptyResponse, error)
+	RequestedLanguageSupport(ctx context.Context) ([]string, error)
 }
 
 type AutoindexingServiceResolver interface {

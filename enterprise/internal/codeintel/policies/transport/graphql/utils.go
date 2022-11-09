@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -63,8 +64,8 @@ func NextPageCursor(endCursor string) *PageInfo {
 func (r *PageInfo) EndCursor() *string { return r.endCursor }
 func (r *PageInfo) HasNextPage() bool  { return r.hasNextPage }
 
-func validateConfigurationPolicy(policy CodeIntelConfigurationPolicy) error {
-	switch policy.Type {
+func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPolicy) error {
+	switch types.GitObjectType(policy.Type) {
 	case types.GitObjectTypeCommit:
 	case types.GitObjectTypeTag:
 	case types.GitObjectTypeTree:
@@ -78,7 +79,7 @@ func validateConfigurationPolicy(policy CodeIntelConfigurationPolicy) error {
 	if policy.Pattern == "" {
 		return errors.Errorf("no pattern supplied")
 	}
-	if policy.Type == types.GitObjectTypeCommit && policy.Pattern != "HEAD" {
+	if types.GitObjectType(policy.Type) == types.GitObjectTypeCommit && policy.Pattern != "HEAD" {
 		return errors.Errorf("pattern must be HEAD for policy type 'GIT_COMMIT'")
 	}
 	if policy.RetentionDurationHours != nil && *policy.RetentionDurationHours <= 0 {
