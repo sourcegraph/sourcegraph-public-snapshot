@@ -32,19 +32,19 @@ export const BatchChangeChangesetsHeader: React.FunctionComponent<
                 }
             />
         )}
-        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap" aria-hidden={true}>
             Status
         </H5>
-        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-nowrap">
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-nowrap" aria-hidden={true}>
             Changeset information
         </H5>
-        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap" aria-hidden={true}>
             Check state
         </H5>
-        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap" aria-hidden={true}>
             Review state
         </H5>
-        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+        <H5 as={H3} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap" aria-hidden={true}>
             Changes
         </H5>
     </>
