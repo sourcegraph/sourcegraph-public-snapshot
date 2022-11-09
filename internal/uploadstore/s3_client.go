@@ -28,6 +28,7 @@ type s3Store struct {
 	client                       s3API
 	uploader                     s3Uploader
 	bucketLifecycleConfiguration *s3types.BucketLifecycleConfiguration
+	canConfigureLifecycle        bool
 	operations                   *Operations
 }
 
@@ -52,10 +53,11 @@ func newS3FromConfig(ctx context.Context, config Config, operations *Operations)
 	s3Client := s3.NewFromConfig(cfg, s3ClientOptions(config.S3))
 	api := &s3APIShim{s3Client}
 	uploader := &s3UploaderShim{manager.NewUploader(s3Client)}
-	return newS3WithClients(api, uploader, config.Bucket, config.ManageBucket, s3BucketLifecycleConfiguration(config.Backend, config.TTL), operations), nil
+	lifecycleConfiguration, canConfigureLifecycle := s3BucketLifecycleConfiguration(config.Backend, config.TTL)
+	return newS3WithClients(api, uploader, config.Bucket, config.ManageBucket, lifecycleConfiguration, canConfigureLifecycle, operations), nil
 }
 
-func newS3WithClients(client s3API, uploader s3Uploader, bucket string, manageBucket bool, lifecycleConfiguration *s3types.BucketLifecycleConfiguration, operations *Operations) *s3Store {
+func newS3WithClients(client s3API, uploader s3Uploader, bucket string, manageBucket bool, lifecycleConfiguration *s3types.BucketLifecycleConfiguration, canConfigureLifecycle bool, operations *Operations) *s3Store {
 	return &s3Store{
 		bucket:                       bucket,
 		manageBucket:                 manageBucket,
@@ -63,6 +65,7 @@ func newS3WithClients(client s3API, uploader s3Uploader, bucket string, manageBu
 		uploader:                     uploader,
 		operations:                   operations,
 		bucketLifecycleConfiguration: lifecycleConfiguration,
+		canConfigureLifecycle:        canConfigureLifecycle,
 	}
 }
 
@@ -286,11 +289,13 @@ func (s *s3Store) create(ctx context.Context) error {
 }
 
 func (s *s3Store) update(ctx context.Context) error {
+	if !s.canConfigureLifecycle {
+		return nil
+	}
 	configureRequest := &s3.PutBucketLifecycleConfigurationInput{
 		Bucket:                 aws.String(s.bucket),
 		LifecycleConfiguration: s.bucketLifecycleConfiguration,
 	}
-
 	_, err := s.client.PutBucketLifecycleConfiguration(ctx, configureRequest)
 	return err
 }
@@ -359,7 +364,11 @@ func isConnectionResetError(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "read: connection reset by peer")
 }
 
-func s3BucketLifecycleConfiguration(backend string, ttl time.Duration) *s3types.BucketLifecycleConfiguration {
+func s3BucketLifecycleConfiguration(backend string, ttl time.Duration) (*s3types.BucketLifecycleConfiguration, bool) {
+	if backend == "blobstore" {
+		// blobstore backend does not support configuration of lifecycle rules.
+		return nil, false
+	}
 	days := int32(ttl / (time.Hour * 24))
 
 	rules := []s3types.LifecycleRule{
@@ -371,6 +380,7 @@ func s3BucketLifecycleConfiguration(backend string, ttl time.Duration) *s3types.
 		},
 	}
 
+	// TODO(blobstore): remove minio support
 	// This rule doesn't work on minio, so we have to skip it there.
 	if backend != "minio" {
 		rules = append(rules, s3types.LifecycleRule{
@@ -380,6 +390,5 @@ func s3BucketLifecycleConfiguration(backend string, ttl time.Duration) *s3types.
 			AbortIncompleteMultipartUpload: &s3types.AbortIncompleteMultipartUpload{DaysAfterInitiation: days},
 		})
 	}
-
-	return &s3types.BucketLifecycleConfiguration{Rules: rules}
+	return &s3types.BucketLifecycleConfiguration{Rules: rules}, true
 }

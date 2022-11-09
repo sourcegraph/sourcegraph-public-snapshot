@@ -8,6 +8,7 @@ import (
 	"github.com/inconshreveable/log15"
 )
 
+// TODO(blobstore): replace minio with blobstore here
 func maybeMinio() []string {
 	if os.Getenv("DISABLE_MINIO") != "" {
 		log15.Info("WARNING: Running with minio disabled")
