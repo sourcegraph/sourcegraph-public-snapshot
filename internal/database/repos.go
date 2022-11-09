@@ -1190,15 +1190,23 @@ func (s *repoStore) ListSourcegraphDotComIndexableRepos(ctx context.Context, opt
 		tr.Finish()
 	}()
 
-	var where, joins []*sqlf.Query
-
+	var joins, where []*sqlf.Query
 	if opts.CloneStatus != types.CloneStatusUnknown {
-		joins = append(joins, sqlf.Sprintf(
-			"JOIN gitserver_repos gr ON gr.repo_id = repo.id",
-		))
-		where = append(where, sqlf.Sprintf(
-			"gr.clone_status = %s", opts.CloneStatus,
-		))
+		if opts.CloneStatus == types.CloneStatusCloned {
+			// **Performance optimization case**:
+			//
+			// sourcegraph.com (at the time of this comment) has 2.8M cloned and 10k uncloned _indexable_ repos.
+			// At this scale, it is much faster (and logically equivalent) to perform an anti-join on the inverse
+			// set (i.e., filter out non-cloned repos) than a join on the target set (i.e., retaining cloned repos).
+			//
+			// If these scales change significantly this optimization should be reconsidered. The original query
+			// plans informing this change are available at https://github.com/sourcegraph/sourcegraph/pull/44129.
+			joins = append(joins, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id AND gr.clone_status <> %s", types.CloneStatusCloned))
+			where = append(where, sqlf.Sprintf("gr.repo_id IS NULL"))
+		} else {
+			// Normal case: Filter out rows that do not have a gitserver repo with the target status
+			joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id AND gr.clone_status = %s", opts.CloneStatus))
+		}
 	}
 
 	if len(where) == 0 {
@@ -1232,22 +1240,24 @@ func (s *repoStore) ListSourcegraphDotComIndexableRepos(ctx context.Context, opt
 	return results, nil
 }
 
+// N.B. This query's exact conditions are mirrored in the Postgres index
+// repo_dotcom_indexable_repos_idx. Any substantial changes to this query
+// may require an associated index redefinition.
 const listSourcegraphDotComIndexableReposQuery = `
 SELECT
-	repo.id, repo.name, repo.stars
+	repo.id,
+	repo.name,
+	repo.stars
 FROM repo
 %s
 WHERE
+	deleted_at IS NULL AND
+	blocked IS NULL AND
 	(
 		(repo.stars >= %s AND NOT COALESCE(fork, false) AND NOT archived)
 		OR
 		lower(repo.name) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'
-	)
-	AND
-	deleted_at IS NULL
-	AND
-	blocked IS NULL
-	AND
+	) AND
 	%s
 ORDER BY stars DESC NULLS LAST
 `
