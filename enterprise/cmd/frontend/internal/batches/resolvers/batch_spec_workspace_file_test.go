@@ -223,7 +223,6 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 
 	t.Run("binary file", func(t *testing.T) {
 		var ctx = context.Background()
-		// var highlightResolver = &graphqlbackend.HighlightedFileResolver{}
 		var highlightArgs = &graphqlbackend.HighlightArgs{}
 		var highlightErr = errors.New("cannot highlight binary file")
 
