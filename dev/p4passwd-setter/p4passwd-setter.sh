@@ -29,3 +29,5 @@ if [[ $response == *"error"* ]]; then
     echo "Error: $error_message"
     exit 1
 fi
+
+echo "Password for code host updated."
