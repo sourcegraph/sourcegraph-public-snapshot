@@ -148,6 +148,7 @@ func NewInternalHandler(
 	db database.DB,
 	schema *graphql.Schema,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	rankingService enterprise.RankingService,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
 ) http.Handler {
@@ -176,10 +177,8 @@ func NewInternalHandler(
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},
-		Indexers: search.Indexers(),
-		// TODO - enterprise/
-		// Ranking:  codeIntelServices.RankingService,
-
+		Indexers:               search.Indexers(),
+		Ranking:                rankingService,
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))

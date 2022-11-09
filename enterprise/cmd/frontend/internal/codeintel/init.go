@@ -86,6 +86,7 @@ func Init(
 		uploadRootResolver,
 	)
 	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler
+	enterpriseServices.RankingService = codeIntelServices.RankingService
 	return nil
 }
 

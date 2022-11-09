@@ -2,12 +2,15 @@ package enterprise
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,6 +28,7 @@ type Services struct {
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
 	NewCodeIntelUploadHandler       NewCodeIntelUploadHandler
+	RankingService                  RankingService
 	NewExecutorProxyHandler         NewExecutorProxyHandler
 	NewGitHubAppSetupHandler        NewGitHubAppSetupHandler
 	NewComputeStreamHandler         NewComputeStreamHandler
@@ -45,6 +49,13 @@ type Services struct {
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
 // resulting handler skips auth checks when the internal flag is true.
 type NewCodeIntelUploadHandler func(internal bool) http.Handler
+
+// RankingService is a subset of codeintel.ranking.Service methods we use.
+type RankingService interface {
+	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
+	GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error)
+	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error)
+}
 
 // NewExecutorProxyHandler creates a new proxy handler for routes accessible to the
 // executor services deployed separately from the k8s cluster. This handler is protected
@@ -70,6 +81,7 @@ func DefaultServices() Services {
 		BatchesChangesFileExistsHandler: makeNotFoundHandler("batches file exists handler"),
 		BatchesChangesFileUploadHandler: makeNotFoundHandler("batches file upload handler"),
 		NewCodeIntelUploadHandler:       func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
+		RankingService:                  stubRankingService{},
 		NewExecutorProxyHandler:         func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
 		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
@@ -144,4 +156,18 @@ func BatchChangesEnabledForUser(ctx context.Context, db database.DB) error {
 		return ErrBatchChangesDisabledForUser{}
 	}
 	return nil
+}
+
+type stubRankingService struct{}
+
+func (s stubRankingService) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
+	return nil, errors.New("ranking not available in OSS")
+}
+
+func (s stubRankingService) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error) {
+	return nil, errors.New("ranking not available in OSS")
+}
+
+func (s stubRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
+	return nil, errors.New("ranking not available in OSS")
 }

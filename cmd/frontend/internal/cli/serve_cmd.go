@@ -373,6 +373,7 @@ func makeInternalAPI(
 		schema,
 		db,
 		enterprise.NewCodeIntelUploadHandler,
+		enterprise.RankingService,
 		enterprise.NewComputeStreamHandler,
 		rateLimiter,
 	)

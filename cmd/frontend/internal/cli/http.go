@@ -136,6 +136,7 @@ func newInternalHTTPHandler(
 	schema *graphql.Schema,
 	db database.DB,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	rankingService enterprise.RankingService,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
 ) http.Handler {
@@ -150,6 +151,7 @@ func newInternalHTTPHandler(
 					db,
 					schema,
 					newCodeIntelUploadHandler,
+					rankingService,
 					newComputeStreamHandler,
 					rateLimitWatcher,
 				),
