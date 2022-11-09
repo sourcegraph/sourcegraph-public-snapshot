@@ -8,8 +8,9 @@ code_host_id=$1
 password=$2
 
 # Fetch and decode data
-query=("query GetCodeHostInfo{node(id:\"$code_host_id\"){...on ExternalService{config}}}")
-response=$(src api -query "${query[@]}")
+# shellcheck disable=SC2016
+query='query GetCodeHostInfo($id:ID!){node(id:$id){...on ExternalService{config}}}'
+response=$(echo "$query" | src api "id=$code_host_id")
 # If response contains "error", show error message
 if [[ $response == *"error"* ]]; then
     error_message=$(echo "$response" | jq .errors[0].message)
