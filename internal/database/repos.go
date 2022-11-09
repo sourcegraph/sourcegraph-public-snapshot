@@ -1193,13 +1193,18 @@ func (s *repoStore) ListSourcegraphDotComIndexableRepos(ctx context.Context, opt
 	var joins, where []*sqlf.Query
 	if opts.CloneStatus != types.CloneStatusUnknown {
 		if opts.CloneStatus == types.CloneStatusCloned {
-			// Optimization: if we're asking for all cloned repos, then we can more quickly filter out
-			// repos that have a different status. This takes into account repo <-> gitserver_repos rows
-			// are 1-to-1, and the number of cloned repos are MUCH larger on the DotCom instance where
-			// this query is running.
+			// **Performance optimization case**:
+			//
+			// sourcegraph.com (at the time of this comment) has 2.8M cloned and 10k uncloned _indexable_ repos.
+			// At this scale, it is much faster (and logically equivalent) to perform an anti-join on the inverse
+			// set (i.e., filter out non-cloned repos) than a join on the target set (i.e., retaining cloned repos).
+			//
+			// If these scales change significantly this optimization should be reconsidered. The original query
+			// plans informing this change are available at https://github.com/sourcegraph/sourcegraph/pull/44129.
 			joins = append(joins, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id AND gr.clone_status <> %s", types.CloneStatusCloned))
 			where = append(where, sqlf.Sprintf("gr.repo_id IS NULL"))
 		} else {
+			// Normal case: Filter out rows that do not have a gitserver repo with the target status
 			joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id AND gr.clone_status = %s", opts.CloneStatus))
 		}
 	}
