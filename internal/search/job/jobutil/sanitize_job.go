@@ -59,6 +59,7 @@ func (j *SanitizeJob) Run(ctx context.Context, clients job.RuntimeClients, s str
 
 func (j *SanitizeJob) sanitizeEvent(event streaming.SearchEvent) streaming.SearchEvent {
 	sanitized := event.Results[:0]
+
 	for _, res := range event.Results {
 		switch v := res.(type) {
 		case *result.FileMatch:
@@ -66,20 +67,22 @@ func (j *SanitizeJob) sanitizeEvent(event streaming.SearchEvent) streaming.Searc
 				sanitized = append(sanitized, sanitizedFileMatch)
 			}
 		case *result.CommitMatch:
-			if cm := j.sanitizeCommitMatch(v); cm != nil {
-				sanitized = append(sanitized, cm)
+			if sanitizedCommitMatch := j.sanitizeCommitMatch(v); sanitizedCommitMatch != nil {
+				sanitized = append(sanitized, sanitizedCommitMatch)
 			}
 		default:
 			// Don't worry about result types that don't expose file content
 			sanitized = append(sanitized, v)
 		}
 	}
+
 	event.Results = sanitized
 	return event
 }
 
 func (j *SanitizeJob) sanitizeFileMatch(fm *result.FileMatch) result.Match {
 	sanitizedChunks := fm.ChunkMatches[:0]
+
 	for _, chunk := range fm.ChunkMatches {
 		chunk = j.sanitizeChunk(chunk)
 		if len(chunk.Ranges) == 0 {
@@ -91,7 +94,6 @@ func (j *SanitizeJob) sanitizeFileMatch(fm *result.FileMatch) result.Match {
 	if len(sanitizedChunks) == 0 {
 		return nil
 	}
-
 	fm.ChunkMatches = sanitizedChunks
 	return fm
 }
@@ -99,30 +101,32 @@ func (j *SanitizeJob) sanitizeFileMatch(fm *result.FileMatch) result.Match {
 func (j *SanitizeJob) sanitizeChunk(chunk result.ChunkMatch) result.ChunkMatch {
 	sanitizedRanges := chunk.Ranges[:0]
 
-OUTER:
 	for i, val := range chunk.MatchedContent() {
-		for _, re := range j.sanitizePatterns {
-			if re.MatchString(val) {
-				continue OUTER
-			}
+		if j.matchesAnySanitizePattern(val) {
+			continue
 		}
 		sanitizedRanges = append(sanitizedRanges, chunk.Ranges[i])
 	}
+
 	chunk.Ranges = sanitizedRanges
 	return chunk
 }
 
 func (j *SanitizeJob) sanitizeCommitMatch(cm *result.CommitMatch) result.Match {
-	// Skip any commit matches -- we only handle diff matches
 	if cm.DiffPreview == nil {
 		return nil
 	}
+	if j.matchesAnySanitizePattern(cm.DiffPreview.Content) {
+		return nil
+	}
+	return cm
+}
 
+func (j *SanitizeJob) matchesAnySanitizePattern(val string) bool {
 	for _, re := range j.sanitizePatterns {
-		if re.MatchString(cm.DiffPreview.Content) {
-			return nil
+		if re.MatchString(val) {
+			return true
 		}
 	}
-
-	return cm
+	return false
 }
