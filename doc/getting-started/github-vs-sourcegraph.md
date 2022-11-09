@@ -2,7 +2,7 @@ Please note: this page was last updated 2022-11-09, and we will continue to make
 
 # GitHub code search vs. Sourcegraph
 
-GitHub code search is the next iteration of GitHub’s native code search and navigation functionality that can be used to search code stored in GitHub. It’s currently in beta preview and search is embedded into the main GitHub.com UI. 
+GitHub code search is the next iteration of GitHub’s native code search and navigation functionality that can be used to search code stored in GitHub. It’s currently in beta preview. 
 
 Sourcegraph is a code intelligence platform that makes codebases intelligible by semantically indexing and analyzing all of an organization’s code, providing developers and engineering leaders with a complete understanding of their codebase. In addition to universal code search across every code host, Sourcegraph has features to help developers find code, understand and answer questions about code, and fix code faster.
 
@@ -721,6 +721,6 @@ Sourceraph OSS is Apache 2 licensed and allows any developer to use, modify, and
 
 ## Availability
 
-GitHub code search is currently available through a Public Beta (you can sign up for their [waitlist](https://github.com/features/code-search-code-view/signup) to request access). This technical preview is not yet available for GitHub Enterprise. 
+GitHub code search is currently available through a beta preview (you can sign up for their [waitlist](https://github.com/features/code-search-code-view/signup) to request access). This technical preview is not yet available for GitHub Enterprise. 
 
 Sourcegraph’s code intelligence platform is generally available, and you can sign up for a free trial for your team [here](https://signup.sourcegraph.com/).
