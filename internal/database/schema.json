@@ -10743,6 +10743,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "gitserver_repos_not_explicitly_cloned_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX gitserver_repos_not_explicitly_cloned_idx ON gitserver_repos USING btree (repo_id) WHERE clone_status \u003c\u003e 'cloned'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "gitserver_repos_shard_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -17028,6 +17038,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX repo_description_trgm_idx ON repo USING gin (lower(description) gin_trgm_ops)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "repo_dotcom_indexable_repos_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX repo_dotcom_indexable_repos_idx ON repo USING btree (stars DESC NULLS LAST) INCLUDE (id, name) WHERE deleted_at IS NULL AND blocked IS NULL AND (stars \u003e= 5 AND NOT COALESCE(fork, false) AND NOT archived OR lower(name::text) ~ '^(src\\.fedoraproject\\.org|maven|npm|jdk)'::text)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
