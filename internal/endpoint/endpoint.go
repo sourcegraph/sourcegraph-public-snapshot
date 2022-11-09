@@ -6,19 +6,23 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cespare/xxhash/v2"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/go-rendezvous"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Map is a consistent hash map to URLs. It uses the kubernetes API to watch
-// the endpoints for a service and update the map when they change. It can
-// also fallback to static URLs if not configured for kubernetes.
+// Map is a consistent hash map to URLs. It uses the kubernetes API to
+// watch the endpoints for a service and update the map when they change. It
+// can also fallback to static URLs if not configured for kubernetes.
 type Map struct {
 	urlspec string
 
 	mu  sync.RWMutex
-	hm  consistentHash
+	hm  *rendezvous.Rendezvous
 	err error
 
 	init      sync.Once
@@ -206,4 +210,26 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 			close(ready)
 		}
 	}
+}
+
+type connsGetter func(conns conftypes.ServiceConnections) []string
+
+// ConfBased returns a Map that watches the global conf and calls the provided
+// getter to extract endpoints.
+func ConfBased(getter connsGetter) *Map {
+	return &Map{
+		urlspec: "conf-based",
+		discofunk: func(disco chan endpoints) {
+			conf.Watch(func() {
+				serviceConnections := conf.Get().ServiceConnections()
+
+				eps := getter(serviceConnections)
+				disco <- endpoints{Endpoints: eps}
+			})
+		},
+	}
+}
+
+func newConsistentHash(nodes []string) *rendezvous.Rendezvous {
+	return rendezvous.New(nodes, xxhash.Sum64String)
 }

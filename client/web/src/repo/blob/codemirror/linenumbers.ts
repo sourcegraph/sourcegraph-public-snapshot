@@ -34,7 +34,10 @@ const MOUSE_MAIN_BUTTON = 0
  */
 export type SelectedLineRange = { line: number; endLine?: number } | null
 
-const selectedLineDecoration = Decoration.line({ class: 'selected-line', attributes: { tabIndex: '-1' } })
+const selectedLineDecoration = Decoration.line({
+    class: 'selected-line',
+    attributes: { tabIndex: '-1', 'data-line-focusable': '' },
+})
 const selectedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'selected-line'
 })()
@@ -119,7 +122,10 @@ const lineSelectionSource = Annotation.define<'gutter'>()
 const scrollIntoView = ViewPlugin.fromClass(
     class implements PluginValue {
         private lastSelectedLines: SelectedLineRange | null = null
-        constructor(private readonly view: EditorView) {}
+        constructor(private readonly view: EditorView) {
+            this.lastSelectedLines = this.view.state.field(selectedLines)
+            this.scrollIntoView(this.lastSelectedLines)
+        }
 
         public update(update: ViewUpdate): void {
             const currentSelectedLines = update.state.field(selectedLines)
@@ -385,7 +391,7 @@ function normalizeLineRange(range: SelectedLineRange): SelectedLineRange {
  * outside of the editor viewport).
  */
 function shouldScrollIntoView(view: EditorView, range: SelectedLineRange): boolean {
-    if (!range) {
+    if (!range || !isValidLineRange(range, view.state.doc)) {
         return false
     }
 

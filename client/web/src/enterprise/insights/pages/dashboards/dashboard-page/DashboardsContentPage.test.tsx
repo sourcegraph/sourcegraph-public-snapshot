@@ -23,9 +23,9 @@ import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../../../cor
 import {
     GET_DASHBOARD_INSIGHTS_GQL,
     GET_INSIGHTS_GQL,
-    GET_INSIGHTS_DASHBOARDS_GQL,
     GET_INSIGHTS_DASHBOARD_OWNERS_GQL,
 } from '../../../core/backend/gql-backend'
+import { GET_INSIGHT_DASHBOARDS_GQL } from '../../../core/hooks/use-insight-dashboards'
 
 import { GET_ACCESSIBLE_INSIGHTS_LIST } from './components/add-insight-modal'
 import { DashboardsContentPage } from './DashboardsContentPage'
@@ -87,8 +87,7 @@ const userMock = {
 const mocks: MockedResponse[] = [
     {
         request: {
-            query: GET_INSIGHTS_DASHBOARDS_GQL,
-            // variables: { id: undefined },
+            query: GET_INSIGHT_DASHBOARDS_GQL,
         },
         result: {
             data: { insightsDashboards: { nodes: [mockDashboard, mockDashboard2] }, currentUser: userMock },
@@ -96,7 +95,7 @@ const mocks: MockedResponse[] = [
     } as MockedResponse<InsightsDashboardsResult>,
     {
         request: {
-            query: GET_INSIGHTS_DASHBOARDS_GQL,
+            query: GET_INSIGHT_DASHBOARDS_GQL,
             variables: { id: 'foo' },
         },
         result: {

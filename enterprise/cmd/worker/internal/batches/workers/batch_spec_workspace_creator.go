@@ -17,6 +17,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
@@ -37,6 +38,10 @@ type batchSpecWorkspaceCreator struct {
 func (r *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
 	return func(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 		job := record.(*btypes.BatchSpecResolutionJob)
+
+		// Run the resolution job as the user, so that only secrets and workspaces
+		// that are visible to the user are returned.
+		ctx = actor.WithActor(ctx, actor.FromUser(job.InitiatorID))
 
 		return r.process(ctx, service.NewWorkspaceResolver, job)
 	}
@@ -73,9 +78,34 @@ func (r *batchSpecWorkspaceCreator) process(
 		return err
 	}
 
+	// Next, we fetch all secrets that are requested by the spec.
+	rk := spec.Spec.RequiredEnvVars()
+	var secrets []*database.ExecutorSecret
+	if len(rk) > 0 {
+		esStore := r.store.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+		secrets, _, err = esStore.List(ctx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
+			NamespaceUserID: spec.NamespaceUserID,
+			NamespaceOrgID:  spec.NamespaceOrgID,
+			Keys:            rk,
+		})
+		if err != nil {
+			return errors.Wrap(err, "fetching secrets")
+		}
+	}
+
+	esalStore := r.store.DatabaseDB().ExecutorSecretAccessLogs()
+	envVars := make([]string, len(secrets))
+	for i, secret := range secrets {
+		// This will create an audit log event in the name of the initiating user.
+		val, err := secret.Value(ctx, esalStore)
+		if err != nil {
+			return errors.Wrap(err, "getting value for secret")
+		}
+		envVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
+	}
+
 	resolver := newResolver(r.store)
-	userCtx := actor.WithActor(ctx, actor.FromUser(spec.UserID))
-	workspaces, err := resolver.ResolveWorkspacesForBatchSpec(userCtx, evaluatableSpec)
+	workspaces, err := resolver.ResolveWorkspacesForBatchSpec(ctx, evaluatableSpec)
 	if err != nil {
 		return err
 	}
@@ -150,6 +180,7 @@ func (r *batchSpecWorkspaceCreator) process(
 				},
 				repo,
 				w.Path,
+				envVars,
 				w.OnlyFetchWorkspace,
 				spec.Spec.Steps,
 				i,
@@ -158,7 +189,7 @@ func (r *batchSpecWorkspaceCreator) process(
 
 			rawStepKey, err := key.Key()
 			if err != nil {
-				return nil
+				return err
 			}
 
 			stepCacheKeys = append(stepCacheKeys, stepCacheKey{index: i, key: rawStepKey})

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
@@ -18,31 +17,24 @@ import (
 )
 
 type Service struct {
-	store         store.Store
-	uploadSvc     UploadService
-	gitserver     GitserverClient
-	backgroundJob background.BackgroundJob
-	operations    *operations
+	store      store.Store
+	uploadSvc  UploadService
+	gitserver  GitserverClient
+	operations *operations
 }
 
 func newService(
 	policiesStore store.Store,
 	uploadSvc UploadService,
 	gitserver GitserverClient,
-	backgroundJob background.BackgroundJob,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
-		store:         policiesStore,
-		uploadSvc:     uploadSvc,
-		gitserver:     gitserver,
-		backgroundJob: backgroundJob,
-		operations:    newOperations(observationContext),
+		store:      policiesStore,
+		uploadSvc:  uploadSvc,
+		gitserver:  gitserver,
+		operations: newOperations(observationContext),
 	}
-}
-
-func GetBackgroundJobs(s *Service) background.BackgroundJob {
-	return s.backgroundJob
 }
 
 func (s *Service) getPolicyMatcherFromFactory(gitserver GitserverClient, extractor policies.Extractor, includeTipOfDefaultBranch bool, filterByCreatedDate bool) *policies.Matcher {
@@ -148,7 +140,7 @@ func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload types.U
 		return nil, 0, err
 	}
 
-	matchingPolicies, err := policyMatcher.CommitsDescribedByPolicyInternal(ctx, upload.RepositoryID, configPolicies, time.Now(), visibleCommits...)
+	matchingPolicies, err := policyMatcher.CommitsDescribedByPolicy(ctx, upload.RepositoryID, configPolicies, time.Now(), visibleCommits...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -210,7 +202,7 @@ func (s *Service) GetPreviewGitObjectFilter(ctx context.Context, repositoryID in
 	defer endObservation(1, observation.Args{})
 
 	policyMatcher := s.getPolicyMatcherFromFactory(s.gitserver, policies.NoopExtractor, false, false)
-	policyMatches, err := policyMatcher.CommitsDescribedByPolicyInternal(ctx, repositoryID, []types.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}}, timeutil.Now())
+	policyMatches, err := policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, []types.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}}, timeutil.Now())
 	if err != nil {
 		return nil, err
 	}

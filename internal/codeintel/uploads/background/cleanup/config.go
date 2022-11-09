@@ -15,6 +15,7 @@ type config struct {
 	AuditLogMaxAge                 time.Duration
 	CommitResolverMaximumCommitLag time.Duration
 	UploadTimeout                  time.Duration
+	ReconcilerBatchSize            int
 }
 
 var ConfigInst = &config{}
@@ -32,4 +33,5 @@ func (c *config) Load() {
 	c.AuditLogMaxAge = c.GetInterval(auditLogMaxAgeName, "720h", "The maximum time a code intel audit log record can remain on the database.")
 	c.CommitResolverMaximumCommitLag = c.GetInterval(commitResolverMaximumCommitLagName, "0s", "The maximum acceptable delay between accepting an upload and its commit becoming resolvable. Be cautious about setting this to a large value, as uploads for unresolvable commits will be retried periodically during this interval.")
 	c.UploadTimeout = c.GetInterval(uploadTimeoutName, "24h", "The maximum time an upload can be in the 'uploading' state.")
+	c.ReconcilerBatchSize = c.GetInt("CODEINTEL_UPLOADS_RECONCILER_BATCH_SIZE", "1000", "The number of uploads to reconcile in one cleanup routine invocation.")
 }

@@ -53,6 +53,10 @@ type UploadService interface {
 
 	// Utils
 	GetWorkerutilStore() dbworkerstore.Store
+	FrontendReconcileCandidates(ctx context.Context, batchSize int) ([]int, error)
+	CodeIntelDBReconcileCandidates(ctx context.Context, batchSize int) ([]int, error)
+	GetDumpsByIDs(ctx context.Context, ids []int) ([]types.Dump, error)
+	IDsWithMeta(ctx context.Context, ids []int) ([]int, error)
 }
 
 type GitserverClient interface {

@@ -26,6 +26,7 @@ import (
 	temporarysettings "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 	schema "github.com/sourcegraph/sourcegraph/schema"
+	zoekt "github.com/sourcegraph/zoekt"
 )
 
 // MockAccessTokenStore is a mock implementation of the AccessTokenStore
@@ -3743,6 +3744,9 @@ type MockDB struct {
 	// WebhooksFunc is an instance of a mock function object controlling the
 	// behavior of the method Webhooks.
 	WebhooksFunc *DBWebhooksFunc
+	// ZoektReposFunc is an instance of a mock function object controlling
+	// the behavior of the method ZoektRepos.
+	ZoektReposFunc *DBZoektReposFunc
 }
 
 // NewMockDB creates a new mock of the DB interface. All methods return zero
@@ -3951,6 +3955,11 @@ func NewMockDB() *MockDB {
 		},
 		WebhooksFunc: &DBWebhooksFunc{
 			defaultHook: func(encryption.Key) (r0 WebhookStore) {
+				return
+			},
+		},
+		ZoektReposFunc: &DBZoektReposFunc{
+			defaultHook: func() (r0 ZoektReposStore) {
 				return
 			},
 		},
@@ -4166,6 +4175,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Webhooks")
 			},
 		},
+		ZoektReposFunc: &DBZoektReposFunc{
+			defaultHook: func() ZoektReposStore {
+				panic("unexpected invocation of MockDB.ZoektRepos")
+			},
+		},
 	}
 }
 
@@ -4295,6 +4309,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		WebhooksFunc: &DBWebhooksFunc{
 			defaultHook: i.Webhooks,
+		},
+		ZoektReposFunc: &DBZoektReposFunc{
+			defaultHook: i.ZoektRepos,
 		},
 	}
 }
@@ -8406,6 +8423,104 @@ func (c DBWebhooksFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBWebhooksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBZoektReposFunc describes the behavior when the ZoektRepos method of the
+// parent MockDB instance is invoked.
+type DBZoektReposFunc struct {
+	defaultHook func() ZoektReposStore
+	hooks       []func() ZoektReposStore
+	history     []DBZoektReposFuncCall
+	mutex       sync.Mutex
+}
+
+// ZoektRepos delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) ZoektRepos() ZoektReposStore {
+	r0 := m.ZoektReposFunc.nextHook()()
+	m.ZoektReposFunc.appendCall(DBZoektReposFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ZoektRepos method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBZoektReposFunc) SetDefaultHook(hook func() ZoektReposStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ZoektRepos method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBZoektReposFunc) PushHook(hook func() ZoektReposStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBZoektReposFunc) SetDefaultReturn(r0 ZoektReposStore) {
+	f.SetDefaultHook(func() ZoektReposStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBZoektReposFunc) PushReturn(r0 ZoektReposStore) {
+	f.PushHook(func() ZoektReposStore {
+		return r0
+	})
+}
+
+func (f *DBZoektReposFunc) nextHook() func() ZoektReposStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBZoektReposFunc) appendCall(r0 DBZoektReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBZoektReposFuncCall objects describing the
+// invocations of this function.
+func (f *DBZoektReposFunc) History() []DBZoektReposFuncCall {
+	f.mutex.Lock()
+	history := make([]DBZoektReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBZoektReposFuncCall is an object that describes an invocation of method
+// ZoektRepos on an instance of MockDB.
+type DBZoektReposFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 ZoektReposStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBZoektReposFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBZoektReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -31833,12 +31948,13 @@ type MockRepoStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *RepoStoreListFunc
-	// ListIndexableReposFunc is an instance of a mock function object
-	// controlling the behavior of the method ListIndexableRepos.
-	ListIndexableReposFunc *RepoStoreListIndexableReposFunc
 	// ListMinimalReposFunc is an instance of a mock function object
 	// controlling the behavior of the method ListMinimalRepos.
 	ListMinimalReposFunc *RepoStoreListMinimalReposFunc
+	// ListSourcegraphDotComIndexableReposFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// ListSourcegraphDotComIndexableRepos.
+	ListSourcegraphDotComIndexableReposFunc *RepoStoreListSourcegraphDotComIndexableReposFunc
 	// MetadataFunc is an instance of a mock function object controlling the
 	// behavior of the method Metadata.
 	MetadataFunc *RepoStoreMetadataFunc
@@ -31925,13 +32041,13 @@ func NewMockRepoStore() *MockRepoStore {
 				return
 			},
 		},
-		ListIndexableReposFunc: &RepoStoreListIndexableReposFunc{
-			defaultHook: func(context.Context, ListIndexableReposOptions) (r0 []types.MinimalRepo, r1 error) {
+		ListMinimalReposFunc: &RepoStoreListMinimalReposFunc{
+			defaultHook: func(context.Context, ReposListOptions) (r0 []types.MinimalRepo, r1 error) {
 				return
 			},
 		},
-		ListMinimalReposFunc: &RepoStoreListMinimalReposFunc{
-			defaultHook: func(context.Context, ReposListOptions) (r0 []types.MinimalRepo, r1 error) {
+		ListSourcegraphDotComIndexableReposFunc: &RepoStoreListSourcegraphDotComIndexableReposFunc{
+			defaultHook: func(context.Context, ListSourcegraphDotComIndexableReposOptions) (r0 []types.MinimalRepo, r1 error) {
 				return
 			},
 		},
@@ -32032,14 +32148,14 @@ func NewStrictMockRepoStore() *MockRepoStore {
 				panic("unexpected invocation of MockRepoStore.List")
 			},
 		},
-		ListIndexableReposFunc: &RepoStoreListIndexableReposFunc{
-			defaultHook: func(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error) {
-				panic("unexpected invocation of MockRepoStore.ListIndexableRepos")
-			},
-		},
 		ListMinimalReposFunc: &RepoStoreListMinimalReposFunc{
 			defaultHook: func(context.Context, ReposListOptions) ([]types.MinimalRepo, error) {
 				panic("unexpected invocation of MockRepoStore.ListMinimalRepos")
+			},
+		},
+		ListSourcegraphDotComIndexableReposFunc: &RepoStoreListSourcegraphDotComIndexableReposFunc{
+			defaultHook: func(context.Context, ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error) {
+				panic("unexpected invocation of MockRepoStore.ListSourcegraphDotComIndexableRepos")
 			},
 		},
 		MetadataFunc: &RepoStoreMetadataFunc{
@@ -32113,11 +32229,11 @@ func NewMockRepoStoreFrom(i RepoStore) *MockRepoStore {
 		ListFunc: &RepoStoreListFunc{
 			defaultHook: i.List,
 		},
-		ListIndexableReposFunc: &RepoStoreListIndexableReposFunc{
-			defaultHook: i.ListIndexableRepos,
-		},
 		ListMinimalReposFunc: &RepoStoreListMinimalReposFunc{
 			defaultHook: i.ListMinimalRepos,
+		},
+		ListSourcegraphDotComIndexableReposFunc: &RepoStoreListSourcegraphDotComIndexableReposFunc{
+			defaultHook: i.ListSourcegraphDotComIndexableRepos,
 		},
 		MetadataFunc: &RepoStoreMetadataFunc{
 			defaultHook: i.Metadata,
@@ -33552,115 +33668,6 @@ func (c RepoStoreListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// RepoStoreListIndexableReposFunc describes the behavior when the
-// ListIndexableRepos method of the parent MockRepoStore instance is
-// invoked.
-type RepoStoreListIndexableReposFunc struct {
-	defaultHook func(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
-	hooks       []func(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
-	history     []RepoStoreListIndexableReposFuncCall
-	mutex       sync.Mutex
-}
-
-// ListIndexableRepos delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockRepoStore) ListIndexableRepos(v0 context.Context, v1 ListIndexableReposOptions) ([]types.MinimalRepo, error) {
-	r0, r1 := m.ListIndexableReposFunc.nextHook()(v0, v1)
-	m.ListIndexableReposFunc.appendCall(RepoStoreListIndexableReposFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ListIndexableRepos
-// method of the parent MockRepoStore instance is invoked and the hook queue
-// is empty.
-func (f *RepoStoreListIndexableReposFunc) SetDefaultHook(hook func(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ListIndexableRepos method of the parent MockRepoStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *RepoStoreListIndexableReposFunc) PushHook(hook func(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *RepoStoreListIndexableReposFunc) SetDefaultReturn(r0 []types.MinimalRepo, r1 error) {
-	f.SetDefaultHook(func(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *RepoStoreListIndexableReposFunc) PushReturn(r0 []types.MinimalRepo, r1 error) {
-	f.PushHook(func(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error) {
-		return r0, r1
-	})
-}
-
-func (f *RepoStoreListIndexableReposFunc) nextHook() func(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *RepoStoreListIndexableReposFunc) appendCall(r0 RepoStoreListIndexableReposFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of RepoStoreListIndexableReposFuncCall objects
-// describing the invocations of this function.
-func (f *RepoStoreListIndexableReposFunc) History() []RepoStoreListIndexableReposFuncCall {
-	f.mutex.Lock()
-	history := make([]RepoStoreListIndexableReposFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// RepoStoreListIndexableReposFuncCall is an object that describes an
-// invocation of method ListIndexableRepos on an instance of MockRepoStore.
-type RepoStoreListIndexableReposFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 ListIndexableReposOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []types.MinimalRepo
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c RepoStoreListIndexableReposFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c RepoStoreListIndexableReposFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // RepoStoreListMinimalReposFunc describes the behavior when the
 // ListMinimalRepos method of the parent MockRepoStore instance is invoked.
 type RepoStoreListMinimalReposFunc struct {
@@ -33766,6 +33773,119 @@ func (c RepoStoreListMinimalReposFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoStoreListMinimalReposFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// RepoStoreListSourcegraphDotComIndexableReposFunc describes the behavior
+// when the ListSourcegraphDotComIndexableRepos method of the parent
+// MockRepoStore instance is invoked.
+type RepoStoreListSourcegraphDotComIndexableReposFunc struct {
+	defaultHook func(context.Context, ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error)
+	hooks       []func(context.Context, ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error)
+	history     []RepoStoreListSourcegraphDotComIndexableReposFuncCall
+	mutex       sync.Mutex
+}
+
+// ListSourcegraphDotComIndexableRepos delegates to the next hook function
+// in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockRepoStore) ListSourcegraphDotComIndexableRepos(v0 context.Context, v1 ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error) {
+	r0, r1 := m.ListSourcegraphDotComIndexableReposFunc.nextHook()(v0, v1)
+	m.ListSourcegraphDotComIndexableReposFunc.appendCall(RepoStoreListSourcegraphDotComIndexableReposFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// ListSourcegraphDotComIndexableRepos method of the parent MockRepoStore
+// instance is invoked and the hook queue is empty.
+func (f *RepoStoreListSourcegraphDotComIndexableReposFunc) SetDefaultHook(hook func(context.Context, ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListSourcegraphDotComIndexableRepos method of the parent MockRepoStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *RepoStoreListSourcegraphDotComIndexableReposFunc) PushHook(hook func(context.Context, ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoStoreListSourcegraphDotComIndexableReposFunc) SetDefaultReturn(r0 []types.MinimalRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoStoreListSourcegraphDotComIndexableReposFunc) PushReturn(r0 []types.MinimalRepo, r1 error) {
+	f.PushHook(func(context.Context, ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoStoreListSourcegraphDotComIndexableReposFunc) nextHook() func(context.Context, ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoStoreListSourcegraphDotComIndexableReposFunc) appendCall(r0 RepoStoreListSourcegraphDotComIndexableReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RepoStoreListSourcegraphDotComIndexableReposFuncCall objects describing
+// the invocations of this function.
+func (f *RepoStoreListSourcegraphDotComIndexableReposFunc) History() []RepoStoreListSourcegraphDotComIndexableReposFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoStoreListSourcegraphDotComIndexableReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoStoreListSourcegraphDotComIndexableReposFuncCall is an object that
+// describes an invocation of method ListSourcegraphDotComIndexableRepos on
+// an instance of MockRepoStore.
+type RepoStoreListSourcegraphDotComIndexableReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListSourcegraphDotComIndexableReposOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []types.MinimalRepo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoStoreListSourcegraphDotComIndexableReposFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoStoreListSourcegraphDotComIndexableReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -39138,9 +39258,9 @@ type MockSubRepoPermsStore struct {
 	// GetByUserAndServiceFunc is an instance of a mock function object
 	// controlling the behavior of the method GetByUserAndService.
 	GetByUserAndServiceFunc *SubRepoPermsStoreGetByUserAndServiceFunc
-	// RepoIdSupportedFunc is an instance of a mock function object
-	// controlling the behavior of the method RepoIdSupported.
-	RepoIdSupportedFunc *SubRepoPermsStoreRepoIdSupportedFunc
+	// RepoIDSupportedFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoIDSupported.
+	RepoIDSupportedFunc *SubRepoPermsStoreRepoIDSupportedFunc
 	// RepoSupportedFunc is an instance of a mock function object
 	// controlling the behavior of the method RepoSupported.
 	RepoSupportedFunc *SubRepoPermsStoreRepoSupportedFunc
@@ -39183,7 +39303,7 @@ func NewMockSubRepoPermsStore() *MockSubRepoPermsStore {
 				return
 			},
 		},
-		RepoIdSupportedFunc: &SubRepoPermsStoreRepoIdSupportedFunc{
+		RepoIDSupportedFunc: &SubRepoPermsStoreRepoIDSupportedFunc{
 			defaultHook: func(context.Context, api.RepoID) (r0 bool, r1 error) {
 				return
 			},
@@ -39241,9 +39361,9 @@ func NewStrictMockSubRepoPermsStore() *MockSubRepoPermsStore {
 				panic("unexpected invocation of MockSubRepoPermsStore.GetByUserAndService")
 			},
 		},
-		RepoIdSupportedFunc: &SubRepoPermsStoreRepoIdSupportedFunc{
+		RepoIDSupportedFunc: &SubRepoPermsStoreRepoIDSupportedFunc{
 			defaultHook: func(context.Context, api.RepoID) (bool, error) {
-				panic("unexpected invocation of MockSubRepoPermsStore.RepoIdSupported")
+				panic("unexpected invocation of MockSubRepoPermsStore.RepoIDSupported")
 			},
 		},
 		RepoSupportedFunc: &SubRepoPermsStoreRepoSupportedFunc{
@@ -39291,8 +39411,8 @@ func NewMockSubRepoPermsStoreFrom(i SubRepoPermsStore) *MockSubRepoPermsStore {
 		GetByUserAndServiceFunc: &SubRepoPermsStoreGetByUserAndServiceFunc{
 			defaultHook: i.GetByUserAndService,
 		},
-		RepoIdSupportedFunc: &SubRepoPermsStoreRepoIdSupportedFunc{
-			defaultHook: i.RepoIdSupported,
+		RepoIDSupportedFunc: &SubRepoPermsStoreRepoIDSupportedFunc{
+			defaultHook: i.RepoIDSupported,
 		},
 		RepoSupportedFunc: &SubRepoPermsStoreRepoSupportedFunc{
 			defaultHook: i.RepoSupported,
@@ -39751,37 +39871,37 @@ func (c SubRepoPermsStoreGetByUserAndServiceFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// SubRepoPermsStoreRepoIdSupportedFunc describes the behavior when the
-// RepoIdSupported method of the parent MockSubRepoPermsStore instance is
+// SubRepoPermsStoreRepoIDSupportedFunc describes the behavior when the
+// RepoIDSupported method of the parent MockSubRepoPermsStore instance is
 // invoked.
-type SubRepoPermsStoreRepoIdSupportedFunc struct {
+type SubRepoPermsStoreRepoIDSupportedFunc struct {
 	defaultHook func(context.Context, api.RepoID) (bool, error)
 	hooks       []func(context.Context, api.RepoID) (bool, error)
-	history     []SubRepoPermsStoreRepoIdSupportedFuncCall
+	history     []SubRepoPermsStoreRepoIDSupportedFuncCall
 	mutex       sync.Mutex
 }
 
-// RepoIdSupported delegates to the next hook function in the queue and
+// RepoIDSupported delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockSubRepoPermsStore) RepoIdSupported(v0 context.Context, v1 api.RepoID) (bool, error) {
-	r0, r1 := m.RepoIdSupportedFunc.nextHook()(v0, v1)
-	m.RepoIdSupportedFunc.appendCall(SubRepoPermsStoreRepoIdSupportedFuncCall{v0, v1, r0, r1})
+func (m *MockSubRepoPermsStore) RepoIDSupported(v0 context.Context, v1 api.RepoID) (bool, error) {
+	r0, r1 := m.RepoIDSupportedFunc.nextHook()(v0, v1)
+	m.RepoIDSupportedFunc.appendCall(SubRepoPermsStoreRepoIDSupportedFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the RepoIdSupported
+// SetDefaultHook sets function that is called when the RepoIDSupported
 // method of the parent MockSubRepoPermsStore instance is invoked and the
 // hook queue is empty.
-func (f *SubRepoPermsStoreRepoIdSupportedFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (bool, error)) {
+func (f *SubRepoPermsStoreRepoIDSupportedFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoIdSupported method of the parent MockSubRepoPermsStore instance
+// RepoIDSupported method of the parent MockSubRepoPermsStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *SubRepoPermsStoreRepoIdSupportedFunc) PushHook(hook func(context.Context, api.RepoID) (bool, error)) {
+func (f *SubRepoPermsStoreRepoIDSupportedFunc) PushHook(hook func(context.Context, api.RepoID) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -39789,20 +39909,20 @@ func (f *SubRepoPermsStoreRepoIdSupportedFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *SubRepoPermsStoreRepoIdSupportedFunc) SetDefaultReturn(r0 bool, r1 error) {
+func (f *SubRepoPermsStoreRepoIDSupportedFunc) SetDefaultReturn(r0 bool, r1 error) {
 	f.SetDefaultHook(func(context.Context, api.RepoID) (bool, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *SubRepoPermsStoreRepoIdSupportedFunc) PushReturn(r0 bool, r1 error) {
+func (f *SubRepoPermsStoreRepoIDSupportedFunc) PushReturn(r0 bool, r1 error) {
 	f.PushHook(func(context.Context, api.RepoID) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *SubRepoPermsStoreRepoIdSupportedFunc) nextHook() func(context.Context, api.RepoID) (bool, error) {
+func (f *SubRepoPermsStoreRepoIDSupportedFunc) nextHook() func(context.Context, api.RepoID) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -39815,27 +39935,27 @@ func (f *SubRepoPermsStoreRepoIdSupportedFunc) nextHook() func(context.Context, 
 	return hook
 }
 
-func (f *SubRepoPermsStoreRepoIdSupportedFunc) appendCall(r0 SubRepoPermsStoreRepoIdSupportedFuncCall) {
+func (f *SubRepoPermsStoreRepoIDSupportedFunc) appendCall(r0 SubRepoPermsStoreRepoIDSupportedFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of SubRepoPermsStoreRepoIdSupportedFuncCall
+// History returns a sequence of SubRepoPermsStoreRepoIDSupportedFuncCall
 // objects describing the invocations of this function.
-func (f *SubRepoPermsStoreRepoIdSupportedFunc) History() []SubRepoPermsStoreRepoIdSupportedFuncCall {
+func (f *SubRepoPermsStoreRepoIDSupportedFunc) History() []SubRepoPermsStoreRepoIDSupportedFuncCall {
 	f.mutex.Lock()
-	history := make([]SubRepoPermsStoreRepoIdSupportedFuncCall, len(f.history))
+	history := make([]SubRepoPermsStoreRepoIDSupportedFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// SubRepoPermsStoreRepoIdSupportedFuncCall is an object that describes an
-// invocation of method RepoIdSupported on an instance of
+// SubRepoPermsStoreRepoIDSupportedFuncCall is an object that describes an
+// invocation of method RepoIDSupported on an instance of
 // MockSubRepoPermsStore.
-type SubRepoPermsStoreRepoIdSupportedFuncCall struct {
+type SubRepoPermsStoreRepoIDSupportedFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -39852,13 +39972,13 @@ type SubRepoPermsStoreRepoIdSupportedFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c SubRepoPermsStoreRepoIdSupportedFuncCall) Args() []interface{} {
+func (c SubRepoPermsStoreRepoIDSupportedFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c SubRepoPermsStoreRepoIdSupportedFuncCall) Results() []interface{} {
+func (c SubRepoPermsStoreRepoIDSupportedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -53318,4 +53438,638 @@ func (c WebhookStoreUpdateFuncCall) Args() []interface{} {
 // invocation.
 func (c WebhookStoreUpdateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockZoektReposStore is a mock implementation of the ZoektReposStore
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockZoektReposStore struct {
+	// GetStatisticsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetStatistics.
+	GetStatisticsFunc *ZoektReposStoreGetStatisticsFunc
+	// GetZoektRepoFunc is an instance of a mock function object controlling
+	// the behavior of the method GetZoektRepo.
+	GetZoektRepoFunc *ZoektReposStoreGetZoektRepoFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *ZoektReposStoreHandleFunc
+	// UpdateIndexStatusesFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateIndexStatuses.
+	UpdateIndexStatusesFunc *ZoektReposStoreUpdateIndexStatusesFunc
+	// WithFunc is an instance of a mock function object controlling the
+	// behavior of the method With.
+	WithFunc *ZoektReposStoreWithFunc
+}
+
+// NewMockZoektReposStore creates a new mock of the ZoektReposStore
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockZoektReposStore() *MockZoektReposStore {
+	return &MockZoektReposStore{
+		GetStatisticsFunc: &ZoektReposStoreGetStatisticsFunc{
+			defaultHook: func(context.Context) (r0 ZoektRepoStatistics, r1 error) {
+				return
+			},
+		},
+		GetZoektRepoFunc: &ZoektReposStoreGetZoektRepoFunc{
+			defaultHook: func(context.Context, api.RepoID) (r0 *ZoektRepo, r1 error) {
+				return
+			},
+		},
+		HandleFunc: &ZoektReposStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		UpdateIndexStatusesFunc: &ZoektReposStoreUpdateIndexStatusesFunc{
+			defaultHook: func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) (r0 error) {
+				return
+			},
+		},
+		WithFunc: &ZoektReposStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) (r0 ZoektReposStore) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockZoektReposStore creates a new mock of the ZoektReposStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockZoektReposStore() *MockZoektReposStore {
+	return &MockZoektReposStore{
+		GetStatisticsFunc: &ZoektReposStoreGetStatisticsFunc{
+			defaultHook: func(context.Context) (ZoektRepoStatistics, error) {
+				panic("unexpected invocation of MockZoektReposStore.GetStatistics")
+			},
+		},
+		GetZoektRepoFunc: &ZoektReposStoreGetZoektRepoFunc{
+			defaultHook: func(context.Context, api.RepoID) (*ZoektRepo, error) {
+				panic("unexpected invocation of MockZoektReposStore.GetZoektRepo")
+			},
+		},
+		HandleFunc: &ZoektReposStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockZoektReposStore.Handle")
+			},
+		},
+		UpdateIndexStatusesFunc: &ZoektReposStoreUpdateIndexStatusesFunc{
+			defaultHook: func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error {
+				panic("unexpected invocation of MockZoektReposStore.UpdateIndexStatuses")
+			},
+		},
+		WithFunc: &ZoektReposStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) ZoektReposStore {
+				panic("unexpected invocation of MockZoektReposStore.With")
+			},
+		},
+	}
+}
+
+// NewMockZoektReposStoreFrom creates a new mock of the MockZoektReposStore
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockZoektReposStoreFrom(i ZoektReposStore) *MockZoektReposStore {
+	return &MockZoektReposStore{
+		GetStatisticsFunc: &ZoektReposStoreGetStatisticsFunc{
+			defaultHook: i.GetStatistics,
+		},
+		GetZoektRepoFunc: &ZoektReposStoreGetZoektRepoFunc{
+			defaultHook: i.GetZoektRepo,
+		},
+		HandleFunc: &ZoektReposStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		UpdateIndexStatusesFunc: &ZoektReposStoreUpdateIndexStatusesFunc{
+			defaultHook: i.UpdateIndexStatuses,
+		},
+		WithFunc: &ZoektReposStoreWithFunc{
+			defaultHook: i.With,
+		},
+	}
+}
+
+// ZoektReposStoreGetStatisticsFunc describes the behavior when the
+// GetStatistics method of the parent MockZoektReposStore instance is
+// invoked.
+type ZoektReposStoreGetStatisticsFunc struct {
+	defaultHook func(context.Context) (ZoektRepoStatistics, error)
+	hooks       []func(context.Context) (ZoektRepoStatistics, error)
+	history     []ZoektReposStoreGetStatisticsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetStatistics delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockZoektReposStore) GetStatistics(v0 context.Context) (ZoektRepoStatistics, error) {
+	r0, r1 := m.GetStatisticsFunc.nextHook()(v0)
+	m.GetStatisticsFunc.appendCall(ZoektReposStoreGetStatisticsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetStatistics method
+// of the parent MockZoektReposStore instance is invoked and the hook queue
+// is empty.
+func (f *ZoektReposStoreGetStatisticsFunc) SetDefaultHook(hook func(context.Context) (ZoektRepoStatistics, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetStatistics method of the parent MockZoektReposStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ZoektReposStoreGetStatisticsFunc) PushHook(hook func(context.Context) (ZoektRepoStatistics, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ZoektReposStoreGetStatisticsFunc) SetDefaultReturn(r0 ZoektRepoStatistics, r1 error) {
+	f.SetDefaultHook(func(context.Context) (ZoektRepoStatistics, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ZoektReposStoreGetStatisticsFunc) PushReturn(r0 ZoektRepoStatistics, r1 error) {
+	f.PushHook(func(context.Context) (ZoektRepoStatistics, error) {
+		return r0, r1
+	})
+}
+
+func (f *ZoektReposStoreGetStatisticsFunc) nextHook() func(context.Context) (ZoektRepoStatistics, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ZoektReposStoreGetStatisticsFunc) appendCall(r0 ZoektReposStoreGetStatisticsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ZoektReposStoreGetStatisticsFuncCall
+// objects describing the invocations of this function.
+func (f *ZoektReposStoreGetStatisticsFunc) History() []ZoektReposStoreGetStatisticsFuncCall {
+	f.mutex.Lock()
+	history := make([]ZoektReposStoreGetStatisticsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ZoektReposStoreGetStatisticsFuncCall is an object that describes an
+// invocation of method GetStatistics on an instance of MockZoektReposStore.
+type ZoektReposStoreGetStatisticsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 ZoektRepoStatistics
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ZoektReposStoreGetStatisticsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ZoektReposStoreGetStatisticsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ZoektReposStoreGetZoektRepoFunc describes the behavior when the
+// GetZoektRepo method of the parent MockZoektReposStore instance is
+// invoked.
+type ZoektReposStoreGetZoektRepoFunc struct {
+	defaultHook func(context.Context, api.RepoID) (*ZoektRepo, error)
+	hooks       []func(context.Context, api.RepoID) (*ZoektRepo, error)
+	history     []ZoektReposStoreGetZoektRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// GetZoektRepo delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockZoektReposStore) GetZoektRepo(v0 context.Context, v1 api.RepoID) (*ZoektRepo, error) {
+	r0, r1 := m.GetZoektRepoFunc.nextHook()(v0, v1)
+	m.GetZoektRepoFunc.appendCall(ZoektReposStoreGetZoektRepoFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetZoektRepo method
+// of the parent MockZoektReposStore instance is invoked and the hook queue
+// is empty.
+func (f *ZoektReposStoreGetZoektRepoFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (*ZoektRepo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetZoektRepo method of the parent MockZoektReposStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ZoektReposStoreGetZoektRepoFunc) PushHook(hook func(context.Context, api.RepoID) (*ZoektRepo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ZoektReposStoreGetZoektRepoFunc) SetDefaultReturn(r0 *ZoektRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID) (*ZoektRepo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ZoektReposStoreGetZoektRepoFunc) PushReturn(r0 *ZoektRepo, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID) (*ZoektRepo, error) {
+		return r0, r1
+	})
+}
+
+func (f *ZoektReposStoreGetZoektRepoFunc) nextHook() func(context.Context, api.RepoID) (*ZoektRepo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ZoektReposStoreGetZoektRepoFunc) appendCall(r0 ZoektReposStoreGetZoektRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ZoektReposStoreGetZoektRepoFuncCall objects
+// describing the invocations of this function.
+func (f *ZoektReposStoreGetZoektRepoFunc) History() []ZoektReposStoreGetZoektRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]ZoektReposStoreGetZoektRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ZoektReposStoreGetZoektRepoFuncCall is an object that describes an
+// invocation of method GetZoektRepo on an instance of MockZoektReposStore.
+type ZoektReposStoreGetZoektRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *ZoektRepo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ZoektReposStoreGetZoektRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ZoektReposStoreGetZoektRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ZoektReposStoreHandleFunc describes the behavior when the Handle method
+// of the parent MockZoektReposStore instance is invoked.
+type ZoektReposStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []ZoektReposStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockZoektReposStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(ZoektReposStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockZoektReposStore instance is invoked and the hook queue is
+// empty.
+func (f *ZoektReposStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockZoektReposStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ZoektReposStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ZoektReposStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ZoektReposStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *ZoektReposStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ZoektReposStoreHandleFunc) appendCall(r0 ZoektReposStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ZoektReposStoreHandleFuncCall objects
+// describing the invocations of this function.
+func (f *ZoektReposStoreHandleFunc) History() []ZoektReposStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]ZoektReposStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ZoektReposStoreHandleFuncCall is an object that describes an invocation
+// of method Handle on an instance of MockZoektReposStore.
+type ZoektReposStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ZoektReposStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ZoektReposStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ZoektReposStoreUpdateIndexStatusesFunc describes the behavior when the
+// UpdateIndexStatuses method of the parent MockZoektReposStore instance is
+// invoked.
+type ZoektReposStoreUpdateIndexStatusesFunc struct {
+	defaultHook func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error
+	hooks       []func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error
+	history     []ZoektReposStoreUpdateIndexStatusesFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateIndexStatuses delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockZoektReposStore) UpdateIndexStatuses(v0 context.Context, v1 map[uint32]*zoekt.MinimalRepoListEntry) error {
+	r0 := m.UpdateIndexStatusesFunc.nextHook()(v0, v1)
+	m.UpdateIndexStatusesFunc.appendCall(ZoektReposStoreUpdateIndexStatusesFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpdateIndexStatuses
+// method of the parent MockZoektReposStore instance is invoked and the hook
+// queue is empty.
+func (f *ZoektReposStoreUpdateIndexStatusesFunc) SetDefaultHook(hook func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateIndexStatuses method of the parent MockZoektReposStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ZoektReposStoreUpdateIndexStatusesFunc) PushHook(hook func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ZoektReposStoreUpdateIndexStatusesFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ZoektReposStoreUpdateIndexStatusesFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error {
+		return r0
+	})
+}
+
+func (f *ZoektReposStoreUpdateIndexStatusesFunc) nextHook() func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ZoektReposStoreUpdateIndexStatusesFunc) appendCall(r0 ZoektReposStoreUpdateIndexStatusesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ZoektReposStoreUpdateIndexStatusesFuncCall
+// objects describing the invocations of this function.
+func (f *ZoektReposStoreUpdateIndexStatusesFunc) History() []ZoektReposStoreUpdateIndexStatusesFuncCall {
+	f.mutex.Lock()
+	history := make([]ZoektReposStoreUpdateIndexStatusesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ZoektReposStoreUpdateIndexStatusesFuncCall is an object that describes an
+// invocation of method UpdateIndexStatuses on an instance of
+// MockZoektReposStore.
+type ZoektReposStoreUpdateIndexStatusesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 map[uint32]*zoekt.MinimalRepoListEntry
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ZoektReposStoreUpdateIndexStatusesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ZoektReposStoreUpdateIndexStatusesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ZoektReposStoreWithFunc describes the behavior when the With method of
+// the parent MockZoektReposStore instance is invoked.
+type ZoektReposStoreWithFunc struct {
+	defaultHook func(basestore.ShareableStore) ZoektReposStore
+	hooks       []func(basestore.ShareableStore) ZoektReposStore
+	history     []ZoektReposStoreWithFuncCall
+	mutex       sync.Mutex
+}
+
+// With delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockZoektReposStore) With(v0 basestore.ShareableStore) ZoektReposStore {
+	r0 := m.WithFunc.nextHook()(v0)
+	m.WithFunc.appendCall(ZoektReposStoreWithFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the With method of the
+// parent MockZoektReposStore instance is invoked and the hook queue is
+// empty.
+func (f *ZoektReposStoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) ZoektReposStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// With method of the parent MockZoektReposStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *ZoektReposStoreWithFunc) PushHook(hook func(basestore.ShareableStore) ZoektReposStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ZoektReposStoreWithFunc) SetDefaultReturn(r0 ZoektReposStore) {
+	f.SetDefaultHook(func(basestore.ShareableStore) ZoektReposStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ZoektReposStoreWithFunc) PushReturn(r0 ZoektReposStore) {
+	f.PushHook(func(basestore.ShareableStore) ZoektReposStore {
+		return r0
+	})
+}
+
+func (f *ZoektReposStoreWithFunc) nextHook() func(basestore.ShareableStore) ZoektReposStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ZoektReposStoreWithFunc) appendCall(r0 ZoektReposStoreWithFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ZoektReposStoreWithFuncCall objects
+// describing the invocations of this function.
+func (f *ZoektReposStoreWithFunc) History() []ZoektReposStoreWithFuncCall {
+	f.mutex.Lock()
+	history := make([]ZoektReposStoreWithFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ZoektReposStoreWithFuncCall is an object that describes an invocation of
+// method With on an instance of MockZoektReposStore.
+type ZoektReposStoreWithFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 basestore.ShareableStore
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 ZoektReposStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ZoektReposStoreWithFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ZoektReposStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }

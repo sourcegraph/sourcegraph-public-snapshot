@@ -163,7 +163,7 @@ func TestLockoutStore(t *testing.T) {
 		// than the claims ExpiresAt. Additionally CI can be busy, so lets add
 		// a decent amount of fudge to this (10s).
 		want := time.Now().Add(5 * time.Minute).Truncate(jwt.TimePrecision)
-		got := *&claims.ExpiresAt.Time
+		got := claims.ExpiresAt.Time
 		if durationAbs(want.Sub(got)) > 10*time.Second {
 			t.Fatalf("unexpected ExpiresAt time:\ngot:  %s\nwant: %s", got, want)
 		}

@@ -8,7 +8,6 @@ exports[`DiffStat expandedCounts 1`] = `
     <div
       aria-label="3 additions, 5 deletions"
       class="diffStat"
-      data-state="closed"
       role="note"
     >
       <strong
@@ -34,7 +33,6 @@ exports[`DiffStat standard 1`] = `
     <div
       aria-label="3 additions, 5 deletions"
       class="diffStat"
-      data-state="closed"
       role="note"
     >
       <small>
@@ -80,7 +78,6 @@ exports[`DiffStatStack 1`] = `
       <div
         aria-label="3 additions, 5 deletions"
         class="diffStat"
-        data-state="closed"
         role="note"
       >
         <strong

@@ -123,7 +123,7 @@ export const SearchContextsListTab: React.FunctionComponent<React.PropsWithChild
             values: [
                 {
                     value: 'spec-asc',
-                    label: 'Spec (ascending)',
+                    label: 'Alphabetically A-Z',
                     args: {
                         orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
                         descending: false,
@@ -131,7 +131,7 @@ export const SearchContextsListTab: React.FunctionComponent<React.PropsWithChild
                 },
                 {
                     value: 'spec-desc',
-                    label: 'Spec (descending)',
+                    label: 'Alphabetically Z-A',
                     args: {
                         orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_SPEC,
                         descending: true,
@@ -139,7 +139,7 @@ export const SearchContextsListTab: React.FunctionComponent<React.PropsWithChild
                 },
                 {
                     value: 'updated-at-asc',
-                    label: 'Last update (ascending)',
+                    label: 'Last update ascending',
                     args: {
                         orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_UPDATED_AT,
                         descending: false,
@@ -147,7 +147,7 @@ export const SearchContextsListTab: React.FunctionComponent<React.PropsWithChild
                 },
                 {
                     value: 'updated-at-desc',
-                    label: 'Last update (descending)',
+                    label: 'Last update descending',
                     args: {
                         orderBy: SearchContextsOrderBy.SEARCH_CONTEXT_UPDATED_AT,
                         descending: true,

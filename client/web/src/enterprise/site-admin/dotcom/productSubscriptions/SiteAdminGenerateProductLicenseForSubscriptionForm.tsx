@@ -10,10 +10,13 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Alert, Button, useEventObservable, Link, Label, Input } from '@sourcegraph/wildcard'
 
 import { mutateGraphQL } from '../../../../backend/graphql'
+import {
+    GenerateProductLicenseForSubscriptionResult,
+    GenerateProductLicenseForSubscriptionVariables,
+} from '../../../../graphql-operations'
 import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
 
 interface Props {
@@ -232,8 +235,8 @@ function addDaysAndRoundToEndOfDay(amount: number): number {
 }
 
 function generateProductLicenseForSubscription(
-    args: GQL.IGenerateProductLicenseForSubscriptionOnDotcomMutationArguments
-): Observable<Pick<GQL.IProductSubscription, 'id'>> {
+    args: GenerateProductLicenseForSubscriptionVariables
+): Observable<GenerateProductLicenseForSubscriptionResult['dotcom']['generateProductLicenseForSubscription']> {
     return mutateGraphQL(
         gql`
             mutation GenerateProductLicenseForSubscription(

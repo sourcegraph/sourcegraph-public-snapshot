@@ -81,12 +81,12 @@ type InsightsDataPointResolver interface {
 }
 
 type InsightStatusResolver interface {
-	TotalPoints() int32
-	PendingJobs() int32
-	CompletedJobs() int32
-	FailedJobs() int32
-	BackfillQueuedAt() *gqlutil.DateTime
-	IsLoadingData() (*bool, error)
+	TotalPoints(context.Context) (int32, error)
+	PendingJobs(context.Context) (int32, error)
+	CompletedJobs(context.Context) (int32, error)
+	FailedJobs(context.Context) (int32, error)
+	BackfillQueuedAt(context.Context) *gqlutil.DateTime
+	IsLoadingData(context.Context) (*bool, error)
 }
 
 type InsightsPointsArgs struct {

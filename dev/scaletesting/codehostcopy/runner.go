@@ -117,7 +117,7 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 	var done int64
 	total := len(srcRepos)
 
-	g := group.NewWithResults[error]().WithMaxConcurrency(20)
+	g := group.NewWithResults[error]().WithMaxConcurrency(concurrency)
 	for _, repo := range srcRepos {
 		repo := repo
 		g.Go(func() error {

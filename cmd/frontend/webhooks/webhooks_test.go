@@ -6,6 +6,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -60,24 +62,39 @@ func TestWebhooksHandler(t *testing.T) {
 	)
 
 	require.NoError(t, err)
-	gh := GitHubWebhook{
+	wr := WebhookRouter{
 		DB: db,
 	}
+	gh := GitHubWebhook{WebhookRouter: &wr}
+
+	webhookMiddleware := NewLogMiddleware(
+		db.WebhookLogs(keyring.Default().WebhookLogKey),
+	)
 
 	base := mux.NewRouter()
-	base.Path("/.api/webhooks/{webhook_uuid}").Methods("POST").Handler(NewHandler(logger, db, &gh))
+	base.Path("/.api/webhooks/{webhook_uuid}").Methods("POST").Handler(webhookMiddleware.Logger(NewHandler(logger, db, gh.WebhookRouter)))
 	srv := httptest.NewServer(base)
 
-	t.Run("found GitLab webhook with correct secret returns unimplemented", func(t *testing.T) {
+	t.Run("found GitLab webhook with correct secret returns 200", func(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitLabWH.UUID)
 
-		req, err := http.NewRequest("POST", requestURL, nil)
+		event := webhooks.EventCommon{
+			ObjectKind: "pipeline",
+		}
+		wr.handlers = map[string]webhookEventHandlers{
+			extsvc.KindGitLab: {
+				"pipeline": []WebhookHandler{fakeWebhookHandler},
+			},
+		}
+		payload, err := json.Marshal(event)
+		require.NoError(t, err)
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
 		require.NoError(t, err)
 		req.Header.Add("X-GitLab-Token", "somesecret")
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusNotImplemented, resp.StatusCode)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
 	t.Run("not-found webhook returns 404", func(t *testing.T) {
@@ -118,6 +135,12 @@ func TestWebhooksHandler(t *testing.T) {
 		h.Write(payload)
 		res := h.Sum(nil)
 
+		wr.handlers = map[string]webhookEventHandlers{
+			extsvc.KindGitHub: {
+				"member": []WebhookHandler{fakeWebhookHandler},
+			},
+		}
+
 		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
 		require.NoError(t, err)
 		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
@@ -128,6 +151,15 @@ func TestWebhooksHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		logs, _, err := db.WebhookLogs(keyring.Default().WebhookLogKey).List(context.Background(), database.WebhookLogListOpts{
+			WebhookID: &gitHubWH.ID,
+		})
+		assert.NoError(t, err)
+		assert.Len(t, logs, 1)
+		for _, log := range logs {
+			assert.Equal(t, gitHubWH.ID, *log.WebhookID)
+		}
 	})
 
 	t.Run("GitHub with no secret returns 200", func(t *testing.T) {
@@ -165,4 +197,8 @@ func TestWebhooksHandler(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
+}
+
+func fakeWebhookHandler(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error {
+	return nil
 }
