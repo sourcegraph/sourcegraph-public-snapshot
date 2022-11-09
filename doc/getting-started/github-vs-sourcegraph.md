@@ -357,7 +357,7 @@ GitHub code search does not currently offer this functionality.
 
 Code search filters help you refine and narrow search query results to be more relevant. Both GitHub code search and Sourcegraph include filters.
 
-GitHub code search includes filters such as language, repository, path, and file size. GitHub automatically suggests filters to apply to your search based on your search history and information about you, such as your organization. GitHub also offers a auto-complete using filters to complete a code search query. 
+GitHub code search includes filters such as language, repository, path, and file size. GitHub automatically suggests filters to apply to your search based on your search history and information about you, such as your organization. GitHub also offers auto-complete using filters to complete a code search query. 
 
 Sourcegraph filters reduce the scope of search query results by language, repository, path, author, message, content, timeframe, visibility, and more. Sourcegraph does not automatically suggest filters, and does not have the ability to complete a fuzzy find using filters. 
 
