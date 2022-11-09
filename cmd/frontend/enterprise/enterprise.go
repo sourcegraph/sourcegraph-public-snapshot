@@ -41,6 +41,7 @@ type Services struct {
 	NotebooksResolver               graphqlbackend.NotebooksResolver
 	ComputeResolver                 graphqlbackend.ComputeResolver
 	InsightsAggregationResolver     graphqlbackend.InsightsAggregationResolver
+	WebhooksResolver                graphqlbackend.WebhooksResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
@@ -105,7 +106,7 @@ func (e *emptyWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 type ErrBatchChangesDisabledDotcom struct{}
 
 func (e ErrBatchChangesDisabledDotcom) Error() string {
-	return "access to batch changes on Sourcegraph.com is currently not available"
+	return "batch changes is not available on Sourcegraph.com; use Sourcegraph Cloud or self-hosted instead"
 }
 
 type ErrBatchChangesDisabled struct{}

@@ -311,6 +311,7 @@ func (s *gitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types
 		if err == sql.ErrNoRows {
 			return nil, &errGitserverRepoNotFound{}
 		}
+		return nil, err
 	}
 	return repo, nil
 }

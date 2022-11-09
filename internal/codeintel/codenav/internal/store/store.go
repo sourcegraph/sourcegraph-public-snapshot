@@ -18,7 +18,7 @@ type Store interface {
 	GetUnsafeDB() database.DB
 	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]ExportedUpload, error)
 
-	ProcessStaleExportedUplods(
+	ProcessStaleExportedUploads(
 		ctx context.Context,
 		graphKey string,
 		batchSize int,
@@ -73,19 +73,26 @@ func (s *store) GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix
 
 const getUploadsForRankingQuery = `
 WITH candidates AS (
-	SELECT u.id
+	SELECT
+		u.id,
+		u.repository_id,
+		r.name AS repository_name,
+		u.root
 	FROM lsif_uploads u
 	JOIN repo r ON r.id = u.repository_id
 	WHERE
 		u.id IN (
 			SELECT uvt.upload_id
 			FROM lsif_uploads_visible_at_tip uvt
-			WHERE uvt.is_default_branch
-		) AND
-		u.id NOT IN (
-			SELECT re.upload_id
-			FROM codeintel_ranking_exports re
-			WHERE re.graph_key = %s
+			WHERE
+				uvt.is_default_branch AND
+				NOT EXISTS (
+					SELECT 1
+					FROM codeintel_ranking_exports re
+					WHERE
+						re.graph_key = %s AND
+						re.upload_id = uvt.upload_id
+				)
 		) AND
 		r.deleted_at IS NULL AND
 		r.blocked IS NULL
@@ -104,17 +111,16 @@ inserted AS (
 	RETURNING upload_id AS id
 )
 SELECT
-	u.id,
-	r.name,
-	u.root,
-	%s || '/' || u.id AS object_prefix
-FROM lsif_uploads u
-JOIN repo r ON r.id = u.repository_id
-WHERE u.id IN (SELECT id FROM inserted)
-ORDER BY u.id
+	c.id,
+	c.repository_name,
+	c.root,
+	%s || '/' || c.id AS object_prefix
+FROM candidates c
+WHERE c.id IN (SELECT id FROM inserted)
+ORDER BY c.id
 `
 
-func (s *store) ProcessStaleExportedUplods(
+func (s *store) ProcessStaleExportedUploads(
 	ctx context.Context,
 	graphKey string,
 	batchSize int,
@@ -157,19 +163,12 @@ SELECT
 	re.id,
 	re.object_prefix
 FROM codeintel_ranking_exports re
-LEFT JOIN lsif_uploads u ON u.id = re.upload_id
-LEFT JOIN repo r ON r.id = u.repository_id
 WHERE
-	re.graph_key = %s AND NOT (
-		u.id IN (
-			SELECT uvt.upload_id
-			FROM lsif_uploads_visible_at_tip uvt
-			WHERE uvt.is_default_branch
-		) AND
-		r.id IS NOT NULL AND
-		r.deleted_at IS NULL AND
-		r.blocked IS NULL
-	)
+	re.graph_key = %s AND (re.upload_id IS NULL OR re.upload_id NOT IN (
+		SELECT uvt.upload_id
+		FROM lsif_uploads_visible_at_tip uvt
+		WHERE uvt.is_default_branch
+	))
 ORDER BY re.upload_id DESC
 LIMIT %s
 FOR UPDATE OF re SKIP LOCKED

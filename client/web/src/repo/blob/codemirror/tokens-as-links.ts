@@ -6,6 +6,7 @@ import { concatMap, debounceTime, map } from 'rxjs/operators'
 import { DeepNonNullable } from 'utility-types'
 
 import { logger, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
+import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 import { toPrettyBlobURL, UIRange } from '@sourcegraph/shared/src/util/url'
 
 import { BlobInfo } from '../Blob'
@@ -239,9 +240,48 @@ interface TokensAsLinksConfiguration {
     preloadGoToDefinition: boolean
 }
 
+/**
+ * Occurrences that are possibly interactive (i.e. they can have code intelligence).
+ */
+const INTERACTIVE_OCCURRENCE_KINDS = new Set([
+    SyntaxKind.Identifier,
+    SyntaxKind.IdentifierBuiltin,
+    SyntaxKind.IdentifierConstant,
+    SyntaxKind.IdentifierMutableGlobal,
+    SyntaxKind.IdentifierParameter,
+    SyntaxKind.IdentifierLocal,
+    SyntaxKind.IdentifierShadowed,
+    SyntaxKind.IdentifierModule,
+    SyntaxKind.IdentifierFunction,
+    SyntaxKind.IdentifierFunctionDefinition,
+    SyntaxKind.IdentifierMacro,
+    SyntaxKind.IdentifierMacroDefinition,
+    SyntaxKind.IdentifierType,
+    SyntaxKind.IdentifierBuiltinType,
+    SyntaxKind.IdentifierAttribute,
+])
+
+const isInteractiveOccurrence = (occurence: Occurrence): boolean => {
+    if (!occurence.kind) {
+        return false
+    }
+
+    return INTERACTIVE_OCCURRENCE_KINDS.has(occurence.kind)
+}
+
 export const tokensAsLinks = ({ history, blobInfo, preloadGoToDefinition }: TokensAsLinksConfiguration): Extension => {
+    /**
+     * Prefer precise code intelligence ranges, fall back to making certain Occurences interactive.
+     */
+    const ranges =
+        blobInfo.stencil && blobInfo.stencil.length > 0
+            ? blobInfo.stencil.map(range => range)
+            : Occurrence.fromInfo(blobInfo)
+                  .filter(isInteractiveOccurrence)
+                  .map(({ range }) => range)
+
     const referencesLinks =
-        blobInfo.stencil?.map(range => ({
+        ranges.map(range => ({
             range,
             url: `?${toPositionOrRangeQueryParameter({
                 position: { line: range.start.line + 1, character: range.start.character + 1 },
