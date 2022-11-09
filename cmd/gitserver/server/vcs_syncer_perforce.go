@@ -178,8 +178,8 @@ func (s *PerforceDepotSyncer) p4CommandEnv(host, username, password string) []st
 	}
 
 	if s.P4Home != "" {
-		// git p4 commands write to $HOME/.gitp4-usercache.txt, we should ensure that
-		// this location is writeable.
+		// git p4 commands write to $HOME/.gitp4-usercache.txt, we should pass in a
+		// directory under our control and ensure that it is writeable.
 		env = append(env, "HOME="+s.P4Home)
 	}
 
