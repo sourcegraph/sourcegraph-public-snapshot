@@ -119,9 +119,7 @@ func (j janitorJob) handleUnknownCommit(ctx context.Context, cfg JanitorConfig) 
 		cfg.MinimumTimeSinceLastCheck,
 		cfg.CommitResolverBatchSize,
 		cfg.CommitResolverMaximumCommitLag,
-		func(ctx context.Context, repositoryID int, commit string) (bool, error) {
-			return j.shouldDeleteUploadsForCommit(ctx, repositoryID, commit)
-		},
+		j.shouldDeleteUploadsForCommit,
 	)
 	if err != nil {
 		return err

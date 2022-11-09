@@ -77,7 +77,7 @@ func NewResetters(db database.DB, observationContext *observation.Context) []gor
 	}
 }
 
-func NewJanitorJobs(autoindexingSvc background.AutoIndexingService, gitserver background.GitserverClient) []goroutine.BackgroundRoutine {
+func NewJanitorJobs(autoindexingSvc AutoIndexingService, gitserver GitserverClient) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewJanitor(
 			ConfigCleanupInst.Interval,
@@ -96,8 +96,8 @@ func NewJanitorJobs(autoindexingSvc background.AutoIndexingService, gitserver ba
 func NewIndexSchedulers(
 	uploadSvc UploadService,
 	policiesSvc PoliciesService,
-	policyMatcher background.PolicyMatcher,
-	autoindexingSvc background.AutoIndexingService,
+	policyMatcher PolicyMatcher,
+	autoindexingSvc AutoIndexingService,
 	observationContext *observation.Context,
 ) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
@@ -126,8 +126,8 @@ func NewDependencyIndexSchedulers(
 	db database.DB,
 	uploadSvc UploadService,
 	depsSvc DependenciesService,
-	autoindexingSvc background.AutoIndexingService,
-	repoUpdater background.RepoUpdaterClient,
+	autoindexingSvc AutoIndexingService,
+	repoUpdater RepoUpdaterClient,
 	observationContext *observation.Context,
 ) []goroutine.BackgroundRoutine {
 	dependencySyncStore := dbworkerstore.NewWithMetrics(db.Handle(), background.DependencySyncingJobWorkerStoreOptions, observationContext)

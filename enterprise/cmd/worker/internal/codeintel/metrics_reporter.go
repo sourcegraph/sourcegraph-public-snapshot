@@ -50,7 +50,7 @@ func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Log
 		return nil, err
 	}
 
-	// TODO: oh no
+	// TODO: change later when uploads domain tackled
 	uploads.GetBackgroundJob(services.UploadsService).SetMetricReporters(observationContext)
 
 	dependencySyncStore := dbworkerstore.NewWithMetrics(db.Handle(), autoindexing.DependencySyncingJobWorkerStoreOptions, observationContext)

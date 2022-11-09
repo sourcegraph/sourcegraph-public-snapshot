@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -25,9 +26,14 @@ type operations struct {
 // as newOperations changes based on the store name passed in, and a dbworker store
 // for a given store can be created more than once (once for actual use and once for metrics),
 // we avoid a "panic: duplicate metrics collector registration attempted" this way.
-var metricsMap = map[string]*metrics.REDMetrics{}
+var (
+	metricsMap = map[string]*metrics.REDMetrics{}
+	metricsMu  sync.Mutex
+)
 
 func newOperations(storeName string, observationContext *observation.Context) *operations {
+	metricsMu.Lock()
+
 	var red *metrics.REDMetrics
 	if m, ok := metricsMap[storeName]; ok {
 		red = m
@@ -40,6 +46,8 @@ func newOperations(storeName string, observationContext *observation.Context) *o
 		)
 		metricsMap[storeName] = red
 	}
+
+	metricsMu.Unlock()
 
 	op := func(opName string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
