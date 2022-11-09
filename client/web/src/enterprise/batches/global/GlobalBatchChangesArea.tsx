@@ -78,9 +78,11 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
                     location={location}
                 />
             </Route>
-            <Route path={`${match.url}/create`} exact={true}>
-                <CreateBatchChangePage headingElement="h1" {...props} />
-            </Route>
+            {!isSourcegraphDotCom && (
+                <Route path={`${match.url}/create`} exact={true}>
+                    <CreateBatchChangePage headingElement="h1" {...props} />
+                </Route>
+            )}
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>
     </div>
