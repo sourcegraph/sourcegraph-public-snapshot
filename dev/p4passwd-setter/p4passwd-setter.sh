@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Print each command before executing it; exit in case of an error
+set -ex
+
 # Name arguments
 code_host_id=$1
 password=$2
