@@ -115,13 +115,13 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                             <Tab key="Search query examples">Search query examples</Tab>
                         </TabList>
                         <TabPanels>
-                            <TabPanel>
+                            <TabPanel className={styles.tabPanel}>
                                 <QueryExamplesLayout
                                     queryColumns={exampleSyntaxColumns}
                                     onQueryExampleClick={onQueryExampleClick}
                                 />
                             </TabPanel>
-                            <TabPanel>
+                            <TabPanel className={styles.tabPanel}>
                                 <QueryExamplesLayout
                                     queryColumns={exampleQueryColumns}
                                     onQueryExampleClick={onQueryExampleClick}
@@ -191,7 +191,7 @@ export const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> =
 }) => (
     <div className={styles.queryExamplesSectionsColumns}>
         {queryColumns.map((column, index) => (
-            <div key={`column-${queryColumns[0][0].title}`}>
+            <div key={`column-${queryColumns[index][0].title}`}>
                 {column.map(({ title, queryExamples }) => (
                     <ExamplesSection
                         key={title}
