@@ -573,7 +573,7 @@ func TestExecutorSecretsIntegration(t *testing.T) {
 		t.Fatal("invalid number of access logs found in DB")
 	}
 
-	s, err := NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := NewSchemaWithoutResolvers(db)
 	if err != nil {
 		t.Fatal(err)
 	}
