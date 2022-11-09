@@ -104,7 +104,6 @@ export const queryBatchChangeBatchSpecs = (id: Scalars['ID']) => ({
 
 const PARTIAL_BATCH_WORKSPACE_FILE_FIELDS = gql`
     fragment PartialBatchSpecWorkspaceFileFields on BatchSpecWorkspaceFile {
-        __typename
         id
         name
         binary
@@ -134,6 +133,7 @@ const BATCH_SPEC_LIST_FIELDS_FRAGMENT = gql`
         createdAt
         source
         description {
+            __typename
             name
         }
         namespace {

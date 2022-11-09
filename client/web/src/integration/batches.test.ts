@@ -270,6 +270,7 @@ const BatchChangeBatchSpecs: (variables: BatchChangeBatchSpecsVariables) => Batc
                     finishedAt: '2022-07-06T23:21:45Z',
                     createdAt: '2022-07-06T23:21:45Z',
                     description: {
+                        __typename: 'BatchChangeDescription',
                         name: 'test-batch-change',
                     },
                     source: BatchSpecSource.REMOTE,

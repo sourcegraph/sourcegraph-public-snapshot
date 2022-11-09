@@ -168,6 +168,7 @@ const batchChangeFragment = gql`
                     hasNextPage
                 }
                 nodes {
+                    __typename
                     id
                     name
                     binary

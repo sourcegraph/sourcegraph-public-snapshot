@@ -9,6 +9,7 @@ const COMMON_NODE_FIELDS = {
     finishedAt: new Date().toISOString(),
     originalInput: 'name: super-cool-spec',
     description: {
+        __typename: 'BatchChangeDescription',
         name: 'super-cool-spec',
     },
     source: BatchSpecSource.LOCAL,

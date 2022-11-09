@@ -87,20 +87,12 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
                     name: 'test.txt',
                     binary: false,
                     byteSize: 74,
-                    highlight: {
-                        __typename: 'HighlightedFile',
-                        html: 'random-test-in-a-text-file',
-                    },
                 },
                 {
                     id: 'random-id-2',
                     name: 'src-cli',
                     binary: true,
                     byteSize: 75,
-                    highlight: {
-                        __typename: 'HighlightedFile',
-                        html: '',
-                    },
                 },
             ],
         },
