@@ -27,7 +27,7 @@ import (
 )
 
 func makeTestJobGenerator(numJobs int) SearchJobGenerator {
-	return func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.SearchJob, error) {
+	return func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
 		jobs := make([]*queryrunner.SearchJob, 0, numJobs)
 		recordDate := time.Date(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
 		for i := 0; i < numJobs; i++ {
@@ -37,7 +37,7 @@ func makeTestJobGenerator(numJobs int) SearchJobGenerator {
 				RecordTime:  &recordDate,
 			})
 		}
-		return ctx, &req, jobs, nil
+		return &req, jobs, nil
 	}
 }
 
@@ -60,13 +60,13 @@ func makeTestSearchHandlerErr(err error, errorAfterNumReq int) func(ctx context.
 	}
 }
 
-func testSearchRunnerStep(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
+func testSearchRunnerStep(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, err error) (*requestContext, []store.RecordSeriesPointArgs, error) {
 	points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
 	for _, job := range jobs {
 		newPoints, _ := testSearchHandlerConstValue(ctx, job, reqContext.backfillRequest.Series, *job.RecordTime)
 		points = append(points, newPoints...)
 	}
-	return ctx, reqContext, points, nil
+	return reqContext, points, nil
 }
 
 type testRunCounts struct {
@@ -279,7 +279,7 @@ func TestMakeSearchJobs(t *testing.T) {
 			}
 			unlimitedLimiter := ratelimit.NewInstrumentedLimiter("", rate.NewLimiter(rate.Inf, 100))
 			jobsFunc := makeSearchJobsFunc(logtest.NoOp(t), tc.commitClient, &compression.NoopFilter{}, tc.workers, unlimitedLimiter)
-			_, _, jobs, err := jobsFunc(testCtx, requestContext{backfillRequest: tc.backfillReq})
+			_, jobs, err := jobsFunc(testCtx, requestContext{backfillRequest: tc.backfillReq})
 			got := []string{}
 			// sorted jobs to make test stable
 			sort.SliceStable(jobs, func(i, j int) bool {
@@ -400,7 +400,7 @@ func TestMakeRunSearch(t *testing.T) {
 			unlimitedLimiter := ratelimit.NewInstrumentedLimiter("", rate.NewLimiter(rate.Inf, 100))
 			searchFunc := makeRunSearchFunc(logtest.NoOp(t), tc.handlers, tc.workers, unlimitedLimiter)
 
-			_, _, points, err := searchFunc(testCtx, &requestContext{backfillRequest: backfillReq}, tc.jobs, tc.incomingErr)
+			_, points, err := searchFunc(testCtx, &requestContext{backfillRequest: backfillReq}, tc.jobs, tc.incomingErr)
 
 			got := []string{}
 			// sorted points to make test stable

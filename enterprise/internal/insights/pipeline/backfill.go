@@ -41,8 +41,8 @@ type GitCommitClient interface {
 	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
 }
 
-type SearchJobGenerator func(ctx context.Context, req requestContext) (context.Context, *requestContext, []*queryrunner.SearchJob, error)
-type SearchRunner func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, err error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error)
+type SearchJobGenerator func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error)
+type SearchRunner func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, err error) (*requestContext, []store.RecordSeriesPointArgs, error)
 type ResultsPersister func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs, err error) (*requestContext, error)
 
 type BackfillerConfig struct {
@@ -83,17 +83,22 @@ type backfiller struct {
 }
 
 func (b *backfiller) Run(ctx context.Context, req BackfillRequest) error {
-	_, err := b.persister(b.searchRunner(b.searchJobGenerator(ctx, requestContext{backfillRequest: &req})))
-	return err
+
+	startingReqContext := requestContext{backfillRequest: &req}
+
+	step1ReqContext, searchJobs, jobErr := b.searchJobGenerator(ctx, startingReqContext)
+	step2ReqContext, recordings, searchErr := b.searchRunner(ctx, step1ReqContext, searchJobs, jobErr)
+	_, saveErr := b.persister(ctx, step2ReqContext, recordings, searchErr)
+	return saveErr
 }
 
 // Implementation of steps for Backfill process
 
 func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int, rateLimit *ratelimit.InstrumentedLimiter) SearchJobGenerator {
-	return func(ctx context.Context, reqContext requestContext) (context.Context, *requestContext, []*queryrunner.SearchJob, error) {
+	return func(ctx context.Context, reqContext requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
 		jobs := make([]*queryrunner.SearchJob, 0, 12)
 		if reqContext.backfillRequest == nil {
-			return ctx, &reqContext, jobs, errors.New("backfill request provided")
+			return &reqContext, jobs, errors.New("backfill request provided")
 		}
 
 		req := reqContext.backfillRequest
@@ -104,10 +109,10 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 		if err != nil {
 			if errors.Is(err, discovery.EmptyRepoErr) {
 				// This is fine it's empty there is no work to be done
-				return ctx, &reqContext, jobs, nil
+				return &reqContext, jobs, nil
 			}
 
-			return ctx, &reqContext, jobs, err
+			return &reqContext, jobs, err
 		}
 
 		searchPlan := compressionPlan.FilterFrames(ctx, req.Frames, req.Repo.ID)
@@ -145,7 +150,7 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 		if err != nil {
 			jobs = nil
 		}
-		return ctx, &reqContext, jobs, err
+		return &reqContext, jobs, err
 	}
 }
 
@@ -243,11 +248,11 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 }
 
 func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMethod]queryrunner.InsightsHandler, searchWorkerLimit int, rateLimiter *ratelimit.InstrumentedLimiter) SearchRunner {
-	return func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, incomingErr error) (context.Context, *requestContext, []store.RecordSeriesPointArgs, error) {
+	return func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob, incomingErr error) (*requestContext, []store.RecordSeriesPointArgs, error) {
 		points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
 		// early return
 		if incomingErr != nil || ctx.Err() != nil {
-			return ctx, reqContext, points, incomingErr
+			return reqContext, points, incomingErr
 		}
 		series := reqContext.backfillRequest.Series
 		mu := &sync.Mutex{}
@@ -277,7 +282,7 @@ func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMet
 		if err != nil {
 			points = nil
 		}
-		return ctx, reqContext, points, err
+		return reqContext, points, err
 	}
 }
 
