@@ -106,7 +106,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
     }
     // If there weren't any errors and we just didn't receive any data
     if (!data || !data.batchChange) {
-        return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
+        return <HeroPage icon={AlertCircleIcon} title="404: Not Found" />
     }
 
     const { batchChange } = data
