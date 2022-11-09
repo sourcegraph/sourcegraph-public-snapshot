@@ -484,16 +484,11 @@ C#, CodeQL, Elixir, Go, Java, JavaScript, TypeScript, PHP, Python, Ruby
 
 GitHub and Sourcegraph both offer precise code navigation as well. Despite having the same name, the two versions of precise code navigation are very different in terms of the underlying technology and accuracy they provide. Only Sourcegraph’s precise code navigation is 100% accurate. 
 
-GitHub’s [precise code navigation](https://docs.github.com/en/repositories/working-with-files/using-files/navigating-code-on-github#precise-and-search-based-navigation) is an improved form of heuristic-based code navigation which uses syntax trees to offer higher accuracy for references and definitions. It is more accurate than GitHub’s search-based code navigation, but it can still present inaccuracies and is limited to navigation within a single repository. It is available out-of-the-box on GitHub and is automatically used over search-based code navigation when available. It is supported for 1 language, Python.
+GitHub’s [precise code navigation](https://docs.github.com/en/repositories/working-with-files/using-files/navigating-code-on-github#precise-and-search-based-navigation) is an improved form of heuristic-based code navigation which uses syntax trees to offer higher accuracy for references and definitions and cross-repository navigation. It is more accurate than GitHub’s search-based code navigation, but it can still present inaccuracies. It is available out-of-the-box on GitHub and is automatically used over search-based code navigation when available. It is supported for 1 language, Python.
 
-Sourcegraph’s [precise code navigation](https://docs.sourcegraph.com/code_navigation/explanations/precise_code_navigation) is not heuristic-based. Instead, it uses [SCIP and LSIF](https://docs.sourcegraph.com/code_navigation/references/indexers) data to deliver precomputed code navigation, meaning that it is fast and compiler-accurate. It is the only 100% accurate solution for code navigation between Sourcegraph’s and GitHub’s offerings.
+Sourcegraph’s [precise code navigation](https://docs.sourcegraph.com/code_navigation/explanations/precise_code_navigation) is not heuristic-based. Instead, it uses [SCIP and LSIF](https://docs.sourcegraph.com/code_navigation/references/indexers) data to deliver precomputed code navigation, meaning that it is fast and compiler-accurate. It is the only 100% accurate solution for code navigation between Sourcegraph’s and GitHub’s offerings. 
 
-Because precise code navigation uses code graph (SCIP) data, it is not susceptible to false positives or other potential errors (such as those caused by symbols with the same name). It also offers several features unique to Sourcegraph:
-
-
-
-* Cross-repository navigation, which shows symbol usage across repositories and [transitive dependencies](https://docs.sourcegraph.com/code_navigation/explanations/features#beta-dependency-navigation). Dependency navigation is currently in beta.
-* “Find implementations,” which allows you to navigate to a symbol’s interface definition or find all the places an interface is being implemented.
+Because precise code navigation uses code graph (SCIP) data, it is not susceptible to false positives or other potential errors (such as those caused by symbols with the same name). It also supports cross-repository navigation, which shows symbol usage across repositories and [transitive dependencies](https://docs.sourcegraph.com/code_navigation/explanations/features#beta-dependency-navigation). It also has a unique feature, “Find implementations,” which allows you to navigate to a symbol’s interface definition or find all the places an interface is being implemented.
 
 Sourcegraph’s precise code navigation is opt-in and requires you to upload code graph data ([LSIF or SCIP](https://docs.sourcegraph.com/code_navigation/references/indexers)) to Sourcegraph. This data can be automatically generated and uploaded to Sourcegraph via [auto-indexing](https://docs.sourcegraph.com/code_navigation/explanations/auto_indexing). For repositories without SCIP or LSIF data, Sourcegraph automatically falls back to search-based code navigation.
 
@@ -548,7 +543,7 @@ Go, TypeScript, JavaScript, C, C++, Java, Scala, Kotlin, Rust, Python, Ruby
   <tr>
    <td><strong>Cross-repository</strong>
    </td>
-   <td>✗
+   <td>✓
    </td>
    <td>✓ 
    </td>
