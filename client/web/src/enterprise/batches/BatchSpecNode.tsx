@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, {useCallback, useEffect, useState} from 'react'
 
 import {
     mdiCheckCircle,
@@ -25,12 +25,12 @@ import { Timestamp } from '../../components/time/Timestamp'
 import {
     BatchSpecListFields,
     Scalars,
-    PartialBatchWorkspaceFileFields,
+    PartialBatchSpecWorkspaceFileFields,
     BatchSpecWorkspaceFileResult,
     BatchSpecWorkspaceFileVariables,
 } from '../../graphql-operations'
-import { BATCH_SPEC_WORKSPACE_FILE } from './backend'
 
+import { BATCH_SPEC_WORKSPACE_FILE, generateFileDownloadLink } from './backend'
 import { BatchSpec } from './BatchSpec'
 import { humanizeSize } from './utils/size'
 
@@ -130,7 +130,7 @@ interface BatchSpecInfoProps {
 
 type BatchWorkspaceFile = {
     isSpecFile: boolean
-} & Omit<PartialBatchWorkspaceFileFields, '__typename'>
+} & Omit<PartialBatchSpecWorkspaceFileFields, '__typename'>
 
 export const BatchSpecInfo: React.FunctionComponent<BatchSpecInfoProps> = ({ spec, isLightTheme }) => {
     const specFile: BatchWorkspaceFile = {
@@ -204,22 +204,49 @@ interface BatchWorkspaceFileContentProps {
 
 const BatchWorkspaceFileContent: React.FunctionComponent<BatchWorkspaceFileContentProps> = ({ file, specId }) => {
     if (file.binary) {
-        return (
-            <div className={styles.specFileBinary}>
-                <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} className={styles.specFileBinaryIcon} />
-                <Text className={styles.specFileBinaryName}>
-                    {file.name} <span className={styles.specFileBinarySize}>{humanizeSize(file.byteSize)}</span>
-                </Text>
-                <Button className={styles.specFileBinaryBtn}>
-                    <Icon aria-hidden={true} svgPath={mdiFileDownload} />
-                    {'  '}
-                    Download file
-                </Button>
-            </div>
-        )
+        return <BinaryBatchWorkspaceFile file={file} specId={specId} />
     }
 
     return <NonBinaryBatchWorkspaceFile id={file.id} />
+}
+
+const BinaryBatchWorkspaceFile: React.FunctionComponent<BatchWorkspaceFileContentProps> = ({ file, specId }) => {
+    const [loading, setIsLoading] = useState<boolean>(true)
+    const [downloadUrl, setDownloadUrl] = useState<string>('')
+    const [downloadError, setDownloadError] = useState<Error | null>(null)
+
+    useEffect(() => {
+        generateFileDownloadLink(specId, file.id)
+            .then(url => setDownloadUrl(url))
+            .catch(error => setDownloadError(error))
+            .finally(() => setIsLoading(false))
+    }, [file.id, specId])
+
+    if (loading) {
+        return <LoadingSpinner />
+    }
+
+    if (downloadError) {
+        return (
+            <Alert variant="danger" className={styles.fileError}>
+                <Text>Error fetching file content: {downloadError?.message}</Text>
+            </Alert>
+        )
+    }
+
+    return (
+        <div className={styles.specFileBinary}>
+            <Icon aria-hidden={true} svgPath={mdiFileDocumentOutline} className={styles.specFileBinaryIcon} />
+            <Text className={styles.specFileBinaryName}>
+                {file.name} <span className={styles.specFileBinarySize}>{humanizeSize(file.byteSize)}</span>
+            </Text>
+            <Link to={downloadUrl} download={file.name} className={styles.specFileBinaryBtn}>
+                <Icon aria-hidden={true} svgPath={mdiFileDownload} />
+                {'  '}
+                Download file
+            </Link>
+        </div>
+    )
 }
 
 const NonBinaryBatchWorkspaceFile: React.FunctionComponent<Pick<BatchWorkspaceFile, 'id'>> = ({ id }) => {

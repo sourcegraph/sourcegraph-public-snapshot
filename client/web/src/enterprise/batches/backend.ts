@@ -185,3 +185,16 @@ export const BATCH_SPEC_WORKSPACE_FILE = gql`
 
     ${BATCH_WORKSPACE_FILE_FIELDS}
 `
+
+const BATCH_CHANGE_FILE_BASE_URL = '/.api/files/batch-changes'
+
+export const generateFileDownloadLink = async (specId: string, fileId: string): Promise<string> => {
+    const url = `${BATCH_CHANGE_FILE_BASE_URL}/${specId}/${fileId}`
+    const file = await fetch(url, {
+        headers: {
+            ...window.context.xhrHeaders
+        }
+    })
+    const fileBlob = await file.blob()
+    return URL.createObjectURL(fileBlob)
+}

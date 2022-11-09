@@ -81,6 +81,16 @@
         border-radius: 3px;
         font-size: 0.75rem;
         margin-top: 1rem;
+        color: var(--body-color);
+        padding: 0.375rem 0.5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        &:hover {
+            text-decoration: none;
+            color: var(--body-color);
+        }
     }
 
     &__icon {
