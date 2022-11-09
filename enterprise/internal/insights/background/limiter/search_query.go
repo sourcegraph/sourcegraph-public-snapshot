@@ -3,8 +3,9 @@ package limiter
 import (
 	"sync"
 
-	"github.com/sourcegraph/log"
 	"golang.org/x/time/rate"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
