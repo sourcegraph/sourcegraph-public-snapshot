@@ -40,7 +40,7 @@ var initServicesMemo = memo.NewMemoizedConstructorWithArg(func(dbs Databases) (S
 	gitserverClient := gitserver.New(db, scopedContext("gitserver"))
 
 	uploadsSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
-	dependenciesSvc := dependencies.GetService(db, gitserverClient)
+	dependenciesSvc := dependencies.GetService(db)
 	policiesSvc := policies.GetService(db, uploadsSvc, gitserverClient)
 	autoIndexingSvc := autoindexing.GetService(db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient)
 	codenavSvc := codenav.GetService(db, codeIntelDB, uploadsSvc, gitserverClient)

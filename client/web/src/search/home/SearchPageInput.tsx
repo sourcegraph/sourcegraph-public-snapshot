@@ -155,7 +155,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         patternType={patternType}
                         setPatternType={setSearchPatternType}
                         setCaseSensitivity={setSearchCaseSensitivity}
-                        submitSearchOnToggle={submitSearchOnChange}
                         queryState={props.queryState}
                         onChange={props.setQueryState}
                         onSubmit={onSubmit}

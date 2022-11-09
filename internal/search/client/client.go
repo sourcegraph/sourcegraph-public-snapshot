@@ -245,6 +245,7 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
 		AbLuckySearch:           flagSet.GetBoolOr("ab-lucky-search", false),
 		Ranking:                 flagSet.GetBoolOr("search-ranking", false),
+		Debug:                   flagSet.GetBoolOr("search-debug", false),
 	}
 }
 

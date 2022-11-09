@@ -6,6 +6,8 @@ import (
 	"time"
 
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -18,8 +20,9 @@ import (
 func TestWebhookLogsArgs(t *testing.T) {
 	// Create two times for easier reuse in test cases.
 	var (
-		now   = time.Date(2021, 11, 1, 18, 25, 10, 0, time.UTC)
-		later = now.Add(1 * time.Hour)
+		now       = time.Date(2021, 11, 1, 18, 25, 10, 0, time.UTC)
+		later     = now.Add(1 * time.Hour)
+		webhookID = marshalWebhookID(123)
 	)
 
 	t.Run("success", func(t *testing.T) {
@@ -56,6 +59,7 @@ func TestWebhookLogsArgs(t *testing.T) {
 					OnlyErrors: boolPtr(true),
 					Since:      timePtr(now),
 					Until:      timePtr(later),
+					WebhookID:  gqlIDPtr(webhookID),
 				},
 				want: database.WebhookLogListOpts{
 					Limit:             25,
@@ -64,6 +68,7 @@ func TestWebhookLogsArgs(t *testing.T) {
 					OnlyErrors:        true,
 					Since:             timePtr(now),
 					Until:             timePtr(later),
+					WebhookID:         int32Ptr(123),
 				},
 			},
 		} {
@@ -131,7 +136,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 	ctx := context.Background()
 
 	// We'll set up a fake page of 20 logs.
-	logs := []*types.WebhookLog{}
+	var logs []*types.WebhookLog
 	for i := 0; i < 20; i++ {
 		logs = append(logs, &types.WebhookLog{})
 	}
@@ -279,8 +284,144 @@ func TestWebhookLogConnectionResolver_TotalCount(t *testing.T) {
 	})
 }
 
-func boolPtr(v bool) *bool           { return &v }
-func int32Ptr(v int32) *int32        { return &v }
-func int64Ptr(v int64) *int64        { return &v }
-func stringPtr(v string) *string     { return &v }
-func timePtr(v time.Time) *time.Time { return &v }
+func TestListWebhookLogs(t *testing.T) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	webhookLogsStore := database.NewMockWebhookLogStore()
+	webhookLogs := []*types.WebhookLog{
+		{ID: 1, WebhookID: int32Ptr(1), StatusCode: 200},
+		{ID: 2, WebhookID: int32Ptr(1), StatusCode: 500},
+		{ID: 3, WebhookID: int32Ptr(1), StatusCode: 200},
+		{ID: 4, WebhookID: int32Ptr(2), StatusCode: 200},
+		{ID: 5, WebhookID: int32Ptr(2), StatusCode: 200},
+		{ID: 6, WebhookID: int32Ptr(2), StatusCode: 200},
+		{ID: 7, WebhookID: int32Ptr(3), StatusCode: 500},
+		{ID: 8, WebhookID: int32Ptr(3), StatusCode: 500},
+	}
+	webhookLogsStore.ListFunc.SetDefaultHook(func(_ context.Context, options database.WebhookLogListOpts) ([]*types.WebhookLog, int64, error) {
+		var logs []*types.WebhookLog
+		logs = append(logs, webhookLogs...)
+
+		filter := func(items []*types.WebhookLog, predicate func(log *types.WebhookLog) bool) []*types.WebhookLog {
+			var filtered []*types.WebhookLog
+			for _, wl := range items {
+				if predicate(wl) {
+					filtered = append(filtered, wl)
+				}
+			}
+			return filtered
+		}
+
+		if options.WebhookID != nil {
+			logs = filter(
+				logs,
+				func(wl *types.WebhookLog) bool {
+					return *wl.WebhookID == *options.WebhookID
+				},
+			)
+		}
+
+		if options.OnlyErrors {
+			logs = filter(
+				logs,
+				func(wl *types.WebhookLog) bool {
+					return wl.StatusCode < 100 || wl.StatusCode > 399
+				},
+			)
+		}
+
+		return logs, int64(len(logs)), nil
+	})
+
+	webhookLogsStore.CountFunc.SetDefaultHook(func(ctx context.Context, opts database.WebhookLogListOpts) (int64, error) {
+		logs, _, err := webhookLogsStore.List(ctx, opts)
+		return int64(len(logs)), err
+	})
+
+	db := database.NewMockDB()
+	db.WebhookLogsFunc.SetDefaultReturn(webhookLogsStore)
+	db.UsersFunc.SetDefaultReturn(users)
+	schema := mustParseGraphQLSchema(t, db)
+	RunTests(t, []*Test{
+		{
+			Label:   "only errors",
+			Context: ctx,
+			Schema:  schema,
+			Query: `query WebhookLogs($onlyErrors: Boolean!) {
+						webhookLogs(onlyErrors: $onlyErrors) {
+							nodes { id }
+							totalCount
+						}
+					}
+			`,
+			Variables: map[string]any{
+				"onlyErrors": true,
+			},
+			ExpectedResult: `{"webhookLogs":
+				{
+					"nodes":[
+						{"id":"V2ViaG9va0xvZzoy"},
+						{"id":"V2ViaG9va0xvZzo3"},
+						{"id":"V2ViaG9va0xvZzo4"}
+					],
+					"totalCount":3
+				}}`,
+		},
+		{
+			Label:   "specific webhook ID",
+			Context: ctx,
+			Schema:  schema,
+			Query: `query WebhookLogs($webhookID: ID!) {
+						webhookLogs(webhookID: $webhookID) {
+							nodes { id }
+							totalCount
+						}
+					}
+			`,
+			Variables: map[string]any{
+				"webhookID": "V2ViaG9vazox",
+			},
+			ExpectedResult: `{"webhookLogs":
+				{
+					"nodes":[
+						{"id":"V2ViaG9va0xvZzox"},
+						{"id":"V2ViaG9va0xvZzoy"},
+						{"id":"V2ViaG9va0xvZzoz"}
+					],
+					"totalCount":3
+				}}`,
+		},
+		{
+			Label:   "only errors for a specific webhook ID",
+			Context: ctx,
+			Schema:  schema,
+			Query: `query WebhookLogs($webhookID: ID!, $onlyErrors: Boolean!) {
+						webhookLogs(webhookID: $webhookID, onlyErrors: $onlyErrors) {
+							nodes { id }
+							totalCount
+						}
+					}
+			`,
+			Variables: map[string]any{
+				"webhookID":  "V2ViaG9vazox",
+				"onlyErrors": true,
+			},
+			ExpectedResult: `{"webhookLogs":
+				{
+					"nodes":[
+						{"id":"V2ViaG9va0xvZzoy"}
+					],
+					"totalCount":1
+				}}`,
+		},
+	})
+}
+
+func boolPtr(v bool) *bool              { return &v }
+func int32Ptr(v int32) *int32           { return &v }
+func int64Ptr(v int64) *int64           { return &v }
+func stringPtr(v string) *string        { return &v }
+func timePtr(v time.Time) *time.Time    { return &v }
+func gqlIDPtr(v graphql.ID) *graphql.ID { return &v }

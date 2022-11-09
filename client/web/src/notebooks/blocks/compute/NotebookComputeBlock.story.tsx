@@ -22,6 +22,7 @@ const noopBlockCallbacks = {
     onSelectBlock: noop,
     onMoveBlockSelection: noop,
     onDeleteBlock: noop,
+    onNewBlock: noop,
     onMoveBlock: noop,
     onDuplicateBlock: noop,
 }
@@ -37,7 +38,7 @@ export const Default: Story = () => (
                 id="compute-block-1"
                 isSelected={true}
                 isReadOnly={false}
-                isOtherBlockSelected={false}
+                showMenu={false}
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )}

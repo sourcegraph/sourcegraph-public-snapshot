@@ -7,7 +7,6 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	autoindexingshared "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -53,9 +51,13 @@ type AutoIndexingService interface {
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 	ExpireFailedRecords(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) error
 
-	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []autoindexingshared.SourcedCommits, err error)
-	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error)
-	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration) (indexesDeleted int, err error)
+	ProcessStaleSourcedCommits(
+		ctx context.Context,
+		minimumTimeSinceLastCheck time.Duration,
+		commitResolverBatchSize int,
+		commitResolverMaximumCommitLag time.Duration,
+		shouldDelete func(ctx context.Context, repositoryID int, commit string) (bool, error),
+	) (indexesDeleted int, _ error)
 
 	ProcessRepoRevs(ctx context.Context, batchSize int) (err error)
 }
@@ -77,11 +79,6 @@ type GitserverClient interface {
 	CommitDate(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error)
 	RefDescriptions(ctx context.Context, repositoryID int, gitOjbs ...string) (map[string][]gitdomain.RefDescription, error)
 	CommitsUniqueToBranch(ctx context.Context, repositoryID int, branchName string, isDefaultBranch bool, maxAge *time.Time) (map[string]time.Time, error)
-}
-
-type InferenceService interface {
-	InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) ([]config.IndexJob, error)
-	InferIndexJobHints(ctx context.Context, repo api.RepoName, commit, overrideScript string) ([]config.IndexJobHint, error)
 }
 
 type UploadService interface {

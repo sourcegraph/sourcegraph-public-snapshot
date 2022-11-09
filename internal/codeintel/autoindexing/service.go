@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
@@ -22,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -36,7 +34,6 @@ type Service struct {
 	repoUpdater     RepoUpdaterClient
 	gitserverClient GitserverClient
 	symbolsClient   *symbols.Client
-	backgroundJobs  background.BackgroundJob
 
 	logger     log.Logger
 	operations *operations
@@ -49,7 +46,6 @@ func newService(
 	repoUpdater RepoUpdaterClient,
 	gitserver GitserverClient,
 	symbolsClient *symbols.Client,
-	backgroundJobs background.BackgroundJob,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
@@ -60,21 +56,10 @@ func newService(
 		repoUpdater:     repoUpdater,
 		gitserverClient: gitserver,
 		symbolsClient:   symbolsClient,
-		backgroundJobs:  backgroundJobs,
 
 		logger:     observationContext.Logger,
 		operations: newOperations(observationContext),
 	}
-}
-
-func GetBackgroundJobs(s *Service) background.BackgroundJob { return s.backgroundJobs }
-func GetWorkerutilStore(s *Service) dbworkerstore.Store     { return s.backgroundJobs.WorkerutilStore() }
-func GetDependencySyncStore(s *Service) dbworkerstore.Store {
-	return s.backgroundJobs.DependencySyncStore()
-}
-
-func GetDependencyIndexingStore(s *Service) dbworkerstore.Store {
-	return s.backgroundJobs.DependencyIndexingStore()
 }
 
 func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {
@@ -140,25 +125,14 @@ func (s *Service) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexes
 	return s.store.ReindexIndexes(ctx, opts)
 }
 
-func (s *Service) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error) {
-	ctx, _, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.GetStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
-}
-
-func (s *Service) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error) {
-	ctx, _, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.UpdateSourcedCommits(ctx, repositoryID, commit, now)
-}
-
-func (s *Service) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration) (indexesDeleted int, err error) {
-	ctx, _, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag)
+func (s *Service) ProcessStaleSourcedCommits(
+	ctx context.Context,
+	minimumTimeSinceLastCheck time.Duration,
+	commitResolverBatchSize int,
+	commitResolverMaximumCommitLag time.Duration,
+	shouldDelete func(ctx context.Context, repositoryID int, commit string) (bool, error),
+) (_ int, err error) {
+	return s.store.ProcessStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, commitResolverBatchSize, commitResolverMaximumCommitLag, shouldDelete)
 }
 
 func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {

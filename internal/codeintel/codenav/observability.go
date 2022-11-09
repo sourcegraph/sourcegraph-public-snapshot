@@ -23,8 +23,10 @@ type operations struct {
 	getDumpsByIDs          *observation.Operation
 	getClosestDumpsForBlob *observation.Operation
 
-	numUploadsRead   prometheus.Counter
-	numBytesUploaded prometheus.Counter
+	numUploadsRead         prometheus.Counter
+	numBytesUploaded       prometheus.Counter
+	numStaleRecordsDeleted prometheus.Counter
+	numBytesDeleted        prometheus.Counter
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -61,6 +63,14 @@ func newOperations(observationContext *observation.Context) *operations {
 		"src_codeintel_codenav_ranking_bytes_uploaded_total",
 		"The number of bytes uploaded to GCS.",
 	)
+	numStaleRecordsDeleted := counter(
+		"src_codeintel_codenav_ranking_stale_uploads_removed_total",
+		"The number of stale upload records removed from GCS.",
+	)
+	numBytesDeleted := counter(
+		"src_codeintel_codenav_ranking_bytes_deleted_total",
+		"The number of bytes deleted from GCS.",
+	)
 
 	return &operations{
 		getReferences:          op("getReferences"),
@@ -73,8 +83,10 @@ func newOperations(observationContext *observation.Context) *operations {
 		getDumpsByIDs:          op("GetDumpsByIDs"),
 		getClosestDumpsForBlob: op("GetClosestDumpsForBlob"),
 
-		numUploadsRead:   numUploadsRead,
-		numBytesUploaded: numBytesUploaded,
+		numUploadsRead:         numUploadsRead,
+		numBytesUploaded:       numBytesUploaded,
+		numStaleRecordsDeleted: numStaleRecordsDeleted,
+		numBytesDeleted:        numBytesDeleted,
 	}
 }
 

@@ -5,72 +5,81 @@ import (
 	"sort"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type janitorConfig struct {
-	minimumTimeSinceLastCheck      time.Duration
-	commitResolverBatchSize        int
-	commitResolverMaximumCommitLag time.Duration
-	failedIndexBatchSize           int
-	failedIndexMaxAge              time.Duration
+type JanitorConfig struct {
+	MinimumTimeSinceLastCheck      time.Duration
+	CommitResolverBatchSize        int
+	CommitResolverMaximumCommitLag time.Duration
+	FailedIndexBatchSize           int
+	FailedIndexMaxAge              time.Duration
 }
 
-func (b backgroundJob) NewJanitor(
+type janitorJob struct {
+	autoindexingSvc AutoIndexingService
+	gitserverClient GitserverClient
+	metrics         janitorMetrics
+	logger          log.Logger
+	clock           glock.Clock
+}
+
+func NewJanitor(
 	interval time.Duration,
-	minimumTimeSinceLastCheck time.Duration,
-	commitResolverBatchSize int,
-	commitResolverMaximumCommitLag time.Duration,
-	failedIndexBatchSize int,
-	failedIndexMaxAge time.Duration,
+	autoindexingSvc AutoIndexingService,
+	gitserverClient GitserverClient,
+	clock glock.Clock,
+	config JanitorConfig,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return b.handleCleanup(ctx, janitorConfig{
-			minimumTimeSinceLastCheck:      minimumTimeSinceLastCheck,
-			commitResolverBatchSize:        commitResolverBatchSize,
-			commitResolverMaximumCommitLag: commitResolverMaximumCommitLag,
-			failedIndexBatchSize:           failedIndexBatchSize,
-			failedIndexMaxAge:              failedIndexMaxAge,
-		})
+		job := janitorJob{
+			autoindexingSvc: autoindexingSvc,
+			gitserverClient: gitserverClient,
+			metrics:         janitorMetrics{},
+			logger:          log.Scoped("codeintel.janitor.background", ""),
+			clock:           clock,
+		}
+
+		return job.handleCleanup(ctx, config)
 	}))
 }
 
-func (b backgroundJob) handleCleanup(ctx context.Context, cfg janitorConfig) (errs error) {
+func (j janitorJob) handleCleanup(ctx context.Context, cfg JanitorConfig) (errs error) {
 	// Reconciliation and denormalization
-	if err := b.handleDeletedRepository(ctx); err != nil {
+	if err := j.handleDeletedRepository(ctx); err != nil {
 		errs = errors.Append(errs, err)
 	}
-	if err := b.handleUnknownCommit(ctx, cfg); err != nil {
+	if err := j.handleUnknownCommit(ctx, cfg); err != nil {
 		errs = errors.Append(errs, err)
 	}
 
 	// Expiration
-	if err := b.handleExpiredRecords(ctx, cfg); err != nil {
+	if err := j.handleExpiredRecords(ctx, cfg); err != nil {
 		errs = errors.Append(errs, err)
 	}
 
 	return errs
 }
 
-func (b backgroundJob) handleDeletedRepository(ctx context.Context) (err error) {
-	indexesCounts, err := b.autoindexingSvc.DeleteIndexesWithoutRepository(ctx, time.Now())
+func (j janitorJob) handleDeletedRepository(ctx context.Context) (err error) {
+	indexesCounts, err := j.autoindexingSvc.DeleteIndexesWithoutRepository(ctx, time.Now())
 	if err != nil {
 		return errors.Wrap(err, "autoindexingSvc.DeleteIndexesWithoutRepository")
 	}
 
 	for _, counts := range gatherCounts(indexesCounts) {
-		b.logger.Debug(
+		j.logger.Debug(
 			"Deleted codeintel records with a deleted repository",
 			log.Int("repository_id", counts.repoID),
 			log.Int("indexes_count", counts.indexesCount),
 		)
 
-		b.janitorMetrics.numIndexRecordsRemoved.Add(float64(counts.indexesCount))
+		j.metrics.numIndexRecordsRemoved.Add(float64(counts.indexesCount))
 	}
 
 	return nil
@@ -104,72 +113,47 @@ func gatherCounts(indexesCounts map[int]int) []recordCount {
 	return recordCounts
 }
 
-func (b backgroundJob) handleUnknownCommit(ctx context.Context, cfg janitorConfig) (err error) {
-	staleIndexes, err := b.autoindexingSvc.GetStaleSourcedCommits(ctx, cfg.minimumTimeSinceLastCheck, cfg.commitResolverBatchSize, b.clock.Now())
+func (j janitorJob) handleUnknownCommit(ctx context.Context, cfg JanitorConfig) (err error) {
+	indexesDeleted, err := j.autoindexingSvc.ProcessStaleSourcedCommits(
+		ctx,
+		cfg.MinimumTimeSinceLastCheck,
+		cfg.CommitResolverBatchSize,
+		cfg.CommitResolverMaximumCommitLag,
+		j.shouldDeleteUploadsForCommit,
+	)
 	if err != nil {
-		return errors.Wrap(err, "indexSvc.StaleSourcedCommits")
+		return err
 	}
-
-	for _, sourcedCommits := range staleIndexes {
-		if err := b.handleSourcedCommits(ctx, sourcedCommits, cfg); err != nil {
-			return err
-		}
+	if indexesDeleted > 0 {
+		j.metrics.numIndexRecordsRemoved.Add(float64(indexesDeleted))
 	}
 
 	return nil
 }
 
-func (b backgroundJob) handleSourcedCommits(ctx context.Context, sc shared.SourcedCommits, cfg janitorConfig) error {
-	for _, commit := range sc.Commits {
-		if err := b.handleCommit(ctx, sc.RepositoryID, sc.RepositoryName, commit, cfg); err != nil {
-			return err
-		}
-	}
-
-	return nil
+func (j janitorJob) handleExpiredRecords(ctx context.Context, cfg JanitorConfig) error {
+	return j.autoindexingSvc.ExpireFailedRecords(ctx, cfg.FailedIndexBatchSize, cfg.FailedIndexMaxAge, j.clock.Now())
 }
 
-func (b backgroundJob) handleCommit(ctx context.Context, repositoryID int, repositoryName, commit string, cfg janitorConfig) error {
-	var shouldDelete bool
-	_, err := b.gitserverClient.ResolveRevision(ctx, repositoryID, commit)
-	if err == nil {
-		// If we have no error then the commit is resolvable and we shouldn't touch it.
-		shouldDelete = false
-	} else if gitdomain.IsRepoNotExist(err) {
-		// If we have a repository not found error, then we'll just update the timestamp
-		// of the record so we can move on to other data; we deleted records associated
-		// with deleted repositories in a separate janitor process.
-		shouldDelete = false
-	} else if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-		// Target condition: repository is resolvable bu the commit is not; was probably
-		// force-pushed away and the commit was gc'd after some time or after a re-clone
-		// in gitserver.
-		shouldDelete = true
-	} else {
-		// unexpected error
-		return errors.Wrap(err, "git.ResolveRevision")
-	}
-
-	if shouldDelete {
-		indexesDeleted, err := b.autoindexingSvc.DeleteSourcedCommits(ctx, repositoryID, commit, cfg.commitResolverMaximumCommitLag)
-		if err != nil {
-			return errors.Wrap(err, "indexSvc.DeleteSourcedCommits")
-		}
-		if indexesDeleted > 0 {
-			// log.Debug("Deleted index records with unresolvable commits", "count", indexesDeleted)
-			b.janitorMetrics.numIndexRecordsRemoved.Add(float64(indexesDeleted))
+func (j janitorJob) shouldDeleteUploadsForCommit(ctx context.Context, repositoryID int, commit string) (bool, error) {
+	if _, err := j.gitserverClient.ResolveRevision(ctx, repositoryID, commit); err != nil {
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			// Target condition: repository is resolvable but the commit is not; was probably
+			// force-pushed away and the commit was gc'd after some time or after a re-clone
+			// in gitserver.
+			return true, nil
 		}
 
-		return nil
+		if !gitdomain.IsRepoNotExist(err) {
+			// unexpected error
+			return false, errors.Wrap(err, "git.ResolveRevision")
+		}
 	}
 
-	if _, err := b.autoindexingSvc.UpdateSourcedCommits(ctx, repositoryID, commit, b.clock.Now()); err != nil {
-		return errors.Wrap(err, "indexSvc.UpdateSourcedCommits")
-	}
-
-	return nil
-}
-
-func (b backgroundJob) handleExpiredRecords(ctx context.Context, cfg janitorConfig) error {
-	return b.autoindexingSvc.ExpireFailedRecords(ctx, cfg.failedIndexBatchSize, cfg.failedIndexMaxAge, b.clock.Now())
+	// We hit this in one of two conditions:
+	//   - If we have no error then the commit is resolvable and we shouldn't touch it.
+	//   - If we have a repository not found error, then we'll just update the timestamp
+	//     of the record so we can move on to other data; we deleted records associated
+	//     with deleted repositories in a separate janitor process.
+	return false, nil
 }

@@ -47,7 +47,6 @@ func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ 
 					err = errors.Newf("Still processing symbols ([more details](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)). Estimated completion: %s.", status.Remaining())
 				}
 			}
-			return
 		}()
 	}
 

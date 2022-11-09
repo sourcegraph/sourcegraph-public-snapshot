@@ -234,10 +234,10 @@ func addSentry(r *mux.Router) {
 				logger.Warn("failed to forward", sglog.Error(err), sglog.Int("statusCode", resp.StatusCode))
 				return
 			}
+			resp.Body.Close()
 		}()
 
 		w.WriteHeader(http.StatusOK)
-		return
 	})
 }
 

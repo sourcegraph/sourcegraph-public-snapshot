@@ -146,15 +146,27 @@ export function searchQueryAutocompletion(
         // This renders the completion icon
         {
             render(completion) {
-                return createSVGIcon(
+                const icon = createSVGIcon(
                     completion.type && completion.type in typeIconMap
                         ? typeIconMap[completion.type as CompletionType]
-                        : typeIconMap[SymbolKind.UNKNOWN]
+                        : typeIconMap[SymbolKind.UNKNOWN],
+                    completion.type && completion.type in typeIconMap ? completion.type : ''
                 )
+                return icon
             },
             // Per CodeMirror documentation, 20 is the default icon
             // position
             position: 20,
+        },
+        {
+            render: voiceOverComma,
+            // after icon
+            position: 21,
+        },
+        {
+            render: voiceOverComma,
+            // after label
+            position: 51,
         },
         {
             render(completion) {
@@ -549,4 +561,15 @@ function isTokenInRange(
     position: number
 ): boolean {
     return token.range.start <= position && token.range.end + (token.type === 'field' ? 2 : 0) >= position
+}
+
+/**
+ * Helper function for inserting voice over-only commas to improve the way the
+ * content is read.
+ */
+function voiceOverComma(): HTMLElement {
+    const element = document.createElement('span')
+    element.className = 'sr-only'
+    element.append(document.createTextNode(','))
+    return element
 }

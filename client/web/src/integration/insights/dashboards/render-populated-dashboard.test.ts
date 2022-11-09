@@ -90,6 +90,12 @@ describe('Code insights populated dashboard', () => {
             SEARCH_BASED_INSIGHT.presentation.title,
             COMPUTE_INSIGHT.presentation.title,
         ]
+
+        await driver.page.waitForSelector(`[aria-label="${CAPTURE_GROUP_INSIGHT.presentation.title} insight`)
+        await driver.page.waitForSelector(`[aria-label="${LANG_STATS_INSIGHT.presentation.title} insight`)
+        await driver.page.waitForSelector(`[aria-label="${SEARCH_BASED_INSIGHT.presentation.title} insight`)
+        await driver.page.waitForSelector(`[aria-label="${COMPUTE_INSIGHT.presentation.title} insight`)
+
         const foundLinks = await getLinks(driver.page, expectedLinks)
 
         assert.deepStrictEqual(expectedLinks, foundLinks)

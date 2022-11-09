@@ -19,9 +19,9 @@ import (
 
 var mockGetProviderValue *Provider
 
-// getProvider looks up the registered OpenID Connect authentication provider
-// with the given ID.
-func getProvider(id string) *Provider {
+// GetProvider looks up the registered OpenID Connect authentication provider
+// with the given ID. It returns nil if no such provider exists.
+func GetProvider(id string) *Provider {
 	if mockGetProviderValue != nil {
 		return mockGetProviderValue
 	}

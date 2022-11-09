@@ -1,8 +1,6 @@
 import React from 'react'
 
-import classNames from 'classnames'
-
-import { Link, Code } from '@sourcegraph/wildcard'
+import { Code, Link } from '@sourcegraph/wildcard'
 
 import styles from './HighlightedLink.module.scss'
 
@@ -49,7 +47,7 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
         const key = `${startOffset}-${endOffset}`
         if (kind === 'mark') {
             spans.push(
-                <mark key={key} className={classNames(styles.mark, 'px-0')}>
+                <mark key={key} className="px-0">
                     {text}
                 </mark>
             )

@@ -33,7 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -42,7 +41,8 @@ import (
 
 type Handlers struct {
 	GitHubWebhook                   webhooks.Registerer
-	GitLabWebhook                   http.Handler
+	GitHubSyncWebhook               webhooks.Registerer
+	GitLabWebhook                   webhooks.RegistererHandler
 	BitbucketServerWebhook          http.Handler
 	BitbucketCloudWebhook           http.Handler
 	BatchesChangesFileGetHandler    http.Handler
@@ -88,19 +88,22 @@ func NewHandler(
 		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
-	gh := webhooks.GitHubWebhook{
+	wh := webhooks.WebhookRouter{
 		DB: db,
 	}
-	webhookhandlers.Init(db, &gh)
-	handlers.GitHubWebhook.Register(&gh)
-	ghSync := repos.GitHubWebhookHandler{}
-	ghSync.Register(&gh)
+	webhookhandlers.Init(db, &wh)
+	handlers.GitHubWebhook.Register(&wh)
+	handlers.GitLabWebhook.Register(&wh)
+	handlers.GitHubSyncWebhook.Register(&wh)
 
 	// 🚨 SECURITY: This handler implements its own secret-based auth
-	webhookHandler := webhooks.NewHandler(logger, db, &gh)
+	// TODO: Integrate with webhookMiddleware.Logger
+	webhookHandler := webhooks.NewHandler(logger, db, &wh)
+
+	gitHubWebhook := webhooks.GitHubWebhook{WebhookRouter: &wh}
 
 	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))
-	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
+	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gitHubWebhook)))
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
 	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketServerWebhook)))
 	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketCloudWebhook)))
@@ -176,10 +179,9 @@ func NewInternalHandler(
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},
 		Indexers: search.Indexers(),
+		Ranking:  codeIntelServices.RankingService,
 
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
-
-		codeIntelServices: codeIntelServices,
 	}
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))

@@ -1,6 +1,41 @@
 package updatecheck
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/sourcegraph/log/logtest"
+)
+
+func TestUpdateCheckURL(t *testing.T) {
+	tests := []struct {
+		name           string
+		env            string
+		want           string
+		errorLogsCount int
+	}{
+		{name: "default OK", env: "", want: "https://sourcegraph.com/.api/updates", errorLogsCount: 0},
+		{name: "specified default OK", env: "https://sourcegraph.com/", want: "https://sourcegraph.com/.api/updates", errorLogsCount: 0},
+		{name: "http NOK", env: "http://sourcegraph.com/", want: "https://sourcegraph.com/.api/updates", errorLogsCount: 1},
+		{name: "env OK", env: "https://fourfegraph.com/", want: "https://fourfegraph.com/.api/updates", errorLogsCount: 0},
+		{name: "env no protocol NOK", env: "fourfegraph.com", want: "https://sourcegraph.com/.api/updates", errorLogsCount: 1},
+		{name: "env garbage NOK", env: "garbage  foo", want: "https://sourcegraph.com/.api/updates", errorLogsCount: 1},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Setenv("UPDATE_CHECK_BASE_URL", test.env)
+			logger, export := logtest.Captured(t)
+
+			if got, expected := updateCheckURL(logger), test.want; got != expected {
+				t.Errorf("Got %q, expected %q", got, expected)
+			}
+
+			if got, expected := len(export()), test.errorLogsCount; got != expected {
+				t.Errorf("Got %d, expected %d log messages", got, expected)
+			}
+		})
+	}
+}
 
 func TestParseRedisInfo(t *testing.T) {
 	info, err := parseRedisInfo([]byte(redisInfoCommand))
