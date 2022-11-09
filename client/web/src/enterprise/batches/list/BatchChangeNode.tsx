@@ -112,7 +112,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
     }, [isExecutionEnabled, node.url, node.state, node.currentSpec, latestExecution])
 
     return (
-        <>
+        <li className={styles.batchChangeNode}>
             <span className={styles.batchChangeNodeSeparator} />
             {isExecutionEnabled ? (
                 <BatchChangeStatePill
@@ -197,6 +197,6 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                     />
                 </>
             )}
-        </>
+        </li>
     )
 }
