@@ -60,7 +60,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                     <VisuallyHidden>,</VisuallyHidden>
                 </Code>{' '}
                 <VisuallyHidden>Commited</VisuallyHidden>
-                <Timestamp date={result.authorDate} noAbout={true} strict={true} />
+                <Timestamp date={result.committerDate} noAbout={true} strict={true} />
             </Link>
             {result.repoStars && <div className={styles.divider} />}
         </div>
