@@ -46,13 +46,10 @@ func getSearchQueryRateLimit(defaultRate rate.Limit, defaultBurst int) func() (r
 			rateLimit = rate.Limit(*limit)
 		}
 
-		var burstLimit int
-		if burst == nil {
-			burstLimit = defaultBurst
-		} else {
-			burstLimit = *burst
+		if burst <= 0 {
+			burst = defaultBurst
 		}
 
-		return rateLimit, burstLimit
+		return rateLimit, burst
 	}
 }

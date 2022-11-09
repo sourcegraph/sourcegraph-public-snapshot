@@ -1446,8 +1446,7 @@
       "type": "integer",
       "group": "CodeInsights",
       "default": 20,
-      "examples": [10, 20],
-      "!go": { "pointer": true }
+      "examples": [10, 20]
     },
     "insights.compute.graphql": {
       "description": "DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
