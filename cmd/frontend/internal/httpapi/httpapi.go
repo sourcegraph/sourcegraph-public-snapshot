@@ -27,7 +27,6 @@ import (
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	internalcodeintel "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -151,7 +150,6 @@ func NewInternalHandler(
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
-	codeIntelServices internalcodeintel.Services,
 ) http.Handler {
 	logger := sglog.Scoped("InternalHandler", "frontend internal HTTP API handler")
 	if m == nil {
@@ -179,7 +177,8 @@ func NewInternalHandler(
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},
 		Indexers: search.Indexers(),
-		Ranking:  codeIntelServices.RankingService,
+		// TODO - enterprise/
+		// Ranking:  codeIntelServices.RankingService,
 
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}

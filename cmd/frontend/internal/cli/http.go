@@ -23,7 +23,6 @@ import (
 	internalhttpapi "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -139,7 +138,6 @@ func newInternalHTTPHandler(
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
-	codeIntelServices codeintel.Services,
 ) http.Handler {
 	internalMux := http.NewServeMux()
 	logger := log.Scoped("internal", "internal http handlers")
@@ -154,7 +152,6 @@ func newInternalHTTPHandler(
 					newCodeIntelUploadHandler,
 					newComputeStreamHandler,
 					rateLimitWatcher,
-					codeIntelServices,
 				),
 			),
 		),

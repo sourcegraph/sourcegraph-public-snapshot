@@ -75,11 +75,6 @@ func (r *RepositoryResolver) Type(ctx context.Context) (*types.Repo, error) {
 	return r.repo(ctx)
 }
 
-type RepositoryCommitArgs struct {
-	Rev          string
-	InputRevspec *string
-}
-
 func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
 	resolver := NewGitCommitResolver(r, commitID)
 	if args.InputRevspec != nil {

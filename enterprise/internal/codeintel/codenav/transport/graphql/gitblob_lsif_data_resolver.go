@@ -99,11 +99,6 @@ func (r *gitBlobLSIFDataResolver) Stencil(ctx context.Context) (_ []RangeResolve
 	return resolvers, nil
 }
 
-type LSIFRangesArgs struct {
-	StartLine int32
-	EndLine   int32
-}
-
 // ErrIllegalBounds occurs when a negative or zero-width bound is supplied by the user.
 var ErrIllegalBounds = errors.New("illegal bounds")
 
@@ -224,19 +219,6 @@ const DefaultImplementationsPageSize = 100
 // ErrIllegalLimit occurs when the user requests less than one object per page.
 var ErrIllegalLimit = errors.New("illegal limit")
 
-type LSIFPagedQueryPositionArgs struct {
-	LSIFQueryPositionArgs
-	ConnectionArgs
-	After  *string
-	Filter *string
-}
-
-type LSIFQueryPositionArgs struct {
-	Line      int32
-	Character int32
-	Filter    *string
-}
-
 func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *LSIFPagedQueryPositionArgs) (_ LocationConnectionResolver, err error) {
 	limit := derefInt32(args.First, DefaultImplementationsPageSize)
 	if limit <= 0 {
@@ -328,10 +310,6 @@ func (r *gitBlobLSIFDataResolver) LSIFUploads(ctx context.Context) (_ []sharedre
 
 // DefaultDiagnosticsPageSize is the diagnostic result page size when no limit is supplied.
 const DefaultDiagnosticsPageSize = 100
-
-type LSIFDiagnosticsArgs struct {
-	ConnectionArgs
-}
 
 // Diagnostics returns the diagnostics for documents with the given path prefix.
 func (r *gitBlobLSIFDataResolver) Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (_ DiagnosticConnectionResolver, err error) {

@@ -56,6 +56,7 @@ func main() {
 		"export-usage-telemetry":        telemetry.NewTelemetryJob(),
 		"webhook-build-job":             repos.NewWebhookBuildJob(),
 
+		"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
 		"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
 		"codeintel-autoindexing-janitor":              codeintel.NewAutoindexingJanitorJob(),
 		"codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),

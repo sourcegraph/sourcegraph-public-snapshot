@@ -25,8 +25,6 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
-	stores "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -122,14 +120,7 @@ func main() {
 	db := database.NewDB(logger, sqlDB)
 
 	repoStore := db.Repos()
-	services, err := codeintel.GetServices(codeintel.Databases{
-		DB:          db,
-		CodeIntelDB: stores.NoopDB,
-	})
-	if err != nil {
-		logger.Fatal("failed to initialize codeintel services", zap.Error(err))
-	}
-	depsSvc := services.DependenciesService
+	dependenciesSvc := dependencies.GetService(db)
 	externalServiceStore := db.ExternalServices()
 
 	err = keyring.Init(ctx)
@@ -150,7 +141,7 @@ func main() {
 			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, depsSvc, repo)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo)
 		},
 		Hostname:                hostname.Get(),
 		DB:                      db,

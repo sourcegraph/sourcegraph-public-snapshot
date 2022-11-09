@@ -4,21 +4,21 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-
 	"github.com/opentracing/opentracing-go/log"
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type RootResolver interface {
 	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
 	LSIFUploadByID(ctx context.Context, id graphql.ID) (sharedresolvers.LSIFUploadResolver, error)
-	LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (sharedresolvers.LSIFUploadConnectionResolver, error)
-	LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (sharedresolvers.LSIFUploadConnectionResolver, error)
+	LSIFUploads(ctx context.Context, args *resolverstubs.LSIFUploadsQueryArgs) (sharedresolvers.LSIFUploadConnectionResolver, error)
+	LSIFUploadsByRepo(ctx context.Context, args *resolverstubs.LSIFRepositoryUploadsQueryArgs) (sharedresolvers.LSIFUploadConnectionResolver, error)
 	DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*sharedresolvers.EmptyResponse, error)
-	DeleteLSIFUploads(ctx context.Context, args *DeleteLSIFUploadsArgs) (*sharedresolvers.EmptyResponse, error)
+	DeleteLSIFUploads(ctx context.Context, args *resolverstubs.DeleteLSIFUploadsArgs) (*sharedresolvers.EmptyResponse, error)
 }
 
 type rootResolver struct {
@@ -81,36 +81,13 @@ func (r *rootResolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (_ sha
 	return sharedresolvers.NewUploadResolver(r.uploadSvc, r.autoindexSvc, r.policySvc, upload, prefetcher, traceErrs), nil
 }
 
-type LSIFUploadsQueryArgs struct {
-	ConnectionArgs
-	Query           *string
-	State           *string
-	IsLatestForRepo *bool
-	DependencyOf    *graphql.ID
-	DependentOf     *graphql.ID
-	After           *string
-	IncludeDeleted  *bool
-}
-
-type LSIFRepositoryUploadsQueryArgs struct {
-	*LSIFUploadsQueryArgs
-	RepositoryID graphql.ID
-}
-
-type DeleteLSIFUploadsArgs struct {
-	Query           *string
-	State           *string
-	IsLatestForRepo *bool
-	Repository      *graphql.ID
-}
-
 // 🚨 SECURITY: dbstore layer handles authz for GetUploads
-func (r *rootResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (_ sharedresolvers.LSIFUploadConnectionResolver, err error) {
+func (r *rootResolver) LSIFUploads(ctx context.Context, args *resolverstubs.LSIFUploadsQueryArgs) (_ sharedresolvers.LSIFUploadConnectionResolver, err error) {
 	// Delegate behavior to LSIFUploadsByRepo with no specified repository identifier
-	return r.LSIFUploadsByRepo(ctx, &LSIFRepositoryUploadsQueryArgs{LSIFUploadsQueryArgs: args})
+	return r.LSIFUploadsByRepo(ctx, &resolverstubs.LSIFRepositoryUploadsQueryArgs{LSIFUploadsQueryArgs: args})
 }
 
-func (r *rootResolver) LSIFUploadsByRepo(ctx context.Context, args *LSIFRepositoryUploadsQueryArgs) (_ sharedresolvers.LSIFUploadConnectionResolver, err error) {
+func (r *rootResolver) LSIFUploadsByRepo(ctx context.Context, args *resolverstubs.LSIFRepositoryUploadsQueryArgs) (_ sharedresolvers.LSIFUploadConnectionResolver, err error) {
 	ctx, traceErrs, endObservation := r.operations.lsifUploadsByRepo.WithErrors(ctx, &err, observation.Args{
 		LogFields: []log.Field{
 			log.String("repoID", string(args.RepositoryID)),
@@ -155,7 +132,7 @@ func (r *rootResolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID gr
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
-func (r *rootResolver) DeleteLSIFUploads(ctx context.Context, args *DeleteLSIFUploadsArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+func (r *rootResolver) DeleteLSIFUploads(ctx context.Context, args *resolverstubs.DeleteLSIFUploadsArgs) (_ *sharedresolvers.EmptyResponse, err error) {
 	ctx, _, endObservation := r.operations.deleteLsifUploads.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 

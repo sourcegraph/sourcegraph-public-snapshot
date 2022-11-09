@@ -6,14 +6,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type RootResolver interface {
-	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (_ GitBlobLSIFDataResolver, err error)
+	GitBlobLSIFData(ctx context.Context, args *resolverstubs.GitBlobLSIFDataArgs) (_ GitBlobLSIFDataResolver, err error)
 }
 
 type rootResolver struct {
@@ -42,16 +41,8 @@ func NewRootResolver(svc CodeNavService, autoindexingSvc AutoIndexingService, up
 	}
 }
 
-type GitBlobLSIFDataArgs struct {
-	Repo      *types.Repo
-	Commit    api.CommitID
-	Path      string
-	ExactPath bool
-	ToolName  string
-}
-
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
-func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (_ GitBlobLSIFDataResolver, err error) {
+func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.GitBlobLSIFDataArgs) (_ GitBlobLSIFDataResolver, err error) {
 	ctx, errTracer, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 

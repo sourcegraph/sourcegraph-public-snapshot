@@ -129,13 +129,6 @@ func (r *UploadResolver) ProjectRoot(ctx context.Context) (*GitTreeEntryResolver
 
 const DefaultRetentionPolicyMatchesPageSize = 50
 
-type LSIFUploadRetentionPolicyMatchesArgs struct {
-	MatchesOnly bool
-	First       *int32
-	After       *string
-	Query       *string
-}
-
 func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (_ CodeIntelligenceRetentionPolicyMatchesConnectionResolver, err error) {
 	var afterID int64
 	if args.After != nil {
@@ -171,10 +164,6 @@ func (r *UploadResolver) Indexer() types.CodeIntelIndexerResolver {
 	}
 
 	return types.NewCodeIntelIndexerResolver(r.upload.Indexer)
-}
-
-type LSIFUploadDocumentPathsQueryArgs struct {
-	Pattern string
 }
 
 func (r *UploadResolver) DocumentPaths(ctx context.Context, args *LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error) {

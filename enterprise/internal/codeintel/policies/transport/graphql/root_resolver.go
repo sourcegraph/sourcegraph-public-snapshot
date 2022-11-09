@@ -62,15 +62,6 @@ func (r *rootResolver) ConfigurationPolicyByID(ctx context.Context, id graphql.I
 	return NewConfigurationPolicyResolver(r.policySvc, configurationPolicy, traceErrs), nil
 }
 
-type CodeIntelligenceConfigurationPoliciesArgs struct {
-	ConnectionArgs
-	Repository       *graphql.ID
-	Query            *string
-	ForDataRetention *bool
-	ForIndexing      *bool
-	After            *string
-}
-
 const DefaultConfigurationPolicyPageSize = 50
 
 // 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicies
@@ -121,25 +112,6 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(r.policySvc, policies, totalCount, traceErrs), nil
 }
 
-type CodeIntelConfigurationPolicy struct {
-	Name                      string
-	RepositoryID              *int32
-	RepositoryPatterns        *[]string
-	Type                      types.GitObjectType
-	Pattern                   string
-	RetentionEnabled          bool
-	RetentionDurationHours    *int32
-	RetainIntermediateCommits bool
-	IndexingEnabled           bool
-	IndexCommitMaxAgeHours    *int32
-	IndexIntermediateCommits  bool
-}
-
-type CreateCodeIntelligenceConfigurationPolicyArgs struct {
-	Repository *graphql.ID
-	CodeIntelConfigurationPolicy
-}
-
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *CreateCodeIntelligenceConfigurationPolicyArgs) (_ CodeIntelligenceConfigurationPolicyResolver, err error) {
 	ctx, traceErrs, endObservation := r.operations.createConfigurationPolicy.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
@@ -185,12 +157,6 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 	return NewConfigurationPolicyResolver(r.policySvc, configurationPolicy, traceErrs), nil
 }
 
-type UpdateCodeIntelligenceConfigurationPolicyArgs struct {
-	ID         graphql.ID
-	Repository *graphql.ID
-	CodeIntelConfigurationPolicy
-}
-
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *UpdateCodeIntelligenceConfigurationPolicyArgs) (_ *sharedresolvers.EmptyResponse, err error) {
 	ctx, _, endObservation := r.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -231,10 +197,6 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 	return &sharedresolvers.EmptyResponse{}, nil
 }
 
-type DeleteCodeIntelligenceConfigurationPolicyArgs struct {
-	Policy graphql.ID
-}
-
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *DeleteCodeIntelligenceConfigurationPolicyArgs) (_ *sharedresolvers.EmptyResponse, err error) {
 	ctx, _, endObservation := r.operations.deleteConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -256,12 +218,6 @@ func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Con
 	}
 
 	return &sharedresolvers.EmptyResponse{}, nil
-}
-
-type PreviewRepositoryFilterArgs struct {
-	graphqlutil.ConnectionArgs
-	Patterns []string
-	After    *string
 }
 
 const DefaultRepositoryFilterPreviewPageSize = 50
@@ -303,11 +259,6 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *Previe
 	}
 
 	return NewRepositoryFilterPreviewResolver(resv, limitedCount, totalMatches, offset, repositoryMatchLimit), nil
-}
-
-type PreviewGitObjectFilterArgs struct {
-	Type    types.GitObjectType
-	Pattern string
 }
 
 func (r *rootResolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *PreviewGitObjectFilterArgs) (_ []GitObjectFilterPreviewResolver, err error) {

@@ -9,20 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
-type LSIFUploadsAuditLogsResolver interface {
-	LogTimestamp() gqlutil.DateTime
-	UploadDeletedAt() *gqlutil.DateTime
-	Reason() *string
-	ChangedColumns() []AuditLogColumnChange
-	UploadID() graphql.ID
-	InputCommit() string
-	InputRoot() string
-	InputIndexer() string
-	UploadedAt() gqlutil.DateTime
-	Operation() string
-	// AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
-}
-
 type AuditLogColumnChange interface {
 	Column() string
 	Old() *string
