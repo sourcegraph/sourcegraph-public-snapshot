@@ -67,9 +67,10 @@ func (j *sanitizeJob) sanitizeEvent(event streaming.SearchEvent) streaming.Searc
 			if sanitizedCommitMatch := j.sanitizeCommitMatch(v); sanitizedCommitMatch != nil {
 				sanitized = append(sanitized, sanitizedCommitMatch)
 			}
-		default:
-			// Don't worry about result types that don't expose file content
+		case *result.RepoMatch:
 			sanitized = append(sanitized, v)
+		default:
+			// default to dropping this result
 		}
 	}
 
