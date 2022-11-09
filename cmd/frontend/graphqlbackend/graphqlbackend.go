@@ -312,7 +312,7 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
