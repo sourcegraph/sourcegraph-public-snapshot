@@ -116,6 +116,29 @@ func TestSanitizeJob(t *testing.T) {
 			},
 		},
 		{
+			name: "no-op for commit match that is not a diff match",
+			inputEvent: streaming.SearchEvent{
+				Results: r(&result.CommitMatch{
+					MessagePreview: &result.MatchedString{
+						Content: "commit msg",
+						MatchedRanges: []result.Range{
+							{Start: result.Location{Offset: 0}, End: result.Location{Offset: len("commit")}},
+						},
+					},
+				}),
+			},
+			outputEvent: streaming.SearchEvent{
+				Results: r(&result.CommitMatch{
+					MessagePreview: &result.MatchedString{
+						Content: "commit msg",
+						MatchedRanges: []result.Range{
+							{Start: result.Location{Offset: 0}, End: result.Location{Offset: len("commit")}},
+						},
+					},
+				}),
+			},
+		},
+		{
 			name: "no-op for result type other than FileMatch or CommitMatch",
 			inputEvent: streaming.SearchEvent{
 				Results: r(&result.RepoMatch{Name: "weird al greatest hits"}),

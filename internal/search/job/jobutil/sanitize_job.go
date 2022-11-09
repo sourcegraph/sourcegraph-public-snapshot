@@ -114,7 +114,7 @@ func (j *SanitizeJob) sanitizeChunk(chunk result.ChunkMatch) result.ChunkMatch {
 
 func (j *SanitizeJob) sanitizeCommitMatch(cm *result.CommitMatch) result.Match {
 	if cm.DiffPreview == nil {
-		return nil
+		return cm
 	}
 	if j.matchesAnySanitizePattern(cm.DiffPreview.Content) {
 		return nil
