@@ -16,36 +16,36 @@ func NewSanitizeJob(sanitizePatterns []*regexp.Regexp, child job.Job) job.Job {
 		return &NoopJob{}
 	}
 
-	return &SanitizeJob{
+	return &sanitizeJob{
 		sanitizePatterns: sanitizePatterns,
 		child:            child,
 	}
 }
 
-type SanitizeJob struct {
+type sanitizeJob struct {
 	sanitizePatterns []*regexp.Regexp
 	child            job.Job
 }
 
-func (j *SanitizeJob) Name() string {
+func (j *sanitizeJob) Name() string {
 	return "SanitizeJob"
 }
 
-func (j *SanitizeJob) Fields(job.Verbosity) []otlog.Field {
+func (j *sanitizeJob) Fields(job.Verbosity) []otlog.Field {
 	return nil
 }
 
-func (j *SanitizeJob) Children() []job.Describer {
+func (j *sanitizeJob) Children() []job.Describer {
 	return []job.Describer{j.child}
 }
 
-func (j *SanitizeJob) MapChildren(fn job.MapFunc) job.Job {
+func (j *sanitizeJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *j
 	cp.child = job.Map(j.child, fn)
 	return &cp
 }
 
-func (j *SanitizeJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
+func (j *sanitizeJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, s, j)
 	defer func() { finish(alert, err) }()
 
@@ -57,7 +57,7 @@ func (j *SanitizeJob) Run(ctx context.Context, clients job.RuntimeClients, s str
 	return j.child.Run(ctx, clients, filteredStream)
 }
 
-func (j *SanitizeJob) sanitizeEvent(event streaming.SearchEvent) streaming.SearchEvent {
+func (j *sanitizeJob) sanitizeEvent(event streaming.SearchEvent) streaming.SearchEvent {
 	sanitized := event.Results[:0]
 
 	for _, res := range event.Results {
@@ -80,7 +80,7 @@ func (j *SanitizeJob) sanitizeEvent(event streaming.SearchEvent) streaming.Searc
 	return event
 }
 
-func (j *SanitizeJob) sanitizeFileMatch(fm *result.FileMatch) result.Match {
+func (j *sanitizeJob) sanitizeFileMatch(fm *result.FileMatch) result.Match {
 	sanitizedChunks := fm.ChunkMatches[:0]
 
 	for _, chunk := range fm.ChunkMatches {
@@ -98,7 +98,7 @@ func (j *SanitizeJob) sanitizeFileMatch(fm *result.FileMatch) result.Match {
 	return fm
 }
 
-func (j *SanitizeJob) sanitizeChunk(chunk result.ChunkMatch) result.ChunkMatch {
+func (j *sanitizeJob) sanitizeChunk(chunk result.ChunkMatch) result.ChunkMatch {
 	sanitizedRanges := chunk.Ranges[:0]
 
 	for i, val := range chunk.MatchedContent() {
@@ -112,7 +112,7 @@ func (j *SanitizeJob) sanitizeChunk(chunk result.ChunkMatch) result.ChunkMatch {
 	return chunk
 }
 
-func (j *SanitizeJob) sanitizeCommitMatch(cm *result.CommitMatch) result.Match {
+func (j *sanitizeJob) sanitizeCommitMatch(cm *result.CommitMatch) result.Match {
 	if cm.DiffPreview == nil {
 		return cm
 	}
@@ -122,7 +122,7 @@ func (j *SanitizeJob) sanitizeCommitMatch(cm *result.CommitMatch) result.Match {
 	return cm
 }
 
-func (j *SanitizeJob) matchesAnySanitizePattern(val string) bool {
+func (j *sanitizeJob) matchesAnySanitizePattern(val string) bool {
 	for _, re := range j.sanitizePatterns {
 		if re.MatchString(val) {
 			return true
