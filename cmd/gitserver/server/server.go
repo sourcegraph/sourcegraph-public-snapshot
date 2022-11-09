@@ -64,10 +64,6 @@ import (
 // tempDirName is the name used for the temporary directory under ReposDir.
 const tempDirName = ".tmp"
 
-// P4HomeName is the name used for the directory that git p4 will use as $HOME
-// and where it will store cache data.
-const P4HomeName = ".p4home"
-
 // traceLogs is controlled via the env SRC_GITSERVER_TRACE. If true we trace
 // logs to stderr
 var traceLogs bool
@@ -923,12 +919,11 @@ func (s *Server) tempDir(prefix string) (name string, err error) {
 }
 
 func (s *Server) ignorePath(path string) bool {
-	// We ignore any path which starts with .tmp or .p4home in ReposDir
+	// We ignore any path which starts with .tmp in ReposDir
 	if filepath.Dir(path) != s.ReposDir {
 		return false
 	}
-	base := filepath.Base(path)
-	return strings.HasPrefix(base, tempDirName) || strings.HasPrefix(base, P4HomeName)
+	return strings.HasPrefix(filepath.Base(path), tempDirName)
 }
 
 func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
