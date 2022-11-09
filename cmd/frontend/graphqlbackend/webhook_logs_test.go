@@ -49,16 +49,6 @@ func TestWebhookLogsArgs(t *testing.T) {
 					OnlyErrors:        false,
 				},
 			},
-			"WebhookID is -1": {
-				id: webhookLogsUnmatchedExternalService,
-				input: webhookLogsArgs{
-					WebhookID: gqlIDPtr(marshalWebhookID(-1)),
-				},
-				want: database.WebhookLogListOpts{
-					ExternalServiceID: int64Ptr(0),
-					Limit:             50,
-				},
-			},
 			"all arguments": {
 				id: webhookLogsExternalServiceID(1),
 				input: webhookLogsArgs{

@@ -290,6 +290,7 @@ func Main(enterpriseSetupHook func(db database.DB, codeIntelServices codeintel.S
 		enterprise.NotebooksResolver,
 		enterprise.ComputeResolver,
 		enterprise.InsightsAggregationResolver,
+		enterprise.WebhooksResolver,
 	)
 	if err != nil {
 		return err

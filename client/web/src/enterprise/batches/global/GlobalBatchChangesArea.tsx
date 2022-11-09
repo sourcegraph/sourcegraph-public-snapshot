@@ -21,8 +21,6 @@ import { TabName } from '../detail/BatchChangeDetailsTabs'
 import type { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from '../list/BatchChangeListPage'
 import type { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
 
-import type { DotcomGettingStartedPageProps } from './DotcomGettingStartedPage'
-
 const BatchChangeListPage = lazyComponent<BatchChangeListPageProps, 'BatchChangeListPage'>(
     () => import('../list/BatchChangeListPage'),
     'BatchChangeListPage'
@@ -47,12 +45,9 @@ const BatchChangeClosePage = lazyComponent<BatchChangeClosePageProps, 'BatchChan
     () => import('../close/BatchChangeClosePage'),
     'BatchChangeClosePage'
 )
-const DotcomGettingStartedPage = lazyComponent<DotcomGettingStartedPageProps, 'DotcomGettingStartedPage'>(
-    () => import('./DotcomGettingStartedPage'),
-    'DotcomGettingStartedPage'
-)
-interface Props<RouteProps extends {} = {}>
-    extends RouteComponentProps<RouteProps>,
+
+interface Props
+    extends RouteComponentProps,
         ThemeProps,
         ExtensionsControllerProps,
         TelemetryProps,
@@ -65,9 +60,31 @@ interface Props<RouteProps extends {} = {}>
 /**
  * The global batch changes area.
  */
-export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
+export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    match,
+    location,
+    authenticatedUser,
+    isSourcegraphDotCom,
+    ...props
+}) => (
     <div className="w-100">
-        {props.isSourcegraphDotCom ? <DotcomGettingStartedPage /> : <AuthenticatedBatchChangesArea {...props} />}
+        <Switch>
+            <Route path={match.url} exact={true}>
+                <BatchChangeListPage
+                    headingElement="h1"
+                    canCreate={Boolean(authenticatedUser) && !isSourcegraphDotCom}
+                    isSourcegraphDotCom={isSourcegraphDotCom}
+                    {...props}
+                    location={location}
+                />
+            </Route>
+            {!isSourcegraphDotCom && (
+                <Route path={`${match.url}/create`} exact={true}>
+                    <CreateBatchChangePage headingElement="h1" {...props} />
+                </Route>
+            )}
+            <Route component={NotFoundPage} key="hardcoded-key" />
+        </Switch>
     </div>
 )
 
@@ -75,27 +92,7 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
     <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 )
 
-interface AuthenticatedProps extends Props {
-    authenticatedUser: AuthenticatedUser
-}
-
-export const AuthenticatedBatchChangesArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => (
-    <Switch>
-        <Route
-            render={props => <BatchChangeListPage headingElement="h1" canCreate={true} {...outerProps} {...props} />}
-            path={match.url}
-            exact={true}
-        />
-        <Route
-            path={`${match.url}/create`}
-            render={props => <CreateBatchChangePage headingElement="h1" {...outerProps} {...props} />}
-            exact={true}
-        />
-        <Route component={NotFoundPage} key="hardcoded-key" />
-    </Switch>
-))
-
-export interface NamespaceBatchChangesAreaProps<RouteProps = {}> extends Props<RouteProps> {
+export interface NamespaceBatchChangesAreaProps extends Props {
     namespaceID: Scalars['ID']
 }
 

@@ -71,7 +71,6 @@ func TestQueueIndexesExplicit(t *testing.T) {
 		nil, // repoUpdater
 		mockGitserverClient,
 		nil, // symbolsClient
-		nil, // backgroundJob
 		&observation.TestContext,
 	)
 	_, _ = service.QueueIndexes(context.Background(), 42, "HEAD", config, false, false)
@@ -190,7 +189,6 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 		nil, // repoUpdater
 		mockGitserverClient,
 		nil, // symbolsClient
-		nil, // backgroundJob
 		&observation.TestContext,
 	)
 	_, _ = service.QueueIndexes(context.Background(), 42, "HEAD", "", false, false)
@@ -314,7 +312,6 @@ func TestQueueIndexesInRepository(t *testing.T) {
 		nil, // repoUpdater
 		mockGitserverClient,
 		nil, // symbolsClient
-		nil, // backgroundJob
 		&observation.TestContext,
 	)
 
@@ -421,7 +418,6 @@ func TestQueueIndexesInferred(t *testing.T) {
 		nil, // repoUpdater
 		mockGitserverClient,
 		nil, // symbolsClient
-		nil, // backgroundJob
 		&observation.TestContext,
 	)
 
@@ -493,7 +489,6 @@ func TestQueueIndexesInferredTooLarge(t *testing.T) {
 		nil, // repoUpdater
 		mockGitserverClient,
 		nil, //
-		nil, // backgroundJob
 		&observation.TestContext,
 	)
 
@@ -555,7 +550,6 @@ func TestQueueIndexesForPackage(t *testing.T) {
 		mockRepoUpdater, // repoUpdater
 		mockGitserverClient,
 		nil, //
-		nil, // backgroundJob
 		&observation.TestContext,
 	)
 

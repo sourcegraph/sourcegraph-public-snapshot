@@ -86,10 +86,11 @@
     }
 }
 
-.code-basics-title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
+.tab-header {
+    border: none !important;
+    @media (--lg-breakpoint-up) {
+        justify-content: center !important;
+    }
 }
 
 .pro-tip-title {

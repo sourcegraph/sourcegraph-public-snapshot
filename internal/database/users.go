@@ -568,6 +568,10 @@ func (u *userStore) HardDelete(ctx context.Context, id int32) (err error) {
 
 // HardDeleteList performs a bulk "HardDelete" action.
 func (u *userStore) HardDeleteList(ctx context.Context, ids []int32) (err error) {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := u.Transact(ctx)
 	if err != nil {

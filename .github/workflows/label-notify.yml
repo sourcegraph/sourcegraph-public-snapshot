@@ -14,7 +14,6 @@ jobs:
              edit_body: true
              message: /cc {recipients}
              recipients: |
-                  team/integrations=@sourcegraph/integrations
                   team/growth=@sourcegraph/growth
                   team/cloud=@sourcegraph/cloud
                   team/search-product=@sourcegraph/search-product
@@ -23,7 +22,7 @@ jobs:
                   team/delivery=@sourcegraph/delivery
                   team/security=@dcomas
                   team/dev-experience=@jhchabran @kstretch9
-                  team/frontend-platform=@sourcegraph/frontend-platform
                   team/repo-management=@jplahn @ryphil
                   team/devops=@sourcegraph/cloud-devops
                   team/iam=@sourcegraph/iam
+                  team/code-exploration=@felixfbecker

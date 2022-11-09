@@ -250,6 +250,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				uploadSourcemaps = true
 			}
 			imageBuildOps.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), uploadSourcemaps))
+			if dockerImage == "gitserver" {
+				imageBuildOps.Append(buildCandidateDockerImage(dockerImage+"-ms-git", c.Version, c.candidateImageTag(), uploadSourcemaps))
+			}
 		}
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
@@ -297,6 +300,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		publishOps := operations.NewNamedSet("Publish images")
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
+			if dockerImage == "gitserver" {
+				publishOps.Append(publishFinalDockerImage(c, dockerImage+"-ms-git"))
+			}
 		}
 		// Executor VM image
 		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {

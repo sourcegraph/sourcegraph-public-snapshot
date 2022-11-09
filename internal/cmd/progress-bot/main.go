@@ -36,7 +36,7 @@ func main() {
 	since := flag.Duration("since", 24*time.Hour, "Report new changelog entries since this period")
 	dry := flag.Bool("dry", false, "If true, print out the JSON payload that would be sent to the Slack API")
 	channel := flag.String("channel", "progress-bot-test", "Slack channel to post message to")
-	gcsBucket := flag.String("bucket", "sourcegraph-progress-bot-avatars", "GCS bucket to which generated group avatars are uploaded")
+	gcsBucket := flag.String("bucket", "sg-progress-bot-avatars", "GCS bucket to which generated group avatars are uploaded")
 
 	flag.Parse()
 

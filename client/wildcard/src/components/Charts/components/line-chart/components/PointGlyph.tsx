@@ -1,4 +1,4 @@
-import React, { FocusEventHandler, MouseEventHandler } from 'react'
+import { FC, FocusEventHandler, MouseEventHandler } from 'react'
 
 import { GlyphDot } from '@visx/glyph'
 
@@ -9,6 +9,8 @@ interface PointGlyphProps {
     left: number
     color: string
     active: boolean
+    role: string
+    'aria-label': string
     linkURL?: string
     tabIndex?: number
     onClick: MouseEventHandler<Element>
@@ -16,31 +18,42 @@ interface PointGlyphProps {
     onBlur?: FocusEventHandler<Element>
 }
 
-export const PointGlyph: React.FunctionComponent<React.PropsWithChildren<PointGlyphProps>> = props => {
-    const { top, left, color, active, linkURL, tabIndex = 0, onFocus, onBlur, onClick } = props
+export const PointGlyph: FC<PointGlyphProps> = props => {
+    const {
+        top,
+        left,
+        color,
+        active,
+        role,
+        'aria-label': ariaLabel,
+        linkURL,
+        tabIndex = 0,
+        onFocus,
+        onBlur,
+        onClick,
+    } = props
 
     return (
         <MaybeLink
             to={linkURL}
             target="_blank"
             rel="noopener"
+            tabIndex={tabIndex}
+            role={role}
+            aria-label={ariaLabel}
             onClick={onClick}
             onFocus={onFocus}
             onBlur={onBlur}
-            tabIndex={tabIndex}
-            role={linkURL ? 'link' : 'graphics-dataunit'}
-            aria-label={linkURL ? 'Click to view data point detail' : 'Data point'}
         >
             <GlyphDot
-                tabIndex={linkURL ? -1 : tabIndex}
-                onFocus={onFocus}
-                onBlur={onBlur}
                 cx={left}
                 cy={top}
-                stroke={color}
-                fill="var(--body-bg)"
-                strokeWidth={active ? 3 : 2}
                 r={active ? 6 : 4}
+                fill="var(--body-bg)"
+                stroke={color}
+                strokeWidth={active ? 3 : 2}
+                onFocus={onFocus}
+                onBlur={onBlur}
             />
         </MaybeLink>
     )

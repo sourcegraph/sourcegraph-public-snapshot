@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
@@ -22,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -36,7 +34,6 @@ type Service struct {
 	repoUpdater     RepoUpdaterClient
 	gitserverClient GitserverClient
 	symbolsClient   *symbols.Client
-	backgroundJobs  background.BackgroundJob
 
 	logger     log.Logger
 	operations *operations
@@ -49,7 +46,6 @@ func newService(
 	repoUpdater RepoUpdaterClient,
 	gitserver GitserverClient,
 	symbolsClient *symbols.Client,
-	backgroundJobs background.BackgroundJob,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
@@ -60,21 +56,10 @@ func newService(
 		repoUpdater:     repoUpdater,
 		gitserverClient: gitserver,
 		symbolsClient:   symbolsClient,
-		backgroundJobs:  backgroundJobs,
 
 		logger:     observationContext.Logger,
 		operations: newOperations(observationContext),
 	}
-}
-
-func GetBackgroundJobs(s *Service) background.BackgroundJob { return s.backgroundJobs }
-func GetWorkerutilStore(s *Service) dbworkerstore.Store     { return s.backgroundJobs.WorkerutilStore() }
-func GetDependencySyncStore(s *Service) dbworkerstore.Store {
-	return s.backgroundJobs.DependencySyncStore()
-}
-
-func GetDependencyIndexingStore(s *Service) dbworkerstore.Store {
-	return s.backgroundJobs.DependencyIndexingStore()
 }
 
 func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {

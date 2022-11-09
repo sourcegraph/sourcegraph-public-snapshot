@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -69,6 +70,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		event = honey.NewEvent("search-zoekt")
 		event.AddField("category", cat)
 		event.AddField("query", qStr)
+		event.AddField("actor", actor.FromContext(ctx).UIDString())
 		for _, t := range tags {
 			event.AddField(t.Key, t.Value)
 		}

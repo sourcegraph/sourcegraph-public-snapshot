@@ -5,71 +5,21 @@ import { differenceInHours, formatISO, parseISO } from 'date-fns'
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
-const dotComExamples = [
-    [
-        {
-            title: 'Scope search to specific repos',
-            queryExamples: [
-                { id: 'org-repos', query: 'repo:sourcegraph/*' },
-                { id: 'single-repo', query: 'repo:facebook/react' },
-            ],
-        },
-        {
-            title: 'Jump into code navigation',
-            queryExamples: [
-                { id: 'file-filter', query: 'file:README.md' },
-                { id: 'type-symbol', query: 'type:symbol SymbolName' },
-            ],
-        },
-        {
-            title: 'Get logical',
-            queryExamples: [
-                { id: 'not-operator', query: 'lang:go NOT file:main.go' },
-                { id: 'or-operator', query: 'lang:javascript OR lang:typescript' },
-                { id: 'and-operator', query: 'hello AND world' },
-            ],
-        },
-    ],
-    [
-        {
-            title: 'Find content or patterns',
-            queryExamples: [
-                { id: 'exact-matches', query: 'some exact error message', helperText: 'No quotes needed' },
-                { id: 'regex-pattern', query: '/regex.*pattern/' },
-            ],
-        },
-        {
-            title: 'Explore code history',
-            queryExamples: [
-                { id: 'type-diff-author', query: 'type:diff author:torvalds' },
-                { id: 'type-commit-message', query: 'type:commit some message' },
-            ],
-        },
-        {
-            title: 'Get advanced',
-            queryExamples: [
-                { id: 'repo-has-description', query: 'repo:has.description(scientific computing)' },
-                // eslint-disable-next-line no-useless-escape
-                {
-                    id: 'conditional-repo',
-                    query: 'repo:has.file(path:package.json content:eslint.*^8.13.0) file:.eslintrc$ rules',
-                },
-            ],
-        },
-    ],
-]
+import { basicSyntaxColumns } from './QueryExamplesHomepage.constants'
+
 export interface QueryExamplesContent {
     repositoryName: string
     filePath: string
     author: string
 }
 
-interface QueryExample {
+export interface QueryExamplesSection {
     title: string
     queryExamples: {
         id: string
         query: string
         helperText?: string
+        slug?: string
     }[]
 }
 
@@ -119,7 +69,7 @@ function getRepoFilterExamples(repositoryName: string): { singleRepoExample: str
 export function useQueryExamples(
     selectedSearchContextSpec: string,
     isSourcegraphDotCom: boolean = false
-): QueryExample[][] {
+): QueryExamplesSection[][] {
     const [queryExamplesContent, setQueryExamplesContent] = useState<QueryExamplesContent>()
     const [
         cachedQueryExamplesContent,
@@ -194,7 +144,7 @@ export function useQueryExamples(
     return useMemo(() => {
         // Static examples for DotCom
         if (isSourcegraphDotCom) {
-            return dotComExamples
+            return basicSyntaxColumns
         }
         if (!queryExamplesContent) {
             return []

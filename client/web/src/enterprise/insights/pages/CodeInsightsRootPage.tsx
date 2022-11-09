@@ -50,7 +50,9 @@ interface CodeInsightsRootPageProps extends TelemetryProps {
     activeView: CodeInsightsRootPageTab
 }
 
-export const CodeInsightsRootPage: React.FunctionComponent<CodeInsightsRootPageProps> = props => {
+export const CodeInsightsRootPage: React.FunctionComponent<
+    React.PropsWithChildren<CodeInsightsRootPageProps>
+> = props => {
     const { telemetryService, activeView } = props
     const location = useLocation()
     const query = useQuery()
