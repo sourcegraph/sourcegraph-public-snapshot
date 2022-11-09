@@ -9,59 +9,72 @@ import {
     ServiceWebhookLogsResult,
     ServiceWebhookLogsVariables,
     WebhookLogConnectionFields,
+    WebhookLogsByWebhookIDResult,
+    WebhookLogsByWebhookIDVariables,
     WebhookLogsResult,
     WebhookLogsVariables,
 } from '../../graphql-operations'
 
 export type SelectedExternalService = 'unmatched' | 'all' | Scalars['ID']
 
-export const queryWebhookLogs = (
-    { first, after }: Pick<WebhookLogsVariables, 'first' | 'after'>,
-    externalService: SelectedExternalService,
-    onlyErrors: boolean
-): Observable<WebhookLogConnectionFields> => {
-    const fragment = gql`
-        fragment WebhookLogConnectionFields on WebhookLogConnection {
-            nodes {
-                ...WebhookLogFields
-            }
-            pageInfo {
-                hasNextPage
-                endCursor
-            }
-            totalCount
+const webhookLogConnectionFieldsFragment = gql`
+    fragment WebhookLogConnectionFields on WebhookLogConnection {
+        nodes {
+            ...WebhookLogFields
         }
-
-        fragment WebhookLogFields on WebhookLog {
-            id
-            receivedAt
-            externalService {
-                displayName
-            }
-            statusCode
-            request {
-                ...WebhookLogMessageFields
-                ...WebhookLogRequestFields
-            }
-            response {
-                ...WebhookLogMessageFields
-            }
+        pageInfo {
+            hasNextPage
+            endCursor
         }
+        totalCount
+    }
 
-        fragment WebhookLogMessageFields on WebhookLogMessage {
+    fragment WebhookLogFields on WebhookLog {
+        id
+        receivedAt
+        externalService {
+            displayName
+        }
+        statusCode
+        request {
+            headers {
+                name
+                values
+            }
+            body
+            method
+            url
+            version
+        }
+        response {
             headers {
                 name
                 values
             }
             body
         }
+    }
+`
 
-        fragment WebhookLogRequestFields on WebhookLogRequest {
-            method
-            url
-            version
-        }
-    `
+export const queryWebhookLogs = (
+    { first, after }: Pick<WebhookLogsVariables, 'first' | 'after'>,
+    externalService: SelectedExternalService,
+    onlyErrors: boolean,
+    webhookID?: string
+): Observable<WebhookLogConnectionFields> => {
+    // If webhook ID is provided, then we search for this webhook's logs
+    if (webhookID) {
+        return requestGraphQL<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables>(WEBHOOK_LOGS_BY_ID, {
+            first: first ?? 20,
+            after: null,
+            onlyErrors: false,
+            onlyUnmatched: false,
+            webhookID,
+        }).pipe(
+            map(dataOrThrowErrors),
+            map((result: WebhookLogsResult) => result.webhookLogs)
+        )
+    }
 
     if (externalService === 'all' || externalService === 'unmatched') {
         return requestGraphQL<WebhookLogsResult, WebhookLogsVariables>(
@@ -72,7 +85,7 @@ export const queryWebhookLogs = (
                     }
                 }
 
-                ${fragment}
+                ${webhookLogConnectionFieldsFragment}
             `,
             {
                 first,
@@ -99,7 +112,7 @@ export const queryWebhookLogs = (
                 }
             }
 
-            ${fragment}
+            ${webhookLogConnectionFieldsFragment}
         `,
         {
             first: first ?? null,
@@ -135,5 +148,34 @@ export const WEBHOOK_LOG_PAGE_HEADER = gql`
     fragment WebhookLogPageHeaderExternalService on ExternalService {
         id
         displayName
+    }
+`
+
+export const WEBHOOK_LOGS_BY_ID = gql`
+    ${webhookLogConnectionFieldsFragment}
+
+    query WebhookLogsByWebhookID(
+        $first: Int
+        $after: String
+        $onlyErrors: Boolean!
+        $onlyUnmatched: Boolean!
+        $webhookID: ID!
+    ) {
+        webhookLogs(
+            first: $first
+            after: $after
+            onlyErrors: $onlyErrors
+            onlyUnmatched: $onlyUnmatched
+            webhookID: $webhookID
+        ) {
+            nodes {
+                ...WebhookLogFields
+            }
+            pageInfo {
+                hasNextPage
+                endCursor
+            }
+            totalCount
+        }
     }
 `

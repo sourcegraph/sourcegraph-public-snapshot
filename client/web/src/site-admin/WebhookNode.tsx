@@ -10,6 +10,7 @@ import { ExternalServiceKind } from '../graphql-operations'
 import styles from './WebhookNode.module.scss'
 
 export interface WebhookProps {
+    id: string
     codeHostKind: ExternalServiceKind
     codeHostURN: string
 }
