@@ -35,7 +35,7 @@ describe('FeedbackPrompt', () => {
     })
 
     const submitFeedback = () => {
-        fireEvent.change(screen.getByTestId('feedback-text'), {
+        fireEvent.change(screen.getByLabelText('Send feedback to Sourcegraph'), {
             target: { value: sampleFeedback.feedback },
         })
 
@@ -51,7 +51,7 @@ describe('FeedbackPrompt', () => {
     test('should enable/disable submit button correctly', () => {
         expect(screen.getByText('Send')).toBeDisabled()
 
-        userEvent.type(screen.getByTestId('feedback-text'), sampleFeedback.feedback)
+        userEvent.type(screen.getByLabelText('Send feedback to Sourcegraph'), sampleFeedback.feedback)
 
         expect(screen.getByText('Send')).toBeEnabled()
     })

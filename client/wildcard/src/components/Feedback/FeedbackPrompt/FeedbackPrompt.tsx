@@ -111,7 +111,6 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
                     )}
                     <FlexTextArea
                         aria-labelledby="feedback-prompt-question"
-                        data-testid="feedback-text"
                         onChange={handleTextChange}
                         value={text}
                         minRows={3}
