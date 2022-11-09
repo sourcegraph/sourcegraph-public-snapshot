@@ -8,13 +8,13 @@ import (
 	"os"
 	"time"
 
-	"cuelang.org/go/cue/errors"
+	cueErrs "cuelang.org/go/cue/errors"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
-	sgerr "github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 //go:embed config.example.cue
@@ -85,7 +85,7 @@ func createDestinationCodeHost(ctx context.Context, logger log.Logger, cfg CodeH
 		}
 	default:
 		{
-			return nil, sgerr.Newf("unknown code host %q", cfg.Kind)
+			return nil, errors.Newf("unknown code host %q", cfg.Kind)
 		}
 	}
 }
@@ -102,7 +102,7 @@ func createSourceCodeHost(ctx context.Context, logger log.Logger, cfg CodeHostDe
 		}
 	default:
 		{
-			return nil, sgerr.Newf("unknown code host %q", cfg.Kind)
+			return nil, errors.Newf("unknown code host %q", cfg.Kind)
 		}
 	}
 }
@@ -110,9 +110,9 @@ func createSourceCodeHost(ctx context.Context, logger log.Logger, cfg CodeHostDe
 func doRun(ctx context.Context, logger log.Logger, state string, config string) error {
 	cfg, err := loadConfig(config)
 	if err != nil {
-		var cueErr errors.Error
+		var cueErr cueErrs.Error
 		if errors.As(err, &cueErr) {
-			logger.Info(errors.Details(err, nil))
+			logger.Info(cueErrs.Details(err, nil))
 		}
 		logger.Fatal("failed to load config", log.Error(err))
 	}
@@ -137,9 +137,9 @@ func doRun(ctx context.Context, logger log.Logger, state string, config string) 
 func doList(ctx context.Context, logger log.Logger, state string, config string, limit int) error {
 	cfg, err := loadConfig(config)
 	if err != nil {
-		var cueErr errors.Error
+		var cueErr cueErrs.Error
 		if errors.As(err, &cueErr) {
-			logger.Info(errors.Details(err, nil))
+			logger.Info(cueErrs.Details(err, nil))
 		}
 		logger.Fatal("failed to load config", log.Error(err))
 	}
