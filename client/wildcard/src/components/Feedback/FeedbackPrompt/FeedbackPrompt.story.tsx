@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Args, useMemo } from '@storybook/addons'
+import { Args } from '@storybook/addons'
 import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -75,7 +75,7 @@ const commonProps = (
 export const FeedbackPromptWithSuccessResponse: Story = args => (
     <>
         <H1>This is a feedbackPrompt with success response</H1>
-        <FeedbackPrompt onSubmit={handleSuccessSubmit} {...useMemo(() => commonProps(args), [args])}>
+        <FeedbackPrompt onSubmit={handleSuccessSubmit} {...commonProps(args)}>
             <PopoverTrigger
                 className={styles.feedbackPrompt}
                 as={Button}
@@ -93,7 +93,7 @@ export const FeedbackPromptWithSuccessResponse: Story = args => (
 export const FeedbackPromptWithErrorResponse: Story = args => (
     <>
         <H1>This is a feedbackPrompt with error response</H1>
-        <FeedbackPrompt onSubmit={handleErrorSubmit} {...useMemo(() => commonProps(args), [args])}>
+        <FeedbackPrompt onSubmit={handleErrorSubmit} {...commonProps(args)}>
             <PopoverTrigger
                 className={styles.feedbackPrompt}
                 as={Button}
@@ -111,7 +111,7 @@ export const FeedbackPromptWithErrorResponse: Story = args => (
 export const FeedbackPromptWithInModal: Story = args => (
     <>
         <H1>This is a feedbackPrompt in modal</H1>
-        <FeedbackPrompt onSubmit={handleSuccessSubmit} modal={true} {...useMemo(() => commonProps(args), [args])}>
+        <FeedbackPrompt onSubmit={handleSuccessSubmit} modal={true} {...commonProps(args)}>
             {({ onClick }) => (
                 <Button onClick={onClick} aria-label="Feedback" variant="secondary" outline={true} size="sm">
                     <small>Feedback</small>
