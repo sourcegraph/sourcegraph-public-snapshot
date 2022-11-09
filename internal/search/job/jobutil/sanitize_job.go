@@ -13,10 +13,6 @@ import (
 )
 
 func NewSanitizeJob(sanitizePatterns []*regexp.Regexp, child job.Job) job.Job {
-	if len(sanitizePatterns) == 0 {
-		return &NoopJob{}
-	}
-
 	return &sanitizeJob{
 		sanitizePatterns: sanitizePatterns,
 		child:            child,
@@ -82,8 +78,11 @@ func (j *sanitizeJob) sanitizeEvent(event streaming.SearchEvent) streaming.Searc
 }
 
 func (j *sanitizeJob) sanitizeFileMatch(fm *result.FileMatch) result.Match {
-	sanitizedChunks := fm.ChunkMatches[:0]
+	if len(fm.Symbols) > 0 {
+		return fm
+	}
 
+	sanitizedChunks := fm.ChunkMatches[:0]
 	for _, chunk := range fm.ChunkMatches {
 		chunk = j.sanitizeChunk(chunk)
 		if len(chunk.Ranges) == 0 {
