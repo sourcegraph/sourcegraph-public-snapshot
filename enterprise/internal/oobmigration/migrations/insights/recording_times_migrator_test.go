@@ -16,10 +16,8 @@ import (
 
 func TestRecordingTimesMigrator(t *testing.T) {
 	logger := logtest.Scoped(t)
-	//postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 
-	//permStore := store.NewInsightPermissionStore(postgres)
 	insightsStore := basestore.NewWithHandle(insightsDB.Handle())
 
 	migrator := NewRecordingTimesMigrator(insightsStore, 500)

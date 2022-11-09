@@ -106,8 +106,6 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 		metadata.existingTimes = recordingTimes
 	}
 
-	// using the inserter is probably the most efficient way however it creates a dependency so commenting out for now
-	// inserter := batch.NewInserterWithConflict(ctx, tx.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "insight_series_id", "recording_time", "snapshot")
 	for id, metadata := range series {
 		calculatedTimes := calculateRecordingTimes(metadata.createdAt, metadata.lastRecordedAt, metadata.interval, metadata.existingTimes)
 		for _, recordTime := range calculatedTimes {
