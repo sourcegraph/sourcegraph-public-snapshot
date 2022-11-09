@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -43,8 +44,12 @@ func NewGitTreeEntryResolver(db database.DB, commit *GitCommitResolver, stat fs.
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
 func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
 
-func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { return r, r.IsDirectory() }
-func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, !r.IsDirectory() }
+func (r *GitTreeEntryResolver) ToGitTree() (resolverstubs.GitTreeEntryResolver, bool) {
+	return r, r.IsDirectory()
+}
+func (r *GitTreeEntryResolver) ToGitBlob() (resolverstubs.GitTreeEntryResolver, bool) {
+	return r, !r.IsDirectory()
+}
 
 // func (r *GitTreeEntryResolver) ToVirtualFile() (*virtualFileResolver, bool) { return nil, false }
 
@@ -63,7 +68,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 
 		r.content, r.contentErr = gitserver.NewClient(r.db).ReadFile(
 			ctx,
-			r.commit.repoResolver.RepoName(),
+			api.RepoName(r.commit.Repository().Name()),
 			api.CommitID(r.commit.OID()),
 			r.Path(),
 			authz.DefaultSubRepoPermsChecker,
@@ -73,8 +78,14 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 	return string(r.content), r.contentErr
 }
 
-func (r *GitTreeEntryResolver) Commit() *GitCommitResolver      { return r.commit }
-func (r *GitTreeEntryResolver) Repository() *RepositoryResolver { return r.commit.repoResolver }
+func (r *GitTreeEntryResolver) Commit() resolverstubs.GitCommitResolver {
+	return r.commit
+}
+
+func (r *GitTreeEntryResolver) Repository() resolverstubs.RepositoryResolver {
+	return r.commit.Repository()
+}
+
 func (r *GitTreeEntryResolver) CanonicalURL() string {
 	url := r.commit.canonicalRepoRevURL()
 	return r.urlPath(url).String()
@@ -91,7 +102,7 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 	return r.url(ctx).String(), nil
 }
 
-func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
+func (r *GitTreeEntryResolver) Submodule() resolverstubs.GitSubmoduleResolver {
 	if submoduleInfo, ok := r.stat.Sys().(gitdomain.Submodule); ok {
 		// return &gitSubmoduleResolver{submodule: submoduleInfo}
 		return NewGitSubmoduleResolver(submoduleInfo)

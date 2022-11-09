@@ -1,16 +1,12 @@
 package sharedresolvers
 
-type AuditLogColumnChangeResolver interface {
-	Column() string
-	Old() *string
-	New() *string
-}
+import resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 
 type auditLogColumnChangeResolver struct {
 	columnTransition map[string]*string
 }
 
-func NewAuditLogColumnChangeResolver(columnTransition map[string]*string) AuditLogColumnChangeResolver {
+func NewAuditLogColumnChangeResolver(columnTransition map[string]*string) resolverstubs.AuditLogColumnChangeResolver {
 	return &auditLogColumnChangeResolver{columnTransition}
 }
 

@@ -2,14 +2,9 @@ package sharedresolvers
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
-
-type IndexStepResolver interface {
-	IndexerArgs() []string
-	Outfile() *string
-	LogEntry() ExecutionLogEntryResolver
-}
 
 type indexStepResolver struct {
 	svc   AutoIndexingService
@@ -17,7 +12,7 @@ type indexStepResolver struct {
 	entry *workerutil.ExecutionLogEntry
 }
 
-func NewIndexStepResolver(svc AutoIndexingService, index types.Index, entry *workerutil.ExecutionLogEntry) IndexStepResolver {
+func NewIndexStepResolver(svc AutoIndexingService, index types.Index, entry *workerutil.ExecutionLogEntry) resolverstubs.IndexStepResolver {
 	return &indexStepResolver{
 		svc:   svc,
 		index: index,
@@ -28,7 +23,7 @@ func NewIndexStepResolver(svc AutoIndexingService, index types.Index, entry *wor
 func (r *indexStepResolver) IndexerArgs() []string { return r.index.IndexerArgs }
 func (r *indexStepResolver) Outfile() *string      { return strPtr(r.index.Outfile) }
 
-func (r *indexStepResolver) LogEntry() ExecutionLogEntryResolver {
+func (r *indexStepResolver) LogEntry() resolverstubs.ExecutionLogEntryResolver {
 	if r.entry != nil {
 		return NewExecutionLogEntryResolver(r.svc, *r.entry)
 	}

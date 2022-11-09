@@ -2,24 +2,21 @@ package graphql
 
 import (
 	"github.com/sourcegraph/go-lsp"
-)
 
-type HoverResolver interface {
-	Markdown() Markdown
-	Range() RangeResolver
-}
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+)
 
 type hoverResolver struct {
 	text     string
 	lspRange lsp.Range
 }
 
-func NewHoverResolver(text string, lspRange lsp.Range) HoverResolver {
+func NewHoverResolver(text string, lspRange lsp.Range) resolverstubs.HoverResolver {
 	return &hoverResolver{
 		text:     text,
 		lspRange: lspRange,
 	}
 }
 
-func (r *hoverResolver) Markdown() Markdown   { return Markdown(r.text) }
-func (r *hoverResolver) Range() RangeResolver { return NewRangeResolver(r.lspRange) }
+func (r *hoverResolver) Markdown() resolverstubs.Markdown   { return resolverstubs.Markdown(r.text) }
+func (r *hoverResolver) Range() resolverstubs.RangeResolver { return NewRangeResolver(r.lspRange) }

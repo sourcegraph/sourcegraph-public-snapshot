@@ -17,12 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type CodeIntelRepositoryResolver interface {
-	ID() graphql.ID
-	Name() string
-	URL() string
-}
-
 type RepositoryResolver struct {
 	logger    sglog.Logger
 	hydration sync.Once
@@ -76,7 +70,11 @@ func (r *RepositoryResolver) Type(ctx context.Context) (*types.Repo, error) {
 	return r.repo(ctx)
 }
 
-func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *resolverstubs.RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
+func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *resolverstubs.RepositoryCommitArgs, commitID api.CommitID) (resolverstubs.GitCommitResolver, error) {
+	return r.commitFromID(ctx, args, commitID)
+}
+
+func (r *RepositoryResolver) commitFromID(ctx context.Context, args *resolverstubs.RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
 	resolver := NewGitCommitResolver(r, commitID)
 	if args.InputRevspec != nil {
 		resolver.inputRev = args.InputRevspec

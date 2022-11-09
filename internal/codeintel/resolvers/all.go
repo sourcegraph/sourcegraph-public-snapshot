@@ -3,8 +3,12 @@ package resolvers
 import (
 	"context"
 	"errors"
+	"regexp"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/microcosm-cc/bluemonday"
+	gfm "github.com/shurcooL/github_flavored_markdown"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,13 +26,13 @@ type RootResolver interface {
 
 type CodeNavServiceResolver interface {
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
-	GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (_ GitBlobCodeIntelSupportResolver, err error)
-	GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (resolver GitTreeCodeIntelSupportResolver, err error)
-	RequestLanguageSupport(ctx context.Context, args *RequestLanguageSupportArgs) (*EmptyResponse, error)
-	RequestedLanguageSupport(ctx context.Context) ([]string, error)
 }
 
 type AutoindexingServiceResolver interface {
+	RequestLanguageSupport(ctx context.Context, args *RequestLanguageSupportArgs) (*EmptyResponse, error)
+	RequestedLanguageSupport(ctx context.Context) ([]string, error)
+	GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (_ GitBlobCodeIntelSupportResolver, err error)
+	GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (resolver GitTreeCodeIntelSupportResolver, err error)
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
 	DeleteLSIFIndexes(ctx context.Context, args *DeleteLSIFIndexesArgs) (*EmptyResponse, error)
@@ -72,18 +76,18 @@ type CodeIntelRepositorySummaryResolver interface {
 type LSIFIndexConnectionResolver interface {
 	Nodes(ctx context.Context) ([]LSIFIndexResolver, error)
 	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*PageInfo, error)
+	PageInfo(ctx context.Context) (PageInfo, error)
 }
 
 type LSIFUploadConnectionResolver interface {
 	Nodes(ctx context.Context) ([]LSIFUploadResolver, error)
 	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*PageInfo, error)
+	PageInfo(ctx context.Context) (PageInfo, error)
 }
 
-type PageInfo struct {
-	endCursor   *string
-	hasNextPage bool
+type PageInfo interface {
+	EndCursor() *string
+	HasNextPage() bool
 }
 
 type RepositoryResolver interface {
@@ -97,7 +101,7 @@ type RepositoryResolver interface {
 
 type GitCommitResolver interface {
 	ID() graphql.ID
-	Repository() *LSIFIndexesWithRepositoryNamespaceResolver
+	Repository() RepositoryResolver
 	OID() GitObjectID
 	AbbreviatedOID() string
 	URL() string
@@ -145,7 +149,7 @@ type RepositoryFilterPreviewResolver interface {
 	TotalCount() int32
 	Limit() *int32
 	TotalMatches() int32
-	PageInfo() *PageInfo
+	PageInfo() PageInfo
 }
 
 type CodeIntelligenceCommitGraphResolver interface {
@@ -222,7 +226,7 @@ type CodeIntelligenceRangeConnectionResolver interface {
 
 type LocationConnectionResolver interface {
 	Nodes(ctx context.Context) ([]LocationResolver, error)
-	PageInfo(ctx context.Context) (*PageInfo, error)
+	PageInfo(ctx context.Context) (PageInfo, error)
 }
 
 type LSIFDiagnosticsArgs struct {
@@ -260,11 +264,11 @@ type PositionResolver interface {
 type GitTreeEntryResolver interface {
 	Path() string
 	Name() string
-	ToGitTree() (*GitTreeEntryResolver, bool)
-	ToGitBlob() (*GitTreeEntryResolver, bool)
+	ToGitTree() (GitTreeEntryResolver, bool)
+	ToGitBlob() (GitTreeEntryResolver, bool)
 	ByteSize(ctx context.Context) (int32, error)
-	Commit() *GitCommitResolver
-	Repository() *RepositoryResolver
+	Commit() GitCommitResolver
+	Repository() RepositoryResolver
 	CanonicalURL() string
 	IsRoot() bool
 	IsDirectory() bool
@@ -286,6 +290,36 @@ type GitSubmoduleResolver interface {
 
 type Markdown string
 
+func (m Markdown) Text() string {
+	return string(m)
+}
+
+func (m Markdown) HTML() string {
+	return render(string(m))
+}
+
+var (
+	once   sync.Once
+	policy *bluemonday.Policy
+)
+
+// Render renders Markdown content into sanitized HTML that is safe to render anywhere.
+func render(content string) string {
+	once.Do(func() {
+		policy = bluemonday.UGCPolicy()
+		policy.AllowAttrs("name").Matching(bluemonday.SpaceSeparatedTokens).OnElements("a")
+		policy.AllowAttrs("rel").Matching(regexp.MustCompile(`^nofollow$`)).OnElements("a")
+		policy.AllowAttrs("class").Matching(regexp.MustCompile(`^anchor$`)).OnElements("a")
+		policy.AllowAttrs("aria-hidden").Matching(regexp.MustCompile(`^true$`)).OnElements("a")
+		policy.AllowAttrs("type").Matching(regexp.MustCompile(`^checkbox$`)).OnElements("input")
+		policy.AllowAttrs("checked", "disabled").Matching(regexp.MustCompile(`^$`)).OnElements("input")
+		policy.AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
+	})
+
+	unsafeHTML := gfm.Markdown([]byte(content))
+	return string(policy.SanitizeBytes(unsafeHTML))
+}
+
 type CodeIntelligenceRangeResolver interface {
 	Range(ctx context.Context) (RangeResolver, error)
 	Definitions(ctx context.Context) (LocationConnectionResolver, error)
@@ -302,18 +336,24 @@ type HoverResolver interface {
 type DiagnosticConnectionResolver interface {
 	Nodes(ctx context.Context) ([]DiagnosticResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*PageInfo, error)
+	PageInfo(ctx context.Context) (PageInfo, error)
 }
 
 type CodeIntelligenceConfigurationPolicyConnectionResolver interface {
 	Nodes(ctx context.Context) ([]CodeIntelligenceConfigurationPolicyResolver, error)
 	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*PageInfo, error)
+	PageInfo(ctx context.Context) (PageInfo, error)
+}
+
+type RetentionPolicyMatcherResolver interface {
+	ConfigurationPolicy() CodeIntelligenceConfigurationPolicyResolver
+	Matches() bool
+	ProtectingCommits() *[]string
 }
 
 type CodeIntelligenceConfigurationPolicyResolver interface {
 	ID() graphql.ID
-	Repository(ctx context.Context) (*RepositoryResolver, error)
+	Repository(ctx context.Context) (RepositoryResolver, error)
 	RepositoryPatterns() *[]string
 	Name() string
 	Type() (GitObjectType, error)
@@ -351,7 +391,7 @@ type LSIFIndexResolver interface {
 	PlaceInQueue() *int32
 	AssociatedUpload(ctx context.Context) (LSIFUploadResolver, error)
 	ShouldReindex(ctx context.Context) bool
-	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+	ProjectRoot(ctx context.Context) (GitTreeEntryResolver, error)
 }
 
 type IndexStepsResolver interface {
@@ -378,6 +418,11 @@ type ExecutionLogEntryResolver interface {
 	DurationMilliseconds() *int32
 }
 
+type UploadDocumentPathsConnectionResolver interface {
+	Nodes(ctx context.Context) ([]string, error)
+	TotalCount(ctx context.Context) (*int32, error)
+}
+
 type LSIFUploadResolver interface {
 	ID() graphql.ID
 	InputCommit() string
@@ -393,7 +438,7 @@ type LSIFUploadResolver interface {
 	Indexer() CodeIntelIndexerResolver
 	PlaceInQueue() *int32
 	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
-	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+	ProjectRoot(ctx context.Context) (GitTreeEntryResolver, error)
 	RetentionPolicyOverview(ctx context.Context, args *LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
 	DocumentPaths(ctx context.Context, args *LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error)
 	AuditLogs(ctx context.Context) (*[]LSIFUploadsAuditLogsResolver, error)
@@ -436,10 +481,16 @@ type AuditLogColumnChange interface {
 	New() *string
 }
 
+type AuditLogColumnChangeResolver interface {
+	Column() string
+	Old() *string
+	New() *string
+}
+
 type CodeIntelligenceRetentionPolicyMatchesConnectionResolver interface {
 	Nodes(ctx context.Context) ([]CodeIntelligenceRetentionPolicyMatchResolver, error)
 	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*PageInfo, error)
+	PageInfo(ctx context.Context) (PageInfo, error)
 }
 
 type CodeIntelligenceRetentionPolicyMatchResolver interface {

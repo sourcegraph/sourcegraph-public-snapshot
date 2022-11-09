@@ -5,16 +5,13 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/go-lsp"
-)
 
-type PositionResolver interface {
-	Line() int32
-	Character() int32
-}
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+)
 
 type positionResolver struct{ pos lsp.Position }
 
-func NewPositionResolver(pos lsp.Position) PositionResolver {
+func NewPositionResolver(pos lsp.Position) resolverstubs.PositionResolver {
 	return &positionResolver{pos: pos}
 }
 

@@ -7,13 +7,15 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 
 func TestMakeGetIndexesOptions(t *testing.T) {
-	opts, err := makeGetIndexesOptions(&LSIFRepositoryIndexesQueryArgs{
-		LSIFIndexesQueryArgs: &LSIFIndexesQueryArgs{
-			ConnectionArgs: ConnectionArgs{
+	opts, err := makeGetIndexesOptions(&resolverstubs.LSIFRepositoryIndexesQueryArgs{
+		LSIFIndexesQueryArgs: &resolverstubs.LSIFIndexesQueryArgs{
+			ConnectionArgs: graphqlutil.ConnectionArgs{
 				First: intPtr(5),
 			},
 			Query: strPtr("q"),
@@ -39,8 +41,8 @@ func TestMakeGetIndexesOptions(t *testing.T) {
 }
 
 func TestMakeGetIndexesOptionsDefaults(t *testing.T) {
-	opts, err := makeGetIndexesOptions(&LSIFRepositoryIndexesQueryArgs{
-		LSIFIndexesQueryArgs: &LSIFIndexesQueryArgs{},
+	opts, err := makeGetIndexesOptions(&resolverstubs.LSIFRepositoryIndexesQueryArgs{
+		LSIFIndexesQueryArgs: &resolverstubs.LSIFIndexesQueryArgs{},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error making options: %s", err)

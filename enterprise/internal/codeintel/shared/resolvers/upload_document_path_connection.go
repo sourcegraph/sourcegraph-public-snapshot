@@ -1,23 +1,17 @@
 package sharedresolvers
 
-import "context"
+import (
+	"context"
 
-type LSIFUploadDocumentPathsConnectionResolver interface {
-	Nodes(ctx context.Context) ([]string, error)
-	TotalCount(ctx context.Context) (*int32, error)
-}
-
-type UploadDocumentPathsConnectionResolver interface {
-	Nodes(ctx context.Context) ([]string, error)
-	TotalCount(ctx context.Context) (*int32, error)
-}
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+)
 
 type uploadDocumentPathsConnectionResolver struct {
 	totalCount int
 	documents  []string
 }
 
-func NewUploadDocumentPathsConnectionResolver(totalCount int, documents []string) UploadDocumentPathsConnectionResolver {
+func NewUploadDocumentPathsConnectionResolver(totalCount int, documents []string) resolverstubs.UploadDocumentPathsConnectionResolver {
 	return &uploadDocumentPathsConnectionResolver{
 		totalCount: totalCount,
 		documents:  documents,

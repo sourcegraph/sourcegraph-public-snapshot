@@ -5,9 +5,11 @@ import (
 	"encoding/base64"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -34,7 +36,7 @@ func TestRanges(t *testing.T) {
 		mockOperations,
 	)
 
-	args := &LSIFRangesArgs{StartLine: 10, EndLine: 20}
+	args := &resolverstubs.LSIFRangesArgs{StartLine: 10, EndLine: 20}
 	if _, err := resolver.Ranges(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -72,7 +74,7 @@ func TestDefinitions(t *testing.T) {
 		mockOperations,
 	)
 
-	args := &LSIFQueryPositionArgs{Line: 10, Character: 15}
+	args := &resolverstubs.LSIFQueryPositionArgs{Line: 10, Character: 15}
 	if _, err := resolver.Definitions(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -115,12 +117,12 @@ func TestReferences(t *testing.T) {
 	encodedCursor := encodeReferencesCursor(mockRefCursor)
 	mockCursor := base64.StdEncoding.EncodeToString([]byte(encodedCursor))
 
-	args := &LSIFPagedQueryPositionArgs{
-		LSIFQueryPositionArgs: LSIFQueryPositionArgs{
+	args := &resolverstubs.LSIFPagedQueryPositionArgs{
+		LSIFQueryPositionArgs: resolverstubs.LSIFQueryPositionArgs{
 			Line:      10,
 			Character: 15,
 		},
-		ConnectionArgs: ConnectionArgs{First: &offset},
+		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
 		After:          &mockCursor,
 	}
 
@@ -167,12 +169,12 @@ func TestReferencesDefaultLimit(t *testing.T) {
 		mockOperations,
 	)
 
-	args := &LSIFPagedQueryPositionArgs{
-		LSIFQueryPositionArgs: LSIFQueryPositionArgs{
+	args := &resolverstubs.LSIFPagedQueryPositionArgs{
+		LSIFQueryPositionArgs: resolverstubs.LSIFQueryPositionArgs{
 			Line:      10,
 			Character: 15,
 		},
-		ConnectionArgs: ConnectionArgs{},
+		ConnectionArgs: graphqlutil.ConnectionArgs{},
 	}
 
 	if _, err := resolver.References(context.Background(), args); err != nil {
@@ -210,12 +212,12 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 	)
 
 	offset := int32(-1)
-	args := &LSIFPagedQueryPositionArgs{
-		LSIFQueryPositionArgs: LSIFQueryPositionArgs{
+	args := &resolverstubs.LSIFPagedQueryPositionArgs{
+		LSIFQueryPositionArgs: resolverstubs.LSIFQueryPositionArgs{
 			Line:      10,
 			Character: 15,
 		},
-		ConnectionArgs: ConnectionArgs{First: &offset},
+		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
 	}
 
 	if _, err := resolver.References(context.Background(), args); err != ErrIllegalLimit {
@@ -246,7 +248,7 @@ func TestHover(t *testing.T) {
 	)
 
 	mockCodeNavService.GetHoverFunc.SetDefaultReturn("text", types.Range{}, true, nil)
-	args := &LSIFQueryPositionArgs{Line: 10, Character: 15}
+	args := &resolverstubs.LSIFQueryPositionArgs{Line: 10, Character: 15}
 	if _, err := resolver.Hover(context.Background(), args); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -285,8 +287,8 @@ func TestDiagnostics(t *testing.T) {
 	)
 
 	offset := int32(25)
-	args := &LSIFDiagnosticsArgs{
-		ConnectionArgs: ConnectionArgs{First: &offset},
+	args := &resolverstubs.LSIFDiagnosticsArgs{
+		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
 	}
 
 	if _, err := resolver.Diagnostics(context.Background(), args); err != nil {
@@ -323,8 +325,8 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 		mockOperations,
 	)
 
-	args := &LSIFDiagnosticsArgs{
-		ConnectionArgs: ConnectionArgs{},
+	args := &resolverstubs.LSIFDiagnosticsArgs{
+		ConnectionArgs: graphqlutil.ConnectionArgs{},
 	}
 
 	if _, err := resolver.Diagnostics(context.Background(), args); err != nil {
@@ -362,8 +364,8 @@ func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 	)
 
 	offset := int32(-1)
-	args := &LSIFDiagnosticsArgs{
-		ConnectionArgs: ConnectionArgs{First: &offset},
+	args := &resolverstubs.LSIFDiagnosticsArgs{
+		ConnectionArgs: graphqlutil.ConnectionArgs{First: &offset},
 	}
 
 	if _, err := resolver.Diagnostics(context.Background(), args); err != ErrIllegalLimit {

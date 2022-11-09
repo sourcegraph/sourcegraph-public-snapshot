@@ -5,12 +5,8 @@ import (
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
-
-type LocationConnectionResolver interface {
-	Nodes(ctx context.Context) ([]LocationResolver, error)
-	PageInfo(ctx context.Context) (*PageInfo, error)
-}
 
 type locationConnectionResolver struct {
 	locations        []types.UploadLocation
@@ -18,7 +14,7 @@ type locationConnectionResolver struct {
 	locationResolver *sharedresolvers.CachedLocationResolver
 }
 
-func NewLocationConnectionResolver(locations []types.UploadLocation, cursor *string, locationResolver *sharedresolvers.CachedLocationResolver) LocationConnectionResolver {
+func NewLocationConnectionResolver(locations []types.UploadLocation, cursor *string, locationResolver *sharedresolvers.CachedLocationResolver) resolverstubs.LocationConnectionResolver {
 	return &locationConnectionResolver{
 		locations:        locations,
 		cursor:           cursor,
@@ -26,10 +22,10 @@ func NewLocationConnectionResolver(locations []types.UploadLocation, cursor *str
 	}
 }
 
-func (r *locationConnectionResolver) Nodes(ctx context.Context) ([]LocationResolver, error) {
+func (r *locationConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.LocationResolver, error) {
 	return resolveLocations(ctx, r.locationResolver, r.locations)
 }
 
-func (r *locationConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *locationConnectionResolver) PageInfo(ctx context.Context) (resolverstubs.PageInfo, error) {
 	return EncodeCursor(r.cursor), nil
 }

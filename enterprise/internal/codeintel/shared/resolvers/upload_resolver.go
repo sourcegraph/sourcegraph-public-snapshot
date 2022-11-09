@@ -16,27 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type LSIFUploadResolver interface {
-	ID() graphql.ID
-	InputCommit() string
-	Tags(ctx context.Context) ([]string, error)
-	InputRoot() string
-	IsLatestForRepo() bool
-	UploadedAt() gqlutil.DateTime
-	State() string
-	Failure() *string
-	StartedAt() *gqlutil.DateTime
-	FinishedAt() *gqlutil.DateTime
-	InputIndexer() string
-	Indexer() types.CodeIntelIndexerResolver
-	PlaceInQueue() *int32
-	AssociatedIndex(ctx context.Context) (LSIFIndexResolver, error)
-	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
-	RetentionPolicyOverview(ctx context.Context, args *resolverstubs.LSIFUploadRetentionPolicyMatchesArgs) (CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error)
-	DocumentPaths(ctx context.Context, args *resolverstubs.LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error)
-	AuditLogs(ctx context.Context) (*[]resolverstubs.LSIFUploadsAuditLogsResolver, error)
-}
-
 type UploadResolver struct {
 	uploadsSvc       UploadsService
 	autoindexingSvc  AutoIndexingService
@@ -47,7 +26,7 @@ type UploadResolver struct {
 	traceErrs        *observation.ErrCollector
 }
 
-func NewUploadResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policySvc PolicyService, upload types.Upload, prefetcher *Prefetcher, traceErrs *observation.ErrCollector) LSIFUploadResolver {
+func NewUploadResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policySvc PolicyService, upload types.Upload, prefetcher *Prefetcher, traceErrs *observation.ErrCollector) resolverstubs.LSIFUploadResolver {
 	if upload.AssociatedIndexID != nil {
 		// Request the next batch of index fetches to contain the record's associated
 		// index id, if one exists it exists. This allows the prefetcher.GetIndexByID
@@ -105,7 +84,7 @@ func (r *UploadResolver) State() string {
 	return state
 }
 
-func (r *UploadResolver) AssociatedIndex(ctx context.Context) (_ LSIFIndexResolver, err error) {
+func (r *UploadResolver) AssociatedIndex(ctx context.Context) (_ resolverstubs.LSIFIndexResolver, err error) {
 	// TODO - why are a bunch of them zero?
 	if r.upload.AssociatedIndexID == nil || *r.upload.AssociatedIndexID == 0 {
 		return nil, nil
@@ -124,13 +103,13 @@ func (r *UploadResolver) AssociatedIndex(ctx context.Context) (_ LSIFIndexResolv
 	return NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policySvc, index, r.prefetcher, r.traceErrs), nil
 }
 
-func (r *UploadResolver) ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error) {
+func (r *UploadResolver) ProjectRoot(ctx context.Context) (resolverstubs.GitTreeEntryResolver, error) {
 	return r.locationResolver.Path(ctx, api.RepoID(r.upload.RepositoryID), r.upload.Commit, r.upload.Root)
 }
 
 const DefaultRetentionPolicyMatchesPageSize = 50
 
-func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *resolverstubs.LSIFUploadRetentionPolicyMatchesArgs) (_ CodeIntelligenceRetentionPolicyMatchesConnectionResolver, err error) {
+func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *resolverstubs.LSIFUploadRetentionPolicyMatchesArgs) (_ resolverstubs.CodeIntelligenceRetentionPolicyMatchesConnectionResolver, err error) {
 	var afterID int64
 	if args.After != nil {
 		afterID, err = unmarshalConfigurationPolicyGQLID(graphql.ID(*args.After))
@@ -157,7 +136,7 @@ func (r *UploadResolver) RetentionPolicyOverview(ctx context.Context, args *reso
 	return NewCodeIntelligenceRetentionPolicyMatcherConnectionResolver(r.autoindexingSvc, matches, totalCount, r.traceErrs), nil
 }
 
-func (r *UploadResolver) Indexer() types.CodeIntelIndexerResolver {
+func (r *UploadResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
 	for _, indexer := range types.AllIndexers {
 		if indexer.Name == r.upload.Indexer {
 			return types.NewCodeIntelIndexerResolverFrom(indexer)
@@ -167,7 +146,7 @@ func (r *UploadResolver) Indexer() types.CodeIntelIndexerResolver {
 	return types.NewCodeIntelIndexerResolver(r.upload.Indexer)
 }
 
-func (r *UploadResolver) DocumentPaths(ctx context.Context, args *resolverstubs.LSIFUploadDocumentPathsQueryArgs) (LSIFUploadDocumentPathsConnectionResolver, error) {
+func (r *UploadResolver) DocumentPaths(ctx context.Context, args *resolverstubs.LSIFUploadDocumentPathsQueryArgs) (resolverstubs.LSIFUploadDocumentPathsConnectionResolver, error) {
 	pattern := "%%"
 	if args.Pattern != "" {
 		pattern = args.Pattern

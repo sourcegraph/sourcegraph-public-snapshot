@@ -20,36 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type RootResolver interface {
-	// Mirrors AutoindexingServiceResolver in graphqlbackend
-	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
-	DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*sharedresolvers.EmptyResponse, error)
-	DeleteLSIFIndexes(ctx context.Context, args *resolverstubs.DeleteLSIFIndexesArgs) (*sharedresolvers.EmptyResponse, error)
-	ReindexLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*sharedresolvers.EmptyResponse, error)
-	ReindexLSIFIndexes(ctx context.Context, args *resolverstubs.ReindexLSIFIndexesArgs) (*sharedresolvers.EmptyResponse, error)
-	LSIFIndexByID(ctx context.Context, id graphql.ID) (_ sharedresolvers.LSIFIndexResolver, err error)
-	LSIFIndexes(ctx context.Context, args *resolverstubs.LSIFIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error)
-	LSIFIndexesByRepo(ctx context.Context, args *resolverstubs.LSIFRepositoryIndexesQueryArgs) (sharedresolvers.LSIFIndexConnectionResolver, error)
-	QueueAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.QueueAutoIndexJobsForRepoArgs) ([]sharedresolvers.LSIFIndexResolver, error)
-	UpdateRepositoryIndexConfiguration(ctx context.Context, args *resolverstubs.UpdateRepositoryIndexConfigurationArgs) (*sharedresolvers.EmptyResponse, error)
-	RepositorySummary(ctx context.Context, id graphql.ID) (_ sharedresolvers.CodeIntelRepositorySummaryResolver, err error)
-	GitBlobCodeIntelInfo(ctx context.Context, args *resolverstubs.GitTreeEntryCodeIntelInfoArgs) (_ GitBlobCodeIntelSupportResolver, err error)
-	GitTreeCodeIntelInfo(ctx context.Context, args *resolverstubs.GitTreeEntryCodeIntelInfoArgs) (resolver GitTreeCodeIntelSupportResolver, err error)
-	RequestLanguageSupport(ctx context.Context, args *resolverstubs.RequestLanguageSupportArgs) (_ *sharedresolvers.EmptyResponse, err error)
-	RequestedLanguageSupport(ctx context.Context) (_ []string, err error)
-
-	// AutoIndexing
-	GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []shared.IndexesWithRepositoryNamespace, err error)
-	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error)
-	InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (_ *config.IndexConfiguration, _ bool, err error)
-	InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) (_ []config.IndexJobHint, err error)
-	CodeIntelligenceInferenceScript(ctx context.Context) (script string, err error)
-	UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *resolverstubs.UpdateCodeIntelligenceInferenceScriptArgs) (err error)
-
-	// Symbols client
-	GetSupportedByCtags(ctx context.Context, filepath string, repoName api.RepoName) (bool, string, error)
-}
-
 type rootResolver struct {
 	autoindexSvc AutoIndexingService
 	uploadSvc    UploadsService
@@ -57,7 +27,7 @@ type rootResolver struct {
 	operations   *operations
 }
 
-func NewRootResolver(autoindexSvc AutoIndexingService, uploadSvc UploadsService, policySvc PolicyService, observationContext *observation.Context) RootResolver {
+func NewRootResolver(autoindexSvc AutoIndexingService, uploadSvc UploadsService, policySvc PolicyService, observationContext *observation.Context) resolverstubs.AutoindexingServiceResolver {
 	return &rootResolver{
 		autoindexSvc: autoindexSvc,
 		uploadSvc:    uploadSvc,
@@ -72,7 +42,7 @@ var (
 )
 
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
-func (r *rootResolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_ IndexConfigurationResolver, err error) {
+func (r *rootResolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_ resolverstubs.IndexConfigurationResolver, err error) {
 	_, traceErrs, endObservation := r.operations.indexConfiguration.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(id)),
 	}})
@@ -91,7 +61,7 @@ func (r *rootResolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence index data
-func (r *rootResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *sharedresolvers.EmptyResponse, err error) {
+func (r *rootResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *resolverstubs.EmptyResponse, err error) {
 	ctx, _, endObservation := r.operations.deleteLsifIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("indexID", string(args.ID)),
 	}})
@@ -113,11 +83,11 @@ func (r *rootResolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID gra
 		return nil, err
 	}
 
-	return &sharedresolvers.EmptyResponse{}, nil
+	return &resolverstubs.EmptyResponse{}, nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
-func (r *rootResolver) DeleteLSIFIndexes(ctx context.Context, args *resolverstubs.DeleteLSIFIndexesArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+func (r *rootResolver) DeleteLSIFIndexes(ctx context.Context, args *resolverstubs.DeleteLSIFIndexesArgs) (_ *resolverstubs.EmptyResponse, err error) {
 	ctx, _, endObservation := r.operations.deleteLsifIndexes.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -136,11 +106,11 @@ func (r *rootResolver) DeleteLSIFIndexes(ctx context.Context, args *resolverstub
 		return nil, err
 	}
 
-	return &sharedresolvers.EmptyResponse{}, nil
+	return &resolverstubs.EmptyResponse{}, nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence index data
-func (r *rootResolver) ReindexLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *sharedresolvers.EmptyResponse, err error) {
+func (r *rootResolver) ReindexLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *resolverstubs.EmptyResponse, err error) {
 	ctx, _, endObservation := r.operations.reindexLsifIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("indexID", string(args.ID)),
 	}})
@@ -162,11 +132,11 @@ func (r *rootResolver) ReindexLSIFIndex(ctx context.Context, args *struct{ ID gr
 		return nil, err
 	}
 
-	return &sharedresolvers.EmptyResponse{}, nil
+	return &resolverstubs.EmptyResponse{}, nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
-func (r *rootResolver) ReindexLSIFIndexes(ctx context.Context, args *resolverstubs.ReindexLSIFIndexesArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+func (r *rootResolver) ReindexLSIFIndexes(ctx context.Context, args *resolverstubs.ReindexLSIFIndexesArgs) (_ *resolverstubs.EmptyResponse, err error) {
 	ctx, _, endObservation := r.operations.reindexLsifIndexes.With(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -185,11 +155,11 @@ func (r *rootResolver) ReindexLSIFIndexes(ctx context.Context, args *resolverstu
 		return nil, err
 	}
 
-	return &sharedresolvers.EmptyResponse{}, nil
+	return &resolverstubs.EmptyResponse{}, nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexByID
-func (r *rootResolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ sharedresolvers.LSIFIndexResolver, err error) {
+func (r *rootResolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ resolverstubs.LSIFIndexResolver, err error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
@@ -217,7 +187,7 @@ func (r *rootResolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ shar
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexes
-func (r *rootResolver) LSIFIndexes(ctx context.Context, args *resolverstubs.LSIFIndexesQueryArgs) (_ sharedresolvers.LSIFIndexConnectionResolver, err error) {
+func (r *rootResolver) LSIFIndexes(ctx context.Context, args *resolverstubs.LSIFIndexesQueryArgs) (_ resolverstubs.LSIFIndexConnectionResolver, err error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
@@ -230,7 +200,7 @@ func (r *rootResolver) LSIFIndexes(ctx context.Context, args *resolverstubs.LSIF
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for GetIndexes
-func (r *rootResolver) LSIFIndexesByRepo(ctx context.Context, args *resolverstubs.LSIFRepositoryIndexesQueryArgs) (_ sharedresolvers.LSIFIndexConnectionResolver, err error) {
+func (r *rootResolver) LSIFIndexesByRepo(ctx context.Context, args *resolverstubs.LSIFRepositoryIndexesQueryArgs) (_ resolverstubs.LSIFIndexConnectionResolver, err error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
 	}
@@ -257,7 +227,7 @@ func (r *rootResolver) LSIFIndexesByRepo(ctx context.Context, args *resolverstub
 }
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
-func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.QueueAutoIndexJobsForRepoArgs) (_ []sharedresolvers.LSIFIndexResolver, err error) {
+func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.QueueAutoIndexJobsForRepoArgs) (_ []resolverstubs.LSIFIndexResolver, err error) {
 	ctx, traceErrs, endObservation := r.operations.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(args.Repository)),
 	}})
@@ -294,7 +264,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 	// the same graphQL request, not across different request.
 	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexSvc, r.uploadSvc)
 
-	lsifIndexResolvers := make([]sharedresolvers.LSIFIndexResolver, 0, len(indexes))
+	lsifIndexResolvers := make([]resolverstubs.LSIFIndexResolver, 0, len(indexes))
 	for i := range indexes {
 		lsifIndexResolvers = append(lsifIndexResolvers, sharedresolvers.NewIndexResolver(r.autoindexSvc, r.uploadSvc, r.policySvc, indexes[i], prefetcher, traceErrs))
 	}
@@ -303,7 +273,7 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence indexing configuration
-func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *resolverstubs.UpdateRepositoryIndexConfigurationArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *resolverstubs.UpdateRepositoryIndexConfigurationArgs) (_ *resolverstubs.EmptyResponse, err error) {
 	ctx, _, endObservation := r.operations.updateIndexConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(args.Repository)),
 	}})
@@ -329,25 +299,25 @@ func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, a
 		return nil, err
 	}
 
-	return &sharedresolvers.EmptyResponse{}, nil
+	return &resolverstubs.EmptyResponse{}, nil
 }
 
 func (r *rootResolver) CodeIntelligenceInferenceScript(ctx context.Context) (script string, err error) {
 	return r.autoindexSvc.GetInferenceScript(ctx)
 }
 
-func (r *rootResolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *resolverstubs.UpdateCodeIntelligenceInferenceScriptArgs) (err error) {
-	return r.autoindexSvc.SetInferenceScript(ctx, args.Script)
+func (r *rootResolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *resolverstubs.UpdateCodeIntelligenceInferenceScriptArgs) (_ *resolverstubs.EmptyResponse, err error) {
+	return &resolverstubs.EmptyResponse{}, r.autoindexSvc.SetInferenceScript(ctx, args.Script)
 }
 
-func (r *rootResolver) GitBlobCodeIntelInfo(ctx context.Context, args *resolverstubs.GitTreeEntryCodeIntelInfoArgs) (_ GitBlobCodeIntelSupportResolver, err error) {
+func (r *rootResolver) GitBlobCodeIntelInfo(ctx context.Context, args *resolverstubs.GitTreeEntryCodeIntelInfoArgs) (_ resolverstubs.GitBlobCodeIntelSupportResolver, err error) {
 	ctx, errTracer, endObservation := r.operations.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	return NewCodeIntelSupportResolver(r.autoindexSvc, args.Repo.Name, args.Path, errTracer), nil
 }
 
-func (r *rootResolver) GitTreeCodeIntelInfo(ctx context.Context, args *resolverstubs.GitTreeEntryCodeIntelInfoArgs) (resolver GitTreeCodeIntelSupportResolver, err error) {
+func (r *rootResolver) GitTreeCodeIntelInfo(ctx context.Context, args *resolverstubs.GitTreeEntryCodeIntelInfoArgs) (resolver resolverstubs.GitTreeCodeIntelSupportResolver, err error) {
 	ctx, errTracer, endObservation := r.operations.gitBlobCodeIntelInfo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repoID", int(args.Repo.ID)),
 		log.String("path", args.Path),
@@ -414,7 +384,7 @@ func (r *rootResolver) InferedIndexConfigurationHints(ctx context.Context, repos
 	return hints, nil
 }
 
-func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ sharedresolvers.CodeIntelRepositorySummaryResolver, err error) {
+func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
 	ctx, errTracer, endObservation := r.operations.repositorySummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoID", string(id)),
 	}})
@@ -473,7 +443,7 @@ func (r *rootResolver) GetSupportedByCtags(ctx context.Context, filepath string,
 	return r.autoindexSvc.GetSupportedByCtags(ctx, filepath, repoName)
 }
 
-func (r *rootResolver) RequestLanguageSupport(ctx context.Context, args *resolverstubs.RequestLanguageSupportArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+func (r *rootResolver) RequestLanguageSupport(ctx context.Context, args *resolverstubs.RequestLanguageSupportArgs) (_ *resolverstubs.EmptyResponse, err error) {
 	ctx, _, endObservation := r.operations.requestLanguageSupport.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -486,7 +456,7 @@ func (r *rootResolver) RequestLanguageSupport(ctx context.Context, args *resolve
 		return nil, err
 	}
 
-	return &sharedresolvers.EmptyResponse{}, nil
+	return &resolverstubs.EmptyResponse{}, nil
 }
 
 func (r *rootResolver) SetRequestLanguageSupport(ctx context.Context, userID int, language string) (err error) {

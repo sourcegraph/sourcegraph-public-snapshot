@@ -86,7 +86,6 @@ func Init(
 		uploadRootResolver,
 	)
 	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler
-	enterpriseServices.CodeIntelAutoIndexingService = codeIntelServices.AutoIndexingService
 	return nil
 }
 

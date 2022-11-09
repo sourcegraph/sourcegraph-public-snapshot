@@ -1,17 +1,11 @@
 package sharedresolvers
 
 import (
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
-
-type CodeIntelRepositorySummaryResolver interface {
-	RecentUploads() []LSIFUploadsWithRepositoryNamespaceResolver
-	RecentIndexes() []LSIFIndexesWithRepositoryNamespaceResolver
-	LastUploadRetentionScan() *gqlutil.DateTime
-	LastIndexScan() *gqlutil.DateTime
-}
 
 type repositorySummaryResolver struct {
 	autoindexingSvc  AutoIndexingService
@@ -23,7 +17,7 @@ type repositorySummaryResolver struct {
 	errTracer        *observation.ErrCollector
 }
 
-func NewRepositorySummaryResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, summary RepositorySummary, prefetcher *Prefetcher, errTracer *observation.ErrCollector) CodeIntelRepositorySummaryResolver {
+func NewRepositorySummaryResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, summary RepositorySummary, prefetcher *Prefetcher, errTracer *observation.ErrCollector) resolverstubs.CodeIntelRepositorySummaryResolver {
 	db := autoindexingSvc.GetUnsafeDB()
 	return &repositorySummaryResolver{
 		autoindexingSvc:  autoindexingSvc,
@@ -36,10 +30,10 @@ func NewRepositorySummaryResolver(autoindexingSvc AutoIndexingService, uploadsSv
 	}
 }
 
-func (r *repositorySummaryResolver) RecentUploads() []LSIFUploadsWithRepositoryNamespaceResolver {
-	resolvers := make([]LSIFUploadsWithRepositoryNamespaceResolver, 0, len(r.summary.RecentUploads))
+func (r *repositorySummaryResolver) RecentUploads() []resolverstubs.LSIFUploadsWithRepositoryNamespaceResolver {
+	resolvers := make([]resolverstubs.LSIFUploadsWithRepositoryNamespaceResolver, 0, len(r.summary.RecentUploads))
 	for _, upload := range r.summary.RecentUploads {
-		uploadResolvers := make([]LSIFUploadResolver, 0, len(upload.Uploads))
+		uploadResolvers := make([]resolverstubs.LSIFUploadResolver, 0, len(upload.Uploads))
 		for _, u := range upload.Uploads {
 			uploadResolvers = append(uploadResolvers, NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policySvc, u, r.prefetcher, r.errTracer))
 		}
@@ -50,10 +44,10 @@ func (r *repositorySummaryResolver) RecentUploads() []LSIFUploadsWithRepositoryN
 	return resolvers
 }
 
-func (r *repositorySummaryResolver) RecentIndexes() []LSIFIndexesWithRepositoryNamespaceResolver {
-	resolvers := make([]LSIFIndexesWithRepositoryNamespaceResolver, 0, len(r.summary.RecentIndexes))
+func (r *repositorySummaryResolver) RecentIndexes() []resolverstubs.LSIFIndexesWithRepositoryNamespaceResolver {
+	resolvers := make([]resolverstubs.LSIFIndexesWithRepositoryNamespaceResolver, 0, len(r.summary.RecentIndexes))
 	for _, index := range r.summary.RecentIndexes {
-		indexResolvers := make([]LSIFIndexResolver, 0, len(index.Indexes))
+		indexResolvers := make([]resolverstubs.LSIFIndexResolver, 0, len(index.Indexes))
 		for _, idx := range index.Indexes {
 			indexResolvers = append(indexResolvers, NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policySvc, idx, r.prefetcher, r.errTracer))
 		}

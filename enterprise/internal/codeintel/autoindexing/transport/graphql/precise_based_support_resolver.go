@@ -5,12 +5,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
-
-type PreciseSupportResolver interface {
-	SupportLevel() string
-	Indexers() *[]types.CodeIntelIndexerResolver
-}
 
 type preciseCodeIntelSupportType string
 
@@ -21,13 +17,13 @@ const (
 )
 
 type preciseCodeIntelSupportResolver struct {
-	indexers []types.CodeIntelIndexerResolver
+	indexers []resolverstubs.CodeIntelIndexerResolver
 }
 
-func NewPreciseCodeIntelSupportResolver(filepath string) PreciseSupportResolver {
+func NewPreciseCodeIntelSupportResolver(filepath string) resolverstubs.PreciseSupportResolver {
 	indexers := types.LanguageToIndexer[path.Ext(filepath)]
 
-	resolvers := make([]types.CodeIntelIndexerResolver, 0, len(indexers))
+	resolvers := make([]resolverstubs.CodeIntelIndexerResolver, 0, len(indexers))
 	for _, indexer := range indexers {
 		resolvers = append(resolvers, types.NewCodeIntelIndexerResolverFrom(indexer))
 	}
@@ -37,7 +33,7 @@ func NewPreciseCodeIntelSupportResolver(filepath string) PreciseSupportResolver 
 	}
 }
 
-func NewPreciseCodeIntelSupportResolverFromIndexers(indexers []types.CodeIntelIndexerResolver) PreciseSupportResolver {
+func NewPreciseCodeIntelSupportResolverFromIndexers(indexers []resolverstubs.CodeIntelIndexerResolver) resolverstubs.PreciseSupportResolver {
 	return &preciseCodeIntelSupportResolver{
 		indexers: indexers,
 	}
@@ -57,7 +53,7 @@ func (r *preciseCodeIntelSupportResolver) SupportLevel() string {
 	}
 }
 
-func (r *preciseCodeIntelSupportResolver) Indexers() *[]types.CodeIntelIndexerResolver {
+func (r *preciseCodeIntelSupportResolver) Indexers() *[]resolverstubs.CodeIntelIndexerResolver {
 	if len(r.indexers) == 0 {
 		return nil
 	}

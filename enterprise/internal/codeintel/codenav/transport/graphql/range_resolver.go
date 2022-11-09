@@ -1,22 +1,21 @@
 package graphql
 
-import "github.com/sourcegraph/go-lsp"
+import (
+	"github.com/sourcegraph/go-lsp"
 
-type RangeResolver interface {
-	Start() PositionResolver
-	End() PositionResolver
-}
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+)
 
 type rangeResolver struct{ lspRange lsp.Range }
 
-func NewRangeResolver(lspRange lsp.Range) RangeResolver {
+func NewRangeResolver(lspRange lsp.Range) resolverstubs.RangeResolver {
 	return &rangeResolver{
 		lspRange: lspRange,
 	}
 }
 
-func (r *rangeResolver) Start() PositionResolver { return r.start() }
-func (r *rangeResolver) End() PositionResolver   { return r.end() }
+func (r *rangeResolver) Start() resolverstubs.PositionResolver { return r.start() }
+func (r *rangeResolver) End() resolverstubs.PositionResolver   { return r.end() }
 
 func (r *rangeResolver) start() *positionResolver { return &positionResolver{r.lspRange.Start} }
 func (r *rangeResolver) end() *positionResolver   { return &positionResolver{r.lspRange.End} }

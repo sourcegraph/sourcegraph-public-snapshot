@@ -1,26 +1,18 @@
 package graphql
 
 import (
-	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 
-type RepositoryFilterPreviewResolver interface {
-	Nodes() []*sharedresolvers.RepositoryResolver
-	TotalCount() int32
-	Limit() *int32
-	TotalMatches() int32
-	PageInfo() *PageInfo
-}
-
 type repositoryFilterPreviewResolver struct {
-	repositoryResolvers []*sharedresolvers.RepositoryResolver
+	repositoryResolvers []resolverstubs.RepositoryResolver
 	totalCount          int
 	offset              int
 	totalMatches        int
 	limit               *int
 }
 
-func NewRepositoryFilterPreviewResolver(repositoryResolvers []*sharedresolvers.RepositoryResolver, totalCount, offset, totalMatches int, limit *int) RepositoryFilterPreviewResolver {
+func NewRepositoryFilterPreviewResolver(repositoryResolvers []resolverstubs.RepositoryResolver, totalCount, offset, totalMatches int, limit *int) resolverstubs.RepositoryFilterPreviewResolver {
 	return &repositoryFilterPreviewResolver{
 		repositoryResolvers: repositoryResolvers,
 		totalCount:          totalCount,
@@ -30,7 +22,7 @@ func NewRepositoryFilterPreviewResolver(repositoryResolvers []*sharedresolvers.R
 	}
 }
 
-func (r *repositoryFilterPreviewResolver) Nodes() []*sharedresolvers.RepositoryResolver {
+func (r *repositoryFilterPreviewResolver) Nodes() []resolverstubs.RepositoryResolver {
 	return r.repositoryResolvers
 }
 
@@ -51,6 +43,6 @@ func (r *repositoryFilterPreviewResolver) Limit() *int32 {
 	return &v
 }
 
-func (r *repositoryFilterPreviewResolver) PageInfo() *PageInfo {
+func (r *repositoryFilterPreviewResolver) PageInfo() resolverstubs.PageInfo {
 	return EncodeIntCursor(toInt32(NextOffset(r.offset, len(r.repositoryResolvers), r.totalCount)))
 }

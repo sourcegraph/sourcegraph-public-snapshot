@@ -9,31 +9,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-type LSIFIndexResolver interface {
-	ID() graphql.ID
-	InputCommit() string
-	Tags(ctx context.Context) ([]string, error)
-	InputRoot() string
-	InputIndexer() string
-	Indexer() types.CodeIntelIndexerResolver
-	QueuedAt() gqlutil.DateTime
-	State() string
-	Failure() *string
-	StartedAt() *gqlutil.DateTime
-	FinishedAt() *gqlutil.DateTime
-	Steps() IndexStepsResolver
-	PlaceInQueue() *int32
-	AssociatedUpload(ctx context.Context) (LSIFUploadResolver, error)
-	ShouldReindex(ctx context.Context) bool
-	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
-}
 
 type indexResolver struct {
 	autoindexingSvc  AutoIndexingService
@@ -45,7 +27,7 @@ type indexResolver struct {
 	traceErrs        *observation.ErrCollector
 }
 
-func NewIndexResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, index types.Index, prefetcher *Prefetcher, errTrace *observation.ErrCollector) LSIFIndexResolver {
+func NewIndexResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, index types.Index, prefetcher *Prefetcher, errTrace *observation.ErrCollector) resolverstubs.LSIFIndexResolver {
 	if index.AssociatedUploadID != nil {
 		// Request the next batch of upload fetches to contain the record's associated
 		// upload id, if one exists it exists. This allows the prefetcher.GetUploadByID
@@ -80,7 +62,7 @@ func (r *indexResolver) FinishedAt() *gqlutil.DateTime {
 	return gqlutil.DateTimeOrNil(r.index.FinishedAt)
 }
 
-func (r *indexResolver) Steps() IndexStepsResolver {
+func (r *indexResolver) Steps() resolverstubs.IndexStepsResolver {
 	return NewIndexStepsResolver(r.autoindexingSvc, r.index)
 }
 func (r *indexResolver) PlaceInQueue() *int32 { return toInt32(r.index.Rank) }
@@ -108,7 +90,7 @@ func (r *indexResolver) State() string {
 	return state
 }
 
-func (r *indexResolver) AssociatedUpload(ctx context.Context) (_ LSIFUploadResolver, err error) {
+func (r *indexResolver) AssociatedUpload(ctx context.Context) (_ resolverstubs.LSIFUploadResolver, err error) {
 	if r.index.AssociatedUploadID == nil {
 		return nil, nil
 	}
@@ -130,13 +112,13 @@ func (r *indexResolver) ShouldReindex(ctx context.Context) bool {
 	return r.index.ShouldReindex
 }
 
-func (r *indexResolver) ProjectRoot(ctx context.Context) (_ *GitTreeEntryResolver, err error) {
+func (r *indexResolver) ProjectRoot(ctx context.Context) (_ resolverstubs.GitTreeEntryResolver, err error) {
 	defer r.traceErrs.Collect(&err, log.String("indexResolver.field", "projectRoot"))
 
 	return r.locationResolver.Path(ctx, api.RepoID(r.index.RepositoryID), r.index.Commit, r.index.Root)
 }
 
-func (r *indexResolver) Indexer() types.CodeIntelIndexerResolver {
+func (r *indexResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
 	// drop the tag if it exists
 	if idx, ok := types.ImageToIndexer[strings.Split(r.index.Indexer, ":")[0]]; ok {
 		return types.NewCodeIntelIndexerResolverFrom(idx)

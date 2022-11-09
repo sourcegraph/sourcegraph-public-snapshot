@@ -1,16 +1,13 @@
 package graphql
 
-type GitObjectFilterPreviewResolver interface {
-	Name() string
-	Rev() string
-}
+import resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 
 type gitObjectFilterPreviewResolver struct {
 	name string
 	rev  string
 }
 
-func NewGitObjectFilterPreviewResolver(name, rev string) GitObjectFilterPreviewResolver {
+func NewGitObjectFilterPreviewResolver(name, rev string) resolverstubs.GitObjectFilterPreviewResolver {
 	return &gitObjectFilterPreviewResolver{name: name, rev: rev}
 }
 

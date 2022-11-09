@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 
 type GitCommitResolver struct {
@@ -33,9 +34,9 @@ func (r *GitCommitResolver) ID() graphql.ID {
 	return marshalGitCommitID(r.repoResolver.ID(), r.oid)
 }
 
-func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoResolver }
+func (r *GitCommitResolver) Repository() resolverstubs.RepositoryResolver { return r.repoResolver }
 
-func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
+func (r *GitCommitResolver) OID() resolverstubs.GitObjectID { return resolverstubs.GitObjectID(r.oid) }
 
 func (r *GitCommitResolver) AbbreviatedOID() string {
 	return string(r.oid)[:7]

@@ -19,19 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type GitBlobLSIFDataResolver interface {
-	GitTreeLSIFDataResolver
-	ToGitTreeLSIFData() (GitTreeLSIFDataResolver, bool)
-	ToGitBlobLSIFData() (GitBlobLSIFDataResolver, bool)
-
-	Stencil(ctx context.Context) ([]RangeResolver, error)
-	Ranges(ctx context.Context, args *resolverstubs.LSIFRangesArgs) (CodeIntelligenceRangeConnectionResolver, error)
-	Definitions(ctx context.Context, args *resolverstubs.LSIFQueryPositionArgs) (LocationConnectionResolver, error)
-	References(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
-	Implementations(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
-	Hover(ctx context.Context, args *resolverstubs.LSIFQueryPositionArgs) (HoverResolver, error)
-}
-
 // gitBlobLSIFDataResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
 // resolver concerns itself with GraphQL/API-specific behaviors (auth, validation, marshaling, etc.).
 // All code intel-specific behavior is delegated to the underlying resolver instance, which is defined
@@ -60,7 +47,7 @@ func NewGitBlobLSIFDataResolver(
 	requestState codenav.RequestState,
 	errTracer *observation.ErrCollector,
 	operations *operations,
-) GitBlobLSIFDataResolver {
+) resolverstubs.GitBlobLSIFDataResolver {
 	db := autoindexSvc.GetUnsafeDB()
 	return &gitBlobLSIFDataResolver{
 		codeNavSvc:       codeNavSvc,
@@ -74,15 +61,15 @@ func NewGitBlobLSIFDataResolver(
 	}
 }
 
-func (r *gitBlobLSIFDataResolver) ToGitTreeLSIFData() (GitTreeLSIFDataResolver, bool) {
+func (r *gitBlobLSIFDataResolver) ToGitTreeLSIFData() (resolverstubs.GitTreeLSIFDataResolver, bool) {
 	return r, true
 }
 
-func (r *gitBlobLSIFDataResolver) ToGitBlobLSIFData() (GitBlobLSIFDataResolver, bool) {
+func (r *gitBlobLSIFDataResolver) ToGitBlobLSIFData() (resolverstubs.GitBlobLSIFDataResolver, bool) {
 	return r, true
 }
 
-func (r *gitBlobLSIFDataResolver) Stencil(ctx context.Context) (_ []RangeResolver, err error) {
+func (r *gitBlobLSIFDataResolver) Stencil(ctx context.Context) (_ []resolverstubs.RangeResolver, err error) {
 	args := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.stencil, time.Second, getObservationArgs(args))
 	defer endObservation()
@@ -92,7 +79,7 @@ func (r *gitBlobLSIFDataResolver) Stencil(ctx context.Context) (_ []RangeResolve
 		return nil, errors.Wrap(err, "svc.GetStencil")
 	}
 
-	resolvers := make([]RangeResolver, 0, len(ranges))
+	resolvers := make([]resolverstubs.RangeResolver, 0, len(ranges))
 	for _, r := range ranges {
 		resolvers = append(resolvers, NewRangeResolver(convertRange(r)))
 	}
@@ -106,7 +93,7 @@ var ErrIllegalBounds = errors.New("illegal bounds")
 // Ranges returns code intelligence for the ranges that fall within the given range of lines. These
 // results are partial and do not include references outside the current file, or any location that
 // requires cross-linking of bundles (cross-repo or cross-root).
-func (r *gitBlobLSIFDataResolver) Ranges(ctx context.Context, args *resolverstubs.LSIFRangesArgs) (_ CodeIntelligenceRangeConnectionResolver, err error) {
+func (r *gitBlobLSIFDataResolver) Ranges(ctx context.Context, args *resolverstubs.LSIFRangesArgs) (_ resolverstubs.CodeIntelligenceRangeConnectionResolver, err error) {
 	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.ranges, time.Second, observation.Args{
 		LogFields: []log.Field{
@@ -132,7 +119,7 @@ func (r *gitBlobLSIFDataResolver) Ranges(ctx context.Context, args *resolverstub
 }
 
 // Definitions returns the list of source locations that define the symbol at the given position.
-func (r *gitBlobLSIFDataResolver) Definitions(ctx context.Context, args *resolverstubs.LSIFQueryPositionArgs) (_ LocationConnectionResolver, err error) {
+func (r *gitBlobLSIFDataResolver) Definitions(ctx context.Context, args *resolverstubs.LSIFQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
 	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character)}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.definitions, time.Second, observation.Args{
 		LogFields: []traceLog.Field{
@@ -167,7 +154,7 @@ func (r *gitBlobLSIFDataResolver) Definitions(ctx context.Context, args *resolve
 const DefaultReferencesPageSize = 100
 
 // References returns the list of source locations that reference the symbol at the given position.
-func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ LocationConnectionResolver, err error) {
+func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
 	limit := derefInt32(args.First, DefaultReferencesPageSize)
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
@@ -220,7 +207,7 @@ const DefaultImplementationsPageSize = 100
 // ErrIllegalLimit occurs when the user requests less than one object per page.
 var ErrIllegalLimit = errors.New("illegal limit")
 
-func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ LocationConnectionResolver, err error) {
+func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
 	limit := derefInt32(args.First, DefaultImplementationsPageSize)
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
@@ -268,7 +255,7 @@ func (r *gitBlobLSIFDataResolver) Implementations(ctx context.Context, args *res
 }
 
 // Hover returns the hover text and range for the symbol at the given position.
-func (r *gitBlobLSIFDataResolver) Hover(ctx context.Context, args *resolverstubs.LSIFQueryPositionArgs) (_ HoverResolver, err error) {
+func (r *gitBlobLSIFDataResolver) Hover(ctx context.Context, args *resolverstubs.LSIFQueryPositionArgs) (_ resolverstubs.HoverResolver, err error) {
 	requestArgs := shared.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character)}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.hover, time.Second, getObservationArgs(requestArgs))
 	defer endObservation()
@@ -283,7 +270,7 @@ func (r *gitBlobLSIFDataResolver) Hover(ctx context.Context, args *resolverstubs
 
 // LSIFUploads returns the list of dbstore.Uploads for the store.Dumps determined to be applicable
 // for answering code-intel queries.
-func (r *gitBlobLSIFDataResolver) LSIFUploads(ctx context.Context) (_ []sharedresolvers.LSIFUploadResolver, err error) {
+func (r *gitBlobLSIFDataResolver) LSIFUploads(ctx context.Context) (_ []resolverstubs.LSIFUploadResolver, err error) {
 	defer r.errTracer.Collect(&err, log.String("queryResolver.field", "lsifUploads"))
 
 	cacheUploads := r.requestState.GetCacheUploads()
@@ -301,7 +288,7 @@ func (r *gitBlobLSIFDataResolver) LSIFUploads(ctx context.Context) (_ []sharedre
 
 	prefetcher := sharedresolvers.NewPrefetcher(r.autoindexingSvc, r.uploadSvc)
 
-	resolvers := make([]sharedresolvers.LSIFUploadResolver, 0, len(uploads))
+	resolvers := make([]resolverstubs.LSIFUploadResolver, 0, len(uploads))
 	for _, upload := range dbUploads {
 		resolvers = append(resolvers, sharedresolvers.NewUploadResolver(r.uploadSvc, r.autoindexingSvc, r.policiesSvc, upload, prefetcher, r.errTracer))
 	}
@@ -313,7 +300,7 @@ func (r *gitBlobLSIFDataResolver) LSIFUploads(ctx context.Context) (_ []sharedre
 const DefaultDiagnosticsPageSize = 100
 
 // Diagnostics returns the diagnostics for documents with the given path prefix.
-func (r *gitBlobLSIFDataResolver) Diagnostics(ctx context.Context, args *resolverstubs.LSIFDiagnosticsArgs) (_ DiagnosticConnectionResolver, err error) {
+func (r *gitBlobLSIFDataResolver) Diagnostics(ctx context.Context, args *resolverstubs.LSIFDiagnosticsArgs) (_ resolverstubs.DiagnosticConnectionResolver, err error) {
 	limit := derefInt32(args.First, DefaultDiagnosticsPageSize)
 	if limit <= 0 {
 		return nil, ErrIllegalLimit

@@ -1,9 +1,6 @@
 package graphql
 
-type SearchBasedSupportResolver interface {
-	SupportLevel() string
-	Language() string
-}
+import resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 
 type searchBasedCodeIntelSupportType string
 
@@ -16,7 +13,7 @@ type searchBasedSupportResolver struct {
 	language string
 }
 
-func NewSearchBasedCodeIntelResolver(language string) SearchBasedSupportResolver {
+func NewSearchBasedCodeIntelResolver(language string) resolverstubs.SearchBasedSupportResolver {
 	return &searchBasedSupportResolver{language}
 }
 

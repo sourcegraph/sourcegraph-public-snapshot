@@ -9,12 +9,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 
 func TestMakeGetUploadsOptions(t *testing.T) {
-	opts, err := makeGetUploadsOptions(&LSIFRepositoryUploadsQueryArgs{
-		LSIFUploadsQueryArgs: &LSIFUploadsQueryArgs{
-			ConnectionArgs: ConnectionArgs{
+	opts, err := makeGetUploadsOptions(&resolverstubs.LSIFRepositoryUploadsQueryArgs{
+		LSIFUploadsQueryArgs: &resolverstubs.LSIFUploadsQueryArgs{
+			ConnectionArgs: graphqlutil.ConnectionArgs{
 				First: intPtr(5),
 			},
 			Query:           strPtr("q"),
@@ -43,8 +44,8 @@ func TestMakeGetUploadsOptions(t *testing.T) {
 }
 
 func TestMakeGetUploadsOptionsDefaults(t *testing.T) {
-	opts, err := makeGetUploadsOptions(&LSIFRepositoryUploadsQueryArgs{
-		LSIFUploadsQueryArgs: &LSIFUploadsQueryArgs{},
+	opts, err := makeGetUploadsOptions(&resolverstubs.LSIFRepositoryUploadsQueryArgs{
+		LSIFUploadsQueryArgs: &resolverstubs.LSIFUploadsQueryArgs{},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error making options: %s", err)

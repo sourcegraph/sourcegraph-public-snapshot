@@ -9,7 +9,7 @@ import (
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 
 // convertRange creates an LSP range from a bundle range.
@@ -117,32 +117,11 @@ func sharedDumpToDbstoreUpload(dump types.Dump) types.Upload {
 	}
 }
 
-// ConnectionArgs is the common set of arguments to GraphQL fields that return connections (lists).
-type ConnectionArgs struct {
-	First *int32 // return the first n items
-}
-
-// Set is a convenience method for setting the DB limit and offset in a DB XyzListOptions struct.
-func (a ConnectionArgs) Set(o **database.LimitOffset) {
-	if a.First != nil {
-		*o = &database.LimitOffset{Limit: int(*a.First)}
-	}
-}
-
-// GetFirst is a convenience method returning the value of First, defaulting to
-// the type's zero value if nil.
-func (a ConnectionArgs) GetFirst() int32 {
-	if a.First == nil {
-		return 0
-	}
-	return *a.First
-}
-
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The
 // resulting list may be smaller than the input list as any locations with a commit not known by
 // gitserver will be skipped.
-func resolveLocations(ctx context.Context, locationResolver *sharedresolvers.CachedLocationResolver, locations []types.UploadLocation) ([]LocationResolver, error) {
-	resolvedLocations := make([]LocationResolver, 0, len(locations))
+func resolveLocations(ctx context.Context, locationResolver *sharedresolvers.CachedLocationResolver, locations []types.UploadLocation) ([]resolverstubs.LocationResolver, error) {
+	resolvedLocations := make([]resolverstubs.LocationResolver, 0, len(locations))
 	for i := range locations {
 		resolver, err := resolveLocation(ctx, locationResolver, locations[i])
 		if err != nil {
@@ -160,7 +139,7 @@ func resolveLocations(ctx context.Context, locationResolver *sharedresolvers.Cac
 
 // resolveLocation creates a LocationResolver for the given adjusted location. This function may return a
 // nil resolver if the location's commit is not known by gitserver.
-func resolveLocation(ctx context.Context, locationResolver *sharedresolvers.CachedLocationResolver, location types.UploadLocation) (LocationResolver, error) {
+func resolveLocation(ctx context.Context, locationResolver *sharedresolvers.CachedLocationResolver, location types.UploadLocation) (resolverstubs.LocationResolver, error) {
 	treeResolver, err := locationResolver.Path(ctx, api.RepoID(location.Dump.RepositoryID), location.TargetCommit, location.Path)
 	if err != nil || treeResolver == nil {
 		return nil, err

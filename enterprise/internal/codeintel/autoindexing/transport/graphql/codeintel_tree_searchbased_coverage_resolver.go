@@ -1,9 +1,6 @@
 package graphql
 
-type GitTreeSearchBasedCoverage interface {
-	CoveredPaths() []string
-	Support() SearchBasedSupportResolver
-}
+import resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 
 type codeIntelTreeSearchBasedCoverageResolver struct {
 	paths    []string
@@ -14,6 +11,6 @@ func (r *codeIntelTreeSearchBasedCoverageResolver) CoveredPaths() []string {
 	return r.paths
 }
 
-func (r *codeIntelTreeSearchBasedCoverageResolver) Support() SearchBasedSupportResolver {
+func (r *codeIntelTreeSearchBasedCoverageResolver) Support() resolverstubs.SearchBasedSupportResolver {
 	return NewSearchBasedCodeIntelResolver(r.language)
 }

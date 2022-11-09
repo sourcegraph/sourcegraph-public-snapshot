@@ -5,15 +5,10 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
-
-type LSIFIndexConnectionResolver interface {
-	Nodes(ctx context.Context) ([]LSIFIndexResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*PageInfo, error)
-}
 
 type IndexConnectionResolver struct {
 	uploadsSvc       UploadsService
@@ -25,7 +20,7 @@ type IndexConnectionResolver struct {
 	errTracer        *observation.ErrCollector
 }
 
-func NewIndexConnectionResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, indexesResolver *IndexesResolver, prefetcher *Prefetcher, errTracer *observation.ErrCollector) LSIFIndexConnectionResolver {
+func NewIndexConnectionResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, indexesResolver *IndexesResolver, prefetcher *Prefetcher, errTracer *observation.ErrCollector) resolverstubs.LSIFIndexConnectionResolver {
 	db := autoindexingSvc.GetUnsafeDB()
 	return &IndexConnectionResolver{
 		uploadsSvc:       uploadsSvc,
@@ -38,12 +33,12 @@ func NewIndexConnectionResolver(autoindexingSvc AutoIndexingService, uploadsSvc 
 	}
 }
 
-func (r *IndexConnectionResolver) Nodes(ctx context.Context) ([]LSIFIndexResolver, error) {
+func (r *IndexConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.LSIFIndexResolver, error) {
 	if err := r.indexesResolver.Resolve(ctx); err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]LSIFIndexResolver, 0, len(r.indexesResolver.Indexes))
+	resolvers := make([]resolverstubs.LSIFIndexResolver, 0, len(r.indexesResolver.Indexes))
 	for i := range r.indexesResolver.Indexes {
 		resolvers = append(resolvers, NewIndexResolver(r.autoindexingSvc, r.uploadsSvc, r.policySvc, r.indexesResolver.Indexes[i], r.prefetcher, r.errTracer))
 	}
@@ -59,7 +54,7 @@ func (r *IndexConnectionResolver) TotalCount(ctx context.Context) (_ *int32, err
 	return toInt32(&r.indexesResolver.TotalCount), nil
 }
 
-func (r *IndexConnectionResolver) PageInfo(ctx context.Context) (_ *PageInfo, err error) {
+func (r *IndexConnectionResolver) PageInfo(ctx context.Context) (_ resolverstubs.PageInfo, err error) {
 	defer r.errTracer.Collect(&err, log.String("indexConnectionResolver.field", "pageInfo"))
 
 	if err := r.indexesResolver.Resolve(ctx); err != nil {

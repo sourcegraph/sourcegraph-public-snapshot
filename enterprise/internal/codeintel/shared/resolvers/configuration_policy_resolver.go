@@ -12,26 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-type CodeIntelligenceConfigurationPolicyResolver interface {
-	ID() graphql.ID
-	Repository(ctx context.Context) (*RepositoryResolver, error)
-	RepositoryPatterns() *[]string
-	Name() string
-	Type() (types.GitObjectType, error)
-	Pattern() string
-	Protected() bool
-	RetentionEnabled() bool
-	RetentionDurationHours() *int32
-	RetainIntermediateCommits() bool
-	IndexingEnabled() bool
-	IndexCommitMaxAgeHours() *int32
-	IndexIntermediateCommits() bool
-}
 
 type configurationPolicyResolver struct {
 	svc                 AutoIndexingService
@@ -40,7 +25,7 @@ type configurationPolicyResolver struct {
 	errTracer           *observation.ErrCollector
 }
 
-func NewConfigurationPolicyResolver(svc AutoIndexingService, configurationPolicy types.ConfigurationPolicy, errTracer *observation.ErrCollector) CodeIntelligenceConfigurationPolicyResolver {
+func NewConfigurationPolicyResolver(svc AutoIndexingService, configurationPolicy types.ConfigurationPolicy, errTracer *observation.ErrCollector) resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
 		svc:                 svc,
 		logger:              sglog.Scoped("configurationPolicyResolver", ""),
@@ -57,7 +42,7 @@ func (r *configurationPolicyResolver) Name() string {
 	return r.configurationPolicy.Name
 }
 
-func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *RepositoryResolver, err error) {
+func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ resolverstubs.RepositoryResolver, err error) {
 	if r.configurationPolicy.RepositoryID == nil {
 		return nil, nil
 	}
@@ -81,7 +66,7 @@ func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {
 	return r.configurationPolicy.RepositoryPatterns
 }
 
-func (r *configurationPolicyResolver) Type() (_ types.GitObjectType, err error) {
+func (r *configurationPolicyResolver) Type() (_ resolverstubs.GitObjectType, err error) {
 	defer r.errTracer.Collect(&err,
 		log.String("configurationPolicyResolver.field", "type"),
 		log.Int("configurationPolicyID", r.configurationPolicy.ID),
@@ -90,11 +75,11 @@ func (r *configurationPolicyResolver) Type() (_ types.GitObjectType, err error) 
 
 	switch r.configurationPolicy.Type {
 	case types.GitObjectTypeCommit:
-		return types.GitObjectTypeCommit, nil
+		return resolverstubs.GitObjectType(types.GitObjectTypeCommit), nil
 	case types.GitObjectTypeTag:
-		return types.GitObjectTypeTag, nil
+		return resolverstubs.GitObjectType(types.GitObjectTypeTag), nil
 	case types.GitObjectTypeTree:
-		return types.GitObjectTypeTree, nil
+		return resolverstubs.GitObjectType(types.GitObjectTypeTree), nil
 	default:
 		return "", errors.Errorf("unknown git object type %s", r.configurationPolicy.Type)
 	}

@@ -10,12 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
-type AuditLogColumnChange interface {
-	Column() string
-	Old() *string
-	New() *string
-}
-
 type lsifUploadsAuditLogResolver struct {
 	log types.UploadLog
 }

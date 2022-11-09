@@ -4,20 +4,16 @@ import (
 	"context"
 	"time"
 
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
-
-type CodeIntelligenceCommitGraphResolver interface {
-	Stale(ctx context.Context) (bool, error)
-	UpdatedAt(ctx context.Context) (*gqlutil.DateTime, error)
-}
 
 type CommitGraphResolver struct {
 	stale     bool
 	updatedAt *time.Time
 }
 
-func NewCommitGraphResolver(stale bool, updatedAt *time.Time) CodeIntelligenceCommitGraphResolver {
+func NewCommitGraphResolver(stale bool, updatedAt *time.Time) resolverstubs.CodeIntelligenceCommitGraphResolver {
 	return &CommitGraphResolver{
 		stale:     stale,
 		updatedAt: updatedAt,

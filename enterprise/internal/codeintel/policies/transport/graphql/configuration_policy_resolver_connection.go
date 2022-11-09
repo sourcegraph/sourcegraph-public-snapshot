@@ -5,14 +5,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
-
-type CodeIntelligenceConfigurationPolicyConnectionResolver interface {
-	Nodes(ctx context.Context) ([]CodeIntelligenceConfigurationPolicyResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*PageInfo, error)
-}
 
 type codeIntelligenceConfigurationPolicyConnectionResolver struct {
 	policySvc  *policies.Service
@@ -26,7 +21,7 @@ func NewCodeIntelligenceConfigurationPolicyConnectionResolver(
 	policies []types.ConfigurationPolicy,
 	totalCount int,
 	errTracer *observation.ErrCollector,
-) CodeIntelligenceConfigurationPolicyConnectionResolver {
+) resolverstubs.CodeIntelligenceConfigurationPolicyConnectionResolver {
 	return &codeIntelligenceConfigurationPolicyConnectionResolver{
 		policySvc:  policySvc,
 		policies:   policies,
@@ -35,8 +30,8 @@ func NewCodeIntelligenceConfigurationPolicyConnectionResolver(
 	}
 }
 
-func (r *codeIntelligenceConfigurationPolicyConnectionResolver) Nodes(ctx context.Context) ([]CodeIntelligenceConfigurationPolicyResolver, error) {
-	resolvers := make([]CodeIntelligenceConfigurationPolicyResolver, 0, len(r.policies))
+func (r *codeIntelligenceConfigurationPolicyConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.CodeIntelligenceConfigurationPolicyResolver, error) {
+	resolvers := make([]resolverstubs.CodeIntelligenceConfigurationPolicyResolver, 0, len(r.policies))
 	for _, policy := range r.policies {
 		resolvers = append(resolvers, NewConfigurationPolicyResolver(r.policySvc, policy, r.errTracer))
 	}
@@ -49,6 +44,6 @@ func (r *codeIntelligenceConfigurationPolicyConnectionResolver) TotalCount(ctx c
 	return &v, nil
 }
 
-func (r *codeIntelligenceConfigurationPolicyConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *codeIntelligenceConfigurationPolicyConnectionResolver) PageInfo(ctx context.Context) (resolverstubs.PageInfo, error) {
 	return HasNextPage(len(r.policies) < r.totalCount), nil
 }

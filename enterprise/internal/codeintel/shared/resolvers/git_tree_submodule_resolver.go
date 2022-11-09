@@ -4,12 +4,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
-type GitSubmoduleResolver interface {
-	URL() string
-	Commit() string
-	Path() string
-}
-
 type gitSubmoduleResolver struct {
 	submodule gitdomain.Submodule
 }

@@ -11,6 +11,7 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -95,7 +96,7 @@ func TestCachedLocationResolver(t *testing.T) {
 						errs <- err
 						return
 					}
-					if commitResolver.OID() != GitObjectID(commit) {
+					if commitResolver.OID() != resolverstubs.GitObjectID(commit) {
 						errs <- errors.Errorf("unexpected commit. want=%s have=%s", commit, commitResolver.OID())
 						return
 					}

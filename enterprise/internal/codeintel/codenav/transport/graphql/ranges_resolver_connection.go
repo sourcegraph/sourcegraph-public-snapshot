@@ -5,26 +5,23 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
-
-type CodeIntelligenceRangeConnectionResolver interface {
-	Nodes(ctx context.Context) ([]CodeIntelligenceRangeResolver, error)
-}
 
 type codeIntelligenceRangeConnectionResolver struct {
 	ranges           []shared.AdjustedCodeIntelligenceRange
 	locationResolver *sharedresolvers.CachedLocationResolver
 }
 
-func NewCodeIntelligenceRangeConnectionResolver(ranges []shared.AdjustedCodeIntelligenceRange, locationResolver *sharedresolvers.CachedLocationResolver) CodeIntelligenceRangeConnectionResolver {
+func NewCodeIntelligenceRangeConnectionResolver(ranges []shared.AdjustedCodeIntelligenceRange, locationResolver *sharedresolvers.CachedLocationResolver) resolverstubs.CodeIntelligenceRangeConnectionResolver {
 	return &codeIntelligenceRangeConnectionResolver{
 		ranges:           ranges,
 		locationResolver: locationResolver,
 	}
 }
 
-func (r *codeIntelligenceRangeConnectionResolver) Nodes(ctx context.Context) ([]CodeIntelligenceRangeResolver, error) {
-	var resolvers []CodeIntelligenceRangeResolver
+func (r *codeIntelligenceRangeConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.CodeIntelligenceRangeResolver, error) {
+	var resolvers []resolverstubs.CodeIntelligenceRangeResolver
 	for _, rn := range r.ranges {
 		resolvers = append(resolvers, &codeIntelligenceRangeResolver{
 			r:                rn,

@@ -21,29 +21,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type RootResolver interface {
-	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *resolverstubs.CodeIntelligenceConfigurationPoliciesArgs) (_ CodeIntelligenceConfigurationPolicyConnectionResolver, err error)
-	ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (_ CodeIntelligenceConfigurationPolicyResolver, err error)
-	CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.CreateCodeIntelligenceConfigurationPolicyArgs) (_ CodeIntelligenceConfigurationPolicyResolver, err error)
-	UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.UpdateCodeIntelligenceConfigurationPolicyArgs) (_ *sharedresolvers.EmptyResponse, err error)
-	DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.DeleteCodeIntelligenceConfigurationPolicyArgs) (_ *sharedresolvers.EmptyResponse, err error)
-	PreviewRepositoryFilter(ctx context.Context, args *resolverstubs.PreviewRepositoryFilterArgs) (_ RepositoryFilterPreviewResolver, err error)
-	PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *resolverstubs.PreviewGitObjectFilterArgs) (_ []GitObjectFilterPreviewResolver, err error)
-}
-
 type rootResolver struct {
 	policySvc  *policies.Service
 	operations *operations
 }
 
-func NewRootResolver(policySvc *policies.Service, observationContext *observation.Context) RootResolver {
+func NewRootResolver(policySvc *policies.Service, observationContext *observation.Context) resolverstubs.PoliciesServiceResolver {
 	return &rootResolver{
 		policySvc:  policySvc,
 		operations: newOperations(observationContext),
 	}
 }
 
-func (r *rootResolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (_ CodeIntelligenceConfigurationPolicyResolver, err error) {
+func (r *rootResolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (_ resolverstubs.CodeIntelligenceConfigurationPolicyResolver, err error) {
 	ctx, traceErrs, endObservation := r.operations.configurationPolicyByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("configPolicyID", string(id)),
 	}})
@@ -65,7 +55,7 @@ func (r *rootResolver) ConfigurationPolicyByID(ctx context.Context, id graphql.I
 const DefaultConfigurationPolicyPageSize = 50
 
 // 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicies
-func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, args *resolverstubs.CodeIntelligenceConfigurationPoliciesArgs) (_ CodeIntelligenceConfigurationPolicyConnectionResolver, err error) {
+func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, args *resolverstubs.CodeIntelligenceConfigurationPoliciesArgs) (_ resolverstubs.CodeIntelligenceConfigurationPolicyConnectionResolver, err error) {
 	fields := []log.Field{}
 	if args.Repository != nil {
 		fields = append(fields, log.String("repoID", string(*args.Repository)))
@@ -113,7 +103,7 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
-func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.CreateCodeIntelligenceConfigurationPolicyArgs) (_ CodeIntelligenceConfigurationPolicyResolver, err error) {
+func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.CreateCodeIntelligenceConfigurationPolicyArgs) (_ resolverstubs.CodeIntelligenceConfigurationPolicyResolver, err error) {
 	ctx, traceErrs, endObservation := r.operations.createConfigurationPolicy.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -158,7 +148,7 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
-func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.UpdateCodeIntelligenceConfigurationPolicyArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.UpdateCodeIntelligenceConfigurationPolicyArgs) (_ *resolverstubs.EmptyResponse, err error) {
 	ctx, _, endObservation := r.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("configPolicyID", string(args.ID)),
 	}})
@@ -194,11 +184,11 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		return nil, err
 	}
 
-	return &sharedresolvers.EmptyResponse{}, nil
+	return &resolverstubs.EmptyResponse{}, nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
-func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.DeleteCodeIntelligenceConfigurationPolicyArgs) (_ *sharedresolvers.EmptyResponse, err error) {
+func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.DeleteCodeIntelligenceConfigurationPolicyArgs) (_ *resolverstubs.EmptyResponse, err error) {
 	ctx, _, endObservation := r.operations.deleteConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("configPolicyID", string(args.Policy)),
 	}})
@@ -217,12 +207,12 @@ func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Con
 		return nil, err
 	}
 
-	return &sharedresolvers.EmptyResponse{}, nil
+	return &resolverstubs.EmptyResponse{}, nil
 }
 
 const DefaultRepositoryFilterPreviewPageSize = 50
 
-func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolverstubs.PreviewRepositoryFilterArgs) (_ RepositoryFilterPreviewResolver, err error) {
+func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolverstubs.PreviewRepositoryFilterArgs) (_ resolverstubs.RepositoryFilterPreviewResolver, err error) {
 	ctx, _, endObservation := r.operations.previewRepoFilter.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -241,7 +231,7 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolv
 		return nil, err
 	}
 
-	resv := make([]*sharedresolvers.RepositoryResolver, 0, len(ids))
+	resv := make([]resolverstubs.RepositoryResolver, 0, len(ids))
 	logger := sglog.Scoped("PreviewRepositoryFilter", "policies resolver")
 	for _, id := range ids {
 		db := r.policySvc.GetUnsafeDB()
@@ -261,7 +251,7 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolv
 	return NewRepositoryFilterPreviewResolver(resv, limitedCount, totalMatches, offset, repositoryMatchLimit), nil
 }
 
-func (r *rootResolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *resolverstubs.PreviewGitObjectFilterArgs) (_ []GitObjectFilterPreviewResolver, err error) {
+func (r *rootResolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *resolverstubs.PreviewGitObjectFilterArgs) (_ []resolverstubs.GitObjectFilterPreviewResolver, err error) {
 	ctx, _, endObservation := r.operations.previewGitObjectFilter.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -275,7 +265,7 @@ func (r *rootResolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID
 		return nil, err
 	}
 
-	var previews []GitObjectFilterPreviewResolver
+	var previews []resolverstubs.GitObjectFilterPreviewResolver
 	for rev, names := range namesByRev {
 		for _, name := range names {
 			previews = append(previews, &gitObjectFilterPreviewResolver{

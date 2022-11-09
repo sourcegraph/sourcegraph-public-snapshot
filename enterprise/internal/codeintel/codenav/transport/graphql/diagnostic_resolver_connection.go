@@ -5,13 +5,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
-
-type DiagnosticConnectionResolver interface {
-	Nodes(ctx context.Context) ([]DiagnosticResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*PageInfo, error)
-}
 
 type diagnosticConnectionResolver struct {
 	diagnostics      []shared.DiagnosticAtUpload
@@ -19,7 +14,7 @@ type diagnosticConnectionResolver struct {
 	locationResolver *sharedresolvers.CachedLocationResolver
 }
 
-func NewDiagnosticConnectionResolver(diagnostics []shared.DiagnosticAtUpload, totalCount int, locationResolver *sharedresolvers.CachedLocationResolver) DiagnosticConnectionResolver {
+func NewDiagnosticConnectionResolver(diagnostics []shared.DiagnosticAtUpload, totalCount int, locationResolver *sharedresolvers.CachedLocationResolver) resolverstubs.DiagnosticConnectionResolver {
 	return &diagnosticConnectionResolver{
 		diagnostics:      diagnostics,
 		totalCount:       totalCount,
@@ -27,8 +22,8 @@ func NewDiagnosticConnectionResolver(diagnostics []shared.DiagnosticAtUpload, to
 	}
 }
 
-func (r *diagnosticConnectionResolver) Nodes(ctx context.Context) ([]DiagnosticResolver, error) {
-	resolvers := make([]DiagnosticResolver, 0, len(r.diagnostics))
+func (r *diagnosticConnectionResolver) Nodes(ctx context.Context) ([]resolverstubs.DiagnosticResolver, error) {
+	resolvers := make([]resolverstubs.DiagnosticResolver, 0, len(r.diagnostics))
 	for i := range r.diagnostics {
 		resolvers = append(resolvers, NewDiagnosticResolver(r.diagnostics[i], r.locationResolver))
 	}
@@ -39,6 +34,6 @@ func (r *diagnosticConnectionResolver) TotalCount(ctx context.Context) (int32, e
 	return int32(r.totalCount), nil
 }
 
-func (r *diagnosticConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *diagnosticConnectionResolver) PageInfo(ctx context.Context) (resolverstubs.PageInfo, error) {
 	return HasNextPage(len(r.diagnostics) < r.totalCount), nil
 }

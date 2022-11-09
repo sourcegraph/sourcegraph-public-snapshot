@@ -6,32 +6,28 @@ import (
 	"github.com/sourcegraph/go-lsp"
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
-
-type LocationResolver interface {
-	Resource() *sharedresolvers.GitTreeEntryResolver
-	Range() *rangeResolver
-	URL(ctx context.Context) (string, error)
-	CanonicalURL() string
-}
 
 type locationResolver struct {
 	resource *sharedresolvers.GitTreeEntryResolver
 	lspRange *lsp.Range
 }
 
-var _ LocationResolver = &locationResolver{}
-
-func NewLocationResolver(resource *sharedresolvers.GitTreeEntryResolver, lspRange *lsp.Range) LocationResolver {
+func NewLocationResolver(resource *sharedresolvers.GitTreeEntryResolver, lspRange *lsp.Range) resolverstubs.LocationResolver {
 	return &locationResolver{
 		resource: resource,
 		lspRange: lspRange,
 	}
 }
 
-func (r *locationResolver) Resource() *sharedresolvers.GitTreeEntryResolver { return r.resource }
+func (r *locationResolver) Resource() resolverstubs.GitTreeEntryResolver { return r.resource }
 
-func (r *locationResolver) Range() *rangeResolver {
+func (r *locationResolver) Range() resolverstubs.RangeResolver {
+	return r.rangeInternal()
+}
+
+func (r *locationResolver) rangeInternal() *rangeResolver {
 	if r.lspRange == nil {
 		return nil
 	}
@@ -54,7 +50,7 @@ func (r *locationResolver) CanonicalURL() string {
 func (r *locationResolver) urlPath(prefix string) string {
 	url := prefix
 	if r.lspRange != nil {
-		url += "?L" + r.Range().urlFragment()
+		url += "?L" + r.rangeInternal().urlFragment()
 	}
 	return url
 }

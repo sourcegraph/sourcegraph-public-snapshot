@@ -11,10 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type RootResolver interface {
-	GitBlobLSIFData(ctx context.Context, args *resolverstubs.GitBlobLSIFDataArgs) (_ GitBlobLSIFDataResolver, err error)
-}
-
 type rootResolver struct {
 	svc                            CodeNavService
 	autoindexingSvc                AutoIndexingService
@@ -28,7 +24,7 @@ type rootResolver struct {
 	operations *operations
 }
 
-func NewRootResolver(svc CodeNavService, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserver GitserverClient, maxIndexSearch, hunkCacheSize int, observationContext *observation.Context) RootResolver {
+func NewRootResolver(svc CodeNavService, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserver GitserverClient, maxIndexSearch, hunkCacheSize int, observationContext *observation.Context) resolverstubs.CodeNavServiceResolver {
 	return &rootResolver{
 		svc:                            svc,
 		autoindexingSvc:                autoindexingSvc,
@@ -42,7 +38,7 @@ func NewRootResolver(svc CodeNavService, autoindexingSvc AutoIndexingService, up
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
-func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.GitBlobLSIFDataArgs) (_ GitBlobLSIFDataResolver, err error) {
+func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.GitBlobLSIFDataArgs) (_ resolverstubs.GitBlobLSIFDataResolver, err error) {
 	ctx, errTracer, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 

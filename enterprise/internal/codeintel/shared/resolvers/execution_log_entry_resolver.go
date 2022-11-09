@@ -4,25 +4,17 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
-
-type ExecutionLogEntryResolver interface {
-	Key() string
-	Command() []string
-	StartTime() gqlutil.DateTime
-	ExitCode() *int32
-	Out(ctx context.Context) (string, error)
-	DurationMilliseconds() *int32
-}
 
 type executionLogEntryResolver struct {
 	svc   AutoIndexingService
 	entry workerutil.ExecutionLogEntry
 }
 
-func NewExecutionLogEntryResolver(svc AutoIndexingService, entry workerutil.ExecutionLogEntry) ExecutionLogEntryResolver {
+func NewExecutionLogEntryResolver(svc AutoIndexingService, entry workerutil.ExecutionLogEntry) resolverstubs.ExecutionLogEntryResolver {
 	return &executionLogEntryResolver{
 		svc:   svc,
 		entry: entry,

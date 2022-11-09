@@ -6,13 +6,9 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
-
-type GitBlobCodeIntelSupportResolver interface {
-	SearchBasedSupport(context.Context) (SearchBasedSupportResolver, error)
-	PreciseSupport(context.Context) (PreciseSupportResolver, error)
-}
 
 type codeIntelSupportResolver struct {
 	repo         api.RepoName
@@ -21,7 +17,7 @@ type codeIntelSupportResolver struct {
 	errTracer    *observation.ErrCollector
 }
 
-func NewCodeIntelSupportResolver(autoindexSvc AutoIndexingService, repoName api.RepoName, path string, errTracer *observation.ErrCollector) GitBlobCodeIntelSupportResolver {
+func NewCodeIntelSupportResolver(autoindexSvc AutoIndexingService, repoName api.RepoName, path string, errTracer *observation.ErrCollector) resolverstubs.GitBlobCodeIntelSupportResolver {
 	return &codeIntelSupportResolver{
 		repo:         repoName,
 		path:         path,
@@ -30,7 +26,7 @@ func NewCodeIntelSupportResolver(autoindexSvc AutoIndexingService, repoName api.
 	}
 }
 
-func (r *codeIntelSupportResolver) SearchBasedSupport(ctx context.Context) (_ SearchBasedSupportResolver, err error) {
+func (r *codeIntelSupportResolver) SearchBasedSupport(ctx context.Context) (_ resolverstubs.SearchBasedSupportResolver, err error) {
 	var (
 		ctagsSupported bool
 		language       string
@@ -55,6 +51,6 @@ func (r *codeIntelSupportResolver) SearchBasedSupport(ctx context.Context) (_ Se
 	return NewSearchBasedCodeIntelResolver(language), nil
 }
 
-func (r *codeIntelSupportResolver) PreciseSupport(ctx context.Context) (PreciseSupportResolver, error) {
+func (r *codeIntelSupportResolver) PreciseSupport(ctx context.Context) (resolverstubs.PreciseSupportResolver, error) {
 	return NewPreciseCodeIntelSupportResolver(r.path), nil
 }

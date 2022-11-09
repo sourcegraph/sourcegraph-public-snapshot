@@ -5,15 +5,10 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
-
-type LSIFUploadConnectionResolver interface {
-	Nodes(ctx context.Context) ([]LSIFUploadResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*PageInfo, error)
-}
 
 type UploadConnectionResolver struct {
 	uploadsSvc       UploadsService
@@ -25,7 +20,7 @@ type UploadConnectionResolver struct {
 	traceErrs        *observation.ErrCollector
 }
 
-func NewUploadConnectionResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policySvc PolicyService, uploadsResolver *UploadsResolver, prefetcher *Prefetcher, traceErrs *observation.ErrCollector) LSIFUploadConnectionResolver {
+func NewUploadConnectionResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, policySvc PolicyService, uploadsResolver *UploadsResolver, prefetcher *Prefetcher, traceErrs *observation.ErrCollector) resolverstubs.LSIFUploadConnectionResolver {
 	db := autoindexingSvc.GetUnsafeDB()
 	return &UploadConnectionResolver{
 		uploadsSvc:       uploadsSvc,
@@ -38,14 +33,14 @@ func NewUploadConnectionResolver(uploadsSvc UploadsService, autoindexingSvc Auto
 	}
 }
 
-func (r *UploadConnectionResolver) Nodes(ctx context.Context) (_ []LSIFUploadResolver, err error) {
+func (r *UploadConnectionResolver) Nodes(ctx context.Context) (_ []resolverstubs.LSIFUploadResolver, err error) {
 	defer r.traceErrs.Collect(&err, log.String("uploadConnectionResolver.field", "nodes"))
 
 	if err := r.uploadsResolver.Resolve(ctx); err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]LSIFUploadResolver, 0, len(r.uploadsResolver.Uploads))
+	resolvers := make([]resolverstubs.LSIFUploadResolver, 0, len(r.uploadsResolver.Uploads))
 	for i := range r.uploadsResolver.Uploads {
 		resolvers = append(resolvers, NewUploadResolver(r.uploadsSvc, r.autoindexingSvc, r.policySvc, r.uploadsResolver.Uploads[i], r.prefetcher, r.traceErrs))
 	}
@@ -61,7 +56,7 @@ func (r *UploadConnectionResolver) TotalCount(ctx context.Context) (_ *int32, er
 	return toInt32(&r.uploadsResolver.TotalCount), nil
 }
 
-func (r *UploadConnectionResolver) PageInfo(ctx context.Context) (_ *PageInfo, err error) {
+func (r *UploadConnectionResolver) PageInfo(ctx context.Context) (_ resolverstubs.PageInfo, err error) {
 	defer r.traceErrs.Collect(&err, log.String("uploadConnectionResolver.field", "pageInfo"))
 
 	if err := r.uploadsResolver.Resolve(ctx); err != nil {

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -16,29 +17,21 @@ import (
 //   - upload step; the only src-cli step
 //
 // The setup and teardown steps match the executor setup and teardown.
-type IndexStepsResolver interface {
-	Setup() []ExecutionLogEntryResolver
-	PreIndex() []PreIndexStepResolver
-	Index() IndexStepResolver
-	Upload() ExecutionLogEntryResolver
-	Teardown() []ExecutionLogEntryResolver
-}
-
 type indexStepsResolver struct {
 	svc   AutoIndexingService
 	index types.Index
 }
 
-func NewIndexStepsResolver(svc AutoIndexingService, index types.Index) IndexStepsResolver {
+func NewIndexStepsResolver(svc AutoIndexingService, index types.Index) resolverstubs.IndexStepsResolver {
 	return &indexStepsResolver{svc: svc, index: index}
 }
 
-func (r *indexStepsResolver) Setup() []ExecutionLogEntryResolver {
+func (r *indexStepsResolver) Setup() []resolverstubs.ExecutionLogEntryResolver {
 	return r.executionLogEntryResolversWithPrefix("setup.")
 }
 
-func (r *indexStepsResolver) PreIndex() []PreIndexStepResolver {
-	var resolvers []PreIndexStepResolver
+func (r *indexStepsResolver) PreIndex() []resolverstubs.PreIndexStepResolver {
+	var resolvers []resolverstubs.PreIndexStepResolver
 	for i, step := range r.index.DockerSteps {
 		if entry, ok := r.findExecutionLogEntry(fmt.Sprintf("step.docker.pre-index.%d", i)); ok {
 			resolvers = append(resolvers, NewPreIndexStepResolver(r.svc, step, &entry))
@@ -54,7 +47,7 @@ func (r *indexStepsResolver) PreIndex() []PreIndexStepResolver {
 	return resolvers
 }
 
-func (r *indexStepsResolver) Index() IndexStepResolver {
+func (r *indexStepsResolver) Index() resolverstubs.IndexStepResolver {
 	if entry, ok := r.findExecutionLogEntry("step.docker.indexer"); ok {
 		return NewIndexStepResolver(r.svc, r.index, &entry)
 	}
@@ -68,7 +61,7 @@ func (r *indexStepsResolver) Index() IndexStepResolver {
 	return NewIndexStepResolver(r.svc, r.index, nil)
 }
 
-func (r *indexStepsResolver) Upload() ExecutionLogEntryResolver {
+func (r *indexStepsResolver) Upload() resolverstubs.ExecutionLogEntryResolver {
 	if entry, ok := r.findExecutionLogEntry("step.docker.upload"); ok {
 		return NewExecutionLogEntryResolver(r.svc, entry)
 	}
@@ -88,7 +81,7 @@ func (r *indexStepsResolver) Upload() ExecutionLogEntryResolver {
 	return nil
 }
 
-func (r *indexStepsResolver) Teardown() []ExecutionLogEntryResolver {
+func (r *indexStepsResolver) Teardown() []resolverstubs.ExecutionLogEntryResolver {
 	return r.executionLogEntryResolversWithPrefix("teardown.")
 }
 
@@ -102,8 +95,8 @@ func (r *indexStepsResolver) findExecutionLogEntry(key string) (workerutil.Execu
 	return workerutil.ExecutionLogEntry{}, false
 }
 
-func (r *indexStepsResolver) executionLogEntryResolversWithPrefix(prefix string) []ExecutionLogEntryResolver {
-	var resolvers []ExecutionLogEntryResolver
+func (r *indexStepsResolver) executionLogEntryResolversWithPrefix(prefix string) []resolverstubs.ExecutionLogEntryResolver {
+	var resolvers []resolverstubs.ExecutionLogEntryResolver
 	for _, entry := range r.index.ExecutionLogs {
 		if !strings.HasPrefix(entry.Key, prefix) {
 			continue

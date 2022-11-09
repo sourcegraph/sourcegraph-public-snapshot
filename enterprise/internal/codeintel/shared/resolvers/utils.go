@@ -46,30 +46,30 @@ func unmarshalConfigurationPolicyGQLID(id graphql.ID) (configurationPolicyID int
 	return configurationPolicyID, err
 }
 
-type PageInfo struct {
+type pageInfo struct {
 	endCursor   *string
 	hasNextPage bool
 }
 
 // HasNextPage returns a new PageInfo with the given hasNextPage value.
-func HasNextPage(hasNextPage bool) *PageInfo {
-	return &PageInfo{hasNextPage: hasNextPage}
+func HasNextPage(hasNextPage bool) *pageInfo {
+	return &pageInfo{hasNextPage: hasNextPage}
 }
 
 // NextPageCursor returns a new PageInfo indicating there is a next page with
 // the given end cursor.
-func NextPageCursor(endCursor string) *PageInfo {
-	return &PageInfo{endCursor: &endCursor, hasNextPage: true}
+func NextPageCursor(endCursor string) *pageInfo {
+	return &pageInfo{endCursor: &endCursor, hasNextPage: true}
 }
 
-func (r *PageInfo) EndCursor() *string { return r.endCursor }
-func (r *PageInfo) HasNextPage() bool  { return r.hasNextPage }
+func (r *pageInfo) EndCursor() *string { return r.endCursor }
+func (r *pageInfo) HasNextPage() bool  { return r.hasNextPage }
 
 // EncodeIntCursor creates a PageInfo object from the given new offset value. If the
 // new offset value, then an object indicating the end of the result set is returned.
 // The cursor is base64 encoded for transfer, and should be decoded using the function
 // decodeIntCursor.
-func EncodeIntCursor(val *int32) *PageInfo {
+func EncodeIntCursor(val *int32) *pageInfo {
 	if val == nil {
 		return EncodeCursor(nil)
 	}
@@ -81,7 +81,7 @@ func EncodeIntCursor(val *int32) *PageInfo {
 // EncodeCursor creates a PageInfo object from the given cursor. If the cursor is not
 // defined, then an object indicating the end of the result set is returned. The cursor
 // is base64 encoded for transfer, and should be decoded using the function decodeCursor.
-func EncodeCursor(val *string) *PageInfo {
+func EncodeCursor(val *string) *pageInfo {
 	if val != nil {
 		return NextPageCursor(base64.StdEncoding.EncodeToString([]byte(*val)))
 	}

@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func unmarshalLSIFUploadGQLID(id graphql.ID) (uploadID int64, err error) {
@@ -147,25 +146,6 @@ func derefInt32(val *int32, defaultValue int) int {
 }
 
 // ConnectionArgs is the common set of arguments to GraphQL fields that return connections (lists).
-type ConnectionArgs struct {
-	First *int32 // return the first n items
-}
-
-// Set is a convenience method for setting the DB limit and offset in a DB XyzListOptions struct.
-func (a ConnectionArgs) Set(o **database.LimitOffset) {
-	if a.First != nil {
-		*o = &database.LimitOffset{Limit: int(*a.First)}
-	}
-}
-
-// GetFirst is a convenience method returning the value of First, defaulting to
-// the type's zero value if nil.
-func (a ConnectionArgs) GetFirst() int32 {
-	if a.First == nil {
-		return 0
-	}
-	return *a.First
-}
 
 type PageInfo struct {
 	endCursor   *string

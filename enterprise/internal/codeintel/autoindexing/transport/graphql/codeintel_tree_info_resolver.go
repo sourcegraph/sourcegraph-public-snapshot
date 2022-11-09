@@ -5,15 +5,11 @@ import (
 	"strings"
 
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
-
-type GitTreeCodeIntelSupportResolver interface {
-	SearchBasedSupport(context.Context) (*[]GitTreeSearchBasedCoverage, error)
-	PreciseSupport(context.Context) (*[]GitTreePreciseCoverage, error)
-}
 
 type preciseSupportInferenceConfidence string
 
@@ -32,7 +28,7 @@ type codeIntelTreeInfoResolver struct {
 	errTracer    *observation.ErrCollector
 }
 
-func NewCodeIntelTreeInfoResolver(autoindexSvc AutoIndexingService, repo *types.Repo, commit, path string, files []string, errTracer *observation.ErrCollector) GitTreeCodeIntelSupportResolver {
+func NewCodeIntelTreeInfoResolver(autoindexSvc AutoIndexingService, repo *types.Repo, commit, path string, files []string, errTracer *observation.ErrCollector) resolverstubs.GitTreeCodeIntelSupportResolver {
 	return &codeIntelTreeInfoResolver{
 		autoindexSvc: autoindexSvc,
 		repo:         repo,
@@ -43,7 +39,7 @@ func NewCodeIntelTreeInfoResolver(autoindexSvc AutoIndexingService, repo *types.
 	}
 }
 
-func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) (*[]GitTreeSearchBasedCoverage, error) {
+func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) (*[]resolverstubs.GitTreeSearchBasedCoverage, error) {
 	langMapping := make(map[string][]string)
 	for _, file := range r.files {
 		ok, lang, err := r.autoindexSvc.GetSupportedByCtags(ctx, file, r.repo.Name)
@@ -55,7 +51,7 @@ func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) (*[]
 		}
 	}
 
-	resolvers := make([]GitTreeSearchBasedCoverage, 0, len(langMapping))
+	resolvers := make([]resolverstubs.GitTreeSearchBasedCoverage, 0, len(langMapping))
 
 	for lang, files := range langMapping {
 		resolvers = append(resolvers, &codeIntelTreeSearchBasedCoverageResolver{
@@ -67,13 +63,13 @@ func (r *codeIntelTreeInfoResolver) SearchBasedSupport(ctx context.Context) (*[]
 	return &resolvers, nil
 }
 
-func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]GitTreePreciseCoverage, error) {
+func (r *codeIntelTreeInfoResolver) PreciseSupport(ctx context.Context) (*[]resolverstubs.GitTreePreciseCoverage, error) {
 	configurations, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, int(r.repo.ID), r.commit, true)
 	if err != nil {
 		return nil, err
 	}
 
-	var resolvers []GitTreePreciseCoverage
+	var resolvers []resolverstubs.GitTreePreciseCoverage
 
 	if configurations != nil {
 		for _, job := range configurations.IndexJobs {
