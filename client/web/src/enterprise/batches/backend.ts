@@ -192,8 +192,8 @@ export const generateFileDownloadLink = async (specId: string, fileId: string): 
     const url = `${BATCH_CHANGE_FILE_BASE_URL}/${specId}/${fileId}`
     const file = await fetch(url, {
         headers: {
-            ...window.context.xhrHeaders
-        }
+            ...window.context.xhrHeaders,
+        },
     })
     const fileBlob = await file.blob()
     return URL.createObjectURL(fileBlob)
