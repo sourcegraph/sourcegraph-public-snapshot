@@ -16,8 +16,6 @@ If you have a small codebase hosted exclusively in GitHub, GitHub's native code 
 
 **Who should use Sourcegraph?**
 
-If you're brand new to code search and you want to try it, visit [Sourcegraph.com](https://sourcegraph.com/search) to search across open source repositories. 
-
 As your codebase grows in complexity, the value of code search quickly increases. Sourcegraph may be a good fit for your team if:
 
 
@@ -26,6 +24,7 @@ As your codebase grows in complexity, the value of code search quickly increases
 
 If you frequently rely on your editor’s “go to definition” and “find references” features, you’ll also be able to take advantage of Sourcegraph's precise code navigation. Only Sourcegraph's offering features IDE-level accuracy and works across repositories.
 
+If you're brand new to code search and you want to try it, visit [Sourcegraph.com](https://sourcegraph.com/search) to search across open source repositories. 
 
 ## Searching code
 
