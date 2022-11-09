@@ -210,7 +210,9 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 settingsCascade={props.settingsCascade}
                 isSourcegraphDotCom={props.isSourcegraphDotCom}
             />
-            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && (
+                <SurveyToast authenticatedUser={props.authenticatedUser} />
+            )}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
