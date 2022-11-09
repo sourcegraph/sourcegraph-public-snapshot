@@ -52,6 +52,14 @@ Sourcegraph's main features are:
 
 You can also try [Sourcegraph.com](https://sourcegraph.com/search), which is a public instance of Sourcegraph for use on open-source code only.
 
+## How is Sourcegraph licensed? 
+
+Sourcegraph offers two versions of its product: Sourcegraph Open Source (Sourcegraph OSS) and Sourcegraph Enterprise. 
+
+Sourcegraph Enterprise is Sourcegraph’s primary offering and includes all code intelligence platform features. Sourcegraph Enterprise is the best solution for enterprises who want to use Sourcegraph with their organization’s code. Sourcegraph OSS only includes universal code search functionality. 
+
+For more details, see the [Sourcegraph OSS vs. Sourcegraph Enterprise docs](./oss-enterprise.md).
+
 ## How is Sourcegraph different than GitHub code search? 
 - [See how GitHub code search compares to Sourcegraph](./github-vs-sourcegraph.md)
 
