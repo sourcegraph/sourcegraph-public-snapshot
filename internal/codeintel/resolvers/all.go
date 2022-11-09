@@ -267,6 +267,7 @@ type GitTreeEntryResolver interface {
 	ToGitTree() (GitTreeEntryResolver, bool)
 	ToGitBlob() (GitTreeEntryResolver, bool)
 	ByteSize(ctx context.Context) (int32, error)
+	Content(ctx context.Context) (string, error)
 	Commit() GitCommitResolver
 	Repository() RepositoryResolver
 	CanonicalURL() string
@@ -275,6 +276,7 @@ type GitTreeEntryResolver interface {
 	URL(ctx context.Context) (string, error)
 	Submodule() GitSubmoduleResolver
 }
+
 type LocationResolver interface {
 	Resource() GitTreeEntryResolver
 	Range() RangeResolver
