@@ -719,6 +719,6 @@ Sourceraph OSS is Apache 2 licensed and allows any developer to use, modify, and
 
 ## Availability
 
-GitHub code search is currently available through a beta preview (you can sign up for their [waitlist](https://github.com/features/code-search-code-view/signup) to request access). This technical preview is not yet available for GitHub Enterprise. 
+GitHub code search is currently available through a beta preview (you can sign up for their [waitlist](https://github.com/features/code-search-code-view/signup) to request access). The beta preview is not yet available for GitHub Enterprise. 
 
 Sourcegraph’s code intelligence platform is generally available, and you can sign up for a free trial for your team [here](https://signup.sourcegraph.com/).
