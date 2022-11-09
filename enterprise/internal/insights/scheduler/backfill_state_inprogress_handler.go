@@ -249,5 +249,3 @@ func getInterruptAfter() time.Duration {
 	}
 	return time.Duration(defaultInterruptSeconds) * time.Second
 }
-
-var incompleteBackfillErr error = errors.New("incomplete backfill")
