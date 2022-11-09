@@ -87,6 +87,7 @@ Available commands in `sg.config.yaml`:
 
 * batches-executor
 * batches-executor-firecracker
+* batcheshelper-builder
 * bext
 * caddy
 * codeintel-executor
