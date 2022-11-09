@@ -190,6 +190,7 @@ func (p *PersistentRepoIterator) NextRetryWithFinish(config IterationConfig) (ap
 		} else if config.MaxFailures > 0 && p.errors.FailureCount(current) >= config.MaxFailures {
 			// this repo has exceeded its retry count, skip it
 			p.advanceRetry()
+			p.setRepoTerminal(current)
 			continue
 		}
 		break
@@ -332,8 +333,7 @@ func (p *PersistentRepoIterator) doFinish(ctx context.Context, store *basestore.
 				if err != nil {
 					return errors.Wrap(err, "iterator.OnTerminal")
 				}
-				p.terminalErrors[currentRepo] = p.errors[currentRepo]
-				delete(p.errors, currentRepo)
+				p.setRepoTerminal(currentRepo)
 			}
 		}
 	} else if isRetry {
@@ -346,6 +346,12 @@ func (p *PersistentRepoIterator) doFinish(ctx context.Context, store *basestore.
 	}
 
 	return nil
+}
+
+// setRepoTerminal sets a repository to a terminal error state
+func (p *PersistentRepoIterator) setRepoTerminal(repoId int32) {
+	p.terminalErrors[repoId] = p.errors[repoId]
+	delete(p.errors, repoId)
 }
 
 func (p *PersistentRepoIterator) updateRepoIterator(ctx context.Context, store *basestore.Store, successCount, cursorOffset int, duration time.Duration) error {
