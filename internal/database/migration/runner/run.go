@@ -415,6 +415,8 @@ pollIndexStatusLoop:
 		}
 
 		if exists && indexStatus.IsValid {
+			// TODO - ensure log exists here
+
 			// Index exists and is valid; nothing to do
 			return unlocked, nil
 		}
