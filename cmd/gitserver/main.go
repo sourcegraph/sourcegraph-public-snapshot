@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -487,10 +488,12 @@ func getVCSSyncer(
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
+		p4Home := filepath.Join(reposDir, server.P4HomeName)
 		return &server.PerforceDepotSyncer{
 			MaxChanges:   int(c.MaxChanges),
 			Client:       c.P4Client,
 			FusionConfig: configureFusionClient(c),
+			P4Home:       p4Home,
 		}, nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
