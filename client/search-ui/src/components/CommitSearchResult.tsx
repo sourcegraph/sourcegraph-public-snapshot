@@ -60,6 +60,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                     <VisuallyHidden>,</VisuallyHidden>
                 </Code>{' '}
                 <VisuallyHidden>Commited</VisuallyHidden>
+                {/* Display commit date in UTC to match behavior of before/after filters */}
                 <Timestamp date={result.committerDate} noAbout={true} strict={true} utc={true} />
             </Link>
             {result.repoStars && <div className={styles.divider} />}
