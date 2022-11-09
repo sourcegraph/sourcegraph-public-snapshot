@@ -6,24 +6,14 @@ import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
 import { BlobInfo } from '../Blob'
 
-import { positionToOffset } from './utils'
-
-/**
- * This data structure combines the syntax highlighting data received from the
- * server with a lineIndex map (implemented as array), for fast lookup by line
- * number, with minimal additional impact on memory (e.g. garbage collection).
- */
-interface HighlightIndex {
-    occurrences: Occurrence[]
-    lineIndex: (number | undefined)[]
-}
+import { positionToOffset, OccurrenceIndex } from './utils'
 
 /**
  * Parses JSON-encoded SCIP syntax highlighting data and creates a line index.
  * NOTE: This assumes that the data is sorted and does not contain overlapping
  * ranges.
  */
-function createHighlightTable(info: BlobInfo): HighlightIndex {
+function createHighlightTable(info: BlobInfo): OccurrenceIndex {
     const lineIndex: (number | undefined)[] = []
 
     if (!info.lsif) {
@@ -80,7 +70,7 @@ class SyntaxHighlightManager implements PluginValue {
             const fromLine = view.state.doc.lineAt(from)
             const toLine = view.state.doc.lineAt(to)
 
-            const { occurrences, lineIndex } = view.state.facet(syntaxHighlight)
+            const { occurrences, lineIndex } = view.state.facet(lsifData)
 
             // Find index of first relevant token
             let startIndex: number | undefined
@@ -147,7 +137,7 @@ class SyntaxHighlightManager implements PluginValue {
  * Facet for providing syntax highlighting information from a {@link BlobInfo}
  * object.
  */
-export const syntaxHighlight = Facet.define<BlobInfo, HighlightIndex>({
+export const lsifData = Facet.define<BlobInfo, OccurrenceIndex>({
     static: true,
     compareInput: (blobInfoA, blobInfoB) => blobInfoA.lsif === blobInfoB.lsif,
     combine: blobInfos =>

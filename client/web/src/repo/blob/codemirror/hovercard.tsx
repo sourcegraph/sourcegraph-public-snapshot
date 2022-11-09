@@ -64,6 +64,7 @@ import {
     LineOrPositionOrRange,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
+import { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -75,6 +76,7 @@ import {
 } from '../../../components/WebHoverOverlay'
 import { BlobProps, updateBrowserHistoryIfChanged } from '../Blob'
 
+import { lsifData } from './highlight'
 import { Container } from './react-interop'
 import {
     preciseWordAtCoords,
@@ -83,6 +85,8 @@ import {
     preciseOffsetAtCoords,
     uiPositionToOffset,
     zeroToOneBasedPosition,
+    findLsifOccurenceAt,
+    HOVER_DEBOUNCE_TIME,
 } from './utils'
 
 import { blobPropsFacet } from './index'
@@ -127,7 +131,6 @@ interface Hovercard {
 }
 
 const HOVER_INFO_CACHE_SIZE = 30
-const HOVER_DEBOUNCE_TIME = 25 // ms
 
 /**
  * Some style overrides to replicate the existing hovercard style.
@@ -730,6 +733,11 @@ const hoverdataCache = ViewPlugin.fromClass(
 )
 
 /**
+ * Syntax kinds for which we don't want to request hover data.
+ */
+const syntaxKindBlockList = new Set([SyntaxKind.Comment, SyntaxKind.IdentifierKeyword, SyntaxKind.IdentifierOperator])
+
+/**
  * Helper operator for requesting hover information and creating a {@link Hovercard}
  * object.
  */
@@ -743,10 +751,17 @@ function tokenRangeToHovercard(
             if (token) {
                 const lineCharacterRange = offsetToUIPosition(view.state.doc, token.from, token.to)
 
-                const hoverDataSource = view.state.facet(hovercardSource)
-                if (!hoverDataSource) {
+                // If the requested token is known to not have hover information associated with it,
+                // we are not going to ask the server for information
+                const validOccurenceAtPosition = findLsifOccurenceAt(
+                    view.state.facet(lsifData),
+                    { line: lineCharacterRange.start.line - 1, character: lineCharacterRange.start.character - 1 },
+                    occurence => !occurence?.kind || !syntaxKindBlockList.has(occurence.kind)
+                )
+                if (!validOccurenceAtPosition) {
                     return of(null)
                 }
+
                 // We request hover information and create a hot observable. We use the observable to determine
                 // whether/when to show a tooltip. The observable is also passed to the tooltip so it can update itself
                 // as new information arrives.
@@ -756,7 +771,7 @@ function tokenRangeToHovercard(
                 if (cachedHoverData) {
                     hoverData = cachedHoverData
                 } else {
-                    hoverData = hoverDataSource(view, lineCharacterRange.start).pipe(shareReplay(1))
+                    hoverData = view.state.facet(hoverDataSource)(view, lineCharacterRange.start).pipe(shareReplay(1))
                     if (cache) {
                         cache.add(token, hoverData)
                     }
@@ -869,15 +884,17 @@ function tokenRangeToHovercard(
  * A HovercardSource is a function that is passed a position and returns an
  * observable that provides hover information.
  */
-export type HovercardSource = (view: EditorView, position: UIPosition) => Observable<HoverData>
+export type HoverDataSource = (view: EditorView, position: UIPosition) => Observable<HoverData>
+
+const DEFAULT_HOVERDATA_SOURCE: HoverDataSource = () => of({ actionsOrError: null, hoverOrError: null })
 
 /**
  * Facet with which an extension can provide a hovercard source. For simplicity
  * only one source can be provided, others are ignored (in practice there is
  * only one source at the moment anyway).
  */
-export const hovercardSource = Facet.define<HovercardSource, HovercardSource | undefined>({
-    combine: sources => sources[0],
+export const hoverDataSource = Facet.define<HoverDataSource, HoverDataSource>({
+    combine: sources => sources[0] ?? DEFAULT_HOVERDATA_SOURCE,
     enables: [
         hoverdataCache,
         hovercardState,

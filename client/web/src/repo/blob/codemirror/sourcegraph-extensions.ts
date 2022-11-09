@@ -34,7 +34,7 @@ import { BlobInfo, BlobProps } from '../Blob'
 
 import { documentHighlightsSource } from './document-highlights'
 import { showTextDocumentDecorations } from './extensions-decorations'
-import { hovercardSource } from './hovercard'
+import { hoverDataSource } from './hovercard'
 import { SelectedLineRange, selectedLines } from './linenumbers'
 import { Container } from './react-interop'
 
@@ -259,11 +259,11 @@ class SelectionManager implements PluginValue {
 //
 
 /**
- * hovercardDataSource uses the {@link hovercardSource} facet to provide a
+ * hovercardDataSource uses the {@link hoverDataSource} facet to provide a
  * callback function for querying the extension API for hover data.
  */
 function hovercardDataSource(context: Observable<Context>): Extension {
-    return hovercardSource.of(
+    return hoverDataSource.of(
         (
             view: EditorView,
             position: UIPositionSpec['position']

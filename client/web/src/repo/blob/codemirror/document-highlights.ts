@@ -19,14 +19,23 @@ import {
 } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, ViewPlugin } from '@codemirror/view'
 import { from, fromEvent, Observable, Subscription } from 'rxjs'
-import { switchMap, filter, mergeAll, map, tap, distinctUntilChanged } from 'rxjs/operators'
+import { switchMap, filter, mergeAll, map, tap, distinctUntilChanged, debounceTime } from 'rxjs/operators'
 
 import { DocumentHighlight } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
+import { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
-import { offsetToUIPosition, positionToOffset, preciseWordAtCoords, sortRangeValuesByStart } from './utils'
+import { lsifData } from './highlight'
+import {
+    offsetToUIPosition,
+    positionToOffset,
+    preciseWordAtCoords,
+    sortRangeValuesByStart,
+    findLsifOccurenceAt,
+    HOVER_DEBOUNCE_TIME,
+} from './utils'
 
 type DocumentHighlightsSource = (position: Position) => Observable<DocumentHighlight[]>
 
@@ -37,7 +46,7 @@ const highlightDecoration = Decoration.mark({ class: 'sourcegraph-document-highl
  * value of this facet enables the necessary extensions to render CodeMirror
  * decorations for the document highlights.
  */
-export const showDocumentHighlights = Facet.define<DocumentHighlight[], DocumentHighlight[]>({
+const showDocumentHighlights = Facet.define<DocumentHighlight[], DocumentHighlight[]>({
     combine: highlights => highlights.flat(),
     compare: (a, b) => a === b || (a.length === 0 && b.length === 0),
     enables: facet =>
@@ -115,6 +124,11 @@ function documentHighlights(sources: Facet<DocumentHighlightsSource>, sink: Face
 }
 
 /**
+ * Syntax kinds for which we don't want to request document highlights.
+ */
+const syntaxKindBlockList = new Set([SyntaxKind.Comment, SyntaxKind.IdentifierKeyword, SyntaxKind.IdentifierOperator])
+
+/**
  * This class listens to CodeMirror mouse events, queries the registered data
  * sources (see {@link documentHighlightsSource}) and updates the
  * {@link showDocumentHighlights} facet with their responses.
@@ -134,14 +148,31 @@ class DocumentHighlightsManager {
                 distinctUntilChanged(
                     (previous, current) => previous?.from === current?.from && previous?.to === current?.to
                 ),
+                // Convert from offsets to UIPosition. We only need the start position
+                map(word => {
+                    if (word) {
+                        const position = offsetToUIPosition(this.view.state.doc, word.from)
+
+                        // If the position is known to not have document highlights associated with it,
+                        // we are not going to ask the server for information.
+                        const validOccurenceAtPosition = findLsifOccurenceAt(
+                            view.state.facet(lsifData),
+                            { line: position.line - 1, character: position.character - 1 },
+                            occurence => !occurence?.kind || !syntaxKindBlockList.has(occurence.kind)
+                        )
+
+                        if (validOccurenceAtPosition) {
+                            return position
+                        }
+                    }
+                    return null
+                }),
                 tap(word => {
+                    // Clear highlights as quickly as possible
                     if (!word) {
                         this.clearHighlights()
                     }
                 }),
-                // Convert from offsets to UIPosition. We only need the start
-                // position
-                map(word => (word ? offsetToUIPosition(this.view.state.doc, word.from) : null)),
                 // Ignore position changes if we already have a document highlight
                 // within that range
                 filter(
@@ -151,6 +182,8 @@ class DocumentHighlightsManager {
                             hasDocumentHighlightAtPosition(view.state.field(documentHighlightsField), position)
                         )
                 ),
+                // Debounce events so that users can move over tokens without triggering highlights immediately
+                debounceTime(HOVER_DEBOUNCE_TIME),
                 // Cancel any running query when a new position comes in (could be null)
                 switchMap(position =>
                     from(position ? view.state.facet(this.sources).map(source => source(position)) : []).pipe(

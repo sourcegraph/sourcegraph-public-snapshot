@@ -2,7 +2,13 @@ import { Line, Text } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 
 import { Position } from '@sourcegraph/extension-api-types'
+import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+
+/**
+ * Debounce time to use for hover interactions.
+ */
+export const HOVER_DEBOUNCE_TIME = 25 // ms
 
 export function zeroToOneBasedPosition(position: Position): { line: number; character: number } {
     return {
@@ -183,4 +189,53 @@ export function isValidLineRange(
     }
 
     return true
+}
+
+/**
+ * This data structure combines the lsif data received from the server with a
+ * lineIndex map (implemented as array), for fast lookup by line number, with
+ * minimal additional impact on memory (e.g. garbage collection).
+ */
+export interface OccurrenceIndex {
+    occurrences: Occurrence[]
+    /**
+     * A <line number> -> <index in occurences> mapping to quickly find the
+     * start position of occurences for a specific line.
+     */
+    lineIndex: (number | undefined)[]
+}
+
+/**
+ * Given an occurrence index, this returns the occurrence at the provided
+ * position (position has to be 0-based).
+ */
+export function findLsifOccurenceAt(
+    { lineIndex, occurrences }: OccurrenceIndex,
+    position: { line: number; character: number },
+    filter?: (occurrence: Occurrence) => boolean
+): Occurrence | null {
+    const startIndex = lineIndex[position.line]
+
+    if (startIndex !== undefined) {
+        for (let index = startIndex; index <= occurrences.length; index++) {
+            const occurrence = occurrences[index]
+            const {
+                range: { start, end },
+            } = occurrence
+
+            if (start.line <= position.line && start.character <= position.character) {
+                if (
+                    end.line >= position.line &&
+                    end.character >= position.character &&
+                    (filter?.(occurrence) ?? true)
+                ) {
+                    return occurrence
+                }
+            } else {
+                return null
+            }
+        }
+    }
+
+    return null
 }
