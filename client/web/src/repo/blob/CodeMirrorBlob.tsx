@@ -220,7 +220,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     })
     editorRef.current = editor
 
-    // Manually patch DOM accessibility attributes
+    // Make gutters content visible for the screen readers
     useEffect(() => {
         if (editor) {
             editor.dom.querySelector('.cm-gutters')?.removeAttribute('aria-hidden')
