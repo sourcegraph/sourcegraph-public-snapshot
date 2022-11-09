@@ -22,9 +22,16 @@ var (
 	lfsOIDRe = lazyregexp.New(`oid sha256:[0-9a-f]{64}`)
 	// size 902
 	lfsSizeRe = lazyregexp.New(`size (\d+)`)
+	// this is the same size used by git-lfs to determine if it is worth
+	// parsing a file as a pointer.
+	lfsBlobSizeCutoff = 1024
 )
 
 func parseLFSPointer(b string) *lfsResolver {
+	if len(b) >= lfsBlobSizeCutoff {
+		return nil
+	}
+
 	if !strings.HasPrefix(b, "version https://git-lfs.github.com/spec/v1") {
 		return nil
 	}
