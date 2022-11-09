@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 
 import { mdiHistory } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { Badge, Icon } from '@sourcegraph/wildcard'
@@ -56,14 +57,14 @@ export const BatchChangeStatePill: React.FunctionComponent<React.PropsWithChildr
 
     return (
         <div
-            role="group"
+            role="status"
             className={classNames(styles.pillGroup, className, {
                 [styles.open]: state === BatchChangeState.OPEN,
                 [styles.draft]: state === BatchChangeState.DRAFT,
                 [styles.closed]: state === BatchChangeState.CLOSED,
             })}
-            aria-label={`${state} status`}
         >
+            <VisuallyHidden>{state} status</VisuallyHidden>
             <StatePill state={state} />
             {executionStatePill}
         </div>
