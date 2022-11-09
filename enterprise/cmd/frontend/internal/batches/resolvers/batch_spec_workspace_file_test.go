@@ -72,10 +72,12 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 	}
 
 	t.Run("non binary file", func(t *testing.T) {
+		var numOfVirtualFileCalls int
 		resolver := &batchSpecWorkspaceFileResolver{
 			batchSpecRandID: batchSpecRandID,
 			file:            file,
 			createVirtualFile: func(content []byte, path string) graphqlbackend.FileResolver {
+				numOfVirtualFileCalls++
 				return &mockFileResolver{
 					content:             content,
 					path:                path,
@@ -213,13 +215,21 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 				assert.Equal(t, test.expected, actual)
 			})
 		}
+
+		t.Run("virtual file", func(t *testing.T) {
+			// we call the `createVirtualFile` function twice - one for checking if the content
+			// is a binary content and another for highlighting the content.
+			assert.Equal(t, numOfVirtualFileCalls, 2)
+		})
 	})
 
 	t.Run("binary file", func(t *testing.T) {
+		var numOfVirtualFileCalls int
 		resolver := &batchSpecWorkspaceFileResolver{
 			batchSpecRandID: batchSpecRandID,
 			file:            file,
 			createVirtualFile: func(content []byte, path string) graphqlbackend.FileResolver {
+				numOfVirtualFileCalls++
 				return &mockFileResolver{
 					content:          content,
 					path:             path,
@@ -358,5 +368,11 @@ func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
 				assert.Equal(t, test.expected, actual)
 			})
 		}
+
+		t.Run("virtual file", func(t *testing.T) {
+			// we call the `createVirtualFile` function twice - one for checking if the content
+			// is a binary content and another for highlighting the content (which returns an error for binary files).
+			assert.Equal(t, numOfVirtualFileCalls, 2)
+		})
 	})
 }
