@@ -295,7 +295,7 @@ FailedUpload.args = {
             uploadedAt: '2020-06-13T12:20:30+00:00',
             startedAt: null,
             finishedAt: '2020-06-13T12:20:31+00:00',
-            failure: 'Upload failed to complete: object store error:\n * XMinioStorageFull etc etc',
+            failure: 'Upload failed to complete: object store error:\n * XBlobstoreStorageFull etc etc',
         }),
 }
 

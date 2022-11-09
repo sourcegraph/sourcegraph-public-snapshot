@@ -26,7 +26,7 @@ func TestConfigDefaults(t *testing.T) {
 	if config.S3SecretAccessKey != "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" {
 		t.Errorf("unexpected value for S3.SecretAccessKey. want=%s have=%s", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", config.S3SecretAccessKey)
 	}
-	if config.S3Endpoint != "http://minio:9000" {
+	if config.S3Endpoint != "http://blobstore:9000" {
 		t.Errorf("unexpected value for S3.Endpoint. want=%s have=%s", "us-east-1", config.S3Endpoint)
 	}
 	if config.S3Region != "us-east-1" {

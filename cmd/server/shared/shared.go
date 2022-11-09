@@ -169,6 +169,7 @@ func Main() {
 		procfile = append(procfile, monitoringLines...)
 	}
 
+	// TODO(blobstore): remove minio support
 	if minioLines := maybeMinio(); len(minioLines) != 0 {
 		procfile = append(procfile, minioLines...)
 	}
