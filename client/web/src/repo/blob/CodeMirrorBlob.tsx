@@ -220,6 +220,13 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     })
     editorRef.current = editor
 
+    // Manually patch DOM accessibility attributes
+    useEffect(() => {
+        if (editor) {
+            editor.dom.querySelector('.cm-gutters')?.removeAttribute('aria-hidden')
+        }
+    }, [editor])
+
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
         if (editor) {
