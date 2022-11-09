@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -20,7 +21,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// TODO: Tests
+var _ WebhookResolver = &webhookResolver{}
+
+type WebhookResolver interface {
+	ID() graphql.ID
+	UUID() string
+	URL() (string, error)
+	CodeHostURN() string
+	CodeHostKind() string
+	Secret(ctx context.Context) (*string, error)
+	CreatedAt() gqlutil.DateTime
+	UpdatedAt() gqlutil.DateTime
+	CreatedBy(ctx context.Context) (*UserResolver, error)
+	UpdatedBy(ctx context.Context) (*UserResolver, error)
+}
 
 type webhookResolver struct {
 	db   database.DB
@@ -72,6 +86,32 @@ func (r *webhookResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.hook.UpdatedAt}
 }
 
+func (r *webhookResolver) CreatedBy(ctx context.Context) (*UserResolver, error) {
+	if r.hook.CreatedByUserID == 0 {
+		return nil, nil
+	}
+
+	user, err := UserByIDInt32(ctx, r.db, r.hook.CreatedByUserID)
+	if errcode.IsNotFound(err) {
+		return nil, nil
+	}
+
+	return user, err
+}
+
+func (r *webhookResolver) UpdatedBy(ctx context.Context) (*UserResolver, error) {
+	if r.hook.UpdatedByUserID == 0 {
+		return nil, nil
+	}
+
+	user, err := UserByIDInt32(ctx, r.db, r.hook.UpdatedByUserID)
+	if errcode.IsNotFound(err) {
+		return nil, nil
+	}
+
+	return user, err
+}
+
 func (r *schemaResolver) Webhooks(ctx context.Context, args *webhookArgs) (*webhookConnectionResolver, error) {
 	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, auth.ErrMustBeSiteAdmin
@@ -114,7 +154,7 @@ func (args *webhookArgs) toWebhookListOptions() (database.WebhookListOptions, er
 }
 
 type WebhookConnectionResolver interface {
-	Nodes(ctx context.Context) ([]*webhookResolver, error)
+	Nodes(ctx context.Context) ([]WebhookResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
@@ -130,14 +170,15 @@ type webhookConnectionResolver struct {
 	err      error
 }
 
-func (r *webhookConnectionResolver) Nodes(ctx context.Context) ([]*webhookResolver, error) {
+func (r *webhookConnectionResolver) Nodes(ctx context.Context) ([]WebhookResolver, error) {
 	webhooks, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*webhookResolver, 0, len(webhooks))
+	resolvers := make([]WebhookResolver, 0, len(webhooks))
 	for _, wh := range webhooks {
 		resolvers = append(resolvers, &webhookResolver{
+			db:   r.db,
 			hook: wh,
 		})
 	}
@@ -150,6 +191,24 @@ func (r *webhookConnectionResolver) TotalCount(ctx context.Context) (int32, erro
 		return 0, err
 	}
 	return int32(count), nil
+}
+
+func (r *webhookConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	_, next, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if next == 0 {
+		return graphqlutil.HasNextPage(false), nil
+	}
+
+	return graphqlutil.NextPageCursor(MarshalWebhookCursor(
+		&types.Cursor{
+			Column:    r.opt.Cursor.Column,
+			Value:     fmt.Sprintf("%d", next),
+			Direction: r.opt.Cursor.Direction,
+		},
+	)), nil
 }
 
 func (r *webhookConnectionResolver) compute(ctx context.Context) ([]*types.Webhook, int32, error) {
@@ -180,24 +239,6 @@ func copyOpts(opts database.WebhookListOptions) database.WebhookListOptions {
 		copied.LimitOffset = &limitOffset
 	}
 	return copied
-}
-
-func (r *webhookConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, next, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if next == 0 {
-		return graphqlutil.HasNextPage(false), nil
-	}
-
-	return graphqlutil.NextPageCursor(MarshalWebhookCursor(
-		&types.Cursor{
-			Column:    r.opt.Cursor.Column,
-			Value:     fmt.Sprintf("%d", next),
-			Direction: r.opt.Cursor.Direction,
-		},
-	)), nil
 }
 
 func webhookByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*webhookResolver, error) {
