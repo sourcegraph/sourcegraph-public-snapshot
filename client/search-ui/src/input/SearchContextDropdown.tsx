@@ -152,11 +152,6 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
                     </Code>
                 </PopoverTrigger>
             </Tooltip>
-            {/*
-               a11y-ignore
-               Rule: "aria-required-children" (Certain ARIA roles must contain particular children)
-               GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/34348
-             */}
             <PopoverContent
                 position={Position.bottomStart}
                 className={classNames('a11y-ignore', styles.menu)}

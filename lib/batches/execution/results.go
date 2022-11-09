@@ -1,8 +1,6 @@
 package execution
 
-import (
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
-)
+import "github.com/sourcegraph/sourcegraph/lib/batches/git"
 
 // AfterStepResult is the execution result after executing a step with the given
 // index in Steps.

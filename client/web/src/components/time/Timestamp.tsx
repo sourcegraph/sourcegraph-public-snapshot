@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { parseISO, format } from 'date-fns'
+import { format, addMinutes, parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 
@@ -24,6 +24,8 @@ interface Props {
 
     /** Optional semantic timestamp format */
     timestampFormat?: TimestampFormat
+
+    utc?: boolean
 }
 
 export enum TimestampFormat {
@@ -45,6 +47,7 @@ export const Timestamp: React.FunctionComponent<React.PropsWithChildren<Props>> 
     now = Date.now,
     preferAbsolute = false,
     timestampFormat,
+    utc = false,
 }) => {
     const [label, setLabel] = useState<string>(calculateLabel(date, now, strict, noAbout))
     useEffect(() => {
@@ -58,11 +61,14 @@ export const Timestamp: React.FunctionComponent<React.PropsWithChildren<Props>> 
     }, [date, noAbout, now, strict])
 
     const tooltip = useMemo(() => {
-        const parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date)
+        let parsedDate = typeof date === 'string' ? parseISO(date) : new Date(date)
+        if (utc) {
+            parsedDate = addMinutes(parsedDate, parsedDate.getTimezoneOffset())
+        }
         const dateHasTime = date.toString().includes('T')
         const defaultFormat = dateHasTime ? TimestampFormat.FULL_DATE_TIME : TimestampFormat.FULL_DATE
-        return format(parsedDate, timestampFormat ?? defaultFormat)
-    }, [date, timestampFormat])
+        return format(parsedDate, timestampFormat ?? defaultFormat) + (utc ? ' UTC' : '')
+    }, [date, timestampFormat, utc])
 
     return (
         <Tooltip content={preferAbsolute ? label : tooltip}>

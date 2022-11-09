@@ -167,6 +167,7 @@ Foreign-key constraints:
  cancel                  | boolean                  |           | not null | false
  queued_at               | timestamp with time zone |           |          | now()
  user_id                 | integer                  |           | not null | 
+ version                 | integer                  |           | not null | 1
 Indexes:
     "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_workspace_execution_jobs_batch_spec_workspace_id" btree (batch_spec_workspace_id)
@@ -3297,6 +3298,7 @@ Foreign-key constraints:
     j.cancel,
     j.queued_at,
     j.user_id,
+    j.version,
     q.place_in_global_queue,
     q.place_in_user_queue
    FROM (batch_spec_workspace_execution_jobs j
