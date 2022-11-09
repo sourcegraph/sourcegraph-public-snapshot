@@ -158,7 +158,7 @@ In addition to searching your organization’s private code, you can use Sourceg
    </td>
   </tr>
   <tr>
-   <td><strong>Sarch across files larger than 350 KiB</strong>
+   <td><strong>Search across files larger than 350 KiB</strong>
    </td>
    <td>✗
    </td>
