@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
-import VisuallyHidden from '@reach/visually-hidden'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
