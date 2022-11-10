@@ -83,7 +83,10 @@ export const FiveWebhooksFound: Story = () => (
                                             createWebhookMock(ExternalServiceKind.GITHUB, 'github.com/repo1'),
                                             createWebhookMock(ExternalServiceKind.GITHUB, 'github.com/repo2'),
                                             createWebhookMock(ExternalServiceKind.GITHUB, 'github.com/repo3'),
-                                            createWebhookMock(ExternalServiceKind.BITBUCKETCLOUD, 'bitbucket.com/repo2'),
+                                            createWebhookMock(
+                                                ExternalServiceKind.BITBUCKETCLOUD,
+                                                'bitbucket.com/repo2'
+                                            ),
                                         ],
                                         totalCount: 5,
                                         pageInfo: {

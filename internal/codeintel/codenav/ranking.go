@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -21,11 +20,7 @@ import (
 func (s *Service) SerializeRankingGraph(
 	ctx context.Context,
 ) error {
-	if os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
-		return nil
-	}
 	if s.rankingBucket == nil {
-		s.logger.Warn("No ranking bucket is configured")
 		return nil
 	}
 
@@ -62,15 +57,11 @@ func (s *Service) SerializeRankingGraph(
 func (s *Service) VacuumRankingGraph(
 	ctx context.Context,
 ) error {
-	if os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
-		return nil
-	}
 	if s.rankingBucket == nil {
-		s.logger.Warn("No ranking bucket is configured")
 		return nil
 	}
 
-	numDeleted, err := s.store.ProcessStaleExportedUplods(ctx, rankingGraphKey, rankingGraphDeleteBatchSize, func(ctx context.Context, objectPrefix string) error {
+	numDeleted, err := s.store.ProcessStaleExportedUploads(ctx, rankingGraphKey, rankingGraphDeleteBatchSize, func(ctx context.Context, objectPrefix string) error {
 		if objectPrefix == "" {
 			// Special case: we haven't backfilled some data on dotcom yet
 			return nil

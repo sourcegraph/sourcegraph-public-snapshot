@@ -290,6 +290,7 @@ func Main(enterpriseSetupHook func(db database.DB, codeIntelServices codeintel.S
 		enterprise.NotebooksResolver,
 		enterprise.ComputeResolver,
 		enterprise.InsightsAggregationResolver,
+		enterprise.WebhooksResolver,
 	)
 	if err != nil {
 		return err
@@ -342,6 +343,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 		&httpapi.Handlers{
 			GitHubWebhook:                   enterprise.GitHubWebhook,
 			GitLabWebhook:                   enterprise.GitLabWebhook,
+			GitHubSyncWebhook:               enterprise.GitHubSyncWebhook,
 			BitbucketServerWebhook:          enterprise.BitbucketServerWebhook,
 			BitbucketCloudWebhook:           enterprise.BitbucketCloudWebhook,
 			BatchesChangesFileGetHandler:    enterprise.BatchesChangesFileGetHandler,

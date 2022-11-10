@@ -438,11 +438,16 @@ export class FilteredConnection<
                     map(({ location }) => location.search),
                     distinctUntilChanged(),
                     map(searchParams => new URLSearchParams(searchParams)),
+                    map(searchParams => getFilterFromURL(searchParams, this.props.filters)),
+                    // Map is compared by reference, so by default distinctUntilChanged
+                    // will always return false for two maps. isEqual compares
+                    // them by value.
+                    distinctUntilChanged((prev, next) => isEqual(prev, next)),
                     skip(1)
                 )
-                .subscribe(searchParameters => {
+                .subscribe(newFilterValues => {
                     if (this.props.useURLQuery) {
-                        this.activeValuesChanges.next(getFilterFromURL(searchParameters, this.props.filters))
+                        this.activeValuesChanges.next(newFilterValues)
                     }
                 })
         )

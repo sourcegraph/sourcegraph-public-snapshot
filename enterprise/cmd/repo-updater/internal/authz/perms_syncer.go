@@ -122,6 +122,8 @@ func (s *PermsSyncer) ScheduleUsers(ctx context.Context, opts authz.FetchPermsOp
 	}
 
 	s.scheduleUsers(ctx, users...)
+	metricsItemsSyncScheduled.WithLabelValues("manualUsersTrigger", "high").Set(float64(len(userIDs)))
+	s.collectMetrics(ctx)
 }
 
 func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser) {
@@ -171,6 +173,8 @@ func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 
 	scheduleReposCounter.Add(float64(numberOfRepos))
 	s.scheduleRepos(ctx, repos...)
+	metricsItemsSyncScheduled.WithLabelValues("manualReposTrigger", "high").Set(float64(numberOfRepos))
+	s.collectMetrics(ctx)
 }
 
 func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo) {
@@ -639,7 +643,16 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "fetch user permissions via external accounts")
 	}
 
-	// Save permissions to database
+	// fetch current permissions from database
+	oldPerms := &authz.UserPermissions{
+		UserID: user.ID,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
+		IDs:    map[int32]struct{}{},
+	}
+	s.permsStore.LoadUserPermissions(ctx, oldPerms)
+
+	// Save new permissions to database
 	p := &authz.UserPermissions{
 		UserID: user.ID,
 		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
@@ -682,6 +695,16 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		log.Int("count", len(p.IDs)),
 		log.Object("fetchOpts", log.Bool("InvalidateCache", fetchOpts.InvalidateCaches)),
 	)
+
+	metricsSuccessPermsSyncs.WithLabelValues("user", string(p.UserID)).Inc()
+	metricsPermsFound.WithLabelValues("user", string(p.UserID)).Set(float64(len(p.IDs)))
+
+	if !oldPerms.SyncedAt.IsZero() {
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("user", string(p.UserID)).Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
+	} else {
+		metricsFirstPermsSyncs.WithLabelValues("user", string(p.UserID)).Inc()
+		metricsPermsFirstSyncDelay.WithLabelValues("user", string(p.UserID)).Set(p.SyncedAt.Sub(user.CreatedAt).Seconds())
+	}
 
 	return nil
 }
@@ -830,6 +853,14 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		}
 	}
 
+	// Load current permissions from database
+	oldPerms := &authz.RepoPermissions{
+		RepoID:  int32(repoID),
+		Perm:    authz.Read,
+		UserIDs: map[int32]struct{}{},
+	}
+	s.permsStore.LoadRepoPermissions(ctx, oldPerms)
+
 	// Save permissions to database
 	p := &authz.RepoPermissions{
 		RepoID:  int32(repoID),
@@ -886,6 +917,17 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		log.Int("pendingCount", pendingCount),
 		log.Object("fetchOpts", log.Bool("invalidateCaches", fetchOpts.InvalidateCaches)),
 	)
+
+	metricsSuccessPermsSyncs.WithLabelValues("repo", string(p.RepoID)).Inc()
+	metricsPermsFound.WithLabelValues("repo", string(p.RepoID)).Set(float64(regularCount))
+
+	if !oldPerms.SyncedAt.IsZero() {
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("repo", string(p.RepoID)).Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
+	} else {
+		metricsFirstPermsSyncs.WithLabelValues("repo", string(p.RepoID)).Inc()
+		metricsPermsFirstSyncDelay.WithLabelValues("repo", string(p.RepoID)).Set(p.SyncedAt.Sub(repo.CreatedAt).Seconds())
+	}
+
 	return nil
 }
 
@@ -950,7 +992,15 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGrou
 					),
 					log.Error(err),
 				)
+
+				if request.Type == requestTypeUser {
+					metricsFailedPermsSyncs.WithLabelValues("user", string(request.ID)).Inc()
+				} else {
+					metricsFailedPermsSyncs.WithLabelValues("repo", string(request.ID)).Inc()
+				}
 			}
+
+			s.collectMetrics(ctx)
 			return nil
 		},
 	)
@@ -1156,23 +1206,23 @@ type scheduledRepo struct {
 func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	schedule := new(schedule)
 
-	users, err := s.scheduleUsersWithOutdatedPerms(ctx)
+	usersWithOutdatedPerms, err := s.scheduleUsersWithOutdatedPerms(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "schedule users with outdated permissions")
 	}
-	schedule.Users = append(schedule.Users, users...)
+	schedule.Users = append(schedule.Users, usersWithOutdatedPerms...)
 
-	users, err = s.scheduleUsersWithNoPerms(ctx)
+	usersWithNoPerms, err := s.scheduleUsersWithNoPerms(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "schedule users with no permissions")
 	}
-	schedule.Users = append(schedule.Users, users...)
+	schedule.Users = append(schedule.Users, usersWithNoPerms...)
 
-	repos, err := s.scheduleReposWithNoPerms(ctx)
+	reposWithNoPerms, err := s.scheduleReposWithNoPerms(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "schedule repositories with no permissions")
 	}
-	schedule.Repos = append(schedule.Repos, repos...)
+	schedule.Repos = append(schedule.Repos, reposWithNoPerms...)
 
 	// TODO(jchen): Predict a limit taking account into:
 	//   1. Based on total repos and users that make sense to finish syncing before
@@ -1188,17 +1238,23 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	// TODO(jchen): Use better heuristics for setting NextSyncAt, the initial version
 	// just uses the value of LastUpdatedAt get from the perms tables.
 
-	users, err = s.scheduleUsersWithOldestPerms(ctx, userLimit, syncUserBackoff())
+	usersWithOldestPerms, err := s.scheduleUsersWithOldestPerms(ctx, userLimit, syncUserBackoff())
 	if err != nil {
 		return nil, errors.Wrap(err, "load users with oldest permissions")
 	}
-	schedule.Users = append(schedule.Users, users...)
+	schedule.Users = append(schedule.Users, usersWithOldestPerms...)
 
-	repos, err = s.scheduleReposWithOldestPerms(ctx, repoLimit, syncRepoBackoff())
+	reposWithOldestPerms, err := s.scheduleReposWithOldestPerms(ctx, repoLimit, syncRepoBackoff())
 	if err != nil {
 		return nil, errors.Wrap(err, "scan repositories with oldest permissions")
 	}
-	schedule.Repos = append(schedule.Repos, repos...)
+	schedule.Repos = append(schedule.Repos, reposWithOldestPerms...)
+
+	metricsItemsSyncScheduled.WithLabelValues("usersWithOutdatedPerms", "low").Set(float64(len(usersWithOutdatedPerms)))
+	metricsItemsSyncScheduled.WithLabelValues("usersWithNoPerms", "low").Set(float64(len(usersWithNoPerms)))
+	metricsItemsSyncScheduled.WithLabelValues("usersWithOldestPerms", "low").Set(float64(len(usersWithOldestPerms)))
+	metricsItemsSyncScheduled.WithLabelValues("reposWithNoPerms", "low").Set(float64(len(reposWithNoPerms)))
+	metricsItemsSyncScheduled.WithLabelValues("reposWithOldestPerms", "low").Set(float64(len(reposWithOldestPerms)))
 
 	return schedule, nil
 }
@@ -1244,6 +1300,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		}
 		s.scheduleUsers(ctx, schedule.Users...)
 		s.scheduleRepos(ctx, schedule.Repos...)
+		s.collectMetrics(ctx)
 	}
 }
 
@@ -1325,44 +1382,40 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 	}
 }
 
-// collectMetrics periodically collecting metrics values from both database and memory objects.
+var collectMetricsDisabled = false
+
+// collectMetrics collects metrics values from both database and memory objects.
 func (s *PermsSyncer) collectMetrics(ctx context.Context) {
-	logger := s.logger.Scoped("collectMetrics", "")
-	ticker := time.NewTicker(time.Minute)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-		case <-ctx.Done():
-			return
-		}
-
-		m, err := s.permsStore.Metrics(ctx, 3*24*time.Hour)
-		if err != nil {
-			logger.Error("failed to get metrics from database", log.Error(err))
-			continue
-		}
-		mstrict, err := s.permsStore.Metrics(ctx, 1*time.Hour)
-		if err != nil {
-			logger.Error("failed to get metrics from database", log.Error(err))
-			continue
-		}
-
-		metricsStalePerms.WithLabelValues("user").Set(float64(m.UsersWithStalePerms))
-		metricsStrictStalePerms.WithLabelValues("user").Set(float64(mstrict.UsersWithStalePerms))
-		metricsPermsGap.WithLabelValues("user").Set(m.UsersPermsGapSeconds)
-		metricsStalePerms.WithLabelValues("repo").Set(float64(m.ReposWithStalePerms))
-		metricsStrictStalePerms.WithLabelValues("repo").Set(float64(mstrict.ReposWithStalePerms))
-		metricsPermsGap.WithLabelValues("repo").Set(m.ReposPermsGapSeconds)
-		metricsStalePerms.WithLabelValues("sub-repo").Set(float64(m.SubReposWithStalePerms))
-		metricsStrictStalePerms.WithLabelValues("sub-repo").Set(float64(mstrict.SubReposWithStalePerms))
-		metricsPermsGap.WithLabelValues("sub-repo").Set(m.SubReposPermsGapSeconds)
-
-		s.queue.mu.RLock()
-		metricsQueueSize.Set(float64(s.queue.Len()))
-		s.queue.mu.RUnlock()
+	if collectMetricsDisabled {
+		return
 	}
+
+	logger := s.logger.Scoped("collectMetrics", "")
+
+	m, err := s.permsStore.Metrics(ctx, 3*24*time.Hour)
+	if err != nil {
+		logger.Error("failed to get metrics from database", log.Error(err))
+		return
+	}
+	mstrict, err := s.permsStore.Metrics(ctx, 1*time.Hour)
+	if err != nil {
+		logger.Error("failed to get metrics from database", log.Error(err))
+		return
+	}
+
+	metricsStalePerms.WithLabelValues("user").Set(float64(m.UsersWithStalePerms))
+	metricsStrictStalePerms.WithLabelValues("user").Set(float64(mstrict.UsersWithStalePerms))
+	metricsPermsGap.WithLabelValues("user").Set(m.UsersPermsGapSeconds)
+	metricsStalePerms.WithLabelValues("repo").Set(float64(m.ReposWithStalePerms))
+	metricsStrictStalePerms.WithLabelValues("repo").Set(float64(mstrict.ReposWithStalePerms))
+	metricsPermsGap.WithLabelValues("repo").Set(m.ReposPermsGapSeconds)
+	metricsStalePerms.WithLabelValues("sub-repo").Set(float64(m.SubReposWithStalePerms))
+	metricsStrictStalePerms.WithLabelValues("sub-repo").Set(float64(mstrict.SubReposWithStalePerms))
+	metricsPermsGap.WithLabelValues("sub-repo").Set(m.SubReposPermsGapSeconds)
+
+	s.queue.mu.RLock()
+	metricsQueueSize.Set(float64(s.queue.Len()))
+	s.queue.mu.RUnlock()
 }
 
 // Run kicks off the permissions syncing process, this method is blocking and
@@ -1370,7 +1423,6 @@ func (s *PermsSyncer) collectMetrics(ctx context.Context) {
 func (s *PermsSyncer) Run(ctx context.Context) {
 	go s.runSync(ctx)
 	go s.runSchedule(ctx)
-	go s.collectMetrics(ctx)
 
 	<-ctx.Done()
 }

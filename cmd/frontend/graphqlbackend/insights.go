@@ -87,6 +87,7 @@ type InsightStatusResolver interface {
 	FailedJobs(context.Context) (int32, error)
 	BackfillQueuedAt(context.Context) *gqlutil.DateTime
 	IsLoadingData(context.Context) (*bool, error)
+	IncompleteDatapoints(ctx context.Context) ([]IncompleteDatapointAlert, error)
 }
 
 type InsightsPointsArgs struct {
@@ -449,4 +450,13 @@ type DeleteInsightViewArgs struct {
 type SearchInsightLivePreviewSeriesResolver interface {
 	Points(ctx context.Context) ([]InsightsDataPointResolver, error)
 	Label(ctx context.Context) (string, error)
+}
+
+type IncompleteDatapointAlert interface {
+	ToTimeoutDatapointAlert() (TimeoutDatapointAlert, bool)
+	Time() gqlutil.DateTime
+}
+
+type TimeoutDatapointAlert interface {
+	Time() gqlutil.DateTime
 }

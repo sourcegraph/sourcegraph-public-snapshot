@@ -1,6 +1,5 @@
 package com.sourcegraph.website;
 
-import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Caret;
@@ -25,11 +24,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public abstract class SearchActionBase extends DumbAwareAction {
-    @Override
-    public @NotNull ActionUpdateThread getActionUpdateThread() {
-        return ActionUpdateThread.BGT;
-    }
-
     public void actionPerformedMode(@NotNull AnActionEvent event, @NotNull Scope scope) {
         final Project project = event.getProject();
 

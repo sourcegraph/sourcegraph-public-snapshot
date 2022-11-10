@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -137,7 +136,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 type HappinessFeedbackSubmissionInput struct {
 	// Score is the user's happiness rating, from 1-4.
 	Score int32
-	// Feedback is the answer to "What's going well? What could be better?".
+	// Feedback is the feedback text from the user.
 	Feedback *string
 	// The path that the happiness feedback was submitted from
 	CurrentPath *string
@@ -145,7 +144,7 @@ type HappinessFeedbackSubmissionInput struct {
 
 type happinessFeedbackSubmissionForHubSpot struct {
 	Email       *string `url:"email"`
-	Score       int32   `url:"happiness_score"`
+	Username    *string `url:"happiness_username"`
 	Feedback    *string `url:"happiness_feedback"`
 	CurrentPath *string `url:"happiness_current_url"`
 	IsTest      bool    `url:"happiness_is_test"`
@@ -156,37 +155,33 @@ type happinessFeedbackSubmissionForHubSpot struct {
 func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *struct {
 	Input *HappinessFeedbackSubmissionInput
 }) (*EmptyResponse, error) {
-	var email *string
-
-	if args.Input.Score < 1 || args.Input.Score > 4 {
-		return nil, errors.New("Score must be a value between 1 and 4")
-	}
-
-	// If we are on Sourcegraph.com, we want to capture the email of the user
-	if envvar.SourcegraphDotComMode() {
-		actor := actor.FromContext(ctx)
-
-		// If user is authenticated, use their uid and set the email field.
-		if actor.IsAuthenticated() {
-			e, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, actor.UID)
-			if err != nil && !errcode.IsNotFound(err) {
-				return nil, err
-			}
-			if e != "" {
-				email = &e
-			}
-		}
-	}
-
-	// Submit form to HubSpot
-	if err := hubspotutil.Client().SubmitForm(hubspotutil.HappinessFeedbackFormID, &happinessFeedbackSubmissionForHubSpot{
-		Email:       email,
-		Score:       args.Input.Score,
+	data := happinessFeedbackSubmissionForHubSpot{
 		Feedback:    args.Input.Feedback,
 		CurrentPath: args.Input.CurrentPath,
 		IsTest:      env.InsecureDev,
 		SiteID:      siteid.Get(),
-	}); err != nil {
+	}
+
+	// We include the username and email address of the user (if signed in). For signed-in users,
+	// the UI indicates that the username and email address will be sent to Sourcegraph.
+	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
+		currentUser, err := r.db.Users().GetByID(ctx, actor.UID)
+		if err != nil {
+			return nil, err
+		}
+		data.Username = &currentUser.Username
+
+		email, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, actor.UID)
+		if err != nil && !errcode.IsNotFound(err) {
+			return nil, err
+		}
+		if email != "" {
+			data.Email = &email
+		}
+	}
+
+	// Submit form to HubSpot
+	if err := hubspotutil.Client().SubmitForm(hubspotutil.HappinessFeedbackFormID, &data); err != nil {
 		// Log an error, but don't return one if the only failure was in submitting feedback results to HubSpot.
 		log15.Error("Unable to submit happiness feedback results to Sourcegraph remote", "error", err)
 	}

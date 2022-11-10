@@ -2,15 +2,17 @@ import React, { useCallback, useState } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
+import { useHistory } from 'react-router'
 
 import { EditorHint, QueryState, SearchPatternType } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, H2, H4, Text, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, H2, H4, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { useQueryExamples } from './useQueryExamples'
+import { exampleQueryColumns } from './QueryExamplesHomepage.constants'
+import { useQueryExamples, QueryExamplesSection } from './useQueryExamples'
 
 import styles from './QueryExamplesHomepage.module.scss'
 
@@ -48,11 +50,23 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
 }) => {
     const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
     const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
+    const [queryExampleTabActive, setQueryExampleTabActive] = useState<boolean>(false)
+    const history = useHistory()
 
-    const queryExampleSectionsColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
+    const exampleSyntaxColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
+
+    const handleTabChange = (selectedTab: number): void => {
+        setQueryExampleTabActive(!!selectedTab)
+    }
 
     const onQueryExampleClick = useCallback(
-        (id: string | undefined, query: string) => {
+        (id: string | undefined, query: string, slug: string | undefined) => {
+            // Run search for dotcom longer query examples
+            if (isSourcegraphDotCom && queryExampleTabActive) {
+                telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
+                history.push(slug!)
+            }
+
             setQueryState({ query: `${queryState.query} ${query}`.trimStart(), hint: EditorHint.Focus })
 
             telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
@@ -85,17 +99,45 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
             setSelectedTip,
             selectTipTimeout,
             setSelectTipTimeout,
+            queryExampleTabActive,
+            history,
+            isSourcegraphDotCom,
         ]
     )
 
     return (
         <div>
-            <div>
-                {isSourcegraphDotCom ? (
-                    <div className="d-flex align-items-center mb-2">
-                        <Text className={classNames('mr-2 pr-2', styles.codeBasicsTitle)}>Code Search Basics</Text>
+            {isSourcegraphDotCom ? (
+                <>
+                    <Tabs size="medium" onChange={handleTabChange}>
+                        <TabList wrapperClassName={classNames('mb-4', styles.tabHeader)}>
+                            <Tab key="Code search basics">Code search basics</Tab>
+                            <Tab key="Search query examples">Search query examples</Tab>
+                        </TabList>
+                        <TabPanels>
+                            <TabPanel className={styles.tabPanel}>
+                                <QueryExamplesLayout
+                                    queryColumns={exampleSyntaxColumns}
+                                    onQueryExampleClick={onQueryExampleClick}
+                                />
+                            </TabPanel>
+                            <TabPanel className={styles.tabPanel}>
+                                <QueryExamplesLayout
+                                    queryColumns={exampleQueryColumns}
+                                    onQueryExampleClick={onQueryExampleClick}
+                                />
+                            </TabPanel>
+                        </TabPanels>
+                    </Tabs>
+                    <div className="d-flex align-items-baseline justify-content-lg-center my-5">
+                        <H4 className={classNames('mr-2 mb-0 pr-2', styles.proTipTitle)}>Pro Tip</H4>
+                        <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
+                            Use Sourcegraph to search across your team's code.
+                        </Link>
                     </div>
-                ) : (
+                </>
+            ) : (
+                <div>
                     <div className={classNames(styles.tip, selectedTip && styles.tipVisible)}>
                         <strong>Tip</strong>
                         <span className="mx-1">–</span>
@@ -128,50 +170,55 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                             </>
                         )}
                     </div>
-                )}
-                <div className={styles.queryExamplesSectionsColumns}>
-                    {queryExampleSectionsColumns.map((column, index) => (
-                        // eslint-disable-next-line react/no-array-index-key
-                        <div key={`column-${index}`}>
-                            {column.map(({ title, queryExamples }) => (
-                                <QueryExamplesSection
-                                    key={title}
-                                    title={title}
-                                    queryExamples={queryExamples}
-                                    onQueryExampleClick={onQueryExampleClick}
-                                />
-                            ))}
-                            {!!index && (
-                                <small className="d-block">
-                                    <Link target="blank" to="/help/code_search/reference/queries">
-                                        Complete query reference{' '}
-                                        <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
-                                    </Link>
-                                </small>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-            {isSourcegraphDotCom && (
-                <div className="d-flex align-items-center justify-content-lg-center my-5">
-                    <H4 className={classNames('mr-2 mb-0 pr-2', styles.proTipTitle)}>Pro Tip</H4>
-                    <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
-                        Search your private code with Sourcegraph Cloud.
-                    </Link>
+                    <QueryExamplesLayout
+                        queryColumns={exampleSyntaxColumns}
+                        onQueryExampleClick={onQueryExampleClick}
+                    />
                 </div>
             )}
         </div>
     )
 }
 
-interface QueryExamplesSection {
-    title: string
-    queryExamples: QueryExample[]
-    onQueryExampleClick: (id: string | undefined, query: string) => void
+interface QueryExamplesLayout {
+    queryColumns: QueryExamplesSection[][]
+    onQueryExampleClick: (id: string | undefined, query: string, slug: string | undefined) => void
 }
 
-export const QueryExamplesSection: React.FunctionComponent<QueryExamplesSection> = ({
+export const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> = ({
+    queryColumns,
+    onQueryExampleClick,
+}) => (
+    <div className={styles.queryExamplesSectionsColumns}>
+        {queryColumns.map((column, index) => (
+            <div key={`column-${queryColumns[index][0].title}`}>
+                {column.map(({ title, queryExamples }) => (
+                    <ExamplesSection
+                        key={title}
+                        title={title}
+                        queryExamples={queryExamples}
+                        onQueryExampleClick={onQueryExampleClick}
+                    />
+                ))}
+                {/* Add docs link to last column */}
+                {queryColumns.length === index + 1 && (
+                    <small className="d-block">
+                        <Link target="blank" to="/help/code_search/reference/queries">
+                            Complete query reference{' '}
+                            <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                        </Link>
+                    </small>
+                )}
+            </div>
+        ))}
+    </div>
+)
+
+interface ExamplesSection extends QueryExamplesSection {
+    onQueryExampleClick: (id: string | undefined, query: string, slug: string | undefined) => void
+}
+
+export const ExamplesSection: React.FunctionComponent<ExamplesSection> = ({
     title,
     queryExamples,
     onQueryExampleClick,
@@ -181,11 +228,12 @@ export const QueryExamplesSection: React.FunctionComponent<QueryExamplesSection>
         <ul className={classNames('list-unstyled', styles.queryExamplesItems)}>
             {queryExamples
                 .filter(({ query }) => query.length > 0)
-                .map(({ id, query, helperText }) => (
+                .map(({ id, query, helperText, slug }) => (
                     <QueryExampleChip
                         id={id}
                         key={query}
                         query={query}
+                        slug={slug}
                         helperText={helperText}
                         onClick={onQueryExampleClick}
                     />
@@ -198,22 +246,24 @@ interface QueryExample {
     id?: string
     query: string
     helperText?: string
+    slug?: string | undefined
 }
 
 interface QueryExampleChipProps extends QueryExample {
     className?: string
-    onClick: (id: string | undefined, query: string) => void
+    onClick: (id: string | undefined, query: string, slug: string | undefined) => void | undefined
 }
 
 export const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = ({
     id,
     query,
     helperText,
+    slug,
     className,
     onClick,
 }) => (
     <li className={classNames('d-flex align-items-center', className)}>
-        <Button type="button" className={styles.queryExampleChip} onClick={() => onClick(id, query)}>
+        <Button type="button" className={styles.queryExampleChip} onClick={() => onClick(id, query, slug || '')}>
             <SyntaxHighlightedSearchQuery query={query} searchPatternType={SearchPatternType.standard} />
         </Button>
         {helperText && (

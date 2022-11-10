@@ -18,6 +18,7 @@ import (
 // enterprise frontend setup hook.
 type Services struct {
 	GitHubWebhook                   webhooks.Registerer
+	GitHubSyncWebhook               webhooks.Registerer
 	GitLabWebhook                   webhooks.RegistererHandler
 	BitbucketServerWebhook          http.Handler
 	BitbucketCloudWebhook           http.Handler
@@ -40,6 +41,7 @@ type Services struct {
 	NotebooksResolver               graphqlbackend.NotebooksResolver
 	ComputeResolver                 graphqlbackend.ComputeResolver
 	InsightsAggregationResolver     graphqlbackend.InsightsAggregationResolver
+	WebhooksResolver                graphqlbackend.WebhooksResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
@@ -63,6 +65,7 @@ func DefaultServices() Services {
 	return Services{
 		GitHubWebhook:                   &emptyWebhookHandler{name: "github webhook"},
 		GitLabWebhook:                   &emptyWebhookHandler{name: "gitlab webhook"},
+		GitHubSyncWebhook:               &emptyWebhookHandler{name: "github sync webhook"},
 		BitbucketServerWebhook:          makeNotFoundHandler("bitbucket server webhook"),
 		BitbucketCloudWebhook:           makeNotFoundHandler("bitbucket cloud webhook"),
 		BatchesChangesFileGetHandler:    makeNotFoundHandler("batches file get handler"),
@@ -103,7 +106,7 @@ func (e *emptyWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 type ErrBatchChangesDisabledDotcom struct{}
 
 func (e ErrBatchChangesDisabledDotcom) Error() string {
-	return "access to batch changes on Sourcegraph.com is currently not available"
+	return "batch changes is not available on Sourcegraph.com; use Sourcegraph Cloud or self-hosted instead"
 }
 
 type ErrBatchChangesDisabled struct{}

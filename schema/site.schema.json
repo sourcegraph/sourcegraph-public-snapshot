@@ -556,6 +556,11 @@
           "description": "Enables hiding Sourcegraph operator auth provider on login page.",
           "type": "boolean",
           "default": false
+        },
+        "insightsBackfillerV2": {
+          "description": "Use v2 of the insights backfiller which backfills a series at a time.",
+          "type": "boolean",
+          "default": false
         }
       },
       "examples": [
@@ -1144,6 +1149,16 @@
       "type": "string",
       "examples": ["4.1.0"]
     },
+    "executors.batcheshelperImage": {
+      "description": "The image to use for batch changes in executors. Use this value to pull from a custom image registry.",
+      "type": "string",
+      "default": "sourcegraph/batcheshelper"
+    },
+    "executors.batcheshelperImageTag": {
+      "description": "The tag to use for the batcheshelper image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
+      "type": "string",
+      "examples": ["4.1.0"]
+    },
     "executors.accessToken": {
       "description": "The shared secret between Sourcegraph and executors.",
       "type": "string",
@@ -1396,6 +1411,12 @@
       "group": "Debug",
       "examples": [["10000"]]
     },
+    "insights.backfill.interruptAfter": {
+      "description": "Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 60
+    },
     "insights.historical.frames": {
       "description": "DEPRECATED: (debug) number of historical insights timeframes to populate",
       "type": "integer",
@@ -1426,9 +1447,16 @@
       "description": "Maximum number of Code Insights queries initiated per second on a worker node.",
       "type": "number",
       "group": "CodeInsights",
-      "default": 2,
+      "default": 20,
       "examples": [10.0, 0.5],
       "!go": { "pointer": true }
+    },
+    "insights.query.worker.rateLimitBurst": {
+      "description": "The allowed burst rate for the Code Insights queries per second rate limiter.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 20,
+      "examples": [10, 20]
     },
     "insights.compute.graphql": {
       "description": "DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",

@@ -253,7 +253,7 @@ locked_candidates AS (
 		pr.payload
 	FROM codeintel_path_rank_inputs pr
 	WHERE pr.graph_key = %s AND NOT pr.processed
-	ORDER BY pr.id
+	ORDER BY pr.repository_name, pr.id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
@@ -267,13 +267,14 @@ upserted AS (
 	FROM locked_candidates c
 	JOIN repo r ON r.name = c.repository_name
 	GROUP BY r.id, c.precision, c.graph_key
-	ON CONFLICT (repository_id, precision) DO UPDATE SET payload =
-	 CASE
-		WHEN pr.graph_key != EXCLUDED.graph_key
-			THEN EXCLUDED.payload
-		ELSE
-			pr.payload || EXCLUDED.payload
-	END
+	ON CONFLICT (repository_id, precision) DO UPDATE SET
+		graph_key = EXCLUDED.graph_key,
+		payload   = CASE
+			WHEN pr.graph_key != EXCLUDED.graph_key
+				THEN EXCLUDED.payload
+			ELSE
+				pr.payload || EXCLUDED.payload
+		END
 	RETURNING 1
 ),
 processed AS (

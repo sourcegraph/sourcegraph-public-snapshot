@@ -144,7 +144,6 @@ export function buildSearchURLQueryFromQueryState(parameters: BuildSearchQueryUR
         parameters.query,
         parameters.patternType ?? currentState.searchPatternType,
         parameters.caseSensitive ?? currentState.searchCaseSensitivity,
-        parameters.searchContextSpec,
-        parameters.searchParametersList
+        parameters.searchContextSpec
     )
 }

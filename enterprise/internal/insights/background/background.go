@@ -51,11 +51,6 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
 	featureFlagStore := mainAppDB.FeatureFlags()
-	backfillerV2Enabled := false
-	backfillerV2Flag, err := featureFlagStore.GetFeatureFlag(ctx, "insights-backfiller-v2")
-	if err == nil && backfillerV2Flag != nil && backfillerV2Flag.Bool.Value {
-		backfillerV2Enabled = true
-	}
 
 	// Start background goroutines for all of our workers.
 	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
@@ -73,44 +68,45 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// work to fill them - if not disabled.
 	disableHistorical, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS_HISTORICAL"))
 	if !disableHistorical {
-		if backfillerV2Enabled {
-			searchRateLimiter := limiter.SearchQueryRate()
-			historicRateLimiter := limiter.HistoricalWorkRate()
-			backfillConfig := pipeline.BackfillerConfig{
-				CompressionPlan:         compression.NewHistoricalFilter(true, time.Now().Add(-1*365*24*time.Hour), edb.NewInsightsDBWith(insightsStore)),
-				SearchHandlers:          queryrunner.GetSearchHandlers(),
-				InsightStore:            insightsStore,
-				CommitClient:            discovery.NewGitCommitClient(mainAppDB),
-				SearchPlanWorkerLimit:   1,
-				SearchRunnerWorkerLimit: 12,
-				SearchRateLimiter:       searchRateLimiter,
-				HistoricRateLimiter:     historicRateLimiter,
-			}
-			backfillRunner := pipeline.NewDefaultBackfiller(backfillConfig)
-			config := scheduler.JobMonitorConfig{
-				InsightsDB:     insightsDB,
-				InsightStore:   insightsStore,
-				RepoStore:      mainAppDB.Repos(),
-				BackfillRunner: backfillRunner,
-				ObsContext:     observationContext,
-				AllRepoIterator: discovery.NewAllReposIterator(
-					mainAppDB.Repos(),
-					time.Now,
-					envvar.SourcegraphDotComMode(),
-					15*time.Minute,
-					&prometheus.CounterOpts{
-						Namespace: "src",
-						Name:      "insight_backfill_new_index_repositories_analyzed",
-						Help:      "Counter of the number of repositories analyzed in the backfiller new state.",
-					}),
-				CostAnalyzer: priority.DefaultQueryAnalyzer(),
-			}
-			monitor := scheduler.NewBackgroundJobMonitor(ctx, config)
-			routines = append(routines, monitor.Routines()...)
-		} else {
-			routines = append(routines, newInsightHistoricalEnqueuer(ctx, workerBaseStore, insightsMetadataStore, insightsStore, featureFlagStore, observationContext))
+
+		searchRateLimiter := limiter.SearchQueryRate()
+		historicRateLimiter := limiter.HistoricalWorkRate()
+		backfillConfig := pipeline.BackfillerConfig{
+			CompressionPlan:         compression.NewHistoricalFilter(true, time.Now().Add(-1*365*24*time.Hour), edb.NewInsightsDBWith(insightsStore)),
+			SearchHandlers:          queryrunner.GetSearchHandlers(),
+			InsightStore:            insightsStore,
+			CommitClient:            discovery.NewGitCommitClient(mainAppDB),
+			SearchPlanWorkerLimit:   1,
+			SearchRunnerWorkerLimit: 5, //TODO: move these to settings
+			SearchRateLimiter:       searchRateLimiter,
+			HistoricRateLimiter:     historicRateLimiter,
+		}
+		backfillRunner := pipeline.NewDefaultBackfiller(backfillConfig)
+		config := scheduler.JobMonitorConfig{
+			InsightsDB:     insightsDB,
+			InsightStore:   insightsStore,
+			RepoStore:      mainAppDB.Repos(),
+			BackfillRunner: backfillRunner,
+			ObsContext:     observationContext,
+			AllRepoIterator: discovery.NewAllReposIterator(
+				mainAppDB.Repos(),
+				time.Now,
+				envvar.SourcegraphDotComMode(),
+				15*time.Minute,
+				&prometheus.CounterOpts{
+					Namespace: "src",
+					Name:      "insight_backfill_new_index_repositories_analyzed",
+					Help:      "Counter of the number of repositories analyzed in the backfiller new state.",
+				}),
+			CostAnalyzer: priority.DefaultQueryAnalyzer(),
 		}
 
+		// Add the backfill v2 workers
+		monitor := scheduler.NewBackgroundJobMonitor(ctx, config)
+		routines = append(routines, monitor.Routines()...)
+
+		// Add the backfiller v1 workers
+		routines = append(routines, newInsightHistoricalEnqueuer(ctx, workerBaseStore, insightsMetadataStore, insightsStore, featureFlagStore, observationContext))
 	}
 
 	routines = append(

@@ -61,7 +61,11 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
                         aria-label="Webhooks"
                     >
                         {connection?.nodes?.map(node => (
-                            <WebhookNode key={node.id} codeHostKind={node.codeHostKind} codeHostURN={node.codeHostURN} />
+                            <WebhookNode
+                                key={node.id}
+                                codeHostKind={node.codeHostKind}
+                                codeHostURN={node.codeHostURN}
+                            />
                         ))}
                     </ConnectionList>
                     {connection && (
