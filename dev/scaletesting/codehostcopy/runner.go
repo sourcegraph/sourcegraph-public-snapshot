@@ -190,7 +190,7 @@ func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts 
 	return gitPushWithRetry(ctx, repoDir, 3, destOpts...)
 }
 
-func gitPushWithRetry(ctx context.Context, dir string, retry int, destOpt ...GitOpt) error {
+func gitPushWithRetry(ctx context.Context, dir string, retry int, destOpts ...GitOpt) error {
 	var err error
 	for i := 0; i < retry; i++ {
 		cmd := run.Bash(ctx, "git push destination").Dir(dir)
