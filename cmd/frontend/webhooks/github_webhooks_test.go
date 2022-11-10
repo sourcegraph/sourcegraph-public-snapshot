@@ -224,8 +224,8 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 			hook.ServeHTTP(rec, req)
 			resp := rec.Result()
 
-			if resp.StatusCode != http.StatusInternalServerError {
-				t.Errorf("Non 500 code: %v", resp.StatusCode)
+			if resp.StatusCode != http.StatusBadRequest {
+				t.Errorf("Non 400 code: %v", resp.StatusCode)
 			}
 
 			if called {
