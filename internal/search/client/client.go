@@ -6,9 +6,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/zoekt"
 
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/zoekt"
 )
 
 type SearchClient interface {
@@ -119,6 +120,7 @@ func (s *searchClient) Plan(
 		Features:            ToFeatures(featureflag.FromContext(ctx), s.logger),
 		PatternType:         searchType,
 		Protocol:            protocol,
+		SanitizeSearch:      shouldSanitizeSearch(ctx, s.db), // Experimental: check site config to see if search sanitization is enabled
 	}
 
 	tr.LazyPrintf("Parsed query: %s", inputs.Query)
@@ -153,6 +155,36 @@ func (s *searchClient) JobClients() job.RuntimeClients {
 		SearcherURLs: s.searcherURLs,
 		Gitserver:    gitserver.NewClient(s.db),
 	}
+}
+
+func shouldSanitizeSearch(ctx context.Context, db database.DB) bool {
+	c := conf.Get()
+	if c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SearchSanitization != nil {
+		user, err := actor.FromContext(ctx).User(ctx, db.Users())
+		if err != nil {
+			return true
+		}
+
+		if user.SiteAdmin {
+			return false
+		}
+
+		if len(c.ExperimentalFeatures.SearchSanitization.OrgName) > 0 {
+			orgStore := db.Orgs()
+			userOrgs, err := orgStore.GetByUserID(ctx, user.ID)
+			if err != nil {
+				return true
+			}
+
+			for _, org := range userOrgs {
+				if org.Name == c.ExperimentalFeatures.SearchSanitization.OrgName {
+					return false
+				}
+			}
+		}
+		return true
+	}
+	return false
 }
 
 type QueryError struct {

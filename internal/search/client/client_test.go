@@ -1,11 +1,18 @@
 package client
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestDetectSearchType(t *testing.T) {
@@ -71,4 +78,98 @@ func TestDetectSearchType(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestShouldSanitizeSearch(t *testing.T) {
+	mockConf := &conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				SearchSanitization: &schema.SearchSanitization{
+					SanitizePatterns: []string{"it's Morbin' time"},
+					OrgName:          "Thirty Seconds to Mars",
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name        string
+		conf        *conf.Unified
+		user        *types.User
+		userDBError bool
+		userOrgs    []*types.Org
+		orgDBError  bool
+		want        bool
+	}{
+		{
+			name:     "false if feature is not enabled",
+			conf:     &conf.Unified{},
+			user:     &types.User{ID: 1},
+			userOrgs: []*types.Org{},
+			want:     false,
+		},
+		{
+			name:     "false if user is site admin",
+			conf:     mockConf,
+			user:     &types.User{ID: 1, SiteAdmin: true},
+			userOrgs: []*types.Org{},
+			want:     false,
+		},
+		{
+			name:     "false if user is non-admin but member of allowlist org",
+			conf:     mockConf,
+			user:     &types.User{ID: 1},
+			userOrgs: []*types.Org{{Name: "Thirty Seconds to Mars"}},
+			want:     false,
+		},
+		{
+			name:     "true if user is non-admin and not member of allowlist org",
+			conf:     mockConf,
+			user:     &types.User{ID: 1},
+			userOrgs: []*types.Org{{Name: "Bring Me the Horizon"}, {Name: "Linkin Park"}},
+			want:     true,
+		},
+		{
+			name:        "true if error on get user from db",
+			conf:        mockConf,
+			user:        &types.User{ID: 1},
+			userDBError: true,
+			userOrgs:    []*types.Org{},
+			want:        true,
+		},
+		{
+			name:       "true if error on get user orgs from db",
+			conf:       mockConf,
+			user:       &types.User{ID: 1},
+			userOrgs:   []*types.Org{},
+			orgDBError: true,
+			want:       true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			conf.DefaultClient().Mock(tc.conf)
+
+			mockUserStore := database.NewMockUserStore()
+			if tc.userDBError {
+				mockUserStore.GetByIDFunc.SetDefaultReturn(nil, errors.New("test error"))
+			} else {
+				mockUserStore.GetByIDFunc.SetDefaultReturn(tc.user, nil)
+			}
+
+			mockOrgStore := database.NewMockOrgStore()
+			if tc.orgDBError {
+				mockOrgStore.GetByUserIDFunc.SetDefaultReturn(nil, errors.New("test error"))
+			} else {
+				mockOrgStore.GetByUserIDFunc.SetDefaultReturn(tc.userOrgs, nil)
+			}
+
+			mockDB := database.NewMockDB()
+			mockDB.UsersFunc.SetDefaultReturn(mockUserStore)
+			mockDB.OrgsFunc.SetDefaultReturn(mockOrgStore)
+
+			require.Equal(t, tc.want, shouldSanitizeSearch(actor.WithActor(context.Background(), actor.FromMockUser(tc.user.ID)), mockDB))
+		})
+	}
 }

@@ -30,6 +30,7 @@ type Inputs struct {
 	OnSourcegraphDotCom bool
 	Features            *Features
 	Protocol            Protocol
+	SanitizeSearch      bool
 }
 
 // MaxResults computes the limit for the query.
