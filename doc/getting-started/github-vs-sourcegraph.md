@@ -181,16 +181,6 @@ Using the <a href="https://docs.sourcegraph.com/admin/config/site_config#search-
    <td>2.8 million 
    </td>
   </tr>
-  <tr>
-   <td><strong>Search across both your private repositories and public repositories at the same time</strong>
-   </td>
-   <td>✓
-   </td>
-   <td>✓
-<p>
-Public and private repos can be searched as long as they’re synced with your code host. 
-   </td>
-  </tr>
 </table>
 
 
