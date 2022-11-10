@@ -57,7 +57,6 @@ export const BatchChangeStatePill: React.FunctionComponent<React.PropsWithChildr
 
     return (
         <div
-            role="status"
             className={classNames(styles.pillGroup, className, {
                 [styles.open]: state === BatchChangeState.OPEN,
                 [styles.draft]: state === BatchChangeState.DRAFT,
