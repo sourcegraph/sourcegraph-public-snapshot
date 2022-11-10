@@ -64,7 +64,12 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 	knownFilenameMap := map[string]struct{}{}
 
 	for i := 0; i < len(filenames); i += inputFilenameBatchSize {
-		batch := filenames[i : i+inputFilenameBatchSize]
+		n := i + inputFilenameBatchSize
+		if n > len(filenames) {
+			n = len(filenames)
+		}
+		batch := filenames[i:n]
+
 		knownFilenames, err := s.store.HasInputFilename(ctx, resultsGraphKey, batch)
 		if err != nil {
 			return err
