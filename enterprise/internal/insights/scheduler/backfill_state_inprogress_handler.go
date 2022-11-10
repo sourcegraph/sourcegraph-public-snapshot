@@ -156,7 +156,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		MaxFailures: 3,
 		OnTerminal: func(ctx context.Context, tx *basestore.Store, repoId int32, terminalErr error) error {
 			reason := translateIncompleteReasons(terminalErr)
-			logger.Info("insights backfill incomplete repo writing all datapoints",
+			logger.Debug("insights backfill incomplete repo writing all datapoints",
 				log.Int32("repoId", repoId),
 				log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID),
 				log.Int("backfillId", backfillJob.Id),
