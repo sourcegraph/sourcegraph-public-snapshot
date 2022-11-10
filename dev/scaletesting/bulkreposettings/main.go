@@ -170,6 +170,10 @@ var app = &cli.App{
 							}
 						}
 
+						if err := repoIter.Err(); err != nil {
+							logger.Error("repo iterator encountered an error", log.Error(err))
+						}
+
 						results := g.Wait()
 
 						// Check that we actually got errors
