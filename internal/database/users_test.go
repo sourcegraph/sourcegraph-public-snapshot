@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -328,6 +329,37 @@ func TestUsers_ListCount(t *testing.T) {
 	} else if len(users) > 0 {
 		t.Errorf("got %d, want empty", len(users))
 	}
+
+	// Create a Sourcegraph Operator user and should be excluded when desired
+	_, err = db.UserExternalAccounts().CreateUserAndSave(
+		ctx,
+		NewUser{
+			Username: "sourcegraph-operator-logan",
+		},
+		extsvc.AccountSpec{
+			ServiceType: "sourcegraph-operator",
+		},
+		extsvc.AccountData{},
+	)
+	require.NoError(t, err)
+	count, err := db.Users().Count(
+		ctx,
+		&UsersListOptions{
+			ExcludeSourcegraphAdmins:    true,
+			ExcludeSourcegraphOperators: true,
+		},
+	)
+	require.NoError(t, err)
+	assert.Equal(t, 0, count)
+	users, err := db.Users().List(
+		ctx,
+		&UsersListOptions{
+			ExcludeSourcegraphAdmins:    true,
+			ExcludeSourcegraphOperators: true,
+		},
+	)
+	require.NoError(t, err)
+	assert.Len(t, users, 0)
 }
 
 func TestUsers_Update(t *testing.T) {
