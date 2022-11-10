@@ -27,7 +27,7 @@ func (r *schemaResolver) SendTestEmail(ctx context.Context, args struct{ To stri
 	} else {
 		id = fullID.String()[:5]
 	}
-	logger = logger.With(log.String("id", id))
+	logger = logger.With(log.String("emailID", id))
 
 	if err := txemail.Send(ctx, "test_email", txemail.Message{
 		To:       []string{args.To},
