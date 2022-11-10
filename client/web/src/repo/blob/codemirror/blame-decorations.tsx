@@ -4,7 +4,17 @@
  * decorations are provided via the {@link showGitBlameDecorations} facet.
  */
 import { Facet, RangeSet } from '@codemirror/state'
-import { Decoration, EditorView, gutter, gutterLineClass, GutterMarker } from '@codemirror/view'
+import {
+    Decoration,
+    DecorationSet,
+    EditorView,
+    gutter,
+    gutterLineClass,
+    GutterMarker,
+    ViewPlugin,
+    ViewUpdate,
+    WidgetType,
+} from '@codemirror/view'
 import { isEqual } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
 
@@ -34,6 +44,87 @@ const [hoveredLine, setHoveredLine] = createUpdateableField<number | null>(null,
             : RangeSet.of(highlightedLineGutterMarker.range(state.doc.line(line).from))
     }),
 ])
+
+class CheckboxWidget extends WidgetType {
+    constructor(readonly checked: boolean) {
+        super()
+    }
+
+    eq(other: CheckboxWidget) {
+        return other.checked == this.checked
+    }
+
+    toDOM() {
+        let wrap = document.createElement('span')
+        wrap.style.maxWidth = '50px'
+        // wrap.classList.add('sr-only')
+        // wrap.setAttribute('aria-hidden', 'true')
+        // wrap.className = 'cm-boolean-toggle'
+        let a = document.createElement('a')
+        a.innerText = 'link'
+        a.setAttribute('href', 'https://sourcegraph.com')
+        wrap.appendChild(a)
+        // box.type = 'checkbox'
+        // box.checked = this.checked
+        return wrap
+    }
+
+    ignoreEvent() {
+        return false
+    }
+}
+
+function checkboxes(view: EditorView) {
+    let widgets = []
+    // console.log(view.visibleRanges)
+    // const hunks = view.state.facet(facet)
+    // consi
+    for (let { from, to } of view.visibleRanges) {
+        for (let pos = from; pos <= to; ) {
+            let line = view.state.doc.lineAt(pos)
+            let deco = Decoration.widget({
+                widget: new CheckboxWidget(true),
+                side: 1,
+            })
+            widgets.push(deco.range(line.from))
+            pos = line.to + 1
+        }
+
+        // for (let i = from; i < to; i++) {
+        //     let deco = Decoration.widget({
+        //         widget: new CheckboxWidget(true),
+        //         side: 1,
+        //     })
+        //     widgets.push(deco.range(0))
+        // }
+    }
+    return Decoration.set(widgets)
+}
+
+const checkboxPlugin = ViewPlugin.fromClass(
+    class {
+        decorations: DecorationSet
+
+        constructor(view: EditorView) {
+            this.decorations = checkboxes(view)
+        }
+
+        update(update: ViewUpdate) {
+            if (update.docChanged || update.viewportChanged) this.decorations = checkboxes(update.view)
+        }
+    },
+    {
+        decorations: v => v.decorations,
+
+        eventHandlers: {
+            mousedown: (e, view) => {
+                let target = e.target as HTMLElement
+                if (target.nodeName == 'INPUT' && target.parentElement!.classList.contains('cm-boolean-toggle'))
+                    return console.log('hello')
+            },
+        },
+    }
+)
 
 /**
  * Used to find the blame decoration(s) with the longest text,
@@ -138,5 +229,6 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                 update.startState.facet(EditorView.darkTheme) !== update.state.facet(EditorView.darkTheme),
         }),
         hoveredLine,
+        checkboxPlugin,
     ],
 })
