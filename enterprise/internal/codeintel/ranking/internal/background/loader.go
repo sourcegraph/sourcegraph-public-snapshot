@@ -39,29 +39,31 @@ func NewRankLoader(
 	interval time.Duration,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
+	loader := &rankLoader{
+		store:         store,
+		resultsBucket: resultsBucket,
+		logger:        log.Scoped("codeintel-rank-loader", "Reads rank data from GCS into Postgres"),
+		metrics:       newLoaderMetrics(observationContext),
+	}
+
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return (&rankLoader{
-			store:         store,
-			resultsBucket: resultsBucket,
-			logger:        log.Scoped("", ""), // TODO
-			metrics:       newLoaderMetrics(observationContext),
-		}).loadRanks(ctx, config)
+		return loader.loadRanks(ctx, config)
 	}))
 }
 
 const pageRankPrecision = float64(1.0)
 
-func (s *rankLoader) loadRanks(ctx context.Context, config RankLoaderConfig) (err error) {
+func (l *rankLoader) loadRanks(ctx context.Context, config RankLoaderConfig) (err error) {
 	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
 		return nil
 	}
-	if s.resultsBucket == nil {
-		s.logger.Warn("No result bucket is configured")
+	if l.resultsBucket == nil {
+		l.logger.Warn("No result bucket is configured")
 		return nil
 	}
 
 	var filenames []string
-	objects := s.resultsBucket.Objects(ctx, &storage.Query{
+	objects := l.resultsBucket.Objects(ctx, &storage.Query{
 		Prefix: config.ResultsObjectKeyPrefix,
 	})
 	for {
@@ -81,7 +83,7 @@ func (s *rankLoader) loadRanks(ctx context.Context, config RankLoaderConfig) (er
 		filenames = append(filenames, attrs.Name)
 	}
 
-	knownFilenames, err := s.store.HasInputFilename(ctx, config.ResultsGraphKey, filenames)
+	knownFilenames, err := l.store.HasInputFilename(ctx, config.ResultsGraphKey, filenames)
 	if err != nil {
 		return err
 	}
@@ -99,7 +101,7 @@ func (s *rankLoader) loadRanks(ctx context.Context, config RankLoaderConfig) (er
 	}
 
 	for _, name := range filtered {
-		r, err := s.resultsBucket.Object(name).NewReader(ctx)
+		r, err := l.resultsBucket.Object(name).NewReader(ctx)
 		if err != nil {
 			return err
 		}
@@ -120,7 +122,7 @@ func (s *rankLoader) loadRanks(ctx context.Context, config RankLoaderConfig) (er
 			}
 
 			offset := cr.n
-			s.metrics.numCSVBytesRead.Add(float64(offset - lastOffset))
+			l.metrics.numCSVBytesRead.Add(float64(offset - lastOffset))
 			lastOffset = offset
 
 			if len(line) < 3 {
@@ -142,11 +144,11 @@ func (s *rankLoader) loadRanks(ctx context.Context, config RankLoaderConfig) (er
 			ranks[repo][path] = rank
 		}
 
-		if err := s.store.BulkSetDocumentRanks(ctx, config.ResultsGraphKey, name, pageRankPrecision, ranks); err != nil {
+		if err := l.store.BulkSetDocumentRanks(ctx, config.ResultsGraphKey, name, pageRankPrecision, ranks); err != nil {
 			return err
 		}
 
-		s.metrics.numCSVFilesProcessed.Add(float64(1))
+		l.metrics.numCSVFilesProcessed.Add(float64(1))
 	}
 
 	return nil

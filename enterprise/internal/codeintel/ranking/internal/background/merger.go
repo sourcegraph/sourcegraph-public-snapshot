@@ -38,12 +38,14 @@ func NewRankMerger(
 	interval time.Duration,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
+	merger := &rankMerger{
+		store:         store,
+		resultsBucket: resultsBucket,
+		metrics:       newMergerMetrics(observationContext),
+	}
+
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return (&rankMerger{
-			store:         store,
-			resultsBucket: resultsBucket,
-			metrics:       newMergerMetrics(observationContext),
-		}).mergeRanks(ctx, config)
+		return merger.mergeRanks(ctx, config)
 	}))
 }
 

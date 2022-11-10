@@ -17,12 +17,14 @@ func NewRepositoryIndexer(
 	interval time.Duration,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
+	indexer := &indexer{
+		store:           store,
+		gitserverClient: gitserverClient,
+		symbolsClient:   symbolsClient,
+	}
+
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return (&indexer{
-			store:           store,
-			gitserverClient: gitserverClient,
-			symbolsClient:   symbolsClient,
-		}).indexRepositories(ctx)
+		return indexer.indexRepositories(ctx)
 	}))
 }
 
@@ -36,18 +38,18 @@ type indexer struct {
 	symbolsClient   SymbolsClient
 }
 
-func (s *indexer) indexRepositories(ctx context.Context) (err error) {
+func (i *indexer) indexRepositories(ctx context.Context) (err error) {
 	if !rankingEnabled {
 		return nil
 	}
 
-	repos, err := s.store.GetRepos(ctx)
+	repos, err := i.store.GetRepos(ctx)
 	if err != nil {
 		return err
 	}
 
 	for _, repoName := range repos {
-		if err := s.indexRepository(ctx, repoName); err != nil {
+		if err := i.indexRepository(ctx, repoName); err != nil {
 			return err
 		}
 	}
@@ -57,8 +59,8 @@ func (s *indexer) indexRepositories(ctx context.Context) (err error) {
 
 const fileReferenceGraphPrecision = 0.5
 
-func (s *indexer) indexRepository(ctx context.Context, repoName api.RepoName) (err error) {
-	graph, err := s.buildFileReferenceGraph(ctx, repoName)
+func (i *indexer) indexRepository(ctx context.Context, repoName api.RepoName) (err error) {
+	graph, err := i.buildFileReferenceGraph(ctx, repoName)
 	if err != nil {
 		return err
 	}
@@ -68,5 +70,5 @@ func (s *indexer) indexRepository(ctx context.Context, repoName api.RepoName) (e
 		return err
 	}
 
-	return s.store.SetDocumentRanks(ctx, repoName, fileReferenceGraphPrecision, ranks)
+	return i.store.SetDocumentRanks(ctx, repoName, fileReferenceGraphPrecision, ranks)
 }

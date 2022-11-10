@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type rankingSourcerJob struct{}
@@ -37,7 +38,7 @@ func (j *rankingSourcerJob) Routines(startupCtx context.Context, logger log.Logg
 	}
 
 	return append(
-		ranking.NewIndexer(services.RankingService),
-		ranking.NewPageRankLoader(services.RankingService)...,
+		ranking.NewIndexer(services.RankingService, observation.ContextWithLogger(logger)),
+		ranking.NewPageRankLoader(services.RankingService, observation.ContextWithLogger(logger))...,
 	), nil
 }
