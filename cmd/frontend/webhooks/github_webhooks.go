@@ -41,7 +41,7 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log15.Error("Could not find valid external service for webhook", "error", err)
 
 		if errcode.IsNotFound(err) {
-			http.Error(w, "External service not found", http.StatusInternalServerError)
+			http.Error(w, "External service not found", http.StatusNotFound)
 			return
 		}
 
