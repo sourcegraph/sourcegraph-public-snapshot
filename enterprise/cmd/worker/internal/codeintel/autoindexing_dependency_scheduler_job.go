@@ -7,10 +7,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	bkgdependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/background/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type autoindexingDependencyScheduler struct{}
@@ -25,7 +28,7 @@ func (j *autoindexingDependencyScheduler) Description() string {
 
 func (j *autoindexingDependencyScheduler) Config() []env.Config {
 	return []env.Config{
-		bkgdependencies.ConfigInst,
+		autoindexing.ConfigDependencyIndexInst,
 	}
 }
 
@@ -35,5 +38,17 @@ func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, l
 		return nil, err
 	}
 
-	return bkgdependencies.NewSchedulers(autoindexing.GetBackgroundJobs(services.AutoIndexingService)), nil
+	db, err := workerdb.InitDBWithLogger(logger)
+	if err != nil {
+		return nil, err
+	}
+
+	return autoindexing.NewDependencyIndexSchedulers(
+		db,
+		services.UploadsService,
+		services.DependenciesService,
+		services.AutoIndexingService,
+		repoupdater.DefaultClient,
+		observation.ContextWithLogger(logger),
+	), nil
 }

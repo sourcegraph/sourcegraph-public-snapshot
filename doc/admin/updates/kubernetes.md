@@ -36,7 +36,7 @@
 
 _Upgrade notes for the next version will appear here._
 
-## v4.0 ➔ v4.1.2
+## v4.0 ➔ v4.1.3
 
 <!-- Add changes changes to this section before release. -->
 

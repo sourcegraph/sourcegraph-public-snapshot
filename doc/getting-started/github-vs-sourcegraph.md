@@ -1,8 +1,8 @@
-Please note: this page was last updated 2022-11-08, and we will continue to make updates as offerings from both GitHub and Sourcegraph evolve.
+Please note: this page was last updated 2022-11-09, and we will continue to make updates as offerings from both GitHub and Sourcegraph evolve.
 
 # GitHub code search vs. Sourcegraph
 
-GitHub code search is the next iteration of GitHub’s native code search and navigation functionality that can be used to search code stored in GitHub. It’s currently in technical preview and is separate from GitHub’s primary UI (GitHub will eventually [integrate this functionality](https://cs.github.com/about/faq#new-ui) into the primary UI). 
+GitHub code search is the next iteration of GitHub’s native code search and navigation functionality that can be used to search code stored in GitHub. It’s currently in beta preview. 
 
 Sourcegraph is a code intelligence platform that makes codebases intelligible by semantically indexing and analyzing all of an organization’s code, providing developers and engineering leaders with a complete understanding of their codebase. In addition to universal code search across every code host, Sourcegraph has features to help developers find code, understand and answer questions about code, and fix code faster.
 
@@ -24,6 +24,7 @@ As your codebase grows in complexity, the value of code search quickly increases
 
 If you frequently rely on your editor’s “go to definition” and “find references” features, you’ll also be able to take advantage of Sourcegraph's precise code navigation. Only Sourcegraph's offering features IDE-level accuracy and works across repositories.
 
+If you're brand new to code search and you want to try it, visit [Sourcegraph.com](https://sourcegraph.com/search) to search across open source repositories. 
 
 ## Searching code
 
@@ -141,48 +142,48 @@ In addition to searching your organization’s private code, you can use Sourceg
   <tr>
    <td>
    </td>
-  <td><strong>GitHub</strong>
+   <td><strong>GitHub</strong>
    </td>
    <td><strong>Sourcegraph</strong>
-
    </td>
   </tr>
   <tr>
    <td><strong>Search across all repositories and forks</strong>
-
    </td>
    <td>✓ with limitations 
-
    </td>
    <td>✓ with limitations 
-
    </td>
   </tr>
   <tr>
    <td><strong>Search across files larger than 350 KiB</strong>
-
    </td>
    <td>✗
-
    </td>
    <td>✓ 
-
-Using the search.largeFiles keyword
-
+<p>
+Using the <a href="https://docs.sourcegraph.com/admin/config/site_config#search-largeFile">search.largeFiles</a> keyword
    </td>
   </tr>
   <tr>
    <td><strong>Search across all branches</strong>
-
    </td>
    <td>Only the default branch is searchable
-
    </td>
    <td>✓
-
+   </td>
+  </tr>
+  <tr>
+   <td><strong>Number of open source repositories indexed</strong>
+   </td>
+   <td>7 million 
+   </td>
+   <td>2.8 million 
    </td>
   </tr>
 </table>
+
+
 
 ### Search syntax
 
@@ -282,6 +283,8 @@ GitHub only returns the first 10 pages of search results. You cannot currently g
 
 Sourcegraph can retrieve all search results. By default, Sourcegraph returns 500 search results, but this number can be increased by increasing the ‘count’ value. Sourcegraph can display a maximum of 1,500 matches, but all matches can be fetched using the [src CLI](https://docs.sourcegraph.com/cli/quickstart), the [Stream API](https://docs.sourcegraph.com/api/stream_api), or [GraphQL API](https://docs.sourcegraph.com/api/graphql). You can also export the results via CSV. 
 
+GitHub code search includes suggestions, completions, and the ability to save your searches. Sourcegraph offers suggestions through search query examples and [saved searches](https://docs.sourcegraph.com/code_search/how-to/saved_searches#creating-saved-searches). 
+
 GitHub code search returns a list of repositories and files. Sourcegraph results can include repositories, files, diffs, commits, and symbols; however, you must use the ‘type’ filter to return anything outside of repositories and files. 
 
 **Ranking**
@@ -352,9 +355,9 @@ GitHub code search does not currently offer this functionality.
 
 Code search filters help you refine and narrow search query results to be more relevant. Both GitHub code search and Sourcegraph include filters.
 
-GitHub code search includes filters such as language, repository, path, and file size. GitHub automatically suggests filters to apply to your search based on your search history and information about you, such as your organization. 
+GitHub code search includes filters such as language, repository, path, and file size. GitHub automatically suggests filters to apply to your search based on your search history and information about you, such as your organization. GitHub also offers auto-complete using filters to complete a code search query. 
 
-Sourcegraph filters reduce the scope of search query results by language, repository, path, author, message, content, timeframe, visibility, and more. Sourcegraph does not automatically suggest filters.
+Sourcegraph filters reduce the scope of search query results by language, repository, path, author, message, content, timeframe, visibility, and more. Sourcegraph offers auto-completion on filters in the search query. 
 
 **Search contexts**
 
@@ -407,7 +410,7 @@ Repository-based and query-based
 
 Both GitHub and Sourcegraph offer out-of-the-box, search-based code navigation. This version of code navigation uses search-based heuristics to find references and definitions across a codebase without any setup required. It is powerful and convenient, but it can sometimes present inaccurate results. For example, it can return false positive references for symbols with common names. It is limited to returning definitions and references within a single repository (it won’t track references across multiple repositories).
 
-GitHub’s [search-based code navigation](https://docs.github.com/en/repositories/working-with-files/using-files/navigating-code-on-github) supports 10 languages. Sourcegraph’s [search-based code navigation](https://docs.sourcegraph.com/code_navigation/explanations/search_based_code_navigation) supports 40 languages.
+GitHub’s [search-based code navigation](https://docs.github.com/en/repositories/working-with-files/using-files/navigating-code-on-github) officially supports 10 languages according to the documentation, but more languages are supported in the latest beta preview. Sourcegraph’s [search-based code navigation](https://docs.sourcegraph.com/code_navigation/explanations/search_based_code_navigation) supports 40 languages.
 
 
 <table>
@@ -471,16 +474,11 @@ C#, CodeQL, Elixir, Go, Java, JavaScript, TypeScript, PHP, Python, Ruby
 
 GitHub and Sourcegraph both offer precise code navigation as well. Despite having the same name, the two versions of precise code navigation are very different in terms of the underlying technology and accuracy they provide. Only Sourcegraph’s precise code navigation is 100% accurate. 
 
-GitHub’s [precise code navigation](https://docs.github.com/en/repositories/working-with-files/using-files/navigating-code-on-github#precise-and-search-based-navigation) is an improved form of heuristic-based code navigation which uses syntax trees to offer higher accuracy for references and definitions. It is more accurate than GitHub’s search-based code navigation, but it can still present inaccuracies and is limited to navigation within a single repository. It is available out-of-the-box on GitHub and is automatically used over search-based code navigation when available. It is supported for 1 language, Python.
+GitHub’s [precise code navigation](https://docs.github.com/en/repositories/working-with-files/using-files/navigating-code-on-github#precise-and-search-based-navigation) is an improved form of heuristic-based code navigation which uses syntax trees to offer higher accuracy for references and definitions and cross-repository navigation. It is more accurate than GitHub’s search-based code navigation, but it can still present inaccuracies. It is available out-of-the-box on GitHub and is automatically used over search-based code navigation when available. It is supported for 1 language, Python.
 
-Sourcegraph’s [precise code navigation](https://docs.sourcegraph.com/code_navigation/explanations/precise_code_navigation) is not heuristic-based. Instead, it uses [SCIP and LSIF](https://docs.sourcegraph.com/code_navigation/references/indexers) data to deliver precomputed code navigation, meaning that it is fast and compiler-accurate. It is the only 100% accurate solution for code navigation between Sourcegraph’s and GitHub’s offerings.
+Sourcegraph’s [precise code navigation](https://docs.sourcegraph.com/code_navigation/explanations/precise_code_navigation) is not heuristic-based. Instead, it uses [SCIP and LSIF](https://docs.sourcegraph.com/code_navigation/references/indexers) data to deliver precomputed code navigation, meaning that it is fast and compiler-accurate. It is the only 100% accurate solution for code navigation between Sourcegraph’s and GitHub’s offerings. 
 
-Because precise code navigation uses code graph (SCIP) data, it is not susceptible to false positives or other potential errors (such as those caused by symbols with the same name). It also offers several features unique to Sourcegraph:
-
-
-
-* Cross-repository navigation, which shows symbol usage across repositories and [transitive dependencies](https://docs.sourcegraph.com/code_navigation/explanations/features#beta-dependency-navigation). Dependency navigation is currently in beta.
-* “Find implementations,” which allows you to navigate to a symbol’s interface definition or find all the places an interface is being implemented.
+Because precise code navigation uses code graph (SCIP) data, it is not susceptible to false positives or other potential errors (such as those caused by symbols with the same name). It also supports cross-repository navigation, which shows symbol usage across repositories and [transitive dependencies](https://docs.sourcegraph.com/code_navigation/explanations/features#beta-dependency-navigation). It also has a unique feature, “Find implementations,” which allows you to navigate to a symbol’s interface definition or find all the places an interface is being implemented.
 
 Sourcegraph’s precise code navigation is opt-in and requires you to upload code graph data ([LSIF or SCIP](https://docs.sourcegraph.com/code_navigation/references/indexers)) to Sourcegraph. This data can be automatically generated and uploaded to Sourcegraph via [auto-indexing](https://docs.sourcegraph.com/code_navigation/explanations/auto_indexing). For repositories without SCIP or LSIF data, Sourcegraph automatically falls back to search-based code navigation.
 
@@ -535,7 +533,7 @@ Go, TypeScript, JavaScript, C, C++, Java, Scala, Kotlin, Rust, Python, Ruby
   <tr>
    <td><strong>Cross-repository</strong>
    </td>
-   <td>✗
+   <td>✓
    </td>
    <td>✓ 
    </td>
@@ -719,6 +717,6 @@ Sourceraph OSS is Apache 2 licensed and allows any developer to use, modify, and
 
 ## Availability
 
-GitHub code search is currently available through a technical preview (you can sign up for their [waitlist](https://cs.github.com/about) to request access). This technical preview is not yet available for GitHub Enterprise. 
+GitHub code search is currently available through a beta preview (you can sign up for their [waitlist](https://github.com/features/code-search-code-view/signup) to request access). The beta preview is not yet available for GitHub Enterprise. 
 
 Sourcegraph’s code intelligence platform is generally available, and you can sign up for a free trial for your team [here](https://signup.sourcegraph.com/).
