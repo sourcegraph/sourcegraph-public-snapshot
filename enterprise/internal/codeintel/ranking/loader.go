@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 func (s *Service) RankLoader(interval time.Duration) goroutine.BackgroundRoutine {
@@ -26,7 +27,10 @@ func (s *Service) RankLoader(interval time.Duration) goroutine.BackgroundRoutine
 	}))
 }
 
-const pageRankPrecision = float64(1.0)
+const (
+	pageRankPrecision      = float64(1.0)
+	rankInputFileBatchSize = 256
+)
 
 func (s *Service) loadRanks(ctx context.Context) (err error) {
 	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
@@ -37,93 +41,128 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 		return nil
 	}
 
-	var filenames []string
-	objects := s.resultsBucket.Objects(ctx, &storage.Query{
-		Prefix: resultsObjectKeyPrefix,
-	})
-	for {
-		attrs, err := objects.Next()
-		if err != nil {
-			if err == iterator.Done {
-				break
-			}
-			return err
-		}
+	batches := make(chan []string)
+	g := group.New().WithContext(ctx)
 
-		// Don't read the the enclosing folder or success metadata file
-		if attrs.Name == resultsObjectKeyPrefix || attrs.Name == resultsObjectKeyPrefix+"_SUCCESS" {
-			continue
-		}
+	g.Go(func(ctx context.Context) error {
+		defer close(batches)
 
-		filenames = append(filenames, attrs.Name)
-	}
-
-	knownFilenames, err := s.store.HasInputFilename(ctx, resultsGraphKey, filenames)
-	if err != nil {
-		return err
-	}
-
-	knownFilenameMap := map[string]struct{}{}
-	for _, filename := range knownFilenames {
-		knownFilenameMap[filename] = struct{}{}
-	}
-
-	filtered := filenames[:0]
-	for _, filename := range filenames {
-		if _, ok := knownFilenameMap[filename]; !ok {
-			filtered = append(filtered, filename)
-		}
-	}
-
-	for _, name := range filtered {
-		r, err := s.resultsBucket.Object(name).NewReader(ctx)
-		if err != nil {
-			return err
-		}
-
-		ranks := map[api.RepoName]map[string]float64{}
-
-		lastOffset := 0
-		cr := &countingReader{r: r}
-		reader := csv.NewReader(cr)
+		batch := make([]string, 0, rankInputFileBatchSize)
+		objects := s.resultsBucket.Objects(ctx, &storage.Query{
+			Prefix: resultsObjectKeyPrefix,
+		})
 		for {
-			line, err := reader.Read()
+			attrs, err := objects.Next()
 			if err != nil {
-				if err == io.EOF {
+				if err == iterator.Done {
 					break
 				}
 
 				return err
 			}
 
-			offset := cr.n
-			s.operations.numCSVBytesRead.Add(float64(offset - lastOffset))
-			lastOffset = offset
-
-			if len(line) < 3 {
-				return errors.Newf("malformed line: %v", line)
+			// Don't read the the enclosing folder or success metadata file
+			if attrs.Name == resultsObjectKeyPrefix || attrs.Name == resultsObjectKeyPrefix+"_SUCCESS" {
+				continue
 			}
 
-			repo := api.RepoName(line[0])
-			path := line[1]
-			strRank := line[2]
+			batch = append(batch, attrs.Name)
 
-			rank, err := strconv.ParseFloat(strRank, 64)
+			if len(batch) > rankInputFileBatchSize {
+				select {
+				case batches <- batch:
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+
+				batch = make([]string, 0, rankInputFileBatchSize)
+			}
+		}
+
+		if len(batch) > 0 {
+			select {
+			case batches <- batch:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+
+		return nil
+	})
+
+	g.Go(func(ctx context.Context) error {
+		for filenames := range batches {
+			knownFilenames, err := s.store.HasInputFilename(ctx, resultsGraphKey, filenames)
 			if err != nil {
 				return err
 			}
 
-			if _, ok := ranks[repo]; !ok {
-				ranks[repo] = map[string]float64{}
+			knownFilenameMap := map[string]struct{}{}
+			for _, filename := range knownFilenames {
+				knownFilenameMap[filename] = struct{}{}
 			}
-			ranks[repo][path] = rank
+
+			for _, name := range filenames {
+				if _, ok := knownFilenameMap[name]; ok {
+					continue
+				}
+
+				r, err := s.resultsBucket.Object(name).NewReader(ctx)
+				if err != nil {
+					return err
+				}
+
+				ranks := map[api.RepoName]map[string]float64{}
+
+				lastOffset := 0
+				cr := &countingReader{r: r}
+				reader := csv.NewReader(cr)
+				for {
+					line, err := reader.Read()
+					if err != nil {
+						if err == io.EOF {
+							break
+						}
+
+						return err
+					}
+
+					offset := cr.n
+					s.operations.numCSVBytesRead.Add(float64(offset - lastOffset))
+					lastOffset = offset
+
+					if len(line) < 3 {
+						return errors.Newf("malformed line: %v", line)
+					}
+
+					repo := api.RepoName(line[0])
+					path := line[1]
+					strRank := line[2]
+
+					rank, err := strconv.ParseFloat(strRank, 64)
+					if err != nil {
+						return err
+					}
+
+					if _, ok := ranks[repo]; !ok {
+						ranks[repo] = map[string]float64{}
+					}
+					ranks[repo][path] = rank
+				}
+
+				if err := s.store.BulkSetDocumentRanks(ctx, resultsGraphKey, name, pageRankPrecision, ranks); err != nil {
+					return err
+				}
+
+				s.operations.numCSVFilesProcessed.Add(float64(1))
+			}
 		}
 
-		if err := s.store.BulkSetDocumentRanks(ctx, resultsGraphKey, name, pageRankPrecision, ranks); err != nil {
-			return err
-		}
+		return nil
+	})
 
-		s.operations.numCSVFilesProcessed.Add(float64(1))
+	if err := g.Wait(); err != nil {
+		return err
 	}
 
 	return nil
