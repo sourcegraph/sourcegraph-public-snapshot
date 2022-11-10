@@ -240,9 +240,9 @@ func (s *StaticRepoFetcher) Next(_ context.Context) []*store.Repo {
 		return nil
 	}
 	if s.start+s.iterSize > len(s.repos) {
-
+		results := s.repos[s.start:]
 		s.start = len(s.repos)
-		return s.repos[s.start:]
+		return results
 	}
 
 	results := s.repos[s.start : s.start+s.iterSize]
@@ -290,8 +290,7 @@ func (f *GithubRepoFetcher) Next(ctx context.Context) []*store.Repo {
 	}
 
 	// when next is 0, it means the Github api returned the nextPage as 0, which indicates that there are not more pages to fetch
-	hasMore := next > 0
-	if hasMore {
+	if next > 0 {
 		// Ensure that the next request starts at the next page
 		f.pageStart = next
 	} else {
@@ -324,13 +323,13 @@ func (f *GithubRepoFetcher) listRepos(ctx context.Context, org string, start int
 		})
 	}
 
-	if resp.NextPage == 0 {
-		println("-------")
-		println(resp.LastPage)
-		println(resp.NextPage)
-		println(resp.PrevPage)
-		println("-------")
+	next := resp.NextPage
+	if next == 0 {
+		if f.pageStart != resp.LastPage {
+			next = resp.LastPage
+		}
 	}
+
 	return res, resp.NextPage, nil
 }
 
