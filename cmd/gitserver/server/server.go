@@ -1086,11 +1086,11 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// Log which which actor is accessing the repo.
-	accesslog.Record(r.Context(), repo, map[string]string{
-		"treeish": treeish,
-		"format":  format,
-		"path":    strings.Join(pathspecs, ","),
-	})
+	accesslog.Record(r.Context(), repo,
+		log.String("treeish", treeish),
+		log.String("format", format),
+		log.Strings("path", pathspecs),
+	)
 
 	if err := checkSpecArgSafety(treeish); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -1523,10 +1523,10 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		cmd = req.Args[0]
 		args = args[1:]
 	}
-	accesslog.Record(r.Context(), string(req.Repo), map[string]string{
-		"cmd":  cmd,
-		"args": strings.Join(args, " "),
-	})
+	accesslog.Record(r.Context(), string(req.Repo),
+		log.String("cmd", cmd),
+		log.Strings("args", args),
+	)
 
 	s.exec(w, r, &req)
 }
@@ -1768,11 +1768,11 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 	//
 	// p4-exec is currently only used for fetching user based permissions information
 	// so, we don't have a repo name.
-	accesslog.Record(r.Context(), "<no-repo>", map[string]string{
-		"p4user": req.P4User,
-		"p4port": req.P4Port,
-		"args":   strings.Join(req.Args, " "),
-	})
+	accesslog.Record(r.Context(), "<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+		log.Strings("args", req.Args),
+	)
 
 	// Make sure credentials are valid before heavier operation
 	err := p4pingWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)

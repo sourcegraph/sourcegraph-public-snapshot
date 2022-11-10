@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect } from 'react'
+import { HTMLAttributes, forwardRef, useEffect } from 'react'
 
 import { useMergeRefs } from 'use-callback-ref'
 
@@ -9,18 +9,19 @@ import { Insight, isBackendInsight } from '../../../core'
 
 import { BackendInsightView } from './backend-insight/BackendInsight'
 import { BuiltInInsight } from './built-in-insight/BuiltInInsight'
+import { ViewGridItem } from './view-grid/ViewGrid'
 
-export interface SmartInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
+export interface SmartInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
     insight: Insight
     resizing?: boolean
 }
 
 /**
- * Render smart insight with (gql or extension api) fetcher and independent mutation
+ * Render smart insight with ф(gql or extension api) fetcher and independent mutation
  * actions.
  */
 export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, reference) => {
-    const { insight, resizing = false, telemetryService, ...otherProps } = props
+    const { insight, resizing = false, telemetryService, children, ...attributes } = props
 
     const mergedReference = useMergeRefs([reference])
     const search = useSearchParameters()
@@ -30,31 +31,26 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, r
         const element = mergedReference.current
 
         if (element && insightIdToBeFocused === insight.id) {
-            element.focus()
+            // Schedule card focus in the next frame in order to wait
+            // until dashboard rendering is complete
+            requestAnimationFrame(() => {
+                element.focus()
+            })
         }
     }, [insight.id, mergedReference, search])
 
-    if (isBackendInsight(insight)) {
-        return (
-            <BackendInsightView
-                ref={mergedReference}
-                insight={insight}
-                resizing={resizing}
-                telemetryService={telemetryService}
-                {...otherProps}
-            />
-        )
-    }
-
-    // Lang-stats insight is handled by built-in fetchers
     return (
-        <BuiltInInsight
-            insight={insight}
-            resizing={resizing}
-            telemetryService={telemetryService}
-            innerRef={mergedReference}
-            {...otherProps}
-        />
+        <ViewGridItem id={insight.id} ref={mergedReference} {...attributes}>
+            {isBackendInsight(insight) ? (
+                <BackendInsightView insight={insight} resizing={resizing} telemetryService={telemetryService}>
+                    {children}
+                </BackendInsightView>
+            ) : (
+                <BuiltInInsight insight={insight} resizing={resizing} telemetryService={telemetryService}>
+                    {children}
+                </BuiltInInsight>
+            )}
+        </ViewGridItem>
     )
 })
 

@@ -524,6 +524,20 @@ commands:
       EXECUTOR_QUEUE_NAME: batches
       EXECUTOR_MAXIMUM_NUM_JOBS: 8
 
+  # This tool rebuilds the batcheshelper image every time the source of it is changed.
+  batcheshelper-builder:
+    # Nothing to run for this, we just want to re-run the install script every time.
+    cmd: exit 0
+    install: ./enterprise/cmd/batcheshelper/build.sh
+    env:
+      IMAGE: sourcegraph/batcheshelper:insiders
+      # TODO: This is required but should only be set on M1 Macs.
+      PLATFORM: linux/arm64
+    watch:
+      - enterprise/cmd/batcheshelper
+      - lib/batches
+    continueWatchOnExit: true
+
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
   # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
   batches-executor-firecracker:
@@ -929,6 +943,7 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - batches-executor
+      - batcheshelper-builder
 
   iam:
     requiresDevPrivate: true

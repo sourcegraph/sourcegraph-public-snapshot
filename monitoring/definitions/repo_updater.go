@@ -225,12 +225,173 @@ func RepoUpdater() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						{
+							Name:           "permissions_syncs_scheduled_reason",
+							Description:    "number of users/repos scheduled for permissions sync grouped by reason",
+							Query:          `sum by (type) (src_repoupdater_perms_syncer_items_sync_scheduled)`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the number of users/repos scheduled for permissions sync grouped by reason.",
+						},
+						{
+							Name:           "permissions_syncs_scheduled_priority",
+							Description:    "number of users/repos scheduled for permissions sync grouped by priority",
+							Query:          `sum by (priority) (src_repoupdater_perms_syncer_items_sync_scheduled)`,
+							Panel:          monitoring.Panel().LegendFormat("{{priority}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the number of users/repos scheduled for permissions sync grouped by priority.",
+						},
+					},
+					{
+						{
+							Name:           "user_success_syncs_total",
+							Description:    "total number of user permissions syncs",
+							Query:          `sum(src_repoupdater_perms_syncer_success_syncs{type="user"})`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the total number of user permissions sync completed.",
+						},
+						{
+							Name:           "user_success_syncs",
+							Description:    "number of user permissions syncs [5m]",
+							Query:          `sum(increase(src_repoupdater_perms_syncer_success_syncs{type="user"}[5m]))`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the number of users permissions syncs completed.",
+						},
+						{
+							Name:           "user_initial_syncs",
+							Description:    "number of first user permissions syncs [5m]",
+							Query:          `sum(increase(src_repoupdater_perms_syncer_initial_syncs{type="user"}[5m]))`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the number of permissions syncs done for the first time for the user.",
+						},
+					},
+					{
+						{
+							Name:           "user_failed_syncs",
+							Description:    "number of user permissions failed syncs [5m]",
+							Query:          `sum(increase(src_repoupdater_perms_syncer_failed_syncs{type="user"}[5m]))`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the number of users permissions syncs failed.",
+						},
+					},
+					{
+
+						{
+							Name:           "repo_success_syncs_total",
+							Description:    "total number of repo permissions syncs",
+							Query:          `sum(src_repoupdater_perms_syncer_success_syncs{type="repo"})`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the total number of repo permissions sync completed.",
+						},
+						{
+							Name:           "repo_success_syncs",
+							Description:    "number of repo permissions syncs [5m]",
+							Query:          `sum(increase(src_repoupdater_perms_syncer_success_syncs{type="repo"}[5m]))`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the number of repos permissions syncs completed.",
+						},
+						{
+							Name:           "repo_initial_syncs",
+							Description:    "number of first repo permissions syncs [5m]",
+							Query:          `sum(increase(src_repoupdater_perms_syncer_initial_syncs{type="repo"}[5m]))`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the number of permissions syncs done for the first time for the repo.",
+						},
+					},
+					{
+						{
+							Name:           "repo_failed_syncs",
+							Description:    "number of repo permissions failed syncs [5m]",
+							Query:          `sum(increase(src_repoupdater_perms_syncer_failed_syncs{type="repo"}[5m]))`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the number of repos permissions syncs failed in last 5 minute.",
+						},
+					},
+					{
+						{
+							Name:           "users_consecutive_sync_delay",
+							Description:    "max duration between two consecutive permissions sync for user (minutes) [1m]",
+							Query:          `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="user"} [1m]) / 60.0)`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the max delay between two consecutive permissions sync for a user during the period.",
+						},
+						{
+							Name:           "repos_consecutive_sync_delay",
+							Description:    "max duration between two consecutive permissions sync for repo (minutes) [1m]",
+							Query:          `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="repo"} [1m]) / 60.0)`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the max delay between two consecutive permissions sync for a repo during the period.",
+						},
+					},
+					{
+						{
+							Name:           "users_first_sync_delay",
+							Description:    "max duration between user creation and first permissions sync (minutes) [1m]",
+							Query:          `max(max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{type="user"} [1m]) / 60.0)`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the max delay between user creation and their permissions sync",
+						},
+						{
+							Name:           "repos_first_sync_delay",
+							Description:    "max duration between repo creation and first permissions sync (minutes) [1m]",
+							Query:          `max(max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{type="repo"} [1m]) / 60.0)`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the max delay between repo creation and their permissions sync",
+						},
+					},
+					{
+						{
+							Name:           "permissions_found_count",
+							Description:    "number of permissions found during user/repo permissions sync",
+							Query:          `sum by (type) (src_repoupdater_perms_syncer_perms_found)`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the number permissions found during users/repos permissions sync.",
+						},
+						{
+							Name:           "permissions_found_avg",
+							Description:    "average number of permissions found during permissions sync per user/repo",
+							Query:          `avg by (type) (src_repoupdater_perms_syncer_perms_found)`,
+							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerIAM,
+							NoAlert:        true,
+							Interpretation: "Indicates the average number permissions found during permissions sync per user/repo.",
+						},
+					},
+					{
+						{
 							Name:        "perms_syncer_perms",
 							Description: "time gap between least and most up to date permissions",
 							Query:       `max by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)`,
 							Warning:     monitoring.Alert().GreaterOrEqual((3 * 24 * time.Hour).Seconds()).For(5 * time.Minute), // 3 days
 							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerIAM,
 							NextSteps:   "Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).",
 						},
 						{
@@ -239,7 +400,7 @@ func RepoUpdater() *monitoring.Dashboard {
 							Query:       `max by (type) (src_repoupdater_perms_syncer_stale_perms)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerIAM,
 							NextSteps:   "Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).",
 						},
 					},
@@ -250,7 +411,7 @@ func RepoUpdater() *monitoring.Dashboard {
 							Query:       `max by (type) (src_repoupdater_perms_syncer_no_perms)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerIAM,
 							NextSteps: `
 								- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
 								- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
@@ -262,7 +423,7 @@ func RepoUpdater() *monitoring.Dashboard {
 							Query:       `max by (type) (src_repoupdater_perms_syncer_outdated_perms)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerIAM,
 							NextSteps: `
 								- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
 								- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
@@ -276,7 +437,7 @@ func RepoUpdater() *monitoring.Dashboard {
 							Query:       `histogram_quantile(0.95, max by (le, type) (rate(src_repoupdater_perms_syncer_sync_duration_seconds_bucket[1m])))`,
 							Warning:     monitoring.Alert().GreaterOrEqual(30).For(5 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerIAM,
 							NextSteps:   "Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.",
 						},
 						{
@@ -285,7 +446,7 @@ func RepoUpdater() *monitoring.Dashboard {
 							Query:       `max(src_repoupdater_perms_syncer_queue_size)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerIAM,
 							NextSteps: `
 								- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
 								- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
@@ -299,7 +460,7 @@ func RepoUpdater() *monitoring.Dashboard {
 							Query:       `max by (type) (ceil(rate(src_repoupdater_perms_syncer_sync_errors_total[1m])))`,
 							Critical:    monitoring.Alert().GreaterOrEqual(1).For(time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerIAM,
 							NextSteps: `
 								- Check the network connectivity the Sourcegraph and the code host.
 								- Check if API rate limit quota is exhausted on the code host.
@@ -311,7 +472,7 @@ func RepoUpdater() *monitoring.Dashboard {
 							Query:       `max(rate(src_repoupdater_perms_syncer_schedule_repos_total[1m]))`,
 							NoAlert:     true,
 							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerRepoManagement,
+							Owner:       monitoring.ObservableOwnerIAM,
 							Interpretation: `
 								Indicates how many repositories have been scheduled for a permissions sync.
 								More about repository permissions synchronization [here](https://docs.sourcegraph.com/admin/repo/permissions#permissions-sync-scheduling)

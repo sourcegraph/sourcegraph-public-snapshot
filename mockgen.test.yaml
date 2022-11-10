@@ -36,7 +36,7 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app
   interfaces:
     - githubClient
-- filename: internal/codeintel/uploads/transport/http/mocks_test.go
+- filename: enterprise/internal/codeintel/uploads/transport/http/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/uploadhandler
   interfaces:
     - DBStore
@@ -44,8 +44,8 @@
   path: github.com/sourcegraph/sourcegraph/internal/uploadhandler
   interfaces:
     - DBStore
-- filename: internal/codeintel/uploads/transport/http/auth/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth
+- filename: enterprise/internal/codeintel/uploads/transport/http/auth/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/http/auth
   interfaces:
     - GitHubClient
 - filename: enterprise/cmd/frontend/internal/executorqueue/queues/batches/mocks_test.go
@@ -67,9 +67,9 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer
   interfaces:
     - SyncStore
-- filename: internal/codeintel/autoindexing/internal/background/mocks_test.go
+- filename: enterprise/internal/codeintel/autoindexing/internal/background/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background
       interfaces:
         - DependenciesService
         - ReposStore
@@ -78,10 +78,9 @@
         - PolicyMatcher
         - RepoUpdaterClient
         - GitserverClient
-        - InferenceService
         - UploadService
         - AutoIndexingService
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared
       interfaces:
         - PackageReferenceScanner
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
@@ -89,61 +88,61 @@
         - Store
       prefix: Worker
 
-- filename: internal/codeintel/autoindexing/mocks_test.go
+- filename: enterprise/internal/codeintel/autoindexing/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing
       interfaces:
         - GitserverClient
         - RepoUpdaterClient
         - InferenceService
         - UploadService
-- filename: internal/codeintel/autoindexing/internal/inference/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference
+- filename: enterprise/internal/codeintel/autoindexing/internal/inference/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference
   interfaces:
     - GitService
     - SandboxService
-- filename: internal/codeintel/policies/mocks_test.go
+- filename: enterprise/internal/codeintel/policies/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/policies
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies
       interfaces:
         - UploadService
         - GitserverClient
-- filename: internal/codeintel/policies/enterprise/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise
+- filename: enterprise/internal/codeintel/policies/enterprise/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise
   interfaces:
     - GitserverClient
   package: policies
-- filename: internal/codeintel/codenav/mocks_test.go
+- filename: enterprise/internal/codeintel/codenav/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore
       interfaces:
         - LsifStore
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav
       interfaces:
         - UploadService
         - GitTreeTranslator
         - GitserverClient
-- filename: internal/codeintel/uploads/mocks_test.go
+- filename: enterprise/internal/codeintel/uploads/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store
       interfaces:
         - Store
-    - path: internal/codeintel/uploads
+    - path: enterprise/internal/codeintel/uploads
       interfaces:
         - RepoStore
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore
       interfaces:
         - LSIFStore
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads
       interfaces:
         - GitserverClient
         - PolicyService
@@ -152,9 +151,9 @@
       interfaces:
         - Store
       prefix: Worker
-- filename: internal/codeintel/uploads/internal/background/mocks_test.go
+- filename: enterprise/internal/codeintel/uploads/internal/background/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background
       interfaces:
         - UploadService
         - GitserverClient
@@ -211,12 +210,12 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetry
   interfaces:
     - bookmarkStore
-- filename: internal/codeintel/ranking/mocks_test.go
+- filename: enterprise/internal/codeintel/ranking/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/ranking
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking
       interfaces:
         - GitserverClient
         - SymbolsClient
@@ -227,26 +226,26 @@
   path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd
   interfaces:
     - LockoutStore
-- filename: internal/codeintel/shared/resolvers/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers
+- filename: enterprise/internal/codeintel/shared/resolvers/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers
   interfaces:
     - UploadsService
     - AutoIndexingService
   package: sharedresolvers
-- filename: internal/codeintel/uploads/transport/graphql/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql
+- filename: enterprise/internal/codeintel/uploads/transport/graphql/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql
   interfaces:
     - AutoIndexingService
     - UploadService
     - PolicyService
-- filename: internal/codeintel/autoindexing/transport/graphql/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql
+- filename: enterprise/internal/codeintel/autoindexing/transport/graphql/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/transport/graphql
   interfaces:
     - AutoIndexingService
     - UploadsService
     - PolicyService
-- filename: internal/codeintel/codenav/transport/graphql/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql
+- filename: enterprise/internal/codeintel/codenav/transport/graphql/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/transport/graphql
   interfaces:
     - AutoIndexingService
     - UploadsService

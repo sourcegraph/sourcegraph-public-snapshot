@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -68,6 +70,30 @@ func FetchStatusMessages(ctx context.Context, db database.DB) ([]StatusMessage, 
 		})
 	}
 
+	// On Sourcegraph.com we don't index all repositories, which makes
+	// determining the index status a bit more complicated than for other
+	// instances.
+	// So for now we don't return the indexing message on sourcegraph.com.
+	if !envvar.SourcegraphDotComMode() {
+		// Check feature flag
+		if !featureflag.FromContext(ctx).GetBoolOr("indexing-status-message", false) {
+			return messages, nil
+		}
+
+		zoektRepoStats, err := db.ZoektRepos().GetStatistics(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "loading repo statistics")
+		}
+		if zoektRepoStats.NotIndexed > 0 {
+			messages = append(messages, StatusMessage{
+				Indexing: &IndexingProgress{
+					NotIndexed: zoektRepoStats.NotIndexed,
+					Indexed:    zoektRepoStats.Indexed,
+				},
+			})
+		}
+	}
+
 	return messages, nil
 }
 
@@ -95,4 +121,10 @@ type StatusMessage struct {
 	Cloning                  *CloningProgress          `json:"cloning"`
 	ExternalServiceSyncError *ExternalServiceSyncError `json:"external_service_sync_error"`
 	SyncError                *SyncError                `json:"sync_error"`
+	Indexing                 *IndexingProgress         `json:"indexing"`
+}
+
+type IndexingProgress struct {
+	NotIndexed int
+	Indexed    int
 }

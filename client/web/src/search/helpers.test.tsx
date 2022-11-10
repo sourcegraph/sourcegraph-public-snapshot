@@ -15,7 +15,6 @@ describe('search/helpers', () => {
                 caseSensitive: false,
                 selectedSearchContextSpec: 'global',
                 source: 'home',
-                searchParameters: undefined,
             })
             expect(history.location.search).toMatchInlineSnapshot(
                 '"?q=context:global+querystring&patternType=standard"'
@@ -30,7 +29,6 @@ describe('search/helpers', () => {
                 caseSensitive: false,
                 selectedSearchContextSpec: 'global',
                 source: 'home',
-                searchParameters: undefined,
             })
             expect(history.location.search).toMatchInlineSnapshot(
                 '"?q=context%3Aglobal+querystring&patternType=standard&trace=1"'

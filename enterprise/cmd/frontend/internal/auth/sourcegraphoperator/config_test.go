@@ -21,12 +21,12 @@ func TestValidateConfig(t *testing.T) {
 					{
 						SourcegraphOperator: &schema.SourcegraphOperatorAuthProvider{
 							Issuer: "https://example.com/alice",
-							Type:   providerType,
+							Type:   ProviderType,
 						},
 					}, {
 						SourcegraphOperator: &schema.SourcegraphOperatorAuthProvider{
 							Issuer: "https://example.com/bob",
-							Type:   providerType,
+							Type:   ProviderType,
 						},
 					},
 				},
@@ -40,7 +40,7 @@ func TestValidateConfig(t *testing.T) {
 					{
 						SourcegraphOperator: &schema.SourcegraphOperatorAuthProvider{
 							Issuer: "https://example.com/alice",
-							Type:   providerType,
+							Type:   ProviderType,
 						},
 					},
 				},

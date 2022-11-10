@@ -155,7 +155,12 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         }
 
         if (placeholder) {
-            extensions.push(placeholderExtension(placeholder))
+            // Passing a DOM element instead of a string makes the CodeMirror
+            // extension set aria-hidden="true" on the placeholder, which is
+            // what we want.
+            const element = document.createElement('span')
+            element.append(document.createTextNode(placeholder))
+            extensions.push(placeholderExtension(element))
         }
 
         if (editorOptions?.readOnly) {

@@ -6,8 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -219,18 +218,18 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFUpload() (sharedresolvers.LSIFUploadResolver, bool) {
-	n, ok := r.Node.(sharedresolvers.LSIFUploadResolver)
+func (r *NodeResolver) ToLSIFUpload() (resolverstubs.LSIFUploadResolver, bool) {
+	n, ok := r.Node.(resolverstubs.LSIFUploadResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFIndex() (sharedresolvers.LSIFIndexResolver, bool) {
-	n, ok := r.Node.(sharedresolvers.LSIFIndexResolver)
+func (r *NodeResolver) ToLSIFIndex() (resolverstubs.LSIFIndexResolver, bool) {
+	n, ok := r.Node.(resolverstubs.LSIFIndexResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToCodeIntelligenceConfigurationPolicy() (policiesgraphql.CodeIntelligenceConfigurationPolicyResolver, bool) {
-	n, ok := r.Node.(policiesgraphql.CodeIntelligenceConfigurationPolicyResolver)
+func (r *NodeResolver) ToCodeIntelligenceConfigurationPolicy() (resolverstubs.CodeIntelligenceConfigurationPolicyResolver, bool) {
+	n, ok := r.Node.(resolverstubs.CodeIntelligenceConfigurationPolicyResolver)
 	return n, ok
 }
 
@@ -275,8 +274,8 @@ func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToWebhook() (*webhookResolver, bool) {
-	n, ok := r.Node.(*webhookResolver)
+func (r *NodeResolver) ToWebhook() (WebhookResolver, bool) {
+	n, ok := r.Node.(WebhookResolver)
 	return n, ok
 }
 
