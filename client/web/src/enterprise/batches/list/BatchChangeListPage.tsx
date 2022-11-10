@@ -172,8 +172,10 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                             <div className={styles.filtersRow}>
                                 {typeof currentTotalCount === 'number' && typeof lastTotalCount === 'number' && (
                                     <H3 className="align-self-end flex-1">
-                                        {lastTotalCount} of {currentTotalCount}{' '}
-                                        {pluralize('batch change', currentTotalCount)}
+                                        {`${lastTotalCount} of ${currentTotalCount} ${pluralize(
+                                            'batch change',
+                                            currentTotalCount
+                                        )}`}
                                     </H3>
                                 )}
 
