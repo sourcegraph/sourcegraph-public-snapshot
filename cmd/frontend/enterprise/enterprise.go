@@ -2,7 +2,6 @@ package enterprise
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -161,13 +160,13 @@ func BatchChangesEnabledForUser(ctx context.Context, db database.DB) error {
 type stubRankingService struct{}
 
 func (s stubRankingService) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
-	return nil, errors.New("ranking not available in OSS")
+	return nil, nil
 }
 
 func (s stubRankingService) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error) {
-	return nil, errors.New("ranking not available in OSS")
+	return nil, nil
 }
 
 func (s stubRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
-	return nil, errors.New("ranking not available in OSS")
+	return nil, nil
 }
