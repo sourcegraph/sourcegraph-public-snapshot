@@ -65,7 +65,7 @@ func Test_calculateRecordingTimes(t *testing.T) {
 		{
 			interval:      timeInterval{unit: week, value: 2},
 			existingTimes: []time.Time{time.Date(2022, 10, 21, 0, 0, 0, 0, time.UTC)}, // existing point within half an interval
-			want: autogold.Want("existing time returns modified list", []string{
+			want: autogold.Want("2 week intervals with existing time returns modified list", []string{
 				"2022-05-31 00:00:00 +0000 UTC",
 				"2022-06-14 00:00:00 +0000 UTC",
 				"2022-06-28 00:00:00 +0000 UTC",
@@ -77,6 +77,24 @@ func Test_calculateRecordingTimes(t *testing.T) {
 				"2022-09-20 00:00:00 +0000 UTC",
 				"2022-10-04 00:00:00 +0000 UTC",
 				"2022-10-21 00:00:00 +0000 UTC", // this is the modified rough point
+				"2022-11-01 00:00:00 +0000 UTC",
+			}),
+		},
+		{
+			interval:      timeInterval{unit: hour, value: 2},
+			existingTimes: []time.Time{time.Date(2022, 10, 31, 03, 10, 0, 0, time.UTC), time.Date(2022, 10, 31, 18, 26, 0, 0, time.UTC)},
+			want: autogold.Want("2 hour intervals with existing time returns modified list", []string{
+				"2022-10-31 02:00:00 +0000 UTC",
+				"2022-10-31 04:00:00 +0000 UTC",
+				"2022-10-31 06:00:00 +0000 UTC",
+				"2022-10-31 08:00:00 +0000 UTC",
+				"2022-10-31 10:00:00 +0000 UTC",
+				"2022-10-31 12:00:00 +0000 UTC",
+				"2022-10-31 14:00:00 +0000 UTC",
+				"2022-10-31 16:00:00 +0000 UTC",
+				"2022-10-31 18:26:00 +0000 UTC", // this is the modified rough point
+				"2022-10-31 20:00:00 +0000 UTC",
+				"2022-10-31 22:00:00 +0000 UTC",
 				"2022-11-01 00:00:00 +0000 UTC",
 			}),
 		},

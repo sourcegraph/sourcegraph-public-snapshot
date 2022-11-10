@@ -25,12 +25,19 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 		referenceTime := referenceTime
 		if currentPointIndex < len(existingPoints) {
 			existingTime := existingPoints[currentPointIndex]
-			halfAnInterval := interval.toDuration() / 2
+			intervalDuration := interval.toDuration() // precise to rough estimate of an interval's length (e.g. 1 year = 365 * 24 hours)
+			halfAnInterval := intervalDuration / 2
+			if interval.unit == hour {
+				halfAnInterval = intervalDuration / 4
+			}
 			if existingTime.Sub(referenceTime).Abs() <= halfAnInterval {
 				calculatedRecordingTimes = append(calculatedRecordingTimes, existingTime)
 				currentPointIndex++
 			} else {
 				calculatedRecordingTimes = append(calculatedRecordingTimes, referenceTime)
+				if referenceTime.After(existingTime) {
+					currentPointIndex++
+				}
 			}
 		} else {
 			calculatedRecordingTimes = append(calculatedRecordingTimes, referenceTime)
@@ -56,19 +63,20 @@ type timeInterval struct {
 }
 
 func (t timeInterval) toDuration() time.Duration {
+	var singleUnitDuration time.Duration
 	switch t.unit {
 	case year:
-		return time.Hour * 24 * 365
+		singleUnitDuration = time.Hour * 24 * 365
 	case month:
-		return time.Hour * 24 * 30
+		singleUnitDuration = time.Hour * 24 * 30
 	case week:
-		return time.Hour * 24 * 7
+		singleUnitDuration = time.Hour * 24 * 7
 	case day:
-		return time.Hour * 24
+		singleUnitDuration = time.Hour * 24
 	case hour:
-		return time.Hour
+		singleUnitDuration = time.Hour
 	}
-	return time.Hour
+	return singleUnitDuration * time.Duration(t.value)
 }
 
 func buildRecordingTimes(numPoints int, interval timeInterval, now time.Time) []time.Time {

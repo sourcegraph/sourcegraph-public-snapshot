@@ -87,7 +87,7 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 
 	for id, metadata := range series {
 		recordingTimesRows, err := tx.Query(ctx, sqlf.Sprintf(
-			"SELECT DISTINCT recording_time FROM insight_series_recording_times WHERE insight_series_id = %s", id,
+			"SELECT DISTINCT recording_time FROM insight_series_recording_times WHERE insight_series_id = %s ORDER by recording_time ASC", id,
 		))
 		if err != nil {
 			return err
