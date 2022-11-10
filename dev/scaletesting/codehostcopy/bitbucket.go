@@ -51,6 +51,18 @@ func getCloneUrl(repo *bitbucket.Repo) (*url.URL, error) {
 	return nil, errors.New("no https url found")
 }
 
+func (bt *BitbucketCodeHost) GitOpts() []GitOpt {
+	return nil
+}
+
+func (bt *BitbucketCodeHost) AddSSHKey(ctx context.Context) (int64, error) {
+	return 0, nil
+}
+
+func (bt *BitbucketCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
+	return nil
+}
+
 // ListRepos retrieves all repos from the bitbucket server. After all repos are retrieved the http or https clone
 // url is extracted. Note that the repo name has the following format: <project key>_-_<repo name>. Thus if you
 // just want the repo name you would have to strip the project key and '_-_' separator out.
