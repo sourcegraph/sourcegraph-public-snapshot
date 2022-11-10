@@ -180,12 +180,17 @@ UPDATE
 `
 
 func (s *store) HasInputFilename(ctx context.Context, graphKey string, filenames []string) ([]string, error) {
+	// Filter the set of filenames that have a representative row in codeintel_path_rank_inputs
 	return basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(hasInputFilenameQuery, pq.Array(filenames), graphKey)))
 }
 
+// Encourage n index scans on codeintel_path_rank_inputs, as we're hitting a very fast index. Each
+// input filename can have tens of thousands of rows, and we'd prefer a semi-join (EXISTS) which only
+// cares to find one matching row over a merge join, which would match a large intermediate result
+// which then needs to be aggregated away via DISTINCT. This query shape is a bit odd, but helps to
+// encourage the optimal behavior.
 const hasInputFilenameQuery = `
-SELECT s.input_filename
-FROM unnest(%s::text[]) AS s(input_filename)
+SELECT s.input_filename FROM unnest(%s::text[]) AS s(input_filename)
 WHERE EXISTS (
 	SELECT 1
 	FROM codeintel_path_rank_inputs pr
@@ -193,7 +198,6 @@ WHERE EXISTS (
 		pr.graph_key = %s AND
 		pr.input_filename = s.input_filename
 )
-ORDER BY s.input_filename;
 `
 
 func (s *store) BulkSetDocumentRanks(ctx context.Context, graphKey, filename string, precision float64, ranks map[api.RepoName]map[string]float64) error {

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -162,6 +163,7 @@ func TestBulkSetAndMergeDocumentRanks(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error checking if filename inputs exist: %s", err)
 	}
+	sort.Strings(filenames)
 	expectedFilenames := []string{
 		"f-07.csv",
 		"f-08.csv",
