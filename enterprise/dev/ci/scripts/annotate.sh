@@ -15,7 +15,7 @@ print_usage() {
 
 print_heading() {
     output="&bull; [View job output](#$BUILDKITE_JOB_ID)"
-    printf "**%s** %s %s\n\n" "$BUILDKITE_LABEL" "$output"
+    printf "**%s** %s\n\n" "$BUILDKITE_LABEL" "$output"
 }
 
 if [ $# -eq 0 ]; then
