@@ -170,7 +170,16 @@ var app = &cli.App{
 							}
 						}
 
-						errs := g.Wait()
+						results := g.Wait()
+
+						// Check that we actually got errors
+						errs := make([]error, 0)
+						for _, r := range results {
+							if r != nil {
+								errs = append(errs, r)
+							}
+						}
+
 						if len(errs) > 0 {
 							pending.Complete(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("%d errors occured while updating repos", len(errs))))
 							out.Writef("Printing first 5 errros")
