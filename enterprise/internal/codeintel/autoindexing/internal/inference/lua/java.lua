@@ -2,7 +2,7 @@ local path = require "path"
 local recognizer = require "sg.autoindex.recognizer"
 local pattern = require "sg.autoindex.patterns"
 
-local indexer = require("sg.indexes").get "java"
+local indexer = require("sg.autoindex.indexes").get "java"
 local outfile = "index.scip"
 
 local is_project_structure_supported = function(base)
