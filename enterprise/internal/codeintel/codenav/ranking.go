@@ -13,12 +13,15 @@ import (
 	"github.com/sourcegraph/log"
 	"google.golang.org/api/iterator"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 func (s *Service) SerializeRankingGraph(
 	ctx context.Context,
+	numRankingRoutines int,
 ) error {
 	if s.rankingBucket == nil {
 		return nil
@@ -29,26 +32,44 @@ func (s *Service) SerializeRankingGraph(
 		return err
 	}
 
+	g := group.New().WithContext(ctx)
+
+	sharedUploads := make(chan store.ExportedUpload, len(uploads))
 	for _, upload := range uploads {
-		if err := s.serializeAndPersistRankingGraphForUpload(ctx, upload.ID, upload.Repo, upload.Root, upload.ObjectPrefix); err != nil {
-			s.logger.Error(
-				"Failed to process upload for ranking graph",
-				log.Int("id", upload.ID),
-				log.String("repo", upload.Repo),
-				log.String("root", upload.Root),
-				log.Error(err),
-			)
+		sharedUploads <- upload
+	}
+	close(sharedUploads)
 
-			return err
-		}
+	for i := 0; i < numRankingRoutines; i++ {
+		g.Go(func(ctx context.Context) error {
+			for upload := range sharedUploads {
+				if err := s.serializeAndPersistRankingGraphForUpload(ctx, upload.ID, upload.Repo, upload.Root, upload.ObjectPrefix); err != nil {
+					s.logger.Error(
+						"Failed to process upload for ranking graph",
+						log.Int("id", upload.ID),
+						log.String("repo", upload.Repo),
+						log.String("root", upload.Root),
+						log.Error(err),
+					)
 
-		s.logger.Info(
-			"Processed upload for ranking graph",
-			log.Int("id", upload.ID),
-			log.String("repo", upload.Repo),
-			log.String("root", upload.Root),
-		)
-		s.operations.numUploadsRead.Inc()
+					return err
+				}
+
+				s.logger.Info(
+					"Processed upload for ranking graph",
+					log.Int("id", upload.ID),
+					log.String("repo", upload.Repo),
+					log.String("root", upload.Root),
+				)
+				s.operations.numUploadsRead.Inc()
+			}
+
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return err
 	}
 
 	return nil

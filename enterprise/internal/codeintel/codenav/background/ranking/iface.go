@@ -8,6 +8,7 @@ import (
 
 type CodeNavServiceBackgroundJobs interface {
 	NewRankingGraphSerializer(
+		numRankingRoutines int,
 		interval time.Duration,
 	) goroutine.BackgroundRoutine
 }
