@@ -12,7 +12,7 @@ type lfsResolver struct {
 }
 
 func (l *lfsResolver) ByteSize() BigInt {
-	return BigInt{Int: l.size}
+	return BigInt(l.size)
 }
 
 var (
