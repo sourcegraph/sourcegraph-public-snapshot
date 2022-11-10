@@ -274,6 +274,7 @@ func (f *GithubRepoFetcher) Next(ctx context.Context) []*store.Repo {
 		return nil
 	}
 
+    // when next is 0, it means the Github api returned the nextPage as 0, which indicates that there are not more pages to fetch
 	hasMore := next != 0
 	if !hasMore {
 		f.done = true
