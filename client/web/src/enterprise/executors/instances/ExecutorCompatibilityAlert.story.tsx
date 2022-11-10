@@ -27,6 +27,7 @@ export const UpToDate: Story = () => (
     </WebStory>
 )
 
+// This story is expected to be empty.
 UpToDate.storyName = 'Executor is up to date'
 
 export const Outdated: Story = () => (

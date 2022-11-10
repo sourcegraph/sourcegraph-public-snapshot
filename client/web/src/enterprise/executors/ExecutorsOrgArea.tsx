@@ -19,7 +19,7 @@ export interface ExecutorsOrgAreaProps<RouteProps extends {} = {}> extends Route
     namespaceID: Scalars['ID']
 }
 
-/** The page area for all executors settings in user settings. */
+/** The page area for all executors settings in org settings. */
 export const ExecutorsOrgArea: React.FunctionComponent<React.PropsWithChildren<ExecutorsOrgAreaProps>> = ({
     match,
     ...outerProps

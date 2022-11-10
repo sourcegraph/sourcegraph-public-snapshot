@@ -43,7 +43,7 @@ export const RemoveSecretModal: React.FunctionComponent<React.PropsWithChildren<
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
-            <H3 id={labelId}>Remove secret {secret.key}?</H3>
+            <H3 id={labelId}>Executor secret: {secret.key}</H3>
 
             <strong className="d-block text-danger my-3">Removing secrets is irreversible.</strong>
 

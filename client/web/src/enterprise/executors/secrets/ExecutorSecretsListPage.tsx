@@ -136,7 +136,7 @@ const ExecutorSecretsListPage: React.FunctionComponent<React.PropsWithChildren<E
                 description={headerLine}
                 actions={
                     <>
-                        <Button onClick={onClickAdd} aria-label="Add new secret value" variant="primary">
+                        <Button onClick={onClickAdd} variant="primary">
                             Add secret
                         </Button>
                     </>

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Button, Modal, H3 } from '@sourcegraph/wildcard'
+import { Button, Modal, H3, Text } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,
@@ -32,7 +32,8 @@ export const SecretAccessLogsModal: React.FunctionComponent<React.PropsWithChild
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
-            <H3 id={labelId}>Access log</H3>
+            <H3 id={labelId}>Access logs</H3>
+            <Text>All events when the value of this secret was read.</Text>
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}

@@ -104,6 +104,8 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                     cursorPaging={true}
                     filters={filters}
                     emptyElement={<NoExecutors />}
+                    noSummaryIfAllNodesVisible={true}
+                    withCenteredSummary={true}
                 />
             </Container>
         </>

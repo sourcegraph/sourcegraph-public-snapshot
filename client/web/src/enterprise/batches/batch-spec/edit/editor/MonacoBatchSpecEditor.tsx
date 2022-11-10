@@ -64,6 +64,8 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
 
+        // We fetch the execution secrets available in this namespace to provide
+        // autocomplete for env fields. The secrets are namespace-specific.
         this.subscriptions.add(
             componentUpdates
                 .pipe(

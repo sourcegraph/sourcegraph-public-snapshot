@@ -3,7 +3,7 @@ import React, { useCallback, useRef, useState } from 'react'
 import classNames from 'classnames'
 import LockIcon from 'mdi-react/LockIcon'
 
-import { Badge, Button, Icon, H3, Link } from '@sourcegraph/wildcard'
+import { Badge, Button, Icon, H3, Link, Text } from '@sourcegraph/wildcard'
 
 import { ExecutorSecretFields, Scalars } from '../../../graphql-operations'
 
@@ -51,8 +51,6 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
         refetchAll()
     }, [refetchAll, buttonReference])
 
-    const headingAriaLabel = 'Secret value'
-
     return (
         <>
             <li className={classNames(styles.executorSecretNodeContainer, 'list-group-item')}>
@@ -62,33 +60,44 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
                         'd-flex justify-content-between align-items-center flex-wrap mb-0'
                     )}
                 >
-                    <H3 className="text-nowrap mb-0" aria-label={headingAriaLabel}>
-                        <Icon className="mx-2" aria-hidden={true} as={LockIcon} /> {node.key}{' '}
+                    <div className="d-flex align-items-center">
+                        <H3 className="text-nowrap mb-0 mr-2">
+                            <Icon className="mx-2" aria-hidden={true} as={LockIcon} /> {node.key}
+                        </H3>
                         {node.namespace === null && (
-                            <Badge
-                                variant="secondary"
-                                tooltip="This secret will be usable by all users of the Sourcegraph instance."
-                                aria-label="This secret will be usable by all users of the Sourcegraph instance."
-                                className="mr-2"
-                            >
-                                Global secret
-                            </Badge>
+                            <span>
+                                <Badge
+                                    variant="secondary"
+                                    tooltip="This secret is available to users of the Sourcegraph instance."
+                                    aria-label="This secret is available to users of the Sourcegraph instance."
+                                    className="mr-2"
+                                >
+                                    Global secret
+                                </Badge>
+                            </span>
                         )}
                         {node.overwritesGlobalSecret && (
-                            <Badge
-                                variant="secondary"
-                                tooltip="This secret overwrites an existing secret set globally in this Sourcegraph instance."
-                                aria-label="This secret overwrites an existing secret set globally in this Sourcegraph instance."
-                                className="mr-2"
-                            >
-                                Overwrites global secret
-                            </Badge>
+                            <span>
+                                <Badge
+                                    variant="secondary"
+                                    tooltip="This secret overwrites an existing secret set globally in this Sourcegraph instance."
+                                    aria-label="This secret overwrites an existing secret set globally in this Sourcegraph instance."
+                                    className="mr-2"
+                                >
+                                    Overwrites global secret
+                                </Badge>
+                            </span>
                         )}
-                        <small>
-                            By {node.creator && <Link to={node.creator.url}>{node.creator.username}</Link>}
+                        <Text className="text-muted mb-0">
+                            by{' '}
+                            {node.creator && (
+                                <Link className={styles.linkMuted} to={node.creator.url}>
+                                    {node.creator.username}
+                                </Link>
+                            )}
                             {!node.creator && <>deleted user</>}
-                        </small>
-                    </H3>
+                        </Text>
+                    </div>
                     <div className="mb-0 d-flex justify-content-end flex-grow-1 align-items-baseline">
                         <Button
                             onClick={onClickAccessLogs}
@@ -97,6 +106,10 @@ export const ExecutorSecretNode: React.FunctionComponent<React.PropsWithChildren
                         >
                             Access logs
                         </Button>
+                        {/* If this page is the global secrets page (site-admin), or when the secret is
+                            defined in the viewer namepspace, render the update and remove buttons.
+                            Otherwise, these should not be manageable from this page.
+                        */}
                         {(namespaceID === null || (namespaceID !== null && node.namespace !== null)) && (
                             <>
                                 <Button

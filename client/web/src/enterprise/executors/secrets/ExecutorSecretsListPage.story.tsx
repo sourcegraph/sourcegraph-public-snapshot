@@ -17,6 +17,12 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 const config: Meta = {
     title: 'web/executors/secrets/ExecutorSecretsListPage',
     decorators: [decorator],
+    parameters: {
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
+    },
 }
 
 export default config
