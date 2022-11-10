@@ -94,9 +94,19 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
   <a class="btn-app btn" href="/admin/deploy/docker-single-container">
     <img alt="docker-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
     <h3>Docker Container</h3>
-    <p>Spin up a local Sourcegraph instance</p>
+    <p>Spin up a local Sourcegraph instance with pure docker</p>
   </a>
-  <div></div><div></div>
+  <a class="btn-app btn" href="/admin/deploy/single-node/k3s">
+    <img alt="k3s-logo" src="/assets/other-logos/k3s.png"/>
+    <h3>K3s</h3>
+    <p>Spin up a local Sourcegraph instance with Kubernetes</p>
+  </a>
+  <a class="btn-app btn" href="/admin/deploy/single-node/minikube">
+    <img alt="minikube-logo" src="/assets/other-logos/minikube.png"/>
+    <h3>Minikube</h3>
+    <p>Spin up a local Sourcegraph instance with Kubernetes</p>
+  </a>
+  <div></div>
 </div>
 
 ---
