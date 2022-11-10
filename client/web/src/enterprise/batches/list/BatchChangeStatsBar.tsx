@@ -1,11 +1,12 @@
 import React from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { H3, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
+import { H3, H4, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import { GlobalChangesetsStatsResult, GlobalChangesetsStatsVariables } from '../../../graphql-operations'
 import { DEFAULT_MINS_SAVED_PER_CHANGESET } from '../../../site-admin/analytics/AnalyticsBatchChangesPage'
@@ -75,17 +76,22 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
                 <div className="pr-4 text-center">
                     <ChangesetStatusOpen
                         className="d-flex"
-                        aria-label={`${data.globalChangesetsStats.open} total changesets open`}
-                        role="group"
-                        label={<span aria-hidden={true}>{data.globalChangesetsStats.open} open</span>}
+                        label={
+                            <H4 className="font-weight-normal m-0">
+                                {data.globalChangesetsStats.open} <VisuallyHidden>total changesets</VisuallyHidden> open
+                            </H4>
+                        }
                     />
                 </div>
                 <div className="text-center">
                     <ChangesetStatusClosed
                         className="d-flex"
-                        aria-label={`${data.globalChangesetsStats.closed} total changesets closed`}
-                        role="group"
-                        label={<span aria-hidden={true}>{data.globalChangesetsStats.closed} closed</span>}
+                        label={
+                            <H4 className="font-weight-normal m-0">
+                                {data.globalChangesetsStats.closed} <VisuallyHidden>total changesets</VisuallyHidden>{' '}
+                                closed
+                            </H4>
+                        }
                     />
                 </div>
             </div>
