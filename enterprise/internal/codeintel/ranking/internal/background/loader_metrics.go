@@ -1,8 +1,6 @@
 package background
 
 import (
-	"fmt"
-
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -20,7 +18,6 @@ func newLoaderMetrics(observationContext *observation.Context) *loaderMetrics {
 			Help: help,
 		})
 
-		fmt.Printf("!!!!!!!!LOADING %s\n", name)
 		observationContext.Registerer.MustRegister(counter)
 		return counter
 	}
