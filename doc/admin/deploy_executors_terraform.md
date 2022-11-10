@@ -58,7 +58,7 @@ See the Terraform Modules for additional configurations.
 ## Terraform Version
 
 The executor Terraform modules require Terraform 1.1. Use [tfenv](https://github.com/tfutils/tfenv) to install Terraform
-1.1.9.
+1.1+.
 
 ```shell
 tfenv install 1.1.9
@@ -121,25 +121,6 @@ Ensure the [IAM API](https://console.cloud.google.com/apis/api/iam.googleapis.co
 - secretmanager.locations.list
 - secretmanager.secrets.*
 - secretmanager.versions.*
-
-## Isolate Commands
-
-We perform layered security/security in-depth at untrusted boundaries. Untrusted code is run only within a fresh virtual
-machine, and the host machine running untrusted code does not have privileged access to the Sourcegraph instance.
-
-To isolate commands in virtual machines, set `executor_use_firecracker` to true.
-See [How it works](executors.md#how-it-works) for more information.
-
-```terraform
-module "executors" {
-  source = "sourcegraph/executors/<aws | google>"
-  version = "<version>"
-  
-  # ...
-  
-  executor_use_firecracker = true
-}
-```
 
 ## Examples
 
