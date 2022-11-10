@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type UploadService interface {
@@ -30,7 +28,7 @@ type UploadService interface {
 	BackfillCommittedAtBatch(ctx context.Context, batchSize int) (err error)
 
 	// Uploads
-	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []types.Upload, totalCount int, err error)
+	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []codeinteltypes.Upload, totalCount int, err error)
 	SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (int, error)
 	SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, maxTraversal int) (int, error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
@@ -52,10 +50,9 @@ type UploadService interface {
 	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
 
 	// Utils
-	GetWorkerutilStore() dbworkerstore.Store
 	FrontendReconcileCandidates(ctx context.Context, batchSize int) ([]int, error)
 	CodeIntelDBReconcileCandidates(ctx context.Context, batchSize int) ([]int, error)
-	GetDumpsByIDs(ctx context.Context, ids []int) ([]types.Dump, error)
+	GetDumpsByIDs(ctx context.Context, ids []int) ([]codeinteltypes.Dump, error)
 	IDsWithMeta(ctx context.Context, ids []int) ([]int, error)
 }
 
