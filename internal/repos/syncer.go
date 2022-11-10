@@ -926,7 +926,7 @@ func (s *Syncer) observeSync(
 		syncStarted.WithLabelValues(family, owner).Inc()
 
 		now := s.Now()
-		took := s.Now().Sub(began).Seconds()
+		took := now.Sub(began).Seconds()
 
 		lastSync.WithLabelValues(family).Set(float64(now.Unix()))
 
