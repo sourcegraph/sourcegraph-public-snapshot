@@ -81,7 +81,7 @@ func (r *repositoryTextSearchIndexStatus) UpdatedAt() gqlutil.DateTime {
 }
 
 func (r *repositoryTextSearchIndexStatus) ContentByteSize() BigInt {
-	return BigInt{r.entry.Stats.ContentBytes}
+	return BigInt(r.entry.Stats.ContentBytes)
 }
 
 func (r *repositoryTextSearchIndexStatus) ContentFilesCount() int32 {
@@ -213,7 +213,7 @@ func (r *skippedIndexedResolver) Count(ctx context.Context) (BigInt, error) {
 	// with "NOT-INDEXED: <reason>"
 	expr, err := syntax.Parse("^NOT-INDEXED: ", syntax.Perl)
 	if err != nil {
-		return BigInt{}, err
+		return 0, err
 	}
 
 	q := &zoektquery.And{[]zoektquery.Q{
@@ -230,10 +230,10 @@ func (r *skippedIndexedResolver) Count(ctx context.Context) (BigInt, error) {
 			stats.Add(sr.Stats)
 		}),
 	); err != nil {
-		return BigInt{}, err
+		return 0, err
 	}
 
-	return BigInt{int64(stats.FileCount)}, nil
+	return BigInt(stats.FileCount), nil
 }
 
 func (r *skippedIndexedResolver) Query() string {
