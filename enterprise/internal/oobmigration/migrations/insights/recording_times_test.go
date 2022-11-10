@@ -82,7 +82,7 @@ func Test_calculateRecordingTimes(t *testing.T) {
 		},
 		{
 			interval:      timeInterval{unit: hour, value: 2},
-			existingTimes: []time.Time{time.Date(2022, 10, 31, 03, 10, 0, 0, time.UTC), time.Date(2022, 10, 31, 18, 26, 0, 0, time.UTC)},
+			existingTimes: []time.Time{time.Date(2022, 9, 31, 03, 50, 0, 0, time.UTC), time.Date(2022, 10, 31, 18, 26, 0, 0, time.UTC)},
 			want: autogold.Want("2 hour intervals with existing time returns modified list", []string{
 				"2022-10-31 02:00:00 +0000 UTC",
 				"2022-10-31 04:00:00 +0000 UTC",

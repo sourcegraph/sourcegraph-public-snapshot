@@ -19,7 +19,9 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 	var calculatedRecordingTimes []time.Time
 	// For each reference time, we compare it to existing recording times.
 	// If the reference time is before the next existing point (i.e. no time exists there), we add it to the list.
-	// Else if the existing point is +/- half an interval close to the reference time, we add that to the list.
+	// Else if the existing point is + half an interval close to the reference time, we add that to the list.
+	// We use + half an interval because once a recording is queued there might be a delay in stamping. It could not
+	// be stamped in the past.
 	currentPointIndex := 0
 	for _, referenceTime := range referenceTimes {
 		referenceTime := referenceTime
@@ -30,7 +32,8 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 			if interval.unit == hour {
 				halfAnInterval = intervalDuration / 4
 			}
-			if existingTime.Sub(referenceTime).Abs() <= halfAnInterval {
+			differenceInExpectedTime := existingTime.Sub(referenceTime)
+			if differenceInExpectedTime >= 0 && differenceInExpectedTime <= halfAnInterval {
 				calculatedRecordingTimes = append(calculatedRecordingTimes, existingTime)
 				currentPointIndex++
 			} else {
