@@ -299,7 +299,8 @@ const BatchChangeListTabHeader: React.FunctionComponent<
                         to=""
                         onClick={onSelectBatchChanges}
                         className={classNames('nav-link', selectedTab === 'batchChanges' && 'active')}
-                        role="button"
+                        aria-selected={selectedTab === 'batchChanges'}
+                        role="tab"
                     >
                         <span className="text-content" data-tab-content="All batch changes">
                             All batch changes
@@ -314,7 +315,8 @@ const BatchChangeListTabHeader: React.FunctionComponent<
                             eventLogger.log('batch_change_homepage:getting_started:clicked')
                         }}
                         className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}
-                        role="button"
+                        aria-selected={selectedTab === 'gettingStarted'}
+                        role="tab"
                         data-testid="test-getting-started-btn"
                     >
                         <span className="text-content" data-tab-content="Getting started">

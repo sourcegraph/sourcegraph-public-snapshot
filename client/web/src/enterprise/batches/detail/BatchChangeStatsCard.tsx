@@ -56,7 +56,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                     className={classNames('a11y-ignore', styles.batchChangeStatsCardStateBadge)}
                 />
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'mx-3')} />
-                <div className="d-flex align-items-center" role="status">
+                <div className="d-flex align-items-center">
                     <Heading as="h3" styleAs="h1" className="d-inline mb-0" aria-hidden="true">
                         <Icon
                             className={classNames('mr-2', isCompleted ? 'text-success' : 'text-muted')}
