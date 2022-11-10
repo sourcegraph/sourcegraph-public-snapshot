@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { Badge, Link, H3 } from '@sourcegraph/wildcard'
+import { Badge, Link, H3, H4 } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import {
@@ -161,38 +162,26 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                 <>
                     <ChangesetStatusOpen
                         className="d-block d-sm-flex"
-                        aria-labelledby={`changesets-open-label-${node.id}`}
-                        role="group"
                         label={
-                            <span
-                                className="text-muted"
-                                id={`changesets-open-label-${node.id}`}
-                                aria-hidden={true}
-                            >{`${node.changesetsStats.open} open`}</span>
+                            <H4 className="font-weight-normal text-muted m-0">
+                                {node.changesetsStats.open} <VisuallyHidden>changesets</VisuallyHidden> open
+                            </H4>
                         }
                     />
                     <ChangesetStatusClosed
                         className="d-block d-sm-flex text-center"
-                        aria-labelledby={`changesets-closed-label-${node.id}`}
-                        role="group"
                         label={
-                            <span
-                                className="text-muted"
-                                aria-hidden={true}
-                                id={`changesets-closed-label-${node.id}`}
-                            >{`${node.changesetsStats.closed} closed`}</span>
+                            <H4 className="font-weight-normal text-muted m-0">
+                                {node.changesetsStats.closed} <VisuallyHidden>changesets</VisuallyHidden> closed
+                            </H4>
                         }
                     />
                     <ChangesetStatusMerged
                         className="d-block d-sm-flex"
-                        aria-labelledby={`changesets-merged-label-${node.id}`}
-                        role="group"
                         label={
-                            <span
-                                className="text-muted"
-                                id={`changesets-merged-label-${node.id}`}
-                                aria-hidden={true}
-                            >{`${node.changesetsStats.merged} merged`}</span>
+                            <H4 className="font-weight-normal text-muted m-0">
+                                {node.changesetsStats.merged} <VisuallyHidden>changesets</VisuallyHidden> merged
+                            </H4>
                         }
                     />
                 </>
