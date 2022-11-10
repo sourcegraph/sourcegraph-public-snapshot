@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { BadgeProps, Badge } from './Badge'
@@ -59,15 +60,26 @@ export const ProductStatusBadge: React.FunctionComponent<React.PropsWithChildren
 
     if ('linkToDocs' in props) {
         return (
-            <Badge href={STATUS_LINK_MAPPING[props.status]} variant={variant} className={className}>
-                {props.status}
-            </Badge>
+            <>
+                <VisuallyHidden>{`This feature is currently in ${props.status}`}</VisuallyHidden>
+                <Badge
+                    href={STATUS_LINK_MAPPING[props.status]}
+                    variant={variant}
+                    className={className}
+                    aria-hidden={true}
+                >
+                    {props.status}
+                </Badge>
+            </>
         )
     }
 
     return (
-        <Badge {...props} variant={variant} className={className}>
-            {props.status}
-        </Badge>
+        <>
+            <VisuallyHidden>{`This feature is currently in ${props.status}`}</VisuallyHidden>
+            <Badge {...props} variant={variant} className={className} aria-hidden={true}>
+                {props.status}
+            </Badge>
+        </>
     )
 }
