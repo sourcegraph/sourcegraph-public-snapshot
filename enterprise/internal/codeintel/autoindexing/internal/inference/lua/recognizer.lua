@@ -1,4 +1,4 @@
-local recognizers = require "sg.recognizers"
+local recognizers = require "backdoor_recognizers"
 
 local M = {}
 
