@@ -71,14 +71,11 @@ func (r *Resolver) InsightSeriesQueryStatus(ctx context.Context) ([]graphqlbacke
 	// we will treat the results from the queue as the "primary" and perform a left join on query metadata. That way
 	// we never have a situation where we can't inspect the records in the queue, that's the entire point of this operation.
 	for _, status := range seriesStatus {
-		var id *int
 		if series, ok := metadataBySeries[status.SeriesId]; ok {
 			status.Query = series.Query
 			status.Enabled = series.Enabled
-			id = &series.ID
 		}
-
-		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{workerBaseStore: r.workerBaseStore, status: status, seriesID: status.SeriesId, id: id})
+		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{status: status})
 	}
 	return resolvers, nil
 }
@@ -134,10 +131,10 @@ func (i *insightSeriesMetadataResolver) Enabled(ctx context.Context) (bool, erro
 }
 
 type insightSeriesQueryStatusResolver struct {
-	status          types.InsightSeriesStatus
-	seriesID        string
-	id              *int
-	workerBaseStore *basestore.Store
+	status types.InsightSeriesStatus
+	// seriesID        string
+	// id              *int
+	// workerBaseStore *basestore.Store
 }
 
 func (i *insightSeriesQueryStatusResolver) SeriesId(ctx context.Context) (string, error) {
