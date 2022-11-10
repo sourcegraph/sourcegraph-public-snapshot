@@ -194,7 +194,7 @@ func gitPushWithRetry(ctx context.Context, dir string, retry int, destOpts ...Gi
 	var err error
 	for i := 0; i < retry; i++ {
 		cmd := run.Bash(ctx, "git push destination").Dir(dir)
-		for _, opt := range destOpt {
+		for _, opt := range destOpts {
 			cmd = opt(cmd)
 		}
 		err = cmd.Run().Wait()
