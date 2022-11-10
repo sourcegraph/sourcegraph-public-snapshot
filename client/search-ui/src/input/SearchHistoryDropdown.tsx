@@ -12,8 +12,6 @@ import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 // eslint-disable-next-line no-restricted-imports
@@ -40,7 +38,6 @@ interface SearchHistoryDropdownProps extends TelemetryProps {
     onSelect: (search: RecentSearch) => void
 }
 
-const recentSearchTooltipContent = `Recent searches ${shortcutDisplayName('Mod+ArrowDown')}`
 // Adds padding to the popover content to add some space between the trigger
 // button and the content
 const popoverPadding = createRectangle(0, 0, 0, 2)
@@ -57,11 +54,6 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
             [telemetryService, setIsOpen]
         )
 
-        const openOnShortcut = useCallback(() => {
-            telemetryService.log('RecentSearchesListOpened')
-            setIsOpen(true)
-        }, [telemetryService, setIsOpen])
-
         const onSelectInternal = useCallback(
             (search: RecentSearch) => {
                 telemetryService.log('RecentSearchSelected')
@@ -74,7 +66,7 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
         return (
             <>
                 <Popover isOpen={isOpen} onOpenChange={handlePopoverToggle}>
-                    <Tooltip content={recentSearchTooltipContent}>
+                    <Tooltip content="Recent searches">
                         <PopoverTrigger
                             type="button"
                             className={classNames(styles.triggerButton, isOpen ? styles.open : null, className)}
@@ -87,7 +79,6 @@ export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdow
                         <SearchHistoryEntries onSelect={onSelectInternal} recentSearches={recentSearches} />
                     </PopoverContent>
                 </Popover>
-                <Shortcut onMatch={openOnShortcut} held={['Mod']} ordered={['ArrowDown']} ignoreInput={true} />
             </>
         )
     }
