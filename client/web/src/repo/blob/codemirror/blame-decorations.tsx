@@ -46,85 +46,106 @@ const [hoveredLine, setHoveredLine] = createUpdateableField<number | null>(null,
 ])
 
 class CheckboxWidget extends WidgetType {
-    constructor(readonly checked: boolean) {
+    private container: HTMLElement | null = null
+    private reactRoot: Root | null = null
+
+    constructor(public view: EditorView, public readonly hunk: BlameHunk | undefined) {
         super()
     }
 
-    eq(other: CheckboxWidget) {
-        return other.checked == this.checked
+    // eq(other: CheckboxWidget) {
+    //     return other.checked == this.checked
+    // }
+
+    /* eslint-disable-next-line id-length*/
+    public eq(other: CheckboxWidget): boolean {
+        return isEqual(this.hunk, other.hunk)
     }
 
-    toDOM() {
-        let wrap = document.createElement('span')
-        wrap.style.maxWidth = '50px'
-        // wrap.classList.add('sr-only')
-        // wrap.setAttribute('aria-hidden', 'true')
-        // wrap.className = 'cm-boolean-toggle'
-        let a = document.createElement('a')
-        a.innerText = 'link'
-        a.setAttribute('href', 'https://sourcegraph.com')
-        wrap.appendChild(a)
-        // box.type = 'checkbox'
-        // box.checked = this.checked
-        return wrap
+    public toDOM(): HTMLElement {
+        if (!this.container) {
+            this.container = document.createElement('span')
+            // this.container.classList.add('sr-only')
+            this.reactRoot = createRoot(this.container)
+            this.reactRoot.render(
+                <BlameDecoration
+                    line={this.hunk?.startLine ?? 0}
+                    blameHunk={this.hunk}
+                    onSelect={this.selectRow}
+                    onDeselect={this.deselectRow}
+                />
+            )
+        }
+        return this.container
     }
 
-    ignoreEvent() {
-        return false
+    private selectRow = (line: number): void => {
+        setHoveredLine(this.view, line)
     }
+
+    private deselectRow = (line: number): void => {
+        if (this.view.state.field(hoveredLine) === line) {
+            setHoveredLine(this.view, null)
+        }
+    }
+
+    public destroy(): void {
+        this.container?.remove()
+        // setTimeout seems necessary to prevent React from complaining that the
+        // root is synchronously unmounted while rendering is in progress
+        setTimeout(() => this.reactRoot?.unmount(), 0)
+    }
+
+    // ignoreEvent() {
+    //     return false
+    // }
 }
 
-function checkboxes(view: EditorView) {
-    let widgets = []
+function checkboxes(view: EditorView, facet) {
+    const widgets = []
     // console.log(view.visibleRanges)
-    // const hunks = view.state.facet(facet)
+    const hunks = view.state.facet(facet)
+    // console.log(hunks)
     // consi
-    for (let { from, to } of view.visibleRanges) {
+    for (const { from, to } of view.visibleRanges) {
         for (let pos = from; pos <= to; ) {
-            let line = view.state.doc.lineAt(pos)
-            let deco = Decoration.widget({
-                widget: new CheckboxWidget(true),
-                side: 1,
+            const line = view.state.doc.lineAt(pos)
+            // console.log(line)
+            const hunk = hunks.find(h => h.startLine === line.number)
+            const deco = Decoration.widget({
+                widget: new CheckboxWidget(view, hunk),
             })
             widgets.push(deco.range(line.from))
             pos = line.to + 1
         }
-
-        // for (let i = from; i < to; i++) {
-        //     let deco = Decoration.widget({
-        //         widget: new CheckboxWidget(true),
-        //         side: 1,
-        //     })
-        //     widgets.push(deco.range(0))
-        // }
     }
     return Decoration.set(widgets)
 }
 
-const checkboxPlugin = ViewPlugin.fromClass(
-    class {
-        decorations: DecorationSet
+// const checkboxPlugin = ViewPlugin.fromClass(
+//     class {
+//         decorations: DecorationSet
 
-        constructor(view: EditorView) {
-            this.decorations = checkboxes(view)
-        }
+//         constructor(view: EditorView) {
+//             this.decorations = checkboxes(view)
+//         }
 
-        update(update: ViewUpdate) {
-            if (update.docChanged || update.viewportChanged) this.decorations = checkboxes(update.view)
-        }
-    },
-    {
-        decorations: v => v.decorations,
+//         update(update: ViewUpdate) {
+//             if (update.docChanged || update.viewportChanged) this.decorations = checkboxes(update.view)
+//         }
+//     },
+//     {
+//         decorations: v => v.decorations,
 
-        eventHandlers: {
-            mousedown: (e, view) => {
-                let target = e.target as HTMLElement
-                if (target.nodeName == 'INPUT' && target.parentElement!.classList.contains('cm-boolean-toggle'))
-                    return console.log('hello')
-            },
-        },
-    }
-)
+//         eventHandlers: {
+//             mousedown: (e, view) => {
+//                 let target = e.target as HTMLElement
+//                 if (target.nodeName == 'INPUT' && target.parentElement!.classList.contains('cm-boolean-toggle'))
+//                     return console.log('hello')
+//             },
+//         },
+//     }
+// )
 
 /**
  * Used to find the blame decoration(s) with the longest text,
@@ -202,33 +223,49 @@ class BlameDecoratorMarker extends GutterMarker {
 export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
     combine: decorations => decorations.flat(),
     enables: facet => [
-        gutter({
-            class: blameColumnStyles.decoration,
-            lineMarker: (view, lineBlock) => {
-                const hunks = view.state.facet(facet)
-                if (!hunks) {
-                    // This shouldn't be possible but just in case
-                    return null
-                }
-                const lineNumber: number = view.state.doc.lineAt(lineBlock.from).number
-                const hunk = hunks.find(hunk => hunk.startLine === lineNumber)
-                if (!hunk) {
-                    return null
-                }
-                return new BlameDecoratorMarker(view, hunk)
-            },
-            // Without a spacer the whole gutter flickers when the
-            // decorations for the visible lines are re-rendered
-            // TODO: update spacer when decorations change
-            initialSpacer: view => {
-                const hunk = longestColumnDecorations(view.state.facet(facet))
-                return new BlameDecoratorMarker(view, hunk, true)
-            },
-            // Markers need to be updated when theme changes
-            lineMarkerChange: update =>
-                update.startState.facet(EditorView.darkTheme) !== update.state.facet(EditorView.darkTheme),
-        }),
+        // gutter({
+        //     class: blameColumnStyles.decoration,
+        //     lineMarker: (view, lineBlock) => {
+        //         const hunks = view.state.facet(facet)
+        //         if (!hunks) {
+        //             // This shouldn't be possible but just in case
+        //             return null
+        //         }
+        //         const lineNumber: number = view.state.doc.lineAt(lineBlock.from).number
+        //         const hunk = hunks.find(hunk => hunk.startLine === lineNumber)
+        //         if (!hunk) {
+        //             return null
+        //         }
+        //         return new BlameDecoratorMarker(view, hunk)
+        //     },
+        //     // Without a spacer the whole gutter flickers when the
+        //     // decorations for the visible lines are re-rendered
+        //     // TODO: update spacer when decorations change
+        //     initialSpacer: view => {
+        //         const hunk = longestColumnDecorations(view.state.facet(facet))
+        //         return new BlameDecoratorMarker(view, hunk, true)
+        //     },
+        //     // Markers need to be updated when theme changes
+        //     lineMarkerChange: update =>
+        //         update.startState.facet(EditorView.darkTheme) !== update.state.facet(EditorView.darkTheme),
+        // }),
         hoveredLine,
-        checkboxPlugin,
+        // checkboxPlugin,
+        ViewPlugin.fromClass(
+            class {
+                decorations: DecorationSet
+
+                constructor(view: EditorView) {
+                    this.decorations = checkboxes(view, facet)
+                }
+
+                update(update: ViewUpdate) {
+                    if (update.docChanged || update.viewportChanged) this.decorations = checkboxes(update.view, facet)
+                }
+            },
+            {
+                decorations: v => v.decorations,
+            }
+        ),
     ],
 })
