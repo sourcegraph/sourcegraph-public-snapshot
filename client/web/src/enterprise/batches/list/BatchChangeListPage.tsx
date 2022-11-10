@@ -292,7 +292,7 @@ const BatchChangeListTabHeader: React.FunctionComponent<
         [setSelectedTab]
     )
     return (
-        <div className="overflow-auto mb-2">
+        <nav className="overflow-auto mb-2" aria-label="Batch Changes">
             <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
                 <li className="nav-item">
                     <Link
@@ -323,6 +323,6 @@ const BatchChangeListTabHeader: React.FunctionComponent<
                     </Link>
                 </li>
             </ul>
-        </div>
+        </nav>
     )
 }
