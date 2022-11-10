@@ -458,7 +458,7 @@ Debugging information related to an InsightView
 """
 type InsightViewDebug {
     """
-    A json dump of debug information for series on the insightview
+    A JSON dump of debug information for series on the insight view
     """
     raw: [String!]!
 }
