@@ -102,10 +102,10 @@ var app = &cli.App{
 							}
 
 							t, err := getTotalPublicRepos(ctx, gh, org)
-							logger.Info("Estimated public repos from API", log.Int("total", t))
 							if err != nil {
 								logger.Fatal("failed to get total public repos size for org", log.String("org", org), log.Error(err))
 							}
+							logger.Info("Estimated public repos from API", log.Int("total", t))
 							total = int64(t)
 						} else {
 							logger.Info("Using StaticRepoFecther")
