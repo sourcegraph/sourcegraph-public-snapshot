@@ -611,7 +611,8 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                         <ul className="mb-0">
                                             {step.environment.map(variable => (
                                                 <li key={variable.name}>
-                                                    {variable.name}: {variable.value}
+                                                    {variable.name}: {variable.value !== null && <>{variable.value}</>}
+                                                    {variable.value === null && <i>Set from secret</i>}
                                                 </li>
                                             ))}
                                         </ul>
