@@ -50,7 +50,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 	diskStatsQuery := func(nodeExporterMetric string) string {
 		return fmt.Sprintf("(max by (instance) (%s * on (device, nodename) group_left() (%s)))",
 			fmt.Sprintf("%s{mount_name=%q,instance=~`%s`}", mountMetric, opts.MetricMountNameLabel, opts.InstanceFilterRegex),
-			fmt.Sprintf("max by (device, nodename) (rate(%s{instance=~`node-exporter.*`}[2m]))", nodeExporterMetric),
+			fmt.Sprintf("max by (device, nodename) (rate(%s{instance=~`node-exporter.*`}[1m]))", nodeExporterMetric),
 		)
 	}
 
@@ -67,7 +67,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 			{
 				{
 					Name:        fmt.Sprintf("%s_disk_reads_sec", opts.DiskTitle),
-					Description: "read request rate over 2m (per instance)",
+					Description: "read request rate over 1m (per instance)",
 					Query:       diskStatsQuery("node_disk_reads_completed_total"),
 					NoAlert:     true,
 					Panel: monitoring.Panel().LegendFormat("{{instance}}").
@@ -78,7 +78,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 				},
 				{
 					Name:        fmt.Sprintf("%s_disk_writes_sec", opts.DiskTitle),
-					Description: "write request rate over 2m (per instance)",
+					Description: "write request rate over 1m (per instance)",
 					Query:       diskStatsQuery("node_disk_writes_completed_total"),
 					NoAlert:     true,
 					Panel: monitoring.Panel().LegendFormat("{{instance}}").
@@ -91,7 +91,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 			{
 				{
 					Name:        fmt.Sprintf("%s_disk_read_throughput", opts.DiskTitle),
-					Description: "read throughput over 2m (per instance)",
+					Description: "read throughput over 1m (per instance)",
 					Query:       diskStatsQuery("node_disk_read_bytes_total"),
 					NoAlert:     true,
 					Panel: monitoring.Panel().LegendFormat("{{instance}}").
@@ -102,7 +102,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 				},
 				{
 					Name:        fmt.Sprintf("%s_disk_write_throughput", opts.DiskTitle),
-					Description: "write throughput over 2m (per instance)",
+					Description: "write throughput over 1m (per instance)",
 					Query:       diskStatsQuery("node_disk_written_bytes_total"),
 					NoAlert:     true,
 					Panel: monitoring.Panel().LegendFormat("{{instance}}").
@@ -115,7 +115,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 			{
 				{
 					Name:        fmt.Sprintf("%s_disk_read_duration", opts.DiskTitle),
-					Description: "average read duration over 2m (per instance)",
+					Description: "average read duration over 1m (per instance)",
 
 					Query: fmt.Sprintf("((%s) / (%s))",
 						diskStatsQuery("node_disk_read_time_seconds_total"),
@@ -132,7 +132,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 				},
 				{
 					Name:        fmt.Sprintf("%s_disk_write_duration", opts.DiskTitle),
-					Description: "average write duration over 2m (per instance)",
+					Description: "average write duration over 1m (per instance)",
 
 					Query: fmt.Sprintf("((%s) / (%s))",
 						diskStatsQuery("node_disk_write_time_seconds_total"),
@@ -151,7 +151,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 			{
 				{
 					Name:        fmt.Sprintf("%s_disk_read_request_size", opts.DiskTitle),
-					Description: "average read request size over 2m (per instance)",
+					Description: "average read request size over 1m (per instance)",
 					Query: fmt.Sprintf("((%s) / (%s))",
 						diskStatsQuery("node_disk_read_bytes_total"),
 						diskStatsQuery("node_disk_reads_completed_total"),
@@ -165,7 +165,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 				},
 				{
 					Name:        fmt.Sprintf("%s_disk_write_request_size)", opts.DiskTitle),
-					Description: "average write request size over 2m (per instance)",
+					Description: "average write request size over 1m (per instance)",
 					Query: fmt.Sprintf("((%s) / (%s))",
 						diskStatsQuery("node_disk_written_bytes_total"),
 						diskStatsQuery("node_disk_writes_completed_total"),
@@ -181,7 +181,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 			{
 				{
 					Name:        fmt.Sprintf("%s_disk_reads_merged_sec", opts.DiskTitle),
-					Description: "merged read request rate over 2m (per instance)",
+					Description: "merged read request rate over 1m (per instance)",
 					Query:       diskStatsQuery("node_disk_reads_merged_total"),
 					NoAlert:     true,
 					Panel: monitoring.Panel().LegendFormat("{{instance}}").
@@ -192,7 +192,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 				},
 				{
 					Name:        fmt.Sprintf("%s_disk_writes_merged_sec", opts.DiskTitle),
-					Description: "merged writes request rate over 2m (per instance)",
+					Description: "merged writes request rate over 1m (per instance)",
 					Query:       diskStatsQuery("node_disk_writes_merged_total"),
 					NoAlert:     true,
 					Panel: monitoring.Panel().LegendFormat("{{instance}}").
@@ -206,7 +206,7 @@ func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.Observab
 				{
 
 					Name:        fmt.Sprintf("%s_disk_average_queue_size", opts.DiskTitle),
-					Description: "average queue size over 2m (per instance)",
+					Description: "average queue size over 1m (per instance)",
 					Query:       diskStatsQuery("node_disk_io_time_weighted_seconds_total"),
 					NoAlert:     true,
 					Panel: monitoring.Panel().LegendFormat("{{instance}}").

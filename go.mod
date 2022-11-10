@@ -219,6 +219,8 @@ require (
 	github.com/coreos/go-iptables v0.6.0
 	github.com/dcadenas/pagerank v0.0.0-20171013173705-af922e3ceea8
 	github.com/frankban/quicktest v1.14.3
+	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/google/go-github/v47 v47.1.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
 	github.com/prometheus/prometheus v0.37.1
@@ -228,7 +230,7 @@ require (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20221108110600-3b925f0a0087
+	github.com/sourcegraph/zoekt v0.0.0-20221109142233-2e71aad6ac9a
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 

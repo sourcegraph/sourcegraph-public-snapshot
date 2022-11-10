@@ -30,6 +30,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
+func init() {
+	collectMetricsDisabled = true
+}
+
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
 	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
 	defer authz.SetProviders(true, nil)
