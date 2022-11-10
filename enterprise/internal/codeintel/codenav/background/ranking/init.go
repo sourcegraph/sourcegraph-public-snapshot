@@ -4,10 +4,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-func NewGraphSerializers(backgroundJobs CodeNavServiceBackgroundJobs) (routines []goroutine.BackgroundRoutine) {
-	for i := 0; i < ConfigInst.NumRankingRoutines; i++ {
-		routines = append(routines, backgroundJobs.NewRankingGraphSerializer(ConfigInst.RankingInterval))
+func NewGraphSerializers(backgroundJobs CodeNavServiceBackgroundJobs) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		backgroundJobs.NewRankingGraphSerializer(ConfigInst.NumRankingRoutines, ConfigInst.RankingInterval),
 	}
-
-	return routines
 }
