@@ -138,7 +138,7 @@ That's it! You can now access the local Sourcegraph instance in browser using th
 
 ## Upgrade
 
-Please refer to the [upgrade docs for all Sourcegraph kubernetes instances](../kubernetes/operations#upgrade).
+Please refer to the [upgrade docs for all Sourcegraph kubernetes instances](../kubernetes/operations.md#upgrade).
 
 ## Downgrade
 
