@@ -320,6 +320,12 @@ func (f *GithubRepoFetcher) listRepos(ctx context.Context, org string, start int
 		})
 	}
 
+	if resp.NextPage == 0 {
+		println("-------")
+		println(resp.LastPage)
+		println(resp.NextPage)
+		println("-------")
+	}
 	return res, resp.NextPage, nil
 }
 
