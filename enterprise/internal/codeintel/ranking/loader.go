@@ -102,12 +102,12 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 				knownFilenameMap[filename] = struct{}{}
 			}
 
-			for _, filename := range filenames {
-				if _, ok := knownFilenameMap[filename]; ok {
+			for _, name := range filenames {
+				if _, ok := knownFilenameMap[name]; ok {
 					continue
 				}
 
-				r, err := s.resultsBucket.Object(filename).NewReader(ctx)
+				r, err := s.resultsBucket.Object(name).NewReader(ctx)
 				if err != nil {
 					return err
 				}
@@ -150,7 +150,7 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 					ranks[repo][path] = rank
 				}
 
-				if err := s.store.BulkSetDocumentRanks(ctx, resultsGraphKey, filename, pageRankPrecision, ranks); err != nil {
+				if err := s.store.BulkSetDocumentRanks(ctx, resultsGraphKey, name, pageRankPrecision, ranks); err != nil {
 					return err
 				}
 
