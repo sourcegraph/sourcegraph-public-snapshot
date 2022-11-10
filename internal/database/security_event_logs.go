@@ -42,7 +42,15 @@ const (
 
 	SecurityEventNameAccessGranted SecurityEventName = "AccessGranted"
 
-	SecurityEventAccessTokenCreated SecurityEventName = "AccessTokenCreated"
+	SecurityEventAccessTokenCreated     SecurityEventName = "AccessTokenCreated"
+	SecurityEventAccessTokenDeleted     SecurityEventName = "AccessTokenDeleted"
+	SecurityEventAccessTokenHardDeleted SecurityEventName = "AccessTokenHardDeleted"
+
+	SecurityEventGitHubAuthSucceeded SecurityEventName = "GitHubAuthSucceeded"
+	SecurityEventGitHubAuthFailed    SecurityEventName = "GitHubAuthFailed"
+
+	SecurityEventGitLabAuthSucceeded SecurityEventName = "GitLabAuthSucceeded"
+	SecurityEventGitLabAuthFailed    SecurityEventName = "GitLabAuthFailed"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.
@@ -122,6 +130,8 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 			Fields: []log.Field{
 				log.Object("event",
 					log.String("URL", event.URL),
+					log.Uint32("UserID", event.UserID),
+					log.String("AnonymousUserID", event.AnonymousUserID),
 					log.String("source", event.Source),
 					log.String("argument", event.marshalArgumentAsJSON()),
 					log.String("version", version.Version()),

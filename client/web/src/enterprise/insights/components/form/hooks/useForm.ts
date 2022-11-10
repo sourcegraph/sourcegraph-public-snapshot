@@ -175,9 +175,10 @@ export interface FieldMetaState<Value> {
     validState: 'VALID' | 'INVALID' | 'NOT_VALIDATED' | 'CHECKING'
 
     /**
-     * Last error value which has been returned from validators.
+     * Last error message which has been returned from validators.
+     * Interpreted as Markdown.
      */
-    error?: any
+    error?: string
 
     /**
      * Native validity state from native validation API of input element.

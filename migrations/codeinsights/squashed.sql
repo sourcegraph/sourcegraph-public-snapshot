@@ -225,6 +225,24 @@ CREATE SEQUENCE insight_series_id_seq
 
 ALTER SEQUENCE insight_series_id_seq OWNED BY insight_series.id;
 
+CREATE TABLE insight_series_incomplete_points (
+    id integer NOT NULL,
+    series_id integer NOT NULL,
+    reason text NOT NULL,
+    "time" timestamp without time zone NOT NULL,
+    repo_id integer
+);
+
+CREATE SEQUENCE insight_series_incomplete_points_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE insight_series_incomplete_points_id_seq OWNED BY insight_series_incomplete_points.id;
+
 CREATE TABLE insight_series_recording_times (
     insight_series_id integer,
     recording_time timestamp with time zone,
@@ -521,6 +539,8 @@ ALTER TABLE ONLY insight_series ALTER COLUMN id SET DEFAULT nextval('insight_ser
 
 ALTER TABLE ONLY insight_series_backfill ALTER COLUMN id SET DEFAULT nextval('insight_series_backfill_id_seq'::regclass);
 
+ALTER TABLE ONLY insight_series_incomplete_points ALTER COLUMN id SET DEFAULT nextval('insight_series_incomplete_points_id_seq'::regclass);
+
 ALTER TABLE ONLY insight_view ALTER COLUMN id SET DEFAULT nextval('insight_view_id_seq'::regclass);
 
 ALTER TABLE ONLY insight_view_grants ALTER COLUMN id SET DEFAULT nextval('insight_view_grants_id_seq'::regclass);
@@ -555,6 +575,9 @@ ALTER TABLE ONLY insight_dirty_queries
 
 ALTER TABLE ONLY insight_series_backfill
     ADD CONSTRAINT insight_series_backfill_pk PRIMARY KEY (id);
+
+ALTER TABLE ONLY insight_series_incomplete_points
+    ADD CONSTRAINT insight_series_incomplete_points_pk PRIMARY KEY (id);
 
 ALTER TABLE ONLY insight_series
     ADD CONSTRAINT insight_series_pkey PRIMARY KEY (id);
@@ -606,6 +629,8 @@ CREATE INDEX dashboard_insight_view_insight_view_id_fk_idx ON dashboard_insight_
 CREATE INDEX insight_dirty_queries_insight_series_id_fk_idx ON insight_dirty_queries USING btree (insight_series_id);
 
 CREATE INDEX insight_series_deleted_at_idx ON insight_series USING btree (deleted_at);
+
+CREATE UNIQUE INDEX insight_series_incomplete_points_unique_idx ON insight_series_incomplete_points USING btree (series_id, reason, "time", repo_id);
 
 CREATE INDEX insight_series_next_recording_after_idx ON insight_series USING btree (next_recording_after);
 
@@ -670,6 +695,9 @@ ALTER TABLE ONLY insight_series_backfill
 
 ALTER TABLE ONLY insight_series_recording_times
     ADD CONSTRAINT insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY insight_series_incomplete_points
+    ADD CONSTRAINT insight_series_incomplete_points_series_id_fk FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY insight_view_grants
     ADD CONSTRAINT insight_view_grants_insight_view_id_fk FOREIGN KEY (insight_view_id) REFERENCES insight_view(id) ON DELETE CASCADE;

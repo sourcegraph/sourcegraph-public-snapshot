@@ -12,7 +12,6 @@ import {
     FindInsightByNameInput,
     GetBuiltInsightInput,
     GetLangStatsInsightContentInput,
-    GetSearchInsightContentInput,
     InsightCreateInput,
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
@@ -29,7 +28,6 @@ import {
  * pages and components have.
  */
 export interface CodeInsightsBackend {
-
     /**
      * Returns all possible visibility options for dashboard. Dashboard can be stored
      * as private (user subject), org level (organization subject) or global (site subject)
@@ -79,11 +77,6 @@ export interface CodeInsightsBackend {
      * network utils to Sourcegraph search API.
      */
     getBuiltInInsightData: (input: GetBuiltInsightInput) => Observable<InsightContent<unknown>>
-
-    /**
-     * Returns content for the search based insight live preview chart.
-     */
-    getSearchInsightContent: (input: GetSearchInsightContentInput) => Promise<SeriesChartContent<unknown>>
 
     /**
      * Returns content for the code stats insight live preview chart.

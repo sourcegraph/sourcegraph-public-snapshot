@@ -8,7 +8,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../components/PageTitle'
 import { ALL_INSIGHTS_DASHBOARD } from '../../../constants'
-import { useInsightDashboards } from '../../../core';
+import { useInsightDashboards } from '../../../core'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 
@@ -27,7 +27,6 @@ export const DashboardsContentPage: FC<DashboardsContentPageProps> = props => {
     const { url } = useRouteMatch()
 
     const { dashboards, loading } = useInsightDashboards()
-
     const currentDashboard = useMemo(() => dashboards?.find(dashboard => dashboard.id === dashboardID), [
         dashboardID,
         dashboards,
@@ -42,7 +41,7 @@ export const DashboardsContentPage: FC<DashboardsContentPageProps> = props => {
     if (loading || !dashboards) {
         return (
             <div data-testid="loading-spinner">
-                <LoadingSpinner inline={false} />
+                <LoadingSpinner aria-live="off" inline={false} />
             </div>
         )
     }

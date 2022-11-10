@@ -44,7 +44,11 @@ A step by step guide to install Sourcegraph with Docker Compose.
 
 <span class="badge badge-note">RECOMMENDED</span> We **strongly recommend** you to deploy Sourcegraph using your own fork (or private copy) of the deployment repository as this allows you to track customizations made to the [Sourcegraph docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) easily. It also makes upgrading your instance easier in the future.
 
+> NOTE: When forking the repository, make sure the box labeled, "Copy the master branch only", is unchecked. Checking this box will prevent the repository tags from being copied and will result in an error in a later step. 
+
+
 > WARNING: In GitHub, the forks of public repositories are also public. Create a private copy following the [official docs on duplicating a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository) is strongly recommended if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository. However, the preferable approach would be to use a Secrets Management Service. 
+
 
 #### Create a public or private copy of the deployment repository
 
@@ -114,7 +118,7 @@ Continue with the following steps *after* you have created a public or private c
 
 ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v4.1.2"
+  export SOURCEGRAPH_VERSION="v4.1.3"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
 ```

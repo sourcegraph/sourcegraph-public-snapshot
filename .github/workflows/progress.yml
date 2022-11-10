@@ -18,20 +18,24 @@ on:
   - cron: "0 0 * * *"   # Every day 00:00 UTC (4pm PST)
 jobs:
   report-to-slack:
+    if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     name: Report the last 24h of CHANGELOG to the progress channel
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 1000
-      - name: Set up GCP key
-        run: |
-          echo ${{ secrets.PROGRESS_BOT_GCP_ACCOUNT_KEY }} | base64 -d > progress-bot-credentials.json
+
+      - name: Configure gcloud
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: ${{ secrets.PROGRESS_BOT_GCP_ACCOUNT_KEY }}
+          service_account: 'progress-bot@sourcegraph-dev.iam.gserviceaccount.com'
+
       - name: Report to Slack
-        uses: docker://sourcegraph/progress-bot:latest
+        uses: docker://sourcegraph/progress-bot:latest@sha256:adbce46dde34527bcb27027a552c76cc0622683297dd935111fe6e1067c53efa
         env:
           SINCE: ${{ github.event.inputs.since || '24h' }}
           DRY: ${{ github.event.inputs.dry || 'false' }}
           CHANNEL: ${{ github.event.inputs.channel || 'progress' }}
-          GOOGLE_APPLICATION_CREDENTIALS: progress-bot-credentials.json
           SLACK_API_TOKEN: ${{ secrets.PROGRESS_BOT_SLACK_API_TOKEN }}

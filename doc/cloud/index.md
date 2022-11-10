@@ -19,7 +19,7 @@ Sourcegraph provisions each instance in an isolated and secure cloud environment
   </a>
 </div>
 
-Use the button above to sign up for a free 30-day trial of Sourcegraph Cloud. Please [contact us](https://about.sourcegraph.com/contact/sales) if you have specific VPN requirements or you require a large deployment with >500 users, >1,000 repos, or monorepos >5 GB.
+Use the button above to sign up for a free 15-day trial of Sourcegraph Cloud. Please [contact us](https://about.sourcegraph.com/contact/sales) if you have specific VPN requirements or you require a large deployment with >500 users, >1,000 repos, or monorepos >5 GB.
 
 ## Trial limitations
 

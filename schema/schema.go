@@ -112,12 +112,13 @@ type AuthProviderCommon struct {
 	DisplayName string `json:"displayName,omitempty"`
 }
 type AuthProviders struct {
-	Builtin       *BuiltinAuthProvider
-	Saml          *SAMLAuthProvider
-	Openidconnect *OpenIDConnectAuthProvider
-	HttpHeader    *HTTPHeaderAuthProvider
-	Github        *GitHubAuthProvider
-	Gitlab        *GitLabAuthProvider
+	Builtin             *BuiltinAuthProvider
+	Saml                *SAMLAuthProvider
+	Openidconnect       *OpenIDConnectAuthProvider
+	SourcegraphOperator *SourcegraphOperatorAuthProvider
+	HttpHeader          *HTTPHeaderAuthProvider
+	Github              *GitHubAuthProvider
+	Gitlab              *GitLabAuthProvider
 }
 
 func (v AuthProviders) MarshalJSON() ([]byte, error) {
@@ -129,6 +130,9 @@ func (v AuthProviders) MarshalJSON() ([]byte, error) {
 	}
 	if v.Openidconnect != nil {
 		return json.Marshal(v.Openidconnect)
+	}
+	if v.SourcegraphOperator != nil {
+		return json.Marshal(v.SourcegraphOperator)
 	}
 	if v.HttpHeader != nil {
 		return json.Marshal(v.HttpHeader)
@@ -161,8 +165,10 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.Openidconnect)
 	case "saml":
 		return json.Unmarshal(data, &v.Saml)
+	case "sourcegraph-operator":
+		return json.Unmarshal(data, &v.SourcegraphOperator)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "sourcegraph-operator", "http-header", "github", "gitlab"})
 }
 
 type BackendInsight struct {
@@ -639,6 +645,8 @@ type ExperimentalFeatures struct {
 	HideSourcegraphOperatorLogin bool `json:"hideSourcegraphOperatorLogin,omitempty"`
 	// InsightsAlternateLoadingStrategy description: Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.
 	InsightsAlternateLoadingStrategy bool `json:"insightsAlternateLoadingStrategy,omitempty"`
+	// InsightsBackfillerV2 description: Use v2 of the insights backfiller which backfills a series at a time.
+	InsightsBackfillerV2 bool `json:"insightsBackfillerV2,omitempty"`
 	// JvmPackages description: Allow adding JVM package host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
 	// NpmPackages description: Allow adding npm package code host connections
@@ -665,6 +673,8 @@ type ExperimentalFeatures struct {
 	SearchIndexQueryContexts bool `json:"search.index.query.contexts,omitempty"`
 	// SearchIndexRevisions description: An array of objects describing rules for extra revisions (branch, ref, tag, commit sha, etc) to be indexed for all repositories that match them. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
 	SearchIndexRevisions []*SearchIndexRevisionsRule `json:"search.index.revisions,omitempty"`
+	// SearchSanitizePatterns description: A list of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. A pattern that is not a valid Go regular expression will have no effect.
+	SearchSanitizePatterns []string `json:"search.sanitize.patterns,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: DEPRECATED. Always on. Will be removed in 3.19.
 	SearchMultipleRevisionsPerRepository *bool `json:"searchMultipleRevisionsPerRepository,omitempty"`
 	// StructuralSearch description: Enables structural search.
@@ -1480,7 +1490,7 @@ type PerforceConnection struct {
 	MaxChanges float64 `json:"maxChanges,omitempty"`
 	// P4Client description: Client specified as an option for p4 CLI (P4CLIENT, also enables '--use-client-spec')
 	P4Client string `json:"p4.client,omitempty"`
-	// P4Passwd description: The ticket value for the user (P4PASSWD).
+	// P4Passwd description: The ticket value for the user (P4PASSWD). You can get this by running `p4 login -p` or `p4 login -pa`. It should look like `6211C5E719EDE6925855039E8F5CC3D2`.
 	P4Passwd string `json:"p4.passwd"`
 	// P4Port description: The Perforce Server address to be used for p4 CLI (P4PORT).
 	P4Port string `json:"p4.port"`
@@ -2085,6 +2095,10 @@ type SiteConfiguration struct {
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
 	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors.
 	ExecutorsAccessToken string `json:"executors.accessToken,omitempty"`
+	// ExecutorsBatcheshelperImage description: The image to use for batch changes in executors. Use this value to pull from a custom image registry.
+	ExecutorsBatcheshelperImage string `json:"executors.batcheshelperImage,omitempty"`
+	// ExecutorsBatcheshelperImageTag description: The tag to use for the batcheshelper image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
+	ExecutorsBatcheshelperImageTag string `json:"executors.batcheshelperImageTag,omitempty"`
 	// ExecutorsFrontendURL description: The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL
 	ExecutorsFrontendURL string `json:"executors.frontendURL,omitempty"`
 	// ExecutorsSrcCLIImage description: The image to use for src-cli in executors. Use this value to pull from a custom image registry.
@@ -2128,17 +2142,19 @@ type SiteConfiguration struct {
 	InsightsAggregationsBufferSize int `json:"insights.aggregations.bufferSize,omitempty"`
 	// InsightsAggregationsProactiveResultLimit description: The maximum number of results a proactive search aggregation can accept before stopping
 	InsightsAggregationsProactiveResultLimit int `json:"insights.aggregations.proactiveResultLimit,omitempty"`
+	// InsightsBackfillInterruptAfter description: Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.
+	InsightsBackfillInterruptAfter int `json:"insights.backfill.interruptAfter,omitempty"`
 	// InsightsCommitIndexerInterval description: The interval (in minutes) at which the insights commit indexer will check for new commits.
 	InsightsCommitIndexerInterval int `json:"insights.commit.indexer.interval,omitempty"`
 	// InsightsCommitIndexerWindowDuration description: The number of days of commits the insights commit indexer will pull during each request (0 is no limit).
 	InsightsCommitIndexerWindowDuration int `json:"insights.commit.indexer.windowDuration,omitempty"`
 	// InsightsComputeGraphql description: DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API
 	InsightsComputeGraphql *bool `json:"insights.compute.graphql,omitempty"`
-	// InsightsHistoricalFrameLength description: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.
+	// InsightsHistoricalFrameLength description: DEPRECATED: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.
 	InsightsHistoricalFrameLength string `json:"insights.historical.frameLength,omitempty"`
-	// InsightsHistoricalFrames description: (debug) number of historical insights timeframes to populate
+	// InsightsHistoricalFrames description: DEPRECATED: (debug) number of historical insights timeframes to populate
 	InsightsHistoricalFrames int `json:"insights.historical.frames,omitempty"`
-	// InsightsHistoricalSpeedFactor description: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.
+	// InsightsHistoricalSpeedFactor description: DEPRECATED: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.
 	InsightsHistoricalSpeedFactor *float64 `json:"insights.historical.speedFactor,omitempty"`
 	// InsightsHistoricalWorkerRateLimit description: Maximum number of historical Code Insights data frames that may be analyzed per second.
 	InsightsHistoricalWorkerRateLimit *float64 `json:"insights.historical.worker.rateLimit,omitempty"`
@@ -2146,6 +2162,8 @@ type SiteConfiguration struct {
 	InsightsQueryWorkerConcurrency int `json:"insights.query.worker.concurrency,omitempty"`
 	// InsightsQueryWorkerRateLimit description: Maximum number of Code Insights queries initiated per second on a worker node.
 	InsightsQueryWorkerRateLimit *float64 `json:"insights.query.worker.rateLimit,omitempty"`
+	// InsightsQueryWorkerRateLimitBurst description: The allowed burst rate for the Code Insights queries per second rate limiter.
+	InsightsQueryWorkerRateLimitBurst int `json:"insights.query.worker.rateLimitBurst,omitempty"`
 	// InsightsSearchGraphql description: DEPRECATED: Force GraphQL mode for insights searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API
 	InsightsSearchGraphql *bool `json:"insights.search.graphql,omitempty"`
 	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
@@ -2210,6 +2228,19 @@ type SiteConfiguration struct {
 	UserReposMaxPerUser int `json:"userRepos.maxPerUser,omitempty"`
 	// WebhookLogging description: Configuration for logging incoming webhooks.
 	WebhookLogging *WebhookLogging `json:"webhook.logging,omitempty"`
+}
+
+// SourcegraphOperatorAuthProvider description: Configures the Sourcegraph Operator authentication provider for SSO. This is only available in managed instances on Sourcegraph Cloud.
+type SourcegraphOperatorAuthProvider struct {
+	// ClientID description: The client ID of the Sourcegraph Operator client for this site.
+	ClientID string `json:"clientID"`
+	// ClientSecret description: The client secret of the Sourcegraph Operator client for this site.
+	ClientSecret string `json:"clientSecret"`
+	// Issuer description: The URL of the Sourcegraph Operator issuer.
+	Issuer string `json:"issuer"`
+	// LifecycleDuration description: The duration before the user accounts created by this authentication provider to be automatically deleted in minutes.
+	LifecycleDuration int    `json:"lifecycleDuration,omitempty"`
+	Type              string `json:"type"`
 }
 
 // SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.

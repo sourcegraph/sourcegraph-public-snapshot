@@ -4,6 +4,8 @@
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
+    <depends optional="true" config-file="plugin-perforce.xml">PerforceDirectPlugin</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <projectService serviceImplementation="com.sourcegraph.config.SourcegraphProjectService"/>

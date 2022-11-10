@@ -105,6 +105,7 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 			"NULL as place_in_global_queue",
 			"batch_spec_workspace_execution_jobs.created_at",
 			"batch_spec_workspace_execution_jobs.updated_at",
+			"batch_spec_workspace_execution_jobs.version",
 		},
 		func(rows dbutil.Scanner) error {
 			i++

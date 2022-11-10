@@ -896,7 +896,7 @@ type ResolvedBatchSpecWorkspaceResolver interface {
 
 type BatchSpecWorkspaceStagesResolver interface {
 	Setup() []ExecutionLogEntryResolver
-	SrcExec() ExecutionLogEntryResolver
+	SrcExec() []ExecutionLogEntryResolver
 	Teardown() []ExecutionLogEntryResolver
 }
 

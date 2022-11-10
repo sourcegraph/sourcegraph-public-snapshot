@@ -60,7 +60,12 @@ export function useURLQueryInsight(queryParameters: string): UseURLQueryInsightR
             getResolvedSearchRepositories({ variables: { query } })
                 .then(({ data }) => {
                     const repositories = data?.search?.results.repositories ?? []
-                    setInsightValues(createInsightFormFields(seriesQuery, repositories.map(repo => repo.name)))
+                    setInsightValues(
+                        createInsightFormFields(
+                            seriesQuery,
+                            repositories.map(repo => repo.name)
+                        )
+                    )
                 })
                 .catch(error => setInsightValues(asError(error)))
         } else {

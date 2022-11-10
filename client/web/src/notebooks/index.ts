@@ -104,7 +104,7 @@ export type BlockDirection = 'up' | 'down'
 export interface BlockProps<T extends Block = Block> {
     isReadOnly: boolean
     isSelected: boolean
-    isOtherBlockSelected: boolean
+    showMenu: boolean
     id: T['id']
     input: T['input']
     output: T['output']
@@ -113,6 +113,7 @@ export interface BlockProps<T extends Block = Block> {
     onBlockInputChange(id: string, blockInput: BlockInput): void
     onMoveBlock(id: string, direction: BlockDirection): void
     onDuplicateBlock(id: string): void
+    onNewBlock(id: string): void
 }
 
 export interface BlockDependencies {

@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -18,6 +19,7 @@ import (
 // enterprise frontend setup hook.
 type Services struct {
 	GitHubWebhook                   webhooks.Registerer
+	GitHubSyncWebhook               webhooks.Registerer
 	GitLabWebhook                   webhooks.RegistererHandler
 	BitbucketServerWebhook          http.Handler
 	BitbucketCloudWebhook           http.Handler
@@ -25,7 +27,7 @@ type Services struct {
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
 	NewCodeIntelUploadHandler       NewCodeIntelUploadHandler
-	CodeIntelAutoIndexingService    *autoindexing.Service
+	RankingService                  RankingService
 	NewExecutorProxyHandler         NewExecutorProxyHandler
 	NewGitHubAppSetupHandler        NewGitHubAppSetupHandler
 	NewComputeStreamHandler         NewComputeStreamHandler
@@ -40,11 +42,19 @@ type Services struct {
 	NotebooksResolver               graphqlbackend.NotebooksResolver
 	ComputeResolver                 graphqlbackend.ComputeResolver
 	InsightsAggregationResolver     graphqlbackend.InsightsAggregationResolver
+	WebhooksResolver                graphqlbackend.WebhooksResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
 // resulting handler skips auth checks when the internal flag is true.
 type NewCodeIntelUploadHandler func(internal bool) http.Handler
+
+// RankingService is a subset of codeintel.ranking.Service methods we use.
+type RankingService interface {
+	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
+	GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error)
+	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error)
+}
 
 // NewExecutorProxyHandler creates a new proxy handler for routes accessible to the
 // executor services deployed separately from the k8s cluster. This handler is protected
@@ -63,13 +73,14 @@ func DefaultServices() Services {
 	return Services{
 		GitHubWebhook:                   &emptyWebhookHandler{name: "github webhook"},
 		GitLabWebhook:                   &emptyWebhookHandler{name: "gitlab webhook"},
+		GitHubSyncWebhook:               &emptyWebhookHandler{name: "github sync webhook"},
 		BitbucketServerWebhook:          makeNotFoundHandler("bitbucket server webhook"),
 		BitbucketCloudWebhook:           makeNotFoundHandler("bitbucket cloud webhook"),
 		BatchesChangesFileGetHandler:    makeNotFoundHandler("batches file get handler"),
 		BatchesChangesFileExistsHandler: makeNotFoundHandler("batches file exists handler"),
 		BatchesChangesFileUploadHandler: makeNotFoundHandler("batches file upload handler"),
 		NewCodeIntelUploadHandler:       func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
-		CodeIntelAutoIndexingService:    nil,
+		RankingService:                  stubRankingService{},
 		NewExecutorProxyHandler:         func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
 		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
@@ -103,7 +114,7 @@ func (e *emptyWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 type ErrBatchChangesDisabledDotcom struct{}
 
 func (e ErrBatchChangesDisabledDotcom) Error() string {
-	return "access to batch changes on Sourcegraph.com is currently not available"
+	return "batch changes is not available on Sourcegraph.com; use Sourcegraph Cloud or self-hosted instead"
 }
 
 type ErrBatchChangesDisabled struct{}
@@ -144,4 +155,18 @@ func BatchChangesEnabledForUser(ctx context.Context, db database.DB) error {
 		return ErrBatchChangesDisabledForUser{}
 	}
 	return nil
+}
+
+type stubRankingService struct{}
+
+func (s stubRankingService) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
+	return nil, nil
+}
+
+func (s stubRankingService) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error) {
+	return nil, nil
+}
+
+func (s stubRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
+	return nil, nil
 }

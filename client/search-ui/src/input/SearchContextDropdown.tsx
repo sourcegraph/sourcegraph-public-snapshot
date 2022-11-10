@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -17,6 +17,7 @@ import {
     PopoverTrigger,
     Position,
     PopoverOpenEventReason,
+    useUpdateEffect,
 } from '@sourcegraph/wildcard'
 
 import { SearchContextMenu } from './SearchContextMenu'
@@ -53,6 +54,13 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
     } = props
 
     const [isOpen, setIsOpen] = useState(false)
+    const searchContextDropdownReference = useRef<HTMLButtonElement>(null)
+
+    useUpdateEffect(() => {
+        if (!isOpen) {
+            searchContextDropdownReference?.current?.focus()
+        }
+    }, [isOpen])
 
     const selectSearchContextSpec = useCallback(
         (spec: string): void => {
@@ -123,6 +131,7 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
                         'test-search-context-dropdown',
                         isOpen && styles.buttonOpen
                     )}
+                    ref={searchContextDropdownReference}
                 >
                     <Code className={classNames('test-selected-search-context-spec', styles.buttonContent)}>
                         {
@@ -143,11 +152,6 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
                     </Code>
                 </PopoverTrigger>
             </Tooltip>
-            {/*
-               a11y-ignore
-               Rule: "aria-required-children" (Certain ARIA roles must contain particular children)
-               GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/34348
-             */}
             <PopoverContent
                 position={Position.bottomStart}
                 className={classNames('a11y-ignore', styles.menu)}

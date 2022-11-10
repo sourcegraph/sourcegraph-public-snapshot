@@ -100,6 +100,11 @@ export interface ReferencesPanelProps
      */
     externalHistory: H.History
     externalLocation: H.Location
+
+    /**
+     * Used to overwrite the initial active URL
+     */
+    initialActiveURL?: string
 }
 
 export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<
@@ -208,17 +213,24 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
         blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
         identCharPattern: spec.identCharPattern,
     })
+    const shouldMixPreciseAndSearchBasedReferences: boolean = newSettingsGetter(props.settingsCascade)<boolean>(
+        'codeIntel.mixPreciseAndSearchBasedReferences',
+        false
+    )
 
     if (!tokenResult?.searchToken) {
         return (
             <div>
-                <Text className="text-danger">Could not find hovered token.</Text>
+                <Text className="text-danger">Could not find token.</Text>
             </div>
         )
     }
 
     return (
         <ReferencesList
+            // Force the references list to recreate when the user settings
+            // change. This way we avoid showing stale results.
+            key={shouldMixPreciseAndSearchBasedReferences.toString()}
             {...props}
             token={props.token}
             searchToken={tokenResult?.searchToken}
@@ -304,7 +316,7 @@ const ReferencesList: React.FunctionComponent<
     // in the browser history.
     const [activeURL, setActiveURL] = useSessionStorage<string | undefined>(
         'sideblob-active-url' + sessionStorageKeyFromToken(props.token),
-        undefined
+        props.initialActiveURL
     )
     const setActiveLocation = useCallback(
         (location: Location | undefined): void => {
@@ -935,7 +947,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
         if (range !== undefined) {
             const lineNumber = range.start.line + 1
             const lineContent = location.lines[range.start.line]
-            const tableLine = `<tr><td class="line" data-line="${lineNumber}"></td><td class="code">${lineContent}</td></tr>`
+            const tableLine = `<tr><th class="line" data-line="${lineNumber}"></th><td class="code">${lineContent}</td></tr>`
             return of([tableLine])
         }
         return of([])

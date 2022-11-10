@@ -208,7 +208,6 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
-	github.com/sourcegraph/mountinfo v0.0.0-20221027185101-272dd8baaf4a // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.opentelemetry.io/otel/metric v0.31.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect
@@ -220,15 +219,18 @@ require (
 	github.com/coreos/go-iptables v0.6.0
 	github.com/dcadenas/pagerank v0.0.0-20171013173705-af922e3ceea8
 	github.com/frankban/quicktest v1.14.3
+	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/google/go-github/v47 v47.1.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
 	github.com/prometheus/prometheus v0.37.1
+	github.com/sourcegraph/mountinfo v0.0.0-20221027185101-272dd8baaf4a
 	github.com/xanzy/go-gitlab v0.73.1
 	go.opentelemetry.io/otel/exporters/jaeger v1.9.0
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20221102142945-42b609c769a8
+	github.com/sourcegraph/zoekt v0.0.0-20221109142233-2e71aad6ac9a
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 
@@ -431,7 +433,7 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/mod v0.6.0
 	golang.org/x/term v0.1.0 // indirect
-	golang.org/x/text v0.4.0 // indirect
+	golang.org/x/text v0.4.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/grpc v1.50.1 // indirect
