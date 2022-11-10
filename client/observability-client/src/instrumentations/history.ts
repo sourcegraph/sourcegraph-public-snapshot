@@ -44,7 +44,12 @@ export class HistoryInstrumentation extends InstrumentationBaseWeb {
         const instrumentation = this
 
         return function historyMethod(this: History, ...args: unknown[]) {
-            const result = original.apply(this, args as any)
+            /**
+             * TODO: figure out why `original as any` is required.
+             * Without it the monorepo wide Typescript build fails even though
+             * the `observability-client` Typescript builds are successful.
+             */
+            const result = (original as any).apply(this, args as any)
             instrumentation.createPageViewSpan()
 
             return result
