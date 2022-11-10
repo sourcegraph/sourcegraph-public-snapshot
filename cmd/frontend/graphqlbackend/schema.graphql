@@ -5113,7 +5113,7 @@ type LFS {
     Note: the file size in the GitBlob will be the size of the pointer not the file a
     user checks out.
     """
-    byteSize: Int!
+    byteSize: BigInt!
 }
 
 """
