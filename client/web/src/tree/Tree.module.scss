@@ -6,6 +6,8 @@
     isolation: isolate;
     flex: 1 1 auto;
     width: 100%;
+    padding: 0;
+    margin: 0;
     white-space: pre;
     line-height: (20/14);
     font-size: 0.875rem;
@@ -21,6 +23,7 @@
     padding-left: 0;
     padding-right: 0;
     border-radius: var(--border-radius);
+    list-style-type: none;
 }
 
 .tree-layer {

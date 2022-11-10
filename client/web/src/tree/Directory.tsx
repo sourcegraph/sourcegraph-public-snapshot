@@ -1,23 +1,22 @@
 import * as React from 'react'
 
-import { mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
+import { mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
 import { FileDecoration } from 'sourcegraph'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import {
-    TreeLayerRowContentsText,
-    TreeLayerCell,
-    TreeRowAlert,
     TreeLayerRowContents,
+    TreeLayerRowContentsText,
+    TreeRow,
+    TreeRowAlert,
     TreeRowIconLink,
     TreeRowLabelLink,
-    TreeRow,
 } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
 import { FileDecorator } from './FileDecorator'
-import { TreeEntryInfo, getTreeItemOffset } from './util'
+import { getTreeItemOffset, TreeEntryInfo } from './util'
 
 import styles from './Tree.module.scss'
 
@@ -53,7 +52,7 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<Director
         isExpanded={props.isExpanded}
         depth={props.depth}
     >
-        <TreeLayerCell className="test-sidebar-file-decorable">
+        <div className="test-sidebar-file-decorable">
             <TreeLayerRowContents data-tree-is-directory="true" data-tree-path={props.entryInfo.path} isNew={true}>
                 <TreeLayerRowContentsText className="flex-1 justify-between">
                     <div className="d-flex">
@@ -102,6 +101,6 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<Director
                     error="Too many entries. Use search to find a specific file."
                 />
             )}
-        </TreeLayerCell>
+        </div>
     </TreeRow>
 )

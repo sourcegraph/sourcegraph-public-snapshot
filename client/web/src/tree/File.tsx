@@ -2,7 +2,7 @@
 import * as React from 'react'
 import { useEffect, useState } from 'react'
 
-import { mdiSourceRepository, mdiFileDocumentOutline } from '@mdi/js'
+import { mdiFileDocumentOutline, mdiSourceRepository } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
@@ -21,20 +21,20 @@ import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
 import {
-    TreeLayerCell,
+    TreeLayerItem,
     TreeLayerRowContents,
     TreeLayerRowContentsLink,
-    TreeRowAlert,
     TreeLayerRowContentsText,
+    TreeRow,
+    TreeRowAlert,
     TreeRowIcon,
     TreeRowLabel,
-    TreeRow,
 } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
 import { FileDecorator } from './FileDecorator'
 import { useTreeRootContext } from './TreeContext'
 import { TreeLayerProps } from './TreeLayer'
-import { TreeEntryInfo, getTreeItemOffset } from './util'
+import { getTreeItemOffset, TreeEntryInfo } from './util'
 
 import styles from './File.module.scss'
 import treeStyles from './Tree.module.scss'
@@ -92,7 +92,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
     return (
         <>
             <TreeRow key={entryInfo.path} className={className} isActive={isActive} isSelected={isSelected}>
-                <TreeLayerCell className="test-sidebar-file-decorable">
+                <div className="test-sidebar-file-decorable">
                     {entryInfo.submodule ? (
                         entryInfo.url ? (
                             <TreeLayerRowContentsLink
@@ -170,7 +170,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                             error="Too many entries. Use search to find a specific file."
                         />
                     )}
-                </TreeLayerCell>
+                </div>
             </TreeRow>
             {enableMergedFileSymbolSidebar && isActive && <Symbols activePath={entryInfo.path} style={offsetStyle} />}
         </>
@@ -254,11 +254,11 @@ const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, style }) =
         return (
             <Delay timeout={800}>
                 <TreeRow className={styles.symbols}>
-                    <TreeLayerCell>
+                    <TreeLayerItem>
                         <TreeLayerRowContents className="d-flex" style={style}>
                             <LoadingSpinner /> Loading symbol data...
                         </TreeLayerRowContents>
-                    </TreeLayerCell>
+                    </TreeLayerItem>
                 </TreeRow>
             </Delay>
         )
@@ -299,9 +299,9 @@ const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, style }) =
     if (content) {
         return (
             <TreeRow className={styles.symbols}>
-                <TreeLayerCell>
+                <TreeLayerItem>
                     <TreeLayerRowContents style={style}>{content}</TreeLayerRowContents>
-                </TreeLayerCell>
+                </TreeLayerItem>
             </TreeRow>
         )
     }

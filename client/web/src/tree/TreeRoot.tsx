@@ -28,11 +28,11 @@ import { getFileDecorations } from '../backend/features'
 import { requestGraphQL } from '../backend/graphql'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
-import { TreeLayerTable, TreeLayerCell, TreeRowAlert } from './components'
+import { TreeRowAlert } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
 import { TreeNode } from './Tree'
 import { TreeRootContext } from './TreeContext'
-import { hasSingleChild, compareTreeProps, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
+import { compareTreeProps, hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 
 import styles from './Tree.module.scss'
 
@@ -183,63 +183,51 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         ) {
             singleChildTreeEntry = singleChildEntriesToGitTree(treeOrError.entries)
         }
+        if (isErrorLike(treeOrError)) {
+            return (
+                <TreeRowAlert
+                    // needed because of dynamic styling
+                    style={errorWidth(localStorage.getItem(this.props.sizeKey) ? this.props.sizeKey : undefined)}
+                    prefix="Error loading tree"
+                    error={treeOrError}
+                />
+            )
+        }
+
+        if (treeOrError === LOADING) {
+            return (
+                <li role="treeitem" className={styles.treeLoadingSpinner}>
+                    <LoadingSpinner className="tree-page__entries-loader mr-2" />
+                    Loading tree
+                </li>
+            )
+        }
 
         return (
             <>
-                {isErrorLike(treeOrError) ? (
-                    <TreeRowAlert
-                        // needed because of dynamic styling
-                        style={errorWidth(localStorage.getItem(this.props.sizeKey) ? this.props.sizeKey : undefined)}
-                        prefix="Error loading tree"
-                        error={treeOrError}
-                    />
-                ) : (
-                    /**
-                     * TODO: Improve accessibility here.
-                     * We should not be stealing focus here, we should let the user focus on the actual items listed.
-                     * Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
-                     */
-                    <TreeLayerTable tabIndex={0}>
-                        <tbody>
-                            <tr>
-                                <TreeLayerCell>
-                                    {treeOrError === LOADING ? (
-                                        <div className={styles.treeLoadingSpinner}>
-                                            <LoadingSpinner className="tree-page__entries-loader mr-2" />
-                                            Loading tree
-                                        </div>
-                                    ) : (
-                                        treeOrError && (
-                                            <TreeRootContext.Provider
-                                                value={{
-                                                    rootTreeUrl: treeOrError.url,
-                                                    repoID: this.props.repoID,
-                                                    repoName: this.props.repoName,
-                                                    revision: this.props.revision,
-                                                    commitID: this.props.commitID,
-                                                }}
-                                            >
-                                                <ChildTreeLayer
-                                                    {...this.props}
-                                                    parent={this.node}
-                                                    depth={-1 as number}
-                                                    entries={treeOrError.entries}
-                                                    singleChildTreeEntry={singleChildTreeEntry}
-                                                    childrenEntries={singleChildTreeEntry.children}
-                                                    onHover={this.fetchChildContents}
-                                                    setChildNodes={this.setChildNode}
-                                                    fileDecorationsByPath={this.state.fileDecorationsByPath}
-                                                    enableMergedFileSymbolSidebar={
-                                                        this.props.enableMergedFileSymbolSidebar
-                                                    }
-                                                />
-                                            </TreeRootContext.Provider>
-                                        )
-                                    )}
-                                </TreeLayerCell>
-                            </tr>
-                        </tbody>
-                    </TreeLayerTable>
+                {treeOrError && (
+                    <TreeRootContext.Provider
+                        value={{
+                            rootTreeUrl: treeOrError.url,
+                            repoID: this.props.repoID,
+                            repoName: this.props.repoName,
+                            revision: this.props.revision,
+                            commitID: this.props.commitID,
+                        }}
+                    >
+                        <ChildTreeLayer
+                            {...this.props}
+                            parent={this.node}
+                            depth={-1 as number}
+                            entries={treeOrError.entries}
+                            singleChildTreeEntry={singleChildTreeEntry}
+                            childrenEntries={singleChildTreeEntry.children}
+                            onHover={this.fetchChildContents}
+                            setChildNodes={this.setChildNode}
+                            fileDecorationsByPath={this.state.fileDecorationsByPath}
+                            enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
+                        />
+                    </TreeRootContext.Provider>
                 )}
             </>
         )

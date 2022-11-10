@@ -27023,6 +27023,18 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
+"react-accessible-treeview@npm:^2.3.1":
+  version: 2.3.1
+  resolution: "react-accessible-treeview@npm:2.3.1"
+  peerDependencies:
+    classnames: ^2.2.6
+    prop-types: ^15.7.2
+    react: ^16.8.0 || ^17.0.0
+    react-dom: ^16.8.0 || ^17.0.0
+  checksum: 094d43adcb728e19cc463309336cb8a5d5aa5361cebd5a42dd12b30446a7c56c6b30b3ea15a3b7a84db70caaa04dcf4b0e5d997daabb6a8cde04cd36690877a0
+  languageName: node
+  linkType: hard
+
 "react-calendar@npm:^3.7.0":
   version: 3.7.0
   resolution: "react-calendar@npm:3.7.0"
@@ -28882,6 +28894,7 @@ pvutils@latest:
     protoc-gen-ts: 0.8.1
     puppeteer: ^13.5.1
     react: 18.1.0
+    react-accessible-treeview: ^2.3.1
     react-calendar: ^3.7.0
     react-circular-progressbar: ^2.0.3
     react-dom: 18.1.0

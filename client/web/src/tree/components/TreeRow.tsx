@@ -6,7 +6,7 @@ import styles from '../Tree.module.scss'
 
 const MAX_DIRECTORY_DEPTH = 100
 
-type TreeRowProps = HTMLAttributes<HTMLTableRowElement> & {
+type TreeRowProps = HTMLAttributes<HTMLDivElement> & {
     isActive?: boolean
     isSelected?: boolean
     isExpanded?: boolean
@@ -22,7 +22,7 @@ export const TreeRow: React.FunctionComponent<React.PropsWithChildren<TreeRowPro
     depth = 0,
     ...rest
 }) => (
-    <tr
+    <div
         className={classNames(
             styles.row,
             isActive && styles.rowActive,
@@ -39,5 +39,5 @@ export const TreeRow: React.FunctionComponent<React.PropsWithChildren<TreeRowPro
         {...rest}
     >
         {children}
-    </tr>
+    </div>
 )

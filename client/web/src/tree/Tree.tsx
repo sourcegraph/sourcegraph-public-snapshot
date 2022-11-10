@@ -309,7 +309,8 @@ export class Tree extends React.PureComponent<Props, State> {
              * We should not be stealing focus here, we should let the user focus on the actual items listed.
              * Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
              */
-            <div
+            <ul
+                role="tree"
                 data-testid="tree"
                 className={styles.tree}
                 tabIndex={0}
@@ -347,7 +348,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     telemetryService={this.props.telemetryService}
                     enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
                 />
-            </div>
+            </ul>
         )
     }
 

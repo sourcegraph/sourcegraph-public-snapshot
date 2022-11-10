@@ -24,7 +24,7 @@ import { getFileDecorations } from '../backend/features'
 import { requestGraphQL } from '../backend/graphql'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
-import { TreeLayerCell, TreeLayerTable, TreeRowAlert } from './components'
+import { TreeLayerGroup, TreeLayerItem, TreeRowAlert } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
 import { Directory } from './Directory'
 import { File } from './File'
@@ -32,11 +32,11 @@ import { TreeNode } from './Tree'
 import { TreeRootProps } from './TreeRoot'
 import {
     compareTreeProps,
+    getTreeItemOffset,
     hasSingleChild,
     singleChildEntriesToGitTree,
     SingleChildGitTree,
     TreeEntryInfo,
-    getTreeItemOffset,
 } from './util'
 
 export interface TreeLayerProps extends Omit<TreeRootProps, 'sizeKey'> {
@@ -264,80 +264,74 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         }
 
         // Every other layer is a row in the file tree, and will fetch and render its children (if any) when expanded.
-        return (
-            <div>
-                {/*
+        {
+            /*
                     TODO: Improve accessibility here.
                     We should support onFocus here but we currently do not let users focus directly on the actual items in this list.
                     Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
-                */}
-                <TreeLayerTable onMouseOver={entryInfo.isDirectory ? this.invokeOnHover : undefined}>
-                    <tbody>
-                        {entryInfo.isDirectory ? (
-                            <>
-                                <Directory
-                                    fileDecorations={this.props.fileDecorations}
-                                    entryInfo={this.props.entryInfo}
-                                    depth={this.props.depth}
-                                    index={this.props.index}
-                                    isLightTheme={this.props.isLightTheme}
-                                    loading={treeOrError === LOADING}
-                                    handleTreeClick={this.handleTreeClick}
-                                    noopRowClick={this.noopRowClick}
-                                    linkRowClick={this.linkRowClick}
-                                    isActive={isActive}
-                                    isSelected={isSelected}
-                                    isExpanded={this.props.isExpanded}
-                                />
-                                {this.props.isExpanded && treeOrError !== LOADING && (
-                                    <tr>
-                                        <TreeLayerCell>
-                                            {isErrorLike(treeOrError) ? (
-                                                <TreeRowAlert
-                                                    // needed because of dynamic styling
-                                                    style={getTreeItemOffset(this.props.depth)}
-                                                    error={treeOrError}
-                                                    prefix="Error loading file tree"
-                                                />
-                                            ) : (
-                                                treeOrError && (
-                                                    <ChildTreeLayer
-                                                        {...this.props}
-                                                        parent={this.node}
-                                                        key={singleChildTreeEntry.path}
-                                                        entries={treeOrError.entries}
-                                                        singleChildTreeEntry={singleChildTreeEntry}
-                                                        childrenEntries={singleChildTreeEntry.children}
-                                                        setChildNodes={this.setChildNode}
-                                                        fileDecorationsByPath={this.state.fileDecorationsByPath}
-                                                        enableMergedFileSymbolSidebar={
-                                                            this.props.enableMergedFileSymbolSidebar
-                                                        }
-                                                    />
-                                                )
-                                            )}
-                                        </TreeLayerCell>
-                                    </tr>
+                */
+        }
+        return (
+            <TreeLayerItem onMouseOver={entryInfo.isDirectory ? this.invokeOnHover : undefined}>
+                {entryInfo.isDirectory ? (
+                    <>
+                        <Directory
+                            fileDecorations={this.props.fileDecorations}
+                            entryInfo={this.props.entryInfo}
+                            depth={this.props.depth}
+                            index={this.props.index}
+                            isLightTheme={this.props.isLightTheme}
+                            loading={treeOrError === LOADING}
+                            handleTreeClick={this.handleTreeClick}
+                            noopRowClick={this.noopRowClick}
+                            linkRowClick={this.linkRowClick}
+                            isActive={isActive}
+                            isSelected={isSelected}
+                            isExpanded={this.props.isExpanded}
+                        />
+                        {this.props.isExpanded && treeOrError !== LOADING && (
+                            <TreeLayerGroup>
+                                {isErrorLike(treeOrError) ? (
+                                    <TreeRowAlert
+                                        // needed because of dynamic styling
+                                        style={getTreeItemOffset(this.props.depth)}
+                                        error={treeOrError}
+                                        prefix="Error loading file tree"
+                                    />
+                                ) : (
+                                    treeOrError && (
+                                        <ChildTreeLayer
+                                            {...this.props}
+                                            parent={this.node}
+                                            key={singleChildTreeEntry.path}
+                                            entries={treeOrError.entries}
+                                            singleChildTreeEntry={singleChildTreeEntry}
+                                            childrenEntries={singleChildTreeEntry.children}
+                                            setChildNodes={this.setChildNode}
+                                            fileDecorationsByPath={this.state.fileDecorationsByPath}
+                                            enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
+                                        />
+                                    )
                                 )}
-                            </>
-                        ) : (
-                            <File
-                                fileDecorations={this.props.fileDecorations}
-                                entryInfo={this.props.entryInfo}
-                                depth={this.props.depth}
-                                index={this.props.index}
-                                isLightTheme={this.props.isLightTheme}
-                                handleTreeClick={this.handleTreeClick}
-                                noopRowClick={this.noopRowClick}
-                                linkRowClick={this.linkRowClick}
-                                isActive={isActive}
-                                isSelected={isSelected}
-                                enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
-                            />
+                            </TreeLayerGroup>
                         )}
-                    </tbody>
-                </TreeLayerTable>
-            </div>
+                    </>
+                ) : (
+                    <File
+                        fileDecorations={this.props.fileDecorations}
+                        entryInfo={this.props.entryInfo}
+                        depth={this.props.depth}
+                        index={this.props.index}
+                        isLightTheme={this.props.isLightTheme}
+                        handleTreeClick={this.handleTreeClick}
+                        noopRowClick={this.noopRowClick}
+                        linkRowClick={this.linkRowClick}
+                        isActive={isActive}
+                        isSelected={isSelected}
+                        enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
+                    />
+                )}
+            </TreeLayerItem>
         )
     }
 

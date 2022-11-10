@@ -6,7 +6,7 @@ import { FileDecoration } from 'sourcegraph'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
-import { TreeLayerTable } from './components'
+import { TreeLayerItem } from './components'
 import { Directory } from './Directory'
 import { TreeNode } from './Tree'
 import { TreeLayerProps } from './TreeLayer'
@@ -120,46 +120,38 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
         const isActive = this.node === this.props.activeNode
         const isSelected = this.node === this.props.selectedNode
 
-        return (
-            <div>
-                {/*
+        /*
                     TODO: Improve accessibility here.
                     We should support onFocus here but we currently do not let users focus directly on the actual items in this list.
                     Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
-                */}
-                <TreeLayerTable onMouseOver={this.props.entryInfo.isDirectory ? this.invokeOnHover : undefined}>
-                    <tbody>
-                        <Directory
-                            entryInfo={this.props.entryInfo}
-                            depth={this.props.depth}
-                            index={this.props.index}
-                            isLightTheme={this.props.isLightTheme}
-                            loading={false}
-                            handleTreeClick={this.handleTreeClick}
-                            noopRowClick={this.noopRowClick}
-                            linkRowClick={this.linkRowClick}
-                            fileDecorations={this.props.fileDecorations}
-                            isActive={isActive}
-                            isSelected={isSelected}
-                            isExpanded={this.props.isExpanded}
-                        />
-                        {this.props.isExpanded && (
-                            <tr>
-                                <td>
-                                    <ChildTreeLayer
-                                        {...this.props}
-                                        parent={this.node}
-                                        entries={this.props.childrenEntries}
-                                        singleChildTreeEntry={this.props.childrenEntries[0]}
-                                        childrenEntries={this.props.childrenEntries[0].children}
-                                        setChildNodes={this.setChildNode}
-                                    />
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </TreeLayerTable>
-            </div>
+                */
+        return (
+            <TreeLayerItem onMouseOver={this.props.entryInfo.isDirectory ? this.invokeOnHover : undefined}>
+                <Directory
+                    entryInfo={this.props.entryInfo}
+                    depth={this.props.depth}
+                    index={this.props.index}
+                    isLightTheme={this.props.isLightTheme}
+                    loading={false}
+                    handleTreeClick={this.handleTreeClick}
+                    noopRowClick={this.noopRowClick}
+                    linkRowClick={this.linkRowClick}
+                    fileDecorations={this.props.fileDecorations}
+                    isActive={isActive}
+                    isSelected={isSelected}
+                    isExpanded={this.props.isExpanded}
+                />
+                {this.props.isExpanded && (
+                    <ChildTreeLayer
+                        {...this.props}
+                        parent={this.node}
+                        entries={this.props.childrenEntries}
+                        singleChildTreeEntry={this.props.childrenEntries[0]}
+                        childrenEntries={this.props.childrenEntries[0].children}
+                        setChildNodes={this.setChildNode}
+                    />
+                )}
+            </TreeLayerItem>
         )
     }
 
