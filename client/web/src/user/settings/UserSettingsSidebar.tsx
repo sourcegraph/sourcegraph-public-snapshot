@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React, { useState, useCallback } from 'react'
 
 import { mdiMenu, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
@@ -42,7 +42,8 @@ export interface UserSettingsSidebarProps
 export const UserSettingsSidebar: React.FunctionComponent<
     React.PropsWithChildren<UserSettingsSidebarProps>
 > = props => {
-    const [isMobileExpanded, setIsMobileExpanded] = React.useState(false)
+    const [isMobileExpanded, setIsMobileExpanded] = useState(false)
+    const collapseMobileSidebar = useCallback((): void => setIsMobileExpanded(false), [])
 
     if (!props.authenticatedUser) {
         return null
@@ -71,7 +72,12 @@ export const UserSettingsSidebar: React.FunctionComponent<
                     {props.items.map(
                         ({ label, to, exact, status, condition = () => true }) =>
                             condition(context) && (
-                                <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
+                                <SidebarNavItem
+                                    key={label}
+                                    to={props.match.path + to}
+                                    exact={exact}
+                                    onClick={collapseMobileSidebar}
+                                >
                                     {label} {status && <ProductStatusBadge className="ml-1" status={status} />}
                                 </SidebarNavItem>
                             )
@@ -85,6 +91,7 @@ export const UserSettingsSidebar: React.FunctionComponent<
                                 key={org.id}
                                 to={`/organizations/${org.name}/settings`}
                                 className="text-truncate text-nowrap align-items-center"
+                                onClick={collapseMobileSidebar}
                             >
                                 <OrgAvatar org={org.name} className="d-inline-flex mr-1" /> {org.name}
                             </SidebarNavItem>
@@ -92,7 +99,10 @@ export const UserSettingsSidebar: React.FunctionComponent<
                         {!siteAdminViewingOtherUser &&
                             (window.context.sourcegraphDotComMode &&
                             !props.authenticatedUser?.tags?.includes('CreateOrg') ? (
-                                <SidebarNavItem to={`${props.match.path}/about-organizations`}>
+                                <SidebarNavItem
+                                    to={`${props.match.path}/about-organizations`}
+                                    onClick={collapseMobileSidebar}
+                                >
                                     About organizations
                                 </SidebarNavItem>
                             ) : (
@@ -103,6 +113,7 @@ export const UserSettingsSidebar: React.FunctionComponent<
                                         outline={true}
                                         size="sm"
                                         as={Link}
+                                        onClick={collapseMobileSidebar}
                                     >
                                         <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
                                     </Button>
@@ -112,8 +123,16 @@ export const UserSettingsSidebar: React.FunctionComponent<
                 )}
                 <SidebarGroup>
                     <SidebarGroupHeader label="Other actions" />
-                    {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
-                    {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
+                    {!siteAdminViewingOtherUser && (
+                        <SidebarNavItem to="/api/console" onClick={collapseMobileSidebar}>
+                            API console
+                        </SidebarNavItem>
+                    )}
+                    {props.authenticatedUser.siteAdmin && (
+                        <SidebarNavItem to="/site-admin" onClick={collapseMobileSidebar}>
+                            Site admin
+                        </SidebarNavItem>
+                    )}
                 </SidebarGroup>
                 <div>Version: {window.context.version}</div>
             </div>

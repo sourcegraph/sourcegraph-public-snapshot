@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
@@ -34,7 +34,8 @@ export const SiteAdminSidebar: React.FunctionComponent<React.PropsWithChildren<S
     groups,
     ...props
 }) => {
-    const [isMobileExpanded, setIsMobileExpanded] = React.useState(false)
+    const [isMobileExpanded, setIsMobileExpanded] = useState(false)
+    const collapseMobileSidebar = useCallback((): void => setIsMobileExpanded(false), [])
 
     return (
         <>
@@ -63,6 +64,7 @@ export const SiteAdminSidebar: React.FunctionComponent<React.PropsWithChildren<S
                                                         key={label}
                                                         source={source}
                                                         className={styles.navItem}
+                                                        onClick={collapseMobileSidebar}
                                                     >
                                                         {label}
                                                     </SidebarNavItem>
@@ -75,6 +77,7 @@ export const SiteAdminSidebar: React.FunctionComponent<React.PropsWithChildren<S
                                     <Link
                                         to={items[0].to}
                                         className="bg-2 border-0 d-flex list-group-item-action p-2 w-100"
+                                        onClick={collapseMobileSidebar}
                                     >
                                         <span>
                                             {header?.icon && (
