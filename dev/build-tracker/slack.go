@@ -1,14 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/google/go-github/v41/github"
@@ -16,7 +12,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/team"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type NotificationClient struct {
@@ -65,74 +60,6 @@ func (c *NotificationClient) sendFailedBuild(build *Build) error {
 
 	logger.Info("notification posted")
 	return nil
-}
-
-type GrafanaQuery struct {
-	RefId string `json:"refId"`
-	Expr  string `json:"expr"`
-}
-
-type GrafanaRange struct {
-	From string `json:"from"`
-	To   string `json:"to"`
-}
-
-type GrafanaPayload struct {
-	DataSource string         `json:"datasource"`
-	Queries    []GrafanaQuery `json:"queries"`
-	Range      GrafanaRange   `json:"range"`
-}
-
-func grafanaURLFor(build *Build) (string, error) {
-	queryData := struct {
-		Build int
-	}{
-		Build: intp(build.Number),
-	}
-	tmpl := template.Must(template.New("Expression").Parse(`{app="buildkite", build="{{.Build}}", state="failed"} |~ "(?i)failed|panic|error|FAIL \\|"`))
-
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, queryData); err != nil {
-		return "", err
-	}
-	var expression = buf.String()
-
-	begin := time.Now().Add(-(2 * time.Hour)).UnixMilli()
-	end := time.Now().Add(15 * time.Minute).UnixMilli()
-
-	data := GrafanaPayload{
-		DataSource: "grafanacloud-sourcegraph-logs",
-		Queries: []GrafanaQuery{
-			{
-				RefId: "A",
-				Expr:  expression,
-			},
-		},
-		Range: GrafanaRange{
-			From: fmt.Sprintf("%d", begin),
-			To:   fmt.Sprintf("%d", end),
-		},
-	}
-
-	result, err := json.Marshal(data)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to marshall GrafanaPayload")
-	}
-
-	query := url.PathEscape(string(result))
-	// default query escapes ":", which we  don't want since it is json. Query and Path escape
-	// escape a few characters incorrectly so we fix it with this replacer.
-	// Got the idea from https://sourcegraph.com/github.com/kubernetes/kubernetes/-/blob/vendor/github.com/PuerkitoBio/urlesc/urlesc.go?L115-121
-	replacer := strings.NewReplacer(
-		"+", "%20",
-		"%28", "(",
-		"%29", ")",
-		"=", "%3D",
-		"%2C", ",",
-	)
-	query = replacer.Replace(query)
-
-	return "https://sourcegraph.grafana.net/explore?orgId=1&left=" + query, nil
 }
 
 func commitLink(msg, commit string) string {
@@ -186,11 +113,6 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 		author = slackMention(teammate)
 	}
 
-	grafanaURL, err := grafanaURLFor(build)
-	if err != nil {
-		return nil, err
-	}
-
 	blocks := []slack.Block{
 		slack.NewHeaderBlock(
 			slack.NewTextBlockObject(slack.PlainTextType, generateSlackHeader(build), true, false),
@@ -212,11 +134,6 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 					Style: slack.StylePrimary,
 					URL:   *build.WebURL,
 					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Go to build"},
-				},
-				&slack.ButtonBlockElement{
-					Type: slack.METButton,
-					URL:  grafanaURL,
-					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "View logs on Grafana"},
 				},
 				&slack.ButtonBlockElement{
 					Type: slack.METButton,

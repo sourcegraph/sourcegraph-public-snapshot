@@ -268,6 +268,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                         {executionAlert}
                         <MonacoBatchSpecEditor
                             autoFocus={true}
+                            batchChangeNamespace={batchChange.namespace}
                             batchChangeName={batchChange.name}
                             className={styles.editor}
                             isLightTheme={isLightTheme}

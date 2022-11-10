@@ -922,7 +922,7 @@ type BatchSpecWorkspaceStepResolver interface {
 
 type BatchSpecWorkspaceEnvironmentVariableResolver interface {
 	Name() string
-	Value() string
+	Value() *string
 }
 
 type BatchSpecWorkspaceOutputVariableResolver interface {

@@ -3,9 +3,15 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { userSettingsAreaRoutes } from '../../../user/settings/routes'
 import { UserSettingsAreaRoute } from '../../../user/settings/UserSettingsArea'
 import { SHOW_BUSINESS_FEATURES } from '../../dotcom/productSubscriptions/features'
+import type { ExecutorsUserAreaProps } from '../../executors/ExecutorsUserArea'
 import { authExp } from '../../site-admin/SiteAdminAuthenticationProvidersPage'
 
 import { UserEventLogsPageProps } from './UserEventLogsPage'
+
+const ExecutorsUserArea = lazyComponent<ExecutorsUserAreaProps, 'ExecutorsUserArea'>(
+    () => import('../../executors/ExecutorsUserArea'),
+    'ExecutorsUserArea'
+)
 
 export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     ...userSettingsAreaRoutes,
@@ -28,6 +34,11 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
         exact: true,
         render: lazyComponent(() => import('./UserSettingsExternalAccountsPage'), 'UserSettingsExternalAccountsPage'),
         condition: () => authExp,
+    },
+    {
+        path: '/executors',
+        render: props => <ExecutorsUserArea {...props} namespaceID={props.user.id} />,
+        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
     },
     {
         path: '/batch-changes',

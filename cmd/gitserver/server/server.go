@@ -777,64 +777,83 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
 	}
 
+	// Make sure we fetch at least a good chunk of records, assuming that most
+	// would not need an update anyways. Don't fetch too many though to keep the
+	// DB load at a reasonable level and constrain memory usage.
+	iteratePageSize := batchSize * 2
+	if iteratePageSize < 500 {
+		iteratePageSize = 500
+	}
+
 	options := database.IterateRepoGitserverStatusOptions{
 		// We also want to include deleted repos as they may still be cloned on disk
 		IncludeDeleted: true,
+		BatchSize:      iteratePageSize,
 	}
 	if !fullSync {
 		options.OnlyWithoutShard = true
 	}
-	err := store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
-		repoSyncStateCounter.WithLabelValues("check").Inc()
-
-		// We may have a deleted repo, we need to extract the original name both to
-		// ensure that the shard check is correct and also so that we can find the
-		// directory.
-		repo.Name = api.UndeletedRepoName(repo.Name)
-
-		// Ensure we're only dealing with repos we are responsible for.
-		addr, err := s.addrForRepo(ctx, repo.Name, gitServerAddrs)
+	for {
+		repos, nextRepo, err := store.IterateRepoGitserverStatus(ctx, options)
 		if err != nil {
 			return err
 		}
-		if !s.hostnameMatch(addr) {
-			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
-			return nil
+		for _, repo := range repos {
+			repoSyncStateCounter.WithLabelValues("check").Inc()
+
+			// We may have a deleted repo, we need to extract the original name both to
+			// ensure that the shard check is correct and also so that we can find the
+			// directory.
+			repo.Name = api.UndeletedRepoName(repo.Name)
+
+			// Ensure we're only dealing with repos we are responsible for.
+			addr, err := s.addrForRepo(ctx, repo.Name, gitServerAddrs)
+			if err != nil {
+				return err
+			}
+			if !s.hostnameMatch(addr) {
+				repoSyncStateCounter.WithLabelValues("other_shard").Inc()
+				continue
+			}
+			repoSyncStateCounter.WithLabelValues("this_shard").Inc()
+
+			dir := s.dir(repo.Name)
+			cloned := repoCloned(dir)
+			_, cloning := s.locker.Status(dir)
+
+			var shouldUpdate bool
+			if repo.ShardID != s.Hostname {
+				repo.ShardID = s.Hostname
+				shouldUpdate = true
+			}
+			cloneStatus := cloneStatus(cloned, cloning)
+			if repo.CloneStatus != cloneStatus {
+				repo.CloneStatus = cloneStatus
+				shouldUpdate = true
+			}
+
+			if !shouldUpdate {
+				continue
+			}
+
+			batch = append(batch, repo.GitserverRepo)
+
+			if len(batch) >= batchSize {
+				writeBatch()
+			}
 		}
-		repoSyncStateCounter.WithLabelValues("this_shard").Inc()
 
-		dir := s.dir(repo.Name)
-		cloned := repoCloned(dir)
-		_, cloning := s.locker.Status(dir)
-
-		var shouldUpdate bool
-		if repo.ShardID != s.Hostname {
-			repo.ShardID = s.Hostname
-			shouldUpdate = true
-		}
-		cloneStatus := cloneStatus(cloned, cloning)
-		if repo.CloneStatus != cloneStatus {
-			repo.CloneStatus = cloneStatus
-			shouldUpdate = true
+		if nextRepo == 0 {
+			break
 		}
 
-		if !shouldUpdate {
-			return nil
-		}
-
-		batch = append(batch, repo.GitserverRepo)
-
-		if len(batch) >= batchSize {
-			writeBatch()
-		}
-
-		return nil
-	})
+		options.NextCursor = nextRepo
+	}
 
 	// Attempt final write
 	writeBatch()
 
-	return err
+	return nil
 }
 
 // Stop cancels the running background jobs and returns when done.

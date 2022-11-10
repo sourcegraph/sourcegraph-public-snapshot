@@ -4,7 +4,7 @@ import { map } from 'rxjs/operators'
 
 import { gql, getDocumentNode } from '@sourcegraph/http-client'
 
-import { ExecutorFields, ExecutorsResult, ExecutorsVariables } from '../../graphql-operations'
+import { ExecutorsResult, ExecutorsVariables, ExecutorConnectionFields } from '../../../graphql-operations'
 
 export const executorFieldsFragment = gql`
     fragment ExecutorFields on Executor {
@@ -26,23 +26,21 @@ export const executorFieldsFragment = gql`
     }
 `
 
-interface ExecutorConnection {
-    nodes: ExecutorFields[]
-    totalCount: number | null
-    pageInfo: { endCursor: string | null; hasNextPage: boolean }
-}
-
 const EXECUTORS = gql`
     query Executors($query: String, $active: Boolean, $first: Int, $after: String) {
         executors(query: $query, active: $active, first: $first, after: $after) {
-            nodes {
-                ...ExecutorFields
-            }
-            totalCount
-            pageInfo {
-                endCursor
-                hasNextPage
-            }
+            ...ExecutorConnectionFields
+        }
+    }
+
+    fragment ExecutorConnectionFields on ExecutorConnection {
+        nodes {
+            ...ExecutorFields
+        }
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
         }
     }
 
@@ -52,7 +50,7 @@ const EXECUTORS = gql`
 export const queryExecutors = (
     { query, active, first, after }: Partial<ExecutorsVariables>,
     client: ApolloClient<object>
-): Observable<ExecutorConnection> => {
+): Observable<ExecutorConnectionFields> => {
     const variables: ExecutorsVariables = {
         query: query ?? null,
         active: active ?? null,

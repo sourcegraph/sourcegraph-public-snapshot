@@ -107,16 +107,3 @@ func (m *rankMerger) exportRanksForDevelopment(ctx context.Context, config RankM
 
 	return nil
 }
-
-// countingReader is an io.Reader that counts the number of bytes sent
-// back to the caller.
-type countingReader struct {
-	r io.Reader
-	n int
-}
-
-func (r *countingReader) Read(p []byte) (n int, err error) {
-	n, err = r.r.Read(p)
-	r.n += n
-	return n, err
-}
