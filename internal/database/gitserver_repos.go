@@ -254,6 +254,9 @@ func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 
 	if options.NextCursor > 0 {
 		preds = append(preds, sqlf.Sprintf("gr.repo_id > %s", options.NextCursor))
+		// Performance improvement: Postgres picks a more optimal strategy when we also constrain
+		// set of potential joins.
+		preds = append(preds, sqlf.Sprintf("repo.id > %s", options.NextCursor))
 	}
 
 	if len(preds) == 0 {
