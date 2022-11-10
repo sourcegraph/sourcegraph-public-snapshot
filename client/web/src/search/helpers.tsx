@@ -26,12 +26,7 @@ export function submitSearch({
     source,
     addRecentSearch,
 }: SubmitSearchParameters): void {
-    let searchQueryParameter = buildSearchURLQuery(
-        query,
-        patternType,
-        caseSensitive,
-        selectedSearchContextSpec,
-    )
+    let searchQueryParameter = buildSearchURLQuery(query, patternType, caseSensitive, selectedSearchContextSpec)
 
     const existingParameters = new URLSearchParams(history.location.search)
     for (const key of PRESERVED_QUERY_PARAMETERS) {
