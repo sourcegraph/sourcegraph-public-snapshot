@@ -448,7 +448,7 @@ extend type Query {
     insightSeriesQueryStatus: [InsightSeriesQueryStatus!]!
 
     """
-    Retrieve information about an insight view and it's status. Restricted to admins only.
+    Retrieve information about an insight view and its status. Restricted to admins only.
     """
     insightViewDebug(id: ID!): InsightViewDebug
 }
