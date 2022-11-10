@@ -1,4 +1,4 @@
-local patterns = require "sg.patterns"
+local patterns = require "backdoor_patterns"
 
 local M = {}
 

@@ -10,7 +10,7 @@ import (
 )
 
 var defaultAPIs = map[string]luasandbox.LuaLib{
-	"sg.patterns":          libs.Patterns,
+	"backdoor_patterns":    libs.Patterns,
 	"backdoor_recognizers": libs.Recognizers,
 	"backdoor_indexes":     libs.Indexes,
 }
