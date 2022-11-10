@@ -121,7 +121,7 @@ With GitHub, only the default **branch** is searchable (though GitHub is plannin
 
 **Forks** are included in the index, but they are subject to the same limitations as other repositories, so not all forks are indexed.
 
-In addition to searching your private code, GitHub has indexed over 7 million public GitHub repositories which are also searchable.
+In addition to searching your private code, GitHub has indexed over 7 million public GitHub repositories which are also searchable via a unified search experience. 
 
 Sourcegraph allows you to search indexed and [unindexed](https://docs.sourcegraph.com/code_search/how-to/exhaustive#non-indexed-backends) code. Sourcegraph’s [current limitations](https://docs.sourcegraph.com/admin/search) on indexed code are: 
 
@@ -135,7 +135,7 @@ With Sourcegraph, typically, the latest code on the default **branch** of each r
 
 **Forks** are included in the index, but they are subject to the same limitations as other repositories, so not all forks are indexed. You may need to include the fork filter to retrieve results for the fork repos, but an admin can adjust global settings to automatically include forks in search query results. 
 
-In addition to searching your organization’s private code, you can use Sourcegraph.com to search across 2.8 million public repositories from multiple code hosts. 
+In addition to searching your organization’s private code, you can use Sourcegraph.com to search across 2.8 million public repositories from multiple code hosts. Both private and public repositories can be searched when using the a private instance of Sourcegraph as long as the repositories are synced within your code host. 
 
 
 <table>
