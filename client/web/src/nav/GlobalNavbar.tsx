@@ -17,7 +17,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, ButtonLink, useWindowSize } from '@sourcegraph/wildcard'
+import { Button, Link, ButtonLink, useWindowSize, FeedbackPrompt, PopoverTrigger } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -28,7 +28,7 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { renderShortcutKey } from '../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { WebCommandListPopoverButton } from '../components/shared'
-import { useRoutesMatch } from '../hooks'
+import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { NotebookProps } from '../notebooks'
@@ -147,6 +147,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     branding = branding ?? window.context?.branding
 
     const routeMatch = useRoutesMatch(props.routes)
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch,
+    })
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext) && searchContextsEnabled
@@ -253,7 +256,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <>
                             <NavAction>
                                 <Link className={styles.link} to="https://about.sourcegraph.com">
-                                    About <span className="d-none d-sm-inline">Sourcegraph</span>
+                                    About
                                 </Link>
                             </NavAction>
 
@@ -268,6 +271,25 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     </Link>
                                 </NavAction>
                             )}
+
+                            <NavAction>
+                                <FeedbackPrompt
+                                    onSubmit={handleSubmitFeedback}
+                                    productResearchEnabled={true}
+                                    authenticatedUser={props.authenticatedUser}
+                                >
+                                    <PopoverTrigger
+                                        as={Button}
+                                        aria-label="Feedback"
+                                        variant="secondary"
+                                        outline={true}
+                                        size="sm"
+                                        className={styles.feedbackTrigger}
+                                    >
+                                        <span>Feedback</span>
+                                    </PopoverTrigger>
+                                </FeedbackPrompt>
+                            </NavAction>
                         </>
                     )}
                     {props.authenticatedUser && isSourcegraphDotCom &&
