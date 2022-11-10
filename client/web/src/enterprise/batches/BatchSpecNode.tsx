@@ -18,7 +18,19 @@ import { upperFirst } from 'lodash'
 import { useQuery } from '@sourcegraph/http-client'
 import { BatchSpecSource, BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Code, Link, Icon, H3, H4, Tooltip, Text, Button, LoadingSpinner, Alert } from '@sourcegraph/wildcard'
+import {
+    Code,
+    Link,
+    Icon,
+    H3,
+    H4,
+    Tooltip,
+    Text,
+    Button,
+    LoadingSpinner,
+    Alert,
+    AnchorLink,
+} from '@sourcegraph/wildcard'
 
 import { Duration } from '../../components/time/Duration'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -240,11 +252,19 @@ const BinaryBatchWorkspaceFile: React.FunctionComponent<BatchWorkspaceFileConten
             <Text className={styles.specFileBinaryName}>
                 {file.name} <span className={styles.specFileBinarySize}>{humanizeSize(file.byteSize)}</span>
             </Text>
-            <Link to={downloadUrl} download={file.name} className={styles.specFileBinaryBtn}>
-                <Icon aria-hidden={true} svgPath={mdiFileDownload} />
+            <Button
+                outline={true}
+                variant="secondary"
+                size="sm"
+                to={downloadUrl}
+                download={file.name}
+                className="mt-1"
+                as={AnchorLink}
+            >
+                <Icon aria-hidden={true} svgPath={mdiFileDownload} className="mr-1" />
                 {'  '}
                 Download file
-            </Link>
+            </Button>
         </div>
     )
 }
