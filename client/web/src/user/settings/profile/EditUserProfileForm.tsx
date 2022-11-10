@@ -99,7 +99,7 @@ export const EditUserProfileForm: React.FunctionComponent<React.PropsWithChildre
                 )}
                 {after && (
                     <>
-                        <hr className="my-4" />
+                        <hr className="my-4" aria-hidden={true} />
                         {after}
                     </>
                 )}
