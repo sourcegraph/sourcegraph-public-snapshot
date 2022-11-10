@@ -118,11 +118,8 @@ var app = &cli.App{
 						}
 
 						out := output.NewOutput(os.Stdout, output.OutputOpts{})
-						bars := []output.ProgressBar{
-							{Label: "Updating repos", Max: float64(total)},
-						}
-						progress := out.Progress(bars, nil)
-						defer progress.Destroy()
+						pending := out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Updating repos"))
+						defer pending.Destroy()
 
 						var done int64
 
@@ -151,12 +148,12 @@ var app = &cli.App{
 											break
 										}
 									}
+
 									if err := s.SaveRepo(r); err != nil {
 										logger.Fatal("could not save repo", log.Error(err), log.String("repo", r.Name))
 									}
 									atomic.AddInt64(&done, 1)
-									progress.SetValue(0, float64(done))
-									progress.SetLabel(0, fmt.Sprintf("%d/+-%d ", done, total))
+									pending.Update(fmt.Sprintf("%d repos updated (estimated total: %d)", done, total))
 									return err
 								})
 							}
@@ -169,12 +166,11 @@ var app = &cli.App{
 									logger.Fatal("failed to get updated public repos count", log.Error(err))
 								}
 								atomic.AddInt64(&total, int64(t))
-								bars[0].Max = bars[0].Max + float64(total)
-
+								pending.Update(fmt.Sprintf("%d repos updated (estimated total: %d)", done, total))
 							}
 						}
-
 						errs := g.Wait()
+						pending.Complete(output.Line(output.EmojiOk, output.StyleBold, fmt.Sprintf("%d repos updated", done)))
 						if len(errs) > 0 {
 							return errs[0]
 						}
