@@ -29,7 +29,7 @@ func (s *Service) RankLoader(interval time.Duration) goroutine.BackgroundRoutine
 
 const (
 	pageRankPrecision      = float64(1.0)
-	rankInputFileBatchSize = 128
+	rankInputFileBatchSize = 256
 )
 
 func (s *Service) loadRanks(ctx context.Context) (err error) {
@@ -47,7 +47,7 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 	g.Go(func(ctx context.Context) error {
 		defer close(batches)
 
-		var batch []string
+		batch := make([]string, 0, rankInputFileBatchSize)
 		objects := s.resultsBucket.Objects(ctx, &storage.Query{
 			Prefix: resultsObjectKeyPrefix,
 		})
@@ -75,7 +75,7 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 					return ctx.Err()
 				}
 
-				batch = []string{}
+				batch = make([]string, 0, rankInputFileBatchSize)
 			}
 		}
 
