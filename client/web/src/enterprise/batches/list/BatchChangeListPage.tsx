@@ -197,7 +197,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                         */}
                             <ConnectionList
                                 className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}
-                                aria-label="Batch changes"
+                                aria-label="batch changes"
                             >
                                 {connection?.nodes?.map(node => (
                                     <BatchChangeNode
