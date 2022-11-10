@@ -326,6 +326,14 @@ func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoA
 	return &symbolInfoResolver{symbolInfo: result}, nil
 }
 
+func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
+	content, err := r.Content(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return parseLFSPointer(content), nil
+}
+
 type symbolInfoArgs struct {
 	Line      int32
 	Character int32

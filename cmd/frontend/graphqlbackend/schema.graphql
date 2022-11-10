@@ -5098,6 +5098,22 @@ type GitBlob implements TreeEntry & File2 {
         """
         recursiveSingleChild: Boolean = false
     ): Boolean!
+    """
+    LFS is set if the GitBlob is a pointer to a file stored in LFS.
+    """
+    lfs: LFS
+}
+
+"""
+Information about a blob stored in Git Large File Storage (LFS).
+"""
+type LFS {
+    """
+    The size of the file in LFS in bytes.
+    Note: the file size in the GitBlob will be the size of the pointer not the file a
+    user checks out.
+    """
+    byteSize: BigInt!
 }
 
 """
