@@ -137,7 +137,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
     }, [selectedItem, props, updateTemplateWithQueryAndName])
 
     return (
-        <>
+        <div role="region" aria-label="batch spec template library">
             {selectedItem ? (
                 <ReplaceSpecModal
                     libraryItemName={selectedItem.name}
@@ -192,6 +192,6 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                     </Text>
                 </animated.div>
             </animated.div>
-        </>
+        </div>
     )
 }
