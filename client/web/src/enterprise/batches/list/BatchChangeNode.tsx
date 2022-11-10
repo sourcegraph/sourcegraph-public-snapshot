@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react'
 
-import VisuallyHidden from '@reach/visually-hidden'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { renderMarkdown } from '@sourcegraph/common'
+import { pluralize, renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Badge, Link, H3, H4 } from '@sourcegraph/wildcard'
 
@@ -164,7 +164,9 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                         className="d-block d-sm-flex"
                         label={
                             <H4 className="font-weight-normal text-muted m-0">
-                                {node.changesetsStats.open} <VisuallyHidden>changesets</VisuallyHidden> open
+                                {node.changesetsStats.open}{' '}
+                                <VisuallyHidden>{pluralize('changeset', node.changesetsStats.open)}</VisuallyHidden>{' '}
+                                open
                             </H4>
                         }
                     />
@@ -172,7 +174,9 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                         className="d-block d-sm-flex text-center"
                         label={
                             <H4 className="font-weight-normal text-muted m-0">
-                                {node.changesetsStats.closed} <VisuallyHidden>changesets</VisuallyHidden> closed
+                                {node.changesetsStats.closed}{' '}
+                                <VisuallyHidden>{pluralize('changeset', node.changesetsStats.closed)}</VisuallyHidden>{' '}
+                                closed
                             </H4>
                         }
                     />
@@ -180,7 +184,9 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                         className="d-block d-sm-flex"
                         label={
                             <H4 className="font-weight-normal text-muted m-0">
-                                {node.changesetsStats.merged} <VisuallyHidden>changesets</VisuallyHidden> merged
+                                {node.changesetsStats.merged}{' '}
+                                <VisuallyHidden>{pluralize('changeset', node.changesetsStats.merged)}</VisuallyHidden>{' '}
+                                merged
                             </H4>
                         }
                     />

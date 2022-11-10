@@ -75,7 +75,8 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                     <ChangesetStatusUnpublished
                         label={
                             <H4 className="font-weight-normal text-muted m-0">
-                                {stats.unpublished} <VisuallyHidden>changesets</VisuallyHidden> unpublished
+                                {stats.unpublished}{' '}
+                                <VisuallyHidden>{pluralize('changeset', stats.unpublished)}</VisuallyHidden> unpublished
                             </H4>
                         }
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 px-2 text-truncate')}
@@ -83,7 +84,8 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                     <ChangesetStatusDraft
                         label={
                             <H4 className="font-weight-normal text-muted m-0">
-                                {stats.draft} <VisuallyHidden>changesets</VisuallyHidden> draft
+                                {stats.draft} <VisuallyHidden>{pluralize('changeset', stats.draft)}</VisuallyHidden>{' '}
+                                draft
                             </H4>
                         }
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 px-2 text-truncate')}
@@ -91,7 +93,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                     <ChangesetStatusOpen
                         label={
                             <H4 className="font-weight-normal text-muted m-0">
-                                {stats.open} <VisuallyHidden>changesets</VisuallyHidden> open
+                                {stats.open} <VisuallyHidden>{pluralize('changeset', stats.open)}</VisuallyHidden> open
                             </H4>
                         }
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 px-2 text-truncate')}
@@ -99,7 +101,8 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                     <ChangesetStatusClosed
                         label={
                             <H4 className="font-weight-normal text-muted m-0">
-                                {stats.closed} <VisuallyHidden>changesets</VisuallyHidden> closed
+                                {stats.closed} <VisuallyHidden>{pluralize('changeset', stats.closed)}</VisuallyHidden>{' '}
+                                closed
                             </H4>
                         }
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 px-2 text-truncate')}
@@ -107,7 +110,8 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                     <ChangesetStatusMerged
                         label={
                             <H4 className="font-weight-normal text-muted m-0">
-                                {stats.merged} <VisuallyHidden>changesets</VisuallyHidden> merged
+                                {stats.merged} <VisuallyHidden>{pluralize('changeset', stats.merged)}</VisuallyHidden>{' '}
+                                merged
                             </H4>
                         }
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 pl-2 text-truncate')}
@@ -115,7 +119,8 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                     <ChangesetStatusArchived
                         label={
                             <H4 className="font-weight-normal text-muted m-0">
-                                {stats.archived} <VisuallyHidden>changesets</VisuallyHidden> archived
+                                {stats.archived}{' '}
+                                <VisuallyHidden>{pluralize('changeset', stats.archived)}</VisuallyHidden> archived
                             </H4>
                         }
                         className={classNames(styles.batchChangeStatsCardStat, 'd-flex flex-grow-0 pl-2 text-truncate')}
