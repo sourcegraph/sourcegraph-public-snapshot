@@ -94,7 +94,7 @@ func (r *Resolver) InsightViewDebug(ctx context.Context, args graphqlbackend.Ins
 		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
 	}
 
-	// 🚨 SECURITY: This debug resolver is restricted to admins only so looking up the series does not check for the users authoriztion
+	// 🚨 SECURITY: This debug resolver is restricted to admins only so looking up the series does not check for the users authorization
 	viewSeries, err := r.insightStore.Get(ctx, store.InsightQueryArgs{UniqueID: viewId, WithoutAuthorization: true})
 	if err != nil {
 		return nil, err
