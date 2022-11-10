@@ -8,8 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/background/indexer"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/background/loader"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
@@ -26,8 +25,8 @@ func (j *rankingSourcerJob) Description() string {
 
 func (j *rankingSourcerJob) Config() []env.Config {
 	return []env.Config{
-		indexer.ConfigInst,
-		loader.ConfigInst,
+		ranking.IndexerConfigInst,
+		ranking.LoaderConfigInst,
 	}
 }
 
@@ -38,7 +37,7 @@ func (j *rankingSourcerJob) Routines(startupCtx context.Context, logger log.Logg
 	}
 
 	return append(
-		indexer.NewIndexer(services.RankingService),
-		loader.NewPageRankLoader(services.RankingService)...,
+		ranking.NewIndexer(services.RankingService),
+		ranking.NewPageRankLoader(services.RankingService)...,
 	), nil
 }

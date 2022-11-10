@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
@@ -90,4 +91,17 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 
 func scopedContext(component string) *observation.Context {
 	return observation.ScopedContext("codeintel", "ranking", component)
+}
+
+func NewIndexer(rankingSvc *Service) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		rankingSvc.RepositoryIndexer(IndexerConfigInst.Interval),
+	}
+}
+
+func NewPageRankLoader(rankingSvc *Service) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		rankingSvc.RankLoader(LoaderConfigInst.LoadInterval),
+		rankingSvc.RankMerger(LoaderConfigInst.MergeInterval),
+	}
 }
