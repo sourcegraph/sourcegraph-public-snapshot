@@ -242,7 +242,6 @@ type IterateRepoGitserverStatusOptions struct {
 }
 
 func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions) (rs []types.RepoGitserverStatus, nextCursor int, err error) {
-	joins := []*sqlf.Query{}
 	preds := []*sqlf.Query{}
 
 	if !options.IncludeDeleted {
@@ -257,9 +256,7 @@ func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 		preds = append(preds, sqlf.Sprintf("gr.repo_id > %s", options.NextCursor))
 		// Performance improvement: Postgres picks a more optimal strategy when we also constrain
 		// set of potential joins.
-		joins = append(joins, sqlf.Sprintf("JOIN repo ON gr.repo_id = repo.id AND repo.id > %s", options.NextCursor))
-	} else {
-		joins = append(joins, sqlf.Sprintf("JOIN repo ON gr.repo_id = repo.id"))
+		preds = append(preds, sqlf.Sprintf("repo.id > %s", options.NextCursor))
 	}
 
 	if len(preds) == 0 {
@@ -271,7 +268,7 @@ func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 		limitOffset = &LimitOffset{Limit: options.BatchSize}
 	}
 
-	q := sqlf.Sprintf(iterateRepoGitserverQuery, sqlf.Join(joins, "\n"), sqlf.Join(preds, "AND"), limitOffset.SQL())
+	q := sqlf.Sprintf(iterateRepoGitserverQuery, sqlf.Join(preds, "AND"), limitOffset.SQL())
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -314,7 +311,7 @@ SELECT
 	gr.repo_size_bytes,
 	gr.updated_at
 FROM gitserver_repos gr
-%s
+JOIN repo ON gr.repo_id = repo.id
 WHERE %s
 ORDER BY repo_id ASC
 %s
