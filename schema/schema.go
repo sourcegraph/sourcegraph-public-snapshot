@@ -673,6 +673,8 @@ type ExperimentalFeatures struct {
 	SearchIndexQueryContexts bool `json:"search.index.query.contexts,omitempty"`
 	// SearchIndexRevisions description: An array of objects describing rules for extra revisions (branch, ref, tag, commit sha, etc) to be indexed for all repositories that match them. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
 	SearchIndexRevisions []*SearchIndexRevisionsRule `json:"search.index.revisions,omitempty"`
+	// SearchSanitizePatterns description: A list of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. A pattern that is not a valid Go regular expression will have no effect.
+	SearchSanitizePatterns []string `json:"search.sanitize.patterns,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: DEPRECATED. Always on. Will be removed in 3.19.
 	SearchMultipleRevisionsPerRepository *bool `json:"searchMultipleRevisionsPerRepository,omitempty"`
 	// StructuralSearch description: Enables structural search.

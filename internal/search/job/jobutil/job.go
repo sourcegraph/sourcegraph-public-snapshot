@@ -195,6 +195,22 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		}
 	}
 
+	{
+		// Apply search result sanitize rules post-filter
+		var sanitizePatterns []*regexp.Regexp
+		c := conf.Get()
+		if c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SearchSanitizePatterns != nil {
+			for _, val := range c.ExperimentalFeatures.SearchSanitizePatterns {
+				if re, err := regexp.Compile(val); err == nil {
+					sanitizePatterns = append(sanitizePatterns, re)
+				}
+			}
+		}
+		if len(sanitizePatterns) > 0 {
+			basicJob = NewSanitizeJob(sanitizePatterns, basicJob)
+		}
+	}
+
 	{ // Apply limit
 		maxResults := b.ToParseTree().MaxResults(inputs.DefaultLimit())
 		basicJob = NewLimitJob(maxResults, basicJob)

@@ -519,6 +519,14 @@
             }
           }
         },
+        "search.sanitize.patterns": {
+          "description": "A list of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. A pattern that is not a valid Go regular expression will have no effect.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "regex"
+          }
+        },
         "enableGithubInternalRepoVisibility": {
           "description": "Enable support for visilibity of internal Github repositories",
           "type": "boolean",
