@@ -103,8 +103,8 @@ const DynamicChangesetStatusScheduled: React.FunctionComponent<React.PropsWithCh
 }
 
 const StaticChangesetStatusScheduled: React.FunctionComponent<
-    React.PropsWithChildren<Pick<Props, 'label' | 'className'>>
-> = ({ label, className }) => (
+    React.PropsWithChildren<Pick<Props, 'label' | 'className' | 'role'>>
+> = ({ label, className, role }) => (
     <div className={classNames(iconClassNames, className)} role={role}>
         <Icon svgPath={mdiTimerOutline} inline={false} aria-hidden={true} />
         {label}
