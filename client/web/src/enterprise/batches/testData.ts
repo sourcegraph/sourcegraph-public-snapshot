@@ -120,91 +120,11 @@ export const MOCK_HIGHLIGHTED_FILES: BatchSpecWorkspaceFileResult = {
         binary: false,
         byteSize: 12,
         highlight: {
-            __typename: 'HighlightedFile',
             aborted: false,
-            html: `<table>
-            <tbody>
-              <tr>
-                <th class="line" data-line="1"></th>
-                <td class="code">
-                  <div>
-                    <span class="hl-source hl-shell hl-bash">
-                      <span class="hl-comment hl-line hl-number-sign hl-shell">
-                        <span
-                          class="hl-punctuation hl-definition hl-comment hl-begin hl-shell"
-                        >
-                          #
-                        </span>
-                      </span>
-                      <span class="hl-comment hl-line hl-number-sign hl-shell">
-                        !/usr/bin/env bash
-                      </span>
-                      <span class="hl-comment hl-line hl-number-sign hl-shell"> </span>
-                    </span>
-                  </div>
-                </td>
-              </tr>
+            __typename: 'HighlightedFile',
+            html: `import { React } from 'react';
 
-              <tr>
-                <th class="line" data-line="2"></th>
-                <td class="code">
-                  <div>
-                    <span class="hl-source hl-shell hl-bash"> </span>
-                  </div>
-                </td>
-              </tr>
-
-              <tr>
-                <th class="line" data-line="3"></th>
-                <td class="code">
-                   <div>
-                      <span class="hl-source hl-shell hl-bash">
-                         <span class="hl-meta hl-function-call hl-shell">
-                            <span class="hl-support hl-function hl-echo hl-shell">
-                               echo
-                            </span>
-                         </span>
-
-                         <span class="hl-meta hl-function-call hl-arguments hl-shell">
-                            Hello World
-                         </span>
-                         <span class="hl-keyword hl-operator hl-logical hl-pipe hl-shell">|</span>
-
-                         <span class="hl-meta hl-function-call hl-shell">
-                            <span class="hl-variable hl-function hl-shell">tee</span>
-                         </span>
-                         <span class="hl-meta hl-function-call hl-arguments hl-shell">
-                            <span class="hl-variable hl-parameter hl-option hl-shell">
-                               <span class="hl-punctuation hl-definition hl-parameter hl-shell">-</span>
-                               a
-                            </span>
-                            <span class="hl-string hl-quoted hl-double hl-shell">
-                               <span class="hl-punctuation hl-definition hl-string hl-begin hl-shell">"</span>
-                               <span class="hl-meta hl-group hl-expansion hl-command hl-parens hl-shell">
-                                  <span class="hl-punctuation hl-definition hl-variable hl-shell">$</span>
-                                  <span class="hl-punctuation hl-section hl-parens hl-begin hl-shell">(</span>
-                                  <span class="hl-meta hl-function-call hl-shell">
-                                     <span class="hl-variable hl-function hl-shell">find</span>
-                                  </span>
-                                  <span class="hl-meta hl-function-call hl-arguments hl-shell">
-                                     <span class="hl-variable hl-parameter hl-option hl-shell">
-                                        <span class="hl-punctuation hl-definition hl-parameter hl-shell">-</span>
-                                        name
-                                     </span>
-                                     README.md
-                                  </span>
-                                  <span class="hl-punctuation hl-section hl-parens hl-end hl-shell">)</span>
-                               </span>
-
-                            <span class="hl-punctuation hl-definition hl-string hl-end hl-shell">"</span>
-                         </span>
-                      </span>
-                   </span>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>`,
+const MyComponent = () => <div>My Component</div>`,
         },
     },
 }
