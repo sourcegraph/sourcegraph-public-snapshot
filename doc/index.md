@@ -104,7 +104,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
   <a class="btn-app btn" href="/admin/deploy/single-node/minikube">
     <img alt="minikube-logo" src="/assets/other-logos/minikube.png"/>
     <h3>Minikube</h3>
-    <p>Spin up a local Sourcegraph instance with kubernetes</p>
+    <p>Spin up a local Sourcegraph instance with Kubernetes</p>
   </a>
   <div></div>
 </div>
