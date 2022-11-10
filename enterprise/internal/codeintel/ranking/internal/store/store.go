@@ -180,16 +180,20 @@ UPDATE
 `
 
 func (s *store) HasInputFilename(ctx context.Context, graphKey string, filenames []string) ([]string, error) {
-	return basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(hasInputFilenameQuery, graphKey, pq.Array(filenames))))
+	return basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(hasInputFilenameQuery, pq.Array(filenames), graphKey)))
 }
 
 const hasInputFilenameQuery = `
-SELECT DISTINCT pr.input_filename
-FROM codeintel_path_rank_inputs pr
-WHERE
-	pr.graph_key = %s AND
-	pr.input_filename = ANY (%s)
-ORDER BY pr.input_filename
+SELECT s.input_filename
+FROM unnest(%s::text[]) AS s(input_filename)
+WHERE EXISTS (
+	SELECT 1
+	FROM codeintel_path_rank_inputs pr
+	WHERE
+		pr.graph_key = %s AND
+		pr.input_filename = s.input_filename
+)
+ORDER BY s.input_filename;
 `
 
 func (s *store) BulkSetDocumentRanks(ctx context.Context, graphKey, filename string, precision float64, ranks map[api.RepoName]map[string]float64) error {
