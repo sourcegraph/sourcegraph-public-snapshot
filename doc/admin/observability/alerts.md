@@ -4534,7 +4534,7 @@ Generated query for critical alert: `max((max(rate(src_repoupdater_sched_error[1
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4565,7 +4565,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4597,7 +4597,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4629,7 +4629,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4660,7 +4660,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4692,7 +4692,7 @@ Generated query for warning alert: `max((histogram_quantile(0.95, max by(le, typ
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4724,7 +4724,7 @@ Generated query for warning alert: `max((max(src_repoupdater_perms_syncer_queue_
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>

@@ -16,6 +16,7 @@ import {
 import { AxisScale, TickRendererProps } from '@visx/axis'
 import { Group } from '@visx/group'
 import { scaleLinear } from '@visx/scale'
+import { ScaleTime } from 'd3-scale'
 import { noop } from 'lodash'
 import { useMergeRefs } from 'use-callback-ref'
 import useResizeObserver from 'use-resize-observer'
@@ -232,7 +233,7 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
     )
 }
 
-interface SvgContentProps<XScale extends AxisScale, YScale extends AxisScale> {
+interface SvgContentProps<XScale extends AxisScale | ScaleTime<any, any>, YScale extends AxisScale> {
     children: (input: { xScale: XScale; yScale: YScale; content: Rectangle }) => ReactNode
 }
 

@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -12,64 +13,73 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type janitorConfig struct {
-	minimumTimeSinceLastCheck      time.Duration
-	commitResolverBatchSize        int
-	commitResolverMaximumCommitLag time.Duration
-	failedIndexBatchSize           int
-	failedIndexMaxAge              time.Duration
+type JanitorConfig struct {
+	MinimumTimeSinceLastCheck      time.Duration
+	CommitResolverBatchSize        int
+	CommitResolverMaximumCommitLag time.Duration
+	FailedIndexBatchSize           int
+	FailedIndexMaxAge              time.Duration
 }
 
-func (b backgroundJob) NewJanitor(
+type janitorJob struct {
+	autoindexingSvc AutoIndexingService
+	gitserverClient GitserverClient
+	metrics         janitorMetrics
+	logger          log.Logger
+	clock           glock.Clock
+}
+
+func NewJanitor(
 	interval time.Duration,
-	minimumTimeSinceLastCheck time.Duration,
-	commitResolverBatchSize int,
-	commitResolverMaximumCommitLag time.Duration,
-	failedIndexBatchSize int,
-	failedIndexMaxAge time.Duration,
+	autoindexingSvc AutoIndexingService,
+	gitserverClient GitserverClient,
+	clock glock.Clock,
+	config JanitorConfig,
 ) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return b.handleCleanup(ctx, janitorConfig{
-			minimumTimeSinceLastCheck:      minimumTimeSinceLastCheck,
-			commitResolverBatchSize:        commitResolverBatchSize,
-			commitResolverMaximumCommitLag: commitResolverMaximumCommitLag,
-			failedIndexBatchSize:           failedIndexBatchSize,
-			failedIndexMaxAge:              failedIndexMaxAge,
-		})
+		job := janitorJob{
+			autoindexingSvc: autoindexingSvc,
+			gitserverClient: gitserverClient,
+			metrics:         janitorMetrics{},
+			logger:          log.Scoped("codeintel.janitor.background", ""),
+			clock:           clock,
+		}
+
+		return job.handleCleanup(ctx, config)
 	}))
 }
 
-func (b backgroundJob) handleCleanup(ctx context.Context, cfg janitorConfig) (errs error) {
+func (j janitorJob) handleCleanup(ctx context.Context, cfg JanitorConfig) (errs error) {
 	// Reconciliation and denormalization
-	if err := b.handleDeletedRepository(ctx); err != nil {
+	if err := j.handleDeletedRepository(ctx); err != nil {
 		errs = errors.Append(errs, err)
 	}
-	if err := b.handleUnknownCommit(ctx, cfg); err != nil {
+	if err := j.handleUnknownCommit(ctx, cfg); err != nil {
 		errs = errors.Append(errs, err)
 	}
 
 	// Expiration
-	if err := b.handleExpiredRecords(ctx, cfg); err != nil {
+	if err := j.handleExpiredRecords(ctx, cfg); err != nil {
 		errs = errors.Append(errs, err)
 	}
 
 	return errs
 }
 
-func (b backgroundJob) handleDeletedRepository(ctx context.Context) (err error) {
-	indexesCounts, err := b.autoindexingSvc.DeleteIndexesWithoutRepository(ctx, time.Now())
+func (j janitorJob) handleDeletedRepository(ctx context.Context) (err error) {
+	indexesCounts, err := j.autoindexingSvc.DeleteIndexesWithoutRepository(ctx, time.Now())
 	if err != nil {
 		return errors.Wrap(err, "autoindexingSvc.DeleteIndexesWithoutRepository")
 	}
 
 	for _, counts := range gatherCounts(indexesCounts) {
-		b.logger.Debug(
+		j.logger.Debug(
 			"Deleted codeintel records with a deleted repository",
 			log.Int("repository_id", counts.repoID),
 			log.Int("indexes_count", counts.indexesCount),
 		)
 
-		b.janitorMetrics.numIndexRecordsRemoved.Add(float64(counts.indexesCount))
+		j.metrics.numIndexRecordsRemoved.Add(float64(counts.indexesCount))
 	}
 
 	return nil
@@ -103,32 +113,30 @@ func gatherCounts(indexesCounts map[int]int) []recordCount {
 	return recordCounts
 }
 
-func (b backgroundJob) handleUnknownCommit(ctx context.Context, cfg janitorConfig) (err error) {
-	indexesDeleted, err := b.autoindexingSvc.ProcessStaleSourcedCommits(
+func (j janitorJob) handleUnknownCommit(ctx context.Context, cfg JanitorConfig) (err error) {
+	indexesDeleted, err := j.autoindexingSvc.ProcessStaleSourcedCommits(
 		ctx,
-		cfg.minimumTimeSinceLastCheck,
-		cfg.commitResolverBatchSize,
-		cfg.commitResolverMaximumCommitLag,
-		func(ctx context.Context, repositoryID int, commit string) (bool, error) {
-			return shouldDeleteUploadsForCommit(ctx, b.gitserverClient, repositoryID, commit)
-		},
+		cfg.MinimumTimeSinceLastCheck,
+		cfg.CommitResolverBatchSize,
+		cfg.CommitResolverMaximumCommitLag,
+		j.shouldDeleteUploadsForCommit,
 	)
 	if err != nil {
 		return err
 	}
 	if indexesDeleted > 0 {
-		b.janitorMetrics.numIndexRecordsRemoved.Add(float64(indexesDeleted))
+		j.metrics.numIndexRecordsRemoved.Add(float64(indexesDeleted))
 	}
 
 	return nil
 }
 
-func (b backgroundJob) handleExpiredRecords(ctx context.Context, cfg janitorConfig) error {
-	return b.autoindexingSvc.ExpireFailedRecords(ctx, cfg.failedIndexBatchSize, cfg.failedIndexMaxAge, b.clock.Now())
+func (j janitorJob) handleExpiredRecords(ctx context.Context, cfg JanitorConfig) error {
+	return j.autoindexingSvc.ExpireFailedRecords(ctx, cfg.FailedIndexBatchSize, cfg.FailedIndexMaxAge, j.clock.Now())
 }
 
-func shouldDeleteUploadsForCommit(ctx context.Context, gitserverClient GitserverClient, repositoryID int, commit string) (bool, error) {
-	if _, err := gitserverClient.ResolveRevision(ctx, repositoryID, commit); err != nil {
+func (j janitorJob) shouldDeleteUploadsForCommit(ctx context.Context, repositoryID int, commit string) (bool, error) {
+	if _, err := j.gitserverClient.ResolveRevision(ctx, repositoryID, commit); err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			// Target condition: repository is resolvable but the commit is not; was probably
 			// force-pushed away and the commit was gc'd after some time or after a re-clone

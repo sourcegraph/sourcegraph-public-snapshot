@@ -21,7 +21,6 @@ func Init(
 	enterpriseServices *enterprise.Services,
 	observationContext *observation.Context,
 ) error {
-	autoIndexingService := enterpriseServices.CodeIntelAutoIndexingService
 	codeintelUploadHandler := enterpriseServices.NewCodeIntelUploadHandler(false)
 	batchesWorkspaceFileGetHandler := enterpriseServices.BatchesChangesFileGetHandler
 	batchesWorkspaceFileExistsHandler := enterpriseServices.BatchesChangesFileGetHandler
@@ -33,7 +32,7 @@ func Init(
 	//
 	// Note: In order register a new queue type please change the validate() check code in enterprise/cmd/executor/config.go
 	queueOptions := []handler.QueueOptions{
-		codeintelqueue.QueueOptions(autoIndexingService, accessToken, observationContext),
+		codeintelqueue.QueueOptions(db, accessToken, observationContext),
 		batches.QueueOptions(db, accessToken, observationContext),
 	}
 

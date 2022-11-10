@@ -78,7 +78,6 @@
         - PolicyMatcher
         - RepoUpdaterClient
         - GitserverClient
-        - InferenceService
         - UploadService
         - AutoIndexingService
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared

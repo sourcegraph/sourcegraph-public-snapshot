@@ -132,13 +132,13 @@ const batchPreviewStage = (
     if (execution.stages === null) {
         return undefined
     }
-    return !execution.stages.srcExec
+    return execution.stages.srcExec.length === 0
         ? undefined
         : {
               text: 'Create batch spec preview',
-              details: (
-                  <ExecutionLogEntry key={execution.stages.srcExec.key} logEntry={execution.stages.srcExec} now={now} />
-              ),
+              details: execution.stages.srcExec.map(logEntry => (
+                  <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
+              )),
               ...genericStage(execution.stages.srcExec, expandedByDefault),
           }
 }

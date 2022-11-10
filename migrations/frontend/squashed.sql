@@ -917,7 +917,8 @@ CREATE TABLE batch_spec_workspace_execution_jobs (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    user_id integer NOT NULL
+    user_id integer NOT NULL,
+    version integer DEFAULT 1 NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_workspace_execution_jobs_id_seq
@@ -966,6 +967,7 @@ CREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS
     j.cancel,
     j.queued_at,
     j.user_id,
+    j.version,
     q.place_in_global_queue,
     q.place_in_user_queue
    FROM (batch_spec_workspace_execution_jobs j
@@ -4432,6 +4434,8 @@ CREATE INDEX gitserver_repos_last_error_idx ON gitserver_repos USING btree (repo
 
 CREATE INDEX gitserver_repos_not_cloned_status_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status = 'not_cloned'::text);
 
+CREATE INDEX gitserver_repos_not_explicitly_cloned_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status <> 'cloned'::text);
+
 CREATE INDEX gitserver_repos_shard_id ON gitserver_repos USING btree (shard_id, repo_id);
 
 CREATE INDEX insights_query_runner_jobs_cost_idx ON insights_query_runner_jobs USING btree (cost);
@@ -4537,6 +4541,8 @@ CREATE INDEX repo_blocked_idx ON repo USING btree (((blocked IS NOT NULL)));
 CREATE INDEX repo_created_at ON repo USING btree (created_at);
 
 CREATE INDEX repo_description_trgm_idx ON repo USING gin (lower(description) gin_trgm_ops);
+
+CREATE INDEX repo_dotcom_indexable_repos_idx ON repo USING btree (stars DESC NULLS LAST) INCLUDE (id, name) WHERE ((deleted_at IS NULL) AND (blocked IS NULL) AND (((stars >= 5) AND (NOT COALESCE(fork, false)) AND (NOT archived)) OR (lower((name)::text) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'::text)));
 
 CREATE UNIQUE INDEX repo_external_unique_idx ON repo USING btree (external_service_type, external_service_id, external_id);
 
