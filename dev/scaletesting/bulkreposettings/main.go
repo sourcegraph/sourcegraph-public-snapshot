@@ -169,11 +169,17 @@ var app = &cli.App{
 								pending.Update(fmt.Sprintf("%d repos updated (estimated total: %d)", done, total))
 							}
 						}
+
 						errs := g.Wait()
-						pending.Complete(output.Line(output.EmojiOk, output.StyleBold, fmt.Sprintf("%d repos updated", done)))
 						if len(errs) > 0 {
+							pending.Complete(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("%d errors occured while updating repos", len(errs))))
+							out.Writef("Printing first 5 errros")
+							for i := 0; i < len(errs) && i < 5; i++ {
+								logger.Error("Error updating repo", log.Error(errs[i]))
+							}
 							return errs[0]
 						}
+						pending.Complete(output.Line(output.EmojiOk, output.StyleBold, fmt.Sprintf("%d repos updated", done)))
 						return nil
 					},
 				},
@@ -270,12 +276,12 @@ func (f *GithubRepoFetcher) Next(ctx context.Context) []*store.Repo {
 		return nil
 	}
 
-    // when next is 0, it means the Github api returned the nextPage as 0, which indicates that there are not more pages to fetch
+	// when next is 0, it means the Github api returned the nextPage as 0, which indicates that there are not more pages to fetch
 	hasMore := next != 0
 	if !hasMore {
 		f.done = true
 	}
-// Ensure that the next request starts at the next page
+	// Ensure that the next request starts at the next page
 	f.pageStart = next
 
 	return results
