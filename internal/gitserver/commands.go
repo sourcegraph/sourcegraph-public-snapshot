@@ -687,6 +687,46 @@ type Hunk struct {
 	Filename string
 }
 
+type dummyHunkReader struct {
+	n int
+}
+
+func (d *dummyHunkReader) Read() (hunk []*Hunk, ok bool, err error) {
+	if d.n >= 50 {
+		return nil, true, nil
+	}
+
+	time.Sleep(50 * time.Millisecond)
+
+	d.n += 1
+
+	hunks := []*Hunk{
+		{
+			StartLine: 50 + d.n,
+			EndLine:   60 + d.n,
+			StartByte: 50 + d.n,
+			EndByte:   60 + d.n,
+			CommitID:  api.CommitID(fmt.Sprintf("commit-%d", d.n)),
+			Author: gitdomain.Signature{
+				Name:  "Horsegraph Inc",
+				Email: "ceo@horsegraph.com",
+				Date:  time.Now(),
+			},
+			Message:  fmt.Sprintf("message %d", d.n),
+			Filename: fmt.Sprintf("file-%d", d.n),
+		},
+	}
+
+	return hunks, false, nil
+}
+
+// StreamBlameFile returns Git blame information about a file.
+func (c *clientImplementor) StreamBlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (HunkReader, error) {
+	// BIG FAT TODO: Actually call `git blame --incremental` and then use the
+	// parsing code from `BlameFile` below and send hunks to consumer.
+	return &dummyHunkReader{n: 0}, nil
+}
+
 // BlameFile returns Git blame information about a file.
 func (c *clientImplementor) BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: BlameFile")
