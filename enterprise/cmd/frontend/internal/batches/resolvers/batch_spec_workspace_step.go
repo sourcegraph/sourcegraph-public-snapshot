@@ -274,9 +274,19 @@ func (r *batchSpecWorkspaceStepV2Resolver) Environment() ([]graphqlbackend.Batch
 		return nil, err
 	}
 
+	outer := r.step.Env.OuterVars()
+	outerMap := make(map[string]struct{})
+	for _, o := range outer {
+		outerMap[o] = struct{}{}
+	}
+
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, 0, len(env))
 	for k, v := range env {
-		resolvers = append(resolvers, &batchSpecWorkspaceEnvironmentVariableResolver{key: k, value: v})
+		var val *string
+		if _, ok := outerMap[k]; !ok {
+			val = &v
+		}
+		resolvers = append(resolvers, &batchSpecWorkspaceEnvironmentVariableResolver{key: k, value: val})
 	}
 	return resolvers, nil
 }
