@@ -39,12 +39,9 @@ export const CodeInsightsExamplesPicker: FunctionComponent<CodeInsightsExamplesP
     return (
         <Card as={CardBody} className={classNames(styles.root, { [styles.rootMobile]: isMobileLayout })}>
             <div className={styles.section}>
-                <H2>Common uses for Code Insights</H2>
+                <H2>Use Code Insights to...</H2>
 
-                <Text className="text-muted">
-                    Here's what it'd look like if you used Code Insights for these common use cases.{' '}
-                    <Link to="/help/code_insights/references/common_use_cases">See more use cases.</Link>
-                </Text>
+                <Link to="/help/code_insights/references/common_use_cases">See more use cases</Link>
 
                 {!isMobileLayout && (
                     <ul className={styles.list}>
