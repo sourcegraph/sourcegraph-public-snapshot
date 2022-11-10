@@ -65,7 +65,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<React.PropsWithChildr
                         />
                     </Heading>{' '}
                     <span className={classNames(styles.batchChangeStatsCardCompleteness, 'lead text-nowrap')}>
-                        {formatDisplayPercent(percentComplete)} complete
+                        {`${formatDisplayPercent(percentComplete)} complete`}
                     </span>
                 </div>
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'd-none d-md-block mx-3')} />
