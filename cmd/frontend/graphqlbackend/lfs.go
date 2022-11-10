@@ -43,7 +43,7 @@ func parseLFSPointer(b string) *lfsResolver {
 		return nil
 	}
 
-	size, err := strconv.ParseInt(match[1], 10, 32)
+	size, err := strconv.ParseInt(match[1], 10, 64)
 	if err != nil {
 		return nil
 	}
