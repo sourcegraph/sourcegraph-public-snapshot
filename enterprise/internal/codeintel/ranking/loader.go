@@ -26,7 +26,10 @@ func (s *Service) RankLoader(interval time.Duration) goroutine.BackgroundRoutine
 	}))
 }
 
-const pageRankPrecision = float64(1.0)
+const (
+	pageRankPrecision      = float64(1.0)
+	inputFilenameBatchSize = 128
+)
 
 func (s *Service) loadRanks(ctx context.Context) (err error) {
 	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
@@ -58,14 +61,18 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 		filenames = append(filenames, attrs.Name)
 	}
 
-	knownFilenames, err := s.store.HasInputFilename(ctx, resultsGraphKey, filenames)
-	if err != nil {
-		return err
-	}
-
 	knownFilenameMap := map[string]struct{}{}
-	for _, filename := range knownFilenames {
-		knownFilenameMap[filename] = struct{}{}
+
+	for i := 0; i < len(filenames); i += inputFilenameBatchSize {
+		batch := filenames[i : i+inputFilenameBatchSize]
+		knownFilenames, err := s.store.HasInputFilename(ctx, resultsGraphKey, batch)
+		if err != nil {
+			return err
+		}
+
+		for _, filename := range knownFilenames {
+			knownFilenameMap[filename] = struct{}{}
+		}
 	}
 
 	filtered := filenames[:0]
