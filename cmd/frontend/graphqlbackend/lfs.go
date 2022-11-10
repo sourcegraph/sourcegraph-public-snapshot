@@ -11,8 +11,8 @@ type lfsResolver struct {
 	size int64
 }
 
-func (l *lfsResolver) ByteSize() *BigInt {
-	return &BigInt{Int: l.size}
+func (l *lfsResolver) ByteSize() BigInt {
+	return BigInt{Int: l.size}
 }
 
 var (
