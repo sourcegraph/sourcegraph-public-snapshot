@@ -179,6 +179,7 @@ type SeriesBackfillDebug struct {
 	Info   BackfillDebugInfo
 	Errors []iterator.IterationError
 }
+
 type BackfillDebugInfo struct {
 	Id              int
 	RepoIteratorId  int
