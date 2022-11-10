@@ -324,6 +324,7 @@ func (f *GithubRepoFetcher) listRepos(ctx context.Context, org string, start int
 		println("-------")
 		println(resp.LastPage)
 		println(resp.NextPage)
+		println(resp.PrevPage)
 		println("-------")
 	}
 	return res, resp.NextPage, nil
