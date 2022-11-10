@@ -5099,7 +5099,7 @@ type GitBlob implements TreeEntry & File2 {
         recursiveSingleChild: Boolean = false
     ): Boolean!
     """
-    LFS is non-nil if the GitBlob is a pointer to a file stored in LFS.
+    LFS is set if the GitBlob is a pointer to a file stored in LFS.
     """
     lfs: LFS
 }
