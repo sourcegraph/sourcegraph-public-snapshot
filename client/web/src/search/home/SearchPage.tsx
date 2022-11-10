@@ -18,6 +18,9 @@ import { CodeInsightsProps } from '../../insights/types'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
+import { Link } from '@sourcegraph/wildcard'
+
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { QueryExamplesHomepage } from './QueryExamplesHomepage'
 import { SearchPageFooter } from './SearchPageFooter'
@@ -64,7 +67,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
             <BrandLogo className={styles.logo} isLightTheme={props.isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && (
-                <div className="text-muted text-center mt-3">Search millions of open source repositories</div>
+                <div className="text-muted text-center mt-3">Search millions of open source repositories | <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>Search private code</Link></div>
             )}
             <div className={styles.searchContainer}>
                 <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} source="home" />
