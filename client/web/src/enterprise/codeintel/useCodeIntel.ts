@@ -134,7 +134,6 @@ export const useCodeIntel = ({
         variables,
         notifyOnNetworkStatusChange: false,
         fetchPolicy: 'no-cache',
-        skip: !shouldFetchPrecise,
         onCompleted: result => {
             if (shouldFetchPrecise.current) {
                 shouldFetchPrecise.current = false

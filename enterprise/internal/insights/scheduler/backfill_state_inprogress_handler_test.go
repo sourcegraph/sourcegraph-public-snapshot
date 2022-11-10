@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
-	store2 "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -256,9 +255,8 @@ func Test_BackfillWithRetry(t *testing.T) {
 		clock:          clock,
 	}
 
-	// we should get an errored record here that will be retried by the overall queue
 	err = handler.Handle(ctx, logger, dequeue)
-	require.ErrorIs(t, err, incompleteBackfillErr)
+	require.NoError(t, err)
 
 	completedBackfill, err := bfs.loadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
@@ -337,13 +335,7 @@ func Test_BackfillWithRetryAndComplete(t *testing.T) {
 
 	// we should get an errored record here that will be retried by the overall queue
 	err = handler.Handle(ctx, logger, dequeue)
-	require.ErrorIs(t, err, incompleteBackfillErr)
-
-	updated, err := monitor.inProgressStore.MarkErrored(ctx, dequeue.RecordID(), err.Error(), store2.MarkFinalOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	require.True(t, updated)
+	require.NoError(t, err)
 
 	// the queue won't immediately dequeue so we will just pass it back to the handler as if it was dequeued again
 	err = handler.Handle(ctx, logger, dequeue)

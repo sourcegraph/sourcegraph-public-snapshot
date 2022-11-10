@@ -345,6 +345,10 @@ type Features struct {
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.
 	Debug bool `json:"debug"`
+
+	// RankingDampDocRanks if true will damp the influence of document
+	// ranks on the final ranking.
+	RankingDampDocRanks bool `json:"search-ranking-damp-doc-ranks"`
 }
 
 func (f *Features) String() string {

@@ -123,7 +123,7 @@ func (s *PermsSyncer) ScheduleUsers(ctx context.Context, opts authz.FetchPermsOp
 
 	s.scheduleUsers(ctx, users...)
 	metricsItemsSyncScheduled.WithLabelValues("manualUsersTrigger", "high").Set(float64(len(userIDs)))
-	s.collectMetrics(ctx)
+	s.collectQueueSize()
 }
 
 func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser) {
@@ -174,7 +174,7 @@ func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 	scheduleReposCounter.Add(float64(numberOfRepos))
 	s.scheduleRepos(ctx, repos...)
 	metricsItemsSyncScheduled.WithLabelValues("manualReposTrigger", "high").Set(float64(numberOfRepos))
-	s.collectMetrics(ctx)
+	s.collectQueueSize()
 }
 
 func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo) {
@@ -1000,7 +1000,7 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGrou
 				}
 			}
 
-			s.collectMetrics(ctx)
+			s.collectQueueSize()
 			return nil
 		},
 	)
@@ -1384,6 +1384,16 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 
 var collectMetricsDisabled = false
 
+func (s *PermsSyncer) collectQueueSize() {
+	if collectMetricsDisabled {
+		return
+	}
+
+	s.queue.mu.RLock()
+	metricsQueueSize.Set(float64(s.queue.Len()))
+	s.queue.mu.RUnlock()
+}
+
 // collectMetrics collects metrics values from both database and memory objects.
 func (s *PermsSyncer) collectMetrics(ctx context.Context) {
 	if collectMetricsDisabled {
@@ -1413,9 +1423,7 @@ func (s *PermsSyncer) collectMetrics(ctx context.Context) {
 	metricsStrictStalePerms.WithLabelValues("sub-repo").Set(float64(mstrict.SubReposWithStalePerms))
 	metricsPermsGap.WithLabelValues("sub-repo").Set(m.SubReposPermsGapSeconds)
 
-	s.queue.mu.RLock()
-	metricsQueueSize.Set(float64(s.queue.Len()))
-	s.queue.mu.RUnlock()
+	s.collectQueueSize()
 }
 
 // Run kicks off the permissions syncing process, this method is blocking and

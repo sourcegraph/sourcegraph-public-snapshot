@@ -11,8 +11,10 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,7 +39,13 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	extSvc, err := h.getExternalService(r, body)
 	if err != nil {
 		log15.Error("Could not find valid external service for webhook", "error", err)
-		http.Error(w, "External service not found", http.StatusInternalServerError)
+
+		if errcode.IsNotFound(err) {
+			http.Error(w, "External service not found", http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, "Error validating payload", http.StatusBadRequest)
 		return
 	}
 

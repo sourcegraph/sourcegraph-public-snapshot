@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
@@ -334,21 +335,16 @@ func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) []*batcheslib.
 		return nil
 	}
 
-	var (
-		entry workerutil.ExecutionLogEntry
-		found bool
-	)
+	entries := []*batcheslib.LogEvent{}
 
 	for _, e := range logs {
-		if e.Key == "step.src.0" || e.Key == "step.src.batch-exec" {
-			entry = e
-			found = true
-			break
+		// V1 executions used either `step.src.0` or `step.src.batch-exec` (after named keys were introduced).
+		// From V2 on, every step has a step in the scheme of `step.docker.step.%d.post` that emits the
+		// AfterStepResult. This will be revised when we are able to upload artifacts from executions.
+		if strings.HasSuffix(e.Key, ".post") || e.Key == "step.src.0" || e.Key == "step.src.batch-exec" {
+			entries = append(entries, btypes.ParseJSONLogsFromOutput(e.Out)...)
 		}
 	}
-	if !found {
-		return nil
-	}
 
-	return btypes.ParseJSONLogsFromOutput(entry.Out)
+	return entries
 }
