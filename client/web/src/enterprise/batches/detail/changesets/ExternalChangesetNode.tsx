@@ -115,6 +115,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
             <ChangesetStatusCell
                 id={node.id}
                 state={node.state}
+                role="status"
                 className={classNames(
                     styles.externalChangesetNodeState,
                     'p-2 align-self-stretch text-muted d-block d-sm-flex'
