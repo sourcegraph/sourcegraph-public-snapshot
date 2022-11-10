@@ -83,13 +83,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	// run in a clean VM.
 	commandLogger := command.NewLogger(h.store, job, record.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
 	defer func() {
-		flushErr := commandLogger.Flush()
-		if flushErr != nil {
-			if err != nil {
-				err = errors.Append(err, flushErr)
-			} else {
-				err = flushErr
-			}
+		if flushErr := commandLogger.Flush(); flushErr != nil {
+			err = errors.Append(err, flushErr)
 		}
 	}()
 
