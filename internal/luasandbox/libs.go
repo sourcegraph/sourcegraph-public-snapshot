@@ -13,8 +13,7 @@ type LuaLib interface {
 }
 
 var defaultAPIs = map[string]LuaLib{
-	"json": libs.JSON,
-	"path": libs.Path,
+	"backdoor_path": libs.Path,
 }
 
 var DefaultGoModules = memo.NewMemoizedConstructor(func() (map[string]lua.LGFunction, error) {
