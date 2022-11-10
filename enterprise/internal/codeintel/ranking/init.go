@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log"
 	"google.golang.org/api/option"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -42,6 +43,7 @@ type serviceDependencies struct {
 }
 
 var (
+	// TODO - move these into background config
 	resultsBucketName             = env.Get("CODEINTEL_RANKING_RESULTS_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")
 	resultsGraphKey               = env.Get("CODEINTEL_RANKING_RESULTS_GRAPH_KEY", "dev", "An identifier of the graph export. Change to start a new import from the configured bucket.")
 	resultsObjectKeyPrefix        = env.Get("CODEINTEL_RANKING_RESULTS_OBJECT_KEY_PREFIX", "ranks/", "The object key prefix that holds results of the last PageRank batch job.")
@@ -93,15 +95,41 @@ func scopedContext(component string) *observation.Context {
 	return observation.ScopedContext("codeintel", "ranking", component)
 }
 
-func NewIndexer(rankingSvc *Service) []goroutine.BackgroundRoutine {
+func NewIndexer(service *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		rankingSvc.RepositoryIndexer(IndexerConfigInst.Interval),
+		background.NewRepositoryIndexer(
+			service.store,
+			service.gitserverClient,
+			service.symbolsClient,
+			IndexerConfigInst.Interval,
+			observationContext,
+		),
 	}
 }
 
-func NewPageRankLoader(rankingSvc *Service) []goroutine.BackgroundRoutine {
+func NewPageRankLoader(service *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		rankingSvc.RankLoader(LoaderConfigInst.LoadInterval),
-		rankingSvc.RankMerger(LoaderConfigInst.MergeInterval),
+		background.NewRankLoader(
+			service.store,
+			service.resultsBucket,
+			background.RankLoaderConfig{
+				ResultsGraphKey:        resultsGraphKey,
+				ResultsObjectKeyPrefix: resultsObjectKeyPrefix,
+			},
+			LoaderConfigInst.LoadInterval,
+			observationContext,
+		),
+		background.NewRankMerger(
+			service.store,
+			service.resultsBucket,
+			background.RankMergerConfig{
+				ResultsGraphKey:               resultsGraphKey,
+				MergeBatchSize:                mergeBatchSize,
+				ExportObjectKeyPrefix:         exportObjectKeyPrefix,
+				DevelopmentExportRepositories: developmentExportRepositories,
+			},
+			LoaderConfigInst.MergeInterval,
+			observationContext,
+		),
 	}
 }
