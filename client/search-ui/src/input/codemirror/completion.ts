@@ -299,7 +299,7 @@ export function createDefaultSuggestionSources(
             // Static suggestions shown if the current position is outside a
             // filter value
             createDefaultSource((context, tokens, token) => {
-                if (tokens.length === 0 && options.showWhenEmpty === false) {
+                if (tokens.length === 0) {
                     return null
                 }
 

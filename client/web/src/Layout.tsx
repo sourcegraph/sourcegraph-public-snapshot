@@ -154,11 +154,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         props.location.pathname === PageRoutes.PasswordReset ||
         props.location.pathname === PageRoutes.Welcome
 
-    // TODO Change this behavior when we have global focus management system
-    // Need to know this for disable autofocus on nav search input
-    // and preserve autofocus for first textarea at survey page, creation UI etc.
-    const isSearchAutoFocusRequired = routeMatch === PageRoutes.Survey || routeMatch === EnterprisePageRoutes.Insights
-
     const themeProps = useThemeProps()
     const themeState = useTheme()
     const themeStateRef = useRef(themeState)
@@ -243,7 +238,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         !isSearchNotebooksPage
                     }
                     setFuzzyFinderIsVisible={setFuzzyFinderVisible}
-                    isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
                     showFeedbackModal={showFeedbackModal}
