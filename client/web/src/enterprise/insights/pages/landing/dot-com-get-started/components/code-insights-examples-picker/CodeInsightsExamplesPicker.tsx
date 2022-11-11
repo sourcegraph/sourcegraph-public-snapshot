@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { throttle } from 'lodash'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Link, H2, Text } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, H2 } from '@sourcegraph/wildcard'
 
 import { CodeInsightExampleCard } from '../../../getting-started/components/code-insights-examples/code-insight-example-card/CodeInsightExampleCard'
 
