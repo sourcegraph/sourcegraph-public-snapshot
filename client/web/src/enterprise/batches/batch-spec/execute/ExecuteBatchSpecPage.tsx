@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 
 import { mdiProgressClock } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
@@ -181,9 +182,16 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                         {batchSpec.source === BatchSpecSource.REMOTE ? (
                             <BatchSpecStateBadge state={batchSpec.state} />
                         ) : (
-                            <Badge variant="secondary" tooltip="This batch spec was executed with src-cli.">
-                                LOCAL
-                            </Badge>
+                            <>
+                                <VisuallyHidden>This batch spec was executed with src-cli.</VisuallyHidden>
+                                <Badge
+                                    variant="secondary"
+                                    tooltip="This batch spec was executed with src-cli."
+                                    aria-hidden={true}
+                                >
+                                    LOCAL
+                                </Badge>
+                            </>
                         )}
                     </div>
                     {batchSpec.startedAt && (
