@@ -2,7 +2,7 @@ package ui
 
 import (
 	"encoding/json"
-	"fmt"
+	"html"
 	"net/http"
 	"strings"
 	"time"
@@ -33,7 +33,6 @@ func serveStreamBlame(db database.DB, gitserverClient gitserver.Client) handlerF
 			//
 			common, err = newCommon(w, r, db, globals.Branding().BrandName, noIndex, serveError)
 			if err != nil {
-				fmt.Printf("here?\n")
 				return err
 			}
 			if common == nil {
@@ -47,9 +46,6 @@ func serveStreamBlame(db database.DB, gitserverClient gitserver.Client) handlerF
 			break
 		}
 		requestedPath := mux.Vars(r)["Path"]
-		if !strings.HasPrefix(requestedPath, "/") {
-			requestedPath = "/" + requestedPath
-		}
 
 		flusher, ok := w.(http.Flusher)
 		if !ok {
@@ -64,16 +60,20 @@ func serveStreamBlame(db database.DB, gitserverClient gitserver.Client) handlerF
 		w.Header().Set("X-Accel-Buffering", "no")
 		// ---------------------- END OF COPY&PASTED -----------------------
 
-		fmt.Println("up here")
-		hunkReader, err := gitserverClient.StreamBlameFile(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, requestedPath, &gitserver.BlameOptions{})
+		if strings.HasPrefix(requestedPath, "/") {
+			requestedPath = strings.TrimLeft(requestedPath, "/")
+		}
+		hunkReader, err := gitserverClient.StreamBlameFile(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, requestedPath, &gitserver.BlameOptions{
+			NewestCommit: common.CommitID,
+		})
 		if err != nil {
 			return err
 		}
 
 		for {
-			fmt.Println("we are here?\n")
 			hunk, done, err := hunkReader.Read()
 			if err != nil {
+				http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 				return err
 			}
 			if done {
@@ -86,17 +86,10 @@ func serveStreamBlame(db database.DB, gitserverClient gitserver.Client) handlerF
 				return err
 			}
 
-			n, err := w.Write(encoded)
-			if err != nil {
+			encoded = append(encoded, []byte("\n")...)
+			if _, err = w.Write(encoded); err != nil {
 				return err
 			}
-			fmt.Printf("bytes written: %d\n", n)
-
-			n, err = w.Write([]byte("\n"))
-			if err != nil {
-				return err
-			}
-			fmt.Printf("bytes written: %d\n", n)
 
 			flusher.Flush()
 		}

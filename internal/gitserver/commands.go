@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
@@ -687,44 +688,42 @@ type Hunk struct {
 	Filename string
 }
 
-type dummyHunkReader struct {
-	n int
-}
-
-func (d *dummyHunkReader) Read() (hunk []*Hunk, ok bool, err error) {
-	if d.n >= 50 {
-		return nil, true, nil
-	}
-
-	time.Sleep(50 * time.Millisecond)
-
-	d.n += 1
-
-	hunks := []*Hunk{
-		{
-			StartLine: 50 + d.n,
-			EndLine:   60 + d.n,
-			StartByte: 50 + d.n,
-			EndByte:   60 + d.n,
-			CommitID:  api.CommitID(fmt.Sprintf("commit-%d", d.n)),
-			Author: gitdomain.Signature{
-				Name:  "Horsegraph Inc",
-				Email: "ceo@horsegraph.com",
-				Date:  time.Now(),
-			},
-			Message:  fmt.Sprintf("message %d", d.n),
-			Filename: fmt.Sprintf("file-%d", d.n),
-		},
-	}
-
-	return hunks, false, nil
-}
-
 // StreamBlameFile returns Git blame information about a file.
 func (c *clientImplementor) StreamBlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (HunkReader, error) {
-	// BIG FAT TODO: Actually call `git blame --incremental` and then use the
-	// parsing code from `BlameFile` below and send hunks to consumer.
-	return &dummyHunkReader{n: 0}, nil
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: StreamBlameFile")
+	span.SetTag("repo", repo)
+	span.SetTag("path", path)
+	span.SetTag("opt", opt)
+	defer span.Finish()
+
+	return streamBlameFileCmd(ctx, c.gitserverGitCommandFunc(repo), path, opt, repo, checker)
+}
+
+func streamBlameFileCmd(ctx context.Context, command gitCommandFunc, path string, opt *BlameOptions, repo api.RepoName, checker authz.SubRepoPermissionChecker) (HunkReader, error) {
+	a := actor.FromContext(ctx)
+	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil || !hasAccess {
+		return nil, err
+	}
+	if opt == nil {
+		opt = &BlameOptions{}
+	}
+	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
+		return nil, err
+	}
+
+	// TODO: Duplicated
+	args := []string{"blame", "-w", "--porcelain", "--incremental"}
+	if opt.StartLine != 0 || opt.EndLine != 0 {
+		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
+	}
+	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
+
+	rc, err := command(args).StdoutReader(ctx)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed", args))
+	}
+
+	return newBlameHunkReader(ctx, rc), nil
 }
 
 // BlameFile returns Git blame information about a file.
@@ -763,6 +762,11 @@ func blameFileCmd(ctx context.Context, command gitCommandFunc, path string, opt 
 		return nil, nil
 	}
 
+	return parseGitBlameOutput(string(out))
+}
+
+// parseGitBlameOutput parses the output of `git blame -w --porcelain`
+func parseGitBlameOutput(out string) ([]*Hunk, error) {
 	commits := make(map[string]gitdomain.Commit)
 	filenames := make(map[string]string)
 	hunks := make([]*Hunk, 0)
@@ -860,6 +864,118 @@ func blameFileCmd(ctx context.Context, command gitCommandFunc, path string, opt 
 	}
 
 	return hunks, nil
+}
+
+func newBlameHunkReader(ctx context.Context, rc io.ReadCloser) HunkReader {
+	br := &blameHunkReader{
+		rc:    rc,
+		hunks: make(chan hunkResult),
+		done:  make(chan struct{}),
+	}
+
+	go br.readHunks(ctx)
+
+	return br
+}
+
+type hunkResult struct {
+	hunk *Hunk
+	err  error
+}
+
+type blameHunkReader struct {
+	rc io.ReadCloser
+
+	hunks chan hunkResult
+	done  chan struct{}
+}
+
+func (d *blameHunkReader) readHunks(ctx context.Context) {
+	sc := bufio.NewScanner(d.rc)
+	defer d.rc.Close()
+
+	var n int
+	for sc.Scan() {
+		if err := ctx.Err(); err != nil {
+			close(d.done)
+			return
+		}
+
+		bs := sc.Bytes()
+		line := string(bs)
+
+		d.hunks <- hunkResult{hunk: &Hunk{
+			StartLine: n,
+			EndLine:   n,
+			StartByte: n,
+			EndByte:   n,
+			CommitID:  api.CommitID(fmt.Sprintf("commit-%d", n)),
+			Author: gitdomain.Signature{
+				Name:  "Horsegraph Inc",
+				Email: "ceo@horsegraph.com",
+				Date:  time.Now(),
+			},
+			Message:  line,
+			Filename: fmt.Sprintf("file-%d", n),
+		}}
+
+		n += 1
+	}
+
+	if err := sc.Err(); err != nil {
+		d.hunks <- hunkResult{err: err}
+	}
+	close(d.done)
+}
+
+func (d *blameHunkReader) Read() (hunk []*Hunk, done bool, err error) {
+	select {
+	case res := <-d.hunks:
+		if res.err != nil {
+			return nil, false, res.err
+		}
+		return []*Hunk{res.hunk}, false, nil
+	case <-d.done:
+		return nil, true, nil
+	}
+}
+
+func parseGitBlameOutputReader(ctx context.Context, out io.ReadCloser, hunks chan hunkResult, done chan struct{}) {
+	sc := bufio.NewScanner(out)
+	defer out.Close()
+
+	var n int
+	for sc.Scan() {
+		if err := ctx.Err(); err != nil {
+			close(done)
+			return
+		}
+
+		bs := sc.Bytes()
+		line := string(bs)
+
+		hunks <- hunkResult{hunk: &Hunk{
+			StartLine: n,
+			EndLine:   n,
+			StartByte: n,
+			EndByte:   n,
+			CommitID:  api.CommitID(fmt.Sprintf("commit-%d", n)),
+			Author: gitdomain.Signature{
+				Name:  "Horsegraph Inc",
+				Email: "ceo@horsegraph.com",
+				Date:  time.Now(),
+			},
+			Message:  line,
+			Filename: fmt.Sprintf("file-%d", n),
+		}}
+
+		n += 1
+	}
+
+	if err := sc.Err(); err != nil {
+		hunks <- hunkResult{err: err}
+	}
+	close(done)
 }
 
 func (c *clientImplementor) gitserverGitCommandFunc(repo api.RepoName) gitCommandFunc {
