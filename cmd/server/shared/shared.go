@@ -173,6 +173,9 @@ func Main() {
 	if minioLines := maybeMinio(); len(minioLines) != 0 {
 		procfile = append(procfile, minioLines...)
 	}
+	if blobstoreLines := maybeBlobstore(); len(blobstoreLines) != 0 {
+		procfile = append(procfile, blobstoreLines...)
+	}
 
 	redisStoreLine, err := maybeRedisStoreProcFile()
 	if err != nil {
