@@ -51,6 +51,8 @@ func (s *store) GetRepositoriesForIndexScan(ctx context.Context, table, column s
 
 func quote(s string) *sqlf.Query { return sqlf.Sprintf(s) }
 
+// toot
+
 const getRepositoriesForIndexScanQuery = `
 WITH
 repositories_matching_policy AS (
