@@ -1,4 +1,4 @@
-package loader
+package ranking
 
 import (
 	"time"
@@ -6,16 +6,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-type config struct {
+type indexerConfig struct {
+	env.BaseConfig
+
+	Interval time.Duration
+}
+
+var IndexerConfigInst = &indexerConfig{}
+
+func (c *indexerConfig) Load() {
+	c.Interval = c.GetInterval("CODEINTEL_RANKING_INDEXER_INTERVAL", "10s", "The frequency with which to run periodic codeintel rank indexing tasks.")
+}
+
+type loaderConfig struct {
 	env.BaseConfig
 
 	LoadInterval  time.Duration
 	MergeInterval time.Duration
 }
 
-var ConfigInst = &config{}
+var LoaderConfigInst = &loaderConfig{}
 
-func (c *config) Load() {
+func (c *loaderConfig) Load() {
 	c.LoadInterval = c.GetInterval("CODEINTEL_RANKING_LOADER_INTERVAL", "10s", "The frequency with which to run periodic codeintel rank loading tasks.")
 	c.MergeInterval = c.GetInterval("CODEINTEL_RANKING_MERGER_INTERVAL", "1s", "The frequency with which to run periodic codeintel rank merging tasks.")
 }

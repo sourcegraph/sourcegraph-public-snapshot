@@ -1,4 +1,4 @@
-package ranking
+package background
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 const pageRankFollowProbability = 0.85 // random jump 15% of the time
 const pageRankTolerance = 0.0001
 
-func (s *Service) pageRankFromStreamingGraph(ctx context.Context, graph streamingGraph) (map[string]float64, error) {
+func pageRankFromStreamingGraph(ctx context.Context, graph streamingGraph) (map[string]float64, error) {
 	g := pagerank.New()
 	idsToName := map[int]string{}
 	nameToIDs := map[string]int{}

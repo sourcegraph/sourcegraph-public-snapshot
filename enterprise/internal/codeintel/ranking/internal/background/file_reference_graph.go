@@ -1,4 +1,4 @@
-package ranking
+package background
 
 import (
 	"archive/tar"
@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
-func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.RepoName) (streamingGraph, error) {
+func (s *indexer) buildFileReferenceGraph(ctx context.Context, repoName api.RepoName) (streamingGraph, error) {
 	symbolsByPath, err := s.extractSymbols(ctx, repoName)
 	if err != nil {
 		return nil, err
@@ -175,7 +175,7 @@ func (s *Service) buildFileReferenceGraph(ctx context.Context, repoName api.Repo
 	return &graphStreamer{ch: ch}, nil
 }
 
-func (s *Service) extractSymbols(ctx context.Context, repoName api.RepoName) (map[string][]string, error) {
+func (s *indexer) extractSymbols(ctx context.Context, repoName api.RepoName) (map[string][]string, error) {
 	headCommit, ok, err := s.gitserverClient.HeadFromName(ctx, repoName)
 	if err != nil {
 		return nil, err
@@ -216,7 +216,7 @@ const maxFileSize = int64(10e4)
 // that file's contents for each file in the repository with one of the given extensions. The byte
 // buffer is re-used on each invocation of the callback, so the use of the buffer must be finished
 // prior to the callback's return to ensure a stable read.
-func (s *Service) forEachFileInArchive(ctx context.Context, repoName api.RepoName, extensions []string, callback func(h *tar.Header, content []byte) error) error {
+func (s *indexer) forEachFileInArchive(ctx context.Context, repoName api.RepoName, extensions []string, callback func(h *tar.Header, content []byte) error) error {
 	pathspecs := make([]gitdomain.Pathspec, 0, len(extensions))
 	for _, extension := range extensions {
 		pathspecs = append(pathspecs, gitdomain.PathspecSuffix(extension))

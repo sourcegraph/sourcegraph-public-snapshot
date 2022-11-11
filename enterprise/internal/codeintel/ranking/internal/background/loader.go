@@ -1,29 +1,54 @@
-package ranking
+package background
 
 import (
-	"bytes"
 	"context"
 	"encoding/csv"
 	"io"
 	"os"
-	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
+	"github.com/sourcegraph/log"
 	"google.golang.org/api/iterator"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
-func (s *Service) RankLoader(interval time.Duration) goroutine.BackgroundRoutine {
+type rankLoader struct {
+	store         store.Store
+	resultsBucket *storage.BucketHandle
+	logger        log.Logger
+	metrics       *loaderMetrics
+}
+
+type RankLoaderConfig struct {
+	ResultsGraphKey        string
+	ResultsObjectKeyPrefix string
+}
+
+func NewRankLoader(
+	store store.Store,
+	resultsBucket *storage.BucketHandle,
+	config RankLoaderConfig,
+	interval time.Duration,
+	observationContext *observation.Context,
+) goroutine.BackgroundRoutine {
+	loader := &rankLoader{
+		store:         store,
+		resultsBucket: resultsBucket,
+		logger:        log.Scoped("codeintel-rank-loader", "Reads rank data from GCS into Postgres"),
+		metrics:       newLoaderMetrics(observationContext),
+	}
+
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return s.loadRanks(ctx)
+		return loader.loadRanks(ctx, config)
 	}))
 }
 
@@ -32,12 +57,12 @@ const (
 	rankInputFileBatchSize = 256
 )
 
-func (s *Service) loadRanks(ctx context.Context) (err error) {
+func (l *rankLoader) loadRanks(ctx context.Context, config RankLoaderConfig) (err error) {
 	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
 		return nil
 	}
-	if s.resultsBucket == nil {
-		s.logger.Warn("No result bucket is configured")
+	if l.resultsBucket == nil {
+		l.logger.Warn("No result bucket is configured")
 		return nil
 	}
 
@@ -48,8 +73,8 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 		defer close(batches)
 
 		batch := make([]string, 0, rankInputFileBatchSize)
-		objects := s.resultsBucket.Objects(ctx, &storage.Query{
-			Prefix: resultsObjectKeyPrefix,
+		objects := l.resultsBucket.Objects(ctx, &storage.Query{
+			Prefix: config.ResultsObjectKeyPrefix,
 		})
 		for {
 			attrs, err := objects.Next()
@@ -62,7 +87,7 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 			}
 
 			// Don't read the the enclosing folder or success metadata file
-			if attrs.Name == resultsObjectKeyPrefix || attrs.Name == resultsObjectKeyPrefix+"_SUCCESS" {
+			if attrs.Name == config.ResultsObjectKeyPrefix || attrs.Name == config.ResultsObjectKeyPrefix+"_SUCCESS" {
 				continue
 			}
 
@@ -92,7 +117,7 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 
 	g.Go(func(ctx context.Context) error {
 		for filenames := range batches {
-			knownFilenames, err := s.store.HasInputFilename(ctx, resultsGraphKey, filenames)
+			knownFilenames, err := l.store.HasInputFilename(ctx, config.ResultsGraphKey, filenames)
 			if err != nil {
 				return err
 			}
@@ -107,7 +132,7 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 					continue
 				}
 
-				r, err := s.resultsBucket.Object(name).NewReader(ctx)
+				r, err := l.resultsBucket.Object(name).NewReader(ctx)
 				if err != nil {
 					return err
 				}
@@ -128,7 +153,7 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 					}
 
 					offset := cr.n
-					s.operations.numCSVBytesRead.Add(float64(offset - lastOffset))
+					l.metrics.numCSVBytesRead.Add(float64(offset - lastOffset))
 					lastOffset = offset
 
 					if len(line) < 3 {
@@ -150,11 +175,11 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 					ranks[repo][path] = rank
 				}
 
-				if err := s.store.BulkSetDocumentRanks(ctx, resultsGraphKey, name, pageRankPrecision, ranks); err != nil {
+				if err := l.store.BulkSetDocumentRanks(ctx, config.ResultsGraphKey, name, pageRankPrecision, ranks); err != nil {
 					return err
 				}
 
-				s.operations.numCSVFilesProcessed.Add(float64(1))
+				l.metrics.numCSVFilesProcessed.Add(float64(1))
 			}
 		}
 
@@ -163,71 +188,6 @@ func (s *Service) loadRanks(ctx context.Context) (err error) {
 
 	if err := g.Wait(); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func (s *Service) RankMerger(interval time.Duration) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return s.mergeRanks(ctx)
-	}))
-}
-
-func (s *Service) mergeRanks(ctx context.Context) (err error) {
-	if !envvar.SourcegraphDotComMode() && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
-		return nil
-	}
-
-	numRepositoriesUpdated, numInputRowsProcessed, err := s.store.MergeDocumentRanks(ctx, resultsGraphKey, mergeBatchSize)
-	if err != nil {
-		return err
-	}
-
-	s.operations.numRepositoriesUpdated.Add(float64(numRepositoriesUpdated))
-	s.operations.numInputRowsProcessed.Add(float64(numInputRowsProcessed))
-
-	if err := s.exportRanksForDevelopment(ctx); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *Service) exportRanksForDevelopment(ctx context.Context) (err error) {
-	if exportObjectKeyPrefix == "" {
-		return nil
-	}
-	for _, repoName := range strings.Split(developmentExportRepositories, ",") {
-		lastUpdated, payload, err := s.store.ExportRankPayloadFor(ctx, api.RepoName(repoName))
-		if err != nil {
-			return err
-		}
-		lastUpdated = lastUpdated.UTC().Truncate(time.Second)
-
-		objectHandle := s.resultsBucket.Object(filepath.Join(exportObjectKeyPrefix, strings.ReplaceAll(repoName, "/", "_")))
-
-		if attrs, err := objectHandle.Attrs(ctx); err != nil {
-			if err != storage.ErrObjectNotExist {
-				return err
-			}
-		} else {
-			if !attrs.CustomTime.IsZero() && !attrs.CustomTime.Before(lastUpdated) {
-				continue
-			}
-		}
-
-		w := objectHandle.NewWriter(ctx)
-		if _, err := io.Copy(w, bytes.NewReader(payload)); err != nil {
-			_ = w.Close()
-			return err
-		}
-		if err := w.Close(); err != nil {
-			return err
-		}
-		if _, err := objectHandle.Update(ctx, storage.ObjectAttrsToUpdate{CustomTime: lastUpdated}); err != nil {
-			return err
-		}
 	}
 
 	return nil
