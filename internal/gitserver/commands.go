@@ -816,11 +816,13 @@ func parseGitBlameOutput(out string) ([]*Hunk, error) {
 
 			for i := 10; i < 13 && i < len(remainingLines); i++ {
 				if strings.HasPrefix(remainingLines[i], "filename ") {
+					fmt.Printf("filename line: %d\n", i)
 					filenames[commitID] = strings.SplitN(remainingLines[i], " ", 2)[1]
 					break
 				}
 			}
 
+			fmt.Printf("len(remainingLines): %d\n", len(remainingLines))
 			if len(remainingLines) >= 13 && strings.HasPrefix(remainingLines[10], "previous ") {
 				byteOffset += len(remainingLines[12])
 				remainingLines = remainingLines[13:]
@@ -891,41 +893,7 @@ type blameHunkReader struct {
 }
 
 func (d *blameHunkReader) readHunks(ctx context.Context) {
-	sc := bufio.NewScanner(d.rc)
-	defer d.rc.Close()
-
-	var n int
-	for sc.Scan() {
-		if err := ctx.Err(); err != nil {
-			close(d.done)
-			return
-		}
-
-		bs := sc.Bytes()
-		line := string(bs)
-
-		d.hunks <- hunkResult{hunk: &Hunk{
-			StartLine: n,
-			EndLine:   n,
-			StartByte: n,
-			EndByte:   n,
-			CommitID:  api.CommitID(fmt.Sprintf("commit-%d", n)),
-			Author: gitdomain.Signature{
-				Name:  "Horsegraph Inc",
-				Email: "ceo@horsegraph.com",
-				Date:  time.Now(),
-			},
-			Message:  line,
-			Filename: fmt.Sprintf("file-%d", n),
-		}}
-
-		n += 1
-	}
-
-	if err := sc.Err(); err != nil {
-		d.hunks <- hunkResult{err: err}
-	}
-	close(d.done)
+	parseGitBlameOutputReader(ctx, d.rc, d.hunks, d.done)
 }
 
 func (d *blameHunkReader) Read() (hunk []*Hunk, done bool, err error) {
@@ -944,32 +912,158 @@ func parseGitBlameOutputReader(ctx context.Context, out io.ReadCloser, hunks cha
 	sc := bufio.NewScanner(out)
 	defer out.Close()
 
-	var n int
-	for sc.Scan() {
+	commits := make(map[string]gitdomain.Commit)
+	filenames := make(map[string]string)
+	byteOffset := 0
+
+	for {
 		if err := ctx.Err(); err != nil {
 			close(done)
 			return
 		}
 
-		bs := sc.Bytes()
-		line := string(bs)
+		if !sc.Scan() {
+			break
+		}
+		hunkHeaderLine := string(sc.Bytes())
 
-		hunks <- hunkResult{hunk: &Hunk{
-			StartLine: n,
-			EndLine:   n,
-			StartByte: n,
-			EndByte:   n,
-			CommitID:  api.CommitID(fmt.Sprintf("commit-%d", n)),
-			Author: gitdomain.Signature{
-				Name:  "Horsegraph Inc",
-				Email: "ceo@horsegraph.com",
-				Date:  time.Now(),
-			},
-			Message:  line,
-			Filename: fmt.Sprintf("file-%d", n),
-		}}
+		// Consume hunk
+		hunkHeader := strings.Split(hunkHeaderLine, " ")
+		if len(hunkHeader) != 4 {
+			hunks <- hunkResult{err: errors.Errorf("Expected at least 4 parts to hunkHeader, but got: '%s'", hunkHeader)}
+			return
+		}
 
-		n += 1
+		commitID := hunkHeader[0]
+		lineNoCur, _ := strconv.Atoi(hunkHeader[2])
+		nLines, _ := strconv.Atoi(hunkHeader[3])
+		hunk := &Hunk{
+			CommitID:  api.CommitID(commitID),
+			StartLine: lineNoCur,
+			EndLine:   lineNoCur + nLines,
+			StartByte: byteOffset,
+		}
+
+		if _, ok := commits[commitID]; ok {
+			// Already seen commit, read next line and bump offset
+			if !sc.Scan() {
+				break
+			}
+			byteOffset += len(sc.Bytes())
+			nLines -= 1
+		} else {
+
+			// --------------- New commit -------------------
+			//
+			// 1. Read author
+			if !sc.Scan() {
+				break
+			}
+			authorLine := string(sc.Bytes())
+			fmt.Printf("authorLine: %q\n", authorLine)
+			author := strings.Join(strings.Split(authorLine, " ")[1:], " ")
+
+			// 2. Read author email
+			if !sc.Scan() {
+				break
+			}
+			emailLine := string(sc.Bytes())
+			fmt.Printf("emailLine: %q\n", emailLine)
+			email := strings.Join(strings.Split(emailLine, " ")[1:], " ")
+			if len(email) >= 2 && email[0] == '<' && email[len(email)-1] == '>' {
+				email = email[1 : len(email)-1]
+			}
+
+			// 3. Read author time
+			if !sc.Scan() {
+				break
+			}
+			authorTimeLine := string(sc.Bytes())
+			authorTime, err := strconv.ParseInt(strings.Join(strings.Split(authorTimeLine, " ")[1:], " "), 10, 64)
+			if err != nil {
+				hunks <- hunkResult{err: errors.Errorf("Failed to parse author-time %q", authorTimeLine)}
+				return
+			}
+
+			// 4. Skip over "author-tz" and "committer-*" lines until we reach "summary"
+			var summaryLine string
+			for summaryLine == "" {
+				if !sc.Scan() {
+					break
+				}
+				l := string(sc.Bytes())
+				if !strings.HasPrefix(l, "summary ") {
+					continue
+				}
+				summaryLine = l
+			}
+
+			summary := strings.Join(strings.Split(summaryLine, " ")[1:], " ")
+			commit := gitdomain.Commit{
+				ID:      api.CommitID(commitID),
+				Message: gitdomain.Message(summary),
+				Author: gitdomain.Signature{
+					Name:  author,
+					Email: email,
+					Date:  time.Unix(authorTime, 0).UTC(),
+				},
+			}
+
+			// 5. Skip over "previous" and find "filename " line
+			var filenameLine string
+			for filenameLine == "" {
+				if !sc.Scan() {
+					break
+				}
+				l := string(sc.Bytes())
+				if !strings.HasPrefix(l, "filename ") {
+					continue
+				}
+				filenameLine = l
+			}
+			filenames[commitID] = strings.SplitN(filenameLine, " ", 2)[1]
+
+			// nLines includes the filenameLine, so we already read that
+			nLines -= 1
+			if !sc.Scan() {
+				break
+			}
+			byteOffset += len(sc.Bytes())
+
+			commits[commitID] = commit
+
+			// TODO: What about "boundary" lines?
+		}
+
+		if commit, present := commits[commitID]; present {
+			// Should always be present, but check just to avoid
+			// panicking in case of a (somewhat likely) bug in our
+			// git-blame parser above.
+			hunk.CommitID = commit.ID
+			hunk.Author = commit.Author
+			hunk.Message = string(commit.Message)
+		}
+
+		if filename, present := filenames[commitID]; present {
+			hunk.Filename = filename
+		}
+
+		// read remaining <sha>\n<content> line pairs in hunk
+		for nLines > 0 {
+			if !sc.Scan() {
+				break
+			}
+
+			if !sc.Scan() {
+				break
+			}
+			byteOffset += len(sc.Bytes())
+			nLines -= 1
+		}
+
+		hunk.EndByte = byteOffset
+
+		hunks <- hunkResult{hunk: hunk}
 	}
 
 	if err := sc.Err(); err != nil {

@@ -3088,7 +3088,7 @@ func TestParseGitBlameOutput(t *testing.T) {
 		t.Fatalf("parseGitBlameOutput failed: %s", err)
 	}
 
-	if d := cmp.Diff(testGitBlameOutput, hunks); d != "" {
+	if d := cmp.Diff(testGitBlameOutputHunks, hunks); d != "" {
 		t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
 	}
 }
@@ -3109,7 +3109,7 @@ func TestBlameHunkReader(t *testing.T) {
 		hunks = append(hunks, hunk...)
 	}
 
-	if d := cmp.Diff(testGitBlameOutput, hunks); d != "" {
+	if d := cmp.Diff(testGitBlameOutputHunks, hunks); d != "" {
 		t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
 	}
 }
