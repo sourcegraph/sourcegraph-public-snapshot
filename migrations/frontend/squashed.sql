@@ -4372,7 +4372,7 @@ CREATE INDEX event_logs_anonymous_user_id ON event_logs USING btree (anonymous_u
 
 CREATE UNIQUE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name);
 
-CREATE INDEX event_logs_name ON event_logs USING btree (name);
+CREATE INDEX event_logs_name_timestamp ON event_logs USING btree (name, "timestamp" DESC);
 
 CREATE INDEX event_logs_source ON event_logs USING btree (source);
 
