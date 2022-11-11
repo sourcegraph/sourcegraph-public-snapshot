@@ -88,7 +88,7 @@ type backfiller struct {
 	clock glock.Clock
 }
 
-var backfillMetrics = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "insights_backfillv2_step", metrics.WithLabels("step"))
+var backfillMetrics = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "insights_repo_backfill", metrics.WithLabels("step"))
 
 func (b *backfiller) Run(ctx context.Context, req BackfillRequest) error {
 
