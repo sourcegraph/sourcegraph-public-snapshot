@@ -62,6 +62,10 @@ func newService(
 	}
 }
 
+func (s *Service) IndexEnqueuer() IndexEnqueuer {
+	return s
+}
+
 func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {
 	ctx, _, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
