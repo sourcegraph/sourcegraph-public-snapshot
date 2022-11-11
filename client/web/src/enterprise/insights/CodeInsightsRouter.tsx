@@ -34,7 +34,7 @@ export const CodeInsightsRouter: React.FunctionComponent<React.PropsWithChildren
     const fetched = useLicense()
     const api = useApi()
 
-    if (!fetched) {
+    if (!fetched && process.env.NODE_ENV !== 'development') {
         return null
     }
 
