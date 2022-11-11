@@ -236,6 +236,8 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	// feels nicer than passing in a readerGrep since handle path directly.
 	if rg, err := compile(p); err != nil {
 		return nil, err
+	} else if rg.re == nil { // we are just matching paths
+		parts = append(parts, &zoektquery.Const{Value: true})
 	} else {
 		re, err := syntax.Parse(rg.re.String(), syntax.Perl)
 		if err != nil {
