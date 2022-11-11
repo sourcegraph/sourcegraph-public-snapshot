@@ -190,7 +190,7 @@ function getDiffResolvedRevisionFromPageSource(
     }
 }
 
-export const getPermalinkSelector = (): string | undefined =>
+const getPermalinkSelector = (): string | undefined =>
     ['.ActionList-item--navActive a', 'a.js-permalink-shortcut'].find(selector => !!document.querySelector(selector))
 
 /**
