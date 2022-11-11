@@ -27,6 +27,7 @@ import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './UserNavItem.module.scss'
 
+const MAX_VISIBLE_ORGS = 5
 export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
     authenticatedUser: Pick<
         AuthenticatedUser,
@@ -150,12 +151,12 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                 <>
                                     <MenuDivider className={styles.dropdownDivider} />
                                     <MenuHeader className={styles.dropdownHeader}>Your organizations</MenuHeader>
-                                    {organizations.slice(0, 5).map(org => (
+                                    {organizations.slice(0, MAX_VISIBLE_ORGS).map(org => (
                                         <MenuLink as={Link} key={org.id} to={org.settingsURL || org.url}>
                                             {org.displayName || org.name}
                                         </MenuLink>
                                     ))}
-                                    {organizations.length > 5 && (
+                                    {organizations.length > MAX_VISIBLE_ORGS && (
                                         <MenuLink as={Link} to={props.authenticatedUser.settingsURL!}>
                                             Show all organizations
                                         </MenuLink>
