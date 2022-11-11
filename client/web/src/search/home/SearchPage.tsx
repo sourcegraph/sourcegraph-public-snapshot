@@ -10,7 +10,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { H4, Link } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
