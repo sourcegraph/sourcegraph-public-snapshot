@@ -4,12 +4,18 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
+	"fmt"
+	"github.com/go-stack/stack"
+	"github.com/inconshreveable/log15"
+	"io/ioutil"
 	"math"
 	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -109,6 +115,7 @@ func NewExternalClientFactory(middleware ...Middleware) *Factory {
 	mw := []Middleware{
 		ContextErrorMiddleware,
 		HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
+		RedisLoggerMiddleware(),
 	}
 	mw = append(mw, middleware...)
 
@@ -258,6 +265,69 @@ func ContextErrorMiddleware(cli Doer) Doer {
 		}
 		return resp, err
 	})
+}
+
+type RedisLogItem struct {
+	Method          string        `json:"method"` // The request method (GET, POST, etc.)
+	URL             string        `json:"url"`
+	RequestHeaders  http.Header   `json:"request_headers"`
+	RequestBody     string        `json:"body"`
+	StatusCode      int           `json:"status_code"` // The response status code
+	ResponseBody    string        `json:"response_body"`
+	ResponseHeaders http.Header   `json:"response_headers"`
+	Duration        time.Duration `json:"duration"`
+	Error           error         `json:"error"`
+	CallStack       string        `json:"call_stack"`
+	CallStack2      string        `json:"call_stack2"`
+}
+
+func RedisLoggerMiddleware() Middleware {
+	return func(cli Doer) Doer {
+		return DoerFunc(func(req *http.Request) (*http.Response, error) {
+			start := time.Now()
+			resp, err := cli.Do(req)
+			duration := time.Since(start)
+			var requestBody []byte
+			var responseBody []byte
+			if req != nil && req.Body != nil {
+				requestBody, _ = ioutil.ReadAll(req.Body)
+			}
+			if resp != nil && resp.Body != nil {
+				responseBody, _ = ioutil.ReadAll(resp.Body)
+			}
+			logItem := RedisLogItem{
+				Method:          req.Method,
+				URL:             req.URL.String(),
+				RequestHeaders:  req.Header,
+				RequestBody:     string(requestBody),
+				StatusCode:      resp.StatusCode,
+				ResponseBody:    string(responseBody),
+				ResponseHeaders: resp.Header,
+				Duration:        duration,
+				Error:           err,
+				CallStack:       string(debug.Stack()),
+				CallStack2:      stack.Caller(2).String(),
+			}
+
+			logItemJson, jsonErr := json.Marshal(logItem)
+
+			if jsonErr != nil {
+				log15.Error("RedisLoggerMiddleware failed to marshal JSON", "error", jsonErr)
+			}
+
+			// Current UTC date in YYYY-MM-DD format
+			today := time.Now().UTC().Format("2006-01-02")
+			// Current UTC time in HH:MM:SS.nS format
+			now := time.Now().UTC().Format("15-04-05.999999999")
+
+			// Redis key
+			key := fmt.Sprintf("outgoing_external_requests:%s:%s", today, now) // TODO: Use a more sensible format
+
+			redisCache.Set(key, logItemJson)
+
+			return resp, err
+		})
+	}
 }
 
 // GitHubProxyRedirectMiddleware rewrites requests to the "github-proxy" host
