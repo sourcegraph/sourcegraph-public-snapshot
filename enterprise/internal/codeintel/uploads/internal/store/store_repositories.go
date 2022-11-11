@@ -51,40 +51,32 @@ func (s *store) GetRepositoriesForIndexScan(ctx context.Context, table, column s
 
 func quote(s string) *sqlf.Query { return sqlf.Sprintf(s) }
 
-// toot
-
 const getRepositoriesForIndexScanQuery = `
 WITH
-repositories_matching_policy AS (
-	(
-		SELECT r.id FROM repo r WHERE EXISTS (
-			SELECT 1
-			FROM lsif_configuration_policies p
-			WHERE
-				p.indexing_enabled AND
-				p.repository_id IS NULL AND
-				p.repository_patterns IS NULL AND
-				%s -- completely enable or disable this query
-		)
-		ORDER BY stars DESC NULLS LAST, id
-		%s
+repositories_matching_policy AS ((
+	SELECT r.id FROM repo r WHERE EXISTS (
+		SELECT 1
+		FROM lsif_configuration_policies p
+		WHERE
+			p.indexing_enabled AND
+			p.repository_id IS NULL AND
+			p.repository_patterns IS NULL AND
+			%s -- completely enable or disable this query
 	)
-
-	UNION ALL
-
+	ORDER BY stars DESC NULLS LAST, id
+	%s
+) UNION ALL (
 	SELECT p.repository_id AS id
 	FROM lsif_configuration_policies p
 	WHERE
 		p.indexing_enabled AND
 		p.repository_id IS NOT NULL
-
-	UNION ALL
-
+) UNION ALL (
 	SELECT rpl.repo_id AS id
 	FROM lsif_configuration_policies p
 	JOIN lsif_configuration_policies_repository_pattern_lookup rpl ON rpl.policy_id = p.id
 	WHERE p.indexing_enabled
-),
+)),
 candidate_repositories AS (
 	SELECT r.id AS id
 	FROM repo r
