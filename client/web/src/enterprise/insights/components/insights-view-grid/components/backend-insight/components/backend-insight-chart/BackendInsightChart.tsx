@@ -150,8 +150,6 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
 
     return (
         <LegendList
-            as={isInteractive ? 'div' : 'ul'}
-            role="list"
             className={styles.legendList}
             // prevent accidental dragging events
             onMouseDown={(event: MouseEvent<HTMLElement>) => event.stopPropagation()}
@@ -159,8 +157,8 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
             {series.map(item => (
                 <LegendItem
                     key={item.id as string}
-                    as={isInteractive ? Button : 'li'}
-                    role={isInteractive ? 'checkbox listitem' : 'listitem'}
+                    as={isInteractive ? Button : 'span'}
+                    role={isInteractive ? 'checkbox' : undefined}
                     aria-checked={isSeriesSelected(`${item.id}`)}
                     name={item.name}
                     hovered={isSeriesHovered(`${item.id}`)}

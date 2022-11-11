@@ -28,29 +28,31 @@ interface LegendItemProps {
 
 export const LegendItem = forwardRef(function LegendItem(props, ref) {
     const {
+        as: Component = 'span',
         name,
         hovered,
         selected = true,
         color = 'var(--gray-07)',
         className,
         children,
-        as: Component = 'li',
         ...attributes
     } = props
 
     return (
-        <Component
-            {...attributes}
-            ref={ref}
-            className={classNames(styles.legendItem, className, { 'text-muted': !selected && !hovered })}
-        >
-            <span
-                aria-hidden={true}
-                /* eslint-disable-next-line react/forbid-dom-props */
-                style={{ backgroundColor: selected || hovered ? color : undefined }}
-                className={classNames([styles.legendMark, { [styles.unselected]: !selected }])}
-            />
-            {children || name}
-        </Component>
+        <li ref={ref}>
+            <Component
+                {...attributes}
+                className={classNames(styles.legendItem, className, { 'text-muted': !selected && !hovered })}
+            >
+                <span
+                    aria-hidden={true}
+                    /* eslint-disable-next-line react/forbid-dom-props */
+                    style={{ backgroundColor: selected || hovered ? color : undefined }}
+                    className={classNames([styles.legendMark, { [styles.unselected]: !selected }])}
+                />
+                {children || name}
+            </Component>
+        </li>
+
     )
 }) as ForwardReferenceComponent<'li', LegendItemProps>
