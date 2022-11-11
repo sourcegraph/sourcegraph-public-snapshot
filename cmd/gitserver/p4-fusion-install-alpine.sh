@@ -38,7 +38,7 @@ set -x
 # Then extract the binary from /usr/local/bin/p4-fusion. Please rename it
 # follow the format and upload to the bucket here
 # https://console.cloud.google.com/storage/browser/sourcegraph-artifacts/p4-fusion
-export P4_FUSION_VERSION=v1.11
+export P4_FUSION_VERSION=v1.12
 
 # Runtime dependencies
 echo "--- p4-fusion apk runtime-deps"
@@ -49,7 +49,7 @@ echo "--- p4-fusion prebuilt binary check"
 if wget https://storage.googleapis.com/sourcegraph-artifacts/p4-fusion/p4-fusion-"$P4_FUSION_VERSION"-musl-x86_64; then
   src=p4-fusion-"$P4_FUSION_VERSION"-musl-x86_64
   cat <<EOF | grep "$src" | sha256sum -c
-98c4991b40cdd0e0cad2fd5fdbe9f8ff56901415dd1684aed5b4531fc49ab79e  p4-fusion-v1.11-musl-x86_64
+1b29ef8ba40f88219aece4339bfaf1b2c1722dd4875ba29d19a6fb0c86e12145  p4-fusion-v1.12-musl-x86_64
 EOF
   chmod +x "$src"
   mv "$src" /usr/local/bin/p4-fusion
