@@ -871,15 +871,17 @@ func TestSyncRepo(t *testing.T) {
 			}
 
 			syncer := &repos.Syncer{
-				Logger: logtest.Scoped(t),
-				Now:    time.Now,
-				Store:  store,
-				Synced: make(chan repos.Diff, 1),
+				Logger:       logtest.Scoped(t),
+				Now:          time.Now,
+				Store:        store,
+				Synced:       make(chan repos.Diff, 1),
+				SyncRepoChan: make(chan repos.BackgroundManualRepoSyncJob),
 				Sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(servicesPerKind[extsvc.KindGitHub], nil, tc.sourced),
 				),
 			}
 
+			go syncer.StartBackgroundManualRepoSyncer(ctx, logtest.Scoped(t))
 			have, err := syncer.SyncRepo(ctx, tc.repo, tc.background)
 			if err != nil {
 				t.Fatal(err)

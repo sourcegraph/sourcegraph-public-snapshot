@@ -39,6 +39,9 @@ type Syncer struct {
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
 	Synced chan Diff
 
+	// SyncRepoChan is a channel that is used to handle manual repo sync requests
+	SyncRepoChan chan BackgroundManualRepoSyncJob
+
 	// Logger if non-nil is logged to.
 	Logger log.Logger
 
@@ -58,6 +61,12 @@ type RunOptions struct {
 	IsCloud         bool                 // Defaults to false
 	MinSyncInterval func() time.Duration // Defaults to 1 minute
 	DequeueInterval time.Duration        // Default to 10 seconds
+}
+
+type BackgroundManualRepoSyncJob struct {
+	name     api.RepoName
+	codehost *extsvc.CodeHost
+	repo     *types.Repo
 }
 
 // Run runs the Sync at the specified interval.
@@ -92,6 +101,8 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 
 	go resetter.Start()
 	defer resetter.Stop()
+
+	go s.StartBackgroundManualRepoSyncer(ctx, s.Logger.Scoped("backgroundManualRepoSyncer", ""))
 
 	for ctx.Err() == nil {
 		if !conf.Get().DisableAutoCodeHostSyncs {
@@ -137,6 +148,22 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 	}
 
 	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval(), progressRecorder)
+}
+
+func (s *Syncer) StartBackgroundManualRepoSyncer(ctx context.Context, logger log.Logger) (err error) {
+	for {
+		select {
+		case <-ctx.Done():
+			return errors.Wrapf(ctx.Err(), "context done")
+		case job := <-s.SyncRepoChan:
+			ctx2, _ := context.WithTimeout(ctx, 3*time.Minute)
+			repo, err := s.syncRepo(ctx2, job.codehost, job.name, job.repo)
+			logger.Debug("syncGroup completed", log.String("updatedRepo", fmt.Sprintf("%v", repo)))
+			if err != nil {
+				logger.Error("StartBackgroundManualRepoSyncer", log.Error(err))
+			}
+		}
+	}
 }
 
 // TriggerExternalServiceSync will enqueue a sync job for the supplied external
@@ -334,21 +361,12 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 	}
 
 	if background && repo != nil {
-		logger.Debug("starting background sync in goroutine")
-		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
-			defer cancel()
-
-			// We don't care about the return value here, but we still want to ensure that
-			// only one is in flight at a time.
-			updatedRepo, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
-				return s.syncRepo(ctx, codehost, name, repo)
-			})
-			logger.Debug("syncGroup completed", log.String("updatedRepo", fmt.Sprintf("%v", updatedRepo.(*types.Repo))))
-			if err != nil {
-				logger.Error("SyncRepo", log.Error(err), log.Bool("shared", shared))
-			}
-		}()
+		logger.Debug("starting background sync")
+		s.SyncRepoChan <- BackgroundManualRepoSyncJob{
+			name:     name,
+			repo:     repo,
+			codehost: codehost,
+		}
 		return repo, nil
 	}
 
