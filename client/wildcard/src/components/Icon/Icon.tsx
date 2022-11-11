@@ -29,6 +29,11 @@ interface BaseIconProps extends SVGProps<SVGSVGElement> {
      * Defaults to `true`.
      */
     inline?: boolean
+    /**
+     * Brand icon variation, added as of 11/11/22
+     * (https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/)
+     */
+    violetBg?: boolean
     className?: string
     role?: AriaRole
 }
@@ -58,9 +63,10 @@ export type IconProps = HiddenIconProps | ScreenReaderIconProps
  */
 // eslint-disable-next-line react/display-name
 export const Icon = React.memo(
-    React.forwardRef(function Icon({ children, className, size, role = 'img', inline = true, ...props }, reference) {
+    React.forwardRef(function Icon({ children, className, size, role = 'img', inline = true, violetBg, ...props }, reference) {
         const iconStyle = classNames(
             'mdi-icon',
+            violetBg && styles.violetBg,
             inline && styles.iconInline,
             size === 'md' && styles.iconInlineMd,
             className

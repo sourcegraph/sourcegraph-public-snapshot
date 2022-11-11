@@ -6,8 +6,6 @@ import { Card, H2, H3, H4, Icon, Text, Link } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../../../../../tracking/eventLogger'
 
-import styles from './CodeInsightsDescription.module.scss'
-
 interface Props {
     className?: string
 }
@@ -63,7 +61,7 @@ export const CodeInsightsDescription: React.FunctionComponent<Props> = ({ classN
             
             {isSourcegraphDotCom && (
                 <Card className="shadow d-flex flex-row align-items-center p-3 mt-5">
-                    <Icon role="img" size="md" className={styles.iconBackground} aria-hidden={true} svgPath={mdiPoll} />
+                    <Icon role="img" size="md" violetBg={true} aria-hidden={true} svgPath={mdiPoll} />
                     <div className="pl-3">
                         <H4 className="mb-1">Get insights for your code</H4>
                         <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
