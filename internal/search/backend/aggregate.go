@@ -89,23 +89,16 @@ func hoistMaxScore(fm []zoekt.FileMatch, n int) {
 		n = len(fm)
 	}
 
-	var max float64
-	pos := 0
-	for i := 0; i < n; i++ {
-		if fm[i].Score > max {
-			max = fm[i].Score
-			pos = i
+	maxIdx := 0
+	for i := 1; i < n; i++ {
+		if fm[i].Score > fm[maxIdx].Score {
+			maxIdx = i
 		}
 	}
 
-	if pos > 0 {
-		prev := fm[0]
-		fm[0] = fm[pos]
-		for i := 1; i <= pos; i++ {
-			this := fm[i]
-			fm[i] = prev
-			prev = this
-		}
+	for maxIdx > 0 {
+		fm[maxIdx-1], fm[maxIdx] = fm[maxIdx], fm[maxIdx-1]
+		maxIdx--
 	}
 }
 
