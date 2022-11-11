@@ -164,7 +164,7 @@ func (m *migrator) Progress(ctx context.Context, _ bool) (float64, error) {
 }
 ```
 
-In the case of enterprise migrations you might want your `Progress` function to report success [if your enterprise feature is disabled](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/oobmigration/migrations/insights/migrator.go?L36-38). 
+In the case of enterprise migrations you will want your `Progress` function to report success [if your enterprise feature is disabled](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/oobmigration/migrations/insights/migrator.go?L36-38). 
 
 In the forward migration direction, we want to select a record that is in the previous format (we can tell here by the absence of a `payload2` field), and update that record with the result of some external computation. Here, we're going to rely on an oracle function `oldToNew` that converts the old format into the new format.
 
