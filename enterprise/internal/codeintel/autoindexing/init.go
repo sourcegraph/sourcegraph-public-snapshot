@@ -76,11 +76,11 @@ func NewResetters(db database.DB, observationContext *observation.Context) []gor
 	}
 }
 
-func NewJanitorJobs(autoindexingSvc AutoIndexingService, gitserver GitserverClient) []goroutine.BackgroundRoutine {
+func NewJanitorJobs(autoindexingSvc *Service, gitserver GitserverClient) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewJanitor(
 			ConfigCleanupInst.Interval,
-			autoindexingSvc, gitserver, glock.NewRealClock(),
+			autoindexingSvc.store, gitserver, glock.NewRealClock(),
 			background.JanitorConfig{
 				MinimumTimeSinceLastCheck:      ConfigCleanupInst.MinimumTimeSinceLastCheck,
 				CommitResolverBatchSize:        ConfigCleanupInst.CommitResolverBatchSize,
@@ -125,7 +125,7 @@ func NewDependencyIndexSchedulers(
 	db database.DB,
 	uploadSvc UploadService,
 	depsSvc DependenciesService,
-	autoindexingSvc AutoIndexingService,
+	autoindexingSvc *Service,
 	repoUpdater RepoUpdaterClient,
 	observationContext *observation.Context,
 ) []goroutine.BackgroundRoutine {
@@ -139,7 +139,7 @@ func NewDependencyIndexSchedulers(
 	return []goroutine.BackgroundRoutine{
 		background.NewDependencySyncScheduler(
 			dependencySyncStore,
-			uploadSvc, depsSvc, autoindexingSvc, externalServiceStore, workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor"),
+			uploadSvc, depsSvc, autoindexingSvc.store, externalServiceStore, workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor"),
 			ConfigDependencyIndexInst.DependencyIndexerSchedulerPollInterval,
 		),
 		background.NewDependencyIndexingScheduler(

@@ -125,30 +125,6 @@ func (s *Service) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexes
 	return s.store.ReindexIndexes(ctx, opts)
 }
 
-func (s *Service) ProcessStaleSourcedCommits(
-	ctx context.Context,
-	minimumTimeSinceLastCheck time.Duration,
-	commitResolverBatchSize int,
-	commitResolverMaximumCommitLag time.Duration,
-	shouldDelete func(ctx context.Context, repositoryID int, commit string) (bool, error),
-) (_ int, err error) {
-	return s.store.ProcessStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, commitResolverBatchSize, commitResolverMaximumCommitLag, shouldDelete)
-}
-
-func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	ctx, _, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.DeleteIndexesWithoutRepository(ctx, now)
-}
-
-func (s *Service) ExpireFailedRecords(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (err error) {
-	ctx, _, endObservation := s.operations.expireFailedRecords.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.ExpireFailedRecords(ctx, batchSize, maxAge, now)
-}
-
 func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error) {
 	ctx, _, endObservation := s.operations.getIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -310,10 +286,6 @@ func (s *Service) GetInferenceScript(ctx context.Context) (script string, err er
 	defer endObservation(1, observation.Args{})
 
 	return s.store.GetInferenceScript(ctx)
-}
-
-func (s *Service) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
-	return s.store.InsertDependencyIndexingJob(ctx, uploadID, externalServiceKind, syncTime)
 }
 
 // QueueIndexes enqueues a set of index jobs for the following repository and commit. If a non-empty
