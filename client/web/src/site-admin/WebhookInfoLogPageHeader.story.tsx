@@ -19,11 +19,6 @@ const decorator: DecoratorFn = story => (
 
 const config: Meta = {
     title: 'web/src/site-admin/WebhookInfoLogPageHeader',
-    parameters: {
-        chromatic: {
-            viewports: [320, 576, 978, 1440],
-        },
-    },
     decorators: [decorator],
     argTypes: {
         externalServiceCount: {
@@ -52,47 +47,6 @@ const WebhookInfoLogPageHeaderContainer: React.FunctionComponent<
     return <WebhookInfoLogPageHeader onlyErrors={onlyErrors} onSetOnlyErrors={setOnlyErrors} />
 }
 
-export const AllZeroes: Story = args => (
-    <WebStory>
-        {() => (
-            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
-                <WebhookInfoLogPageHeaderContainer />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
-AllZeroes.argTypes = {
-    externalServiceCount: {
-        defaultValue: 0,
-    },
-    erroredWebhookCount: {
-        defaultValue: 0,
-    },
-}
-
-AllZeroes.storyName = 'all zeroes'
-
-export const ExternalServices: Story = args => (
-    <WebStory>
-        {() => (
-            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
-                <WebhookInfoLogPageHeaderContainer />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
-
-ExternalServices.storyName = 'external services'
-
-ExternalServices.argTypes = {
-    externalServiceCount: {
-        defaultValue: 10,
-    },
-    erroredWebhookCount: {
-        defaultValue: 0,
-    },
-}
-
 export const ExternalServicesAndErrors: Story = args => (
     <WebStory>
         {() => (
@@ -106,27 +60,6 @@ export const ExternalServicesAndErrors: Story = args => (
 ExternalServicesAndErrors.storyName = 'external services and errors'
 
 ExternalServicesAndErrors.argTypes = {
-    externalServiceCount: {
-        defaultValue: 20,
-    },
-    erroredWebhookCount: {
-        defaultValue: 500,
-    },
-}
-
-export const OnlyErrorsTurnedOn: Story = args => (
-    <WebStory>
-        {() => (
-            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
-                <WebhookInfoLogPageHeaderContainer initialOnlyErrors={true} />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
-
-OnlyErrorsTurnedOn.storyName = 'only errors turned on'
-
-OnlyErrorsTurnedOn.argTypes = {
     externalServiceCount: {
         defaultValue: 20,
     },
