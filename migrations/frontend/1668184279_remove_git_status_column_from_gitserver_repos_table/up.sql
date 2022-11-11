@@ -10,5 +10,4 @@
 --  * If you are modifying Postgres extensions, you must also declare "privileged: true"
 --    in the associated metadata.yaml file.
 
-ALTER TABLE gitserver_repos
-DROP COLUMN repo_status;
+ALTER TABLE gitserver_repos DROP COLUMN IF EXISTS repo_status;
