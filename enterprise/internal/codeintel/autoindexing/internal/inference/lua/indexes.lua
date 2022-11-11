@@ -1,5 +1,5 @@
-local indexer = require "backdoor_indexes"
+local indexes = require "internal_indexes"
 
 return {
-  get = indexer.get,
+  get = indexes.get,
 }

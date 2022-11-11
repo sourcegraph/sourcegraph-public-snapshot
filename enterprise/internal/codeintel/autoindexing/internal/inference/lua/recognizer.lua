@@ -1,4 +1,4 @@
-local recognizers = require "backdoor_recognizers"
+local recognizers = require "internal_recognizers"
 
 local M = {}
 

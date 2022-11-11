@@ -1,4 +1,4 @@
-local patterns = require "backdoor_patterns"
+local patterns = require "internal_patterns"
 
 local M = {}
 
