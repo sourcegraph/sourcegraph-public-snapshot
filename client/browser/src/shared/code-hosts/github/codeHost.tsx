@@ -162,13 +162,24 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountElement.style.verticalAlign = 'middle'
     mountElement.style.alignItems = 'center'
     mountElement.className = className
-    const rawURLLink = codeViewElement.querySelector('#raw-url')
-    const buttonGroup = rawURLLink?.closest('.BtnGroup')
-    if (!buttonGroup?.parentNode) {
-        throw new Error('File actions not found')
+
+    // new GitHub UI
+    const container = codeViewElement.querySelector('#repos-sticky-header')?.childNodes[0]?.childNodes[0]?.childNodes[1]
+        ?.childNodes[1]
+    if (container instanceof HTMLElement) {
+        container.prepend(mountElement)
+        return mountElement
     }
-    buttonGroup.parentNode.insertBefore(mountElement, buttonGroup)
-    return mountElement
+
+    // old GitHub UI (e.g., GHE)
+    const rawURLLink = codeViewElement.querySelector('#raw-url')?.closest('.BtnGroup')
+    const buttonGroup = rawURLLink?.closest('.BtnGroup')
+    if (buttonGroup?.parentNode) {
+        buttonGroup.parentNode.insertBefore(mountElement, buttonGroup)
+        return mountElement
+    }
+
+    throw new Error('File actions container not found.')
 }
 
 const resolveFileLineContainerView = (fileLineContainer: HTMLElement): CodeView | null => {

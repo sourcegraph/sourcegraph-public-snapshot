@@ -1444,10 +1444,13 @@ export async function handleCodeHost({
                 )
                 codeViewEvent.subscriptions.add(hoverSubscription)
 
+                console.log(codeViewEvent)
+
                 element.classList.add('sg-mounted')
                 // Render toolbar
                 if (getToolbarMount && !minimalUI) {
                     const mount = getToolbarMount(element)
+                    console.log('mount', mount)
                     render(
                         <CodeViewToolbar
                             {...codeHost.codeViewToolbarClassProps}
