@@ -766,7 +766,8 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
-		_, err = bbsSrc.GetUserFork(ctx, target)
+		fork, err := bbsSrc.GetUserFork(ctx, target)
+		assert.Nil(t, fork)
 		assert.ErrorContains(t, err, "This repository URL is already taken")
 	})
 
