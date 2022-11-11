@@ -1,7 +1,6 @@
 import React from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
-import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -15,6 +14,7 @@ import { ChangesetStatusClosed, ChangesetStatusOpen } from '../detail/changesets
 import { GLOBAL_CHANGESETS_STATS } from './backend'
 
 import styles from './BatchChangeStatsBar.module.scss'
+import { pluralize } from '@sourcegraph/common'
 
 interface BatchChangeStatsBarProps {
     className?: string
@@ -77,8 +77,14 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
                     <ChangesetStatusOpen
                         className="d-flex"
                         label={
-                            <H4 className="font-weight-normal m-0">
-                                {data.globalChangesetsStats.open} <VisuallyHidden>total changesets</VisuallyHidden> open
+                            <H4
+                                className="font-weight-normal m-0"
+                                aria-label={`${data.globalChangesetsStats.open} total ${pluralize(
+                                    'changeset',
+                                    data.globalChangesetsStats.open
+                                )} open`}
+                            >
+                                {data.globalChangesetsStats.open} open
                             </H4>
                         }
                     />
@@ -87,9 +93,14 @@ export const BatchChangeStatsBar: React.FunctionComponent<React.PropsWithChildre
                     <ChangesetStatusClosed
                         className="d-flex"
                         label={
-                            <H4 className="font-weight-normal m-0">
-                                {data.globalChangesetsStats.closed} <VisuallyHidden>total changesets</VisuallyHidden>{' '}
-                                closed
+                            <H4
+                                className="font-weight-normal m-0"
+                                aria-label={`${data.globalChangesetsStats.closed} total ${pluralize(
+                                    'changeset',
+                                    data.globalChangesetsStats.closed
+                                )} closed`}
+                            >
+                                {data.globalChangesetsStats.closed} closed
                             </H4>
                         }
                     />

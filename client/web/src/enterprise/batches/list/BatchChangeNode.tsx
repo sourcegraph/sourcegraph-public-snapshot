@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
 
-import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
@@ -163,30 +162,42 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                     <ChangesetStatusOpen
                         className="d-block d-sm-flex"
                         label={
-                            <H4 className="font-weight-normal text-muted m-0">
-                                {node.changesetsStats.open}{' '}
-                                <VisuallyHidden>{pluralize('changeset', node.changesetsStats.open)}</VisuallyHidden>{' '}
-                                open
+                            <H4
+                                className="font-weight-normal text-muted m-0"
+                                aria-label={`${node.changesetsStats.open} ${pluralize(
+                                    'changeset',
+                                    node.changesetsStats.open
+                                )} open`}
+                            >
+                                {`${node.changesetsStats.open} open`}
                             </H4>
                         }
                     />
                     <ChangesetStatusClosed
                         className="d-block d-sm-flex text-center"
                         label={
-                            <H4 className="font-weight-normal text-muted m-0">
-                                {node.changesetsStats.closed}{' '}
-                                <VisuallyHidden>{pluralize('changeset', node.changesetsStats.closed)}</VisuallyHidden>{' '}
-                                closed
+                            <H4
+                                className="font-weight-normal text-muted m-0"
+                                aria-label={`${node.changesetsStats.closed} ${pluralize(
+                                    'changeset',
+                                    node.changesetsStats.closed
+                                )} closed`}
+                            >
+                                {`${node.changesetsStats.closed} closed`}
                             </H4>
                         }
                     />
                     <ChangesetStatusMerged
                         className="d-block d-sm-flex"
                         label={
-                            <H4 className="font-weight-normal text-muted m-0">
-                                {node.changesetsStats.merged}{' '}
-                                <VisuallyHidden>{pluralize('changeset', node.changesetsStats.merged)}</VisuallyHidden>{' '}
-                                merged
+                            <H4
+                                className="font-weight-normal text-muted m-0"
+                                aria-label={`${node.changesetsStats.merged} ${pluralize(
+                                    'changeset',
+                                    node.changesetsStats.merged
+                                )} merged`}
+                            >
+                                {`${node.changesetsStats.merged} merged`}
                             </H4>
                         }
                     />

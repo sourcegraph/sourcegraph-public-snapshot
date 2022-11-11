@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react'
 
 import { mdiHistory } from '@mdi/js'
-import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { Badge, Icon } from '@sourcegraph/wildcard'
@@ -62,8 +61,8 @@ export const BatchChangeStatePill: React.FunctionComponent<React.PropsWithChildr
                 [styles.draft]: state === BatchChangeState.DRAFT,
                 [styles.closed]: state === BatchChangeState.CLOSED,
             })}
+            aria-label={`${state.toLowerCase()} batch change`}
         >
-            <VisuallyHidden>{state} status</VisuallyHidden>
             <StatePill state={state} />
             {executionStatePill}
         </div>
