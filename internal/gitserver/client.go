@@ -1224,6 +1224,9 @@ func (c *clientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoNa
 
 // do performs a request to a gitserver instance based on the address in the uri
 // argument.
+//
+// Repo parameter is optional. If it is provided, then "repo" attribute is added
+// to trace span.
 func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
