@@ -1143,23 +1143,7 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 }
 
 func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*protocol.ReposStats, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", "http://"+addr+"/repos-stats", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: Ideally doReposStats should use clientImplementor.do but the varying method
-	// signature prevents us from doing that.
-	//
-	// We should consolidate into a single method for creating requests so that we are
-	// setting all the required properties like headers, trace spans in a central place.
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", c.userAgent)
-
-	// Set header so that the server knows the request is from us.
-	req.Header.Set("X-Requested-With", "Sourcegraph")
-
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.do(ctx, "repos-stats call, no repo provided", "GET", fmt.Sprintf("http://%s/repos-stats", addr), nil)
 	if err != nil {
 		return nil, err
 	}
