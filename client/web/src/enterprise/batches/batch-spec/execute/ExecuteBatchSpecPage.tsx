@@ -196,8 +196,14 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     </div>
                     {batchSpec.startedAt && (
                         <ExecutionStat>
-                            <Icon aria-label="Duration" className={styles.durationIcon} svgPath={mdiProgressClock} />
-                            <Duration start={batchSpec.startedAt} end={batchSpec.finishedAt ?? undefined} />
+                            <Icon aria-hidden={true} className={styles.durationIcon} svgPath={mdiProgressClock} />
+                            <Duration
+                                start={batchSpec.startedAt}
+                                end={batchSpec.finishedAt ?? undefined}
+                                labelPrefix={`The batch spec ${
+                                    batchSpec.finishedAt ? 'finished executing in' : 'has been executing for'
+                                }`}
+                            />
                         </ExecutionStat>
                     )}
                     {workspaceResolution && <ExecutionStatsBar {...workspaceResolution.workspaces.stats} />}
