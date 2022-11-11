@@ -96,7 +96,7 @@ func NewIndexSchedulers(
 	uploadSvc UploadService,
 	policiesSvc PoliciesService,
 	policyMatcher PolicyMatcher,
-	autoindexingSvc AutoIndexingService,
+	autoindexingSvc IndexingEnqueuer,
 	observationContext *observation.Context,
 ) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{

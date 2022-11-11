@@ -27,10 +27,10 @@ type IndexSchedulerConfig struct {
 }
 
 type indexSchedulerJob struct {
-	uploadSvc       UploadService
-	policiesSvc     PoliciesService
-	policyMatcher   PolicyMatcher
-	autoindexingSvc AutoIndexingService
+	uploadSvc     UploadService
+	policiesSvc   PoliciesService
+	policyMatcher PolicyMatcher
+	indexEnqueuer IndexEnqueuer
 }
 
 var backgroundMetrics = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*metrics.REDMetrics, error) {
@@ -46,16 +46,16 @@ func NewScheduler(
 	uploadSvc UploadService,
 	policiesSvc PoliciesService,
 	policyMatcher PolicyMatcher,
-	autoindexingSvc AutoIndexingService,
+	indexEnqueuer IndexEnqueuer,
 	interval time.Duration,
 	config IndexSchedulerConfig,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	job := indexSchedulerJob{
-		uploadSvc:       uploadSvc,
-		policiesSvc:     policiesSvc,
-		policyMatcher:   policyMatcher,
-		autoindexingSvc: autoindexingSvc,
+		uploadSvc:     uploadSvc,
+		policiesSvc:   policiesSvc,
+		policyMatcher: policyMatcher,
+		indexEnqueuer: indexEnqueuer,
 	}
 
 	metrics, _ := backgroundMetrics.Init(observationContext)
@@ -171,7 +171,7 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 			}
 
 			// Attempt to queue an index if one does not exist for each of the matching commits
-			if _, err := b.autoindexingSvc.QueueIndexes(ctx, repositoryID, commit, "", false, false); err != nil {
+			if _, err := b.indexEnqueuer.QueueIndexes(ctx, repositoryID, commit, "", false, false); err != nil {
 				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					continue
 				}
@@ -186,12 +186,12 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 	}
 }
 
-func NewOnDemandScheduler(autoindexingSvc AutoIndexingService, interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
+func NewOnDemandScheduler(indexEnqueuer IndexEnqueuer, interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
 		if !autoIndexingEnabled() {
 			return nil
 		}
 
-		return autoindexingSvc.ProcessRepoRevs(ctx, batchSize)
+		return indexEnqueuer.ProcessRepoRevs(ctx, batchSize)
 	}))
 }

@@ -20,7 +20,7 @@ type GitserverRepoStore = background.GitserverRepoStore
 
 type ExternalServiceStore = background.ExternalServiceStore
 
-type AutoIndexingService = background.AutoIndexingService
+type IndexingEnqueuer = background.IndexEnqueuer
 
 type AutoIndexingServiceForDepScheduling interface {
 	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error

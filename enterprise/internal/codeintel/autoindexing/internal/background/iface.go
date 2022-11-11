@@ -44,7 +44,7 @@ type PoliciesService interface {
 	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
 }
 
-type AutoIndexingService interface {
+type IndexEnqueuer interface {
 	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []codeinteltypes.Index, err error)
 	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error)
 	ProcessRepoRevs(ctx context.Context, batchSize int) (err error)
