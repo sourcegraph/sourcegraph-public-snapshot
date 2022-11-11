@@ -171,7 +171,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		// We always want to listen on the Synced channel since external service syncing
 		// happens on both Cloud and non Cloud instances.
 		Synced:       make(chan repos.Diff),
-		SyncRepoChan: make(chan repos.BackgroundManualRepoSyncJob),
+		SyncRepoChan: make(chan repos.BackgroundRepoSyncJob),
 		Now:          clock,
 		Registerer:   prometheus.DefaultRegisterer,
 	}

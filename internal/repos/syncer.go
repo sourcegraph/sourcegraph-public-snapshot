@@ -40,7 +40,7 @@ type Syncer struct {
 	Synced chan Diff
 
 	// SyncRepoChan is a channel that is used to handle manual repo sync requests
-	SyncRepoChan chan BackgroundManualRepoSyncJob
+	SyncRepoChan chan BackgroundRepoSyncJob
 
 	// Logger if non-nil is logged to.
 	Logger log.Logger
@@ -63,7 +63,7 @@ type RunOptions struct {
 	DequeueInterval time.Duration        // Default to 10 seconds
 }
 
-type BackgroundManualRepoSyncJob struct {
+type BackgroundRepoSyncJob struct {
 	name     api.RepoName
 	codehost *extsvc.CodeHost
 	repo     *types.Repo
@@ -102,7 +102,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 	go resetter.Start()
 	defer resetter.Stop()
 
-	go s.StartBackgroundManualRepoSyncer(ctx, s.Logger.Scoped("backgroundManualRepoSyncer", ""))
+	go s.StartBackgroundRepoSyncer(ctx, s.Logger.Scoped("backgroundManualRepoSyncer", ""))
 
 	for ctx.Err() == nil {
 		if !conf.Get().DisableAutoCodeHostSyncs {
@@ -150,7 +150,7 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval(), progressRecorder)
 }
 
-func (s *Syncer) StartBackgroundManualRepoSyncer(ctx context.Context, logger log.Logger) (err error) {
+func (s *Syncer) StartBackgroundRepoSyncer(ctx context.Context, logger log.Logger) (err error) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -160,7 +160,7 @@ func (s *Syncer) StartBackgroundManualRepoSyncer(ctx context.Context, logger log
 			repo, err := s.syncRepo(ctx2, job.codehost, job.name, job.repo)
 			logger.Debug("syncGroup completed", log.String("updatedRepo", fmt.Sprintf("%v", repo)))
 			if err != nil {
-				logger.Error("StartBackgroundManualRepoSyncer", log.Error(err))
+				logger.Error("StartBackgroundRepoSyncer", log.Error(err))
 			}
 		}
 	}
@@ -362,7 +362,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 
 	if background && repo != nil {
 		logger.Debug("starting background sync")
-		s.SyncRepoChan <- BackgroundManualRepoSyncJob{
+		s.SyncRepoChan <- BackgroundRepoSyncJob{
 			name:     name,
 			repo:     repo,
 			codehost: codehost,
