@@ -62,8 +62,30 @@ func newService(
 	}
 }
 
+type indexEnqueuer struct {
+	store           store.Store
+	uploadSvc       UploadService
+	inferenceSvc    InferenceService
+	repoUpdater     RepoUpdaterClient
+	gitserverClient GitserverClient
+	symbolsClient   *symbols.Client
+	logger          log.Logger
+	operations      *operations
+	inferer         *inferer
+}
+
 func (s *Service) IndexEnqueuer() IndexEnqueuer {
-	return s
+	return &indexEnqueuer{
+		store:           s.store,
+		uploadSvc:       s.uploadSvc,
+		inferenceSvc:    s.inferenceSvc,
+		repoUpdater:     s.repoUpdater,
+		gitserverClient: s.gitserverClient,
+		symbolsClient:   s.symbolsClient,
+		logger:          s.logger,
+		operations:      s.operations,
+		inferer:         s.inferer(),
+	}
 }
 
 func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {
@@ -268,6 +290,10 @@ func (s *Service) GetInferenceScript(ctx context.Context) (script string, err er
 	return s.store.GetInferenceScript(ctx)
 }
 
+func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]types.Index, error) {
+	return s.IndexEnqueuer().QueueIndexes(ctx, repositoryID, rev, configuration, force, bypassLimit)
+}
+
 // QueueIndexes enqueues a set of index jobs for the following repository and commit. If a non-empty
 // configuration is given, it will be used to determine the set of jobs to enqueue. Otherwise, it will
 // the configuration will be determined based on the regular index scheduling rules: first read any
@@ -278,7 +304,7 @@ func (s *Service) GetInferenceScript(ctx context.Context) (script string, err er
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []types.Index, err error) {
+func (s *indexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []types.Index, err error) {
 	ctx, trace, endObservation := s.operations.queueIndex.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.Int("repositoryID", repositoryID),
@@ -297,9 +323,13 @@ func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, confi
 	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, bypassLimit, nil) // trace)
 }
 
+func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
+	return s.IndexEnqueuer().QueueIndexesForPackage(ctx, pkg)
+}
+
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
 // intelligence index.
-func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
+func (s *indexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
 	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.String("scheme", pkg.Scheme),
@@ -343,8 +373,12 @@ var (
 	maximumIndexJobsPerInferredConfiguration = env.MustGetInt("PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_INDEX_JOBS_PER_INFERRED_CONFIGURATION", 25, "Repositories with a number of inferred auto-index jobs exceeding this threshold will not be auto-indexed.")
 )
 
+func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
+	return s.inferer().InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
+}
+
 // InferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobs over all registered recognizers.
-func (s Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
+func (s *inferer) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
 	repoName, err := s.uploadSvc.GetRepoName(ctx, repositoryID)
 	if err != nil {
 		return nil, err
@@ -371,8 +405,12 @@ func (s Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repo
 	return indexes, nil
 }
 
+func (s *Service) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
+	return s.inferer().InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
+}
+
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobHints over all registered recognizers.
-func (s Service) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
+func (s *inferer) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
 	repoName, err := s.uploadSvc.GetRepoName(ctx, repositoryID)
 	if err != nil {
 		return nil, err
@@ -391,7 +429,7 @@ func (s Service) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, 
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s Service) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force, bypassLimit bool, trace observation.TraceLogger) ([]types.Index, error) {
+func (s *indexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force, bypassLimit bool, trace observation.TraceLogger) ([]types.Index, error) {
 	if !force {
 		isQueued, err := s.store.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
@@ -402,7 +440,7 @@ func (s Service) queueIndexForRepositoryAndCommit(ctx context.Context, repositor
 		}
 	}
 
-	indexes, err := s.getIndexRecords(ctx, repositoryID, commit, configuration, bypassLimit)
+	indexes, err := s.inferer.getIndexRecords(ctx, repositoryID, commit, configuration, bypassLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -427,6 +465,30 @@ func (s Service) queueIndexForRepositoryAndCommit(ctx context.Context, repositor
 	return s.store.InsertIndexes(ctx, indexesToInsert)
 }
 
+type inferer struct {
+	store           store.Store
+	uploadSvc       UploadService
+	inferenceSvc    InferenceService
+	repoUpdater     RepoUpdaterClient
+	gitserverClient GitserverClient
+	symbolsClient   *symbols.Client
+	logger          log.Logger
+	operations      *operations
+}
+
+func (s *Service) inferer() *inferer {
+	return &inferer{
+		store:           s.store,
+		uploadSvc:       s.uploadSvc,
+		inferenceSvc:    s.inferenceSvc,
+		repoUpdater:     s.repoUpdater,
+		gitserverClient: s.gitserverClient,
+		symbolsClient:   s.symbolsClient,
+		logger:          s.logger,
+		operations:      s.operations,
+	}
+}
+
 type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error)
 
 // getIndexRecords determines the set of index records that should be enqueued for the given commit.
@@ -436,7 +498,7 @@ type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit
 //   - in the database
 //   - committed to `sourcegraph.yaml` in the repository
 //   - inferred from the repository structure
-func (s Service) getIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]types.Index, error) {
+func (s *inferer) getIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]types.Index, error) {
 	fns := []configurationFactoryFunc{
 		makeExplicitConfigurationFactory(configuration),
 		s.getIndexRecordsFromConfigurationInDatabase,
@@ -480,7 +542,7 @@ func makeExplicitConfigurationFactory(configuration string) configurationFactory
 
 // getIndexRecordsFromConfigurationInDatabase returns a set of index jobs configured via the UI for
 // the given repository. If no jobs are configured via the UI then a false valued flag is returned.
-func (s Service) getIndexRecordsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
+func (s *inferer) getIndexRecordsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
 	indexConfigurationRecord, ok, err := s.store.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "dbstore.GetIndexConfigurationByRepositoryID")
@@ -504,7 +566,7 @@ func (s Service) getIndexRecordsFromConfigurationInDatabase(ctx context.Context,
 // getIndexRecordsFromConfigurationInRepository returns a set of index jobs configured via a committed
 // configuration file at the given commit. If no jobs are configured within the repository then a false
 // valued flag is returned.
-func (s Service) getIndexRecordsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
+func (s *inferer) getIndexRecordsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
 	isConfigured, err := s.gitserverClient.FileExists(ctx, repositoryID, commit, "sourcegraph.yaml")
 	if err != nil {
 		return nil, false, errors.Wrap(err, "gitserver.FileExists")
@@ -533,7 +595,7 @@ func (s Service) getIndexRecordsFromConfigurationInRepository(ctx context.Contex
 // inferIndexRecordsFromRepositoryStructure looks at the repository contents at the given commit and
 // determines a set of index jobs that are likely to succeed. If no jobs could be inferred then a
 // false valued flag is returned.
-func (s Service) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error) {
+func (s *inferer) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error) {
 	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
 	if err != nil || len(indexJobs) == 0 {
 		return nil, false, err
