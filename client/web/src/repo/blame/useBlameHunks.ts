@@ -24,6 +24,7 @@ interface BlameHunkDisplayInfo {
     timestampString: string
     linkURL: string
     message: string
+    commitDate: Date
 }
 
 export interface BlameHunk {
@@ -195,14 +196,16 @@ const addDisplayInfoForHunk = (hunk: Omit<BlameHunk, 'displayInfo'>, sourcegraph
 
     const displayName = truncate(author.person.displayName, { length: 25 })
     const username = author.person.user ? `(${author.person.user.username}) ` : ''
-    const dateString = formatDistanceStrict(new Date(author.date), now, { addSuffix: true })
-    const timestampString = new Date(author.date).toLocaleString()
+    const commitDate = new Date(author.date)
+    const dateString = formatDateForBlame(commitDate, now)
+    const timestampString = commitDate.toLocaleString()
     const linkURL = new URL(commit.url, sourcegraphURL).href
-    const content = `${dateString} • ${username}${displayName} [${truncate(message, { length: 45 })}]`
+    const content = truncate(message, { length: 45 })
 
     ;(hunk as BlameHunk).displayInfo = {
         displayName,
         username,
+        commitDate,
         dateString,
         timestampString,
         linkURL,
@@ -248,4 +251,15 @@ export const useBlameHunks = (
     )
 
     return hunks || { current: undefined }
+}
+
+const ONE_MONTH = 30 * 24 * 60 * 60 * 1000
+function formatDateForBlame(commitDate: Date, now: number): string {
+    if (now - commitDate.getTime() < ONE_MONTH) {
+        return formatDistanceStrict(commitDate, now, { addSuffix: true })
+    }
+    if (commitDate.getFullYear() === new Date(now).getFullYear()) {
+        return commitDate.toLocaleString('default', { month: 'short', day: 'numeric' })
+    }
+    return commitDate.toLocaleString('default', { year: 'numeric', month: 'short', day: 'numeric' })
 }

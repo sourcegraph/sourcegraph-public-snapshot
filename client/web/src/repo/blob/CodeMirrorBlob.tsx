@@ -14,7 +14,7 @@ import {
     formatSearchParameters,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { editorHeight, editorLineHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
@@ -130,7 +130,10 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
 
     const blameVisibility = useMemo(
-        () => (isBlameVisible ? [showBlameGutter.of(isBlameVisible)] : []),
+        () =>
+            isBlameVisible
+                ? [showBlameGutter.of(isBlameVisible), editorLineHeight({ isBlameVisible: true })]
+                : [editorLineHeight({ isBlameVisible: false })],
         [isBlameVisible]
     )
     const blameDecorations = useMemo(
@@ -181,7 +184,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         },
         [customHistoryAction]
     )
-
     const extensions = useMemo(
         () => [
             // Log uncaught errors that happen in callbacks that we pass to

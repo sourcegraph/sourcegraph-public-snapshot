@@ -279,3 +279,11 @@ export const jsonHighlighting: Extension = [
     syntaxHighlighting(HighlightStyle.define([{ tag: [tags.bool, tags.null], class: 'hljs-attr' }])),
     defaultSyntaxHighlighting,
 ]
+
+export function editorLineHeight({ isBlameVisible }: { isBlameVisible: boolean }): Extension {
+    return EditorView.theme({
+        '.cm-line': {
+            lineHeight: isBlameVisible ? '1.5rem' : '1rem',
+        },
+    })
+}

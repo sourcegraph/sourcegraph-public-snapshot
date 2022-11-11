@@ -52,7 +52,12 @@ class BlameDecorationWidget extends WidgetType {
     private reactRoot: Root | null = null
     private state: { history: History }
 
-    constructor(public view: EditorView, public readonly hunk: BlameHunk | undefined, public readonly line: number) {
+    constructor(
+        public view: EditorView,
+        public readonly hunk: BlameHunk | undefined,
+        public readonly line: number,
+        public readonly isFirstInHunk: boolean
+    ) {
         super()
         this.state = { history: this.view.state.facet(blobPropsFacet).history }
     }
@@ -71,6 +76,7 @@ class BlameDecorationWidget extends WidgetType {
             this.reactRoot.render(
                 <BlameDecoration
                     line={this.hunk?.startLine ?? 0}
+                    isFirstInHunk={this.isFirstInHunk}
                     blameHunk={this.hunk}
                     history={this.state.history}
                     onSelect={this.selectRow}
@@ -132,9 +138,16 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                     for (const { from, to } of view.visibleRanges) {
                         for (let position = from; position <= to; ) {
                             const line = view.state.doc.lineAt(position)
-                            const matchingHunk = hunks.find(hunk => hunk.startLine === line.number)
+                            const matchingHunk = hunks.find(
+                                hunk => line.number >= hunk.startLine && line.number < hunk.endLine
+                            )
                             const decoration = Decoration.widget({
-                                widget: new BlameDecorationWidget(view, matchingHunk, line.number),
+                                widget: new BlameDecorationWidget(
+                                    view,
+                                    matchingHunk,
+                                    line.number,
+                                    matchingHunk ? matchingHunk.startLine === line.number : false
+                                ),
                             })
                             widgets.push(decoration.range(line.from))
                             position = line.to + 1
@@ -165,7 +178,7 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                 // the tab start can be moved to the right
                 position: 'absolute',
                 left: '0',
-
+                height: '100%',
                 display: 'inline-block',
                 background: 'var(--body-bg)',
                 verticalAlign: 'bottom',
