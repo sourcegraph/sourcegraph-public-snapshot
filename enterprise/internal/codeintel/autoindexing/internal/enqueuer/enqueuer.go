@@ -1,27 +1,42 @@
-package autoindexing
+package enqueuer
 
 import (
 	"context"
-	"os"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type indexEnqueuer struct {
+type IndexEnqueuer struct {
 	store           store.Store
 	repoUpdater     RepoUpdaterClient
 	gitserverClient GitserverClient
 	operations      *operations
-	inferer         *inferer
+	inferer         *jobselector.JobSelector
+}
+
+func NewIndexEnqueuer(
+	store store.Store,
+	repoUpdater RepoUpdaterClient,
+	gitserverClient GitserverClient,
+	inferer *jobselector.JobSelector,
+	observationContext *observation.Context,
+) *IndexEnqueuer {
+	return &IndexEnqueuer{
+		store:           store,
+		repoUpdater:     repoUpdater,
+		gitserverClient: gitserverClient,
+		operations:      newOperations(observationContext),
+		inferer:         inferer,
+	}
 }
 
 // QueueIndexes enqueues a set of index jobs for the following repository and commit. If a non-empty
@@ -34,7 +49,7 @@ type indexEnqueuer struct {
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *indexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []types.Index, err error) {
+func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []types.Index, err error) {
 	ctx, trace, endObservation := s.operations.queueIndex.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.Int("repositoryID", repositoryID),
@@ -55,7 +70,7 @@ func (s *indexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
 // intelligence index.
-func (s *indexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
+func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
 	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.String("scheme", pkg.Scheme),
@@ -94,17 +109,12 @@ func (s *indexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 	return err
 }
 
-var (
-	overrideScript                           = os.Getenv("SRC_CODEINTEL_INFERENCE_OVERRIDE_SCRIPT")
-	maximumIndexJobsPerInferredConfiguration = env.MustGetInt("PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_INDEX_JOBS_PER_INFERRED_CONFIGURATION", 25, "Repositories with a number of inferred auto-index jobs exceeding this threshold will not be auto-indexed.")
-)
-
 // queueIndexForRepositoryAndCommit determines a set of index jobs to enqueue for the given repository and commit.
 //
 // If the force flag is false, then the presence of an upload or index record for this given repository and commit
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
-func (s *indexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force, bypassLimit bool, trace observation.TraceLogger) ([]types.Index, error) {
+func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force, bypassLimit bool, trace observation.TraceLogger) ([]types.Index, error) {
 	if !force {
 		isQueued, err := s.store.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
@@ -115,7 +125,7 @@ func (s *indexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, re
 		}
 	}
 
-	indexes, err := s.inferer.getIndexRecords(ctx, repositoryID, commit, configuration, bypassLimit)
+	indexes, err := s.inferer.GetIndexRecords(ctx, repositoryID, commit, configuration, bypassLimit)
 	if err != nil {
 		return nil, err
 	}

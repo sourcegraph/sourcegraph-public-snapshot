@@ -9,6 +9,8 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/enqueuer"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -54,24 +56,24 @@ func newService(
 	}
 }
 
-func (s *Service) IndexEnqueuer() IndexEnqueuer {
-	return &indexEnqueuer{
-		store:           s.store,
-		repoUpdater:     s.repoUpdater,
-		gitserverClient: s.gitserverClient,
-		operations:      s.operations,
-		inferer:         s.inferer(),
-	}
+func (s *Service) IndexEnqueuer() *enqueuer.IndexEnqueuer {
+	return enqueuer.NewIndexEnqueuer(
+		s.store,
+		s.repoUpdater,
+		s.gitserverClient,
+		s.inferer(),
+		&observation.TestContext,
+	)
 }
 
-func (s *Service) inferer() *inferer {
-	return &inferer{
-		store:           s.store,
-		uploadSvc:       s.uploadSvc,
-		inferenceSvc:    s.inferenceSvc,
-		gitserverClient: s.gitserverClient,
-		logger:          s.logger,
-	}
+func (s *Service) inferer() *jobselector.JobSelector {
+	return jobselector.NewJobSelector(
+		s.store,
+		s.uploadSvc,
+		s.inferenceSvc,
+		s.gitserverClient,
+		s.logger,
+	)
 }
 
 func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {
