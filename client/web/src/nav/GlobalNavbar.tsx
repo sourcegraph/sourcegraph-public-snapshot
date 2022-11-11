@@ -50,16 +50,16 @@ import styles from './GlobalNavbar.module.scss'
 
 export interface GlobalNavbarProps
     extends SettingsCascadeProps<Settings>,
-        PlatformContextProps,
-        ExtensionsControllerProps,
-        TelemetryProps,
-        ThemeProps,
-        ThemePreferenceProps,
-        SearchContextInputProps,
-        CodeInsightsProps,
-        BatchChangesProps,
-        NotebookProps,
-        CodeMonitoringProps {
+    PlatformContextProps,
+    ExtensionsControllerProps,
+    TelemetryProps,
+    ThemeProps,
+    ThemePreferenceProps,
+    SearchContextInputProps,
+    CodeInsightsProps,
+    BatchChangesProps,
+    NotebookProps,
+    CodeMonitoringProps {
     history: H.History
     location: H.Location
     authenticatedUser: AuthenticatedUser | null
@@ -74,6 +74,7 @@ export interface GlobalNavbarProps
     enableLegacyExtensions?: boolean
     branding?: typeof window.context.branding
     showKeyboardShortcutsHelp: () => void
+    showFeedbackModal: () => void
 
     setFuzzyFinderIsVisible: React.Dispatch<SetStateAction<boolean>>
 }
@@ -139,6 +140,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     notebooksEnabled,
     extensionsController,
     enableLegacyExtensions,
+    showFeedbackModal,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -254,7 +256,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <>
                             <NavAction>
                                 <Link className={styles.link} to="https://about.sourcegraph.com">
-                                    About <span className="d-none d-sm-inline">Sourcegraph</span>
+                                    About
                                 </Link>
                             </NavAction>
 
@@ -269,27 +271,38 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     </Link>
                                 </NavAction>
                             )}
+
+                            <NavAction>
+                                <FeedbackPrompt
+                                    onSubmit={handleSubmitFeedback}
+                                    productResearchEnabled={true}
+                                    authenticatedUser={props.authenticatedUser}
+                                >
+                                    <PopoverTrigger
+                                        as={Button}
+                                        aria-label="Feedback"
+                                        variant="secondary"
+                                        outline={true}
+                                        size="sm"
+                                        className={styles.feedbackTrigger}
+                                    >
+                                        <span>Feedback</span>
+                                    </PopoverTrigger>
+                                </FeedbackPrompt>
+                            </NavAction>
                         </>
                     )}
-                    {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
-                    <NavAction>
-                        <FeedbackPrompt
-                            onSubmit={handleSubmitFeedback}
-                            productResearchEnabled={true}
-                            authenticatedUser={props.authenticatedUser}
+                    {props.authenticatedUser && isSourcegraphDotCom &&
+                        <ButtonLink
+                            className={styles.signUp}
+                            to="https://signup.sourcegraph.com"
+                            size="sm"
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
                         >
-                            <PopoverTrigger
-                                as={Button}
-                                aria-label="Feedback"
-                                variant="secondary"
-                                outline={true}
-                                size="sm"
-                                className={styles.feedbackTrigger}
-                            >
-                                <span>Feedback</span>
-                            </PopoverTrigger>
-                        </FeedbackPrompt>
-                    </NavAction>
+                            Try Sourcegraph Cloud
+                        </ButtonLink>
+                    }
+                    {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser && extensionsController !== null && enableLegacyExtensions && (
                         <NavAction>
                             <WebCommandListPopoverButton
@@ -315,8 +328,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                             '/sign-in?returnTo=' +
                                             encodeURI(
                                                 history.location.pathname +
-                                                    history.location.search +
-                                                    history.location.hash
+                                                history.location.search +
+                                                history.location.hash
                                             )
                                         }
                                         variant="secondary"
@@ -349,6 +362,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                                     'browser-extension'
                                 }
+                                showFeedbackModal={showFeedbackModal}
                             />
                         </NavAction>
                     )}
