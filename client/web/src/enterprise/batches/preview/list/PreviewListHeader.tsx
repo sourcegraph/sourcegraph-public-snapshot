@@ -4,6 +4,8 @@ import { H3, H5 } from '@sourcegraph/wildcard'
 
 import { InputTooltip } from '../../../../components/InputTooltip'
 
+import styles from './PreviewListHeader.module.scss'
+
 export interface PreviewListHeaderProps {
     allSelected?: boolean
     toggleSelectAll?: () => void
@@ -13,7 +15,7 @@ export const PreviewListHeader: React.FunctionComponent<React.PropsWithChildren<
     allSelected,
     toggleSelectAll,
 }) => (
-    <>
+    <li className={styles.listItem}>
         <span className="p-2 d-none d-sm-block" />
         {toggleSelectAll && (
             <div className="d-flex p-2 align-items-center">
@@ -47,5 +49,5 @@ export const PreviewListHeader: React.FunctionComponent<React.PropsWithChildren<
         <H5 as={H3} className="p-2 d-none d-sm-block text-uppercase text-center text-nowrap" aria-hidden={true}>
             Change state
         </H5>
-    </>
+    </li>
 )
