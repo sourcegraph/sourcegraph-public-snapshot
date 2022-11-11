@@ -16,7 +16,7 @@ import (
 
 func TestRecordingTimesMigrator(t *testing.T) {
 	t.Setenv("DISABLE_CODE_INSIGHTS", "")
-	
+
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 
