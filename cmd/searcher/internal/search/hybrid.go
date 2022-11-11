@@ -9,6 +9,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/grafana/regexp"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
@@ -20,7 +22,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// TODO(keegancsmith) prometheus metrics
+var (
+	metricHybridIndexChanged = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "searcher_hybrid_index_changed_total",
+		Help: "Total number of times the zoekt index changed while doing a hybrid search.",
+	})
+	metricHybridFinalState = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "searcher_hybrid_final_state_total",
+		Help: "Total number of times a hybrid search ended in a specific state.",
+	}, []string{"state"})
+)
 
 // hybrid search is an experimental feature which will search zoekt only for
 // the paths that are the same for p.Commit. unsearched is the paths that
@@ -48,10 +59,12 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 
 		indexed, ok, err := zoektIndexedCommit(ctx, client, p.Repo)
 		if err != nil {
+			recordHybridFinalState("zoekt-list-error")
 			return nil, false, err
 		}
 		if !ok {
 			logger.Warn("failed to find indexed commit")
+			recordHybridFinalState("zoekt-list-missing")
 			return nil, false, nil
 		}
 		logger = logger.With(log.String("indexed", string(indexed)))
@@ -61,6 +74,7 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 		// search.
 		out, err := s.GitDiffSymbols(ctx, p.Repo, indexed, p.Commit)
 		if err != nil {
+			recordHybridFinalState("git-diff-error")
 			return nil, false, err
 		}
 
@@ -69,6 +83,7 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 			logger.Debug("parseGitDiffNameStatus failed",
 				log.Binary("out", out),
 				log.Error(err))
+			recordHybridFinalState("git-diff-parse-error")
 			return nil, false, err
 		}
 
@@ -84,6 +99,7 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 		if totalLenIndexedIgnore > s.MaxTotalPathsLength || totalLenUnindexedSearch > s.MaxTotalPathsLength {
 			logger.Info("not doing hybrid search due to changed file list exceeding MAX_TOTAL_PATHS_LENGTH",
 				log.Int("MAX_TOTAL_PATHS_LENGTH", s.MaxTotalPathsLength))
+			recordHybridFinalState("diff-too-large")
 			return nil, false, nil
 		}
 
@@ -91,16 +107,20 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 
 		ok, err = zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
 		if err != nil {
+			recordHybridFinalState("zoekt-search-error")
 			return nil, false, err
 		} else if !ok {
+			metricHybridIndexChanged.Inc()
 			logger.Debug("retrying search since index changed while searching")
 			continue
 		}
 
+		recordHybridFinalState("success")
 		return unindexedSearch, true, nil
 	}
 
 	rootLogger.Warn("reached maximum try count, falling back to default unindexed search")
+	recordHybridFinalState("max-retrys")
 	return nil, false, nil
 }
 
@@ -365,4 +385,10 @@ func totalStringsLen(ss []string) int {
 // TraceContext associated with ctx.
 func logWithTrace(ctx context.Context, l log.Logger) log.Logger {
 	return l.WithTrace(trace.Context(ctx))
+}
+
+// recordHybridFinalState is a wrapper around metricHybridState to make the
+// callsites more succinct.
+func recordHybridFinalState(state string) {
+	metricHybridFinalState.WithLabelValues(state).Inc()
 }
