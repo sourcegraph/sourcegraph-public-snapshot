@@ -11,6 +11,7 @@ import { Button, H2, H4, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab } f
 
 import { eventLogger } from '../../tracking/eventLogger'
 
+import { AnnouncementBlurb } from './AnnouncementBlurb'
 import { exampleQueryColumns } from './QueryExamplesHomepage.constants'
 import { useQueryExamples, QueryExamplesSection } from './useQueryExamples'
 
@@ -135,6 +136,14 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                             Use Sourcegraph to search across your team's code.
                         </Link>
                     </div>
+                    <AnnouncementBlurb
+                        displayUntil={new Date('Dec 13, 2022')}
+                        text="Sourcegraph now uses PageRank to power the most relevant OSS search results."
+                        link={{
+                            text: 'Read the blog post.',
+                            link: 'https://about.sourcegraph.com/blog/new-search-ranking'
+                        }}
+                    />
                 </>
             ) : (
                 <div>

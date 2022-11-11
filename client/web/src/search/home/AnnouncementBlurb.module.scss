@@ -1,0 +1,25 @@
+.saturn-gradient-border {
+    position: relative;
+    max-width: 800px;
+    text-align: center;
+}
+
+.saturn-gradient-border::after {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    border-radius: 5px; /*1*/
+    border: 3px solid transparent; /*2*/
+    background: linear-gradient(90deg,#e8d1ff,#c7ffff) border-box; /*3*/
+    -webkit-mask: /*4*/
+       linear-gradient(#fff 0 0) padding-box, 
+       linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor; /*5'*/
+            mask-composite: exclude; /*5*/
+}
+
+.link {
+    position: relative;
+    z-index: 5;
+}
