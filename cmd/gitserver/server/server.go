@@ -68,25 +68,6 @@ const tempDirName = ".tmp"
 // logs to stderr
 var traceLogs bool
 
-var (
-	lastCheckAt    = make(map[api.RepoName]time.Time)
-	lastCheckMutex sync.Mutex
-)
-
-// debounce() provides some filtering to prevent spammy requests for the same
-// repository. If the last fetch of the repository was within the given
-// duration, returns false, otherwise returns true and updates the last
-// fetch stamp.
-func debounce(name api.RepoName, since time.Duration) bool {
-	lastCheckMutex.Lock()
-	defer lastCheckMutex.Unlock()
-	if t, ok := lastCheckAt[name]; ok && time.Now().Before(t.Add(since)) {
-		return false
-	}
-	lastCheckAt[name] = time.Now()
-	return true
-}
-
 func init() {
 	traceLogs, _ = strconv.ParseBool(env.Get("SRC_GITSERVER_TRACE", "false", "Toggles trace logging to stderr"))
 }
@@ -995,10 +976,9 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleRepoUpdate is a synchronous (waits for update to complete or
-// time out) method so it can yield errors. Updates are not
-// unconditional; we debounce them based on the provided
-// interval, to avoid spam.
+// handleRepoUpdate is a synchronous (waits for update to complete or time out) method so
+// it can yield errors. Updates are not unconditional; we skip updating a repo based on
+// the provided interval, to avoid spam.
 func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	logger := s.Logger.Scoped("handleRepoUpdate", "synchronous http handler for repo updates")
 	var req protocol.RepoUpdateRequest
@@ -1031,13 +1011,44 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	} else {
 		var statusErr, updateErr error
 
-		if debounce(req.Repo, req.Since) {
+		lastFetched, err := repoLastFetched(dir)
+		if err != nil {
+			// TODO: Use level Info
+			s.Logger.Warn(
+				"failed to retrieve last fetched, continuing with repo sync",
+				log.String("repoDir", string(dir)),
+				log.Error(err),
+			)
+		}
+
+		// Perform a fresh repo update only iff the current time is beyond the threshold
+		// of the duration in the request. This provides some filtering against spammy
+		// repo update requests.
+		threshold := lastFetched.Add(req.Since)
+		now := time.Now()
+		if now.After(threshold) {
+			s.Logger.Info(
+				"performing repo update",
+				log.String("repo", string(req.Repo)),
+				log.String("since", req.Since.String()),
+				log.String("threshold", threshold.Format(time.RFC3339)),
+				log.String("lastFetchedAt", lastFetched.Format(time.RFC3339)),
+				log.String("now", now.Format(time.RFC3339)),
+			)
 			updateErr = s.doRepoUpdate(ctx, req.Repo, "")
+		} else {
+			s.Logger.Warn("skipping repo update",
+				log.String("repo", string(req.Repo)),
+				log.String("since", req.Since.String()),
+				log.String("threshold", threshold.Format(time.RFC3339)),
+				log.String("lastFetchedAt", lastFetched.Format(time.RFC3339)),
+				log.String("now", now.Format(time.RFC3339)),
+			)
 		}
 
 		// attempts to acquire these values are not contingent on the success of
 		// the update.
-		lastFetched, err := repoLastFetched(dir)
+		lastFetched, err = repoLastFetched(dir)
 		if err != nil {
 			statusErr = err
 		} else {
