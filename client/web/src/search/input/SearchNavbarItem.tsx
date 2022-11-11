@@ -15,7 +15,7 @@ import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
-import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
+import { NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 
 import { useRecentSearches } from './useRecentSearches'
 
@@ -40,10 +40,11 @@ const selectQueryState = ({
     submitSearch,
     searchCaseSensitivity,
     searchPatternType,
+    searchMode,
 }: NavbarQueryState): Pick<
     NavbarQueryState,
-    'queryState' | 'setQueryState' | 'submitSearch' | 'searchCaseSensitivity' | 'searchPatternType'
-> => ({ queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType })
+    'queryState' | 'setQueryState' | 'submitSearch' | 'searchCaseSensitivity' | 'searchPatternType' | 'searchMode'
+> => ({ queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType, searchMode })
 
 /**
  * The search item in the navbar
@@ -52,10 +53,16 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
     // This uses the same logic as in Layout.tsx until we have a better solution
     // or remove the search help button
-    const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType } = useNavbarQueryState(
-        selectQueryState,
-        shallow
-    )
+
+    const {
+        queryState,
+        setQueryState,
+        submitSearch,
+        searchCaseSensitivity,
+        searchPatternType,
+        searchMode,
+    } = useNavbarQueryState(selectQueryState, shallow)
+
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
@@ -104,6 +111,8 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 setCaseSensitivity={setSearchCaseSensitivity}
                 patternType={searchPatternType}
                 setPatternType={setSearchPatternType}
+                searchMode={searchMode}
+                setSearchMode={setSearchMode}
                 queryState={queryState}
                 onChange={setQueryState}
                 onSubmit={onSubmit}

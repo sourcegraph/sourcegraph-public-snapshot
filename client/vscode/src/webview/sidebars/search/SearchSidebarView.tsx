@@ -71,12 +71,14 @@ export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<
                                     queryState: updatedQueryState,
                                     searchCaseSensitivity: currentSearchQueryState.searchCaseSensitivity,
                                     searchPatternType: currentSearchQueryState.searchPatternType,
+                                    searchMode: currentSearchQueryState.searchMode,
                                 },
                                 currentQueryState: {
                                     // Don't spread currentSearchQueryState as it contains un-clone-able functions.
                                     queryState: currentSearchQueryState.queryState,
                                     searchCaseSensitivity: currentSearchQueryState.searchCaseSensitivity,
                                     searchPatternType: currentSearchQueryState.searchPatternType,
+                                    searchMode: currentSearchQueryState.searchMode,
                                 },
                             })
                             .catch(error => {
