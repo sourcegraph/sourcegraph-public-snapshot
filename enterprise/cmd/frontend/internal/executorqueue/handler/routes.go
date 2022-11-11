@@ -26,9 +26,9 @@ import (
 
 // SetupRoutes registers all route handlers required for all configured executor
 // queues with the given router.
-func SetupRoutes(executorStore database.ExecutorStore, metricsStore metricsstore.DistributedStore, handlers map[string]PubHandler, router *mux.Router) {
-	for name, h := range handlers {
-		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(name))).Subrouter()
+func SetupRoutes(executorStore database.ExecutorStore, metricsStore metricsstore.DistributedStore, handlers []ExecutorHandler, router *mux.Router) {
+	for _, h := range handlers {
+		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(h.Name()))).Subrouter()
 		routes := map[string]func(w http.ResponseWriter, r *http.Request){
 			"dequeue":                 h.handleDequeue,
 			"addExecutionLogEntry":    h.handleAddExecutionLogEntry,
@@ -51,7 +51,7 @@ func (h *handler[T]) handleDequeue(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.DequeueRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
-		job, dequeued, err := h.dequeue(r.Context(), payload.ExecutorName, executorMetadata{
+		job, dequeued, err := h.dequeue(r.Context(), executorMetadata{
 			Name: payload.ExecutorName,
 			Resources: ResourceMetadata{
 				NumCPUs:   payload.NumCPUs,

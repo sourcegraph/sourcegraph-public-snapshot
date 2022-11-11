@@ -40,10 +40,7 @@ func Init(
 	// Note: In order register a new queue type please change the validate() check code in enterprise/cmd/executor/config.go
 	codeintelHandler := handler.NewHandler(executorStore, metricsStore, codeintelqueue.QueueOptions(db, accessToken, observationContext))
 	batchesHandler := handler.NewHandler(executorStore, metricsStore, batches.QueueOptions(db, accessToken, observationContext))
-	queueOptions := map[string]handler.PubHandler{
-		codeintelHandler.Name: codeintelHandler,
-		batchesHandler.Name:   batchesHandler,
-	}
+	queueOptions := []handler.ExecutorHandler{codeintelHandler, batchesHandler}
 
 	queueHandler, err := newExecutorQueueHandler(
 		logger,

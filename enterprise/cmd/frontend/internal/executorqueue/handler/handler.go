@@ -16,7 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type PubHandler interface {
+type ExecutorHandler interface {
+	Name() string
 	handleDequeue(w http.ResponseWriter, r *http.Request)
 	handleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request)
 	handleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.Request)
@@ -27,7 +28,7 @@ type PubHandler interface {
 	handleCanceledJobs(w http.ResponseWriter, r *http.Request)
 }
 
-var _ PubHandler = &handler[workerutil.Record]{}
+var _ ExecutorHandler = &handler[workerutil.Record]{}
 
 type handler[T workerutil.Record] struct {
 	QueueOptions[T]
@@ -69,6 +70,8 @@ type executorMetadata struct {
 	Name      string
 	Resources ResourceMetadata
 }
+
+func (h *handler[T]) Name() string { return h.QueueOptions.Name }
 
 // dequeue selects a job record from the database and stashes metadata including
 // the job record and the locking transaction. If no job is available for processing,
