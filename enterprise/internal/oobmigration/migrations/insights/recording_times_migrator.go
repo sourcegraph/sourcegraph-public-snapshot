@@ -53,7 +53,7 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
-		"SELECT id, created_at, last_recorded_at, sample_interval_unit, sample_interval_value FROM insight_series WHERE supports_augmentation IS FALSE LIMIT %s FOR UPDATE SKIP LOCKED",
+		"SELECT id, created_at, last_recorded_at, sample_interval_unit, sample_interval_value FROM insight_series WHERE supports_augmentation IS FALSE ORDER BY id LIMIT %s FOR UPDATE SKIP LOCKED",
 		m.batchSize,
 	))
 	if err != nil {
