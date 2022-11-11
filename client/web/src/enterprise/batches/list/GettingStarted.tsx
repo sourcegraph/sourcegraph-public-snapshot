@@ -1,7 +1,9 @@
 import React from 'react'
 
+import { mdiOpenInNew } from '@mdi/js'
+
 import { DownloadSourcegraphIcon } from '@sourcegraph/branded/src/components/DownloadSourcegraphIcon'
-import { Container, Link, H2, H3, Text } from '@sourcegraph/wildcard'
+import { Container, Card, Link, H2, H3, H4, Text, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CtaBanner } from '../../../components/CtaBanner'
@@ -18,7 +20,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
 }) => (
     <div className={className} data-testid="test-getting-started">
         <Container className="mb-3">
-            <div className="row">
+            <div className="row align-items-center">
                 <div className="col-12 col-md-7">
                     <video
                         className="w-100 h-auto shadow percy-hide"
@@ -50,38 +52,48 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     <H3>Use Batch Changes to...</H3>
                     <ul>
                         <li>Update configuration files across many repositories</li>
-                        <li>Update libraries which call your APIs</li>
+                        <li>Update libraries consuming your APIs</li>
                         <li>Rapidly fix critical security issues</li>
                         <li>Update boilerplate code</li>
-                        <li>Clean up tech debt</li>
-                        <li>
-                            <Link to="/help/batch_changes/tutorials" rel="noopener">
-                                See more use cases
-                            </Link>
-                        </li>
+                        <li>Pay down tech debt</li>
                     </ul>
                     <H3>Resources</H3>
                     <ul>
                         <li>
                             <Link to="/help/batch_changes" rel="noopener">
-                                Batch Changes documentation
+                                Documentation{' '}
+                                <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                             </Link>
                         </li>
                         <li>
                             <Link to="https://about.sourcegraph.com/batch-changes" rel="noopener">
-                                Batch Changes product page
+                                Product page{' '}
+                                <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                             </Link>
                         </li>
                     </ul>
+                    
+                    {isSourcegraphDotCom && (
+                        <Card className="shadow d-flex flex-row align-items-center p-3 mt-2">
+                            <Icon as={BatchChangesIcon} role="img" size="md" aria-hidden={true} />
+                            <div className="pl-3">
+                                <H4 className="mb-1">Get Batch Changes on your code</H4>
+                                <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
+                                    Sign up for a 30-day trial on Sourcegraph Cloud.
+                                </Link>
+                            </div>
+                        </Card>
+                    )}
                 </div>
             </div>
         </Container>
         <div className="d-flex justify-content-start">
             {isSourcegraphDotCom ? (
                 <CtaBanner
-                    bodyText="Batch Changes requires a Sourcegraph Cloud or self-hosted instance."
-                    title={<H3>Start using Batch Changes</H3>}
-                    linkText="Get started"
+                    className="col-lg-7"
+                    bodyText="Batch Changes requires a local Sourcegraph installation via Docker Compose or Kubernetes. You can check it out for free by installing locally."
+                    title={<H3>Install locally</H3>}
+                    linkText="Install local instance"
                     href="/help/admin/install?utm_medium=inproduct&utm_source=inproduct-batch-changes&utm_campaign=inproduct-batch-changes&term="
                     icon={<DownloadSourcegraphIcon />}
                     onClick={() => eventLogger.log('BatchChangesInstallFromCloudClicked')}

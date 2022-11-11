@@ -33,6 +33,7 @@ export interface CodeInsightsRouterProps extends TelemetryProps {
 export const CodeInsightsRouter: React.FunctionComponent<React.PropsWithChildren<CodeInsightsRouterProps>> = props => {
     const fetched = useLicense()
     const api = useApi()
+    console.log(window.context)
 
     if (!fetched && process.env.NODE_ENV !== 'development') {
         return null

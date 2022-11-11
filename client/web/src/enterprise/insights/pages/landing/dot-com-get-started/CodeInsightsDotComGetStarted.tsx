@@ -68,8 +68,9 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
 
                     <CodeInsightsExamplesPicker telemetryService={telemetryService} />
 
-                    <section className={classNames('d-flex justify-content-start mt-3', styles.ctaWrapper)}>
+                    <section className="d-flex justify-content-start mt-3">
                         <CtaBanner
+                            className="col-lg-7"
                             bodyText="Code Insights requires a local Sourcegraph installation via Docker Compose or Kubernetes. You can check it out for free by installing locally."
                             title={<H3>Install locally to get started</H3>}
                             linkText="Install local instance"
