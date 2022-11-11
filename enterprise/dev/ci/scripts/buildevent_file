@@ -1,7 +1,6 @@
 buildkite.step.key="$BUILDKITE_STEP_KEY"
 buildkite.step.id="$BUILDKITE_STEP_ID"
 buildkite.label="$BUILDKITE_LABEL"
-buildkite.message="$BUILDKITE_MESSAGE"
 buildkite.build.url="$BUILDKITE_BUILD_URL"
 buildkite.build.id="$BUILDKITE_BUILD_ID"
 buildkite.build.author="$BUILDKITE_BUILD_AUTHOR"
