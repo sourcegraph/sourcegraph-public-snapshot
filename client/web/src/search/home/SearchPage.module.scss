@@ -55,3 +55,7 @@
         width: calc(var(--max-homepage-container-width) + 30rem);
     }
 }
+
+.subtitle {
+    border-right: 1px solid var(--border-color);
+}

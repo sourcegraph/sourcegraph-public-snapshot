@@ -10,7 +10,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { H4, Link } from '@sourcegraph/wildcard'
 
 import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -66,7 +66,12 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
             <BrandLogo className={styles.logo} isLightTheme={props.isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && (
-                <div className="text-muted text-center mt-3">Search millions of open source repositories | <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>Search private code</Link></div>
+                <div className="d-flex flex-row">
+                    <div className={classNames('text-muted text-center mt-3 mr-2 pr-2', styles.subtitle)}>Search millions of open source repositories</div>
+                    <div className="mt-3">
+                        <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>Search private code</Link>
+                    </div>
+                </div>
             )}
             <div className={styles.searchContainer}>
                 <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} source="home" />
