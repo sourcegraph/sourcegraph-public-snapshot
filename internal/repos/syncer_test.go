@@ -876,6 +876,7 @@ func TestSyncRepo(t *testing.T) {
 				Store:        store,
 				Synced:       make(chan repos.Diff, 1),
 				SyncRepoChan: make(chan repos.BackgroundRepoSyncJob),
+				SyncRepoMap:  make(map[api.RepoID]struct{}),
 				Sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(servicesPerKind[extsvc.KindGitHub], nil, tc.sourced),
 				),

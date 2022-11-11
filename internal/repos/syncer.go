@@ -42,6 +42,10 @@ type Syncer struct {
 	// SyncRepoChan is a channel that is used to handle manual repo sync requests
 	SyncRepoChan chan BackgroundRepoSyncJob
 
+	// SyncRepoMap is a hashmap used to keep track of which repos are queued to be synced, used to avoid
+	// duplicate sync requests.
+	SyncRepoMap map[api.RepoID]struct{}
+
 	// Logger if non-nil is logged to.
 	Logger log.Logger
 
@@ -151,11 +155,14 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 }
 
 func (s *Syncer) StartBackgroundRepoSyncer(ctx context.Context, logger log.Logger) (err error) {
+
 	for {
 		select {
 		case <-ctx.Done():
 			return errors.Wrapf(ctx.Err(), "context done")
 		case job := <-s.SyncRepoChan:
+			// We are processing this repo now, free up future requests to sync this repo.
+			delete(s.SyncRepoMap, job.repo.ID)
 			ctx2, _ := context.WithTimeout(ctx, 3*time.Minute)
 			repo, err := s.syncRepo(ctx2, job.codehost, job.name, job.repo)
 			logger.Debug("syncGroup completed", log.String("updatedRepo", fmt.Sprintf("%v", repo)))
@@ -361,11 +368,18 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 	}
 
 	if background && repo != nil {
-		logger.Debug("starting background sync")
-		s.SyncRepoChan <- BackgroundRepoSyncJob{
-			name:     name,
-			repo:     repo,
-			codehost: codehost,
+		if _, ok := s.SyncRepoMap[repo.ID]; !ok {
+			logger.Debug("starting background sync")
+			// Repo is not in the queue, add it.
+			s.SyncRepoMap[repo.ID] = struct{}{}
+			s.SyncRepoChan <- BackgroundRepoSyncJob{
+				name:     name,
+				repo:     repo,
+				codehost: codehost,
+			}
+		} else {
+			// Repo is already in the queue, don't need to add it.
+			logger.Debug("repo is already in queue to be synced")
 		}
 		return repo, nil
 	}

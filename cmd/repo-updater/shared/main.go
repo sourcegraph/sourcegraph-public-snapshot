@@ -172,6 +172,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		// happens on both Cloud and non Cloud instances.
 		Synced:       make(chan repos.Diff),
 		SyncRepoChan: make(chan repos.BackgroundRepoSyncJob),
+		SyncRepoMap:  make(map[api.RepoID]struct{}),
 		Now:          clock,
 		Registerer:   prometheus.DefaultRegisterer,
 	}
