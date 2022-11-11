@@ -43,6 +43,9 @@ const getLineNumberElementIndex = (part: DiffPart, isSplitDiff: boolean): number
  * Gets the line number for a given code element on unified diff, split diff and blob views
  */
 const getLineNumberFromCodeElement = (codeElement: HTMLElement): number => {
+    if (codeElement.dataset.lineNumber) {
+        return parseInt(codeElement.dataset.lineNumber, 10)
+    }
     // In diff views, the code element is the `<span>` inside the cell
     // On blob views, the code element is the `<td>` itself, so `closest()` will simply return it
     // Walk all previous sibling cells until we find one with the line number
