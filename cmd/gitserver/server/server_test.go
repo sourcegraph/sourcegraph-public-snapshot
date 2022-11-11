@@ -971,6 +971,39 @@ func TestHandleRepoUpdate(t *testing.T) {
 		t.Fatal(diff)
 	}
 
+	// Create a new request with the Since interval to a long duration to verify that the
+	// update is skipped the next time this request is sent.
+	reqWithSince := protocol.RepoUpdateRequest{
+		Repo:  repoName,
+		Since: time.Duration(time.Hour * 1),
+	}
+
+	reqWithSince.Since = time.Duration(time.Hour * 1)
+	b, err := json.Marshal(reqWithSince)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = newRequest("GET", "/repo-update", bytes.NewReader(b))
+	s.handleRepoUpdate(rr, req)
+
+	expected, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// We will not ignore any fields in the comparison because we don't expect any changes
+	// in the DB.
+	if diff := cmp.Diff(fromDB, expected); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// Reset the Since interval for further tests.
+	updateReq.Since = time.Duration(time.Second * 0)
+	body, err = json.Marshal(updateReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Now we'll call again and with an update that fails
 	doBackgroundRepoUpdateMock = func(name api.RepoName) error {
 		return errors.New("fail")
