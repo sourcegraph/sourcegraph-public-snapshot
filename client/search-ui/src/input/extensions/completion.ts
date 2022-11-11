@@ -570,6 +570,6 @@ function isTokenInRange(
 function voiceOverComma(): HTMLElement {
     const element = document.createElement('span')
     element.className = 'sr-only'
-    element.append(document.createTextNode(','))
+    element.append(', ')
     return element
 }
