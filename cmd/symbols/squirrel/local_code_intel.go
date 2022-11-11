@@ -53,10 +53,17 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 		for captureName, node := range nameToNode {
 			// Only collect "definition*" captures.
 			if strings.HasPrefix(captureName, "definition") {
+				bubbleup := strings.Contains(captureName, "bubbleup")
 				// Find the nearest scope (if it exists).
 				for cur := node.Node; cur != nil; cur = cur.Parent() {
 					// Found the scope.
 					if scope, ok := scopes[nodeId(cur)]; ok {
+						if bubbleup {
+							// Skip this scope and bubble up to the next one.
+							bubbleup = false
+							continue
+						}
+
 						// Get the symbol name.
 						symbolName := SymbolName(node.Content(node.Contents))
 

@@ -243,6 +243,7 @@ const f = (p1?: number, p2 = 3, ...p3) => {
 	// enough (yet?) to express bindings that also escape their lexical scope.
 
 	//          v f.x ref
+	//             v f.g ref
 	console.log(x, g)
 
 	//       v f.i def
