@@ -121,7 +121,7 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
     const showSelectRow = selected === 'all' || selected.size > 0
 
     return (
-        <Container>
+        <Container role="region" aria-label="preview changesets">
             {showSelectRow && queryArguments ? (
                 <PreviewSelectRow
                     queryPublishableChangesetSpecIDs={queryPublishableChangesetSpecIDs}
