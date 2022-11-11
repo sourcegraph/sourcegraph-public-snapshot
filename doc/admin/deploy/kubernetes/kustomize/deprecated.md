@@ -1,13 +1,16 @@
-# Kustomize
+# Kustomize - Deprecated Version
 
-> WARNING: Kustomize can be used **with** Helm to configure Sourcegraph (see [this guidance](helm.md#integrate-kustomize-with-helm-chart)) but this is only recommended as a temporary workaround while Sourcegraph adds to the Helm chart to support previously unsupported customizations.
-> If you have yet to deploy Sourcegraph, it is highly recommended to us Helm for the deployment and configuration ([Using Helm with Sourcegraph](helm.md)).
+<span class="badge badge-critical">IMPORTANT</span> This page is for the deprecated version of kustomize that we no longer supported. It is kept for backward compatibility purpose.
+
+Please refer to our documentation for [the latest version of our kustomize](index.md) when deploying a new Sourcegraph instance.
+
+---
 
 Sourcegraph supports the use of [Kustomize](https://kustomize.io) to modify and customize our Kubernetes manifests. Kustomize is a template-free way to customize configuration with a simple configuration file.
 
 Some benefits of using Kustomize to generate manifests instead of modifying the base directly include:
 
-- Reduce the odds of encountering a merge conflict when [updating Sourcegraph](update.md) - they allow you to separate your unique changes from the upstream base files Sourcegraph provides.
+- Reduce the odds of encountering a merge conflict when [updating Sourcegraph](../update.md) - they allow you to separate your unique changes from the upstream base files Sourcegraph provides.
 - Better enable Sourcegraph to support you if you run into issues, because how your deployment varies from our defaults is encapsulated in a small set of files.
 
 ## Using Kustomize
@@ -120,7 +123,7 @@ This overlay adds a namespace declaration to all the manifests.
 
 By default Sourcegraph is configured to use a storage class called `sourcegraph`. If you wish to use an alternate name, you can use this overlay to change all `storageClass` references in the manifests.
 
-You need to create the storageclass if it doesn't exist yet. See [these docs](./configure.md#configure-a-storage-class) for more instructions.
+You need to create the storageclass if it doesn't exist yet. See [these docs](../configure.md#configure-a-storage-class) for more instructions.
 
 1. To use it, update the following two files, `replace-storageclass-name-pvc.yaml` and `replace-storageclass-name-sts.yaml` in the `deploy-sourcegraph/overlays/storageclass` directory with your storageclass name.
 
@@ -229,9 +232,9 @@ minikube stop
 
 ### Custom overlays
 
-To create your own [overlays](#overlays), first [set up your deployment reference repository to enable customizations](./configure.md#getting-started).
+To create your own [overlays](#overlays), first [set up your deployment reference repository to enable customizations](../configure.md#getting-started).
 
-Then, within the `overlays` directory of the [reference repository](./index.md#reference-repository), create a new directory for your overlay along with a `kustomization.yaml`.
+Then, within the `overlays` directory of the [reference repository](../index.md#reference-repository), create a new directory for your overlay along with a `kustomization.yaml`.
 
 ```text
 deploy-sourcegraph

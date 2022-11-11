@@ -90,7 +90,7 @@ Some of the following instructions require cluster access. Ensure you can [acces
 
 ### Customizations
 
-To make customizations to the Sourcegraph deployment such as resources, replicas or other changes, we recommend using [Kustomize](kustomize.md).
+To make customizations to the Sourcegraph deployment such as resources, replicas or other changes, we recommend using [Kustomize](kustomize/index.md).
 
 This means that you define your customizations as patches, and generate a manifest from our provided manifests to [apply](./operations.md#applying-manifests).
 
@@ -378,7 +378,7 @@ spec:
 
 Network policy is a Kubernetes resource that defines how pods are allowed to communicate with each other and with
 other network endpoints. If the cluster administration requires an associated NetworkPolicy when doing an installation,
-then we recommend running Sourcegraph in a namespace (as described in our [Overlays guide](./kustomize.md#overlays) or below in the
+then we recommend running Sourcegraph in a namespace (as described in our [Overlays guide](./kustomize/index.md#overlays) or below in the
 [Using NetworkPolicy with Namespaced Overlay Example](#using-networkpolicy-with-namespaced-overlay)).
 You can then use the `namespaceSelector` to allow traffic between the Sourcegraph pods.
 When you create the namespace you need to give it a label so it can be used in a `matchLabels` clause.
@@ -575,13 +575,13 @@ By default, the collector is [configured to export trace data by logging](https:
 
 #### Enable the bundled Jaeger deployment
 
-If you do not currently have any tracing backend configured, you can enable Jaeger's [Collector](https://www.jaegertracing.io/docs/1.37/architecture/#collector) and [Query](https://www.jaegertracing.io/docs/1.37/architecture/#query) components by using the [Jaeger overlay](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/overlays/jaeger), which will also configure exporting trace data to this instance. Read the [Overlays](./kustomize.md#overlays) section below about overlays.
+If you do not currently have any tracing backend configured, you can enable Jaeger's [Collector](https://www.jaegertracing.io/docs/1.37/architecture/#collector) and [Query](https://www.jaegertracing.io/docs/1.37/architecture/#query) components by using the [Jaeger overlay](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/overlays/jaeger), which will also configure exporting trace data to this instance. Read the [Overlays](./kustomize/index.md#overlays) section below about overlays.
 
 ## Install without cluster-wide RBAC
 
 Sourcegraph communicates with the Kubernetes API for service discovery. It also has some janitor DaemonSets that clean up temporary cache data. To do that we need to create RBAC resources.
 
-If using cluster roles and cluster rolebinding RBAC is not an option, then you can use the [non-privileged](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/non-privileged) overlay to generate modified manifests. Read the [Overlays](./kustomize.md#overlays) section below about overlays.
+If using cluster roles and cluster rolebinding RBAC is not an option, then you can use the [non-privileged](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/non-privileged) overlay to generate modified manifests. Read the [Overlays](./kustomize/index.md#overlays) section below about overlays.
 
 ## Add license key
 
@@ -592,7 +592,7 @@ Once you have a license key, add it to your [site configuration](https://docs.so
 ## Environment variables
 
 Update the environment variables in the appropriate deployment manifest.
-For example, the following [patch](./kustomize.md#overlays) will update `PGUSER` to have the value `bob`:
+For example, the following [patch](./kustomize/index.md#overlays) will update `PGUSER` to have the value `bob`:
 
 ```yaml
 apiVersion: apps/v1
