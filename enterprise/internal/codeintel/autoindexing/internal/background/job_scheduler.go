@@ -8,6 +8,7 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -186,12 +187,32 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 	}
 }
 
-func NewOnDemandScheduler(indexEnqueuer IndexEnqueuer, interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
+func NewOnDemandScheduler(store store.Store, indexEnqueuer IndexEnqueuer, interval time.Duration, batchSize int) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
 		if !autoIndexingEnabled() {
 			return nil
 		}
 
-		return indexEnqueuer.ProcessRepoRevs(ctx, batchSize)
+		tx, err := store.Transact(ctx)
+		if err != nil {
+			return err
+		}
+		defer func() { err = tx.Done(err) }()
+
+		repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
+		if err != nil {
+			return err
+		}
+
+		ids := make([]int, 0, len(repoRevs))
+		for _, repoRev := range repoRevs {
+			if _, err := indexEnqueuer.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
+				return err
+			}
+
+			ids = append(ids, repoRev.ID)
+		}
+
+		return tx.MarkRepoRevsAsProcessed(ctx, ids)
 	}))
 }

@@ -1984,9 +1984,6 @@ func (c GitserverRepoStoreGetByNamesFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/background)
 // used for unit testing.
 type MockIndexEnqueuer struct {
-	// ProcessRepoRevsFunc is an instance of a mock function object
-	// controlling the behavior of the method ProcessRepoRevs.
-	ProcessRepoRevsFunc *IndexEnqueuerProcessRepoRevsFunc
 	// QueueIndexesFunc is an instance of a mock function object controlling
 	// the behavior of the method QueueIndexes.
 	QueueIndexesFunc *IndexEnqueuerQueueIndexesFunc
@@ -1999,11 +1996,6 @@ type MockIndexEnqueuer struct {
 // All methods return zero values for all results, unless overwritten.
 func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
-		ProcessRepoRevsFunc: &IndexEnqueuerProcessRepoRevsFunc{
-			defaultHook: func(context.Context, int) (r0 error) {
-				return
-			},
-		},
 		QueueIndexesFunc: &IndexEnqueuerQueueIndexesFunc{
 			defaultHook: func(context.Context, int, string, string, bool, bool) (r0 []types1.Index, r1 error) {
 				return
@@ -2021,11 +2013,6 @@ func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockIndexEnqueuer() *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
-		ProcessRepoRevsFunc: &IndexEnqueuerProcessRepoRevsFunc{
-			defaultHook: func(context.Context, int) error {
-				panic("unexpected invocation of MockIndexEnqueuer.ProcessRepoRevs")
-			},
-		},
 		QueueIndexesFunc: &IndexEnqueuerQueueIndexesFunc{
 			defaultHook: func(context.Context, int, string, string, bool, bool) ([]types1.Index, error) {
 				panic("unexpected invocation of MockIndexEnqueuer.QueueIndexes")
@@ -2044,9 +2031,6 @@ func NewStrictMockIndexEnqueuer() *MockIndexEnqueuer {
 // overwritten.
 func NewMockIndexEnqueuerFrom(i IndexEnqueuer) *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
-		ProcessRepoRevsFunc: &IndexEnqueuerProcessRepoRevsFunc{
-			defaultHook: i.ProcessRepoRevs,
-		},
 		QueueIndexesFunc: &IndexEnqueuerQueueIndexesFunc{
 			defaultHook: i.QueueIndexes,
 		},
@@ -2054,112 +2038,6 @@ func NewMockIndexEnqueuerFrom(i IndexEnqueuer) *MockIndexEnqueuer {
 			defaultHook: i.QueueIndexesForPackage,
 		},
 	}
-}
-
-// IndexEnqueuerProcessRepoRevsFunc describes the behavior when the
-// ProcessRepoRevs method of the parent MockIndexEnqueuer instance is
-// invoked.
-type IndexEnqueuerProcessRepoRevsFunc struct {
-	defaultHook func(context.Context, int) error
-	hooks       []func(context.Context, int) error
-	history     []IndexEnqueuerProcessRepoRevsFuncCall
-	mutex       sync.Mutex
-}
-
-// ProcessRepoRevs delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockIndexEnqueuer) ProcessRepoRevs(v0 context.Context, v1 int) error {
-	r0 := m.ProcessRepoRevsFunc.nextHook()(v0, v1)
-	m.ProcessRepoRevsFunc.appendCall(IndexEnqueuerProcessRepoRevsFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the ProcessRepoRevs
-// method of the parent MockIndexEnqueuer instance is invoked and the hook
-// queue is empty.
-func (f *IndexEnqueuerProcessRepoRevsFunc) SetDefaultHook(hook func(context.Context, int) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ProcessRepoRevs method of the parent MockIndexEnqueuer instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *IndexEnqueuerProcessRepoRevsFunc) PushHook(hook func(context.Context, int) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *IndexEnqueuerProcessRepoRevsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *IndexEnqueuerProcessRepoRevsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int) error {
-		return r0
-	})
-}
-
-func (f *IndexEnqueuerProcessRepoRevsFunc) nextHook() func(context.Context, int) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *IndexEnqueuerProcessRepoRevsFunc) appendCall(r0 IndexEnqueuerProcessRepoRevsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of IndexEnqueuerProcessRepoRevsFuncCall
-// objects describing the invocations of this function.
-func (f *IndexEnqueuerProcessRepoRevsFunc) History() []IndexEnqueuerProcessRepoRevsFuncCall {
-	f.mutex.Lock()
-	history := make([]IndexEnqueuerProcessRepoRevsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// IndexEnqueuerProcessRepoRevsFuncCall is an object that describes an
-// invocation of method ProcessRepoRevs on an instance of MockIndexEnqueuer.
-type IndexEnqueuerProcessRepoRevsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c IndexEnqueuerProcessRepoRevsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c IndexEnqueuerProcessRepoRevsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // IndexEnqueuerQueueIndexesFunc describes the behavior when the

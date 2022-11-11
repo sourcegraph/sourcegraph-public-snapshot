@@ -114,6 +114,7 @@ func NewIndexSchedulers(
 		),
 
 		background.NewOnDemandScheduler(
+			autoindexingSvc.store,
 			autoindexingSvc.IndexEnqueuer(),
 			ConfigIndexingInst.OnDemandSchedulerInterval,
 			ConfigIndexingInst.OnDemandBatchsize,
