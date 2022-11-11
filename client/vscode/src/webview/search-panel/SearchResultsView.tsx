@@ -9,6 +9,7 @@ import {
     fetchAutoDefinedSearchContexts,
     getUserSearchContextNamespaces,
     QueryState,
+    SearchMode,
 } from '@sourcegraph/search'
 import {
     IEditor,
@@ -90,6 +91,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     queryState: newState,
                     searchCaseSensitivity: context.submittedSearchQueryState?.searchCaseSensitivity,
                     searchPatternType: context.submittedSearchQueryState?.searchPatternType,
+                    searchMode: context.submittedSearchQueryState?.searchMode,
                 })
                 .catch(error => {
                     // TODO surface error to users
@@ -100,6 +102,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
             extensionCoreAPI,
             context.submittedSearchQueryState.searchCaseSensitivity,
             context.submittedSearchQueryState.searchPatternType,
+            context.submittedSearchQueryState.searchMode,
         ]
     )
 
@@ -134,12 +137,18 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     }, [platformContext, context.submittedSearchQueryState.queryState.query])
 
     const onSubmit = useCallback(
-        (options?: { caseSensitive?: boolean; patternType?: SearchPatternType; newQuery?: string }) => {
+        (options?: {
+            caseSensitive?: boolean
+            patternType?: SearchPatternType
+            newQuery?: string
+            searchMode?: SearchMode
+        }) => {
             const previousSearchQueryState = context.submittedSearchQueryState
 
             const query = options?.newQuery ?? userQueryState.query
             const caseSensitive = options?.caseSensitive ?? previousSearchQueryState.searchCaseSensitivity
             const patternType = options?.patternType ?? previousSearchQueryState.searchPatternType
+            const searchMode = options?.searchMode ?? previousSearchQueryState.searchMode
 
             extensionCoreAPI
                 .streamSearch(query, {
@@ -163,6 +172,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     queryState: { query },
                     searchCaseSensitivity: caseSensitive,
                     searchPatternType: patternType,
+                    searchMode,
                 })
                 .catch(error => {
                     // TODO surface error to users
@@ -234,6 +244,13 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     const setPatternType = useCallback(
         (patternType: SearchPatternType) => {
             onSubmit({ patternType })
+        },
+        [onSubmit]
+    )
+
+    const setSearchMode = useCallback(
+        (searchMode: SearchMode) => {
+            onSubmit({ searchMode })
         },
         [onSubmit]
     )
@@ -323,6 +340,8 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     setCaseSensitivity={setCaseSensitivity}
                     patternType={context.submittedSearchQueryState?.searchPatternType}
                     setPatternType={setPatternType}
+                    searchMode={context.submittedSearchQueryState?.searchMode}
+                    setSearchMode={setSearchMode}
                     isSourcegraphDotCom={isSourcegraphDotCom}
                     structuralSearchDisabled={false}
                     queryState={userQueryState}

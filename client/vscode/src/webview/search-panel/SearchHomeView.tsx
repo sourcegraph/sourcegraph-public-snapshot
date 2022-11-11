@@ -9,6 +9,7 @@ import {
     getUserSearchContextNamespaces,
     fetchAutoDefinedSearchContexts,
     QueryState,
+    SearchMode,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -41,6 +42,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
     // Toggling case sensitivity or pattern type does NOT trigger a new search on home view.
     const [caseSensitive, setCaseSensitivity] = useState(false)
     const [patternType, setPatternType] = useState(SearchPatternType.standard)
+    const [searchMode, setSearchMode] = useState(SearchMode.Precise)
 
     const [userQueryState, setUserQueryState] = useState<QueryState>({
         query: '',
@@ -70,6 +72,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                 queryState: { query: userQueryState.query },
                 searchCaseSensitivity: caseSensitive,
                 searchPatternType: patternType,
+                searchMode,
             })
             .catch(error => {
                 // TODO surface error to users
@@ -119,6 +122,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
         userQueryState.query,
         caseSensitive,
         patternType,
+        searchMode,
         instanceURL,
         context.selectedSearchContextSpec,
         platformContext.telemetryService,
@@ -168,6 +172,8 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                         setCaseSensitivity={setCaseSensitivity}
                         patternType={patternType}
                         setPatternType={setPatternType}
+                        searchMode={searchMode}
+                        setSearchMode={setSearchMode}
                         isSourcegraphDotCom={isSourcegraphDotCom}
                         structuralSearchDisabled={false}
                         queryState={userQueryState}

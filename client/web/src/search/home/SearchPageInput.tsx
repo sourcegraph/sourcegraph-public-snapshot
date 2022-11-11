@@ -12,6 +12,7 @@ import {
     SubmitSearchParameters,
     canSubmitSearch,
     QueryState,
+    SearchModeProps,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -28,6 +29,7 @@ import {
     useNavbarQueryState,
     setSearchCaseSensitivity,
     setSearchPatternType,
+    setSearchMode,
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
@@ -56,13 +58,14 @@ interface Props
 
 const queryStateSelector = (
     state: NavbarQueryState
-): Pick<CaseSensitivityProps, 'caseSensitive'> & SearchPatternTypeProps => ({
+): Pick<CaseSensitivityProps, 'caseSensitive'> & SearchPatternTypeProps & Pick<SearchModeProps, 'searchMode'> => ({
     caseSensitive: state.searchCaseSensitivity,
     patternType: state.searchPatternType,
+    searchMode: state.searchMode,
 })
 
 export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
-    const { caseSensitive, patternType } = useNavbarQueryState(queryStateSelector, shallow)
+    const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
@@ -127,8 +130,10 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         showSearchContextManagement={showSearchContextManagement}
                         caseSensitive={caseSensitive}
                         patternType={patternType}
+                        searchMode={searchMode}
                         setPatternType={setSearchPatternType}
                         setCaseSensitivity={setSearchCaseSensitivity}
+                        setSearchMode={setSearchMode}
                         queryState={props.queryState}
                         onChange={props.setQueryState}
                         onSubmit={onSubmit}
