@@ -22,6 +22,7 @@ var defaultIndexers = map[string]string{
 	"python":     "sourcegraph/scip-python",
 	"rust":       "sourcegraph/lsif-rust",
 	"typescript": "sourcegraph/scip-typescript",
+	"ruby":       "scip-ruby-test0",
 }
 
 // To update, run `DOCKER_USER=... DOCKER_PASS=... ./update-shas.sh`
