@@ -254,30 +254,6 @@ func (s *Service) QueueRepoRev(ctx context.Context, repositoryID int, rev string
 	return s.store.QueueRepoRev(ctx, repositoryID, rev)
 }
 
-func (s *Service) ProcessRepoRevs(ctx context.Context, batchSize int) (err error) {
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
-	if err != nil {
-		return err
-	}
-
-	ids := make([]int, 0, len(repoRevs))
-	for _, repoRev := range repoRevs {
-		if _, err := s.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
-			return err
-		}
-
-		ids = append(ids, repoRev.ID)
-	}
-
-	return tx.MarkRepoRevsAsProcessed(ctx, ids)
-}
-
 func (s *Service) SetInferenceScript(ctx context.Context, script string) (err error) {
 	ctx, _, endObservation := s.operations.setInferenceScript.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
