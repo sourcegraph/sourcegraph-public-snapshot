@@ -5,6 +5,7 @@ package authz
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -164,4 +165,19 @@ func (e ErrUnimplemented) Unimplemented() bool { return true }
 func (e ErrUnimplemented) Is(err error) bool {
 	_, ok := err.(*ErrUnimplemented)
 	return ok
+}
+
+// SyncJobRecord is used to track the outcome of a sync job.
+type SyncJobRecord struct {
+	RequestType string    `json:"request_type"`
+	RequestID   int32     `json:"request_id"`
+	Completed   time.Time `json:"completed"`
+
+	// per-provider status
+	// TODO
+	// Providers []SyncJobStatus `json:"providers"`
+
+	// overall status
+	Status  string `json:"status"`
+	Message string `json:"message,omitempty"`
 }
