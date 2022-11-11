@@ -71,18 +71,18 @@ export const GitReferenceNode: React.FunctionComponent<React.PropsWithChildren<G
                 data-testid="git-ref-node"
                 aria-label={ariaLabel}
             >
-                <span className="d-flex align-items-center">
+                <span className="d-flex flex-wrap align-items-center">
                     {ReferenceIcon && <Icon className="mr-1" as={ReferenceIcon} aria-hidden={true} />}
                     {/*
                     a11y-ignore
                     Rule: "color-contrast" (Elements must have sufficient color contrast)
                     GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
                 */}
-                    <Badge className="a11y-ignore px-1 py-0" as="code">
+                    <Badge className="a11y-ignore px-1 py-0 mr-2 text-break text-wrap text-justify" as="code">
                         {node.displayName}
                     </Badge>
                     {mostRecentSig && (
-                        <small className="pl-2">
+                        <small>
                             Updated <Timestamp date={mostRecentSig.date} />{' '}
                             {mostRecentSig.person && <>by {mostRecentSig.person.displayName}</>}
                         </small>
