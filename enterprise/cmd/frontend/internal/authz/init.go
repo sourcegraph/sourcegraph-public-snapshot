@@ -46,6 +46,7 @@ func Init(
 	}
 
 	extsvcStore := db.ExternalServices()
+
 	// TODO(nsc): use c
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conftypes.SiteConfigQuerier) (problems conf.Problems) {
