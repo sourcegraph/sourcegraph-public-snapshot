@@ -1,4 +1,4 @@
-import { forwardRef } from 'react'
+import { createContext, FC, forwardRef, ReactNode, useContext } from 'react'
 
 import classNames from 'classnames'
 
@@ -19,40 +19,65 @@ export const LegendList = forwardRef(function LegendList(props, ref) {
     )
 }) as ForwardReferenceComponent<'ul'>
 
-interface LegendItemProps {
-    name: string
-    hovered?: boolean
-    selected?: boolean
-    color?: string
+interface LegendItemContextData {
+    active: boolean
+}
+
+const LegendItemContext = createContext<LegendItemContextData>({ active: true })
+
+type LegendItemNameProps = { name: string; children?: undefined } | { name?: undefined; children: ReactNode }
+type LegendItemProps = LegendItemNameProps & {
+    active?: boolean
 }
 
 export const LegendItem = forwardRef(function LegendItem(props, ref) {
     const {
-        as: Component = 'span',
         name,
-        hovered,
-        selected = true,
+        children,
+        active = true,
+        as: Component = 'li',
         color = 'var(--gray-07)',
         className,
-        children,
         ...attributes
     } = props
 
     return (
-        <li ref={ref}>
+        <LegendItemContext.Provider value={{ active }}>
             <Component
+                ref={ref}
                 {...attributes}
-                className={classNames(styles.legendItem, className, { 'text-muted': !selected && !hovered })}
+                className={classNames(styles.legendItem, className, { 'text-muted': !active })}
             >
-                <span
-                    aria-hidden={true}
-                    /* eslint-disable-next-line react/forbid-dom-props */
-                    style={{ backgroundColor: selected || hovered ? color : undefined }}
-                    className={classNames([styles.legendMark, { [styles.unselected]: !selected }])}
-                />
-                {children || name}
+                {name ? (
+                    <>
+                        <LegendItemPoint color={color} active={active} />
+                        {name}
+                    </>
+                ) : (
+                    children
+                )}
             </Component>
-        </li>
-
+        </LegendItemContext.Provider>
     )
 }) as ForwardReferenceComponent<'li', LegendItemProps>
+
+interface LegendItemPointProps {
+    color?: string
+    active?: boolean
+}
+
+export const LegendItemPoint: FC<LegendItemPointProps> = props => {
+    const { color = 'var(--gray-07)', active: propActive } = props
+    const { active: contextActive } = useContext(LegendItemContext)
+
+    const active = propActive ?? contextActive
+
+    return (
+        <span
+            aria-hidden={true}
+            /* eslint-disable-next-line react/forbid-dom-props */
+            style={{ backgroundColor: active ? color : 'var(--icon-muted)' }}
+            className={styles.legendMark}
+        />
+    )
+}

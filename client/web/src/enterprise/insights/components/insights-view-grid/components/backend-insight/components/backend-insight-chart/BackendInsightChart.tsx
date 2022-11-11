@@ -4,7 +4,7 @@ import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
-import { BarChart, ScrollBox, LegendList, LegendItem, Series, Button } from '@sourcegraph/wildcard'
+import { BarChart, ScrollBox, LegendList, LegendItem, Button, Series, LegendItemPoint } from '@sourcegraph/wildcard'
 
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
 import { BackendInsightData, InsightContent } from '../../../../../../core'
@@ -144,38 +144,50 @@ interface SeriesLegendsProps {
 const SeriesLegends: FC<SeriesLegendsProps> = props => {
     const { series, seriesToggleState } = props
 
+    // Non-interactive static legend list
+    if (series.length <= 1) {
+        return (
+            <LegendList className={styles.legendList}>
+                {series.map(item => (
+                    <LegendItem key={item.id as string} name={item.name} color={item.color} />
+                ))}
+            </LegendList>
+        )
+    }
+
     const { setHoveredId, isSeriesSelected, isSeriesHovered, toggle } = seriesToggleState
 
-    const isInteractive = series.length > 1
-
+    // Interactive legends list
     return (
         <LegendList
             className={styles.legendList}
-            // prevent accidental dragging events
+            // Prevent accidental dragging events
             onMouseDown={(event: MouseEvent<HTMLElement>) => event.stopPropagation()}
         >
             {series.map(item => (
                 <LegendItem
                     key={item.id as string}
-                    as={isInteractive ? Button : 'span'}
-                    role={isInteractive ? 'checkbox' : undefined}
-                    aria-checked={isSeriesSelected(`${item.id}`)}
-                    name={item.name}
-                    hovered={isSeriesHovered(`${item.id}`)}
-                    selected={isSeriesSelected(`${item.id}`)}
-                    color={item.color}
-                    className={styles.legendListItem}
-                    onMouseEnter={() => setHoveredId(`${item.id}`)}
-                    onMouseLeave={() => setHoveredId(undefined)}
-                    onFocus={() => setHoveredId(`${item.id}`)}
-                    onBlur={() => setHoveredId(undefined)}
-                    onClick={() =>
-                        toggle(
-                            `${item.id}`,
-                            series.map(series => `${series.id}`)
-                        )
-                    }
-                />
+                    active={isSeriesHovered(`${item.id}`) || isSeriesSelected(`${item.id}`)}
+                >
+                    <Button
+                        role="checkbox"
+                        aria-checked={isSeriesSelected(`${item.id}`)}
+                        className={styles.legendListItem}
+                        onPointerEnter={() => setHoveredId(`${item.id}`)}
+                        onPointerLeave={() => setHoveredId(undefined)}
+                        onFocus={() => setHoveredId(`${item.id}`)}
+                        onBlur={() => setHoveredId(undefined)}
+                        onClick={() =>
+                            toggle(
+                                `${item.id}`,
+                                series.map(series => `${series.id}`)
+                            )
+                        }
+                    >
+                        <LegendItemPoint color={item.color} />
+                        {item.name}
+                    </Button>
+                </LegendItem>
             ))}
         </LegendList>
     )
