@@ -16,7 +16,8 @@ import {
 } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Icon, Tooltip } from '@sourcegraph/wildcard'
+import { pluralize } from '@sourcegraph/common'
+import { H4, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../../graphql-operations'
 
@@ -102,14 +103,28 @@ const PreviewAction: React.FunctionComponent<React.PropsWithChildren<PreviewActi
 
 const iconClassNames = 'm-0 text-nowrap'
 
-export const PreviewActionPublish: React.FunctionComponent<
-    React.PropsWithChildren<{ label?: string; className?: string }>
-> = ({ label = 'Publish', className }) => (
+export const PreviewPublishStat: React.FunctionComponent<
+    React.PropsWithChildren<{ count: number; className?: string }>
+> = ({ count, className }) => (
+    <div className={classNames(className, iconClassNames)}>
+        <Icon aria-hidden={true} svgPath={mdiUpload} />
+        <H4
+            className="font-weight-normal text-muted m-0"
+            aria-label={`${count} ${pluralize('changeset', count)} will be published`}
+        >
+            {count} publish
+        </H4>
+    </div>
+)
+
+export const PreviewActionPublish: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
+    className,
+}) => (
     <div className={classNames(className, iconClassNames)}>
         <Tooltip content="This changeset will be published to its code host">
             <Icon aria-label="This changeset will be published to its code host" className="mr-1" svgPath={mdiUpload} />
         </Tooltip>
-        <span>{label}</span>
+        <span>Publish</span>
     </div>
 )
 
@@ -128,6 +143,20 @@ export const PreviewActionPublishDraft: React.FunctionComponent<
     </div>
 )
 
+export const PreviewImportStat: React.FunctionComponent<
+    React.PropsWithChildren<{ count: number; className?: string }>
+> = ({ count, className }) => (
+    <div className={classNames(className, iconClassNames)}>
+        <Icon aria-hidden={true} svgPath={mdiImport} />
+        <H4
+            className="font-weight-normal text-muted m-0"
+            aria-label={`${count} ${pluralize('changeset', count)} will be imported`}
+        >
+            {count} import
+        </H4>
+    </div>
+)
+
 export const PreviewActionImport: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Import', className }) => (
@@ -140,6 +169,20 @@ export const PreviewActionImport: React.FunctionComponent<
             />
         </Tooltip>
         <span>{label}</span>
+    </div>
+)
+
+export const PreviewCloseStat: React.FunctionComponent<
+    React.PropsWithChildren<{ count: number; className?: string }>
+> = ({ count, className }) => (
+    <div className={classNames(className, iconClassNames, 'text-danger')}>
+        <Icon aria-hidden={true} svgPath={mdiCloseCircleOutline} />
+        <H4
+            className="font-weight-normal text-muted m-0"
+            aria-label={`${count} ${pluralize('changeset', count)} will be closed`}
+        >
+            {count} close
+        </H4>
     </div>
 )
 
@@ -173,6 +216,20 @@ export const PreviewActionDetach: React.FunctionComponent<
     </div>
 )
 
+export const PreviewReopenStat: React.FunctionComponent<
+    React.PropsWithChildren<{ count: number; className?: string }>
+> = ({ count, className }) => (
+    <div className={classNames(className, iconClassNames, 'text-success')}>
+        <Icon aria-hidden={true} svgPath={mdiSourceBranchRefresh} />
+        <H4
+            className="font-weight-normal text-muted m-0"
+            aria-label={`${count} ${pluralize('changeset', count)} will be reopened`}
+        >
+            {count} reopen
+        </H4>
+    </div>
+)
+
 export const PreviewActionReopen: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Reopen', className }) => (
@@ -188,6 +245,20 @@ export const PreviewActionReopen: React.FunctionComponent<
     </div>
 )
 
+export const PreviewUndraftStat: React.FunctionComponent<
+    React.PropsWithChildren<{ count: number; className?: string }>
+> = ({ count, className }) => (
+    <div className={classNames(className, iconClassNames, 'text-success')}>
+        <Icon aria-hidden={true} svgPath={mdiSourceBranchCheck} />
+        <H4
+            className="font-weight-normal text-muted m-0"
+            aria-label={`${count} ${pluralize('changeset', count)} will be promoted from ${pluralize('draft', count)}`}
+        >
+            {count} undraft
+        </H4>
+    </div>
+)
+
 export const PreviewActionUndraft: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Undraft', className }) => (
@@ -200,6 +271,20 @@ export const PreviewActionUndraft: React.FunctionComponent<
             />
         </Tooltip>
         <span>{label}</span>
+    </div>
+)
+
+export const PreviewUpdateStat: React.FunctionComponent<
+    React.PropsWithChildren<{ count: number; className?: string }>
+> = ({ count, className }) => (
+    <div className={classNames(className, iconClassNames)}>
+        <Icon aria-hidden={true} svgPath={mdiSourceBranchSync} />
+        <H4
+            className="font-weight-normal text-muted m-0"
+            aria-label={`${count} ${pluralize('changeset', count)} will be updated`}
+        >
+            {count} update
+        </H4>
     </div>
 )
 
@@ -248,6 +333,20 @@ export const PreviewActionUnknown: React.FunctionComponent<
     </div>
 )
 
+export const PreviewArchiveStat: React.FunctionComponent<
+    React.PropsWithChildren<{ count: number; className?: string }>
+> = ({ count, className }) => (
+    <div className={classNames(className, iconClassNames)}>
+        <Icon aria-hidden={true} svgPath={mdiArchive} />
+        <H4
+            className="font-weight-normal text-muted m-0"
+            aria-label={`${count} ${pluralize('changeset', count)} will be archived`}
+        >
+            {count} archive
+        </H4>
+    </div>
+)
+
 export const PreviewActionArchive: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Archive', className }) => (
@@ -260,6 +359,20 @@ export const PreviewActionArchive: React.FunctionComponent<
             />
         </Tooltip>
         <span>{label}</span>
+    </div>
+)
+
+export const PreviewReattachStat: React.FunctionComponent<
+    React.PropsWithChildren<{ count: number; className?: string }>
+> = ({ count, className }) => (
+    <div className={classNames(className, iconClassNames)}>
+        <Icon aria-hidden={true} svgPath={mdiPaperclip} />
+        <H4
+            className="font-weight-normal text-muted m-0"
+            aria-label={`${count} ${pluralize('changeset', count)} will be re-added`}
+        >
+            {count} reattach
+        </H4>
     </div>
 )
 

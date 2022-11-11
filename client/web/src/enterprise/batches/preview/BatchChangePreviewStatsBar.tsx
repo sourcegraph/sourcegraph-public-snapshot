@@ -13,14 +13,14 @@ import { queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
 import { BatchChangePreviewContext } from './BatchChangePreviewContext'
 import { ChangesetAddedIcon, ChangesetModifiedIcon, ChangesetRemovedIcon } from './icons'
 import {
-    PreviewActionArchive,
-    PreviewActionClose,
-    PreviewActionImport,
-    PreviewActionPublish,
-    PreviewActionReattach,
-    PreviewActionReopen,
-    PreviewActionUndraft,
-    PreviewActionUpdate,
+    PreviewArchiveStat,
+    PreviewCloseStat,
+    PreviewImportStat,
+    PreviewPublishStat,
+    PreviewReattachStat,
+    PreviewReopenStat,
+    PreviewUndraftStat,
+    PreviewUpdateStat,
 } from './list/PreviewActions'
 
 import styles from './BatchChangePreviewStatsBar.module.scss'
@@ -85,17 +85,14 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
             <div className={classNames(styles.batchChangePreviewStatsBarHorizontalDivider, 'd-block d-md-none my-3')} />
             <div className={classNames(styles.batchChangePreviewStatsBarDivider, 'd-none d-md-block ml-3 mr-2')} />
             <div className={classNames(styles.batchChangePreviewStatsBarStates, 'd-flex justify-content-end')}>
-                <PreviewActionReopen className={actionClassNames} label={`${stats.reopen} Reopen`} />
-                <PreviewActionClose className={actionClassNames} label={`${stats.reopen} Close`} />
-                <PreviewActionUpdate className={actionClassNames} label={`${stats.update} Update`} />
-                <PreviewActionUndraft className={actionClassNames} label={`${stats.undraft} Undraft`} />
-                <PreviewActionPublish
-                    className={actionClassNames}
-                    label={`${stats.publish + stats.publishDraft} Publish`}
-                />
-                <PreviewActionImport className={actionClassNames} label={`${stats.import} Import`} />
-                <PreviewActionArchive className={actionClassNames} label={`${stats.archive} Archive`} />
-                <PreviewActionReattach className={actionClassNames} label={`${stats.reattach} Reattach`} />
+                <PreviewReopenStat className={actionClassNames} count={stats.reopen} />
+                <PreviewCloseStat className={actionClassNames} count={stats.close} />
+                <PreviewUpdateStat className={actionClassNames} count={stats.update} />
+                <PreviewUndraftStat className={actionClassNames} count={stats.undraft} />
+                <PreviewPublishStat className={actionClassNames} count={stats.publish} />
+                <PreviewImportStat className={actionClassNames} count={stats.import} />
+                <PreviewArchiveStat className={actionClassNames} count={stats.archive} />
+                <PreviewReattachStat className={actionClassNames} count={stats.reattach} />
             </div>
         </div>
     )
