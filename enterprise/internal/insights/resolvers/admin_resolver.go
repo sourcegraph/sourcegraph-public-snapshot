@@ -132,9 +132,6 @@ func (i *insightSeriesMetadataResolver) Enabled(ctx context.Context) (bool, erro
 
 type insightSeriesQueryStatusResolver struct {
 	status types.InsightSeriesStatus
-	// seriesID        string
-	// id              *int
-	// workerBaseStore *basestore.Store
 }
 
 func (i *insightSeriesQueryStatusResolver) SeriesId(ctx context.Context) (string, error) {
