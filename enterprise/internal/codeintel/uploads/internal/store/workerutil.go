@@ -45,7 +45,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.uncompressed_size"),
 }
 
-var uploadWorkerStoreOptions = dbworkerstore.Options{
+var UploadWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "codeintel_upload",
 	TableName:         "lsif_uploads",
 	ViewName:          "lsif_uploads_with_repository_name u",
@@ -61,5 +61,5 @@ var uploadWorkerStoreOptions = dbworkerstore.Options{
 }
 
 func (s *store) WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store {
-	return dbworkerstore.NewWithMetrics(s.db.Handle(), uploadWorkerStoreOptions, observationContext)
+	return dbworkerstore.NewWithMetrics(s.db.Handle(), UploadWorkerStoreOptions, observationContext)
 }

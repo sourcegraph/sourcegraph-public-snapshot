@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback } from 'react'
 
 import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
@@ -31,7 +31,6 @@ import {
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
-import { searchHistorySource } from '../input/searchHistorySource'
 import { useRecentSearches } from '../input/useRecentSearches'
 
 import styles from './SearchPageInput.module.scss'
@@ -74,31 +73,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const [showSearchHistory] = useFeatureFlag('search-input-show-history')
     const { recentSearches, addRecentSearch } = useRecentSearches()
-
-    const suggestionSources = useMemo(
-        () =>
-            props.authenticatedUser && showSearchHistory
-                ? [
-                      searchHistorySource({
-                          recentSearches,
-                          selectedSearchContext: props.selectedSearchContextSpec,
-                          onSelection: index => {
-                              props.telemetryService.log('SearchSuggestionItemClicked', {
-                                  type: 'SearchHistory',
-                                  index,
-                              })
-                          },
-                      }),
-                  ]
-                : [],
-        [
-            props.authenticatedUser,
-            props.selectedSearchContextSpec,
-            props.telemetryService,
-            recentSearches,
-            showSearchHistory,
-        ]
-    )
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -162,9 +136,9 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                         applySuggestionsOnEnter={applySuggestionsOnEnter}
-                        suggestionSources={suggestionSources}
-                        defaultSuggestionsShowWhenEmpty={!showSearchHistory}
-                        showSuggestionsOnFocus={showSearchHistory}
+                        showCopyQueryButton={!showSearchHistory}
+                        showSearchHistory={showSearchHistory}
+                        recentSearches={recentSearches}
                     />
                 </div>
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />

@@ -10,6 +10,7 @@ import (
 	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
@@ -18,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+type UploadService = background.UploadService
 
 type Locker interface {
 	Lock(ctx context.Context, key int32, blocking bool) (bool, locker.UnlockFunc, error)

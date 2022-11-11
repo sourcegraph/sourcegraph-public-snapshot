@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
@@ -170,6 +171,57 @@ func scanAllBackfills(rows *sql.Rows, queryErr error) (_ []SeriesBackfill, err e
 			temp.EstimatedCost = *cost
 		}
 		results = append(results, temp)
+	}
+	return results, nil
+}
+
+type SeriesBackfillDebug struct {
+	Info   BackfillDebugInfo
+	Errors []iterator.IterationError
+}
+
+type BackfillDebugInfo struct {
+	Id              int
+	RepoIteratorId  int
+	EstimatedCost   float64
+	State           BackfillState
+	StartedAt       *time.Time
+	CompletedAt     *time.Time
+	RuntimeDuration *int64
+	PercentComplete *float64
+	NumRepos        *int
+}
+
+func (s *BackfillStore) LoadSeriesBackfillsDebugInfo(ctx context.Context, seriesID int) ([]SeriesBackfillDebug, error) {
+	backfills, err := s.LoadSeriesBackfills(ctx, seriesID)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]SeriesBackfillDebug, 0, len(backfills))
+	for _, backfill := range backfills {
+		info := BackfillDebugInfo{
+			Id:            backfill.Id,
+			EstimatedCost: backfill.EstimatedCost,
+			State:         backfill.State,
+		}
+		backfillErrors := []iterator.IterationError{}
+		if backfill.repoIteratorId != 0 {
+			it, err := iterator.Load(ctx, s.Store, backfill.repoIteratorId)
+			if err != nil {
+				return nil, err
+			}
+			info.RepoIteratorId = backfill.repoIteratorId
+			info.StartedAt = &it.StartedAt
+			info.CompletedAt = &it.CompletedAt
+			info.PercentComplete = &it.PercentComplete
+			info.NumRepos = &it.TotalCount
+			backfillErrors = it.Errors()
+		}
+		results = append(results, SeriesBackfillDebug{
+			Info:   info,
+			Errors: backfillErrors,
+		})
+
 	}
 	return results, nil
 }

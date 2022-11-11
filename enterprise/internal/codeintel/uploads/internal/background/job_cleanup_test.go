@@ -100,21 +100,22 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 
 	mockUploadSvc := NewMockUploadService()
 	mockUploadSvc.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
-	janitor := &backgroundJob{
+
+	janitor := janitorJob{
 		uploadSvc:       mockUploadSvc,
-		gitserverClient: gitserverClient,
-		clock:           glock.NewRealClock(),
 		logger:          logtest.Scoped(t),
-		janitorMetrics:  newJanitorMetrics(&observation.TestContext),
+		metrics:         NewJanitorMetrics(&observation.TestContext),
+		clock:           glock.NewRealClock(),
+		gitserverClient: gitserverClient,
 	}
 
 	if err := janitor.handleCleanup(
-		context.Background(), janitorConfig{
-			minimumTimeSinceLastCheck:      1 * time.Hour,
-			commitResolverBatchSize:        10,
-			auditLogMaxAge:                 1 * time.Hour,
-			commitResolverMaximumCommitLag: 1 * time.Hour,
-			uploadTimeout:                  1 * time.Hour,
+		context.Background(), JanitorConfig{
+			MinimumTimeSinceLastCheck:      1 * time.Hour,
+			CommitResolverBatchSize:        10,
+			AuditLogMaxAge:                 1 * time.Hour,
+			CommitResolverMaximumCommitLag: 1 * time.Hour,
+			UploadTimeout:                  1 * time.Hour,
 		}); err != nil {
 		t.Fatalf("unexpected error running janitor: %s", err)
 	}

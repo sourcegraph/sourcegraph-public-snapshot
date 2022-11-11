@@ -301,12 +301,18 @@ SELECT COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s AND state=%s
 `
 
 func QueryAllSeriesStatus(ctx context.Context, workerBaseStore *basestore.Store) (_ []types.InsightSeriesStatus, err error) {
-	q := sqlf.Sprintf(queryAllSeriesStatusSql)
+	q := sqlf.Sprintf(queryAllSeriesStatusSql, true)
 	query, err := workerBaseStore.Query(ctx, q)
-	return scanAllSeriesStatusRows(query, err)
+	return scanSeriesStatusRows(query, err)
 }
 
-func scanAllSeriesStatusRows(rows *sql.Rows, queryErr error) (_ []types.InsightSeriesStatus, err error) {
+func QuerySeriesStatus(ctx context.Context, workerBaseStore *basestore.Store, seriesIDs []string) (_ []types.InsightSeriesStatus, err error) {
+	q := sqlf.Sprintf(queryAllSeriesStatusSql, sqlf.Sprintf("series_id = ANY(%s)", pq.Array(seriesIDs)))
+	query, err := workerBaseStore.Query(ctx, q)
+	return scanSeriesStatusRows(query, err)
+}
+
+func scanSeriesStatusRows(rows *sql.Rows, queryErr error) (_ []types.InsightSeriesStatus, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
@@ -339,9 +345,60 @@ select
        sum(case when state = 'completed' then 1 else 0 end) as completed,
        sum(case when state = 'queued' then 1 else 0 end) as queued
 from insights_query_runner_jobs
+WHERE %s
 group by series_id
 order by series_id;
 `
+
+func QuerySeriesSearchFailures(ctx context.Context, workerBaseStore *basestore.Store, seriesID string, limit int) (_ []types.InsightSearchFailure, err error) {
+	errorStates := []string{"errored", "failed"}
+	switch {
+	case limit <= 0:
+		limit = 50
+	case limit > 500:
+		limit = 500
+	}
+
+	q := sqlf.Sprintf(`
+						SELECT
+							search_query,
+							queued_at,
+							failure_message,
+							state,
+							record_time,
+							persist_mode
+					FROM insights_query_runner_jobs
+					WHERE series_id = %s AND state = ANY (%s)
+					ORDER BY queued_at desc
+					LIMIT %d;`,
+		seriesID, pq.Array(&errorStates), limit)
+	query, err := workerBaseStore.Query(ctx, q)
+	return scanSearchFailureRows(query, err)
+}
+
+func scanSearchFailureRows(rows *sql.Rows, queryErr error) (_ []types.InsightSearchFailure, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var results []types.InsightSearchFailure
+	for rows.Next() {
+		var temp types.InsightSearchFailure
+		if err := rows.Scan(
+			&temp.Query,
+			&temp.QueuedAt,
+			&temp.FailureMessage,
+			&temp.State,
+			&temp.RecordTime,
+			&temp.PersistMode,
+		); err != nil {
+			return []types.InsightSearchFailure{}, err
+		}
+		results = append(results, temp)
+	}
+	return results, nil
+}
 
 // Job represents a single job for the query runner worker to perform. When enqueued, it is stored
 // in the insights_query_runner_jobs table - then the worker dequeues it by reading it from that

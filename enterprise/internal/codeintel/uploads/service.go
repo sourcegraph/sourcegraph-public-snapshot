@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	gitserverOptions "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -36,7 +35,6 @@ type Service struct {
 	policySvc       PolicyService
 	policyMatcher   PolicyMatcher
 	locker          Locker
-	backgroundJob   background.BackgroundJob
 	logger          logger.Logger
 	operations      *operations
 	clock           glock.Clock
@@ -50,7 +48,6 @@ func newService(
 	policySvc PolicyService,
 	policyMatcher PolicyMatcher,
 	locker Locker,
-	backgroundJob background.BackgroundJob,
 	observationContext *observation.Context,
 ) *Service {
 	workerutilStore := store.WorkerutilStore(observationContext)
@@ -65,21 +62,12 @@ func newService(
 		lsifstore:       lsifstore,
 		gitserverClient: gsc,
 		policySvc:       policySvc,
-		backgroundJob:   backgroundJob,
 		policyMatcher:   policyMatcher,
 		locker:          locker,
 		logger:          observationContext.Logger,
 		operations:      newOperations(observationContext),
 		clock:           glock.NewRealClock(),
 	}
-}
-
-func GetBackgroundJob(s *Service) background.BackgroundJob {
-	return s.backgroundJob
-}
-
-func (s *Service) GetWorkerutilStore() dbworkerstore.Store {
-	return s.workerutilStore
 }
 
 func (s *Service) FrontendReconcileCandidates(ctx context.Context, batchSize int) ([]int, error) {
@@ -630,7 +618,7 @@ func (s *Service) getCommitGraph(ctx context.Context, repositoryID int) (*gitdom
 	// back any more data than we wanted.
 	commitDate = commitDate.Add(-time.Second)
 
-	commitGraph, err := s.gitserverClient.CommitGraph(ctx, repositoryID, gitserverOptions.CommitGraphOptions{
+	commitGraph, err := s.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{
 		AllRefs: true,
 		Since:   &commitDate,
 	})

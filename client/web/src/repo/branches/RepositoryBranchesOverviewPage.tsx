@@ -154,13 +154,15 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                         />
                                     ))}
                                     {this.state.dataOrError.hasMoreActiveBranches && (
-                                        <Link
-                                            className="list-group-item list-group-item-action py-2 d-flex"
-                                            to={`/${this.props.repo.name}/-/branches/all`}
-                                        >
-                                            View more branches
-                                            <Icon aria-hidden={true} svgPath={mdiChevronRight} />
-                                        </Link>
+                                        <li className="list-group-item list-group-item-action">
+                                            <Link
+                                                className="py-2 d-flex align-items-center"
+                                                to={`/${this.props.repo.name}/-/branches/all`}
+                                            >
+                                                View more branches
+                                                <Icon aria-hidden={true} svgPath={mdiChevronRight} />
+                                            </Link>
+                                        </li>
                                     )}
                                 </ul>
                             </Card>
