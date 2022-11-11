@@ -4430,6 +4430,8 @@ CREATE INDEX gitserver_repos_cloned_status_idx ON gitserver_repos USING btree (r
 
 CREATE INDEX gitserver_repos_cloning_status_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status = 'cloning'::text);
 
+CREATE INDEX gitserver_repos_last_changed_idx ON gitserver_repos USING btree (last_changed, repo_id);
+
 CREATE INDEX gitserver_repos_last_error_idx ON gitserver_repos USING btree (repo_id) WHERE (last_error IS NOT NULL);
 
 CREATE INDEX gitserver_repos_not_cloned_status_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status = 'not_cloned'::text);

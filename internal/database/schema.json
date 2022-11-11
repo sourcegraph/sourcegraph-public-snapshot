@@ -10736,6 +10736,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "gitserver_repos_last_changed_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX gitserver_repos_last_changed_idx ON gitserver_repos USING btree (last_changed, repo_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "gitserver_repos_last_error_idx",
           "IsPrimaryKey": false,
           "IsUnique": false,
