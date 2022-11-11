@@ -56,6 +56,9 @@ func Init(
 
 		// Add connection validation issue
 		for _, p := range providers {
+			// Validating the connection may make a cross service call, so we should use an
+			// internal actor.
+			ctx = actor.WithInternalActor(ctx)
 			for _, problem := range p.ValidateConnection(ctx) {
 				warnings = append(warnings, fmt.Sprintf("%s provider %q: %s", p.ServiceType(), p.ServiceID(), problem))
 			}
