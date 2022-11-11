@@ -20,14 +20,14 @@ type IndexEnqueuer struct {
 	repoUpdater     RepoUpdaterClient
 	gitserverClient GitserverClient
 	operations      *operations
-	inferer         *jobselector.JobSelector
+	jobSelector     *jobselector.JobSelector
 }
 
 func NewIndexEnqueuer(
 	store store.Store,
 	repoUpdater RepoUpdaterClient,
 	gitserverClient GitserverClient,
-	inferer *jobselector.JobSelector,
+	jobSelector *jobselector.JobSelector,
 	observationContext *observation.Context,
 ) *IndexEnqueuer {
 	return &IndexEnqueuer{
@@ -35,7 +35,7 @@ func NewIndexEnqueuer(
 		repoUpdater:     repoUpdater,
 		gitserverClient: gitserverClient,
 		operations:      newOperations(observationContext),
-		inferer:         inferer,
+		jobSelector:     jobSelector,
 	}
 }
 
@@ -125,7 +125,7 @@ func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, re
 		}
 	}
 
-	indexes, err := s.inferer.GetIndexRecords(ctx, repositoryID, commit, configuration, bypassLimit)
+	indexes, err := s.jobSelector.GetIndexRecords(ctx, repositoryID, commit, configuration, bypassLimit)
 	if err != nil {
 		return nil, err
 	}

@@ -101,7 +101,7 @@ func NewIndexSchedulers(
 ) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewScheduler(
-			uploadSvc, policiesSvc, policyMatcher, autoindexingSvc.IndexEnqueuer(),
+			uploadSvc, policiesSvc, policyMatcher, autoindexingSvc.indexEnqueuer,
 			ConfigIndexingInst.SchedulerInterval,
 			background.IndexSchedulerConfig{
 				RepositoryProcessDelay: ConfigIndexingInst.RepositoryProcessDelay,
@@ -115,7 +115,7 @@ func NewIndexSchedulers(
 
 		background.NewOnDemandScheduler(
 			autoindexingSvc.store,
-			autoindexingSvc.IndexEnqueuer(),
+			autoindexingSvc.indexEnqueuer,
 			ConfigIndexingInst.OnDemandSchedulerInterval,
 			ConfigIndexingInst.OnDemandBatchsize,
 		),
@@ -145,7 +145,7 @@ func NewDependencyIndexSchedulers(
 		),
 		background.NewDependencyIndexingScheduler(
 			dependencyIndexingStore,
-			uploadSvc, repoStore, externalServiceStore, gitserverRepoStore, autoindexingSvc.IndexEnqueuer(), repoUpdater,
+			uploadSvc, repoStore, externalServiceStore, gitserverRepoStore, autoindexingSvc.indexEnqueuer, repoUpdater,
 			workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing"),
 			ConfigDependencyIndexInst.DependencyIndexerSchedulerPollInterval,
 			ConfigDependencyIndexInst.DependencyIndexerSchedulerConcurrency,

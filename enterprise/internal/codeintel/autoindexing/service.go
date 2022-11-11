@@ -31,6 +31,8 @@ type Service struct {
 	repoUpdater     RepoUpdaterClient
 	gitserverClient GitserverClient
 	symbolsClient   *symbols.Client
+	indexEnqueuer   *enqueuer.IndexEnqueuer
+	jobSelector     *jobselector.JobSelector
 	logger          log.Logger
 	operations      *operations
 }
@@ -44,6 +46,22 @@ func newService(
 	symbolsClient *symbols.Client,
 	observationContext *observation.Context,
 ) *Service {
+	jobSelector := jobselector.NewJobSelector(
+		store,
+		uploadSvc,
+		inferenceSvc,
+		gitserver,
+		log.Scoped("autoindexing job selector", ""),
+	)
+
+	indexEnqueuer := enqueuer.NewIndexEnqueuer(
+		store,
+		repoUpdater,
+		gitserver,
+		jobSelector,
+		&observation.TestContext,
+	)
+
 	return &Service{
 		store:           store,
 		uploadSvc:       uploadSvc,
@@ -51,29 +69,11 @@ func newService(
 		repoUpdater:     repoUpdater,
 		gitserverClient: gitserver,
 		symbolsClient:   symbolsClient,
+		indexEnqueuer:   indexEnqueuer,
+		jobSelector:     jobSelector,
 		logger:          observationContext.Logger,
 		operations:      newOperations(observationContext),
 	}
-}
-
-func (s *Service) IndexEnqueuer() *enqueuer.IndexEnqueuer {
-	return enqueuer.NewIndexEnqueuer(
-		s.store,
-		s.repoUpdater,
-		s.gitserverClient,
-		s.inferer(),
-		&observation.TestContext,
-	)
-}
-
-func (s *Service) inferer() *jobselector.JobSelector {
-	return jobselector.NewJobSelector(
-		s.store,
-		s.uploadSvc,
-		s.inferenceSvc,
-		s.gitserverClient,
-		s.logger,
-	)
 }
 
 func (s *Service) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []types.Index, _ int, err error) {
@@ -279,17 +279,17 @@ func (s *Service) GetInferenceScript(ctx context.Context) (script string, err er
 }
 
 func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]types.Index, error) {
-	return s.IndexEnqueuer().QueueIndexes(ctx, repositoryID, rev, configuration, force, bypassLimit)
+	return s.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, force, bypassLimit)
 }
 
 func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
-	return s.IndexEnqueuer().QueueIndexesForPackage(ctx, pkg)
+	return s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg)
 }
 
 func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
-	return s.inferer().InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
+	return s.jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
 }
 
 func (s *Service) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
-	return s.inferer().InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
+	return s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
 }
