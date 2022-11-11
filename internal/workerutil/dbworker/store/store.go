@@ -159,7 +159,7 @@ type store[T workerutil.Record] struct {
 	logger                          log.Logger
 }
 
-// var _ Store = &store{}
+var _ Store[workerutil.Record] = &store[workerutil.Record]{}
 
 // Options configure the behavior of Store over a particular set of tables, columns, and expressions.
 type Options[T workerutil.Record] struct {
