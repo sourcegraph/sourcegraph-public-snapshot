@@ -54,6 +54,9 @@ type UploadService interface {
 	CodeIntelDBReconcileCandidates(ctx context.Context, batchSize int) ([]int, error)
 	GetDumpsByIDs(ctx context.Context, ids []int) ([]codeinteltypes.Dump, error)
 	IDsWithMeta(ctx context.Context, ids []int) ([]int, error)
+
+	SerializeRankingGraph(ctx context.Context, numRankingRoutines int) error
+	VacuumRankingGraph(ctx context.Context) error
 }
 
 type GitserverClient interface {
