@@ -60,9 +60,12 @@ const getLineNumberFromCodeElement = (codeElement: HTMLElement): number => {
  * Gets the `<td>` element for a target that contains the code
  */
 const getCodeCellFromTarget = (target: HTMLElement): HTMLTableCellElement | null => {
-    const cell = target.closest<HTMLTableCellElement>('td.blob-code')
-    // Handle rows with the [ ↕ ] button that expands collapsed unchanged lines
+    const cell =
+        target.closest<HTMLTableCellElement>('td.react-code-cell') ||
+        target.closest<HTMLTableCellElement>('td.blob-code')
+    // Handle rows with the [ ↕ ] button that expands collapsed unchanged lines TODO: CHECK IF IT STILL WORKS
     if (!cell || cell.parentElement?.classList.contains('js-expandable-line')) {
+        // TODO: update selector
         return null
     }
     return cell
