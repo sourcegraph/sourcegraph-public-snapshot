@@ -2854,12 +2854,6 @@ func TestLFSSmudge(t *testing.T) {
 		`git commit -m "lfs"`,
 	)
 
-	// CI won't have these set in the config, nor do our helpers set them.
-	t.Setenv("GIT_COMMITTER_NAME", "test")
-	t.Setenv("GIT_COMMITTER_EMAIL", "test@sourcegraph.com")
-	t.Setenv("GIT_AUTHOR_NAME", "test")
-	t.Setenv("GIT_AUTHOR_EMAIL", "test@sourcegraph.com")
-
 	// We ensure we test against a bare repo because a lot of LFS stuff only
 	// seems to work under the assumption of a working copy.
 	repo := MakeBareGitRepository(t, gitCmds...)
