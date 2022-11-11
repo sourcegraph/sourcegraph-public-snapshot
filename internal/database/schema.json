@@ -8285,12 +8285,12 @@
           "ConstraintDefinition": ""
         },
         {
-          "Name": "event_logs_name",
+          "Name": "event_logs_name_timestamp",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_name ON event_logs USING btree (name)",
+          "IndexDefinition": "CREATE INDEX event_logs_name_timestamp ON event_logs USING btree (name, \"timestamp\" DESC)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
