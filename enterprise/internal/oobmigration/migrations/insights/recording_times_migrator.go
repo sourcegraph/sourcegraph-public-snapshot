@@ -6,6 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -29,6 +30,9 @@ func (m *recordingTimesMigrator) ID() int                 { return 17 }
 func (m *recordingTimesMigrator) Interval() time.Duration { return time.Second * 10 }
 
 func (m *recordingTimesMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
+	if !insights.IsEnabled() {
+		return 1, nil
+	}
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			CASE c2.count WHEN 0 THEN 1 ELSE
