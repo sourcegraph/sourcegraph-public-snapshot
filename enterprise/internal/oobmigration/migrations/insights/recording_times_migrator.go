@@ -107,11 +107,8 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 		if err = basestore.CloseRows(recordingTimesRows, err); err != nil {
 			return err
 		}
-		metadata.existingTimes = recordingTimes
-	}
 
-	for id, metadata := range series {
-		calculatedTimes := calculateRecordingTimes(metadata.createdAt, metadata.lastRecordedAt, metadata.interval, metadata.existingTimes)
+		calculatedTimes := calculateRecordingTimes(metadata.createdAt, metadata.lastRecordedAt, metadata.interval, recordingTimes)
 		for _, recordTime := range calculatedTimes {
 			if err := tx.Exec(ctx, sqlf.Sprintf(
 				"INSERT INTO insight_series_recording_times (insight_series_id, recording_time, snapshot) VALUES(%s, %s, false) ON CONFLICT DO NOTHING",
@@ -137,7 +134,6 @@ type seriesMetadata struct {
 	createdAt      time.Time
 	lastRecordedAt time.Time
 	interval       timeInterval
-	existingTimes  []time.Time
 }
 
 func (m *recordingTimesMigrator) Down(ctx context.Context) error {
