@@ -15,25 +15,21 @@ local pattern_list = {
 return recognizer.new_path_recognizer {
   patterns = pattern_list,
 
-  generate = function(api, paths)
+  generate = function(_api, paths)
     local roots = {}
     for i = 1, #paths do
       roots[path.dirname(paths[i])] = true
     end
+    local jobs = {}
     for root in pairs(roots) do
-      api:register(recognizer.new_path_recognizer({
-        patterns = pattern_list, -- unused; only present to trigger generate
-        generate = function(api, _paths)
-          return {
-            steps = {},
-            root = root,
-            indexer = indexer,
-            indexer_args = { "scip-ruby-autoindex" },
-            outfile = outfile,
-          }
-        end,
-      }))
+      table.insert(jobs, {
+        steps = {},
+        root = root,
+        indexer = indexer,
+        indexer_args = { "scip-ruby-autoindex" },
+        outfile = outfile,
+      })
     end
-    return {}
+    return jobs
   end
 }
