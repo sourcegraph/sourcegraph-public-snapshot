@@ -252,7 +252,7 @@ where last_fetched < now() - interval '8 hours'
 	}, func() float64 {
 		count, err := scanCount(`
 SELECT
-	SUM(cloned)
+	COALESCE(SUM(cloned), 0)
 FROM
 	repo_statistics
 `)
