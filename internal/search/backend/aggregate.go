@@ -78,7 +78,35 @@ func (c *collectSender) Done() (_ *zoekt.SearchResult, ok bool) {
 		agg.Files = agg.Files[:max]
 	}
 
+	hoistMaxScore(agg.Files, 10)
+
 	return agg, true
+}
+
+// hoistMaxScore swaps the top scoring result within fm[:n] to the top.
+func hoistMaxScore(fm []zoekt.FileMatch, n int) {
+	if n > len(fm) {
+		n = len(fm)
+	}
+
+	var max float64
+	pos := 0
+	for i := 0; i < n; i++ {
+		if fm[i].Score > max {
+			max = fm[i].Score
+			pos = i
+		}
+	}
+
+	if pos > 0 {
+		prev := fm[0]
+		fm[0] = fm[pos]
+		for i := 1; i <= pos; i++ {
+			this := fm[i]
+			fm[i] = prev
+			prev = this
+		}
+	}
 }
 
 // newFlushCollectSender creates a sender which will collect and rank results
