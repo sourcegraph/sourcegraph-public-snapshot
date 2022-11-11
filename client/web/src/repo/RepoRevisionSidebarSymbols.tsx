@@ -1,12 +1,11 @@
-import * as React from 'react'
-import { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { sortBy } from 'lodash'
-import { entries, escapeRegExp, flatMap, flow, groupBy, isEqual, map } from 'lodash/fp'
+import { entries, escapeRegExp, flatMap, flow, groupBy, isEqual } from 'lodash/fp'
 import { NavLink, useLocation } from 'react-router-dom'
 
+import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -22,28 +21,27 @@ import {
     SummaryContainer,
     ShowMoreButton,
 } from '../components/FilteredConnection/ui'
-import { Scalars, SymbolKind, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
+import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
 
 interface SymbolNodeProps {
-    node: SymbolNodeFields
+    node: Sym
     onHandleClick: () => void
     isActive: boolean
-    style: React.CSSProperties
+    nestedRender: HierarchicalSymbolsProps['render']
 }
 
 const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProps>> = ({
     node,
     onHandleClick,
     isActive,
-    style,
+    nestedRender,
 }) => {
     const isActiveFunc = (): boolean => isActive
     return (
-        // eslint-disable-next-line react/forbid-dom-props
-        <li className={styles.repoRevisionSidebarSymbolsNode} style={style}>
+        <li className={styles.repoRevisionSidebarSymbolsNode}>
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
@@ -56,6 +54,7 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
                     {node.name}
                 </span>
             </NavLink>
+            {node.children && <HierarchicalSymbols symbols={node.children} render={nestedRender} className="pl-3" />}
         </li>
     )
 }
@@ -182,6 +181,16 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
         )
     }
 
+    const heirarchicalSymbols = useMemo(
+        () =>
+            flow(
+                groupBy<SymbolNodeFields>(symbol => symbol.location.resource.path),
+                entries,
+                flatMap(([, symbols]) => hierarchyOf(symbols))
+            )(connection?.nodes ?? []),
+        [connection?.nodes]
+    )
+
     return (
         <ConnectionContainer className={classNames('h-100', styles.repoRevisionSidebarSymbols)} compact={true}>
             <div className={styles.formContainer}>
@@ -199,25 +208,15 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
             {error && <ConnectionError errors={[error.message]} compact={true} />}
             {connection && (
                 <HierarchicalSymbols
-                    symbols={connection.nodes}
-                    render={args =>
-                        args.symbol.__typename === 'IntermediateSymbol' ? (
-                            // eslint-disable-next-line react/forbid-dom-props
-                            <li className={styles.repoRevisionSidebarSymbolsNode} style={padding(args.symbol)}>
-                                <span className={styles.link}>
-                                    <SymbolIcon kind={SymbolKind.UNKNOWN} className="mr-1" />
-                                    {args.symbol.name}
-                                </span>
-                            </li>
-                        ) : (
-                            <SymbolNode
-                                node={args.symbol}
-                                onHandleClick={onHandleSymbolClick}
-                                isActive={isSymbolActive(args.symbol.url)}
-                                style={padding(args.symbol)}
-                            />
-                        )
-                    }
+                    symbols={heirarchicalSymbols}
+                    render={args => (
+                        <SymbolNode
+                            node={args.symbol}
+                            onHandleClick={onHandleSymbolClick}
+                            isActive={isSymbolActive(args.symbol.url)}
+                            nestedRender={args.nestedRender}
+                        />
+                    )}
                 />
             )}
             {loading && <ConnectionLoading compact={true} />}
@@ -232,74 +231,76 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
 }
 
 interface HierarchicalSymbolsProps {
-    symbols: SymbolNodeFields[]
-    render: (props: { symbol: Sym }) => React.ReactElement
+    symbols: Sym[]
+    render: (props: { symbol: Sym; nestedRender: HierarchicalSymbolsProps['render'] }) => React.ReactElement
+    className?: string
 }
 
 const HierarchicalSymbols: React.FunctionComponent<HierarchicalSymbolsProps> = props => (
-    <ul className={styles.hierarchicalSymbolsContainer}>
-        {flow(
-            groupBy<SymbolNodeFields>(symbol => symbol.location.resource.path),
-            entries,
-            flatMap(([, symbols]) => hierarchyOf(symbols)),
-            map(symbol => <props.render key={'url' in symbol ? symbol.url : fullName(symbol)} symbol={symbol} />)
-        )(props.symbols)}
+    <ul className={classNames(styles.hierarchicalSymbolsContainer, props.className)}>
+        {props.symbols.map(symbol => (
+            <props.render
+                key={'url' in symbol ? symbol.url : fullName(symbol)}
+                symbol={symbol}
+                nestedRender={props.render}
+            />
+        ))}
     </ul>
 )
 
-interface IntermediateSymbol {
-    __typename: 'IntermediateSymbol'
-    name: string
-    language: string
-}
-
-type Sym = (SymbolNodeFields | IntermediateSymbol) & { containers: string[] }
+type Sym = SymbolNodeFields & { children: Sym[] }
 
 const hierarchyOf = (symbols: SymbolNodeFields[]): Sym[] => {
     const fullNameToSymbol = new Map<string, SymbolNodeFields>(symbols.map(symbol => [fullName(symbol), symbol]))
     const fullNameToSym = new Map<string, Sym>()
+    const topLevelSymbols: Sym[] = []
 
-    const visit = (fullName: string, language: string): string[] => {
+    const visit = (fullName: string): void => {
         if (fullName === '') {
-            return []
-        }
-
-        const sym = fullNameToSym.get(fullName)
-        if (sym) {
-            return [...sym.containers, sym.name]
+            return
         }
 
         const symbol = fullNameToSymbol.get(fullName)
-        if (symbol) {
-            const containers = symbol.containerName ? visit(fullName.split('.').slice(0, -1).join('.'), language) : []
-            fullNameToSym.set(fullName, { ...symbol, containers })
-            return [...containers, symbol.name]
+        if (!symbol) {
+            return
         }
 
-        const containers = visit(fullName.split('.').slice(0, -1).join('.'), language)
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const name = fullName.split('.').pop()!
-        fullNameToSym.set(fullName, {
-            __typename: 'IntermediateSymbol',
-            containers,
-            name,
-            language,
-        })
-        return [...containers, name]
+        // Sym might already exist if we've already visited a child of this symbol.
+        const sym = fullNameToSym.get(fullName) || { ...symbol, children: [] }
+        fullNameToSym.set(fullName, sym)
+
+        const parentFullName = fullName.split('.').slice(0, -1).join('.')
+        if (!parentFullName) {
+            // No parent, add to top-level
+            topLevelSymbols.push(sym)
+            return
+        }
+
+        const parentSymbol = fullNameToSymbol.get(parentFullName)
+        const parentSym = fullNameToSym.get(parentFullName)
+        if (parentSym) {
+            // Parent exists, add to parent
+            parentSym.children.push(sym)
+        } else if (parentSymbol) {
+            // Create parent node and add current symbol to it
+            fullNameToSym.set(parentFullName, { ...parentSymbol, children: [sym] })
+        } else {
+            // This should never happen!!
+            logger.error(new Error(`Could not find parent symbol for ${fullName}`))
+        }
     }
 
     for (const symbol of symbols) {
-        visit(fullName(symbol), symbol.language)
+        visit(fullName(symbol))
     }
 
-    return sortBy([...fullNameToSym.entries()], ([fullName]) => fullName).map(([, symbol]) => symbol)
-}
-
-const fullName = (symbol: SymbolNodeFields | Sym): string => {
-    if ('containers' in symbol) {
-        return [...symbol.containers, symbol.name].join('.')
+    // Sort everything
+    for (const sym of fullNameToSym.values()) {
+        sym.children.sort((a, b) => a.name.localeCompare(b.name))
     }
-    return `${symbol.containerName ? symbol.containerName + '.' : ''}${symbol.name}`
+
+    return topLevelSymbols
 }
 
-const padding = (symbol: Sym): React.CSSProperties => ({ paddingLeft: `${symbol.containers.length}rem` })
+const fullName = (symbol: SymbolNodeFields): string =>
+    `${symbol.containerName ? symbol.containerName + '.' : ''}${symbol.name}`
