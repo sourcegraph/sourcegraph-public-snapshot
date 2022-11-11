@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 
 import { mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
@@ -10,7 +10,7 @@ import { SidebarGroupHeader, SidebarGroup, SidebarNavItem } from '../../componen
 import { SettingsAreaRepositoryFields } from '../../graphql-operations'
 import { NavGroupDescriptor } from '../../util/contributions'
 
-export interface RepoSettingsSideBarGroup extends NavGroupDescriptor {}
+export interface RepoSettingsSideBarGroup extends Omit<NavGroupDescriptor, 'condition'> {}
 
 export type RepoSettingsSideBarGroups = readonly RepoSettingsSideBarGroup[]
 
@@ -29,7 +29,6 @@ export const RepoSettingsSidebar: React.FunctionComponent<React.PropsWithChildre
     repo,
 }: Props) => {
     const [isMobileExpanded, setIsMobileExpanded] = useState(false)
-    const collapseMobileSidebar = useCallback((): void => setIsMobileExpanded(false), [])
 
     return (
         <>
@@ -38,27 +37,24 @@ export const RepoSettingsSidebar: React.FunctionComponent<React.PropsWithChildre
                 {isMobileExpanded ? 'Hide' : 'Show'} menu
             </Button>
             <div className={classNames(className, 'd-sm-block', !isMobileExpanded && 'd-none')}>
-                {repoSettingsSidebarGroups.map(
-                    ({ header, items, condition = () => true }, index) =>
-                        condition({}) && (
-                            <SidebarGroup key={index}>
-                                {header && <SidebarGroupHeader label={header.label} />}
-                                {items.map(
-                                    ({ label, to, exact, condition = () => true }) =>
-                                        condition({}) && (
-                                            <SidebarNavItem
-                                                to={`${repo.url}/-/settings${to}`}
-                                                exact={exact}
-                                                key={label}
-                                                onClick={collapseMobileSidebar}
-                                            >
-                                                {label}
-                                            </SidebarNavItem>
-                                        )
-                                )}
-                            </SidebarGroup>
-                        )
-                )}
+                {repoSettingsSidebarGroups.map(({ header, items }, index) => (
+                    <SidebarGroup key={index}>
+                        {header && <SidebarGroupHeader label={header.label} />}
+                        {items.map(
+                            ({ label, to, exact, condition = () => true }) =>
+                                condition({}) && (
+                                    <SidebarNavItem
+                                        to={`${repo.url}/-/settings${to}`}
+                                        exact={exact}
+                                        key={label}
+                                        onClick={() => setIsMobileExpanded(false)}
+                                    >
+                                        {label}
+                                    </SidebarNavItem>
+                                )
+                        )}
+                    </SidebarGroup>
+                ))}
             </div>
         </>
     )
