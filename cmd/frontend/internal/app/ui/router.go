@@ -198,6 +198,7 @@ func newRouter() *mux.Router {
 
 	// raw
 	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw)
+	// TODO: Probably the wrong path
 	repoRev.Path("/stream-blame{Path:.*}").Methods("GET", "HEAD").Name(routeStreamBlame)
 
 	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()

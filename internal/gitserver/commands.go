@@ -997,6 +997,7 @@ func parseGitBlameOutputReader(ctx context.Context, out io.ReadCloser, hunks cha
 				}
 				summaryLine = l
 			}
+			fmt.Printf("summaryLine: %q\n", summaryLine)
 
 			summary := strings.Join(strings.Split(summaryLine, " ")[1:], " ")
 			commit := gitdomain.Commit{
@@ -1021,6 +1022,7 @@ func parseGitBlameOutputReader(ctx context.Context, out io.ReadCloser, hunks cha
 				}
 				filenameLine = l
 			}
+			fmt.Printf("filenameLine: %q\n", filenameLine)
 			filenames[commitID] = strings.SplitN(filenameLine, " ", 2)[1]
 
 			// nLines includes the filenameLine, so we already read that
@@ -1049,6 +1051,7 @@ func parseGitBlameOutputReader(ctx context.Context, out io.ReadCloser, hunks cha
 		}
 
 		// read remaining <sha>\n<content> line pairs in hunk
+		fmt.Printf("nLines: %d\n", nLines)
 		for nLines > 0 {
 			if !sc.Scan() {
 				break
