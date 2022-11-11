@@ -1143,7 +1143,7 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 }
 
 func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*protocol.ReposStats, error) {
-	resp, err := c.do(ctx, "repos-stats call, no repo provided", "GET", fmt.Sprintf("http://%s/repos-stats", addr), nil)
+	resp, err := c.do(ctx, "", "GET", fmt.Sprintf("http://%s/repos-stats", addr), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1222,9 +1222,8 @@ func (c *clientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoNa
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
-// do performs a request to a gitserver instance based on the address in the uri argument.
-//
-//nolint:unparam // unparam complains that `method` always has same value across call-sites, but that's OK
+// do performs a request to a gitserver instance based on the address in the uri
+// argument.
 func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
@@ -1233,6 +1232,11 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
 	defer func() {
+		if repo != "" {
+			span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
+		} else {
+			span.LogKV("method", method, "path", parsedURL.Path)
+		}
 		span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
 		if err != nil {
 			ext.Error.Set(span, true)
