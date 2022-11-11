@@ -2,7 +2,7 @@ import { Line, Text } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 
 import { Position } from '@sourcegraph/extension-api-types'
-import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
+import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
 /**
@@ -238,4 +238,33 @@ export function findLsifOccurenceAt(
     }
 
     return null
+}
+
+/**
+ * Occurrences that are possibly interactive (i.e. they can have code intelligence).
+ */
+const INTERACTIVE_OCCURRENCE_KINDS = new Set([
+    SyntaxKind.Identifier,
+    SyntaxKind.IdentifierBuiltin,
+    SyntaxKind.IdentifierConstant,
+    SyntaxKind.IdentifierMutableGlobal,
+    SyntaxKind.IdentifierParameter,
+    SyntaxKind.IdentifierLocal,
+    SyntaxKind.IdentifierShadowed,
+    SyntaxKind.IdentifierModule,
+    SyntaxKind.IdentifierFunction,
+    SyntaxKind.IdentifierFunctionDefinition,
+    SyntaxKind.IdentifierMacro,
+    SyntaxKind.IdentifierMacroDefinition,
+    SyntaxKind.IdentifierType,
+    SyntaxKind.IdentifierBuiltinType,
+    SyntaxKind.IdentifierAttribute,
+])
+
+export const isInteractiveOccurrence = (occurence: Occurrence): boolean => {
+    if (!occurence.kind) {
+        return false
+    }
+
+    return INTERACTIVE_OCCURRENCE_KINDS.has(occurence.kind)
 }

@@ -64,7 +64,6 @@ import {
     LineOrPositionOrRange,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -87,6 +86,7 @@ import {
     zeroToOneBasedPosition,
     findLsifOccurenceAt,
     HOVER_DEBOUNCE_TIME,
+    isInteractiveOccurrence,
 } from './utils'
 
 import { blobPropsFacet } from './index'
@@ -733,11 +733,6 @@ const hoverdataCache = ViewPlugin.fromClass(
 )
 
 /**
- * Syntax kinds for which we don't want to request hover data.
- */
-const syntaxKindBlockList = new Set([SyntaxKind.Comment, SyntaxKind.IdentifierKeyword, SyntaxKind.IdentifierOperator])
-
-/**
  * Helper operator for requesting hover information and creating a {@link Hovercard}
  * object.
  */
@@ -756,7 +751,7 @@ function tokenRangeToHovercard(
                 const validOccurenceAtPosition = findLsifOccurenceAt(
                     view.state.facet(lsifData),
                     { line: lineCharacterRange.start.line - 1, character: lineCharacterRange.start.character - 1 },
-                    occurence => !occurence?.kind || !syntaxKindBlockList.has(occurence.kind)
+                    occurence => isInteractiveOccurrence(occurence)
                 )
                 if (!validOccurenceAtPosition) {
                     return of(null)

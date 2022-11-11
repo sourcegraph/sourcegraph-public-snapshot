@@ -23,7 +23,6 @@ import { switchMap, filter, mergeAll, map, tap, distinctUntilChanged, debounceTi
 
 import { DocumentHighlight } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
-import { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -35,6 +34,7 @@ import {
     sortRangeValuesByStart,
     findLsifOccurenceAt,
     HOVER_DEBOUNCE_TIME,
+    isInteractiveOccurrence,
 } from './utils'
 
 type DocumentHighlightsSource = (position: Position) => Observable<DocumentHighlight[]>
@@ -124,11 +124,6 @@ function documentHighlights(sources: Facet<DocumentHighlightsSource>, sink: Face
 }
 
 /**
- * Syntax kinds for which we don't want to request document highlights.
- */
-const syntaxKindBlockList = new Set([SyntaxKind.Comment, SyntaxKind.IdentifierKeyword, SyntaxKind.IdentifierOperator])
-
-/**
  * This class listens to CodeMirror mouse events, queries the registered data
  * sources (see {@link documentHighlightsSource}) and updates the
  * {@link showDocumentHighlights} facet with their responses.
@@ -158,7 +153,7 @@ class DocumentHighlightsManager {
                         const validOccurenceAtPosition = findLsifOccurenceAt(
                             view.state.facet(lsifData),
                             { line: position.line - 1, character: position.character - 1 },
-                            occurence => !occurence?.kind || !syntaxKindBlockList.has(occurence.kind)
+                            occurence => isInteractiveOccurrence(occurence)
                         )
 
                         if (validOccurenceAtPosition) {
