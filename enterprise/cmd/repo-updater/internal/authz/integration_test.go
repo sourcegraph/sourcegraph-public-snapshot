@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -137,10 +138,15 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, []providerState{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				State:        "SUCCESS",
+			}}, providerStates)
 
 			p := &authz.UserPermissions{
 				UserID: userID,
@@ -217,10 +223,15 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, []providerState{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				State:        "SUCCESS",
+			}}, providerStates)
 
 			p := &authz.UserPermissions{
 				UserID: userID,
@@ -238,10 +249,16 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			// sync again and check
-			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			providerStates, err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, []providerState{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				State:        "SUCCESS",
+			}}, providerStates)
+
 			err = permsStore.LoadUserPermissions(ctx, p)
 			if err != nil {
 				t.Fatal(err)
@@ -323,10 +340,15 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			providerStates, err := syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, []providerState{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				State:        "SUCCESS",
+			}}, providerStates)
 
 			p := &authz.UserPermissions{
 				UserID: userID,
@@ -406,10 +428,15 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			permsStore := edb.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
-			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			providerStates, err := syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, []providerState{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				State:        "SUCCESS",
+			}}, providerStates)
 
 			p := &authz.UserPermissions{
 				UserID: userID,
@@ -427,10 +454,16 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 
 			// sync again and check
-			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
+			providerStates, err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
+			assert.Equal(t, []providerState{{
+				ProviderID:   "https://github.com/",
+				ProviderType: "github",
+				State:        "SUCCESS",
+			}}, providerStates)
+
 			err = permsStore.LoadUserPermissions(ctx, p)
 			if err != nil {
 				t.Fatal(err)
