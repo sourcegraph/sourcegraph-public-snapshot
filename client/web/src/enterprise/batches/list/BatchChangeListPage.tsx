@@ -293,8 +293,8 @@ const BatchChangeListTabHeader: React.FunctionComponent<
     )
     return (
         <nav className="overflow-auto mb-2" aria-label="Batch Changes">
-            <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap" role="tablist">
-                <li className="nav-item">
+            <div className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap" role="tablist">
+                <div className="nav-item">
                     <Link
                         to=""
                         onClick={onSelectBatchChanges}
@@ -306,8 +306,8 @@ const BatchChangeListTabHeader: React.FunctionComponent<
                             All batch changes
                         </span>
                     </Link>
-                </li>
-                <li className="nav-item">
+                </div>
+                <div className="nav-item">
                     <Link
                         to=""
                         onClick={event => {
@@ -323,8 +323,8 @@ const BatchChangeListTabHeader: React.FunctionComponent<
                             Getting started
                         </span>
                     </Link>
-                </li>
-            </ul>
+                </div>
+            </div>
         </nav>
     )
 }
