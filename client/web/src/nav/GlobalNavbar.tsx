@@ -11,6 +11,7 @@ import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
 import { SearchContextInputProps } from '@sourcegraph/search'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -26,7 +27,6 @@ import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
-import { renderShortcutKey } from '../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { WebCommandListPopoverButton } from '../components/shared'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
@@ -119,7 +119,7 @@ function FuzzyFinderNavItem(setFuzzyFinderVisible: React.Dispatch<SetStateAction
                 size="sm"
             >
                 <span aria-hidden={true} aria-label={isMacPlatform() ? 'command-k' : 'ctrl-k'}>
-                    {isMacPlatform() ? renderShortcutKey('Mod') + 'K' : [renderShortcutKey('Mod'), 'K'].join('+')}
+                    {shortcutDisplayName('Mod+K')}
                 </span>
             </Button>
         </NavAction>
@@ -369,18 +369,16 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                 </NavActions>
             </NavBar>
             {showSearchBox && (
-                <div className="w-100 px-3 pt-2">
-                    <div className="pb-2 border-bottom">
-                        <SearchNavbarItem
-                            {...props}
-                            location={location}
-                            history={history}
-                            isLightTheme={isLightTheme}
-                            isSourcegraphDotCom={isSourcegraphDotCom}
-                            searchContextsEnabled={searchContextsEnabled}
-                            isRepositoryRelatedPage={isRepositoryRelatedPage}
-                        />
-                    </div>
+                <div className="w-100 px-3 py-2 border-bottom">
+                    <SearchNavbarItem
+                        {...props}
+                        location={location}
+                        history={history}
+                        isLightTheme={isLightTheme}
+                        isSourcegraphDotCom={isSourcegraphDotCom}
+                        searchContextsEnabled={searchContextsEnabled}
+                        isRepositoryRelatedPage={isRepositoryRelatedPage}
+                    />
                 </div>
             )}
         </>

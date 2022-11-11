@@ -69,10 +69,8 @@ export const createDefaultSuggestions = ({
     disableSymbolCompletion,
     applyOnEnter,
     showWhenEmpty,
-    additionalSources = [],
 }: Omit<DefaultSuggestionSourcesOptions, 'fetchSuggestions'> & {
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>
-    additionalSources?: StandardSuggestionSource[]
     /**
      * Whether or not to allow suggestions selection by Enter key.
      */
@@ -86,7 +84,7 @@ export const createDefaultSuggestions = ({
             disableSymbolCompletion,
             disableFilterCompletion,
             showWhenEmpty,
-        }).concat(additionalSources),
+        }),
         applyOnEnter
     ),
     loadingIndicator(),
