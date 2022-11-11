@@ -681,11 +681,11 @@ function enhanceSearchPage(sourcegraphURL: string): void {
     }
 }
 
-export const githubCodeHost: GithubCodeHost = {
+export const githubCodeHost: CodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
-    searchEnhancement,
-    enhanceSearchPage,
+    // searchEnhancement,
+    // enhanceSearchPage,
     codeViewResolvers: [
         genericCodeViewResolver,
         fileLineContainerResolver,
