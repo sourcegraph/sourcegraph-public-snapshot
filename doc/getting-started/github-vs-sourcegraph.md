@@ -279,7 +279,7 @@ C#, Python, Go, Java, JavaScript, TypeScript, PHP, Protocol Buffers, Ruby, and R
 
 **Search results**
 
-GitHub only returns the first 10 pages of search results. You cannot currently go past the 10th page or retrieve all search results.
+GitHub only returns the first 100 search results. You cannot currently go past 100 results or retrieve all search results.
 
 Sourcegraph can retrieve all search results. By default, Sourcegraph returns 500 search results, but this number can be increased by increasing the ‘count’ value. Sourcegraph can display a maximum of 1,500 matches, but all matches can be fetched using the [src CLI](https://docs.sourcegraph.com/cli/quickstart), the [Stream API](https://docs.sourcegraph.com/api/stream_api), or [GraphQL API](https://docs.sourcegraph.com/api/graphql). You can also export the results via CSV. 
 
@@ -321,7 +321,7 @@ When submitting a search query, the quality of a match is scored based on langua
    </td>
    <td>✗
 <p>
-Limited to 10 pages of results
+Limited to 100 search results
    </td>
    <td>✓ 
 <p>
