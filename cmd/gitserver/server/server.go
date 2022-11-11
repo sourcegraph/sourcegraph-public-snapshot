@@ -78,6 +78,7 @@ var (
 // duration, returns false, otherwise returns true and updates the last
 // fetch stamp.
 func debounce(name api.RepoName, since time.Duration) bool {
+	lastCheckAtMapAccessedCounter.WithLabelValues(string(name)).Inc()
 	lastCheckMutex.Lock()
 	defer lastCheckMutex.Unlock()
 	if t, ok := lastCheckAt[name]; ok && time.Now().Before(t.Add(since)) {
@@ -712,6 +713,11 @@ var (
 		Name: "src_gitserver_repo_wrong_shard_deleted",
 		Help: "The number of repos on the wrong shard that we deleted",
 	})
+
+	lastCheckAtMapAccessedCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_last_check_at_map_accessed",
+		Help: "The number of times the lastCheckAt map was accessed",
+	}, []string{"repo"})
 )
 
 func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
