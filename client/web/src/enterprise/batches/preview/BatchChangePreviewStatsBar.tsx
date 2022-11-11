@@ -1,8 +1,10 @@
 import React, { useContext, useMemo } from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { Badge, H2, useObservable } from '@sourcegraph/wildcard'
+import { pluralize } from '@sourcegraph/common'
+import { Badge, H2, H4, useObservable } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { ApplyPreviewStatsFields, DiffStatFields, Scalars } from '../../../graphql-operations'
@@ -59,7 +61,10 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
     return (
         <div className="d-flex flex-wrap mb-3 align-items-center">
             <H2 className="m-0 align-self-center">
-                <Badge variant="info" className="text-uppercase mb-0">
+                <VisuallyHidden>
+                    This is a preview of the changesets generated from executing the batch spec.
+                </VisuallyHidden>
+                <Badge variant="info" className="text-uppercase mb-0" aria-hidden={true}>
                     Preview
                 </Badge>
             </H2>
@@ -72,8 +77,6 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
                     styles.batchChangePreviewStatsBarMetrics,
                     'flex-grow-1 d-flex justify-content-end'
                 )}
-                aria-label="Preview Stats"
-                role="note"
             >
                 <PreviewStatsAdded count={stats.added} />
                 <PreviewStatsRemoved count={stats.removed} />
@@ -109,7 +112,9 @@ export const PreviewStatsAdded: React.FunctionComponent<React.PropsWithChildren<
             </span>
             <span className={styles.previewStatsAddedLine}>&nbsp;</span>
         </div>
-        {count} Added
+        <H4 className="font-weight-normal mt-1 mb-0" aria-label={`${count} ${pluralize('changeset', count)} added`}>
+            {`${count} added`}
+        </H4>
     </div>
 )
 export const PreviewStatsModified: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({
@@ -128,7 +133,9 @@ export const PreviewStatsModified: React.FunctionComponent<React.PropsWithChildr
             </span>
             <span className={styles.previewStatsModifiedLine}>&nbsp;</span>
         </div>
-        {count} Modified
+        <H4 className="font-weight-normal mt-1 mb-0" aria-label={`${count} ${pluralize('changeset', count)} modified`}>
+            {`${count} modified`}
+        </H4>
     </div>
 )
 export const PreviewStatsRemoved: React.FunctionComponent<React.PropsWithChildren<{ count: number }>> = ({ count }) => (
@@ -145,6 +152,8 @@ export const PreviewStatsRemoved: React.FunctionComponent<React.PropsWithChildre
             </span>
             <span className={styles.previewStatsRemovedLine}>&nbsp;</span>
         </div>
-        {count} Removed
+        <H4 className="font-weight-normal mt-1 mb-0" aria-label={`${count} ${pluralize('changeset', count)} removed`}>
+            {`${count} removed`}
+        </H4>
     </div>
 )

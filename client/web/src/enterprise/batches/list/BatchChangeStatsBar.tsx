@@ -3,6 +3,7 @@ import React from 'react'
 import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 
+import { pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { H3, H4, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
@@ -14,7 +15,6 @@ import { ChangesetStatusClosed, ChangesetStatusOpen } from '../detail/changesets
 import { GLOBAL_CHANGESETS_STATS } from './backend'
 
 import styles from './BatchChangeStatsBar.module.scss'
-import { pluralize } from '@sourcegraph/common'
 
 interface BatchChangeStatsBarProps {
     className?: string
