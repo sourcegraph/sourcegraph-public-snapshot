@@ -146,7 +146,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
     errors,
     queryWorkspacesList,
 }) {
-    const { executionURL, workspaceResolution, source, applyURL } = batchSpec
+    const { executionURL, workspaceResolution, applyURL } = batchSpec
 
     const tabsConfig = useMemo<TabsConfig[]>(
         () => [
@@ -155,7 +155,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
             { key: 'execution', isEnabled: true, handler: { type: 'link' } },
             { key: 'preview', isEnabled: applyURL !== null, handler: { type: 'link' } },
         ],
-        [applyURL, source]
+        [applyURL]
     )
 
     return (
