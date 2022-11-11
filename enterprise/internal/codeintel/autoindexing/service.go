@@ -46,6 +46,13 @@ func newService(
 	symbolsClient *symbols.Client,
 	observationContext *observation.Context,
 ) *Service {
+	// NOTE - this should go up a level in init.go.
+	// Not going to do this now so that we don't blow up all of the
+	// tests (which have pretty good coverage of the whole service).
+	// We should rewrite/transplant tests to the closest package that
+	// provides that behavior and then mock the dependencies in the
+	// glue packages.
+
 	jobSelector := jobselector.NewJobSelector(
 		store,
 		uploadSvc,
