@@ -5,7 +5,6 @@ import (
 	"os"
 
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
@@ -13,19 +12,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type indexEnqueuer struct {
 	store           store.Store
-	uploadSvc       UploadService
-	inferenceSvc    InferenceService
 	repoUpdater     RepoUpdaterClient
 	gitserverClient GitserverClient
-	symbolsClient   *symbols.Client
-	logger          log.Logger
 	operations      *operations
 	inferer         *inferer
 }

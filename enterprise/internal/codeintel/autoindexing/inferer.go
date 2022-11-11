@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -17,11 +16,8 @@ type inferer struct {
 	store           store.Store
 	uploadSvc       UploadService
 	inferenceSvc    InferenceService
-	repoUpdater     RepoUpdaterClient
 	gitserverClient GitserverClient
-	symbolsClient   *symbols.Client
 	logger          log.Logger
-	operations      *operations
 }
 
 // InferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobs over all registered recognizers.

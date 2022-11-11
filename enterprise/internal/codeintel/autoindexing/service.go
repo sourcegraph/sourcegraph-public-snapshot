@@ -57,12 +57,8 @@ func newService(
 func (s *Service) IndexEnqueuer() IndexEnqueuer {
 	return &indexEnqueuer{
 		store:           s.store,
-		uploadSvc:       s.uploadSvc,
-		inferenceSvc:    s.inferenceSvc,
 		repoUpdater:     s.repoUpdater,
 		gitserverClient: s.gitserverClient,
-		symbolsClient:   s.symbolsClient,
-		logger:          s.logger,
 		operations:      s.operations,
 		inferer:         s.inferer(),
 	}
@@ -73,11 +69,8 @@ func (s *Service) inferer() *inferer {
 		store:           s.store,
 		uploadSvc:       s.uploadSvc,
 		inferenceSvc:    s.inferenceSvc,
-		repoUpdater:     s.repoUpdater,
 		gitserverClient: s.gitserverClient,
-		symbolsClient:   s.symbolsClient,
 		logger:          s.logger,
-		operations:      s.operations,
 	}
 }
 
