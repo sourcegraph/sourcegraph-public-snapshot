@@ -14,7 +14,7 @@ type janitorMetrics struct {
 	numUploadsPurged          prometheus.Counter
 }
 
-func newJanitorMetrics(observationContext *observation.Context) *janitorMetrics {
+func NewJanitorMetrics(observationContext *observation.Context) *janitorMetrics {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,

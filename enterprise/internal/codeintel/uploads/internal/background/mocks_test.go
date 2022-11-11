@@ -23,7 +23,6 @@ import (
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	observation "github.com/sourcegraph/sourcegraph/internal/observation"
 	uploadstore "github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	store "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // MockGitserverClient is a mock implementation of the GitserverClient
@@ -2072,9 +2071,6 @@ type MockUploadService struct {
 	// GetUploadsFunc is an instance of a mock function object controlling
 	// the behavior of the method GetUploads.
 	GetUploadsFunc *UploadServiceGetUploadsFunc
-	// GetWorkerutilStoreFunc is an instance of a mock function object
-	// controlling the behavior of the method GetWorkerutilStore.
-	GetWorkerutilStoreFunc *UploadServiceGetWorkerutilStoreFunc
 	// HandleExpiredUploadsBatchFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// HandleExpiredUploadsBatch.
@@ -2174,11 +2170,6 @@ func NewMockUploadService() *MockUploadService {
 		},
 		GetUploadsFunc: &UploadServiceGetUploadsFunc{
 			defaultHook: func(context.Context, shared.GetUploadsOptions) (r0 []types.Upload, r1 int, r2 error) {
-				return
-			},
-		},
-		GetWorkerutilStoreFunc: &UploadServiceGetWorkerutilStoreFunc{
-			defaultHook: func() (r0 store.Store) {
 				return
 			},
 		},
@@ -2299,11 +2290,6 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.GetUploads")
 			},
 		},
-		GetWorkerutilStoreFunc: &UploadServiceGetWorkerutilStoreFunc{
-			defaultHook: func() store.Store {
-				panic("unexpected invocation of MockUploadService.GetWorkerutilStore")
-			},
-		},
 		HandleExpiredUploadsBatchFunc: &UploadServiceHandleExpiredUploadsBatchFunc{
 			defaultHook: func(context.Context, *ExpirationMetrics, ExpirerConfig) error {
 				panic("unexpected invocation of MockUploadService.HandleExpiredUploadsBatch")
@@ -2395,9 +2381,6 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		},
 		GetUploadsFunc: &UploadServiceGetUploadsFunc{
 			defaultHook: i.GetUploads,
-		},
-		GetWorkerutilStoreFunc: &UploadServiceGetWorkerutilStoreFunc{
-			defaultHook: i.GetWorkerutilStore,
 		},
 		HandleExpiredUploadsBatchFunc: &UploadServiceHandleExpiredUploadsBatchFunc{
 			defaultHook: i.HandleExpiredUploadsBatch,
@@ -3890,108 +3873,6 @@ func (c UploadServiceGetUploadsFuncCall) Args() []interface{} {
 // invocation.
 func (c UploadServiceGetUploadsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// UploadServiceGetWorkerutilStoreFunc describes the behavior when the
-// GetWorkerutilStore method of the parent MockUploadService instance is
-// invoked.
-type UploadServiceGetWorkerutilStoreFunc struct {
-	defaultHook func() store.Store
-	hooks       []func() store.Store
-	history     []UploadServiceGetWorkerutilStoreFuncCall
-	mutex       sync.Mutex
-}
-
-// GetWorkerutilStore delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockUploadService) GetWorkerutilStore() store.Store {
-	r0 := m.GetWorkerutilStoreFunc.nextHook()()
-	m.GetWorkerutilStoreFunc.appendCall(UploadServiceGetWorkerutilStoreFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the GetWorkerutilStore
-// method of the parent MockUploadService instance is invoked and the hook
-// queue is empty.
-func (f *UploadServiceGetWorkerutilStoreFunc) SetDefaultHook(hook func() store.Store) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetWorkerutilStore method of the parent MockUploadService instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *UploadServiceGetWorkerutilStoreFunc) PushHook(hook func() store.Store) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UploadServiceGetWorkerutilStoreFunc) SetDefaultReturn(r0 store.Store) {
-	f.SetDefaultHook(func() store.Store {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UploadServiceGetWorkerutilStoreFunc) PushReturn(r0 store.Store) {
-	f.PushHook(func() store.Store {
-		return r0
-	})
-}
-
-func (f *UploadServiceGetWorkerutilStoreFunc) nextHook() func() store.Store {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UploadServiceGetWorkerutilStoreFunc) appendCall(r0 UploadServiceGetWorkerutilStoreFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UploadServiceGetWorkerutilStoreFuncCall
-// objects describing the invocations of this function.
-func (f *UploadServiceGetWorkerutilStoreFunc) History() []UploadServiceGetWorkerutilStoreFuncCall {
-	f.mutex.Lock()
-	history := make([]UploadServiceGetWorkerutilStoreFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UploadServiceGetWorkerutilStoreFuncCall is an object that describes an
-// invocation of method GetWorkerutilStore on an instance of
-// MockUploadService.
-type UploadServiceGetWorkerutilStoreFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 store.Store
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UploadServiceGetWorkerutilStoreFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UploadServiceGetWorkerutilStoreFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // UploadServiceHandleExpiredUploadsBatchFunc describes the behavior when

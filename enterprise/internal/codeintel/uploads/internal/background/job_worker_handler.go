@@ -16,30 +16,38 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (b *backgroundJob) NewWorker(
+func NewUploadProcessorWorker(
+	uploadSvc UploadService,
+	workerStore store.Store,
 	uploadStore uploadstore.Store,
 	workerConcurrency int,
 	workerBudget int64,
 	workerPollInterval time.Duration,
 	maximumRuntimePerJob time.Duration,
+	observationContext *observation.Context,
 ) *workerutil.Worker {
 	rootContext := actor.WithInternalActor(context.Background())
 
-	handler := b.NewWorkerutilHandler(
+	handler := NewUploadProcessorHandler(
+		uploadSvc,
 		uploadStore,
 		workerConcurrency,
 		workerBudget,
+		observationContext,
 	)
 
-	return dbworker.NewWorker(rootContext, b.uploadSvc.GetWorkerutilStore(), handler, workerutil.WorkerOptions{
+	metrics := workerutil.NewMetrics(observationContext, "codeintel_upload_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true }))
+
+	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
 		Name:                 "precise_code_intel_upload_worker",
 		NumHandlers:          workerConcurrency,
 		Interval:             workerPollInterval,
 		HeartbeatInterval:    time.Second,
-		Metrics:              b.workerMetrics,
+		Metrics:              metrics,
 		MaximumRuntimePerJob: maximumRuntimePerJob,
 	})
 }
@@ -50,11 +58,7 @@ type handler struct {
 	handleOp        *observation.Operation
 	budgetRemaining int64
 	enableBudget    bool
-	// Map of upload ID to uncompressed size. Uploads are deleted before
-	// PostHandle, so we store it here.
-	// Should only contain entries for processing in-progress uploads.
-	uncompressedSizes map[int]uint64
-	uploadSizeGuage   prometheus.Gauge
+	uploadSizeGuage prometheus.Gauge
 }
 
 var (
@@ -63,15 +67,22 @@ var (
 	_ workerutil.WithHooks      = &handler{}
 )
 
-func (b *backgroundJob) NewWorkerutilHandler(uploadStore uploadstore.Store, numProcessorRoutines int, budgetMax int64) workerutil.Handler {
+func NewUploadProcessorHandler(
+	uploadSvc UploadService,
+	uploadStore uploadstore.Store,
+	numProcessorRoutines int,
+	budgetMax int64,
+	observationContext *observation.Context,
+) workerutil.Handler {
+	operations := newOperations(observationContext)
+
 	return &handler{
-		uploadsSvc:        b.uploadSvc,
-		uploadStore:       uploadStore,
-		handleOp:          b.operations.uploadProcessor,
-		budgetRemaining:   budgetMax,
-		enableBudget:      budgetMax > 0,
-		uncompressedSizes: make(map[int]uint64, numProcessorRoutines),
-		uploadSizeGuage:   b.operations.uploadSizeGuage,
+		uploadsSvc:      uploadSvc,
+		uploadStore:     uploadStore,
+		handleOp:        operations.uploadProcessor,
+		budgetRemaining: budgetMax,
+		enableBudget:    budgetMax > 0,
+		uploadSizeGuage: operations.uploadSizeGuage,
 	}
 }
 
