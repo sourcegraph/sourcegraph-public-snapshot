@@ -4,11 +4,10 @@ import { useHistory } from 'react-router'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { gql, useMutation } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Container, Button, Alert } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
-import { UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'
+import { EditUserProfilePage, UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import { UserProfileFormFields, UserProfileFormFieldsValue } from './UserProfileFormFields'
@@ -25,7 +24,7 @@ export const UPDATE_USER = gql`
 `
 
 interface Props {
-    user: Pick<GQL.IUser, 'id' | 'viewerCanChangeUsername'>
+    user: Pick<EditUserProfilePage, 'id' | 'viewerCanChangeUsername'>
     initialValue: UserProfileFormFieldsValue
     after?: React.ReactNode
 }

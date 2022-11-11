@@ -134,7 +134,7 @@ export const LongContent: Story = () => (
         <div>
             <Tooltip
                 content="Nulla porttitor accumsan tincidunt. IAmVeryLongTextWithNoBreaksAndIWantToBeWrappedInMultipleLines. Proin eget tortor risus. Quisque velit nisi, pretium ut lacinia in, elementum id enim. Donec rutrum congue leo eget malesuada."
-                placement="right"
+                placement="bottom"
             >
                 <Button variant="primary">Example</Button>
             </Tooltip>

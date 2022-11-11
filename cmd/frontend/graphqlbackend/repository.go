@@ -9,22 +9,21 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	autoindex "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
-	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
-	resolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/sharedresolvers"
-	uploads "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
+	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -43,7 +42,8 @@ type RepositoryResolver struct {
 	// because it may cause a race during hydration.
 	result.RepoMatch
 
-	db database.DB
+	db              database.DB
+	gitserverClient gitserver.Client
 
 	// innerRepo may only contain ID and Name information.
 	// To access any other repo information, use repo() instead.
@@ -54,7 +54,7 @@ type RepositoryResolver struct {
 	defaultBranchErr  error
 }
 
-func NewRepositoryResolver(db database.DB, repo *types.Repo) *RepositoryResolver {
+func NewRepositoryResolver(db database.DB, client gitserver.Client, repo *types.Repo) *RepositoryResolver {
 	// Protect against a nil repo
 	var name api.RepoName
 	var id api.RepoID
@@ -64,8 +64,9 @@ func NewRepositoryResolver(db database.DB, repo *types.Repo) *RepositoryResolver
 	}
 
 	return &RepositoryResolver{
-		db:        db,
-		innerRepo: repo,
+		db:              db,
+		innerRepo:       repo,
+		gitserverClient: client,
 		RepoMatch: result.RepoMatch{
 			Name: name,
 			ID:   id,
@@ -137,8 +138,8 @@ func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 }
 
 func (r *RepositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err == auth.ErrMustBeSiteAdmin || err == auth.ErrNotAuthenticated {
 			return false, nil // not an error
 		}
 		return false, err
@@ -151,14 +152,18 @@ func (r *RepositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 }
 
 func (r *RepositoryResolver) DiskSizeBytes(ctx context.Context) (*BigInt, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err == auth.ErrMustBeSiteAdmin || err == auth.ErrNotAuthenticated {
 			return nil, nil // not an error
 		}
 		return nil, err
 	}
 	repo, err := r.db.GitserverRepos().GetByID(ctx, r.IDInt32())
-	return &BigInt{Int: repo.RepoSizeBytes}, err
+	if err != nil {
+		return nil, err
+	}
+	size := BigInt(repo.RepoSizeBytes)
+	return &size, nil
 }
 
 func (r *RepositoryResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
@@ -192,7 +197,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		return nil, err
 	}
 
-	commitID, err := backend.NewRepos(r.logger, r.db).ResolveRev(ctx, repo, args.Rev)
+	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
@@ -204,7 +209,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 }
 
 func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
-	resolver := NewGitCommitResolver(r.db, r, commitID, nil)
+	resolver := NewGitCommitResolver(r.db, r.gitserverClient, r, commitID, nil)
 	if args.InputRevspec != nil {
 		resolver.inputRev = args.InputRevspec
 	} else {
@@ -215,7 +220,7 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refName, _, err := gitserver.NewClient(r.db).GetDefaultBranch(ctx, r.RepoName(), false)
+		refName, _, err := r.gitserverClient.GetDefaultBranch(ctx, r.RepoName(), false)
 		if err != nil {
 			return nil, err
 		}
@@ -240,13 +245,13 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	commitID, err := backend.NewRepos(r.logger, r.db).ResolveRev(ctx, repo, "")
+	commitID, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).ResolveRev(ctx, repo, "")
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db).GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, commitID, false)
 	if err != nil {
 		return "", err
 	}
@@ -262,11 +267,11 @@ func (r *RepositoryResolver) Enabled() bool { return true }
 // the marshalling of timestamps is significant in our postgres client. So we
 // deprecate the fields and return fake data for created_at.
 // https://github.com/sourcegraph/sourcegraph/pull/4668
-func (r *RepositoryResolver) CreatedAt() DateTime {
-	return DateTime{Time: time.Now()}
+func (r *RepositoryResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: time.Now()}
 }
 
-func (r *RepositoryResolver) UpdatedAt() *DateTime {
+func (r *RepositoryResolver) UpdatedAt() *gqlutil.DateTime {
 	return nil
 }
 
@@ -360,33 +365,33 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	return r.err
 }
 
-func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *uploads.LSIFUploadsQueryArgs) (resolvers.LSIFUploadConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &uploads.LSIFRepositoryUploadsQueryArgs{
+func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *resolverstubs.LSIFUploadsQueryArgs) (resolverstubs.LSIFUploadConnectionResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.LSIFUploadsByRepo(ctx, &resolverstubs.LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
 }
 
-func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *autoindex.LSIFIndexesQueryArgs) (resolvers.LSIFIndexConnectionResolver, error) {
-	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &autoindex.LSIFRepositoryIndexesQueryArgs{
+func (r *RepositoryResolver) LSIFIndexes(ctx context.Context, args *resolverstubs.LSIFIndexesQueryArgs) (resolverstubs.LSIFIndexConnectionResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.LSIFIndexesByRepo(ctx, &resolverstubs.LSIFRepositoryIndexesQueryArgs{
 		LSIFIndexesQueryArgs: args,
 		RepositoryID:         r.ID(),
 	})
 }
 
-func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (autoindex.IndexConfigurationResolver, error) {
+func (r *RepositoryResolver) IndexConfiguration(ctx context.Context) (resolverstubs.IndexConfigurationResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.IndexConfiguration(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (uploads.CodeIntelligenceCommitGraphResolver, error) {
+func (r *RepositoryResolver) CodeIntelligenceCommitGraph(ctx context.Context) (resolverstubs.CodeIntelligenceCommitGraphResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.CommitGraph(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (resolvers.CodeIntelRepositorySummaryResolver, error) {
+func (r *RepositoryResolver) CodeIntelSummary(ctx context.Context) (resolverstubs.CodeIntelRepositorySummaryResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.RepositorySummary(ctx, r.ID())
 }
 
-func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *policies.PreviewGitObjectFilterArgs) ([]policies.GitObjectFilterPreviewResolver, error) {
+func (r *RepositoryResolver) PreviewGitObjectFilter(ctx context.Context, args *resolverstubs.PreviewGitObjectFilterArgs) ([]resolverstubs.GitObjectFilterPreviewResolver, error) {
 	return EnterpriseResolvers.codeIntelResolver.PreviewGitObjectFilter(ctx, r.ID(), args)
 }
 
@@ -449,19 +454,18 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		return nil, err
 	}
 	targetRef := fmt.Sprintf("phabricator/diff/%d", args.DiffID)
-	gitserverClient := gitserver.NewClient(db)
 	getCommit := func() (*GitCommitResolver, error) {
 		// We first check via the vcsrepo api so that we can toggle
 		// NoEnsureRevision. We do this, otherwise RepositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		_, err = gitserverClient.ResolveRevision(ctx, repo.Name, targetRef, gitserver.ResolveRevisionOptions{
+		_, err = r.gitserverClient.ResolveRevision(ctx, repo.Name, targetRef, gitserver.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {
 			return nil, err
 		}
-		r := NewRepositoryResolver(db, repo)
+		r := NewRepositoryResolver(db, r.gitserverClient, repo)
 		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 
@@ -527,7 +531,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		}
 	}
 
-	_, err = gitserverClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
+	_, err = r.gitserverClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(args.RepoName),
 		BaseCommit: api.CommitID(args.BaseRev),
 		TargetRef:  targetRef,
@@ -617,8 +621,12 @@ func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
 	Value *string
 },
 ) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
@@ -635,8 +643,12 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 	Value *string
 },
 ) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
@@ -653,8 +665,12 @@ func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct
 	Key  string
 },
 ) (*EmptyResponse, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)

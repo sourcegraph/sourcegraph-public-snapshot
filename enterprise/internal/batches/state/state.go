@@ -29,7 +29,7 @@ import (
 
 // SetDerivedState will update the external state fields on the Changeset based
 // on the current state of the changeset and associated events.
-func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btypes.Changeset, es []*btypes.ChangesetEvent) {
+func SetDerivedState(ctx context.Context, repoStore database.RepoStore, client gitserver.Client, c *btypes.Changeset, es []*btypes.ChangesetEvent) {
 	// Copy so that we can sort without mutating the argument
 	events := make(ChangesetEvents, len(es))
 	copy(events, es)
@@ -78,8 +78,7 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btype
 	// and new states for the duration of this function, although we'll update
 	// c.SyncState as soon as we can.
 	oldState := c.SyncState
-	db := database.NewDBWith(logger, repoStore)
-	newState, err := computeSyncState(ctx, db, c, repo.Name)
+	newState, err := computeSyncState(ctx, client, c, repo.Name)
 	if err != nil {
 		logger.Warn("Computing sync state", log.Error(err))
 		return
@@ -89,7 +88,7 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btype
 	// Now we can update fields that are invalidated when the sync state
 	// changes.
 	if !oldState.Equals(newState) {
-		if stat, err := computeDiffStat(ctx, db, c, repo.Name); err != nil {
+		if stat, err := computeDiffStat(ctx, client, c, repo.Name); err != nil {
 			logger.Warn("Computing diffstat", log.Error(err))
 		} else {
 			c.SetDiffStat(stat)
@@ -614,8 +613,8 @@ func selectReviewState(states map[btypes.ChangesetReviewState]bool) btypes.Chang
 
 // computeDiffStat computes the up to date diffstat for the changeset, based on
 // the values in c.SyncState.
-func computeDiffStat(ctx context.Context, db database.DB, c *btypes.Changeset, repo api.RepoName) (*diff.Stat, error) {
-	iter, err := gitserver.NewClient(db).Diff(ctx, gitserver.DiffOptions{
+func computeDiffStat(ctx context.Context, client gitserver.Client, c *btypes.Changeset, repo api.RepoName) (*diff.Stat, error) {
+	iter, err := client.Diff(ctx, gitserver.DiffOptions{
 		Repo: repo,
 		Base: c.SyncState.BaseRefOid,
 		Head: c.SyncState.HeadRefOid,
@@ -645,16 +644,16 @@ func computeDiffStat(ctx context.Context, db database.DB, c *btypes.Changeset, r
 
 // computeSyncState computes the up to date sync state based on the changeset as
 // it currently exists on the external provider.
-func computeSyncState(ctx context.Context, db database.DB, c *btypes.Changeset, repo api.RepoName) (*btypes.ChangesetSyncState, error) {
+func computeSyncState(ctx context.Context, client gitserver.Client, c *btypes.Changeset, repo api.RepoName) (*btypes.ChangesetSyncState, error) {
 	// We compute the revision by first trying to get the OID, then the Ref. //
 	// We then call out to gitserver to ensure that the one we use is available on
 	// gitserver.
-	base, err := computeRev(ctx, db, repo, c.BaseRefOid, c.BaseRef)
+	base, err := computeRev(ctx, client, repo, c.BaseRefOid, c.BaseRef)
 	if err != nil {
 		return nil, err
 	}
 
-	head, err := computeRev(ctx, db, repo, c.HeadRefOid, c.HeadRef)
+	head, err := computeRev(ctx, client, repo, c.HeadRefOid, c.HeadRef)
 	if err != nil {
 		return nil, err
 	}
@@ -666,7 +665,7 @@ func computeSyncState(ctx context.Context, db database.DB, c *btypes.Changeset, 
 	}, nil
 }
 
-func computeRev(ctx context.Context, db database.DB, repo api.RepoName, getOid, getRef func() (string, error)) (string, error) {
+func computeRev(ctx context.Context, client gitserver.Client, repo api.RepoName, getOid, getRef func() (string, error)) (string, error) {
 	// Try to get the OID first
 	rev, err := getOid()
 	if err != nil {
@@ -683,7 +682,7 @@ func computeRev(ctx context.Context, db database.DB, repo api.RepoName, getOid, 
 
 	// Resolve the revision to make sure it's on gitserver and, in case we did
 	// the fallback to ref, to get the specific revision.
-	gitRev, err := gitserver.NewClient(db).ResolveRevision(ctx, repo, rev, gitserver.ResolveRevisionOptions{})
+	gitRev, err := client.ResolveRevision(ctx, repo, rev, gitserver.ResolveRevisionOptions{})
 	return string(gitRev), err
 }
 

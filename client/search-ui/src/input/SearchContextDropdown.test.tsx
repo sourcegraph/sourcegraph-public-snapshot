@@ -116,7 +116,10 @@ describe('SearchContextDropdown', () => {
         )
 
         userEvent.click(screen.getByTestId('dropdown-toggle'))
-        userEvent.type(document.body, '{esc}')
+        userEvent.type(document.body, '{esc}', {
+            // We need to skip, otherwise the close event will trigger due to a "click away"
+            skipClick: true,
+        })
 
         act(() => {
             // Wait for the next frame

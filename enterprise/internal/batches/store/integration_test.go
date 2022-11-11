@@ -36,6 +36,7 @@ func TestIntegration(t *testing.T) {
 		t.Run("ChangesetSpecsCurrentState", storeTest(db, nil, testStoreChangesetSpecsCurrentState))
 		t.Run("ChangesetSpecsCurrentStateAndTextSearch", storeTest(db, nil, testStoreChangesetSpecsCurrentStateAndTextSearch))
 		t.Run("ChangesetSpecsTextSearch", storeTest(db, nil, testStoreChangesetSpecsTextSearch))
+		t.Run("ChangesetSpecsPublishedValues", storeTest(db, nil, testStoreChangesetSpecsPublishedValues))
 		t.Run("CodeHosts", storeTest(db, nil, testStoreCodeHost))
 		t.Run("UserDeleteCascades", storeTest(db, nil, testUserDeleteCascades))
 		t.Run("ChangesetJobs", storeTest(db, nil, testStoreChangesetJobs))

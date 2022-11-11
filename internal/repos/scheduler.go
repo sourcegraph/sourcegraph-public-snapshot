@@ -36,6 +36,8 @@ func RunScheduler(ctx context.Context, logger log.Logger, scheduler *UpdateSched
 		stop context.CancelFunc
 	)
 
+	logger = logger.Scoped("RunScheduler", "git fetch scheduler")
+
 	conf.Watch(func() {
 		c := conf.Get()
 
@@ -48,6 +50,7 @@ func RunScheduler(ctx context.Context, logger log.Logger, scheduler *UpdateSched
 			return
 		}
 
+		logger.Debug("config changed")
 		if stop != nil {
 			stop()
 			logger.Info("stopped previous scheduler")
@@ -900,6 +903,7 @@ func (s *schedule) reset() {
 // i.e. heap.Fix, heap.Remove, heap.Push, heap.Pop.
 
 func (s *schedule) Len() int { return len(s.heap) }
+
 func (s *schedule) Less(i, j int) bool {
 	return s.heap[i].Due.Before(s.heap[j].Due)
 }

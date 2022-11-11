@@ -5,7 +5,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { Link, Text } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../components/HeroPage'
@@ -73,7 +73,7 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
 

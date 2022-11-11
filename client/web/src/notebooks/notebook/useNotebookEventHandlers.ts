@@ -8,17 +8,43 @@ import { BlockDirection, BlockProps } from '..'
 import { Notebook } from '.'
 
 interface UseNotebookEventHandlersProps
-    extends Pick<BlockProps, 'isReadOnly' | 'onMoveBlock' | 'onRunBlock' | 'onDeleteBlock' | 'onDuplicateBlock'> {
+    extends Pick<
+        BlockProps,
+        'isReadOnly' | 'onMoveBlock' | 'onRunBlock' | 'onDeleteBlock' | 'onDuplicateBlock' | 'onNewBlock'
+    > {
     notebook: Notebook
     selectedBlockId: string | null
     commandPaletteInputReference: React.RefObject<HTMLInputElement>
     selectBlock: (blockId: string | null) => void
 }
 
+function getBlockElement(id: string): HTMLDivElement | null {
+    return document.querySelector<HTMLDivElement>(`[data-block-id="${id}"] .block`)
+}
+
 export function focusBlockElement(blockId: string, isReadOnly: boolean): void {
     if (!isReadOnly) {
-        document.querySelector<HTMLDivElement>(`[data-block-id="${blockId}"] .block`)?.focus()
+        const blockElement = getBlockElement(blockId)
+        blockElement?.focus()
     }
+}
+
+function isTopOfBlockVisible(id: string): boolean {
+    const blockElement = getBlockElement(id)
+    if (!blockElement) {
+        return false
+    }
+    const { top } = blockElement.getBoundingClientRect()
+    return top >= 0
+}
+
+function isBottomOfBlockVisible(id: string): boolean {
+    const blockElement = getBlockElement(id)
+    if (!blockElement) {
+        return false
+    }
+    const { bottom } = blockElement.getBoundingClientRect()
+    return bottom <= window.innerHeight
 }
 
 export function isModifierKeyPressed(isMetaKey: boolean, isCtrlKey: boolean, isMacPlatform: boolean): boolean {
@@ -35,6 +61,7 @@ export function useNotebookEventHandlers({
     onRunBlock,
     onDeleteBlock,
     onDuplicateBlock,
+    onNewBlock,
 }: UseNotebookEventHandlersProps): void {
     const onMoveBlockSelection = useCallback(
         (id: string, direction: BlockDirection) => {
@@ -75,6 +102,12 @@ export function useNotebookEventHandlers({
 
         const handleKeyDown = (event: KeyboardEvent): void => {
             const target = event.target as HTMLElement
+
+            // Don't handle keydown events if the alt/option key is pressed.
+            // This allows using Opt+Arrow keys to page up/down on macOS.
+            if (event.altKey) {
+                return
+            }
 
             if (isInputElement(target)) {
                 return
@@ -117,13 +150,27 @@ export function useNotebookEventHandlers({
                 const direction = event.key === 'ArrowUp' ? 'up' : 'down'
                 if (isModifierKeyDown) {
                     onMoveBlock(selectedBlockId, direction)
-                    // Prevent page scrolling in Firefox
+                    // Prevent page scrolling
                     event.preventDefault()
                 } else {
+                    // If the block is not visible in the direction we're moving, scroll the window. Otherwise, move the selection.
+                    // Also allow scrolling beyond the selected block if it is the first/last block.
+                    if (
+                        (event.key === 'ArrowUp' && !isTopOfBlockVisible(selectedBlockId)) ||
+                        (event.key === 'ArrowDown' && !isBottomOfBlockVisible(selectedBlockId)) ||
+                        (event.key === 'ArrowUp' && selectedBlockId === notebook.getFirstBlockId())
+                    ) {
+                        return
+                    }
                     onMoveBlockSelection(selectedBlockId, direction)
+                    // Prevent page scrolling
+                    event.preventDefault()
                 }
-            } else if (event.key === 'Enter' && isModifierKeyDown) {
+            } else if (event.key === 'Enter' && isModifierKeyDown && !event.shiftKey) {
                 onRunBlock(selectedBlockId)
+            } else if (event.key === 'Enter' && isModifierKeyDown && event.shiftKey) {
+                event.preventDefault()
+                onNewBlock(selectedBlockId)
             } else if (event.key === 'Delete' || (event.key === 'Backspace' && isModifierKeyDown)) {
                 onDeleteBlock(selectedBlockId)
             } else if (event.key === 'd' && isModifierKeyDown) {
@@ -155,5 +202,6 @@ export function useNotebookEventHandlers({
         onRunBlock,
         onDeleteBlock,
         onDuplicateBlock,
+        onNewBlock,
     ])
 }

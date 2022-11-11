@@ -26,8 +26,10 @@ func Default() Dashboards {
 		Executor(),
 		Containers(),
 		CodeIntelAutoIndexing(),
-		CodeIntelUploads(),
+		CodeIntelCodeNav(),
 		CodeIntelPolicies(),
+		CodeIntelRanking(),
+		CodeIntelUploads(),
 		Telemetry(),
 	}
 }

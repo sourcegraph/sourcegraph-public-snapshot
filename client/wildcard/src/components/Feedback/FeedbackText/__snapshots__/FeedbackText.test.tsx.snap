@@ -37,43 +37,6 @@ exports[`FeedbackText render a FeedbackText 1`] = `
 </DocumentFragment>
 `;
 
-exports[`FeedbackText render feedbackText with empty header 1`] = `
-<DocumentFragment>
-  <p
-    class=""
-  >
-     Contact us at 
-    <a
-      class=""
-      href="https://twitter.com/sourcegraph"
-      rel="noopener noreferrer"
-      target="_blank"
-    >
-      @sourcegraph
-    </a>
-     or 
-    <a
-      class=""
-      href="mailto:support@sourcegraph.com"
-      rel="noopener noreferrer"
-      target="_blank"
-    >
-      support@sourcegraph.com
-    </a>
-    , or file issues on our 
-    <a
-      class=""
-      href="https://github.com/sourcegraph/issues/issues"
-      rel="noopener noreferrer"
-      target="_blank"
-    >
-      public issue tracker
-    </a>
-    . 
-  </p>
-</DocumentFragment>
-`;
-
 exports[`FeedbackText render feedbackText with footer 1`] = `
 <DocumentFragment>
   <p

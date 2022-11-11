@@ -1,12 +1,10 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { assert, stub } from 'sinon'
 
 import { LineChart } from './LineChart'
 import { FLAT_SERIES } from './story/mocks'
 
-const totalSeries = FLAT_SERIES.length
-const totalDataPoints = FLAT_SERIES.reduce((acc, series) => acc + series.data.length, 0)
 const defaultArgs: RenderChartArgs = { series: FLAT_SERIES }
 
 interface RenderChartArgs {
@@ -15,7 +13,7 @@ interface RenderChartArgs {
 const renderChart = ({ series }: RenderChartArgs) => render(<LineChart width={400} height={400} series={series} />)
 
 describe('LineChart', () => {
-    // Non exhaustive smoke tests to check that the chart renders correctly
+    // Non-exhaustive smoke tests to check that the chart renders correctly
     // All other general rendering tests are covered by chromatic
     describe('should render', () => {
         it('empty series', () => {
@@ -25,21 +23,31 @@ describe('LineChart', () => {
         it('series with data', () => {
             renderChart(defaultArgs)
 
-            // Check number of series rendered
-            expect(screen.getAllByRole('listitem')).toHaveLength(totalSeries)
+            // Query chart series list
+            const series = screen.getByLabelText('Chart series')
+
+            // Check that series were rendered
+            const series1 = within(series).getByLabelText('A metric')
+            const series2 = within(series).getByLabelText('C metric')
+            const series3 = within(series).getByLabelText('B metric')
+            expect(series1)
+            expect(series2)
+            expect(series3)
 
             // Check number of data points rendered
-            expect(screen.getAllByRole(/(link|graphics-dataunit)/)).toHaveLength(totalDataPoints)
+            expect(within(series1).getAllByRole('listitem')).toHaveLength(FLAT_SERIES[0].data.length)
+            expect(within(series2).getAllByRole('listitem')).toHaveLength(FLAT_SERIES[1].data.length)
+            expect(within(series3).getAllByRole('listitem')).toHaveLength(FLAT_SERIES[2].data.length)
 
             // Spot check y axis labels
-            expect(screen.getByLabelText(/tick axis 1 of 8. value: 8/i)).toBeInTheDocument()
-            expect(screen.getByLabelText(/tick axis 4 of 8. value: 20/i)).toBeInTheDocument()
-            expect(screen.getByLabelText(/tick axis 8 of 8. value: 36/i)).toBeInTheDocument()
+            expect(screen.getByLabelText(/axis tick, value: 8/i)).toBeInTheDocument()
+            expect(screen.getByLabelText(/axis tick, value: 20/i)).toBeInTheDocument()
+            expect(screen.getByLabelText(/axis tick, value: 36/i)).toBeInTheDocument()
 
             // Spot check x axis labels
-            expect(screen.getByLabelText(/tick axis 1 of 8. value:.*jan 01/i)).toBeInTheDocument()
-            expect(screen.getByLabelText(/tick axis 4 of 8. value:.*oct 01/i)).toBeInTheDocument()
-            expect(screen.getByLabelText(/tick axis 8 of 8. value:.*oct 01/i)).toBeInTheDocument()
+            expect(screen.getByLabelText(/axis tick, value: .*jan 01 2021/i)).toBeInTheDocument()
+            expect(screen.getByLabelText(/axis tick, value: .*oct 01 2021/i)).toBeInTheDocument()
+            expect(screen.getByLabelText(/axis tick, value: .*oct 01 2022/i)).toBeInTheDocument()
         })
     })
 
@@ -49,9 +57,9 @@ describe('LineChart', () => {
 
             renderChart(defaultArgs)
 
-            const [firstPoint, secondPoint, thirdPoint] = screen.getAllByRole('link', {
-                name: 'Click to view data point detail',
-            })
+            // Query chart series list
+            const series = screen.getByLabelText('Chart series')
+            const [firstPoint, secondPoint, thirdPoint] = within(series).getAllByRole('listitem')
 
             // Spot checking multiple points
             // related issue https://github.com/sourcegraph/sourcegraph/issues/38304

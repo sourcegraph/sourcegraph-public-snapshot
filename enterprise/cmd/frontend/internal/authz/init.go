@@ -9,16 +9,17 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -31,7 +32,14 @@ import (
 
 var clock = timeutil.Now
 
-func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(
+	ctx context.Context,
+	db database.DB,
+	_ codeintel.Services,
+	_ conftypes.UnifiedWatchable,
+	enterpriseServices *enterprise.Services,
+	observationContext *observation.Context,
+) error {
 	database.ValidateExternalServiceConfig = edb.ValidateExternalServiceConfig
 	database.AuthzWith = func(other basestore.ShareableStore) database.AuthzStore {
 		return edb.NewAuthzStore(observationContext.Logger, db, clock)
@@ -45,6 +53,10 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 		_, providers, seriousProblems, warnings, _ :=
 			eiauthz.ProvidersFromConfig(ctx, cfg, extsvcStore, db)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
+
+		// Validating the connection may make a cross service call, so we should use an
+		// internal actor.
+		ctx := actor.WithInternalActor(ctx)
 
 		// Add connection validation issue
 		for _, p := range providers {
@@ -137,13 +149,13 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 			}
 
 			siteadminOrHandler := func(handler func()) {
-				err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db)
+				err := auth.CheckCurrentUserIsSiteAdmin(r.Context(), db)
 				if err == nil {
 					// User is site admin, let them proceed.
 					next.ServeHTTP(w, r)
 					return
 				}
-				if err != backend.ErrMustBeSiteAdmin {
+				if err != auth.ErrMustBeSiteAdmin {
 					log15.Error("Error checking current user is site admin", "err", err)
 					http.Error(w, "Error checking current user is site admin. Site admins may check the logs for more information.", http.StatusInternalServerError)
 					return

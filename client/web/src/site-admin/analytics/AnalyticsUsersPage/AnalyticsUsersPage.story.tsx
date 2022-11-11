@@ -33,95 +33,107 @@ const USER_ANALYTICS_QUERY_MOCK: MockedResponse<UsersStatisticsResult> = {
             site: {
                 analytics: {
                     users: {
-                        summary: {
-                            avgDAU: 16717,
-                            avgWAU: 99778,
-                            avgMAU: 380389,
-                            __typename: 'AnalyticsUsersSummaryResult',
-                        },
+                        monthlyActiveUsers: [
+                            {
+                                date: '2022-08',
+                                count: 99778,
+                                __typename: 'AnalyticsMonthlyActiveUsers',
+                            },
+                            {
+                                date: '2022-09',
+                                count: 99778,
+                                __typename: 'AnalyticsMonthlyActiveUsers',
+                            },
+                            {
+                                date: '2022-10',
+                                count: 99778,
+                                __typename: 'AnalyticsMonthlyActiveUsers',
+                            },
+                        ],
                         activity: {
                             nodes: [
                                 {
                                     date: '2022-09-05T00:00:00Z',
                                     count: 1679289,
-                                    registeredUsers: 1148,
+                                    uniqueUsers: 1148,
                                     __typename: 'AnalyticsStatItemNode',
                                 },
                                 {
                                     date: '2022-08-29T00:00:00Z',
                                     count: 2017644,
-                                    registeredUsers: 1280,
+                                    uniqueUsers: 1280,
                                     __typename: 'AnalyticsStatItemNode',
                                 },
                                 {
                                     date: '2022-08-22T00:00:00Z',
                                     count: 2022434,
-                                    registeredUsers: 1313,
+                                    uniqueUsers: 1313,
                                     __typename: 'AnalyticsStatItemNode',
                                 },
                                 {
                                     date: '2022-08-15T00:00:00Z',
                                     count: 2118379,
-                                    registeredUsers: 1338,
+                                    uniqueUsers: 1338,
                                     __typename: 'AnalyticsStatItemNode',
                                 },
                                 {
                                     date: '2022-08-08T00:00:00Z',
                                     count: 2092362,
-                                    registeredUsers: 1383,
+                                    uniqueUsers: 1383,
                                     __typename: 'AnalyticsStatItemNode',
                                 },
                                 {
                                     date: '2022-08-01T00:00:00Z',
                                     count: 2155192,
-                                    registeredUsers: 1502,
+                                    uniqueUsers: 1502,
                                     __typename: 'AnalyticsStatItemNode',
                                 },
                                 {
                                     date: '2022-07-25T00:00:00Z',
                                     count: 1896399,
-                                    registeredUsers: 1492,
+                                    uniqueUsers: 1492,
                                     __typename: 'AnalyticsStatItemNode',
                                 },
                                 {
                                     date: '2022-07-18T00:00:00Z',
                                     count: 1897174,
-                                    registeredUsers: 1672,
+                                    uniqueUsers: 1672,
                                     __typename: 'AnalyticsStatItemNode',
                                 },
                                 {
                                     date: '2022-07-11T00:00:00Z',
                                     count: 1847606,
-                                    registeredUsers: 1746,
+                                    uniqueUsers: 1746,
                                     __typename: 'AnalyticsStatItemNode',
                                 },
                                 {
                                     date: '2022-07-04T00:00:00Z',
                                     count: 1817582,
-                                    registeredUsers: 1797,
+                                    uniqueUsers: 1797,
                                     __typename: 'AnalyticsStatItemNode',
                                 },
                                 {
                                     date: '2022-06-27T00:00:00Z',
                                     count: 1808359,
-                                    registeredUsers: 1914,
+                                    uniqueUsers: 1914,
                                     __typename: 'AnalyticsStatItemNode',
                                 },
                                 {
                                     date: '2022-06-20T00:00:00Z',
                                     count: 2014862,
-                                    registeredUsers: 2091,
+                                    uniqueUsers: 2091,
                                     __typename: 'AnalyticsStatItemNode',
                                 },
                                 {
                                     date: '2022-06-13T00:00:00Z',
                                     count: 1967790,
-                                    registeredUsers: 2109,
+                                    uniqueUsers: 2109,
                                     __typename: 'AnalyticsStatItemNode',
                                 },
                             ],
                             summary: {
                                 totalCount: 25888117,
+                                totalUniqueUsers: 6663,
                                 totalRegisteredUsers: 6663,
                                 __typename: 'AnalyticsStatItemSummary',
                             },

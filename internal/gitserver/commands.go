@@ -105,6 +105,13 @@ type DiffFileIterator struct {
 	fileFilterFunc diffFileIteratorFilter
 }
 
+func NewDiffFileIterator(rdr io.ReadCloser) *DiffFileIterator {
+	return &DiffFileIterator{
+		rdr:  rdr,
+		mfdr: diff.NewMultiFileDiffReader(rdr),
+	}
+}
+
 type diffFileIteratorFilter func(fileName string) (bool, error)
 
 func getFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) diffFileIteratorFilter {
@@ -184,17 +191,10 @@ func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoN
 // execReader should NOT be exported. We want to limit direct git calls to this
 // package.
 func (c *clientImplementor) execReader(ctx context.Context, repo api.RepoName, args []string) (io.ReadCloser, error) {
-	if Mocks.ExecReader != nil {
-		return Mocks.ExecReader(args)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ExecReader")
 	span.SetTag("args", args)
 	defer span.Finish()
 
-	if !gitdomain.IsAllowedGitCmd(c.logger, args) {
-		return nil, errors.Errorf("command failed: %v is not a allowed git command", args)
-	}
 	cmd := c.gitCommand(repo, args...)
 	return cmd.StdoutReader(ctx)
 }
@@ -365,10 +365,6 @@ func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 
 // ReadDir reads the contents of the named directory at commit.
 func (c *clientImplementor) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
-	if Mocks.ReadDir != nil {
-		return Mocks.ReadDir(commit, path, recurse)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadDir")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -873,10 +869,6 @@ var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // * Empty repository: gitdomain.RevisionNotFoundError
 // * Other unexpected errors.
 func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error) {
-	if Mocks.ResolveRevision != nil {
-		return Mocks.ResolveRevision(spec, opt)
-	}
-
 	labelEnsureRevisionValue := "true"
 	if opt.NoEnsureRevision {
 		labelEnsureRevisionValue = "false"
@@ -944,9 +936,6 @@ func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID
 
 // LsFiles returns the output of `git ls-files`.
 func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error) {
-	if Mocks.LsFiles != nil {
-		return Mocks.LsFiles(repo, commit)
-	}
 	args := []string{
 		"ls-files",
 		"-z",
@@ -1097,6 +1086,51 @@ func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
 	return childrenMap
 }
 
+func (c *clientImplementor) LFSSmudge(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, checker authz.SubRepoPermissionChecker) (_ io.ReadCloser, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: LFSSmudge")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(log.Error(err))
+		}
+		span.Finish()
+	}()
+
+	// First read in pointer. Pointer should be less than 200 bytes according
+	// to a few different implementations. Note: git-lfs implementation uses
+	// 1024, but we only support newer kind of pointers which are smaller.
+	r, err := c.NewFileReader(ctx, repo, commit, path, checker)
+	if err != nil {
+		return nil, err
+	}
+
+	pointer := make([]byte, 201)
+	n, err := io.ReadFull(r, pointer)
+	pointer = pointer[:n]
+	if err == nil {
+		// This file is too big to be an LFS pointer. So we can fallback to
+		// just returning r (but need to simulate "unreading" the bytes we
+		// have read)
+
+		return withCloser{
+			Reader: io.MultiReader(bytes.NewReader(pointer), r),
+			Closer: r,
+		}, nil
+	} else if err != io.ErrUnexpectedEOF {
+		return nil, errors.Wrapf(err, "failed to read LFS pointer %q in %s@%s", path, repo, commit)
+	}
+
+	cmd := c.gitCommand(repo, "lfs", "smudge", path)
+	cmd.SetStdin(pointer)
+
+	return cmd.StdoutReader(ctx)
+}
+
+type withCloser struct {
+	io.Reader
+	io.Closer
+}
+
 // ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
 func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags")
@@ -1158,9 +1192,6 @@ func parseTags(in []byte) ([]*gitdomain.Tag, error) {
 // If the repository is empty or currently being cloned, empty values and no
 // error are returned.
 func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
-	if Mocks.GetDefaultBranch != nil {
-		return Mocks.GetDefaultBranch(repo)
-	}
 	args := []string{"symbolic-ref", "HEAD"}
 	if short {
 		args = append(args, "--short")
@@ -1191,9 +1222,6 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 
 // MergeBase returns the merge base commit for the specified commits.
 func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
-	if Mocks.MergeBase != nil {
-		return Mocks.MergeBase(repo, a, b)
-	}
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: MergeBase")
 	span.SetTag("A", a)
 	span.SetTag("B", b)
@@ -1260,10 +1288,6 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 // ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 // file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
 func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) ([]byte, error) {
-	if Mocks.ReadFile != nil {
-		return Mocks.ReadFile(commit, name)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadFile")
 	span.SetTag("Name", name)
 	defer span.Finish()
@@ -1285,9 +1309,6 @@ func (c *clientImplementor) ReadFile(ctx context.Context, repo api.RepoName, com
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
 func (c *clientImplementor) NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error) {
-	if Mocks.NewFileReader != nil {
-		return Mocks.NewFileReader(commit, name)
-	}
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
 		return nil, err
@@ -1380,10 +1401,6 @@ func (br *blobReader) convertError(err error) error {
 
 // Stat returns a FileInfo describing the named file at commit.
 func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	if Mocks.Stat != nil {
-		return Mocks.Stat(commit, path)
-	}
-
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Stat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -1432,10 +1449,6 @@ var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
 // getCommit returns the commit with the given id.
 func (c *clientImplementor) getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (_ *gitdomain.Commit, err error) {
-	if Mocks.GetCommit != nil {
-		return Mocks.GetCommit(id)
-	}
-
 	if honey.Enabled() && recordGetCommitQueries {
 		defer func() {
 			ev := honey.NewEvent("getCommit")
@@ -1498,10 +1511,7 @@ func (c *clientImplementor) GetCommit(ctx context.Context, repo api.RepoName, id
 
 // Commits returns all commits matching the options.
 func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
-	if Mocks.Commits != nil {
-		return Mocks.Commits(repo, opt)
-	}
-
+	opt = addNameOnly(opt, checker)
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Commits")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -1509,7 +1519,6 @@ func (c *clientImplementor) Commits(ctx context.Context, repo api.RepoName, opt 
 	if err := checkSpecArgSafety(opt.Range); err != nil {
 		return nil, err
 	}
-	opt = addNameOnly(opt, checker)
 	return c.commitLog(ctx, repo, opt, checker)
 }
 

@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -29,9 +30,9 @@ import (
 )
 
 // executePlan executes the given reconciler plan.
-func executePlan(ctx context.Context, logger log.Logger, gitserverClient GitserverClient, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
+func executePlan(ctx context.Context, logger log.Logger, client gitserver.Client, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
 	e := &executor{
-		gitserverClient:   gitserverClient,
+		client:            client,
 		logger:            logger.Scoped("executor", "An executor for a single Batch Changes reconciler plan"),
 		sourcer:           sourcer,
 		noSleepBeforeSync: noSleepBeforeSync,
@@ -44,7 +45,7 @@ func executePlan(ctx context.Context, logger log.Logger, gitserverClient Gitserv
 }
 
 type executor struct {
-	gitserverClient   GitserverClient
+	client            gitserver.Client
 	logger            log.Logger
 	sourcer           sources.Sourcer
 	noSleepBeforeSync bool
@@ -137,7 +138,7 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		log15.Error("Events", "err", err)
 		return errcode.MakeNonRetryable(err)
 	}
-	state.SetDerivedState(ctx, e.tx.Repos(), e.ch, events)
+	state.SetDerivedState(ctx, e.tx.Repos(), e.client, e.ch, events)
 
 	if err := e.tx.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
@@ -167,8 +168,6 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 
 	// Create a commit and push it
 	// Figure out which authenticator we should use to modify the changeset.
-	// au is nil if we want to use the global credentials stored in the external
-	// service configuration.
 	css, err := e.changesetSource(ctx)
 	if err != nil {
 		return err
@@ -562,7 +561,7 @@ func (e pushCommitError) Error() string {
 }
 
 func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {
-	_, err := e.gitserverClient.CreateCommitFromPatch(ctx, opts)
+	_, err := e.client.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
 		var e *protocol.CreateCommitFromPatchError
 		if errors.As(err, &e) {

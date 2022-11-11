@@ -15,7 +15,8 @@ export default config
 
 window.context.emailEnabled = true
 
-const commonProps: SavedSearchFormProps = {
+const commonProps: Omit<SavedSearchFormProps, 'isLightTheme'> = {
+    isSourcegraphDotCom: false,
     submitLabel: 'Submit',
     title: 'Title',
     defaultValues: {},

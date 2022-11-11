@@ -47,22 +47,24 @@ func (e ErrRepoSeeOther) Error() string {
 // NOTE: The underlying cache is reused from Repos global variable to actually
 // make cache be useful. This is mostly a workaround for now until we come up a
 // more idiomatic solution.
-func NewRepos(logger log.Logger, db database.DB) *repos {
+func NewRepos(logger log.Logger, db database.DB, client gitserver.Client) *repos {
 	repoStore := db.Repos()
 	logger = logger.Scoped("repos", "provides a repos store for the backend")
 	return &repos{
-		logger: logger,
-		db:     db,
-		store:  repoStore,
-		cache:  dbcache.NewIndexableReposLister(logger, repoStore),
+		logger:          logger,
+		db:              db,
+		gitserverClient: client,
+		store:           repoStore,
+		cache:           dbcache.NewIndexableReposLister(logger, repoStore),
 	}
 }
 
 type repos struct {
-	logger log.Logger
-	db     database.DB
-	store  database.RepoStore
-	cache  *dbcache.IndexableReposLister
+	logger          log.Logger
+	db              database.DB
+	gitserverClient gitserver.Client
+	store           database.RepoStore
+	cache           *dbcache.IndexableReposLister
 }
 
 func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {
@@ -149,7 +151,7 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 	}()
 
 	if !codehost.IsPackageHost() {
-		if err := gitserver.NewClient(s.db).IsRepoCloneable(ctx, name); err != nil {
+		if err := s.gitserverClient.IsRepoCloneable(ctx, name); err != nil {
 			if ctx.Err() != nil {
 				status = "timeout"
 			} else {
@@ -188,9 +190,8 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	return s.store.List(ctx, opt)
 }
 
-// ListIndexable calls database.ListMinimalRepos, with tracing. It lists
-// ALL indexable repos which could include private user added repos.
-// In addition, it only lists cloned repositories.
+// ListIndexable calls database.ListMinimalRepos, with tracing. It lists ALL
+// indexable repos. In addition, it only lists cloned repositories.
 //
 // The intended call site for this is the logic which assigns repositories to
 // zoekt shards.
@@ -209,9 +210,11 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 		return s.cache.List(ctx)
 	}
 
-	trueP := true
+	if !conf.SearchIndexEnabled() {
+		return []types.MinimalRepo{}, nil
+	}
+
 	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{
-		Index:      &trueP,
 		OnlyCloned: true,
 	})
 }
@@ -228,12 +231,12 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	invCtx, err := InventoryContext(s.logger, repo.Name, s.db, commitID, forceEnhancedLanguageDetection)
+	invCtx, err := InventoryContext(s.logger, repo.Name, s.gitserverClient, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}
 
-	root, err := gitserver.NewClient(s.db).Stat(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
+	root, err := s.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +265,7 @@ func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID)
 	ctx, done := trace(ctx, "Repos", "DeleteRepositoryFromDisk", repoID, &err)
 	defer done()
 
-	err = gitserver.NewClient(s.db).Remove(ctx, repo.Name)
+	err = s.gitserverClient.Remove(ctx, repo.Name)
 	return err
 }
 
@@ -275,7 +278,7 @@ func (s *repos) RequestRepositoryClone(ctx context.Context, repoID api.RepoID) (
 	ctx, done := trace(ctx, "Repos", "RequestRepositoryClone", repoID, &err)
 	defer done()
 
-	resp, err := gitserver.NewClient(s.db).RequestRepoClone(ctx, repo.Name)
+	resp, err := s.gitserverClient.RequestRepoClone(ctx, repo.Name)
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-import { FC, FormEventHandler, ReactNode } from 'react'
+import { FC, FormEventHandler, ReactNode, FormHTMLAttributes } from 'react'
 
 import { Checkbox, Input, Link } from '@sourcegraph/wildcard'
 
@@ -15,12 +15,11 @@ import {
 import { useUiFeatures } from '../../../../../hooks'
 import { CreateInsightFormFields } from '../types'
 
-interface CreationSearchInsightFormProps {
+interface CreationSearchInsightFormProps extends Omit<FormHTMLAttributes<HTMLFormElement>, 'title' | 'children'> {
     handleSubmit: FormEventHandler
     submitErrors: SubmissionErrors
     submitting: boolean
     submitted: boolean
-    className?: string
     isFormClearActive: boolean
     dashboardReferenceCount?: number
 
@@ -58,18 +57,18 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
         series,
         stepValue,
         step,
-        className,
         isFormClearActive,
         dashboardReferenceCount,
         children,
         onFormReset,
+        ...attributes
     } = props
 
     const { licensed } = useUiFeatures()
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form noValidate={true} onSubmit={handleSubmit} onReset={onFormReset} className={className}>
+        <form {...attributes} noValidate={true} onSubmit={handleSubmit} onReset={onFormReset}>
             <FormGroup
                 name="insight repositories"
                 title="Targeted repositories"
@@ -109,7 +108,7 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
                     </Link>
                 </small>
 
-                <hr className="my-4 w-100" />
+                <hr aria-hidden={true} className="my-4 w-100" />
             </FormGroup>
 
             <FormGroup
@@ -118,7 +117,7 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
                 subtitle={
                     licensed ? 'Add any number of data series to your chart' : 'Add up to 10 data series to your chart'
                 }
-                error={series.meta.touched && series.meta.error}
+                error={(series.meta.touched && series.meta.error) || undefined}
                 innerRef={series.input.ref}
             >
                 <FormSeries
@@ -128,7 +127,7 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
                 />
             </FormGroup>
 
-            <hr className="my-4 w-100" />
+            <hr aria-hidden={true} className="my-4 w-100" />
 
             <FormGroup name="chart settings group" title="Chart settings">
                 <Input
@@ -143,7 +142,7 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
                 <CodeInsightTimeStepPicker
                     {...stepValue.input}
                     valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
-                    error={stepValue.meta.touched && stepValue.meta.error}
+                    error={(stepValue.meta.touched && stepValue.meta.error) || undefined}
                     errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
                     stepType={step.input.value}
                     onStepTypeChange={step.input.onChange}
@@ -155,7 +154,7 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
                 <CodeInsightDashboardsVisibility className="mt-5 mb-n1" dashboardCount={dashboardReferenceCount} />
             )}
 
-            <hr className="my-4 w-100" />
+            <hr aria-hidden={true} className="my-4 w-100" />
 
             {children({ submitting, submitErrors, isFormClearActive })}
         </form>

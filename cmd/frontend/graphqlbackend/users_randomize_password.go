@@ -6,10 +6,13 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -51,11 +54,14 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 	if !userpasswd.ResetPasswordEnabled() {
 		return nil, errors.New("resetting passwords is not enabled")
 	}
+
+	// 🚨 SECURITY: On dotcom, we MUST send password reset links via email.
 	if envvar.SourcegraphDotComMode() && !conf.CanSendEmail() {
 		return nil, errors.New("unable to reset password because email sending is not configured")
 	}
+
 	// 🚨 SECURITY: Only site admins can randomize user passwords.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -64,6 +70,10 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 		return nil, errors.Wrap(err, "cannot parse user ID")
 	}
 
+	logger := r.logger.Scoped("randomizeUserPassword", "endpoint for resetting user passwords").
+		With(log.Int32("userID", userID))
+
+	logger.Info("resetting user password")
 	if err := r.db.Users().RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
 		return nil, err
 	}
@@ -75,14 +85,27 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 	if err != nil {
 		return nil, err
 	}
-	// Send email to the user instead of returning the reset URL on Cloud
-	if envvar.SourcegraphDotComMode() {
-		if err := sendEmail(ctx, r.db, userID, resetURL); err != nil {
-			return nil, err
-		}
 
-		// 🚨 SECURITY: Do not return reset URL on Cloud
+	// If email is enabled, we also send this reset URL to the user via email.
+	var emailSendErr error
+	if conf.CanSendEmail() {
+		logger.Debug("sending password reset URL in email")
+		if emailSendErr = sendEmail(ctx, r.db, userID, resetURL); emailSendErr != nil {
+			// This is not a hard error - if the email send fails, we still want to
+			// provide the reset URL to the caller, so we just log it here.
+			logger.Error("failed to send password reset URL", log.Error(emailSendErr))
+		}
+	}
+
+	if envvar.SourcegraphDotComMode() {
+		// 🚨 SECURITY: Do not return reset URL on dotcom - we must have send it via an email.
+		// We already validate that email is enabled earlier in this endpoint for dotcom.
 		resetURL = nil
+		// Since we don't provide the reset URL, however, if the email fails to send then
+		// this error should be surfaced to the caller.
+		if emailSendErr != nil {
+			return nil, errors.Wrap(emailSendErr, "failed to send password reset URL")
+		}
 	}
 
 	return &randomizeUserPasswordResult{resetURL: resetURL}, nil

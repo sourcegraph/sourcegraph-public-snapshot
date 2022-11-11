@@ -35,9 +35,9 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 	rootLogger := logWithTrace(ctx, s.Log).Scoped("hybrid", "experimental hybrid search").With(
 		log.String("repo", string(p.Repo)),
 		log.String("commit", string(p.Commit)),
-		log.Int("endpoints", len(p.IndexerEndpoints)))
+	)
 
-	client := getZoektClient(p.IndexerEndpoints)
+	client := s.Indexed
 
 	// There is a race condition between asking zoekt what is indexed vs
 	// actually searching since the index may update. If the index changes,
@@ -120,13 +120,15 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 		zoektIgnorePaths(ignoredPaths),
 	))
 
-	k := zoektutil.ResultCountFactor(1, int32(p.Limit), false)
-	opts := zoektutil.SearchOpts(ctx, k, int32(p.Limit), nil)
+	opts := (&zoektutil.Options{
+		NumRepos:       1,
+		FileMatchLimit: int32(p.Limit),
+	}).ToSearch(ctx)
 	if deadline, ok := ctx.Deadline(); ok {
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond
 	}
 
-	res, err := client.Search(ctx, q, &opts)
+	res, err := client.Search(ctx, q, opts)
 	if err != nil {
 		return false, err
 	}
@@ -234,6 +236,8 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	// feels nicer than passing in a readerGrep since handle path directly.
 	if rg, err := compile(p); err != nil {
 		return nil, err
+	} else if rg.re == nil { // we are just matching paths
+		parts = append(parts, &zoektquery.Const{Value: true})
 	} else {
 		re, err := syntax.Parse(rg.re.String(), syntax.Perl)
 		if err != nil {

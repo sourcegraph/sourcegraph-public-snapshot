@@ -1,11 +1,15 @@
 package adminanalytics
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 )
 
 var (
@@ -47,11 +51,66 @@ func getFromDate(dateRange string, now time.Time) (time.Time, error) {
 	return now, errors.New("Invalid date range")
 }
 
+// find sourcegraph employee user ids to exclude (usually CEs)
+var sgEmpUserIdsQuery = `
+SELECT
+  DISTINCT users.id AS user_id
+FROM
+  users INNER JOIN user_emails ON user_emails.user_id = users.id
+WHERE
+  (
+    users.username ILIKE 'managed-%%'
+		OR users.username ILIKE 'sourcegraph-management-%%'
+		OR users.username = 'sourcegraph-admin'
+  )
+	AND user_emails.email ILIKE '%%@sourcegraph.com'
+`
+
+const employeeUserIdsCacheExpiry = int64(300 * time.Second)
+const employeeUserIdsCacheKey = "sourcegraph_employee_user_ids"
+
+func getSgEmpUserIDs(ctx context.Context, db database.DB, cache bool) ([]*int32, error) {
+	if cache {
+		if ids, err := getArrayFromCache[int32](employeeUserIdsCacheKey); err == nil {
+			return ids, nil
+		}
+	}
+
+	query := sqlf.Sprintf(sgEmpUserIdsQuery)
+	rows, err := db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	if err != nil {
+		return []*int32{}, err
+	}
+	defer rows.Close()
+
+	ids := make([]*int32, 0)
+	for rows.Next() {
+		var id int32
+
+		if err := rows.Scan(&id); err != nil {
+			return ids, err
+		}
+
+		ids = append(ids, &id)
+	}
+
+	cacheData, err := json.Marshal(ids)
+	if err != nil {
+		return ids, err
+	}
+
+	if _, err := setDataToCache(employeeUserIdsCacheKey, string(cacheData), employeeUserIdsCacheExpiry); err != nil {
+		return ids, err
+	}
+
+	return ids, nil
+}
+
 var eventLogsNodesQuery = `
 SELECT
 	%s AS date,
 	COUNT(*) AS total_count,
-	COUNT(DISTINCT anonymous_user_id) AS unique_users,
+	COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS unique_users,
 	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
 FROM
 	event_logs
@@ -62,23 +121,53 @@ GROUP BY date
 var eventLogsSummaryQuery = `
 SELECT
 	COUNT(*) AS total_count,
-	COUNT(DISTINCT anonymous_user_id) AS unique_users,
+	COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS unique_users,
 	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
 FROM
 	event_logs
 %s
 `
 
-func makeEventLogsQueries(dateRange string, grouping string, events []string, conditions ...*sqlf.Query) (*sqlf.Query, *sqlf.Query, error) {
+func getDefaultConds(ctx context.Context, db database.DB, cache bool) ([]*sqlf.Query, error) {
+	nonActiveUserEvents := []*sqlf.Query{}
+	for _, name := range eventlogger.NonActiveUserEvents {
+		nonActiveUserEvents = append(nonActiveUserEvents, sqlf.Sprintf("%s", name))
+	}
+
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("anonymous_user_id <> 'backend'"),
+		sqlf.Sprintf("name NOT IN (%s)", sqlf.Join(nonActiveUserEvents, ", ")),
+	}
+
+	sgEmpUserIds, err := getSgEmpUserIDs(ctx, db, cache)
+	if err != nil {
+		return []*sqlf.Query{}, err
+	}
+
+	if len(sgEmpUserIds) > 0 {
+		excludeUserIDs := []*sqlf.Query{}
+		for _, userId := range sgEmpUserIds {
+			excludeUserIDs = append(excludeUserIDs, sqlf.Sprintf("%d", userId))
+		}
+
+		conds = append(conds, sqlf.Sprintf("user_id NOT IN (%s)", sqlf.Join(excludeUserIDs, ", ")))
+	}
+
+	return conds, nil
+}
+
+func makeEventLogsQueries(ctx context.Context, db database.DB, cache bool, dateRange string, grouping string, events []string, conditions ...*sqlf.Query) (*sqlf.Query, *sqlf.Query, error) {
 	dateTruncExp, dateBetweenCond, err := makeDateParameters(dateRange, grouping, "timestamp")
 	if err != nil {
 		return nil, nil, err
 	}
 
-	conds := []*sqlf.Query{
-		sqlf.Sprintf("anonymous_user_id <> 'backend'"),
-		sqlf.Sprintf("timestamp %s", dateBetweenCond),
+	defaultConds, err := getDefaultConds(ctx, db, cache)
+	if err != nil {
+		return nil, nil, err
 	}
+
+	conds := append(defaultConds, sqlf.Sprintf("timestamp %s", dateBetweenCond))
 
 	if len(conditions) > 0 {
 		conds = append(conds, conditions...)

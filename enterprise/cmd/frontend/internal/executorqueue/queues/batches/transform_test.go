@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
+	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 	"github.com/google/go-cmp/cmp"
+	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -35,16 +38,43 @@ func TestTransformRecord(t *testing.T) {
 		conf.Mock(nil)
 	})
 
+	secs := database.NewMockExecutorSecretStore()
+	secs.ListFunc.SetDefaultReturn(
+		[]*database.ExecutorSecret{
+			database.NewMockExecutorSecret(&database.ExecutorSecret{
+				Key:       "FOO",
+				Scope:     database.ExecutorSecretScopeBatches,
+				CreatorID: 1,
+			}, "bar"),
+		},
+		0,
+		nil,
+	)
+	db.ExecutorSecretsFunc.SetDefaultReturn(secs)
+
+	sal := database.NewMockExecutorSecretAccessLogStore()
+	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(sal)
+
+	spec := batcheslib.BatchSpec{}
+	err := yaml.Unmarshal([]byte(`
+steps:
+  - run: echo lol >> readme.md
+    container: alpine:3
+    env:
+      - FOO
+  - run: echo more lol >> readme.md
+    container: alpine:3
+`), &spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	batchSpec := &btypes.BatchSpec{
+		RandID:          "abc",
 		UserID:          123,
 		NamespaceUserID: 123,
 		RawSpec:         "horse",
-		Spec: &batcheslib.BatchSpec{
-			Steps: []batcheslib.Step{
-				{Run: "echo lol >> readme.md", Container: "alpine:3"},
-				{Run: "echo more lol >> readme.md", Container: "alpine:3"},
-			},
-		},
+		Spec:            &spec,
 	}
 
 	workspace := &btypes.BatchSpecWorkspace{
@@ -118,21 +148,38 @@ func TestTransformRecord(t *testing.T) {
 			Commit:              workspace.Commit,
 			ShallowClone:        true,
 			SparseCheckout:      []string{"a/b/c/*"},
-			VirtualMachineFiles: map[string]string{
-				"input.json": string(marshaledInput),
+			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
+				"input.json": {Content: string(marshaledInput)},
 			},
 			CliSteps: []apiclient.CliStep{
 				{
-					Commands: []string{"batch", "exec", "-f", "input.json", "-repo", "repository", "-tmp", ".src-tmp"},
-					Dir:      ".",
-					Env:      []string{},
+					Key: "batch-exec",
+					Commands: []string{
+						"batch",
+						"exec",
+						"-f",
+						"input.json",
+						"-repo",
+						"repository",
+						"-tmp",
+						".src-tmp",
+					},
+					Dir: ".",
+					Env: []string{
+						"FOO=bar",
+					},
 				},
 			},
-			RedactedValues: map[string]string{},
+			RedactedValues: map[string]string{
+				"bar": "${{ secrets.FOO }}",
+			},
 		}
 		if diff := cmp.Diff(expected, job); diff != "" {
 			t.Errorf("unexpected job (-want +got):\n%s", diff)
 		}
+
+		mockassert.CalledOnce(t, secs.ListFunc)
+		mockassert.CalledOnce(t, sal.CreateFunc)
 	})
 
 	t.Run("with cache disabled", func(t *testing.T) {
@@ -156,20 +203,113 @@ func TestTransformRecord(t *testing.T) {
 			Commit:              workspace.Commit,
 			ShallowClone:        true,
 			SparseCheckout:      []string{"a/b/c/*"},
-			VirtualMachineFiles: map[string]string{
-				"input.json": string(marshaledInput),
+			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
+				"input.json": {Content: string(marshaledInput)},
 			},
 			CliSteps: []apiclient.CliStep{
 				{
-					Commands: []string{"batch", "exec", "-f", "input.json", "-repo", "repository", "-tmp", ".src-tmp"},
-					Dir:      ".",
-					Env:      []string{},
+					Key: "batch-exec",
+					Commands: []string{
+						"batch",
+						"exec",
+						"-f",
+						"input.json",
+						"-repo",
+						"repository",
+						"-tmp",
+						".src-tmp",
+					},
+					Dir: ".",
+					Env: []string{
+						"FOO=bar",
+					},
 				},
 			},
-			RedactedValues: map[string]string{},
+			RedactedValues: map[string]string{
+				"bar": "${{ secrets.FOO }}",
+			},
 		}
 		if diff := cmp.Diff(expected, job); diff != "" {
 			t.Errorf("unexpected job (-want +got):\n%s", diff)
 		}
+
+		mockassert.CalledN(t, secs.ListFunc, 2)
+		mockassert.CalledN(t, sal.CreateFunc, 2)
+	})
+
+	t.Run("workspace file", func(t *testing.T) {
+		t.Cleanup(func() {
+			store.ListBatchSpecWorkspaceFilesFunc.SetDefaultReturn(nil, 0, nil)
+		})
+
+		batchSpec.NoCache = true
+
+		workspaceFileModifiedAt := time.Now()
+		store.ListBatchSpecWorkspaceFilesFunc.SetDefaultReturn(
+			[]*btypes.BatchSpecWorkspaceFile{
+				{
+					RandID:     "xyz",
+					FileName:   "script.sh",
+					Path:       "foo/bar",
+					Size:       12,
+					ModifiedAt: workspaceFileModifiedAt,
+				},
+			},
+			0,
+			nil,
+		)
+
+		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob)
+		if err != nil {
+			t.Fatalf("unexpected error transforming record: %s", err)
+		}
+
+		marshaledInput, err := json.Marshal(wantInput(false, execution.AfterStepResult{}))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := apiclient.Job{
+			ID:                  int(workspaceExecutionJob.ID),
+			RepositoryName:      "github.com/sourcegraph/sourcegraph",
+			RepositoryDirectory: "repository",
+			Commit:              workspace.Commit,
+			ShallowClone:        true,
+			SparseCheckout:      []string{"a/b/c/*"},
+			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
+				"input.json":                        {Content: string(marshaledInput)},
+				"workspace-files/foo/bar/script.sh": {Bucket: "batch-changes", Key: "abc/xyz", ModifiedAt: workspaceFileModifiedAt},
+			},
+			CliSteps: []apiclient.CliStep{
+				{
+					Key: "batch-exec",
+					Commands: []string{
+						"batch",
+						"exec",
+						"-f",
+						"input.json",
+						"-repo",
+						"repository",
+						"-tmp",
+						".src-tmp",
+						"-workspaceFiles",
+						"workspace-files",
+					},
+					Dir: ".",
+					Env: []string{
+						"FOO=bar",
+					},
+				},
+			},
+			RedactedValues: map[string]string{
+				"bar": "${{ secrets.FOO }}",
+			},
+		}
+		if diff := cmp.Diff(expected, job); diff != "" {
+			t.Errorf("unexpected job (-want +got):\n%s", diff)
+		}
+
+		mockassert.CalledN(t, secs.ListFunc, 3)
+		mockassert.CalledN(t, sal.CreateFunc, 3)
 	})
 }

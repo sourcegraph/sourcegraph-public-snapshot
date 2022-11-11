@@ -174,6 +174,7 @@ export const listExternalServiceFragment = gql`
         nextSyncAt
         updatedAt
         createdAt
+        webhookURL
         namespace {
             id
             namespaceName
@@ -311,6 +312,12 @@ export const EXTERNAL_SERVICE_SYNC_JOBS = gql`
         startedAt
         finishedAt
         failureMessage
+        reposSynced
+        repoSyncErrors
+        reposAdded
+        reposDeleted
+        reposModified
+        reposUnmodified
     }
 `
 

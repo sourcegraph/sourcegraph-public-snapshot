@@ -6,6 +6,8 @@ import { marked } from 'marked'
 import sanitize from 'sanitize-html'
 import { Overwrite } from 'utility-types'
 
+import { logger } from '../logger'
+
 /**
  * Escapes HTML by replacing characters like `<` with their HTML escape sequences like `&lt;`
  */
@@ -37,7 +39,7 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
         }
         return highlightAuto(code).value
     } catch (error) {
-        console.warn('Error syntax-highlighting hover markdown code block', error)
+        logger.warn('Error syntax-highlighting hover markdown code block', error)
         return escapeHTML(code)
     }
 }

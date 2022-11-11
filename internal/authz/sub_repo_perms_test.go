@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gobwas/glob"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
@@ -61,8 +62,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-							PathIncludes: []string{},
-							PathExcludes: []string{},
+							Paths: []string{},
 						},
 					}, nil
 				})
@@ -82,8 +82,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-							PathIncludes: []string{},
-							PathExcludes: []string{"/dev/*"},
+							Paths: []string{"-/dev/*"},
 						},
 					}, nil
 				})
@@ -103,7 +102,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-							PathIncludes: []string{"*"},
+							Paths: []string{"/*"},
 						},
 					}, nil
 				})
@@ -112,7 +111,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 			want: None,
 		},
 		{
-			name:   "Exclude takes precedence",
+			name:   "Last rule takes precedence (exclude)",
 			userID: 1,
 			content: RepoContent{
 				Repo: "sample",
@@ -123,14 +122,33 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
-							PathIncludes: []string{"*"},
-							PathExcludes: []string{"/dev/*"},
+							Paths: []string{"/**", "-/dev/*"},
 						},
 					}, nil
 				})
 				return NewSubRepoPermsClient(getter)
 			},
 			want: None,
+		},
+		{
+			name:   "Last rule takes precedence (include)",
+			userID: 1,
+			content: RepoContent{
+				Repo: "sample",
+				Path: "/dev/thing",
+			},
+			clientFn: func() (*SubRepoPermsClient, error) {
+				getter := NewMockSubRepoPermissionsGetter()
+				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
+					return map[api.RepoName]SubRepoPermissions{
+						"sample": {
+							Paths: []string{"-/dev/*", "/**"},
+						},
+					}, nil
+				})
+				return NewSubRepoPermsClient(getter)
+			},
+			want: Read,
 		},
 	}
 
@@ -233,19 +251,17 @@ func BenchmarkFilterActorPaths(b *testing.B) {
 	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 		return map[api.RepoName]SubRepoPermissions{
 			repo: {
-				PathIncludes: []string{
-					"base/**",
-					"*/stuff/**",
-					"frontend/**/stuff/*",
-					"config.yaml",
-					"subdir/**",
-					"**/README.md",
-					"dir.yaml",
-				},
-				PathExcludes: []string{
-					"subdir/remove/",
-					"subdir/*/also-remove/**",
-					"**/.secrets.env",
+				Paths: []string{
+					"/base/**",
+					"/*/stuff/**",
+					"/frontend/**/stuff/*",
+					"/config.yaml",
+					"/subdir/**",
+					"/**/README.md",
+					"/dir.yaml",
+					"-/subdir/remove/",
+					"-/subdir/*/also-remove/**",
+					"-/**/.secrets.env",
 				},
 			},
 		}, nil
@@ -350,37 +366,61 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 	repoName := api.RepoName("repo")
 
 	testCases := []struct {
-		pathIncludes  []string
+		paths         []string
 		canReadAll    []string
 		cannotReadAny []string
 	}{
 		{
-			pathIncludes:  []string{"foo/bar/thing.txt"},
+			paths:         []string{"foo/bar/thing.txt"},
 			canReadAll:    []string{"foo/", "foo/bar/"},
 			cannotReadAny: []string{"foo/thing.txt", "foo/bar/other.txt"},
 		},
 		{
-			pathIncludes: []string{"foo/bar/**"},
-			canReadAll:   []string{"foo/", "foo/bar/", "foo/bar/baz/", "foo/bar/baz/fox/"},
+			paths:      []string{"foo/bar/**"},
+			canReadAll: []string{"foo/", "foo/bar/", "foo/bar/baz/", "foo/bar/baz/fox/"},
 		},
 		{
-			pathIncludes:  []string{"foo/bar/"},
+			paths:         []string{"foo/bar/"},
 			canReadAll:    []string{"foo/", "foo/bar/"},
 			cannotReadAny: []string{"foo/thing.txt", "foo/bar/thing.txt"},
 		},
 		{
-			pathIncludes:  []string{"baz/*/foo/bar/thing.txt"},
+			paths:         []string{"baz/*/foo/bar/thing.txt"},
 			canReadAll:    []string{"baz/", "baz/x/", "baz/x/foo/bar/"},
 			cannotReadAny: []string{"baz/thing.txt"},
 		},
-		// We can't support rules that start with a wildcard, see comment in expandDirs
+		// If we have a wildcard in a path we allow all directories that are not
+		// explicitly excluded.
 		{
-			pathIncludes:  []string{"**/foo/bar/thing.txt"},
-			cannotReadAny: []string{"foo/", "foo/bar/"},
+			paths:      []string{"**/foo/bar/thing.txt"},
+			canReadAll: []string{"foo/", "foo/bar/"},
 		},
 		{
-			pathIncludes:  []string{"*/foo/bar/thing.txt"},
-			cannotReadAny: []string{"foo/", "foo/bar/"},
+			paths:      []string{"*/foo/bar/thing.txt"},
+			canReadAll: []string{"foo/", "foo/bar/"},
+		},
+		{
+			paths:      []string{"/**/foo/bar/thing.txt"},
+			canReadAll: []string{"foo/", "foo/bar/"},
+		},
+		{
+			paths:      []string{"/*/foo/bar/thing.txt"},
+			canReadAll: []string{"foo/", "foo/bar/"},
+		},
+		{
+			paths:      []string{"-/**", "/storage/redis/**"},
+			canReadAll: []string{"storage/", "/storage/", "/storage/redis/"},
+		},
+		{
+			paths:      []string{"-/**", "-/storage/**", "/storage/redis/**"},
+			canReadAll: []string{"storage/", "/storage/", "/storage/redis/"},
+		},
+		// Even with a wildcard include rule, we should still exclude directories that
+		// are explicitly excluded later
+		{
+			paths:         []string{"/**", "-/storage/**"},
+			canReadAll:    []string{"/foo"},
+			cannotReadAny: []string{"storage/", "/storage/", "/storage/redis/"},
 		},
 	}
 
@@ -390,7 +430,7 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 			getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 				return map[api.RepoName]SubRepoPermissions{
 					repoName: {
-						PathIncludes: tc.pathIncludes,
+						Paths: tc.paths,
 					},
 				}, nil
 			})
@@ -525,4 +565,15 @@ func TestFileInfoPath(t *testing.T) {
 		}
 		assert.Equal(t, "my-file.txt", fileInfoPath(fi))
 	})
+}
+
+func TestGlobMatchOnlyDirectories(t *testing.T) {
+	g, err := glob.Compile("**/", '/')
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.True(t, g.Match("foo/"))
+	assert.True(t, g.Match("foo/thing/"))
+	assert.False(t, g.Match("foo/thing"))
+	assert.False(t, g.Match("/foo/thing"))
 }

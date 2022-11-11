@@ -13,10 +13,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -49,7 +51,7 @@ func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) 
 		return nil, err
 	}
 
-	if err := backend.CheckExternalServiceAccess(ctx, db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+	if err := backend.CheckExternalServiceAccess(ctx, db); err != nil {
 		return nil, err
 	}
 	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: db, externalService: es}, nil
@@ -88,12 +90,12 @@ func (r *externalServiceResolver) Config(ctx context.Context) (JSONCString, erro
 	return JSONCString(redacted), nil
 }
 
-func (r *externalServiceResolver) CreatedAt() DateTime {
-	return DateTime{Time: r.externalService.CreatedAt}
+func (r *externalServiceResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.externalService.CreatedAt}
 }
 
-func (r *externalServiceResolver) UpdatedAt() DateTime {
-	return DateTime{Time: r.externalService.UpdatedAt}
+func (r *externalServiceResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.externalService.UpdatedAt}
 }
 
 func (r *externalServiceResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
@@ -173,18 +175,18 @@ func (r *externalServiceResolver) RepoCount(ctx context.Context) (int32, error) 
 	return r.db.ExternalServices().RepoCount(ctx, r.externalService.ID)
 }
 
-func (r *externalServiceResolver) LastSyncAt() *DateTime {
+func (r *externalServiceResolver) LastSyncAt() *gqlutil.DateTime {
 	if r.externalService.LastSyncAt.IsZero() {
 		return nil
 	}
-	return &DateTime{Time: r.externalService.LastSyncAt}
+	return &gqlutil.DateTime{Time: r.externalService.LastSyncAt}
 }
 
-func (r *externalServiceResolver) NextSyncAt() *DateTime {
+func (r *externalServiceResolver) NextSyncAt() *gqlutil.DateTime {
 	if r.externalService.NextSyncAt.IsZero() {
 		return nil
 	}
-	return &DateTime{Time: r.externalService.NextSyncAt}
+	return &gqlutil.DateTime{Time: r.externalService.NextSyncAt}
 }
 
 var scopeCache = rcache.New("extsvc_token_scope")
@@ -216,7 +218,6 @@ func (r *externalServiceResolver) SyncJobs(ctx context.Context, args *externalSe
 }
 
 type externalServiceSyncJobConnectionResolver struct {
-	logger            log.Logger
 	args              *externalServiceSyncJobsArgs
 	externalServiceID int64
 	db                database.DB
@@ -299,7 +300,7 @@ func unmarshalExternalServiceSyncJobID(id graphql.ID) (jobID int64, err error) {
 
 func externalServiceSyncJobByID(ctx context.Context, db database.DB, gqlID graphql.ID) (Node, error) {
 	// Site-admin only for now.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
@@ -338,22 +339,34 @@ func (r *externalServiceSyncJobResolver) FailureMessage() *string {
 	return &r.job.FailureMessage
 }
 
-func (r *externalServiceSyncJobResolver) QueuedAt() DateTime {
-	return DateTime{Time: r.job.QueuedAt}
+func (r *externalServiceSyncJobResolver) QueuedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.job.QueuedAt}
 }
 
-func (r *externalServiceSyncJobResolver) StartedAt() *DateTime {
+func (r *externalServiceSyncJobResolver) StartedAt() *gqlutil.DateTime {
 	if r.job.StartedAt.IsZero() {
 		return nil
 	}
 
-	return &DateTime{Time: r.job.StartedAt}
+	return &gqlutil.DateTime{Time: r.job.StartedAt}
 }
 
-func (r *externalServiceSyncJobResolver) FinishedAt() *DateTime {
+func (r *externalServiceSyncJobResolver) FinishedAt() *gqlutil.DateTime {
 	if r.job.FinishedAt.IsZero() {
 		return nil
 	}
 
-	return &DateTime{Time: r.job.FinishedAt}
+	return &gqlutil.DateTime{Time: r.job.FinishedAt}
 }
+
+func (r *externalServiceSyncJobResolver) ReposSynced() int32 { return r.job.ReposSynced }
+
+func (r *externalServiceSyncJobResolver) RepoSyncErrors() int32 { return r.job.RepoSyncErrors }
+
+func (r *externalServiceSyncJobResolver) ReposAdded() int32 { return r.job.ReposAdded }
+
+func (r *externalServiceSyncJobResolver) ReposDeleted() int32 { return r.job.ReposDeleted }
+
+func (r *externalServiceSyncJobResolver) ReposModified() int32 { return r.job.ReposModified }
+
+func (r *externalServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.ReposUnmodified }

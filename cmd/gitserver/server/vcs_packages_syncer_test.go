@@ -11,10 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -198,7 +197,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 			t.Fatal("Cannot parse Maven dependency")
 		}
 		err = s.gitPushDependencyTag(ctx, string(dir), springBootDep)
-		require.NoError(t, err)
+		require.NotNil(t, err)
 	})
 }
 

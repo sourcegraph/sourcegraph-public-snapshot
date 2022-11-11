@@ -2,7 +2,6 @@ package executorqueue
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -21,10 +20,10 @@ func Init(
 	conf conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 	observationContext *observation.Context,
-	codeintelUploadHandler http.Handler,
-	batchesWorkspaceFileGetHandler http.Handler,
-	batchesWorkspaceFileExistsHandler http.Handler,
 ) error {
+	codeintelUploadHandler := enterpriseServices.NewCodeIntelUploadHandler(false)
+	batchesWorkspaceFileGetHandler := enterpriseServices.BatchesChangesFileGetHandler
+	batchesWorkspaceFileExistsHandler := enterpriseServices.BatchesChangesFileGetHandler
 	accessToken := func() string { return conf.SiteConfig().ExecutorsAccessToken }
 
 	// Register queues. If this set changes, be sure to also update the list of valid
@@ -37,8 +36,14 @@ func Init(
 		batches.QueueOptions(db, accessToken, observationContext),
 	}
 
-	queueHandler, err := newExecutorQueueHandler(db, queueOptions, accessToken, codeintelUploadHandler,
-		batchesWorkspaceFileGetHandler, batchesWorkspaceFileExistsHandler)
+	queueHandler, err := newExecutorQueueHandler(
+		db,
+		queueOptions,
+		accessToken,
+		codeintelUploadHandler,
+		batchesWorkspaceFileGetHandler,
+		batchesWorkspaceFileExistsHandler,
+	)
 	if err != nil {
 		return err
 	}

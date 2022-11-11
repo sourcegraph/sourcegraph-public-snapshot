@@ -52,6 +52,19 @@ func TestGroup(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("propagate panic", func(t *testing.T) {
+		g := New()
+		for i := 0; i < 10; i++ {
+			i := i
+			g.Go(func() {
+				if i == 5 {
+					panic(i)
+				}
+			})
+		}
+		require.Panics(t, func() { g.Wait() })
+	})
 }
 
 func TestErrorGroup(t *testing.T) {

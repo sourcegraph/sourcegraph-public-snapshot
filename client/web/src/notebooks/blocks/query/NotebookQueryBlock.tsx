@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
 import { EditorView } from '@codemirror/view'
-import { mdiPlayCircleOutline, mdiOpenInNew } from '@mdi/js'
+import { mdiPlayCircleOutline, mdiOpenInNew, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { Observable, of } from 'rxjs'
 
@@ -20,7 +20,6 @@ import { editorHeight } from '@sourcegraph/shared/src/components/CodeMirrorEdito
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -30,6 +29,7 @@ import { LoadingSpinner, useObservable, Icon } from '@sourcegraph/wildcard'
 
 import { BlockProps, QueryBlock } from '../..'
 import { AuthenticatedUser } from '../../../auth'
+import { SearchPatternType } from '../../../graphql-operations'
 import { useExperimentalFeatures } from '../../../stores'
 import { blockKeymap, focusEditor as focusCodeMirrorInput } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
@@ -74,7 +74,6 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
         telemetryService,
         settingsCascade,
         isSelected,
-        isOtherBlockSelected,
         hoverifier,
         onBlockInputChange,
         fetchHighlightedFileLineRanges,
@@ -157,11 +156,9 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
 
         return (
             <NotebookBlock
-                className={styles.block}
                 id={id}
                 aria-label="Notebook query block"
                 isSelected={isSelected}
-                isOtherBlockSelected={isOtherBlockSelected}
                 isInputVisible={true}
                 focusInput={focusInput}
                 mainAction={mainMenuAction}
@@ -169,28 +166,35 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                 {...props}
             >
                 <div className={styles.content}>
-                    <div className="mb-1 text-muted">Search query</div>
                     <div className={styles.queryInputWrapper}>
-                        <CodeMirrorQueryInput
-                            value={input.query}
-                            patternType={SearchPatternType.standard}
-                            interpretComments={true}
-                            isLightTheme={isLightTheme}
-                            onEditorCreated={setEditor}
-                            extensions={useMemo(
-                                () => [
-                                    EditorView.lineWrapping,
-                                    queryCompletion,
-                                    changeListener(onInputChange),
-                                    blockKeymap({ runBlock }),
-                                    maxEditorHeight,
-                                    editorAttributes,
-                                ],
-                                [queryCompletion, runBlock, onInputChange]
-                            )}
+                        <Icon
+                            aria-hidden={true}
+                            svgPath={mdiMagnify}
+                            style={{
+                                display: 'inline-block',
+                            }}
                         />
+                        <div className={styles.codeMirrorWrapper}>
+                            <CodeMirrorQueryInput
+                                value={input.query}
+                                patternType={SearchPatternType.standard}
+                                interpretComments={true}
+                                isLightTheme={isLightTheme}
+                                onEditorCreated={setEditor}
+                                extensions={useMemo(
+                                    () => [
+                                        EditorView.lineWrapping,
+                                        queryCompletion,
+                                        changeListener(onInputChange),
+                                        blockKeymap({ runBlock }),
+                                        maxEditorHeight,
+                                        editorAttributes,
+                                    ],
+                                    [queryCompletion, runBlock, onInputChange]
+                                )}
+                            />
+                        </div>
                     </div>
-
                     {searchResults && searchResults.state === 'loading' && (
                         <div className={classNames('d-flex justify-content-center py-3', styles.results)}>
                             <LoadingSpinner />

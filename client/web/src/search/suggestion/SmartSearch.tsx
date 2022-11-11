@@ -108,7 +108,7 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
                                 </span>
                             </span>
                         </span>
-                        <span className="d-flex align-items-baseline flex-shrink-0 ml-2">
+                        <span className="d-flex align-items-center flex-shrink-0 ml-2">
                             {isCollapsed ? (
                                 <>
                                     <span className="text-muted mr-2 flex-shrink-0">Show queries</span>

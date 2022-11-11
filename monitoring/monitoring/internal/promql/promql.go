@@ -2,6 +2,7 @@ package promql
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/grafana/regexp"
 
@@ -53,6 +54,15 @@ func Inject(expression string, matchers []*labels.Matcher, vars VariableApplier)
 	return revertExpr(expr)
 }
 
+type inspector func(promqlparser.Node, []promqlparser.Node) error
+
+func (f inspector) Visit(node promqlparser.Node, path []promqlparser.Node) (promqlparser.Visitor, error) {
+	if err := f(node, path); err != nil {
+		return nil, err
+	}
+	return f, nil
+}
+
 // InjectAsAlert does the same thing as Inject, but also converts expression into a valid
 // query that can be used for alerting by removing selectors with variable values, or an
 // error if it can't.
@@ -65,23 +75,30 @@ func InjectAsAlert(expression string, matchers []*labels.Matcher, vars VariableA
 
 	// Inject matchers into selectors, but also remove selectors that have variables in
 	// them.
-	promqlparser.Inspect(expr, func(n promqlparser.Node, path []promqlparser.Node) error {
+	err = promqlparser.Walk(inspector(func(n promqlparser.Node, path []promqlparser.Node) error {
 		if vec, ok := n.(*promqlparser.VectorSelector); ok {
 			validMatchers := make([]*labels.Matcher, 0, len(vec.LabelMatchers)+len(matchers))
 			for _, lm := range vec.LabelMatchers {
 				// vars.ApplySentinelValues does not replace vars that are used in string
 				// values, so we will find them here in the value intact
 				var hasVar bool
-				for varName := range vars {
+				for varName, sentinelValue := range vars {
 					// We use regexp here because we want to be stricter than
 					// VariableApplier - we need to catch any possible usage of this var.
 					varKey, err := newVarKeyRegexp(varName)
 					if err != nil {
 						return errors.Wrapf(err, "generating regexp for variable %q", varName)
 					}
-					if varKey.MatchString(lm.Value) || varKey.MatchString(lm.GetRegexString()) {
+					reValue := lm.GetRegexString()
+					if varKey.MatchString(lm.Value) || varKey.MatchString(reValue) {
 						hasVar = true
 						break
+					}
+					// If the regexp match value contains this variable's sentinel value,
+					// it means this variable was used in a regexp match, and should use
+					// Grafana's '${variable:regex}' instead.
+					if strings.Contains(reValue, sentinelValue) {
+						return errors.Newf("unexpected sentinel value found in value of %q - you may want to use '${variable:regex}' instead", lm.String())
 					}
 				}
 				if !hasVar {
@@ -92,7 +109,10 @@ func InjectAsAlert(expression string, matchers []*labels.Matcher, vars VariableA
 			vec.LabelMatchers = append(validMatchers, matchers...)
 		}
 		return nil
-	})
+	}), expr, nil)
+	if err != nil {
+		return expression, errors.Wrap(err, "walk promql") // return original
+	}
 
 	// Revert any remaining variables
 	rendered := expr.String()
@@ -106,6 +126,16 @@ func InjectAsAlert(expression string, matchers []*labels.Matcher, vars VariableA
 	}
 
 	return rendered, nil
+}
+
+// Prometheus histograms require all 3 metrics in the set: https://prometheus.io/docs/practices/histograms/
+//
+// This map maps suffixes to the other 2 metrics in a set. If one is used, they must
+// all be listed.
+var histogramSuffixes = map[string][]string{
+	"_count":  {"_sum", "_bucket"},
+	"_sum":    {"_count", "_bucket"},
+	"_bucket": {"_count", "_sum"},
 }
 
 // ListMetrics returns all unique metrics used in the expression.
@@ -139,6 +169,17 @@ func ListMetrics(expression string, vars VariableApplier) ([]string, error) {
 			} else {
 				// Otherwise just add the vector
 				addMetric(vec.Name)
+
+				// If vector is part of a histogram set, add all the other metrics in the
+				// set.
+				for suffix, otherSuffixes := range histogramSuffixes {
+					if strings.HasSuffix(vec.Name, suffix) {
+						root := strings.TrimSuffix(vec.Name, suffix)
+						for _, s := range otherSuffixes {
+							addMetric(root + s)
+						}
+					}
+				}
 			}
 		}
 		return nil

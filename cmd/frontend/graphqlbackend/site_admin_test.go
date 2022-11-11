@@ -9,13 +9,14 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	errors "github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -29,13 +30,13 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db).DeleteUser(ctx, &struct {
+		result, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
 			User: MarshalUserID(1),
 		})
-		if want := backend.ErrMustBeSiteAdmin; err != want {
+		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}
 		if result != nil {
@@ -51,7 +52,7 @@ func TestDeleteUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db).DeleteUser(ctx, &struct {
+		_, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{

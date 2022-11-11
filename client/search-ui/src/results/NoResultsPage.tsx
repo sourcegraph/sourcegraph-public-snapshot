@@ -49,7 +49,7 @@ const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<Search
             >
                 {showSearchContext && (
                     <>
-                        <div className={classNames(searchBoxStyle.searchBoxContextDropdown, styles.fakeSearchContext)}>
+                        <div className={classNames(searchBoxStyle.searchBoxAlignMiddle, styles.fakeSearchContext)}>
                             <Button
                                 as="div"
                                 variant="link"

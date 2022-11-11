@@ -13,6 +13,7 @@ import {
     addLineRangeQueryParameter,
     ErrorLike,
     formatSearchParameters,
+    logger,
     lprToRange,
     pluralize,
     toPositionOrRangeQueryParameter,
@@ -68,9 +69,10 @@ import { Location, LocationGroup, locationGroupQuality, buildRepoLocationGroups,
 import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
 import { newSettingsGetter } from './settings'
 import { findSearchToken } from './token'
-import { useCodeIntel } from './useCodeIntel'
 import { useRepoAndBlob } from './useRepoAndBlob'
 import { isDefined } from './util/helpers'
+
+import { CodeIntelligenceProps } from '.'
 
 import styles from './ReferencesPanel.module.scss'
 
@@ -83,6 +85,7 @@ interface HighlightedFileLineRangesProps {
 export interface ReferencesPanelProps
     extends SettingsCascadeProps,
         PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
+        Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
@@ -97,6 +100,11 @@ export interface ReferencesPanelProps
      */
     externalHistory: H.History
     externalLocation: H.Location
+
+    /**
+     * Used to overwrite the initial active URL
+     */
+    initialActiveURL?: string
 }
 
 export const ReferencesPanelWithMemoryRouter: React.FunctionComponent<
@@ -156,6 +164,11 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
         return <>Nothing found</>
     }
 
+    const useCodeIntel = props.useCodeIntel
+    if (!useCodeIntel) {
+        return <>Code intelligence is not available</>
+    }
+
     const token = {
         repoName: props.repoName,
         line: props.line,
@@ -168,6 +181,7 @@ export const RevisionResolvingReferencesList: React.FunctionComponent<
     return (
         <SearchTokenFindingReferencesList
             {...props}
+            useCodeIntel={useCodeIntel}
             token={token}
             isFork={data.isFork}
             isArchived={data.isArchived}
@@ -181,6 +195,7 @@ interface ReferencesPanelPropsWithToken extends ReferencesPanelProps {
     isFork: boolean
     isArchived: boolean
     fileContent: string
+    useCodeIntel: NonNullable<ReferencesPanelProps['useCodeIntel']>
 }
 
 const SearchTokenFindingReferencesList: React.FunctionComponent<
@@ -198,17 +213,24 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
         blockCommentStyles: spec.commentStyles.map(style => style.block).filter(isDefined),
         identCharPattern: spec.identCharPattern,
     })
+    const shouldMixPreciseAndSearchBasedReferences: boolean = newSettingsGetter(props.settingsCascade)<boolean>(
+        'codeIntel.mixPreciseAndSearchBasedReferences',
+        false
+    )
 
     if (!tokenResult?.searchToken) {
         return (
             <div>
-                <Text className="text-danger">Could not find hovered token.</Text>
+                <Text className="text-danger">Could not find token.</Text>
             </div>
         )
     }
 
     return (
         <ReferencesList
+            // Force the references list to recreate when the user settings
+            // change. This way we avoid showing stale results.
+            key={shouldMixPreciseAndSearchBasedReferences.toString()}
             {...props}
             token={props.token}
             searchToken={tokenResult?.searchToken}
@@ -222,7 +244,7 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
 
 const SHOW_SPINNER_DELAY_MS = 100
 
-export const ReferencesList: React.FunctionComponent<
+const ReferencesList: React.FunctionComponent<
     React.PropsWithChildren<
         ReferencesPanelPropsWithToken & {
             searchToken: string
@@ -250,7 +272,7 @@ export const ReferencesList: React.FunctionComponent<
         fetchMoreImplementations,
         fetchMoreReferencesLoading,
         fetchMoreImplementationsLoading,
-    } = useCodeIntel({
+    } = props.useCodeIntel({
         variables: {
             repository: props.token.repoName,
             commit: props.token.commitID,
@@ -294,7 +316,7 @@ export const ReferencesList: React.FunctionComponent<
     // in the browser history.
     const [activeURL, setActiveURL] = useSessionStorage<string | undefined>(
         'sideblob-active-url' + sessionStorageKeyFromToken(props.token),
-        undefined
+        props.initialActiveURL
     )
     const setActiveLocation = useCallback(
         (location: Location | undefined): void => {
@@ -642,7 +664,7 @@ function parseSideBlobProps(
             : undefined
         return { activeURL, repository: url.repoName, commitID: url.commitID || '', file: url.filePath, position }
     } catch (error) {
-        console.error(`failed to parse activeURL ${activeURL}`, error)
+        logger.error(`failed to parse activeURL ${activeURL}`, error)
         return undefined
     }
 }
@@ -925,7 +947,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
         if (range !== undefined) {
             const lineNumber = range.start.line + 1
             const lineContent = location.lines[range.start.line]
-            const tableLine = `<tr><td class="line" data-line="${lineNumber}"></td><td class="code">${lineContent}</td></tr>`
+            const tableLine = `<tr><th class="line" data-line="${lineNumber}"></th><td class="code">${lineContent}</td></tr>`
             return of([tableLine])
         }
         return of([])
@@ -1016,11 +1038,10 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                                                 repoName={reference.repo}
                                                 highlightRanges={[
                                                     {
-                                                        line: reference.range?.start.line ?? 0,
-                                                        character: reference.range?.start.character ?? 0,
-                                                        highlightLength:
-                                                            (reference.range?.end.character ?? 0) -
-                                                            (reference.range?.start.character ?? 0),
+                                                        startLine: reference.range?.start.line ?? 0,
+                                                        startCharacter: reference.range?.start.character ?? 0,
+                                                        endLine: reference.range?.end.line ?? 0,
+                                                        endCharacter: reference.range?.end.character ?? 0,
                                                     },
                                                 ]}
                                                 startLine={reference.range?.start.line ?? 0}

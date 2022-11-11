@@ -14,7 +14,7 @@ import { Subject, Subscription, throwError } from 'rxjs'
 import { first, timeoutWith } from 'rxjs/operators'
 
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
-import { asError, keyExistsIn } from '@sourcegraph/common'
+import { logger, asError, keyExistsIn } from '@sourcegraph/common'
 import { ErrorGraphQLResult, GraphQLResult } from '@sourcegraph/http-client'
 // eslint-disable-next-line no-restricted-imports
 import { SourcegraphContext } from '@sourcegraph/web/src/jscontext'
@@ -208,7 +208,7 @@ export const createSharedIntegrationTestContext = async <
                 if ((asError(error) as NodeJS.ErrnoException).code === 'ENOENT') {
                     response.sendStatus(404)
                 } else {
-                    console.error(error)
+                    logger.error(error)
                     response.status(500).send(asError(error).message)
                 }
             }
@@ -318,11 +318,11 @@ export const createSharedIntegrationTestContext = async <
                         try {
                             localStorage.clear()
                         } catch (error) {
-                            console.error('Failed to clear localStorage!', error)
+                            logger.error('Failed to clear localStorage!', error)
                         }
                     }),
                     DISPOSE_ACTION_TIMEOUT,
-                    () => console.warn('Failed to clear localStorage!')
+                    () => logger.warn('Failed to clear localStorage!')
                 )
             }
 

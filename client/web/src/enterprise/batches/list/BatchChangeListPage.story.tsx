@@ -6,8 +6,14 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
+import { GlobalChangesetsStatsResult } from '../../../graphql-operations'
 
-import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
+import {
+    GLOBAL_CHANGESETS_STATS,
+    BATCH_CHANGES,
+    BATCH_CHANGES_BY_NAMESPACE,
+    GET_LICENSE_AND_USAGE_INFO,
+} from './backend'
 import { BatchChangeListPage } from './BatchChangeListPage'
 import {
     BATCH_CHANGES_BY_NAMESPACE_RESULT,
@@ -32,6 +38,12 @@ const config: Meta = {
 
 export default config
 
+const statBarData: GlobalChangesetsStatsResult = {
+    __typename: 'Query',
+    batchChanges: { __typename: 'BatchChangeConnection', totalCount: 30 },
+    globalChangesetsStats: { __typename: 'GlobalChangesetsStats', open: 7, closed: 5, merged: 21 },
+}
+
 const buildMocks = (isLicensed = true, hasBatchChanges = true, hasFilteredBatchChanges = true) =>
     new WildcardMockLink([
         {
@@ -44,6 +56,16 @@ const buildMocks = (isLicensed = true, hasBatchChanges = true, hasFilteredBatchC
         {
             request: { query: getDocumentNode(GET_LICENSE_AND_USAGE_INFO), variables: MATCH_ANY_PARAMETERS },
             result: { data: getLicenseAndUsageInfoResult(isLicensed, hasBatchChanges) },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+        {
+            request: {
+                query: getDocumentNode(GLOBAL_CHANGESETS_STATS),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: {
+                data: statBarData,
+            },
             nMatches: Number.POSITIVE_INFINITY,
         },
     ])
@@ -70,6 +92,7 @@ export const ListOfBatchChanges: Story = args => (
                     headingElement="h1"
                     canCreate={args.canCreate}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    isSourcegraphDotCom={false}
                 />
             </MockedTestProvider>
         )}
@@ -95,6 +118,7 @@ export const ListOfBatchChangesSpecificNamespace: Story = () => (
                     canCreate={true}
                     namespaceID="test-12345"
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    isSourcegraphDotCom={false}
                 />
             </MockedTestProvider>
         )}
@@ -117,6 +141,7 @@ export const ListOfBatchChangesServerSideExecutionEnabled: Story = () => (
                             experimentalFeatures: { batchChangesExecution: true },
                         },
                     }}
+                    isSourcegraphDotCom={false}
                 />
             </MockedTestProvider>
         )}
@@ -134,6 +159,7 @@ export const LicensingNotEnforced: Story = () => (
                     headingElement="h1"
                     canCreate={true}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    isSourcegraphDotCom={false}
                 />
             </MockedTestProvider>
         )}
@@ -151,6 +177,7 @@ export const NoBatchChanges: Story = () => (
                     headingElement="h1"
                     canCreate={true}
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    isSourcegraphDotCom={false}
                 />
             </MockedTestProvider>
         )}
@@ -169,6 +196,7 @@ export const AllBatchChangesTabEmpty: Story = () => (
                     canCreate={true}
                     openTab="batchChanges"
                     settingsCascade={EMPTY_SETTINGS_CASCADE}
+                    isSourcegraphDotCom={false}
                 />
             </MockedTestProvider>
         )}

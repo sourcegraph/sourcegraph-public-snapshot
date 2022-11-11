@@ -68,6 +68,15 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 				Value: "admin:admin",
 				Usage: "Credentials for the Grafana instance to reload",
 			},
+			&cli.StringSliceFlag{
+				Name:    "grafana.headers",
+				EnvVars: []string{"GRAFANA_HEADERS"},
+				Usage:   "Additional headers for HTTP requests to the Grafana instance",
+			},
+			&cli.StringFlag{
+				Name:  "grafana.folder",
+				Usage: "Folder on Grafana instance to put generated dashboards in",
+			},
 
 			&cli.StringFlag{
 				Name:    "prometheus.dir",
@@ -122,6 +131,29 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 				GrafanaDir:         os.Expand(c.String("grafana.dir"), expandWithSgRoot),
 				GrafanaURL:         c.String("grafana.url"),
 				GrafanaCredentials: c.String("grafana.creds"),
+				GrafanaFolder:      c.String("grafana.folder"),
+				GrafanaHeaders: func() map[string]string {
+					h := make(map[string]string)
+					for _, entry := range c.StringSlice("grafana.headers") {
+						if len(entry) == 0 {
+							continue
+						}
+
+						parts := strings.Split(entry, "=")
+						if len(parts) != 2 {
+							logger.Error("discarding invalid grafana.headers entry",
+								log.String("entry", entry))
+							continue
+						}
+						header := parts[0]
+						value, err := strconv.Unquote(parts[1])
+						if err != nil {
+							value = parts[1]
+						}
+						h[header] = value
+					}
+					return h
+				}(),
 
 				PrometheusDir: os.Expand(c.String("prometheus.dir"), expandWithSgRoot),
 				PrometheusURL: c.String("prometheus.url"),

@@ -26,13 +26,16 @@ func newTest(t *testing.T) *httptestutil.Client {
 	rateLimitStore, _ := memstore.New(1024)
 	rateLimiter := graphqlbackend.NewRateLimiteWatcher(logger, rateLimitStore)
 
-	return httptestutil.NewTest(NewHandler(database.NewMockDB(),
+	db := database.NewMockDB()
+
+	return httptestutil.NewTest(NewHandler(db,
 		router.New(mux.NewRouter()),
 		nil,
 		rateLimiter,
 		&Handlers{
 			GitHubWebhook:             enterpriseServices.GitHubWebhook,
 			GitLabWebhook:             enterpriseServices.GitLabWebhook,
+			GitHubSyncWebhook:         enterpriseServices.GitHubSyncWebhook,
 			BitbucketServerWebhook:    enterpriseServices.BitbucketServerWebhook,
 			BitbucketCloudWebhook:     enterpriseServices.BitbucketCloudWebhook,
 			NewCodeIntelUploadHandler: enterpriseServices.NewCodeIntelUploadHandler,

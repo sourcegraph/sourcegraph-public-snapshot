@@ -23,7 +23,7 @@ export { Tabs, Tab, TabList, TabPanel, TabPanels, useTabsContext } from './Tabs'
 export { SourcegraphIcon } from './SourcegraphIcon'
 export { Badge, ProductStatusBadge, BADGE_VARIANTS, PRODUCT_STATUSES } from './Badge'
 export { Panel } from './Panel'
-export { Tooltip } from './Tooltip'
+export { Tooltip, TooltipOpenChangeReason } from './Tooltip'
 export { Card, CardBody, CardHeader, CardList, CardSubtitle, CardText, CardTitle, CardFooter } from './Card'
 export { Icon } from './Icon'
 export { ButtonLink } from './ButtonLink'
@@ -32,7 +32,7 @@ export { NavMenu } from './NavMenu'
 export { Text, Code, Heading, Label, H1, H2, H3, H4, H5, H6 } from './Typography'
 export { AnchorLink, RouterLink, setLinkComponent, Link, createLinkUrl } from './Link'
 export { Modal } from './Modal'
-export { FeedbackBadge, FeedbackText } from './Feedback'
+export { FeedbackBadge, FeedbackText, FeedbackPrompt } from './Feedback'
 export {
     Popover,
     PopoverTrigger,
@@ -43,6 +43,9 @@ export {
     PopoverOpenEventReason,
     EMPTY_RECTANGLE,
     createRectangle,
+    usePopoverContext,
+    Flipping,
+    Strategy,
 } from './Popover'
 export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 export {
@@ -59,6 +62,7 @@ export {
  * Type Exports
  * `export type` is required to avoid Webpack warnings.
  */
+export type { FeedbackPromptSubmitEventHandler } from './Feedback'
 export type { AlertProps, AlertLinkProps } from './Alert'
 export type { MultiSelectProps, MultiSelectOption, MultiSelectState, SelectProps, InputProps } from './Form'
 export type { ButtonProps } from './Button'
@@ -70,7 +74,7 @@ export type { MenuLinkProps, MenuItemProps } from './Menu'
 export type { TabsProps, TabListProps, TabProps, TabPanelProps, TabPanelsProps } from './Tabs'
 export type { IconProps, IconType } from './Icon'
 export type { Point } from './Popover'
-export type { TooltipProps } from './Tooltip'
+export type { TooltipProps, TooltipOpenEvent } from './Tooltip'
 export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
 export type { ModalProps } from './Modal'

@@ -9,13 +9,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 var _ graphqlbackend.BatchChangesConnectionResolver = &batchChangesConnectionResolver{}
 
 type batchChangesConnectionResolver struct {
-	store *store.Store
-	opts  store.ListBatchChangesOpts
+	store           *store.Store
+	opts            store.ListBatchChangesOpts
+	gitserverClient gitserver.Client
 
 	// cache results because they are used by multiple fields
 	once         sync.Once
@@ -31,7 +33,7 @@ func (r *batchChangesConnectionResolver) Nodes(ctx context.Context) ([]graphqlba
 	}
 	resolvers := make([]graphqlbackend.BatchChangeResolver, 0, len(nodes))
 	for _, c := range nodes {
-		resolvers = append(resolvers, &batchChangeResolver{store: r.store, batchChange: c})
+		resolvers = append(resolvers, &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: c})
 	}
 	return resolvers, nil
 }

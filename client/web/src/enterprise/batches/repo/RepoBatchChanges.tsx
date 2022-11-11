@@ -78,7 +78,7 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
                 headComponent={RepoBatchChangesHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
-                emptyElement={<GettingStarted />}
+                emptyElement={<GettingStarted isSourcegraphDotCom={false} />}
             />
         </Container>
     )

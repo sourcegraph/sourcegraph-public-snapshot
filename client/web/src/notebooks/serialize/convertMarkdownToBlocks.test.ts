@@ -1,4 +1,4 @@
-import { SymbolKind } from '@sourcegraph/shared/src/schema'
+import { SymbolKind } from '../../graphql-operations'
 
 import { convertMarkdownToBlocks } from './convertMarkdownToBlocks'
 

@@ -6,7 +6,6 @@ import shallow from 'zustand/shallow'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -14,12 +13,14 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 
+import { useRecentSearches } from './useRecentSearches'
+
 interface Props
-    extends ActivationProps,
-        SettingsCascadeProps,
+    extends SettingsCascadeProps,
         ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
@@ -48,10 +49,9 @@ const selectQueryState = ({
  * The search item in the navbar
  */
 export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
-    const autoFocus = props.isSearchAutoFocusRequired ?? true
+    const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
     // This uses the same logic as in Layout.tsx until we have a better solution
     // or remove the search help button
-    const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
     const { queryState, setQueryState, submitSearch, searchCaseSensitivity, searchPatternType } = useNavbarQueryState(
         selectQueryState,
         shallow
@@ -64,17 +64,20 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
+    const [showSearchHistory] = useFeatureFlag('search-input-show-history')
+    const { recentSearches, addRecentSearch } = useRecentSearches()
+
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
             submitSearch({
                 history: props.history,
                 source: 'nav',
-                activation: props.activation,
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
+                addRecentSearch,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.activation, props.selectedSearchContextSpec]
+        [submitSearch, props.history, props.selectedSearchContextSpec, addRecentSearch]
     )
 
     const onSubmit = useCallback(
@@ -92,6 +95,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         >
             <SearchBox
                 {...props}
+                autoFocus={false}
                 editorComponent={editorComponent}
                 applySuggestionsOnEnter={applySuggestionsOnEnter}
                 showSearchContext={showSearchContext}
@@ -105,10 +109,11 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 onSubmit={onSubmit}
                 submitSearchOnToggle={submitSearchOnChange}
                 submitSearchOnSearchContextChange={submitSearchOnChange}
-                autoFocus={autoFocus}
-                hideHelpButton={isSearchPage}
                 isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+                hideHelpButton={isSearchPage}
+                showSearchHistory={showSearchHistory}
+                recentSearches={recentSearches}
             />
         </Form>
     )

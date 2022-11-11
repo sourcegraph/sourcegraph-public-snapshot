@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -22,9 +23,15 @@ import (
 // Interface is the interface describing a code insights store. See the Store struct
 // for actual API usage.
 type Interface interface {
+	WithOther(other basestore.ShareableStore) Interface
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
-	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
+	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
+	RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error
+	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
+	GetInsightSeriesRecordingTimes(ctx context.Context, id int, from *time.Time, to *time.Time) (types.InsightSeriesRecordingTimes, error)
+	LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
+	AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error
 }
 
 var _ Interface = &Store{}
@@ -66,10 +73,15 @@ var _ basestore.ShareableStore = &Store{}
 // underlying basestore.Store.
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{Store: s.Store.With(other), now: s.now}
+	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
 }
 
-var _ Interface = &Store{}
+// WithOther creates a new Store with the given basestore.Shareable store as the
+// underlying basestore.Store.
+// Needed to implement the basestore.Store interface
+func (s *Store) WithOther(other basestore.ShareableStore) Interface {
+	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
+}
 
 // SeriesPoint describes a single insights' series data point.
 //
@@ -85,6 +97,9 @@ type SeriesPoint struct {
 }
 
 func (s *SeriesPoint) String() string {
+	if s.Capture != nil {
+		return fmt.Sprintf("SeriesPoint{Time: %q, Capture: %q, Value: %v}", s.Time, *s.Capture, s.Value)
+	}
 	return fmt.Sprintf("SeriesPoint{Time: %q, Value: %v}", s.Time, s.Value)
 }
 
@@ -92,6 +107,8 @@ func (s *SeriesPoint) String() string {
 type SeriesPointsOpts struct {
 	// SeriesID is the unique series ID to query, if non-nil.
 	SeriesID *string
+	// ID is the unique integer series ID to query, if non-nil.
+	ID *int
 
 	// RepoID, if non-nil, indicates to filter results to only points recorded with this repo ID.
 	RepoID *api.RepoID
@@ -106,6 +123,9 @@ type SeriesPointsOpts struct {
 
 	// Time ranges to query from/to, if non-nil, in UTC.
 	From, To *time.Time
+
+	// Whether to augment the series points data with zero values.
+	SupportsAugmentation bool
 
 	// Limit is the number of data points to query, if non-zero.
 	Limit int
@@ -132,6 +152,8 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 	opts.Excluded = append(opts.Excluded, denylist...)
 
 	q := seriesPointsQuery(fullVectorSeriesAggregation, opts)
+	pointsMap := make(map[string]*SeriesPoint)
+	captureValues := make(map[string]struct{})
 	err = s.query(ctx, q, func(sc scanner) error {
 		var point SeriesPoint
 		err := sc.Scan(
@@ -144,15 +166,33 @@ func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]Seri
 			return err
 		}
 		points = append(points, point)
+		capture := ""
+		if point.Capture != nil {
+			capture = *point.Capture
+		}
+		captureValues[capture] = struct{}{}
+		pointsMap[point.Time.String()+capture] = &point
 		return nil
 	})
-	return points, err
+	if err != nil {
+		return nil, err
+	}
+
+	augmentedPoints, err := s.augmentSeriesPoints(ctx, opts, pointsMap, captureValues)
+	if err != nil {
+		return nil, errors.Wrap(err, "augmentSeriesPoints")
+	}
+	if len(augmentedPoints) > 0 {
+		points = augmentedPoints
+	}
+
+	return points, nil
 }
 
 func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (points []SeriesPoint, err error) {
 	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
 	if err != nil {
-		return []SeriesPoint{}, err
+		return nil, err
 	}
 	denyBitmap := roaring.New()
 	for _, id := range denylist {
@@ -223,16 +263,39 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 		return nil
 	})
 
+	if err != nil {
+		return nil, err
+	}
+
+	pointsMap := make(map[string]*SeriesPoint)
+	captureValues := make(map[string]struct{})
+
 	for _, pointTime := range mapping {
 		for _, point := range pointTime {
-			points = append(points, SeriesPoint{
+			pt := SeriesPoint{
 				SeriesID: *opts.SeriesID,
 				Time:     point.Time,
 				Value:    point.Value,
 				Capture:  point.Capture,
-			})
+			}
+			points = append(points, pt)
+			capture := ""
+			if point.Capture != nil {
+				capture = *point.Capture
+			}
+			captureValues[capture] = struct{}{}
+			pointsMap[point.Time.String()+capture] = &pt
 		}
 	}
+
+	augmentedPoints, err := s.augmentSeriesPoints(ctx, opts, pointsMap, captureValues)
+	if err != nil {
+		return nil, errors.Wrap(err, "augmentSeriesPoints")
+	}
+	if len(augmentedPoints) > 0 {
+		points = augmentedPoints
+	}
+
 	return points, err
 }
 
@@ -257,12 +320,10 @@ func (s *Store) Delete(ctx context.Context, seriesId string) (err error) {
 }
 
 const deleteForSeries = `
--- source: enterprise/internal/insights/store/store.go:Delete
 DELETE FROM series_points where series_id = %s;
 `
 
 const deleteForSeriesSnapshots = `
--- source: enterprise/internal/insights/store/store.go:Delete
 DELETE FROM series_points_snapshots where series_id = %s;
 `
 
@@ -271,7 +332,6 @@ DELETE FROM series_points_snapshots where series_id = %s;
 // eliminating duplicate points that might have been recorded in a given interval for a given repository)
 // and then SUM the result for each repository, giving us our final total number.
 const fullVectorSeriesAggregation = `
--- source: enterprise/internal/insights/store/store.go:SeriesPoints
 SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.capture FROM (
 	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, capture
 	FROM (  select * from series_points
@@ -303,12 +363,23 @@ func seriesPointsQuery(baseQuery string, opts SeriesPointsOpts) *sqlf.Query {
 	if opts.Limit > 0 {
 		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
 	}
-	repoFilterJoinClause := " "
+	joinClause := " "
 	if len(opts.IncludeRepoRegex) > 0 || len(opts.ExcludeRepoRegex) > 0 {
-		repoFilterJoinClause = ` JOIN repo_names rn ON sp.repo_name_id = rn.id `
+		joinClause = ` JOIN repo_names rn ON sp.repo_name_id = rn.id `
+	}
+	if len(opts.Excluded) > 0 {
+		excludedStrings := []string{}
+		for _, id := range opts.Excluded {
+			excludedStrings = append(excludedStrings, strconv.Itoa(int(id)))
+		}
+
+		excludeReposJoin := ` LEFT JOIN ( select unnest('{%s}'::_int4) as excluded_repo ) perm
+			ON sp.repo_id = perm.excluded_repo `
+
+		joinClause = joinClause + fmt.Sprintf(excludeReposJoin, strings.Join(excludedStrings, ","))
 	}
 
-	queryWithJoin := fmt.Sprintf(baseQuery, repoFilterJoinClause, `%s`) // this is a little janky
+	queryWithJoin := fmt.Sprintf(baseQuery, joinClause, `%s`) // this is a little janky
 	return sqlf.Sprintf(
 		queryWithJoin+limitClause,
 		sqlf.Join(preds, "\n AND "),
@@ -336,8 +407,7 @@ func seriesPointsPredicates(opts SeriesPointsOpts) []*sqlf.Query {
 		preds = append(preds, sqlf.Sprintf(s))
 	}
 	if len(opts.Excluded) > 0 {
-		s := fmt.Sprintf("repo_id != all(%v)", values(opts.Excluded))
-		preds = append(preds, sqlf.Sprintf(s))
+		preds = append(preds, sqlf.Sprintf("perm.excluded_repo IS NULL"))
 	}
 	if len(opts.IncludeRepoRegex) > 0 {
 		for _, regex := range opts.IncludeRepoRegex {
@@ -439,12 +509,19 @@ func (s *Store) DeleteSnapshots(ctx context.Context, series *types.InsightSeries
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete insights snapshots for series_id: %s", series.SeriesID)
 	}
+	err = s.Exec(ctx, sqlf.Sprintf(deleteSnapshotRecordingTimeSql, series.ID))
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete snapshot recording time for series_id %d", series.ID)
+	}
 	return nil
 }
 
 const deleteSnapshotsSql = `
--- source: enterprise/internal/insights/store/store.go:DeleteSnapshots
-delete from %s where series_id = %s;
+DELETE FROM %s WHERE series_id = %s;
+`
+
+const deleteSnapshotRecordingTimeSql = `
+DELETE FROM insight_series_recording_times WHERE insight_series_id = %s and snapshot = true;
 `
 
 type PersistMode string
@@ -474,7 +551,8 @@ type RecordSeriesPointArgs struct {
 	PersistMode PersistMode
 }
 
-// RecordSeriesPoints stores multiple data points atomically.
+// RecordSeriesPoints stores multiple data points atomically. Use this in favour of RecordSeriesPointsAndRecordingTimes
+// if recording times are not known.
 func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) (err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
@@ -533,12 +611,139 @@ func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointA
 			return errors.Wrap(err, "Flush")
 		}
 	}
-
 	return nil
 }
 
+func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecordingTimes []types.InsightSeriesRecordingTimes) (err error) {
+	if len(seriesRecordingTimes) == 0 {
+		return nil
+	}
+	inserter := batch.NewInserterWithConflict(ctx, s.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "insight_series_id", "recording_time", "snapshot")
+
+	for _, series := range seriesRecordingTimes {
+		id := series.InsightSeriesID
+		for _, record := range series.RecordingTimes {
+			if err := inserter.Insert(
+				ctx,
+				id,                     // insight_series_id
+				record.Timestamp.UTC(), // recording_time
+				record.Snapshot,        // snapshot
+
+			); err != nil {
+				return errors.Wrap(err, "Insert")
+			}
+		}
+	}
+
+	if err := inserter.Flush(ctx); err != nil {
+		return errors.Wrap(err, "Flush")
+	}
+	return nil
+}
+
+func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, from, to *time.Time) (series types.InsightSeriesRecordingTimes, err error) {
+	series.InsightSeriesID = id
+
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("insight_series_id = %s", id),
+	}
+	if from != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time >= %s", from.UTC()))
+	}
+	if to != nil {
+		preds = append(preds, sqlf.Sprintf("recording_time <= %s", to.UTC()))
+	}
+	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"))
+
+	recordingTimes := []types.RecordingTime{}
+	err = s.query(ctx, timesQuery, func(sc scanner) (err error) {
+		var recordingTime time.Time
+		err = sc.Scan(
+			&recordingTime,
+		)
+		if err != nil {
+			return err
+		}
+
+		recordingTimes = append(recordingTimes, types.RecordingTime{Timestamp: recordingTime})
+		return nil
+	})
+	if err != nil {
+		return series, err
+	}
+	series.RecordingTimes = recordingTimes
+
+	return series, nil
+}
+
+// RecordSeriesPointsAndRecordingTimes is a wrapper around the RecordSeriesPoints and SetInsightSeriesRecordingTimes
+// functions. It makes the assumption that this is called per-series, so all the points will share the same SeriesID.
+// Use this in favour of RecordSeriesPoints if recording times are known.
+func (s *Store) RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if len(pts) > 0 {
+		if err := tx.RecordSeriesPoints(ctx, pts); err != nil {
+			return err
+		}
+	}
+	if len(recordingTimes.RecordingTimes) > 0 {
+		if err := tx.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{recordingTimes}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Store) augmentSeriesPoints(ctx context.Context, opts SeriesPointsOpts, pointsMap map[string]*SeriesPoint, captureValues map[string]struct{}) ([]SeriesPoint, error) {
+	if opts.ID == nil || opts.SeriesID == nil || !opts.SupportsAugmentation {
+		return []SeriesPoint{}, nil
+	}
+	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts.From, opts.To)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
+	}
+	var augmentedPoints []SeriesPoint
+	if len(recordingsData.RecordingTimes) > 0 {
+		augmentedPoints = coalesceZeroValues(*opts.SeriesID, pointsMap, captureValues, recordingsData.RecordingTimes)
+	}
+	return augmentedPoints, nil
+}
+
+func coalesceZeroValues(seriesID string, pointsMap map[string]*SeriesPoint, captureValues map[string]struct{}, recordingTimes []types.RecordingTime) []SeriesPoint {
+	augmentedPoints := []SeriesPoint{}
+	for _, recordingTime := range recordingTimes {
+		timestamp := recordingTime.Timestamp
+		// We have to pivot on potential capture values as well. This is because for capture group data we need to know
+		// which capture group values to attach zero data to. Take points [{oct 20, "a"}, {oct 24 "a"}, {oct 24 "b"}]
+		// and recording times [oct 20, oct 24]. Without the capture value data we would not be able to know we have a
+		// missing {oct 20, "b"} entry.
+		for captureValue := range captureValues {
+			captureValue := captureValue
+			if point, ok := pointsMap[timestamp.String()+captureValue]; ok {
+				augmentedPoints = append(augmentedPoints, *point)
+			} else {
+				var capture *string
+				if captureValue != "" {
+					capture = &captureValue
+				}
+				augmentedPoints = append(augmentedPoints, SeriesPoint{
+					SeriesID: seriesID,
+					Time:     timestamp,
+					Value:    0,
+					Capture:  capture,
+				})
+			}
+		}
+	}
+	return augmentedPoints
+}
+
 const upsertRepoNameFmtStr = `
--- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
 WITH e AS(
 	INSERT INTO repo_names(name)
 	VALUES (%s)
@@ -550,16 +755,10 @@ UNION
 	SELECT id FROM repo_names WHERE name = %s;
 `
 
-const recordSeriesPointFmtstr = `
--- source: enterprise/internal/insights/store/store.go:RecordSeriesPoint
-INSERT INTO %s (
-	series_id,
-	time,
-	value,
-	repo_id,
-	repo_name_id,
-	original_repo_name_id, capture)
-VALUES (%s, %s, %s, %s, %s, %s, %s);
+const getInsightSeriesRecordingTimesStr = `
+SELECT date_trunc('seconds', recording_time) FROM insight_series_recording_times
+WHERE %s
+ORDER BY recording_time ASC;
 `
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
@@ -588,3 +787,52 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	}
 	return rows.Err()
 }
+
+// LoadAggregatedIncompleteDatapoints returns incomplete datapoints for a given series aggregated for each reason and time. This will effectively
+// remove any repository granularity information from the result.
+func (s *Store) LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error) {
+	if seriesID == 0 {
+		return nil, errors.New("invalid seriesID")
+	}
+
+	q := "select reason, time from insight_series_incomplete_points where series_id = %s group by reason, time;"
+	rows, err := s.Query(ctx, sqlf.Sprintf(q, seriesID))
+	if err != nil {
+		return nil, err
+	}
+	return results, scanAll(rows, func(s scanner) (err error) {
+		var tmp IncompleteDatapoint
+		if err = rows.Scan(
+			&tmp.Reason,
+			&tmp.Time); err != nil {
+			return err
+		}
+		results = append(results, tmp)
+		return nil
+	})
+}
+
+type AddIncompleteDatapointInput struct {
+	SeriesID int
+	RepoID   *int
+	Reason   IncompleteReason
+	Time     time.Time
+}
+
+func (s *Store) AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error {
+	q := "insert into insight_series_incomplete_points (series_id, repo_id, reason, time) values (%s, %s, %s, %s) on conflict do nothing;"
+	return s.Exec(ctx, sqlf.Sprintf(q, input.SeriesID, input.RepoID, input.Reason, input.Time))
+}
+
+type IncompleteDatapoint struct {
+	Reason IncompleteReason
+	RepoId *int
+	Time   time.Time
+}
+
+type IncompleteReason string
+
+const (
+	ReasonTimeout IncompleteReason = "timeout"
+	ReasonGeneric IncompleteReason = "generic"
+)

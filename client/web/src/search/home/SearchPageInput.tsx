@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback } from 'react'
 
 import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
@@ -14,7 +14,6 @@ import {
     QueryState,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -32,7 +31,7 @@ import {
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
-import { searchQueryHistorySource } from '../input/completion'
+import { useRecentSearches } from '../input/useRecentSearches'
 
 import styles from './SearchPageInput.module.scss'
 
@@ -40,7 +39,6 @@ interface Props
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
-        ActivationProps,
         TelemetryProps,
         PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
@@ -72,26 +70,9 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
-    const [showSearchHistory] = useFeatureFlag('search-input-show-history')
 
-    const suggestionSources = useMemo(
-        () =>
-            props.authenticatedUser && showSearchHistory
-                ? [
-                      searchQueryHistorySource({
-                          userId: props.authenticatedUser.id,
-                          selectedSearchContext: props.selectedSearchContextSpec,
-                          onSelection: index => {
-                              props.telemetryService.log('SearchSuggestionItemClicked', {
-                                  type: 'SearchHistory',
-                                  index,
-                              })
-                          },
-                      }),
-                  ]
-                : [],
-        [props.authenticatedUser, props.selectedSearchContextSpec, props.telemetryService, showSearchHistory]
-    )
+    const [showSearchHistory] = useFeatureFlag('search-input-show-history')
+    const { recentSearches, addRecentSearch } = useRecentSearches()
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -104,8 +85,8 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                     history: props.history,
                     patternType,
                     caseSensitive,
-                    activation: props.activation,
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    addRecentSearch,
                     ...parameters,
                 })
             }
@@ -114,7 +95,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             props.queryState.query,
             props.selectedSearchContextSpec,
             props.history,
-            props.activation,
+            addRecentSearch,
             patternType,
             caseSensitive,
         ]
@@ -148,7 +129,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         patternType={patternType}
                         setPatternType={setSearchPatternType}
                         setCaseSensitivity={setSearchCaseSensitivity}
-                        submitSearchOnToggle={submitSearchOnChange}
                         queryState={props.queryState}
                         onChange={props.setQueryState}
                         onSubmit={onSubmit}
@@ -156,9 +136,9 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                         applySuggestionsOnEnter={applySuggestionsOnEnter}
-                        suggestionSources={suggestionSources}
-                        defaultSuggestionsShowWhenEmpty={false}
-                        showSuggestionsOnFocus={true}
+                        showCopyQueryButton={!showSearchHistory}
+                        showSearchHistory={showSearchHistory}
+                        recentSearches={recentSearches}
                     />
                 </div>
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />

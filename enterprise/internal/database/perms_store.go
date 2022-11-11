@@ -290,7 +290,6 @@ func (s *permsStore) LoadUserPermissions(ctx context.Context, p *authz.UserPermi
 
 func (s *permsStore) FetchReposByUserAndExternalService(ctx context.Context, userID int32, serviceType, serviceID string) (ids []api.RepoID, err error) {
 	const format = `
--- source: enterprise/internal/database/perms_store.go:FetchReposByUserAndExternalService
 SELECT id
 FROM repo
 WHERE external_service_id = %s
@@ -419,7 +418,6 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 // column to the value of p.SyncedAt field.
 func upsertUserPermissionsQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/internal/database/perms_store.go:upsertUserPermissionsQuery
 INSERT INTO user_permissions
   (user_id, permission, object_type, object_ids_ints, updated_at, synced_at)
 VALUES
@@ -517,7 +515,6 @@ func (s *permsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 // for `removedUserIDs`) of `objectIDs` using upsert.
 func upsertUserPermissionsBatchQuery(addedUserIDs, removedUserIDs, objectIDs []int32, perm authz.Perms, permType authz.PermType, updatedAt time.Time) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/internal/database/perms_store.go:upsertUserPermissionsBatchQuery
 INSERT INTO user_permissions
 	(user_id, permission, object_type, object_ids_ints, updated_at)
 VALUES
@@ -579,7 +576,6 @@ func (s *permsStore) SetRepoPermissionsUnrestricted(ctx context.Context, ids []i
 	}
 
 	const format = `
--- source: enterprise/internal/database/perms_store.go:SetRepoPermissionsUnrestricted
 INSERT INTO repo_permissions
   (repo_id, permission, user_ids_ints, updated_at, synced_at, unrestricted)
 SELECT unnest(%s::int[]), 'read', '{}'::int[], NOW(), NOW(), %s
@@ -598,7 +594,6 @@ DO UPDATE SET
 // upsertRepoPermissionsQuery upserts single row of repository permissions.
 func upsertRepoPermissionsQuery(p *authz.RepoPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/internal/database/perms_store.go:upsertRepoPermissionsQuery
 INSERT INTO repo_permissions
   (repo_id, permission, user_ids_ints, updated_at, synced_at, unrestricted)
 VALUES
@@ -637,7 +632,6 @@ DO UPDATE SET
 // upsertRepoPendingPermissionsQuery
 func upsertRepoPendingPermissionsQuery(p *authz.RepoPermissions) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/internal/database/perms_store.go:upsertRepoPendingPermissionsQuery
 INSERT INTO repo_pending_permissions
   (repo_id, permission, user_ids_ints, updated_at)
 VALUES
@@ -673,7 +667,6 @@ func (s *permsStore) TouchRepoPermissions(ctx context.Context, repoID int32) (er
 	touchedAt := s.clock().UTC()
 	perm := authz.Read.String() // Note: We currently only support read for repository permissions.
 	q := sqlf.Sprintf(`
--- source: enterprise/internal/database/perms_store.go:TouchRepoPermissions
 INSERT INTO repo_permissions
 	(repo_id, permission, updated_at, synced_at)
 VALUES
@@ -698,7 +691,6 @@ func (s *permsStore) TouchUserPermissions(ctx context.Context, userID int32) (er
 	perm := authz.Read.String()   // Note: We currently only support read for repository permissions.
 	objectType := authz.PermRepos // Note: We currently only support user permissions regarding repos
 	q := sqlf.Sprintf(`
--- source: enterprise/internal/database/perms_store.go:TouchUserPermissions
 INSERT INTO user_permissions
 	(user_id, object_type, permission, updated_at, synced_at)
 VALUES
@@ -895,7 +887,6 @@ func upsertUserPendingPermissionsBatchQuery(
 	// If changing the parameters used in this query, make sure to run relevant tests
 	// named `postgresParameterLimitTest` using "go test -slow-tests".
 	const format = `
--- source: enterprise/internal/database/perms_store.go:upsertUserPendingPermissionsBatchQuery
 INSERT INTO user_pending_permissions
 	(service_type, service_id, bind_id, permission, object_type, updated_at)
 	(
@@ -926,7 +917,6 @@ RETURNING id
 
 func loadExistingUserPendingPermissionsBatchQuery(accounts *extsvc.Accounts, p *authz.RepoPermissions) *sqlf.Query {
 	const format = `
--- source: enterprise/internal/database/perms_store.go:loadExistingUserPendingPermissionsBatchQuery
 SELECT bind_id, id FROM user_pending_permissions
 WHERE
 	service_type = %s
@@ -955,7 +945,6 @@ AND bind_id IN (%s)
 // for `removedUserIDs`) of `objectIDs` using update.
 func updateUserPendingPermissionsBatchQuery(addedUserIDs, removedUserIDs []int64, objectIDs []int32, perm authz.Perms, permType authz.PermType, updatedAt time.Time) (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/internal/database/perms_store.go:updateUserPendingPermissionsBatchQuery
 UPDATE user_pending_permissions
 SET
 	object_ids_ints = CASE
@@ -1119,7 +1108,6 @@ func upsertRepoPermissionsBatchQuery(page *upsertRepoPermissionsPage, allAddedRe
 	// If changing the parameters used in this query, make sure to run relevant tests
 	// named `postgresParameterLimitTest` using "go test -slow-tests".
 	const format = `
--- source: enterprise/internal/database/perms_store.go:upsertRepoPermissionsBatchQuery
 INSERT INTO repo_permissions
 	(repo_id, permission, user_ids_ints, updated_at)
 VALUES
@@ -1175,7 +1163,6 @@ DO UPDATE SET
 
 func deleteUserPendingPermissionsQuery(p *authz.UserPendingPermissions) *sqlf.Query {
 	const format = `
--- source: enterprise/internal/database/perms_store.go:deleteUserPendingPermissionsQuery
 DELETE FROM user_pending_permissions
 WHERE service_type = %s
 AND service_id = %s
@@ -1256,7 +1243,6 @@ func (s *permsStore) DeleteAllUserPendingPermissions(ctx context.Context, accoun
 		items[i] = sqlf.Sprintf("%s", accounts.AccountIDs[i])
 	}
 	q := sqlf.Sprintf(`
--- source: enterprise/internal/database/perms_store.go:PermsStore.DeleteAllUserPendingPermissions
 DELETE FROM user_pending_permissions
 WHERE service_type = %s
 AND service_id = %s
@@ -1301,7 +1287,6 @@ func (s *permsStore) execute(ctx context.Context, q *sqlf.Query, vs ...any) (err
 // []int32 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
 func (s *permsStore) loadUserPermissions(ctx context.Context, p *authz.UserPermissions, lock string) (ids []int32, updatedAt, syncedAt time.Time, err error) {
 	const format = `
--- source: enterprise/internal/database/perms_store.go:loadUserPermissions
 SELECT object_ids_ints, updated_at, synced_at
 FROM user_permissions
 WHERE user_id = %s
@@ -1352,7 +1337,6 @@ AND object_type = %s
 // []int32 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
 func (s *permsStore) loadRepoPermissions(ctx context.Context, p *authz.RepoPermissions, lock string) (ids []int32, updatedAt, syncedAt time.Time, unrestricted bool, err error) {
 	const format = `
--- source: enterprise/internal/database/perms_store.go:loadRepoPermissions
 SELECT user_ids_ints, updated_at, synced_at, unrestricted
 FROM repo_permissions
 WHERE repo_id = %s
@@ -1401,7 +1385,6 @@ AND permission = %s
 // int64 (id), []int32 (ids), time.Time (updatedAt).
 func (s *permsStore) loadUserPendingPermissions(ctx context.Context, p *authz.UserPendingPermissions, lock string) (id int64, ids []int32, updatedAt time.Time, err error) {
 	const format = `
--- source: enterprise/internal/database/perms_store.go:loadUserPendingPermissions
 SELECT id, object_ids_ints, updated_at
 FROM user_pending_permissions
 WHERE service_type = %s
@@ -1454,7 +1437,6 @@ AND bind_id = %s
 // int32 (id), []int64 (ids), time.Time (updatedAt) and nullable time.Time (syncedAt).
 func (s *permsStore) loadRepoPendingPermissions(ctx context.Context, p *authz.RepoPermissions, lock string) (id int32, ids []int64, updatedAt, syncedAt time.Time, err error) {
 	const format = `
--- source: enterprise/internal/database/perms_store.go:loadRepoPendingPermissionsQuery
 SELECT repo_id, user_ids_ints, updated_at, NULL
 FROM repo_pending_permissions
 WHERE repo_id = %s
@@ -1507,7 +1489,6 @@ func (s *permsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts 
 	}
 
 	q := sqlf.Sprintf(`
--- source: enterprise/internal/database/perms_store.go:PermsStore.GetUserIDsByExternalAccounts
 SELECT user_id, account_id
 FROM user_external_accounts
 WHERE service_type = %s
@@ -1547,7 +1528,6 @@ func (s *permsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 	}
 
 	q := sqlf.Sprintf(`
--- source: enterprise/internal/database/perms_store.go:PermsStore.UserIDsWithNoPerms
 SELECT users.id, NULL
 FROM users
 WHERE
@@ -1573,7 +1553,6 @@ AND NOT EXISTS (
 
 func (s *permsStore) UserIDsWithOutdatedPerms(ctx context.Context) (map[int32]time.Time, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/internal/database/perms_store.go:PermsStore.UserIDsWithOutdatedPerms
 SELECT
 	user_permissions.user_id,
 	user_permissions.synced_at
@@ -1606,7 +1585,6 @@ AND (
 
 func (s *permsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/internal/database/perms_store.go:PermsStore.RepoIDsWithNoPerms
 SELECT repo.id, NULL FROM repo
 WHERE repo.deleted_at IS NULL
 AND repo.private = TRUE
@@ -1638,7 +1616,6 @@ func (s *permsStore) UserIDsWithOldestPerms(ctx context.Context, limit int, age 
 		cutoffClause = sqlf.Sprintf("(perms.synced_at IS NULL OR perms.synced_at < %s)", cutoff)
 	}
 	q := sqlf.Sprintf(`
--- source: enterprise/internal/database/perms_store.go:PermsStore.UserIDsWithOldestPerms
 SELECT perms.user_id, perms.synced_at FROM user_permissions AS perms
 WHERE perms.user_id IN
 	(SELECT users.id FROM users
@@ -1657,7 +1634,6 @@ func (s *permsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int, age
 		cutoffClause = sqlf.Sprintf("(perms.synced_at IS NULL OR perms.synced_at < %s)", cutoff)
 	}
 	q := sqlf.Sprintf(`
--- source: enterprise/internal/database/perms_store.go:PermsStore.ReposIDsWithOldestPerms
 SELECT perms.repo_id, perms.synced_at FROM repo_permissions AS perms
 WHERE perms.repo_id IN
 	(SELECT repo.id FROM repo
@@ -1710,7 +1686,6 @@ func (s *permsStore) UserIsMemberOfOrgHasCodeHostConnection(ctx context.Context,
 	defer func() { save(&err, otlog.Int32("userID", userID)) }()
 
 	q := sqlf.Sprintf(`
--- source: enterprise/internal/database/perms_store.go:PermsStore.UserIsMemberOfOrgHasCodeHostConnection
 SELECT EXISTS (
 	SELECT
 	FROM org_members

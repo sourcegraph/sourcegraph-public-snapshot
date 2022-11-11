@@ -1,12 +1,14 @@
 import { take } from 'rxjs/operators'
 
+import { logger } from '@sourcegraph/common'
+
 import { TemporarySettings, TemporarySettingsSchema } from './TemporarySettings'
 import { TemporarySettingsStorage } from './TemporarySettingsStorage'
 
 interface Migration {
     localStorageKey: string
     temporarySettingsKey: keyof TemporarySettings
-    type: 'boolean' | 'number' | 'json'
+    type: 'boolean' | 'number' | 'string' | 'json'
     transform?: (value: any) => any
     preserve?: boolean
 }
@@ -40,12 +42,18 @@ const migrations: Migration[] = [
             value.state.tours,
         preserve: true,
     },
+    {
+        localStorageKey: 'diff-mode-visualizer',
+        temporarySettingsKey: 'repo.commitPage.diffMode',
+        type: 'string',
+    },
 ]
 
 const parse = (type: Migration['type'], localStorageValue: string | null): boolean | number | any => {
     if (localStorageValue === null) {
         return
     }
+
     if (type === 'boolean') {
         return localStorageValue === 'true'
     }
@@ -57,6 +65,11 @@ const parse = (type: Migration['type'], localStorageValue: string | null): boole
     if (type === 'json') {
         return JSON.parse(localStorageValue)
     }
+
+    if (type === 'string') {
+        return localStorageValue
+    }
+
     return
 }
 
@@ -78,7 +91,7 @@ export async function migrateLocalStorageToTemporarySettings(storage: TemporaryS
                     localStorage.removeItem(migration.localStorageKey)
                 }
             } catch (error) {
-                console.error(
+                logger.error(
                     `Failed to migrate temporary settings "${migration.temporarySettingsKey}" from localStorage using key "${migration.localStorageKey}"`,
                     error
                 )

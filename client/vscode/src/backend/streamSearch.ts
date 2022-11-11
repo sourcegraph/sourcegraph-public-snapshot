@@ -16,10 +16,12 @@ export function createStreamSearch({
     context,
     stateMachine,
     sourcegraphURL,
+    session,
 }: {
     context: vscode.ExtensionContext
     stateMachine: VSCEStateMachine
     sourcegraphURL: string
+    session: vscode.AuthenticationSession | undefined
 }): ExtensionCoreAPI['streamSearch'] {
     // Ensure only one search is active at a time
     let previousSearchSubscription: Subscription | null
@@ -29,8 +31,8 @@ export function createStreamSearch({
             previousSearchSubscription?.unsubscribe()
         },
     })
-
-    const instanceVersionNumber = observeInstanceVersionNumber()
+    const token = session?.accessToken === undefined ? '' : session?.accessToken
+    const instanceVersionNumber = observeInstanceVersionNumber(token, sourcegraphURL)
 
     return function streamSearch(query, options) {
         previousSearchSubscription?.unsubscribe()
@@ -52,7 +54,11 @@ export function createStreamSearch({
                 map(version => {
                     let patternType = options.patternType
 
-                    if (version && isOlderThan(version, { major: 3, minor: 43 })) {
+                    if (
+                        patternType === SearchPatternType.standard &&
+                        version &&
+                        isOlderThan(version, { major: 3, minor: 43 })
+                    ) {
                         /**
                          * SearchPatternType.standard support was added in Sourcegraph v3.43.0.
                          * Use SearchPatternType.literal for earlier versions instead (it was the default before v3.43.0).

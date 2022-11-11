@@ -381,7 +381,7 @@ sg ci build --help
 		},
 	}, {
 		Name:      "build",
-		ArgsUsage: "[runtype]",
+		ArgsUsage: "[runtype] <argument>",
 		Usage:     "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types)",
 		Description: fmt.Sprintf(`Optionally provide a run type to build with.
 
@@ -395,10 +395,20 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 * %s
 
 For run types that require branch arguments, you will be prompted for an argument, or you
-can provide it directly (for example, 'sg ci build [runtype] [argument]').
+can provide it directly (for example, 'sg ci build [runtype] <argument>').
 
 Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.`,
 			strings.Join(getAllowedBuildTypeArgs(), "\n* ")),
+		UsageText: `
+# Start a main-dry-run build
+sg ci build main-dry-run
+
+# Publish a custom image build
+sg ci build docker-images-patch
+
+# Publish a custom Prometheus image build without running tests
+sg ci build docker-images-patch-notest prometheus
+`,
 		BashComplete: cliutil.CompleteOptions(getAllowedBuildTypeArgs),
 		Flags: []cli.Flag{
 			&ciPipelineFlag,

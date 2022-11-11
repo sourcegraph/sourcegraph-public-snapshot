@@ -36,7 +36,7 @@ func (productSubscriptionStatus) ProductNameWithBrand() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	hasLicense := info != nil
+	hasLicense := info != nil && !IsFreePlan(info)
 	var licenseTags []string
 	if hasLicense {
 		licenseTags = info.Tags()
@@ -53,7 +53,7 @@ func (productSubscriptionStatus) ActualUserCountDate(ctx context.Context) (strin
 }
 
 func (productSubscriptionStatus) NoLicenseWarningUserCount(ctx context.Context) (*int32, error) {
-	if info, err := GetConfiguredProductLicenseInfo(); info != nil {
+	if info, err := GetConfiguredProductLicenseInfo(); info != nil && !IsFreePlan(info) {
 		// if a license exists, warnings never need to be shown.
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (productSubscriptionStatus) MaximumAllowedUserCount(ctx context.Context) (*
 	if err != nil {
 		return nil, err
 	}
-	if info != nil {
+	if info != nil && !IsFreePlan(info) {
 		tmp := info.UserCount()
 		return &tmp, nil
 	}

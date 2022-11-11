@@ -1,4 +1,4 @@
-import { MouseEvent, ReactElement, SVGProps, useRef, useState } from 'react'
+import { FocusEventHandler, MouseEvent, ReactElement, SVGProps, useRef, useState } from 'react'
 
 import { Group } from '@visx/group'
 import classNames from 'classnames'
@@ -65,15 +65,28 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
         onBarHover?.(datum)
     }
 
+    const handleBarFocus = (datum: Datum, category: Category<Datum>, node: Element): void => {
+        setActiveSegment({ datum, category, node })
+    }
+
+    const handleBlurCapture: FocusEventHandler<SVGSVGElement> = event => {
+        const relatedTarget = event.relatedTarget as Element
+        const currentTarget = event.currentTarget as Element
+
+        if (!currentTarget.contains(relatedTarget)) {
+            setActiveSegment(null)
+        }
+    }
+
     return (
         <Group
             {...attributes}
             innerRef={rootRef}
             className={classNames(styles.root, { [styles.rootWithHoveredLinkPoint]: withActiveLink })}
+            onBlurCapture={handleBlurCapture}
         >
             {stacked ? (
                 <StackedBars
-                    aria-label="chart content group"
                     categories={categories}
                     xScale={xScale}
                     yScale={yScale}
@@ -87,7 +100,6 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
                 />
             ) : (
                 <GroupedBars
-                    aria-label="chart content group"
                     activeSegment={activeSegment}
                     categories={categories}
                     xScale={xScale}
@@ -102,11 +114,12 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
                     onBarHover={handleBarHover}
                     onBarLeave={() => setActiveSegment(null)}
                     onBarClick={onBarClick}
+                    onBarFocus={handleBarFocus}
                 />
             )}
 
             {activeSegment && rootRef.current && (
-                <Tooltip containerElement={rootRef.current}>
+                <Tooltip containerElement={rootRef.current} activeElement={activeSegment.node as HTMLElement}>
                     <BarTooltipContent
                         category={activeSegment.category}
                         activeBar={activeSegment.datum}

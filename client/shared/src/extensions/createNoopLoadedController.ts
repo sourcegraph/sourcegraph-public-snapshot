@@ -39,7 +39,7 @@ export function createNoopController(platformContext: PlatformContext): Controll
                 const extensionHostAPI = injectNewCodeintel(createExtensionHostAPI(extensionHostState), {
                     requestGraphQL: platformContext.requestGraphQL,
                     telemetryService: platformContext.telemetryService,
-                    settings: newSettingsGetter(platformContext.settings),
+                    settings: newSettingsGetter(settingsCascade),
                 })
                 const remoteExtensionHostAPI = pretendRemote(extensionHostAPI)
                 const exposedToClient = initMainThreadAPI(remoteExtensionHostAPI, platformContext).exposedToClient

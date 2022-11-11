@@ -26,6 +26,7 @@ interface GroupedBarsProps<Datum> extends ComponentProps<typeof Group> {
     onBarHover: (datum: Datum, category: Category<Datum>) => void
     onBarLeave: () => void
     onBarClick: (event: MouseEvent, datum: Datum, index: number) => void
+    onBarFocus: (datum: Datum, category: Category<Datum>, node: Element) => void
 }
 
 const isSafari = getBrowserName() === 'safari'
@@ -46,6 +47,7 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
         onBarHover,
         onBarLeave,
         onBarClick,
+        onBarFocus,
         ...attributes
     } = props
 
@@ -86,13 +88,15 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
     }
 
     return (
-        <Group {...attributes} pointerEvents="bounding-rect">
+        <Group {...attributes} pointerEvents="bounding-rect" aria-label="Bar chart content" role="list">
             {categories.map(category => (
                 <Group key={category.id} left={xScale(category.id)} height={height}>
                     {category.data.map((datum, index) => {
                         const isOneDatumCategory = category.data.length === 1
+                        const value = getDatumValue(datum)
+                        const name = getDatumName(datum)
                         const barWidth = isOneDatumCategory ? xScale.bandwidth() : xCategoriesScale.bandwidth()
-                        const barHeight = height - yScale(getDatumValue(datum))
+                        const barHeight = height - yScale(value)
                         const barX = isOneDatumCategory ? 0 : xCategoriesScale(getDatumName(datum))
                         const barY = yScale(getDatumValue(datum))
 
@@ -105,12 +109,18 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
                                       { className: styles.barFade, opacity: isSafari ? 0.5 : 1 }
                                 : {}
 
+                        const barLabelText = `${name}, Value: ${value}`
+                        const barCategoryLabelText = isOneDatumCategory
+                            ? barLabelText
+                            : `Category: ${category.id}, ${barLabelText}`
+
                         return (
                             <MaybeLink
-                                key={`bar-group-bar-${category.id}-${getDatumName(datum)}`}
+                                key={`bar-group-bar-${category.id}-${name}`}
                                 to={getDatumLink(datum)}
-                                onFocus={() => onBarHover(datum, category)}
+                                onFocus={event => onBarFocus(datum, category, event.target)}
                                 onClick={event => onBarClick(event, datum, index)}
+                                aria-label={barCategoryLabelText}
                             >
                                 <rect
                                     x={barX}
@@ -132,6 +142,7 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
                 height={height}
                 fill="transparent"
                 opacity={0}
+                aria-hidden={true}
                 onMouseMove={handleGroupMouseMove}
                 onMouseLeave={onBarLeave}
                 onClick={handleGroupClick}

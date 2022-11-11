@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -29,7 +28,7 @@ var inventoryCache = rcache.New(fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLan
 
 // InventoryContext returns the inventory context for computing the inventory for the repository at
 // the given commit.
-func InventoryContext(logger log.Logger, repo api.RepoName, db database.DB, commitID api.CommitID, forceEnhancedLanguageDetection bool) (inventory.Context, error) {
+func InventoryContext(logger log.Logger, repo api.RepoName, gsClient gitserver.Client, commitID api.CommitID, forceEnhancedLanguageDetection bool) (inventory.Context, error) {
 	if !gitserver.IsAbsoluteRevision(string(commitID)) {
 		return inventory.Context{}, errors.Errorf("refusing to compute inventory for non-absolute commit ID %q", commitID)
 	}
@@ -48,10 +47,10 @@ func InventoryContext(logger log.Logger, repo api.RepoName, db database.DB, comm
 		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
 			// TODO: As a perf optimization, we could read multiple levels of the Git tree at once
 			// to avoid sequential tree traversal calls.
-			return gitserver.NewClient(db).ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, path, false)
+			return gsClient.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, path, false)
 		},
 		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return gitserver.NewClient(db).NewFileReader(ctx, repo, commitID, path, authz.DefaultSubRepoPermsChecker)
+			return gsClient.NewFileReader(ctx, repo, commitID, path, authz.DefaultSubRepoPermsChecker)
 		},
 		CacheGet: func(e fs.FileInfo) (inventory.Inventory, bool) {
 			cacheKey := cacheKey(e)

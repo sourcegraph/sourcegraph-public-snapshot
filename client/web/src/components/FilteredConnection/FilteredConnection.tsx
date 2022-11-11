@@ -19,7 +19,7 @@ import {
     share,
 } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 
 import { ConnectionNodes, ConnectionNodesState, ConnectionNodesDisplayProps, ConnectionProps } from './ConnectionNodes'
 import { Connection, ConnectionQueryArguments } from './ConnectionType'
@@ -95,7 +95,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}, HP = {}>
     queryConnection: (args: FilteredConnectionQueryArguments) => Observable<C>
 
     /** Called when the queryConnection Observable emits. */
-    onUpdate?: (value: C | ErrorLike | undefined, query: string) => void
+    onUpdate?: (value: C | ErrorLike | undefined, query: string, activeValues: FilteredConnectionArgs) => void
 
     /**
      * Set to true when the GraphQL response is expected to emit an `PageInfo.endCursor` value when
@@ -359,11 +359,15 @@ export class FilteredConnection<
                             }
                         }
                         if (this.props.onUpdate) {
-                            this.props.onUpdate(connectionOrError, this.state.query)
+                            this.props.onUpdate(
+                                connectionOrError,
+                                this.state.query,
+                                this.buildArgs(this.state.activeValues)
+                            )
                         }
                         this.setState({ connectionOrError, ...rest })
                     },
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
 
@@ -426,6 +430,28 @@ export class FilteredConnection<
                     )
                 )
         )
+
+        // React to location changes.
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    map(({ location }) => location.search),
+                    distinctUntilChanged(),
+                    map(searchParams => new URLSearchParams(searchParams)),
+                    map(searchParams => getFilterFromURL(searchParams, this.props.filters)),
+                    // Map is compared by reference, so by default distinctUntilChanged
+                    // will always return false for two maps. isEqual compares
+                    // them by value.
+                    distinctUntilChanged((prev, next) => isEqual(prev, next)),
+                    skip(1)
+                )
+                .subscribe(newFilterValues => {
+                    if (this.props.useURLQuery) {
+                        this.activeValuesChanges.next(newFilterValues)
+                    }
+                })
+        )
+
         this.componentUpdates.next(this.props)
     }
 
@@ -560,6 +586,7 @@ export class FilteredConnection<
     }
 
     private onChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+        this.props.onInputChange?.(event)
         this.queryInputChanges.next(event.currentTarget.value)
     }
 
@@ -576,10 +603,8 @@ export class FilteredConnection<
         this.showMoreClicks.next()
     }
 
-    private buildArgs = (
-        values: Map<string, FilteredConnectionFilterValue>
-    ): { [name: string]: string | number | boolean } => {
-        let args: { [name: string]: string | number | boolean } = {}
+    private buildArgs = (values: Map<string, FilteredConnectionFilterValue>): FilteredConnectionArgs => {
+        let args: FilteredConnectionArgs = {}
         for (const key of values.keys()) {
             const value = values.get(key)
             if (value === undefined) {
@@ -600,4 +625,8 @@ export const resetFilteredConnectionURLQuery = (parameters: URLSearchParams): vo
     parameters.delete('visible')
     parameters.delete('first')
     parameters.delete('after')
+}
+
+export interface FilteredConnectionArgs {
+    [name: string]: string | number | boolean
 }

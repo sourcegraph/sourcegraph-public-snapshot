@@ -46,6 +46,7 @@ func (e *InsightsPingEmitter) emit(ctx context.Context) error {
 		"emitTotalOrgsWithDashboard":  e.emitTotalOrgsWithDashboard,
 		"emitTotalDashboards":         e.emitTotalDashboards,
 		"emitInsightsPerDashboard":    e.emitInsightsPerDashboard,
+		"emitBackfillTime":            e.emitBackfillTime,
 		"emitTotalCountCritical":      e.emitTotalCountCritical,
 	}
 	hasError := false
@@ -199,6 +200,24 @@ func (e *InsightsPingEmitter) emitInsightsPerDashboard(ctx context.Context) erro
 	}
 
 	err = e.SaveEvent(ctx, usagestats.InsightsPerDashboardPingName, marshal)
+	if err != nil {
+		return errors.Wrap(err, "SaveEvent")
+	}
+	return nil
+}
+
+func (e *InsightsPingEmitter) emitBackfillTime(ctx context.Context) error {
+	counts, err := e.GetBackfillTime(ctx)
+	if err != nil {
+		return errors.Wrap(err, "GetBackfillTime")
+	}
+
+	marshal, err := json.Marshal(counts)
+	if err != nil {
+		return errors.Wrap(err, "Marshal")
+	}
+
+	err = e.SaveEvent(ctx, usagestats.InsightsBackfillTimePingName, marshal)
 	if err != nil {
 		return errors.Wrap(err, "SaveEvent")
 	}

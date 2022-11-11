@@ -14,7 +14,7 @@ import {
     SeriesBasedChartTypes,
     SeriesChart,
 } from '../../../../../../components'
-import { CodeInsightsBackendContext, InsightType } from '../../../../../../core'
+import { InsightType } from '../../../../../../core'
 import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../../pings'
 import {
     CodeInsightsLandingPageContext,
@@ -51,9 +51,6 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
     const seriesToggleState = useSeriesToggle()
 
     const { mode } = useContext(CodeInsightsLandingPageContext)
-    const {
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
 
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')
 
@@ -90,7 +87,7 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
                         to={templateLink}
                         onClick={handleTemplateLinkClick}
                     >
-                        {licensed ? 'Use as template' : 'Explore template'}
+                        Use as template
                     </Button>
                 )}
             </InsightCardHeader>
@@ -135,10 +132,6 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
     } = props
     const seriesToggleState = useSeriesToggle()
 
-    const {
-        UIFeatures: { licensed },
-    } = useContext(CodeInsightsBackendContext)
-
     const { mode } = useContext(CodeInsightsLandingPageContext)
     const bigTemplateClickPingName = useLogEventName('InsightsGetStartedBigTemplateClick')
 
@@ -171,7 +164,7 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
                         to={templateLink}
                         onClick={handleTemplateLinkClick}
                     >
-                        {licensed ? 'Use as template' : 'Explore template'}
+                        Use as template
                     </Button>
                 )}
             </InsightCardHeader>

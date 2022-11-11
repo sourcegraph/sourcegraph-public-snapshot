@@ -137,7 +137,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
  */
 async function init(driver: Driver): Promise<void> {
     if (restConfig.testUserPassword) {
-        await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+        await driver.ensureSignedIn({ username: 'test', password: restConfig.testUserPassword })
     }
     // TODO test with a Gitolite external service
     await driver.ensureHasExternalService({

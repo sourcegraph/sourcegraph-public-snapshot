@@ -7,13 +7,17 @@ import type * as sourcegraph from 'sourcegraph'
 import { encodeURIPathComponent } from '@sourcegraph/common'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { DiffHunkLineType, RepositoryContributorsResult, WebGraphQlOperations } from '../graphql-operations'
+import {
+    DiffHunkLineType,
+    RepositoryContributorsResult,
+    WebGraphQlOperations,
+    ExternalServiceKind,
+} from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import {
@@ -277,7 +281,9 @@ describe('Repository', () => {
                             subject: 'update LSIF indexing CI workflow',
                             body: null,
                             author: {
+                                __typename: 'Signature',
                                 person: {
+                                    __typename: 'Person',
                                     avatarURL: '',
                                     name: 'garo (they/them)',
                                     email: 'gbrik@users.noreply.github.com',
@@ -287,7 +293,9 @@ describe('Repository', () => {
                                 date: '2020-04-29T18:40:54Z',
                             },
                             committer: {
+                                __typename: 'Signature',
                                 person: {
+                                    __typename: 'Person',
                                     avatarURL: '',
                                     name: 'GitHub',
                                     email: 'noreply@github.com',
@@ -298,12 +306,14 @@ describe('Repository', () => {
                             },
                             parents: [
                                 {
+                                    __typename: 'GitCommit',
                                     oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                     abbreviatedOID: '96c4efa',
                                     url:
                                         '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                 },
                                 {
+                                    __typename: 'GitCommit',
                                     oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                     abbreviatedOID: '9e615b1',
                                     url:
@@ -314,12 +324,14 @@ describe('Repository', () => {
                             canonicalURL: commitUrl,
                             externalURLs: [
                                 {
+                                    __typename: 'ExternalLink',
                                     url:
                                         'https://github.com/sourcegraph/jsonrpc2/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                                     serviceKind: ExternalServiceKind.GITHUB,
                                 },
                             ],
                             tree: {
+                                __typename: 'GitTree',
                                 canonicalURL:
                                     '/github.com/sourcegraph/jsonrpc2@15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                             },

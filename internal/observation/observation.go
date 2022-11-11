@@ -5,14 +5,15 @@ package observation
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel/attribute"
-
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
@@ -39,6 +40,23 @@ type Context struct {
 
 // TestContext is a behaviorless Context usable for unit tests.
 var TestContext = Context{Logger: log.NoOp(), Registerer: metrics.TestRegisterer}
+
+// ContextWithLogger creates a live Context with the given logger instance.
+func ContextWithLogger(logger log.Logger) *Context {
+	return &Context{
+		Logger:     logger,
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+}
+
+// ScopedContext creates a live Context with a logger configured with the given values.
+func ScopedContext(team, domain, component string) *Context {
+	return ContextWithLogger(log.Scoped(
+		fmt.Sprintf("%s.%s.%s", team, domain, component),
+		fmt.Sprintf("%s %s %s", team, domain, component),
+	))
+}
 
 type ErrorFilterBehaviour uint8
 
@@ -157,9 +175,10 @@ func TestTraceLogger(logger log.Logger) TraceLogger {
 }
 
 type traceLogger struct {
-	opName string
-	event  honey.Event
-	trace  *trace.Trace
+	opName  string
+	event   honey.Event
+	trace   *trace.Trace
+	context *Context
 
 	log.Logger
 }
@@ -178,10 +197,19 @@ func (t *traceLogger) initWithTags(fields ...otlog.Field) {
 }
 
 func (t *traceLogger) AddEvent(name string, attributes ...attribute.KeyValue) {
-	if honey.Enabled() {
+	if honey.Enabled() && t.context.HoneyDataset != nil {
+		event := t.context.HoneyDataset.EventWithFields(map[string]any{
+			"operation":            toSnakeCase(name),
+			"meta.annotation_type": "span_event",
+			"trace.trace_id":       t.event.Fields()["trace.trace_id"],
+			"trace.parent_id":      t.event.Fields()["trace.span_id"],
+		})
 		for _, attr := range attributes {
-			t.event.AddField(t.opName+"."+toSnakeCase(string(attr.Key)), attr.Value)
+			event.AddField(t.opName+"."+toSnakeCase(string(attr.Key)), attr.Value.AsInterface())
 		}
+		// if sample rate > 1 for this dataset, then theres a possibility that this event
+		// won't be sent but the "parent" may be sent.
+		event.Send()
 	}
 	if t.trace != nil {
 		t.trace.AddEvent(name, attributes...)
@@ -338,10 +366,11 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 	}
 
 	trLogger := &traceLogger{
-		opName: snakecaseOpName,
-		event:  event,
-		trace:  tr,
-		Logger: logger,
+		context: op.context,
+		opName:  snakecaseOpName,
+		event:   event,
+		trace:   tr,
+		Logger:  logger,
 	}
 
 	if mergedFields := mergeLogFields(op.logFields, args.LogFields); len(mergedFields) > 0 {

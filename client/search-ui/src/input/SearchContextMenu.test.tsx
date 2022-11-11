@@ -4,7 +4,7 @@ import { act } from 'react-dom/test-utils'
 import { Observable, of, throwError } from 'rxjs'
 import sinon from 'sinon'
 
-import { ListSearchContextsResult, SearchContextFields, SearchContextMinimalFields } from '@sourcegraph/search'
+import { ListSearchContextsResult, SearchContextMinimalFields } from '@sourcegraph/search'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { mockGetUserSearchContextNamespaces } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -86,7 +86,9 @@ const mockFetchSearchContexts = ({ query }: { first: number; query?: string; aft
             repositories: [],
             viewerCanManage: true,
         },
-    ].filter(context => !query || context.spec.toLowerCase().includes(query.toLowerCase())) as SearchContextFields[]
+    ].filter(
+        context => !query || context.spec.toLowerCase().includes(query.toLowerCase())
+    ) as SearchContextMinimalFields[]
     const result: ListSearchContextsResult['searchContexts'] = {
         nodes,
         pageInfo: {
@@ -157,8 +159,8 @@ describe('SearchContextMenu', () => {
 
         const items = screen.getAllByTestId('search-context-menu-item')
         expect(items.length).toBe(2)
-        expect(items[0]).toHaveTextContent('@username Your repositories on Sourcegraph')
-        expect(items[1]).toHaveTextContent('@username/test-version-1.5 Only code in version 1.5')
+        expect(items[0]).toHaveTextContent('@username, Your repositories on Sourcegraph')
+        expect(items[1]).toHaveTextContent('@username/test-version-1.5, Only code in version 1.5')
 
         expect(items).toMatchSnapshot()
     })
@@ -222,6 +224,6 @@ describe('SearchContextMenu', () => {
 
         const items = screen.getAllByTestId('search-context-menu-item')
         // With no auto-defined contexts, the first context should be a user-defined context
-        expect(items[0]).toHaveTextContent('@username/test-version-1.5 Only code in version 1.5')
+        expect(items[0]).toHaveTextContent('@username/test-version-1.5, Only code in version 1.5')
     })
 })

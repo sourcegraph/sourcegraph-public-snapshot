@@ -11,436 +11,445 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func testSyncRateLimiters(store repos.Store) func(*testing.T) {
-	return func(t *testing.T) {
-		clock := timeutil.NewFakeClock(time.Now(), 0)
-		now := clock.Now()
-		ctx := context.Background()
-		transact(ctx, store, func(t testing.TB, tx repos.Store) {
-			toCreate := 501 // Larger than default page size in order to test pagination
-			services := make([]*types.ExternalService, 0, toCreate)
-			for i := 0; i < toCreate; i++ {
-				svc := &types.ExternalService{
-					ID:          int64(i) + 1,
-					Kind:        "GITLAB",
-					DisplayName: "GitLab",
-					CreatedAt:   now,
-					UpdatedAt:   now,
-					DeletedAt:   time.Time{},
-					Config:      extsvc.NewEmptyConfig(),
-				}
-				config := schema.GitLabConnection{
-					Token: "abc",
-					Url:   fmt.Sprintf("http://example%d.com/", i),
-					RateLimit: &schema.GitLabRateLimit{
-						RequestsPerHour: 3600,
-						Enabled:         true,
-					},
-					ProjectQuery: []string{
-						"None",
-					},
-				}
-				data, err := json.Marshal(config)
-				if err != nil {
-					t.Fatal(err)
-				}
-				svc.Config.Set(string(data))
-				services = append(services, svc)
-			}
+func TestSyncRateLimiters(t *testing.T) {
+	t.Parallel()
+	store := getTestRepoStore(t)
 
-			if err := tx.ExternalServiceStore().Upsert(ctx, services...); err != nil {
-				t.Fatalf("failed to setup store: %v", err)
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+	ctx := context.Background()
+	transact(ctx, store, func(t testing.TB, tx repos.Store) {
+		toCreate := 501 // Larger than default page size in order to test pagination
+		services := make([]*types.ExternalService, 0, toCreate)
+		for i := 0; i < toCreate; i++ {
+			svc := &types.ExternalService{
+				ID:          int64(i) + 1,
+				Kind:        "GITLAB",
+				DisplayName: "GitLab",
+				CreatedAt:   now,
+				UpdatedAt:   now,
+				DeletedAt:   time.Time{},
+				Config:      extsvc.NewEmptyConfig(),
 			}
-
-			registry := ratelimit.NewRegistry()
-			syncer := repos.NewRateLimitSyncer(registry, tx.ExternalServiceStore(), repos.RateLimitSyncerOpts{})
-			err := syncer.SyncRateLimiters(ctx)
+			config := schema.GitLabConnection{
+				Token: "abc",
+				Url:   fmt.Sprintf("http://example%d.com/", i),
+				RateLimit: &schema.GitLabRateLimit{
+					RequestsPerHour: 3600,
+					Enabled:         true,
+				},
+				ProjectQuery: []string{
+					"None",
+				},
+			}
+			data, err := json.Marshal(config)
 			if err != nil {
 				t.Fatal(err)
 			}
-			have := registry.Count()
-			if have != toCreate {
-				t.Fatalf("Want %d, got %d", toCreate, have)
-			}
-		})(t)
-	}
+			svc.Config.Set(string(data))
+			services = append(services, svc)
+		}
+
+		if err := tx.ExternalServiceStore().Upsert(ctx, services...); err != nil {
+			t.Fatalf("failed to setup store: %v", err)
+		}
+
+		registry := ratelimit.NewRegistry()
+		syncer := repos.NewRateLimitSyncer(registry, tx.ExternalServiceStore(), repos.RateLimitSyncerOpts{})
+		err := syncer.SyncRateLimiters(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		have := registry.Count()
+		if have != toCreate {
+			t.Fatalf("Want %d, got %d", toCreate, have)
+		}
+	})(t)
 }
 
-func testStoreEnqueueSyncJobs(store repos.Store) func(*testing.T) {
-	return func(t *testing.T) {
-		ctx := context.Background()
-		clock := timeutil.NewFakeClock(time.Now(), 0)
-		now := clock.Now()
+func TestStoreEnqueueSyncJobs(t *testing.T) {
+	t.Parallel()
+	store := getTestRepoStore(t)
 
-		services := generateExternalServices(10, mkExternalServices(now)...)
+	ctx := context.Background()
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
 
-		type testCase struct {
-			name            string
-			stored          types.ExternalServices
-			queued          func(types.ExternalServices) []int64
-			ignoreSiteAdmin bool
-			err             error
-		}
+	services := generateExternalServices(10, mkExternalServices(now)...)
 
-		var testCases []testCase
+	type testCase struct {
+		name            string
+		stored          types.ExternalServices
+		queued          func(types.ExternalServices) []int64
+		ignoreSiteAdmin bool
+		err             error
+	}
 
+	var testCases []testCase
+
+	testCases = append(testCases, testCase{
+		name: "enqueue everything",
+		stored: services.With(func(s *types.ExternalService) {
+			s.NextSyncAt = now.Add(-10 * time.Second)
+		}),
+		queued: func(svcs types.ExternalServices) []int64 { return svcs.IDs() },
+	})
+
+	testCases = append(testCases, testCase{
+		name: "nothing to enqueue",
+		stored: services.With(func(s *types.ExternalService) {
+			s.NextSyncAt = now.Add(10 * time.Second)
+		}),
+		queued: func(svcs types.ExternalServices) []int64 { return []int64{} },
+	})
+
+	testCases = append(testCases, testCase{
+		name: "ignore siteadmin repos",
+		stored: services.With(func(s *types.ExternalService) {
+			s.NextSyncAt = now.Add(10 * time.Second)
+		}),
+		ignoreSiteAdmin: true,
+		queued:          func(svcs types.ExternalServices) []int64 { return []int64{} },
+	})
+
+	{
+		i := 0
 		testCases = append(testCases, testCase{
-			name: "enqueue everything",
+			name: "some to enqueue",
 			stored: services.With(func(s *types.ExternalService) {
-				s.NextSyncAt = now.Add(-10 * time.Second)
-			}),
-			queued: func(svcs types.ExternalServices) []int64 { return svcs.IDs() },
-		})
-
-		testCases = append(testCases, testCase{
-			name: "nothing to enqueue",
-			stored: services.With(func(s *types.ExternalService) {
-				s.NextSyncAt = now.Add(10 * time.Second)
-			}),
-			queued: func(svcs types.ExternalServices) []int64 { return []int64{} },
-		})
-
-		testCases = append(testCases, testCase{
-			name: "ignore siteadmin repos",
-			stored: services.With(func(s *types.ExternalService) {
-				s.NextSyncAt = now.Add(10 * time.Second)
-			}),
-			ignoreSiteAdmin: true,
-			queued:          func(svcs types.ExternalServices) []int64 { return []int64{} },
-		})
-
-		{
-			i := 0
-			testCases = append(testCases, testCase{
-				name: "some to enqueue",
-				stored: services.With(func(s *types.ExternalService) {
-					if i%2 == 0 {
-						s.NextSyncAt = now.Add(10 * time.Second)
-					} else {
-						s.NextSyncAt = now.Add(-10 * time.Second)
-					}
-					i++
-				}),
-				queued: func(svcs types.ExternalServices) []int64 {
-					var ids []int64
-					for i := range svcs {
-						if i%2 != 0 {
-							ids = append(ids, svcs[i].ID)
-						}
-					}
-					return ids
-				},
-			})
-		}
-
-		for _, tc := range testCases {
-			tc := tc
-
-			t.Run(tc.name, func(t *testing.T) {
-				t.Cleanup(func() {
-					q := sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")
-					if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-						t.Fatal(err)
-					}
-				})
-				stored := tc.stored.Clone()
-
-				if err := store.ExternalServiceStore().Upsert(ctx, stored...); err != nil {
-					t.Fatalf("failed to setup store: %v", err)
+				if i%2 == 0 {
+					s.NextSyncAt = now.Add(10 * time.Second)
+				} else {
+					s.NextSyncAt = now.Add(-10 * time.Second)
 				}
-
-				err := store.EnqueueSyncJobs(ctx, tc.ignoreSiteAdmin)
-				if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
-					t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+				i++
+			}),
+			queued: func(svcs types.ExternalServices) []int64 {
+				var ids []int64
+				for i := range svcs {
+					if i%2 != 0 {
+						ids = append(ids, svcs[i].ID)
+					}
 				}
+				return ids
+			},
+		})
+	}
 
-				jobs, err := store.ListSyncJobs(ctx)
-				if err != nil {
+	for _, tc := range testCases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Cleanup(func() {
+				q := sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")
+				if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 					t.Fatal(err)
 				}
-
-				gotIDs := make([]int64, 0, len(jobs))
-				for _, job := range jobs {
-					gotIDs = append(gotIDs, job.ExternalServiceID)
-				}
-
-				want := tc.queued(stored)
-				sort.Slice(gotIDs, func(i, j int) bool {
-					return gotIDs[i] < gotIDs[j]
-				})
-				sort.Slice(want, func(i, j int) bool {
-					return want[i] < want[j]
-				})
-
-				if diff := cmp.Diff(want, gotIDs); diff != "" {
-					t.Fatal(diff)
-				}
 			})
-		}
+			stored := tc.stored.Clone()
+
+			if err := store.ExternalServiceStore().Upsert(ctx, stored...); err != nil {
+				t.Fatalf("failed to setup store: %v", err)
+			}
+
+			err := store.EnqueueSyncJobs(ctx, tc.ignoreSiteAdmin)
+			if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); have != want {
+				t.Errorf("error:\nhave: %v\nwant: %v", have, want)
+			}
+
+			jobs, err := store.ListSyncJobs(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			gotIDs := make([]int64, 0, len(jobs))
+			for _, job := range jobs {
+				gotIDs = append(gotIDs, job.ExternalServiceID)
+			}
+
+			want := tc.queued(stored)
+			sort.Slice(gotIDs, func(i, j int) bool {
+				return gotIDs[i] < gotIDs[j]
+			})
+			sort.Slice(want, func(i, j int) bool {
+				return want[i] < want[j]
+			})
+
+			if diff := cmp.Diff(want, gotIDs); diff != "" {
+				t.Fatal(diff)
+			}
+		})
 	}
 }
 
-func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
-	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		clock := timeutil.NewFakeClock(time.Now(), 0)
-		now := clock.Now()
+func TestStoreEnqueueSingleSyncJob(t *testing.T) {
+	t.Parallel()
+	store := getTestRepoStore(t)
 
-		ctx := context.Background()
-		t.Cleanup(func() {
-			q := sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")
-			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-				t.Fatal(err)
-			}
-		})
-		service := types.ExternalService{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "Github - Test",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
-			CreatedAt:   now,
-			UpdatedAt:   now,
-		}
+	logger := logtest.Scoped(t)
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
 
-		// Create a new external service
-		confGet := func() *conf.Unified {
-			return &conf.Unified{}
-		}
-		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &service)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		assertCount := func(t *testing.T, want int) {
-			t.Helper()
-			var count int
-			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")
-			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
-				t.Fatal(err)
-			}
-			if count != want {
-				t.Fatalf("Expected %d rows, got %d", want, count)
-			}
-		}
-		assertCount(t, 0)
-
-		err = store.EnqueueSingleSyncJob(ctx, service.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assertCount(t, 1)
-
-		// Doing it again should not fail or add a new row
-		err = store.EnqueueSingleSyncJob(ctx, service.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assertCount(t, 1)
-
-		// If we change status to processing it should not add a new row
-		q := sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='processing'")
+	ctx := context.Background()
+	t.Cleanup(func() {
+		q := sqlf.Sprintf("DELETE FROM external_service_sync_jobs;DELETE FROM external_services")
 		if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
-		err = store.EnqueueSingleSyncJob(ctx, service.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assertCount(t, 1)
-
-		// If we change status to completed we should be able to enqueue another one
-		q = sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")
-		if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-			t.Fatal(err)
-		}
-		err = store.EnqueueSingleSyncJob(ctx, service.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assertCount(t, 2)
-
-		// Test that cloud default external services don't get jobs enqueued (no-ops instead of errors)
-		q = sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")
-		if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-			t.Fatal(err)
-		}
-
-		service.CloudDefault = true
-		err = store.ExternalServiceStore().Upsert(ctx, &service)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = store.EnqueueSingleSyncJob(ctx, service.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assertCount(t, 2)
-
-		// Test that cloud default external services don't get jobs enqueued also when there are no job rows.
-		q = sqlf.Sprintf("DELETE FROM external_service_sync_jobs")
-		if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-			t.Fatal(err)
-		}
-
-		err = store.EnqueueSingleSyncJob(ctx, service.ID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assertCount(t, 0)
+	})
+	service := types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Test",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &service)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertCount := func(t *testing.T, want int) {
+		t.Helper()
+		var count int
+		q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")
+		if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+			t.Fatal(err)
+		}
+		if count != want {
+			t.Fatalf("Expected %d rows, got %d", want, count)
+		}
+	}
+	assertCount(t, 0)
+
+	err = store.EnqueueSingleSyncJob(ctx, service.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertCount(t, 1)
+
+	// Doing it again should not fail or add a new row
+	err = store.EnqueueSingleSyncJob(ctx, service.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertCount(t, 1)
+
+	// If we change status to processing it should not add a new row
+	q := sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='processing'")
+	if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		t.Fatal(err)
+	}
+	err = store.EnqueueSingleSyncJob(ctx, service.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertCount(t, 1)
+
+	// If we change status to completed we should be able to enqueue another one
+	q = sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")
+	if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		t.Fatal(err)
+	}
+	err = store.EnqueueSingleSyncJob(ctx, service.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertCount(t, 2)
+
+	// Test that cloud default external services don't get jobs enqueued (no-ops instead of errors)
+	q = sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")
+	if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		t.Fatal(err)
+	}
+
+	service.CloudDefault = true
+	err = store.ExternalServiceStore().Upsert(ctx, &service)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = store.EnqueueSingleSyncJob(ctx, service.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertCount(t, 2)
+
+	// Test that cloud default external services don't get jobs enqueued also when there are no job rows.
+	q = sqlf.Sprintf("DELETE FROM external_service_sync_jobs")
+	if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+		t.Fatal(err)
+	}
+
+	err = store.EnqueueSingleSyncJob(ctx, service.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertCount(t, 0)
 }
 
-func testStoreListExternalServiceUserIDsByRepoID(store repos.Store) func(*testing.T) {
-	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		ctx := context.Background()
-		t.Cleanup(func() {
-			q := sqlf.Sprintf(`
+func TestStoreListExternalServiceUserIDsByRepoID(t *testing.T) {
+	t.Parallel()
+	store := getTestRepoStore(t)
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	t.Cleanup(func() {
+		q := sqlf.Sprintf(`
 DELETE FROM external_service_repos;
 DELETE FROM external_services;
 DELETE FROM repo;
 DELETE FROM users;
 `)
-			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-				t.Fatal(err)
-			}
-		})
-
-		clock := timeutil.NewFakeClock(time.Now(), 0)
-		now := clock.Now()
-
-		svc := types.ExternalService{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "Github - Test",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
-			CreatedAt:   now,
-			UpdatedAt:   now,
-		}
-
-		// Create a new external service
-		confGet := func() *conf.Unified {
-			return &conf.Unified{}
-		}
-		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &svc)
-		if err != nil {
+		if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
+	})
 
-		qs := []*sqlf.Query{
-			sqlf.Sprintf(`
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	svc := types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Test",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &svc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	qs := []*sqlf.Query{
+		sqlf.Sprintf(`
 INSERT INTO repo (id, name, private)
 VALUES
 	(1, 'repo-1', TRUE),
 	(2, 'repo-2', TRUE)
 `),
-			sqlf.Sprintf(`INSERT INTO users (id, username) VALUES (1, 'alice')`),
-			sqlf.Sprintf(`
+		sqlf.Sprintf(`INSERT INTO users (id, username) VALUES (1, 'alice')`),
+		sqlf.Sprintf(`
 INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, user_id)
 		VALUES
 			(%s, 1, '', NULL),
 			(%s, 2, '', 1);
 		`, svc.ID, svc.ID),
-		}
-		for _, q := range qs {
-			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		got, err := store.ListExternalServiceUserIDsByRepoID(ctx, 2)
-		if err != nil {
+	}
+	for _, q := range qs {
+		if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
+	}
 
-		want := []int32{1}
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
-		}
+	got, err := store.ListExternalServiceUserIDsByRepoID(ctx, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []int32{1}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }
 
-func testStoreListExternalServicePrivateRepoIDsByUserID(store repos.Store) func(*testing.T) {
-	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		ctx := context.Background()
-		t.Cleanup(func() {
-			q := sqlf.Sprintf(`
+func TestStoreListExternalServicePrivateRepoIDsByUserID(t *testing.T) {
+	t.Parallel()
+	store := getTestRepoStore(t)
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	t.Cleanup(func() {
+		q := sqlf.Sprintf(`
 DELETE FROM external_service_repos;
 DELETE FROM external_services;
 DELETE FROM repo;
 DELETE FROM users;
 `)
-			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-				t.Fatal(err)
-			}
-		})
-
-		clock := timeutil.NewFakeClock(time.Now(), 0)
-		now := clock.Now()
-
-		svc := types.ExternalService{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "Github - Test",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
-			CreatedAt:   now,
-			UpdatedAt:   now,
-		}
-
-		// Create a new external service
-		confGet := func() *conf.Unified {
-			return &conf.Unified{}
-		}
-		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &svc)
-		if err != nil {
+		if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
+	})
 
-		qs := []*sqlf.Query{
-			sqlf.Sprintf(`
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	svc := types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "Github - Test",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &svc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	qs := []*sqlf.Query{
+		sqlf.Sprintf(`
 INSERT INTO repo (id, name, private)
 VALUES
 	(1, 'repo-1', TRUE),
 	(2, 'repo-2', TRUE),
 	(3, 'repo-3', FALSE)
 `),
-			sqlf.Sprintf(`INSERT INTO users (id, username) VALUES (1, 'alice')`),
-			sqlf.Sprintf(`
+		sqlf.Sprintf(`INSERT INTO users (id, username) VALUES (1, 'alice')`),
+		sqlf.Sprintf(`
 INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, user_id)
 VALUES
 	(%s, 1, '', NULL),
 	(%s, 2, '', 1),
 	(%s, 3, '', 1)
 		`, svc.ID, svc.ID, svc.ID),
-		}
-		for _, q := range qs {
-			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-				t.Fatal(err)
-			}
-		}
-
-		got, err := store.ListExternalServicePrivateRepoIDsByUserID(ctx, 1)
-		if err != nil {
+	}
+	for _, q := range qs {
+		if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}
+	}
 
-		want := []api.RepoID{2}
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
-		}
+	got, err := store.ListExternalServicePrivateRepoIDsByUserID(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []api.RepoID{2}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
 }
 
@@ -473,6 +482,11 @@ func generateExternalServices(n int, base ...*types.ExternalService) types.Exter
 	}
 	return es
 }
+
+// This error is passed to txstore.Done in order to always
+// roll-back the transaction a test case executes in.
+// This is meant to ensure each test case has a clean slate.
+var errRollback = errors.New("tx: rollback")
 
 func transact(ctx context.Context, s repos.Store, test func(testing.TB, repos.Store)) func(*testing.T) {
 	return func(t *testing.T) {
@@ -588,4 +602,20 @@ func mkExternalServices(now time.Time) types.ExternalServices {
 		&otherSvc,
 		&gitoliteSvc,
 	}
+}
+
+// get a test store. When in short mode, the test will be skipped as it accesses
+// the database.
+func getTestRepoStore(t *testing.T) repos.Store {
+	t.Helper()
+
+	if testing.Short() {
+		t.Skip(t)
+	}
+
+	logger := logtest.Scoped(t)
+	store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))
+	store.SetMetrics(repos.NewStoreMetrics())
+	store.SetTracer(trace.Tracer{TracerProvider: otel.GetTracerProvider()})
+	return store
 }

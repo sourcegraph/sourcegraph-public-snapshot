@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiClose, mdiRadioboxBlank, mdiRadioboxMarked } from '@mdi/js'
 import classNames from 'classnames'
@@ -13,8 +13,8 @@ import {
     PopoverTrigger,
     Tooltip,
     Position,
-    H1,
     H4,
+    H2,
 } from '@sourcegraph/wildcard'
 
 import { ToggleProps } from './QueryInputToggle'
@@ -51,24 +51,24 @@ export const SmartSearchToggle: React.FunctionComponent<SmartSearchToggleProps> 
 
     return (
         <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
-            <PopoverTrigger
-                as={Button}
-                className={classNames(
-                    styles.toggle,
-                    smartStyles.button,
-                    className,
-                    !!disabledRule && styles.disabled,
-                    isActive && styles.toggleActive,
-                    !interactive && styles.toggleNonInteractive
-                )}
-                variant="icon"
-                aria-checked={isActive}
-                {...interactiveProps}
-            >
-                <Tooltip content={tooltipValue} placement="bottom">
+            <Tooltip content={tooltipValue} placement="bottom">
+                <PopoverTrigger
+                    as={Button}
+                    className={classNames(
+                        styles.toggle,
+                        smartStyles.button,
+                        className,
+                        !!disabledRule && styles.disabled,
+                        isActive && styles.toggleActive,
+                        !interactive && styles.toggleNonInteractive
+                    )}
+                    variant="icon"
+                    aria-checked={isActive}
+                    {...interactiveProps}
+                >
                     <Icon aria-label={tooltipValue} svgPath={smartSearchIconSvgPath} />
-                </Tooltip>
-            </PopoverTrigger>
+                </PopoverTrigger>
+            </Tooltip>
 
             <SmartSearchToggleMenu onSelect={onSelect} isActive={isActive} closeMenu={() => setIsPopoverOpen(false)} />
         </Popover>
@@ -78,10 +78,19 @@ export const SmartSearchToggle: React.FunctionComponent<SmartSearchToggleProps> 
 const SmartSearchToggleMenu: React.FunctionComponent<
     Pick<SmartSearchToggleProps, 'onSelect' | 'isActive'> & { closeMenu: () => void }
 > = ({ onSelect, isActive, closeMenu }) => {
+    const [visibleIsEnabled, setVisibleIsEnabled] = useState(isActive)
+    useEffect(() => {
+        setVisibleIsEnabled(isActive)
+    }, [isActive])
+
     const onChange = useCallback(
         (value: boolean) => {
-            onSelect(value)
-            closeMenu()
+            setVisibleIsEnabled(value)
+            // Wait a tiny bit for user to see the selection change before closing the popover
+            setTimeout(() => {
+                onSelect(value)
+                closeMenu()
+            }, 100)
         },
         [onSelect, closeMenu]
     )
@@ -93,7 +102,7 @@ const SmartSearchToggleMenu: React.FunctionComponent<
             className={smartStyles.popoverWindow}
         >
             <div className="d-flex align-items-center px-3 py-2">
-                <H4 as={H1} id="smart-search-popover-header" className="m-0 flex-1">
+                <H4 as={H2} id="smart-search-popover-header" className="m-0 flex-1">
                     Smart Search
                 </H4>
                 <Button onClick={() => closeMenu()} variant="icon" aria-label="Close">
@@ -104,14 +113,14 @@ const SmartSearchToggleMenu: React.FunctionComponent<
                 value={true}
                 header="Enable"
                 description="Suggest variations of your query to find more results that may relate."
-                isChecked={isActive}
+                isChecked={visibleIsEnabled}
                 onSelect={onChange}
             />
             <RadioItem
                 value={false}
                 header="Disable"
                 description="Only show results that precisely match your query."
-                isChecked={!isActive}
+                isChecked={!visibleIsEnabled}
                 onSelect={onChange}
             />
         </PopoverContent>

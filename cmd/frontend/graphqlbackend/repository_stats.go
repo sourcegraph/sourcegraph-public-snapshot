@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -31,9 +31,9 @@ type repositoryStatsResolver struct {
 func (r *repositoryStatsResolver) GitDirBytes(ctx context.Context) (BigInt, error) {
 	gitDirBytes, err := r.computeGitDirBytes(ctx)
 	if err != nil {
-		return BigInt{}, err
+		return 0, err
 	}
-	return BigInt{Int: gitDirBytes}, nil
+	return BigInt(gitDirBytes), nil
 
 }
 
@@ -82,9 +82,9 @@ func min(a, b int32) int32 {
 func (r *repositoryStatsResolver) IndexedLinesCount(ctx context.Context) (BigInt, error) {
 	_, indexedLinesCount, err := r.computeIndexedStats(ctx)
 	if err != nil {
-		return BigInt{}, err
+		return 0, err
 	}
-	return BigInt{Int: indexedLinesCount}, nil
+	return BigInt(indexedLinesCount), nil
 }
 
 func (r *repositoryStatsResolver) computeIndexedStats(ctx context.Context) (int32, int64, error) {
@@ -161,7 +161,7 @@ func (r *repositoryStatsResolver) computeRepoStatistics(ctx context.Context) (da
 func (r *schemaResolver) RepositoryStats(ctx context.Context) (*repositoryStatsResolver, error) {
 	// 🚨 SECURITY: Only site admins may query repository statistics for the site.
 	db := r.db
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 

@@ -24,6 +24,7 @@ type Inputs struct {
 	Plan                query.Plan // the comprehensive query plan
 	Query               query.Q    // the current basic query being evaluated, one part of query.Plan
 	OriginalQuery       string     // the raw string of the original search query
+	SearchMode          Mode
 	PatternType         query.SearchType
 	UserSettings        *schema.Settings
 	OnSourcegraphDotCom bool
@@ -43,6 +44,13 @@ func (inputs Inputs) DefaultLimit() int {
 	}
 	return limits.DefaultMaxSearchResultsStreaming
 }
+
+type Mode int
+
+const (
+	Precise     Mode = 0
+	SmartSearch      = 1 << (iota - 1)
+)
 
 type Protocol int
 
@@ -157,6 +165,9 @@ type ZoektParameters struct {
 	Typ            IndexedRequestType
 	FileMatchLimit int32
 	Select         filter.SelectPath
+
+	// Features are feature flags that can affect behaviour of searcher.
+	Features Features
 }
 
 // SearcherParameters the inputs for a search fulfilled by the Searcher service
@@ -323,14 +334,21 @@ type Features struct {
 	// what has changed since the indexed commit.
 	HybridSearch bool `json:"search-hybrid"`
 
-	// CodeOwnershipFilters when true will add the code ownership post-search
-	// filter and allow users to search by code owners using the has.owner
-	// predicate.
-	CodeOwnershipFilters bool `json:"code-ownership"`
-
 	// When true lucky search runs by default. Adding for A/B testing in
 	// 08/2022. To be removed at latest by 12/2022.
 	AbLuckySearch bool `json:"ab-lucky-search"`
+
+	// Ranking when true will use a our new #ranking signals and code paths
+	// for ranking results from Zoekt.
+	Ranking bool `json:"ranking"`
+
+	// Debug when true will set the Debug field on FileMatches. This may grow
+	// from here. For now we treat this like a feature flag for convenience.
+	Debug bool `json:"debug"`
+
+	// RankingDampDocRanks if true will damp the influence of document
+	// ranks on the final ranking.
+	RankingDampDocRanks bool `json:"search-ranking-damp-doc-ranks"`
 }
 
 func (f *Features) String() string {
@@ -356,7 +374,7 @@ type RepoOptions struct {
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
 
-	CommitAfter string
+	CommitAfter *query.RepoHasCommitAfterArgs
 	Visibility  query.RepoVisibility
 	Limit       int
 	Cursors     []*types.Cursor
@@ -402,8 +420,9 @@ func (op *RepoOptions) Tags() []otlog.Field {
 	if op.SearchContextSpec != "" {
 		add(otlog.String("searchContextSpec", op.SearchContextSpec))
 	}
-	if op.CommitAfter != "" {
-		add(otlog.String("commitAfter", op.CommitAfter))
+	if op.CommitAfter != nil {
+		add(otlog.String("commitAfter.time", op.CommitAfter.TimeRef))
+		add(otlog.Bool("commitAfter.negated", op.CommitAfter.Negated))
 	}
 	if op.Visibility != query.Any {
 		add(otlog.String("visibility", string(op.Visibility)))
@@ -489,7 +508,9 @@ func (op *RepoOptions) String() string {
 		fmt.Fprintf(&b, "DescriptionPatterns: %q\n", op.DescriptionPatterns)
 	}
 
-	fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter)
+	if op.CommitAfter != nil {
+		fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter.TimeRef)
+	}
 	fmt.Fprintf(&b, "Visibility: %s\n", string(op.Visibility))
 
 	if op.UseIndex != query.Yes {

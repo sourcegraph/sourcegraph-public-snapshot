@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -40,8 +41,15 @@ func IsEnabled() bool {
 }
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
-func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
-	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver(postgres, observationContext)
+func Init(
+	ctx context.Context,
+	db database.DB,
+	_ codeintel.Services,
+	_ conftypes.UnifiedWatchable,
+	enterpriseServices *enterprise.Services,
+	observationContext *observation.Context,
+) error {
+	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver(db, observationContext)
 
 	if !IsEnabled() {
 		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
@@ -51,11 +59,11 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 		}
 		return nil
 	}
-	db, err := InitializeCodeInsightsDB("frontend")
+	rawInsightsDB, err := InitializeCodeInsightsDB("frontend")
 	if err != nil {
 		return err
 	}
-	enterpriseServices.InsightsResolver = resolvers.New(db, postgres)
+	enterpriseServices.InsightsResolver = resolvers.New(rawInsightsDB, db)
 
 	return nil
 }

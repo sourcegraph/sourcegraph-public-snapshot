@@ -5,12 +5,11 @@ import classNames from 'classnames'
 import * as H from 'history'
 
 import { renderMarkdown, pluralize } from '@sourcegraph/common'
-import { IMarkdownBlock, NotebookBlock } from '@sourcegraph/shared/src/schema'
 import { Link, Badge, Icon } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { NotebookFields } from '../../graphql-operations'
-import { PageRoutes } from '../../routes.constants'
+import { EnterprisePageRoutes } from '../../routes.constants'
 
 import styles from './NotebookNode.module.scss'
 
@@ -22,9 +21,10 @@ export interface NotebookNodeProps {
 
 // Find the first Markdown block in the notebook, and use the first line in the block
 // as the notebook description.
-function getNotebookDescription(blocks: NotebookBlock[]): string {
-    const firstMarkdownBlock = blocks.find<IMarkdownBlock>(
-        (block): block is IMarkdownBlock => block.__typename === 'MarkdownBlock'
+function getNotebookDescription(blocks: NotebookFields['blocks']): string {
+    const firstMarkdownBlock = blocks.find(
+        (block): block is Extract<NotebookFields['blocks'][number], { __typename: 'MarkdownBlock' }> =>
+            block.__typename === 'MarkdownBlock'
     )
     if (!firstMarkdownBlock) {
         return ''
@@ -40,7 +40,7 @@ export const NotebookNode: React.FunctionComponent<React.PropsWithChildren<Noteb
     return (
         <li className={classNames('py-3', styles.notebookNode)}>
             <div className="d-flex align-items-center">
-                <Link to={PageRoutes.Notebook.replace(':id', node.id)} className={styles.notebookLink}>
+                <Link to={EnterprisePageRoutes.Notebook.replace(':id', node.id)} className={styles.notebookLink}>
                     <strong>{node.title}</strong>
                 </Link>
                 {!node.public && (

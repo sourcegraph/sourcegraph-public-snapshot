@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { from } from 'rxjs'
 
+import { logger } from '@sourcegraph/common'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { isSettingsValid, Settings } from '@sourcegraph/shared/src/settings/settings'
@@ -138,10 +139,10 @@ function upgradeSettings(platformContext: PlatformContext, settings: Settings, u
                 value: openInEditor,
             })
             .then(() => {
-                console.log('Migrated items successfully.')
+                logger.log('Migrated items successfully.')
             })
             .catch(error => {
-                console.error('Setting migration failed.', error)
+                logger.error('Setting migration failed.', error)
             })
     }
 }

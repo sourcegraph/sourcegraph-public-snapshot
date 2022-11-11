@@ -78,7 +78,7 @@ const filterInfos: FilterInfo[] = [
         ...createQueryExampleFromString('"{last week}"'),
         field: FilterType.after,
         description:
-            'Only include results from diffs or commits which have a commit date after the specified time frame. To use this filter, the search query must contain `type:diff` or `type:commit`.',
+            'Only include results from diffs or commits which have a commit date after the specified time frame. Times are interpreted as UTC by default. To use this filter, the search query must contain `type:diff` or `type:commit`.',
         commonRank: 100,
         examples: ['after:"6 weeks ago"', 'after:"november 1 2019"'],
     },
@@ -103,7 +103,7 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         ...createQueryExampleFromString('"{last thursday}"'),
         field: FilterType.before,
         description:
-            'Only include results from diffs or commits which have a commit date before the specified time frame. To use this filter, the search query must contain `type:diff` or `type:commit`.',
+            'Only include results from diffs or commits which have a commit date before the specified time frame. Times are interpreted as UTC by default. To use this filter, the search query must contain `type:diff` or `type:commit`.',
         commonRank: 100,
         examples: ['before:"last thursday"', 'before:"november 1 2019"'],
     },
@@ -213,6 +213,21 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         field: FilterType.repo,
         description: 'Search inside repositories that have a description matched by the provided regex pattern.',
         examples: ['repo:has.description(linux kernel)', 'repo:has.description(go.*library)'],
+        showSuggestions: false,
+    },
+    {
+        ...createQueryExampleFromString('has.tag({any string})'),
+        field: FilterType.repo,
+        description: 'Search inside repositories that are tagged with the provided string.',
+        examples: ['repo:has.tag(ocaml)', '-repo:has.tag(golang)'],
+        showSuggestions: false,
+    },
+    {
+        ...createQueryExampleFromString('has({key:value})'),
+        field: FilterType.repo,
+        description:
+            'Search inside repositories associated with a key:value pair that matches the provided key:value pair.',
+        examples: ['repo:has(owner:jordan)', '-repo:has(team:search)'],
         showSuggestions: false,
     },
     {

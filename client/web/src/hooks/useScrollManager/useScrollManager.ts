@@ -3,6 +3,8 @@ import { useEffect } from 'react'
 import { debounce } from 'lodash'
 import { useHistory } from 'react-router'
 
+import { logger } from '@sourcegraph/common'
+
 import {
     MutationObserverError,
     MutationObserverPromise,
@@ -94,7 +96,7 @@ export function useScrollManager(containerKey: string, containerRef: React.RefOb
                     )
                     .catch((error: MutationObserverError) => {
                         if (!error.cancelled) {
-                            console.error(
+                            logger.error(
                                 `Failed to scroll to position '${scrollPosition}' for pathname '${pathname}' in container '${containerKey}'.`
                             )
                         }

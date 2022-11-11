@@ -2,16 +2,16 @@ import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Input, Label } from '@sourcegraph/wildcard'
 
 import { USER_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { UsernameInput } from '../../../auth/SignInSignUpCommon'
+import { EditUserProfilePage } from '../../../graphql-operations'
 import { UserAvatar } from '../../UserAvatar'
 
 import styles from './UserProfileFormFields.module.scss'
 
-export type UserProfileFormFieldsValue = Pick<GQL.IUser, 'username' | 'displayName' | 'avatarURL'>
+export type UserProfileFormFieldsValue = Pick<EditUserProfilePage, 'username' | 'displayName' | 'avatarURL'>
 
 interface Props {
     value: UserProfileFormFieldsValue

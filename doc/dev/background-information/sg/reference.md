@@ -87,6 +87,7 @@ Available commands in `sg.config.yaml`:
 
 * batches-executor
 * batches-executor-firecracker
+* batcheshelper-builder
 * bext
 * caddy
 * codeintel-executor
@@ -98,6 +99,9 @@ Available commands in `sg.config.yaml`:
 * frontend: Enterprise frontend
 * github-proxy
 * gitserver
+* gitserver-0
+* gitserver-1
+* gitserver-template
 * grafana
 * jaeger
 * loki
@@ -237,11 +241,20 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 * backend-integration
 
 For run types that require branch arguments, you will be prompted for an argument, or you
-can provide it directly (for example, 'sg ci build [runtype] [argument]').
+can provide it directly (for example, 'sg ci build [runtype] <argument>').
 
 Learn more about pipeline run types in https://docs.sourcegraph.com/dev/background-information/ci/reference.
 
-Arguments: `[runtype]`
+```sh
+# Start a main-dry-run build
+$ sg ci build main-dry-run
+
+# Publish a custom image build
+$ sg ci build docker-images-patch
+
+# Publish a custom Prometheus image build without running tests
+$ sg ci build docker-images-patch-notest prometheus
+```
 
 Flags:
 
@@ -374,6 +387,7 @@ Flags:
 * `--fail-fast, --ff`: Exit immediately if an issue is encountered (not available with '-fix')
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--fix, -f`: Try to fix any lint issues
+* `--no-format-check, --nfc`: Don't check file formatting
 
 ### sg lint urls
 
@@ -438,6 +452,15 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
+### sg lint format
+
+Check client code and docs for formatting errors.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ## sg generate
 
 Run code and docs generation tasks.
@@ -467,6 +490,9 @@ Flags:
 Interact with local Sourcegraph databases for development.
 
 ```sh
+# Delete test databases
+$ sg db delete-test-dbs
+
 # Reset the Sourcegraph 'frontend' database
 $ sg db reset-pg
 
@@ -482,6 +508,15 @@ $ sg db reset-redis
 # Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
 $ sg db add-user -name=foo
 ```
+
+### sg db delete-test-dbs
+
+Drops all databases that have the prefix `sourcegraph-test-`.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ### sg db reset-pg
 
@@ -968,6 +1003,8 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--grafana.creds="<value>"`: Credentials for the Grafana instance to reload (default: admin:admin)
 * `--grafana.dir="<value>"`: Output directory for generated Grafana assets (default: $SG_ROOT/docker-images/grafana/config/provisioning/dashboards/sourcegraph/)
+* `--grafana.folder="<value>"`: Folder on Grafana instance to put generated dashboards in
+* `--grafana.headers="<value>"`: Additional headers for HTTP requests to the Grafana instance
 * `--grafana.url="<value>"`: Address for the Grafana instance to reload (default: http://127.0.0.1:3370)
 * `--inject-label-matcher="<value>"`: Labels to inject into all selectors in Prometheus expressions: observable queries, dashboard template variables, etc.
 * `--no-prune`: Toggles pruning of dangling generated assets through simple heuristic - should be disabled during builds.
@@ -1045,6 +1082,57 @@ Flags:
 * `--fix, -f`: Fix all checks
 * `--oss`: Omit Sourcegraph-teammate-specific setup
 
+## sg src
+
+Run src-cli on a given instance defined with 'sg src-instance'.
+
+```sh
+$ sg src [src-cli args]
+$ sg src help # get src-cli help
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+## sg src-instance
+
+Interact with Sourcegraph instances that 'sg src' will use.
+
+```sh
+$ sg src-instance [command]
+```
+
+### sg src-instance register
+
+Register (or edit an existing) Sourcegraph instance to target with src-cli.
+
+```sh
+$ sg src instance register [name] [endpoint]
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg src-instance use
+
+Set current src-cli instance to use with 'sg src'.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg src-instance list
+
+List registered instances for src-cli.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ## sg teammate
 
 Get information about Sourcegraph teammates.
@@ -1086,16 +1174,60 @@ Flags:
 
 List, search, and open Sourcegraph RFCs.
 
+Sourcegraph RFCs live in the following drives - see flags to configure which drive to query:
+
+* Public: https://drive.google.com/drive/folders/1zP3FxdDlcSQGC1qvM9lHZRaHH4I9Jwwa
+* Private: https://drive.google.com/drive/folders/1KCq4tMLnVlC0a1rwGuU5OSCw6mdDxLuv
+
+
 ```sh
-# List all RFCs
+# List all Public RFCs
 $ sg rfc list
 
-# Search for an RFC
+# List all Private RFCs
+$ sg rfc --private list
+
+# Search for a Public RFC
 $ sg rfc search "search terms"
 
-# Open a specific RFC
+# Search for a Private RFC
+$ sg rfc --private search "search terms"
+
+# Open a specific Public RFC
 $ sg rfc open 420
+
+# Open a specific private RFC
+$ sg rfc --private open 420
 ```
+
+Flags:
+
+* `--private`: perform the RFC action on the private RFC drive
+
+### sg rfc list
+
+List Sourcegraph RFCs.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg rfc search
+
+Search Sourcegraph RFCs.
+
+Arguments: `[query]`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg rfc open
+
+Open a Sourcegraph RFC - find and list RFC numbers with 'sg rfc list' or 'sg rfc search'.
+
+Arguments: `[number]`
 
 Flags:
 
@@ -1181,12 +1313,14 @@ Available preset environments:
 * s2
 * dotcom
 * k8s
+* scaletesting
 
 ```sh
 # See which version is deployed on a preset environment
 $ sg live s2
 $ sg live dotcom
 $ sg live k8s
+$ sg live scaletesting
 
 # See which version is deployed on a custom environment
 $ sg live https://demo.sourcegraph.com

@@ -11,7 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -58,8 +60,8 @@ func (s *surveyResponseResolver) OtherUseCase() *string {
 	return s.surveyResponse.OtherUseCase
 }
 
-func (s *surveyResponseResolver) CreatedAt() DateTime {
-	return DateTime{Time: s.surveyResponse.CreatedAt}
+func (s *surveyResponseResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: s.surveyResponse.CreatedAt}
 }
 
 // SurveySubmissionInput contains a satisfaction (NPS) survey response.
@@ -125,6 +127,63 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	}); err != nil {
 		// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
 		log15.Error("Unable to submit survey results to Sourcegraph remote", "error", err)
+	}
+
+	return &EmptyResponse{}, nil
+}
+
+// FeedbackSubmissionInput contains a happiness feedback response.
+type HappinessFeedbackSubmissionInput struct {
+	// Score is the user's happiness rating, from 1-4.
+	Score int32
+	// Feedback is the feedback text from the user.
+	Feedback *string
+	// The path that the happiness feedback was submitted from
+	CurrentPath *string
+}
+
+type happinessFeedbackSubmissionForHubSpot struct {
+	Email       *string `url:"email"`
+	Username    *string `url:"happiness_username"`
+	Feedback    *string `url:"happiness_feedback"`
+	CurrentPath *string `url:"happiness_current_url"`
+	IsTest      bool    `url:"happiness_is_test"`
+	SiteID      string  `url:"site_id"`
+}
+
+// SubmitHappinessFeedback records a new happiness feedback response by the current user.
+func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *struct {
+	Input *HappinessFeedbackSubmissionInput
+}) (*EmptyResponse, error) {
+	data := happinessFeedbackSubmissionForHubSpot{
+		Feedback:    args.Input.Feedback,
+		CurrentPath: args.Input.CurrentPath,
+		IsTest:      env.InsecureDev,
+		SiteID:      siteid.Get(),
+	}
+
+	// We include the username and email address of the user (if signed in). For signed-in users,
+	// the UI indicates that the username and email address will be sent to Sourcegraph.
+	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
+		currentUser, err := r.db.Users().GetByID(ctx, actor.UID)
+		if err != nil {
+			return nil, err
+		}
+		data.Username = &currentUser.Username
+
+		email, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, actor.UID)
+		if err != nil && !errcode.IsNotFound(err) {
+			return nil, err
+		}
+		if email != "" {
+			data.Email = &email
+		}
+	}
+
+	// Submit form to HubSpot
+	if err := hubspotutil.Client().SubmitForm(hubspotutil.HappinessFeedbackFormID, &data); err != nil {
+		// Log an error, but don't return one if the only failure was in submitting feedback results to HubSpot.
+		log15.Error("Unable to submit happiness feedback results to Sourcegraph remote", "error", err)
 	}
 
 	return &EmptyResponse{}, nil

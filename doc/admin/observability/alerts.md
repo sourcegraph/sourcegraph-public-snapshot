@@ -1214,6 +1214,43 @@ Generated query for critical alert: `min((sum by(app) (up{app=~".*(frontend|sour
 
 <br />
 
+## frontend: email_delivery_failures
+
+<p class="subtitle">emails delivery failures every 30 minutes</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> frontend: 1+ emails delivery failures every 30 minutes
+- <span class="badge badge-critical">critical</span> frontend: 2+ emails delivery failures every 30 minutes
+
+**Next steps**
+
+- Check your SMTP configuration in site configuration.
+- Check frontend logs for more detailed error messages.
+- Check your SMTP provider for more detailed error messages.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-email-delivery-failures).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_email_delivery_failures",
+  "critical_frontend_email_delivery_failures"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum(increase(src_email_send{success="false"}[30m]))) >= 1)`
+
+Generated query for critical alert: `max((sum(increase(src_email_send{success="false"}[30m]))) >= 2)`
+
+</details>
+
+<br />
+
 ## frontend: mean_successful_sentinel_duration_over_2h
 
 <p class="subtitle">mean successful sentinel search duration over 2h</p>
@@ -4259,37 +4296,6 @@ Generated query for warning alert: `min((max(rate(src_repoupdater_source_repos_t
 
 <br />
 
-## repo-updater: user_added_repos
-
-<p class="subtitle">total number of user added repos</p>
-
-**Descriptions**
-
-- <span class="badge badge-critical">critical</span> repo-updater: 720000+ total number of user added repos for 5m0s
-
-**Next steps**
-
-- Check for unusual spikes in user added repos. Each user is only allowed to add 2000 and we have a site wide limit of 800k.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-user-added-repos).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_repo-updater_user_added_repos"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for critical alert: `max((max(src_repoupdater_user_repos_total)) >= 720000)`
-
-</details>
-
-<br />
-
 ## repo-updater: purge_failed
 
 <p class="subtitle">repositories purge failed</p>
@@ -4331,7 +4337,7 @@ Generated query for warning alert: `max((max(rate(src_repoupdater_purge_failed[1
 
 **Next steps**
 
-- Check repo-updater logs. This is expected to fire if there are no user added code hosts
+- Check repo-updater logs.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-sched-auto-fetch).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -4528,7 +4534,7 @@ Generated query for critical alert: `max((max(rate(src_repoupdater_sched_error[1
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4559,7 +4565,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4591,7 +4597,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4623,7 +4629,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4654,7 +4660,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4686,7 +4692,7 @@ Generated query for warning alert: `max((histogram_quantile(0.95, max by(le, typ
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4718,7 +4724,7 @@ Generated query for warning alert: `max((max(src_repoupdater_perms_syncer_queue_
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4755,37 +4761,6 @@ Generated query for critical alert: `max((max by(type) (ceil(rate(src_repoupdate
 <summary>Technical details</summary>
 
 Generated query for critical alert: `max((max(src_repoupdater_external_services_total)) >= 20000)`
-
-</details>
-
-<br />
-
-## repo-updater: src_repoupdater_user_external_services_total
-
-<p class="subtitle">the total number of user added external services</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 20000+ the total number of user added external services for 1h0m0s
-
-**Next steps**
-
-- Check for spikes in external services, could be abuse
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-src-repoupdater-user-external-services-total).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_src_repoupdater_user_external_services_total"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max(src_repoupdater_user_external_services_total)) >= 20000)`
 
 </details>
 
@@ -6589,6 +6564,48 @@ Generated query for warning alert: `max((sum by(code) (increase(src_zoekt_reques
 
 <br />
 
+## zoekt: memory_map_areas_percentage_used
+
+<p class="subtitle">process memory map areas percentage used (per instance)</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> zoekt: 70%+ process memory map areas percentage used (per instance)
+- <span class="badge badge-critical">critical</span> zoekt: 90%+ process memory map areas percentage used (per instance)
+
+**Next steps**
+
+- If you are running out of memory map areas, you could resolve this by:
+
+    - Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
+means that each _individual_ replica will have fewer shards. This, in turn, decreases the
+amount of memory map areas that a _single_ replica can create (in order to load the shards into memory).
+    - Increase the virtual memory subsystem`s `max_map_count` parameter which defines the upper limit of memory areas
+a process can use. The exact instructions for tuning this parameter can differ depending on your environment.
+See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-memory-map-areas-percentage-used).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_zoekt_memory_map_areas_percentage_used",
+  "critical_zoekt_memory_map_areas_percentage_used"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max(((proc_metrics_memory_map_current_count / proc_metrics_memory_map_max_limit) * 100) >= 70)`
+
+Generated query for critical alert: `max(((proc_metrics_memory_map_current_count / proc_metrics_memory_map_max_limit) * 100) >= 90)`
+
+</details>
+
+<br />
+
 ## zoekt: container_cpu_usage
 
 <p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
@@ -7765,7 +7782,7 @@ an underprovisioned main postgres instance.
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^.*"})) >= 3600)`
+Generated query for critical alert: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`
 
 </details>
 

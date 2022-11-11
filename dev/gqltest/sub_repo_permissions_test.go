@@ -27,7 +27,9 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 
 	// Test cases
 
+	// flaky test
 	t.Run("can read README.md", func(t *testing.T) {
+		t.Skip("skipping because flaky")
 		blob, err := userClient.GitBlob(repoName, "master", "README.md")
 		if err != nil {
 			t.Fatal(err)
@@ -39,11 +41,7 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 		}
 	})
 
-	// flaky test
-	// https://github.com/sourcegraph/sourcegraph/issues/40882
 	t.Run("cannot read hack.sh", func(t *testing.T) {
-		t.Skip("skipping because flaky")
-
 		// Should not be able to read hack.sh
 		blob, err := userClient.GitBlob(repoName, "master", "Security/hack.sh")
 		if err != nil {
@@ -60,10 +58,8 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 	})
 
 	// flaky test
-	// https://github.com/sourcegraph/sourcegraph/issues/40883
 	t.Run("file list excludes excluded files", func(t *testing.T) {
 		t.Skip("skipping because flaky")
-
 		files, err := userClient.GitListFilenames(repoName, "master")
 		if err != nil {
 			t.Fatal(err)
@@ -337,19 +333,41 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 	if err != nil {
 		t.Fatal("Waiting for user permissions to be synced:", err)
 	}
+	// Wait up to 30 seconds for Perforce to be added as an authz provider
+	err = gqltestutil.Retry(30*time.Second, func() error {
+		authzProviders, err := client.AuthzProviderTypes()
+		if err != nil {
+			t.Fatal("failed to fetch list of authz providers", err)
+		}
+		if len(authzProviders) != 0 {
+			for _, p := range authzProviders {
+				if p == "perforce" {
+					return nil
+				}
+			}
+		}
+		return gqltestutil.ErrContinueRetry
+	})
+	if err != nil {
+		t.Fatal("Waiting for authz providers to be added:", err)
+	}
 }
 
 func enableSubRepoPermissions(t *testing.T) {
 	t.Helper()
 
-	siteConfig, err := client.SiteConfiguration()
+	siteConfig, lastID, err := client.SiteConfiguration()
 	if err != nil {
 		t.Fatal(err)
 	}
 	oldSiteConfig := new(schema.SiteConfiguration)
 	*oldSiteConfig = *siteConfig
 	t.Cleanup(func() {
-		err = client.UpdateSiteConfiguration(oldSiteConfig)
+		_, lastID, err := client.SiteConfiguration()
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -361,7 +379,7 @@ func enableSubRepoPermissions(t *testing.T) {
 			Enabled: true,
 		},
 	}
-	err = client.UpdateSiteConfiguration(siteConfig)
+	err = client.UpdateSiteConfiguration(siteConfig, lastID)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -410,7 +410,6 @@ var userCredentialsColumns = []*sqlf.Query{
 // in a vain attempt to improve their readability.
 
 const userCredentialsGetByScopeQueryFmtstr = `
--- source: internal/database/user_credentials.go:GetByScope
 SELECT %s
 FROM user_credentials
 WHERE
@@ -422,7 +421,6 @@ WHERE
 `
 
 const userCredentialsListQueryFmtstr = `
--- source: internal/database/user_credentials.go:List
 SELECT %s
 FROM user_credentials
 WHERE %s
@@ -432,7 +430,6 @@ ORDER BY created_at ASC, domain ASC, user_id ASC, external_service_id ASC
 `
 
 const userCredentialsCreateQueryFmtstr = `
--- source: internal/database/user_credentials.go:Create
 INSERT INTO
 	user_credentials (
 		domain,
@@ -460,7 +457,6 @@ INSERT INTO
 `
 
 const userCredentialsUpdateQueryFmtstr = `
--- source: internal/database/user_credentials.go:Update
 UPDATE user_credentials
 SET
 	domain = %s,

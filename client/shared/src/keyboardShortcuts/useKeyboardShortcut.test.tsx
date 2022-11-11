@@ -53,7 +53,7 @@ describe('useKeyboardShortcut', () => {
                 <div>
                   <pre>
                     {
-                  "title": "Fuzzy search files",
+                  "title": "Fuzzy finder",
                   "keybindings": [
                     {
                       "held": [
@@ -99,7 +99,7 @@ describe('useKeyboardShortcut', () => {
                 <div>
                   <pre>
                     {
-                  "title": "Fuzzy search files",
+                  "title": "Fuzzy finder",
                   "keybindings": [
                     {
                       "held": [

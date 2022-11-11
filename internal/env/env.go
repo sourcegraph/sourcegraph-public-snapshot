@@ -92,7 +92,7 @@ func init() {
 }
 
 // Get returns the value of the given environment variable. It also registers the description for
-// PrintHelp. Calling Get with the same name twice causes a panic. Get should only be called on
+// HelpString. Calling Get with the same name twice causes a panic. Get should only be called on
 // package initialization. Calls at a later point will cause a panic if Lock was called before.
 //
 // This should be used for only *internal* environment values. User-visible configuration should be
@@ -175,21 +175,23 @@ func Lock() {
 	}))
 }
 
-// PrintHelp prints a list of all registered environment variables and their descriptions.
-func PrintHelp() {
-	log.Print("Environment variables:")
+// HelpString prints a list of all registered environment variables and their descriptions.
+func HelpString() string {
+	helpStr := "Environment variables:\n"
 	for _, e := range env {
-		log.Printf("  %-40s %s (value: %q)", e.name, e.description, e.value)
+		helpStr += fmt.Sprintf("  %-40s %s (value: %q)\n", e.name, e.description, e.value)
 	}
+
+	return helpStr
 }
 
 // HandleHelpFlag looks at the first CLI argument. If it is "help", "-h" or "--help", then it calls
-// PrintHelp and exits.
+// HelpString and exits.
 func HandleHelpFlag() {
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
 		case "help", "-h", "--help":
-			PrintHelp()
+			log.Print(HelpString())
 			os.Exit(0)
 		}
 	}

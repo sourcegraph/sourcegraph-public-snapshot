@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -13,7 +13,7 @@ import (
 
 func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageResolver, error) {
 	// 🚨 SECURITY: Only site admins can fetch status messages.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -47,6 +47,13 @@ func (r *statusMessageResolver) ToSyncError() (*statusMessageResolver, bool) {
 	return r, r.message.SyncError != nil
 }
 
+func (r *statusMessageResolver) ToIndexingProgress() (*indexingProgressMessageResolver, bool) {
+	if r.message.Indexing != nil {
+		return &indexingProgressMessageResolver{message: r.message.Indexing}, true
+	}
+	return nil, false
+}
+
 func (r *statusMessageResolver) Message() (string, error) {
 	if r.message.Cloning != nil {
 		return r.message.Cloning.Message, nil
@@ -69,3 +76,10 @@ func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalS
 
 	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}, nil
 }
+
+type indexingProgressMessageResolver struct {
+	message *repos.IndexingProgress
+}
+
+func (r *indexingProgressMessageResolver) NotIndexed() int32 { return int32(r.message.NotIndexed) }
+func (r *indexingProgressMessageResolver) Indexed() int32    { return int32(r.message.Indexed) }

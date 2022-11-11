@@ -31,6 +31,7 @@ type SearchClient interface {
 		version string,
 		patternType *string,
 		searchQuery string,
+		searchMode search.Mode,
 		protocol search.Protocol,
 		settings *schema.Settings,
 		sourcegraphDotComMode bool,
@@ -66,6 +67,7 @@ func (s *searchClient) Plan(
 	version string,
 	patternType *string,
 	searchQuery string,
+	searchMode search.Mode,
 	protocol search.Protocol,
 	settings *schema.Settings,
 	sourcegraphDotComMode bool,
@@ -111,6 +113,7 @@ func (s *searchClient) Plan(
 		Plan:                plan,
 		Query:               plan.ToQ(),
 		OriginalQuery:       searchQuery,
+		SearchMode:          searchMode,
 		UserSettings:        settings,
 		OnSourcegraphDotCom: sourcegraphDotComMode,
 		Features:            ToFeatures(featureflag.FromContext(ctx), s.logger),
@@ -240,8 +243,10 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
-		CodeOwnershipFilters:    flagSet.GetBoolOr("code-ownership", false),
 		AbLuckySearch:           flagSet.GetBoolOr("ab-lucky-search", false),
+		Ranking:                 flagSet.GetBoolOr("search-ranking", false),
+		RankingDampDocRanks:     flagSet.GetBoolOr("search-ranking-damp-doc-ranks", false),
+		Debug:                   flagSet.GetBoolOr("search-debug", false),
 	}
 }
 

@@ -16,7 +16,7 @@ func main() {
 	// See https://github.com/sourcegraph/sourcegraph/issues/3847 for details.
 	authz.SetProviders(true, []authz.Provider{})
 
-	shared.Main(func(db database.DB, c conftypes.UnifiedWatchable) enterprise.Services {
+	shared.Main(func(_ database.DB, _ conftypes.UnifiedWatchable) enterprise.Services {
 		return enterprise.DefaultServices()
 	})
 }

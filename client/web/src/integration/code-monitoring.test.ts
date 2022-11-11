@@ -36,6 +36,7 @@ describe('Code monitoring', () => {
                     subjects: [
                         {
                             __typename: 'DefaultSettings',
+                            id: 'TestDefaultSettingsID',
                             settingsURL: null,
                             viewerCanAdminister: false,
                             latestSettings: {

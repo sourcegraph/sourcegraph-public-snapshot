@@ -17,12 +17,9 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/prometheus/client_golang/prometheus"
+	sglog "github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2/store/redigostore"
 	"go.opentelemetry.io/otel"
-
-	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
-
-	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -34,9 +31,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
+	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/check"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -45,6 +42,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -120,7 +118,7 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable) enterprise.Services) error {
+func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) enterprise.Services) error {
 	ctx := context.Background()
 
 	log.SetFlags(0)
@@ -137,19 +135,9 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	)) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
-	hc := &check.HealthChecker{Checks: []check.Check{
-		checkCanReachGitserver,
-		checkCanReachSearcher,
-	}}
-	hc.Init()
-
 	logger := sglog.Scoped("server", "the frontend server program")
 	ready := make(chan struct{})
-	go debugserver.NewServerRoutine(ready, debugserver.Endpoint{
-		Name:    "Health Checks",
-		Path:    "/aggregate-checks",
-		Handler: check.NewAggregateHealthCheckHandler(check.DefaultEndpointProvider),
-	}).Start()
+	go debugserver.NewServerRoutine(ready).Start()
 
 	sqlDB, err := InitDB(logger)
 	if err != nil {
@@ -213,7 +201,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
 	}
-	ui.InitRouter(db, enterprise.CodeIntelResolver)
+	ui.InitRouter(db)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
@@ -221,7 +209,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 			log.Printf("Version: %s", version.Version())
 			log.Print()
 
-			env.PrintHelp()
+			log.Print(env.HelpString())
 
 			log.Print()
 			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -264,6 +252,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 
 	siteid.Init(db)
 
+	globals.WatchBranding()
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 	globals.WatchPermissionsUserMapping()
 
@@ -276,6 +265,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
 
 	schema, err := graphqlbackend.NewSchema(db,
+		gitserver.NewClient(db),
 		enterprise.BatchChangesResolver,
 		enterprise.CodeIntelResolver,
 		enterprise.InsightsResolver,
@@ -287,6 +277,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		enterprise.NotebooksResolver,
 		enterprise.ComputeResolver,
 		enterprise.InsightsAggregationResolver,
+		enterprise.WebhooksResolver,
 	)
 	if err != nil {
 		return err
@@ -302,7 +293,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher, hc)
+	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
@@ -339,6 +330,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 		&httpapi.Handlers{
 			GitHubWebhook:                   enterprise.GitHubWebhook,
 			GitLabWebhook:                   enterprise.GitLabWebhook,
+			GitHubSyncWebhook:               enterprise.GitHubSyncWebhook,
 			BitbucketServerWebhook:          enterprise.BitbucketServerWebhook,
 			BitbucketCloudWebhook:           enterprise.BitbucketCloudWebhook,
 			BatchesChangesFileGetHandler:    enterprise.BatchesChangesFileGetHandler,
@@ -361,7 +353,12 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher, healthCheckHandler http.Handler) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(
+	schema *graphql.Schema,
+	db database.DB,
+	enterprise enterprise.Services,
+	rateLimiter graphqlbackend.LimitWatcher,
+) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
@@ -376,9 +373,9 @@ func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterpri
 		schema,
 		db,
 		enterprise.NewCodeIntelUploadHandler,
+		enterprise.RankingService,
 		enterprise.NewComputeStreamHandler,
 		rateLimiter,
-		healthCheckHandler,
 	)
 	httpServer := &http.Server{
 		Handler:     internalHandler,

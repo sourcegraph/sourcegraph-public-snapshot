@@ -9,10 +9,10 @@ import {
     isErrorGraphQLResult,
     gql,
 } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
+import { useConnection, UseConnectionResult } from '../components/FilteredConnection/hooks/useConnection'
 import {
     RepositoriesVariables,
     RepositoriesResult,
@@ -36,8 +36,6 @@ import {
     InvalidateSessionsByIDVariables,
     DeleteUserResult,
     DeleteUserVariables,
-    UpdateMirrorRepositoryResult,
-    UpdateMirrorRepositoryVariables,
     ScheduleRepositoryPermissionsSyncResult,
     ScheduleRepositoryPermissionsSyncVariables,
     OutOfBandMigrationFields,
@@ -51,39 +49,56 @@ import {
     SiteAdminAccessTokenConnectionFields,
     SiteAdminAccessTokensVariables,
     SiteAdminAccessTokensResult,
+    CheckMirrorRepositoryConnectionResult,
+    UsersResult,
+    SiteUsageStatisticsResult,
+    SiteResult,
+    AllConfigResult,
+    RandomizeUserPasswordResult,
+    CreateUserResult,
+    SiteMonitoringStatisticsResult,
+    SiteAdminSettingsCascadeFields,
+    UserUsageStatisticsResult,
+    WebhooksListResult,
+    WebhooksListVariables,
+    WebhookFields,
 } from '../graphql-operations'
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
 /**
  * Fetches all users.
  */
-export function fetchAllUsers(args: { first?: number; query?: string }): Observable<GQL.IUserConnection> {
+export function fetchAllUsers(args: { first?: number; query?: string }): Observable<UsersResult['users']> {
     return queryGraphQL(
         gql`
             query Users($first: Int, $query: String) {
                 users(first: $first, query: $query) {
                     nodes {
-                        id
-                        username
-                        displayName
-                        emails {
-                            email
-                            verified
-                            verificationPending
-                            viewerCanManuallyVerify
-                            isPrimary
-                        }
-                        createdAt
-                        siteAdmin
-                        organizations {
-                            nodes {
-                                name
-                            }
-                        }
-                        tags
+                        ...UserNodeFields
                     }
                     totalCount
                 }
+            }
+
+            fragment UserNodeFields on User {
+                id
+                username
+                displayName
+                emails {
+                    email
+                    verified
+                    verificationPending
+                    viewerCanManuallyVerify
+                    isPrimary
+                }
+                createdAt
+                siteAdmin
+                organizations {
+                    nodes {
+                        name
+                    }
+                }
+                tags
             }
         `,
         args
@@ -146,6 +161,7 @@ const mirrorRepositoryInfoFieldsFragment = gql`
         updatedAt
         lastError
         byteSize
+        shard
     }
 `
 
@@ -175,6 +191,16 @@ const siteAdminRepositoryFieldsFragment = gql`
         }
     }
 `
+
+export const SiteUsagePeriodFragment = gql`
+    fragment SiteUsagePeriodFields on SiteUsagePeriod {
+        userCount
+        registeredUserCount
+        anonymousUserCount
+        startTime
+    }
+`
+
 /**
  * Fetches all repositories.
  *
@@ -242,22 +268,21 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
     )
 }
 
-export function updateMirrorRepository(args: { repository: Scalars['ID'] }): Observable<void> {
-    return requestGraphQL<UpdateMirrorRepositoryResult, UpdateMirrorRepositoryVariables>(
-        gql`
-            mutation UpdateMirrorRepository($repository: ID!) {
-                updateMirrorRepository(repository: $repository) {
-                    alwaysNil
-                }
-            }
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        map(() => undefined)
-    )
-}
+export const UPDATE_MIRROR_REPOSITORY = gql`
+    mutation UpdateMirrorRepository($repository: ID!) {
+        updateMirrorRepository(repository: $repository) {
+            alwaysNil
+        }
+    }
+`
+
+export const CHECK_MIRROR_REPOSITORY_CONNECTION = gql`
+    mutation CheckMirrorRepositoryConnection($repository: ID, $name: String) {
+        checkMirrorRepositoryConnection(repository: $repository, name: $name) {
+            error
+        }
+    }
+`
 
 export function checkMirrorRepositoryConnection(
     args:
@@ -267,17 +292,8 @@ export function checkMirrorRepositoryConnection(
         | {
               name: string
           }
-): Observable<GQL.ICheckMirrorRepositoryConnectionResult> {
-    return mutateGraphQL(
-        gql`
-            mutation CheckMirrorRepositoryConnection($repository: ID, $name: String) {
-                checkMirrorRepositoryConnection(repository: $repository, name: $name) {
-                    error
-                }
-            }
-        `,
-        args
-    ).pipe(
+): Observable<CheckMirrorRepositoryConnectionResult['checkMirrorRepositoryConnection']> {
+    return mutateGraphQL(CHECK_MIRROR_REPOSITORY_CONNECTION, args).pipe(
         map(dataOrThrowErrors),
         tap(() => resetAllMemoizationCaches()),
         map(data => data.checkMirrorRepositoryConnection)
@@ -318,7 +334,7 @@ export function fetchUserUsageStatistics(args: {
     activePeriod?: UserActivePeriod
     query?: string
     first?: number
-}): Observable<GQL.IUserConnection> {
+}): Observable<UserUsageStatisticsResult['users']> {
     return queryGraphQL(
         gql`
             query UserUsageStatistics($activePeriod: UserActivePeriod, $query: String, $first: Int) {
@@ -327,15 +343,19 @@ export function fetchUserUsageStatistics(args: {
                         id
                         username
                         usageStatistics {
-                            searchQueries
-                            pageViews
-                            codeIntelligenceActions
-                            lastActiveTime
-                            lastActiveCodeHostIntegrationTime
+                            ...UserUsageStatisticsFields
                         }
                     }
                     totalCount
                 }
+            }
+
+            fragment UserUsageStatisticsFields on UserUsageStatistics {
+                searchQueries
+                pageViews
+                codeIntelligenceActions
+                lastActiveTime
+                lastActiveCodeHostIntegrationTime
             }
         `,
         args
@@ -350,32 +370,24 @@ export function fetchUserUsageStatistics(args: {
  *
  * @returns Observable that emits the list of users and their usage data
  */
-export function fetchSiteUsageStatistics(): Observable<GQL.ISiteUsageStatistics> {
+export function fetchSiteUsageStatistics(): Observable<SiteUsageStatisticsResult['site']['usageStatistics']> {
     return queryGraphQL(gql`
         query SiteUsageStatistics {
             site {
                 usageStatistics {
                     daus {
-                        userCount
-                        registeredUserCount
-                        anonymousUserCount
-                        startTime
+                        ...SiteUsagePeriodFields
                     }
                     waus {
-                        userCount
-                        registeredUserCount
-                        anonymousUserCount
-                        startTime
+                        ...SiteUsagePeriodFields
                     }
                     maus {
-                        userCount
-                        registeredUserCount
-                        anonymousUserCount
-                        startTime
+                        ...SiteUsagePeriodFields
                     }
                 }
             }
         }
+        ${SiteUsagePeriodFragment}
     `).pipe(
         map(dataOrThrowErrors),
         map(data => data.site.usageStatistics)
@@ -387,10 +399,11 @@ export function fetchSiteUsageStatistics(): Observable<GQL.ISiteUsageStatistics>
  *
  * @returns Observable that emits the site
  */
-export function fetchSite(): Observable<GQL.ISite> {
+export function fetchSite(): Observable<SiteResult['site']> {
     return queryGraphQL(gql`
         query Site {
             site {
+                __typename
                 id
                 canReloadSite
                 configuration {
@@ -411,7 +424,7 @@ export function fetchSite(): Observable<GQL.ISite> {
  */
 interface ExternalServiceConfig {}
 
-type SettingsSubject = Pick<GQL.SettingsSubject, 'settingsURL' | '__typename'> & {
+type SettingsSubject = Pick<SiteAdminSettingsCascadeFields['subjects'][number], 'settingsURL' | '__typename'> & {
     contents: Settings
 }
 
@@ -419,7 +432,7 @@ type SettingsSubject = Pick<GQL.SettingsSubject, 'settingsURL' | '__typename'> &
  * All configuration and settings in one place.
  */
 interface AllConfig {
-    site: GQL.ISiteConfiguration
+    site: AllConfigResult['site']
     externalServices: Partial<Record<ExternalServiceKind, ExternalServiceConfig>>
     settings: {
         subjects: SettingsSubject[]
@@ -592,7 +605,9 @@ export function invalidateSessionsByID(userID: Scalars['ID']): Observable<void> 
     )
 }
 
-export function randomizeUserPassword(user: Scalars['ID']): Observable<GQL.IRandomizeUserPasswordResult> {
+export function randomizeUserPassword(
+    user: Scalars['ID']
+): Observable<RandomizeUserPasswordResult['randomizeUserPassword']> {
     return mutateGraphQL(
         gql`
             mutation RandomizeUserPassword($user: ID!) {
@@ -628,7 +643,7 @@ export function deleteUser(user: Scalars['ID'], hard?: boolean): Observable<void
     )
 }
 
-export function createUser(username: string, email: string | undefined): Observable<GQL.ICreateUserResult> {
+export function createUser(username: string, email: string | undefined): Observable<CreateUserResult['createUser']> {
     return mutateGraphQL(
         gql`
             mutation CreateUser($username: String!, $email: String) {
@@ -713,7 +728,9 @@ export function fetchSiteUpdateCheck(): Observable<SiteUpdateCheckResult['site']
  *
  * @param days number of days of data to fetch
  */
-export function fetchMonitoringStats(days: number): Observable<GQL.IMonitoringStatistics | false> {
+export function fetchMonitoringStats(
+    days: number
+): Observable<SiteMonitoringStatisticsResult['site']['monitoringStatistics'] | false> {
     // more details in /internal/srcprometheus.ErrPrometheusUnavailable
     const errorPrometheusUnavailable = 'prometheus API is unavailable'
     return queryGraphQL(
@@ -871,3 +888,46 @@ export function queryAccessTokens(args: { first?: number }): Observable<SiteAdmi
         map(data => data.site.accessTokens)
     )
 }
+
+export const SITE_EXTERNAL_SERVICE_CONFIG = gql`
+    query SiteExternalServiceConfig {
+        site {
+            externalServicesFromFile
+            allowEditExternalServicesWithFile
+        }
+    }
+`
+
+export const WEBHOOKS = gql`
+    fragment WebhookFields on Webhook {
+        id
+        uuid
+        url
+        codeHostKind
+        codeHostURN
+        secret
+        updatedAt
+        createdAt
+    }
+    query WebhooksList {
+        webhooks {
+            nodes {
+                ...WebhookFields
+            }
+            totalCount
+            pageInfo {
+                hasNextPage
+            }
+        }
+    }
+`
+
+export const useWebhooksConnection = (): UseConnectionResult<WebhookFields> =>
+    useConnection<WebhooksListResult, WebhooksListVariables, WebhookFields>({
+        query: WEBHOOKS,
+        variables: {},
+        getConnection: result => {
+            const { webhooks } = dataOrThrowErrors(result)
+            return webhooks
+        },
+    })

@@ -8,14 +8,14 @@ import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { asError, logger } from '@sourcegraph/common'
 import { Button, Link, Alert, Icon, H2, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CopyableText } from '../../components/CopyableText'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
+import { UserNodeFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { setUserEmailVerified } from '../../user/settings/backend'
@@ -34,7 +34,7 @@ interface UserNodeProps {
     /**
      * The user to display in this list item.
      */
-    node: GQL.IUser
+    node: UserNodeFields
 
     /**
      * The currently authenticated user.
@@ -98,7 +98,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                             this.props.onDidUpdate()
                         }
                     },
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
     }
@@ -374,7 +374,7 @@ export interface Props extends RouteComponentProps<{}> {
 }
 
 interface State {
-    users?: GQL.IUser[]
+    users?: UserNodeFields[]
     totalCount?: number
 }
 
@@ -413,7 +413,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                         </Button>
                     </div>
                 </div>
-                <FilteredConnection<GQL.IUser, Omit<UserNodeProps, 'node'>>
+                <FilteredConnection<UserNodeFields, Omit<UserNodeProps, 'node'>>
                     className="list-group list-group-flush mt-3"
                     noun="user"
                     pluralNoun="users"

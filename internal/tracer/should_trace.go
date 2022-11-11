@@ -16,6 +16,8 @@ var otelNoOpTracer = oteltrace.NewNoopTracerProvider().Tracer("internal/tracer/n
 type shouldTraceTracer struct {
 	logger log.Logger
 	debug  bool
+
+	// tracer is the wrapped tracer implementation.
 	tracer oteltrace.Tracer
 }
 
