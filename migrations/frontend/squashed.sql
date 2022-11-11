@@ -2168,8 +2168,7 @@ CREATE TABLE gitserver_repos (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     last_fetched timestamp with time zone DEFAULT now() NOT NULL,
     last_changed timestamp with time zone DEFAULT now() NOT NULL,
-    repo_size_bytes bigint,
-    repo_status text
+    repo_size_bytes bigint
 );
 
 CREATE TABLE gitserver_repos_statistics (
