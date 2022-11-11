@@ -7,6 +7,7 @@ import (
 
 	"github.com/derision-test/glock"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
@@ -32,7 +33,8 @@ type BackfillRequest struct {
 }
 
 type requestContext struct {
-	backfillRequest *BackfillRequest
+	backfillRequest    *BackfillRequest
+	compressionSavings float64
 }
 
 type Backfiller interface {
@@ -117,14 +119,19 @@ func (b *backfiller) Run(ctx context.Context, req BackfillRequest) error {
 }
 
 // Implementation of steps for Backfill process
+var compressionSavingsMetric = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name:    "src_insights_backfill_searches_per_frame",
+	Help:    "the ratio of searches per frame for insights backfills",
+	Buckets: prometheus.LinearBuckets(.1, .1, 10),
+}, []string{"preempted"})
 
 func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int, rateLimit *ratelimit.InstrumentedLimiter) SearchJobGenerator {
 	return func(ctx context.Context, reqContext requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
-		jobs := make([]*queryrunner.SearchJob, 0, 12)
+		numberOffFrames := len(reqContext.backfillRequest.Frames)
+		jobs := make([]*queryrunner.SearchJob, 0, numberOffFrames)
 		if reqContext.backfillRequest == nil {
 			return &reqContext, jobs, errors.New("backfill request provided")
 		}
-
 		req := reqContext.backfillRequest
 		buildJob := makeHistoricalSearchJobFunc(logger, commitClient)
 		logger.Debug("making search plan")
@@ -133,14 +140,22 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 		if err != nil {
 			if errors.Is(err, discovery.EmptyRepoErr) {
 				// This is fine it's empty there is no work to be done
+				compressionSavingsMetric.
+					With(prometheus.Labels{"preempted": "true"}).
+					Observe(0)
 				return &reqContext, jobs, nil
 			}
 
 			return &reqContext, jobs, err
 		}
-
 		searchPlan := compressionPlan.FilterFrames(ctx, req.Frames, req.Repo.ID)
-
+		var ratio float64 = 1.0
+		if numberOffFrames > 0 {
+			ratio = (float64(len(searchPlan.Executions)) / float64(numberOffFrames))
+		}
+		compressionSavingsMetric.
+			With(prometheus.Labels{"preempted": "false"}).
+			Observe(ratio)
 		mu := &sync.Mutex{}
 
 		groupContext, groupCancel := context.WithCancel(ctx)
