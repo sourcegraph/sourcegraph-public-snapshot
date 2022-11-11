@@ -6,7 +6,7 @@ import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
 
 import { pluralize } from '@sourcegraph/common'
-import { Badge, Icon, Heading, H4 } from '@sourcegraph/wildcard'
+import { Badge, Icon, Heading, H3, H4 } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { BatchChangeFields } from '../../../graphql-operations'
@@ -135,6 +135,7 @@ export const BatchChangeStatsTotalAction: React.FunctionComponent<React.PropsWit
     count,
 }) => (
     <H4
+        as={H3}
         className={classNames(
             styles.batchChangeStatsCardStat,
             'font-weight-normal m-0 flex-grow-0 pr-2 text-truncate text-nowrap d-flex flex-column align-items-center justify-content-center'

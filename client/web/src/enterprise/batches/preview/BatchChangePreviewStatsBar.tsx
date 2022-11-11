@@ -4,7 +4,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { Badge, H2, H4, useObservable } from '@sourcegraph/wildcard'
+import { Badge, H2, H3, H4, useObservable } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { ApplyPreviewStatsFields, DiffStatFields, Scalars } from '../../../graphql-operations'
@@ -109,7 +109,11 @@ export const PreviewStatsAdded: React.FunctionComponent<React.PropsWithChildren<
             </span>
             <span className={styles.previewStatsAddedLine}>&nbsp;</span>
         </div>
-        <H4 className="font-weight-normal mt-1 mb-0" aria-label={`${count} ${pluralize('changeset', count)} added`}>
+        <H4
+            as={H3}
+            className="font-weight-normal mt-1 mb-0"
+            aria-label={`${count} ${pluralize('changeset', count)} added`}
+        >
             {`${count} added`}
         </H4>
     </div>
@@ -130,7 +134,11 @@ export const PreviewStatsModified: React.FunctionComponent<React.PropsWithChildr
             </span>
             <span className={styles.previewStatsModifiedLine}>&nbsp;</span>
         </div>
-        <H4 className="font-weight-normal mt-1 mb-0" aria-label={`${count} ${pluralize('changeset', count)} modified`}>
+        <H4
+            as={H3}
+            className="font-weight-normal mt-1 mb-0"
+            aria-label={`${count} ${pluralize('changeset', count)} modified`}
+        >
             {`${count} modified`}
         </H4>
     </div>
@@ -149,7 +157,11 @@ export const PreviewStatsRemoved: React.FunctionComponent<React.PropsWithChildre
             </span>
             <span className={styles.previewStatsRemovedLine}>&nbsp;</span>
         </div>
-        <H4 className="font-weight-normal mt-1 mb-0" aria-label={`${count} ${pluralize('changeset', count)} removed`}>
+        <H4
+            as={H3}
+            className="font-weight-normal mt-1 mb-0"
+            aria-label={`${count} ${pluralize('changeset', count)} removed`}
+        >
             {`${count} removed`}
         </H4>
     </div>

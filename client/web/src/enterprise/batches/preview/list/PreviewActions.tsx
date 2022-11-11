@@ -17,7 +17,7 @@ import {
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { H4, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { H3, H4, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../../graphql-operations'
 
@@ -109,6 +109,7 @@ export const PreviewPublishStat: React.FunctionComponent<
     <div className={classNames(className, iconClassNames)}>
         <Icon aria-hidden={true} svgPath={mdiUpload} />
         <H4
+            as={H3}
             className="font-weight-normal text-muted m-0"
             aria-label={`${count} ${pluralize('changeset', count)} will be published`}
         >
@@ -149,6 +150,7 @@ export const PreviewImportStat: React.FunctionComponent<
     <div className={classNames(className, iconClassNames)}>
         <Icon aria-hidden={true} svgPath={mdiImport} />
         <H4
+            as={H3}
             className="font-weight-normal text-muted m-0"
             aria-label={`${count} ${pluralize('changeset', count)} will be imported`}
         >
@@ -178,6 +180,7 @@ export const PreviewCloseStat: React.FunctionComponent<
     <div className={classNames(className, iconClassNames, 'text-danger')}>
         <Icon aria-hidden={true} svgPath={mdiCloseCircleOutline} />
         <H4
+            as={H3}
             className="font-weight-normal text-muted m-0"
             aria-label={`${count} ${pluralize('changeset', count)} will be closed`}
         >
@@ -222,6 +225,7 @@ export const PreviewReopenStat: React.FunctionComponent<
     <div className={classNames(className, iconClassNames, 'text-success')}>
         <Icon aria-hidden={true} svgPath={mdiSourceBranchRefresh} />
         <H4
+            as={H3}
             className="font-weight-normal text-muted m-0"
             aria-label={`${count} ${pluralize('changeset', count)} will be reopened`}
         >
@@ -251,6 +255,7 @@ export const PreviewUndraftStat: React.FunctionComponent<
     <div className={classNames(className, iconClassNames, 'text-success')}>
         <Icon aria-hidden={true} svgPath={mdiSourceBranchCheck} />
         <H4
+            as={H3}
             className="font-weight-normal text-muted m-0"
             aria-label={`${count} ${pluralize('changeset', count)} will be promoted from ${pluralize('draft', count)}`}
         >
@@ -280,6 +285,7 @@ export const PreviewUpdateStat: React.FunctionComponent<
     <div className={classNames(className, iconClassNames)}>
         <Icon aria-hidden={true} svgPath={mdiSourceBranchSync} />
         <H4
+            as={H3}
             className="font-weight-normal text-muted m-0"
             aria-label={`${count} ${pluralize('changeset', count)} will be updated`}
         >
@@ -339,6 +345,7 @@ export const PreviewArchiveStat: React.FunctionComponent<
     <div className={classNames(className, iconClassNames)}>
         <Icon aria-hidden={true} svgPath={mdiArchive} />
         <H4
+            as={H3}
             className="font-weight-normal text-muted m-0"
             aria-label={`${count} ${pluralize('changeset', count)} will be archived`}
         >
@@ -368,6 +375,7 @@ export const PreviewReattachStat: React.FunctionComponent<
     <div className={classNames(className, iconClassNames)}>
         <Icon aria-hidden={true} svgPath={mdiPaperclip} />
         <H4
+            as={H3}
             className="font-weight-normal text-muted m-0"
             aria-label={`${count} ${pluralize('changeset', count)} will be re-added`}
         >
