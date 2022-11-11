@@ -4,17 +4,31 @@
  */
 
 import {
-    findNext,
-    findPrevious,
-    getSearchQuery,
-    openSearchPanel,
-    search as codemirrorSearch,
-    searchKeymap,
-    SearchQuery,
-    setSearchQuery,
-} from '@codemirror/search'
-import { Compartment, Extension } from '@codemirror/state'
-import { EditorView, KeyBinding, keymap, Panel, runScopeHandlers, ViewPlugin, ViewUpdate } from '@codemirror/view'
+    combineConfig,
+    Compartment,
+    EditorState,
+    Extension,
+    Facet,
+    RangeSetBuilder,
+    StateEffect,
+    StateField,
+    Text,
+} from '@codemirror/state'
+import {
+    Command,
+    Decoration,
+    DecorationSet,
+    EditorView,
+    getPanel,
+    KeyBinding,
+    keymap,
+    Panel,
+    PanelConstructor,
+    runScopeHandlers,
+    showPanel,
+    ViewPlugin,
+    ViewUpdate,
+} from '@codemirror/view'
 import { mdiChevronDown, mdiChevronUp, mdiFormatLetterCase, mdiInformationOutline, mdiRegex } from '@mdi/js'
 import { History } from 'history'
 import { createRoot, Root } from 'react-dom/client'
@@ -31,6 +45,276 @@ import { createElement } from '../../../util/dom'
 import { Container } from './react-interop'
 
 import { blobPropsFacet } from '.'
+import escapeRegExp from 'lodash/escapeRegExp'
+
+interface RegexpSearchConfig {
+    createPanel: PanelConstructor
+}
+
+interface SearchQueryConfig {
+    /**
+     * The query input.
+     */
+    search: string
+    caseSensitive: boolean
+    regexp: boolean
+}
+
+const EMPTY_REGEXP = new RegExp('')
+
+class SearchQuery {
+    /**
+     * Query is non empty and, if regexp, a valid regular expression.
+     */
+    public valid: boolean
+
+    private matchRegexp: RegExp = EMPTY_REGEXP
+    public matches: { from: number; to: number }[] = []
+    public current: number = 0
+
+    constructor(private config: SearchQueryConfig) {
+        this.valid = config.search.length > 0
+
+        let flags = 'g'
+        if (!config.caseSensitive) {
+            flags += 'i'
+        }
+
+        if (this.valid) {
+            if (config.regexp) {
+                try {
+                    this.matchRegexp = new RegExp(config.search, flags)
+                } catch (error) {
+                    this.valid = false
+                }
+            } else {
+                this.matchRegexp = new RegExp(escapeRegExp(config.search), flags)
+            }
+        }
+    }
+
+    get regexp() {
+        return this.config.regexp
+    }
+
+    get caseSensitive() {
+        return this.config.caseSensitive
+    }
+
+    get search() {
+        return this.config.search
+    }
+
+    eq(other: SearchQuery): boolean {
+        return (
+            this.config.search === other.config.search &&
+            this.config.caseSensitive === other.config.caseSensitive &&
+            this.config.regexp === other.config.regexp
+        )
+    }
+
+    exec(input: string): { from: number; to: number }[] {
+        const matches: { from: number; to: number }[] = []
+
+        let match: RegExpMatchArray | null
+        while ((match = this.matchRegexp.exec(input))) {
+            if (match.index !== undefined) {
+                matches.push({ from: match.index, to: match.index + match[0].length })
+            }
+        }
+        return matches
+    }
+}
+
+class SearchMatch {
+    public matches: { from: number; to: number }[] = []
+    public current: number = 0
+
+    constructor(query: SearchQuery, text: Text) {
+        if (query.valid) {
+            this.matches = query.exec(text.sliceString(0))
+        }
+    }
+
+    public get count() {
+        return this.matches.length
+    }
+}
+
+const searchConfig = Facet.define<RegexpSearchConfig, Required<RegexpSearchConfig>>({
+    combine(configs) {
+        return combineConfig(configs, { createPanel: view => new SearchPanel(view) })
+    },
+})
+
+const createSearchPanel: PanelConstructor = view => view.state.facet(searchConfig).createPanel(view)
+
+function getSearchQuery(state: EditorState): SearchQuery {
+    return state.field(searchState).query
+}
+
+const setSearchQuery = StateEffect.define<SearchQuery>()
+const togglePanel = StateEffect.define<boolean>()
+const setSelectedMatch = StateEffect.define<number>()
+
+interface SearchState {
+    query: SearchQuery
+    matches: SearchMatch | null
+    selectedMatch: number
+    panel: PanelConstructor | null
+}
+
+function defaultQuery(state: EditorState, fallback?: SearchQuery): SearchQuery {
+    const selection = state.selection.main
+    const selectedText =
+        selection.empty || selection.to > selection.from + 100 ? '' : state.sliceDoc(selection.from, selection.to)
+    return new SearchQuery({
+        search: selectedText,
+        caseSensitive: fallback?.caseSensitive || false,
+        regexp: false,
+    })
+}
+
+const matchDecoration = Decoration.mark({ class: 'cm-searchMatch' })
+const selectedMatchDecoration = Decoration.mark({ class: 'cm-searchMatch cm-searchMatch-selected' })
+
+const searchState = StateField.define<SearchState>({
+    create(state) {
+        return { query: defaultQuery(state), matches: null, selectedMatch: 0, panel: null }
+    },
+
+    update(value, transaction) {
+        for (const effect of transaction.effects) {
+            if (effect.is(setSearchQuery)) {
+                const query = effect.value
+                value = { ...value, query, matches: new SearchMatch(query, transaction.newDoc) }
+            } else if (effect.is(togglePanel)) {
+                value = { ...value, panel: createSearchPanel }
+            } else if (effect.is(setSelectedMatch)) {
+                value = { ...value, selectedMatch: effect.value }
+            }
+        }
+        return value
+    },
+
+    provide(field) {
+        return [showPanel.from(field, value => value.panel)]
+    },
+})
+
+const searchHighlighter = ViewPlugin.fromClass(
+    class {
+        decorations: DecorationSet
+
+        constructor(readonly view: EditorView) {
+            this.decorations = this.highlight(view.state.field(searchState))
+        }
+
+        update(update: ViewUpdate): void {
+            const state = update.state.field(searchState)
+            if (
+                state !== update.startState.field(searchState) ||
+                update.docChanged ||
+                update.selectionSet ||
+                update.viewportChanged
+            ) {
+                this.decorations = this.highlight(state)
+            }
+        }
+
+        highlight({ panel, matches, selectedMatch }: SearchState): DecorationSet {
+            if (!panel || !matches) {
+                return Decoration.none
+            }
+
+            const builder = new RangeSetBuilder<Decoration>()
+            let index = 0
+            for (const { from, to } of this.view.visibleRanges) {
+                while (index < matches.matches.length) {
+                    const selected = index === selectedMatch
+                    const match = matches.matches[index++]
+
+                    if (from > match.to) {
+                        // Skip matches before the visible range
+                        continue
+                    }
+
+                    if (match.from > to) {
+                        // Continue with the next visible range
+                        break
+                    }
+
+                    builder.add(match.from, match.to, selected ? selectedMatchDecoration : matchDecoration)
+                }
+            }
+            return builder.finish()
+        }
+    },
+    { decorations: plugin => plugin.decorations }
+)
+
+export const openSearchPanel: Command = view => {
+    const state = view.state.field(searchState, false)
+    if (state && state.panel) {
+        const panel = getPanel(view, createSearchPanel)
+        if (!panel) return false
+        const searchInput = panel.dom.querySelector('[main-field]') as HTMLInputElement | null
+        if (searchInput && searchInput != view.root.activeElement) {
+            const query = defaultQuery(view.state, state.query)
+            if (query.valid) view.dispatch({ effects: setSearchQuery.of(query) })
+            searchInput.focus()
+            searchInput.select()
+        }
+    } else {
+        view.dispatch({ effects: [togglePanel.of(true), setSearchQuery.of(defaultQuery(view.state, state?.query))] })
+    }
+    return true
+}
+
+const closeSearchPanel: Command = view => {
+    let state = view.state.field(searchState, false)
+    if (!state || !state.panel) return false
+    let panel = getPanel(view, createSearchPanel)
+    if (panel && panel.dom.contains(view.root.activeElement)) view.focus()
+    view.dispatch({ effects: togglePanel.of(false) })
+    return true
+}
+
+const findNext: Command = view => {
+    const state = view.state.field(searchState)
+    if (state.query.valid && state.matches) {
+        const matchCount = state.matches.count
+        const nextIndex = (state.selectedMatch + 1) % matchCount
+        const nextMatch = state.matches.matches[nextIndex]
+
+        view.dispatch({
+            selection: { anchor: nextMatch.from, head: nextMatch.to },
+            scrollIntoView: true,
+            effects: setSelectedMatch.of(nextIndex),
+        })
+    }
+    return true
+}
+
+const findPrevious: Command = view => {
+    const state = view.state.field(searchState)
+    if (state.query.valid && state.matches) {
+        const matchCount = state.matches.count
+        const previousIndex = state.selectedMatch === 0 ? matchCount - 1 : state.selectedMatch - 1
+        const previousMatch = state.matches.matches[previousIndex]
+
+        view.dispatch({
+            selection: { anchor: previousMatch.from, head: previousMatch.to },
+            scrollIntoView: true,
+            effects: setSelectedMatch.of(previousIndex),
+        })
+    }
+    return true
+}
+
+function regexpSearch(config: RegexpSearchConfig): Extension {
+    return [searchConfig.of(config), searchState, searchHighlighter]
+}
 
 const searchKeybinding = <Keybindings keybindings={[{ held: ['Mod'], ordered: ['F'] }]} />
 
@@ -50,7 +334,13 @@ class SearchPanel implements Panel {
     public dom: HTMLElement
     public top = true
 
-    private state: { searchQuery: SearchQuery; overrideBrowserSearch: boolean; history: History }
+    private state: {
+        searchQuery: SearchQuery
+        overrideBrowserSearch: boolean
+        history: History
+        selectedMatch: number
+        matchCount: number
+    }
     private root: Root | null = null
     private input: HTMLInputElement | null = null
 
@@ -60,8 +350,12 @@ class SearchPanel implements Panel {
             onkeydown: this.onkeydown,
         })
 
+        const { query, selectedMatch, matches } = this.view.state.field(searchState)
+
         this.state = {
-            searchQuery: getSearchQuery(this.view.state),
+            searchQuery: query,
+            selectedMatch,
+            matchCount: matches?.count ?? 0,
             overrideBrowserSearch: this.view.state.field(overrideBrowserFindInPageShortcut),
             history: this.view.state.facet(blobPropsFacet).history,
         }
@@ -70,9 +364,19 @@ class SearchPanel implements Panel {
     public update(update: ViewUpdate): void {
         let newState = this.state
 
-        const searchQuery = getSearchQuery(update.state)
-        if (!searchQuery.eq(this.state.searchQuery)) {
-            newState = { ...newState, searchQuery }
+        const { query, selectedMatch, matches } = this.view.state.field(searchState)
+        const matchCount = matches?.count ?? 0
+
+        if (!query.eq(this.state.searchQuery)) {
+            newState = { ...newState, searchQuery: query }
+        }
+
+        if (selectedMatch !== this.state.selectedMatch) {
+            newState = { ...newState, selectedMatch }
+        }
+
+        if (matchCount !== this.state.matchCount) {
+            newState = { ...newState, matchCount }
         }
 
         const overrideBrowserSearch = update.state.field(overrideBrowserFindInPageShortcut)
@@ -97,13 +401,11 @@ class SearchPanel implements Panel {
 
     private render({
         searchQuery,
+        selectedMatch,
+        matchCount,
         overrideBrowserSearch,
         history,
-    }: {
-        searchQuery: SearchQuery
-        overrideBrowserSearch: boolean
-        history: History
-    }): void {
+    }: SearchPanel['state']): void {
         if (!this.root) {
             this.root = createRoot(this.dom)
         }
@@ -181,6 +483,11 @@ class SearchPanel implements Panel {
                     </Label>
                     {searchKeybindingTooltip}
                 </div>
+                {searchQuery.valid && (
+                    <span className="ml-auto">
+                        {selectedMatch + (matchCount > 0 ? 1 : 0)} / {matchCount}
+                    </span>
+                )}
             </Container>
         )
     }
@@ -217,6 +524,7 @@ class SearchPanel implements Panel {
         if (!query.eq(this.state.searchQuery)) {
             this.view.dispatch({ effects: setSearchQuery.of(query) })
 
+            /*
             if (query.search) {
                 // The following code scrolls next match into view if there is no
                 // match in the visible viewport. This is done by searching for the
@@ -254,6 +562,7 @@ class SearchPanel implements Panel {
                     })
                 }
             }
+             */
         }
     }
 }
@@ -264,6 +573,22 @@ interface SearchConfig {
 }
 
 const [overrideBrowserFindInPageShortcut, , setOverrideBrowserFindInPageShortcut] = createUpdateableField(true)
+
+const searchKeymap: KeyBinding[] = [
+    {
+        key: 'Mod-f',
+        run: openSearchPanel,
+    },
+    {
+        key: 'Esc',
+        run: closeSearchPanel,
+    },
+    {
+        key: 'Mod-g',
+        run: findNext,
+        shift: findPrevious,
+    },
+]
 
 export function search(config: SearchConfig): Extension {
     const keymapCompartment = new Compartment()
@@ -317,7 +642,7 @@ export function search(config: SearchConfig): Extension {
             },
         }),
         keymapCompartment.of(keymap.of(getKeyBindings(config.overrideBrowserFindInPageShortcut))),
-        codemirrorSearch({
+        regexpSearch({
             createPanel: view => new SearchPanel(view),
         }),
         ViewPlugin.define(view => {

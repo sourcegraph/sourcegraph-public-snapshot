@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { openSearchPanel } from '@codemirror/search'
+import { openSearchPanel } from './codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
