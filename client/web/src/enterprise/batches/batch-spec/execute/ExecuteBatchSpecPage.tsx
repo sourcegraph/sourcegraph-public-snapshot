@@ -152,7 +152,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
         () => [
             { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
             { key: 'spec', isEnabled: true, handler: { type: 'link' } },
-            { key: 'execution', isEnabled: source === BatchSpecSource.REMOTE, handler: { type: 'link' } },
+            { key: 'execution', isEnabled: true, handler: { type: 'link' } },
             { key: 'preview', isEnabled: applyURL !== null, handler: { type: 'link' } },
         ],
         [applyURL, source]
