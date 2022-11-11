@@ -3,7 +3,7 @@ import graphiql from 'graphiql'
 
 import { Button, Alert, ButtonLink } from '@sourcegraph/wildcard'
 
-import styles from './ApiConsole.module.scss'
+import styles from './ApiConsoleToolbar.module.scss'
 
 export const ApiConsoleToolbar: React.FunctionComponent = () => {
     const prettify = usePrettifyEditors()
