@@ -62,7 +62,6 @@ func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (dequeueabl
 // Handle clones the target code into a temporary directory, invokes the target indexer in a
 // fresh docker container, and uploads the results to the external frontend API.
 func (h *handler) Handle(ctx context.Context, logger log.Logger, job executor.Job) (err error) {
-	// job := record.(executor.Job)
 	logger = logger.With(
 		log.Int("jobID", job.ID),
 		log.String("repositoryName", job.RepositoryName),

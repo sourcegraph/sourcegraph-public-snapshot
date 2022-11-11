@@ -73,7 +73,7 @@ type executorMetadata struct {
 // dequeue selects a job record from the database and stashes metadata including
 // the job record and the locking transaction. If no job is available for processing,
 // a false-valued flag is returned.
-func (h *handler[T]) dequeue(ctx context.Context, executorName string, metadata executorMetadata) (_ apiclient.Job, dequeued bool, _ error) {
+func (h *handler[T]) dequeue(ctx context.Context, metadata executorMetadata) (_ apiclient.Job, dequeued bool, _ error) {
 	// executorName is supposed to be unique.
 	record, dequeued, err := h.Store.Dequeue(ctx, metadata.Name, nil)
 	if err != nil {

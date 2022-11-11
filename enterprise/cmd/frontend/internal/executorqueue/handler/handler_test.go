@@ -43,7 +43,7 @@ func TestDequeue(t *testing.T) {
 
 	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", executorMetadata{Name: "deadbeef"})
+	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -64,7 +64,7 @@ func TestDequeueNoRecord(t *testing.T) {
 
 	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: workerstoremocks.NewMockStore[testRecord]()})
 
-	_, dequeued, err := handler.dequeue(context.Background(), "deadbeef", executorMetadata{Name: "deadbeef"})
+	_, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -87,7 +87,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 
 	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", executorMetadata{Name: "deadbeef"})
+	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -147,7 +147,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 
 	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", executorMetadata{Name: "deadbeef"})
+	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -208,7 +208,7 @@ func TestMarkComplete(t *testing.T) {
 
 	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", executorMetadata{Name: "deadbeef"})
+	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -267,7 +267,7 @@ func TestMarkErrored(t *testing.T) {
 
 	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", executorMetadata{Name: "deadbeef"})
+	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}
@@ -329,7 +329,7 @@ func TestMarkFailed(t *testing.T) {
 
 	handler := NewHandler(executorStore, metricsStore, QueueOptions[testRecord]{Store: store, RecordTransformer: recordTransformer})
 
-	job, dequeued, err := handler.dequeue(context.Background(), "deadbeef", executorMetadata{Name: "deadbeef"})
+	job, dequeued, err := handler.dequeue(context.Background(), executorMetadata{Name: "deadbeef"})
 	if err != nil {
 		t.Fatalf("unexpected error dequeueing job: %s", err)
 	}

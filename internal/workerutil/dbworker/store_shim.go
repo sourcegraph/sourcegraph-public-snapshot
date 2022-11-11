@@ -15,7 +15,7 @@ type storeShim[T workerutil.Record] struct {
 	store.Store[T]
 }
 
-// var _ workerutil.Store[T] = &storeShim{}
+var _ workerutil.Store[workerutil.Record] = &storeShim[workerutil.Record]{}
 
 // newStoreShim wraps the given store in a shim.
 func newStoreShim[T workerutil.Record](store store.Store[T]) workerutil.Store[T] {
