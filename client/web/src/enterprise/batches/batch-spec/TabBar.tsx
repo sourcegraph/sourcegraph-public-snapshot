@@ -46,7 +46,10 @@ export const TabBar: React.FunctionComponent<React.PropsWithChildren<TabBarProps
     const fullTabsConfig = useMemo<TabsConfig[]>(() => uniqBy([...tabsConfig, ...DEFAULT_TABS], 'key'), [tabsConfig])
     return (
         <nav className="overflow-auto flex-shrink-0" aria-label="Steps">
-            <ul className={classNames('nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap', className)}>
+            <ul
+                className={classNames('nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap', className)}
+                role="tablist"
+            >
                 {fullTabsConfig.map(({ key, isEnabled, handler }, index) => {
                     const tabName = getTabName(key, index)
 
