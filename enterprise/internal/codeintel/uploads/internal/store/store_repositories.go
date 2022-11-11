@@ -53,55 +53,52 @@ func quote(s string) *sqlf.Query { return sqlf.Sprintf(s) }
 
 const getRepositoriesForIndexScanQuery = `
 WITH
-repositories_matching_policy AS (
-	(
-		SELECT r.id FROM repo r WHERE EXISTS (
+repositories_matching_policy AS ((
+	SELECT r.id
+	FROM repo r
+	WHERE
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL AND
+		EXISTS (
 			SELECT 1
 			FROM lsif_configuration_policies p
 			WHERE
 				p.indexing_enabled AND
 				p.repository_id IS NULL AND
-				p.repository_patterns IS NULL AND
-				%s -- completely enable or disable this query
-		)
-		ORDER BY stars DESC NULLS LAST, id
-		%s
-	)
-
-	UNION ALL
-
-	SELECT p.repository_id AS id
-	FROM lsif_configuration_policies p
-	WHERE
-		p.indexing_enabled AND
-		p.repository_id IS NOT NULL
-
-	UNION ALL
-
-	SELECT rpl.repo_id AS id
-	FROM lsif_configuration_policies p
-	JOIN lsif_configuration_policies_repository_pattern_lookup rpl ON rpl.policy_id = p.id
-	WHERE p.indexing_enabled
-),
-candidate_repositories AS (
-	SELECT r.id AS id
+				p.repository_patterns IS NULL
+		) AND
+		%s -- completely enable or disable this query
+	ORDER BY stars DESC NULLS LAST, id
+	%s
+) UNION ALL (
+	SELECT r.id
 	FROM repo r
+	JOIN lsif_configuration_policies p ON p.repository_id = r.id
 	WHERE
 		r.deleted_at IS NULL AND
 		r.blocked IS NULL AND
-		r.id IN (SELECT id FROM repositories_matching_policy)
-),
+		p.indexing_enabled
+) UNION ALL (
+	SELECT r.id
+	FROM repo r
+	JOIN lsif_configuration_policies_repository_pattern_lookup rpl ON rpl.repo_id = r.id
+	JOIN lsif_configuration_policies p ON p.id = rpl.policy_id
+	WHERE
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL AND
+		p.indexing_enabled
+)),
 repositories AS (
-	SELECT cr.id
-	FROM candidate_repositories cr
-	LEFT JOIN %s lrs ON lrs.repository_id = cr.id
+	SELECT rmp.id
+	FROM repositories_matching_policy rmp
+	LEFT JOIN %s lrs ON lrs.repository_id = rmp.id
 
 	-- Ignore records that have been checked recently. Note this condition is
 	-- true for a null {column_name} (which has never been checked).
 	WHERE (%s - lrs.{column_name} > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
 	ORDER BY
 		lrs.{column_name} NULLS FIRST,
-		cr.id -- tie breaker
+		rmp.id -- tie breaker
 	LIMIT %s
 )
 INSERT INTO %s (repository_id, {column_name})
