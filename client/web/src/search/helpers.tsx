@@ -14,6 +14,20 @@ import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './results
 const PRESERVED_QUERY_PARAMETERS = ['feat', 'trace', AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY]
 
 /**
+ * Returns a URL query string with only the parameters in PRESERVED_QUERY_PARAMETERS.
+ */
+function preservedQuery(query: string): string {
+    const old = new URLSearchParams(query)
+    const filtered = new URLSearchParams()
+    for (const key of PRESERVED_QUERY_PARAMETERS) {
+        for (const value of old.getAll(key)) {
+            filtered.append(key, value)
+        }
+    }
+    return filtered.toString()
+}
+
+/**
  * @param activation If set, records the DidSearch activation event for the new user activation
  * flow.
  */
@@ -28,19 +42,9 @@ export function submitSearch({
 }: SubmitSearchParameters): void {
     let searchQueryParameter = buildSearchURLQuery(query, patternType, caseSensitive, selectedSearchContextSpec)
 
-    const existingParameters = new URLSearchParams(history.location.search)
-    for (const key of PRESERVED_QUERY_PARAMETERS) {
-        const values = existingParameters.getAll(key)
-        if (values.length === 0) {
-            continue
-        }
-
-        const parameters = new URLSearchParams(searchQueryParameter)
-        parameters.delete(key)
-        for (const value of values) {
-            parameters.append(key, value)
-        }
-        searchQueryParameter = parameters.toString()
+    const preserved = preservedQuery(history.location.search)
+    if (preserved !== '') {
+        searchQueryParameter = searchQueryParameter + '&' + preserved
     }
 
     // Go to search results page

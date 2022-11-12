@@ -2535,8 +2535,9 @@ type BatchSpecWorkspaceEnvironmentVariable {
     name: String!
     """
     The variable value.
+    If null, the variable will be populated from a secret.
     """
-    value: String!
+    value: String
 }
 
 """

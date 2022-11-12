@@ -63,6 +63,7 @@ describe('UserNavItem', () => {
                             authenticatedUser={USER}
                             showDotComMarketing={true}
                             codeHostIntegrationMessaging="browser-extension"
+                            showFeedbackModal={() => undefined}
                         />
                     </CompatRouter>
                 </MemoryRouter>
@@ -80,6 +81,7 @@ describe('UserNavItem', () => {
                 authenticatedUser={USER}
                 showDotComMarketing={true}
                 codeHostIntegrationMessaging="browser-extension"
+                showFeedbackModal={() => undefined}
             />,
             {
                 history,

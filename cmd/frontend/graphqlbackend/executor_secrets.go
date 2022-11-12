@@ -73,10 +73,23 @@ func (r *schemaResolver) CreateExecutorSecret(ctx context.Context, args CreateEx
 		NamespaceOrgID:  orgID,
 	}
 	if err := store.Create(ctx, args.Scope.ToDatabaseScope(), secret, args.Value); err != nil {
+		if err == database.ErrDuplicateExecutorSecret {
+			return nil, &ErrDuplicateExecutorSecret{}
+		}
 		return nil, err
 	}
 
 	return &executorSecretResolver{db: r.db, secret: secret}, nil
+}
+
+type ErrDuplicateExecutorSecret struct{}
+
+func (e ErrDuplicateExecutorSecret) Error() string {
+	return "multiple secrets with the same key in the same namespace not allowed"
+}
+
+func (e ErrDuplicateExecutorSecret) Extensions() map[string]any {
+	return map[string]any{"code": "ErrDuplicateExecutorSecret"}
 }
 
 type UpdateExecutorSecretArgs struct {
