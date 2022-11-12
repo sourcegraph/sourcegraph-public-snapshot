@@ -2,15 +2,13 @@
 title: Get Started
 ---
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-
-# Get Started
+# Sourcegraph
 
 ## Deploy Sourcegraph
 
 Sourcegraph is runnable in a variety of environments, from cloud to self-hosted to your local machine.
 
-<a href="admin/deploy" target="_blank">Learn more about our deployment methods <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+<a href="admin/deploy" target="_blank">Learn more about our deployment methods</a>
 
 ### Recommended
 
@@ -132,20 +130,21 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 
 <div class="grid">
   <a class="btn btn-icon" href="https://about.sourcegraph.com/blog/">
-      <i class="fa-solid fa-rss"></i> Blog
+      Blog
   </a>
   <a class="btn btn-icon" href="https://discord.gg/s2qDtYGnAE">
-    <i class="fa-brands fa-discord"></i> Discord
+    Discord
   </a>
   <a class="btn btn-icon" href="https://twitter.com/sourcegraph">
-    <i class="fa-brands fa-twitter"></i> Twitter
+    Twitter
   </a>
   <a class="btn btn-icon" href="https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide">
-    <i class="fa-regular fa-bug"></i> File an issue
+    File an issue
   </a>
   <a class="btn btn-icon" href="https://about.sourcegraph.com/demo">
-    <i class="fa-regular fa-paper-plane"></i> Request a demo</a>
+    Request a demo
+  </a>
   <a class="btn btn-icon" href="https://about.sourcegraph.com/contact/request-info/">
-    <i class="fa-regular fa-envelope"></i> Contact us
+    Contact us
   </a>
 </div>
