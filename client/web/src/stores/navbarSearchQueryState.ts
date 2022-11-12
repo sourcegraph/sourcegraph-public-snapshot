@@ -19,7 +19,11 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { ParsedSearchURL } from '../search'
 import { submitSearch } from '../search/helpers'
-import { defaultCaseSensitiveFromSettings, defaultPatternTypeFromSettings } from '../util/settings'
+import {
+    defaultCaseSensitiveFromSettings,
+    defaultPatternTypeFromSettings,
+    defaultSearchModeFromSettings,
+} from '../util/settings'
 
 export interface NavbarQueryState extends SearchQueryState {}
 
@@ -116,7 +120,7 @@ export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Setti
     }
 
     const newState: Partial<
-        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'parametersSource'>
+        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'parametersSource' | 'searchMode'>
     > = {
         parametersSource: InitialParametersSource.USER_SETTINGS,
     }
@@ -124,6 +128,11 @@ export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Setti
     const caseSensitive = defaultCaseSensitiveFromSettings(settings)
     if (caseSensitive !== undefined) {
         newState.searchCaseSensitivity = caseSensitive
+    }
+
+    const searchMode = defaultSearchModeFromSettings(settings)
+    if (searchMode) {
+        newState.searchMode = searchMode
     }
 
     const searchPatternType = defaultPatternTypeFromSettings(settings)
