@@ -187,7 +187,7 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
  *
  */
 const fileLineContainerResolver: ViewResolver<CodeView> = {
-    selector: '.js-file-line-container, react-app table',
+    selector: '.js-file-line-container, react-app table', // the former for the old UI and the latter for the new UI
     resolveView: (fileLineContainer: HTMLElement): CodeView | null => {
         const embeddedBlobWrapper = fileLineContainer.closest('.blob-wrapper-embedded')
         if (embeddedBlobWrapper) {
