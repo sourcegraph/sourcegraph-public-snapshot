@@ -265,7 +265,8 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 		}
 		parts = append(parts, &zoektquery.Regexp{
 			Regexp:        re,
-			Content:       true,
+			Content:       p.PatternMatchesContent,
+			FileName:      p.PatternMatchesPath,
 			CaseSensitive: !rg.ignoreCase,
 		})
 	}
