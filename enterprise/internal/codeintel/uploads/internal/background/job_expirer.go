@@ -5,28 +5,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
-
-func (b backgroundJob) NewUploadExpirer(
-	interval time.Duration,
-	repositoryProcessDelay time.Duration,
-	repositoryBatchSize int,
-	uploadProcessDelay time.Duration,
-	uploadBatchSize int,
-	commitBatchSize int,
-	policyBatchSize int,
-) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return b.uploadSvc.HandleExpiredUploadsBatch(ctx, b.expirationMetrics, ExpirerConfig{
-			RepositoryProcessDelay: repositoryProcessDelay,
-			RepositoryBatchSize:    repositoryBatchSize,
-			UploadProcessDelay:     uploadProcessDelay,
-			UploadBatchSize:        uploadBatchSize,
-			CommitBatchSize:        commitBatchSize,
-			PolicyBatchSize:        policyBatchSize,
-		})
-	}))
-}
 
 type ExpirerConfig struct {
 	RepositoryProcessDelay time.Duration
@@ -35,4 +15,15 @@ type ExpirerConfig struct {
 	UploadBatchSize        int
 	CommitBatchSize        int
 	PolicyBatchSize        int
+}
+
+func NewUploadExpirer(
+	uploadSvc UploadService,
+	interval time.Duration,
+	config ExpirerConfig,
+	observationContext *observation.Context,
+) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
+		return uploadSvc.HandleExpiredUploadsBatch(ctx, NewExpirationMetrics(observationContext), config)
+	}))
 }

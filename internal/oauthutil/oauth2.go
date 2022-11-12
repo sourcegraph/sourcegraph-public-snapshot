@@ -83,7 +83,7 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 			// The next request should then succeed.
 			err = autherWithRefresh.Refresh(ctx, doer)
 			if err != nil {
-				return resp, errors.Wrap(err, "refresh token")
+				return resp, errors.Wrap(err, "unauthorized request and could not refresh token")
 			}
 			continue
 		}

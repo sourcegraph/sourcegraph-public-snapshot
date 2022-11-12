@@ -24,7 +24,6 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 		nil, // policySvc
 		nil, // policyMatcher
 		nil, // locker
-		nil, // backgroundJobs
 		&observation.TestContext,
 	)
 
@@ -106,7 +105,6 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 		nil, // policySvc
 		nil, // policyMatcher
 		nil, // locker
-		nil, // backgroundJobs
 		&observation.TestContext,
 	)
 

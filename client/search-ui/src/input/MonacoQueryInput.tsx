@@ -5,23 +5,14 @@ import { isPlainObject, noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 
 import { observeResize, hasProperty } from '@sourcegraph/common'
-import {
-    QueryChangeSource,
-    QueryState,
-    CaseSensitivityProps,
-    SearchPatternTypeProps,
-    SearchContextProps,
-    EditorHint,
-} from '@sourcegraph/search'
+import { QueryChangeSource, EditorHint } from '@sourcegraph/search'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { StandardSuggestionSource } from './extensions'
-import { IEditor } from './LazyMonacoQueryInput'
+import { QueryInputProps } from './QueryInput'
 import { useQueryDiagnostics, useQueryIntelligence } from './useQueryIntelligence'
 
 import styles from './MonacoQueryInput.module.scss'
@@ -59,67 +50,10 @@ export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstruction
     cursorWidth: 1,
 }
 
-export interface MonacoQueryInputProps
-    extends ThemeProps,
-        Pick<CaseSensitivityProps, 'caseSensitive'>,
-        SearchPatternTypeProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
-    isSourcegraphDotCom: boolean // Needed for query suggestions to give different options on dotcom; see SOURCEGRAPH_DOT_COM_REPO_COMPLETION
-    queryState: QueryState
-    onChange: (newState: QueryState) => void
-    onSubmit?: () => void
-    onFocus?: () => void
-    onBlur?: () => void
-    onCompletionItemSelected?: () => void
-    onEditorCreated?: (editor: IEditor) => void
-    fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
-    autoFocus?: boolean
-    // Whether globbing is enabled for filters.
-    globbing: boolean
-
-    // Whether comments are parsed and highlighted
-    interpretComments?: boolean
-
-    className?: string
-
-    height?: string | number
-    preventNewLine?: boolean
+export interface MonacoQueryInputProps extends QueryInputProps {
     editorOptions?: Monaco.editor.IStandaloneEditorConstructionOptions
-
-    /**
-     * NOTE: This is currently only used for Insights code through
-     * the MonacoField component: client/web/src/enterprise/insights/components/form/monaco-field/MonacoField.tsx
-     *
-     * Issue to improve this: https://github.com/sourcegraph/sourcegraph/issues/29438
-     */
-    placeholder?: string
-
-    ariaLabel?: string
-
+    height?: string | number
     editorClassName?: string
-
-    // CodeMirror specific
-    /**
-     * If set suggestions can be applied by pressing enter. In the past we
-     * didn't enable this behavior because it interfered with loading
-     * suggestions asynchronously, but CodeMirror allows us to disable selecting
-     * a suggestion by default. This is currently an experimental feature.
-     */
-    applySuggestionsOnEnter?: boolean
-    /**
-     * Additional sources to use for autocompletion.
-     */
-    suggestionSources?: StandardSuggestionSource[]
-    /**
-     * Show suggestions from default sources when query is empty. Defaults to
-     * true.
-     */
-    defaultSuggestionsShowWhenEmpty?: boolean
-    /**
-     * Automatically show suggestions when the input receives focus and it is
-     * empty. Defaults to false.
-     */
-    showSuggestionsOnFocus?: boolean
 }
 
 /**
