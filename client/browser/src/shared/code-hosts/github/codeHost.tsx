@@ -165,21 +165,21 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
 
     // new GitHub UI
     const container = codeViewElement.querySelector('#repos-sticky-header')?.childNodes[0]?.childNodes[0]?.childNodes[1]
-        ?.childNodes[1]
+        ?.childNodes[1] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
     if (container instanceof HTMLElement) {
         container.prepend(mountElement)
         return mountElement
     }
 
     // old GitHub UI (e.g., GHE)
-    const rawURLLink = codeViewElement.querySelector('#raw-url')?.closest('.BtnGroup')
+    const rawURLLink = codeViewElement.querySelector('#raw-url')
     const buttonGroup = rawURLLink?.closest('.BtnGroup')
     if (buttonGroup?.parentNode) {
         buttonGroup.parentNode.insertBefore(mountElement, buttonGroup)
         return mountElement
     }
 
-    throw new Error('File actions container not found.')
+    throw new Error('Failed to create file toolbar mount node: container not found.')
 }
 
 /**
