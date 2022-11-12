@@ -29,7 +29,6 @@ import {
 import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
 import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
@@ -387,13 +386,11 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
         }, [editor, externalExtensions, extensions])
 
         return (
-            <TraceSpanProvider name="CodeMirrorQueryInput">
-                <div
-                    ref={setContainer}
-                    className={classNames(styles.root, className, 'test-query-input', 'test-editor')}
-                    data-editor="codemirror6"
-                />
-            </TraceSpanProvider>
+            <div
+                ref={setContainer}
+                className={classNames(styles.root, className, 'test-query-input', 'test-editor')}
+                data-editor="codemirror6"
+            />
         )
     }
 )

@@ -5,7 +5,6 @@ import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import {
     SearchContextInputProps,
     CaseSensitivityProps,
@@ -121,30 +120,26 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
                 <div data-search-page-input-container={true} className={styles.inputContainer}>
-                    <TraceSpanProvider name="SearchBox">
-                        <SearchBox
-                            {...props}
-                            editorComponent={editorComponent}
-                            showSearchContext={showSearchContext}
-                            showSearchContextManagement={showSearchContextManagement}
-                            caseSensitive={caseSensitive}
-                            patternType={patternType}
-                            setPatternType={setSearchPatternType}
-                            setCaseSensitivity={setSearchCaseSensitivity}
-                            queryState={props.queryState}
-                            onChange={props.setQueryState}
-                            onSubmit={onSubmit}
-                            autoFocus={!showSearchHistory && !isTouchOnlyDevice && props.autoFocus !== false}
-                            isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
-                            structuralSearchDisabled={
-                                window.context?.experimentalFeatures?.structuralSearch === 'disabled'
-                            }
-                            applySuggestionsOnEnter={applySuggestionsOnEnter}
-                            showCopyQueryButton={!showSearchHistory}
-                            showSearchHistory={showSearchHistory}
-                            recentSearches={recentSearches}
-                        />
-                    </TraceSpanProvider>
+                    <SearchBox
+                        {...props}
+                        editorComponent={editorComponent}
+                        showSearchContext={showSearchContext}
+                        showSearchContextManagement={showSearchContextManagement}
+                        caseSensitive={caseSensitive}
+                        patternType={patternType}
+                        setPatternType={setSearchPatternType}
+                        setCaseSensitivity={setSearchCaseSensitivity}
+                        queryState={props.queryState}
+                        onChange={props.setQueryState}
+                        onSubmit={onSubmit}
+                        autoFocus={!showSearchHistory && !isTouchOnlyDevice && props.autoFocus !== false}
+                        isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
+                        structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+                        applySuggestionsOnEnter={applySuggestionsOnEnter}
+                        showCopyQueryButton={!showSearchHistory}
+                        showSearchHistory={showSearchHistory}
+                        recentSearches={recentSearches}
+                    />
                 </div>
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
             </Form>
