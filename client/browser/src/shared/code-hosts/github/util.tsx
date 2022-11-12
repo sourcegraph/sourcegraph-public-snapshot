@@ -190,17 +190,19 @@ function getDiffResolvedRevisionFromPageSource(
     }
 }
 
-const getPermalinkSelector = (): string | undefined =>
-    ['.ActionList-item--navActive a', 'a.js-permalink-shortcut'].find(selector => !!document.querySelector(selector))
-
 /**
  * Returns the file path for the current page. Must be on a blob or tree page.
  *
  * Implementation details:
  *
  * This scrapes the file path from the permalink on GitHub blob pages:
+ * - old UI:
  * ```html
  * <a class="d-none js-permalink-shortcut" data-hotkey="y" href="/gorilla/mux/blob/ed099d42384823742bba0bf9a72b53b55c9e2e38/mux.go">Permalink</a>
+ * ```
+ * - new UI:
+ * ```html
+ * <li class="Tree-item ActionList-item ActionList-item--subItem ActionList-item--navActive"><a class="Link-sc-hrxz1n-0 eHoHg ActionList-content hx_ActionList-content" href="/sourcegraph/sourcegraph/blob/main/client/browser/src/browser-extension/ThemeWrapper.tsx">ThemeWrapper.tsx</a></li>
  * ```
  *
  * We can't get the file path from the URL because the branch name can contain
@@ -210,19 +212,24 @@ const getPermalinkSelector = (): string | undefined =>
  * TODO ideally, this should only scrape the code view itself.
  */
 export function getFilePath(): string {
-    const selector = getPermalinkSelector()
-    const permalink = document.querySelector<HTMLAnchorElement>(selector!)
+    let permalink: HTMLAnchorElement | null = null
+    for (const selector of ['.ActionList-item--navActive a', 'a.js-permalink-shortcut']) {
+        permalink = document.querySelector<HTMLAnchorElement>(selector)
+        if (permalink) {
+            break
+        }
+    }
     if (!permalink) {
-        throw new Error('Unable to determine the file path because no containing file permalink was found.')
+        throw new Error('Unable to determine the file path because no element containing file link was found.')
     }
     const url = new URL(permalink.href)
-    // <empty>/<user>/<repo>/(blob|tree)/<commitID>/<path/to/file>
+    // <empty>/<user>/<repo>/(blob|tree)/<commitID|rev>/<path/to/file>
     // eslint-disable-next-line unicorn/no-unreadable-array-destructuring
     const [, , , pageType, , ...path] = url.pathname.split('/')
     // Check for page type because a tree page can be the repo root, so it shouldn't throw an error despite an empty path
     if (pageType !== 'tree' && path.length === 0) {
         throw new Error(
-            `Unable to determine the file path because the link href attribute was ${url.pathname} (it is expected to be of the form /<user>/<repo>/blob/<commitID>/<path/to/file>).`
+            `Unable to determine the file path because the link href attribute was ${url.pathname} (it is expected to be of the form /<user>/<repo>/blob/<commitID|rev>/<path/to/file>).`
         )
     }
     return decodeURIComponent(path.join('/'))
