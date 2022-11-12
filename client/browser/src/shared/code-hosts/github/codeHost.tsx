@@ -211,18 +211,40 @@ const resolveFileLineContainerView = (fileLineContainer: HTMLElement): CodeView 
     }
 }
 
-const newFileLineContainerResolver: ViewResolver<CodeView> = {
-    selector: 'react-app table',
-    resolveView: resolveFileLineContainerView,
-}
-
 /**
  * Matches the modern single-file code view, or snippets embedded in comments.
  *
  */
 const fileLineContainerResolver: ViewResolver<CodeView> = {
-    selector: '.js-file-line-container',
-    resolveView: resolveFileLineContainerView,
+    selector: '.js-file-line-container, react-app table',
+    resolveView: (fileLineContainer: HTMLElement): CodeView | null => {
+        const embeddedBlobWrapper = fileLineContainer.closest('.blob-wrapper-embedded')
+        if (embeddedBlobWrapper) {
+            // This is a snippet embedded in a comment.
+            // Resolve to `.blob-wrapper-embedded`'s parent element,
+            // the smallest element that contains both the code and
+            // the HTML anchor allowing to resolve the file info.
+            const element = embeddedBlobWrapper.parentElement!
+            return {
+                element,
+                ...snippetCodeView,
+            }
+        }
+        const { pageType } = parseURL()
+        if (pageType !== 'blob') {
+            // this is not a single-file code view
+            return null
+        }
+        const repositoryContent = fileLineContainer.closest('.repository-content')
+        if (!repositoryContent) {
+            throw new Error('Could not find repository content element')
+        }
+        return {
+            element: repositoryContent as HTMLElement,
+            ...singleFileCodeView,
+            getToolbarMount: createFileLineContainerToolbarMount,
+        }
+    },
 }
 
 const genericCodeViewResolver: ViewResolver<CodeView> = {
@@ -686,12 +708,7 @@ export const githubCodeHost: CodeHost = {
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
     // searchEnhancement,
     // enhanceSearchPage,
-    codeViewResolvers: [
-        genericCodeViewResolver,
-        fileLineContainerResolver,
-        newFileLineContainerResolver,
-        searchResultCodeViewResolver,
-    ],
+    codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
     routeChange: mutations =>
