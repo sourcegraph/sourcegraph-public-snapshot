@@ -913,6 +913,150 @@ func TestSyncRepo(t *testing.T) {
 	}
 }
 
+func TestBlockedSyncRepo(t *testing.T) {
+	t.Parallel()
+	store := getTestRepoStore(t)
+
+	servicesPerKind := createExternalServices(t, store, func(svc *types.ExternalService) { svc.CloudDefault = true })
+
+	repo := &types.Repo{
+		ID:          0, // explicitly make default value for sourced repo
+		Name:        "github.com/foo/bar",
+		Description: "The description",
+		Archived:    false,
+		Fork:        false,
+		Stars:       100,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com/",
+		},
+		Sources: map[string]*types.SourceInfo{
+			servicesPerKind[extsvc.KindGitHub].URN(): {
+				ID:       servicesPerKind[extsvc.KindGitHub].URN(),
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+		Metadata: &github.Repository{
+			ID:             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			URL:            "github.com/foo/bar",
+			DatabaseID:     1234,
+			Description:    "The description",
+			NameWithOwner:  "foo/bar",
+			StargazerCount: 100,
+		},
+	}
+
+	now := time.Now().UTC()
+	oldRepo := repo.With(func(r *types.Repo) {
+		r.UpdatedAt = now.Add(-time.Hour)
+		r.CreatedAt = r.UpdatedAt.Add(-time.Hour)
+		r.Stars = 0
+	})
+
+	testCases := []struct {
+		name       string
+		repo       api.RepoName
+		background bool        // whether to run SyncRepo in the background
+		before     types.Repos // the repos to insert into the database before syncing
+		sourced    *types.Repo // the repo that is returned by the fake sourcer
+		returned   *types.Repo // the expected return value from SyncRepo (which changes meaning depending on background)
+		after      types.Repos // the expected database repos after syncing
+		diff       repos.Diff  // the expected repos.Diff sent by the syncer
+	}{{
+		name:       "blocked sync repo",
+		repo:       repo.Name,
+		background: true,
+		before:     types.Repos{oldRepo},
+		sourced:    repo.Clone(),
+		returned:   oldRepo,
+		after:      types.Repos{repo},
+		diff: repos.Diff{
+			Modified: repos.ReposModified{
+				{Repo: repo, Modified: types.RepoModifiedStars},
+			},
+		},
+	}}
+
+	for _, tc := range testCases {
+		tc := tc
+		ctx := context.Background()
+
+		t.Run(tc.name, func(t *testing.T) {
+			q := sqlf.Sprintf("DELETE FROM repo")
+			_, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if err := store.RepoStore().Create(ctx, tc.before.Clone()...); err != nil {
+				t.Fatalf("failed to prepare store: %v", err)
+			}
+
+			syncer := &repos.Syncer{
+				Logger:       logtest.Scoped(t),
+				Now:          time.Now,
+				Store:        store,
+				Synced:       make(chan repos.Diff, 1),
+				SyncRepoChan: make(chan repos.BackgroundRepoSyncJob),
+				// Block the execution of the first repo sync by placing the repo ID in the map
+				SyncRepoMap: map[api.RepoID]struct{}{oldRepo.ID: {}},
+				Sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(servicesPerKind[extsvc.KindGitHub], nil, tc.sourced),
+				),
+			}
+
+			go syncer.StartBackgroundRepoSyncer(ctx, logtest.Scoped(t))
+
+			have, err := syncer.SyncRepo(ctx, tc.repo, tc.background)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have.ID == 0 {
+				t.Errorf("expected returned synced repo to have an ID set")
+			}
+
+			opt := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt")
+			if diff := cmp.Diff(have, oldRepo, opt); diff != "" {
+				t.Errorf("repos mismatch: (-have, +want):\n%s", diff)
+			}
+
+			// Trigger the repo sync of the old repo we blocked the syncs with
+			syncer.SyncRepoChan <- repos.BackgroundRepoSyncJob{
+				Name:     tc.repo,
+				Codehost: extsvc.CodeHostOf(tc.repo, extsvc.PublicCodeHosts...),
+				Repo:     oldRepo,
+			}
+			// Sleep 1 second just to let it finish syncing
+			time.Sleep(1 * time.Second)
+
+			// Sync for real this time, now that the queue is unblocked
+			have, err = syncer.SyncRepo(ctx, tc.repo, tc.background)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(have, repo, opt); diff != "" {
+				t.Errorf("returned mismatch: (-have, +want):\n%s", diff)
+			}
+
+			if diff := cmp.Diff(<-syncer.Synced, tc.diff, opt); diff != "" {
+				t.Errorf("diff mismatch: (-have, +want):\n%s", diff)
+			}
+
+			after, err := store.RepoStore().List(ctx, database.ReposListOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if diff := cmp.Diff(types.Repos(after), tc.after, opt); diff != "" {
+				t.Errorf("repos mismatch: (-have, +want):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestSyncRun(t *testing.T) {
 	t.Parallel()
 	store := getTestRepoStore(t)

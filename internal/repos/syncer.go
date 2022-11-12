@@ -68,9 +68,9 @@ type RunOptions struct {
 }
 
 type BackgroundRepoSyncJob struct {
-	name     api.RepoName
-	codehost *extsvc.CodeHost
-	repo     *types.Repo
+	Name     api.RepoName
+	Codehost *extsvc.CodeHost
+	Repo     *types.Repo
 }
 
 // Run runs the Sync at the specified interval.
@@ -162,9 +162,9 @@ func (s *Syncer) StartBackgroundRepoSyncer(ctx context.Context, logger log.Logge
 			return errors.Wrapf(ctx.Err(), "context done")
 		case job := <-s.SyncRepoChan:
 			// We are processing this repo now, free up future requests to sync this repo.
-			delete(s.SyncRepoMap, job.repo.ID)
+			delete(s.SyncRepoMap, job.Repo.ID)
 			ctx2, _ := context.WithTimeout(ctx, 3*time.Minute)
-			repo, err := s.syncRepo(ctx2, job.codehost, job.name, job.repo)
+			repo, err := s.syncRepo(ctx2, job.Codehost, job.Name, job.Repo)
 			logger.Debug("syncGroup completed", log.String("updatedRepo", fmt.Sprintf("%v", repo)))
 			if err != nil {
 				logger.Error("StartBackgroundRepoSyncer", log.Error(err))
@@ -373,9 +373,9 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 			// Repo is not in the queue, add it.
 			s.SyncRepoMap[repo.ID] = struct{}{}
 			s.SyncRepoChan <- BackgroundRepoSyncJob{
-				name:     name,
-				repo:     repo,
-				codehost: codehost,
+				Name:     name,
+				Repo:     repo,
+				Codehost: codehost,
 			}
 		} else {
 			// Repo is already in the queue, don't need to add it.
