@@ -155,7 +155,6 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 }
 
 func (s *Syncer) StartBackgroundRepoSyncer(ctx context.Context, logger log.Logger) (err error) {
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -163,12 +162,17 @@ func (s *Syncer) StartBackgroundRepoSyncer(ctx context.Context, logger log.Logge
 		case job := <-s.SyncRepoChan:
 			// We are processing this repo now, free up future requests to sync this repo.
 			delete(s.SyncRepoMap, job.Repo.ID)
-			ctx2, _ := context.WithTimeout(ctx, 3*time.Minute)
-			repo, err := s.syncRepo(ctx2, job.Codehost, job.Name, job.Repo)
-			logger.Debug("syncGroup completed", log.String("updatedRepo", fmt.Sprintf("%v", repo)))
-			if err != nil {
-				logger.Error("StartBackgroundRepoSyncer", log.Error(err))
+			// Wrap in a function to deal with the cancel func
+			syncFunc := func() {
+				ctx2, cancel := context.WithTimeout(ctx, 3*time.Minute)
+				defer cancel()
+				repo, err := s.syncRepo(ctx2, job.Codehost, job.Name, job.Repo)
+				logger.Debug("syncGroup completed", log.String("updatedRepo", fmt.Sprintf("%v", repo)))
+				if err != nil {
+					logger.Error("StartBackgroundRepoSyncer", log.Error(err))
+				}
 			}
+			syncFunc()
 		}
 	}
 }
