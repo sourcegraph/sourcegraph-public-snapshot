@@ -5,10 +5,15 @@ import { commitIDFromPermalink } from '../../util/dom'
  */
 export function getCommitIDFromPermalink(): string {
     // new UI
-    const script = document.querySelector<HTMLScriptElement>('script[data-target="react-app.embeddedData"]')
+    const embeddedDataScriptSelector = 'script[data-target="react-app.embeddedData"]'
+    const script = document.querySelector<HTMLScriptElement>(embeddedDataScriptSelector)
     if (script) {
-        const data = JSON.parse(script.textContent || '')
-        return data.payload.refInfo.currentOid
+        try {
+            const data = JSON.parse(script.textContent || '')
+            return data.payload.refInfo.currentOid
+        } catch {
+            throw new Error(`Could not parse '${embeddedDataScriptSelector}' content or extract commit ID from it`)
+        }
     }
 
     // old UI
