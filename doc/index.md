@@ -1,8 +1,8 @@
----
-title: Get Started
----
-
 # Sourcegraph
+
+Sourcegraph is a code search and intelligence platform. Devs use it to search, understand, and fix code across large codebases.
+
+To try Sourcegraph on 2 million open-source repositories, visit [Sourcegraph.com](https://sourcegraph.com/search).
 
 ## Deploy Sourcegraph
 
@@ -10,17 +10,16 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 
 <a href="admin/deploy" target="_blank">Learn more about our deployment methods</a>
 
-### Recommended
+### Cloud
 
 <div>
   <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
     <div class="cloud-cta-copy">
-      <h2>Get Sourcegraph on your code.</h2>
-      <h3>A single-tenant instance managed by Sourcegraph.</h3>
-      <p>Sign up for a 30 day trial for your team.</p>
+      <h2>Sourcegraph Cloud</h2>
+      <h3>A single-tenant instance managed by Sourcegraph</h3>
     </div>
     <div class="cloud-cta-btn-container">
-      <div class="visual-btn">Get free trial now</div>
+      <div class="visual-btn">Sign up</div>
     </div>
   </a>
 </div>
@@ -40,7 +39,7 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
   <!-- GCE Images-->
   <a class="btn-app btn" href="/admin/deploy/machine-images/gce">
     <img alt="aws-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/googlecloud.png" />
-    <h3>Goole Compute Engine</h3>
+    <h3>Google Compute Engine</h3>
     <p>Launch a pre-configured Sourcegraph instance from a GCE Image</p>
   </a>
 </div>
@@ -120,31 +119,12 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
     <span>Sourcegraph Tour</span>
     <p>Take a tour of Sourcegraph’s features using real-world examples and use cases.</p>
   </a>
-  <a href="adopt/trial" class="btn" alt="Create a batch change">
-    <span>Sourcegraph Trial</span>
-    <p>Learn more about starting a Sourcegraph trial at your company.</p>
-  </a>
 </div>
 
 ## Community
 
-<div class="grid">
-  <a class="btn btn-icon" href="https://about.sourcegraph.com/blog/">
-      Blog
-  </a>
-  <a class="btn btn-icon" href="https://discord.gg/s2qDtYGnAE">
-    Discord
-  </a>
-  <a class="btn btn-icon" href="https://twitter.com/sourcegraph">
-    Twitter
-  </a>
-  <a class="btn btn-icon" href="https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide">
-    File an issue
-  </a>
-  <a class="btn btn-icon" href="https://about.sourcegraph.com/demo">
-    Request a demo
-  </a>
-  <a class="btn btn-icon" href="https://about.sourcegraph.com/contact/request-info/">
-    Contact us
-  </a>
-</div>
+* [Blog](https://about.sourcegraph.com/blog/)
+* [Discord](https://discord.gg/s2qDtYGnAE)
+* [Twitter](https://twitter.com/sourcegraph)
+* [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
+* [Contact us](https://about.sourcegraph.com/contact)
