@@ -13,6 +13,7 @@ const (
 
 	SearchStream  = "search.stream"
 	ComputeStream = "compute.stream"
+	MLX           = "mlx"
 
 	SrcCli             = "src-cli"
 	SrcCliVersionCache = "src-cli.version-cache"
@@ -107,6 +108,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/search/stream").Methods("GET").Name(StreamingSearch)
 	base.Path("/compute/stream").Methods("GET", "POST").Name(ComputeStream)
+	base.PathPrefix("/mlx").Methods("POST").Name(MLX)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 

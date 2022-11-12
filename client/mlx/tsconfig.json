@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "sourceRoot": "src",
+    "rootDir": ".",
+    "outDir": "./out",
+    "baseUrl": "./src",
+  },
+  "include": ["./src/**/*", "./*.ts"],
+  "exclude": ["../../node_modules", "./node_modules", "./out"],
+  "references": [
+    { "path": "../search" },
+    { "path": "../shared" },
+    { "path": "../http-client" },
+    { "path": "../common" },
+  ],
+}

@@ -30,6 +30,7 @@ type Services struct {
 	NewExecutorProxyHandler         NewExecutorProxyHandler
 	NewGitHubAppSetupHandler        NewGitHubAppSetupHandler
 	NewComputeStreamHandler         NewComputeStreamHandler
+	NewMLXHandler                   NewMLXHandler
 	AuthzResolver                   graphqlbackend.AuthzResolver
 	BatchChangesResolver            graphqlbackend.BatchChangesResolver
 	CodeIntelResolver               graphqlbackend.CodeIntelResolver
@@ -59,6 +60,9 @@ type NewGitHubAppSetupHandler func() http.Handler
 // NewComputeStreamHandler creates a new handler for the Sourcegraph Compute streaming endpoint.
 type NewComputeStreamHandler func() http.Handler
 
+// NewMLXHandler creates a new handler for the Sourcegraph mlx streaming endpoint.
+type NewMLXHandler func() http.Handler
+
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
 	return Services{
@@ -75,6 +79,7 @@ func DefaultServices() Services {
 		NewExecutorProxyHandler:         func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
 		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
+		NewMLXHandler:                   func() http.Handler { return makeNotFoundHandler("mlx endpoint") },
 	}
 }
 

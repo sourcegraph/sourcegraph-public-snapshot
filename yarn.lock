@@ -5479,6 +5479,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@sourcegraph/mlx@workspace:client/mlx":
+  version: 0.0.0-use.local
+  resolution: "@sourcegraph/mlx@workspace:client/mlx"
+  languageName: unknown
+  linkType: soft
+
 "@sourcegraph/observability-client@workspace:client/observability-client":
   version: 0.0.0-use.local
   resolution: "@sourcegraph/observability-client@workspace:client/observability-client"

@@ -40,6 +40,7 @@ func newTest(t *testing.T) *httptestutil.Client {
 			BitbucketCloudWebhook:     enterpriseServices.BitbucketCloudWebhook,
 			NewCodeIntelUploadHandler: enterpriseServices.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:   enterpriseServices.NewComputeStreamHandler,
+			NewMLXHandler:             enterpriseServices.NewMLXHandler,
 		},
 	))
 }

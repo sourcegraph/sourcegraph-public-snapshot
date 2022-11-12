@@ -50,6 +50,7 @@ type Handlers struct {
 	BatchesChangesFileUploadHandler http.Handler
 	NewCodeIntelUploadHandler       enterprise.NewCodeIntelUploadHandler
 	NewComputeStreamHandler         enterprise.NewComputeStreamHandler
+	NewMLXHandler                   enterprise.NewMLXHandler
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -112,6 +113,7 @@ func NewHandler(
 	m.Get(apirouter.BatchesFileUpload).Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
+	m.Get(apirouter.MLX).Handler(trace.Route(handlers.NewMLXHandler()))
 
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))

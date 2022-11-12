@@ -350,6 +350,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 			BatchesChangesFileUploadHandler: enterprise.BatchesChangesFileUploadHandler,
 			NewCodeIntelUploadHandler:       enterprise.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:         enterprise.NewComputeStreamHandler,
+			NewMLXHandler:                   enterprise.NewMLXHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,
