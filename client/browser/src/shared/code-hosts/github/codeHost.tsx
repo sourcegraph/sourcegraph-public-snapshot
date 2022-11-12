@@ -182,35 +182,6 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     throw new Error('File actions container not found.')
 }
 
-const resolveFileLineContainerView = (fileLineContainer: HTMLElement): CodeView | null => {
-    const embeddedBlobWrapper = fileLineContainer.closest('.blob-wrapper-embedded')
-    if (embeddedBlobWrapper) {
-        // This is a snippet embedded in a comment.
-        // Resolve to `.blob-wrapper-embedded`'s parent element,
-        // the smallest element that contains both the code and
-        // the HTML anchor allowing to resolve the file info.
-        const element = embeddedBlobWrapper.parentElement!
-        return {
-            element,
-            ...snippetCodeView,
-        }
-    }
-    const { pageType } = parseURL()
-    if (pageType !== 'blob') {
-        // this is not a single-file code view
-        return null
-    }
-    const repositoryContent = fileLineContainer.closest('.repository-content')
-    if (!repositoryContent) {
-        throw new Error('Could not find repository content element')
-    }
-    return {
-        element: repositoryContent as HTMLElement,
-        ...singleFileCodeView,
-        getToolbarMount: createFileLineContainerToolbarMount,
-    }
-}
-
 /**
  * Matches the modern single-file code view, or snippets embedded in comments.
  *
