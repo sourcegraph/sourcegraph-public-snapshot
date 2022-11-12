@@ -43,6 +43,7 @@ const getLineNumberElementIndex = (part: DiffPart, isSplitDiff: boolean): number
  * Gets the line number for a given code element on unified diff, split diff and blob views
  */
 const getLineNumberFromCodeElement = (codeElement: HTMLElement): number => {
+    // In the new GitHub UI element may actually be the one containing the line number
     if (codeElement.dataset.lineNumber) {
         return parseInt(codeElement.dataset.lineNumber, 10)
     }
@@ -63,12 +64,9 @@ const getLineNumberFromCodeElement = (codeElement: HTMLElement): number => {
  * Gets the `<td>` element for a target that contains the code
  */
 const getCodeCellFromTarget = (target: HTMLElement): HTMLTableCellElement | null => {
-    const cell =
-        target.closest<HTMLTableCellElement>('td.react-code-cell') ||
-        target.closest<HTMLTableCellElement>('td.blob-code')
-    // Handle rows with the [ ↕ ] button that expands collapsed unchanged lines TODO: CHECK IF IT STILL WORKS
+    const cell = target.closest<HTMLTableCellElement>('td.blob-code, td.react-code-cell') // the former for the old UI and the latter for the new UI
+    // Handle rows with the [ ↕ ] button that expands collapsed unchanged lines
     if (!cell || cell.parentElement?.classList.contains('js-expandable-line')) {
-        // TODO: update selector
         return null
     }
     return cell
