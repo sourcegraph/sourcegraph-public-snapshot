@@ -1,7 +1,7 @@
 import { commitIDFromPermalink } from '../../util/dom'
 
 /**
- * Get the commit ID from the permalink element on the page.
+ * Get the commit ID from either permalink element on the page (old UI) or script with embedded data (new UI).
  */
 export function getCommitIDFromPermalink(): string {
     // new UI
