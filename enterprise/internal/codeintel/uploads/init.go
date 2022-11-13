@@ -93,10 +93,11 @@ func NewUploadProcessorJob(
 	)
 }
 
-func NewCommittedAtBackfillerJob(uploadSvc UploadService) []goroutine.BackgroundRoutine {
+func NewCommittedAtBackfillerJob(uploadSvc *Service) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewCommittedAtBackfiller(
-			uploadSvc,
+			uploadSvc.store,
+			uploadSvc.gitserverClient,
 			ConfigCommittedAtBackfillInst.Interval,
 			ConfigCommittedAtBackfillInst.BatchSize,
 		),

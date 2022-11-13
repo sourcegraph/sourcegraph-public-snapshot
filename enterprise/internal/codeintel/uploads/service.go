@@ -447,42 +447,6 @@ func (s *Service) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, maxT
 	return s.store.SoftDeleteExpiredUploadsViaTraversal(ctx, maxTraversal)
 }
 
-// BackfillCommittedAtBatch calculates the committed_at value for a batch of upload records that do not have
-// this value set. This method is used to backfill old upload records prior to this value being reliably set
-// during processing.
-func (s *Service) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (err error) {
-	tx, err := s.store.Transact(ctx)
-	defer func() {
-		err = tx.Done(err)
-	}()
-
-	batch, err := tx.SourcedCommitsWithoutCommittedAt(ctx, batchSize)
-	if err != nil {
-		return errors.Wrap(err, "store.SourcedCommitsWithoutCommittedAt")
-	}
-
-	for _, sourcedCommits := range batch {
-		for _, commit := range sourcedCommits.Commits {
-			commitDateString, err := s.getCommitDate(ctx, sourcedCommits.RepositoryID, commit)
-			if err != nil {
-				return err
-			}
-
-			// Update commit date of all uploads attached to this this repository and commit
-			if err := tx.UpdateCommittedAt(ctx, sourcedCommits.RepositoryID, commit, commitDateString); err != nil {
-				return errors.Wrap(err, "store.UpdateCommittedAt")
-			}
-		}
-
-		// Mark repository as dirty so the commit graph is recalculated with fresh data
-		if err := tx.SetRepositoryAsDirty(ctx, sourcedCommits.RepositoryID); err != nil {
-			return errors.Wrap(err, "store.SetRepositoryAsDirty")
-		}
-	}
-
-	return nil
-}
-
 func (s *Service) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
 	ctx, _, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{
 		LogFields: []log.Field{log.String("now", now.Format(time.RFC3339))},
@@ -490,26 +454,6 @@ func (s *Service) DeleteUploadsWithoutRepository(ctx context.Context, now time.T
 	defer endObservation(1, observation.Args{})
 
 	return s.store.DeleteUploadsWithoutRepository(ctx, now)
-}
-
-func (s *Service) getCommitDate(ctx context.Context, repositoryID int, commit string) (string, error) {
-	_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, repositoryID, commit)
-	if err != nil {
-		return "", errors.Wrap(err, "gitserver.CommitDate")
-	}
-
-	var commitDateString string
-	if revisionExists {
-		commitDateString = commitDate.Format(time.RFC3339)
-	} else {
-		// Set a value here that we'll filter out on the query side so that we don't
-		// reprocess the same failing batch infinitely. We could alternatively soft
-		// delete the record, but it would be better to keep record deletion behavior
-		// together in the same place (so we have unified metrics on that event).
-		commitDateString = "-infinity"
-	}
-
-	return commitDateString, nil
 }
 
 // Handle periodically re-calculates the commit and upload visibility graph for repositories
