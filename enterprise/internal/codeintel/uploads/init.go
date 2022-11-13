@@ -104,10 +104,11 @@ func NewCommittedAtBackfillerJob(uploadSvc *Service) []goroutine.BackgroundRouti
 	}
 }
 
-func NewJanitor(uploadSvc UploadService, gitserverClient GitserverClient, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func NewJanitor(uploadSvc *Service, gitserverClient GitserverClient, observationContext *observation.Context) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewJanitor(
-			uploadSvc,
+			uploadSvc.store,
+			uploadSvc.lsifstore,
 			gitserverClient,
 			ConfigJanitorInst.Interval,
 			background.JanitorConfig{

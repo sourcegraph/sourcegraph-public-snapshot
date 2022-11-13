@@ -102,7 +102,7 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	mockUploadSvc.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
 
 	janitor := janitorJob{
-		uploadSvc:       mockUploadSvc,
+		store:           mockUploadSvc,
 		logger:          logtest.Scoped(t),
 		metrics:         NewJanitorMetrics(&observation.TestContext),
 		clock:           glock.NewRealClock(),
