@@ -421,7 +421,7 @@ export interface GithubCodeHost extends CodeHost {
         onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
     }
 
-    enhanceSearchPage: (sourcegraphURL: string) => void
+    // enhanceSearchPage: (sourcegraphURL: string) => void
 }
 
 export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost => codeHost.type === 'github'
@@ -673,7 +673,7 @@ export const githubCodeHost: GithubCodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
     searchEnhancement,
-    enhanceSearchPage,
+    // enhanceSearchPage,
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
