@@ -21,7 +21,8 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		t.Skip()
 	}
 
-	// NOTE: We cannot run this test with t.Parallel() because of this mock.
+	// NOTE: We cannot run this test with t.Parallel() because this mock mutates a
+	// shared global state.
 	cloud.MockSiteConfig(
 		t,
 		&cloud.SchemaSiteConfig{

@@ -39,7 +39,7 @@ func (j *sourcegraphOperatorCleaner) Config() []env.Config {
 
 func (j *sourcegraphOperatorCleaner) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	cloudSiteConfig := cloud.SiteConfig()
-	if cloudSiteConfig.AuthProviders == nil || cloudSiteConfig.AuthProviders.SourcegraphOperator == nil {
+	if !cloudSiteConfig.SourcegraphOperatorAuthProviderEnabled() {
 		return nil, nil
 	}
 

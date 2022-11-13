@@ -111,3 +111,9 @@ type SchemaAuthProviderSourcegraphOperator struct {
 	ClientSecret      string `json:"clientSecret"`
 	LifecycleDuration int    `json:"lifecycleDuration"`
 }
+
+// SourcegraphOperatorAuthProviderEnabled returns true if the Sourcegraph
+// Operator authentication provider has been enabled.
+func (s *SchemaSiteConfig) SourcegraphOperatorAuthProviderEnabled() bool {
+	return s.AuthProviders != nil && s.AuthProviders.SourcegraphOperator != nil
+}

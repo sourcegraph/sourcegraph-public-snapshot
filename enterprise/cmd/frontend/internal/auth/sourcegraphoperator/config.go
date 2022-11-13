@@ -30,7 +30,7 @@ func GetOIDCProvider(id string) *openidconnect.Provider {
 
 func Init() {
 	cloudSiteConfig := cloud.SiteConfig()
-	if cloudSiteConfig.AuthProviders == nil || cloudSiteConfig.AuthProviders.SourcegraphOperator == nil {
+	if !cloudSiteConfig.SourcegraphOperatorAuthProviderEnabled() {
 		return
 	}
 
