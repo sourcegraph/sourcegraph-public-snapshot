@@ -113,7 +113,6 @@ type exportConfig struct {
 var ConfigExportInst = &exportConfig{}
 
 func (c *exportConfig) Load() {
-	// TODO - rename once advertised / renamed on dotcom
-	c.RankingInterval = c.GetInterval("CODEINTEL_CODENAV_RANKING_INTERVAL", "1s", "How frequently to serialize a batch of the code intel graph for ranking.")
-	c.NumRankingRoutines = c.GetInt("CODEINTEL_CODENAV_RANKING_NUM_ROUTINES", "4", "The number of concurrent ranking graph serializer routines to run per worker instance.")
+	c.RankingInterval = c.GetInterval("CODEINTEL_UPLOADS_RANKING_INTERVAL", "1s", "How frequently to serialize a batch of the code intel graph for ranking.")
+	c.NumRankingRoutines = c.GetInt("CODEINTEL_UPLOADS_RANKING_NUM_ROUTINES", "4", "The number of concurrent ranking graph serializer routines to run per worker instance.")
 }

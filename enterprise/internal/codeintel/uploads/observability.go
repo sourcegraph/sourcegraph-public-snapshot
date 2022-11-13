@@ -93,19 +93,19 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	numUploadsRead := counter(
-		"src_codeintel_codenav_ranking_uploads_read_total",
+		"src_codeintel_uploads_ranking_uploads_read_total",
 		"The number of upload records read.",
 	)
 	numBytesUploaded := counter(
-		"src_codeintel_codenav_ranking_bytes_uploaded_total",
+		"src_codeintel_uploads_ranking_bytes_uploaded_total",
 		"The number of bytes uploaded to GCS.",
 	)
 	numStaleRecordsDeleted := counter(
-		"src_codeintel_codenav_ranking_stale_uploads_removed_total",
+		"src_codeintel_uploads_ranking_stale_uploads_removed_total",
 		"The number of stale upload records removed from GCS.",
 	)
 	numBytesDeleted := counter(
-		"src_codeintel_codenav_ranking_bytes_deleted_total",
+		"src_codeintel_uploads_ranking_bytes_deleted_total",
 		"The number of bytes deleted from GCS.",
 	)
 
