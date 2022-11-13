@@ -1,11 +1,17 @@
-import { Span } from '@opentelemetry/api'
 import { hrTimeToMilliseconds } from '@opentelemetry/core'
-import { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base'
+import { SpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
 import { getBrowserName } from '@sourcegraph/common'
 
-import { areOnTheSameTrace, isNavigationSpanName, isSharedSpanName, SharedSpanName, sharedSpanStore } from '../sdk'
+import {
+    areOnTheSameTrace,
+    isNavigationSpanName,
+    isSharedSpanName,
+    SharedSpanName,
+    sharedSpanStore,
+    ReadWriteSpan,
+} from '../sdk'
 
 export enum ClientAttributes {
     LocationHref = 'window.location.href',
@@ -25,7 +31,7 @@ export enum ClientAttributes {
 export class ClientAttributesSpanProcessor implements SpanProcessor {
     constructor(private version: string) {}
 
-    public onStart(span: Span): void {
+    public onStart(span: ReadWriteSpan): void {
         this.setTimeSinceAttributes(span)
         this.setPreviousLocationAttributes(span)
 
@@ -54,8 +60,8 @@ export class ClientAttributesSpanProcessor implements SpanProcessor {
      * Calculate the time elapsed since the recent navigation and attach it span attributes.
      * Allows querying this data in Honeycomb because it's impossible to calculate it there on demand.
      */
-    private setTimeSinceAttributes(span: Span): void {
-        const { startTime, name } = (span as unknown) as ReadableSpan
+    private setTimeSinceAttributes(span: ReadWriteSpan): void {
+        const { startTime, name } = span
         const startTimeMs = hrTimeToMilliseconds(startTime)
         const appMountSpan = sharedSpanStore.getAppMountSpan()
         const navigationSpan = sharedSpanStore.getRootNavigationSpan()
@@ -88,8 +94,8 @@ export class ClientAttributesSpanProcessor implements SpanProcessor {
      * Honeycomb queries. Helpful in querying spans started upon leaving a specific part
      * of the web application.
      */
-    private setPreviousLocationAttributes(span: Span): void {
-        const { name } = (span as unknown) as ReadableSpan
+    private setPreviousLocationAttributes(span: ReadWriteSpan): void {
+        const { name } = span
         const navigationSpan = sharedSpanStore.getRootNavigationSpan()
 
         if (isNavigationSpanName(name)) {

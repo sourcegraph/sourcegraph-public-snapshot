@@ -7,9 +7,9 @@ export enum SharedSpanName {
     AppMount = 'AppMount',
 }
 
-type SharedSpanNames = keyof typeof SharedSpanName
+export type SharedSpanNames = `${SharedSpanName}`
 
-export function isSharedSpanName(spanName: string): boolean {
+export function isSharedSpanName(spanName: string): spanName is SharedSpanNames {
     return Object.values(SharedSpanName).some(name => name === spanName)
 }
 
@@ -36,7 +36,7 @@ export function isNavigationSpanName(spanName: string): boolean {
 class SharedSpanStore {
     private spanMap: { [key in SharedSpanNames]?: { context: Context; span: ReadableSpan } } = {}
 
-    public set(spanName: SharedSpanName, span: ReadableSpan): void {
+    public set(spanName: SharedSpanNames, span: ReadableSpan): void {
         this.spanMap[spanName] = {
             span,
             context: trace.setSpan(context.active(), (span as unknown) as Span),
