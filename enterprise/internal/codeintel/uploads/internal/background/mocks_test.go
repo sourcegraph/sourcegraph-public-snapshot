@@ -2084,6 +2084,9 @@ type MockUploadService struct {
 	// IDsWithMetaFunc is an instance of a mock function object controlling
 	// the behavior of the method IDsWithMeta.
 	IDsWithMetaFunc *UploadServiceIDsWithMetaFunc
+	// SerializeRankingGraphFunc is an instance of a mock function object
+	// controlling the behavior of the method SerializeRankingGraph.
+	SerializeRankingGraphFunc *UploadServiceSerializeRankingGraphFunc
 	// SetRepositoriesForRetentionScanFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// SetRepositoriesForRetentionScan.
@@ -2102,6 +2105,9 @@ type MockUploadService struct {
 	// UpdateSourcedCommitsFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateSourcedCommits.
 	UpdateSourcedCommitsFunc *UploadServiceUpdateSourcedCommitsFunc
+	// VacuumRankingGraphFunc is an instance of a mock function object
+	// controlling the behavior of the method VacuumRankingGraph.
+	VacuumRankingGraphFunc *UploadServiceVacuumRankingGraphFunc
 }
 
 // NewMockUploadService creates a new mock of the UploadService interface.
@@ -2193,6 +2199,11 @@ func NewMockUploadService() *MockUploadService {
 				return
 			},
 		},
+		SerializeRankingGraphFunc: &UploadServiceSerializeRankingGraphFunc{
+			defaultHook: func(context.Context, int) (r0 error) {
+				return
+			},
+		},
 		SetRepositoriesForRetentionScanFunc: &UploadServiceSetRepositoriesForRetentionScanFunc{
 			defaultHook: func(context.Context, time.Duration, int) (r0 []int, r1 error) {
 				return
@@ -2215,6 +2226,11 @@ func NewMockUploadService() *MockUploadService {
 		},
 		UpdateSourcedCommitsFunc: &UploadServiceUpdateSourcedCommitsFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (r0 int, r1 error) {
+				return
+			},
+		},
+		VacuumRankingGraphFunc: &UploadServiceVacuumRankingGraphFunc{
+			defaultHook: func(context.Context) (r0 error) {
 				return
 			},
 		},
@@ -2310,6 +2326,11 @@ func NewStrictMockUploadService() *MockUploadService {
 				panic("unexpected invocation of MockUploadService.IDsWithMeta")
 			},
 		},
+		SerializeRankingGraphFunc: &UploadServiceSerializeRankingGraphFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockUploadService.SerializeRankingGraph")
+			},
+		},
 		SetRepositoriesForRetentionScanFunc: &UploadServiceSetRepositoriesForRetentionScanFunc{
 			defaultHook: func(context.Context, time.Duration, int) ([]int, error) {
 				panic("unexpected invocation of MockUploadService.SetRepositoriesForRetentionScan")
@@ -2333,6 +2354,11 @@ func NewStrictMockUploadService() *MockUploadService {
 		UpdateSourcedCommitsFunc: &UploadServiceUpdateSourcedCommitsFunc{
 			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
 				panic("unexpected invocation of MockUploadService.UpdateSourcedCommits")
+			},
+		},
+		VacuumRankingGraphFunc: &UploadServiceVacuumRankingGraphFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockUploadService.VacuumRankingGraph")
 			},
 		},
 	}
@@ -2394,6 +2420,9 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		IDsWithMetaFunc: &UploadServiceIDsWithMetaFunc{
 			defaultHook: i.IDsWithMeta,
 		},
+		SerializeRankingGraphFunc: &UploadServiceSerializeRankingGraphFunc{
+			defaultHook: i.SerializeRankingGraph,
+		},
 		SetRepositoriesForRetentionScanFunc: &UploadServiceSetRepositoriesForRetentionScanFunc{
 			defaultHook: i.SetRepositoriesForRetentionScan,
 		},
@@ -2408,6 +2437,9 @@ func NewMockUploadServiceFrom(i UploadService) *MockUploadService {
 		},
 		UpdateSourcedCommitsFunc: &UploadServiceUpdateSourcedCommitsFunc{
 			defaultHook: i.UpdateSourcedCommits,
+		},
+		VacuumRankingGraphFunc: &UploadServiceVacuumRankingGraphFunc{
+			defaultHook: i.VacuumRankingGraph,
 		},
 	}
 }
@@ -4328,6 +4360,114 @@ func (c UploadServiceIDsWithMetaFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// UploadServiceSerializeRankingGraphFunc describes the behavior when the
+// SerializeRankingGraph method of the parent MockUploadService instance is
+// invoked.
+type UploadServiceSerializeRankingGraphFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []UploadServiceSerializeRankingGraphFuncCall
+	mutex       sync.Mutex
+}
+
+// SerializeRankingGraph delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUploadService) SerializeRankingGraph(v0 context.Context, v1 int) error {
+	r0 := m.SerializeRankingGraphFunc.nextHook()(v0, v1)
+	m.SerializeRankingGraphFunc.appendCall(UploadServiceSerializeRankingGraphFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// SerializeRankingGraph method of the parent MockUploadService instance is
+// invoked and the hook queue is empty.
+func (f *UploadServiceSerializeRankingGraphFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SerializeRankingGraph method of the parent MockUploadService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadServiceSerializeRankingGraphFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceSerializeRankingGraphFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceSerializeRankingGraphFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *UploadServiceSerializeRankingGraphFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceSerializeRankingGraphFunc) appendCall(r0 UploadServiceSerializeRankingGraphFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadServiceSerializeRankingGraphFuncCall
+// objects describing the invocations of this function.
+func (f *UploadServiceSerializeRankingGraphFunc) History() []UploadServiceSerializeRankingGraphFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceSerializeRankingGraphFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceSerializeRankingGraphFuncCall is an object that describes an
+// invocation of method SerializeRankingGraph on an instance of
+// MockUploadService.
+type UploadServiceSerializeRankingGraphFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceSerializeRankingGraphFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceSerializeRankingGraphFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // UploadServiceSetRepositoriesForRetentionScanFunc describes the behavior
 // when the SetRepositoriesForRetentionScan method of the parent
 // MockUploadService instance is invoked.
@@ -4895,4 +5035,109 @@ func (c UploadServiceUpdateSourcedCommitsFuncCall) Args() []interface{} {
 // invocation.
 func (c UploadServiceUpdateSourcedCommitsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// UploadServiceVacuumRankingGraphFunc describes the behavior when the
+// VacuumRankingGraph method of the parent MockUploadService instance is
+// invoked.
+type UploadServiceVacuumRankingGraphFunc struct {
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
+	history     []UploadServiceVacuumRankingGraphFuncCall
+	mutex       sync.Mutex
+}
+
+// VacuumRankingGraph delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUploadService) VacuumRankingGraph(v0 context.Context) error {
+	r0 := m.VacuumRankingGraphFunc.nextHook()(v0)
+	m.VacuumRankingGraphFunc.appendCall(UploadServiceVacuumRankingGraphFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the VacuumRankingGraph
+// method of the parent MockUploadService instance is invoked and the hook
+// queue is empty.
+func (f *UploadServiceVacuumRankingGraphFunc) SetDefaultHook(hook func(context.Context) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// VacuumRankingGraph method of the parent MockUploadService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UploadServiceVacuumRankingGraphFunc) PushHook(hook func(context.Context) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UploadServiceVacuumRankingGraphFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UploadServiceVacuumRankingGraphFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context) error {
+		return r0
+	})
+}
+
+func (f *UploadServiceVacuumRankingGraphFunc) nextHook() func(context.Context) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UploadServiceVacuumRankingGraphFunc) appendCall(r0 UploadServiceVacuumRankingGraphFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UploadServiceVacuumRankingGraphFuncCall
+// objects describing the invocations of this function.
+func (f *UploadServiceVacuumRankingGraphFunc) History() []UploadServiceVacuumRankingGraphFuncCall {
+	f.mutex.Lock()
+	history := make([]UploadServiceVacuumRankingGraphFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UploadServiceVacuumRankingGraphFuncCall is an object that describes an
+// invocation of method VacuumRankingGraph on an instance of
+// MockUploadService.
+type UploadServiceVacuumRankingGraphFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UploadServiceVacuumRankingGraphFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UploadServiceVacuumRankingGraphFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
