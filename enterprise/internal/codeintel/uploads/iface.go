@@ -7,9 +7,6 @@ import (
 
 	"github.com/grafana/regexp"
 
-	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
-	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -49,10 +46,6 @@ type RepoStore interface {
 	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
 }
 
-type PolicyService interface {
-	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
-}
+type PolicyService = background.PolicyService
 
-type PolicyMatcher interface {
-	CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []codeinteltypes.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]policies.PolicyMatch, error)
-}
+type PolicyMatcher = background.PolicyMatcher

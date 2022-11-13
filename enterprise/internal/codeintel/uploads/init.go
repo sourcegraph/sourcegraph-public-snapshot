@@ -153,10 +153,12 @@ func NewCommitGraphUpdater(uploadSvc *Service) []goroutine.BackgroundRoutine {
 	}
 }
 
-func NewExpirationTasks(uploadSvc UploadService, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func NewExpirationTasks(uploadSvc *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewUploadExpirer(
-			uploadSvc,
+			uploadSvc.store,
+			uploadSvc.policySvc,
+			uploadSvc.policyMatcher,
 			ConfigExpirationInst.ExpirerInterval,
 			background.ExpirerConfig{
 				RepositoryProcessDelay: ConfigExpirationInst.RepositoryProcessDelay,

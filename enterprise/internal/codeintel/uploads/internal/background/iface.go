@@ -6,9 +6,10 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-
 	"github.com/sourcegraph/log"
 
+	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
+	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -80,4 +81,11 @@ type GitserverClient interface {
 
 type Locker interface {
 	Lock(ctx context.Context, key int32, blocking bool) (bool, locker.UnlockFunc, error)
+}
+
+type PolicyService interface {
+	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
+}
+type PolicyMatcher interface {
+	CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []codeinteltypes.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]policies.PolicyMatch, error)
 }
