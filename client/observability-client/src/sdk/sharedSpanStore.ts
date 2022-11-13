@@ -1,5 +1,7 @@
-import { trace, context, Context, Span } from '@opentelemetry/api'
+import { trace, context, Context } from '@opentelemetry/api'
 import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
+
+import { ReadWriteSpan } from './span'
 
 export enum SharedSpanName {
     PageView = 'PageView',
@@ -36,10 +38,10 @@ export function isNavigationSpanName(spanName: string): boolean {
 class SharedSpanStore {
     private spanMap: { [key in SharedSpanNames]?: { context: Context; span: ReadableSpan } } = {}
 
-    public set(spanName: SharedSpanNames, span: ReadableSpan): void {
+    public set(spanName: SharedSpanNames, span: ReadWriteSpan): void {
         this.spanMap[spanName] = {
             span,
-            context: trace.setSpan(context.active(), (span as unknown) as Span),
+            context: trace.setSpan(context.active(), span),
         }
     }
 
