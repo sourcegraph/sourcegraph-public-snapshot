@@ -67,9 +67,13 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
             <BrandLogo className={styles.logo} isLightTheme={props.isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && (
                 <div className="d-flex flex-row">
-                    <div className={classNames('text-muted text-center mt-3 mr-2 pr-2 border-right')}>Search millions of open source repositories</div>
+                    <div className={classNames('text-muted text-center mt-3 mr-2 pr-2 border-right')}>
+                        Search millions of open source repositories
+                    </div>
                     <div className="mt-3">
-                        <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>Search private code</Link>
+                        <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
+                            Search private code
+                        </Link>
                     </div>
                 </div>
             )}
