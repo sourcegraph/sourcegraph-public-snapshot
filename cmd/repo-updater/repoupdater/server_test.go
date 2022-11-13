@@ -645,12 +645,14 @@ func TestServer_RepoLookup(t *testing.T) {
 			clock := clock
 			logger := logtest.Scoped(t)
 			syncer := &repos.Syncer{
-				Logger:  logger,
-				Now:     clock.Now,
-				Store:   store,
-				Sourcer: repos.NewFakeSourcer(nil, tc.src),
+				Logger:       logger,
+				Now:          clock.Now,
+				Store:        store,
+				Sourcer:      repos.NewFakeSourcer(nil, tc.src),
+				SyncRepoChan: make(chan repos.BackgroundRepoSyncJob),
+				SyncRepoMap:  map[api.RepoID]struct{}{},
 			}
-
+			go syncer.StartBackgroundRepoSyncer(ctx, logtest.Scoped(t))
 			scheduler := repos.NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
 
 			s := &Server{
