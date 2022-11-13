@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type UploadService = background.UploadService
@@ -41,10 +40,7 @@ type GitserverClient interface {
 	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
 }
 
-type RepoStore interface {
-	Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error)
-	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
-}
+type RepoStore = background.RepoStore
 
 type PolicyService = background.PolicyService
 

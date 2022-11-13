@@ -71,7 +71,7 @@ func scopedContext(component string) *observation.Context {
 }
 
 func NewUploadProcessorJob(
-	uploadSvc UploadService,
+	uploadSvc *Service,
 	db database.DB,
 	uploadStore uploadstore.Store,
 	workerConcurrency int,
@@ -82,7 +82,10 @@ func NewUploadProcessorJob(
 ) goroutine.BackgroundRoutine {
 	uploadsProcessorStore := dbworkerstore.NewWithMetrics(db.Handle(), store.UploadWorkerStoreOptions, observationContext)
 	return background.NewUploadProcessorWorker(
-		uploadSvc,
+		uploadSvc.store,
+		uploadSvc.lsifstore,
+		uploadSvc.gitserverClient,
+		uploadSvc.repoStore,
 		uploadsProcessorStore,
 		uploadStore,
 		workerConcurrency,

@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
@@ -88,4 +89,9 @@ type PolicyService interface {
 }
 type PolicyMatcher interface {
 	CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []codeinteltypes.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]policies.PolicyMatch, error)
+}
+
+type RepoStore interface {
+	Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error)
+	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
 }
