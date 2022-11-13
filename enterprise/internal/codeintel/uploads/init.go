@@ -140,10 +140,12 @@ func NewResetters(db database.DB, observationContext *observation.Context) []gor
 	}
 }
 
-func NewCommitGraphUpdater(uploadSvc UploadService) []goroutine.BackgroundRoutine {
+func NewCommitGraphUpdater(uploadSvc *Service) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewCommitGraphUpdater(
-			uploadSvc,
+			uploadSvc.store,
+			uploadSvc.locker,
+			uploadSvc.gitserverClient,
 			ConfigCommitGraphInst.CommitGraphUpdateTaskInterval,
 			ConfigCommitGraphInst.MaxAgeForNonStaleBranches,
 			ConfigCommitGraphInst.MaxAgeForNonStaleTags,
