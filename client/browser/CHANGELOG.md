@@ -14,6 +14,7 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 ## Unreleased
 
 - Add new GitHub UI support: [issues/44237](https://github.com/sourcegraph/sourcegraph/issues/44237), [pull/44285](https://github.com/sourcegraph/sourcegraph/pull/44285)
+- Remove 'Search on Sourcegraph' buttons from GitHub search pages: [pull/44328](https://github.com/sourcegraph/sourcegraph/pull/44328)
 
 ## Chrome 22.10.18.1144, Firefox 22.10.18.1133, Safari v1.17
 
