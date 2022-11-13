@@ -125,9 +125,9 @@ func NewJanitor(uploadSvc *Service, gitserverClient GitserverClient, observation
 	}
 }
 
-func NewReconciler(uploadSvc UploadService, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func NewReconciler(uploadSvc *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		background.NewReconciler(uploadSvc, ConfigJanitorInst.Interval, ConfigJanitorInst.ReconcilerBatchSize, observationContext),
+		background.NewReconciler(uploadSvc.store, uploadSvc.lsifstore, ConfigJanitorInst.Interval, ConfigJanitorInst.ReconcilerBatchSize, observationContext),
 	}
 }
 
