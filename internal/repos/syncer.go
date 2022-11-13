@@ -106,7 +106,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 	go resetter.Start()
 	defer resetter.Stop()
 
-	go s.StartBackgroundRepoSyncer(ctx, s.Logger.Scoped("backgroundManualRepoSyncer", ""))
+	go s.StartBackgroundRepoSyncer(ctx, s.Logger.Scoped("backgroundRepoSyncer", ""))
 
 	for ctx.Err() == nil {
 		if !conf.Get().DisableAutoCodeHostSyncs {
