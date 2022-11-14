@@ -122,7 +122,7 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 
 	formatCheck := ""
 	if runType.Is(runtype.MainBranch) || runType.Is(runtype.MainDryRun) {
-		formatCheck = "--no-format-check "
+		formatCheck = "--skip-format-check "
 	}
 
 	cmd = cmd + "lint -annotations -fail-fast=false " + formatCheck + strings.Join(targets, " ")
