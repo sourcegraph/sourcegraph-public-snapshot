@@ -6,7 +6,6 @@ import (
 	"regexp/syntax"
 	"sort"
 	"time"
-	"unicode/utf8"
 
 	"github.com/grafana/regexp"
 	"github.com/prometheus/client_golang/prometheus"
@@ -148,6 +147,9 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond
 	}
 
+	// We only support chunk matches below.
+	opts.ChunkMatches = true
+
 	res, err := client.Search(ctx, q, opts)
 	if err != nil {
 		return false, err
@@ -160,39 +162,6 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 		}
 
 		cms := make([]protocol.ChunkMatch, 0, len(fm.ChunkMatches))
-		for _, l := range fm.LineMatches {
-			if l.FileName {
-				continue
-			}
-
-			for _, m := range l.LineFragments {
-				runeOffset := utf8.RuneCount(l.Line[:m.LineOffset])
-				runeLength := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
-
-				cms = append(cms, protocol.ChunkMatch{
-					Content: string(l.Line),
-					// zoekt line numbers are 1-based rather than 0-based so subtract 1
-					ContentStart: protocol.Location{
-						Offset: int32(l.LineStart),
-						Line:   int32(l.LineNumber - 1),
-						Column: 0,
-					},
-					Ranges: []protocol.Range{{
-						Start: protocol.Location{
-							Offset: int32(m.Offset),
-							Line:   int32(l.LineNumber - 1),
-							Column: int32(runeOffset),
-						},
-						End: protocol.Location{
-							Offset: int32(m.Offset) + int32(m.MatchLength),
-							Line:   int32(l.LineNumber - 1),
-							Column: int32(runeOffset + runeLength),
-						},
-					}},
-				})
-			}
-		}
-
 		for _, cm := range fm.ChunkMatches {
 			if cm.FileName {
 				continue
