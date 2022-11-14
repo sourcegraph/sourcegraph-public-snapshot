@@ -161,10 +161,15 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 }
 
 func TestExternalService_PerforceGitP4(t *testing.T) {
+	const repoName = "perforce/test-perms"
+
 	checkPerforceEnvironment(t)
+	// Make sure the repo wasn't already cloned by another test
+	if err := client.DeleteRepoFromDiskByName(repoName); err != nil {
+		t.Fatal(err)
+	}
 	createPerforceExternalService(t, false)
 
-	const repoName = "perforce/test-perms"
 	err := client.WaitForReposToBeCloned(repoName)
 	if err != nil {
 		t.Fatal(err)
@@ -183,10 +188,15 @@ func TestExternalService_PerforceGitP4(t *testing.T) {
 }
 
 func TestExternalService_PerforceP4Fusion(t *testing.T) {
+	const repoName = "perforce/test-perms"
+
 	checkPerforceEnvironment(t)
+	// Make sure the repo wasn't already cloned by another test
+	if err := client.DeleteRepoFromDiskByName(repoName); err != nil {
+		t.Fatal(err)
+	}
 	createPerforceExternalService(t, true)
 
-	const repoName = "perforce/test-perms"
 	err := client.WaitForReposToBeCloned(repoName)
 	if err != nil {
 		t.Fatal(err)
