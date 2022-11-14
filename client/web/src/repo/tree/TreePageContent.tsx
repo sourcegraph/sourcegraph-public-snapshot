@@ -177,8 +177,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
     const { extensionsController } = props
 
-    const showLinkToCommitsPage =
-        connection && hasNextPage && filePath === '' && connection.nodes.length > TREE_COMMITS_PER_PAGE
+    const showLinkToCommitsPage = connection && hasNextPage && connection.nodes.length > TREE_COMMITS_PER_PAGE
 
     return (
         <>
@@ -255,7 +254,9 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                         />
                         {hasNextPage ? (
                             showLinkToCommitsPage ? (
-                                <Link to={`${tree.url}/-/commits`}>Show all commits</Link>
+                                <Link to={`${repo.url}/-/commits${filePath ? `/${filePath}` : ''}`}>
+                                    Show all commits
+                                </Link>
                             ) : (
                                 <ShowMoreButton centered={true} onClick={fetchMore} />
                             )
