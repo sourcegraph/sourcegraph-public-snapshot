@@ -182,6 +182,19 @@ func BenchmarkLoadTimes(b *testing.B) {
 			times:   12,
 			capture: 200,
 		},
+		{
+			name:         "1000 repos no capture 500 restrictions",
+			repos:        1000,
+			times:        12,
+			restrictions: 500,
+		},
+		{
+			name:         "1000 repos 200 capture 500 restrictions",
+			repos:        1000,
+			times:        12,
+			capture:      200,
+			restrictions: 500,
+		},
 	}
 	for _, bm := range benchmarks {
 		logger := logtest.Scoped(b)
@@ -194,7 +207,7 @@ func BenchmarkLoadTimes(b *testing.B) {
 
 		seriesID := initializeData(ctx, store, bm.repos, bm.times, bm.capture)
 
-		opts := SeriesPointsOpts{SeriesID: &seriesID}
+		opts := SeriesPointsOpts{SeriesID: &seriesID, Excluded: generateRepoRestrictions(bm.restrictions, bm.repos)}
 
 		b.ResetTimer()
 
