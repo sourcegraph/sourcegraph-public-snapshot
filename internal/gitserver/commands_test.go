@@ -3066,6 +3066,54 @@ previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
 filename release.sh
 `
 
+// This test-data includes the boundary keyword, which is not present in the previous one.
+var testGitBlameOutputIncremental2 = `bbca6551549492486ca1b0f8dee45553dd6aa6d7 16 16 1
+author French Ben
+author-mail <frenchben@docker.com>
+author-time 1517407262
+author-tz +0100
+committer French Ben
+committer-mail <frenchben@docker.com>
+committer-time 1517407262
+committer-tz +0100
+summary Update error output to be clean
+previous b7773ae218740a7be65057fc60b366a49b538a44 format.go
+filename format.go
+bbca6551549492486ca1b0f8dee45553dd6aa6d7 25 25 2
+previous b7773ae218740a7be65057fc60b366a49b538a44 format.go
+filename format.go
+2c87fda17de1def6ea288141b8e7600b888e535b 15 15 1
+author David Tolnay
+author-mail <dtolnay@gmail.com>
+author-time 1478451741
+author-tz -0800
+committer David Tolnay
+committer-mail <dtolnay@gmail.com>
+committer-time 1478451741
+committer-tz -0800
+summary Singular message for a single error
+previous 8c5f0ad9360406a3807ce7de6bc73269a91a6e51 format.go
+filename format.go
+2c87fda17de1def6ea288141b8e7600b888e535b 17 17 2
+previous 8c5f0ad9360406a3807ce7de6bc73269a91a6e51 format.go
+filename format.go
+31fee45604949934710ada68f0b307c4726fb4e8 1 1 14
+author Mitchell Hashimoto
+author-mail <mitchell.hashimoto@gmail.com>
+author-time 1418673320
+author-tz -0800
+committer Mitchell Hashimoto
+committer-mail <mitchell.hashimoto@gmail.com>
+committer-time 1418673320
+committer-tz -0800
+summary Initial commit
+boundary
+filename format.go
+31fee45604949934710ada68f0b307c4726fb4e8 15 19 6
+filename format.go
+31fee45604949934710ada68f0b307c4726fb4e8 23 27 1
+filename format.go`
+
 var testGitBlameOutputHunks = []*Hunk{
 	{
 		StartLine: 1, EndLine: 5, StartByte: 0, EndByte: 43,
@@ -3158,44 +3206,63 @@ func TestParseGitBlameOutput(t *testing.T) {
 }
 
 func TestBlameHunkReader(t *testing.T) {
-	rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
-	reader := newBlameHunkReader(context.Background(), rc)
+	t.Run("OK matching hunks", func(t *testing.T) {
+		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
+		reader := newBlameHunkReader(context.Background(), rc)
 
-	var hunks []*Hunk
-	rc = io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
-	reader = newBlameHunkReader(context.Background(), rc)
+		var hunks []*Hunk
+		rc = io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
+		reader = newBlameHunkReader(context.Background(), rc)
 
-	hunks = []*Hunk{}
-	for {
-		hunk, done, err := reader.Read()
-		if err != nil {
-			t.Fatalf("blameHunkReader.Read failed: %s", err)
+		hunks = []*Hunk{}
+		for {
+			hunk, done, err := reader.Read()
+			if err != nil {
+				t.Fatalf("blameHunkReader.Read failed: %s", err)
+			}
+			if done {
+				break
+			}
+			hunks = append(hunks, hunk...)
 		}
-		if done {
-			break
+
+		sortFn := func(x []*Hunk) func(i, j int) bool {
+			return func(i, j int) bool {
+				return x[i].Author.Date.After(x[j].Author.Date)
+			}
 		}
-		hunks = append(hunks, hunk...)
-	}
 
-	sortFn := func(x []*Hunk) func(i, j int) bool {
-		return func(i, j int) bool {
-			return x[i].Author.Date.After(x[j].Author.Date)
+		// We're not giving back bytes, as the output of --incremental only gives back annotations.
+		expectedHunks := make([]*Hunk, 0, len(testGitBlameOutputHunks))
+		for _, h := range testGitBlameOutputHunks {
+			dup := *h
+			dup.EndByte = 0
+			dup.StartByte = 0
+			expectedHunks = append(expectedHunks, &dup)
 		}
-	}
 
-	// We're not giving back bytes, as the output of --incremental only gives back annotations.
-	expectedHunks := make([]*Hunk, 0, len(testGitBlameOutputHunks))
-	for _, h := range testGitBlameOutputHunks {
-		dup := *h
-		dup.EndByte = 0
-		dup.StartByte = 0
-		expectedHunks = append(expectedHunks, &dup)
-	}
+		// Sort expected hunks by the most recent first, as --incremental does.
+		sort.SliceStable(expectedHunks, sortFn(expectedHunks))
 
-	// Sort expected hunks by the most recent first, as --incremental does.
-	sort.SliceStable(expectedHunks, sortFn(expectedHunks))
+		if d := cmp.Diff(expectedHunks, hunks); d != "" {
+			t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
+		}
+	})
 
-	if d := cmp.Diff(expectedHunks, hunks); d != "" {
-		t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
-	}
+	t.Run("OK parsing hunks", func(t *testing.T) {
+		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental2))
+		reader := newBlameHunkReader(context.Background(), rc)
+
+		hunks := []*Hunk{}
+		for {
+			hunk, done, err := reader.Read()
+			if err != nil {
+				t.Fatalf("blameHunkReader.Read failed: %s", err)
+			}
+			if done {
+				break
+			}
+			hunks = append(hunks, hunk...)
+		}
+	})
 }
