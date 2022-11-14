@@ -171,6 +171,16 @@ func BenchmarkLoadTimes(b *testing.B) {
 			times: 12,
 		},
 		{
+			name:  "10000 repos no capture no restrictions", // 10,000 * 12 = 120,000 samples
+			repos: 10000,
+			times: 12,
+		},
+		{
+			name:  "100000 repos no capture no restrictions", // 100,000 * 12 = 1,200,000 samples
+			repos: 100000,
+			times: 12,
+		},
+		{
 			name:    "1000 repos 100 capture no restrictions", // 1000 * 100 * 12 = 1,200,000 samples
 			repos:   1000,
 			times:   12,
