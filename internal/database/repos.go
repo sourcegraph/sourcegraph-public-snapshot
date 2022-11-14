@@ -370,7 +370,7 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 			"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
 		},
 		// Required so gr.last_fetched is select-able
-		joinGitserverRepos: true,
+		JoinGitserverRepos: true,
 	}
 
 	res := make([]*types.SearchedRepo, 0, len(ids))
@@ -724,9 +724,9 @@ type ReposListOptions struct {
 	// IncludeDeleted, if true, will include soft deleted repositories in the result set.
 	IncludeDeleted bool
 
-	// joinGitserverRepos, if true, will make the fields of gitserver_repos available to select against,
+	// JoinGitserverRepos, if true, will make the fields of gitserver_repos available to select against,
 	// with the table alias "gr".
-	joinGitserverRepos bool
+	JoinGitserverRepos bool
 
 	// ExcludeSources, if true, will NULL out the Sources field on repo. Computing it is relatively costly
 	// and if it doesn't end up being used this is wasted compute.
@@ -1088,7 +1088,7 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.joinGitserverRepos || opt.CloneStatus != types.CloneStatusUnknown {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.JoinGitserverRepos || opt.CloneStatus != types.CloneStatusUnknown {
 		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 
