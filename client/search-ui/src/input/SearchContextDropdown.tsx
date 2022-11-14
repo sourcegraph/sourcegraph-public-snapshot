@@ -18,11 +18,16 @@ import {
     Position,
     PopoverOpenEventReason,
     useUpdateEffect,
+    createRectangle,
 } from '@sourcegraph/wildcard'
 
 import { SearchContextMenu } from './SearchContextMenu'
 
 import styles from './SearchContextDropdown.module.scss'
+
+// Adds padding to the popover content to add some space between the trigger
+// button and the content
+const popoverPadding = createRectangle(0, 0, 0, 2)
 
 export interface SearchContextDropdownProps
     extends SearchContextInputProps,
@@ -152,15 +157,11 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
                     </Code>
                 </PopoverTrigger>
             </Tooltip>
-            {/*
-               a11y-ignore
-               Rule: "aria-required-children" (Certain ARIA roles must contain particular children)
-               GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/34348
-             */}
             <PopoverContent
                 position={Position.bottomStart}
                 className={classNames('a11y-ignore', styles.menu)}
                 data-testid="dropdown-content"
+                targetPadding={popoverPadding}
             >
                 <SearchContextMenu
                     {...props}

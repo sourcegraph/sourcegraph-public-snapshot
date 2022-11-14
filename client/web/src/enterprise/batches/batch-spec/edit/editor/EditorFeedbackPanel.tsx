@@ -26,7 +26,11 @@ export const EditorFeedbackPanel: React.FunctionComponent<React.PropsWithChildre
     const errorHeading = errors.codeValidation ? 'Validation Errors' : 'Errors found'
 
     return (
-        <div className={classNames(styles.panel, 'rounded border bg-1 p-2 w-100 mt-2')}>
+        <div
+            className={classNames(styles.panel, 'rounded border bg-1 p-2 w-100 mt-2')}
+            role="region"
+            aria-label="editor feedback panel"
+        >
             <H4 className="text-danger text-uppercase">
                 <Icon aria-hidden={true} className="text-danger" svgPath={mdiAlertCircle} /> {errorHeading}
             </H4>

@@ -122,6 +122,8 @@ func (s *PermsSyncer) ScheduleUsers(ctx context.Context, opts authz.FetchPermsOp
 	}
 
 	s.scheduleUsers(ctx, users...)
+	metricsItemsSyncScheduled.WithLabelValues("manualUsersTrigger", "high").Set(float64(len(userIDs)))
+	s.collectQueueSize()
 }
 
 func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser) {
@@ -171,6 +173,8 @@ func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 
 	scheduleReposCounter.Add(float64(numberOfRepos))
 	s.scheduleRepos(ctx, repos...)
+	metricsItemsSyncScheduled.WithLabelValues("manualReposTrigger", "high").Set(float64(numberOfRepos))
+	s.collectQueueSize()
 }
 
 func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo) {
@@ -618,13 +622,6 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "get user")
 	}
 
-	// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
-	//  table, the user has proven that they have read access to the repository.
-	repoIDs, err := s.reposStore.ListExternalServicePrivateRepoIDsByUserID(ctx, user.ID)
-	if err != nil {
-		return errors.Wrap(err, "list external service repo IDs by user ID")
-	}
-
 	// We call this when there are errors communicating with external services so
 	// that we don't have the same user stuck at the front of the queue.
 	tryTouchUserPerms := func() {
@@ -639,18 +636,23 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return errors.Wrap(err, "fetch user permissions via external accounts")
 	}
 
-	// Save permissions to database
+	// fetch current permissions from database
+	oldPerms := &authz.UserPermissions{
+		UserID: user.ID,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
+		IDs:    map[int32]struct{}{},
+	}
+	s.permsStore.LoadUserPermissions(ctx, oldPerms)
+
+	// Save new permissions to database
 	p := &authz.UserPermissions{
 		UserID: user.ID,
 		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
 		Type:   authz.PermRepos,
 		IDs:    map[int32]struct{}{},
 	}
-	for i := range repoIDs {
-		p.IDs[int32(repoIDs[i])] = struct{}{}
-	}
 
-	// Looping over two slices individually in order to avoid unnecessary memory allocation.
 	for i := range externalAccountsRepoIDs {
 		p.IDs[int32(externalAccountsRepoIDs[i])] = struct{}{}
 	}
@@ -683,6 +685,16 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		log.Object("fetchOpts", log.Bool("InvalidateCache", fetchOpts.InvalidateCaches)),
 	)
 
+	metricsSuccessPermsSyncs.WithLabelValues("user", string(p.UserID)).Inc()
+	metricsPermsFound.WithLabelValues("user", string(p.UserID)).Set(float64(len(p.IDs)))
+
+	if !oldPerms.SyncedAt.IsZero() {
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("user", string(p.UserID)).Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
+	} else {
+		metricsFirstPermsSyncs.WithLabelValues("user", string(p.UserID)).Inc()
+		metricsPermsFirstSyncDelay.WithLabelValues("user", string(p.UserID)).Set(p.SyncedAt.Sub(user.CreatedAt).Seconds())
+	}
+
 	return nil
 }
 
@@ -700,19 +712,11 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		}
 		return errors.Wrap(err, "get repository")
 	}
-	var userIDs []int32
 	var provider authz.Provider
 
 	// Only check authz provider for private repositories because we only need to
 	// fetch permissions for private repositories.
 	if repo.Private {
-		// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
-		//  table, the user has proven that they have read access to the repository.
-		userIDs, err = s.reposStore.ListExternalServiceUserIDsByRepoID(ctx, repoID)
-		if err != nil {
-			return errors.Wrap(err, "list external service user IDs by repo ID")
-		}
-
 		// Loop over repository's sources and see if matching any authz provider's URN.
 		providers := s.providersByURNs()
 		for urn := range repo.Sources {
@@ -732,9 +736,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	)
 
 	// For non-private repositories, we rely on the fact that the `provider` is
-	// always nil and no user IDs here because we don't restrict access to
-	// non-private repositories.
-	if provider == nil && len(userIDs) == 0 {
+	// always nil and we do not restrict access
+	if provider == nil {
 		logger.Debug("skipFetchPerms")
 
 		// We have no authz provider configured for the repository.
@@ -745,90 +748,97 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 
 	pendingAccountIDsSet := make(map[string]struct{})
 	accountIDsToUserIDs := make(map[string]int32) // Account ID -> User ID
-	if provider != nil {
-		if err := s.waitForRateLimit(ctx, provider.URN(), 1, "repo"); err != nil {
-			return errors.Wrap(err, "wait for rate limiter")
+
+	if err := s.waitForRateLimit(ctx, provider.URN(), 1, "repo"); err != nil {
+		return errors.Wrap(err, "wait for rate limiter")
+	}
+
+	extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
+		URI:              repo.URI,
+		ExternalRepoSpec: repo.ExternalRepo,
+	}, fetchOpts)
+
+	// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
+	// when the owner of the token only has READ access. However, we don't want to fail
+	// so the scheduler won't keep trying to fetch permissions of this same repository, so we
+	// return a nil error and log a warning message.
+	var apiErr *github.APIError
+	if errors.As(err, &apiErr) && apiErr.Code == http.StatusNotFound {
+		logger.Warn("ignoreUnauthorizedAPIError",
+			log.Error(err),
+			log.String("suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions"),
+		)
+		return errors.Wrap(s.permsStore.TouchRepoPermissions(ctx, int32(repoID)), "touch repository permissions")
+	}
+
+	// Skip repo if unimplemented
+	if errors.Is(err, &authz.ErrUnimplemented{}) {
+		logger.Debug("unimplemented", log.Error(err))
+
+		// We should still touch the repo perms so that we don't keep scheduling the repo
+		// for permissions syncs on a tight interval.
+		if err = s.permsStore.TouchRepoPermissions(ctx, int32(repoID)); err != nil {
+			logger.Warn("error touching permissions for unimplemented authz provider", log.Error(err))
 		}
 
-		extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
-			URI:              repo.URI,
-			ExternalRepoSpec: repo.ExternalRepo,
-		}, fetchOpts)
+		return nil
+	}
 
-		// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
-		// when the owner of the token only has READ access. However, we don't want to fail
-		// so the scheduler won't keep trying to fetch permissions of this same repository, so we
-		// return a nil error and log a warning message.
-		var apiErr *github.APIError
-		if errors.As(err, &apiErr) && apiErr.Code == http.StatusNotFound {
-			logger.Warn("ignoreUnauthorizedAPIError",
-				log.Error(err),
-				log.String("suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions"),
-			)
-			return errors.Wrap(s.permsStore.TouchRepoPermissions(ctx, int32(repoID)), "touch repository permissions")
+	if err != nil {
+		// Process partial results if this is an initial fetch.
+		if !noPerms {
+			return errors.Wrap(err, "fetch repository permissions")
+		}
+		logger.Warn("proceedWithPartialResults", log.Error(err))
+	}
+
+	if len(extAccountIDs) > 0 {
+		accountIDs := make([]string, len(extAccountIDs))
+		for i := range extAccountIDs {
+			accountIDs[i] = string(extAccountIDs[i])
 		}
 
-		// Skip repo if unimplemented
-		if errors.Is(err, &authz.ErrUnimplemented{}) {
-			logger.Debug("unimplemented", log.Error(err))
+		// Get corresponding internal database IDs
+		accountIDsToUserIDs, err = s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.Accounts{
+			ServiceType: provider.ServiceType(),
+			ServiceID:   provider.ServiceID(),
+			AccountIDs:  accountIDs,
+		})
 
-			// We should still touch the repo perms so that we don't keep scheduling the repo
-			// for permissions syncs on a tight interval.
-			if err = s.permsStore.TouchRepoPermissions(ctx, int32(repoID)); err != nil {
-				logger.Warn("error touching permissions for unimplemented authz provider", log.Error(err))
-			}
-
-			return nil
-		}
-
-		if err != nil {
-			// Process partial results if this is an initial fetch.
-			if !noPerms {
-				return errors.Wrap(err, "fetch repository permissions")
-			}
-			logger.Warn("proceedWithPartialResults", log.Error(err))
-		}
-
-		if len(extAccountIDs) > 0 {
-			accountIDs := make([]string, len(extAccountIDs))
-			for i := range extAccountIDs {
-				accountIDs[i] = string(extAccountIDs[i])
-			}
-
-			// Get corresponding internal database IDs
-			accountIDsToUserIDs, err = s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.Accounts{
-				ServiceType: provider.ServiceType(),
+		if provider.ServiceType() == extsvc.TypeGitHub {
+			linkedAccountIDsToUserIDs, err := s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.Accounts{
+				ServiceType: extsvc.TypeGitHubApp,
 				ServiceID:   provider.ServiceID(),
 				AccountIDs:  accountIDs,
 			})
-
-			if provider.ServiceType() == extsvc.TypeGitHub {
-				linkedAccountIDsToUserIDs, err := s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.Accounts{
-					ServiceType: extsvc.TypeGitHubApp,
-					ServiceID:   provider.ServiceID(),
-					AccountIDs:  accountIDs,
-				})
-				if err == nil {
-					for k, v := range linkedAccountIDsToUserIDs {
-						accountIDsToUserIDs[k] = v
-					}
-				} else {
-					// Only log in case of error, as there can still be valid permissions syncing.
-					logger.Warn("error fetching linked accounts", log.Error(err))
+			if err == nil {
+				for k, v := range linkedAccountIDsToUserIDs {
+					accountIDsToUserIDs[k] = v
 				}
-			}
-
-			if err != nil {
-				return errors.Wrap(err, "get user IDs by external accounts")
-			}
-
-			// Set up the set of all account IDs that need to be bound to permissions
-			pendingAccountIDsSet = make(map[string]struct{}, len(accountIDs))
-			for i := range accountIDs {
-				pendingAccountIDsSet[accountIDs[i]] = struct{}{}
+			} else {
+				// Only log in case of error, as there can still be valid permissions syncing.
+				logger.Warn("error fetching linked accounts", log.Error(err))
 			}
 		}
+
+		if err != nil {
+			return errors.Wrap(err, "get user IDs by external accounts")
+		}
+
+		// Set up the set of all account IDs that need to be bound to permissions
+		pendingAccountIDsSet = make(map[string]struct{}, len(accountIDs))
+		for i := range accountIDs {
+			pendingAccountIDsSet[accountIDs[i]] = struct{}{}
+		}
 	}
+
+	// Load current permissions from database
+	oldPerms := &authz.RepoPermissions{
+		RepoID:  int32(repoID),
+		Perm:    authz.Read,
+		UserIDs: map[int32]struct{}{},
+	}
+	s.permsStore.LoadRepoPermissions(ctx, oldPerms)
 
 	// Save permissions to database
 	p := &authz.RepoPermissions{
@@ -837,9 +847,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		UserIDs: map[int32]struct{}{},
 	}
 
-	for i := range userIDs {
-		p.UserIDs[userIDs[i]] = struct{}{}
-	}
 	for aid, uid := range accountIDsToUserIDs {
 		// Add existing user to permissions
 		p.UserIDs[uid] = struct{}{}
@@ -868,16 +875,13 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	regularCount := len(p.UserIDs)
 
-	// If there is no provider, there would be no pending permissions that need to be generated.
-	if provider != nil {
-		accounts := &extsvc.Accounts{
-			ServiceType: provider.ServiceType(),
-			ServiceID:   provider.ServiceID(),
-			AccountIDs:  pendingAccountIDs,
-		}
-		if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
-			return errors.Wrap(err, "set repository pending permissions")
-		}
+	accounts := &extsvc.Accounts{
+		ServiceType: provider.ServiceType(),
+		ServiceID:   provider.ServiceID(),
+		AccountIDs:  pendingAccountIDs,
+	}
+	if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
+		return errors.Wrap(err, "set repository pending permissions")
 	}
 	pendingCount := len(p.UserIDs)
 
@@ -886,6 +890,17 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		log.Int("pendingCount", pendingCount),
 		log.Object("fetchOpts", log.Bool("invalidateCaches", fetchOpts.InvalidateCaches)),
 	)
+
+	metricsSuccessPermsSyncs.WithLabelValues("repo", string(p.RepoID)).Inc()
+	metricsPermsFound.WithLabelValues("repo", string(p.RepoID)).Set(float64(regularCount))
+
+	if !oldPerms.SyncedAt.IsZero() {
+		metricsPermsConsecutiveSyncDelay.WithLabelValues("repo", string(p.RepoID)).Set(p.SyncedAt.Sub(oldPerms.SyncedAt).Seconds())
+	} else {
+		metricsFirstPermsSyncs.WithLabelValues("repo", string(p.RepoID)).Inc()
+		metricsPermsFirstSyncDelay.WithLabelValues("repo", string(p.RepoID)).Set(p.SyncedAt.Sub(repo.CreatedAt).Seconds())
+	}
+
 	return nil
 }
 
@@ -950,7 +965,15 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGrou
 					),
 					log.Error(err),
 				)
+
+				if request.Type == requestTypeUser {
+					metricsFailedPermsSyncs.WithLabelValues("user", string(request.ID)).Inc()
+				} else {
+					metricsFailedPermsSyncs.WithLabelValues("repo", string(request.ID)).Inc()
+				}
 			}
+
+			s.collectQueueSize()
 			return nil
 		},
 	)
@@ -1156,23 +1179,23 @@ type scheduledRepo struct {
 func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	schedule := new(schedule)
 
-	users, err := s.scheduleUsersWithOutdatedPerms(ctx)
+	usersWithOutdatedPerms, err := s.scheduleUsersWithOutdatedPerms(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "schedule users with outdated permissions")
 	}
-	schedule.Users = append(schedule.Users, users...)
+	schedule.Users = append(schedule.Users, usersWithOutdatedPerms...)
 
-	users, err = s.scheduleUsersWithNoPerms(ctx)
+	usersWithNoPerms, err := s.scheduleUsersWithNoPerms(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "schedule users with no permissions")
 	}
-	schedule.Users = append(schedule.Users, users...)
+	schedule.Users = append(schedule.Users, usersWithNoPerms...)
 
-	repos, err := s.scheduleReposWithNoPerms(ctx)
+	reposWithNoPerms, err := s.scheduleReposWithNoPerms(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "schedule repositories with no permissions")
 	}
-	schedule.Repos = append(schedule.Repos, repos...)
+	schedule.Repos = append(schedule.Repos, reposWithNoPerms...)
 
 	// TODO(jchen): Predict a limit taking account into:
 	//   1. Based on total repos and users that make sense to finish syncing before
@@ -1188,17 +1211,23 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	// TODO(jchen): Use better heuristics for setting NextSyncAt, the initial version
 	// just uses the value of LastUpdatedAt get from the perms tables.
 
-	users, err = s.scheduleUsersWithOldestPerms(ctx, userLimit, syncUserBackoff())
+	usersWithOldestPerms, err := s.scheduleUsersWithOldestPerms(ctx, userLimit, syncUserBackoff())
 	if err != nil {
 		return nil, errors.Wrap(err, "load users with oldest permissions")
 	}
-	schedule.Users = append(schedule.Users, users...)
+	schedule.Users = append(schedule.Users, usersWithOldestPerms...)
 
-	repos, err = s.scheduleReposWithOldestPerms(ctx, repoLimit, syncRepoBackoff())
+	reposWithOldestPerms, err := s.scheduleReposWithOldestPerms(ctx, repoLimit, syncRepoBackoff())
 	if err != nil {
 		return nil, errors.Wrap(err, "scan repositories with oldest permissions")
 	}
-	schedule.Repos = append(schedule.Repos, repos...)
+	schedule.Repos = append(schedule.Repos, reposWithOldestPerms...)
+
+	metricsItemsSyncScheduled.WithLabelValues("usersWithOutdatedPerms", "low").Set(float64(len(usersWithOutdatedPerms)))
+	metricsItemsSyncScheduled.WithLabelValues("usersWithNoPerms", "low").Set(float64(len(usersWithNoPerms)))
+	metricsItemsSyncScheduled.WithLabelValues("usersWithOldestPerms", "low").Set(float64(len(usersWithOldestPerms)))
+	metricsItemsSyncScheduled.WithLabelValues("reposWithNoPerms", "low").Set(float64(len(reposWithNoPerms)))
+	metricsItemsSyncScheduled.WithLabelValues("reposWithOldestPerms", "low").Set(float64(len(reposWithOldestPerms)))
 
 	return schedule, nil
 }
@@ -1244,6 +1273,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		}
 		s.scheduleUsers(ctx, schedule.Users...)
 		s.scheduleRepos(ctx, schedule.Repos...)
+		s.collectMetrics(ctx)
 	}
 }
 
@@ -1325,44 +1355,48 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 	}
 }
 
-// collectMetrics periodically collecting metrics values from both database and memory objects.
-func (s *PermsSyncer) collectMetrics(ctx context.Context) {
-	logger := s.logger.Scoped("collectMetrics", "")
-	ticker := time.NewTicker(time.Minute)
-	defer ticker.Stop()
+var collectMetricsDisabled = false
 
-	for {
-		select {
-		case <-ticker.C:
-		case <-ctx.Done():
-			return
-		}
-
-		m, err := s.permsStore.Metrics(ctx, 3*24*time.Hour)
-		if err != nil {
-			logger.Error("failed to get metrics from database", log.Error(err))
-			continue
-		}
-		mstrict, err := s.permsStore.Metrics(ctx, 1*time.Hour)
-		if err != nil {
-			logger.Error("failed to get metrics from database", log.Error(err))
-			continue
-		}
-
-		metricsStalePerms.WithLabelValues("user").Set(float64(m.UsersWithStalePerms))
-		metricsStrictStalePerms.WithLabelValues("user").Set(float64(mstrict.UsersWithStalePerms))
-		metricsPermsGap.WithLabelValues("user").Set(m.UsersPermsGapSeconds)
-		metricsStalePerms.WithLabelValues("repo").Set(float64(m.ReposWithStalePerms))
-		metricsStrictStalePerms.WithLabelValues("repo").Set(float64(mstrict.ReposWithStalePerms))
-		metricsPermsGap.WithLabelValues("repo").Set(m.ReposPermsGapSeconds)
-		metricsStalePerms.WithLabelValues("sub-repo").Set(float64(m.SubReposWithStalePerms))
-		metricsStrictStalePerms.WithLabelValues("sub-repo").Set(float64(mstrict.SubReposWithStalePerms))
-		metricsPermsGap.WithLabelValues("sub-repo").Set(m.SubReposPermsGapSeconds)
-
-		s.queue.mu.RLock()
-		metricsQueueSize.Set(float64(s.queue.Len()))
-		s.queue.mu.RUnlock()
+func (s *PermsSyncer) collectQueueSize() {
+	if collectMetricsDisabled {
+		return
 	}
+
+	s.queue.mu.RLock()
+	metricsQueueSize.Set(float64(s.queue.Len()))
+	s.queue.mu.RUnlock()
+}
+
+// collectMetrics collects metrics values from both database and memory objects.
+func (s *PermsSyncer) collectMetrics(ctx context.Context) {
+	if collectMetricsDisabled {
+		return
+	}
+
+	logger := s.logger.Scoped("collectMetrics", "")
+
+	m, err := s.permsStore.Metrics(ctx, 3*24*time.Hour)
+	if err != nil {
+		logger.Error("failed to get metrics from database", log.Error(err))
+		return
+	}
+	mstrict, err := s.permsStore.Metrics(ctx, 1*time.Hour)
+	if err != nil {
+		logger.Error("failed to get metrics from database", log.Error(err))
+		return
+	}
+
+	metricsStalePerms.WithLabelValues("user").Set(float64(m.UsersWithStalePerms))
+	metricsStrictStalePerms.WithLabelValues("user").Set(float64(mstrict.UsersWithStalePerms))
+	metricsPermsGap.WithLabelValues("user").Set(m.UsersPermsGapSeconds)
+	metricsStalePerms.WithLabelValues("repo").Set(float64(m.ReposWithStalePerms))
+	metricsStrictStalePerms.WithLabelValues("repo").Set(float64(mstrict.ReposWithStalePerms))
+	metricsPermsGap.WithLabelValues("repo").Set(m.ReposPermsGapSeconds)
+	metricsStalePerms.WithLabelValues("sub-repo").Set(float64(m.SubReposWithStalePerms))
+	metricsStrictStalePerms.WithLabelValues("sub-repo").Set(float64(mstrict.SubReposWithStalePerms))
+	metricsPermsGap.WithLabelValues("sub-repo").Set(m.SubReposPermsGapSeconds)
+
+	s.collectQueueSize()
 }
 
 // Run kicks off the permissions syncing process, this method is blocking and
@@ -1370,7 +1404,6 @@ func (s *PermsSyncer) collectMetrics(ctx context.Context) {
 func (s *PermsSyncer) Run(ctx context.Context) {
 	go s.runSync(ctx)
 	go s.runSchedule(ctx)
-	go s.collectMetrics(ctx)
 
 	<-ctx.Done()
 }

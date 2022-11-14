@@ -24,9 +24,19 @@
 
 <!-- Add changes changes to this section before release. -->
 
+**Notes**:
+
+- This upgrade adds a [node-exporter](https://github.com/prometheus/node_exporter) DaemonSet, which collects crucial machine-level metrics that help Sourcegraph scale your deployment.
+  - **Note**: Similarly to `cadvisor`,  `node-exporter`:
+    - runs as a DaemonSet
+    - needs to mount various read-only directories from the host machine (`/`, `/proc`, and `/sys`)
+    - ideally shares the machine's PID namespace
+
+  For more information, see [deploy-sourcegraph-helm's Changelog](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/CHANGELOG.md) or contact customer support.
+
 _Upgrade notes for the next version will appear here._
 
-## v4.0 ➔ v4.1.2
+## v4.0 ➔ v4.1.3
 
 <!-- Add changes changes to this section before release. -->
 

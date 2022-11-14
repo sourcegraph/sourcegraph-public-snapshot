@@ -6,9 +6,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/commitgraph"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
@@ -25,7 +24,7 @@ func (j *commitGraphUpdaterJob) Description() string {
 
 func (j *commitGraphUpdaterJob) Config() []env.Config {
 	return []env.Config{
-		commitgraph.ConfigInst,
+		uploads.ConfigCommitGraphInst,
 	}
 }
 
@@ -35,5 +34,5 @@ func (j *commitGraphUpdaterJob) Routines(startupCtx context.Context, logger log.
 		return nil, err
 	}
 
-	return commitgraph.NewUpdater(uploads.GetBackgroundJob(services.UploadsService)), nil
+	return uploads.NewCommitGraphUpdater(services.UploadsService), nil
 }

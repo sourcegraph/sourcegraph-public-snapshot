@@ -2222,6 +2222,19 @@
           "Comment": ""
         },
         {
+          "Name": "version",
+          "Index": 19,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "1",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "worker_hostname",
           "Index": 11,
           "TypeName": "text",
@@ -6976,12 +6989,12 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "codeintel_path_rank_graph_key_id_repository_name_processed",
+          "Name": "codeintel_path_rank_inputs_graph_key_repository_name_id_process",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_path_rank_graph_key_id_repository_name_processed ON codeintel_path_rank_inputs USING btree (graph_key, id, repository_name) WHERE NOT processed",
+          "IndexDefinition": "CREATE INDEX codeintel_path_rank_inputs_graph_key_repository_name_id_process ON codeintel_path_rank_inputs USING btree (graph_key, repository_name, id) WHERE NOT processed",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -7161,6 +7174,16 @@
       ],
       "Indexes": [
         {
+          "Name": "codeintel_ranking_exports_graph_key_upload_id",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "codeintel_ranking_exports_pkey",
           "IsPrimaryKey": true,
           "IsUnique": true,
@@ -7169,16 +7192,6 @@
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_exports_pkey ON codeintel_ranking_exports USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "codeintel_ranking_exports_upload_id_graph_key",
-          "IsPrimaryKey": false,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_exports_upload_id_graph_key ON codeintel_ranking_exports USING btree (upload_id, graph_key)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -8272,12 +8285,12 @@
           "ConstraintDefinition": ""
         },
         {
-          "Name": "event_logs_name",
+          "Name": "event_logs_name_timestamp",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_name ON event_logs USING btree (name)",
+          "IndexDefinition": "CREATE INDEX event_logs_name_timestamp ON event_logs USING btree (name, \"timestamp\" DESC)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -10652,19 +10665,6 @@
           "Comment": ""
         },
         {
-          "Name": "repo_status",
-          "Index": 9,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "shard_id",
           "Index": 3,
           "TypeName": "text",
@@ -10723,6 +10723,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "gitserver_repos_last_changed_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX gitserver_repos_last_changed_idx ON gitserver_repos USING btree (last_changed, repo_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "gitserver_repos_last_error_idx",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -10739,6 +10749,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX gitserver_repos_not_cloned_status_idx ON gitserver_repos USING btree (repo_id) WHERE clone_status = 'not_cloned'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "gitserver_repos_not_explicitly_cloned_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX gitserver_repos_not_explicitly_cloned_idx ON gitserver_repos USING btree (repo_id) WHERE clone_status \u003c\u003e 'cloned'::text",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -17032,6 +17052,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "repo_dotcom_indexable_repos_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX repo_dotcom_indexable_repos_idx ON repo USING btree (stars DESC NULLS LAST) INCLUDE (id, name) WHERE deleted_at IS NULL AND blocked IS NULL AND (stars \u003e= 5 AND NOT COALESCE(fork, false) AND NOT archived OR lower(name::text) ~ '^(src\\.fedoraproject\\.org|maven|npm|jdk)'::text)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "repo_fork",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -20661,7 +20691,7 @@
   "Views": [
     {
       "Name": "batch_spec_workspace_execution_jobs_with_rank",
-      "Definition": " SELECT j.id,\n    j.batch_spec_workspace_id,\n    j.state,\n    j.failure_message,\n    j.started_at,\n    j.finished_at,\n    j.process_after,\n    j.num_resets,\n    j.num_failures,\n    j.execution_logs,\n    j.worker_hostname,\n    j.last_heartbeat_at,\n    j.created_at,\n    j.updated_at,\n    j.cancel,\n    j.queued_at,\n    j.user_id,\n    q.place_in_global_queue,\n    q.place_in_user_queue\n   FROM (batch_spec_workspace_execution_jobs j\n     LEFT JOIN batch_spec_workspace_execution_queue q ON ((j.id = q.id)));"
+      "Definition": " SELECT j.id,\n    j.batch_spec_workspace_id,\n    j.state,\n    j.failure_message,\n    j.started_at,\n    j.finished_at,\n    j.process_after,\n    j.num_resets,\n    j.num_failures,\n    j.execution_logs,\n    j.worker_hostname,\n    j.last_heartbeat_at,\n    j.created_at,\n    j.updated_at,\n    j.cancel,\n    j.queued_at,\n    j.user_id,\n    j.version,\n    q.place_in_global_queue,\n    q.place_in_user_queue\n   FROM (batch_spec_workspace_execution_jobs j\n     LEFT JOIN batch_spec_workspace_execution_queue q ON ((j.id = q.id)));"
     },
     {
       "Name": "batch_spec_workspace_execution_queue",

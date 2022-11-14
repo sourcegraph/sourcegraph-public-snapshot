@@ -50,6 +50,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     setFuzzyFinderIsVisible: () => undefined,
     notebooksEnabled: true,
     codeMonitoringEnabled: true,
+    showFeedbackModal: () => undefined,
 }
 
 describe('GlobalNavbar', () => {

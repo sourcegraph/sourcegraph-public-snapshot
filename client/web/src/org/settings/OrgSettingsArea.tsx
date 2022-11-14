@@ -68,8 +68,8 @@ export const AuthenticatedOrgSettingsArea: React.FunctionComponent<
     }
 
     return (
-        <div className="d-flex">
-            <OrgSettingsSidebar items={props.sideBarItems} {...context} className="flex-0 mr-3" />
+        <div className="d-flex flex-column flex-sm-row">
+            <OrgSettingsSidebar items={props.sideBarItems} {...context} className="flex-0 mr-3 mb-4" />
             <div className="flex-1">
                 <ErrorBoundary location={props.location}>
                     <React.Suspense fallback={<LoadingSpinner className="m-2" />}>

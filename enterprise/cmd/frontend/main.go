@@ -11,9 +11,8 @@ import (
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
@@ -31,10 +30,13 @@ import (
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
+	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -65,7 +67,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"repos":          repos.Init,
 }
 
-func enterpriseSetupHook(db database.DB, codeIntelServices codeintel.Services, conf conftypes.UnifiedWatchable) enterprise.Services {
+func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
 	logger := log.Scoped("enterprise", "frontend enterprise edition")
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
@@ -83,6 +85,14 @@ func enterpriseSetupHook(db database.DB, codeIntelServices codeintel.Services, c
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
+	codeIntelServices, err := codeintel.GetServices(codeintel.Databases{
+		DB:          db,
+		CodeIntelDB: mustInitializeCodeIntelDB(logger),
+	})
+	if err != nil {
+		logger.Fatal("failed to initialize code intelligence", log.Error(err))
+	}
+
 	for name, fn := range initFunctions {
 		if err := fn(ctx, db, codeIntelServices, conf, &enterpriseServices, observationContext); err != nil {
 			logger.Fatal("failed to initialize", log.String("name", name), log.Error(err))
@@ -96,4 +106,17 @@ func enterpriseSetupHook(db database.DB, codeIntelServices codeintel.Services, c
 	}
 
 	return enterpriseServices
+}
+
+func mustInitializeCodeIntelDB(logger log.Logger) codeintelshared.CodeIntelDB {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.CodeIntelPostgresDSN
+	})
+
+	db, err := connections.EnsureNewCodeIntelDB(dsn, "frontend", &observation.TestContext)
+	if err != nil {
+		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
+	}
+
+	return codeintelshared.NewCodeIntelDB(db)
 }

@@ -113,15 +113,38 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		searchOpts.DebugScore = true
 	}
 
-	if limit := int(o.FileMatchLimit); o.Features.Ranking && limit < 1000 {
-		// It is hard to think up general stats here based on limit. So
-		// instead we only run the ranking code path if the limit is
-		// reasonably small. This is fine while we experiment.
+	if o.Features.Ranking {
+		limit := int(o.FileMatchLimit)
+
+		// Tell each zoekt replica to not send back more than limit results.
+		searchOpts.MaxDocDisplayCount = limit
+
+		// These are reasonable default amounts of work to do per shard and
+		// replica respectively.
 		searchOpts.ShardMaxMatchCount = 10_000
 		searchOpts.TotalMaxMatchCount = 100_000
-		searchOpts.MaxDocDisplayCount = limit
+
+		// If we are searching for large limits, raise the amount of work we
+		// are willing to do per shard and zoekt replica respectively.
+		if limit > searchOpts.ShardMaxMatchCount {
+			searchOpts.ShardMaxMatchCount = limit
+		}
+		if limit > searchOpts.TotalMaxMatchCount {
+			searchOpts.TotalMaxMatchCount = limit
+		}
+
+		// This enables our stream based ranking were we wait upto 500ms to
+		// collect results before ranking.
 		searchOpts.FlushWallTime = 500 * time.Millisecond
+
+		// This enables the use of PageRank scores if they are available.
 		searchOpts.UseDocumentRanks = true
+
+		// This damps the impact of document ranks on the final ranking.
+		if o.Features.RankingDampDocRanks {
+			searchOpts.RanksDampingFactor = 0.5
+		}
+
 		return searchOpts
 	}
 

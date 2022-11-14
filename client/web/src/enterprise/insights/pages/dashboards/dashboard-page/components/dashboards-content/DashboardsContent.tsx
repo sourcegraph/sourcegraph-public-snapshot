@@ -118,7 +118,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                     className={classNames(styles.limitedAccessLabel)}
                     message={
                         currentDashboard?.id === ALL_INSIGHTS_DASHBOARD.id
-                            ? 'Create up to two global insights'
+                            ? 'Create up to 2 global insights'
                             : 'Unlock Code Insights for full access to custom dashboards'
                     }
                 />

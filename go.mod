@@ -34,7 +34,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v1.0.0
 	github.com/derision-test/glock v1.0.0
-	github.com/derision-test/go-mockgen v1.3.6
+	github.com/derision-test/go-mockgen v1.3.7
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dgraph-io/ristretto v0.1.0
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
@@ -219,6 +219,8 @@ require (
 	github.com/coreos/go-iptables v0.6.0
 	github.com/dcadenas/pagerank v0.0.0-20171013173705-af922e3ceea8
 	github.com/frankban/quicktest v1.14.3
+	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/google/go-github/v47 v47.1.0
 	github.com/hashicorp/hcl v1.0.0
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
 	github.com/prometheus/prometheus v0.37.1
@@ -228,7 +230,7 @@ require (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20221104165739-12648c98a5dd
+	github.com/sourcegraph/zoekt v0.0.0-20221114131345-a14d4f556847
 	github.com/stretchr/objx v0.4.0 // indirect
 )
 

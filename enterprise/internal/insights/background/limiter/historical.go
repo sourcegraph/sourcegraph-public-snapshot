@@ -23,7 +23,7 @@ func HistoricalWorkRate() *ratelimit.InstrumentedLimiter {
 		historicalLimiter = ratelimit.NewInstrumentedLimiter("HistoricalInsight", rate.NewLimiter(getRateLimit(), 1))
 		go conf.Watch(func() {
 			val := getRateLimit()
-			historicalLogger.Info("Updating insights/query-worker rate limit", log.Int("value", int(val)))
+			historicalLogger.Info("Updating insights/historical rate limit", log.Int("value", int(val)))
 			historicalLimiter.SetLimit(val)
 		})
 	})

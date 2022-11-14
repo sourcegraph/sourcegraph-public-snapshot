@@ -8397,12 +8397,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-grid-layout@npm:1.3.0":
-  version: 1.3.0
-  resolution: "@types/react-grid-layout@npm:1.3.0"
+"@types/react-grid-layout@npm:1.3.2":
+  version: 1.3.2
+  resolution: "@types/react-grid-layout@npm:1.3.2"
   dependencies:
     "@types/react": "*"
-  checksum: 94243bce2c7005dafad165f6f9329e4e77e09eed3ab8380b010474d75e4314856da43ff006f90c26a3f69e3d5398bbec145dbbd8619361abbc068ed413b791a6
+  checksum: 190492acb69186c651bb99f19028dcd4c65129eae7de6efd41f51b6a6711af490e7b99ad7156b8731b11ecf2ec7c22bcf13c782bfe65be4b4e5c3362b97095bf
   languageName: node
   linkType: hard
 
@@ -12307,7 +12307,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"classnames@npm:2.3.1, classnames@npm:^2.2.5, classnames@npm:^2.2.6, classnames@npm:^2.3.1":
+"classnames@npm:^2.2.5, classnames@npm:^2.2.6, classnames@npm:^2.3.1":
   version: 2.3.1
   resolution: "classnames@npm:2.3.1"
   checksum: 14db8889d56c267a591f08b0834989fe542d47fac659af5a539e110cc4266694e8de86e4e3bbd271157dbd831361310a8293e0167141e80b0f03a0f175c80960
@@ -12558,6 +12558,13 @@ __metadata:
     process-nextick-args: ^2.0.0
     readable-stream: ^2.3.5
   checksum: 4d9a10f81dd79fca256bfca7e668a141bc7afeba802df2d4cdff48f96b5ca9a38dd262d9ac4fa18c2835029468f813abc7963c80e5d853518f5e45f602418f07
+  languageName: node
+  linkType: hard
+
+"clsx@npm:^1.1.1":
+  version: 1.2.1
+  resolution: "clsx@npm:1.2.1"
+  checksum: 30befca8019b2eb7dbad38cff6266cf543091dae2825c856a62a8ccf2c3ab9c2907c4d12b288b73101196767f66812365400a227581484a05f968b0307cfaf12
   languageName: node
   linkType: hard
 
@@ -26674,14 +26681,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prop-types@npm:15.x, prop-types@npm:^15.0.0, prop-types@npm:^15.5.10, prop-types@npm:^15.5.8, prop-types@npm:^15.6.0, prop-types@npm:^15.6.1, prop-types@npm:^15.6.2, prop-types@npm:^15.7.2":
-  version: 15.7.2
-  resolution: "prop-types@npm:15.7.2"
+"prop-types@npm:15.x, prop-types@npm:^15.0.0, prop-types@npm:^15.5.10, prop-types@npm:^15.5.8, prop-types@npm:^15.6.0, prop-types@npm:^15.6.1, prop-types@npm:^15.6.2, prop-types@npm:^15.7.2, prop-types@npm:^15.8.1":
+  version: 15.8.1
+  resolution: "prop-types@npm:15.8.1"
   dependencies:
     loose-envify: ^1.4.0
     object-assign: ^4.1.1
-    react-is: ^16.8.1
-  checksum: 5eef82fdda64252c7e75aa5c8cc28a24bbdece0f540adb60ce67c205cf978a5bd56b83e4f269f91c6e4dcfd80b36f2a2dec24d362e278913db2086ca9c6f9430
+    react-is: ^16.13.1
+  checksum: c056d3f1c057cb7ff8344c645450e14f088a915d078dcda795041765047fa080d38e5d626560ccaac94a4e16e3aa15f3557c1a9a8d1174530955e992c675e459
   languageName: node
   linkType: hard
 
@@ -27173,19 +27180,19 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"react-grid-layout@npm:1.3.0":
-  version: 1.3.0
-  resolution: "react-grid-layout@npm:1.3.0"
+"react-grid-layout@npm:1.3.4":
+  version: 1.3.4
+  resolution: "react-grid-layout@npm:1.3.4"
   dependencies:
-    classnames: 2.3.1
+    clsx: ^1.1.1
     lodash.isequal: ^4.0.0
-    prop-types: ^15.0.0
+    prop-types: ^15.8.1
     react-draggable: ^4.0.0
     react-resizable: ^3.0.4
   peerDependencies:
     react: ">= 16.3.0"
     react-dom: ">= 16.3.0"
-  checksum: 955c135dcc14e86f573141e75b211e08e68f1d4f4ea2d0849652410dfc41715d89507abf1d28c2de4326b201f2e4138a2c2796561e917a2ee8b932adf40864bb
+  checksum: f56c8c452acd9588edf1dc6996a4ea14d9f669d77f6b2ebd50146eaeeb9325c83f5ca44b66bac2b8c24f9cb2ec7ed49396350435991255c3b31e21b8a2e3d243
   languageName: node
   linkType: hard
 
@@ -27220,7 +27227,7 @@ pvutils@latest:
   languageName: node
   linkType: hard
 
-"react-is@npm:^16.6.0, react-is@npm:^16.7.0, react-is@npm:^16.8.1, react-is@npm:^16.8.6, react-is@npm:^16.9.0":
+"react-is@npm:^16.13.1, react-is@npm:^16.6.0, react-is@npm:^16.7.0, react-is@npm:^16.8.6, react-is@npm:^16.9.0":
   version: 16.13.1
   resolution: "react-is@npm:16.13.1"
   checksum: f7a19ac3496de32ca9ae12aa030f00f14a3d45374f1ceca0af707c831b2a6098ef0d6bdae51bd437b0a306d7f01d4677fcc8de7c0d331eb47ad0f46130e53c5f
@@ -28699,7 +28706,7 @@ pvutils@latest:
     "@types/react-calendar": ^3.5.2
     "@types/react-circular-progressbar": 1.0.2
     "@types/react-dom": 18.0.2
-    "@types/react-grid-layout": 1.3.0
+    "@types/react-grid-layout": 1.3.2
     "@types/react-resizable": ^3.0.2
     "@types/react-router": ^5.1.18
     "@types/react-router-dom": ^5.3.3
@@ -28868,7 +28875,7 @@ pvutils@latest:
     postcss-inset: ^1.0.0
     postcss-loader: ^6.1.1
     postcss-modules: ^4.2.2
-    prettier: 2.2.1
+    prettier: 2.7.1
     pretty-bytes: ^5.3.0
     process: ^0.11.10
     prop-types: ^15.7.2
@@ -28881,7 +28888,7 @@ pvutils@latest:
     react-dom-confetti: ^0.1.4
     react-elm-components: ^1.1.0
     react-focus-lock: ^2.7.1
-    react-grid-layout: 1.3.0
+    react-grid-layout: 1.3.4
     react-refresh: ^0.10.0
     react-resizable: ^3.0.4
     react-router: ^5.2.0

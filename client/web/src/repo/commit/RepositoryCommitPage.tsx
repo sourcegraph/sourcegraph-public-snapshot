@@ -3,13 +3,13 @@ import React, { useMemo, useCallback, useEffect } from 'react'
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 import { Observable, ReplaySubject, Subject } from 'rxjs'
-import { catchError, filter, map, withLatestFrom } from 'rxjs/operators'
+import { filter, map, withLatestFrom } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { HoveredToken, createHoverifier, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
-import { createAggregateError, isErrorLike, isDefined, memoizeObservable, property, asError } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
+import { isDefined, property } from '@sourcegraph/common'
+import { gql, useQuery } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
@@ -31,7 +31,6 @@ import {
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
-import { requestGraphQL } from '../../backend/graphql'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
 import { FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
@@ -43,7 +42,6 @@ import {
     RepositoryCommitResult,
     RepositoryCommitVariables,
     RepositoryFields,
-    Scalars,
 } from '../../graphql-operations'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
@@ -51,60 +49,20 @@ import { queryRepositoryComparisonFileDiffs, RepositoryComparisonDiff } from '..
 
 import styles from './RepositoryCommitPage.module.scss'
 
-const queryCommit = memoizeObservable(
-    (args: { repo: Scalars['ID']; revspec: string }): Observable<GitCommitFields> =>
-        requestGraphQL<RepositoryCommitResult, RepositoryCommitVariables>(
-            gql`
-                query RepositoryCommit($repo: ID!, $revspec: String!) {
-                    node(id: $repo) {
-                        __typename
-                        ... on Repository {
-                            commit(rev: $revspec) {
-                                __typename # necessary so that isErrorLike(x) is false when x: GitCommitFields
-                                ...GitCommitFields
-                            }
-                        }
-                    }
+const COMMIT_QUERY = gql`
+    query RepositoryCommit($repo: ID!, $revspec: String!) {
+        node(id: $repo) {
+            __typename
+            ... on Repository {
+                commit(rev: $revspec) {
+                    __typename # Necessary for error handling to check if commit exists
+                    ...GitCommitFields
                 }
-                ${gitCommitFragment}
-            `,
-            args
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.node) {
-                    throw createAggregateError(errors)
-                }
-                if (data.node.__typename !== 'Repository') {
-                    throw new Error(`Node is a ${data.node.__typename}, not a Repository`)
-                }
-                if (!data.node.commit) {
-                    // Filter out any revision not found errors, they usually come in multiples when searching for a commit, we want to replace all of them with 1 "Commit not found" error
-                    // TODO: Figuring why should we use `errors` here since it is `undefined` in this place
-                    const errorsWithoutRevisionError = errors?.filter(
-                        (error: { message: string | string[] }) => !error.message.includes('revision not found')
-                    )
-
-                    const revisionErrorsFiltered =
-                        errors && errorsWithoutRevisionError && errorsWithoutRevisionError.length < errors?.length
-
-                    // If there are no other errors left (or there wasn't any errors to begin with throw out a Commit not found error
-                    if (!errorsWithoutRevisionError || errorsWithoutRevisionError.length === 0) {
-                        throw new Error('Commit not found')
-                    }
-
-                    // if we found at least 1 "revision nor found error" add "Commit not found" to the errors
-                    if (revisionErrorsFiltered) {
-                        throw createAggregateError([new Error('Commit not found'), ...errorsWithoutRevisionError])
-                    }
-
-                    // no "revision not found" errors, throw the other errors
-                    throw createAggregateError(errorsWithoutRevisionError)
-                }
-                return data.node.commit
-            })
-        ),
-    args => `${args.repo}:${args.revspec}`
-)
+            }
+        }
+    }
+    ${gitCommitFragment}
+`
 
 interface RepositoryCommitPageProps
     extends RouteComponentProps<{ revspec: string }>,
@@ -121,15 +79,18 @@ export type { DiffMode } from '@sourcegraph/shared/src/settings/temporary/diffMo
 
 /** Displays a commit. */
 export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageProps> = props => {
-    const commitOrError = useObservable(
-        useMemo(
-            () =>
-                queryCommit({ repo: props.repo.id, revspec: props.match.params.revspec }).pipe(
-                    catchError(error => [asError(error)])
-                ),
-            [props.match.params.revspec, props.repo.id]
-        )
+    const { data, error, loading } = useQuery<RepositoryCommitResult, RepositoryCommitVariables>(COMMIT_QUERY, {
+        variables: {
+            repo: props.repo.id,
+            revspec: props.match.params.revspec,
+        },
+    })
+
+    const commit = useMemo(
+        () => (data?.node && data?.node?.__typename === 'Repository' ? data?.node?.commit : undefined),
+        [data]
     )
+
     const [diffMode, setDiffMode] = useTemporarySetting('repo.commitPage.diffMode', 'unified')
 
     /** Emits whenever the ref callback for the hover element is called */
@@ -200,24 +161,25 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
     }, [props.telemetryService])
 
     useEffect(() => {
-        if (commitOrError && !isErrorLike(commitOrError)) {
-            props.onDidUpdateExternalLinks(commitOrError.externalURLs)
+        if (commit) {
+            props.onDidUpdateExternalLinks(commit.externalURLs)
         }
 
         return () => {
             props.onDidUpdateExternalLinks(undefined)
         }
-    }, [commitOrError, props])
+    }, [commit, props])
 
     const queryDiffs = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
+            // Non-null assertions here are safe because the query is only executed if the commit is defined.
             queryRepositoryComparisonFileDiffs({
                 ...args,
                 repo: props.repo.id,
-                base: commitParentOrEmpty(commitOrError as GitCommitFields),
-                head: (commitOrError as GitCommitFields).oid,
+                base: commitParentOrEmpty(commit!),
+                head: commit!.oid,
             }),
-        [commitOrError, props.repo.id]
+        [commit, props.repo.id]
     )
 
     const { extensionsController } = props
@@ -228,23 +190,17 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
             className={classNames('p-3', styles.repositoryCommitPage)}
             ref={nextRepositoryCommitPageElement}
         >
-            <PageTitle
-                title={
-                    commitOrError && !isErrorLike(commitOrError)
-                        ? commitOrError.subject
-                        : `Commit ${props.match.params.revspec}`
-                }
-            />
-            {commitOrError === undefined ? (
+            <PageTitle title={commit ? commit.subject : `Commit ${props.match.params.revspec}`} />
+            {loading ? (
                 <LoadingSpinner className="mt-2" />
-            ) : isErrorLike(commitOrError) ? (
-                <ErrorAlert className="mt-2" error={commitOrError} />
+            ) : error || !commit ? (
+                <ErrorAlert className="mt-2" error={error ?? new Error('Commit not found')} />
             ) : (
                 <>
                     <div className="border-bottom pb-2">
                         <div>
                             <GitCommitNode
-                                node={commitOrError}
+                                node={commit}
                                 expandCommitMessageBody={true}
                                 showSHAAndParentsRow={true}
                                 diffMode={diffMode}
@@ -267,14 +223,14 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
                                           base: {
                                               repoName: props.repo.name,
                                               repoID: props.repo.id,
-                                              revision: commitParentOrEmpty(commitOrError),
-                                              commitID: commitParentOrEmpty(commitOrError),
+                                              revision: commitParentOrEmpty(commit),
+                                              commitID: commitParentOrEmpty(commit),
                                           },
                                           head: {
                                               repoName: props.repo.name,
                                               repoID: props.repo.id,
-                                              revision: commitOrError.oid,
-                                              commitID: commitOrError.oid,
+                                              revision: commit.oid,
+                                              commitID: commit.oid,
                                           },
                                           hoverifier,
                                           extensionsController,
@@ -283,7 +239,7 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
                             lineNumbers: true,
                             diffMode,
                         }}
-                        updateOnChange={`${props.repo.id}:${commitOrError.oid}`}
+                        updateOnChange={`${props.repo.id}:${commit.oid}`}
                         defaultFirst={15}
                         hideSearch={true}
                         noSummaryIfAllNodesVisible={true}

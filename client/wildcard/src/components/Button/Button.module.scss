@@ -57,15 +57,15 @@
     }
 
     &:not(:disabled):not(:global(.disabled)) {
-        &:hover:not(:global(.focus)):not(:focus) {
+        &:hover:not(:global(.focus)):not(:focus),
+        &:active,
+        &:global(.active) {
             text-decoration: underline;
             color: var(--link-hover-color);
         }
 
         &:focus,
-        &:global(.focus),
-        &:active,
-        &:global(.active) {
+        &:global(.focus) {
             text-decoration: underline;
 
             :global(.theme-light) & {
@@ -168,15 +168,15 @@
     }
 
     &:not(:disabled):not(:global(.disabled)) {
-        &:hover:not(:global(.focus)):not(:focus) {
+        &:hover:not(:global(.focus)):not(:focus),
+        &:active,
+        &:global(.active) {
             color: var(--btn-text-color);
             background-color: var(--btn-dark-color-variant);
         }
 
         &:focus,
-        &:global(.focus),
-        &:active,
-        &:global(.active) {
+        &:global(.focus) {
             color: var(--btn-text-color);
             background-color: var(--btn-base-color);
             border-color: var(--body-bg);
@@ -222,7 +222,9 @@
             fill: var(--btn-base-color);
         }
 
-        &:hover:not(:global(.focus)):not(:focus) {
+        &:hover:not(:global(.focus)):not(:focus),
+        &:active,
+        &:global(.active) {
             background-color: var(--color-bg-1);
 
             :global(.theme-light) & {
@@ -241,9 +243,7 @@
         }
 
         &:focus,
-        &:global(.focus),
-        &:active,
-        &:global(.active) {
+        &:global(.focus) {
             color: var(--body-color);
             background-color: var(--body-bg);
             border-color: var(--body-bg);
@@ -332,7 +332,9 @@
         }
 
         &:not(:disabled):not(:global(.disabled)) {
-            &:hover:not(:global(.focus)):not(:focus) {
+            &:hover:not(:global(.focus)):not(:focus),
+            &:active,
+            &:global(.active) {
                 text-decoration: none;
                 color: var(--body-color);
                 border-color: var(--secondary);
@@ -343,9 +345,7 @@
             }
 
             &:focus,
-            &:global(.focus),
-            &:active,
-            &:global(.active) {
+            &:global(.focus) {
                 box-shadow: 0 0 0 2px var(--primary-2);
             }
 

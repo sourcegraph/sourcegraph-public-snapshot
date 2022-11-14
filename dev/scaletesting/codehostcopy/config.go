@@ -14,6 +14,7 @@ var schema = `#CodeHost: {
 	path:      string
 	username?: string
 	password?: string
+    sshKey: string
 }
 
 #Config: {
@@ -28,6 +29,7 @@ type CodeHostDefinition struct {
 	Path     string
 	Username string
 	Password string
+	SSHKey   string
 }
 
 type Config struct {

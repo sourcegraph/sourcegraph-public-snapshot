@@ -2,12 +2,6 @@
 title: Install Sourcegraph on DigitalOcean
 ---
 
-<style>
-  .screenshot {
-      min-width: 100%
-  }
-</style>
-
 # Install Sourcegraph on DigitalOcean
 
 This guide will take you through how to deploy a Sourcegraph instance to a single DigitalOcean Droplet with [Docker Compose](https://docs.docker.com/compose/).
@@ -22,7 +16,7 @@ This guide will take you through how to deploy a Sourcegraph instance to a singl
 
 1. Select **Ubuntu 18.04** under *Distributions*
 
-<img class="screenshot" src="https://user-images.githubusercontent.com/68532117/188502550-bbab20a0-df2d-4e45-a484-628e022505c9.png"/>
+<img class="screenshot w-100" src="https://user-images.githubusercontent.com/68532117/188502550-bbab20a0-df2d-4e45-a484-628e022505c9.png"/>
 
 #### Choose a plan
 
@@ -38,13 +32,13 @@ This guide will take you through how to deploy a Sourcegraph instance to a singl
 
 3. Under **Choose configuration options**, select "Manually Format and Mount"
 
-<img class="screenshot" src="https://user-images.githubusercontent.com/68532117/188502606-66bc1301-edbb-493d-b64d-f4a3e6dd0487.png"/>
+<img class="screenshot w-100" src="https://user-images.githubusercontent.com/68532117/188502606-66bc1301-edbb-493d-b64d-f4a3e6dd0487.png"/>
 
 #### Authentication
 
 1. <span class="badge badge-note">RECOMMENDED</span> Select **SSH keys** to create a **New SSH Key** for convenient access to the droplet
 
-<img class="screenshot" src="https://user-images.githubusercontent.com/68532117/188502682-37667333-75d0-4bd9-8fa8-3b92924c9755.png"/>
+<img class="screenshot w-100" src="https://user-images.githubusercontent.com/68532117/188502682-37667333-75d0-4bd9-8fa8-3b92924c9755.png"/>
 
 #### Authentication > Enable backups
 
@@ -64,7 +58,7 @@ set -euxo pipefail
 ###############################################################################
 # Please read the notes below the script if you are cloning a private repository
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.1.2'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v4.1.3'
 ##################### NO CHANGES REQUIRED BELOW THIS LINE #####################
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 DOCKER_DATA_ROOT='/mnt/docker-data'

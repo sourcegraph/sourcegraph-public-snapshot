@@ -18,15 +18,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Wed, 29 Dec 2021 02:28:05 GMT
+      - Mon, 07 Nov 2022 17:50:10 GMT
       Server:
       - Caddy
       Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
-      Www-Authenticate:
-      - OAuth realm="https%3A%2F%2Fbitbucket.sgdev.org"
+      - x-ausername,x-auserid,cookie,accept-encoding
       X-Arequestid:
-      - '@9KC48Ux148x17313334x0'
+      - '@1KBB873x1070x1023864x1'
       X-Content-Type-Options:
       - nosniff
     status: 401 Unauthorized

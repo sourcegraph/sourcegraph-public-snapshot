@@ -44,12 +44,12 @@ describe('Code insights [Insight Card] should has a proper focus management ', (
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/DASHBOARD_WITH_SEARCH')
 
-        await driver.page.waitForSelector('[aria-label="Insight card"]')
-        await driver.page.focus('[aria-label="Insight card"]')
+        await driver.page.waitForSelector('[aria-label="Search Based insight"]')
+        await driver.page.focus('[aria-label="Search Based insight"]')
 
         await driver.page.keyboard.press(Key.Tab)
         assert.strictEqual(
-            await hasFocus(driver, '[aria-label="Go to the insight page"]'),
+            await hasFocus(driver, '[aria-label="Search Based insight"] h2 a'),
             true,
             'Insight title should be focused'
         )
@@ -74,8 +74,8 @@ describe('Code insights [Insight Card] should has a proper focus management ', (
                 assert.strictEqual(
                     await hasFocus(
                         driver,
-                        `[aria-label="Line chart"] [role="listitem"]:nth-child(${lineIndex + 1}) a:nth-child(${
-                            pointIndex + 2
+                        `[aria-label="Chart series"] > [role="listitem"]:nth-child(${lineIndex + 2}) a:nth-child(${
+                            pointIndex + 1
                         })`
                     ),
                     true,
@@ -98,12 +98,12 @@ describe('Code insights [Insight Card] should has a proper focus management ', (
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/DASHBOARD_WITH_LANG_INSIGHT')
 
-        await driver.page.waitForSelector('[aria-label="Insight card"]')
-        await driver.page.focus('[aria-label="Insight card"]')
+        await driver.page.waitForSelector('[aria-label="Lang Stats insight"]')
+        await driver.page.focus('[aria-label="Lang Stats insight"]')
 
         await driver.page.keyboard.press(Key.Tab)
         assert.strictEqual(
-            await hasFocus(driver, '[aria-label="Go to the insight page"]'),
+            await hasFocus(driver, '[aria-label="Lang Stats insight"] h2 a'),
             true,
             'Insight title should be focused'
         )

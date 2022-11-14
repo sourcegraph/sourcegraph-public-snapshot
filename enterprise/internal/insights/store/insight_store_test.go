@@ -8,7 +8,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/hexops/autogold"
 	"github.com/hexops/valast"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log/logtest"
@@ -993,8 +992,6 @@ func TestCreateSeries(t *testing.T) {
 			GroupBy:              &groupByRepo,
 			SupportsAugmentation: true,
 		}
-
-		log15.Info("values", "want", want, "got", got)
 
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result from create insight series (want/got): %s", diff)

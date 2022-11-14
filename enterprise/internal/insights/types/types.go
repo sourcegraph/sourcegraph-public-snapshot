@@ -164,6 +164,15 @@ type InsightSeriesStatus struct {
 	Completed  int
 }
 
+type InsightSearchFailure struct {
+	Query          string
+	QueuedAt       time.Time
+	State          string
+	FailureMessage string
+	RecordTime     *time.Time
+	PersistMode    string
+}
+
 type PresentationType string
 
 const (

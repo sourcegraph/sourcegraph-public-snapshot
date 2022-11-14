@@ -64,7 +64,6 @@ export interface SubmitSearchParameters
         | 'communitySearchContextPage'
         | 'excludedResults'
         | 'smartSearchDisabled'
-    searchParameters?: { key: string; value: string }[]
     addRecentSearch?: (query: string) => void
 }
 

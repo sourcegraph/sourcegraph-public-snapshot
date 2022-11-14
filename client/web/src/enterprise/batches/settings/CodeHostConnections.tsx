@@ -53,7 +53,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}
-                <ConnectionList as="ul" className="list-group" aria-label="Code hosts">
+                <ConnectionList as="ul" className="list-group" aria-label="code hosts">
                     {connection?.nodes?.map(node => (
                         <CodeHostConnectionNode
                             key={node.externalServiceURL}
