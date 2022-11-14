@@ -1639,14 +1639,13 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "sourcegraph-operator"]
+            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab"]
           }
         },
         "oneOf": [
           { "$ref": "#/definitions/BuiltinAuthProvider" },
           { "$ref": "#/definitions/SAMLAuthProvider" },
           { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
-          { "$ref": "#/definitions/SourcegraphOperatorAuthProvider" },
           { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
           { "$ref": "#/definitions/GitHubAuthProvider" },
           { "$ref": "#/definitions/GitLabAuthProvider" }
@@ -1937,39 +1936,6 @@
           "description": "Allows new visitors to sign up for accounts via OpenID Connect authentication. If false, users signing in via OpenID Connect must have an existing Sourcegraph account, which will be linked to their OpenID Connect identity after sign-in.",
           "type": "boolean",
           "!go": { "pointer": true }
-        }
-      }
-    },
-    "SourcegraphOperatorAuthProvider": {
-      "description": "Configures the Sourcegraph Operator authentication provider for SSO. This is only available in managed instances on Sourcegraph Cloud.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "issuer", "clientID", "clientSecret"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "sourcegraph-operator"
-        },
-        "issuer": {
-          "description": "The URL of the Sourcegraph Operator issuer.",
-          "type": "string",
-          "format": "uri",
-          "pattern": "^https?://"
-        },
-        "clientID": {
-          "description": "The client ID of the Sourcegraph Operator client for this site.",
-          "type": "string",
-          "pattern": "^[^<]"
-        },
-        "clientSecret": {
-          "description": "The client secret of the Sourcegraph Operator client for this site.",
-          "type": "string",
-          "pattern": "^[^<]"
-        },
-        "lifecycleDuration": {
-          "description": "The duration before the user accounts created by this authentication provider to be automatically deleted in minutes.",
-          "type": "integer",
-          "default": 60
         }
       }
     },

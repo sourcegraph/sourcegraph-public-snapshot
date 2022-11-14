@@ -10,11 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/sourcegraphoperator"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSourcegraphOperatorCleanHandler(t *testing.T) {
@@ -22,27 +21,24 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 		t.Skip()
 	}
 
-	// NOTE: We cannot run this test with t.Parallel() because of this mock.
-	conf.Mock(
-		&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
-					{
-						SourcegraphOperator: &schema.SourcegraphOperatorAuthProvider{
-							LifecycleDuration: 60,
-							Type:              sourcegraphoperator.ProviderType,
-						},
-					},
-				},
+	// NOTE: We cannot run this test with t.Parallel() because this mock mutates a
+	// shared global state.
+	cloud.MockSiteConfig(
+		t,
+		&cloud.SchemaSiteConfig{
+			AuthProviders: &cloud.SchemaAuthProviders{
+				SourcegraphOperator: &cloud.SchemaAuthProviderSourcegraphOperator{},
 			},
 		},
 	)
-	defer conf.Mock(nil)
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	handler := sourcegraphOperatorCleanHandler{db: db}
+	handler := sourcegraphOperatorCleanHandler{
+		db:                db,
+		lifecycleDuration: 60 * time.Minute,
+	}
 
 	// Make sure it doesn't blow up if there is nothing to clean up
 	err := handler.Handle(ctx)
