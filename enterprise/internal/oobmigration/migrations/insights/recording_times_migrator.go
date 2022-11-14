@@ -46,6 +46,9 @@ func (m *recordingTimesMigrator) Progress(ctx context.Context, _ bool) (float64,
 }
 
 func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
+	if !insights.IsEnabled() {
+		return nil
+	}
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
 		return err
@@ -137,6 +140,9 @@ type seriesMetadata struct {
 }
 
 func (m *recordingTimesMigrator) Down(ctx context.Context) error {
+	if !insights.IsEnabled() {
+		return nil
+	}
 	tx, err := m.store.Transact(ctx)
 	if err != nil {
 		return err
