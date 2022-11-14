@@ -70,7 +70,7 @@ func (r *syncJobsRecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 }
 
 // Add queues a record for the completion of a sync job.
-func (r *syncJobsRecordsStore) Record(jobType string, jobID int32, providerStates []providerState, err error) {
+func (r *syncJobsRecordsStore) Record(jobType string, jobID int32, providerStates []authz.SyncJobProviderState, err error) {
 	completed := time.Now()
 
 	r.mux.Lock()

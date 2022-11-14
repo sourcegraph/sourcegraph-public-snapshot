@@ -179,10 +179,10 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, []providerState{{
+	assert.Equal(t, []authz.SyncJobProviderState{{
 		ProviderID:   "https://gitlab.com/",
 		ProviderType: "gitlab",
-		State:        "SUCCESS",
+		Status:       "SUCCESS",
 		Message:      "FetchUserPerms",
 	}}, providers)
 }
@@ -334,10 +334,10 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, []providerState{{
+	assert.Equal(t, []authz.SyncJobProviderState{{
 		ProviderID:   "https://gitlab.com/",
 		ProviderType: "gitlab",
-		State:        "ERROR",
+		Status:       "ERROR",
 		Message:      "FetchUserPerms: context deadline exceeded",
 	}}, providers)
 }

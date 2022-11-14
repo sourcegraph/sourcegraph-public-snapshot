@@ -142,10 +142,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []providerState{{
+			assert.Equal(t, []authz.SyncJobProviderState{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				State:        "SUCCESS",
+				Status:       "SUCCESS",
 				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
@@ -228,10 +228,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []providerState{{
+			assert.Equal(t, []authz.SyncJobProviderState{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				State:        "SUCCESS",
+				Status:       "SUCCESS",
 				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
@@ -255,10 +255,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []providerState{{
+			assert.Equal(t, []authz.SyncJobProviderState{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				State:        "SUCCESS",
+				Status:       "SUCCESS",
 				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
@@ -347,10 +347,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []providerState{{
+			assert.Equal(t, []authz.SyncJobProviderState{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				State:        "SUCCESS",
+				Status:       "SUCCESS",
 				Message:      "FetchUserPerms",
 			}}, providerStates)
 
@@ -436,10 +436,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []providerState{{
+			assert.Equal(t, []authz.SyncJobProviderState{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				State:        "SUCCESS",
+				Status:       "SUCCESS",
 				Message:      "FetchUserPerms",
 			}}, providerStates)
 
@@ -463,10 +463,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []providerState{{
+			assert.Equal(t, []authz.SyncJobProviderState{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				State:        "SUCCESS",
+				Status:       "SUCCESS",
 				Message:      "FetchUserPerms",
 			}}, providerStates)
 
