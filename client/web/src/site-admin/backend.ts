@@ -233,6 +233,8 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                     notIndexed: $notIndexed
                     failedFetch: $failedFetch
                     cloneStatus: $cloneStatus
+                    orderBy: SIZE
+                    descending: true
                 ) {
                     nodes {
                         ...SiteAdminRepositoryFields
