@@ -301,28 +301,6 @@ func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *e
 	return installations, nil
 }
 
-// providerState describes the state of a provider during a permissions sync.
-type providerState struct {
-	ProviderID   string
-	ProviderType string
-
-	// One of "ERROR" or "SUCCESS"
-	State   string
-	Message string
-}
-
-type providerStatesSet []providerState
-
-// ErroredProviders returns the list of providers that had error responses.
-func (ps providerStatesSet) ErroredProviders() (providers []string) {
-	for _, p := range ps {
-		if p.State == "ERROR" {
-			providers = append(providers, fmt.Sprintf("%s:%s", p.ProviderType, p.ProviderID))
-		}
-	}
-	return
-}
-
 type fetchUserPermsViaExternalAccountsResults struct {
 	repoIDs      []uint32
 	subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions
@@ -805,6 +783,20 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		URI:              repo.URI,
 		ExternalRepoSpec: repo.ExternalRepo,
 	}, fetchOpts)
+	if err != nil {
+		providerStates = append(providerStates, providerState{
+			ProviderID:   provider.ServiceID(),
+			ProviderType: provider.ServiceType(),
+			State:        "ERROR",
+			Message:      fmt.Sprintf("failed to fetch repo perms: %s", err.Error()),
+		})
+	} else {
+		providerStates = append(providerStates, providerState{
+			ProviderID:   provider.ServiceID(),
+			ProviderType: provider.ServiceType(),
+			State:        "SUCCESS",
+		})
+	}
 
 	// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
 	// when the owner of the token only has READ access. However, we don't want to fail
@@ -976,7 +968,13 @@ func (s *PermsSyncer) waitForRateLimit(ctx context.Context, urn string, n int, s
 // The given sync groups are used to control the max concurrency, this method
 // only returns when the sync process is spawned, and blocks when it reaches max
 // concurrency defined by the sync group.
-func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGroups map[requestType]group.ContextGroup, request *syncRequest) {
+func (s *PermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]group.ContextGroup, request *syncRequest) {
+	logger := s.logger.Scoped("syncPerms", "process perms sync request").With(
+		log.Object("request",
+			log.Int("type", int(request.Type)),
+			log.Int32("id", request.ID),
+		))
+
 	defer s.queue.remove(request.Type, request.ID, true)
 
 	var runSync func() (providerStatesSet, error)
@@ -1007,11 +1005,7 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGrou
 			providerStates, err := runSync()
 			if err != nil {
 				logger.Error("failed to sync permissions",
-					log.Object("request",
-						log.Int("type", int(request.Type)),
-						log.Int32("id", request.ID),
-					),
-					log.Strings("erroredProviders", providerStates.ErroredProviders()),
+					providerStates.SummaryField(),
 					log.Error(err),
 				)
 
@@ -1020,6 +1014,9 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, logger log.Logger, syncGrou
 				} else {
 					metricsFailedPermsSyncs.WithLabelValues("repo", string(request.ID)).Inc()
 				}
+			} else {
+				logger.Debug("succeeded in syncing permissions",
+					providerStates.SummaryField())
 			}
 
 			s.collectQueueSize()
@@ -1085,7 +1082,7 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 
 		notify(notifyDequeued)
 
-		s.syncPerms(ctx, logger, syncGroups, request)
+		s.syncPerms(ctx, syncGroups, request)
 	}
 }
 

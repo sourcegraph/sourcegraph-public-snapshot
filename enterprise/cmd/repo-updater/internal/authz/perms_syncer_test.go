@@ -924,7 +924,7 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 		s := NewPermsSyncer(logtest.Scoped(t), nil, nil, nil, nil, nil)
 		s.queue.Push(request)
 
-		s.syncPerms(context.Background(), logtest.NoOp(t), nil, request)
+		s.syncPerms(context.Background(), nil, request)
 		assert.Equal(t, 0, s.queue.Len())
 	})
 
@@ -978,11 +978,11 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 		started := make(chan struct{}, 2)
 		go func() {
 			started <- struct{}{}
-			s.syncPerms(ctx, logtest.NoOp(t), syncGroups, request1)
+			s.syncPerms(ctx, syncGroups, request1)
 		}()
 		go func() {
 			started <- struct{}{}
-			s.syncPerms(ctx, logtest.NoOp(t), syncGroups, request2)
+			s.syncPerms(ctx, syncGroups, request2)
 		}()
 
 		getOrFail := func(c <-chan struct{}) (failed bool) {
