@@ -7,6 +7,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useAutoFocus, Input } from '@sourcegraph/wildcard'
 
 import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from '../FilterControl'
+import { OrderControl, OrderedConnectionOrderingOption, OrderedConnectionOrderValue } from '../OrderControl'
 
 import styles from './ConnectionForm.module.scss'
 
@@ -36,18 +37,32 @@ export interface ConnectionFormProps {
     autoFocus?: boolean
 
     /**
+     * Ordering options to display next to the order input field.
+     *
+     * Ordering options are mutually exclusive.
+     */
+    orderingOptions?: OrderedConnectionOrderingOption[]
+
+    onOrderingOptionSelect?: (
+        orderingOption: OrderedConnectionOrderingOption,
+        value: OrderedConnectionOrderValue
+    ) => void
+
+    orderValues?: Map<string, OrderedConnectionOrderValue>
+
+    /**
      * Filters to display next to the filter input field.
      *
      * Filters are mutually exclusive.
      */
     filters?: FilteredConnectionFilter[]
 
-    onValueSelect?: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
+    onFilterSelect?: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
 
     /** An element rendered as a sibling of the filters. */
     additionalFilterElement?: React.ReactElement
 
-    values?: Map<string, FilteredConnectionFilterValue>
+    filterValues?: Map<string, FilteredConnectionFilterValue>
 
     compact?: boolean
 }
@@ -67,10 +82,13 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
             inputValue,
             onInputChange,
             autoFocus,
+            orderingOptions,
+            onOrderingOptionSelect,
+            orderValues,
             filters,
-            onValueSelect,
+            onFilterSelect,
+            filterValues,
             additionalFilterElement,
-            values,
             compact,
         },
         reference
@@ -89,8 +107,17 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
                 className={classNames(styles.form, !compact && styles.noncompact, formClassName)}
                 onSubmit={handleSubmit}
             >
-                {filters && onValueSelect && values && (
-                    <FilterControl filters={filters} onValueSelect={onValueSelect} values={values}>
+                {orderingOptions && onOrderingOptionSelect && orderValues && (
+                    <OrderControl
+                        orderingOptions={orderingOptions}
+                        onValueSelect={onOrderingOptionSelect}
+                        values={orderValues}
+                    >
+                        {additionalFilterElement}
+                    </OrderControl>
+                )}
+                {filters && onFilterSelect && filterValues && (
+                    <FilterControl filters={filters} onValueSelect={onFilterSelect} values={filterValues}>
                         {additionalFilterElement}
                     </FilterControl>
                 )}

@@ -28,9 +28,11 @@ import {
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
+import { OrderedConnectionOrderingOption } from '../components/FilteredConnection/OrderControl'
 import { PageTitle } from '../components/PageTitle'
 import {
     RepositoriesResult,
+    RepositoryOrderBy,
     RepositoryStatsResult,
     RepositoryStatsVariables,
     SiteAdminRepositoryFields,
@@ -87,6 +89,52 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
 )
 
 interface Props extends RouteComponentProps<{}>, TelemetryProps {}
+
+const ORDERING_OPTIONS: OrderedConnectionOrderingOption[] = [
+    {
+        id: 'order',
+        label: 'Order',
+        type: 'select',
+        values: [
+            {
+                label: 'Name (A-Z)',
+                value: 'name-asc',
+                tooltip: 'Order repositories by name in ascending order',
+                args: {
+                    orderBy: RepositoryOrderBy.REPOSITORY_NAME,
+                    descending: false,
+                },
+            },
+            {
+                label: 'Name (Z-A)',
+                value: 'name-desc',
+                tooltip: 'Order repositories by name in descending order',
+                args: {
+                    orderBy: RepositoryOrderBy.REPOSITORY_NAME,
+                    descending: true,
+                },
+            },
+            {
+                label: 'Size (largest first)',
+                value: 'size-desc',
+                tooltip: 'Order repositories by size in descending order',
+                args: {
+                    orderBy: RepositoryOrderBy.SIZE,
+                    descending: true,
+                },
+            },
+            {
+                label: 'Size (smallest first)',
+                value: 'size-asc',
+                tooltip: 'Order repositories by size in ascending order',
+                args: {
+                    orderBy: RepositoryOrderBy.SIZE,
+                    descending: false,
+                },
+            },
+        ],
+    },
+]
 
 const FILTERS: FilteredConnectionFilter[] = [
     {
@@ -289,6 +337,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                     queryConnection={queryRepositories}
                     nodeComponent={RepositoryNode}
                     inputClassName="flex-1"
+                    orderingOptions={ORDERING_OPTIONS}
                     filters={FILTERS}
                     history={history}
                     location={location}

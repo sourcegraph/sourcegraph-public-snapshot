@@ -47,19 +47,21 @@ import {
     SetUserIsSiteAdminVariables,
     SetUserTagResult,
     SetUserTagVariables,
+    FeatureFlagsResult,
+    FeatureFlagsVariables,
+    FeatureFlagFields,
     SiteAdminAccessTokenConnectionFields,
-    SiteAdminAccessTokensResult,
     SiteAdminAccessTokensVariables,
-    SiteAdminSettingsCascadeFields,
-    SiteMonitoringStatisticsResult,
-    SiteResult,
-    SiteUpdateCheckResult,
-    SiteUpdateCheckVariables,
-    SiteUsageStatisticsResult,
-    UpdateSiteConfigurationResult,
-    UpdateSiteConfigurationVariables,
-    UserActivePeriod,
+    SiteAdminAccessTokensResult,
+    CheckMirrorRepositoryConnectionResult,
     UsersResult,
+    SiteUsageStatisticsResult,
+    SiteResult,
+    AllConfigResult,
+    RandomizeUserPasswordResult,
+    CreateUserResult,
+    SiteMonitoringStatisticsResult,
+    SiteAdminSettingsCascadeFields,
     UserUsageStatisticsResult,
     WebhookByIdResult,
     WebhookByIdVariables,
@@ -69,6 +71,7 @@ import {
     WebhookLogsByWebhookIDVariables,
     WebhooksListResult,
     WebhooksListVariables,
+    WebhookFields,
 } from '../graphql-operations'
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
@@ -225,6 +228,8 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                 $notIndexed: Boolean
                 $failedFetch: Boolean
                 $cloneStatus: CloneStatus
+                $orderBy: RepositoryOrderBy
+                $descending: Boolean
             ) {
                 repositories(
                     first: $first
@@ -233,8 +238,8 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                     notIndexed: $notIndexed
                     failedFetch: $failedFetch
                     cloneStatus: $cloneStatus
-                    orderBy: SIZE
-                    descending: true
+                    orderBy: $orderBy
+                    descending: $descending
                 ) {
                     nodes {
                         ...SiteAdminRepositoryFields
@@ -255,6 +260,8 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
             first: args.first ?? null,
             query: args.query ?? null,
             cloneStatus: args.cloneStatus ?? null,
+            orderBy: args.orderBy ?? RepositoryOrderBy.REPOSITORY_NAME,
+            descending: args.descending ?? false,
         }
     ).pipe(
         map(dataOrThrowErrors),
