@@ -194,17 +194,7 @@ function getDiffResolvedRevisionFromPageSource(
  * Returns the file path for the current page. Must be on a blob or tree page.
  *
  * Implementation details:
- *
- * This scrapes the file path from the permalink on GitHub blob pages:
- * - old UI:
- * ```html
- * <a class="d-none js-permalink-shortcut" data-hotkey="y" href="/gorilla/mux/blob/ed099d42384823742bba0bf9a72b53b55c9e2e38/mux.go">Permalink</a>
- * ```
- * - new UI:
- * ```html
- * <li class="Tree-item ActionList-item ActionList-item--subItem ActionList-item--navActive"><a class="Link-sc-hrxz1n-0 eHoHg ActionList-content hx_ActionList-content" href="/sourcegraph/sourcegraph/blob/main/client/browser/src/browser-extension/ThemeWrapper.tsx">ThemeWrapper.tsx</a></li>
- * ```
- *
+ * This scrapes the file path from the permalink on GitHub blob pages.
  * We can't get the file path from the URL because the branch name can contain
  * slashes which make the boundary between the branch name and file path
  * ambiguous. For example: https://github.com/sourcegraph/sourcegraph/blob/bext/release/cmd/frontend/internal/session/session.go
@@ -212,13 +202,7 @@ function getDiffResolvedRevisionFromPageSource(
  * TODO ideally, this should only scrape the code view itself.
  */
 export function getFilePath(): string {
-    let permalink: HTMLAnchorElement | null = null
-    for (const selector of ['.ActionList-item--navActive a', 'a.js-permalink-shortcut']) {
-        permalink = document.querySelector<HTMLAnchorElement>(selector)
-        if (permalink) {
-            break
-        }
-    }
+    const permalink = document.querySelector<HTMLAnchorElement>(getSelectorFor('permalink'))
     if (!permalink) {
         throw new Error('Unable to determine the file path because no element containing file link was found.')
     }
@@ -282,3 +266,29 @@ export function parseURL(location: Pick<Location, 'host' | 'pathname' | 'href'> 
             return { pageType: 'other', rawRepoName, repoName }
     }
 }
+
+interface UISelectors {
+    codeCell: string
+    blobContainer: string
+    permalink: string
+    // fileToolbarMountContainer: string
+}
+
+const oldUISelectors: UISelectors = {
+    codeCell: 'td.blob-code',
+    blobContainer: '.js-file-line-container',
+    permalink: 'a.js-permalink-shortcut',
+    // fileToolbarMountContainer: '.file',
+}
+
+const newUISelectors: UISelectors = {
+    codeCell: 'td.react-code-cell',
+    blobContainer: 'react-app table',
+    permalink: '.ActionList-item--navActive a',
+    // fileToolbarMountContainer: '.file',
+}
+
+/**
+ * Returns the common selector for old and new GitHub UIs.
+ */
+export const getSelectorFor = (key: keyof UISelectors): string => `${oldUISelectors[key]}, ${newUISelectors[key]}`

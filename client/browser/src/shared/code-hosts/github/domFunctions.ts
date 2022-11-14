@@ -2,7 +2,7 @@ import { DiffPart } from '@sourcegraph/codeintellify'
 
 import { DOMFunctions } from '../shared/codeViews'
 
-import { isDiffPageType, parseURL } from './util'
+import { getSelectorFor, isDiffPageType, parseURL } from './util'
 
 const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
     const tableCell = codeElement.closest('td')!
@@ -64,7 +64,7 @@ const getLineNumberFromCodeElement = (codeElement: HTMLElement): number => {
  * Gets the `<td>` element for a target that contains the code
  */
 const getCodeCellFromTarget = (target: HTMLElement): HTMLTableCellElement | null => {
-    const cell = target.closest<HTMLTableCellElement>('td.blob-code, td.react-code-cell') // the former for the old UI and the latter for the new UI
+    const cell = target.closest<HTMLTableCellElement>(getSelectorFor('codeCell'))
     // Handle rows with the [ ↕ ] button that expands collapsed unchanged lines
     if (!cell || cell.parentElement?.classList.contains('js-expandable-line')) {
         return null
