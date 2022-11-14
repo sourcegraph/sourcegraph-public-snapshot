@@ -141,9 +141,21 @@ func BenchmarkLoadTimes(b *testing.B) {
 		times   int
 	}{
 		{
-			name:  "simple",
+			name:  "1000 repos no capture no restrictions", // 1000 * 12 = 12,000 samples
 			repos: 1000,
 			times: 12,
+		},
+		{
+			name:    "1000 repos 100 capture no restrictions", // 1000 * 100 * 12 = 1,200,000 samples
+			repos:   1000,
+			times:   12,
+			capture: 100,
+		},
+		{
+			name:    "500 repos 200 capture no restrictions", // 500 * 200 * 12 = 1,200,000 samples
+			repos:   500,
+			times:   12,
+			capture: 200,
 		},
 	}
 	for _, bm := range benchmarks {
@@ -159,7 +171,9 @@ func BenchmarkLoadTimes(b *testing.B) {
 
 		opts := SeriesPointsOpts{SeriesID: &seriesID}
 
-		b.Run("in-db-aggregate", func(b *testing.B) {
+		b.ResetTimer()
+
+		b.Run("in-db-aggregate-"+bm.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				_, err := store.SeriesPoints(ctx, opts)
 				if err != nil {
@@ -168,7 +182,7 @@ func BenchmarkLoadTimes(b *testing.B) {
 			}
 		})
 
-		b.Run("in-mem-aggregate", func(b *testing.B) {
+		b.Run("in-mem-aggregate-"+bm.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				_, err := store.LoadSeriesInMem(ctx, opts)
 				if err != nil {
