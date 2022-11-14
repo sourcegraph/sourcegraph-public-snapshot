@@ -22,6 +22,7 @@ func NewAssetHandler(mux *http.ServeMux) http.Handler {
 		// circumstances that couldn't be reproduced
 		if filepath.Ext(r.URL.Path) == ".svg" {
 			w.Header().Set("Content-Type", "image/svg+xml")
+			w.Header().Set("X-Frame-Options", "sameorigin")
 		}
 		// Required for phabricator integration, some browser extensions block
 		// unless the mime type on externally loaded JS is set
