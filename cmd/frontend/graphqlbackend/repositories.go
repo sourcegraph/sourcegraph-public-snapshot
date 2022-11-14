@@ -24,7 +24,7 @@ import (
 
 type repositoryArgs struct {
 	graphqlutil.ConnectionArgs
-	Query *string
+	Query *string // Search query
 	Names *[]string
 
 	Cloned     bool
@@ -46,6 +46,7 @@ func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, err
 			Field:      ToDBRepoListColumn(args.OrderBy),
 			Descending: args.Descending,
 		}},
+		JoinGitserverRepos: true,
 	}
 	if args.Names != nil {
 		opt.Names = *args.Names
@@ -312,6 +313,8 @@ func ToDBRepoListColumn(ob string) database.RepoListColumn {
 		return database.RepoListName
 	case "REPO_CREATED_AT", "REPOSITORY_CREATED_AT":
 		return database.RepoListCreatedAt
+	case "SIZE":
+		return database.RepoListSize
 	default:
 		return ""
 	}

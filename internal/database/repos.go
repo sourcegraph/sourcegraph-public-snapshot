@@ -788,6 +788,7 @@ const (
 	RepoListName      RepoListColumn = "name"
 	RepoListID        RepoListColumn = "id"
 	RepoListStars     RepoListColumn = "stars"
+	RepoListSize      RepoListColumn = "gr.repo_size_bytes"
 )
 
 // List lists repositories in the Sourcegraph repository
