@@ -18,15 +18,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func initializeData(ctx context.Context, store *Store, repos, times int, withCapture bool) string {
+func initializeData(ctx context.Context, store *Store, repos, times int, withCapture int) string {
 	var cv []*string
 	strPtr := func(s string) *string {
 		return &s
 	}
 
-	if withCapture {
-		cv = append(cv, strPtr("one"))
-		cv = append(cv, strPtr("two"))
+	if withCapture > 0 {
+		for i := 0; i < withCapture; i++ {
+			cv = append(cv, strPtr(fmt.Sprintf("%d", i)))
+		}
 	} else {
 		cv = append(cv, nil)
 	}
@@ -64,7 +65,6 @@ func initializeData(ctx context.Context, store *Store, repos, times int, withCap
 }
 
 func TestCompareLoadMethods(t *testing.T) {
-
 	toStr := func(pts []SeriesPoint) []string {
 		var elems []string
 		for _, pt := range pts {
@@ -87,7 +87,7 @@ func TestCompareLoadMethods(t *testing.T) {
 		permStore := NewInsightPermissionStore(postgres)
 		store := NewWithClock(insightsDB, permStore, clock)
 
-		seriesID := initializeData(ctx, store, 500, 5, false)
+		seriesID := initializeData(ctx, store, 500, 5, 0)
 
 		db, _ := store.SeriesPoints(ctx, SeriesPointsOpts{SeriesID: &seriesID})
 		mem, _ := store.LoadSeriesInMem(ctx, SeriesPointsOpts{SeriesID: &seriesID})
@@ -114,7 +114,7 @@ func TestCompareLoadMethods(t *testing.T) {
 		permStore := NewInsightPermissionStore(postgres)
 		store := NewWithClock(insightsDB, permStore, clock)
 
-		seriesID := initializeData(ctx, store, 500, 5, true)
+		seriesID := initializeData(ctx, store, 500, 5, 2)
 
 		db, _ := store.SeriesPoints(ctx, SeriesPointsOpts{SeriesID: &seriesID})
 		mem, _ := store.LoadSeriesInMem(ctx, SeriesPointsOpts{SeriesID: &seriesID})
@@ -135,9 +135,10 @@ func TestCompareLoadMethods(t *testing.T) {
 
 func BenchmarkLoadTimes(b *testing.B) {
 	benchmarks := []struct {
-		name  string
-		repos int
-		times int
+		name    string
+		repos   int
+		capture int
+		times   int
 	}{
 		{
 			name:  "simple",
@@ -154,7 +155,7 @@ func BenchmarkLoadTimes(b *testing.B) {
 		permStore := NewInsightPermissionStore(postgres)
 		store := NewWithClock(insightsDB, permStore, clock)
 
-		seriesID := initializeData(ctx, store, bm.repos, bm.times, false)
+		seriesID := initializeData(ctx, store, bm.repos, bm.times, bm.capture)
 
 		opts := SeriesPointsOpts{SeriesID: &seriesID}
 
