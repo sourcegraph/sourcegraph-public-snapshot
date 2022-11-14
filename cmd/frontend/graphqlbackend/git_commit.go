@@ -68,14 +68,16 @@ type GitCommitResolver struct {
 // commit will be loaded lazily as needed by the resolver. Pass in a commit when
 // you have batch-loaded a bunch of them and already have them at hand.
 func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
-	var commitId = GitObjectID(id)
-	var repoName = repo.RepoName()
+	var repoName api.RepoName
+	if repo != nil {
+		repoName = repo.RepoName()
+	}
 
 	return &GitCommitResolver{
 		logger: log.Scoped("gitCommitResolver", "resolve a specific commit").
 			With(log.Object("commit",
 				log.String("repo", string(repoName)),
-				log.String("commitId", string(commitId)))),
+				log.String("commitId", string(id)))),
 		db:              db,
 		gitserverClient: gsClient,
 		repoResolver:    repo,
