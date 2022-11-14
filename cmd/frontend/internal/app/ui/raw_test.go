@@ -12,7 +12,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -395,23 +394,12 @@ func Test_serveRawRepoCloning(t *testing.T) {
 
 	req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
 	w := httptest.NewRecorder()
-
 	db := database.NewMockDB()
 	// Former implementation would sleep awaiting repository to be available.
 	// Await request to be served with a timeout by racing done channel with time.After.
-	done := make(chan struct{})
-	var err error
-	go func() {
-		defer func() { done <- struct{}{} }()
-		err = serveRaw(db, gsClient)(w, req)
-	}()
-	select {
-	case <-done:
-		if err != nil {
-			t.Fatalf("Failed to invoke serveRaw: %v", err)
-		}
-	case <-time.After(2 * time.Second):
-		t.Fatalf("timed out waiting for repo raw")
+	err := serveRaw(db, gsClient)(w, req)
+	if err != nil {
+		t.Fatalf("Failed to invoke serveRaw: %v", err)
 	}
 	if got, want := w.Code, http.StatusNotFound; got != want {
 		t.Errorf("http status, got %d, want %d", got, want)
