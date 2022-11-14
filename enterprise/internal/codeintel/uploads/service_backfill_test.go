@@ -21,6 +21,7 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 		nil, // repoStore
 		nil, // lsifstore
 		gitserverClient,
+		nil, // ranking bucket
 		nil, // policySvc
 		nil, // policyMatcher
 		nil, // locker
@@ -102,6 +103,7 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 		nil, // repoStore
 		nil, // lsifstore
 		gitserverClient,
+		nil, // ranking bucket
 		nil, // policySvc
 		nil, // policyMatcher
 		nil, // locker
