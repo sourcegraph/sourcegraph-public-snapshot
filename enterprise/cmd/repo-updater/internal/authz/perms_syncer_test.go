@@ -183,6 +183,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		ProviderID:   "https://gitlab.com/",
 		ProviderType: "gitlab",
 		State:        "SUCCESS",
+		Message:      "FetchUserPerms",
 	}}, providers)
 }
 
@@ -337,7 +338,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 		ProviderID:   "https://gitlab.com/",
 		ProviderType: "gitlab",
 		State:        "ERROR",
-		Message:      "could not fetch user permissions: context deadline exceeded",
+		Message:      "FetchUserPerms: context deadline exceeded",
 	}}, providers)
 }
 

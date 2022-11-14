@@ -381,14 +381,9 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		}
 
 		acct, err := provider.FetchAccount(ctx, user, accts, emails)
+		results.providerStates = append(results.providerStates, newProviderState(provider, err, "FetchAccount"))
 		if err != nil {
 			providerLogger.Error("could not fetch account from authz provider", log.Error(err))
-			results.providerStates = append(results.providerStates, providerState{
-				ProviderID:   provider.ServiceID(),
-				ProviderType: provider.ServiceType(),
-				State:        "ERROR",
-				Message:      fmt.Sprintf("could not fetch account: %s", err.Error()),
-			})
 			continue
 		}
 
@@ -448,14 +443,9 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		// the token, or if the token is revoked, the "401 Unauthorized" error will be
 		// handled here.
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
+		results.providerStates = append(results.providerStates, newProviderState(provider, err, "FetchUserPerms"))
 		if err != nil {
-			acctLogger.Debug("fetching user permissions", log.Error(err))
-			results.providerStates = append(results.providerStates, providerState{
-				ProviderID:   provider.ServiceID(),
-				ProviderType: provider.ServiceType(),
-				State:        "ERROR",
-				Message:      fmt.Sprintf("could not fetch user permissions: %s", err.Error()),
-			})
+			acctLogger.Debug("error fetching user permissions", log.Error(err))
 
 			unauthorized := errcode.IsUnauthorized(err)
 			forbidden := errcode.IsForbidden(err)
@@ -541,12 +531,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			}
 			acctLogger.Warn("proceedWithPartialResults", log.Error(err))
 		} else {
-			results.providerStates = append(results.providerStates, providerState{
-				ProviderID:   provider.ServiceID(),
-				ProviderType: provider.ServiceType(),
-				State:        "SUCCESS",
-			})
-
 			err = accounts.TouchLastValid(ctx, acct.ID)
 			if err != nil {
 				return results, errors.Wrapf(err, "set last valid for external account %d", acct.ID)
@@ -783,20 +767,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		URI:              repo.URI,
 		ExternalRepoSpec: repo.ExternalRepo,
 	}, fetchOpts)
-	if err != nil {
-		providerStates = append(providerStates, providerState{
-			ProviderID:   provider.ServiceID(),
-			ProviderType: provider.ServiceType(),
-			State:        "ERROR",
-			Message:      fmt.Sprintf("failed to fetch repo perms: %s", err.Error()),
-		})
-	} else {
-		providerStates = append(providerStates, providerState{
-			ProviderID:   provider.ServiceID(),
-			ProviderType: provider.ServiceType(),
-			State:        "SUCCESS",
-		})
-	}
+	providerStates = append(providerStates, newProviderState(provider, err, "FetchRepoPerms"))
 
 	// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
 	// when the owner of the token only has READ access. However, we don't want to fail

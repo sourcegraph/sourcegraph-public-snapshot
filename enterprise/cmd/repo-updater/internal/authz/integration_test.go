@@ -146,6 +146,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				State:        "SUCCESS",
+				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
 			p := &authz.UserPermissions{
@@ -231,6 +232,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				State:        "SUCCESS",
+				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
 			p := &authz.UserPermissions{
@@ -257,6 +259,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				State:        "SUCCESS",
+				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
 			err = permsStore.LoadUserPermissions(ctx, p)
@@ -348,6 +351,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				State:        "SUCCESS",
+				Message:      "FetchUserPerms",
 			}}, providerStates)
 
 			p := &authz.UserPermissions{
@@ -436,6 +440,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				State:        "SUCCESS",
+				Message:      "FetchUserPerms",
 			}}, providerStates)
 
 			p := &authz.UserPermissions{
@@ -462,6 +467,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				State:        "SUCCESS",
+				Message:      "FetchUserPerms",
 			}}, providerStates)
 
 			err = permsStore.LoadUserPermissions(ctx, p)

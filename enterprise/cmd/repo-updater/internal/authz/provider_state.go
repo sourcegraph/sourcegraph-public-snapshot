@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 )
 
 // providerState describes the state of a provider during a permissions sync.
@@ -14,6 +16,24 @@ type providerState struct {
 	// One of "ERROR" or "SUCCESS"
 	State   string
 	Message string
+}
+
+func newProviderState(provider authz.Provider, err error, action string) providerState {
+	if err != nil {
+		return providerState{
+			ProviderID:   provider.ServiceID(),
+			ProviderType: provider.ServiceType(),
+			State:        "ERROR",
+			Message:      fmt.Sprintf("%s: %s", action, err.Error()),
+		}
+	} else {
+		return providerState{
+			ProviderID:   provider.ServiceID(),
+			ProviderType: provider.ServiceType(),
+			State:        "SUCCESS",
+			Message:      action,
+		}
+	}
 }
 
 type providerStatesSet []providerState
