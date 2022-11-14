@@ -2910,6 +2910,11 @@ size 12
 	}
 }
 
+// testGitBlameOutput is produced by running
+//
+//	git blame -w --porcelain release.sh
+//
+// `sourcegraph/src-cli`
 const testGitBlameOutput = `3f61310114082d6179c23f75950b88d1842fe2de 1 1 4
 author Thorsten Ball
 author-mail <mrnugget@gmail.com>
@@ -3000,6 +3005,65 @@ filename release.sh
 	# We use --atomic so that we push the tag and the commit if the commit was or wasn't pushed before
 67b7b725a7ff913da520b997d71c840230351e30 13 23
 	git push --atomic origin main "${VERSION}"
+`
+
+var testGitBlameOutputIncremental = `8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498 15 15 1
+author Adam Harvey
+author-mail <adam@adamharvey.name>
+author-time 1660860583
+author-tz -0700
+committer GitHub
+committer-mail <noreply@github.com>
+committer-time 1660860583
+committer-tz +0000
+summary release.sh: allow -rc.X suffixes (#829)
+previous e6e03e850770dd0ba745f0fa4b23127e9d72ad30 release.sh
+filename release.sh
+fbb98e0b7ff0752798463d9f49d922858a4188f6 5 5 10
+author Adam Harvey
+author-mail <aharvey@sourcegraph.com>
+author-time 1602630694
+author-tz -0700
+committer GitHub
+committer-mail <noreply@github.com>
+committer-time 1602630694
+committer-tz -0700
+summary release: add a prompt about DEVELOPMENT.md (#349)
+previous 18f59760f4260518c29f0f07056245ed5d1d0f08 release.sh
+filename release.sh
+67b7b725a7ff913da520b997d71c840230351e30 10 20 1
+author Thorsten Ball
+author-mail <mrnugget@gmail.com>
+author-time 1600334460
+author-tz +0200
+committer Thorsten Ball
+committer-mail <mrnugget@gmail.com>
+committer-time 1600334460
+committer-tz +0200
+summary Fix goreleaser GitHub action setup and release script
+previous 6e931cc9745502184ce32d48b01f9a8706a4dfe8 release.sh
+filename release.sh
+67b7b725a7ff913da520b997d71c840230351e30 12 22 2
+previous 6e931cc9745502184ce32d48b01f9a8706a4dfe8 release.sh
+filename release.sh
+3f61310114082d6179c23f75950b88d1842fe2de 1 1 4
+author Thorsten Ball
+author-mail <mrnugget@gmail.com>
+author-time 1592827635
+author-tz +0200
+committer GitHub
+committer-mail <noreply@github.com>
+committer-time 1592827635
+committer-tz +0200
+summary Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)
+previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
+filename release.sh
+3f61310114082d6179c23f75950b88d1842fe2de 6 16 4
+previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
+filename release.sh
+3f61310114082d6179c23f75950b88d1842fe2de 10 21 1
+previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
+filename release.sh
 `
 
 var testGitBlameOutputHunks = []*Hunk{
@@ -3098,6 +3162,30 @@ func TestBlameHunkReader(t *testing.T) {
 	reader := newBlameHunkReader(context.Background(), rc)
 
 	var hunks []*Hunk
+	for {
+		hunk, done, err := reader.Read()
+		if err != nil {
+			t.Fatalf("blameHunkReader.Read failed: %s", err)
+		}
+		if done {
+			break
+		}
+		hunks = append(hunks, hunk...)
+	}
+
+	if d := cmp.Diff(testGitBlameOutputHunks, hunks); d != "" {
+		t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
+	}
+
+	t.Logf(`TODO: This test is wrong. The testGitBlameOutput is the output of 'git blame' without '--incremental'.`)
+	t.Logf(`TODO: Right now everything above this line passes, because I built the BlameHunkReader to read the non-incremental output (because I'm an idiot)`)
+	t.Logf(`TODO: What needs to pass is the stuff below`)
+
+	// TODO: This needs to pass!!
+	rc = io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
+	reader = newBlameHunkReader(context.Background(), rc)
+
+	hunks = []*Hunk{}
 	for {
 		hunk, done, err := reader.Read()
 		if err != nil {
