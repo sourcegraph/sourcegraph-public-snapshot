@@ -3158,30 +3158,10 @@ func TestParseGitBlameOutput(t *testing.T) {
 }
 
 func TestBlameHunkReader(t *testing.T) {
-	rc := io.NopCloser(strings.NewReader(testGitBlameOutput))
+	rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
 	reader := newBlameHunkReader(context.Background(), rc)
 
 	var hunks []*Hunk
-	for {
-		hunk, done, err := reader.Read()
-		if err != nil {
-			t.Fatalf("blameHunkReader.Read failed: %s", err)
-		}
-		if done {
-			break
-		}
-		hunks = append(hunks, hunk...)
-	}
-
-	if d := cmp.Diff(testGitBlameOutputHunks, hunks); d != "" {
-		t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
-	}
-
-	t.Logf(`TODO: This test is wrong. The testGitBlameOutput is the output of 'git blame' without '--incremental'.`)
-	t.Logf(`TODO: Right now everything above this line passes, because I built the BlameHunkReader to read the non-incremental output (because I'm an idiot)`)
-	t.Logf(`TODO: What needs to pass is the stuff below`)
-
-	// TODO: This needs to pass!!
 	rc = io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
 	reader = newBlameHunkReader(context.Background(), rc)
 
@@ -3197,7 +3177,25 @@ func TestBlameHunkReader(t *testing.T) {
 		hunks = append(hunks, hunk...)
 	}
 
-	if d := cmp.Diff(testGitBlameOutputHunks, hunks); d != "" {
+	sortFn := func(x []*Hunk) func(i, j int) bool {
+		return func(i, j int) bool {
+			return x[i].Author.Date.After(x[j].Author.Date)
+		}
+	}
+
+	// We're not giving back bytes, as the output of --incremental only gives back annotations.
+	expectedHunks := make([]*Hunk, 0, len(testGitBlameOutputHunks))
+	for _, h := range testGitBlameOutputHunks {
+		dup := *h
+		dup.EndByte = 0
+		dup.StartByte = 0
+		expectedHunks = append(expectedHunks, &dup)
+	}
+
+	// Sort expected hunks by the most recent first, as --incremental does.
+	sort.SliceStable(expectedHunks, sortFn(expectedHunks))
+
+	if d := cmp.Diff(expectedHunks, hunks); d != "" {
 		t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
 	}
 }

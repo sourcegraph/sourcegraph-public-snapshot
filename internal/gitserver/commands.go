@@ -941,16 +941,17 @@ func parseGitBlameOutputReader(ctx context.Context, out io.ReadCloser, hunks cha
 			CommitID:  api.CommitID(commitID),
 			StartLine: lineNoCur,
 			EndLine:   lineNoCur + nLines,
-			StartByte: byteOffset,
 		}
 
 		if _, ok := commits[commitID]; ok {
-			// Already seen commit, read next line and bump offset
+			// Already seen commit, read next two lines and bump offset
 			if !sc.Scan() {
 				break
 			}
-			byteOffset += len(sc.Bytes())
-			nLines -= 1
+			if !sc.Scan() {
+				break
+			}
+			// nLines -= 1
 		} else {
 
 			// --------------- New commit -------------------
@@ -1025,13 +1026,6 @@ func parseGitBlameOutputReader(ctx context.Context, out io.ReadCloser, hunks cha
 			fmt.Printf("filenameLine: %q\n", filenameLine)
 			filenames[commitID] = strings.SplitN(filenameLine, " ", 2)[1]
 
-			// nLines includes the filenameLine, so we already read that
-			nLines -= 1
-			if !sc.Scan() {
-				break
-			}
-			byteOffset += len(sc.Bytes())
-
 			commits[commitID] = commit
 
 			// TODO: What about "boundary" lines?
@@ -1048,20 +1042,6 @@ func parseGitBlameOutputReader(ctx context.Context, out io.ReadCloser, hunks cha
 
 		if filename, present := filenames[commitID]; present {
 			hunk.Filename = filename
-		}
-
-		// read remaining <sha>\n<content> line pairs in hunk
-		fmt.Printf("nLines: %d\n", nLines)
-		for nLines > 0 {
-			if !sc.Scan() {
-				break
-			}
-
-			if !sc.Scan() {
-				break
-			}
-			byteOffset += len(sc.Bytes())
-			nLines -= 1
 		}
 
 		hunk.EndByte = byteOffset
