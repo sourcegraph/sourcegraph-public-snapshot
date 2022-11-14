@@ -1,6 +1,7 @@
 import { FC, useEffect, useState } from 'react'
 
 import { mdiCog, mdiPlus } from '@mdi/js'
+import { RouteComponentProps } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonLink, Container, H2, H5, Icon, PageHeader } from '@sourcegraph/wildcard'
@@ -25,16 +26,19 @@ import { WebhookLogNode } from './webhooks/WebhookLogNode'
 
 import styles from './SiteAdminWebhookPage.module.scss'
 
-export interface WebhookPageProps extends TelemetryProps {
-    node: WebhookFields
-}
+export interface WebhookPageProps extends TelemetryProps, RouteComponentProps<{ id: string }> {}
 
 export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
-    const { node, telemetryService } = props
+    const {
+        match: {
+            params: { id },
+        },
+        telemetryService,
+    } = props
 
     const [onlyErrors, setOnlyErrors] = useState(false)
-    const { loading, hasNextPage, fetchMore, connection, error } = useWebhookLogsConnection(node.id, 20, onlyErrors)
-    const { loading: webhookLoading, data: webhookData } = useWebhookQuery(node.id)
+    const { loading, hasNextPage, fetchMore, connection, error } = useWebhookLogsConnection(id, 20, onlyErrors)
+    const { loading: webhookLoading, data: webhookData } = useWebhookQuery(id)
 
     useEffect(() => {
         telemetryService.logPageView('SiteAdminWebhook')
@@ -48,19 +52,19 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                 <PageHeader
                     path={[
                         { icon: mdiCog },
-                        { to: '/webhooks', text: 'Webhook receivers' },
-                        { text: node.codeHostURN },
+                        { to: '/site-admin/webhooks', text: 'Webhook receivers' },
+                        { text: webhookData.node.codeHostURN },
                     ]}
                     byline={
                         <CreatedByAndUpdatedByInfoByline
-                            createdAt={node.createdAt}
+                            createdAt={webhookData.node.createdAt}
                             createdBy={webhookData.node.createdBy}
-                            updatedAt={node.updatedAt}
+                            updatedAt={webhookData.node.updatedAt}
                             updatedBy={webhookData.node.updatedBy}
                         />
                     }
-                    description="Some description going on in here"
                     className="test-batch-change-close-page mb-3"
+                    headingElement="h2"
                     actions={
                         <div className="d-flex flex-row-reverse align-items-center">
                             <div className="flex-grow mr-2">
@@ -89,7 +93,9 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
             )}
 
             <H2>Information</H2>
-            <WebhookInformation webhook={node} />
+            {webhookData?.node && webhookData.node.__typename === 'Webhook' && (
+                <WebhookInformation webhook={webhookData.node as WebhookFields} />
+            )}
 
             <H2>Logs</H2>
             <WebhookInfoLogPageHeader onlyErrors={onlyErrors} onSetOnlyErrors={setOnlyErrors} />
