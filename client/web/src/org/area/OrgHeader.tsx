@@ -77,7 +77,7 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
                                 </PageHeader.Breadcrumb>
                             </PageHeader.Heading>
                         </PageHeader>
-                        <div className="d-flex align-items-end justify-content-between">
+                        <nav className="d-flex align-items-end justify-content-between" aria-label="Org">
                             <ul className="nav nav-tabs w-100">
                                 {navItems.map(
                                     ({
@@ -127,7 +127,7 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
                                     </Button>
                                 </div>
                             )}
-                        </div>
+                        </nav>
                     </>
                 )}
             </div>

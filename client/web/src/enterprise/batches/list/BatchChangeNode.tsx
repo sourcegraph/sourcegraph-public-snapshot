@@ -2,9 +2,9 @@ import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { renderMarkdown } from '@sourcegraph/common'
+import { pluralize, renderMarkdown } from '@sourcegraph/common'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { Badge, Link, H3 } from '@sourcegraph/wildcard'
+import { Badge, Link, H3, H4 } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../components/time/Timestamp'
 import {
@@ -112,7 +112,7 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
     }, [isExecutionEnabled, node.url, node.state, node.currentSpec, latestExecution])
 
     return (
-        <>
+        <li className={styles.batchChangeNode}>
             <span className={styles.batchChangeNodeSeparator} />
             {isExecutionEnabled ? (
                 <BatchChangeStatePill
@@ -161,42 +161,48 @@ export const BatchChangeNode: React.FunctionComponent<React.PropsWithChildren<Ba
                 <>
                     <ChangesetStatusOpen
                         className="d-block d-sm-flex"
-                        aria-labelledby={`changesets-open-label-${node.id}`}
-                        role="group"
                         label={
-                            <span
-                                className="text-muted"
-                                id={`changesets-open-label-${node.id}`}
-                                aria-hidden={true}
-                            >{`${node.changesetsStats.open} open`}</span>
+                            <H4
+                                className="font-weight-normal text-muted m-0"
+                                aria-label={`${node.changesetsStats.open} ${pluralize(
+                                    'changeset',
+                                    node.changesetsStats.open
+                                )} open`}
+                            >
+                                {`${node.changesetsStats.open} open`}
+                            </H4>
                         }
                     />
                     <ChangesetStatusClosed
                         className="d-block d-sm-flex text-center"
-                        aria-labelledby={`changesets-closed-label-${node.id}`}
-                        role="group"
                         label={
-                            <span
-                                className="text-muted"
-                                aria-hidden={true}
-                                id={`changesets-closed-label-${node.id}`}
-                            >{`${node.changesetsStats.closed} closed`}</span>
+                            <H4
+                                className="font-weight-normal text-muted m-0"
+                                aria-label={`${node.changesetsStats.closed} ${pluralize(
+                                    'changeset',
+                                    node.changesetsStats.closed
+                                )} closed`}
+                            >
+                                {`${node.changesetsStats.closed} closed`}
+                            </H4>
                         }
                     />
                     <ChangesetStatusMerged
                         className="d-block d-sm-flex"
-                        aria-labelledby={`changesets-merged-label-${node.id}`}
-                        role="group"
                         label={
-                            <span
-                                className="text-muted"
-                                id={`changesets-merged-label-${node.id}`}
-                                aria-hidden={true}
-                            >{`${node.changesetsStats.merged} merged`}</span>
+                            <H4
+                                className="font-weight-normal text-muted m-0"
+                                aria-label={`${node.changesetsStats.merged} ${pluralize(
+                                    'changeset',
+                                    node.changesetsStats.merged
+                                )} merged`}
+                            >
+                                {`${node.changesetsStats.merged} merged`}
+                            </H4>
                         }
                     />
                 </>
             )}
-        </>
+        </li>
     )
 }
