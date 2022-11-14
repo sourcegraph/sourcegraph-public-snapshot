@@ -81,10 +81,6 @@ sg lint --help
 		if len(targets) == 0 {
 			// If no args provided, run all
 			for _, t := range linters.Targets {
-				// skip adding the formatting check
-				if lintNoFormatCheck.Get(cmd) && t.Name == linters.Formatting.Name {
-					continue
-				}
 				lintTargets = append(lintTargets, t)
 				targets = append(targets, t.Name)
 			}
@@ -95,7 +91,7 @@ sg lint --help
 			for _, c := range linters.Targets {
 				allLintTargetsMap[c.Name] = c
 			}
-			// only add a target it we know about it
+
 			for _, t := range targets {
 				target, ok := allLintTargetsMap[t]
 				if !ok {
@@ -105,11 +101,11 @@ sg lint --help
 				lintTargets = append(lintTargets, target)
 			}
 
-			// Always add the format check, unless specified otherwise!
-			if !lintNoFormatCheck.Get(cmd) {
-				lintTargets = append(lintTargets, linters.Formatting)
-				targets = append(targets, linters.Formatting.Name)
-			}
+		}
+		// Always add the format check, unless specified otherwise!
+		if !lintNoFormatCheck.Get(cmd) {
+			lintTargets = append(lintTargets, linters.Formatting)
+			targets = append(targets, linters.Formatting.Name)
 		}
 
 		repoState, err := repo.GetState(cmd.Context)
@@ -126,7 +122,7 @@ sg lint --help
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runner.Check(cmd.Context, repoState)
 	},
-	Subcommands: lintTargets(linters.Targets).Commands(),
+	Subcommands: lintTargets(append(linters.Targets, linters.Formatting)).Commands(),
 }
 
 type lintTargets []linters.Target
@@ -150,18 +146,21 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 				}
 
 				lintTargets := []linters.Target{target}
+				targets := []string{target.Name}
 				// Always add the format check, unless specified otherwise!
 				if !lintNoFormatCheck.Get(cmd) && target.Name != linters.Formatting.Name {
 					lintTargets = append(lintTargets, linters.Formatting)
+					targets = append(targets, linters.Formatting.Name)
+
 				}
 
 				runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), lintTargets...)
 				if lintFix.Get(cmd) {
-					std.Out.WriteNoticef("Fixing checks from target: %s", target.Name)
+					std.Out.WriteNoticef("Fixing checks from target: %s", strings.Join(targets, ", "))
 					return runner.Fix(cmd.Context, repoState)
 				}
 				runner.FailFast = lintFailFast.Get(cmd)
-				std.Out.WriteNoticef("Running checks from target: %s", target.Name)
+				std.Out.WriteNoticef("Running checks from target: %s", strings.Join(targets, ", "))
 				return runner.Check(cmd.Context, repoState)
 			},
 			// Completions to chain multiple commands
