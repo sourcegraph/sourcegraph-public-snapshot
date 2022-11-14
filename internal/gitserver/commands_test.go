@@ -3112,7 +3112,8 @@ filename format.go
 31fee45604949934710ada68f0b307c4726fb4e8 15 19 6
 filename format.go
 31fee45604949934710ada68f0b307c4726fb4e8 23 27 1
-filename format.go`
+filename format.go
+`
 
 var testGitBlameOutputHunks = []*Hunk{
 	{

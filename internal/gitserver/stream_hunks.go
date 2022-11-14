@@ -86,6 +86,7 @@ func (p hunkParser) parse(ctx context.Context) {
 	for {
 		if err := ctx.Err(); err != nil {
 			close(p.done)
+			break
 		}
 
 		// Do we have more to read?
