@@ -89,6 +89,7 @@ var Targets = []Target{
 			bashSyntax,
 		},
 	},
+	Formatting,
 }
 
 var Formatting = Target{

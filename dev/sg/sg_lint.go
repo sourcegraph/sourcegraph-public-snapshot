@@ -80,8 +80,12 @@ sg lint --help
 
 		if len(targets) == 0 {
 			// If no args provided, run all
-			lintTargets = linters.Targets
-			for _, t := range lintTargets {
+			for _, t := range linters.Targets {
+				if lintNoFormatCheck.Get(cmd) {
+					continue
+				}
+
+				lintTargets = append(lintTargets, t)
 				targets = append(targets, t.Name)
 			}
 
@@ -92,20 +96,26 @@ sg lint --help
 				allLintTargetsMap[c.Name] = c
 			}
 
+			hasFormatTarget := false
 			for _, t := range targets {
 				target, ok := allLintTargetsMap[t]
 				if !ok {
 					std.Out.WriteFailuref("unrecognized target %q provided", t)
 					return flag.ErrHelp
 				}
+				if target.Name == linters.Formatting.Name {
+					hasFormatTarget = true
+				}
+
 				lintTargets = append(lintTargets, target)
 			}
 
-		}
-		// Always add the format check, unless specified otherwise!
-		if !lintNoFormatCheck.Get(cmd) {
-			lintTargets = append(lintTargets, linters.Formatting)
-			targets = append(targets, linters.Formatting.Name)
+			// If we haven't added the format target already, add it! Unless specified otherwise
+			if !lintNoFormatCheck.Get(cmd) && !hasFormatTarget {
+				lintTargets = append(lintTargets, linters.Formatting)
+				targets = append(targets, linters.Formatting.Name)
+
+			}
 		}
 
 		repoState, err := repo.GetState(cmd.Context)
