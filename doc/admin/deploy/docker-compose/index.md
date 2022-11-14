@@ -46,9 +46,9 @@ A step by step guide to install Sourcegraph with Docker Compose.
 
 > NOTE: When forking the repository, make sure the box labeled, "Copy the master branch only", is unchecked. Checking this box will prevent the repository tags from being copied and will result in an error in a later step. 
 
+<span class="virtual-br"></span>
 
 > WARNING: In GitHub, the forks of public repositories are also public. Create a private copy following the [official docs on duplicating a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository) is strongly recommended if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository. However, the preferable approach would be to use a Secrets Management Service. 
-
 
 #### Create a public or private copy of the deployment repository
 
