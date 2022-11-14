@@ -60,8 +60,17 @@ func TestWebhooksHandler(t *testing.T) {
 		u.ID,
 		nil,
 	)
-
 	require.NoError(t, err)
+
+	bbServerWH, err := dbWebhooks.Create(
+		context.Background(),
+		extsvc.KindBitbucketServer,
+		"http://bitbucket.com",
+		u.ID,
+		types.NewUnencryptedSecret("bbsecret"),
+	)
+	require.NoError(t, err)
+
 	wr := WebhookRouter{
 		DB: db,
 	}
@@ -190,6 +199,61 @@ func TestWebhooksHandler(t *testing.T) {
 		require.NoError(t, err)
 		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
 		req.Header.Set("X-Github-Event", "member")
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	})
+
+	t.Run("correct Bitbucket Server secret returns 200", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, bbServerWH.UUID)
+
+		h := hmac.New(sha1.New, []byte("bbsecret"))
+		payload := []byte(`{"body": "text"}`)
+		h.Write(payload)
+		res := h.Sum(nil)
+
+		wr.handlers = map[string]webhookEventHandlers{
+			extsvc.KindBitbucketServer: {
+				"ping": []WebhookHandler{fakeWebhookHandler},
+			},
+		}
+
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		require.NoError(t, err)
+		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
+		req.Header.Set("X-Event-Key", "ping")
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+		logs, _, err := db.WebhookLogs(keyring.Default().WebhookLogKey).List(context.Background(), database.WebhookLogListOpts{
+			WebhookID: &bbServerWH.ID,
+		})
+		assert.NoError(t, err)
+		assert.Len(t, logs, 1)
+		for _, log := range logs {
+			assert.Equal(t, bbServerWH.ID, *log.WebhookID)
+		}
+	})
+
+	t.Run("incorrect Bitbucket server secret returns 400", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, bbServerWH.UUID)
+
+		h := hmac.New(sha1.New, []byte("wrongsecret"))
+		payload := []byte(`{"body": "text"}`)
+		h.Write(payload)
+		res := h.Sum(nil)
+
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		require.NoError(t, err)
+		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
+		req.Header.Set("X-Event-Key", "ping")
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := http.DefaultClient.Do(req)

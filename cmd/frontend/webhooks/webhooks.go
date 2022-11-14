@@ -116,7 +116,8 @@ func webhookHandler(logger log.Logger, db database.DB, wh *WebhookRouter) http.H
 			wh.handleGitLabWebHook(logger, w, r, webhook.CodeHostURN, secret)
 			return
 		case extsvc.KindBitbucketServer:
-			// TODO: handle Bitbucket Server secret verification
+			wh.handleBitbucketServerWebhook(logger, w, r, webhook.CodeHostURN, secret)
+			return
 		case extsvc.KindBitbucketCloud:
 			// TODO: handle Bitbucket Cloud secret verification
 		}
