@@ -22,7 +22,7 @@ const (
 func TestSubRepoPermissionsPerforce(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	createPerforceExternalService(t, false)
+	createPerforceExternalService(t)
 	userClient, repoName := createTestUserAndWaitForRepo(t)
 
 	// Test cases
@@ -81,7 +81,7 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 func TestSubRepoPermissionsSearch(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	createPerforceExternalService(t, false)
+	createPerforceExternalService(t)
 	userClient, _ := createTestUserAndWaitForRepo(t)
 
 	err := client.WaitForReposToBeIndexed(perforceRepoName)
