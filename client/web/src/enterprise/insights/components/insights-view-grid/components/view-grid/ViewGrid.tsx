@@ -1,15 +1,33 @@
-import { FC, PropsWithChildren, useCallback, useLayoutEffect, useMemo, useRef } from 'react'
+import React, {
+    createContext,
+    FC,
+    forwardRef,
+    PropsWithChildren,
+    ReactElement,
+    useCallback,
+    useContext,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import {
+    Layout,
     Layout as ReactGridLayout,
     Layouts as ReactGridLayouts,
     Responsive as ResponsiveGridLayout,
 } from 'react-grid-layout'
+import { Key } from 'ts-key-enum'
+import { useMergeRefs } from 'use-callback-ref'
 
 import { isFirefox } from '@sourcegraph/common'
 import { useMeasure } from '@sourcegraph/wildcard'
+
+import { Direction, findNextLayout } from './focus-management'
 
 import styles from './ViewGrid.module.scss'
 
@@ -25,6 +43,20 @@ export const DEFAULT_HEIGHT = 3.25
 export const ROW_HEIGHT = 6 * 16 // 6rem
 export const CONTAINER_PADDING: [number, number] = [0, 0]
 export const GRID_MARGIN: [number, number] = [12, 12]
+
+function findBreakpointByWidth(width: number): BreakpointName {
+    let currentBreakpoint: BreakpointName = 'xs'
+
+    for (let index = 0; index <= BREAKPOINTS_NAMES.length - 1; index++) {
+        const breakPointMinWidth = BREAKPOINTS[BREAKPOINTS_NAMES[index]]
+
+        if (width >= breakPointMinWidth) {
+            currentBreakpoint = BREAKPOINTS_NAMES[index]
+        }
+    }
+
+    return currentBreakpoint
+}
 
 const DEFAULT_VIEWS_LAYOUT_GENERATOR = (viewIds: string[]): ReactGridLayouts =>
     Object.fromEntries(
@@ -49,6 +81,16 @@ const DEFAULT_VIEWS_LAYOUT_GENERATOR = (viewIds: string[]): ReactGridLayouts =>
                 ] as const
         )
     )
+
+interface GridViewContextInfo {
+    gridElements: Map<string, HTMLElement>
+    activeLayout: Layout[]
+}
+
+const GridViewContext = createContext<GridViewContextInfo>({
+    gridElements: new Map(),
+    activeLayout: [],
+})
 
 export type ViewGridProps =
     | {
@@ -89,9 +131,17 @@ export const ViewGrid: FC<PropsWithChildren<ViewGridProps & ViewGridCommonProps>
     } = props
 
     const gridRef = useRef<HTMLDivElement>(null)
+    const [gridElements] = useState(() => new Map<string, HTMLElement>())
     const [, { width }] = useMeasure(gridRef.current)
 
     const gridLayouts = useMemo(() => layouts ?? DEFAULT_VIEWS_LAYOUT_GENERATOR(viewIds), [layouts, viewIds])
+    const activeBreakpoint = useMemo(() => findBreakpointByWidth(width), [width])
+
+    const context = useMemo(() => ({ gridElements, activeLayout: gridLayouts[activeBreakpoint] }), [
+        gridElements,
+        gridLayouts,
+        activeBreakpoint,
+    ])
 
     const handleResizeStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item, newItem) => onResizeStart(newItem),
@@ -125,24 +175,86 @@ export const ViewGrid: FC<PropsWithChildren<ViewGridProps & ViewGridCommonProps>
     }, [])
 
     return (
-        <ResponsiveGridLayout
-            breakpoints={BREAKPOINTS}
-            cols={COLUMNS}
-            rowHeight={ROW_HEIGHT}
-            containerPadding={CONTAINER_PADDING}
-            margin={GRID_MARGIN}
-            innerRef={gridRef}
-            width={width}
-            autoSize={true}
-            layouts={gridLayouts}
-            useCSSTransforms={useCSSTransforms}
-            onResizeStart={handleResizeStart}
-            onResizeStop={handleResizeStop}
-            onDragStart={handleDragStart}
-            onLayoutChange={onLayoutChange}
-            className={classNames(className, styles.viewGrid)}
-        >
-            {width && children}
-        </ResponsiveGridLayout>
+        <GridViewContext.Provider value={context}>
+            <ResponsiveGridLayout
+                breakpoints={BREAKPOINTS}
+                cols={COLUMNS}
+                rowHeight={ROW_HEIGHT}
+                containerPadding={CONTAINER_PADDING}
+                margin={GRID_MARGIN}
+                innerRef={gridRef}
+                width={width}
+                autoSize={true}
+                layouts={gridLayouts}
+                useCSSTransforms={useCSSTransforms}
+                onResizeStart={handleResizeStart}
+                onResizeStop={handleResizeStop}
+                onDragStart={handleDragStart}
+                onLayoutChange={onLayoutChange}
+                className={classNames(className, styles.viewGrid)}
+            >
+                {width && children}
+            </ResponsiveGridLayout>
+        </GridViewContext.Provider>
     )
 }
+
+const KEY_NAVIGATION_DIRECTIONS: Partial<Record<Key, Direction>> = {
+    [Key.ArrowUp]: 'top',
+    [Key.ArrowRight]: 'right',
+    [Key.ArrowDown]: 'bottom',
+    [Key.ArrowLeft]: 'left',
+}
+
+interface ViewGridItemProps {
+    id: string
+    children: React.ReactElement
+}
+
+export const ViewGridItem = forwardRef<HTMLElement, ViewGridItemProps>((props, ref) => {
+    const { children, id, ...attributes } = props
+
+    const { gridElements, activeLayout } = useContext(GridViewContext)
+    const mergedRef = useMergeRefs<HTMLElement>([ref, (children as any).ref])
+
+    useEffect(() => {
+        if (!mergedRef.current) {
+            return
+        }
+
+        gridElements.set(id, mergedRef.current)
+
+        return () => {
+            gridElements.delete(id)
+        }
+    }, [id, mergedRef, gridElements])
+
+    const handleKeydown = useCallback(
+        (event: KeyboardEvent): void => {
+            const direction = KEY_NAVIGATION_DIRECTIONS[event.key as Key]
+
+            // No support key, just skip the navigation action and do nothing
+            if (!direction) {
+                return
+            }
+
+            const nextLayout = findNextLayout(direction, id, activeLayout)
+            const nextLayoutElement = nextLayout ? gridElements.get(nextLayout.i) : null
+
+            if (nextLayoutElement) {
+                nextLayoutElement.focus()
+            }
+        },
+        [activeLayout, gridElements, id]
+    )
+
+    if (React.isValidElement(children)) {
+        return React.cloneElement(children as ReactElement, {
+            ...attributes,
+            ref: mergedRef,
+            onKeyDown: handleKeydown,
+        })
+    }
+
+    return children
+})

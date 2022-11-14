@@ -5568,7 +5568,7 @@ Query: `sum by (instance) (src_gitserver_search_running{instance=~`${shard:regex
 
 #### gitserver: repos_disk_reads_sec
 
-<p class="subtitle">Read request rate over 2m (per instance)</p>
+<p class="subtitle">Read request rate over 1m (per instance)</p>
 
 The number of read requests that were issued to the device per second.
 
@@ -5583,7 +5583,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10060
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -5591,7 +5591,7 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 #### gitserver: repos_disk_writes_sec
 
-<p class="subtitle">Write request rate over 2m (per instance)</p>
+<p class="subtitle">Write request rate over 1m (per instance)</p>
 
 The number of write requests that were issued to the device per second.
 
@@ -5606,7 +5606,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10060
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -5614,7 +5614,7 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 #### gitserver: repos_disk_read_throughput
 
-<p class="subtitle">Read throughput over 2m (per instance)</p>
+<p class="subtitle">Read throughput over 1m (per instance)</p>
 
 The amount of data that was read from the device per second.
 
@@ -5629,7 +5629,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10061
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -5637,7 +5637,7 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 #### gitserver: repos_disk_write_throughput
 
-<p class="subtitle">Write throughput over 2m (per instance)</p>
+<p class="subtitle">Write throughput over 1m (per instance)</p>
 
 The amount of data that was written to the device per second.
 
@@ -5652,7 +5652,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10061
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -5660,7 +5660,7 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 #### gitserver: repos_disk_read_duration
 
-<p class="subtitle">Average read duration over 2m (per instance)</p>
+<p class="subtitle">Average read duration over 1m (per instance)</p>
 
 The average time for read requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
 
@@ -5675,7 +5675,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10062
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[1m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[1m])))))))`
 
 </details>
 
@@ -5683,7 +5683,7 @@ Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",i
 
 #### gitserver: repos_disk_write_duration
 
-<p class="subtitle">Average write duration over 2m (per instance)</p>
+<p class="subtitle">Average write duration over 1m (per instance)</p>
 
 The average time for write requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
 
@@ -5698,7 +5698,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10062
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[1m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[1m])))))))`
 
 </details>
 
@@ -5706,7 +5706,7 @@ Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",i
 
 #### gitserver: repos_disk_read_request_size
 
-<p class="subtitle">Average read request size over 2m (per instance)</p>
+<p class="subtitle">Average read request size over 1m (per instance)</p>
 
 The average size of read requests that were issued to the device.
 
@@ -5721,7 +5721,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10063
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[1m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[1m])))))))`
 
 </details>
 
@@ -5729,7 +5729,7 @@ Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",i
 
 #### gitserver: repos_disk_write_request_size)
 
-<p class="subtitle">Average write request size over 2m (per instance)</p>
+<p class="subtitle">Average write request size over 1m (per instance)</p>
 
 The average size of write requests that were issued to the device.
 
@@ -5744,7 +5744,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10063
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[1m])))))) / ((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[1m])))))))`
 
 </details>
 
@@ -5752,7 +5752,7 @@ Query: `(((max by (instance) (gitserver_mount_point_info{mount_name="reposDir",i
 
 #### gitserver: repos_disk_reads_merged_sec
 
-<p class="subtitle">Merged read request rate over 2m (per instance)</p>
+<p class="subtitle">Merged read request rate over 1m (per instance)</p>
 
 The number of read requests merged per second that were queued to the device.
 
@@ -5767,7 +5767,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10064
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -5775,7 +5775,7 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 #### gitserver: repos_disk_writes_merged_sec
 
-<p class="subtitle">Merged writes request rate over 2m (per instance)</p>
+<p class="subtitle">Merged writes request rate over 1m (per instance)</p>
 
 The number of write requests merged per second that were queued to the device.
 
@@ -5790,7 +5790,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10064
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -5798,7 +5798,7 @@ Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",ins
 
 #### gitserver: repos_disk_average_queue_size
 
-<p class="subtitle">Average queue size over 2m (per instance)</p>
+<p class="subtitle">Average queue size over 1m (per instance)</p>
 
 The number of I/O operations that were being queued or being serviced. See https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
 
@@ -5813,7 +5813,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10065
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (gitserver_mount_point_info{mount_name="reposDir",instance=~`${shard:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -12273,15 +12273,351 @@ Query: `max(rate(src_repoupdater_sched_error[1m]))`
 
 ### Repo Updater: Permissions
 
+#### repo-updater: permissions_syncs_scheduled_reason
+
+<p class="subtitle">Number of users/repos scheduled for permissions sync grouped by reason</p>
+
+Indicates the number of users/repos scheduled for permissions sync grouped by reason.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (type) (src_repoupdater_perms_syncer_items_sync_scheduled)`
+
+</details>
+
+<br />
+
+#### repo-updater: permissions_syncs_scheduled_priority
+
+<p class="subtitle">Number of users/repos scheduled for permissions sync grouped by priority</p>
+
+Indicates the number of users/repos scheduled for permissions sync grouped by priority.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (priority) (src_repoupdater_perms_syncer_items_sync_scheduled)`
+
+</details>
+
+<br />
+
+#### repo-updater: user_success_syncs_total
+
+<p class="subtitle">Total number of user permissions syncs</p>
+
+Indicates the total number of user permissions sync completed.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100110` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(src_repoupdater_perms_syncer_success_syncs{type="user"})`
+
+</details>
+
+<br />
+
+#### repo-updater: user_success_syncs
+
+<p class="subtitle">Number of user permissions syncs [5m]</p>
+
+Indicates the number of users permissions syncs completed.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_repoupdater_perms_syncer_success_syncs{type="user"}[5m]))`
+
+</details>
+
+<br />
+
+#### repo-updater: user_initial_syncs
+
+<p class="subtitle">Number of first user permissions syncs [5m]</p>
+
+Indicates the number of permissions syncs done for the first time for the user.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100112` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_repoupdater_perms_syncer_initial_syncs{type="user"}[5m]))`
+
+</details>
+
+<br />
+
+#### repo-updater: user_failed_syncs
+
+<p class="subtitle">Number of user permissions failed syncs [5m]</p>
+
+Indicates the number of users permissions syncs failed.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100120` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_repoupdater_perms_syncer_failed_syncs{type="user"}[5m]))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_success_syncs_total
+
+<p class="subtitle">Total number of repo permissions syncs</p>
+
+Indicates the total number of repo permissions sync completed.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100130` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(src_repoupdater_perms_syncer_success_syncs{type="repo"})`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_success_syncs
+
+<p class="subtitle">Number of repo permissions syncs [5m]</p>
+
+Indicates the number of repos permissions syncs completed.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100131` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_repoupdater_perms_syncer_success_syncs{type="repo"}[5m]))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_initial_syncs
+
+<p class="subtitle">Number of first repo permissions syncs [5m]</p>
+
+Indicates the number of permissions syncs done for the first time for the repo.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100132` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_repoupdater_perms_syncer_initial_syncs{type="repo"}[5m]))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_failed_syncs
+
+<p class="subtitle">Number of repo permissions failed syncs [5m]</p>
+
+Indicates the number of repos permissions syncs failed in last 5 minute.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100140` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_repoupdater_perms_syncer_failed_syncs{type="repo"}[5m]))`
+
+</details>
+
+<br />
+
+#### repo-updater: users_consecutive_sync_delay
+
+<p class="subtitle">Max duration between two consecutive permissions sync for user (minutes) [1m]</p>
+
+Indicates the max delay between two consecutive permissions sync for a user during the period.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100150` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="user"} [1m]) / 60.0)`
+
+</details>
+
+<br />
+
+#### repo-updater: repos_consecutive_sync_delay
+
+<p class="subtitle">Max duration between two consecutive permissions sync for repo (minutes) [1m]</p>
+
+Indicates the max delay between two consecutive permissions sync for a repo during the period.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100151` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="repo"} [1m]) / 60.0)`
+
+</details>
+
+<br />
+
+#### repo-updater: users_first_sync_delay
+
+<p class="subtitle">Max duration between user creation and first permissions sync (minutes) [1m]</p>
+
+Indicates the max delay between user creation and their permissions sync
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100160` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{type="user"} [1m]) / 60.0)`
+
+</details>
+
+<br />
+
+#### repo-updater: repos_first_sync_delay
+
+<p class="subtitle">Max duration between repo creation and first permissions sync (minutes) [1m]</p>
+
+Indicates the max delay between repo creation and their permissions sync
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100161` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(max_over_time (src_repoupdater_perms_syncer_perms_first_sync_delay{type="repo"} [1m]) / 60.0)`
+
+</details>
+
+<br />
+
+#### repo-updater: permissions_found_count
+
+<p class="subtitle">Number of permissions found during user/repo permissions sync</p>
+
+Indicates the number permissions found during users/repos permissions sync.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100170` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by (type) (src_repoupdater_perms_syncer_perms_found)`
+
+</details>
+
+<br />
+
+#### repo-updater: permissions_found_avg
+
+<p class="subtitle">Average number of permissions found during permissions sync per user/repo</p>
+
+Indicates the average number permissions found during permissions sync per user/repo.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100171` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `avg by (type) (src_repoupdater_perms_syncer_perms_found)`
+
+</details>
+
+<br />
+
 #### repo-updater: perms_syncer_perms
 
 <p class="subtitle">Time gap between least and most up to date permissions</p>
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-perms) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100100` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100180` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -12298,9 +12634,9 @@ Query: `max by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)`
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-stale-perms) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100181` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -12317,9 +12653,9 @@ Query: `max by (type) (src_repoupdater_perms_syncer_stale_perms)`
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-no-perms) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100190` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -12336,9 +12672,9 @@ Query: `max by (type) (src_repoupdater_perms_syncer_no_perms)`
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-outdated-perms) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100111` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100191` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -12355,9 +12691,9 @@ Query: `max by (type) (src_repoupdater_perms_syncer_outdated_perms)`
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-sync-duration) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100120` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100200` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -12374,9 +12710,9 @@ Query: `histogram_quantile(0.95, max by (le, type) (rate(src_repoupdater_perms_s
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-queue-size) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100121` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100201` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -12393,9 +12729,9 @@ Query: `max(src_repoupdater_perms_syncer_queue_size)`
 
 Refer to the [alerts reference](./alerts.md#repo-updater-perms-syncer-sync-errors) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100130` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100210` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -12415,9 +12751,9 @@ More about repository permissions synchronization [here](https://docs.sourcegrap
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100131` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100211` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -13908,7 +14244,7 @@ Query: `sum by(instance) (rate(searcher_service_request_total[10m]))`
 
 #### searcher: cache_disk_reads_sec
 
-<p class="subtitle">Read request rate over 2m (per instance)</p>
+<p class="subtitle">Read request rate over 1m (per instance)</p>
 
 The number of read requests that were issued to the device per second.
 
@@ -13923,7 +14259,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100100`
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -13931,7 +14267,7 @@ Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",inst
 
 #### searcher: cache_disk_writes_sec
 
-<p class="subtitle">Write request rate over 2m (per instance)</p>
+<p class="subtitle">Write request rate over 1m (per instance)</p>
 
 The number of write requests that were issued to the device per second.
 
@@ -13946,7 +14282,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100101`
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -13954,7 +14290,7 @@ Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",inst
 
 #### searcher: cache_disk_read_throughput
 
-<p class="subtitle">Read throughput over 2m (per instance)</p>
+<p class="subtitle">Read throughput over 1m (per instance)</p>
 
 The amount of data that was read from the device per second.
 
@@ -13969,7 +14305,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100110`
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -13977,7 +14313,7 @@ Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",inst
 
 #### searcher: cache_disk_write_throughput
 
-<p class="subtitle">Write throughput over 2m (per instance)</p>
+<p class="subtitle">Write throughput over 1m (per instance)</p>
 
 The amount of data that was written to the device per second.
 
@@ -13992,7 +14328,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100111`
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -14000,7 +14336,7 @@ Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",inst
 
 #### searcher: cache_disk_read_duration
 
-<p class="subtitle">Average read duration over 2m (per instance)</p>
+<p class="subtitle">Average read duration over 1m (per instance)</p>
 
 The average time for read requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
 
@@ -14015,7 +14351,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100120`
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[1m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[1m])))))))`
 
 </details>
 
@@ -14023,7 +14359,7 @@ Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",in
 
 #### searcher: cache_disk_write_duration
 
-<p class="subtitle">Average write duration over 2m (per instance)</p>
+<p class="subtitle">Average write duration over 1m (per instance)</p>
 
 The average time for write requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
 
@@ -14038,7 +14374,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100121`
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[1m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[1m])))))))`
 
 </details>
 
@@ -14046,7 +14382,7 @@ Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",in
 
 #### searcher: cache_disk_read_request_size
 
-<p class="subtitle">Average read request size over 2m (per instance)</p>
+<p class="subtitle">Average read request size over 1m (per instance)</p>
 
 The average size of read requests that were issued to the device.
 
@@ -14061,7 +14397,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100130`
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[1m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[1m])))))))`
 
 </details>
 
@@ -14069,7 +14405,7 @@ Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",in
 
 #### searcher: cache_disk_write_request_size)
 
-<p class="subtitle">Average write request size over 2m (per instance)</p>
+<p class="subtitle">Average write request size over 1m (per instance)</p>
 
 The average size of write requests that were issued to the device.
 
@@ -14084,7 +14420,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100131`
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[1m])))))) / ((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[1m])))))))`
 
 </details>
 
@@ -14092,7 +14428,7 @@ Query: `(((max by (instance) (searcher_mount_point_info{mount_name="cacheDir",in
 
 #### searcher: cache_disk_reads_merged_sec
 
-<p class="subtitle">Merged read request rate over 2m (per instance)</p>
+<p class="subtitle">Merged read request rate over 1m (per instance)</p>
 
 The number of read requests merged per second that were queued to the device.
 
@@ -14107,7 +14443,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100140`
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -14115,7 +14451,7 @@ Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",inst
 
 #### searcher: cache_disk_writes_merged_sec
 
-<p class="subtitle">Merged writes request rate over 2m (per instance)</p>
+<p class="subtitle">Merged writes request rate over 1m (per instance)</p>
 
 The number of write requests merged per second that were queued to the device.
 
@@ -14130,7 +14466,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100141`
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -14138,7 +14474,7 @@ Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",inst
 
 #### searcher: cache_disk_average_queue_size
 
-<p class="subtitle">Average queue size over 2m (per instance)</p>
+<p class="subtitle">Average queue size over 1m (per instance)</p>
 
 The number of I/O operations that were being queued or being serviced. See https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
 
@@ -14153,7 +14489,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100150`
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (searcher_mount_point_info{mount_name="cacheDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -17383,7 +17719,7 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_
 
 #### zoekt: data_disk_reads_sec
 
-<p class="subtitle">Read request rate over 2m (per instance)</p>
+<p class="subtitle">Read request rate over 1m (per instance)</p>
 
 The number of read requests that were issued to the device per second.
 
@@ -17398,7 +17734,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100800` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -17406,7 +17742,7 @@ Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="index
 
 #### zoekt: data_disk_writes_sec
 
-<p class="subtitle">Write request rate over 2m (per instance)</p>
+<p class="subtitle">Write request rate over 1m (per instance)</p>
 
 The number of write requests that were issued to the device per second.
 
@@ -17421,7 +17757,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100801` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -17429,7 +17765,7 @@ Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="index
 
 #### zoekt: data_disk_read_throughput
 
-<p class="subtitle">Read throughput over 2m (per instance)</p>
+<p class="subtitle">Read throughput over 1m (per instance)</p>
 
 The amount of data that was read from the device per second.
 
@@ -17444,7 +17780,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100810` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -17452,7 +17788,7 @@ Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="index
 
 #### zoekt: data_disk_write_throughput
 
-<p class="subtitle">Write throughput over 2m (per instance)</p>
+<p class="subtitle">Write throughput over 1m (per instance)</p>
 
 The amount of data that was written to the device per second.
 
@@ -17467,7 +17803,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100811` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -17475,7 +17811,7 @@ Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="index
 
 #### zoekt: data_disk_read_duration
 
-<p class="subtitle">Average read duration over 2m (per instance)</p>
+<p class="subtitle">Average read duration over 1m (per instance)</p>
 
 The average time for read requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
 
@@ -17490,7 +17826,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100820` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_time_seconds_total{instance=~`node-exporter.*`}[1m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[1m])))))))`
 
 </details>
 
@@ -17498,7 +17834,7 @@ Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="ind
 
 #### zoekt: data_disk_write_duration
 
-<p class="subtitle">Average write duration over 2m (per instance)</p>
+<p class="subtitle">Average write duration over 1m (per instance)</p>
 
 The average time for write requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.
 
@@ -17513,7 +17849,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100821` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_write_time_seconds_total{instance=~`node-exporter.*`}[1m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[1m])))))))`
 
 </details>
 
@@ -17521,7 +17857,7 @@ Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="ind
 
 #### zoekt: data_disk_read_request_size
 
-<p class="subtitle">Average read request size over 2m (per instance)</p>
+<p class="subtitle">Average read request size over 1m (per instance)</p>
 
 The average size of read requests that were issued to the device.
 
@@ -17536,7 +17872,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100830` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_read_bytes_total{instance=~`node-exporter.*`}[1m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_completed_total{instance=~`node-exporter.*`}[1m])))))))`
 
 </details>
 
@@ -17544,7 +17880,7 @@ Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="ind
 
 #### zoekt: data_disk_write_request_size)
 
-<p class="subtitle">Average write request size over 2m (per instance)</p>
+<p class="subtitle">Average write request size over 1m (per instance)</p>
 
 The average size of write requests that were issued to the device.
 
@@ -17559,7 +17895,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100831` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[2m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[2m])))))))`
+Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_written_bytes_total{instance=~`node-exporter.*`}[1m])))))) / ((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_completed_total{instance=~`node-exporter.*`}[1m])))))))`
 
 </details>
 
@@ -17567,7 +17903,7 @@ Query: `(((max by (instance) (zoekt_indexserver_mount_point_info{mount_name="ind
 
 #### zoekt: data_disk_reads_merged_sec
 
-<p class="subtitle">Merged read request rate over 2m (per instance)</p>
+<p class="subtitle">Merged read request rate over 1m (per instance)</p>
 
 The number of read requests merged per second that were queued to the device.
 
@@ -17582,7 +17918,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100840` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_reads_merged_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -17590,7 +17926,7 @@ Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="index
 
 #### zoekt: data_disk_writes_merged_sec
 
-<p class="subtitle">Merged writes request rate over 2m (per instance)</p>
+<p class="subtitle">Merged writes request rate over 1m (per instance)</p>
 
 The number of write requests merged per second that were queued to the device.
 
@@ -17605,7 +17941,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100841` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_writes_merged_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -17613,7 +17949,7 @@ Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="index
 
 #### zoekt: data_disk_average_queue_size
 
-<p class="subtitle">Average queue size over 2m (per instance)</p>
+<p class="subtitle">Average queue size over 1m (per instance)</p>
 
 The number of I/O operations that were being queued or being serviced. See https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).
 
@@ -17628,7 +17964,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100850` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[2m])))))`
+Query: `(max by (instance) (zoekt_indexserver_mount_point_info{mount_name="indexDir",instance=~`${instance:regex}`} * on (device, nodename) group_left() (max by (device, nodename) (rate(node_disk_io_time_weighted_seconds_total{instance=~`node-exporter.*`}[1m])))))`
 
 </details>
 
@@ -20127,7 +20463,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegr
 
 ## Code Intelligence > Autoindexing
 
-<p class="subtitle">The service at `internal/codeintel/autoindexing`.</p>
+<p class="subtitle">The service at `enterprise/internal/codeintel/autoindexing`.</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing` on your Sourcegraph instance.
 
@@ -21160,7 +21496,7 @@ Query: `sum by (op)(increase(src_luasandbox_errors_total{job=~"^${source:regex}.
 
 ## Code Intelligence > Code Nav
 
-<p class="subtitle">The service at `internal/codeintel/codenav`.</p>
+<p class="subtitle">The service at `enterprise/internal/codeintel/codenav`.</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav` on your Sourcegraph instance.
 
@@ -21782,7 +22118,7 @@ Query: `sum by (op)(increase(src_codeintel_codenav_store_errors_total{job=~"^${s
 
 ## Code Intelligence > Policies
 
-<p class="subtitle">The service at `internal/codeintel/policies`.</p>
+<p class="subtitle">The service at `enterprise/internal/codeintel/policies`.</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/codeintel-policies/codeintel-policies` on your Sourcegraph instance.
 
@@ -22273,7 +22609,7 @@ Query: `sum(increase(src_codeintel_background_policies_updated_total_total{job=~
 
 ## Code Intelligence > Ranking
 
-<p class="subtitle">The service at `internal/codeintel/ranking`.</p>
+<p class="subtitle">The service at `enterprise/internal/codeintel/ranking`.</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking` on your Sourcegraph instance.
 
@@ -22757,7 +23093,7 @@ Query: `sum(increase(src_codeintel_codenav_ranking_bytes_deleted_total{job=~"^${
 
 ## Code Intelligence > Uploads
 
-<p class="subtitle">The service at `internal/codeintel/uploads`.</p>
+<p class="subtitle">The service at `enterprise/internal/codeintel/uploads`.</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads` on your Sourcegraph instance.
 

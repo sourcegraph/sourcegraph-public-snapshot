@@ -162,14 +162,14 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
 
     return (
         <InsightCard
-            role="listitem"
+            {...attributes}
             ref={cardElementRef}
             data-testid={`insight-card.${insight.id}`}
             aria-label={`${insight.title} insight`}
+            role="listitem"
             className={classNames(className, { [styles.cardWithFilters]: isFiltersOpen })}
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
-            {...attributes}
         >
             <InsightCardHeader
                 title={

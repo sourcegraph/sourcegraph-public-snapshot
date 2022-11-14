@@ -3,9 +3,13 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
 
-import { HighlightedFileResult, HighlightedFileVariables, HighlightResponseFormat } from '../graphql-operations'
+import {
+    HighlightedFileResult,
+    HighlightedFileVariables,
+    HighlightLineRange,
+    HighlightResponseFormat,
+} from '../graphql-operations'
 import { PlatformContext } from '../platform/context'
 import { makeRepoURI } from '../util/url'
 
@@ -64,6 +68,15 @@ const VSCE_HIGHLIGHTED_FILE_QUERY = gql`
         }
     }
 `
+
+export interface FetchFileParameters {
+    repoName: string
+    commitID: string
+    filePath: string
+    disableTimeout?: boolean
+    ranges: HighlightLineRange[]
+    format?: HighlightResponseFormat
+}
 
 /**
  * Fetches the specified highlighted file line ranges (`FetchFileParameters.ranges`) and returns

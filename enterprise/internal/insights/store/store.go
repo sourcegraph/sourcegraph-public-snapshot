@@ -23,12 +23,15 @@ import (
 // Interface is the interface describing a code insights store. See the Store struct
 // for actual API usage.
 type Interface interface {
+	WithOther(other basestore.ShareableStore) Interface
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
 	CountData(ctx context.Context, opts CountDataOpts) (int, error)
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
 	GetInsightSeriesRecordingTimes(ctx context.Context, id int, from *time.Time, to *time.Time) (types.InsightSeriesRecordingTimes, error)
+	LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
+	AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error
 }
 
 var _ Interface = &Store{}
@@ -70,10 +73,15 @@ var _ basestore.ShareableStore = &Store{}
 // underlying basestore.Store.
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{Store: s.Store.With(other), now: s.now}
+	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
 }
 
-var _ Interface = &Store{}
+// WithOther creates a new Store with the given basestore.Shareable store as the
+// underlying basestore.Store.
+// Needed to implement the basestore.Store interface
+func (s *Store) WithOther(other basestore.ShareableStore) Interface {
+	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
+}
 
 // SeriesPoint describes a single insights' series data point.
 //
@@ -779,3 +787,52 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	}
 	return rows.Err()
 }
+
+// LoadAggregatedIncompleteDatapoints returns incomplete datapoints for a given series aggregated for each reason and time. This will effectively
+// remove any repository granularity information from the result.
+func (s *Store) LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error) {
+	if seriesID == 0 {
+		return nil, errors.New("invalid seriesID")
+	}
+
+	q := "select reason, time from insight_series_incomplete_points where series_id = %s group by reason, time;"
+	rows, err := s.Query(ctx, sqlf.Sprintf(q, seriesID))
+	if err != nil {
+		return nil, err
+	}
+	return results, scanAll(rows, func(s scanner) (err error) {
+		var tmp IncompleteDatapoint
+		if err = rows.Scan(
+			&tmp.Reason,
+			&tmp.Time); err != nil {
+			return err
+		}
+		results = append(results, tmp)
+		return nil
+	})
+}
+
+type AddIncompleteDatapointInput struct {
+	SeriesID int
+	RepoID   *int
+	Reason   IncompleteReason
+	Time     time.Time
+}
+
+func (s *Store) AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error {
+	q := "insert into insight_series_incomplete_points (series_id, repo_id, reason, time) values (%s, %s, %s, %s) on conflict do nothing;"
+	return s.Exec(ctx, sqlf.Sprintf(q, input.SeriesID, input.RepoID, input.Reason, input.Time))
+}
+
+type IncompleteDatapoint struct {
+	Reason IncompleteReason
+	RepoId *int
+	Time   time.Time
+}
+
+type IncompleteReason string
+
+const (
+	ReasonTimeout IncompleteReason = "timeout"
+	ReasonGeneric IncompleteReason = "generic"
+)

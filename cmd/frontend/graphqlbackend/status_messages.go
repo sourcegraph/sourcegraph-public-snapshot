@@ -47,6 +47,13 @@ func (r *statusMessageResolver) ToSyncError() (*statusMessageResolver, bool) {
 	return r, r.message.SyncError != nil
 }
 
+func (r *statusMessageResolver) ToIndexingProgress() (*indexingProgressMessageResolver, bool) {
+	if r.message.Indexing != nil {
+		return &indexingProgressMessageResolver{message: r.message.Indexing}, true
+	}
+	return nil, false
+}
+
 func (r *statusMessageResolver) Message() (string, error) {
 	if r.message.Cloning != nil {
 		return r.message.Cloning.Message, nil
@@ -69,3 +76,10 @@ func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalS
 
 	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}, nil
 }
+
+type indexingProgressMessageResolver struct {
+	message *repos.IndexingProgress
+}
+
+func (r *indexingProgressMessageResolver) NotIndexed() int32 { return int32(r.message.NotIndexed) }
+func (r *indexingProgressMessageResolver) Indexed() int32    { return int32(r.message.Indexed) }

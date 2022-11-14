@@ -1,8 +1,9 @@
 import { Remote } from 'comlink'
 import { Observable } from 'rxjs'
 
-import { FetchFileParameters, HighlightRange } from '@sourcegraph/search-ui'
+import { HighlightRange } from '@sourcegraph/search-ui'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 

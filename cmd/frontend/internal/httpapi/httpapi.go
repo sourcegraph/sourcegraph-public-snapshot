@@ -28,7 +28,6 @@ import (
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	internalcodeintel "github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -149,9 +148,9 @@ func NewInternalHandler(
 	db database.DB,
 	schema *graphql.Schema,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	rankingService enterprise.RankingService,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
-	codeIntelServices internalcodeintel.Services,
 ) http.Handler {
 	logger := sglog.Scoped("InternalHandler", "frontend internal HTTP API handler")
 	if m == nil {
@@ -178,9 +177,8 @@ func NewInternalHandler(
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return searchcontexts.RepoRevs(ctx, db, repoIDs)
 		},
-		Indexers: search.Indexers(),
-		Ranking:  codeIntelServices.RankingService,
-
+		Indexers:               search.Indexers(),
+		Ranking:                rankingService,
 		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))

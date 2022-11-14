@@ -1152,11 +1152,7 @@ Input for a happiness feedback submission.
 """
 input HappinessFeedbackSubmissionInput {
     """
-    User's happiness rating, from 1-4.
-    """
-    score: Int!
-    """
-    The answer to "What's going well? What could be better?".
+    The feedback text from the user.
     """
     feedback: String
     """
@@ -1683,6 +1679,11 @@ type ExecutorSecret implements Node {
     particular scope.
     """
     scope: ExecutorSecretScope!
+    """
+    If true, this secret is defined in a namespace and a secret with the same key
+    is also defined in the global namespace, which this secret overwrites.
+    """
+    overwritesGlobalSecret: Boolean!
     """
     The namespace this secret belongs to. Null, if a global secret.
     Global secrets are available to every execution.
@@ -5102,6 +5103,22 @@ type GitBlob implements TreeEntry & File2 {
         """
         recursiveSingleChild: Boolean = false
     ): Boolean!
+    """
+    LFS is set if the GitBlob is a pointer to a file stored in LFS.
+    """
+    lfs: LFS
+}
+
+"""
+Information about a blob stored in Git Large File Storage (LFS).
+"""
+type LFS {
+    """
+    The size of the file in LFS in bytes.
+    Note: the file size in the GitBlob will be the size of the pointer not the file a
+    user checks out.
+    """
+    byteSize: BigInt!
 }
 
 """
@@ -7689,9 +7706,24 @@ type SyncError {
 }
 
 """
+FOR INTERNAL USE ONLY: A status message produced when repositories are being
+indexed for search.
+"""
+type IndexingProgress {
+    """
+    The number of repositories that have not been indexed yet.
+    """
+    notIndexed: Int!
+    """
+    The number of repositories that have been indexed.
+    """
+    indexed: Int!
+}
+
+"""
 FOR INTERNAL USE ONLY: A status message
 """
-union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
+union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError | IndexingProgress
 
 """
 An arbitrarily large integer encoded as a decimal string.
@@ -7914,9 +7946,19 @@ type Webhook implements Node {
     """
     updatedAt: DateTime!
     """
+    The user who last updated this webhook.
+    Null if the user was deleted or if the webhook hasn't been updated yet.
+    """
+    updatedBy: User
+    """
     When the webhook was created.
     """
     createdAt: DateTime!
+    """
+    The user who created this webhook.
+    Null if the user was deleted.
+    """
+    createdBy: User
 }
 
 """

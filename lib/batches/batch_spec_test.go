@@ -260,7 +260,7 @@ func TestOnQueryOrRepository_Branches(t *testing.T) {
 func TestSkippedStepsForRepo(t *testing.T) {
 	tests := map[string]struct {
 		spec        *BatchSpec
-		wantSkipped []int32
+		wantSkipped []int
 	}{
 		"no if": {
 			spec: &BatchSpec{
@@ -268,7 +268,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 1"},
 				},
 			},
-			wantSkipped: []int32{},
+			wantSkipped: []int{},
 		},
 
 		"if has static true value": {
@@ -277,7 +277,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 1", If: "true"},
 				},
 			},
-			wantSkipped: []int32{},
+			wantSkipped: []int{},
 		},
 
 		"one of many steps has if with static true value": {
@@ -288,7 +288,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 3"},
 				},
 			},
-			wantSkipped: []int32{},
+			wantSkipped: []int{},
 		},
 
 		"if has static non-true value": {
@@ -297,7 +297,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 1", If: "this is not true"},
 				},
 			},
-			wantSkipped: []int32{0},
+			wantSkipped: []int{0},
 		},
 
 		"one of many steps has if with static non-true value": {
@@ -308,7 +308,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 3"},
 				},
 			},
-			wantSkipped: []int32{1},
+			wantSkipped: []int{1},
 		},
 
 		"if expression that can be partially evaluated to true": {
@@ -317,7 +317,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 1", If: `${{ matches repository.name "github.com/sourcegraph/src*" }}`},
 				},
 			},
-			wantSkipped: []int32{},
+			wantSkipped: []int{},
 		},
 
 		"if expression that can be partially evaluated to false": {
@@ -326,7 +326,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 1", If: `${{ matches repository.name "horse" }}`},
 				},
 			},
-			wantSkipped: []int32{0},
+			wantSkipped: []int{0},
 		},
 
 		"one of many steps has if expression that can be evaluated to false": {
@@ -337,7 +337,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 3"},
 				},
 			},
-			wantSkipped: []int32{1},
+			wantSkipped: []int{1},
 		},
 
 		"if expression that can NOT be partially evaluated": {
@@ -346,7 +346,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 1", If: `${{ eq outputs.value "foobar" }}`},
 				},
 			},
-			wantSkipped: []int32{},
+			wantSkipped: []int{},
 		},
 	}
 
@@ -358,12 +358,12 @@ func TestSkippedStepsForRepo(t *testing.T) {
 			}
 
 			want := tt.wantSkipped
-			sort.Sort(sortableInt32(want))
-			have := make([]int32, 0, len(haveSkipped))
+			sort.Sort(sortableInt(want))
+			have := make([]int, 0, len(haveSkipped))
 			for s := range haveSkipped {
 				have = append(have, s)
 			}
-			sort.Sort(sortableInt32(have))
+			sort.Sort(sortableInt(have))
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
 			}
@@ -371,13 +371,13 @@ func TestSkippedStepsForRepo(t *testing.T) {
 	}
 }
 
-type sortableInt32 []int32
+type sortableInt []int
 
-func (s sortableInt32) Len() int { return len(s) }
+func (s sortableInt) Len() int { return len(s) }
 
-func (s sortableInt32) Less(i, j int) bool { return s[i] < s[j] }
+func (s sortableInt) Less(i, j int) bool { return s[i] < s[j] }
 
-func (s sortableInt32) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s sortableInt) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 func TestBatchSpec_RequiredEnvVars(t *testing.T) {
 	for name, tc := range map[string]struct {

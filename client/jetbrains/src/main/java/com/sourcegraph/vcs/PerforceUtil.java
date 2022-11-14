@@ -14,7 +14,7 @@ import java.util.Collection;
 public class PerforceUtil {
 
     @NotNull
-    // Returned format: perforce@perforce.company.com:depot/path/comes/here
+    // Returned format: perforce@perforce.company.com:depot-name.perforce
     public static String getRemoteRepoUrl(@NotNull Project project, @NotNull VirtualFile file) throws Exception {
         PerforceVcs vcs = PerforceVcs.getInstance(project);
         Collection<Pair<P4Connection, Collection<VirtualFile>>> rootsByConnections = vcs.getRootsByConnections();

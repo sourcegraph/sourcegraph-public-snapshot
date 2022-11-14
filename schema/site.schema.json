@@ -519,6 +519,14 @@
             }
           }
         },
+        "search.sanitize.patterns": {
+          "description": "A list of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. A pattern that is not a valid Go regular expression will have no effect.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "regex"
+          }
+        },
         "enableGithubInternalRepoVisibility": {
           "description": "Enable support for visilibity of internal Github repositories",
           "type": "boolean",
@@ -1149,6 +1157,16 @@
       "type": "string",
       "examples": ["4.1.0"]
     },
+    "executors.batcheshelperImage": {
+      "description": "The image to use for batch changes in executors. Use this value to pull from a custom image registry.",
+      "type": "string",
+      "default": "sourcegraph/batcheshelper"
+    },
+    "executors.batcheshelperImageTag": {
+      "description": "The tag to use for the batcheshelper image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
+      "type": "string",
+      "examples": ["4.1.0"]
+    },
     "executors.accessToken": {
       "description": "The shared secret between Sourcegraph and executors.",
       "type": "string",
@@ -1437,9 +1455,16 @@
       "description": "Maximum number of Code Insights queries initiated per second on a worker node.",
       "type": "number",
       "group": "CodeInsights",
-      "default": 2,
+      "default": 20,
       "examples": [10.0, 0.5],
       "!go": { "pointer": true }
+    },
+    "insights.query.worker.rateLimitBurst": {
+      "description": "The allowed burst rate for the Code Insights queries per second rate limiter.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 20,
+      "examples": [10, 20]
     },
     "insights.compute.graphql": {
       "description": "DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",

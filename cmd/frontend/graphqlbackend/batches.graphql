@@ -2080,10 +2080,9 @@ type BatchSpecWorkspaceStages {
     setup: [ExecutionLogEntry!]!
 
     """
-    Execution log entry related to running src batch exec.
-    This field is null, if the step had not been executed.
+    Execution log entries related to running the steps of the batch spec.
     """
-    srcExec: ExecutionLogEntry
+    srcExec: [ExecutionLogEntry!]!
 
     """
     Execution log entries related to tearing down the workspace.
@@ -2536,8 +2535,9 @@ type BatchSpecWorkspaceEnvironmentVariable {
     name: String!
     """
     The variable value.
+    If null, the variable will be populated from a secret.
     """
-    value: String!
+    value: String
 }
 
 """

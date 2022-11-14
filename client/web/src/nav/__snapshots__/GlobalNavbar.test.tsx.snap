@@ -3,7 +3,7 @@
 exports[`GlobalNavbar default 1`] = `
 <DocumentFragment>
   <nav
-    aria-label="Main Menu"
+    aria-label="Main"
     class="navbar"
   >
     <h1
@@ -190,13 +190,22 @@ exports[`GlobalNavbar default 1`] = `
           class="anchorLink link"
           href="https://about.sourcegraph.com"
         >
-          About 
-          <span
-            class="d-none d-sm-inline"
-          >
-            Sourcegraph
-          </span>
+          About
         </a>
+      </li>
+      <li
+        class="action"
+      >
+        <button
+          aria-expanded="false"
+          aria-label="Feedback"
+          class="btn btnSecondary btnOutline btnSm feedbackTrigger"
+          type="button"
+        >
+          <span>
+            Feedback
+          </span>
+        </button>
       </li>
       <li
         class="action"
@@ -220,23 +229,19 @@ exports[`GlobalNavbar default 1`] = `
     </ul>
   </nav>
   <div
-    class="w-100 px-3 pt-2"
+    class="w-100 px-3 py-2 border-bottom"
   >
-    <div
-      class="pb-2 border-bottom"
-    >
-      <searchnavbaritem
-        defaultsearchcontextspec=""
-        history="[object Object]"
-        location="[object Object]"
-        platformcontext="[object Object]"
-        routes=""
-        selectedsearchcontextspec=""
-        settingscascade="[object Object]"
-        telemetryservice="[object Object]"
-        themepreference="light"
-      />
-    </div>
+    <searchnavbaritem
+      defaultsearchcontextspec=""
+      history="[object Object]"
+      location="[object Object]"
+      platformcontext="[object Object]"
+      routes=""
+      selectedsearchcontextspec=""
+      settingscascade="[object Object]"
+      telemetryservice="[object Object]"
+      themepreference="light"
+    />
   </div>
 </DocumentFragment>
 `;

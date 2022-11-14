@@ -3,7 +3,7 @@ import { useMemo, useContext } from 'react'
 import { context, trace, Span, Context, Attributes, ROOT_CONTEXT } from '@opentelemetry/api'
 
 import { sharedSpanStore, areOnTheSameTrace } from '../../sdk'
-import { TraceContext, reactManualTracer } from '../constants'
+import { TraceContext, reactManualTracer, ReactAttributes } from '../constants'
 
 import type { TraceSpanProviderProps } from './TraceSpanProvider'
 
@@ -43,8 +43,10 @@ export function useNewTraceContextProviderValue(
     return useMemo(() => {
         const { name, attributes, options: spanOptions, context: customContext } = options
         const parentContext = getReactTracerContext(customContext || providedParentContext)
-
         const newSpan = reactManualTracer.startSpan(name, spanOptions, parentContext)
+
+        newSpan.setAttribute(ReactAttributes.ComponentName, name)
+
         const newContext = trace.setSpan(parentContext, newSpan)
 
         if (attributes) {
@@ -61,8 +63,9 @@ export function useNewTraceContextProviderValue(
 }
 
 /**
- * A wrapper around `span.setAttributes()` that prefixes attribute names with `render.` string.
- * This namespacing is valuable for data exploration with tools like Honeycomb.
+ * A wrapper around `span.setAttributes()` that prefixes attribute names with
+ * `ReactAttributes.ComponentPropPrefix` string. This namespacing is valuable for
+ * data exploration with tools like Honeycomb.
  */
 const setRenderAttributes = (span: Span | undefined, attributes: Attributes): void => {
     if (!span) {
@@ -70,7 +73,7 @@ const setRenderAttributes = (span: Span | undefined, attributes: Attributes): vo
     }
 
     const prefixedAttributes = Object.fromEntries(
-        Object.entries(attributes).map(([key, value]) => [`render.${key}`, value])
+        Object.entries(attributes).map(([key, value]) => [`${ReactAttributes.ComponentPropPrefix}.${key}`, value])
     )
 
     span.setAttributes(prefixedAttributes)

@@ -47,8 +47,8 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 RUN wget -O git-$GIT_VERSION.tar.gz https://github.com/microsoft/git/archive/refs/tags/v$GIT_VERSION.tar.gz
 RUN apk add --no-cache $PACKAGES
 
-RUN tar -xvf git-$GIT_VERSION.tar.gz
-WORKDIR git-$GIT_VERSION
+RUN tar -xf git-$GIT_VERSION.tar.gz
+WORKDIR /git-$GIT_VERSION
 RUN make -j12 prefix=/usr/local \
   && make -j12 prefix=/usr/local install
 

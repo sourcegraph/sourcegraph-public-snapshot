@@ -36,7 +36,7 @@ const (
 	testIDToken  = "testIDToken"
 )
 
-// new OIDCIDServer returns a new running mock OIDC ID Provider service. It is
+// new OIDCIDServer returns a new running mock OIDC ID provider service. It is
 // the caller's responsibility to call Close().
 func newOIDCIDServer(t *testing.T, code string, providerConfig *schema.SourcegraphOperatorAuthProvider) (server *httptest.Server, emailPtr *string) {
 	s := http.NewServeMux()
@@ -100,7 +100,7 @@ func newOIDCIDServer(t *testing.T, code string, providerConfig *schema.Sourcegra
 	})
 
 	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-		if op.ExternalAccount.ServiceType == providerType &&
+		if op.ExternalAccount.ServiceType == ProviderType &&
 			op.ExternalAccount.ServiceID == providerConfig.Issuer &&
 			op.ExternalAccount.ClientID == testClientID &&
 			op.ExternalAccount.AccountID == testOIDCUser {
@@ -123,13 +123,13 @@ func TestMiddleware(t *testing.T) {
 		ClientID:          testClientID,
 		ClientSecret:      "testClientSecret",
 		LifecycleDuration: 60,
-		Type:              providerType,
+		Type:              ProviderType,
 	}
 	oidcIDServer, emailPtr := newOIDCIDServer(t, testCode, &providerConfig)
 	defer oidcIDServer.Close()
 	providerConfig.Issuer = oidcIDServer.URL
 
-	mockProvider := newProvider(providerConfig).(*provider)
+	mockProvider := NewProvider(providerConfig).(*provider)
 	providers.MockProviders = []providers.Provider{mockProvider}
 	defer func() { providers.MockProviders = nil }()
 
@@ -144,7 +144,7 @@ func TestMiddleware(t *testing.T) {
 		[]*extsvc.Account{
 			{
 				AccountSpec: extsvc.AccountSpec{
-					ServiceType: providerType,
+					ServiceType: ProviderType,
 				},
 			},
 		},

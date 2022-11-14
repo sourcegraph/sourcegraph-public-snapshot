@@ -2,16 +2,24 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/url"
+	"os"
+	"time"
+
+	"github.com/xanzy/go-gitlab"
+
+	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/xanzy/go-gitlab"
 )
 
 type GitLabCodeHost struct {
 	def *CodeHostDefinition
 	c   *gitlab.Client
 }
+
+var _ CodeHostDestination = (*GitLabCodeHost)(nil)
 
 func NewGitLabCodeHost(_ context.Context, def *CodeHostDefinition) (*GitLabCodeHost, error) {
 	baseURL, err := url.Parse(def.URL)
@@ -28,6 +36,75 @@ func NewGitLabCodeHost(_ context.Context, def *CodeHostDefinition) (*GitLabCodeH
 		def: def,
 		c:   gl,
 	}, nil
+}
+
+// GitOpts returns the git options that should be used when a git command is invoked for GitLab
+func (g *GitLabCodeHost) GitOpts() []GitOpt {
+	if len(g.def.SSHKey) == 0 {
+		return []GitOpt{}
+	}
+
+	GitEnv := func(cmd *run.Command) *run.Command {
+		return cmd.Environ([]string{fmt.Sprintf("GIT_SSH_COMMAND=ssh -i %s -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'", g.def.SSHKey)})
+	}
+
+	return []GitOpt{GitEnv}
+}
+
+// AddSSHKey adds the SSH key defined in the code host configuration to
+// the current authenticated user. The key that is added is set to expire
+// in 7 days and the name of the key is set to "codehost-copy key"
+//
+// If there is no ssh key defined on the code host configuration this
+// is is a noop and returns a 0 for the key ID
+func (g *GitLabCodeHost) AddSSHKey(ctx context.Context) (int64, error) {
+	if len(g.def.SSHKey) == 0 {
+		return 0, nil
+	}
+
+	data, err := os.ReadFile(g.def.SSHKey)
+	if err != nil {
+		return 0, err
+	}
+
+	keyData := string(data)
+	keyTitle := "codehost-copy key"
+	week := 24 * time.Hour * 7
+	expireTime := gitlab.ISOTime(time.Now().Add(week))
+
+	sshKey, res, err := g.c.Users.AddSSHKey(&gitlab.AddSSHKeyOptions{
+		Title:     &keyTitle,
+		Key:       &keyData,
+		ExpiresAt: &expireTime,
+	}, nil)
+
+	if err != nil {
+		return 0, nil
+	}
+
+	if res.StatusCode >= 300 {
+		return 0, errors.Newf("failed to add ssh key. Got status %d code", res.StatusCode)
+	}
+	return int64(sshKey.ID), nil
+}
+
+// DropSSHKey removes the ssh key by by ID for the current authenticated user. If there is no
+// ssh key set on the codehost configuration this method is a noop
+func (g *GitLabCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
+	// if there is no ssh key in the code host definition
+	// then we have nothing to drop
+	if len(g.def.SSHKey) == 0 {
+		return nil
+	}
+	res, err := g.c.Users.DeleteSSHKey(int(keyID), nil)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != 200 {
+		return errors.Newf("failed to delete key %v. Got status %d code", keyID, res.StatusCode)
+	}
+	return nil
 }
 
 func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
@@ -53,7 +130,11 @@ func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL,
 		return nil, err
 	}
 
-	gitURL.User = url.UserPassword(g.def.Username, g.def.Password)
+	if len(g.def.SSHKey) == 0 {
+		gitURL.Scheme = "ssh://"
+	} else {
+		gitURL.User = url.UserPassword(g.def.Username, g.def.Password)
+	}
 	gitURL.Path = gitURL.Path + ".git"
 
 	return gitURL, nil
