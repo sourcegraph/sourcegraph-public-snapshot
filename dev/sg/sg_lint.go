@@ -151,7 +151,7 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 
 				lintTargets := []linters.Target{target}
 				// Always add the format check, unless specified otherwise!
-				if !lintNoFormatCheck.Get(cmd) {
+				if !lintNoFormatCheck.Get(cmd) && target.Name != linters.Formatting.Name {
 					lintTargets = append(lintTargets, linters.Formatting)
 				}
 
