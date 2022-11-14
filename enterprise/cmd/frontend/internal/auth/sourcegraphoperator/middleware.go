@@ -26,10 +26,6 @@ const authPrefix = auth.AuthURLPrefix + "/" + ProviderType
 // 🚨SECURITY: See docstring of the openidconnect.Middleware for security details
 // because the Sourcegraph Operator authentication provider is a wrapper of the
 // OpenID Connect authentication provider.
-//
-// TODO(jchen): Init in enterprise/cmd/frontend/internal/auth/init.go once we
-// have figured out how to only allow load SOAP from SRC_CLOUD_SITE_CONFIG, see
-// https://github.com/sourcegraph/customer/issues/1427 for details.
 func Middleware(db database.DB) *auth.Middleware {
 	return &auth.Middleware{
 		API: func(next http.Handler) http.Handler {
