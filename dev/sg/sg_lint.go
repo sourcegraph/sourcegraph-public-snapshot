@@ -31,10 +31,10 @@ var lintFailFast = &cli.BoolFlag{
 	Value:   true,
 }
 
-var lintNoFormatCheck = &cli.BoolFlag{
-	Name:    "no-format-check",
-	Aliases: []string{"nfc"},
-	Usage:   "Don't check file formatting",
+var lintSkipFormatCheck = &cli.BoolFlag{
+	Name:    "skip-format-check",
+	Aliases: []string{"sfc"},
+	Usage:   "Skip file formatting check",
 	Value:   false,
 }
 
@@ -64,7 +64,7 @@ sg lint --help
 		generateAnnotations,
 		lintFix,
 		lintFailFast,
-		lintNoFormatCheck,
+		lintSkipFormatCheck,
 	},
 	Before: func(cmd *cli.Context) error {
 		// If more than 1 target is requested, hijack subcommands by setting it to nil
@@ -81,7 +81,7 @@ sg lint --help
 		if len(targets) == 0 {
 			// If no args provided, run all
 			for _, t := range linters.Targets {
-				if lintNoFormatCheck.Get(cmd) {
+				if lintSkipFormatCheck.Get(cmd) {
 					continue
 				}
 
@@ -110,8 +110,8 @@ sg lint --help
 				lintTargets = append(lintTargets, target)
 			}
 
-			// If we haven't added the format target already, add it! Unless specified otherwise
-			if !lintNoFormatCheck.Get(cmd) && !hasFormatTarget {
+			// If we haven't added the format target already, add it! Unless we must skip it
+			if !lintSkipFormatCheck.Get(cmd) && !hasFormatTarget {
 				lintTargets = append(lintTargets, linters.Formatting)
 				targets = append(targets, linters.Formatting.Name)
 
@@ -157,8 +157,8 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 
 				lintTargets := []linters.Target{target}
 				targets := []string{target.Name}
-				// Always add the format check, unless specified otherwise!
-				if !lintNoFormatCheck.Get(cmd) && target.Name != linters.Formatting.Name {
+				// Always add the format check, unless we must skip it!
+				if !lintSkipFormatCheck.Get(cmd) && target.Name != linters.Formatting.Name {
 					lintTargets = append(lintTargets, linters.Formatting)
 					targets = append(targets, linters.Formatting.Name)
 
