@@ -8,14 +8,13 @@ import (
 	"fmt"
 	"github.com/go-stack/stack"
 	"github.com/inconshreveable/log15"
-	"io/ioutil"
+	"io"
 	"math"
 	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -268,45 +267,42 @@ func ContextErrorMiddleware(cli Doer) Doer {
 }
 
 type RedisLogItem struct {
-	Method          string        `json:"method"` // The request method (GET, POST, etc.)
-	URL             string        `json:"url"`
-	RequestHeaders  http.Header   `json:"request_headers"`
-	RequestBody     string        `json:"body"`
-	StatusCode      int           `json:"status_code"` // The response status code
-	ResponseBody    string        `json:"response_body"`
-	ResponseHeaders http.Header   `json:"response_headers"`
-	Duration        time.Duration `json:"duration"`
-	Error           error         `json:"error"`
-	CallStack       string        `json:"call_stack"`
-	CallStack2      string        `json:"call_stack2"`
+	Method          string      `json:"method"` // The request method (GET, POST, etc.)
+	URL             string      `json:"url"`
+	RequestHeaders  http.Header `json:"request_headers"`
+	RequestBody     string      `json:"body"`
+	StatusCode      int         `json:"status_code"` // The response status code
+	ResponseHeaders http.Header `json:"response_headers"`
+	Duration        string      `json:"duration"`
+	Error           error       `json:"error"`
+	CreatedAtFrame  string      `json:"created_at_frame"`
+	CalledAtFrame   string      `json:"called_at_frame"`
 }
 
 func RedisLoggerMiddleware() Middleware {
+	f := stack.Caller(2).Frame()
+	creatorStack := fmt.Sprintf("%s:%d, %s", f.File, f.Line, f.Function)
 	return func(cli Doer) Doer {
 		return DoerFunc(func(req *http.Request) (*http.Response, error) {
 			start := time.Now()
 			resp, err := cli.Do(req)
 			duration := time.Since(start)
 			var requestBody []byte
-			var responseBody []byte
 			if req != nil && req.Body != nil {
-				requestBody, _ = ioutil.ReadAll(req.Body)
+				requestBody, _ = io.ReadAll(req.Body)
 			}
-			if resp != nil && resp.Body != nil {
-				responseBody, _ = ioutil.ReadAll(resp.Body)
-			}
+			callStack := stack.Trace().TrimRuntime().TrimBelow(stack.Caller(3))
 			logItem := RedisLogItem{
 				Method:          req.Method,
 				URL:             req.URL.String(),
 				RequestHeaders:  req.Header,
 				RequestBody:     string(requestBody),
 				StatusCode:      resp.StatusCode,
-				ResponseBody:    string(responseBody),
 				ResponseHeaders: resp.Header,
-				Duration:        duration,
+				Duration:        duration.String(),
 				Error:           err,
-				CallStack:       string(debug.Stack()),
-				CallStack2:      stack.Caller(2).String(),
+				CreatedAtFrame:  creatorStack,
+				CalledAtFrame:   callStack.String(),
 			}
 
 			logItemJson, jsonErr := json.Marshal(logItem)
