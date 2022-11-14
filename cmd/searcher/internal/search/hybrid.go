@@ -194,6 +194,10 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 		}
 
 		for _, cm := range fm.ChunkMatches {
+			if cm.FileName {
+				continue
+			}
+
 			ranges := make([]protocol.Range, 0, len(cm.Ranges))
 			for _, r := range cm.Ranges {
 				ranges = append(ranges, protocol.Range{
