@@ -57,7 +57,9 @@ See the Terraform Modules for additional configurations.
 
 ## Terraform Version
 
-The executor Terraform modules require Terraform 1.1. Use [tfenv](https://github.com/tfutils/tfenv) to install Terraform
+Terraform modules `4.2.x` and above allow Terraform from 1.1.x to < 2.x to be used. 
+
+If a Terraform modules `4.1.x` or below, use [tfenv](https://github.com/tfutils/tfenv) to install Terraform
 1.1+.
 
 ```shell
@@ -342,7 +344,7 @@ module "my-credentials" {
   version = "<version>"
 
   # AWS
-  availability_zone = "<availability zone to provision resource in AWS>"
+  availability_zone = "<availability zone to provision resource in AWS>" # Removed in 4.2
   # Google
   zone              = "<zone to provision resource in GCP>" # Removed in 4.1
 
