@@ -30,8 +30,9 @@ interface BaseIconProps extends SVGProps<SVGSVGElement> {
      */
     inline?: boolean
     /**
-     * Brand icon variation, added as of 11/11/22
-     * (https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/)
+     * Brand icon variation with violet background
+     * 
+     * More info: https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/
      */
     violetBg?: boolean
     className?: string

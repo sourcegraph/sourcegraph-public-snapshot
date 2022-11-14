@@ -46,13 +46,13 @@ export const CodeInsightsDescription: React.FunctionComponent<Props> = ({ classN
             <H3>Resources</H3>
             <ul>
                 <li>
-                    <Link to="/help/code_insights" rel="noopener">
+                    <Link to="/help/code_insights" target="_blank" rel="noopener">
                         Documentation{' '}
                         <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                     </Link>
                 </li>
                 <li>
-                    <Link to="https://about.sourcegraph.com/code-insights" rel="noopener">
+                    <Link to="https://about.sourcegraph.com/code-insights" target="_blank" rel="noopener">
                         Product page{' '}
                         <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                     </Link>
@@ -65,7 +65,7 @@ export const CodeInsightsDescription: React.FunctionComponent<Props> = ({ classN
                     <div className="pl-3">
                         <H4 className="mb-1">Get insights for your code</H4>
                         <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
-                            Sign up for a 30-day trial on Sourcegraph Cloud.
+                            Sign up for a 30-day trial on Sourcegraph Cloud
                         </Link>
                     </div>
                 </Card>

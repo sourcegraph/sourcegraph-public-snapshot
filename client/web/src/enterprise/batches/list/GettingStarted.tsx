@@ -60,13 +60,13 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     <H3>Resources</H3>
                     <ul>
                         <li>
-                            <Link to="/help/batch_changes" rel="noopener">
+                            <Link to="/help/batch_changes" target="_blank" rel="noopener">
                                 Documentation{' '}
                                 <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                             </Link>
                         </li>
                         <li>
-                            <Link to="https://about.sourcegraph.com/batch-changes" rel="noopener">
+                            <Link to="https://about.sourcegraph.com/batch-changes" target="_blank" rel="noopener">
                                 Product page{' '}
                                 <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                             </Link>

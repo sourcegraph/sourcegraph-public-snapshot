@@ -41,7 +41,7 @@ export const CodeInsightsExamplesPicker: FunctionComponent<CodeInsightsExamplesP
             <div className={styles.section}>
                 <H2>Use Code Insights to...</H2>
 
-                <Link to="/help/code_insights/references/common_use_cases">See more use cases</Link>
+                <Link to="/help/code_insights/references/common_use_cases" target="_blank" rel="noopener">See more use cases</Link>
 
                 {!isMobileLayout && (
                     <ul className={styles.list}>
