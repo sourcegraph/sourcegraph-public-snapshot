@@ -22,6 +22,7 @@ var defaultIndexers = map[string]string{
 	"python":     "sourcegraph/scip-python",
 	"rust":       "sourcegraph/lsif-rust",
 	"typescript": "sourcegraph/scip-typescript",
+	"ruby":       "sourcegraph/scip-ruby",
 }
 
 // To update, run `DOCKER_USER=... DOCKER_PASS=... ./update-shas.sh`
@@ -32,6 +33,7 @@ var defaultIndexerSHAs = map[string]string{
 	"sourcegraph/scip-java":       "sha256:eb3996bdc8ab3a56600e7d647bc1ef72f3db8cfffc2026550095a0af7bb762bd",
 	"sourcegraph/scip-python":     "sha256:5049c4598d03af542bde5e1254a17fa6d1eb794c1bdd14d0162fb39c604581b4",
 	"sourcegraph/scip-typescript": "sha256:4184c6a771037d854e23323db2c8a65947029c93401b696f3b5281fff5c3cbe9",
+	"sourcegraph/scip-ruby":       "sha256:091a951b3826c7acaadafae24bfe4f0a9beef26b2bef3420f54bf0de36b5a85b",
 }
 
 func DefaultIndexerForLang(language string) (string, bool) {

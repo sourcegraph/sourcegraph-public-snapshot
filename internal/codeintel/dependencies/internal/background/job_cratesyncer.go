@@ -11,6 +11,7 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -85,7 +86,11 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 	}
 
 	repoName := api.RepoName(config.IndexRepositoryName)
-	update, err := b.gitClient.RequestRepoUpdate(ctx, repoName, interval)
+
+	// We should use an internal actor when doing cross service calls.
+	clientCtx := actor.WithInternalActor(ctx)
+
+	update, err := b.gitClient.RequestRepoUpdate(clientCtx, repoName, interval)
 	if err != nil {
 		return err
 	}
@@ -93,7 +98,7 @@ func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 		return errors.Newf("failed to update repo %s, error %s", repoName, update.Error)
 	}
 	reader, err := b.gitClient.ArchiveReader(
-		ctx,
+		clientCtx,
 		nil,
 		repoName,
 		gitserver.ArchiveOptions{

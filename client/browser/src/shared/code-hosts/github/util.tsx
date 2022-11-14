@@ -194,12 +194,7 @@ function getDiffResolvedRevisionFromPageSource(
  * Returns the file path for the current page. Must be on a blob or tree page.
  *
  * Implementation details:
- *
- * This scrapes the file path from the permalink on GitHub blob pages:
- * ```html
- * <a class="d-none js-permalink-shortcut" data-hotkey="y" href="/gorilla/mux/blob/ed099d42384823742bba0bf9a72b53b55c9e2e38/mux.go">Permalink</a>
- * ```
- *
+ * This scrapes the file path from the permalink on GitHub blob pages.
  * We can't get the file path from the URL because the branch name can contain
  * slashes which make the boundary between the branch name and file path
  * ambiguous. For example: https://github.com/sourcegraph/sourcegraph/blob/bext/release/cmd/frontend/internal/session/session.go
@@ -207,18 +202,18 @@ function getDiffResolvedRevisionFromPageSource(
  * TODO ideally, this should only scrape the code view itself.
  */
 export function getFilePath(): string {
-    const permalink = document.querySelector<HTMLAnchorElement>('a.js-permalink-shortcut')
+    const permalink = document.querySelector<HTMLAnchorElement>(getSelectorFor('permalink'))
     if (!permalink) {
-        throw new Error('Unable to determine the file path because no a.js-permalink-shortcut element was found.')
+        throw new Error('Unable to determine the file path because no element containing file link was found.')
     }
     const url = new URL(permalink.href)
-    // <empty>/<user>/<repo>/(blob|tree)/<commitID>/<path/to/file>
+    // <empty>/<user>/<repo>/(blob|tree)/<commitID|rev>/<path/to/file>
     // eslint-disable-next-line unicorn/no-unreadable-array-destructuring
     const [, , , pageType, , ...path] = url.pathname.split('/')
     // Check for page type because a tree page can be the repo root, so it shouldn't throw an error despite an empty path
     if (pageType !== 'tree' && path.length === 0) {
         throw new Error(
-            `Unable to determine the file path because the a.js-permalink-shortcut element's href's path was ${url.pathname} (it is expected to be of the form /<user>/<repo>/blob/<commitID>/<path/to/file>).`
+            `Unable to determine the file path because the link href attribute was ${url.pathname} (it is expected to be of the form /<user>/<repo>/blob/<commitID|rev>/<path/to/file>).`
         )
     }
     return decodeURIComponent(path.join('/'))
@@ -271,3 +266,29 @@ export function parseURL(location: Pick<Location, 'host' | 'pathname' | 'href'> 
             return { pageType: 'other', rawRepoName, repoName }
     }
 }
+
+interface UISelectors {
+    codeCell: string
+    blobContainer: string
+    permalink: string
+    // fileToolbarMountContainer: string
+}
+
+const oldUISelectors: UISelectors = {
+    codeCell: 'td.blob-code',
+    blobContainer: '.js-file-line-container',
+    permalink: 'a.js-permalink-shortcut',
+    // fileToolbarMountContainer: '.file',
+}
+
+const newUISelectors: UISelectors = {
+    codeCell: 'td.react-code-cell',
+    blobContainer: 'react-app table',
+    permalink: '.ActionList-item--navActive a',
+    // fileToolbarMountContainer: '.file',
+}
+
+/**
+ * Returns the common selector for old and new GitHub UIs.
+ */
+export const getSelectorFor = (key: keyof UISelectors): string => `${oldUISelectors[key]}, ${newUISelectors[key]}`

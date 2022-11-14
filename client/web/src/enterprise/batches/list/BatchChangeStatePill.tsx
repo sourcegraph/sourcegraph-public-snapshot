@@ -56,13 +56,12 @@ export const BatchChangeStatePill: React.FunctionComponent<React.PropsWithChildr
 
     return (
         <div
-            role="group"
             className={classNames(styles.pillGroup, className, {
                 [styles.open]: state === BatchChangeState.OPEN,
                 [styles.draft]: state === BatchChangeState.DRAFT,
                 [styles.closed]: state === BatchChangeState.CLOSED,
             })}
-            aria-label={`${state} status`}
+            aria-label={`${state.toLowerCase()} batch change`}
         >
             <StatePill state={state} />
             {executionStatePill}
@@ -105,6 +104,11 @@ const ExecutionStatePill: React.FunctionComponent<
             return (
                 <Badge
                     variant="warning"
+                    aria-label={`This batch change has a new spec ${
+                        latestExecutionState === BatchSpecState.QUEUED
+                            ? 'queued for execution'
+                            : 'in the process of executing'
+                    }.`}
                     tooltip={`This batch change has a new spec ${
                         latestExecutionState === BatchSpecState.QUEUED
                             ? 'queued for execution'
@@ -112,16 +116,7 @@ const ExecutionStatePill: React.FunctionComponent<
                     }.`}
                     className={styles.executionPill}
                 >
-                    <Icon
-                        className={styles.executionIcon}
-                        svgPath={mdiHistory}
-                        inline={false}
-                        aria-label={`This batch change has a new spec ${
-                            latestExecutionState === BatchSpecState.QUEUED
-                                ? 'queued for execution'
-                                : 'in the process of executing'
-                        }.`}
-                    />
+                    <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
                 </Badge>
             )
 
@@ -129,6 +124,7 @@ const ExecutionStatePill: React.FunctionComponent<
             return (
                 <Badge
                     variant="primary"
+                    aria-label="This batch change has a newer batch spec execution that is ready to be applied."
                     tooltip="This batch change has a newer batch spec execution that is ready to be applied."
                     className={styles.executionPill}
                 >
@@ -140,6 +136,7 @@ const ExecutionStatePill: React.FunctionComponent<
             return (
                 <Badge
                     variant="danger"
+                    aria-label="The latest batch spec execution for this batch change failed."
                     tooltip="The latest batch spec execution for this batch change failed."
                     className={styles.executionPill}
                 >

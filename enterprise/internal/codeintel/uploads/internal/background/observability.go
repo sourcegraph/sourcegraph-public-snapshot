@@ -6,6 +6,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -23,13 +24,17 @@ type operations struct {
 	numReconcileDeletesFromCodeIntelDB prometheus.Counter
 }
 
-func newOperations(observationContext *observation.Context) *operations {
-	m := metrics.NewREDMetrics(
+var once = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*metrics.REDMetrics, error) {
+	return metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_uploads_background",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
-	)
+	), nil
+})
+
+func newOperations(observationContext *observation.Context) *operations {
+	m, _ := once.Init(observationContext)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{

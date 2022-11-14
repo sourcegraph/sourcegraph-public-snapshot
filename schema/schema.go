@@ -112,13 +112,12 @@ type AuthProviderCommon struct {
 	DisplayName string `json:"displayName,omitempty"`
 }
 type AuthProviders struct {
-	Builtin             *BuiltinAuthProvider
-	Saml                *SAMLAuthProvider
-	Openidconnect       *OpenIDConnectAuthProvider
-	SourcegraphOperator *SourcegraphOperatorAuthProvider
-	HttpHeader          *HTTPHeaderAuthProvider
-	Github              *GitHubAuthProvider
-	Gitlab              *GitLabAuthProvider
+	Builtin       *BuiltinAuthProvider
+	Saml          *SAMLAuthProvider
+	Openidconnect *OpenIDConnectAuthProvider
+	HttpHeader    *HTTPHeaderAuthProvider
+	Github        *GitHubAuthProvider
+	Gitlab        *GitLabAuthProvider
 }
 
 func (v AuthProviders) MarshalJSON() ([]byte, error) {
@@ -130,9 +129,6 @@ func (v AuthProviders) MarshalJSON() ([]byte, error) {
 	}
 	if v.Openidconnect != nil {
 		return json.Marshal(v.Openidconnect)
-	}
-	if v.SourcegraphOperator != nil {
-		return json.Marshal(v.SourcegraphOperator)
 	}
 	if v.HttpHeader != nil {
 		return json.Marshal(v.HttpHeader)
@@ -165,10 +161,8 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.Openidconnect)
 	case "saml":
 		return json.Unmarshal(data, &v.Saml)
-	case "sourcegraph-operator":
-		return json.Unmarshal(data, &v.SourcegraphOperator)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "sourcegraph-operator", "http-header", "github", "gitlab"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
 type BackendInsight struct {
@@ -2228,19 +2222,6 @@ type SiteConfiguration struct {
 	UserReposMaxPerUser int `json:"userRepos.maxPerUser,omitempty"`
 	// WebhookLogging description: Configuration for logging incoming webhooks.
 	WebhookLogging *WebhookLogging `json:"webhook.logging,omitempty"`
-}
-
-// SourcegraphOperatorAuthProvider description: Configures the Sourcegraph Operator authentication provider for SSO. This is only available in managed instances on Sourcegraph Cloud.
-type SourcegraphOperatorAuthProvider struct {
-	// ClientID description: The client ID of the Sourcegraph Operator client for this site.
-	ClientID string `json:"clientID"`
-	// ClientSecret description: The client secret of the Sourcegraph Operator client for this site.
-	ClientSecret string `json:"clientSecret"`
-	// Issuer description: The URL of the Sourcegraph Operator issuer.
-	Issuer string `json:"issuer"`
-	// LifecycleDuration description: The duration before the user accounts created by this authentication provider to be automatically deleted in minutes.
-	LifecycleDuration int    `json:"lifecycleDuration,omitempty"`
-	Type              string `json:"type"`
 }
 
 // SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
