@@ -25,7 +25,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.24.1
 	github.com/aws/smithy-go v1.11.0
 	github.com/beevik/etree v1.1.0
-	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/buildkite/go-buildkite/v3 v3.0.1
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
@@ -53,7 +52,7 @@ require (
 	github.com/go-enry/go-enry/v2 v2.8.3
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-openapi/strfmt v0.21.3
-	github.com/go-redsync/redsync v1.4.2
+	github.com/go-redsync/redsync v1.0.1
 	github.com/gobwas/glob v0.2.3
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2
@@ -201,6 +200,7 @@ require (
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/emicklei/go-restful v2.16.0+incompatible // indirect
+	github.com/garyburd/redigo v1.1.1-0.20170914051019-70e1b1943d4f // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
@@ -208,6 +208,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
+	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.opentelemetry.io/otel/metric v0.31.0 // indirect
 	go.uber.org/goleak v1.2.0 // indirect
@@ -215,6 +216,7 @@ require (
 
 require (
 	cuelang.org/go v0.4.3
+	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/coreos/go-iptables v0.6.0
 	github.com/dcadenas/pagerank v0.0.0-20171013173705-af922e3ceea8
@@ -327,9 +329,7 @@ require (
 	github.com/gosimple/slug v1.12.0 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.12.0 // indirect
-	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.1 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
