@@ -1,15 +1,16 @@
 package authz
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
@@ -22,50 +23,63 @@ const (
 
 // syncJobsRecords is used to record the results of recent permissions syncing jobs for
 // diagnostic purposes.
-//
-// The volume of entries recorded can be very high, so implementations should commit the
-// jobs to the backend in batches.
 type syncJobsRecordsStore struct {
-	logger      log.Logger
-	recordQueue []authz.SyncJobRecord
-	mux         sync.Mutex
+	logger   log.Logger
+	cacheTTL atomic.Int32
 
+	mux sync.Mutex
 	// cache is a replaceable abstraction over rcache.Cache.
-	cache interface {
-		SetMulti(...[2]string)
-	}
+	cache interface{ Set(key string, v []byte) }
 }
 
 type noopCache struct{}
 
-func (noopCache) SetMulti(...[2]string) {}
+func (noopCache) Set(string, []byte) {}
 
-func newSyncJobsRecordsStore(logger log.Logger, minutesTTL int) *syncJobsRecordsStore {
-	s := &syncJobsRecordsStore{
-		logger:      logger.Scoped("jobRecords", "sync jobs records store"),
-		recordQueue: make([]authz.SyncJobRecord, 0, 10),
+func newSyncJobsRecordsStore(logger log.Logger) *syncJobsRecordsStore {
+	return &syncJobsRecordsStore{
+		logger: logger.Scoped("jobRecords", "sync jobs records store"),
+		cache:  noopCache{},
 	}
-	if minutesTTL > 0 {
-		s.cache = rcache.NewWithTTL(syncJobsRecordsPrefix, minutesTTL*60)
-		logger.Info("enabled records store cache")
-	} else {
-		s.cache = noopCache{}
-		logger.Info("disabled records store cache")
-	}
-
-	return s
 }
 
-func (r *syncJobsRecordsStore) Start(ctx context.Context) {
-	go r.commitRecordsRoutine(ctx)
+func (r *syncJobsRecordsStore) Watch(c conftypes.WatchableSiteConfig) {
+	c.Watch(func() {
+		ttlMinutes := c.SiteConfig().AuthzSyncJobsLogsTTL
+		if ttlMinutes == 0 {
+			ttlMinutes = 30 // default documented
+		}
+		if !r.cacheTTL.CompareAndSwap(r.cacheTTL.Load(), int32(ttlMinutes)) {
+			// unchanged
+			return
+		}
+
+		// Update the cache
+		r.mux.Lock()
+		defer r.mux.Unlock()
+
+		if ttlMinutes > 0 {
+			ttlSeconds := ttlMinutes * 60
+			r.cache = rcache.NewWithTTL(syncJobsRecordsPrefix, ttlSeconds)
+			r.logger.Info("enabled records store cache")
+		} else {
+			r.cache = noopCache{}
+			r.logger.Info("disabled records store cache")
+		}
+	})
 }
 
-// Add queues a record for the completion of a sync job. It is non-blocking.
+// Add queues a record for the completion of a sync job.
 func (r *syncJobsRecordsStore) Record(jobType string, jobID int32, providerStates []providerState, err error) {
+	completed := time.Now()
+
+	r.mux.Lock()
+	defer r.mux.Unlock()
+
 	record := authz.SyncJobRecord{
 		RequestType: jobType,
 		RequestID:   jobID,
-		Completed:   time.Now(),
+		Completed:   completed,
 
 		// TODO export the providerState type
 		// Providers:
@@ -77,50 +91,12 @@ func (r *syncJobsRecordsStore) Record(jobType string, jobID int32, providerState
 		record.Message = err.Error()
 	}
 
-	go func() {
-		r.mux.Lock()
-		r.recordQueue = append(r.recordQueue, record)
-		r.mux.Unlock()
-	}()
-}
-
-func (r *syncJobsRecordsStore) commitRecordsRoutine(ctx context.Context) {
-	ticker := time.NewTicker(1 * time.Minute)
-	for {
-		var done bool
-		select {
-		case <-ctx.Done():
-			done = true
-		case <-ticker.C:
-		}
-
-		// Start work
-		r.mux.Lock()
-
-		// Generate entries
-		entries := make([][2]string, len(r.recordQueue))
-		for i, record := range r.recordQueue {
-			val, err := json.Marshal(record)
-			if err != nil {
-				r.logger.Warn("failed to render entry",
-					log.Int32("requestID", record.RequestID),
-					log.Error(err))
-				continue
-			}
-			entries[i] = [2]string{
-				fmt.Sprintf("%s-%d", record.RequestType, record.RequestID),
-				string(val),
-			}
-		}
-		// Commit entries
-		r.logger.Debug("committing entries", log.Int("entries", len(entries)))
-		r.cache.SetMulti(entries...)
-		// Reset entries
-		r.recordQueue = make([]authz.SyncJobRecord, 0, len(r.recordQueue))
-
-		r.mux.Unlock()
-		if done {
-			break
-		}
+	val, err := json.Marshal(record)
+	if err != nil {
+		r.logger.Warn("failed to render entry",
+			log.Int32("requestID", record.RequestID),
+			log.Error(err))
+		return
 	}
+	r.cache.Set(fmt.Sprintf("%s-%d", record.RequestType, record.RequestID), val)
 }

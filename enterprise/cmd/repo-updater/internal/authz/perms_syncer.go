@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -43,8 +42,6 @@ var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_repoupdater_perms_syncer_schedule_repos_total",
 	Help: "Counts number of repos for which permissions syncing request has been scheduled.",
 })
-
-var syncJobsRecordsTTLMinutes = env.Get("SYNC_JOBS_RECORDS_TTL_MINUTES", "15", "Duration to keep sync job completion records")
 
 // PermsSyncer is a permissions syncing manager that is in charge of keeping
 // permissions up-to-date for users and repositories.
@@ -101,12 +98,7 @@ func NewPermsSyncer(
 		clock:               clock,
 		rateLimiterRegistry: rateLimiterRegistry,
 		scheduleInterval:    scheduleInterval(),
-		recordsStore: newSyncJobsRecordsStore(
-			logger.Scoped("records", "sync jobs records store"),
-			func() int {
-				v, _ := strconv.Atoi(syncJobsRecordsTTLMinutes)
-				return v
-			}()),
+		recordsStore:        newSyncJobsRecordsStore(logger.Scoped("records", "sync jobs records store")),
 	}
 }
 
@@ -1435,7 +1427,7 @@ func (s *PermsSyncer) collectMetrics(ctx context.Context) {
 func (s *PermsSyncer) Run(ctx context.Context) {
 	go s.runSync(ctx)
 	go s.runSchedule(ctx)
-	go s.recordsStore.Start(ctx)
+	go s.recordsStore.Watch(conf.DefaultClient())
 
 	<-ctx.Done()
 }
