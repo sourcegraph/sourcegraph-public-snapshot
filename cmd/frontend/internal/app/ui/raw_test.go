@@ -385,9 +385,9 @@ func Test_serveRawRepoCloning(t *testing.T) {
 			Repo: nil,
 		}, nil
 	}
-	defer func() {
+	t.Cleanup(func() {
 		mockNewCommon = nil
-	}()
+	})
 	// Fail git server calls, as they should not be invoked for a cloning repo.
 	initHTTPTestGitServer(t, http.StatusInternalServerError, "{should not be invoked}")
 	gsClient := gitserver.NewMockClient()
