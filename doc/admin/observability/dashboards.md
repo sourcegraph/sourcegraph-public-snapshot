@@ -5564,7 +5564,7 @@ Query: `sum by (instance) (src_gitserver_search_running{instance=~`${shard:regex
 
 <br />
 
-### Git Server: Repos disk I/O metrics (only available on Sourcegraph internal instances)
+### Git Server: Repos disk I/O metrics
 
 #### gitserver: repos_disk_reads_sec
 
@@ -14240,7 +14240,7 @@ Query: `sum by(instance) (rate(searcher_service_request_total[10m]))`
 
 <br />
 
-### Searcher: Cache disk I/O metrics (only available on Sourcegraph internal instances)
+### Searcher: Cache disk I/O metrics
 
 #### searcher: cache_disk_reads_sec
 
@@ -17715,7 +17715,7 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_network_
 
 <br />
 
-### Zoekt: Data disk I/O metrics (only available on Sourcegraph internal instances)
+### Zoekt: Data disk I/O metrics
 
 #### zoekt: data_disk_reads_sec
 
