@@ -165,7 +165,7 @@ export const BlameDecoration: React.FunctionComponent<{
                         {blameHunk.displayInfo.timestampString}
                     </div>
                     <hr className={classNames(styles.separator, 'm-0')} />
-                    <div className={classNames('px-3 d-flex align-items-center', styles.body)}>
+                    <div className={classNames('px-3 d-flex align-items-center', styles.block, styles.body)}>
                         <Icon
                             aria-hidden={true}
                             as={SourceCommitIcon}
@@ -181,10 +181,13 @@ export const BlameDecoration: React.FunctionComponent<{
                             {blameHunk.message}
                         </Link>
                     </div>
-                    <div className="px-3 my-2">
+                    <hr className={classNames(styles.separator, 'm-0')} />
+                    <div className={classNames('px-3', styles.block)}>
                         <Link
-                            to={replaceRevisionInURL(window.location.href, blameHunk.commit.parents[0].oid)}
-                            className={styles.link}
+                            to={
+                                window.location.origin +
+                                replaceRevisionInURL(window.location.href, blameHunk.commit.parents[0].oid)
+                            }
                         >
                             View blame prior to this change
                         </Link>
