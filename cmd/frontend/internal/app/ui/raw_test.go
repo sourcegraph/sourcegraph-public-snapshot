@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/stretchr/testify/assert"
 )
 
 // initHTTPTestGitServer instantiates an httptest.Server to make it return an HTTP response as set
@@ -401,10 +402,6 @@ func Test_serveRawRepoCloning(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to invoke serveRaw: %v", err)
 	}
-	if got, want := w.Code, http.StatusNotFound; got != want {
-		t.Errorf("http status, got %d, want %d", got, want)
-	}
-	if got, want := string(w.Body.Bytes()), "Repository unavailable while cloning."; got != want {
-		t.Errorf("http response body, got %q, want %q", got, want)
-	}
+	assert.Equal(t, http.StatusNotFound, w.Code, "http response status")
+	assert.Equal(t, "Repository unavailable while cloning.", string(w.Body.Bytes()), "http response body")
 }
