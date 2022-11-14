@@ -71,6 +71,7 @@ $theme-colors: (
 
     // Other root palette colors.
     --blue: #{$blue};
+    --blue-02: #c7ffff;
     --indigo: #0864c6;
     --purple: #{$purple};
     --purple-01: #e8d1ff;
@@ -108,6 +109,9 @@ $theme-colors: (
     --header-icon-color: var(--gray-05);
     --tooltip-bg: var(--gray-08);
     --text-disabled: var(--gray-06);
+    
+    // Gradients
+    --saturn-gradient: linear-gradient(90deg, var(--purple-01), var(--blue-02)) border-box;
 
     // Color for the <mark> element and highlighted/hovered tokens.
     --mark-bg-dark: rgba(217, 72, 15, 0.5);

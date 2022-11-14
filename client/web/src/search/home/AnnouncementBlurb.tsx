@@ -1,8 +1,9 @@
 import React from 'react'
 
+import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Icon } from '@sourcegraph/wildcard'
 
 import styles from './AnnouncementBlurb.module.scss'
 
@@ -18,15 +19,20 @@ interface LinkProps {
 }
 
 export const AnnouncementBlurb: React.FunctionComponent<AnnouncementBlurb> = ({ text, link, displayUntil }) => (
-    // Display only if today is not past display cut off date
-    <div className={classNames(new Date() < displayUntil ? 'd-block' : 'd-none',styles.saturnGradientBorder)}>
-        <div className="py-2 px-3">
-            {text}
-            {link && (
-                <Link to={link.link} className={classNames('ml-1', styles.link)} target="_blank" rel="noopener noreferrer">
-                    {link.text}
-                </Link>
-            )}
-        </div>
+    <div>
+        {/* Display only if today is not past display cut off date */}
+        {new Date() < displayUntil && (
+            <div className={styles.saturnGradientBorder}>
+                <div className="py-2 px-3">
+                    {text}
+                    {link && (
+                        <Link to={link.link} className={classNames('ml-1', styles.link)} target="_blank" rel="noopener noreferrer">
+                            {link.text}{' '}
+                            <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
+                        </Link>
+                    )}
+                </div>
+            </div>
+        )}
     </div>
 )

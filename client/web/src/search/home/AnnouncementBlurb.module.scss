@@ -9,14 +9,14 @@
     position: absolute;
     z-index: 1;
     inset: 0;
-    border-radius: 5px; /*1*/
-    border: 3px solid transparent; /*2*/
-    background: linear-gradient(90deg,#e8d1ff,#c7ffff) border-box; /*3*/
-    -webkit-mask: /*4*/
+    border-radius: 5px;
+    border: 3px solid transparent;
+    background: var(--saturn-gradient);
+    -webkit-mask:
        linear-gradient(#fff 0 0) padding-box, 
        linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor; /*5'*/
-            mask-composite: exclude; /*5*/
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
 }
 
 .link {
