@@ -80,8 +80,8 @@ sg lint --help
 
 		if len(targets) == 0 {
 			// If no args provided, run all
-			for _, t := range linters.Targets {
-				lintTargets = append(lintTargets, t)
+			lintTargets = linters.Targets
+			for _, t := range lintTargets {
 				targets = append(targets, t.Name)
 			}
 
