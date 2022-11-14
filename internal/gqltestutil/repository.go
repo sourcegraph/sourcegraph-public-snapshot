@@ -63,7 +63,8 @@ func (c *Client) DeleteRepoFromDiskByName(name string) error {
 		return errors.Wrap(err, "getting repo")
 	}
 	if repo == nil {
-		return errors.Errorf("repo not found: %q", name)
+		// Repo doesn't exist, no point trying to delete it
+		return nil
 	}
 
 	q := fmt.Sprintf(`
