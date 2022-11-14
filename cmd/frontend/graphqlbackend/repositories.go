@@ -46,7 +46,6 @@ func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, err
 			Field:      ToDBRepoListColumn(args.OrderBy),
 			Descending: args.Descending,
 		}},
-		JoinGitserverRepos: true,
 	}
 	if args.Names != nil {
 		opt.Names = *args.Names
