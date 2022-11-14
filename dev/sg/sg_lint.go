@@ -82,6 +82,10 @@ sg lint --help
 			// If no args provided, run all
 			lintTargets = linters.Targets
 			for _, t := range lintTargets {
+				if lintNoFormatCheck.Get(cmd) && t.Name == linters.Formatting.Name {
+					// don't add the format check if it is disabled
+					continue
+				}
 				targets = append(targets, t.Name)
 			}
 		} else {
@@ -90,6 +94,7 @@ sg lint --help
 			for _, c := range linters.Targets {
 				allLintTargetsMap[c.Name] = c
 			}
+			// only add a target it we know about it
 			for _, t := range targets {
 				target, ok := allLintTargetsMap[t]
 				if !ok {
@@ -98,16 +103,17 @@ sg lint --help
 				}
 				lintTargets = append(lintTargets, target)
 			}
+
+			// Always add the format check, unless specified otherwise!
+			if !lintNoFormatCheck.Get(cmd) {
+				lintTargets = append(lintTargets, linters.Formatting)
+				targets = append(targets, linters.Formatting.Name)
+			}
 		}
 
 		repoState, err := repo.GetState(cmd.Context)
 		if err != nil {
 			return errors.Wrap(err, "repo.GetState")
-		}
-
-		if !lintNoFormatCheck.Get(cmd) {
-			lintTargets = append(lintTargets, linters.FormattingTarget)
-			targets = append(targets, linters.FormattingTarget.Name)
 		}
 
 		runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), lintTargets...)
@@ -119,7 +125,7 @@ sg lint --help
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runner.Check(cmd.Context, repoState)
 	},
-	Subcommands: lintTargets(append(linters.Targets, linters.FormattingTarget)).Commands(),
+	Subcommands: lintTargets(linters.Targets).Commands(),
 }
 
 type lintTargets []linters.Target
@@ -142,7 +148,13 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 					return errors.Wrap(err, "repo.GetState")
 				}
 
-				runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), target)
+				lintTargets := []linters.Target{target}
+				// Always add the format check, unless specified otherwise!
+				if !lintNoFormatCheck.Get(cmd) {
+					lintTargets = append(lintTargets, linters.Formatting)
+				}
+
+				runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), lintTargets...)
 				if lintFix.Get(cmd) {
 					std.Out.WriteNoticef("Fixing checks from target: %s", target.Name)
 					return runner.Fix(cmd.Context, repoState)
