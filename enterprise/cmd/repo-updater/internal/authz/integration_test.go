@@ -142,7 +142,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []authz.SyncJobProviderState{{
+			assert.Equal(t, []authz.SyncJobProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				Status:       "SUCCESS",
@@ -228,7 +228,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []authz.SyncJobProviderState{{
+			assert.Equal(t, []authz.SyncJobProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				Status:       "SUCCESS",
@@ -255,7 +255,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []authz.SyncJobProviderState{{
+			assert.Equal(t, []authz.SyncJobProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				Status:       "SUCCESS",
@@ -347,7 +347,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []authz.SyncJobProviderState{{
+			assert.Equal(t, []authz.SyncJobProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				Status:       "SUCCESS",
@@ -436,7 +436,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []authz.SyncJobProviderState{{
+			assert.Equal(t, []authz.SyncJobProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				Status:       "SUCCESS",
@@ -463,7 +463,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []authz.SyncJobProviderState{{
+			assert.Equal(t, []authz.SyncJobProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				Status:       "SUCCESS",

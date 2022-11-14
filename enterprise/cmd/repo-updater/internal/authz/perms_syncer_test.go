@@ -179,7 +179,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, []authz.SyncJobProviderState{{
+	assert.Equal(t, []authz.SyncJobProviderStatus{{
 		ProviderID:   "https://gitlab.com/",
 		ProviderType: "gitlab",
 		Status:       "SUCCESS",
@@ -334,7 +334,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, []authz.SyncJobProviderState{{
+	assert.Equal(t, []authz.SyncJobProviderStatus{{
 		ProviderID:   "https://gitlab.com/",
 		ProviderType: "gitlab",
 		Status:       "ERROR",

@@ -38,7 +38,7 @@ func (noopCache) Set(string, []byte) {}
 
 func newSyncJobsRecordsStore(logger log.Logger) *syncJobsRecordsStore {
 	return &syncJobsRecordsStore{
-		logger: logger.Scoped("jobRecords", "sync jobs records store"),
+		logger: logger,
 		cache:  noopCache{},
 	}
 }
@@ -61,7 +61,7 @@ func (r *syncJobsRecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 		if ttlMinutes > 0 {
 			ttlSeconds := ttlMinutes * 60
 			r.cache = rcache.NewWithTTL(syncJobsRecordsPrefix, ttlSeconds)
-			r.logger.Info("enabled records store cache")
+			r.logger.Info("enabled records store cache", log.Int("ttlSeconds", ttlSeconds))
 		} else {
 			r.cache = noopCache{}
 			r.logger.Info("disabled records store cache")
@@ -70,21 +70,18 @@ func (r *syncJobsRecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 }
 
 // Add queues a record for the completion of a sync job.
-func (r *syncJobsRecordsStore) Record(jobType string, jobID int32, providerStates []authz.SyncJobProviderState, err error) {
+func (r *syncJobsRecordsStore) Record(jobType string, jobID int32, providerStates []authz.SyncJobProviderStatus, err error) {
 	completed := time.Now()
 
 	r.mux.Lock()
 	defer r.mux.Unlock()
 
-	record := authz.SyncJobRecord{
+	record := authz.SyncJobStatus{
 		RequestType: jobType,
 		RequestID:   jobID,
 		Completed:   completed,
-
-		// TODO export the providerState type
-		// Providers:
-
-		Status: syncJobStatusSucceeded,
+		Status:      syncJobStatusSucceeded,
+		Providers:   providerStates,
 	}
 	if err != nil {
 		record.Status = syncJobStatusError
