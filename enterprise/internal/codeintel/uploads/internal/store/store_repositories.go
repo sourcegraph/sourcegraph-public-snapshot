@@ -102,7 +102,7 @@ repositories AS (
 	LIMIT %s
 )
 INSERT INTO %s (repository_id, {column_name})
-SELECT r.id, %s::timestamp FROM repositories r
+SELECT DISTINCT r.id, %s::timestamp FROM repositories r
 ON CONFLICT (repository_id) DO UPDATE
 SET {column_name} = %s
 RETURNING repository_id

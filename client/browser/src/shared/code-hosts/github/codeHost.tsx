@@ -37,7 +37,7 @@ import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
 import { setElementTooltip } from './tooltip'
-import { getFileContainers, parseURL, getFilePath } from './util'
+import { getFileContainers, parseURL, getFilePath, getSelectorFor } from './util'
 
 import styles from './codeHost.module.scss'
 
@@ -162,21 +162,31 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountElement.style.verticalAlign = 'middle'
     mountElement.style.alignItems = 'center'
     mountElement.className = className
+
+    // new GitHub UI
+    const container = codeViewElement.querySelector('#repos-sticky-header a[href="https://github.dev/"]')?.parentElement
+    if (container instanceof HTMLElement) {
+        container.prepend(mountElement)
+        return mountElement
+    }
+
+    // old GitHub UI (e.g., GHE)
     const rawURLLink = codeViewElement.querySelector('#raw-url')
     const buttonGroup = rawURLLink?.closest('.BtnGroup')
-    if (!buttonGroup?.parentNode) {
-        throw new Error('File actions not found')
+    if (buttonGroup?.parentNode) {
+        buttonGroup.parentNode.insertBefore(mountElement, buttonGroup)
+        return mountElement
     }
-    buttonGroup.parentNode.insertBefore(mountElement, buttonGroup)
-    return mountElement
+
+    throw new Error('Failed to create file toolbar mount node: container not found.')
 }
 
 /**
  * Matches the modern single-file code view, or snippets embedded in comments.
  *
  */
-export const fileLineContainerResolver: ViewResolver<CodeView> = {
-    selector: '.js-file-line-container',
+const fileLineContainerResolver: ViewResolver<CodeView> = {
+    selector: getSelectorFor('blobContainer'),
     resolveView: (fileLineContainer: HTMLElement): CodeView | null => {
         const embeddedBlobWrapper = fileLineContainer.closest('.blob-wrapper-embedded')
         if (embeddedBlobWrapper) {
@@ -195,13 +205,7 @@ export const fileLineContainerResolver: ViewResolver<CodeView> = {
             // this is not a single-file code view
             return null
         }
-        /**
-         * The element matching the latter selector replaces the one matching the former selector
-         * on GitHub when navigating through the repo tree using the client-side navigation.
-         * GitHub Enterprise always uses the former one.
-         */
-        const repositoryContent =
-            fileLineContainer.closest('.repository-content') || fileLineContainer.closest('#repo-content-turbo-frame')
+        const repositoryContent = fileLineContainer.closest('.repository-content')
         if (!repositoryContent) {
             throw new Error('Could not find repository content element')
         }

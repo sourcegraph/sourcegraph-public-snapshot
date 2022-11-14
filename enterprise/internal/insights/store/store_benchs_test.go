@@ -18,15 +18,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func initializeData(ctx context.Context, store *Store, repos, times int, withCapture bool) string {
+func initializeData(ctx context.Context, store *Store, repos, times int, withCapture int) string {
 	var cv []*string
 	strPtr := func(s string) *string {
 		return &s
 	}
 
-	if withCapture {
-		cv = append(cv, strPtr("one"))
-		cv = append(cv, strPtr("two"))
+	if withCapture > 0 {
+		for i := 0; i < withCapture; i++ {
+			cv = append(cv, strPtr(fmt.Sprintf("%d", i)))
+		}
 	} else {
 		cv = append(cv, nil)
 	}
@@ -63,8 +64,24 @@ func initializeData(ctx context.Context, store *Store, repos, times int, withCap
 	return seriesID
 }
 
-func TestCompareLoadMethods(t *testing.T) {
+func generateRepoRestrictions(numberRestricted, totalNumber int) []api.RepoID {
+	seen := map[int]struct{}{}
+	restrictions := []api.RepoID{}
+	upperBound := totalNumber
+	for i := 0; i < numberRestricted; i++ {
+		randomID := rand.Intn(upperBound - 1)
+		if _, ok := seen[randomID]; ok {
+			restrictions = append(restrictions, api.RepoID(upperBound))
+			upperBound = upperBound - 1 // we use the upper bound as our fallback random number, so we always have a hit
+		} else {
+			seen[randomID] = struct{}{}
+			restrictions = append(restrictions, api.RepoID(randomID))
+		}
+	}
+	return restrictions
+}
 
+func TestCompareLoadMethods(t *testing.T) {
 	toStr := func(pts []SeriesPoint) []string {
 		var elems []string
 		for _, pt := range pts {
@@ -77,72 +94,116 @@ func TestCompareLoadMethods(t *testing.T) {
 		}
 		return elems
 	}
+	testCases := []struct {
+		name         string
+		repos        int
+		capture      int
+		restrictions int
+		times        int
+	}{
+		{
+			name:  "no capture values",
+			repos: 500,
+			times: 5,
+		},
+		{
+			name:    "with captured values",
+			repos:   500,
+			times:   5,
+			capture: 2,
+		},
+		{
+			name:         "with restrictions",
+			repos:        500,
+			times:        5,
+			restrictions: 250,
+		},
+		{
+			name:         "all restricted",
+			repos:        100,
+			times:        2,
+			restrictions: 100,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			logger := logtest.Scoped(t)
+			ctx := context.Background()
+			clock := timeutil.Now
+			insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+			postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+			permStore := NewInsightPermissionStore(postgres)
+			store := NewWithClock(insightsDB, permStore, clock)
 
-	t.Run("no capture values", func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		ctx := context.Background()
-		clock := timeutil.Now
-		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
-		postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
-		permStore := NewInsightPermissionStore(postgres)
-		store := NewWithClock(insightsDB, permStore, clock)
+			seriesID := initializeData(ctx, store, tc.repos, tc.times, tc.capture)
 
-		seriesID := initializeData(ctx, store, 500, 5, false)
+			opts := SeriesPointsOpts{SeriesID: &seriesID, Excluded: generateRepoRestrictions(tc.restrictions, tc.repos)}
 
-		db, _ := store.SeriesPoints(ctx, SeriesPointsOpts{SeriesID: &seriesID})
-		mem, _ := store.LoadSeriesInMem(ctx, SeriesPointsOpts{SeriesID: &seriesID})
+			db, _ := store.SeriesPoints(ctx, opts)
+			mem, _ := store.LoadSeriesInMem(ctx, opts)
 
-		dbStr := toStr(db)
-		memStr := toStr(mem)
+			dbStr := toStr(db)
+			memStr := toStr(mem)
 
-		sort.Slice(dbStr, func(i, j int) bool {
-			return dbStr[i] < dbStr[j]
+			sort.Slice(dbStr, func(i, j int) bool {
+				return dbStr[i] < dbStr[j]
+			})
+
+			sort.Slice(memStr, func(i, j int) bool {
+				return memStr[i] < memStr[j]
+			})
+			require.ElementsMatchf(t, dbStr, memStr, "db aggregation not equal to mem aggregation")
 		})
-
-		sort.Slice(memStr, func(i, j int) bool {
-			return memStr[i] < memStr[j]
-		})
-		require.ElementsMatchf(t, dbStr, memStr, "db aggregation not equal to mem aggregation")
-	})
-
-	t.Run("with captured values", func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		ctx := context.Background()
-		clock := timeutil.Now
-		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
-		postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
-		permStore := NewInsightPermissionStore(postgres)
-		store := NewWithClock(insightsDB, permStore, clock)
-
-		seriesID := initializeData(ctx, store, 500, 5, true)
-
-		db, _ := store.SeriesPoints(ctx, SeriesPointsOpts{SeriesID: &seriesID})
-		mem, _ := store.LoadSeriesInMem(ctx, SeriesPointsOpts{SeriesID: &seriesID})
-
-		dbStr := toStr(db)
-		memStr := toStr(mem)
-
-		sort.Slice(dbStr, func(i, j int) bool {
-			return dbStr[i] < dbStr[j]
-		})
-
-		sort.Slice(memStr, func(i, j int) bool {
-			return memStr[i] < memStr[j]
-		})
-		require.ElementsMatchf(t, dbStr, memStr, "db aggregation not equal to mem aggregation")
-	})
+	}
 }
 
 func BenchmarkLoadTimes(b *testing.B) {
 	benchmarks := []struct {
-		name  string
-		repos int
-		times int
+		name         string
+		repos        int
+		capture      int
+		restrictions int
+		times        int
 	}{
 		{
-			name:  "simple",
+			name:  "1000 repos no capture no restrictions", // 1000 * 12 = 12,000 samples
 			repos: 1000,
 			times: 12,
+		},
+		{
+			name:  "10000 repos no capture no restrictions", // 10,000 * 12 = 120,000 samples
+			repos: 10000,
+			times: 12,
+		},
+		{
+			name:  "100000 repos no capture no restrictions", // 100,000 * 12 = 1,200,000 samples
+			repos: 100000,
+			times: 12,
+		},
+		{
+			name:    "1000 repos 100 capture no restrictions", // 1000 * 100 * 12 = 1,200,000 samples
+			repos:   1000,
+			times:   12,
+			capture: 100,
+		},
+		{
+			name:    "500 repos 200 capture no restrictions", // 500 * 200 * 12 = 1,200,000 samples
+			repos:   500,
+			times:   12,
+			capture: 200,
+		},
+		{
+			name:         "1000 repos no capture 500 restrictions",
+			repos:        1000,
+			times:        12,
+			restrictions: 500,
+		},
+		{
+			name:         "1000 repos 200 capture 500 restrictions",
+			repos:        1000,
+			times:        12,
+			capture:      200,
+			restrictions: 500,
 		},
 	}
 	for _, bm := range benchmarks {
@@ -154,11 +215,13 @@ func BenchmarkLoadTimes(b *testing.B) {
 		permStore := NewInsightPermissionStore(postgres)
 		store := NewWithClock(insightsDB, permStore, clock)
 
-		seriesID := initializeData(ctx, store, bm.repos, bm.times, false)
+		seriesID := initializeData(ctx, store, bm.repos, bm.times, bm.capture)
 
-		opts := SeriesPointsOpts{SeriesID: &seriesID}
+		opts := SeriesPointsOpts{SeriesID: &seriesID, Excluded: generateRepoRestrictions(bm.restrictions, bm.repos)}
 
-		b.Run("in-db-aggregate", func(b *testing.B) {
+		b.ResetTimer()
+
+		b.Run("in-db-aggregate-"+bm.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				_, err := store.SeriesPoints(ctx, opts)
 				if err != nil {
@@ -167,7 +230,7 @@ func BenchmarkLoadTimes(b *testing.B) {
 			}
 		})
 
-		b.Run("in-mem-aggregate", func(b *testing.B) {
+		b.Run("in-mem-aggregate-"+bm.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				_, err := store.LoadSeriesInMem(ctx, opts)
 				if err != nil {

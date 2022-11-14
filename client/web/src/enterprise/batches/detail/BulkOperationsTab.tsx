@@ -40,7 +40,7 @@ export const BulkOperationsTab: React.FunctionComponent<React.PropsWithChildren<
         <Container>
             <ConnectionContainer>
                 {error && <ConnectionError errors={[error.message]} />}
-                <ConnectionList className="list-group list-group-flush">
+                <ConnectionList className="list-group list-group-flush" aria-label="bulk operations">
                     {connection?.nodes?.map(node => (
                         <BulkOperationNode key={node.id} node={node} />
                     ))}

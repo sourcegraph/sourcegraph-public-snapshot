@@ -39,11 +39,11 @@ import (
 )
 
 type Handlers struct {
-	GitHubWebhook                   webhooks.Registerer
 	GitHubSyncWebhook               webhooks.Registerer
-	GitLabWebhook                   webhooks.RegistererHandler
-	BitbucketServerWebhook          http.Handler
-	BitbucketCloudWebhook           http.Handler
+	BatchesGitHubWebhook            webhooks.Registerer
+	BatchesGitLabWebhook            webhooks.RegistererHandler
+	BatchesBitbucketServerWebhook   http.Handler
+	BatchesBitbucketCloudWebhook    http.Handler
 	BatchesChangesFileGetHandler    http.Handler
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
@@ -91,8 +91,8 @@ func NewHandler(
 		DB: db,
 	}
 	webhookhandlers.Init(db, &wh)
-	handlers.GitHubWebhook.Register(&wh)
-	handlers.GitLabWebhook.Register(&wh)
+	handlers.BatchesGitHubWebhook.Register(&wh)
+	handlers.BatchesGitLabWebhook.Register(&wh)
 	handlers.GitHubSyncWebhook.Register(&wh)
 
 	// 🚨 SECURITY: This handler implements its own secret-based auth
@@ -103,9 +103,9 @@ func NewHandler(
 
 	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gitHubWebhook)))
-	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
-	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketServerWebhook)))
-	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketCloudWebhook)))
+	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesGitLabWebhook)))
+	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesBitbucketServerWebhook)))
+	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesBitbucketCloudWebhook)))
 	m.Get(apirouter.BatchesFileGet).Handler(trace.Route(handlers.BatchesChangesFileGetHandler))
 	m.Get(apirouter.BatchesFileExists).Handler(trace.Route(handlers.BatchesChangesFileExistsHandler))
 	m.Get(apirouter.BatchesFileUpload).Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))

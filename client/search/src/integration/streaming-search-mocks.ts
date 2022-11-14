@@ -1,9 +1,9 @@
 /* eslint-disable no-template-curly-in-string */
-import { SearchGraphQlOperations } from '@sourcegraph/search'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 
+import { SearchGraphQlOperations } from '..'
 import { SymbolKind } from '../graphql-operations'
 
 export const diffSearchStreamEvents: SearchEvent[] = [

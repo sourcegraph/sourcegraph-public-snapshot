@@ -22,14 +22,17 @@ var updateRecordings = flag.Bool("update-integration", false, "refresh integrati
 func TestGenJwtToken(t *testing.T) {
 	if os.Getenv("BUILDKITE") == "true" {
 		t.Skip("Skipping testing in CI environment")
-	} else {
-		appID := os.Getenv("GITHUB_APP_ID")
-		require.NotEmpty(t, appID, "GITHUB_APP_ID must be set.")
-		keyPath := os.Getenv("KEY_PATH")
-		require.NotEmpty(t, keyPath, "KEY_PATH must be set.")
-		_, err := genJwtToken(appID, keyPath)
-		require.NoError(t, err)
 	}
+
+	appID := os.Getenv("GITHUB_APP_ID")
+	keyPath := os.Getenv("KEY_PATH")
+
+	if appID == "" || keyPath == "" {
+		t.Skip("GITHUB_APP_ID or KEY_PATH is not set")
+	}
+
+	_, err := genJwtToken(appID, keyPath)
+	require.NoError(t, err)
 }
 
 func newTestGitHubClient(ctx context.Context, t *testing.T) (ghc *github.Client, stop func() error) {
