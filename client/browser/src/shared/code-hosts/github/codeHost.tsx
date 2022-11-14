@@ -538,7 +538,6 @@ export const parseHash = (hash: string): LineOrPositionOrRange => {
     return lpr
 }
 
-// TODO(#44327): Uncomment or remove this depending on the outcome of the issue.
 /**
  * Adds "Search on Sourcegraph buttons" to GitHub search pages
  */
