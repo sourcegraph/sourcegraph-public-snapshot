@@ -218,7 +218,7 @@ func createPerforceExternalService(t *testing.T, useP4Fusion bool) {
 	}
 
 	type FusionClient = struct {
-		Enabled   bool `json:"enabled,omitempty"`
+		Enabled   bool `json:"enabled"`
 		LookAhead int  `json:"lookAhead,omitempty"`
 	}
 
