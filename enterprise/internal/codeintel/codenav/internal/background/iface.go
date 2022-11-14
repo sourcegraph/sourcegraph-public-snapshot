@@ -5,6 +5,6 @@ import (
 )
 
 type CodeNavService interface {
-	SerializeRankingGraph(ctx context.Context) error
+	SerializeRankingGraph(ctx context.Context, numRankingRoutines int) error
 	VacuumRankingGraph(ctx context.Context) error
 }

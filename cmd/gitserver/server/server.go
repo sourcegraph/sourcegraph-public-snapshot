@@ -777,10 +777,18 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
 	}
 
+	// Make sure we fetch at least a good chunk of records, assuming that most
+	// would not need an update anyways. Don't fetch too many though to keep the
+	// DB load at a reasonable level and constrain memory usage.
+	iteratePageSize := batchSize * 2
+	if iteratePageSize < 500 {
+		iteratePageSize = 500
+	}
+
 	options := database.IterateRepoGitserverStatusOptions{
 		// We also want to include deleted repos as they may still be cloned on disk
 		IncludeDeleted: true,
-		BatchSize:      perSecond * 2, // Prefetch a few records.
+		BatchSize:      iteratePageSize,
 	}
 	if !fullSync {
 		options.OnlyWithoutShard = true

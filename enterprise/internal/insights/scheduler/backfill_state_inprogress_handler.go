@@ -10,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -154,14 +155,21 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 	itrConfig := iterator.IterationConfig{
 		MaxFailures: 3,
 		OnTerminal: func(ctx context.Context, tx *basestore.Store, repoId int32, terminalErr error) error {
-			logger.Debug("insights backfill incomplete repo writing all datapoints", log.Int32("repoId", repoId), log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID), log.Int("backfillId", backfillJob.Id))
+			reason := translateIncompleteReasons(terminalErr)
+			logger.Debug("insights backfill incomplete repo writing all datapoints",
+				log.Int32("repoId", repoId),
+				log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID),
+				log.Int("backfillId", backfillJob.Id),
+				log.Error(terminalErr),
+				log.String("reason", string(reason)))
+
 			id := int(repoId)
 			for _, frame := range frames {
 				tss := h.insightsStore.WithOther(tx)
 				if err := tss.AddIncompleteDatapoint(ctx, store.AddIncompleteDatapointInput{
 					SeriesID: series.ID,
 					RepoID:   &id,
-					Reason:   store.ReasonGeneric,
+					Reason:   reason,
 					Time:     frame.From,
 				}); err != nil {
 					return errors.Wrap(err, "AddIncompleteDatapoint")
@@ -248,4 +256,11 @@ func getInterruptAfter() time.Duration {
 		return time.Duration(val) * time.Second
 	}
 	return time.Duration(defaultInterruptSeconds) * time.Second
+}
+
+func translateIncompleteReasons(err error) store.IncompleteReason {
+	if errors.Is(err, queryrunner.SearchTimeoutError) {
+		return store.ReasonTimeout
+	}
+	return store.ReasonGeneric
 }

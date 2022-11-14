@@ -280,7 +280,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
             <div className="list-group position-relative" ref={nextContainerElement}>
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
-                    <ConnectionList as="div" className={styles.batchChangeChangesetsGrid}>
+                    <ConnectionList className={styles.batchChangeChangesetsGrid} aria-label="changesets">
                         {connection?.nodes?.length ? (
                             <BatchChangeChangesetsHeader
                                 allSelected={showSelectRow && areAllVisibleSelected()}

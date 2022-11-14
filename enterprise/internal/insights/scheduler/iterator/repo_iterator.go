@@ -248,6 +248,14 @@ func (p *PersistentRepoIterator) TotalErrors() int {
 	return count
 }
 
+func (p *PersistentRepoIterator) Errors() []IterationError {
+	itErrors := []IterationError{}
+	for _, iterationError := range p.errors {
+		itErrors = append(itErrors, *iterationError)
+	}
+	return itErrors
+}
+
 func stampStartedAt(ctx context.Context, store *basestore.Store, itrId int, stampTime time.Time) error {
 	return store.Exec(ctx, sqlf.Sprintf("UPDATE repo_iterator SET started_at = %S WHERE Id = %S", stampTime, itrId))
 }
@@ -355,7 +363,7 @@ func (p *PersistentRepoIterator) setRepoTerminal(repoId int32) {
 }
 
 func (p *PersistentRepoIterator) updateRepoIterator(ctx context.Context, store *basestore.Store, successCount, cursorOffset int, duration time.Duration) error {
-	updateQ := `UPDATE repo_iterator 
+	updateQ := `UPDATE repo_iterator
     SET percent_complete = COALESCE(((%s + success_count)::float / NULLIF(total_count, 0)::float), 0),
     success_count    = success_count + %s,
     repo_cursor      = repo_cursor + %s,

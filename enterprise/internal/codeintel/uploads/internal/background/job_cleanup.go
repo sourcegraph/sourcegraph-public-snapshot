@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -14,34 +15,44 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type janitorConfig struct {
-	uploadTimeout                  time.Duration
-	auditLogMaxAge                 time.Duration
-	minimumTimeSinceLastCheck      time.Duration
-	commitResolverBatchSize        int
-	commitResolverMaximumCommitLag time.Duration
+type JanitorConfig struct {
+	UploadTimeout                  time.Duration
+	AuditLogMaxAge                 time.Duration
+	MinimumTimeSinceLastCheck      time.Duration
+	CommitResolverBatchSize        int
+	CommitResolverMaximumCommitLag time.Duration
 }
 
-func (b backgroundJob) NewJanitor(
+type janitorJob struct {
+	uploadSvc       UploadService
+	logger          log.Logger
+	metrics         *janitorMetrics
+	clock           glock.Clock
+	gitserverClient GitserverClient
+}
+
+func NewJanitor(
+	uploadSvc UploadService,
+	gitserverClient GitserverClient,
 	interval time.Duration,
-	uploadTimeout time.Duration,
-	auditLogMaxAge time.Duration,
-	minimumTimeSinceLastCheck time.Duration,
-	commitResolverBatchSize int,
-	commitResolverMaximumCommitLag time.Duration,
+	config JanitorConfig,
+	clock glock.Clock,
+	logger log.Logger,
+	metrics *janitorMetrics,
 ) goroutine.BackgroundRoutine {
+	j := janitorJob{
+		uploadSvc:       uploadSvc,
+		logger:          logger,
+		metrics:         metrics,
+		clock:           clock,
+		gitserverClient: gitserverClient,
+	}
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
-		return b.handleCleanup(ctx, janitorConfig{
-			uploadTimeout:                  uploadTimeout,
-			auditLogMaxAge:                 auditLogMaxAge,
-			minimumTimeSinceLastCheck:      minimumTimeSinceLastCheck,
-			commitResolverBatchSize:        commitResolverBatchSize,
-			commitResolverMaximumCommitLag: commitResolverMaximumCommitLag,
-		})
+		return j.handleCleanup(ctx, config)
 	}))
 }
 
-func (b backgroundJob) handleCleanup(ctx context.Context, cfg janitorConfig) (errs error) {
+func (b janitorJob) handleCleanup(ctx context.Context, cfg JanitorConfig) (errs error) {
 	// Reconciliation and denormalization
 	if err := b.handleDeletedRepository(ctx); err != nil {
 		errs = errors.Append(errs, err)
@@ -67,7 +78,7 @@ func (b backgroundJob) handleCleanup(ctx context.Context, cfg janitorConfig) (er
 	return errs
 }
 
-func (b backgroundJob) handleDeletedRepository(ctx context.Context) (err error) {
+func (b janitorJob) handleDeletedRepository(ctx context.Context) (err error) {
 	uploadsCounts, err := b.uploadSvc.DeleteUploadsWithoutRepository(ctx, time.Now())
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.DeleteUploadsWithoutRepository")
@@ -80,7 +91,7 @@ func (b backgroundJob) handleDeletedRepository(ctx context.Context) (err error) 
 			log.Int("uploads_count", counts.uploadsCount),
 		)
 
-		b.janitorMetrics.numUploadRecordsRemoved.Add(float64(counts.uploadsCount))
+		b.metrics.numUploadRecordsRemoved.Add(float64(counts.uploadsCount))
 	}
 
 	return nil
@@ -114,8 +125,8 @@ func gatherCounts(uploadsCounts map[int]int) []recordCount {
 	return recordCounts
 }
 
-func (b backgroundJob) handleUnknownCommit(ctx context.Context, cfg janitorConfig) (err error) {
-	staleUploads, err := b.uploadSvc.GetStaleSourcedCommits(ctx, cfg.minimumTimeSinceLastCheck, cfg.commitResolverBatchSize, b.clock.Now())
+func (b janitorJob) handleUnknownCommit(ctx context.Context, cfg JanitorConfig) (err error) {
+	staleUploads, err := b.uploadSvc.GetStaleSourcedCommits(ctx, cfg.MinimumTimeSinceLastCheck, cfg.CommitResolverBatchSize, b.clock.Now())
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.StaleSourcedCommits")
 	}
@@ -129,7 +140,7 @@ func (b backgroundJob) handleUnknownCommit(ctx context.Context, cfg janitorConfi
 	return nil
 }
 
-func (b backgroundJob) handleSourcedCommits(ctx context.Context, sc shared.SourcedCommits, cfg janitorConfig) error {
+func (b janitorJob) handleSourcedCommits(ctx context.Context, sc shared.SourcedCommits, cfg JanitorConfig) error {
 	for _, commit := range sc.Commits {
 		if err := b.handleCommit(ctx, sc.RepositoryID, sc.RepositoryName, commit, cfg); err != nil {
 			return err
@@ -139,7 +150,7 @@ func (b backgroundJob) handleSourcedCommits(ctx context.Context, sc shared.Sourc
 	return nil
 }
 
-func (b backgroundJob) handleCommit(ctx context.Context, repositoryID int, repositoryName, commit string, cfg janitorConfig) error {
+func (b janitorJob) handleCommit(ctx context.Context, repositoryID int, repositoryName, commit string, cfg JanitorConfig) error {
 	var shouldDelete bool
 	_, err := b.gitserverClient.ResolveRevision(ctx, repositoryID, commit)
 	if err == nil {
@@ -161,12 +172,12 @@ func (b backgroundJob) handleCommit(ctx context.Context, repositoryID int, repos
 	}
 
 	if shouldDelete {
-		_, uploadsDeleted, err := b.uploadSvc.DeleteSourcedCommits(ctx, repositoryID, commit, cfg.commitResolverMaximumCommitLag, b.clock.Now())
+		_, uploadsDeleted, err := b.uploadSvc.DeleteSourcedCommits(ctx, repositoryID, commit, cfg.CommitResolverMaximumCommitLag, b.clock.Now())
 		if err != nil {
 			return errors.Wrap(err, "uploadSvc.DeleteSourcedCommits")
 		}
 		if uploadsDeleted > 0 {
-			b.janitorMetrics.numUploadRecordsRemoved.Add(float64(uploadsDeleted))
+			b.metrics.numUploadRecordsRemoved.Add(float64(uploadsDeleted))
 		}
 
 		return nil
@@ -180,30 +191,32 @@ func (b backgroundJob) handleCommit(ctx context.Context, repositoryID int, repos
 }
 
 // handleAbandonedUpload removes upload records which have not left the uploading state within the given TTL.
-func (b backgroundJob) handleAbandonedUpload(ctx context.Context, cfg janitorConfig) error {
-	count, err := b.uploadSvc.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-cfg.uploadTimeout))
+func (b janitorJob) handleAbandonedUpload(ctx context.Context, cfg JanitorConfig) error {
+	count, err := b.uploadSvc.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-cfg.UploadTimeout))
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.DeleteUploadsStuckUploading")
 	}
 	if count > 0 {
 		b.logger.Debug("Deleted abandoned upload records", log.Int("count", count))
-		b.janitorMetrics.numUploadRecordsRemoved.Add(float64(count))
+		b.metrics.numUploadRecordsRemoved.Add(float64(count))
 	}
 
 	return nil
 }
 
-const expiredUploadsBatchSize = 1000
-const expiredUploadsMaxTraversal = 100
+const (
+	expiredUploadsBatchSize    = 1000
+	expiredUploadsMaxTraversal = 100
+)
 
-func (b backgroundJob) handleExpiredUploadDeleter(ctx context.Context) error {
+func (b janitorJob) handleExpiredUploadDeleter(ctx context.Context) error {
 	count, err := b.uploadSvc.SoftDeleteExpiredUploads(ctx, expiredUploadsBatchSize)
 	if err != nil {
 		return errors.Wrap(err, "SoftDeleteExpiredUploads")
 	}
 	if count > 0 {
 		b.logger.Info("Deleted expired codeintel uploads", log.Int("count", count))
-		b.janitorMetrics.numUploadRecordsRemoved.Add(float64(count))
+		b.metrics.numUploadRecordsRemoved.Add(float64(count))
 	}
 
 	count, err = b.uploadSvc.SoftDeleteExpiredUploadsViaTraversal(ctx, expiredUploadsMaxTraversal)
@@ -212,23 +225,23 @@ func (b backgroundJob) handleExpiredUploadDeleter(ctx context.Context) error {
 	}
 	if count > 0 {
 		b.logger.Info("Deleted expired codeintel uploads via traversal", log.Int("count", count))
-		b.janitorMetrics.numUploadRecordsRemoved.Add(float64(count))
+		b.metrics.numUploadRecordsRemoved.Add(float64(count))
 	}
 
 	return nil
 }
 
-func (b backgroundJob) handleHardDeleter(ctx context.Context) error {
+func (b janitorJob) handleHardDeleter(ctx context.Context) error {
 	count, err := b.hardDeleteExpiredUploads(ctx)
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.HardDeleteExpiredUploads")
 	}
 
-	b.janitorMetrics.numUploadsPurged.Add(float64(count))
+	b.metrics.numUploadsPurged.Add(float64(count))
 	return nil
 }
 
-func (b backgroundJob) hardDeleteExpiredUploads(ctx context.Context) (count int, err error) {
+func (b janitorJob) hardDeleteExpiredUploads(ctx context.Context) (count int, err error) {
 	const uploadsBatchSize = 100
 	options := shared.GetUploadsOptions{
 		State:            "deleted",
@@ -265,13 +278,13 @@ func (b backgroundJob) hardDeleteExpiredUploads(ctx context.Context) (count int,
 	return count, nil
 }
 
-func (b backgroundJob) handleAuditLog(ctx context.Context, cfg janitorConfig) (err error) {
-	count, err := b.uploadSvc.DeleteOldAuditLogs(ctx, cfg.auditLogMaxAge, time.Now())
+func (b janitorJob) handleAuditLog(ctx context.Context, cfg JanitorConfig) (err error) {
+	count, err := b.uploadSvc.DeleteOldAuditLogs(ctx, cfg.AuditLogMaxAge, time.Now())
 	if err != nil {
 		return errors.Wrap(err, "uploadSvc.DeleteOldAuditLogs")
 	}
 
-	b.janitorMetrics.numAuditLogRecordsExpired.Add(float64(count))
+	b.metrics.numAuditLogRecordsExpired.Add(float64(count))
 	return nil
 }
 

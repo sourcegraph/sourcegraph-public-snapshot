@@ -1143,23 +1143,7 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 }
 
 func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*protocol.ReposStats, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", "http://"+addr+"/repos-stats", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: Ideally doReposStats should use clientImplementor.do but the varying method
-	// signature prevents us from doing that.
-	//
-	// We should consolidate into a single method for creating requests so that we are
-	// setting all the required properties like headers, trace spans in a central place.
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", c.userAgent)
-
-	// Set header so that the server knows the request is from us.
-	req.Header.Set("X-Requested-With", "Sourcegraph")
-
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.do(ctx, "", "GET", fmt.Sprintf("http://%s/repos-stats", addr), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1238,9 +1222,11 @@ func (c *clientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoNa
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
-// do performs a request to a gitserver instance based on the address in the uri argument.
+// do performs a request to a gitserver instance based on the address in the uri
+// argument.
 //
-//nolint:unparam // unparam complains that `method` always has same value across call-sites, but that's OK
+// Repo parameter is optional. If it is provided, then "repo" attribute is added
+// to trace span.
 func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
@@ -1249,6 +1235,11 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
 	defer func() {
+		if repo != "" {
+			span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
+		} else {
+			span.LogKV("method", method, "path", parsedURL.Path)
+		}
 		span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
 		if err != nil {
 			ext.Error.Set(span, true)

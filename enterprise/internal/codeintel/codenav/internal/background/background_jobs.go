@@ -8,7 +8,7 @@ import (
 )
 
 type BackgroundJob interface {
-	NewRankingGraphSerializer(interval time.Duration) goroutine.BackgroundRoutine
+	NewRankingGraphSerializer(numRankingRoutines int, interval time.Duration) goroutine.BackgroundRoutine
 	SetService(service CodeNavService)
 }
 

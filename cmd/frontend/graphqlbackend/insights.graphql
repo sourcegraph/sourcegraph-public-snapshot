@@ -471,6 +471,21 @@ extend type Query {
     Retrieve information about queued insights series and their breakout by status. Restricted to admins only.
     """
     insightSeriesQueryStatus: [InsightSeriesQueryStatus!]!
+
+    """
+    Retrieve information about an insight view and its status. Restricted to admins only.
+    """
+    insightViewDebug(id: ID!): InsightViewDebug
+}
+
+"""
+Debugging information related to an InsightView
+"""
+type InsightViewDebug {
+    """
+    A JSON dump of debug information for series on the insight view
+    """
+    raw: [String!]!
 }
 
 """
