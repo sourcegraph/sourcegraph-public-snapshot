@@ -5,6 +5,7 @@ import { mdiCog, mdiPlus } from '@mdi/js'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonLink, Container, H2, H5, Icon, PageHeader } from '@sourcegraph/wildcard'
 
+import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -15,7 +16,6 @@ import {
     SummaryContainer,
 } from '../components/FilteredConnection/ui'
 import { PageTitle } from '../components/PageTitle'
-import { BatchChangeInfoByline } from '../enterprise/batches/detail/BatchChangeInfoByline'
 import { WebhookFields } from '../graphql-operations'
 
 import { useWebhookLogsConnection, useWebhookQuery } from './backend'
@@ -52,11 +52,11 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                         { text: node.codeHostURN },
                     ]}
                     byline={
-                        <BatchChangeInfoByline
+                        <CreatedByAndUpdatedByInfoByline
                             createdAt={node.createdAt}
-                            creator={webhookData.node.createdBy}
-                            lastAppliedAt={node.updatedAt}
-                            lastApplier={webhookData.node.updatedBy}
+                            createdBy={webhookData.node.createdBy}
+                            updatedAt={node.updatedAt}
+                            updatedBy={webhookData.node.updatedBy}
                         />
                     }
                     description="Some description going on in here"

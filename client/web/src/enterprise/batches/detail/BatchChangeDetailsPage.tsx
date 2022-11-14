@@ -26,7 +26,7 @@ import { ActiveExecutionNotice } from './ActiveExecutionNotice'
 import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeDetailsProps, BatchChangeDetailsTabs, TabName } from './BatchChangeDetailsTabs'
-import { BatchChangeInfoByline } from './BatchChangeInfoByline'
+import { CreatedByAndUpdatedByInfoByline } from '../../../components/Byline/CreatedByAndUpdatedByInfoByline'
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 import { BulkOperationsAlerts } from './BulkOperationsAlerts'
 import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
@@ -123,11 +123,11 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
             )}
             <PageHeader
                 byline={
-                    <BatchChangeInfoByline
+                    <CreatedByAndUpdatedByInfoByline
                         createdAt={batchChange.createdAt}
-                        creator={batchChange.creator}
-                        lastAppliedAt={batchChange.lastAppliedAt}
-                        lastApplier={batchChange.lastApplier}
+                        createdBy={batchChange.creator}
+                        updatedAt={batchChange.lastAppliedAt}
+                        updatedBy={batchChange.lastApplier}
                     />
                 }
                 actions={
