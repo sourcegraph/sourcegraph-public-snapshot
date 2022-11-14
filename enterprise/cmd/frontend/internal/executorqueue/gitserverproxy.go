@@ -45,11 +45,7 @@ func gitserverProxy(logger log.Logger, gitserverClient GitserverClient, gitPath 
 			},
 			Transport: httpcli.InternalClient.Transport,
 		}
-		didPanic := true
 		defer func() {
-			if !didPanic {
-				return
-			}
 			e := recover()
 			if e != nil {
 				if e == http.ErrAbortHandler {
@@ -63,7 +59,6 @@ func gitserverProxy(logger log.Logger, gitserverClient GitserverClient, gitPath 
 			}
 		}()
 		p.ServeHTTP(w, r)
-		didPanic = false
 	})
 }
 
