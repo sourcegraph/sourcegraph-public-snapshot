@@ -62,7 +62,7 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 			return nil, false, err
 		}
 		if !ok {
-			logger.Warn("failed to find indexed commit")
+			logger.Debug("failed to find indexed commit")
 			recordHybridFinalState("zoekt-list-missing")
 			return nil, false, nil
 		}
@@ -96,13 +96,13 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 			log.Int("totalLenUnindexedSearchPaths", totalLenUnindexedSearch))
 
 		if totalLenIndexedIgnore > s.MaxTotalPathsLength || totalLenUnindexedSearch > s.MaxTotalPathsLength {
-			logger.Info("not doing hybrid search due to changed file list exceeding MAX_TOTAL_PATHS_LENGTH",
+			logger.Debug("not doing hybrid search due to changed file list exceeding MAX_TOTAL_PATHS_LENGTH",
 				log.Int("MAX_TOTAL_PATHS_LENGTH", s.MaxTotalPathsLength))
 			recordHybridFinalState("diff-too-large")
 			return nil, false, nil
 		}
 
-		logger.Info("starting zoekt search")
+		logger.Debug("starting zoekt search")
 
 		ok, err = zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
 		if err != nil {
