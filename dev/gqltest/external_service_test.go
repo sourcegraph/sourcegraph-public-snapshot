@@ -162,7 +162,7 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 
 func TestExternalService_PerforceGitP4(t *testing.T) {
 	checkPerforceEnvironment(t)
-	createPerforceExternalServiceUsingGitP4(t)
+	createPerforceExternalService(t, false)
 
 	const repoName = "perforce/test-perms"
 	err := client.WaitForReposToBeCloned(repoName)
@@ -184,7 +184,7 @@ func TestExternalService_PerforceGitP4(t *testing.T) {
 
 func TestExternalService_PerforceP4Fusion(t *testing.T) {
 	checkPerforceEnvironment(t)
-	createPerforceExternalServiceUsingP4Fusion(t)
+	createPerforceExternalService(t, true)
 
 	const repoName = "perforce/test-perms"
 	err := client.WaitForReposToBeCloned(repoName)
@@ -210,7 +210,7 @@ func checkPerforceEnvironment(t *testing.T) {
 	}
 }
 
-func createPerforceExternalServiceUsingP4Fusion(t *testing.T) {
+func createPerforceExternalService(t *testing.T, useP4Fusion bool) {
 	t.Helper()
 
 	type Authorization = struct {
@@ -232,8 +232,8 @@ func createPerforceExternalServiceUsingP4Fusion(t *testing.T) {
 			P4Password            string        `json:"p4.passwd"`
 			Depots                []string      `json:"depots"`
 			RepositoryPathPattern string        `json:"repositoryPathPattern"`
-			Authorization         Authorization `json:"authorization"`
 			FusionClient          FusionClient  `json:"fusionClient"`
+			Authorization         Authorization `json:"authorization"`
 		}{
 			P4Port:                *perforcePort,
 			P4User:                *perforceUser,
@@ -241,47 +241,9 @@ func createPerforceExternalServiceUsingP4Fusion(t *testing.T) {
 			Depots:                []string{"//test-perms/"},
 			RepositoryPathPattern: "perforce/{depot}",
 			FusionClient: FusionClient{
-				Enabled:   true,
+				Enabled:   useP4Fusion,
 				LookAhead: 2000,
 			},
-			Authorization: Authorization{
-				SubRepoPermissions: true,
-			},
-		}),
-	})
-
-	// The repo-updater might not be up yet but it will eventually catch up for the
-	// external service we just added, thus it is OK to ignore this transient error.
-	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
-		t.Fatal(err)
-	}
-	removeExternalServiceAfterTest(t, esID)
-}
-
-func createPerforceExternalServiceUsingGitP4(t *testing.T) {
-	t.Helper()
-
-	type Authorization = struct {
-		SubRepoPermissions bool `json:"subRepoPermissions"`
-	}
-
-	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
-		Kind:        extsvc.KindPerforce,
-		DisplayName: "gqltest-perforce-server",
-		Config: mustMarshalJSONString(struct {
-			P4Port                string        `json:"p4.port"`
-			P4User                string        `json:"p4.user"`
-			P4Password            string        `json:"p4.passwd"`
-			Depots                []string      `json:"depots"`
-			RepositoryPathPattern string        `json:"repositoryPathPattern"`
-			Authorization         Authorization `json:"authorization"`
-		}{
-			P4Port:                *perforcePort,
-			P4User:                *perforceUser,
-			P4Password:            *perforcePassword,
-			Depots:                []string{"//test-perms/"},
-			RepositoryPathPattern: "perforce/{depot}",
 			Authorization: Authorization{
 				SubRepoPermissions: true,
 			},
