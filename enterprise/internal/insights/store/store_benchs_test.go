@@ -64,6 +64,23 @@ func initializeData(ctx context.Context, store *Store, repos, times int, withCap
 	return seriesID
 }
 
+func generateRepoRestrictions(numberRestricted, totalNumber int) []api.RepoID {
+	seen := map[int]struct{}{}
+	restrictions := []api.RepoID{}
+	upperBound := totalNumber
+	for i := 0; i < numberRestricted; i++ {
+		randomID := rand.Intn(upperBound - 1)
+		if _, ok := seen[randomID]; ok {
+			restrictions = append(restrictions, api.RepoID(upperBound))
+			upperBound = upperBound - 1 // we use the upper bound as our fallback random number, so we always have a hit
+		} else {
+			seen[randomID] = struct{}{}
+			restrictions = append(restrictions, api.RepoID(randomID))
+		}
+	}
+	return restrictions
+}
+
 func TestCompareLoadMethods(t *testing.T) {
 	toStr := func(pts []SeriesPoint) []string {
 		var elems []string
@@ -77,68 +94,76 @@ func TestCompareLoadMethods(t *testing.T) {
 		}
 		return elems
 	}
+	testCases := []struct {
+		name         string
+		repos        int
+		capture      int
+		restrictions int
+		times        int
+	}{
+		{
+			name:  "no capture values",
+			repos: 500,
+			times: 5,
+		},
+		{
+			name:    "with captured values",
+			repos:   500,
+			times:   5,
+			capture: 2,
+		},
+		{
+			name:         "with restrictions",
+			repos:        500,
+			times:        5,
+			restrictions: 250,
+		},
+		{
+			name:         "all restricted",
+			repos:        100,
+			times:        2,
+			restrictions: 100,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			logger := logtest.Scoped(t)
+			ctx := context.Background()
+			clock := timeutil.Now
+			insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+			postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+			permStore := NewInsightPermissionStore(postgres)
+			store := NewWithClock(insightsDB, permStore, clock)
 
-	t.Run("no capture values", func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		ctx := context.Background()
-		clock := timeutil.Now
-		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
-		postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
-		permStore := NewInsightPermissionStore(postgres)
-		store := NewWithClock(insightsDB, permStore, clock)
+			seriesID := initializeData(ctx, store, tc.repos, tc.times, tc.capture)
 
-		seriesID := initializeData(ctx, store, 500, 5, 0)
+			opts := SeriesPointsOpts{SeriesID: &seriesID, Excluded: generateRepoRestrictions(tc.restrictions, tc.repos)}
 
-		db, _ := store.SeriesPoints(ctx, SeriesPointsOpts{SeriesID: &seriesID})
-		mem, _ := store.LoadSeriesInMem(ctx, SeriesPointsOpts{SeriesID: &seriesID})
+			db, _ := store.SeriesPoints(ctx, opts)
+			mem, _ := store.LoadSeriesInMem(ctx, opts)
 
-		dbStr := toStr(db)
-		memStr := toStr(mem)
+			dbStr := toStr(db)
+			memStr := toStr(mem)
 
-		sort.Slice(dbStr, func(i, j int) bool {
-			return dbStr[i] < dbStr[j]
+			sort.Slice(dbStr, func(i, j int) bool {
+				return dbStr[i] < dbStr[j]
+			})
+
+			sort.Slice(memStr, func(i, j int) bool {
+				return memStr[i] < memStr[j]
+			})
+			require.ElementsMatchf(t, dbStr, memStr, "db aggregation not equal to mem aggregation")
 		})
-
-		sort.Slice(memStr, func(i, j int) bool {
-			return memStr[i] < memStr[j]
-		})
-		require.ElementsMatchf(t, dbStr, memStr, "db aggregation not equal to mem aggregation")
-	})
-
-	t.Run("with captured values", func(t *testing.T) {
-		logger := logtest.Scoped(t)
-		ctx := context.Background()
-		clock := timeutil.Now
-		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
-		postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
-		permStore := NewInsightPermissionStore(postgres)
-		store := NewWithClock(insightsDB, permStore, clock)
-
-		seriesID := initializeData(ctx, store, 500, 5, 2)
-
-		db, _ := store.SeriesPoints(ctx, SeriesPointsOpts{SeriesID: &seriesID})
-		mem, _ := store.LoadSeriesInMem(ctx, SeriesPointsOpts{SeriesID: &seriesID})
-
-		dbStr := toStr(db)
-		memStr := toStr(mem)
-
-		sort.Slice(dbStr, func(i, j int) bool {
-			return dbStr[i] < dbStr[j]
-		})
-
-		sort.Slice(memStr, func(i, j int) bool {
-			return memStr[i] < memStr[j]
-		})
-		require.ElementsMatchf(t, dbStr, memStr, "db aggregation not equal to mem aggregation")
-	})
+	}
 }
 
 func BenchmarkLoadTimes(b *testing.B) {
 	benchmarks := []struct {
-		name    string
-		repos   int
-		capture int
-		times   int
+		name         string
+		repos        int
+		capture      int
+		restrictions int
+		times        int
 	}{
 		{
 			name:  "1000 repos no capture no restrictions", // 1000 * 12 = 12,000 samples
