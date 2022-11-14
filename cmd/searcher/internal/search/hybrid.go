@@ -6,7 +6,6 @@ import (
 	"regexp/syntax"
 	"sort"
 	"time"
-	"unicode/utf8"
 
 	"github.com/grafana/regexp"
 	"github.com/prometheus/client_golang/prometheus"
@@ -63,7 +62,7 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 			return nil, false, err
 		}
 		if !ok {
-			logger.Warn("failed to find indexed commit")
+			logger.Debug("failed to find indexed commit")
 			recordHybridFinalState("zoekt-list-missing")
 			return nil, false, nil
 		}
@@ -97,13 +96,13 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 			log.Int("totalLenUnindexedSearchPaths", totalLenUnindexedSearch))
 
 		if totalLenIndexedIgnore > s.MaxTotalPathsLength || totalLenUnindexedSearch > s.MaxTotalPathsLength {
-			logger.Info("not doing hybrid search due to changed file list exceeding MAX_TOTAL_PATHS_LENGTH",
+			logger.Debug("not doing hybrid search due to changed file list exceeding MAX_TOTAL_PATHS_LENGTH",
 				log.Int("MAX_TOTAL_PATHS_LENGTH", s.MaxTotalPathsLength))
 			recordHybridFinalState("diff-too-large")
 			return nil, false, nil
 		}
 
-		logger.Info("starting zoekt search")
+		logger.Debug("starting zoekt search")
 
 		ok, err = zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
 		if err != nil {
@@ -148,6 +147,9 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond
 	}
 
+	// We only support chunk matches below.
+	opts.ChunkMatches = true
+
 	res, err := client.Search(ctx, q, opts)
 	if err != nil {
 		return false, err
@@ -160,40 +162,11 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 		}
 
 		cms := make([]protocol.ChunkMatch, 0, len(fm.ChunkMatches))
-		for _, l := range fm.LineMatches {
-			if l.FileName {
+		for _, cm := range fm.ChunkMatches {
+			if cm.FileName {
 				continue
 			}
 
-			for _, m := range l.LineFragments {
-				runeOffset := utf8.RuneCount(l.Line[:m.LineOffset])
-				runeLength := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
-
-				cms = append(cms, protocol.ChunkMatch{
-					Content: string(l.Line),
-					// zoekt line numbers are 1-based rather than 0-based so subtract 1
-					ContentStart: protocol.Location{
-						Offset: int32(l.LineStart),
-						Line:   int32(l.LineNumber - 1),
-						Column: 0,
-					},
-					Ranges: []protocol.Range{{
-						Start: protocol.Location{
-							Offset: int32(m.Offset),
-							Line:   int32(l.LineNumber - 1),
-							Column: int32(runeOffset),
-						},
-						End: protocol.Location{
-							Offset: int32(m.Offset) + int32(m.MatchLength),
-							Line:   int32(l.LineNumber - 1),
-							Column: int32(runeOffset + runeLength),
-						},
-					}},
-				})
-			}
-		}
-
-		for _, cm := range fm.ChunkMatches {
 			ranges := make([]protocol.Range, 0, len(cm.Ranges))
 			for _, r := range cm.Ranges {
 				ranges = append(ranges, protocol.Range{
@@ -265,7 +238,8 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 		}
 		parts = append(parts, &zoektquery.Regexp{
 			Regexp:        re,
-			Content:       true,
+			Content:       p.PatternMatchesContent,
+			FileName:      p.PatternMatchesPath,
 			CaseSensitive: !rg.ignoreCase,
 		})
 	}

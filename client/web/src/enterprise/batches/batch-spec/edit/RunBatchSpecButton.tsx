@@ -56,6 +56,7 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
                             execute()
                             eventLogger.log('batch_change_editor:run_batch_spec:clicked')
                         }}
+                        aria-label={typeof isExecutionDisabled === 'string' ? isExecutionDisabled : undefined}
                         disabled={!!isExecutionDisabled}
                     >
                         Run batch spec

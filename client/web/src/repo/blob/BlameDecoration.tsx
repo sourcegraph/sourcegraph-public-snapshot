@@ -17,6 +17,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
+import { replaceRevisionInURL } from '../../util/url'
 import { BlameHunk } from '../blame/useBlameHunks'
 
 import styles from './BlameDecoration.module.scss'
@@ -164,7 +165,7 @@ export const BlameDecoration: React.FunctionComponent<{
                         {blameHunk.displayInfo.timestampString}
                     </div>
                     <hr className={classNames(styles.separator, 'm-0')} />
-                    <div className={classNames('px-3 d-flex align-items-center', styles.body)}>
+                    <div className={classNames('d-flex align-items-center', styles.block, styles.body)}>
                         <Icon
                             aria-hidden={true}
                             as={SourceCommitIcon}
@@ -179,6 +180,20 @@ export const BlameDecoration: React.FunctionComponent<{
                         >
                             {blameHunk.message}
                         </Link>
+                    </div>
+                    <hr className={classNames(styles.separator, 'm-0')} />
+                    <div className={classNames('px-3', styles.block)}>
+                        {blameHunk.commit.parents.length > 0 && (
+                            <Link
+                                to={
+                                    window.location.origin +
+                                    replaceRevisionInURL(window.location.href, blameHunk.commit.parents[0].oid)
+                                }
+                                className={styles.footerLink}
+                            >
+                                View blame prior to this change
+                            </Link>
+                        )}
                     </div>
                 </div>
             </PopoverContent>

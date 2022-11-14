@@ -141,10 +141,15 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                             'd-flex justify-content-center align-items-center flex-column mx-1'
                         )}
                     >
-                        <Tooltip content="The diff changed">
-                            <Icon aria-label="The diff changed" svgPath={mdiFileDocumentEditOutline} />
+                        <Tooltip content="The diff for this changeset has been updated">
+                            <Icon
+                                aria-label="The diff for this changeset has been updated"
+                                svgPath={mdiFileDocumentEditOutline}
+                            />
                         </Tooltip>
-                        <span className="text-nowrap">Diff</span>
+                        <span className="text-nowrap" aria-hidden={true}>
+                            Diff
+                        </span>
                     </div>
                 )}
                 {(node.delta.authorNameChanged || node.delta.authorEmailChanged) && (

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 
 import { mdiProgressClock } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
@@ -145,16 +146,16 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
     errors,
     queryWorkspacesList,
 }) {
-    const { executionURL, workspaceResolution, source, applyURL } = batchSpec
+    const { executionURL, workspaceResolution, applyURL } = batchSpec
 
     const tabsConfig = useMemo<TabsConfig[]>(
         () => [
             { key: 'configuration', isEnabled: true, handler: { type: 'link' } },
             { key: 'spec', isEnabled: true, handler: { type: 'link' } },
-            { key: 'execution', isEnabled: source === BatchSpecSource.REMOTE, handler: { type: 'link' } },
+            { key: 'execution', isEnabled: true, handler: { type: 'link' } },
             { key: 'preview', isEnabled: applyURL !== null, handler: { type: 'link' } },
         ],
-        [applyURL, source]
+        [applyURL]
     )
 
     return (
@@ -181,15 +182,28 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                         {batchSpec.source === BatchSpecSource.REMOTE ? (
                             <BatchSpecStateBadge state={batchSpec.state} />
                         ) : (
-                            <Badge variant="secondary" tooltip="This batch spec was executed with src-cli.">
-                                LOCAL
-                            </Badge>
+                            <>
+                                <VisuallyHidden>This batch spec was executed with src-cli.</VisuallyHidden>
+                                <Badge
+                                    variant="secondary"
+                                    tooltip="This batch spec was executed with src-cli."
+                                    aria-hidden={true}
+                                >
+                                    LOCAL
+                                </Badge>
+                            </>
                         )}
                     </div>
                     {batchSpec.startedAt && (
                         <ExecutionStat>
-                            <Icon aria-label="Duration" className={styles.durationIcon} svgPath={mdiProgressClock} />
-                            <Duration start={batchSpec.startedAt} end={batchSpec.finishedAt ?? undefined} />
+                            <Icon aria-hidden={true} className={styles.durationIcon} svgPath={mdiProgressClock} />
+                            <Duration
+                                start={batchSpec.startedAt}
+                                end={batchSpec.finishedAt ?? undefined}
+                                labelPrefix={`The batch spec ${
+                                    batchSpec.finishedAt ? 'finished executing in' : 'has been executing for'
+                                }`}
+                            />
                         </ExecutionStat>
                     )}
                     {workspaceResolution && <ExecutionStatsBar {...workspaceResolution.workspaces.stats} />}
