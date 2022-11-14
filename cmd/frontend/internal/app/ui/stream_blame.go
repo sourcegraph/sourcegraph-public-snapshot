@@ -12,16 +12,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Stream blame
+// serveStreamBlame returns a HTTP handler that streams back the results of running
+// git blame with the --incremental flag. It will stream back to the client the most
+// recent hunks first and will gradually reach the oldests, or not if we timeout
+// before that.
 //
 //	http://localhost:3080/github.com/gorilla/mux/-/stream-blame/mux.go
 func serveStreamBlame(db database.DB, gitserverClient gitserver.Client) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) (err error) {
-		// ---------------------- START OF COPY&PASTED -----------------------
+		flags := featureflag.FromContext(r.Context())
+		if !flags.GetBoolOr("enable-streaming-git-blame", false) {
+			w.WriteHeader(404)
+			return
+		}
+
 		var common *Common
 		for {
 			// newCommon provides various repository handling features that we want, so
@@ -58,11 +67,11 @@ func serveStreamBlame(db database.DB, gitserverClient gitserver.Client) handlerF
 		w.Header().Set("Transfer-Encoding", "chunked")
 
 		w.Header().Set("X-Accel-Buffering", "no")
-		// ---------------------- END OF COPY&PASTED -----------------------
 
 		if strings.HasPrefix(requestedPath, "/") {
 			requestedPath = strings.TrimLeft(requestedPath, "/")
 		}
+
 		hunkReader, err := gitserverClient.StreamBlameFile(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, requestedPath, &gitserver.BlameOptions{
 			NewestCommit: common.CommitID,
 		})
@@ -77,20 +86,16 @@ func serveStreamBlame(db database.DB, gitserverClient gitserver.Client) handlerF
 				return err
 			}
 			if done {
-				// done
 				return nil
 			}
-
 			encoded, err := json.Marshal(hunk)
 			if err != nil {
 				return err
 			}
-
 			encoded = append(encoded, []byte("\n")...)
 			if _, err = w.Write(encoded); err != nil {
 				return err
 			}
-
 			flusher.Flush()
 		}
 	}
