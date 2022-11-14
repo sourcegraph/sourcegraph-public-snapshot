@@ -7,6 +7,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { SymbolKind } from '@sourcegraph/shared/src/schema'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { useDebounce } from '@sourcegraph/wildcard'
@@ -27,7 +28,7 @@ import { parseBrowserRepoURL } from '../util/url'
 import styles from './RepoRevisionSidebarSymbols.module.scss'
 
 interface SymbolNodeProps {
-    node: Sym
+    node: SymbolWithChildren
     onHandleClick: () => void
     isActive: boolean
     nestedRender: HierarchicalSymbolsProps['render']
@@ -42,18 +43,25 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
     const isActiveFunc = (): boolean => isActive
     return (
         <li className={styles.repoRevisionSidebarSymbolsNode}>
-            <NavLink
-                to={node.url}
-                isActive={isActiveFunc}
-                className={classNames('test-symbol-link', styles.link)}
-                activeClassName={styles.linkActive}
-                onClick={onHandleClick}
-            >
-                <SymbolIcon kind={node.kind} className="mr-1" />
-                <span className={styles.name} data-testid="symbol-name">
+            {node.__typename === 'SymbolPlaceholder' ? (
+                <span className={styles.link}>
+                    <SymbolIcon kind={SymbolKind.UNKNOWN} className="mr-1" />
                     {node.name}
                 </span>
-            </NavLink>
+            ) : (
+                <NavLink
+                    to={node.url}
+                    isActive={isActiveFunc}
+                    className={classNames('test-symbol-link', styles.link)}
+                    activeClassName={styles.linkActive}
+                    onClick={onHandleClick}
+                >
+                    <SymbolIcon kind={node.kind} className="mr-1" />
+                    <span className={styles.name} data-testid="symbol-name">
+                        {node.name}
+                    </span>
+                </NavLink>
+            )}
             {node.children && <HierarchicalSymbols symbols={node.children} render={nestedRender} className="pl-3" />}
         </li>
     )
@@ -213,7 +221,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
                         <SymbolNode
                             node={args.symbol}
                             onHandleClick={onHandleSymbolClick}
-                            isActive={isSymbolActive(args.symbol.url)}
+                            isActive={args.symbol.__typename === 'Symbol' && isSymbolActive(args.symbol.url)}
                             nestedRender={args.nestedRender}
                         />
                     )}
@@ -231,8 +239,11 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
 }
 
 interface HierarchicalSymbolsProps {
-    symbols: Sym[]
-    render: (props: { symbol: Sym; nestedRender: HierarchicalSymbolsProps['render'] }) => React.ReactElement
+    symbols: SymbolWithChildren[]
+    render: (props: {
+        symbol: SymbolWithChildren
+        nestedRender: HierarchicalSymbolsProps['render']
+    }) => React.ReactElement
     className?: string
 }
 
@@ -248,45 +259,67 @@ const HierarchicalSymbols: React.FunctionComponent<HierarchicalSymbolsProps> = p
     </ul>
 )
 
-type Sym = SymbolNodeFields & { children: Sym[] }
+// When searching symbols, results may contain only child symbols without their parents
+// (e.g. when searching for "bar", a class named "Foo" with a method named "bar" will
+// return "bar" as a result, and "bar" will say that "Foo" is its parent).
+// The placeholder symbols exist to show the hierarchy of the results, but these placeholders
+// are not interactive (cannot be clicked to navigate) and don't have any other information.
+interface SymbolPlaceholder {
+    __typename: 'SymbolPlaceholder'
+    name: string
+}
 
-const hierarchyOf = (symbols: SymbolNodeFields[]): Sym[] => {
+type SymbolWithChildren = (SymbolNodeFields | SymbolPlaceholder) & { children: SymbolWithChildren[] }
+
+const hierarchyOf = (symbols: SymbolNodeFields[]): SymbolWithChildren[] => {
     const fullNameToSymbol = new Map<string, SymbolNodeFields>(symbols.map(symbol => [fullName(symbol), symbol]))
-    const fullNameToSym = new Map<string, Sym>()
-    const topLevelSymbols: Sym[] = []
+    const fullNameToSymbolWithChildren = new Map<string, SymbolWithChildren>()
+    const topLevelSymbols: SymbolWithChildren[] = []
 
     const visit = (fullName: string): void => {
         if (fullName === '') {
             return
         }
 
-        const symbol = fullNameToSymbol.get(fullName)
+        let symbol: SymbolNodeFields | SymbolPlaceholder | undefined = fullNameToSymbol.get(fullName)
         if (!symbol) {
-            return
+            // Symbol doesn't exist, create placeholder at the top level and add current symbol to it.
+            // (This happens when running a search and the result is a child of a symbol that isn't in the result set.)
+            symbol = {
+                __typename: 'SymbolPlaceholder',
+                name: fullName.split('.').at(-1) || fullName,
+            }
         }
 
-        // Sym might already exist if we've already visited a child of this symbol.
-        const sym = fullNameToSym.get(fullName) || { ...symbol, children: [] }
-        fullNameToSym.set(fullName, sym)
+        // symbolWithChildren might already exist if we've already visited a child of this symbol.
+        const symbolWithChildren = fullNameToSymbolWithChildren.get(fullName) || { ...symbol, children: [] }
+        fullNameToSymbolWithChildren.set(fullName, symbolWithChildren)
 
         const parentFullName = fullName.split('.').slice(0, -1).join('.')
         if (!parentFullName) {
             // No parent, add to top-level
-            topLevelSymbols.push(sym)
+            topLevelSymbols.push(symbolWithChildren)
             return
         }
 
         const parentSymbol = fullNameToSymbol.get(parentFullName)
-        const parentSym = fullNameToSym.get(parentFullName)
-        if (parentSym) {
+        let parentSymbolWithChildren = fullNameToSymbolWithChildren.get(parentFullName)
+        if (parentSymbolWithChildren) {
             // Parent exists, add to parent
-            parentSym.children.push(sym)
+            parentSymbolWithChildren.children.push(symbolWithChildren)
         } else if (parentSymbol) {
             // Create parent node and add current symbol to it
-            fullNameToSym.set(parentFullName, { ...parentSymbol, children: [sym] })
+            fullNameToSymbolWithChildren.set(parentFullName, { ...parentSymbol, children: [symbolWithChildren] })
         } else {
-            // This should never happen!!
-            logger.error(new Error(`Could not find parent symbol for ${fullName}`))
+            // Parent doesn't exist, visit it to generate a placeholder hierarchy, then add current symbol to it
+            visit(parentFullName)
+            parentSymbolWithChildren = fullNameToSymbolWithChildren.get(parentFullName) // This should now exist
+            if (parentSymbolWithChildren) {
+                parentSymbolWithChildren.children.push(symbolWithChildren)
+            } else {
+                // This should never happen!!
+                logger.error('RepoRevisionSidebarSymbols: Failed to add symbol to parent', { fullName, parentFullName })
+            }
         }
     }
 
@@ -295,12 +328,13 @@ const hierarchyOf = (symbols: SymbolNodeFields[]): Sym[] => {
     }
 
     // Sort everything
-    for (const sym of fullNameToSym.values()) {
+    for (const sym of fullNameToSymbolWithChildren.values()) {
         sym.children.sort((a, b) => a.name.localeCompare(b.name))
     }
+    topLevelSymbols.sort((a, b) => a.name.localeCompare(b.name))
 
     return topLevelSymbols
 }
 
-const fullName = (symbol: SymbolNodeFields): string =>
-    `${symbol.containerName ? symbol.containerName + '.' : ''}${symbol.name}`
+const fullName = (symbol: SymbolNodeFields | SymbolPlaceholder): string =>
+    `${symbol.__typename === 'Symbol' && symbol.containerName ? symbol.containerName + '.' : ''}${symbol.name}`
