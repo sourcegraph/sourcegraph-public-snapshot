@@ -80,14 +80,15 @@ sg lint --help
 
 		if len(targets) == 0 {
 			// If no args provided, run all
-			lintTargets = linters.Targets
-			for _, t := range lintTargets {
+			for _, t := range linters.Targets {
+				// skip adding the formatting check
 				if lintNoFormatCheck.Get(cmd) && t.Name == linters.Formatting.Name {
-					// don't add the format check if it is disabled
 					continue
 				}
+				lintTargets = append(lintTargets, t)
 				targets = append(targets, t.Name)
 			}
+
 		} else {
 			// Otherwise run requested set
 			allLintTargetsMap := make(map[string]linters.Target, len(linters.Targets))
