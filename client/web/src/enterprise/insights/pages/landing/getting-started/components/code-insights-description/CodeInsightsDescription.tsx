@@ -64,7 +64,7 @@ export const CodeInsightsDescription: React.FunctionComponent<Props> = ({ classN
                     <Icon role="img" size="md" violetBg={true} aria-hidden={true} svgPath={mdiPoll} />
                     <div className="pl-3">
                         <H4 className="mb-1">Get insights for your code</H4>
-                        <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
+                        <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}>
                             Sign up for a 30-day trial on Sourcegraph Cloud
                         </Link>
                     </div>

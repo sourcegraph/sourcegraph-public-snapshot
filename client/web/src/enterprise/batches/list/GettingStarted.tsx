@@ -78,7 +78,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                             <Icon as={BatchChangesIcon} violetBg={true} role="img" size="md" aria-hidden={true} />
                             <div className="pl-3">
                                 <H4 className="mb-1">Get Batch Changes on your code</H4>
-                                <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
+                                <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}>
                                     Sign up for a 30-day trial on Sourcegraph Cloud.
                                 </Link>
                             </div>
