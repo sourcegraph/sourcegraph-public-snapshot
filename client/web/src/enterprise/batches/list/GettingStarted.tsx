@@ -91,7 +91,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
             {isSourcegraphDotCom ? (
                 <CtaBanner
                     className="col-lg-7"
-                    bodyText="Batch Changes requires a local Sourcegraph installation via Docker Compose or Kubernetes. You can check it out for free by installing locally."
+                    bodyText="Batch Changes requires a Sourcegraph Cloud or self-hosted instance."
                     title={<H3>Install locally</H3>}
                     linkText="Install local instance"
                     href="/help/admin/install?utm_medium=inproduct&utm_source=inproduct-batch-changes&utm_campaign=inproduct-batch-changes&term="
