@@ -585,15 +585,20 @@ func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateSc
 
 // createOnboardingExternalService creates a GITHUB kind external service with OSS repos.
 func createOnboardingExternalService(ctx context.Context, db database.DB) error {
+	ghToken := env.Get("ONBOARDING_EXTERNAL_SERVICE_GH_TOKEN", "", "GitHub token for onboarding external service. Token can be without any permissions.")
+
+	if ghToken == "" {
+		return nil
+	}
+
 	externalService := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB (Onboarding Repositories)",
 		// TODO: Update list of repos (clarify)
-		// NOTE: this a mock token, and does not have any permissions. All the listed repos are OSS/public.
 		Config:      extsvc.NewUnencryptedConfig(`
 		{
 			"url": "https://github.com",
-			"token": "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",
+			"token": "`+ ghToken + `",
 			"repos": [
 				"golang/go",
 				"microsoft/TypeScript",
