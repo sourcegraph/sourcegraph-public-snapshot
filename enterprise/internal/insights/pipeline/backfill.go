@@ -127,8 +127,8 @@ var compressionSavingsMetric = promauto.NewHistogramVec(prometheus.HistogramOpts
 
 func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int, rateLimit *ratelimit.InstrumentedLimiter) SearchJobGenerator {
 	return func(ctx context.Context, reqContext requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
-		numberOffFrames := len(reqContext.backfillRequest.Frames)
-		jobs := make([]*queryrunner.SearchJob, 0, numberOffFrames)
+		numberOfFrames := len(reqContext.backfillRequest.Frames)
+		jobs := make([]*queryrunner.SearchJob, 0, numberOfFrames)
 		if reqContext.backfillRequest == nil {
 			return &reqContext, jobs, errors.New("backfill request provided")
 		}
