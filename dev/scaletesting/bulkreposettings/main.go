@@ -213,7 +213,7 @@ var _ Iter[[]*store.Repo] = (*GithubRepoFetcher)(nil)
 // index, set start to a different value.
 //
 // The iteration is considered done when start >= len(repos)
-type StaticRepoFetcher struct {
+type MockRepoFetcher struct {
 	repos    []*store.Repo
 	iterSize int
 	start    int
