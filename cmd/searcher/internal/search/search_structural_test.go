@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -727,6 +728,9 @@ func maybeSkipComby(t *testing.T) {
 	t.Helper()
 	if os.Getenv("CI") != "" {
 		return
+	}
+	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
+		t.Skip("Skipping due to limitations in comby and M1")
 	}
 	if _, err := exec.LookPath("comby"); err != nil {
 		t.Skipf("skipping comby test when not on CI: %v", err)
