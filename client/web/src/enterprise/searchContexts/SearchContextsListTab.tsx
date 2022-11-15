@@ -1,8 +1,7 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 import { useHistory, useLocation } from 'react-router'
-import { catchError } from 'rxjs/operators'
 
 import {
     SearchContextProps,
@@ -12,7 +11,6 @@ import {
     SearchContextMinimalFields,
 } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Badge, useObservable, Link, Card } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import {
@@ -65,13 +63,6 @@ export const SearchContextsListTab: React.FunctionComponent<React.PropsWithChild
             })
         },
         [authenticatedUser, fetchSearchContexts, getUserSearchContextNamespaces, platformContext]
-    )
-
-    const autoDefinedSearchContexts = useObservable(
-        useMemo(() => fetchAutoDefinedSearchContexts({ platformContext }).pipe(catchError(() => [])), [
-            fetchAutoDefinedSearchContexts,
-            platformContext,
-        ])
     )
 
     const ownerNamespaceFilterValues: FilteredConnectionFilterValue[] = authenticatedUser
