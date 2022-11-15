@@ -31,10 +31,10 @@ var lintFailFast = &cli.BoolFlag{
 	Value:   true,
 }
 
-var lintNoFormatCheck = &cli.BoolFlag{
-	Name:    "no-format-check",
-	Aliases: []string{"nfc"},
-	Usage:   "Don't check file formatting",
+var lintSkipFormatCheck = &cli.BoolFlag{
+	Name:    "skip-format-check",
+	Aliases: []string{"sfc"},
+	Usage:   "Skip file formatting check",
 	Value:   false,
 }
 
@@ -64,7 +64,7 @@ sg lint --help
 		generateAnnotations,
 		lintFix,
 		lintFailFast,
-		lintNoFormatCheck,
+		lintSkipFormatCheck,
 	},
 	Before: func(cmd *cli.Context) error {
 		// If more than 1 target is requested, hijack subcommands by setting it to nil
@@ -80,34 +80,47 @@ sg lint --help
 
 		if len(targets) == 0 {
 			// If no args provided, run all
-			lintTargets = linters.Targets
-			for _, t := range lintTargets {
+			for _, t := range linters.Targets {
+				if lintSkipFormatCheck.Get(cmd) {
+					continue
+				}
+
+				lintTargets = append(lintTargets, t)
 				targets = append(targets, t.Name)
 			}
+
 		} else {
 			// Otherwise run requested set
 			allLintTargetsMap := make(map[string]linters.Target, len(linters.Targets))
 			for _, c := range linters.Targets {
 				allLintTargetsMap[c.Name] = c
 			}
+
+			hasFormatTarget := false
 			for _, t := range targets {
 				target, ok := allLintTargetsMap[t]
 				if !ok {
 					std.Out.WriteFailuref("unrecognized target %q provided", t)
 					return flag.ErrHelp
 				}
+				if target.Name == linters.Formatting.Name {
+					hasFormatTarget = true
+				}
+
 				lintTargets = append(lintTargets, target)
+			}
+
+			// If we haven't added the format target already, add it! Unless we must skip it
+			if !lintSkipFormatCheck.Get(cmd) && !hasFormatTarget {
+				lintTargets = append(lintTargets, linters.Formatting)
+				targets = append(targets, linters.Formatting.Name)
+
 			}
 		}
 
 		repoState, err := repo.GetState(cmd.Context)
 		if err != nil {
 			return errors.Wrap(err, "repo.GetState")
-		}
-
-		if !lintNoFormatCheck.Get(cmd) {
-			lintTargets = append(lintTargets, linters.FormattingTarget)
-			targets = append(targets, linters.FormattingTarget.Name)
 		}
 
 		runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), lintTargets...)
@@ -119,7 +132,7 @@ sg lint --help
 		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
 		return runner.Check(cmd.Context, repoState)
 	},
-	Subcommands: lintTargets(append(linters.Targets, linters.FormattingTarget)).Commands(),
+	Subcommands: lintTargets(append(linters.Targets, linters.Formatting)).Commands(),
 }
 
 type lintTargets []linters.Target
@@ -142,13 +155,22 @@ func (lt lintTargets) Commands() (cmds []*cli.Command) {
 					return errors.Wrap(err, "repo.GetState")
 				}
 
-				runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), target)
+				lintTargets := []linters.Target{target}
+				targets := []string{target.Name}
+				// Always add the format check, unless we must skip it!
+				if !lintSkipFormatCheck.Get(cmd) && target.Name != linters.Formatting.Name {
+					lintTargets = append(lintTargets, linters.Formatting)
+					targets = append(targets, linters.Formatting.Name)
+
+				}
+
+				runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), lintTargets...)
 				if lintFix.Get(cmd) {
-					std.Out.WriteNoticef("Fixing checks from target: %s", target.Name)
+					std.Out.WriteNoticef("Fixing checks from target: %s", strings.Join(targets, ", "))
 					return runner.Fix(cmd.Context, repoState)
 				}
 				runner.FailFast = lintFailFast.Get(cmd)
-				std.Out.WriteNoticef("Running checks from target: %s", target.Name)
+				std.Out.WriteNoticef("Running checks from target: %s", strings.Join(targets, ", "))
 				return runner.Check(cmd.Context, repoState)
 			},
 			// Completions to chain multiple commands
