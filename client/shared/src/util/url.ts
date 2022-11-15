@@ -562,9 +562,13 @@ export function buildSearchURLQuery(
     return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
-export function buildGetStartedURL(forDotcom?: boolean, returnTo?: string): string {
-    // Still support directing to dotcom signup links when needed
-    const path = forDotcom ? 'https://sourcegraph.com/sign-up' : 'https://signup.sourcegraph.com'
+export function buildGetStartedURL(forInstances?: boolean, returnTo?: string): string {
+    /**
+     * Account sign-ups should be available for customer instances whereas
+     * non customer instances like .com should direct users through our cloud
+     * sign-up flow.
+     */
+    const path = forInstances ? 'https://sourcegraph.com/sign-up' : 'https://signup.sourcegraph.com'
     const url = new URL(path)
 
     if (returnTo !== undefined) {
