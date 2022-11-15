@@ -282,7 +282,7 @@ type ResultsetScanFn func(rows *sql.Rows, err error) ([]workerutil.Record, error
 
 // New creates a new store with the given database handle and options.
 func New(logger log.Logger, handle basestore.TransactableHandle, options Options) Store {
-	return NewWithMetrics(handle, options, &observation.TestContext)
+	return NewWithMetrics(handle, options, observation.ContextWithLogger(logger))
 }
 
 func NewWithMetrics(handle basestore.TransactableHandle, options Options, observationContext *observation.Context) Store {
