@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import * as H from 'history'
-import { uniq, isEqual } from 'lodash'
+import { isEqual, uniq } from 'lodash'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -10,24 +10,24 @@ import {
     distinctUntilChanged,
     filter,
     map,
+    scan,
+    share,
     skip,
     startWith,
     switchMap,
     takeUntil,
     tap,
-    scan,
-    share,
 } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 
-import { ConnectionNodes, ConnectionNodesState, ConnectionNodesDisplayProps, ConnectionProps } from './ConnectionNodes'
+import { ConnectionNodes, ConnectionNodesDisplayProps, ConnectionNodesState, ConnectionProps } from './ConnectionNodes'
 import { Connection, ConnectionQueryArguments } from './ConnectionType'
 import { QUERY_KEY } from './constants'
 import { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
-import { ConnectionError, ConnectionLoading, ConnectionForm, ConnectionContainer } from './ui'
+import { ConnectionContainer, ConnectionError, ConnectionForm, ConnectionLoading } from './ui'
 import type { ConnectionFormProps } from './ui/ConnectionForm'
-import { getFilterFromURL, getUrlQuery, parseQueryInt, hasID } from './utils'
+import { getFilterFromURL, getUrlQuery, hasID, parseQueryInt } from './utils'
 
 /**
  * Fields that belong in FilteredConnectionProps and that don't depend on the type parameters. These are the fields
@@ -76,8 +76,14 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, Co
      */
     querySubject?: Subject<string>
 
-    /** A function that generates an aria label given a node display name */
+    /** A function that generates an aria label given a node display name. */
     ariaLabelFunction?: (displayName: string) => string
+
+    /**
+     * Sets the aria-live attribute for the container around the nodes. This will announce updates to
+     * the list to screen reader users (e.g. reading out nodes after they have finished loading).
+     */
+    ariaLive?: 'polite' | 'off'
 }
 
 /**
@@ -514,7 +520,11 @@ export class FilteredConnection<
         const inputPlaceholder = this.props.inputPlaceholder || `Search ${this.props.pluralNoun}...`
 
         return (
-            <ConnectionContainer compact={this.props.compact} className={this.props.className}>
+            <ConnectionContainer
+                compact={this.props.compact}
+                className={this.props.className}
+                ariaLive={this.props.ariaLive}
+            >
                 {(!this.props.hideSearch || this.props.filters) && (
                     <ConnectionForm
                         ref={this.setFilterRef}
