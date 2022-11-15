@@ -32,8 +32,6 @@
     &:disabled,
     &[aria-disabled='true'] {
         cursor: not-allowed;
-        // This is needed to properly support Tooltip behavior on disabled buttons
-        // pointer-events: none;
     }
 
     &:hover {
