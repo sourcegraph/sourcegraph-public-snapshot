@@ -565,14 +565,14 @@ func (s *GitLabSource) getFork(ctx context.Context, targetRepo *types.Repo, name
 
 	targetNamespace, err := targetMeta.Namespace()
 	if err != nil {
-		return nil, errors.Wrap(err, "")
+		return nil, errors.Wrap(err, "getting namespace")
 	}
 
 	targetNamespace = strings.ReplaceAll(targetNamespace, "/", "-")
 
 	targetName, err := targetMeta.Name()
 	if err != nil {
-		return nil, errors.Wrap(err, "where is the name ?!")
+		return nil, errors.Wrap(err, "getting name")
 	}
 
 	createdFork := targetNamespace + "-" + targetName
