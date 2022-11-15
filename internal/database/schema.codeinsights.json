@@ -1089,7 +1089,7 @@
           "Index": 22,
           "TypeName": "boolean",
           "IsNullable": false,
-          "Default": "true",
+          "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
