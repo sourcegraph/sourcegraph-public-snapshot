@@ -144,6 +144,21 @@ func TestGetRemoteURLFunc_GitHubApp(t *testing.T) {
 }
 
 func TestGetVCSSyncer(t *testing.T) {
+	oldReposDir := reposDir
+	t.Cleanup(func() {
+		reposDir = oldReposDir
+	})
+	var err error
+	reposDir, err = os.MkdirTemp("", "TestGetVCSSyncer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.RemoveAll(reposDir); err != nil {
+			t.Fatal(err)
+		}
+	})
+
 	repo := api.RepoName("foo/bar")
 	extsvcStore := database.NewMockExternalServiceStore()
 	repoStore := database.NewMockRepoStore()
