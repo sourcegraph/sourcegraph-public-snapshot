@@ -52,7 +52,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		wantQuery            string
 		onlyCloudDefault     bool
 		includeDeleted       bool
-		displayNames		 []string
+		displayNames         []string
 		wantArgs             []any
 	}{
 		{
@@ -118,10 +118,10 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			wantQuery:      "TRUE",
 		},
 		{
-			name:          "displayNames",
-			displayNames:  []string{"External service #1", "External service #2"},
-			wantQuery:     "deleted_at IS NULL AND display_name = ANY($1)",
-			wantArgs:      []any{pq.Array([]string{"External service #1", "External service #2"})},
+			name:         "displayNames",
+			displayNames: []string{"External service #1", "External service #2"},
+			wantQuery:    "deleted_at IS NULL AND display_name = ANY($1)",
+			wantArgs:     []any{pq.Array([]string{"External service #1", "External service #2"})},
 		},
 	}
 	for _, test := range tests {

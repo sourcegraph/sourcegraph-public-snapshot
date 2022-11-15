@@ -49,7 +49,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
-const port = "3182"
+const (
+	onboardingExternalServiceDisplayName = "GITHUB (Onboarding Repositories)"
+	port                                 = "3182"
+)
 
 //go:embed state.html.tmpl
 var stateHTMLTemplate string
@@ -144,8 +147,12 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
 
-	if err := createOnboardingExternalService(ctx, db); err != nil {
-		logger.Error("failed to create onboarding external service", log.Error(err))
+	ghToken := env.Get("ONBOARDING_EXTERNAL_SERVICE_GH_TOKEN", "", "GitHub token for onboarding external service. Token can be without any permissions.")
+
+	if ghToken != "" {
+		if err := createOnboardingExternalService(ctx, db, ghToken); err != nil {
+			logger.Error("failed to create onboarding external service", log.Error(err))
+		}
 	}
 
 	server := &repoupdater.Server{
@@ -582,21 +589,28 @@ func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateSc
 }
 
 // createOnboardingExternalService creates a GITHUB kind external service with OSS repos.
-func createOnboardingExternalService(ctx context.Context, db database.DB) error {
-	ghToken := env.Get("ONBOARDING_EXTERNAL_SERVICE_GH_TOKEN", "", "GitHub token for onboarding external service. Token can be without any permissions.")
+func createOnboardingExternalService(ctx context.Context, db database.DB, ghToken string) error {
+	svcs, err := db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+		DisplayNames:   []string{onboardingExternalServiceDisplayName},
+		IncludeDeleted: true,
+	})
 
-	if ghToken == "" {
+	if err != nil {
+		return err
+	}
+
+	if len(svcs) > 0 {
 		return nil
 	}
 
 	externalService := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB (Onboarding Repositories)",
+		DisplayName: onboardingExternalServiceDisplayName,
 		// TODO: Update list of repos (clarify)
-		Config:      extsvc.NewUnencryptedConfig(`
+		Config: extsvc.NewUnencryptedConfig(`
 		{
 			"url": "https://github.com",
-			"token": "`+ ghToken + `",
+			"token": "` + ghToken + `",
 			"repos": [
 				"golang/go",
 				"microsoft/TypeScript",
@@ -611,19 +625,6 @@ func createOnboardingExternalService(ctx context.Context, db database.DB) error 
 				"git/git",
 			]
 		}`),
-	}
-
-	svcs, err := db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
-		DisplayNames: []string{externalService.DisplayName},
-		IncludeDeleted: true,
-	})
-
-	if err != nil {
-		return err
-	}
-
-	if len(svcs) > 0 {
-		return nil
 	}
 
 	return db.ExternalServices().Create(ctx, conf.Get, externalService)
