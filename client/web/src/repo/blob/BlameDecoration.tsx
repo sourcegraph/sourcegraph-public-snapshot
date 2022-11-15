@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
