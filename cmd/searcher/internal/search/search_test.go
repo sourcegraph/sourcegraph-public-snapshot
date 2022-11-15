@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
@@ -125,84 +126,84 @@ main.go:6:6:
 main.go:6:6:
 	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.md"}}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.md$`}}, `
 README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
 `},
 
-		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"*.{md,txt}", "*.txt"}}, `
+		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{`\.(md|txt)$`, `\.txt$`}}, `
 abc.txt:1:1:
 w
 `},
 
-		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md", PathPatternsAreRegExps: true}, `
+		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md"}, `
 main.go:6:6:
 	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"\\.md"}, PathPatternsAreRegExps: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"\\.md"}}, `
 README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
 `},
 
-		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"\\.(md|txt)", "README"}, PathPatternsAreRegExps: true}, `
+		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"\\.(md|txt)", "README"}}, `
 README.md:1:1:
 # Hello World
 README.md:3:3:
 Hello world example in go
 `},
 
-		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.{MD,go}"}, PathPatternsAreCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true}, `
 main.go:6:6:
 	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreCaseSensitive: true}, `
 main.go:6:6:
 	fmt.Println("Hello world")
 `},
 
 		{protocol.PatternInfo{Pattern: "doesnotmatch"}, ""},
-		{protocol.PatternInfo{Pattern: "", IsRegExp: false, IncludePatterns: []string{"\\.png"}, PathPatternsAreRegExps: true, PatternMatchesPath: true}, `
+		{protocol.PatternInfo{Pattern: "", IsRegExp: false, IncludePatterns: []string{"\\.png"}, PatternMatchesPath: true}, `
 milton.png
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 main.go:1:3:
 package main
 
 import "fmt"
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\\s*import \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n\\s*import \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 main.go:1:3:
 package main
 
 import "fmt"
 `},
-		{protocol.PatternInfo{Pattern: "package main\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 main.go:1:2:
 package main
 
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 main.go:1:3:
 package main
 
 import "fmt"
 `},
-		{protocol.PatternInfo{Pattern: "\nfunc", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "\nfunc", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 main.go:4:5:
 
 func main() {
 `},
-		{protocol.PatternInfo{Pattern: "\n\\s*func", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "\n\\s*func", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 main.go:3:5:
 import "fmt"
 
 func main() {
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"\n\nfunc main\\(\\) {", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"\n\nfunc main\\(\\) {", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 main.go:1:5:
 package main
 
@@ -210,7 +211,7 @@ import "fmt"
 
 func main() {
 `},
-		{protocol.PatternInfo{Pattern: "\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "\n", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
 README.md:1:3:
 # Hello World
 
@@ -240,7 +241,7 @@ milton.png:1:1:
 `},
 		{protocol.PatternInfo{
 			Pattern:         "filename contains regex metachars",
-			IncludePatterns: []string{"file++.plus"},
+			IncludePatterns: []string{regexp.QuoteMeta("file++.plus")},
 			IsStructuralPat: true,
 			IsRegExp:        true, // To test for a regression, imply that IsStructuralPat takes precedence.
 		}, `
@@ -410,9 +411,8 @@ func TestSearch_badrequest(t *testing.T) {
 			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
-				Pattern:                "test",
-				IncludePatterns:        []string{"**"},
-				PathPatternsAreRegExps: true,
+				Pattern:         "test",
+				IncludePatterns: []string{"**"},
 			},
 		},
 
@@ -422,9 +422,8 @@ func TestSearch_badrequest(t *testing.T) {
 			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
-				Pattern:                "test",
-				ExcludePattern:         "**",
-				PathPatternsAreRegExps: true,
+				Pattern:        "test",
+				ExcludePattern: "**",
 			},
 		},
 
@@ -434,11 +433,10 @@ func TestSearch_badrequest(t *testing.T) {
 			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
-				Pattern:                "fmt.Println(:[_])",
-				IsNegated:              true,
-				ExcludePattern:         "",
-				PathPatternsAreRegExps: true,
-				IsStructuralPat:        true,
+				Pattern:         "fmt.Println(:[_])",
+				IsNegated:       true,
+				ExcludePattern:  "",
+				IsStructuralPat: true,
 			},
 		},
 	}
