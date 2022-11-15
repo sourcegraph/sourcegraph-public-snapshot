@@ -150,8 +150,8 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 		}
 		searchPlan := compressionPlan.FilterFrames(ctx, req.Frames, req.Repo.ID)
 		var ratio float64 = 1.0
-		if numberOffFrames > 0 {
-			ratio = (float64(len(searchPlan.Executions)) / float64(numberOffFrames))
+		if numberOfFrames > 0 {
+			ratio = (float64(len(searchPlan.Executions)) / float64(numberOfFrames))
 		}
 		compressionSavingsMetric.
 			With(prometheus.Labels{"preempted": "false"}).
