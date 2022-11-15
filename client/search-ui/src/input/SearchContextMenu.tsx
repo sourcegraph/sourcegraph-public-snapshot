@@ -269,7 +269,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                         className={styles.footerButton}
                         variant="link"
                         to="https://signup.sourcegraph.com"
-                        onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                        onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}
                         size="sm"
                     >
                         Search private code

@@ -298,7 +298,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             className={styles.signUp}
                             to="https://signup.sourcegraph.com"
                             size="sm"
-                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}
                         >
                             Try Sourcegraph Cloud
                         </ButtonLink>
