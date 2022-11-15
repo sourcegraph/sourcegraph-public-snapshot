@@ -947,7 +947,7 @@ func (s *Server) ignorePath(path string) bool {
 		return false
 	}
 	base := filepath.Base(path)
-	return strings.HasPrefix(base, tempDirName) || strings.HasPrefix(base, P4HomeName)
+	return base == tempDirName || base == P4HomeName
 }
 
 func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
