@@ -29,13 +29,13 @@ Run the following scripts:
 This will always start Sourcegraph at the latest version.
 
 ```bash
-curl -sfL https://raw.githubusercontent.com/sourcegraph/deploy/main/install/scripts/k3s/local.sh | bash
+curl -sfL https://raw.githubusercontent.com/sourcegraph/deploy/main/install/scripts/k3s/local.sh | bash -s -
 ```
 
 To start Sourcegraph at a specific version, add version number at the end of the curl command after `-`:
 
 ```bash
-curl -sfL https://raw.githubusercontent.com/sourcegraph/deploy/main/install/scripts/k3s/local.sh | bash - v4.1.3
+curl -sfL https://raw.githubusercontent.com/sourcegraph/deploy/main/install/scripts/k3s/local.sh | bash -s - v4.1.3
 ```
 
 
