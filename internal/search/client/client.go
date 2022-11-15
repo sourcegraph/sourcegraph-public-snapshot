@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/grafana/regexp"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -111,16 +112,16 @@ func (s *searchClient) Plan(
 	tr.LazyPrintf("parsing done")
 
 	inputs := &search.Inputs{
-		Plan:                plan,
-		Query:               plan.ToQ(),
-		OriginalQuery:       searchQuery,
-		SearchMode:          searchMode,
-		UserSettings:        settings,
-		OnSourcegraphDotCom: sourcegraphDotComMode,
-		Features:            ToFeatures(featureflag.FromContext(ctx), s.logger),
-		PatternType:         searchType,
-		Protocol:            protocol,
-		SanitizeSearch:      shouldSanitizeSearch(ctx, s.db), // Experimental: check site config to see if search sanitization is enabled
+		Plan:                   plan,
+		Query:                  plan.ToQ(),
+		OriginalQuery:          searchQuery,
+		SearchMode:             searchMode,
+		UserSettings:           settings,
+		OnSourcegraphDotCom:    sourcegraphDotComMode,
+		Features:               ToFeatures(featureflag.FromContext(ctx), s.logger),
+		PatternType:            searchType,
+		Protocol:               protocol,
+		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.db, s.logger), // Experimental: check site config to see if search sanitization is enabled
 	}
 
 	tr.LazyPrintf("Parsed query: %s", inputs.Query)
@@ -157,34 +158,48 @@ func (s *searchClient) JobClients() job.RuntimeClients {
 	}
 }
 
-func shouldSanitizeSearch(ctx context.Context, db database.DB) bool {
+func sanitizeSearchPatterns(ctx context.Context, db database.DB, log log.Logger) []*regexp.Regexp {
+	var sanitizePatterns []*regexp.Regexp
 	c := conf.Get()
 	if c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SearchSanitization != nil {
-		user, err := actor.FromContext(ctx).User(ctx, db.Users())
+		actr := actor.FromContext(ctx)
+		if actr.IsInternal() {
+			return []*regexp.Regexp{}
+		}
+
+		for _, pat := range c.ExperimentalFeatures.SearchSanitization.SanitizePatterns {
+			if re, err := regexp.Compile(pat); err != nil {
+				log.Warn("invalid regex pattern provided, ignoring")
+			} else {
+				sanitizePatterns = append(sanitizePatterns, re)
+			}
+		}
+
+		user, err := actr.User(ctx, db.Users())
 		if err != nil {
-			return true
+			log.Warn("search being run as invalid user")
+			return sanitizePatterns
 		}
 
 		if user.SiteAdmin {
-			return false
+			return []*regexp.Regexp{}
 		}
 
-		if len(c.ExperimentalFeatures.SearchSanitization.OrgName) > 0 {
+		if c.ExperimentalFeatures.SearchSanitization.OrgName != "" {
 			orgStore := db.Orgs()
 			userOrgs, err := orgStore.GetByUserID(ctx, user.ID)
 			if err != nil {
-				return true
+				return sanitizePatterns
 			}
 
 			for _, org := range userOrgs {
 				if org.Name == c.ExperimentalFeatures.SearchSanitization.OrgName {
-					return false
+					return []*regexp.Regexp{}
 				}
 			}
 		}
-		return true
 	}
-	return false
+	return sanitizePatterns
 }
 
 type QueryError struct {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/grafana/regexp"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -80,7 +82,7 @@ func TestDetectSearchType(t *testing.T) {
 	})
 }
 
-func TestShouldSanitizeSearch(t *testing.T) {
+func TestSanitizeSearchPatterns(t *testing.T) {
 	mockConf := &conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
@@ -91,6 +93,7 @@ func TestShouldSanitizeSearch(t *testing.T) {
 			},
 		},
 	}
+	mockCompiledPatternList := []*regexp.Regexp{regexp.MustCompile("it's Morbin' time")}
 
 	tests := []struct {
 		name        string
@@ -99,51 +102,51 @@ func TestShouldSanitizeSearch(t *testing.T) {
 		userDBError bool
 		userOrgs    []*types.Org
 		orgDBError  bool
-		want        bool
+		want        []*regexp.Regexp
 	}{
 		{
-			name:     "false if feature is not enabled",
+			name:     "nil if feature is not enabled",
 			conf:     &conf.Unified{},
 			user:     &types.User{ID: 1},
 			userOrgs: []*types.Org{},
-			want:     false,
+			want:     nil,
 		},
 		{
-			name:     "false if user is site admin",
+			name:     "empty slice if user is site admin",
 			conf:     mockConf,
 			user:     &types.User{ID: 1, SiteAdmin: true},
 			userOrgs: []*types.Org{},
-			want:     false,
+			want:     []*regexp.Regexp{},
 		},
 		{
-			name:     "false if user is non-admin but member of allowlist org",
+			name:     "empty slice if user is non-admin but member of allowlist org",
 			conf:     mockConf,
 			user:     &types.User{ID: 1},
 			userOrgs: []*types.Org{{Name: "Thirty Seconds to Mars"}},
-			want:     false,
+			want:     []*regexp.Regexp{},
 		},
 		{
-			name:     "true if user is non-admin and not member of allowlist org",
+			name:     "populated slice if user is non-admin and not member of allowlist org",
 			conf:     mockConf,
 			user:     &types.User{ID: 1},
 			userOrgs: []*types.Org{{Name: "Bring Me the Horizon"}, {Name: "Linkin Park"}},
-			want:     true,
+			want:     mockCompiledPatternList,
 		},
 		{
-			name:        "true if error on get user from db",
+			name:        "populated slice if error on get user from db",
 			conf:        mockConf,
 			user:        &types.User{ID: 1},
 			userDBError: true,
 			userOrgs:    []*types.Org{},
-			want:        true,
+			want:        mockCompiledPatternList,
 		},
 		{
-			name:       "true if error on get user orgs from db",
+			name:       "populated slice if error on get user orgs from db",
 			conf:       mockConf,
 			user:       &types.User{ID: 1},
 			userOrgs:   []*types.Org{},
 			orgDBError: true,
-			want:       true,
+			want:       mockCompiledPatternList,
 		},
 	}
 
@@ -169,7 +172,7 @@ func TestShouldSanitizeSearch(t *testing.T) {
 			mockDB.UsersFunc.SetDefaultReturn(mockUserStore)
 			mockDB.OrgsFunc.SetDefaultReturn(mockOrgStore)
 
-			require.Equal(t, tc.want, shouldSanitizeSearch(actor.WithActor(context.Background(), actor.FromMockUser(tc.user.ID)), mockDB))
+			require.Equal(t, tc.want, sanitizeSearchPatterns(actor.WithActor(context.Background(), actor.FromMockUser(tc.user.ID)), mockDB, logtest.Scoped(t)))
 		})
 	}
 }

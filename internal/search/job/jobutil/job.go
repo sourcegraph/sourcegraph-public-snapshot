@@ -196,19 +196,8 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	}
 
 	{ // Apply search result sanitization post-filter if enabled
-		if inputs.SanitizeSearch {
-			var sanitizePatterns []*regexp.Regexp
-			c := conf.Get()
-			if c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SearchSanitization != nil {
-				for _, val := range c.ExperimentalFeatures.SearchSanitization.SanitizePatterns {
-					if re, err := regexp.Compile(val); err == nil {
-						sanitizePatterns = append(sanitizePatterns, re)
-					}
-				}
-			}
-			if len(sanitizePatterns) > 0 {
-				basicJob = NewSanitizeJob(sanitizePatterns, basicJob)
-			}
+		if len(inputs.SanitizeSearchPatterns) > 0 {
+			basicJob = NewSanitizeJob(inputs.SanitizeSearchPatterns, basicJob)
 		}
 	}
 
