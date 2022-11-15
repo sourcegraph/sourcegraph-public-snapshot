@@ -568,6 +568,7 @@ func (s *GitLabSource) getFork(ctx context.Context, targetRepo *types.Repo, name
 		return nil, errors.Wrap(err, "getting namespace")
 	}
 
+	//considering the case of a nested namespace
 	targetNamespace = strings.ReplaceAll(targetNamespace, "/", "-")
 
 	targetName, err := targetMeta.Name()

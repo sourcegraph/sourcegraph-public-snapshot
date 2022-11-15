@@ -317,16 +317,9 @@ func (c *Client) ForkProject(ctx context.Context, project *Project, namespace *s
 }
 
 func (c *Client) getForkedProject(ctx context.Context, project *Project, namespace string, name string) (*Project, error) {
-
-	// parent, err := project.ForkedFromProject.Name()
-	// if err != nil {
-	// 	return nil, errors.Wrap(err, "parsing parent name")
-	// }
-
 	// Note that we disable the cache when retrieving forked projects as it
 	// interferes with the not found error detection in ForkProject.
 	return c.GetProject(ctx, GetProjectOp{
-		// PathWithNamespace: namespace + "/" + parent + "-" + projectName,
 		PathWithNamespace: namespace + "/" + name,
 		CommonOp:          CommonOp{NoCache: true},
 	})
