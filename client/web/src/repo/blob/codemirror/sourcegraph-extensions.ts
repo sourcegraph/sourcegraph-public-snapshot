@@ -12,10 +12,10 @@ import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/vie
 import { Remote } from 'comlink'
 import { createRoot, Root } from 'react-dom/client'
 import { combineLatest, EMPTY, from, Observable, of, Subject, Subscription } from 'rxjs'
-import { filter, map, catchError, switchMap, distinctUntilChanged, startWith, shareReplay } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, filter, map, shareReplay, startWith, switchMap } from 'rxjs/operators'
 
-import { DocumentHighlight, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
-import { asError, ErrorLike, LineOrPositionOrRange, lprToSelectionsZeroIndexed, logger } from '@sourcegraph/common'
+import { DocumentHighlight, emitLoading, LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { asError, ErrorLike, LineOrPositionOrRange, logger, lprToSelectionsZeroIndexed } from '@sourcegraph/common'
 import { Position, TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
@@ -230,8 +230,15 @@ class SelectionManager implements PluginValue {
 
     constructor(context: Observable<Context>) {
         this.subscription = combineLatest([context, this.nextSelection]).subscribe(([context, selection]) => {
+            // Used to convert SelectedLineRange type to a valid LineOrPositionOrRange type to keep TypeScript happy
+            let lprSelection: LineOrPositionOrRange = {}
+            if (selection) {
+                lprSelection = selection.endLine
+                    ? { line: selection.line, endLine: selection.endLine }
+                    : { line: selection.line, character: selection.character }
+            }
             context.extensionHostAPI
-                .setEditorSelections(context.viewerId, lprToSelectionsZeroIndexed(selection ?? {}))
+                .setEditorSelections(context.viewerId, lprToSelectionsZeroIndexed(lprSelection))
                 .catch(error => logger.error('Error updating editor selections on extension host', error))
         })
     }
