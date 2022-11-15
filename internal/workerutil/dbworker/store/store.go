@@ -80,7 +80,7 @@ func (o *MarkFinalOptions) ToSQLConds(formatQuery func(query string, args ...any
 	return conds
 }
 
-// ErrExecutionLogEntryNotUpdated is retured by AddExecutionLogEntry and UpdateExecutionLogEntry, when
+// ErrExecutionLogEntryNotUpdated is returned by AddExecutionLogEntry and UpdateExecutionLogEntry, when
 // the log entry was not updated.
 var ErrExecutionLogEntryNotUpdated = errors.New("execution log entry not updated")
 
@@ -163,14 +163,6 @@ func (e *ExecutionLogEntry) Scan(value any) error {
 
 func (e ExecutionLogEntry) Value() (driver.Value, error) {
 	return json.Marshal(e)
-}
-
-func ExecutionLogEntries(raw []workerutil.ExecutionLogEntry) (entries []ExecutionLogEntry) {
-	for _, entry := range raw {
-		entries = append(entries, ExecutionLogEntry(entry))
-	}
-
-	return entries
 }
 
 type store struct {
