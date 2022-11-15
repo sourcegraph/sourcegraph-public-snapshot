@@ -519,12 +519,22 @@
             }
           }
         },
-        "search.sanitize.patterns": {
-          "description": "A list of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. A pattern that is not a valid Go regular expression will have no effect.",
-          "type": "array",
-          "items": {
-            "type": "string",
-            "format": "regex"
+        "search.sanitization": {
+          "description": "Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.",
+          "type": "object",
+          "properties": {
+            "sanitizePatterns": {
+              "description": "An array of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. Values added to this array must be valid Go regular expressions. Site admins will not have their search results sanitized.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "regex"
+              }
+            },
+            "orgName": {
+              "description": "Optionally specify the name of an organization within this Sourcegraph instance containing users whose searches should not be sanitized. Admins: ensure that ALL members of this org are trusted users. If no org exists with the given name then there will be no effect. If no org name is specified then all non-admin users will have their searches sanitized if this feature is enabled.",
+              "type": "string"
+            }
           }
         },
         "enableGithubInternalRepoVisibility": {
