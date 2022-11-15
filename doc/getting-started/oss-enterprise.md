@@ -16,7 +16,7 @@ Sourcegraph OSS only includes universal code search functionality and does not i
 - Code navigation
 - Batch Changes
 - Code Insights
-- Code monitoring 
+- Code monitoring
 - Notebooks
 - SSO
 - Browser/IDE extensions
