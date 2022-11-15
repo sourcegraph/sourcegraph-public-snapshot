@@ -13,6 +13,13 @@
     "enableSearchFilePrefetch": true,
     "enableSidebarFilePrefetch": true
   },
+  "notices": [
+    {
+      "message": "Sourcegraph now uses PageRank to power the most relevant OSS search results. [Read the blog post](https://about.sourcegraph.com/blog/new-search-ranking).",
+      "location": "home",
+      "dismissible": false
+    }
+  ],
   "codeIntel.referencesPanel": "tree-view",
   "insights": [
     {
