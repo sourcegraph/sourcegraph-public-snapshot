@@ -502,7 +502,7 @@ export function createDefaultSuggestionSources(
 }
 
 // Returns what kind of type to query for based on existing tokens in the query
-function suggestionTypeFromTokens(tokens: Token[]): SearchMatch['type'] {
+export function suggestionTypeFromTokens(tokens: Token[]): SearchMatch['type'] {
     let isWithinRepo = false
     let isWithinFile = false
     for (const token of tokens) {

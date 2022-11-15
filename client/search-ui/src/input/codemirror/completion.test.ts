@@ -6,7 +6,7 @@ import { ScanResult, scanSearchQuery, ScanSuccess } from '@sourcegraph/shared/sr
 import { Token } from '@sourcegraph/shared/src/search/query/token'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { createDefaultSuggestionSources } from './completion'
+import { createDefaultSuggestionSources, suggestionTypeFromTokens } from './completion'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),
@@ -20,7 +20,7 @@ async function getCompletionItems(
     token: Token,
     position: number,
     fetchSuggestions: () => Promise<SearchMatch[]>,
-    options?: { globbing?: boolean; isSourcegraphDotCom?: boolean }
+    options?: { globbing?: boolean; isSourcegraphDotCom?: boolean; tokens: Token[] }
 ) {
     const sources = createDefaultSuggestionSources({
         globbing: false,
@@ -29,7 +29,9 @@ async function getCompletionItems(
         ...options,
     })
 
-    const results = await Promise.all(sources.map(source => source({ position, onAbort: () => {} }, [token], token)))
+    const results = await Promise.all(
+        sources.map(source => source({ position, onAbort: () => {} }, options?.tokens || [token], token))
+    )
     const allOptions: Completion[] = []
     for (const result of results) {
         if (result) {
@@ -41,7 +43,8 @@ async function getCompletionItems(
 
 const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term
 
-const getToken = (query: string, tokenIndex: number): Token => toSuccess(scanSearchQuery(query))[tokenIndex]
+const getTokens = (query: string): Token[] => toSuccess(scanSearchQuery(query))
+const getToken = (query: string, tokenIndex: number): Token => getTokens(query)[tokenIndex]
 
 // Using async as a short way to create functions that return promises
 /* eslint-disable @typescript-eslint/require-await */
@@ -291,5 +294,83 @@ describe('codmirror completions', () => {
               "^repo/with\\\\ a\\\\ space$ "
             ]
         `)
+    })
+
+    test('inserts repo: prefix for global suggestions', async () => {
+        expect(
+            (
+                await getCompletionItems(
+                    getToken('metal', 0),
+                    'metal'.length,
+                    async () =>
+                        [
+                            {
+                                type: 'repo',
+                                repository: 'scalameta/metals',
+                            },
+                        ] as SearchMatch[]
+                )
+            )
+                ?.map(({ apply }) => apply)
+                .filter(apply => typeof apply === 'string' && apply.includes('metals'))
+        ).toMatchInlineSnapshot(`
+            [
+              "repo:^scalameta/metals$ "
+            ]
+        `)
+    })
+
+    test('inserts file: prefix for global suggestions', async () => {
+        const query = 'repo:x local'
+        const tokens = getTokens(query)
+        const lastToken = tokens[tokens.length - 1]
+        expect(
+            (
+                await getCompletionItems(
+                    lastToken,
+                    query.length,
+                    async () =>
+                        [
+                            {
+                                type: 'path',
+                                path: 'src/local.ts',
+                                repository: 'scalameta/metals',
+                            },
+                        ] as SearchMatch[],
+                    { tokens }
+                )
+            )
+                ?.map(({ apply }) => apply)
+                .filter(apply => typeof apply === 'string' && apply.includes('local'))
+        ).toMatchInlineSnapshot(`
+            [
+              "file:^src/local\\\\.ts$ "
+            ]
+        `)
+    })
+    test('suggests repos for global queries', async () => {
+        expect(suggestionTypeFromTokens(getTokens('sourcegraph'))).toStrictEqual('repo')
+    })
+
+    test('suggests files for repo-scoped queries', async () => {
+        expect(suggestionTypeFromTokens(getTokens('repo:sourcegraph local'))).toStrictEqual('path')
+        expect(suggestionTypeFromTokens(getTokens('r:sourcegraph local'))).toStrictEqual('path')
+    })
+
+    test('suggests symbols for repo+file scoped queries', async () => {
+        expect(suggestionTypeFromTokens(getTokens('repo:sourcegraph file:local sym'))).toStrictEqual('symbol')
+        expect(suggestionTypeFromTokens(getTokens('repo:sourcegraph path:local sym'))).toStrictEqual('symbol')
+        expect(suggestionTypeFromTokens(getTokens('repo:sourcegraph f:local sym'))).toStrictEqual('symbol')
+    })
+
+    test('suggests symbols for type:symbol queries', async () => {
+        expect(suggestionTypeFromTokens(getTokens('type:symbol sym'))).toStrictEqual('symbol')
+        expect(suggestionTypeFromTokens(getTokens('repo:sourcegraph type:symbol sym'))).toStrictEqual('symbol')
+        expect(suggestionTypeFromTokens(getTokens('repo:src file:local type:symbol sym'))).toStrictEqual('symbol')
+    })
+
+    test('suggests files for type:path queries', async () => {
+        expect(suggestionTypeFromTokens(getTokens('type:path sourcegraph'))).toStrictEqual('path')
+        expect(suggestionTypeFromTokens(getTokens('repo:foo type:path sourcegraph'))).toStrictEqual('path')
     })
 })
