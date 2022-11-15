@@ -981,7 +981,6 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 
 type externalServiceNotFoundError struct {
 	id int64
-	displayName string
 }
 
 func (e externalServiceNotFoundError) Error() string {
