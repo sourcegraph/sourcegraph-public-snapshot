@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -564,18 +563,19 @@ func (s *GitLabSource) getFork(ctx context.Context, targetRepo *types.Repo, name
 		return nil, errors.New("target repo is not a GitLab project")
 	}
 
-	targetMetaNamespace, err := targetMeta.Namespace()
+	targetNamespace, err := targetMeta.Namespace()
 	if err != nil {
-		return nil, errors.Wrap(err, "where is the namespace ?!")
+		return nil, errors.Wrap(err, "")
 	}
 
-	targetMetaName, err := targetMeta.Name()
+	targetNamespace = strings.ReplaceAll(targetNamespace, "/", "-")
+
+	targetName, err := targetMeta.Name()
 	if err != nil {
 		return nil, errors.Wrap(err, "where is the name ?!")
 	}
-	fmt.Printf("printing namespace, %v ", targetMetaNamespace)
 
-	createdFork := targetMetaNamespace + "-" + targetMetaName
+	createdFork := targetNamespace + "-" + targetName
 
 	fork, err := s.client.ForkProject(ctx, targetMeta, namespace, &createdFork)
 	if err != nil {
