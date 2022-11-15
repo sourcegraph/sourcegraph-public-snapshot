@@ -24,6 +24,7 @@ const defaultSyncJobsRecordsTTLMinutes = 15
 type RecordsStore struct {
 	logger   log.Logger
 	cacheTTL atomic.Int32
+	now      func() time.Time
 
 	mux sync.Mutex
 	// cache is a replaceable abstraction over rcache.Cache.
@@ -38,6 +39,7 @@ func NewRecordsStore(logger log.Logger) *RecordsStore {
 	return &RecordsStore{
 		logger: logger,
 		cache:  noopCache{},
+		now:    time.Now,
 	}
 }
 
@@ -69,7 +71,7 @@ func (r *RecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 
 // Record inserts a record for this job's outcome into the records store.
 func (r *RecordsStore) Record(jobType string, jobID int32, providerStates []authz.SyncJobProviderStatus, err error) {
-	completed := time.Now()
+	completed := r.now()
 
 	r.mux.Lock()
 	defer r.mux.Unlock()
