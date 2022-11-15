@@ -142,6 +142,9 @@ func TestSpecifyCommandInErrorMessage(t *testing.T) {
 }
 
 func TestP4DepotSyncer_p4CommandEnv(t *testing.T) {
+	// TODO: Temporary, remove skip
+	t.Skip()
+
 	syncer := &PerforceDepotSyncer{
 		Client: "client",
 		P4Home: "p4home",
