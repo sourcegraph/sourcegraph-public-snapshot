@@ -135,6 +135,9 @@ func (p hunkParser) parse(ctx context.Context) {
 			p.hunksCh <- hunkResult{hunk: cur}
 
 			cur, err = parseEntry(annotation, fields)
+			if err != nil {
+				p.hunksCh <- hunkResult{err: err}
+			}
 		}
 	}
 

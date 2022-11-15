@@ -769,7 +769,7 @@ func parseGitBlameOutput(out string) ([]*Hunk, error) {
 	commits := make(map[string]gitdomain.Commit)
 	filenames := make(map[string]string)
 	hunks := make([]*Hunk, 0)
-	remainingLines := strings.Split(string(out[:len(out)-1]), "\n")
+	remainingLines := strings.Split(out[:len(out)-1], "\n")
 	byteOffset := 0
 	for len(remainingLines) > 0 {
 		// Consume hunk

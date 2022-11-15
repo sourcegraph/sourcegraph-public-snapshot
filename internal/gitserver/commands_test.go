@@ -3211,11 +3211,7 @@ func TestBlameHunkReader(t *testing.T) {
 		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
 		reader := newBlameHunkReader(context.Background(), rc)
 
-		var hunks []*Hunk
-		rc = io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
-		reader = newBlameHunkReader(context.Background(), rc)
-
-		hunks = []*Hunk{}
+		hunks := []*Hunk{}
 		for {
 			hunk, done, err := reader.Read()
 			if err != nil {
@@ -3254,16 +3250,14 @@ func TestBlameHunkReader(t *testing.T) {
 		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental2))
 		reader := newBlameHunkReader(context.Background(), rc)
 
-		hunks := []*Hunk{}
 		for {
-			hunk, done, err := reader.Read()
+			_, done, err := reader.Read()
 			if err != nil {
 				t.Fatalf("blameHunkReader.Read failed: %s", err)
 			}
 			if done {
 				break
 			}
-			hunks = append(hunks, hunk...)
 		}
 	})
 }
