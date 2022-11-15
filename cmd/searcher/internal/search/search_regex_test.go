@@ -401,9 +401,8 @@ func TestPathMatches(t *testing.T) {
 	}
 
 	rg, err := compile(&protocol.PatternInfo{
-		Pattern:                "",
-		IncludePatterns:        []string{"a", "b"},
-		PathPatternsAreRegExps: true,
+		Pattern:         "",
+		IncludePatterns: []string{"a", "b"},
 	})
 	if err != nil {
 		t.Fatal(err)
