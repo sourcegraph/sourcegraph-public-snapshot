@@ -119,6 +119,10 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
     <span>Sourcegraph Tour</span>
     <p>Take a tour of Sourcegraph’s features using real-world examples and use cases.</p>
   </a>
+  <a href="getting-started/github-vs-sourcegraph" class="btn" alt="GitHub comparison guide">
+    <span>Compare Sourcegraph against GitHub</span>
+    <p>See how GitHub code search compares to Sourcegraph.</p>
+  </a>
 </div>
 
 ## Community
