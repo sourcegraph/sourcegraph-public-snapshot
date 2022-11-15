@@ -524,7 +524,7 @@
           "type": "object",
           "properties": {
             "sanitizePatterns": {
-              "description": "An array of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. Values added to this array must be valid Go regular expressions. By default, site admins will not have their search results sanitized.",
+              "description": "An array of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. Values added to this array must be valid Go regular expressions. Site admins will not have their search results sanitized.",
               "type": "array",
               "items": {
                 "type": "string",

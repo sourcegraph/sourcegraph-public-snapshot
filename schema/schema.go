@@ -1711,7 +1711,7 @@ type SearchLimits struct {
 type SearchSanitization struct {
 	// OrgName description: Optionally specify the name of an organization within this Sourcegraph instance containing users whose searches should not be sanitized. Admins: ensure that ALL members of this org are trusted users. If no org exists with the given name then there will be no effect. If no org name is specified then all non-admin users will have their searches sanitized if this feature is enabled.
 	OrgName string `json:"orgName,omitempty"`
-	// SanitizePatterns description: An array of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. Values added to this array must be valid Go regular expressions. By default, site admins will not have their search results sanitized.
+	// SanitizePatterns description: An array of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. Values added to this array must be valid Go regular expressions. Site admins will not have their search results sanitized.
 	SanitizePatterns []string `json:"sanitizePatterns,omitempty"`
 }
 type SearchSavedQueries struct {
