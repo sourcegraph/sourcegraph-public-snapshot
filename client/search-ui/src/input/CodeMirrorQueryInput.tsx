@@ -25,7 +25,6 @@ import {
     hoverTooltip,
     TooltipView,
     WidgetType,
-    KeyBinding,
 } from '@codemirror/view'
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
@@ -167,6 +166,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
             globbing,
             isSourcegraphDotCom,
             history,
+            onSubmit,
             applySuggestionsOnEnter,
             fetchStreamSuggestions,
             selectedSearchContextSpec,
