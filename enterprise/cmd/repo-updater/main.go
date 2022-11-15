@@ -29,7 +29,7 @@ import (
 )
 
 func main() {
-	shared.Main(enterpriseInit, true) // TODO: change based on env var or license type (clarify)
+	shared.Main(enterpriseInit)
 }
 
 func enterpriseInit(

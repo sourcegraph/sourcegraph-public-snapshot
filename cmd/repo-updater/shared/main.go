@@ -66,7 +66,7 @@ type LazyDebugserverEndpoint struct {
 	manualPurgeEndpoint          http.HandlerFunc
 }
 
-func Main(enterpriseInit EnterpriseInit, shouldCreateOnboardingExternalService bool) {
+func Main(enterpriseInit EnterpriseInit) {
 	// NOTE: Internal actor is required to have full visibility of the repo table
 	// 	(i.e. bypass repository authorization).
 	ctx := actor.WithInternalActor(context.Background())
@@ -144,10 +144,8 @@ func Main(enterpriseInit EnterpriseInit, shouldCreateOnboardingExternalService b
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
 
-	if shouldCreateOnboardingExternalService {
-		if err := createOnboardingExternalService(ctx, db); err != nil {
-			logger.Error("failed to create onboarding external service", log.Error(err))
-		}
+	if err := createOnboardingExternalService(ctx, db); err != nil {
+		logger.Error("failed to create onboarding external service", log.Error(err))
 	}
 
 	server := &repoupdater.Server{
