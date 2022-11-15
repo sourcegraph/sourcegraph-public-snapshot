@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -60,14 +59,14 @@ func TestSyncJobRecordsRecord(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		c := memCache{}
 		s.cache = c
-		s.Record("repo", 12, []authz.SyncJobProviderStatus{}, nil)
+		s.Record("repo", 12, []ProviderStatus{}, nil)
 		autogold.Want("record_success", memCache{"1136214245000000000": `{"request_type":"repo","request_id":12,"completed":"2006-01-02T15:04:05Z","status":"SUCCESS","message":"","providers":[]}`}).
 			Equal(t, c)
 	})
 	t.Run("error", func(t *testing.T) {
 		c := memCache{}
 		s.cache = c
-		s.Record("repo", 12, []authz.SyncJobProviderStatus{}, errors.New("oh no"))
+		s.Record("repo", 12, []ProviderStatus{}, errors.New("oh no"))
 		autogold.Want("record_error", memCache{"1136214245000000000": `{"request_type":"repo","request_id":12,"completed":"2006-01-02T15:04:05Z","status":"ERROR","message":"oh no","providers":[]}`}).
 			Equal(t, c)
 	})

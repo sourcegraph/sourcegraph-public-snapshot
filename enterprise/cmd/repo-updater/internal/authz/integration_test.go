@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	authzGitHub "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -142,7 +143,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []authz.SyncJobProviderStatus{{
+			assert.Equal(t, []syncjobs.ProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				Status:       "SUCCESS",
@@ -228,7 +229,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []authz.SyncJobProviderStatus{{
+			assert.Equal(t, []syncjobs.ProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				Status:       "SUCCESS",
@@ -255,7 +256,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []authz.SyncJobProviderStatus{{
+			assert.Equal(t, []syncjobs.ProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				Status:       "SUCCESS",
@@ -347,7 +348,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []authz.SyncJobProviderStatus{{
+			assert.Equal(t, []syncjobs.ProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				Status:       "SUCCESS",
@@ -436,7 +437,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []authz.SyncJobProviderStatus{{
+			assert.Equal(t, []syncjobs.ProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				Status:       "SUCCESS",
@@ -463,7 +464,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []authz.SyncJobProviderStatus{{
+			assert.Equal(t, []syncjobs.ProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
 				Status:       "SUCCESS",

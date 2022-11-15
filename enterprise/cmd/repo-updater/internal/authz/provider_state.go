@@ -5,19 +5,20 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 )
 
-func newProviderState(provider authz.Provider, err error, action string) authz.SyncJobProviderStatus {
+func newProviderState(provider authz.Provider, err error, action string) syncjobs.ProviderStatus {
 	if err != nil {
-		return authz.SyncJobProviderStatus{
+		return syncjobs.ProviderStatus{
 			ProviderID:   provider.ServiceID(),
 			ProviderType: provider.ServiceType(),
 			Status:       "ERROR",
 			Message:      fmt.Sprintf("%s: %s", action, err.Error()),
 		}
 	} else {
-		return authz.SyncJobProviderStatus{
+		return syncjobs.ProviderStatus{
 			ProviderID:   provider.ServiceID(),
 			ProviderType: provider.ServiceType(),
 			Status:       "SUCCESS",
@@ -26,7 +27,7 @@ func newProviderState(provider authz.Provider, err error, action string) authz.S
 	}
 }
 
-type providerStatesSet []authz.SyncJobProviderStatus
+type providerStatesSet []syncjobs.ProviderStatus
 
 // SummaryField generates a single log field that summarizes the state of all providers.
 func (ps providerStatesSet) SummaryField() log.Field {

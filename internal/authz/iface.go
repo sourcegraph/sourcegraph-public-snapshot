@@ -5,7 +5,6 @@ package authz
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -165,28 +164,4 @@ func (e ErrUnimplemented) Unimplemented() bool { return true }
 func (e ErrUnimplemented) Is(err error) bool {
 	_, ok := err.(*ErrUnimplemented)
 	return ok
-}
-
-// SyncJobStatus describes the outcome of an authz sync job.
-type SyncJobStatus struct {
-	RequestType string    `json:"request_type"`
-	RequestID   int32     `json:"request_id"`
-	Completed   time.Time `json:"completed"`
-
-	// Status is one of "ERROR" or "SUCCESS"
-	Status  string `json:"status"`
-	Message string `json:"message"`
-
-	// Per-provider states during the sync job
-	Providers []SyncJobProviderStatus `json:"providers"`
-}
-
-// SyncJobProviderStatus describes the state of a provider during an authz sync job.
-type SyncJobProviderStatus struct {
-	ProviderID   string `json:"provider_id"`
-	ProviderType string `json:"provider_type"`
-
-	// Status is one of "ERROR" or "SUCCESS"
-	Status  string `json:"status"`
-	Message string `json:"message"`
 }

@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
@@ -70,13 +69,13 @@ func (r *RecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 }
 
 // Record inserts a record for this job's outcome into the records store.
-func (r *RecordsStore) Record(jobType string, jobID int32, providerStates []authz.SyncJobProviderStatus, err error) {
+func (r *RecordsStore) Record(jobType string, jobID int32, providerStates []ProviderStatus, err error) {
 	completed := r.now()
 
 	r.mux.Lock()
 	defer r.mux.Unlock()
 
-	record := authz.SyncJobStatus{
+	record := Status{
 		RequestType: jobType,
 		RequestID:   jobID,
 		Completed:   completed,
