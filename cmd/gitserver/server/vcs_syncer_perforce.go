@@ -177,11 +177,14 @@ func (s *PerforceDepotSyncer) p4CommandEnv(host, username, password string) []st
 		env = append(env, "P4CLIENT="+s.Client)
 	}
 
-	if s.P4Home != "" {
-		// git p4 commands write to $HOME/.gitp4-usercache.txt, we should pass in a
-		// directory under our control and ensure that it is writeable.
-		env = append(env, "HOME="+s.P4Home)
-	}
+	// TODO: Temporarily comment out to confirm this is the part that is breaking
+	//  integration tests
+
+	//if s.P4Home != "" {
+	//	// git p4 commands write to $HOME/.gitp4-usercache.txt, we should pass in a
+	//	// directory under our control and ensure that it is writeable.
+	//	env = append(env, "HOME="+s.P4Home)
+	//}
 
 	return env
 }
