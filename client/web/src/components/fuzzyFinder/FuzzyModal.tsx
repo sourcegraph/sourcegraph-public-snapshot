@@ -314,16 +314,10 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                         fileAnchor?.click()
                     }
                     break
-                case event.key === 'Tab':
-                    if (tabs.isOnlyFilesEnabled()) {
-                        break
-                    }
-                    event.preventDefault()
-                    setActiveTab(tabs.focusTabWithIncrement(activeTab, event.shiftKey ? -1 : 1))
                 default:
             }
         },
-        [activeTab, setActiveTab, onClose, queryResult, focusIndex, setRoundedFocusIndex, tabs]
+        [onClose, queryResult, focusIndex, setRoundedFocusIndex]
     )
 
     return (
