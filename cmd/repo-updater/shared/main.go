@@ -147,7 +147,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
 
-	ghToken := env.Get("ONBOARDING_EXTERNAL_SERVICE_GH_TOKEN", "", "GitHub token for onboarding external service. Token can be without any permissions.")
+	ghToken := envvar.OnboardingExternalServiceGhToken()
 
 	if ghToken != "" {
 		if err := createOnboardingExternalService(ctx, db, ghToken); err != nil {

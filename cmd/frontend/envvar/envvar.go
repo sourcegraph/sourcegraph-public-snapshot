@@ -20,6 +20,7 @@ var HTTPAddrInternal = env.Get(
 
 var sourcegraphDotComMode, _ = strconv.ParseBool(env.Get("SOURCEGRAPHDOTCOM_MODE", "false", "run as Sourcegraph.com, with add'l marketing and redirects"))
 var openGraphPreviewServiceURL = env.Get("OPENGRAPH_PREVIEW_SERVICE_URL", "", "The URL of the OpenGraph preview image generating service")
+var onboardingExternalServiceGHToken = env.Get("ONBOARDING_EXTERNAL_SERVICE_GH_TOKEN", "", "GitHub token for onboarding external service. Token can be without any permissions.")
 
 // SourcegraphDotComMode is true if this server is running Sourcegraph.com
 // (solely by checking the SOURCEGRAPHDOTCOM_MODE env var). Sourcegraph.com shows
@@ -35,4 +36,8 @@ func MockSourcegraphDotComMode(value bool) {
 
 func OpenGraphPreviewServiceURL() string {
 	return openGraphPreviewServiceURL
+}
+
+func OnboardingExternalServiceGhToken() string {
+	return onboardingExternalServiceGHToken
 }
