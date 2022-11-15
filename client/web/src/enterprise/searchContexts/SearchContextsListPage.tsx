@@ -6,7 +6,7 @@ import * as H from 'history'
 
 import { SearchContextProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { PageHeader, Link, Button, ButtonLink, Icon } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Button, Icon } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { AuthenticatedUser } from '../../auth'

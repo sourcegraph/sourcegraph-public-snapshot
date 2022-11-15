@@ -25,6 +25,7 @@ import {
     ComboboxOptionText,
 } from '@sourcegraph/wildcard'
 
+import { eventLogger } from '@sourcegraph/web/src/tracking/eventLogger'
 import styles from './SearchContextMenu.module.scss'
 
 export interface SearchContextMenuProps
@@ -72,6 +73,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
     const [searchFilter, setSearchFilter] = useState('')
     const [searchContexts, setSearchContexts] = useState<SearchContextMinimalFields[]>([])
     const [lastPageInfo, setLastPageInfo] = useState<PageInfo | null>(null)
+    const isSourcegraphDotCom = window.context.sourcegraphDotComMode
 
     const infiniteScrollTrigger = useRef<HTMLDivElement | null>(null)
     const infiniteScrollList = useRef<HTMLUListElement | null>(null)
@@ -260,11 +262,19 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                     </ButtonLink>
                 )}
             </div>
-            <div className={styles.footer}>
-                <ButtonLink variant="link" to="/contexts" size="sm" className={styles.footerButton}>
-                    Search private code
-                </ButtonLink>
-            </div>
+            {isSourcegraphDotCom &&
+                <div className={styles.footer}>
+                    <ButtonLink
+                        className={styles.footerButton}
+                        variant="link"
+                        to="https://signup.sourcegraph.com"
+                        onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                        size="sm"
+                    >
+                        Search private code
+                    </ButtonLink>
+                </div>
+            }
         </Combobox>
     )
 }
