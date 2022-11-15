@@ -255,8 +255,8 @@ type GithubRepoFetcher struct {
 	client    *github.Client
 	repoType  string
 	org       string
-	pageStart int
-	pageSize  int
+	page int
+	perPage  int
 	done      bool
 	err       error
 }
