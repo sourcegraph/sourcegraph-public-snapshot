@@ -16,3 +16,21 @@ func (o *LimitOffset) SQL() *sqlf.Query {
 	}
 	return sqlf.Sprintf("LIMIT %d OFFSET %d", o.Limit, o.Offset)
 }
+
+func BuildLimitOffsetArgs(limit *int32, offset *int32) *LimitOffset {
+	if limit == nil {
+		return nil
+	}
+
+	if offset == nil {
+		return &LimitOffset{
+			int(*limit),
+			0,
+		}
+	}
+
+	return &LimitOffset{
+		int(*limit),
+		int(*offset),
+	}
+}

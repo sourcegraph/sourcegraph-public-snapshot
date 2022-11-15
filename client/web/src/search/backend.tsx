@@ -59,23 +59,18 @@ const savedSearchFragment = gql`
     }
 `
 
-export function fetchSavedSearches(): Observable<SavedSearchFields[]> {
-    return queryGraphQL(gql`
-        query savedSearches {
-            savedSearches {
+export const SAVED_SEARCHES_PAGE_QUERY = gql`
+    query SavedSearchesPage($namespaceType: String!, $namespaceId: ID!, $limit: Int!, $offset: Int!) {
+        savedSearches: savedSearchesByNamespace(namespaceType: $namespaceType, namespaceId: $namespaceId) {
+            totalCount
+            nodes(limit: $limit, offset: $offset) {
                 ...SavedSearchFields
             }
         }
-        ${savedSearchFragment}
-    `).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.savedSearches) {
-                throw createAggregateError(errors)
-            }
-            return data.savedSearches
-        })
-    )
-}
+    }
+
+    ${savedSearchFragment}
+`
 
 export function fetchSavedSearch(id: Scalars['ID']): Observable<SavedSearchFields> {
     return queryGraphQL(

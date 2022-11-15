@@ -126,8 +126,8 @@ export const commonWebGraphQlResults: Partial<
             },
         },
     }),
-    savedSearches: () => ({
-        savedSearches: [],
+    SavedSearchesPage: () => ({
+        savedSearches: { totalCount: 0, nodes: [] },
     }),
     LogEvents: () => ({
         logEvents: {

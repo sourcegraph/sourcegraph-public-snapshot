@@ -505,18 +505,21 @@ describe('Search', () => {
         test('is styled correctly, with saved searches', async () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
-                savedSearches: () => ({
-                    savedSearches: [
-                        {
-                            description: 'Demo',
-                            id: 'U2F2ZWRTZWFyY2g6NQ==',
-                            namespace: { __typename: 'User', id: 'user123', namespaceName: 'test' },
-                            notify: false,
-                            notifySlack: false,
-                            query: 'context:global Batch Change patternType:literal',
-                            slackWebhookURL: null,
-                        },
-                    ],
+                SavedSearchesPage: () => ({
+                    savedSearches: {
+                        totalCount: 1,
+                        nodes: [
+                            {
+                                description: 'Demo',
+                                id: 'U2F2ZWRTZWFyY2g6NQ==',
+                                namespace: { __typename: 'User', id: 'user123', namespaceName: 'test' },
+                                notify: false,
+                                notifySlack: false,
+                                query: 'context:global Batch Change patternType:literal',
+                                slackWebhookURL: null,
+                            },
+                        ],
+                    },
                 }),
             })
 

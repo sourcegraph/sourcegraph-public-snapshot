@@ -1423,6 +1423,20 @@ type Query {
     """
     savedSearches: [SavedSearch!]!
     """
+    All saved searches configured for the current user, for the organisation.
+    """
+    savedSearchesByNamespace(
+        """
+        type of the namespace "User" or "Org"
+        """
+        namespaceType: String!
+        """
+        ID of the namespace (userID or orgID) to fetch saved searches for.
+        """
+        namespaceId: ID!
+    ): SavedSearchesByNamespaceConnection!
+
+    """
     (experimental) Return the parse tree of a search query.
     """
     parseSearchQuery(
@@ -2469,6 +2483,29 @@ type SavedSearch implements Node {
     The Slack webhook URL associated with this saved search, if any.
     """
     slackWebhookURL: String
+}
+
+"""
+Paginated connection for saved searches created by current user under the organisation provided
+"""
+type SavedSearchesByNamespaceConnection {
+    """
+    Total count of saved searches for the user under the organisation.
+    """
+    totalCount: Float!
+    """
+    Paginated list of saved searches for the current user and the provided organisation.
+    """
+    nodes(
+        """
+        Return the first n saved searches from the list
+        """
+        limit: Int
+        """
+        Skips the first n saved searches from the list
+        """
+        offset: Int
+    ): [SavedSearch!]!
 }
 
 """

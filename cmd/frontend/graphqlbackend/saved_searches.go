@@ -130,6 +130,93 @@ func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResol
 	return savedSearches, nil
 }
 
+func (r *schemaResolver) SavedSearchesByNamespace(ctx context.Context, args *struct {
+	NamespaceType string
+	NamespaceId   graphql.ID
+}) (*savedSearchesConnectionResolver, error) {
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return nil, errors.New("user is not authenticated")
+	}
+
+	var userID, orgID *int32
+
+	if args.NamespaceType == "Org" {
+		err := relay.UnmarshalSpec(args.NamespaceId, &orgID)
+		if err != nil {
+			return nil, err
+		}
+
+		// Saved searches under org namespace are only visible to the org members or a site-admin
+		orgMembership, _ := r.db.OrgMembers().GetByOrgIDAndUserID(ctx, *orgID, a.UID)
+		if orgMembership == nil {
+			user, err := a.User(ctx, r.db.Users())
+			if err != nil {
+				return nil, err
+			}
+			if err != nil || !user.SiteAdmin {
+				return nil, errors.New("must be part of the organisation or a side admin. (must be a side admin)")
+			}
+		}
+	} else if args.NamespaceType == "User" {
+		err := relay.UnmarshalSpec(args.NamespaceId, &userID)
+		if err != nil {
+			return nil, err
+		}
+
+		// Saved searches under user namespace are only visible to the user or a site-admin
+		if *userID != a.UID {
+			user, err := a.User(ctx, r.db.Users())
+			if err != nil {
+				return nil, err
+			}
+			if !user.SiteAdmin {
+				return nil, errors.New("must be authenticated as the authorized user or as an admin (must be site admin)")
+			}
+		}
+	} else {
+		return nil, errors.New(`wrong namespaceType provided. Only "Org" and "User" allowed.`)
+	}
+
+	return &savedSearchesConnectionResolver{
+		r.db,
+		userID,
+		orgID,
+	}, nil
+}
+
+type savedSearchesConnectionResolver struct {
+	db     database.DB
+	userID *int32
+	orgID  *int32
+}
+
+func (s *savedSearchesConnectionResolver) TotalCount(ctx context.Context) (float64, error) {
+	totalCount, err := s.db.SavedSearches().CountSavedSearchesByOrgOrUser(ctx, s.userID, s.orgID)
+	if err != nil {
+		return 0, err
+	}
+
+	return totalCount, nil
+}
+
+func (s *savedSearchesConnectionResolver) Nodes(ctx context.Context, args *struct {
+	Limit  *int32
+	Offset *int32
+}) ([]*savedSearchResolver, error) {
+	allSavedSearches, err := s.db.SavedSearches().ListSavedSearchesByOrgOrUser(ctx, s.userID, s.orgID, database.BuildLimitOffsetArgs(args.Limit, args.Offset))
+	if err != nil {
+		return nil, err
+	}
+
+	var savedSearches []*savedSearchResolver
+	for _, savedSearch := range allSavedSearches {
+		savedSearches = append(savedSearches, &savedSearchResolver{db: s.db, s: *savedSearch})
+	}
+
+	return savedSearches, nil
+}
+
 func (r *schemaResolver) SendSavedSearchTestNotification(ctx context.Context, args *struct {
 	ID graphql.ID
 }) (*EmptyResponse, error) {
