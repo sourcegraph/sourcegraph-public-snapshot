@@ -212,10 +212,15 @@ created = ?
 WHERE login = ?`
 
 func (s *state) saveUser(u *user) error {
+	err := s.insertUsers([]string{u.Login})
+	if err != nil {
+		return err
+	}
+
 	s.Lock()
 	defer s.Unlock()
 
-	_, err := s.db.Exec(
+	_, err = s.db.Exec(
 		saveUserStmt,
 		u.Failed,
 		u.Created,
@@ -234,10 +239,11 @@ totalMembers = ?
 WHERE name = ?`
 
 func (s *state) saveTeam(t *team) error {
+	err := s.insertTeams([]string{t.Name}, []*org{{Login: t.Org}})
 	s.Lock()
 	defer s.Unlock()
 
-	_, err := s.db.Exec(
+	_, err = s.db.Exec(
 		saveTeamStmt,
 		t.Failed,
 		t.Created,
@@ -279,7 +285,7 @@ func (s *state) insertUsers(logins []string) error {
 		return err
 	}
 	for _, login := range logins {
-		if _, err = tx.Exec(`INSERT INTO users(login, email) VALUES (?, ?)`, login, fmt.Sprintf("%s@%s", login, emailDomain)); err != nil {
+		if _, err = tx.Exec(`INSERT OR IGNORE INTO users(login, email) VALUES (?, ?)`, login, fmt.Sprintf("%s@%s", login, emailDomain)); err != nil {
 			return err
 		}
 	}
@@ -296,7 +302,7 @@ func (s *state) insertTeams(names []string, orgs []*org) error {
 	for i, name := range names {
 		// distribute teams evenly over orgs
 		org := orgs[i%len(orgs)]
-		if _, err = tx.Exec(`INSERT INTO teams(name, org) VALUES (?, ?)`, name, org.Login); err != nil {
+		if _, err = tx.Exec(`INSERT OR IGNORE INTO teams(name, org) VALUES (?, ?)`, name, org.Login); err != nil {
 			return err
 		}
 	}
@@ -311,11 +317,39 @@ func (s *state) insertOrgs(logins []string, admin string) error {
 		return err
 	}
 	for _, login := range logins {
-		if _, err = tx.Exec(`INSERT INTO orgs(login, adminLogin) VALUES (?, ?)`, login, admin); err != nil {
+		if _, err = tx.Exec(`INSERT OR IGNORE INTO orgs(login, adminLogin) VALUES (?, ?)`, login, admin); err != nil {
 			return err
 		}
 	}
 	return tx.Commit()
+}
+
+var deleteUserStmt = `DELETE FROM users
+WHERE login = ?`
+
+func (s *state) deleteUser(u *user) error {
+	s.Lock()
+	defer s.Unlock()
+
+	_, err := s.db.Exec(deleteUserStmt, u.Login)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+var deleteTeamStmt = `DELETE FROM teams
+WHERE name = ?`
+
+func (s *state) deleteTeam(t *team) error {
+	s.Lock()
+	defer s.Unlock()
+
+	_, err := s.db.Exec(deleteTeamStmt, t.Name)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *state) countCompletedUsers() (int, error) {

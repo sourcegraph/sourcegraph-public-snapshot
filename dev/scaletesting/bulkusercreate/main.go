@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"log"
 	"math"
 	"net/http"
 	"os"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -50,8 +52,9 @@ func main() {
 	flag.StringVar(&cfg.githubURL, "github.url", "", "(required) GitHub base URL for the destination GHE instance")
 	flag.StringVar(&cfg.githubUser, "github.login", "", "(required) GitHub user to authenticate with")
 	flag.StringVar(&cfg.githubPassword, "github.password", "", "(required) password of the GitHub user to authenticate with")
-	flag.IntVar(&cfg.userCount, "user.count", 100, "Amount of users to create")
-	flag.IntVar(&cfg.orgCount, "org.count", 10, "Amount of orgs to create")
+	flag.IntVar(&cfg.userCount, "user.count", 100, "Amount of users to create or delete")
+	flag.IntVar(&cfg.teamCount, "team.count", 20, "Amount of teams to create or delete")
+	flag.IntVar(&cfg.orgCount, "org.count", 10, "Amount of orgs to create or delete")
 	flag.StringVar(&cfg.orgAdmin, "org.admin", "", "Login of admin of orgs")
 
 	flag.IntVar(&cfg.retry, "retry", 5, "Retries count")
@@ -102,30 +105,12 @@ func main() {
 		os.Exit(-1)
 	}
 
-	// ratio from https://github.com/sourcegraph/sourcegraph/issues/43052
-	cfg.teamCount = (cfg.userCount / 3) * 2
-
 	store, err = newState(cfg.resume)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// load or generate users
-	var users []*user
-	if users, err = store.loadUsers(); err != nil {
-		log.Fatal(err)
-	}
-
-	if len(users) == 0 {
-		if users, err = store.generateUsers(cfg); err != nil {
-			log.Fatal(err)
-		}
-		writeSuccess(out, "generated user jobs in %s", cfg.resume)
-	} else {
-		writeSuccess(out, "resuming user jobs from %s", cfg.resume)
-	}
-
-	// load or generate orgs
+	// load or generate orgs (used by both create and delete actions)
 	var orgs []*org
 	if orgs, err = store.loadOrgs(); err != nil {
 		log.Fatal(err)
@@ -140,25 +125,40 @@ func main() {
 		writeSuccess(out, "resuming org jobs from %s", cfg.resume)
 	}
 
-	// load or generate teams
-	var teams []*team
-	if teams, err = store.loadTeams(); err != nil {
-		log.Fatal(err)
-	}
-
-	if len(teams) == 0 {
-		if teams, err = store.generateTeams(cfg); err != nil {
-			log.Fatal(err)
-		}
-		writeSuccess(out, "generated team jobs in %s", cfg.resume)
-	} else {
-		writeSuccess(out, "resuming team jobs from %s", cfg.resume)
-	}
-
 	start := time.Now()
 
 	g := group.New().WithMaxConcurrency(1000)
 	if cfg.action == "create" {
+		// load or generate users
+		var users []*user
+		if users, err = store.loadUsers(); err != nil {
+			log.Fatal(err)
+		}
+
+		if len(users) == 0 {
+			if users, err = store.generateUsers(cfg); err != nil {
+				log.Fatal(err)
+			}
+			writeSuccess(out, "generated user jobs in %s", cfg.resume)
+		} else {
+			writeSuccess(out, "resuming user jobs from %s", cfg.resume)
+		}
+
+		// load or generate teams
+		var teams []*team
+		if teams, err = store.loadTeams(); err != nil {
+			log.Fatal(err)
+		}
+
+		if len(teams) == 0 {
+			if teams, err = store.generateTeams(cfg); err != nil {
+				log.Fatal(err)
+			}
+			writeSuccess(out, "generated team jobs in %s", cfg.resume)
+		} else {
+			writeSuccess(out, "resuming team jobs from %s", cfg.resume)
+		}
+
 		bars := []output.ProgressBar{
 			{Label: "Creating orgs", Max: float64(cfg.orgCount)},
 			{Label: "Creating teams", Max: float64(cfg.teamCount)},
@@ -217,60 +217,153 @@ func main() {
 			})
 		}
 		g.Wait()
+
+		allUsers, err := store.countAllUsers()
+		if err != nil {
+			log.Fatal(err)
+		}
+		completedUsers, err := store.countCompletedUsers()
+		if err != nil {
+			log.Fatal(err)
+		}
+		allOrgs, err := store.countAllOrgs()
+		if err != nil {
+			log.Fatal(err)
+		}
+		completedOrgs, err := store.countCompletedOrgs()
+		if err != nil {
+			log.Fatal(err)
+		}
+		allTeams, err := store.countAllTeams()
+		if err != nil {
+			log.Fatal(err)
+		}
+		completedTeams, err := store.countCompletedTeams()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		writeSuccess(out, "Successfully added %d users (%d failures)", completedUsers, allUsers-completedUsers)
+		writeSuccess(out, "Successfully added %d orgs (%d failures)", completedOrgs, allOrgs-completedOrgs)
+		writeSuccess(out, "Successfully added %d teams (%d failures)", completedTeams, allTeams-completedTeams)
 	}
 
 	if cfg.action == "delete" {
-		for _, u := range users {
-			currentUser := u
+		localOrgs, err := store.loadOrgs()
+		if err != nil {
+			log.Fatal("Failed to load orgs", err)
+		}
+
+		if len(localOrgs) == 0 {
+			// Fetch orgs currently on instance due to lost state
+			remoteOrgs := getGitHubOrgs(ctx)
+
+			writeInfo(out, "Storing %d orgs in state", len(remoteOrgs))
+			for _, o := range remoteOrgs {
+				if strings.HasPrefix(*o.Name, "org-") {
+					o := &org{
+						Login:   *o.Login,
+						Admin:   cfg.orgAdmin,
+						Failed:  "",
+						Created: true,
+					}
+					if err := store.saveOrg(o); err != nil {
+						log.Fatal(err)
+					}
+					localOrgs = append(localOrgs, o)
+				}
+			}
+		}
+
+		localUsers, err := store.loadUsers()
+		if err != nil {
+			log.Fatal("Failed to load users", err)
+		}
+
+		localTeams, err := store.loadTeams()
+		if err != nil {
+			log.Fatal("Failed to load teams", err)
+		}
+
+		if len(localUsers) == 0 {
+			// Fetch users currently on instance due to lost state
+			remoteUsers := getGitHubUsers(ctx)
+
+			writeInfo(out, "Storing %d users in state", len(remoteUsers))
+			for _, u := range remoteUsers {
+				if strings.HasPrefix(*u.Login, "user-") {
+					u := &user{
+						Login:   *u.Login,
+						Email:   fmt.Sprintf("%s@%s", *u.Login, emailDomain),
+						Failed:  "",
+						Created: true,
+					}
+					if err := store.saveUser(u); err != nil {
+						log.Fatal(err)
+					}
+					localUsers = append(localUsers, u)
+				}
+			}
+		}
+
+		if len(localTeams) == 0 {
+			// Fetch teams currently on instance due to lost state
+			remoteTeams := getGitHubTeams(ctx, localOrgs)
+
+			writeInfo(out, "Storing %d teams in state", len(remoteTeams))
+			for _, t := range remoteTeams {
+				if strings.HasPrefix(*t.Name, "team-") {
+					t := &team{
+						Name:         *t.Name,
+						Org:          *t.Organization.Login,
+						Failed:       "",
+						Created:      true,
+						TotalMembers: 0, //not important for deleting but subsequent use of state will be problematic
+					}
+					if err := store.saveTeam(t); err != nil {
+						log.Fatal(err)
+					}
+					localTeams = append(localTeams, t)
+				}
+			}
+		}
+
+		// delete users from instance
+		usersToDelete := len(localUsers) - cfg.userCount
+		for i := 0; i < usersToDelete; i++ {
+			currentUser := localUsers[i]
+			if i%100 == 0 {
+				writeInfo(out, "Deleted %d out of %d users", i, usersToDelete)
+			}
 			g.Go(func() {
 				executeDeleteUser(ctx, currentUser)
 			})
 		}
 
-		for _, t := range teams {
-			currentTeam := t
+		teamsToDelete := len(localTeams) - cfg.teamCount
+		for i := 0; i < teamsToDelete; i++ {
+			currentTeam := localTeams[i]
+			if i%100 == 0 {
+				writeInfo(out, "Deleted %d out of %d teams", i, teamsToDelete)
+			}
 			g.Go(func() {
 				executeDeleteTeam(ctx, currentTeam)
 			})
 		}
+
+		g.Wait()
+
+		remoteOrgs := getGitHubOrgs(ctx)
+		remoteTeams := getGitHubTeams(ctx, localOrgs)
+		remoteUsers := getGitHubUsers(ctx)
+
+		writeInfo(out, "Total orgs on instance: %d", len(remoteOrgs))
+		writeInfo(out, "Total teams on instance: %d", len(remoteTeams))
+		writeInfo(out, "Total users on instance: %d", len(remoteUsers))
 	}
-	g.Wait()
 
 	end := time.Now()
 	writeInfo(out, "Started at %s, finished at %s", start.String(), end.String())
-
-	allUsers, err := store.countAllUsers()
-	if err != nil {
-		log.Fatal(err)
-	}
-	completedUsers, err := store.countCompletedUsers()
-	if err != nil {
-		log.Fatal(err)
-	}
-	allOrgs, err := store.countAllOrgs()
-	if err != nil {
-		log.Fatal(err)
-	}
-	completedOrgs, err := store.countCompletedOrgs()
-	if err != nil {
-		log.Fatal(err)
-	}
-	allTeams, err := store.countAllTeams()
-	if err != nil {
-		log.Fatal(err)
-	}
-	completedTeams, err := store.countCompletedTeams()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if cfg.action == "create" {
-		writeSuccess(out, "Successfully added %d users (%d failures)", completedUsers, allUsers-completedUsers)
-		writeSuccess(out, "Successfully added %d orgs (%d failures)", completedOrgs, allOrgs-completedOrgs)
-		writeSuccess(out, "Successfully added %d teams (%d failures)", completedTeams, allTeams-completedTeams)
-	} else if cfg.action == "delete" {
-		writeSuccess(out, "Successfully deleted %d users (%d failures)", allUsers-completedUsers, completedUsers)
-	}
 }
 
 func executeDeleteTeam(ctx context.Context, currentTeam *team) {
@@ -293,10 +386,7 @@ func executeDeleteTeam(ctx context.Context, currentTeam *team) {
 		}
 	}
 
-	currentTeam.Created = false
-	currentTeam.Failed = ""
-	currentTeam.TotalMembers = 0
-	if grErr = store.saveTeam(currentTeam); grErr != nil {
+	if grErr = store.deleteTeam(currentTeam); grErr != nil {
 		log.Fatal(grErr)
 	}
 
@@ -308,6 +398,7 @@ func executeDeleteUser(ctx context.Context, currentUser *user) {
 
 	if grErr != nil && resp.StatusCode != 404 {
 		writeFailure(out, "Failed to get user %s, reason: %s", currentUser.Login, grErr)
+		return
 	}
 
 	grErr = nil
@@ -326,7 +417,7 @@ func executeDeleteUser(ctx context.Context, currentUser *user) {
 
 	currentUser.Created = false
 	currentUser.Failed = ""
-	if grErr = store.saveUser(currentUser); grErr != nil {
+	if grErr = store.deleteUser(currentUser); grErr != nil {
 		log.Fatal(grErr)
 	}
 
@@ -394,6 +485,82 @@ func executeCreateTeamMembershipsForUser(ctx context.Context, opts *teamMembersh
 
 		//writeSuccess(out, "Added member %s to team %s", currentUser.Login, candidateTeam.Name)
 	}
+}
+
+func getGitHubOrgs(ctx context.Context) []*github.Organization {
+	var orgs []*github.Organization
+	var since int64
+	for true {
+		writeInfo(out, "Fetching org page, last ID seen is %d", since)
+		orgsPage, _, err := gh.Organizations.ListAll(ctx, &github.OrganizationsListOptions{
+			Since:       since,
+			ListOptions: github.ListOptions{PerPage: 100},
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(orgsPage) != 0 {
+			since = *orgsPage[len(orgsPage)-1].ID
+			orgs = append(orgs, orgsPage...)
+		} else {
+			break
+		}
+	}
+
+	return orgs
+}
+
+func getGitHubTeams(ctx context.Context, orgs []*org) []*github.Team {
+	var teams []*github.Team
+	var currentPage int
+	for _, o := range orgs {
+		for true {
+			writeInfo(out, "Fetching team page %d for org %s", currentPage, o.Login)
+			teamsPage, _, err := gh.Teams.ListTeams(ctx, o.Login, &github.ListOptions{
+				Page:    currentPage,
+				PerPage: 100,
+			})
+			// not returned in API response but necessary
+			for _, t := range teamsPage {
+				t.Organization = &github.Organization{Login: &o.Login}
+			}
+			if err != nil {
+				log.Fatal(err)
+			}
+			if len(teamsPage) != 0 {
+				currentPage++
+				teams = append(teams, teamsPage...)
+			} else {
+				break
+			}
+		}
+		currentPage = 0
+	}
+
+	return teams
+}
+
+func getGitHubUsers(ctx context.Context) []*github.User {
+	var users []*github.User
+	var since int64
+	for true {
+		writeInfo(out, "Fetching user page, last ID seen is %d", since)
+		usersPage, _, err := gh.Users.ListAll(ctx, &github.UserListOptions{
+			Since:       since,
+			ListOptions: github.ListOptions{PerPage: 100},
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(usersPage) != 0 {
+			since = *usersPage[len(usersPage)-1].ID
+			users = append(users, usersPage...)
+		} else {
+			break
+		}
+	}
+
+	return users
 }
 
 func executeCreateUser(ctx context.Context, currentUser *user, usersDone *int64) {
