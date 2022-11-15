@@ -161,37 +161,6 @@ export const SearchContextsListTab: React.FunctionComponent<React.PropsWithChild
     const location = useLocation()
     return (
         <>
-            {isSourcegraphDotCom && (
-                <div
-                    className={classNames(
-                        styles.autoDefinedSearchContexts,
-                        'mb-4',
-                        autoDefinedSearchContexts && autoDefinedSearchContexts.length >= 3
-                            ? styles.autoDefinedSearchContextsRepeat3
-                            : styles.autoDefinedSearchContextsRepeat2
-                    )}
-                >
-                    {autoDefinedSearchContexts?.map(context => (
-                        <Card key={context.spec} className="p-3">
-                            <div>
-                                <Link to={`/contexts/${context.spec}`}>
-                                    <strong>{context.spec}</strong>
-                                </Link>
-                                <Badge
-                                    variant="secondary"
-                                    pill={true}
-                                    className={classNames('ml-1', styles.badge)}
-                                    tooltip="Automatic contexts are created by Sourcegraph."
-                                >
-                                    auto
-                                </Badge>
-                            </div>
-                            <div className="text-muted mt-1">{context.description}</div>
-                        </Card>
-                    ))}
-                </div>
-            )}
-
             <FilteredConnection<
                 SearchContextMinimalFields,
                 Omit<SearchContextNodeProps, 'node'>,

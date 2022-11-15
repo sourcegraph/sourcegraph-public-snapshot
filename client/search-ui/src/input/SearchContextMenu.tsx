@@ -260,6 +260,11 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                     </ButtonLink>
                 )}
             </div>
+            <div className={styles.footer}>
+                <ButtonLink variant="link" to="/contexts" size="sm" className={styles.footerButton}>
+                    Search private code
+                </ButtonLink>
+            </div>
         </Combobox>
     )
 }
