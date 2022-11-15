@@ -56,7 +56,7 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
-		"SELECT id, created_at, last_recorded_at, sample_interval_unit, sample_interval_value FROM insight_series WHERE supports_augmentation IS FALSE ORDER BY id LIMIT %s FOR UPDATE SKIP LOCKED",
+		"SELECT id, series_id, created_at, last_recorded_at, sample_interval_unit, sample_interval_value FROM insight_series WHERE supports_augmentation IS FALSE ORDER BY id LIMIT %s FOR UPDATE SKIP LOCKED",
 		m.batchSize,
 	))
 	if err != nil {
@@ -66,11 +66,13 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 	series := make(map[int]seriesMetadata) // id -> metadata
 	for rows.Next() {
 		var id int
+		var seriesID string
 		var createdAt, lastRecordedAt time.Time
 		var sampleIntervalUnit string
 		var sampleIntervalValue int
 		if err := rows.Scan(
 			&id,
+			&seriesID,
 			&createdAt,
 			&lastRecordedAt,
 			&sampleIntervalUnit,
@@ -80,6 +82,7 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 		}
 		series[id] = seriesMetadata{
 			id:             id,
+			seriesID:       seriesID,
 			createdAt:      createdAt,
 			lastRecordedAt: lastRecordedAt,
 			interval: timeInterval{
@@ -94,7 +97,7 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 
 	for id, metadata := range series {
 		recordingTimesRows, err := tx.Query(ctx, sqlf.Sprintf(
-			"SELECT DISTINCT recording_time FROM insight_series_recording_times WHERE insight_series_id = %s ORDER by recording_time ASC", id,
+			"SELECT DISTINCT time FROM series_points WHERE series_id = %s ORDER by time ASC", metadata.seriesID,
 		))
 		if err != nil {
 			return err
@@ -134,6 +137,7 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 
 type seriesMetadata struct {
 	id             int
+	seriesID       string
 	createdAt      time.Time
 	lastRecordedAt time.Time
 	interval       timeInterval
