@@ -43,10 +43,6 @@ func (d *dynamicInsightSeriesResolver) Status(ctx context.Context) (graphqlbacke
 	return &emptyInsightStatusResolver{}, nil
 }
 
-func (d *dynamicInsightSeriesResolver) DirtyMetadata(ctx context.Context) ([]graphqlbackend.InsightDirtyQueryResolver, error) {
-	return nil, nil
-}
-
 type emptyInsightStatusResolver struct{}
 
 func (e emptyInsightStatusResolver) TotalPoints(ctx context.Context) (int32, error) {
