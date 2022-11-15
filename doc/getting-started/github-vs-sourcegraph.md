@@ -182,7 +182,7 @@ Using the <a href="https://docs.sourcegraph.com/admin/config/site_config#search-
    </td>
   </tr>
   <tr>
-   <td><strong>Search across issues and pull requests</strong>
+   <td><strong>Search across issues, pull requests, commits, packages, discussions, and more.</strong>
    </td>
    <td>✓
    </td>
