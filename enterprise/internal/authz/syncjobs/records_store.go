@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
+// keep in sync with consumer in enterprise/cmd/frontend/internal/authz/resolvers/resolver.go
 const syncJobsRecordsPrefix = "authz/sync-job-records"
 
 // default documented in site.schema.json

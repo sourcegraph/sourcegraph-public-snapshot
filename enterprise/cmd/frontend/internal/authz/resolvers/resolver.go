@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -33,6 +34,9 @@ type Resolver struct {
 	repoupdaterClient interface {
 		SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
 	}
+	syncJobsRecords interface {
+		Get(ctx context.Context, first int) ([]syncjobs.Status, error)
+	}
 }
 
 // checkLicense returns a user-facing error if the provided feature is not purchased
@@ -54,6 +58,7 @@ func NewResolver(db database.DB, clock func() time.Time) graphqlbackend.AuthzRes
 	return &Resolver{
 		db:                edb.NewEnterpriseDB(db),
 		repoupdaterClient: repoupdater.DefaultClient,
+		syncJobsRecords:   syncjobs.NewRecordsReader(),
 	}
 }
 
@@ -619,4 +624,37 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 		syncedAt:  p.SyncedAt,
 		updatedAt: p.UpdatedAt,
 	}, nil
+}
+
+func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend.PermissionsSyncJobsArgs) (graphqlbackend.PermissionsSyncJobsResolver, error) {
+	// 🚨 SECURITY: Only site admins can query sync jobs records.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	count := 100
+	if args.Count != nil {
+		count = int(*args.Count)
+		if count > 500 {
+			count = 500
+		}
+	}
+
+	records, err := r.syncJobsRecords.Get(ctx, count)
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := &permissionsSyncJobsResolver{
+		jobs: make([]graphqlbackend.PermissionsSyncJobResolver, 0, len(records)),
+	}
+	for _, j := range records {
+		if args.Status == nil {
+			jobs.jobs = append(jobs.jobs, permissionsSyncJobResolver{j})
+		} else if j.Status == *args.Status {
+			jobs.jobs = append(jobs.jobs, permissionsSyncJobResolver{j})
+		}
+	}
+
+	return jobs, nil
 }

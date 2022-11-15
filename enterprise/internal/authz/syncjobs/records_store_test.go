@@ -13,14 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type confWatcher struct {
-	update func()
-	conf   schema.SiteConfiguration
-}
-
-func (c *confWatcher) Watch(fn func())                      { c.update = fn }
-func (c *confWatcher) SiteConfig() schema.SiteConfiguration { return c.conf }
-
 func TestSyncJobsRecordsStoreWatch(t *testing.T) {
 	s := NewRecordsStore(logtest.Scoped(t))
 
@@ -42,10 +34,6 @@ func TestSyncJobsRecordsStoreWatch(t *testing.T) {
 	// assert updated
 	assert.Equal(t, 5*time.Minute, s.cache.(*rcache.Cache).TTL())
 }
-
-type memCache map[string]string
-
-func (m memCache) Set(k string, v []byte) { m[k] = string(v) }
 
 func TestSyncJobRecordsRecord(t *testing.T) {
 	mockTime, err := time.Parse(time.RFC1123, time.RFC1123)

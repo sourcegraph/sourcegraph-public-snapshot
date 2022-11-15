@@ -138,6 +138,22 @@ extend type Query {
     authzProviderTypes: [String!]!
 
     """
+    EXPERIMENTAL: Returns a list of recent permissions sync jobs for a given set of parameters.
+
+    This endpoint currently only reports recently completed sync jobs, with an expiry configurable by 'authz.syncJobsRecordsTTL'.
+    """
+    permissionsSyncJobs(
+        """
+        Only returns jobs with this status.
+        """
+        status: PermissionsSyncJobStatus
+        """
+        Number of jobs returned. Maximum number of returned jobs is 500. Up to 100 jobs are returned by default.
+        """
+        count: Int
+    ): PermissionsSyncJobs
+
+    """
     Returns a list of Bitbucket Project permissions sync jobs for a given set of parameters.
     """
     bitbucketProjectPermissionJobs(
@@ -294,6 +310,64 @@ input FetchPermissionsOptions {
     sync should be invalidated.
     """
     invalidateCaches: Boolean
+}
+
+type PermissionsSyncJobs {
+    """
+    Permission sync jobs.
+    """
+    nodes: [PermissionsSyncJob!]!
+}
+
+enum PermissionsSyncJobStatus {
+    ERROR
+    SUCCESS
+}
+
+type PermissionsSyncJob {
+    """
+    Type of the sync job.
+    """
+    type: String!
+    """
+    ID of the entity targeted in this sync job.
+    """
+    id: Int!
+    """
+    Completion time of the sync job.
+    """
+    completedAt: DateTime!
+    """
+    Status of the sync job.
+    """
+    status: PermissionsSyncJobStatus!
+    """
+    Message describing the status of the sync job.
+    """
+    message: String!
+    """
+    Per-provider statuses.
+    """
+    providers: [PermissionsProviderStatus!]!
+}
+
+type PermissionsProviderStatus {
+    """
+    Type of the provider.
+    """
+    type: String!
+    """
+    ID representing the provider.
+    """
+    id: String!
+    """
+    Type of the sync job.
+    """
+    status: PermissionsSyncJobStatus!
+    """
+    Message describing the status of the sync job.
+    """
+    message: String!
 }
 
 """

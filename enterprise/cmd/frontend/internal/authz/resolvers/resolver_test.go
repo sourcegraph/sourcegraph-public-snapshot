@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -26,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -1665,6 +1667,106 @@ query {
 		}
 
 		graphqlbackend.RunTests(t, []*graphqlbackend.Test{test})
+	})
+}
+
+type mockRecordsReader []syncjobs.Status
+
+func (m mockRecordsReader) Get(context.Context, int) ([]syncjobs.Status, error) { return m, nil }
+
+func TestResolverPermissionsSyncJobs(t *testing.T) {
+	t.Run("authenticated as non-admin", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		r := &Resolver{db: db}
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		result, err := r.PermissionsSyncJobs(ctx, nil)
+
+		require.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
+		require.Nil(t, result)
+	})
+
+	t.Run("all job fields successfully returned", func(t *testing.T) {
+		users := database.NewStrictMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		db := edb.NewStrictMockEnterpriseDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
+			Context: ctx,
+			Schema: func() *graphql.Schema {
+				r := &Resolver{
+					db:                edb.NewEnterpriseDB(db),
+					repoupdaterClient: repoupdater.DefaultClient,
+					syncJobsRecords: mockRecordsReader{{
+						RequestID:   3,
+						RequestType: "repo",
+						Status:      "SUCCESS",
+						Message:     "nice",
+						Providers: []syncjobs.ProviderStatus{{
+							ProviderID:   "https://github.com",
+							ProviderType: "github",
+							Status:       "SUCCESS",
+							Message:      "nice",
+						}},
+					}},
+				}
+				parsedSchema, err := graphqlbackend.NewSchemaWithAuthzResolver(db, r)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return parsedSchema
+			}(),
+			Query: `
+query {
+  permissionsSyncJobs(count:1) {
+    nodes {
+		id
+		type
+		status
+		message
+		completedAt
+		providers {
+			id
+			type
+			status
+			message
+		}
+	}
+  }
+}
+					`,
+			ExpectedResult: `
+{
+	"permissionsSyncJobs": {
+		"nodes": [
+			{
+				"id": 3,
+				"type": "repo",
+				"status": "SUCCESS",
+				"message": "nice",
+				"completedAt":"0001-01-01T00:00:00Z",
+				"providers": [
+					{
+						"id": "https://github.com",
+						"type": "github",
+						"status": "SUCCESS",
+						"message": "nice"
+					}
+				]
+			}
+		]
+	}
+}`,
+		}})
 	})
 }
 
