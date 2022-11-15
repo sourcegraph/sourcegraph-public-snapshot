@@ -123,7 +123,6 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 	}
 
 	pathOptions := pathmatch.CompileOptions{
-		RegExp:        true,
 		CaseSensitive: p.PathPatternsAreCaseSensitive,
 	}
 	matchPath, err := pathmatch.CompilePathPatterns(p.IncludePatterns, p.ExcludePattern, pathOptions)

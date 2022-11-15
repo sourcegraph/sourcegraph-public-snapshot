@@ -38,7 +38,7 @@ func TestCompilePattern(t *testing.T) {
 }
 
 func TestCompilePathPatterns(t *testing.T) {
-	match, err := CompilePathPatterns([]string{`main\.go`, `m`}, `README\.md`, CompileOptions{RegExp: true})
+	match, err := CompilePathPatterns([]string{`main\.go`, `m`}, `README\.md`, CompileOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

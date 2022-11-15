@@ -441,7 +441,7 @@ func init() {
 }
 
 func TestRegexSearch(t *testing.T) {
-	match, err := pathmatch.CompilePathPatterns([]string{`a\.go`}, `README\.md`, pathmatch.CompileOptions{RegExp: true})
+	match, err := pathmatch.CompilePathPatterns([]string{`a\.go`}, `README\.md`, pathmatch.CompileOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

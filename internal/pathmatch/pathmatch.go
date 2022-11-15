@@ -5,9 +5,7 @@ package pathmatch
 import (
 	"bytes"
 	"fmt"
-	"strings"
 
-	"github.com/gobwas/glob"
 	"github.com/grafana/regexp"
 )
 
@@ -43,47 +41,22 @@ func (m *regexpMatcher) String() string {
 
 // CompileOptions specifies options about the patterns to compile.
 type CompileOptions struct {
-	RegExp        bool // whether the patterns are regular expressions (false means globs)
 	CaseSensitive bool // whether the patterns are case sensitive
 }
 
 // CompilePattern compiles pattern into a PathMatcher func.
 func CompilePattern(pattern string, options CompileOptions) (PathMatcher, error) {
-	if options.RegExp {
-		// Respect the CaseSensitive option. However, if the pattern already contains
-		// (?i:...), then don't clear that 'i' flag (because we assume that behavior
-		// is desirable in more cases).
-		if !options.CaseSensitive {
-			pattern = "(?i:" + pattern + ")"
-		}
-		p, err := regexp.Compile(pattern)
-		if err != nil {
-			return nil, err
-		}
-		return (*regexpMatcher)(p), nil
-	}
-
+	// Respect the CaseSensitive option. However, if the pattern already contains
+	// (?i:...), then don't clear that 'i' flag (because we assume that behavior
+	// is desirable in more cases).
 	if !options.CaseSensitive {
-		pattern = strings.ToLower(pattern)
+		pattern = "(?i:" + pattern + ")"
 	}
-	p, err := glob.Compile(pattern)
+	p, err := regexp.Compile(pattern)
 	if err != nil {
 		return nil, err
 	}
-	if !options.CaseSensitive {
-		// Use a match func that lowercases the input because globbing has no
-		// first-class concept of case-insensitivity (as regexps do, with the 'i' flag).
-		return &pathMatcherFunc{
-			matcher: func(path string) bool {
-				return p.Match(strings.ToLower(path))
-			},
-			pattern: "iglob:" + pattern,
-		}, nil
-	}
-	return &pathMatcherFunc{
-		matcher: p.Match,
-		pattern: "glob:" + pattern,
-	}, nil
+	return (*regexpMatcher)(p), nil
 }
 
 // pathMatcherAnd is a PathMatcher that matches a path iff all of the
