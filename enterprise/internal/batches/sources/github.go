@@ -289,6 +289,7 @@ func (s GithubSource) MergeChangeset(ctx context.Context, c *Changeset, squash b
 		}
 		return err
 	}
+
 	return c.Changeset.SetMetadata(pr)
 }
 
