@@ -3,6 +3,7 @@
 Sourcegraph offers two versions of its product: Sourcegraph Open Source (Sourcegraph OSS) and Sourcegraph Enterprise. 
 
 Sourcegraph Enterprise is Sourcegraph’s primary offering and includes all code intelligence platform features, like:
+
 - Code Search
 - Code navigation
 - Batch Changes
@@ -13,10 +14,11 @@ See the [detailed feature comparison](#detailed-feature-comparison) for a list o
 Sourcegraph Enterprise is the best solution for enterprises who want to use Sourcegraph with their organization’s code. Sourcegraph Enterprise is available via our [paid plans](https://about.sourcegraph.com/pricing). Teams of up to 10 developers can use a limited version of Sourcegraph Enterprise for free.
 
 Sourcegraph OSS only includes universal code search functionality and does not include any [code intelligence platform](https://about.sourcegraph.com/blog/code-search-to-code-intelligence) or enterprise features. Sourcegraph OSS does **not** include:
+
 - Code navigation
 - Batch Changes
 - Code Insights
-- Code monitoring 
+- Code monitoring
 - Notebooks
 - SSO
 - Browser/IDE extensions
@@ -32,6 +34,7 @@ Sourcegraph Enterprise can be run in a variety of environments, from cloud to se
 Developers can use [Sourcegraph OSS](https://github.com/sourcegraph/sourcegraph) without agreeing to any enterprise licensing terms by building their own server image. If they do so, no code from our enterprise-licensed features will be included in their Sourcegraph deployment.
 
 In practice, Sourcegraph OSS involves:
+
 - Removing the enterprise directories from the repository
 - Building your own docker image (you can’t just use ours)
 
