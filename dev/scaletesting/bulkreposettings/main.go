@@ -261,7 +261,7 @@ type GithubRepoFetcher struct {
 	err       error
 }
 
-// Done determines whether more repos can be retrieved from Github
+// Done determines whether more repos can be retrieved from Github.
 func (f *GithubRepoFetcher) Done() bool {
 	return f.done
 }
