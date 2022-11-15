@@ -260,19 +260,6 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 	return results
 }
 
-func (s *InsightStore) InsertDirtyQuery(ctx context.Context, series *types.InsightSeries, query *types.DirtyQuery) error {
-	q := sqlf.Sprintf(insertDirtyQuerySql, series.ID, query.Query, query.Reason, query.ForTime, s.Now())
-	return s.Exec(ctx, q)
-}
-
-// GetDirtyQueries returns up to 100 dirty queries for a given insight series.
-func (s *InsightStore) GetDirtyQueries(ctx context.Context, series *types.InsightSeries) ([]*types.DirtyQuery, error) {
-	// We are going to limit this for now to some fixed value, and in the future if necessary add pagination.
-	limit := 100
-	q := sqlf.Sprintf(getDirtyQueriesSql, series.ID, limit)
-	return scanDirtyQueries(s.Query(ctx, q))
-}
-
 func scanDirtyQueries(rows *sql.Rows, queryErr error) (_ []*types.DirtyQuery, err error) {
 	if queryErr != nil {
 		return nil, queryErr
