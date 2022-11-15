@@ -52,6 +52,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		wantQuery            string
 		onlyCloudDefault     bool
 		includeDeleted       bool
+		displayNames		 []string
 		wantArgs             []any
 	}{
 		{
@@ -116,6 +117,12 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			includeDeleted: true,
 			wantQuery:      "TRUE",
 		},
+		{
+			name:          "displayNames",
+			displayNames:  []string{"External service #1", "External service #2"},
+			wantQuery:     "deleted_at IS NULL AND display_name = ANY($1)",
+			wantArgs:      []any{pq.Array([]string{"External service #1", "External service #2"})},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -129,6 +136,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				UpdatedAfter:         test.updatedAfter,
 				OnlyCloudDefault:     test.onlyCloudDefault,
 				IncludeDeleted:       test.includeDeleted,
+				DisplayNames:         test.displayNames,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
 			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {
@@ -1743,6 +1751,19 @@ func TestExternalServicesStore_List(t *testing.T) {
 		// We should find all services were updated after a time in the past
 		if len(ess) != 4 {
 			t.Fatalf("Want 4 external services but got %d", len(ess))
+		}
+	})
+
+	t.Run("list services with certain display names", func(t *testing.T) {
+		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
+			DisplayNames: []string{"GITHUB #1", "GITHUB #2"},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// We should find all services were updated after a time in the past
+		if len(ess) != 2 {
+			t.Fatalf("Want 2 external services but got %d", len(ess))
 		}
 	})
 }
