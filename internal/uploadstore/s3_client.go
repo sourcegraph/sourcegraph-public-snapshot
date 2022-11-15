@@ -276,6 +276,16 @@ func (s *s3Store) Delete(ctx context.Context, key string) (err error) {
 	return errors.Wrap(err, "failed to delete object")
 }
 
+func (s *s3Store) ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) (err error) {
+	ctx, _, endObservation := s.operations.ExpireObjects.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("prefix", prefix),
+		log.String("maxAge", maxAge.String()),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return errors.New("unimplemented") // TODO - implement me, Stephen!
+}
+
 func (s *s3Store) create(ctx context.Context) error {
 	_, err := s.client.CreateBucket(ctx, &s3.CreateBucketInput{
 		Bucket: aws.String(s.bucket),

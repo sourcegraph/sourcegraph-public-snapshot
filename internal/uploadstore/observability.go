@@ -8,10 +8,11 @@ import (
 )
 
 type Operations struct {
-	Get     *observation.Operation
-	Upload  *observation.Operation
-	Compose *observation.Operation
-	Delete  *observation.Operation
+	Get           *observation.Operation
+	Upload        *observation.Operation
+	Compose       *observation.Operation
+	Delete        *observation.Operation
+	ExpireObjects *observation.Operation
 }
 
 func NewOperations(observationContext *observation.Context, domain, storeName string) *Operations {
@@ -31,9 +32,10 @@ func NewOperations(observationContext *observation.Context, domain, storeName st
 	}
 
 	return &Operations{
-		Get:     op("Get"),
-		Upload:  op("Upload"),
-		Compose: op("Compose"),
-		Delete:  op("Delete"),
+		Get:           op("Get"),
+		Upload:        op("Upload"),
+		Compose:       op("Compose"),
+		Delete:        op("Delete"),
+		ExpireObjects: op("ExpireObjects"),
 	}
 }

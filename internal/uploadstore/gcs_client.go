@@ -160,6 +160,16 @@ func (s *gcsStore) Delete(ctx context.Context, key string) (err error) {
 	return errors.Wrap(s.client.Bucket(s.bucket).Object(key).Delete(ctx), "failed to delete object")
 }
 
+func (s *gcsStore) ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) (err error) {
+	ctx, _, endObservation := s.operations.ExpireObjects.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("prefix", prefix),
+		log.String("maxAge", maxAge.String()),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return errors.New("unimplemented") // TODO - implement me, Stephen!
+}
+
 func (s *gcsStore) create(ctx context.Context, bucket gcsBucketHandle) error {
 	return bucket.Create(ctx, s.config.ProjectID, &storage.BucketAttrs{
 		Lifecycle: s.lifecycle(),

@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/opentracing/opentracing-go/log"
-
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
