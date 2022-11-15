@@ -1,6 +1,4 @@
-// Package pathmatch provides helpers for matching paths against globs
-// and regular expressions.
-package pathmatch
+package search
 
 import (
 	"bytes"
