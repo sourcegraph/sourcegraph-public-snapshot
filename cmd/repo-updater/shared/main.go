@@ -607,10 +607,10 @@ func createOnboardingExternalService(ctx context.Context, db database.DB, ghToke
 		Kind:        extsvc.KindGitHub,
 		DisplayName: onboardingExternalServiceDisplayName,
 		// TODO: Update list of repos (clarify)
-		Config: extsvc.NewUnencryptedConfig(`
+		Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
 		{
 			"url": "https://github.com",
-			"token": "` + ghToken + `",
+			"token": %q,
 			"repos": [
 				"golang/go",
 				"microsoft/TypeScript",
@@ -622,9 +622,9 @@ func createOnboardingExternalService(ctx context.Context, db database.DB, ghToke
 				"ruby/ruby",
 				"rust-lang/rust",
 				"webpack/webpack",
-				"git/git",
+				"git/git"
 			]
-		}`),
+		}`, ghToken)),
 	}
 
 	return db.ExternalServices().Create(ctx, conf.Get, externalService)
