@@ -130,7 +130,7 @@ export const BlameDecoration: React.FunctionComponent<{
     ])
 
     // Prevent hitting the backend (full page reloads) for links that stay inside the app.
-    const onClick = useMemo(() => createLinkClickHandler(history), [history])
+    const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(history), [history])
 
     if (!blameHunk) {
         return null
@@ -196,7 +196,7 @@ export const BlameDecoration: React.FunctionComponent<{
                                         window.location.origin +
                                         replaceRevisionInURL(window.location.href, blameHunk.commit.parents[0].oid)
                                     }
-                                    onClick={onClick}
+                                    onClick={handleParentCommitLinkClick}
                                     className={styles.footerLink}
                                 >
                                     View blame prior to this change
