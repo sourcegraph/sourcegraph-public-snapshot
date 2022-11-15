@@ -152,7 +152,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     })
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext) && searchContextsEnabled
+    // Don't show contexts in nav on .com
+    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext) && searchContextsEnabled && !isSourcegraphDotCom
     const showCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring) && codeMonitoringEnabled
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook) && notebooksEnabled
 
