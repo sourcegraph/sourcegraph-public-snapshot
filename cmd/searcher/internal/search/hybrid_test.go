@@ -143,8 +143,8 @@ Hello world example in go
 	}, {
 		Name: "added",
 		Pattern: protocol.PatternInfo{
-			Pattern:                "world",
-			IncludePatterns:        []string{"added"},
+			Pattern:         "world",
+			IncludePatterns: []string{"added"},
 		},
 		Want: `
 added.md:1:1:
@@ -153,7 +153,7 @@ hello world I am added
 	}, {
 		Name: "path-include",
 		Pattern: protocol.PatternInfo{
-			IncludePatterns:        []string{"^added"},
+			IncludePatterns: []string{"^added"},
 		},
 		Want: `
 added.md
@@ -161,7 +161,7 @@ added.md
 	}, {
 		Name: "path-exclude-added",
 		Pattern: protocol.PatternInfo{
-			ExcludePattern:         "added",
+			ExcludePattern: "added",
 		},
 		Want: `
 changed.go
@@ -170,7 +170,7 @@ unchanged.md
 	}, {
 		Name: "path-exclude-unchanged",
 		Pattern: protocol.PatternInfo{
-			ExcludePattern:         "unchanged",
+			ExcludePattern: "unchanged",
 		},
 		Want: `
 added.md
@@ -179,7 +179,7 @@ changed.go
 	}, {
 		Name: "path-all",
 		Pattern: protocol.PatternInfo{
-			IncludePatterns:        []string{"."},
+			IncludePatterns: []string{"."},
 		},
 		Want: `
 added.md
