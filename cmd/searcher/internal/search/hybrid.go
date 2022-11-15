@@ -236,12 +236,28 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 		if err != nil {
 			return nil, err
 		}
-		parts = append(parts, &zoektquery.Regexp{
-			Regexp:        re,
-			Content:       p.PatternMatchesContent,
-			FileName:      p.PatternMatchesPath,
-			CaseSensitive: !rg.ignoreCase,
-		})
+		re = zoektquery.OptimizeRegexp(re, syntax.Perl)
+		if p.PatternMatchesContent && p.PatternMatchesPath {
+			parts = append(parts, zoektquery.NewOr(
+				&zoektquery.Regexp{
+					Regexp:        re,
+					Content:       true,
+					CaseSensitive: !rg.ignoreCase,
+				},
+				&zoektquery.Regexp{
+					Regexp:        re,
+					FileName:      true,
+					CaseSensitive: !rg.ignoreCase,
+				},
+			))
+		} else {
+			parts = append(parts, &zoektquery.Regexp{
+				Regexp:        re,
+				Content:       p.PatternMatchesContent,
+				FileName:      p.PatternMatchesPath,
+				CaseSensitive: !rg.ignoreCase,
+			})
+		}
 	}
 
 	for _, pat := range p.IncludePatterns {
