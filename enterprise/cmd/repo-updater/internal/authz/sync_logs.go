@@ -69,7 +69,7 @@ func (r *syncJobsRecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 	})
 }
 
-// Add queues a record for the completion of a sync job.
+// Record inserts a record for this job's outcome into the records store.
 func (r *syncJobsRecordsStore) Record(jobType string, jobID int32, providerStates []authz.SyncJobProviderStatus, err error) {
 	completed := time.Now()
 
