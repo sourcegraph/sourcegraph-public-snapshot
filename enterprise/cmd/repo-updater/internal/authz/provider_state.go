@@ -46,7 +46,6 @@ func (ps providerStatesSet) SummaryField() log.Field {
 	)
 	for _, p := range ps {
 		key := fmt.Sprintf("%s:%s", p.ProviderType, p.ProviderID)
-		// first add errored providers to fields
 		switch p.State {
 		case "ERROR":
 			errored = append(errored, log.String(
