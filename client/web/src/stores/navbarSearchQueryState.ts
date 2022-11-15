@@ -32,7 +32,7 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     queryState: { query: '' },
     searchCaseSensitivity: false,
     searchPatternType: SearchPatternType.standard,
-    searchMode: SearchMode.Precise,
+    searchMode: SearchMode.SmartSearch,
     searchQueryFromURL: '',
 
     setQueryState: queryStateUpdate => {
@@ -131,7 +131,9 @@ export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Setti
     }
 
     const searchMode = defaultSearchModeFromSettings(settings)
-    if (searchMode) {
+    console.log(`default searhc mode setting is ${searchMode}`)
+    if (searchMode !== undefined) {
+        console.log(`SET! default searhc mode setting is ${searchMode}`)
         newState.searchMode = searchMode
     }
 

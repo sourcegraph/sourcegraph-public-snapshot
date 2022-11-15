@@ -66,6 +66,8 @@ const queryStateSelector = (
 
 export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
+    // eslint-disable-next-line no-console
+    console.log(`search mode: ${searchMode}`)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
@@ -88,6 +90,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                     history: props.history,
                     patternType,
                     caseSensitive,
+                    searchMode,
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
                     addRecentSearch,
                     ...parameters,
@@ -101,6 +104,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             addRecentSearch,
             patternType,
             caseSensitive,
+            searchMode,
         ]
     )
 

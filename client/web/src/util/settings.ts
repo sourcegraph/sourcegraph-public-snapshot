@@ -32,12 +32,15 @@ export function viewerSubjectFromSettings(
  * configured by the user.
  */
 export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOrError): SearchMode | undefined {
-    switch (getFromSettings(settingsCascade, 'search.mode')) {
+    switch (getFromSettings(settingsCascade, 'search.defaultMode')) {
         case 'precise':
+            console.log(`got precise`)
             return SearchMode.Precise
         case 'smart':
+            console.log(`got smart`)
             return SearchMode.SmartSearch
     }
+    console.log(`got undefined`)
     return undefined
 }
 
