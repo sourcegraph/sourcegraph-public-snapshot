@@ -22,15 +22,15 @@ export const WebhookInformation: FC<WebhookInformationProps> = props => {
         <table className={classNames(styles.table, 'table')}>
             <tbody>
                 <tr>
-                    <th>Code host</th>
+                    <th className={styles.tableHeader}>Code host</th>
                     <td>{webhook.codeHostKind}</td>
                 </tr>
                 <tr>
-                    <th>URN</th>
+                    <th className={styles.tableHeader}>URN</th>
                     <td>{webhook.codeHostURN}</td>
                 </tr>
                 <tr>
-                    <th>Webhook endpoint</th>
+                    <th className={styles.tableHeader}>Webhook endpoint</th>
                     <td className={styles.contentCell}>
                         {webhook.url}
                         <Button size="sm" className={styles.copyButton} onClick={() => copy(webhook.url)}>
@@ -39,12 +39,12 @@ export const WebhookInformation: FC<WebhookInformationProps> = props => {
                     </td>
                 </tr>
                 <tr>
-                    <th>Secret</th>
+                    <th className={styles.tableHeader}>Secret</th>
                     <td className={styles.contentCell}>
                         <Input
                             name="secret"
                             type={secretShown ? 'text' : 'password'}
-                            value={webhook.secret ?? ''}
+                            value={secretShown ? webhook.secret ?? '' : 'verysecretvalue'}
                             className={classNames(styles.input)}
                             inputClassName={classNames(styles.input)}
                             readOnly={true}

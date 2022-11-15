@@ -17,7 +17,7 @@ import {
 
 export type SelectedExternalService = 'unmatched' | 'all' | Scalars['ID']
 
-const webhookLogFieldsFragment = gql`
+const WEBHOOK_LOG_FIELDS_FRAGMENT = gql`
     fragment WebhookLogFields on WebhookLog {
         id
         receivedAt
@@ -45,8 +45,8 @@ const webhookLogFieldsFragment = gql`
     }
 `
 
-const webhookLogConnectionFieldsFragment = gql`
-    ${webhookLogFieldsFragment}
+const WEBHOOK_LOG_CONNECTION_FIELDS_FRAGMENT = gql`
+    ${WEBHOOK_LOG_FIELDS_FRAGMENT}
     fragment WebhookLogConnectionFields on WebhookLogConnection {
         nodes {
             ...WebhookLogFields
@@ -88,7 +88,7 @@ export const queryWebhookLogs = (
                     }
                 }
 
-                ${webhookLogConnectionFieldsFragment}
+                ${WEBHOOK_LOG_CONNECTION_FIELDS_FRAGMENT}
             `,
             {
                 first,
@@ -115,7 +115,7 @@ export const queryWebhookLogs = (
                 }
             }
 
-            ${webhookLogConnectionFieldsFragment}
+            ${WEBHOOK_LOG_CONNECTION_FIELDS_FRAGMENT}
         `,
         {
             first: first ?? null,
@@ -155,7 +155,7 @@ export const WEBHOOK_LOG_PAGE_HEADER = gql`
 `
 
 export const WEBHOOK_LOGS_BY_ID = gql`
-    ${webhookLogFieldsFragment}
+    ${WEBHOOK_LOG_FIELDS_FRAGMENT}
 
     query WebhookLogsByWebhookID(
         $first: Int

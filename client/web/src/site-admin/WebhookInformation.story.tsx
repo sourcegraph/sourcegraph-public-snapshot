@@ -1,4 +1,5 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { addMinutes, formatRFC3339 } from 'date-fns'
 
 import { WebStory } from '../components/WebStory'
 import { ExternalServiceKind, WebhookFields } from '../graphql-operations'
@@ -14,6 +15,8 @@ const config: Meta = {
 
 export default config
 
+const TIMESTAMP_MOCK = new Date(2021, 10, 8, 16, 40, 30)
+
 export const WebhookDescription: Story = () => (
     <WebStory>{() => <WebhookInformation webhook={createWebhook()} />}</WebStory>
 )
@@ -21,10 +24,10 @@ export const WebhookDescription: Story = () => (
 function createWebhook(): WebhookFields {
     return {
         __typename: 'Webhook',
-        createdAt: '',
+        createdAt: formatRFC3339(TIMESTAMP_MOCK),
         id: '1',
         secret: 'secret-secret',
-        updatedAt: '',
+        updatedAt: formatRFC3339(addMinutes(TIMESTAMP_MOCK, 5)),
         url: 'sg.com/.api/webhooks/1aa2b42c-a14c-4aaa-b756-70c82e94d3e7',
         uuid: '1aa2b42c-a14c-4aaa-b756-70c82e94d3e7',
         codeHostKind: ExternalServiceKind.GITHUB,

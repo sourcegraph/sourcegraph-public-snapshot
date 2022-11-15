@@ -7,15 +7,15 @@
     td {
         border: none;
     }
+}
 
-    tr th {
-        width: 1%;
-        white-space: nowrap;
+.table-header {
+    width: 1%;
+    white-space: nowrap;
 
-        // Override default th value top in order to adjust webhook
-        // information table layout.
-        vertical-align: baseline !important;
-    }
+    // Override default th value top in order to adjust webhook
+    // information table layout.
+    vertical-align: baseline !important;
 }
 
 .input {

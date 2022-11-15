@@ -1,6 +1,7 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
-import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
+import * as H from 'history'
+import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -28,15 +29,14 @@ const TIMESTAMP_MOCK = new Date(2021, 10, 8, 16, 40, 30)
 const WEBHOOK_MOCK_DATA = buildWebhookLogs()
 const ERRORED_WEBHOOK_MOCK_DATA = WEBHOOK_MOCK_DATA.filter(webhook => webhook.statusCode !== 200)
 
-export const SiteAdminWebhookPageStory: Story = () => {
+export const SiteAdminWebhookPageStory: Story = args => {
     const buildWebhookLogsMock = new WildcardMockLink([
         {
             request: {
                 query: getDocumentNode(WEBHOOK_BY_ID),
-                // variables: {
-                //     "id": "webhook-github.com/repo1"
-                // }
-                variables: MATCH_ANY_PARAMETERS,
+                variables: {
+                    id: '1',
+                },
             },
             result: {
                 data: {
@@ -111,7 +111,9 @@ export const SiteAdminWebhookPageStory: Story = () => {
                 <MockedTestProvider link={buildWebhookLogsMock}>
                     <SiteAdminWebhookPage
                         telemetryService={NOOP_TELEMETRY_SERVICE}
-                        node={createWebhookMock(ExternalServiceKind.GITHUB, 'github.com/repo1')}
+                        match={args.match}
+                        history={H.createMemoryHistory()}
+                        location={{} as any}
                     />
                 </MockedTestProvider>
             )}
@@ -120,6 +122,13 @@ export const SiteAdminWebhookPageStory: Story = () => {
 }
 
 SiteAdminWebhookPageStory.storyName = 'Webhook receiver'
+SiteAdminWebhookPageStory.args = {
+    match: {
+        params: {
+            id: '1',
+        },
+    },
+}
 
 function createWebhookMock(kind: ExternalServiceKind, urn: string): WebhookFields {
     return {

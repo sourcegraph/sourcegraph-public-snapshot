@@ -907,7 +907,7 @@ export const SITE_EXTERNAL_SERVICE_CONFIG = gql`
     }
 `
 
-const WebhookFieldsFragment = gql`
+const WEBHOOK_FIELDS_FRAGMENT = gql`
     fragment WebhookFields on Webhook {
         id
         uuid
@@ -929,7 +929,7 @@ const WebhookFieldsFragment = gql`
 `
 
 export const WEBHOOKS = gql`
-    ${WebhookFieldsFragment}
+    ${WEBHOOK_FIELDS_FRAGMENT}
 
     query WebhooksList {
         webhooks {
@@ -945,7 +945,7 @@ export const WEBHOOKS = gql`
 `
 
 export const WEBHOOK_BY_ID = gql`
-    ${WebhookFieldsFragment}
+    ${WEBHOOK_FIELDS_FRAGMENT}
 
     query WebhookById($id: ID!) {
         node(id: $id) {
