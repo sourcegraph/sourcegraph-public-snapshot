@@ -36,10 +36,6 @@ const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
     EditorView.editable.of(false),
     EditorView.contentAttributes.of({
-        // This is required to make the blob view focusable and to make
-        // triggering the in-document search (see below) work when Mod-f is
-        // pressed
-        tabindex: '0',
         // CodeMirror defaults to role="textbox" which does not produce the
         // desired screenreader behavior we want for this component.
         // See https://github.com/sourcegraph/sourcegraph/issues/43375
@@ -62,11 +58,12 @@ const staticExtensions: Extension = [
         '.cm-line': {
             paddingLeft: '1rem',
         },
+        '.cm-line:focus': {
+            boxShadow: 'none',
+            backgroundColor: 'var(--code-focus-bg)',
+        },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
-        },
-        '.selected-line:focus': {
-            boxShadow: 'none',
         },
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
