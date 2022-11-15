@@ -25,8 +25,10 @@ import {
     hoverTooltip,
     TooltipView,
     WidgetType,
+    KeyBinding,
 } from '@codemirror/view'
 import classNames from 'classnames'
+import { useHistory } from 'react-router'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
@@ -148,6 +150,8 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
         [editorReference, onEditorCreated]
     )
 
+    const history = useHistory()
+
     const autocompletion = useMemo(
         () =>
             createDefaultSuggestions({
@@ -155,9 +159,18 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
                     fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
                 globbing,
                 isSourcegraphDotCom,
+                history,
+                onSubmit,
                 applyOnEnter: applySuggestionsOnEnter,
             }),
-        [selectedSearchContextSpec, globbing, isSourcegraphDotCom, fetchStreamSuggestions, applySuggestionsOnEnter]
+        [
+            globbing,
+            isSourcegraphDotCom,
+            history,
+            applySuggestionsOnEnter,
+            fetchStreamSuggestions,
+            selectedSearchContextSpec,
+        ]
     )
 
     const extensions = useMemo(() => {

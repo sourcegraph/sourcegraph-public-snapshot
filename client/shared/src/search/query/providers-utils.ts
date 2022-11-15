@@ -11,7 +11,7 @@ import { FilterType } from './filters'
 import { Filter, KeywordKind, Token } from './token'
 import { isFilterType } from './validate'
 
-const MAX_SUGGESTION_COUNT = 50
+const MAX_SUGGESTION_COUNT = 10
 const REPO_SUGGESTION_FILTERS = [FilterType.fork, FilterType.visibility, FilterType.archived]
 const FILE_SUGGESTION_FILTERS = [...REPO_SUGGESTION_FILTERS, FilterType.repo, FilterType.rev, FilterType.lang]
 
@@ -72,9 +72,9 @@ export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token, sugges
     return ''
 }
 
-export function createCancelableFetchSuggestions(
-    fetchSuggestions: (query: string) => Observable<SearchMatch[]>
-): (query: string, onAbort: (hander: () => void) => void) => Promise<SearchMatch[]> {
+export function createCancelableFetchSuggestions<T>(
+    fetchSuggestions: (query: T) => Observable<SearchMatch[]>
+): (query: T, onAbort: (hander: () => void) => void) => Promise<SearchMatch[]> {
     return (query, onAbort) => {
         if (!query) {
             // Don't fetch suggestions if the query is empty. This would result
@@ -103,7 +103,7 @@ export function createCancelableFetchSuggestions(
                     // cancelled in the meantime.
                     // This prevents us from needlessly running multiple suggestion
                     // queries.
-                    delay(200),
+                    delay(20),
                     switchMap(query => (aborted ? Promise.resolve([]) : fetchSuggestions(query))),
                     takeUntil(abort)
                 )
