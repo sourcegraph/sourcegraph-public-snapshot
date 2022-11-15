@@ -11,6 +11,8 @@ import {
     SearchPatternTypeMutationProps,
     SubmitSearchProps,
     SearchPatternType,
+    SearchMode,
+    SearchModeProps,
 } from '@sourcegraph/search'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -26,6 +28,7 @@ export interface TogglesProps
     extends SearchPatternTypeProps,
         SearchPatternTypeMutationProps,
         CaseSensitivityProps,
+        SearchModeProps,
         SettingsCascadeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
@@ -64,6 +67,8 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         setPatternType,
         caseSensitive,
         setCaseSensitivity,
+        searchMode,
+        setSearchMode,
         settingsCascade,
         className,
         selectedSearchContextSpec,
@@ -87,15 +92,20 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
 
     const submitOnToggle = useCallback(
         (
-            args: { newPatternType: SearchPatternType } | { newCaseSensitivity: boolean } | { newPowerUser: boolean }
+            args:
+                | { newPatternType: SearchPatternType }
+                | { newCaseSensitivity: boolean }
+                | { newPowerUser: boolean }
+                | { newSearchMode: SearchMode }
         ): void => {
             submitSearch?.({
                 source: 'filter',
                 patternType: 'newPatternType' in args ? args.newPatternType : patternType,
                 caseSensitive: 'newCaseSensitivity' in args ? args.newCaseSensitivity : caseSensitive,
+                searchMode: 'newSearchMode' in args ? args.newSearchMode : searchMode,
             })
         },
-        [caseSensitive, patternType, submitSearch]
+        [caseSensitive, patternType, searchMode, submitSearch]
     )
 
     const toggleCaseSensitivity = useCallback((): void => {
@@ -122,12 +132,12 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
 
     const onSelectSmartSearch = useCallback(
         (enabled: boolean): void => {
-            const newPatternType: SearchPatternType = enabled ? SearchPatternType.lucky : SearchPatternType.standard
+            const newSearchMode: SearchMode = enabled ? SearchMode.SmartSearch : SearchMode.Precise
 
-            setPatternType(newPatternType)
-            submitOnToggle({ newPatternType })
+            setSearchMode(newSearchMode)
+            submitOnToggle({ newSearchMode })
         },
-        [setPatternType, submitOnToggle]
+        [setSearchMode, submitOnToggle]
     )
 
     const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
@@ -198,17 +208,9 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                 {showSmartSearch && (
                     <SmartSearchToggle
                         className="test-smart-search-toggle"
-                        isActive={patternType === SearchPatternType.lucky}
+                        isActive={searchMode === SearchMode.SmartSearch}
                         onSelect={onSelectSmartSearch}
                         interactive={props.interactive}
-                        disableOn={[
-                            {
-                                condition:
-                                    findFilter(navbarSearchQuery, 'patterntype', FilterKind.Subexpression) !==
-                                    undefined,
-                                reason: 'Query already contains one or more patterntype subexpressions',
-                            },
-                        ]}
                     />
                 )}
                 {showCopyQueryButton && (

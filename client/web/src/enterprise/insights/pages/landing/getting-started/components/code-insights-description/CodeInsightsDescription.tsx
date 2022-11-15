@@ -35,7 +35,7 @@ export const CodeInsightsDescription: React.FunctionComponent<Props> = ({ classN
         <H3>Resources</H3>
         <ul>
             <li>
-                <Link to="/help/batch_changes" rel="noopener">
+                <Link to="/help/code_insights" rel="noopener">
                     Code Insights documentation
                 </Link>
             </li>

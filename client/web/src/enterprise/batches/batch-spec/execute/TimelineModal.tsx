@@ -9,7 +9,7 @@ import { isDefined } from '../../../../codeintel/util/helpers'
 import { ExecutionLogEntry } from '../../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../../components/Timeline'
 import { BatchSpecWorkspaceState, VisibleBatchSpecWorkspaceFields } from '../../../../graphql-operations'
-import { ExecutorNode } from '../../../executors/ExecutorsListPage'
+import { ExecutorNode } from '../../../executors/instances/ExecutorNode'
 
 import styles from './TimelineModal.module.scss'
 

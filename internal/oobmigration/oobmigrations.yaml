@@ -88,3 +88,11 @@
   introduced_version_minor: 43
   deprecated_version_major: 4
   deprecated_version_minor: 0
+- id: 17
+  team: code-insights
+  component: codeinsights-db.insight_series
+  description: Save historical recording times for all existing insights
+  non_destructive: true
+  is_enterprise: true
+  introduced_version_major: 4
+  introduced_version_minor: 2

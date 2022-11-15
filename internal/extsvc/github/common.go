@@ -1518,7 +1518,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 		// Check if we should pre-emptively refresh
 		if ok && autherWithRefresh.NeedsRefresh() {
 			if err := autherWithRefresh.Refresh(ctx, httpClient); err != nil {
-				logger.Warn("doRequest: failed to refresh token", log.Error(err))
+				logger.Warn("doRequest: refreshing of the token failed", log.Error(err))
 			}
 		}
 		if err := auther.Authenticate(req); err != nil {
@@ -1543,7 +1543,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 	if autherWithRefresh != nil {
 		resp, err = oauthutil.DoRequest(ctx, httpClient, req, autherWithRefresh)
 		if err != nil {
-			return nil, errors.Wrap(err, "do request with refresh and retry")
+			return nil, errors.Wrap(err, "do request with refresh and retry failed")
 		}
 	} else {
 		resp, err = httpClient.Do(req.WithContext(ctx))

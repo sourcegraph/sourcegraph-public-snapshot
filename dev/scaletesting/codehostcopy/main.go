@@ -18,11 +18,21 @@ import (
 //go:embed config.example.cue
 var exampleConfig string
 
+// SSHKeyHandler enables one to add and remove SSH keys
+type SSHKeyHandler interface {
+	AddSSHKey(ctx context.Context) (int64, error)
+	DropSSHKey(ctx context.Context, keyID int64) error
+}
+
 type CodeHostSource interface {
+	GitOpts() []GitOpt
+	SSHKeyHandler
 	ListRepos(ctx context.Context) ([]*store.Repo, error)
 }
 
 type CodeHostDestination interface {
+	GitOpts() []GitOpt
+	SSHKeyHandler
 	CreateRepo(ctx context.Context, name string) (*url.URL, error)
 }
 
@@ -40,6 +50,12 @@ var app = &cli.App{
 			Name:     "config",
 			Usage:    "Path to the config file defining what to copy",
 			Required: true,
+		},
+		&cli.PathFlag{
+			Name:     "ssh-key",
+			Usage:    "path to ssh key to use for cloning",
+			Value:    "",
+			Required: false,
 		},
 	},
 	Action: func(cmd *cli.Context) error {

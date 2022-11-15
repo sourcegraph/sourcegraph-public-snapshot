@@ -12,13 +12,9 @@ import {
     appendSubtreeQueryParameter,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import {
-    LastSyncedIcon,
-    FileMatchChildrenStyles as styles,
-    CodeExcerpt,
-    FetchFileParameters,
-} from '@sourcegraph/search-ui'
+import { LastSyncedIcon, FileMatchChildrenStyles as styles, CodeExcerpt } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'

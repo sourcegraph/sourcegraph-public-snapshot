@@ -53,6 +53,50 @@ func Searcher() *monitoring.Dashboard {
 				},
 			},
 
+			{
+				Title:  "Hybrid (experimental)",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "searcher_hybrid_final_state_total",
+							Description: "hybrid search final state over 10m",
+							Interpretation: `
+This graph should be empty unless you enable the feature flag "search-hybrid".
+
+This graph should mostly be "success". The next most common state should be
+"diff-too-large", which happens if the commit is too far from the indexed
+commit. Otherwise other state should be rare and likely are a sign for further
+investigation.
+
+Note: On sourcegraph.com "zoekt-list-missing" is also common due to it
+indexing a subset of repositories. Otherwise every other state should occur
+rarely.
+
+For a full list of possible state see
+[recordHybridFinalState](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+f:cmd/searcher+recordHybridFinalState).`,
+							Query:   `sum by (state)(increase(searcher_hybrid_final_state_total[10m]))`,
+							Panel:   monitoring.Panel().LegendFormat("{{state}}"),
+							Owner:   monitoring.ObservableOwnerSearchCore,
+							NoAlert: true,
+						},
+						{
+							Name:        "searcher_hybrid_index_changed_total",
+							Description: "hybrid search retrying due to index updates over 10m",
+							Interpretation: `
+Expectation is that this graph should mostly be 0. It should only trigger if a
+user manages to do a search and the underlying index changes while searching.
+So occasional bursts can be expected, but if this graph is regularly above 0
+it is a sign for further investigation.`,
+							Query:   `sum(increase(searcher_hybrid_index_changed_total[10m]))`,
+							Panel:   monitoring.Panel(),
+							Owner:   monitoring.ObservableOwnerSearchCore,
+							NoAlert: true,
+						},
+					},
+				},
+			},
+
 			shared.NewDiskMetricsGroup(
 				shared.DiskMetricsGroupOptions{
 					DiskTitle: "cache",

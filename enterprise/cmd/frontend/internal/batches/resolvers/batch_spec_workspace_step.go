@@ -105,9 +105,19 @@ func (r *batchSpecWorkspaceStepV1Resolver) Environment() ([]graphqlbackend.Batch
 		}
 	}
 
+	outer := r.step.Env.OuterVars()
+	outerMap := make(map[string]struct{})
+	for _, o := range outer {
+		outerMap[o] = struct{}{}
+	}
+
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, 0, len(env))
 	for k, v := range env {
-		resolvers = append(resolvers, &batchSpecWorkspaceEnvironmentVariableResolver{key: k, value: v})
+		var val *string
+		if _, ok := outerMap[k]; !ok {
+			val = &v
+		}
+		resolvers = append(resolvers, &batchSpecWorkspaceEnvironmentVariableResolver{key: k, value: val})
 	}
 	return resolvers, nil
 }
@@ -264,9 +274,19 @@ func (r *batchSpecWorkspaceStepV2Resolver) Environment() ([]graphqlbackend.Batch
 		return nil, err
 	}
 
+	outer := r.step.Env.OuterVars()
+	outerMap := make(map[string]struct{})
+	for _, o := range outer {
+		outerMap[o] = struct{}{}
+	}
+
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, 0, len(env))
 	for k, v := range env {
-		resolvers = append(resolvers, &batchSpecWorkspaceEnvironmentVariableResolver{key: k, value: v})
+		var val *string
+		if _, ok := outerMap[k]; !ok {
+			val = &v
+		}
+		resolvers = append(resolvers, &batchSpecWorkspaceEnvironmentVariableResolver{key: k, value: val})
 	}
 	return resolvers, nil
 }
@@ -313,7 +333,7 @@ func (r *batchSpecWorkspaceStepV2Resolver) Diff(ctx context.Context) (graphqlbac
 
 type batchSpecWorkspaceEnvironmentVariableResolver struct {
 	key   string
-	value string
+	value *string
 }
 
 var _ graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver = &batchSpecWorkspaceEnvironmentVariableResolver{}
@@ -321,7 +341,7 @@ var _ graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver = &batchSpecW
 func (r *batchSpecWorkspaceEnvironmentVariableResolver) Name() string {
 	return r.key
 }
-func (r *batchSpecWorkspaceEnvironmentVariableResolver) Value() string {
+func (r *batchSpecWorkspaceEnvironmentVariableResolver) Value() *string {
 	return r.value
 }
 

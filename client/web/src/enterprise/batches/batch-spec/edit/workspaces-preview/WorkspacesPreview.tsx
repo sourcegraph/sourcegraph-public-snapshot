@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { mdiAlert, mdiMagnify } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { animated, useSpring } from 'react-spring'
 
@@ -207,7 +208,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                     </div>
                 )}
             </H4>
-            <animated.div style={exampleStyle} className={styles.onExample}>
+            <animated.div style={exampleStyle} className={styles.onExample} aria-hidden={!exampleOpen}>
                 <div ref={exampleReference} className="pt-2 pb-3">
                     {/* Hide the copy button while the example is closed so that it's not focusable. */}
                     <CodeSnippet
@@ -283,6 +284,9 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             {!isReadOnly && (
                 <div className="d-flex flex-column align-items-center w-100 mb-3">
                     {error && <ErrorAlert error={error} className="w-100 mb-0" />}
+                    <VisuallyHidden role="status">
+                        {isWorkspacesPreviewInProgress ? 'Preview loading' : ''}
+                    </VisuallyHidden>
                     <div className={styles.iconContainer} aria-hidden={true}>
                         <PreviewLoadingSpinner
                             className={classNames({ [styles.hidden]: !isWorkspacesPreviewInProgress })}
