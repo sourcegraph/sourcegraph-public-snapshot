@@ -261,9 +261,6 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	}
 
 	for _, pat := range p.IncludePatterns {
-		if !p.PathPatternsAreRegExps {
-			return nil, errors.New("hybrid search expects PathPatternsAreRegExps")
-		}
 		re, err := syntax.Parse(pat, syntax.Perl)
 		if err != nil {
 			return nil, err
@@ -276,9 +273,6 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	}
 
 	if p.ExcludePattern != "" {
-		if !p.PathPatternsAreRegExps {
-			return nil, errors.New("hybrid search expects PathPatternsAreRegExps")
-		}
 		re, err := syntax.Parse(p.ExcludePattern, syntax.Perl)
 		if err != nil {
 			return nil, err
