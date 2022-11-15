@@ -6,13 +6,12 @@ import (
 
 	gh "github.com/google/go-github/v43/github"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (h *WebhookRouter) HandleBitBucketServerWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
