@@ -2,7 +2,7 @@ package authz
 
 import (
 	"encoding/json"
-	"fmt"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -95,5 +95,7 @@ func (r *syncJobsRecordsStore) Record(jobType string, jobID int32, providerState
 			log.Error(err))
 		return
 	}
-	r.cache.Set(fmt.Sprintf("%s-%d", record.RequestType, record.RequestID), val)
+
+	// Key by timestamp for sorting
+	r.cache.Set(strconv.FormatInt(record.Completed.UnixNano(), 10), val)
 }

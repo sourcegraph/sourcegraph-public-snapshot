@@ -31,7 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+var updateRegex = flag.String("update-integration", "", "Update testdata of tests matching the given regex")
 
 func update(name string) bool {
 	if updateRegex == nil || *updateRegex == "" {
