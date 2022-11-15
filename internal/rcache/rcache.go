@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -114,6 +115,41 @@ func (r *Cache) SetMulti(keyvals ...[2]string) {
 	if err := c.Flush(); err != nil {
 		log15.Warn("failed to flush Redis client", "error", err)
 	}
+}
+
+// GetAll returns all keys and values in the cache that have the given prefix, in an order ascending by key.
+func (r *Cache) GetAll(prefix string) (results map[string]string, err error) {
+	c := pool.Get()
+	defer func(c redis.Conn) {
+		if tempErr := c.Close(); err == nil {
+			err = tempErr
+		}
+	}(c)
+
+	var keys []string
+	keys, err = redis.Strings(c.Do("KEYS", r.rkeyPrefix()+prefix+"*"))
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(keys)
+
+	// Get values for all keys
+	var values []string
+	ikeys := make([]interface{}, len(keys))
+	for i, v := range keys {
+		ikeys[i] = v
+	}
+	values, err = redis.Strings(c.Do("MGET", ikeys...))
+	if err != nil {
+		return nil, err
+	}
+
+	results = make(map[string]string, len(keys))
+	for i, key := range keys {
+		results[key] = values[i]
+	}
+
+	return
 }
 
 // Get implements httpcache.Cache.Get

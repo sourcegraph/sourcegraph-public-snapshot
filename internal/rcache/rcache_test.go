@@ -184,10 +184,42 @@ func TestCache_deleteKeysWithPrefix(t *testing.T) {
 	}
 }
 
+func TestCache_GetAll(t *testing.T) {
+	SetupForTest(t)
+
+	key2a := "key2test:test:a"
+	value2a := "value2a"
+	key2b := "key2test:test:b"
+	value2b := "value2b"
+
+	c := New("some_prefix")
+	c.Set("key1:test", []byte("value1"))
+	c.Set(key2b, []byte(value2b))
+	c.Set(key2a, []byte(value2a))
+	c.Set("key3:test", []byte("value3"))
+
+	got, err := c.GetAll("key2test:te")
+	assert.Nil(t, err)
+	assert.Len(t, got, 2)
+
+	// The weird loop is here to also verify the order of the keys
+	index := 0
+	for key, value := range got {
+		if index == 0 {
+			assert.Equal(t, key, c.rkeyPrefix()+key2a)
+			assert.Equal(t, value, value2a)
+			index++
+			continue
+		}
+		assert.Equal(t, key, c.rkeyPrefix()+key2b)
+		assert.Equal(t, value, value2b)
+	}
+}
+
 func TestCache_Increase(t *testing.T) {
 	SetupForTest(t)
 
-	c := NewWithTTL("some_prefix:", 1)
+	c := NewWithTTL("some_prefix", 1)
 	c.Increase("a")
 
 	got, ok := c.Get("a")
