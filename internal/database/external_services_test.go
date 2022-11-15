@@ -1722,7 +1722,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// We should find all services were updated after a time in the past
+		// We should find all services updated after a time in the past
 		if len(ess) != 3 {
 			t.Fatalf("Want 3 external services but got %d", len(ess))
 		}
@@ -1735,7 +1735,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// We should find all services were updated after a time in the past
+		// We should find all services where cloud_default is true
 		if len(ess) != 1 {
 			t.Fatalf("Want 0 external services but got %d", len(ess))
 		}
@@ -1748,7 +1748,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// We should find all services were updated after a time in the past
+		// We should find all services including deleted ones
 		if len(ess) != 4 {
 			t.Fatalf("Want 4 external services but got %d", len(ess))
 		}
@@ -1761,7 +1761,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// We should find all services were updated after a time in the past
+		// We should find all services were display names match
 		if len(ess) != 2 {
 			t.Fatalf("Want 2 external services but got %d", len(ess))
 		}
