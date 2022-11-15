@@ -245,6 +245,8 @@ type ExternalServicesGetSyncJobsOptions struct {
 type ExternalServicesListOptions struct {
 	// When specified, only include external services with the given IDs.
 	IDs []int64
+	// When specified, only include external services with the given display names.
+	DisplayNames []string
 	// When true, only include external services not under any namespace (i.e. owned
 	// by all site admins), and values of ExcludeNamespaceUser, NamespaceUserID and
 	// NamespaceOrgID are ignored.
@@ -283,6 +285,10 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if len(o.IDs) > 0 {
 		conds = append(conds, sqlf.Sprintf("id = ANY(%s)", pq.Array(o.IDs)))
+	}
+
+	if len(o.DisplayNames) > 0 {
+		conds = append(conds, sqlf.Sprintf("display_name = ANY(%s)", pq.Array(o.DisplayNames)))
 	}
 
 	if o.NoNamespace {
@@ -975,6 +981,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 
 type externalServiceNotFoundError struct {
 	id int64
+	displayName string
 }
 
 func (e externalServiceNotFoundError) Error() string {

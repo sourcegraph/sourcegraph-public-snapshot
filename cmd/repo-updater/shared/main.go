@@ -66,7 +66,7 @@ type LazyDebugserverEndpoint struct {
 	manualPurgeEndpoint          http.HandlerFunc
 }
 
-func Main(enterpriseInit EnterpriseInit) {
+func Main(enterpriseInit EnterpriseInit, shouldCreateOnboardingExternalService bool) {
 	// NOTE: Internal actor is required to have full visibility of the repo table
 	// 	(i.e. bypass repository authorization).
 	ctx := actor.WithInternalActor(context.Background())
@@ -143,6 +143,13 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
+
+	if shouldCreateOnboardingExternalService {
+		if err := createOnboardingExternalService(ctx, db); err != nil {
+			logger.Error("failed to create onboarding external service", log.Error(err))
+		}
+	}
+
 	server := &repoupdater.Server{
 		Logger:                logger,
 		Store:                 store,
@@ -574,4 +581,47 @@ func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateSc
 		case <-time.After(30 * time.Second):
 		}
 	}
+}
+
+// createOnboardingExternalService creates a GITHUB kind external service with OSS repos.
+func createOnboardingExternalService(ctx context.Context, db database.DB) error {
+	externalService := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB (Onboarding Repositories)",
+		// TODO: Update list of repos (clarify)
+		// NOTE: this a mock token, and does not have any permissions. All the listed repos are OSS/public.
+		Config:      extsvc.NewUnencryptedConfig(`
+		{
+			"url": "https://github.com",
+			"token": "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",
+			"repos": [
+				"golang/go",
+				"microsoft/TypeScript",
+				"facebook/react",
+				"vuejs/vue",
+				"angular/angular",
+				"nodejs/node",
+				"python/cpython",
+				"ruby/ruby",
+				"rust-lang/rust",
+				"webpack/webpack",
+				"git/git",
+			]
+		}`),
+	}
+
+	svcs, err := db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+		DisplayNames: []string{externalService.DisplayName},
+		IncludeDeleted: true,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if len(svcs) > 0 {
+		return nil
+	}
+
+	return db.ExternalServices().Create(ctx, conf.Get, externalService)
 }
