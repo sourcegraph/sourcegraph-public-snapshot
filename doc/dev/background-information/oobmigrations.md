@@ -150,7 +150,7 @@ func NewMigrator(store *basestore.Store) oobmigration.Migrator {
 This migrator reports progress by counting the number of records with its new field populated over the total number of records (and special-cases empty tables as being completely converted as no records are in the old format).
 
 ```go
-func (m *migrator) Progress(ctx context.Context) (float64, error) {
+func (m *migrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			CASE c2.count WHEN 0 THEN 1 ELSE
@@ -163,6 +163,8 @@ func (m *migrator) Progress(ctx context.Context) (float64, error) {
 	return progress, err
 }
 ```
+
+In the case of enterprise migrations you will want your `Progress` function to report success [if your enterprise feature is disabled](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/oobmigration/migrations/insights/migrator.go?L36-38). 
 
 In the forward migration direction, we want to select a record that is in the previous format (we can tell here by the absence of a `payload2` field), and update that record with the result of some external computation. Here, we're going to rely on an oracle function `oldToNew` that converts the old format into the new format.
 
@@ -180,7 +182,7 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 	// that many worker instances can run the same migration concurrently
 	// without them all trying to convert the same record.
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
-		"SELECT id, payload FROM skunk_payloads WHERE payload2 IS NULL LIMIT %s FOR UPDATE SKIP LOCKED",
+		"SELECT id, payload FROM skunk_payloads WHERE payload2 IS NULL ORDER BY id LIMIT %s FOR UPDATE SKIP LOCKED",
 		BatchSize,
 	))
 	if err != nil {

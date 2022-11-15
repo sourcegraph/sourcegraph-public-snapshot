@@ -187,7 +187,7 @@ Using the <a href="https://docs.sourcegraph.com/admin/config/site_config#search-
 
 ### Search syntax
 
-Sourcegraph offers [structural search](https://docs.sourcegraph.com/code_search/reference/structural), and GitHub code search does not offer this search method. Structural search lets you match richer syntax patterns, specifically in code and structured data formats like JSON. Sourcegraph offers structural search on indexed code and uses [Comby syntax](https://comby.dev/docs/syntax-reference) for structural matching of code blocks or nested expressions. For example, the fmt.Sprintf function is a popular print function in Go. [Here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28...%29&patternType=structural&_ga=2.204781593.827352295.1667227568-1057140468.1661198534&_gac=1.118615675.1665776224.CjwKCAjwkaSaBhA4EiwALBgQaJCOc6GlhIDQyg6HQScgfSBQpoFTUf7T_NNqEX5JaobtCS08GUEJuRoCIlIQAvD_BwE&_gl=1*1r2u5zs*_ga*MTA1NzE0MDQ2OC4xNjYxMTk4NTM0*_ga_E82CCDYYS1*MTY2NzUwODExNC4xMTQuMS4xNjY3NTA5NjUyLjAuMC4w) is a pattern that matches all of the arguments in fmt.Sprintf in our code using structural search compared to the [search](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28...%29&patternType=regexp) using regex. 
+Sourcegraph offers [structural search](https://docs.sourcegraph.com/code_search/reference/structural), and GitHub code search does not offer this search method. Structural search lets you match richer syntax patterns, specifically in code and structured data formats like JSON. Sourcegraph offers structural search on indexed code and uses [Comby syntax](https://comby.dev/docs/syntax-reference) for structural matching of code blocks or nested expressions. For example, the `fmt.Sprintf` function is a popular print function in Go. [Here](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28...%29&patternType=structural&_ga=2.204781593.827352295.1667227568-1057140468.1661198534&_gac=1.118615675.1665776224.CjwKCAjwkaSaBhA4EiwALBgQaJCOc6GlhIDQyg6HQScgfSBQpoFTUf7T_NNqEX5JaobtCS08GUEJuRoCIlIQAvD_BwE&_gl=1*1r2u5zs*_ga*MTA1NzE0MDQ2OC4xNjYxMTk4NTM0*_ga_E82CCDYYS1*MTY2NzUwODExNC4xMTQuMS4xNjY3NTA5NjUyLjAuMC4w) is a pattern that matches all of the arguments in `fmt.Sprintf` in our code using structural search compared to the [search](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28...%29&patternType=regexp) using regex. 
 
 Both GitHub code search and Sourcegraph support regular expression and literal search. [Regular expression](https://docs.sourcegraph.com/code_search/reference/queries#standard-search-default) helps you find code that matches a pattern (including classes of characters like letters, numbers, and whitespace) and can restrict the results to anchors like the start of a line, the end of a line, or word boundary. Literal (standard) search matches literal patterns exactly, including punctuation, like quotes.
 
@@ -281,7 +281,7 @@ C#, Python, Go, Java, JavaScript, TypeScript, PHP, Protocol Buffers, Ruby, and R
 
 GitHub only returns the first 10 pages of search results. You cannot currently go past the 10th page or retrieve all search results.
 
-Sourcegraph can retrieve all search results. By default, Sourcegraph returns 500 search results, but this number can be increased by increasing the ‘count’ value. Sourcegraph can display a maximum of 1,500 matches, but all matches can be fetched using the [src CLI](https://docs.sourcegraph.com/cli/quickstart), the [Stream API](https://docs.sourcegraph.com/api/stream_api), or [GraphQL API](https://docs.sourcegraph.com/api/graphql). You can also export the results via CSV. 
+Sourcegraph can retrieve all search results. By default, Sourcegraph returns 500 search results, but this number can be increased by increasing the ‘count’ value. Sourcegraph can display a maximum of 1,500 results, but all matches can be fetched using the [src CLI](https://docs.sourcegraph.com/cli/quickstart), the [Stream API](https://docs.sourcegraph.com/api/stream_api), or [GraphQL API](https://docs.sourcegraph.com/api/graphql). You can also export the results via CSV. 
 
 GitHub code search includes suggestions, completions, and the ability to save your searches. Sourcegraph offers suggestions through search query examples and [saved searches](https://docs.sourcegraph.com/code_search/how-to/saved_searches#creating-saved-searches). 
 
@@ -325,7 +325,7 @@ Limited to 10 pages of results
    </td>
    <td>✓ 
 <p>
-500 searches are returned by default, but this number can be increased by increasing the ‘count’ value. A maximum of 1,500 matches can be displayed, and more matches can be fetched using the src CLI, the Stream API, or GraphQL API.
+500 search results are returned by default, but this number can be increased by increasing the ‘count’ value. A maximum of 1,500 results can be displayed, and more matches can be fetched using the src CLI, the Stream API, or GraphQL API.
    </td>
   </tr>
   <tr>
