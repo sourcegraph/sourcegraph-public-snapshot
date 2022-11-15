@@ -7,6 +7,7 @@ import { sortBy } from 'lodash'
 import { entries, escapeRegExp, flatMap, flow, groupBy, isEqual, map } from 'lodash/fp'
 import { NavLink, useLocation } from 'react-router-dom'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -18,7 +19,6 @@ import {
     ConnectionContainer,
     ConnectionLoading,
     ConnectionSummary,
-    ConnectionError,
     SummaryContainer,
     ShowMoreButton,
 } from '../components/FilteredConnection/ui'
@@ -26,7 +26,6 @@ import { Scalars, SymbolKind, SymbolNodeFields, SymbolsResult, SymbolsVariables 
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
-import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 
 interface SymbolNodeProps {
     node: SymbolNodeFields
