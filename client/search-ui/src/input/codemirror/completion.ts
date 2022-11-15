@@ -128,7 +128,7 @@ export type StandardSuggestionSource = SuggestionSource<CompletionResult | null,
  */
 export function searchQueryAutocompletion(
     sources: StandardSuggestionSource[],
-    history: H.History,
+    history?: H.History,
     onSubmit?: () => void,
     // By default we do not enable suggestion selection with enter because that
     // interferes with the query submission logic.
@@ -261,7 +261,7 @@ export function searchQueryAutocompletion(
                                   const selected = selectedCompletion(view.state)
                                   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
                                   const url = (selected as any)?.url
-                                  if (typeof url === 'string') {
+                                  if (history && typeof url === 'string') {
                                       history.push(url)
                                       return true
                                   }
