@@ -48,7 +48,7 @@ import * as H from 'history'
 import { isEqual, startCase } from 'lodash'
 
 import { isDefined } from '@sourcegraph/common'
-import { SymbolKind } from '@sourcegraph/search'
+import { queryIndexOfScope, SymbolKind } from '@sourcegraph/search'
 import {
     createFilterSuggestions,
     PREDICATE_REGEX,
@@ -65,6 +65,7 @@ import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { queryTokens } from './parsedQuery'
+import { searchHistory } from './history'
 
 type CompletionType = SymbolKind | 'queryfilter' | 'repository' | 'searchhistory'
 
@@ -241,22 +242,21 @@ export function searchQueryAutocompletion(
                               key: 'Enter',
                               run(view) {
                                   const selected = selectedCompletion(view.state)
-                                  //   // Select first completion item if none is selected
-                                  //   // and items are available.
-                                  //   if (selectedCompletion(view.state) === null) {
-                                  //       if (currentCompletions(view.state).length > 0) {
-                                  //           view.dispatch({ effects: setSelectedCompletion(0) })
-                                  //           acceptCompletion(view)
-                                  //           return true
-                                  //       }
-                                  //       return false
-                                  //   }
-                                  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+                                  if (selected?.type === 'query' && typeof selected.apply === 'string') {
+                                      const query = selected.apply
+                                      view.dispatch({
+                                          changes: { from: 0, to: view.state.doc.length, insert: query },
+                                          selection: { anchor: query.length },
+                                      })
+                                      onSubmit?.()
+                                      return true
+                                  }
+
                                   const url = (selected as any)?.url
                                   if (typeof url === 'string') {
-                                      // TODO: trigger search if the query has other tokens
                                       history.push(url)
                                   }
+
                                   // Otherwise apply the selected completion item
                                   // TODO: actually trigger the search
                                   const hasUserPressedDownArrow = selectedCompletion(view.state) !== null
@@ -329,6 +329,7 @@ export interface DefaultSuggestionSourcesOptions {
     disableFilterCompletion?: true
     disableSymbolCompletion?: true
     showWhenEmpty?: boolean
+    editor?: EditorView
 }
 
 /**
@@ -464,8 +465,20 @@ export function createDefaultSuggestionSources(
         sources.push(
             // Show symbol suggestions outside of filters
             createDefaultSource(async (context, tokens, token) => {
+                const historySearches = options?.editor?.state.facet(searchHistory) ?? []
+                const currentQuery = options.editor?.state.doc.iterLines().next().value ?? ''
+                console.log({ currentQuery })
+                const historyCompletions: Completion[] = historySearches
+                    // .filter(({ query }) => query.includes(currentQuery))
+                    .map(({ query }) => ({
+                        label: query,
+                        type: 'query',
+                        // url: `/search${url.search}`,
+                        apply: query,
+                        info: 'Recent query',
+                    }))
                 if (!token || token.type !== 'pattern') {
-                    return null
+                    return { from: context.position, to: context.position, options: historyCompletions }
                 }
 
                 const results = await options.fetchSuggestions(
@@ -475,13 +488,15 @@ export function createDefaultSuggestionSources(
                 if (results.length === 0) {
                     return null
                 }
+                const searchCompletions = results
+                    .flatMap(match => completionFromSearchMatch(match, options, token, tokens))
+                    .filter(isDefined)
+                console.log(historyCompletions)
 
                 return {
                     from: token.range.start,
                     to: token.range.end,
-                    options: results
-                        .flatMap(match => completionFromSearchMatch(match, options, token, tokens))
-                        .filter(isDefined),
+                    options: [...historyCompletions, ...searchCompletions],
                 }
             })
         )

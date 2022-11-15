@@ -159,6 +159,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
                 globbing,
                 isSourcegraphDotCom,
                 history,
+                editor,
                 onSubmit,
                 applyOnEnter: applySuggestionsOnEnter,
             }),
@@ -166,6 +167,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
             globbing,
             isSourcegraphDotCom,
             history,
+            editor,
             onSubmit,
             applySuggestionsOnEnter,
             fetchStreamSuggestions,
@@ -203,7 +205,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
             extensions.push(EditorView.editable.of(false))
         }
 
-        if (searchHistory) {
+        if (searchHistory && !applySuggestionsOnEnter) {
             extensions.push(searchHistoryFacet.of(searchHistory))
         }
 
@@ -221,10 +223,11 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
     }, [
         ariaLabel,
         autocompletion,
-        placeholder,
         preventNewLine,
-        editorOptions,
+        placeholder,
+        editorOptions?.readOnly,
         searchHistory,
+        applySuggestionsOnEnter,
         onSelectSearchFromHistory,
     ])
 
