@@ -57,9 +57,9 @@ See the Terraform Modules for additional configurations.
 
 ## Terraform Version
 
-Terraform modules `4.2.x` and above allow Terraform from 1.1.x to < 2.x to be used. 
+Terraform modules `4.2.x` and above allow Terraform from `1.1.x` to `< 2.x` to be used. 
 
-If a Terraform modules `4.1.x` or below, use [tfenv](https://github.com/tfutils/tfenv) to install Terraform
+If using a Terraform module `4.1.x` or below, use [tfenv](https://github.com/tfutils/tfenv) to install Terraform
 1.1+.
 
 ```shell
