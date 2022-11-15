@@ -226,7 +226,8 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                     filteredList.map(context => (
                         <SearchContextMenuItem
                             key={context.id}
-                            spec={context.spec}
+                            // Simplified global context UI to mitigate confusion
+                            spec={context.spec === 'global' ? 'All repos' : context.spec}
                             description={context.description}
                             query={context.query}
                             isDefault={context.spec === defaultSearchContextSpec}
