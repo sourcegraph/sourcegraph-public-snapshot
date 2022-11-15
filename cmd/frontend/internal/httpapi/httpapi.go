@@ -90,13 +90,12 @@ func NewHandler(
 	wh := webhooks.WebhookRouter{
 		DB: db,
 	}
-	webhookhandlers.Init(db, &wh)
+	webhookhandlers.Init(&wh)
 	handlers.BatchesGitHubWebhook.Register(&wh)
 	handlers.BatchesGitLabWebhook.Register(&wh)
 	handlers.GitHubSyncWebhook.Register(&wh)
 
 	// 🚨 SECURITY: This handler implements its own secret-based auth
-	// TODO: Integrate with webhookMiddleware.Logger
 	webhookHandler := webhooks.NewHandler(logger, db, &wh)
 
 	gitHubWebhook := webhooks.GitHubWebhook{WebhookRouter: &wh}
