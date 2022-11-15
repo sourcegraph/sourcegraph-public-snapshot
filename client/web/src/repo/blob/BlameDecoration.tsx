@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
@@ -181,20 +181,22 @@ export const BlameDecoration: React.FunctionComponent<{
                             {blameHunk.message}
                         </Link>
                     </div>
-                    <hr className={classNames(styles.separator, 'm-0')} />
-                    <div className={classNames('px-3', styles.block)}>
-                        {blameHunk.commit.parents.length > 0 && (
-                            <Link
-                                to={
-                                    window.location.origin +
-                                    replaceRevisionInURL(window.location.href, blameHunk.commit.parents[0].oid)
-                                }
-                                className={styles.footerLink}
-                            >
-                                View blame prior to this change
-                            </Link>
-                        )}
-                    </div>
+                    {blameHunk.commit.parents.length > 0 && (
+                        <>
+                            <hr className={classNames(styles.separator, 'm-0')} />
+                            <div className={classNames('px-3', styles.block)}>
+                                <Link
+                                    to={
+                                        window.location.origin +
+                                        replaceRevisionInURL(window.location.href, blameHunk.commit.parents[0].oid)
+                                    }
+                                    className={styles.footerLink}
+                                >
+                                    View blame prior to this change
+                                </Link>
+                            </div>
+                        </>
+                    )}
                 </div>
             </PopoverContent>
         </Popover>
