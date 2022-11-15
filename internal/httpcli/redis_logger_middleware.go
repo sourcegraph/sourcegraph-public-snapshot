@@ -7,6 +7,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -39,10 +40,10 @@ func redisLoggerMiddleware() Middleware {
 			logItem := RedisLogItem{
 				Method:          req.Method,
 				URL:             req.URL.String(),
-				RequestHeaders:  req.Header,
+				RequestHeaders:  removeSensitiveHeaders(req.Header),
 				RequestBody:     string(requestBody),
 				StatusCode:      resp.StatusCode,
-				ResponseHeaders: resp.Header,
+				ResponseHeaders: removeSensitiveHeaders(resp.Header),
 				Duration:        duration.String(),
 				Error:           err,
 				CreatedAtFrame:  creatorStack,
@@ -68,4 +69,38 @@ func redisLoggerMiddleware() Middleware {
 			return resp, err
 		})
 	}
+}
+
+func removeSensitiveHeaders(headers http.Header) http.Header {
+	var cleanHeaders = make(http.Header)
+	for key, value := range headers {
+		if isRiskyKey(key) || hasRiskyValue(value) {
+			cleanHeaders[key] = []string{"REDACTED"}
+		} else {
+			cleanHeaders[key] = value
+		}
+	}
+	return cleanHeaders
+}
+
+func isRiskyKey(key string) bool {
+	riskyHeaderKeys := []string{"auth", "cookie", "token"}
+	for _, riskyKey := range riskyHeaderKeys {
+		if strings.Contains(strings.ToLower(key), riskyKey) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasRiskyValue(values []string) bool {
+	riskyHeaderValues := []string{"bearer", "ghp_", "glpat-"}
+	for _, value := range values {
+		for _, riskyValue := range riskyHeaderValues {
+			if strings.Contains(strings.ToLower(value), riskyValue) {
+				return true
+			}
+		}
+	}
+	return false
 }
