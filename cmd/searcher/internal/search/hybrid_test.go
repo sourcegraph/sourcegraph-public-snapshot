@@ -145,7 +145,6 @@ Hello world example in go
 		Pattern: protocol.PatternInfo{
 			Pattern:                "world",
 			IncludePatterns:        []string{"added"},
-			PathPatternsAreRegExps: true,
 		},
 		Want: `
 added.md:1:1:
@@ -155,7 +154,6 @@ hello world I am added
 		Name: "path-include",
 		Pattern: protocol.PatternInfo{
 			IncludePatterns:        []string{"^added"},
-			PathPatternsAreRegExps: true,
 		},
 		Want: `
 added.md
@@ -164,7 +162,6 @@ added.md
 		Name: "path-exclude-added",
 		Pattern: protocol.PatternInfo{
 			ExcludePattern:         "added",
-			PathPatternsAreRegExps: true,
 		},
 		Want: `
 changed.go
@@ -174,7 +171,6 @@ unchanged.md
 		Name: "path-exclude-unchanged",
 		Pattern: protocol.PatternInfo{
 			ExcludePattern:         "unchanged",
-			PathPatternsAreRegExps: true,
 		},
 		Want: `
 added.md
@@ -184,7 +180,6 @@ changed.go
 		Name: "path-all",
 		Pattern: protocol.PatternInfo{
 			IncludePatterns:        []string{"."},
-			PathPatternsAreRegExps: true,
 		},
 		Want: `
 added.md
