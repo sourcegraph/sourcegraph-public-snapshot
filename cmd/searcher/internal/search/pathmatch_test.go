@@ -1,4 +1,4 @@
-package pathmatch
+package search
 
 import "testing"
 

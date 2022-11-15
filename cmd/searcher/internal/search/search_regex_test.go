@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 )
 
 func BenchmarkSearchRegex_large_fixed(b *testing.B) {
@@ -441,7 +440,7 @@ func init() {
 }
 
 func TestRegexSearch(t *testing.T) {
-	match, err := pathmatch.CompilePathPatterns([]string{`a\.go`}, `README\.md`, pathmatch.CompileOptions{})
+	match, err := CompilePathPatterns([]string{`a\.go`}, `README\.md`, CompileOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
