@@ -1,9 +1,11 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
+import { History } from 'history'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import { BehaviorSubject } from 'rxjs'
 
+import { createLinkClickHandler } from '@sourcegraph/shared/src/components/utils/linkClickHandler'
 import {
     createRectangle,
     Icon,
@@ -105,9 +107,10 @@ const usePopover = ({
 export const BlameDecoration: React.FunctionComponent<{
     line: number // 1-based line number
     blameHunk?: BlameHunk
+    history: History
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
-}> = ({ line, blameHunk, onSelect, onDeselect }) => {
+}> = ({ line, blameHunk, history, onSelect, onDeselect }) => {
     const id = line?.toString() || ''
     const onOpen = useCallback(() => {
         onSelect?.(line)
@@ -125,6 +128,9 @@ export const BlameDecoration: React.FunctionComponent<{
         close,
         open,
     ])
+
+    // Prevent hitting the backend (full page reloads) for links that stay inside the app.
+    const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(history), [history])
 
     if (!blameHunk) {
         return null
@@ -190,6 +196,7 @@ export const BlameDecoration: React.FunctionComponent<{
                                         window.location.origin +
                                         replaceRevisionInURL(window.location.href, blameHunk.commit.parents[0].oid)
                                     }
+                                    onClick={handleParentCommitLinkClick}
                                     className={styles.footerLink}
                                 >
                                     View blame prior to this change
