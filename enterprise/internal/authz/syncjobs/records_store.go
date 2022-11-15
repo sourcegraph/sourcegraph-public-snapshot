@@ -1,4 +1,4 @@
-package authz
+package syncjobs
 
 import (
 	"encoding/json"
@@ -16,14 +16,12 @@ import (
 
 const syncJobsRecordsPrefix = "authz/sync-job-records"
 
-const (
-	syncJobStatusSucceeded = "SUCCESS"
-	syncJobStatusError     = "ERROR"
-)
+// default documented in site.schema.json
+const defaultSyncJobsRecordsTTLMinutes = 15
 
-// syncJobsRecords is used to record the results of recent permissions syncing jobs for
+// RecordsStore is used to record the results of recent permissions syncing jobs for
 // diagnostic purposes.
-type syncJobsRecordsStore struct {
+type RecordsStore struct {
 	logger   log.Logger
 	cacheTTL atomic.Int32
 
@@ -36,18 +34,18 @@ type noopCache struct{}
 
 func (noopCache) Set(string, []byte) {}
 
-func newSyncJobsRecordsStore(logger log.Logger) *syncJobsRecordsStore {
-	return &syncJobsRecordsStore{
+func NewRecordsStore(logger log.Logger) *RecordsStore {
+	return &RecordsStore{
 		logger: logger,
 		cache:  noopCache{},
 	}
 }
 
-func (r *syncJobsRecordsStore) Watch(c conftypes.WatchableSiteConfig) {
+func (r *RecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 	c.Watch(func() {
 		ttlMinutes := c.SiteConfig().AuthzSyncJobsLogsTTL
 		if ttlMinutes == 0 {
-			ttlMinutes = 30 // default documented
+			ttlMinutes = defaultSyncJobsRecordsTTLMinutes
 		}
 		if !r.cacheTTL.CompareAndSwap(r.cacheTTL.Load(), int32(ttlMinutes)) {
 			// unchanged
@@ -70,7 +68,7 @@ func (r *syncJobsRecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 }
 
 // Record inserts a record for this job's outcome into the records store.
-func (r *syncJobsRecordsStore) Record(jobType string, jobID int32, providerStates []authz.SyncJobProviderStatus, err error) {
+func (r *RecordsStore) Record(jobType string, jobID int32, providerStates []authz.SyncJobProviderStatus, err error) {
 	completed := time.Now()
 
 	r.mux.Lock()
@@ -80,11 +78,11 @@ func (r *syncJobsRecordsStore) Record(jobType string, jobID int32, providerState
 		RequestType: jobType,
 		RequestID:   jobID,
 		Completed:   completed,
-		Status:      syncJobStatusSucceeded,
+		Status:      "SUCCESS",
 		Providers:   providerStates,
 	}
 	if err != nil {
-		record.Status = syncJobStatusError
+		record.Status = "ERROR"
 		record.Message = err.Error()
 	}
 

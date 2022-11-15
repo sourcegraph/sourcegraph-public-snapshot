@@ -19,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -77,7 +78,7 @@ type PermsSyncer struct {
 	permsStore edb.PermsStore
 
 	// recordsStore tracks results of recent permissions sync jobs.
-	recordsStore *syncJobsRecordsStore
+	recordsStore *syncjobs.RecordsStore
 }
 
 // NewPermsSyncer returns a new permissions syncing manager.
@@ -98,7 +99,7 @@ func NewPermsSyncer(
 		clock:               clock,
 		rateLimiterRegistry: rateLimiterRegistry,
 		scheduleInterval:    scheduleInterval(),
-		recordsStore:        newSyncJobsRecordsStore(logger.Scoped("records", "sync jobs records store")),
+		recordsStore:        syncjobs.NewRecordsStore(logger.Scoped("records", "sync jobs records store")),
 	}
 }
 

@@ -1,4 +1,4 @@
-package authz
+package syncjobs
 
 import (
 	"testing"
@@ -23,7 +23,7 @@ func (c *confWatcher) Watch(fn func())                      { c.update = fn }
 func (c *confWatcher) SiteConfig() schema.SiteConfiguration { return c.conf }
 
 func TestSyncJobsRecordsStoreWatch(t *testing.T) {
-	s := newSyncJobsRecordsStore(logtest.Scoped(t))
+	s := NewRecordsStore(logtest.Scoped(t))
 
 	// assert default
 	assert.IsType(t, noopCache{}, s.cache)
@@ -49,7 +49,7 @@ type memCache map[string]string
 func (m memCache) Set(k string, v []byte) { m[k] = string(v) }
 
 func TestSyncJobRecordsRecord(t *testing.T) {
-	s := syncJobsRecordsStore{
+	s := RecordsStore{
 		logger: logtest.Scoped(t),
 	}
 	t.Run("success", func(t *testing.T) {
