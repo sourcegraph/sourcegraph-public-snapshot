@@ -16,6 +16,11 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 		return referenceTimes
 	}
 
+	// We don't have any missing data points for this series so just return it.
+	if len(referenceTimes) == len(existingPoints) {
+		return existingPoints
+	}
+
 	var calculatedRecordingTimes []time.Time
 	// For each reference time, we compare it to existing recording times.
 	// If the reference time is before the next existing point (i.e. no time exists there), we add it to the list.

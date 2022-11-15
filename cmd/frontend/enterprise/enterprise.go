@@ -97,12 +97,6 @@ func makeNotFoundHandler(handlerName string) http.Handler {
 	})
 }
 
-type registerFunc func(webhook *webhooks.WebhookRouter)
-
-func (fn registerFunc) Register(w *webhooks.WebhookRouter) {
-	fn(w)
-}
-
 type emptyWebhookHandler struct {
 	name string
 }

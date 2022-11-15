@@ -1,10 +1,8 @@
 import { FunctionComponent, useContext } from 'react'
 
-import classNames from 'classnames'
-
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, LegendItem, LegendList, ParentSize } from '@sourcegraph/wildcard'
+import { Button, Link, LegendItem, LegendList, ParentSize, LegendItemPoint } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../../../../insights/utils/use-series-toggle'
 import {
@@ -106,8 +104,9 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
 
             <LegendList className={styles.legend}>
                 {content.series.map(series => (
-                    <LegendItem key={series.id as string} color={series.color} name={series.name}>
-                        <span className={classNames(styles.legendItem, 'flex-shrink-0 mr-2')}>{series.name}</span>
+                    <LegendItem key={series.id as string}>
+                        <LegendItemPoint color={series.color} />
+                        <span className={styles.legendItem}>{series.name}</span>
                         <CodeInsightsQueryBlock as={SyntaxHighlightedSearchQuery} query={series.query} />
                     </LegendItem>
                 ))}

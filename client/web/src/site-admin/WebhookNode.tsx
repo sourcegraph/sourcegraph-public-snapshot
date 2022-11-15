@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiCog, mdiDelete } from '@mdi/js'
 
-import { Button, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, H3, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../components/externalServices/externalServices'
 import { ExternalServiceKind } from '../graphql-operations'
@@ -10,11 +10,13 @@ import { ExternalServiceKind } from '../graphql-operations'
 import styles from './WebhookNode.module.scss'
 
 export interface WebhookProps {
+    id: string
     codeHostKind: ExternalServiceKind
     codeHostURN: string
 }
 
 export const WebhookNode: React.FunctionComponent<React.PropsWithChildren<WebhookProps>> = ({
+    id,
     codeHostKind,
     codeHostURN,
 }) => {
@@ -26,7 +28,7 @@ export const WebhookNode: React.FunctionComponent<React.PropsWithChildren<Webhoo
                 <H3 className="pr-2">
                     {' '}
                     <Icon inline={true} as={IconComponent} aria-label="Code host logo" className="mr-2" />
-                    {codeHostURN}
+                    <Link to={`/site-admin/webhooks/${id}`}>{codeHostURN}</Link>
                 </H3>
             </div>
             <div className="d-flex flex-shrink-0 ml-3">
