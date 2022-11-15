@@ -125,7 +125,6 @@ var app = &cli.App{
 
 						g := group.NewWithResults[error]().WithMaxConcurrency(20)
 						for !repoIter.Done() && repoIter.Err() == nil {
-
 							for _, r := range repoIter.Next(ctx) {
 								r := r
 								if err := s.SaveRepo(r); err != nil {
