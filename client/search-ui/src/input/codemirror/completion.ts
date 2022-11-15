@@ -451,7 +451,9 @@ export function createDefaultSuggestionSources(
                 }
                 const filteredResults = results
                     .filter(match => match.type === resolvedFilter.definition.suggestions)
-                    .flatMap(match => completionFromSearchMatch(match, options, token, tokens, token.value?.value))
+                    .flatMap(match =>
+                        completionFromSearchMatch(match, options, token, tokens, { filterValue: token.value?.value })
+                    )
                     .filter(isDefined)
 
                 const insidePredicate = token.value ? PREDICATE_REGEX.test(token.value.value) : false
@@ -487,7 +489,9 @@ export function createDefaultSuggestionSources(
                     from: token.range.start,
                     to: token.range.end,
                     options: results
-                        .flatMap(match => completionFromSearchMatch(match, options, token, tokens))
+                        .flatMap(match =>
+                            completionFromSearchMatch(match, options, token, tokens, { isDefaultSource: true })
+                        )
                         .filter(isDefined),
                 }
             })
@@ -520,12 +524,13 @@ function suggestionTypeFromTokens(tokens: Token[]): SearchMatch['type'] {
                         return 'commit'
                 }
                 break
-            case 'r':
             case 'repo':
+            case 'r':
                 isWithinRepo = true
                 break
-            case 'file':
             case 'path':
+            case 'file':
+            case 'f':
                 isWithinFile = true
                 break
         }
@@ -539,21 +544,20 @@ function suggestionTypeFromTokens(tokens: Token[]): SearchMatch['type'] {
     return 'repo'
 }
 
-interface CompletionWithURL extends Completion {
-    url?: string
-}
+type CompletionWithURL = Completion & { url?: string }
 
 function completionFromSearchMatch(
     match: SearchMatch,
     options: DefaultSuggestionSourcesOptions,
     activeToken: Token,
     tokens: Token[],
-    filterValue?: string
+    params?: {
+        filterValue?: string
+        isDefaultSource?: boolean
+    }
 ): CompletionWithURL[] {
     const hasNonActivePatternTokens =
         tokens.find(token => token.type === 'pattern' && !isEqual(token.range, activeToken.range)) !== undefined
-    console.log({ hasNonActivePatternTokens, tokens })
-    const isDefaultSource = filterValue === undefined
     switch (match.type) {
         case 'path':
             return [
@@ -567,7 +571,7 @@ function completionFromSearchMatch(
                               revision: match.commit,
                               repoName: match.repository,
                           }),
-                    apply: (isDefaultSource ? 'file:' : '') + regexInsertText(match.path, options) + ' ',
+                    apply: (params?.isDefaultSource ? 'file:' : '') + regexInsertText(match.path, options) + ' ',
                     info: match.repository,
                 },
             ]
@@ -578,8 +582,8 @@ function completionFromSearchMatch(
                     type: 'repository',
                     url: hasNonActivePatternTokens ? undefined : `/${match.repository}`,
                     apply:
-                        (isDefaultSource ? 'repo:' : '') +
-                        repositoryInsertText(match, { ...options, filterValue }) +
+                        (params?.isDefaultSource ? 'repo:' : '') +
+                        repositoryInsertText(match, { ...options, filterValue: params?.filterValue }) +
                         ' ',
                 },
             ]
