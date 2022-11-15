@@ -32,7 +32,7 @@ var gitlabEvents = []string{
 type GitLabWebhook struct {
 	*Webhook
 
-	// failHandleEvent is here so that we can explicity force a failure in the event
+	// failHandleEvent is here so that we can explicitly force a failure in the event
 	// handler in tests
 	failHandleEvent error
 }
