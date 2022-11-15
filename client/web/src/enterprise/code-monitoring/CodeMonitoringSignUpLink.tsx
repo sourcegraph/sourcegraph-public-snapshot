@@ -19,7 +19,7 @@ export const CodeMonitorSignUpLink: React.FunctionComponent<
     return (
         <ButtonLink
             onClick={onClick}
-            to={buildGetStartedURL('code-monitoring', '/code-monitoring/new', forDotcom)}
+            to={buildGetStartedURL(forDotcom, '/code-monitoring/new')}
             className={className}
             variant="primary"
         >
