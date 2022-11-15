@@ -1745,6 +1745,8 @@ func TestIgnorePath(t *testing.T) {
 	}{
 		{path: filepath.Join(reposDir, tempDirName), shouldIgnore: true},
 		{path: filepath.Join(reposDir, P4HomeName), shouldIgnore: true},
+		// Double check handling of trailing space
+		{path: filepath.Join(reposDir, P4HomeName+"   "), shouldIgnore: true},
 		{path: filepath.Join(reposDir, "sourcegraph/sourcegraph"), shouldIgnore: false},
 	} {
 		t.Run("", func(t *testing.T) {
