@@ -78,7 +78,7 @@ type Factory struct {
 	common []Opt
 }
 
-// redisCache is a HTTP cache backed by Redis. The TTL of a week is a balance
+// redisCache is an HTTP cache backed by Redis. The TTL of a week is a balance
 // between caching values for a useful amount of time versus growing the cache
 // too large.
 var redisCache = rcache.NewWithTTL("http", 604800)
@@ -244,8 +244,8 @@ func HeadersMiddleware(headers ...string) Middleware {
 }
 
 // ContextErrorMiddleware wraps a Doer with context.Context error
-// handling.  It checks if the request context is done, and if so,
-// returns its error. Otherwise it returns the error from the inner
+// handling. It checks if the request context is done, and if so,
+// returns its error. Otherwise, it returns the error from the inner
 // Doer call.
 func ContextErrorMiddleware(cli Doer) Doer {
 	return DoerFunc(func(req *http.Request) (*http.Response, error) {
@@ -357,7 +357,7 @@ func ExternalTransportOpt(cli *http.Client) error {
 	return nil
 }
 
-// NewCertPoolOpt returns a Opt that sets the RootCAs pool of an http.Client's
+// NewCertPoolOpt returns an Opt that sets the RootCAs pool of an http.Client's
 // transport.
 func NewCertPoolOpt(certs ...string) Opt {
 	return func(cli *http.Client) error {
