@@ -802,7 +802,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 	}
 	series.ID = id
 	series.Enabled = true
-	series.SupportsAugmentation = true
+	series.SupportsAugmentation = false
 	return series, nil
 }
 

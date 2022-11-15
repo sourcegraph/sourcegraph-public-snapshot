@@ -91,7 +91,7 @@ func TestGet(t *testing.T) {
 				PresentationType:     types.Line,
 				GenerationMethod:     types.Search,
 				IsFrozen:             false,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               1,
@@ -115,7 +115,7 @@ func TestGet(t *testing.T) {
 				GenerationMethod:     types.Search,
 				IsFrozen:             false,
 				GroupBy:              &groupByRepo,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               2,
@@ -139,7 +139,7 @@ func TestGet(t *testing.T) {
 				GenerationMethod:     types.Search,
 				IsFrozen:             true,
 				GroupBy:              &groupByRepo,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 		}
 
@@ -178,7 +178,7 @@ func TestGet(t *testing.T) {
 				PresentationType:     types.Line,
 				GenerationMethod:     types.Search,
 				IsFrozen:             false,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               1,
@@ -202,7 +202,7 @@ func TestGet(t *testing.T) {
 				GenerationMethod:     types.Search,
 				IsFrozen:             false,
 				GroupBy:              &groupByRepo,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 		}
 
@@ -240,7 +240,7 @@ func TestGet(t *testing.T) {
 				PresentationType:     types.Line,
 				GenerationMethod:     types.Search,
 				IsFrozen:             false,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               1,
@@ -264,7 +264,7 @@ func TestGet(t *testing.T) {
 				GenerationMethod:     types.Search,
 				IsFrozen:             false,
 				GroupBy:              &groupByRepo,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 		}
 
@@ -370,7 +370,7 @@ func TestGetAll(t *testing.T) {
 				SampleIntervalValue:  1,
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               5,
@@ -393,7 +393,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				GroupBy:              &groupByRepo,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               2,
@@ -415,7 +415,7 @@ func TestGetAll(t *testing.T) {
 				SampleIntervalValue:  1,
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               2,
@@ -438,7 +438,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				GroupBy:              &groupByRepo,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               3,
@@ -460,7 +460,7 @@ func TestGetAll(t *testing.T) {
 				SampleIntervalValue:  1,
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -495,7 +495,7 @@ func TestGetAll(t *testing.T) {
 				SampleIntervalValue:  1,
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               5,
@@ -518,7 +518,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				GroupBy:              &groupByRepo,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -553,7 +553,7 @@ func TestGetAll(t *testing.T) {
 				SampleIntervalValue:  1,
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               2,
@@ -576,7 +576,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				GroupBy:              &groupByRepo,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -611,7 +611,7 @@ func TestGetAll(t *testing.T) {
 				SampleIntervalValue:  1,
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               2,
@@ -634,7 +634,7 @@ func TestGetAll(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				GroupBy:              &groupByRepo,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               3,
@@ -656,7 +656,7 @@ func TestGetAll(t *testing.T) {
 				SampleIntervalValue:  1,
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -744,7 +744,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				GroupBy:              &groupByRepo,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               1,
@@ -767,7 +767,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				SampleIntervalValue:  1,
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               4,
@@ -791,7 +791,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				GroupBy:              &groupByRepo,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               3,
@@ -814,7 +814,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				SampleIntervalValue:  1,
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -851,7 +851,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				GroupBy:              &groupByRepo,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               1,
@@ -874,7 +874,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				SampleIntervalValue:  1,
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -911,7 +911,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
 				GroupBy:              &groupByRepo,
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 			{
 				ViewID:               3,
@@ -934,7 +934,7 @@ func TestGetAllOnDashboard(t *testing.T) {
 				SampleIntervalValue:  1,
 				PresentationType:     types.PresentationType("LINE"),
 				GenerationMethod:     types.GenerationMethod("search"),
-				SupportsAugmentation: true,
+				SupportsAugmentation: false,
 			},
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -990,7 +990,7 @@ func TestCreateSeries(t *testing.T) {
 			SampleIntervalUnit:   string(types.Month),
 			GenerationMethod:     types.Search,
 			GroupBy:              &groupByRepo,
-			SupportsAugmentation: true,
+			SupportsAugmentation: false,
 		}
 
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -1466,7 +1466,7 @@ func TestAttachSeriesView(t *testing.T) {
 			LineColor:            "my stroke",
 			PresentationType:     types.Line,
 			GenerationMethod:     types.Search,
-			SupportsAugmentation: true,
+			SupportsAugmentation: false,
 		}}
 
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -1547,7 +1547,7 @@ func TestRemoveSeriesFromView(t *testing.T) {
 			LineColor:            "my stroke",
 			PresentationType:     types.Line,
 			GenerationMethod:     types.Search,
-			SupportsAugmentation: true,
+			SupportsAugmentation: false,
 		}}
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result after attaching series to view (want/got): %s", diff)
@@ -1610,7 +1610,7 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 			SampleIntervalUnit:   string(types.Month),
 			GenerationMethod:     types.Search,
 			GroupBy:              &groupByRepo,
-			SupportsAugmentation: true,
+			SupportsAugmentation: false,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -1641,7 +1641,7 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 			SampleIntervalUnit:   string(types.Month),
 			JustInTime:           true,
 			GenerationMethod:     types.Search,
-			SupportsAugmentation: true,
+			SupportsAugmentation: false,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -2151,7 +2151,7 @@ func TestUpdateFrontendSeries(t *testing.T) {
 			SampleIntervalUnit:   "WEEK",
 			SampleIntervalValue:  1,
 			GenerationMethod:     "search",
-			SupportsAugmentation: true,
+			SupportsAugmentation: false,
 		}}).Equal(t, gotBeforeUpdate)
 
 		err = store.UpdateFrontendSeries(ctx, UpdateFrontendSeriesArgs{
@@ -2181,7 +2181,7 @@ func TestUpdateFrontendSeries(t *testing.T) {
 			SampleIntervalUnit:   "MONTH",
 			SampleIntervalValue:  5,
 			GenerationMethod:     "search",
-			SupportsAugmentation: true,
+			SupportsAugmentation: false,
 		}}).Equal(t, gotAfterUpdate)
 	})
 }

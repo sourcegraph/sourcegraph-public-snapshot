@@ -477,16 +477,18 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 		return nil
 	})
 
-	seriesRecordingTimes := make([]itypes.InsightSeriesRecordingTimes, 0, len(definitions))
+	seriesRecordingTimes := []itypes.InsightSeriesRecordingTimes{}
 	for _, series := range definitions {
-		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
-			Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
-			Value: series.SampleIntervalValue,
-		}, series.CreatedAt.Truncate(time.Hour*24))
-		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
-			InsightSeriesID: series.ID,
-			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
-		})
+		if series.SupportsAugmentation {
+			frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+				Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
+				Value: series.SampleIntervalValue,
+			}, series.CreatedAt.Truncate(time.Hour*24))
+			seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
+				InsightSeriesID: series.ID,
+				RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
+			})
+		}
 	}
 	if err := h.insightsStore.SetInsightSeriesRecordingTimes(ctx, seriesRecordingTimes); err != nil {
 		return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
