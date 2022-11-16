@@ -133,7 +133,8 @@ export const BlameDecoration: React.FunctionComponent<{
     const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(history), [history])
 
     if (!blameHunk) {
-        return null
+        return <span className={classNames(styles.popoverTrigger, 'px-2')} />
+        // return null
     }
 
     return (

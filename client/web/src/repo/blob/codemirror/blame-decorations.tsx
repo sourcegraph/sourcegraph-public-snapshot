@@ -48,32 +48,32 @@ const [hoveredLine, setHoveredLine] = createUpdateableField<number | null>(null,
     }),
 ])
 
-class CheckboxWidget extends WidgetType {
+class DecorationWidget extends WidgetType {
     private container: HTMLElement | null = null
     private reactRoot: Root | null = null
+    private state: { history: History }
 
     constructor(public view: EditorView, public readonly hunk: BlameHunk | undefined) {
         super()
+        this.state = { history: this.view.state.facet(blobPropsFacet).history }
     }
 
-    // eq(other: CheckboxWidget) {
-    //     return other.checked == this.checked
-    // }
-
     /* eslint-disable-next-line id-length*/
-    public eq(other: CheckboxWidget): boolean {
+    public eq(other: DecorationWidget): boolean {
         return isEqual(this.hunk, other.hunk)
     }
 
     public toDOM(): HTMLElement {
         if (!this.container) {
             this.container = document.createElement('span')
-            // this.container.classList.add('sr-only')
+            this.container.classList.add(blameColumnStyles.codemirrorDecoration)
+
             this.reactRoot = createRoot(this.container)
             this.reactRoot.render(
                 <BlameDecoration
                     line={this.hunk?.startLine ?? 0}
                     blameHunk={this.hunk}
+                    history={this.state.history}
                     onSelect={this.selectRow}
                     onDeselect={this.deselectRow}
                 />
@@ -98,25 +98,20 @@ class CheckboxWidget extends WidgetType {
         // root is synchronously unmounted while rendering is in progress
         setTimeout(() => this.reactRoot?.unmount(), 0)
     }
-
-    // ignoreEvent() {
-    //     return false
-    // }
 }
 
-function checkboxes(view: EditorView, facet) {
+const checkboxes = (view: EditorView, facet: Facet<BlameHunk[], BlameHunk[]>): DecorationSet => {
     const widgets = []
     // console.log(view.visibleRanges)
     const hunks = view.state.facet(facet)
     // console.log(hunks)
-    // consi
     for (const { from, to } of view.visibleRanges) {
         for (let pos = from; pos <= to; ) {
             const line = view.state.doc.lineAt(pos)
             // console.log(line)
             const hunk = hunks.find(h => h.startLine === line.number)
             const deco = Decoration.widget({
-                widget: new CheckboxWidget(view, hunk),
+                widget: new DecorationWidget(view, hunk),
             })
             widgets.push(deco.range(line.from))
             pos = line.to + 1
@@ -124,31 +119,6 @@ function checkboxes(view: EditorView, facet) {
     }
     return Decoration.set(widgets)
 }
-
-// const checkboxPlugin = ViewPlugin.fromClass(
-//     class {
-//         decorations: DecorationSet
-
-//         constructor(view: EditorView) {
-//             this.decorations = checkboxes(view)
-//         }
-
-//         update(update: ViewUpdate) {
-//             if (update.docChanged || update.viewportChanged) this.decorations = checkboxes(update.view)
-//         }
-//     },
-//     {
-//         decorations: v => v.decorations,
-
-//         eventHandlers: {
-//             mousedown: (e, view) => {
-//                 let target = e.target as HTMLElement
-//                 if (target.nodeName == 'INPUT' && target.parentElement!.classList.contains('cm-boolean-toggle'))
-//                     return console.log('hello')
-//             },
-//         },
-//     }
-// )
 
 /**
  * Used to find the blame decoration(s) with the longest text,
@@ -259,18 +229,20 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
         // checkboxPlugin,
         ViewPlugin.fromClass(
             class {
-                decorations: DecorationSet
+                public decorations: DecorationSet
 
                 constructor(view: EditorView) {
                     this.decorations = checkboxes(view, facet)
                 }
 
-                update(update: ViewUpdate) {
-                    if (update.docChanged || update.viewportChanged) this.decorations = checkboxes(update.view, facet)
-                }
+                // private update(update: ViewUpdate) {
+                //     if (update.docChanged || update.viewportChanged) {
+                //         this.decorations = checkboxes(update.view, facet)
+                //     }
+                // }
             },
             {
-                decorations: v => v.decorations,
+                decorations: ({ decorations }) => decorations,
             }
         ),
     ],

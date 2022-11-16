@@ -13,6 +13,12 @@
     }
 }
 
+.codemirror-decoration {
+    display: inline-block;
+    background: var(--body-bg);
+    vertical-align: bottom;
+}
+
 tr:global(.selected),
 tr:global(.highlighted) {
     .decoration {

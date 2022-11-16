@@ -2,9 +2,9 @@
     &-trigger {
         overflow: hidden;
         text-overflow: ellipsis;
-        display: inline-block;
-        width: 100%;
-        max-width: 240px;
+        display: block;
+        width: 240px;
+        height: 1rem;
 
         color: var(--body-color);
         &:hover {
