@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
+// keep in sync with consumer in enterprise/cmd/frontend/internal/authz/resolvers/resolver.go
 const syncJobsRecordsPrefix = "authz/sync-job-records"
 
 // default documented in site.schema.json
@@ -89,5 +90,5 @@ func (r *RecordsStore) Record(jobType string, jobID int32, providerStates []Prov
 	}
 
 	// Key by timestamp for sorting
-	r.cache.Set(strconv.FormatInt(record.Completed.UnixNano(), 10), val)
+	r.cache.Set(strconv.FormatInt(record.Completed.UTC().UnixNano(), 10), val)
 }
