@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	gh "github.com/google/go-github/v43/github"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log/logtest"
@@ -22,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -74,14 +76,14 @@ func TestWebhooksHandler(t *testing.T) {
 	wr := WebhookRouter{
 		DB: db,
 	}
-	gh := GitHubWebhook{WebhookRouter: &wr}
+	gwh := GitHubWebhook{WebhookRouter: &wr}
 
 	webhookMiddleware := NewLogMiddleware(
 		db.WebhookLogs(keyring.Default().WebhookLogKey),
 	)
 
 	base := mux.NewRouter()
-	base.Path("/.api/webhooks/{webhook_uuid}").Methods("POST").Handler(webhookMiddleware.Logger(NewHandler(logger, db, gh.WebhookRouter)))
+	base.Path("/.api/webhooks/{webhook_uuid}").Methods("POST").Handler(webhookMiddleware.Logger(NewHandler(logger, db, gwh.WebhookRouter)))
 	srv := httptest.NewServer(base)
 
 	t.Run("found GitLab webhook with correct secret returns 200", func(t *testing.T) {
@@ -90,9 +92,10 @@ func TestWebhooksHandler(t *testing.T) {
 		event := webhooks.EventCommon{
 			ObjectKind: "pipeline",
 		}
+		wh := &fakeWebhookHandler{}
 		wr.handlers = map[string]webhookEventHandlers{
 			extsvc.KindGitLab: {
-				"pipeline": []WebhookHandler{fakeWebhookHandler},
+				"pipeline": []WebhookHandler{wh.handleEvent},
 			},
 		}
 		payload, err := json.Marshal(event)
@@ -104,6 +107,11 @@ func TestWebhooksHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, gitLabWH.CodeHostURN, wh.codeHostURNReceived)
+		expectedEvent := webhooks.PipelineEvent{
+			EventCommon: event,
+		}
+		assert.Equal(t, &expectedEvent, wh.eventReceived)
 	})
 
 	t.Run("not-found webhook returns 404", func(t *testing.T) {
@@ -140,13 +148,16 @@ func TestWebhooksHandler(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWH.UUID)
 
 		h := hmac.New(sha1.New, []byte("githubsecret"))
-		payload := []byte(`{"body": "text"}`)
+		event := gh.PublicEvent{}
+		payload, err := json.Marshal(event)
+		require.NoError(t, err)
 		h.Write(payload)
 		res := h.Sum(nil)
 
+		wh := &fakeWebhookHandler{}
 		wr.handlers = map[string]webhookEventHandlers{
 			extsvc.KindGitHub: {
-				"member": []WebhookHandler{fakeWebhookHandler},
+				"member": []WebhookHandler{wh.handleEvent},
 			},
 		}
 
@@ -169,6 +180,11 @@ func TestWebhooksHandler(t *testing.T) {
 		for _, log := range logs {
 			assert.Equal(t, gitHubWH.ID, *log.WebhookID)
 		}
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, gitHubWH.CodeHostURN, wh.codeHostURNReceived)
+		expectedEvent := &gh.MemberEvent{}
+		assert.Equal(t, expectedEvent, wh.eventReceived)
 	})
 
 	t.Run("not found handler returns 404", func(t *testing.T) {
@@ -198,9 +214,10 @@ func TestWebhooksHandler(t *testing.T) {
 
 		payload := []byte(`{"body": "text"}`)
 
+		wh := &fakeWebhookHandler{}
 		wr.handlers = map[string]webhookEventHandlers{
 			extsvc.KindGitHub: {
-				"member": []WebhookHandler{fakeWebhookHandler},
+				"member": []WebhookHandler{wh.handleEvent},
 			},
 		}
 
@@ -239,13 +256,16 @@ func TestWebhooksHandler(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, bbServerWH.UUID)
 
 		h := hmac.New(sha1.New, []byte("bbsecret"))
-		payload := []byte(`{"body": "text"}`)
+		event := bitbucketserver.PingEvent{}
+		payload, err := json.Marshal(event)
+		require.NoError(t, err)
 		h.Write(payload)
 		res := h.Sum(nil)
 
+		wh := &fakeWebhookHandler{}
 		wr.handlers = map[string]webhookEventHandlers{
 			extsvc.KindBitbucketServer: {
-				"ping": []WebhookHandler{fakeWebhookHandler},
+				"ping": []WebhookHandler{wh.handleEvent},
 			},
 		}
 
@@ -268,6 +288,9 @@ func TestWebhooksHandler(t *testing.T) {
 		for _, log := range logs {
 			assert.Equal(t, bbServerWH.ID, *log.WebhookID)
 		}
+
+		assert.Equal(t, bbServerWH.CodeHostURN, wh.codeHostURNReceived)
+		assert.Equal(t, event, wh.eventReceived)
 	})
 
 	t.Run("incorrect Bitbucket server secret returns 400", func(t *testing.T) {
@@ -291,6 +314,13 @@ func TestWebhooksHandler(t *testing.T) {
 	})
 }
 
-func fakeWebhookHandler(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error {
+type fakeWebhookHandler struct {
+	eventReceived       any
+	codeHostURNReceived extsvc.CodeHostBaseURL
+}
+
+func (wh *fakeWebhookHandler) handleEvent(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error {
+	wh.eventReceived = event
+	wh.codeHostURNReceived = codeHostURN
 	return nil
 }
