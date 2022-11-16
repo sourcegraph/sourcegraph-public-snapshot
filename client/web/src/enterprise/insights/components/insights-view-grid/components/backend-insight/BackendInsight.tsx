@@ -82,9 +82,12 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                 },
             },
             onCompleted: data => {
-                const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
-                seriesToggleState.setSelectedSeriesIds([])
-                setInsightData(parsedData)
+                const node = data.insightViews.nodes[0]
+                if (node !== null) {
+                    const parsedData = createBackendInsightData({ ...insight, filters }, node)
+                    seriesToggleState.setSelectedSeriesIds([])
+                    setInsightData(parsedData)
+                }
             },
         }
     )

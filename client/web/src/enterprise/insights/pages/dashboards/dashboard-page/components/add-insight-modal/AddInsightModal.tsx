@@ -15,6 +15,7 @@ import {
 } from '../../../../../../../graphql-operations'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components'
 import { CodeInsightsBackendContext, CustomInsightDashboard } from '../../../../../core'
+import { isNotNull } from '../../../../../core/backend/utils/not-null'
 
 import {
     AddInsightFormValues,
@@ -38,6 +39,7 @@ export const AddInsightModal: FC<AddInsightModalProps> = props => {
         GetDashboardAccessibleInsightsVariables
     >(GET_ACCESSIBLE_INSIGHTS_LIST, {
         variables: { id: dashboard.id },
+        errorPolicy: 'all',
     })
 
     const insights = getAvailableInsights(data)
@@ -100,13 +102,13 @@ export const AddInsightModal: FC<AddInsightModalProps> = props => {
 }
 
 function getDashboardInsightIds(data?: GetDashboardAccessibleInsightsResult): string[] {
-    if (!data || !data.dashboardInsightsIds.nodes[0].views) {
+    if (!data || !data.dashboardInsightsIds.nodes[0]?.views) {
         return []
     }
 
-    return data.dashboardInsightsIds.nodes[0].views.nodes.map(view => view.id)
+    return data.dashboardInsightsIds.nodes[0].views.nodes.filter(isNotNull).map(view => view.id)
 }
 
 function getAvailableInsights(data?: GetDashboardAccessibleInsightsResult): AccessibleInsight[] {
-    return data?.accessibleInsights?.nodes ?? []
+    return data?.accessibleInsights?.nodes.filter(isNotNull) ?? []
 }
