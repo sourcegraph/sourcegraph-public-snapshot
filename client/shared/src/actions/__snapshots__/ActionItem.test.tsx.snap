@@ -164,7 +164,6 @@ exports[`ActionItem run command 2`] = `
 exports[`ActionItem run command with error 1`] = `
 <DocumentFragment>
   <button
-    aria-disabled="true"
     aria-label="d"
     class="test-action-item"
     type="button"

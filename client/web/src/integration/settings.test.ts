@@ -95,7 +95,7 @@ describe('Settings', () => {
             await driver.page.waitForSelector('.test-save-toolbar-save')
 
             assert.strictEqual(
-                await isElementDisabled(driver,'.test-save-toolbar-save'),
+                await isElementDisabled(driver, '.test-save-toolbar-save'),
                 true,
                 'Expected save button to be disabled'
             )
