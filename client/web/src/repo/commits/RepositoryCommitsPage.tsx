@@ -121,7 +121,7 @@ export interface RepositoryCommitsPageProps
     extends RevisionSpec,
         BreadcrumbSetters,
         RouteComponentProps<{
-            filePath: string | undefined
+            filePath?: string | undefined
         }>,
         TelemetryProps {
     repo: RepositoryFields | undefined
