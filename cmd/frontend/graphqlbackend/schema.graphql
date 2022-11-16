@@ -1434,7 +1434,14 @@ type Query {
         ID of the namespace (userID or orgID) to fetch saved searches for.
         """
         namespaceId: ID!
-    ): SavedSearchesByNamespaceConnection!
+        """
+        TODO(naman): figure our generic
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): Connection!
 
     """
     (experimental) Return the parse tree of a search query.
@@ -2488,7 +2495,7 @@ type SavedSearch implements Node {
 """
 Paginated connection for saved searches created by current user under the organisation provided
 """
-type SavedSearchesByNamespaceConnection {
+type Connection {
     """
     Total count of saved searches for the user under the organisation.
     """
@@ -2496,16 +2503,16 @@ type SavedSearchesByNamespaceConnection {
     """
     Paginated list of saved searches for the current user and the provided organisation.
     """
-    nodes(
-        """
-        Return the first n saved searches from the list
-        """
-        limit: Int
-        """
-        Skips the first n saved searches from the list
-        """
-        offset: Int
-    ): [SavedSearch!]!
+    nodes: [SavedSearch!]!
+
+    pageInfo: NewPageInfo!
+}
+
+type NewPageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    startCursor: String
+    endCursor: String
 }
 
 """

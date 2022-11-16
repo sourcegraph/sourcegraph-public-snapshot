@@ -22,7 +22,7 @@ type SavedSearchStore interface {
 	ListAll(context.Context) ([]api.SavedQuerySpecAndConfig, error)
 	ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error)
 	ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error)
-	ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, limitOffset *LimitOffset) ([]*types.SavedSearch, error)
+	ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *PaginationArgs) ([]*types.SavedSearch, error)
 	CountSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (float64, error)
 	Transact(context.Context) (SavedSearchStore, error)
 	Update(context.Context, *types.SavedSearch) (*types.SavedSearch, error)
@@ -248,23 +248,35 @@ func (s *savedSearchStore) ListSavedSearchesByOrgID(ctx context.Context, orgID i
 // user is an admin. It is the callers responsibility to ensure only admins or
 // members of the specified organization can access the returned saved
 // searches.
-func (s *savedSearchStore) ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, limitOffset *LimitOffset) ([]*types.SavedSearch, error) {
+func (s *savedSearchStore) ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *PaginationArgs) ([]*types.SavedSearch, error) {
 	var savedSearches []*types.SavedSearch
 	conds := sqlf.Sprintf("WHERE user_id=%v OR org_id=%v", userID, orgID)
-	query := sqlf.Sprintf(`SELECT
-		id,
-		description,
-		query,
-		notify_owner,
-		notify_slack,
-		user_id,
-		org_id,
-		slack_webhook_url
-		FROM saved_searches %v`, conds)
 
-	if limitOffset != nil {
-		query = sqlf.Sprintf(`%v %v`, query, limitOffset.SQL())
+	if paginationArgs != nil {
+		where, order, err := paginationArgs.SQL()
+		if err != nil {
+			return nil, errors.Wrap(err, "PaginationArgsContext")
+		}
+
+		if where != nil {
+			conds = sqlf.Sprintf(`%v AND (%v)`, conds, where)
+		}
+
+		if order != nil {
+			conds = sqlf.Sprintf(`%v ORDER BY %v`, conds, order)
+		}
 	}
+
+	query := sqlf.Sprintf(`SELECT
+	id,
+	description,
+	query,
+	notify_owner,
+	notify_slack,
+	user_id,
+	org_id,
+	slack_webhook_url
+	FROM saved_searches %v`, conds)
 
 	rows, err := s.Query(ctx, query)
 	if err != nil {
