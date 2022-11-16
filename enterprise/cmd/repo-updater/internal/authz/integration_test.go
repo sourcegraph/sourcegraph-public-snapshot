@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	authzGitHub "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -31,7 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+var updateRegex = flag.String("update-integration", "", "Update testdata of tests matching the given regex")
 
 func update(name string) bool {
 	if updateRegex == nil || *updateRegex == "" {
@@ -142,10 +143,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []providerState{{
+			assert.Equal(t, []syncjobs.ProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				State:        "SUCCESS",
+				Status:       "SUCCESS",
 				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
@@ -228,10 +229,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []providerState{{
+			assert.Equal(t, []syncjobs.ProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				State:        "SUCCESS",
+				Status:       "SUCCESS",
 				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
@@ -255,10 +256,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []providerState{{
+			assert.Equal(t, []syncjobs.ProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				State:        "SUCCESS",
+				Status:       "SUCCESS",
 				Message:      "FetchRepoPerms",
 			}}, providerStates)
 
@@ -347,10 +348,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []providerState{{
+			assert.Equal(t, []syncjobs.ProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				State:        "SUCCESS",
+				Status:       "SUCCESS",
 				Message:      "FetchUserPerms",
 			}}, providerStates)
 
@@ -436,10 +437,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []providerState{{
+			assert.Equal(t, []syncjobs.ProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				State:        "SUCCESS",
+				Status:       "SUCCESS",
 				Message:      "FetchUserPerms",
 			}}, providerStates)
 
@@ -463,10 +464,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.Equal(t, []providerState{{
+			assert.Equal(t, []syncjobs.ProviderStatus{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				State:        "SUCCESS",
+				Status:       "SUCCESS",
 				Message:      "FetchUserPerms",
 			}}, providerStates)
 

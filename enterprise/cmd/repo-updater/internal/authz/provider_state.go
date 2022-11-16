@@ -5,38 +5,29 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 )
 
-// providerState describes the state of a provider during a permissions sync.
-type providerState struct {
-	ProviderID   string
-	ProviderType string
-
-	// One of "ERROR" or "SUCCESS"
-	State   string
-	Message string
-}
-
-func newProviderState(provider authz.Provider, err error, action string) providerState {
+func newProviderState(provider authz.Provider, err error, action string) syncjobs.ProviderStatus {
 	if err != nil {
-		return providerState{
+		return syncjobs.ProviderStatus{
 			ProviderID:   provider.ServiceID(),
 			ProviderType: provider.ServiceType(),
-			State:        "ERROR",
+			Status:       "ERROR",
 			Message:      fmt.Sprintf("%s: %s", action, err.Error()),
 		}
 	} else {
-		return providerState{
+		return syncjobs.ProviderStatus{
 			ProviderID:   provider.ServiceID(),
 			ProviderType: provider.ServiceType(),
-			State:        "SUCCESS",
+			Status:       "SUCCESS",
 			Message:      action,
 		}
 	}
 }
 
-type providerStatesSet []providerState
+type providerStatesSet []syncjobs.ProviderStatus
 
 // SummaryField generates a single log field that summarizes the state of all providers.
 func (ps providerStatesSet) SummaryField() log.Field {
@@ -46,7 +37,7 @@ func (ps providerStatesSet) SummaryField() log.Field {
 	)
 	for _, p := range ps {
 		key := fmt.Sprintf("%s:%s", p.ProviderType, p.ProviderID)
-		switch p.State {
+		switch p.Status {
 		case "ERROR":
 			errored = append(errored, log.String(
 				key,

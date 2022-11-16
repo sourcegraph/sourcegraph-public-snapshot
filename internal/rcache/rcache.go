@@ -48,6 +48,8 @@ func NewWithTTL(keyPrefix string, ttlSeconds int) *Cache {
 	}
 }
 
+func (r *Cache) TTL() time.Duration { return time.Duration(r.ttlSeconds) * time.Second }
+
 func (r *Cache) GetMulti(keys ...string) [][]byte {
 	c := pool.Get()
 	defer c.Close()
