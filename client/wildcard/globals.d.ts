@@ -11,3 +11,13 @@ declare module '*.css' {
  * Set by shared/dev/jest-environment.js
  */
 declare var jsdom: import('jsdom').JSDOM
+
+declare global {
+    namespace jest {
+        interface Matchers<R, T> {
+            toBeAriaDisabled(): R
+        }
+    }
+}
+
+export {}

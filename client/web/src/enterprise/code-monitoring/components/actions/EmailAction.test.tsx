@@ -190,7 +190,7 @@ describe('EmailAction', () => {
             )
 
             userEvent.click(getByTestId('form-action-toggle-email'))
-            expect(getByTestId('send-test-email')).toBeDisabled()
+            expect(getByTestId('send-test-email')).toBeAriaDisabled()
         })
 
         test('send test email, success', async () => {
@@ -217,7 +217,7 @@ describe('EmailAction', () => {
             await waitForNextApolloResponse()
 
             expect(getByTestId('send-test-email')).toHaveTextContent('Test email sent!')
-            expect(getByTestId('send-test-email')).toBeDisabled()
+            expect(getByTestId('send-test-email')).toBeAriaDisabled()
 
             expect(queryByTestId('send-test-email-again')).toBeInTheDocument()
             expect(queryByTestId('test-email-error')).not.toBeInTheDocument()

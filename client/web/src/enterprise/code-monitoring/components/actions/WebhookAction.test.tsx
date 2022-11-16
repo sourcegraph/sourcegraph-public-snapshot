@@ -30,7 +30,7 @@ describe('WebhookAction', () => {
 
         userEvent.click(getByTestId('form-action-toggle-webhook'))
 
-        expect(getByTestId('submit-action-webhook')).toBeDisabled()
+        expect(getByTestId('submit-action-webhook')).toBeAriaDisabled()
 
         userEvent.type(getByTestId('webhook-url'), 'https://example.com')
         expect(getByTestId('submit-action-webhook')).toBeEnabled()
@@ -70,7 +70,7 @@ describe('WebhookAction', () => {
         expect(getByTestId('submit-action-webhook')).toBeEnabled()
 
         userEvent.clear(getByTestId('webhook-url'))
-        expect(getByTestId('submit-action-webhook')).toBeDisabled()
+        expect(getByTestId('submit-action-webhook')).toBeAriaDisabled()
 
         userEvent.type(getByTestId('webhook-url'), 'https://example2.com')
         expect(getByTestId('submit-action-webhook')).toBeEnabled()
@@ -215,7 +215,7 @@ describe('WebhookAction', () => {
             )
 
             userEvent.click(getByTestId('form-action-toggle-webhook'))
-            expect(getByTestId('send-test-webhook')).toBeDisabled()
+            expect(getByTestId('send-test-webhook')).toBeAriaDisabled()
         })
 
         test('disabled if no monitor name set', () => {
@@ -226,7 +226,7 @@ describe('WebhookAction', () => {
             )
 
             userEvent.click(getByTestId('form-action-toggle-webhook'))
-            expect(getByTestId('send-test-webhook')).toBeDisabled()
+            expect(getByTestId('send-test-webhook')).toBeAriaDisabled()
         })
 
         test('send test message, success', async () => {
@@ -253,7 +253,7 @@ describe('WebhookAction', () => {
             await waitForNextApolloResponse()
 
             expect(getByTestId('send-test-webhook')).toHaveTextContent('Test call completed!')
-            expect(getByTestId('send-test-webhook')).toBeDisabled()
+            expect(getByTestId('send-test-webhook')).toBeAriaDisabled()
 
             expect(queryByTestId('send-test-webhook')).toBeInTheDocument()
             expect(queryByTestId('test-email-webhook')).not.toBeInTheDocument()

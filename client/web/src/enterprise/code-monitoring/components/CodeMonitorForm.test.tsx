@@ -51,7 +51,7 @@ describe('CodeMonitorForm', () => {
         fireEvent.click(getByTestId('form-action-toggle-email'))
         fireEvent.click(getByTestId('delete-action-email'))
 
-        expect(getByTestId('submit-monitor')).toBeDisabled()
+        expect(getByTestId('submit-monitor')).toBeAriaDisabled()
     })
 
     test('Submit button enabled if one action is present', () => {

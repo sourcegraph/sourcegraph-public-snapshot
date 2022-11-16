@@ -157,7 +157,7 @@ describe('ManageCodeMonitorPage', () => {
             </MockedTestProvider>
         )
         const submitButton = screen.getByTestId('submit-monitor')
-        expect(submitButton).toBeDisabled()
+        expect(submitButton).toBeAriaDisabled()
 
         userEvent.type(screen.getByTestId('name-input'), 'Test code monitor updated')
 

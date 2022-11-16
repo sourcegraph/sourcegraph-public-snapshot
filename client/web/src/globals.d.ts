@@ -28,3 +28,13 @@ declare module '*.yml' {
     const ymlModule: string
     export default ymlModule
 }
+
+declare global {
+    namespace jest {
+        interface Matchers<R, T> {
+            toBeAriaDisabled(): R
+        }
+    }
+}
+
+export {}

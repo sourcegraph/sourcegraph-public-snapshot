@@ -32,7 +32,7 @@ describe('SlackWebhookAction', () => {
 
         userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
 
-        expect(getByTestId('submit-action-slack-webhook')).toBeDisabled()
+        expect(getByTestId('submit-action-slack-webhook')).toBeAriaDisabled()
 
         userEvent.type(getByTestId('slack-webhook-url'), SLACK_URL)
         expect(getByTestId('submit-action-slack-webhook')).toBeEnabled()
@@ -72,7 +72,7 @@ describe('SlackWebhookAction', () => {
         expect(getByTestId('submit-action-slack-webhook')).toBeEnabled()
 
         userEvent.clear(getByTestId('slack-webhook-url'))
-        expect(getByTestId('submit-action-slack-webhook')).toBeDisabled()
+        expect(getByTestId('submit-action-slack-webhook')).toBeAriaDisabled()
 
         userEvent.type(getByTestId('slack-webhook-url'), SLACK_URL)
         expect(getByTestId('submit-action-slack-webhook')).toBeEnabled()
@@ -217,7 +217,7 @@ describe('SlackWebhookAction', () => {
             )
 
             userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
-            expect(getByTestId('send-test-slack-webhook')).toBeDisabled()
+            expect(getByTestId('send-test-slack-webhook')).toBeAriaDisabled()
         })
 
         test('disabled if no monitor name set', () => {
@@ -228,7 +228,7 @@ describe('SlackWebhookAction', () => {
             )
 
             userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
-            expect(getByTestId('send-test-slack-webhook')).toBeDisabled()
+            expect(getByTestId('send-test-slack-webhook')).toBeAriaDisabled()
         })
 
         test('send test message, success', async () => {
@@ -255,7 +255,7 @@ describe('SlackWebhookAction', () => {
             await waitForNextApolloResponse()
 
             expect(getByTestId('send-test-slack-webhook')).toHaveTextContent('Test message sent!')
-            expect(getByTestId('send-test-slack-webhook')).toBeDisabled()
+            expect(getByTestId('send-test-slack-webhook')).toBeAriaDisabled()
 
             expect(queryByTestId('send-test-slack-webhook')).toBeInTheDocument()
             expect(queryByTestId('test-email-slack-webhook')).not.toBeInTheDocument()

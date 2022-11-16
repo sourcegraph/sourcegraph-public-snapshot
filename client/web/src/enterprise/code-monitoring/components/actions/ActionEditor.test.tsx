@@ -84,7 +84,7 @@ describe('ActionEditor', () => {
         userEvent.click(getByTestId('form-action-toggle-email'))
 
         expect(queryByTestId('delete-action-email')).not.toBeInTheDocument()
-        expect(getByTestId('submit-action-email')).toBeDisabled()
+        expect(getByTestId('submit-action-email')).toBeAriaDisabled()
     })
 
     test('toggle disable when collapsed', () => {

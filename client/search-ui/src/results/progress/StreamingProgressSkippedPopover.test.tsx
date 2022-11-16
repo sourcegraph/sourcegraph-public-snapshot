@@ -113,7 +113,7 @@ describe('StreamingProgressSkippedPopover', () => {
         const form = screen.getByTestId('popover-form')
         const searchAgainButton = within(form).getByRole('button')
         expect(searchAgainButton).toBeInTheDocument()
-        expect(searchAgainButton).toBeDisabled()
+        expect(searchAgainButton).toBeAriaDisabled()
     })
 
     it('should enable Search Again button if at least one item is checked', () => {
@@ -217,7 +217,7 @@ describe('StreamingProgressSkippedPopover', () => {
         expect(searchAgainButton).toBeEnabled()
 
         userEvent.click(checkboxes[1])
-        expect(searchAgainButton).toBeDisabled()
+        expect(searchAgainButton).toBeAriaDisabled()
     })
 
     it('should call onSearchAgain with selected items when button is clicked', () => {

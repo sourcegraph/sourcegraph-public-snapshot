@@ -106,6 +106,6 @@ describe('CreateCodeMonitorPage', () => {
             </MockedTestProvider>
         )
         const actionButton = screen.getByTestId('form-action-toggle-email')
-        expect(actionButton).toBeDisabled()
+        expect(actionButton).toBeAriaDisabled()
     })
 })
