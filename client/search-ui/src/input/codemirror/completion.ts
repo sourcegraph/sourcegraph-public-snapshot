@@ -489,6 +489,7 @@ export function createDefaultSuggestionSources(
                 return {
                     from: token.range.start,
                     to: token.range.end,
+                    filter: false,
                     options: results
                         .flatMap(match =>
                             completionFromSearchMatch(match, options, token, tokens, { isDefaultSource: true })
