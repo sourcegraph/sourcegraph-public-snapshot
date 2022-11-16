@@ -153,6 +153,7 @@ func TestMiddleware(t *testing.T) {
 		assert.NotNil(t, event.Timestamp)
 		if event.Name == database.SecurityEventOIDCLoginFailed {
 			assert.NotEmpty(t, event.AnonymousUserID)
+			assert.IsType(t, json.RawMessage{}, event.Argument)
 		} else {
 			assert.Equal(t, uint32(123), event.UserID)
 		}

@@ -134,12 +134,18 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log15.Error("Failed to authenticate with OpenID connect.", "error", err)
 				http.Error(w, safeErrMsg, errStatus)
+				arg, _ := json.Marshal(struct {
+					SafeErrorMsg string `json:"safe_error_msg"`
+				}{
+					SafeErrorMsg: safeErrMsg,
+				})
 				db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
 					Name:            database.SecurityEventOIDCLoginFailed,
 					URL:             r.URL.Path,                                   // Don't log OIDC query params
 					AnonymousUserID: fmt.Sprintf("unknown OIDC @ %s", time.Now()), // we don't know have a reliable user identify at the time of the failure
 					Source:          "BACKEND",
 					Timestamp:       time.Now(),
+					Argument:        arg,
 				})
 				return
 			}
