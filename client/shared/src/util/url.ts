@@ -562,20 +562,25 @@ export function buildSearchURLQuery(
     return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
-export function buildGetStartedURL(forInstances?: boolean, returnTo?: string): string {
+export function buildGetStartedURL(cloudSignup?: boolean, returnTo?: string): string {
     /**
      * Account sign-ups should be available for customer instances whereas
      * non customer instances like .com should direct users through our cloud
-     * sign-up flow.
+     * sign-up flow to prioritize trial-starts.
      */
-    const path = forInstances ? 'https://sourcegraph.com/sign-up' : 'https://signup.sourcegraph.com'
-    const url = new URL(path)
-
-    if (returnTo !== undefined) {
-        url.searchParams.set('returnTo', returnTo)
+    const path = cloudSignup ? 'https://signup.sourcegraph.com' : '/sign-up'
+    
+    if (path.includes('https')) {
+        const url = new URL(path)
+    
+        if (returnTo !== undefined) {
+            url.searchParams.set('returnTo', returnTo)
+        }
+    
+        return url.toString()
     }
 
-    return url.toString()
+    return path
 }
 
 /** The results of parsing a repo-revision string like "my/repo@my/revision". */
