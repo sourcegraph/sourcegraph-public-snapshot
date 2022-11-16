@@ -15,18 +15,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (h *WebhookRouter) HandleBitBucketServerWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
+func (wr *WebhookRouter) HandleBitBucketServerWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
 	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
 	// internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
-	e, eventType, err := h.parseEvent(r, payload)
+	e, eventType, err := parseBitbucketServerEvent(r, payload)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Route the request based on the event type.
-	err = h.Dispatch(ctx, eventType, extsvc.KindBitbucketServer, codeHostURN, e)
+	err = wr.Dispatch(ctx, eventType, extsvc.KindBitbucketServer, codeHostURN, e)
 	if err != nil {
 		logger.Error("Error handling bitbucket server webhook event", log.Error(err))
 		if errcode.IsNotFound(err) {
@@ -37,7 +37,7 @@ func (h *WebhookRouter) HandleBitBucketServerWebhook(logger log.Logger, w http.R
 	}
 }
 
-func (h *WebhookRouter) parseEvent(r *http.Request, payload []byte) (any, string, error) {
+func parseBitbucketServerEvent(r *http.Request, payload []byte) (any, string, error) {
 	eventType := bitbucketserver.WebhookEventType(r)
 	e, err := bitbucketserver.ParseWebhookEvent(eventType, payload)
 	if err != nil {
@@ -46,14 +46,14 @@ func (h *WebhookRouter) parseEvent(r *http.Request, payload []byte) (any, string
 	return e, eventType, nil
 }
 
-func (h *WebhookRouter) handleBitbucketServerWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string) {
+func (wr *WebhookRouter) handleBitbucketServerWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string) {
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Error while reading request body.", http.StatusInternalServerError)
 		return
 	}
 	if secret == "" {
-		h.HandleBitBucketServerWebhook(logger, w, r, urn, payload)
+		wr.HandleBitBucketServerWebhook(logger, w, r, urn, payload)
 		return
 	}
 
@@ -63,5 +63,5 @@ func (h *WebhookRouter) handleBitbucketServerWebhook(logger log.Logger, w http.R
 		return
 	}
 
-	h.HandleBitBucketServerWebhook(logger, w, r, urn, payload)
+	wr.HandleBitBucketServerWebhook(logger, w, r, urn, payload)
 }
