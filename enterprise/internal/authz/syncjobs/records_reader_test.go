@@ -39,8 +39,8 @@ func TestSyncJobRecordsRead(t *testing.T) {
 		assert.Len(t, results, 1)
 
 		first := results[0]
-		assert.Equal(t, "repo", first.RequestType)
-		assert.Equal(t, int32(12), first.RequestID)
+		assert.Equal(t, "repo", first.JobType)
+		assert.Equal(t, int32(12), first.JobID)
 		assert.Len(t, first.Providers, 1)
 	})
 

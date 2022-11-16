@@ -1707,10 +1707,10 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 					db:                edb.NewEnterpriseDB(db),
 					repoupdaterClient: repoupdater.DefaultClient,
 					syncJobsRecords: mockRecordsReader{{
-						RequestID:   3,
-						RequestType: "repo",
-						Status:      "SUCCESS",
-						Message:     "nice",
+						JobID:   3,
+						JobType: "repo",
+						Status:  "SUCCESS",
+						Message: "nice",
 						Providers: []syncjobs.ProviderStatus{{
 							ProviderID:   "https://github.com",
 							ProviderType: "github",
@@ -1732,7 +1732,7 @@ query {
 	pageInfo { hasNextPage }
     nodes {
 		id
-		requestID
+		jobID
 		type
 		status
 		message
@@ -1753,7 +1753,7 @@ query {
 		"nodes": [
 			{
 				"id": "RXZlbnRUaW1lOiIwMDAxLTAxLTAxVDAwOjAwOjAwWiI=",
-				"requestID": 3,
+				"jobID": 3,
 				"type": "repo",
 				"status": "SUCCESS",
 				"message": "nice",

@@ -35,9 +35,9 @@ func (j permissionsSyncJobResolver) ID() graphql.ID {
 	return relay.MarshalID("EventTime", j.s.Completed)
 }
 
-func (j permissionsSyncJobResolver) RequestID() int32 { return j.s.RequestID }
+func (j permissionsSyncJobResolver) JobID() int32 { return j.s.JobID }
 
-func (j permissionsSyncJobResolver) Type() string { return j.s.RequestType }
+func (j permissionsSyncJobResolver) Type() string { return j.s.JobType }
 
 func (j permissionsSyncJobResolver) CompletedAt() *gqlutil.DateTime {
 	return &gqlutil.DateTime{Time: j.s.Completed}

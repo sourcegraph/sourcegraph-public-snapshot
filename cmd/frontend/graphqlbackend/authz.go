@@ -133,7 +133,7 @@ type PermissionsSyncJobsConnection interface {
 
 type PermissionsSyncJobResolver interface {
 	ID() graphql.ID
-	RequestID() int32
+	JobID() int32
 	Type() string
 	Status() string
 	Message() string

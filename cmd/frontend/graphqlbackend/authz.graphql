@@ -351,9 +351,9 @@ type PermissionsSyncJob implements Node {
     """
     type: String!
     """
-    ID of the entity in the original request for a sync job.
+    ID of the entity worked on in this sync job.
     """
-    requestID: Int!
+    jobID: Int!
     """
     Completion time of the sync job.
     """
