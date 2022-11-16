@@ -10771,6 +10771,16 @@
           "IndexDefinition": "CREATE INDEX gitserver_repos_shard_id ON gitserver_repos USING btree (shard_id, repo_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
+        },
+        {
+          "Name": "gitserver_repo_size_bytes",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX gitserver_repo_size_bytes ON gitserver_repos USING btree (repo_size_bytes)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
