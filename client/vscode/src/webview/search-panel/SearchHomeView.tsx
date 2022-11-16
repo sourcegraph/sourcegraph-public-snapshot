@@ -42,7 +42,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
     // Toggling case sensitivity or pattern type does NOT trigger a new search on home view.
     const [caseSensitive, setCaseSensitivity] = useState(false)
     const [patternType, setPatternType] = useState(SearchPatternType.standard)
-    const [searchMode, setSearchMode] = useState(SearchMode.Precise)
+    const [searchMode, setSearchMode] = useState(SearchMode.SmartSearch)
 
     const [userQueryState, setUserQueryState] = useState<QueryState>({
         query: '',
@@ -58,6 +58,7 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
             .streamSearch(userQueryState.query, {
                 caseSensitive,
                 patternType,
+                searchMode,
                 version: LATEST_VERSION,
                 trace: undefined,
             })
