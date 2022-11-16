@@ -71,6 +71,7 @@ func (s *rustDependencySource) Download(ctx context.Context, dir string, dep rep
 	if err != nil {
 		return errors.Wrapf(err, "error downloading crate with URL '%s'", packageURL)
 	}
+	defer pkg.Close()
 
 	// TODO: we could add `.sourcegraph/repo.json` here with more information,
 	// to be used by rust analyzer
