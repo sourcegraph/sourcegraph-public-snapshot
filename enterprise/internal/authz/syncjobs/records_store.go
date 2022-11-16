@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"strconv"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -21,9 +20,8 @@ const defaultSyncJobsRecordsTTLMinutes = 5
 // RecordsStore is used to record the results of recent permissions syncing jobs for
 // diagnostic purposes.
 type RecordsStore struct {
-	logger   log.Logger
-	cacheTTL atomic.Int32
-	now      func() time.Time
+	logger log.Logger
+	now    func() time.Time
 
 	mux sync.Mutex
 	// cache is a replaceable abstraction over rcache.Cache.
@@ -44,18 +42,13 @@ func NewRecordsStore(logger log.Logger) *RecordsStore {
 
 func (r *RecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 	c.Watch(func() {
+		r.mux.Lock()
+		defer r.mux.Unlock()
+
 		ttlMinutes := c.SiteConfig().AuthzSyncJobsRecordsTTL
 		if ttlMinutes == 0 {
 			ttlMinutes = defaultSyncJobsRecordsTTLMinutes
 		}
-		if !r.cacheTTL.CompareAndSwap(r.cacheTTL.Load(), int32(ttlMinutes)) {
-			// unchanged
-			return
-		}
-
-		// Update the cache
-		r.mux.Lock()
-		defer r.mux.Unlock()
 
 		if ttlMinutes > 0 {
 			ttlSeconds := ttlMinutes * 60
