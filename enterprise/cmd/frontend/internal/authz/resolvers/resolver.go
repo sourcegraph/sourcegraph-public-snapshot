@@ -646,7 +646,7 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend
 	}
 
 	jobs := &permissionsSyncJobsConnection{
-		jobs: make([]graphqlbackend.PermissionsSyncJob, 0, len(records)),
+		jobs: make([]graphqlbackend.PermissionsSyncJobResolver, 0, len(records)),
 	}
 	for _, j := range records {
 		// If status is not provided, add all - otherwise, check if the job's status

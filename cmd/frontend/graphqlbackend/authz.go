@@ -126,22 +126,23 @@ type PermissionsSyncJobsArgs struct {
 }
 
 type PermissionsSyncJobsConnection interface {
-	Nodes() []PermissionsSyncJob
+	Nodes() []PermissionsSyncJobResolver
 	TotalCount() int32
 	PageInfo() *graphqlutil.PageInfo
 }
 
-type PermissionsSyncJob interface {
+type PermissionsSyncJobResolver interface {
+	ID() graphql.ID
+	RequestID() int32
 	Type() string
-	ID() int32
 	Status() string
 	Message() string
 	CompletedAt() *gqlutil.DateTime
 
-	Providers() ([]PermissionsProviderStatus, error)
+	Providers() ([]PermissionsProviderStateResolver, error)
 }
 
-type PermissionsProviderStatus interface {
+type PermissionsProviderStateResolver interface {
 	Type() string
 	ID() string
 	Status() string

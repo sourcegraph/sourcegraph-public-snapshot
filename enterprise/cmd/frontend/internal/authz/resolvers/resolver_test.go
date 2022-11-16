@@ -1732,6 +1732,7 @@ query {
 	pageInfo { hasNextPage }
     nodes {
 		id
+		requestID
 		type
 		status
 		message
@@ -1751,7 +1752,8 @@ query {
 	"permissionsSyncJobs": {
 		"nodes": [
 			{
-				"id": 3,
+				"id": "RXZlbnRUaW1lOiIwMDAxLTAxLTAxVDAwOjAwOjAwWiI=",
+				"requestID": 3,
 				"type": "repo",
 				"status": "SUCCESS",
 				"message": "nice",
