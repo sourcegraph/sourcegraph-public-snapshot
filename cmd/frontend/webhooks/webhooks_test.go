@@ -179,6 +179,8 @@ func TestWebhooksHandler(t *testing.T) {
 		h.Write(payload)
 		res := h.Sum(nil)
 
+		wr.handlers = map[string]webhookEventHandlers{}
+
 		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
 		require.NoError(t, err)
 		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
@@ -195,6 +197,12 @@ func TestWebhooksHandler(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWHNoSecret.UUID)
 
 		payload := []byte(`{"body": "text"}`)
+
+		wr.handlers = map[string]webhookEventHandlers{
+			extsvc.KindGitHub: {
+				"member": []WebhookHandler{fakeWebhookHandler},
+			},
+		}
 
 		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
 		require.NoError(t, err)

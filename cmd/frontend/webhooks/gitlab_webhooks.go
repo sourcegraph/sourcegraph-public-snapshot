@@ -81,6 +81,7 @@ func (wr *WebhookRouter) handleGitLabWebHook(logger log.Logger, w http.ResponseW
 			http.Error(w, "Error while reading request body.", http.StatusInternalServerError)
 			return
 		}
+		defer r.Body.Close()
 
 		wr.HandleGitLabWebhook(logger, w, r, urn, payload)
 		return

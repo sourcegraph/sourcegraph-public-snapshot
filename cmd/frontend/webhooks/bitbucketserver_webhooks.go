@@ -52,6 +52,7 @@ func (wr *WebhookRouter) handleBitbucketServerWebhook(logger log.Logger, w http.
 		http.Error(w, "Error while reading request body.", http.StatusInternalServerError)
 		return
 	}
+	defer r.Body.Close()
 	if secret == "" {
 		wr.HandleBitBucketServerWebhook(logger, w, r, urn, payload)
 		return
