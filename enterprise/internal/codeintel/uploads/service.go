@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"cloud.google.com/go/storage"
 	"github.com/derision-test/glock"
 	"github.com/opentracing/opentracing-go/log"
 	logger "github.com/sourcegraph/log"
@@ -32,6 +33,7 @@ type Service struct {
 	workerutilStore dbworkerstore.Store
 	lsifstore       lsifstore.LsifStore
 	gitserverClient GitserverClient
+	rankingBucket   *storage.BucketHandle
 	policySvc       PolicyService
 	policyMatcher   PolicyMatcher
 	locker          Locker
@@ -45,6 +47,7 @@ func newService(
 	repoStore RepoStore,
 	lsifstore lsifstore.LsifStore,
 	gsc GitserverClient,
+	rankingBucket *storage.BucketHandle,
 	policySvc PolicyService,
 	policyMatcher PolicyMatcher,
 	locker Locker,
@@ -61,6 +64,7 @@ func newService(
 		workerutilStore: workerutilStore,
 		lsifstore:       lsifstore,
 		gitserverClient: gsc,
+		rankingBucket:   rankingBucket,
 		policySvc:       policySvc,
 		policyMatcher:   policyMatcher,
 		locker:          locker,

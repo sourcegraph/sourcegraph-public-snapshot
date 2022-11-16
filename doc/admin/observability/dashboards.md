@@ -23045,7 +23045,7 @@ Query: `sum(increase(src_codeintel_ranking_input_rows_processed_total{job=~"^${s
 
 <br />
 
-#### codeintel-ranking: codeintel_codenav_ranking_uploads_read_total
+#### codeintel-ranking: codeintel_uploads_ranking_uploads_read_total
 
 <p class="subtitle">Uploads read uploads read for export every 5m</p>
 
@@ -23060,13 +23060,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_ranking_uploads_read_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_ranking_uploads_read_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_codenav_ranking_stale_uploads_removed_total
+#### codeintel-ranking: codeintel_uploads_ranking_stale_uploads_removed_total
 
 <p class="subtitle">Uploads removed stale upload records removed every 5m</p>
 
@@ -23081,7 +23081,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_ranking_stale_uploads_removed_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_ranking_stale_uploads_removed_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
@@ -23108,7 +23108,7 @@ Query: `sum(increase(src_codeintel_ranking_csv_files_bytes_read_total{job=~"^${s
 
 <br />
 
-#### codeintel-ranking: codeintel_codenav_ranking_bytes_uploaded_total
+#### codeintel-ranking: codeintel_uploads_ranking_bytes_uploaded_total
 
 <p class="subtitle">Bytes uploaded bytes uploaded to GCS every 5m</p>
 
@@ -23123,13 +23123,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_ranking_bytes_uploaded_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_ranking_bytes_uploaded_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_codenav_ranking_bytes_deleted_total
+#### codeintel-ranking: codeintel_uploads_ranking_bytes_deleted_total
 
 <p class="subtitle">Bytes deleted bytes deleted from GCS every 5m</p>
 
@@ -23144,7 +23144,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_codenav_ranking_bytes_deleted_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_uploads_ranking_bytes_deleted_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 

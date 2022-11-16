@@ -1,9 +1,15 @@
 package uploads
 
 import (
+	"context"
+	"os"
 	"time"
 
+	"cloud.google.com/go/storage"
 	"github.com/derision-test/glock"
+	"google.golang.org/api/option"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
@@ -14,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/memo"
@@ -44,6 +51,14 @@ type serviceDependencies struct {
 	gsc         GitserverClient
 }
 
+var (
+	bucketName                   = env.Get("CODEINTEL_UPLOADS_RANKING_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")
+	rankingGraphKey              = env.Get("CODEINTEL_UPLOADS_RANKING_GRAPH_KEY", "dev", "An identifier of the graph export. Change to start a new export in the configured bucket.")
+	rankingGraphBatchSize        = env.MustGetInt("CODEINTEL_UPLOADS_RANKING_GRAPH_BATCH_SIZE", 16, "How many uploads to process at once.")
+	rankingGraphDeleteBatchSize  = env.MustGetInt("CODEINTEL_UPLOADS_RANKING_GRAPH_DELETE_BATCH_SIZE", 32, "How many stale uploads to delete at once.")
+	rankingBucketCredentialsFile = env.Get("CODEINTEL_UPLOADS_RANKING_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")
+)
+
 var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
 	store := store.New(deps.db, scopedContext("store"))
 	repoStore := backend.NewRepos(scopedContext("repos").Logger, deps.db, gitserver.NewClient(deps.db))
@@ -51,11 +66,31 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 	policyMatcher := policiesEnterprise.NewMatcher(deps.gsc, policiesEnterprise.RetentionExtractor, true, false)
 	locker := locker.NewWith(deps.db, "codeintel")
 
+	rankingBucket := func() *storage.BucketHandle {
+		if rankingBucketCredentialsFile == "" && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
+			return nil
+		}
+
+		var opts []option.ClientOption
+		if rankingBucketCredentialsFile != "" {
+			opts = append(opts, option.WithCredentialsFile(rankingBucketCredentialsFile))
+		}
+
+		client, err := storage.NewClient(context.Background(), opts...)
+		if err != nil {
+			log.Scoped("codenav", "").Error("failed to create storage client", log.Error(err))
+			return nil
+		}
+
+		return client.Bucket(bucketName)
+	}()
+
 	svc := newService(
 		store,
 		repoStore,
 		lsifStore,
 		deps.gsc,
+		rankingBucket,
 		nil, // written in circular fashion
 		policyMatcher,
 		locker,
@@ -171,6 +206,17 @@ func NewExpirationTasks(uploadSvc *Service, observationContext *observation.Cont
 				CommitBatchSize:        ConfigExpirationInst.CommitBatchSize,
 				PolicyBatchSize:        ConfigExpirationInst.PolicyBatchSize,
 			},
+			observationContext,
+		),
+	}
+}
+
+func NewGraphExporters(uploadSvc *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+	return []goroutine.BackgroundRoutine{
+		background.NewRankingGraphExporter(
+			uploadSvc,
+			ConfigExportInst.NumRankingRoutines,
+			ConfigExportInst.RankingInterval,
 			observationContext,
 		),
 	}

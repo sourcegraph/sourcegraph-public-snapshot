@@ -19,6 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+type UploadService interface {
+	SerializeRankingGraph(ctx context.Context, numRankingRoutines int) error
+	VacuumRankingGraph(ctx context.Context) error
+}
+
 type GitserverClient interface {
 	CommitGraph(ctx context.Context, repositoryID int, opts gitserver.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error)
 	RefDescriptions(ctx context.Context, repositoryID int, pointedAt ...string) (_ map[string][]gitdomain.RefDescription, err error)
