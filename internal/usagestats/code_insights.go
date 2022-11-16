@@ -9,28 +9,46 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type pingLoadFunc func(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics) error
+
 func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types.CodeInsightsUsageStatistics, error) {
 	stats := &types.CodeInsightsUsageStatistics{}
 
-	err := withWeeklyUsage(ctx, db, stats)
-	if err != nil {
-		return nil, errors.Wrap(err, "WeeklyUsage")
+	logger := log.Scoped("code insights pings", "pings for code insights")
+
+	loaders := make(map[string]pingLoadFunc)
+
+	loaders["weeklyUsage"] = weeklyUsage
+	loaders["weeklyMetricsByInsight"] = weeklyMetricsByInsight
+	loaders["weeklyFirstTimeCreators"] = weeklyFirstTimeCreators
+
+	for name, loadFunc := range loaders {
+		err := loadFunc(ctx, db, stats)
+		if err != nil {
+			logger.Error("insights pings loading error, skipping ping", log.String("name", name))
+		}
 	}
 
-	err = weeklyMetricsByInsight(ctx, db, stats)
-	if err != nil {
-		return nil, errors.Wrap(err, "weeklyMetricsByInsight")
-	}
+	// err := weeklyUsage(ctx, db, stats)
+	// if err != nil {
+	// 	return nil, errors.Wrap(err, "WeeklyUsage")
+	// }
 
-	err = weeklyFirstTimeCreators(ctx, db, stats)
-	if err != nil {
-		return nil, errors.Wrap(err, "weeklyFirstTimeCreators")
-	}
+	// err = weeklyMetricsByInsight(ctx, db, stats)
+	// if err != nil {
+	// 	return nil, errors.Wrap(err, "weeklyMetricsByInsight")
+	// }
+
+	// err = weeklyFirstTimeCreators(ctx, db, stats)
+	// if err != nil {
+	// 	return nil, errors.Wrap(err, "weeklyFirstTimeCreators")
+	// }
 
 	weeklyUsage, err := GetCreationViewUsage(ctx, db, timeNow)
 	if err != nil {
@@ -150,7 +168,7 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	return stats, nil
 }
 
-func withWeeklyUsage(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics) error {
+func weeklyUsage(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics) error {
 	const platformQuery = `
 	SELECT
 		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       			AS weekly_insights_page_views,
