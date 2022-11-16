@@ -145,7 +145,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			}
 			db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
 				Name:      database.SecurityEventOIDCLoginSucceeded,
-				URL:       r.URL.Path, // don't log OIDC query params
+				URL:       r.URL.Path, // Don't log OIDC query params
 				UserID:    uint32(result.User.ID),
 				Source:    "BACKEND",
 				Timestamp: time.Now(),
