@@ -117,7 +117,7 @@ func TestSearch(t *testing.T) {
 			gsClient.ResolveRevisionFunc.SetDefaultHook(tc.repoRevsMock)
 
 			sr := newSchemaResolver(db, gsClient)
-			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{}))
+			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&requestTracer{}))
 			if err != nil {
 				t.Fatal(err)
 			}
