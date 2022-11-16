@@ -67,7 +67,7 @@ const config = {
     require.resolve('core-js/stable'),
     require.resolve('regenerator-runtime/runtime'),
     require.resolve('@testing-library/jest-dom'),
-    path.join(__dirname, 'client/shared/dev/toBeAriaDisabled.ts'),
+    path.join(__dirname, 'client/shared/dev/jest-matchers/setup.ts'),
   ],
   globalSetup: path.join(__dirname, 'client/shared/dev/jestGlobalSetup.js'),
 }

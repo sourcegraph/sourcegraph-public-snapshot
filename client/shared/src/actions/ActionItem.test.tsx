@@ -185,8 +185,8 @@ describe('ActionItem', () => {
         // to result in the setState call.)
         userEvent.click(screen.getByRole('button'))
 
-        // we should wait for the button to be enabled again after got errors. Otherwise it will be flaky
-        await waitFor(() => expect(screen.getByLabelText('d')).toBeEnabled())
+        // we should wait for the button to be enabled again after got errors. Otherwise, it will be flaky
+        await waitFor(() => expect(screen.getByLabelText('d')).toBeAriaEnabled())
 
         expect(asFragment()).toMatchSnapshot()
     })

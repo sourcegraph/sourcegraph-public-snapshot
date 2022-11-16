@@ -32,6 +32,7 @@ declare module '*.yml' {
 declare global {
     namespace jest {
         interface Matchers<R, T> {
+            toBeAriaEnabled(): R
             toBeAriaDisabled(): R
         }
     }

@@ -63,6 +63,6 @@ describe('CodeMonitorForm', () => {
         fireEvent.click(getByTestId('form-action-toggle-email'))
         fireEvent.click(getByTestId('submit-action-email'))
 
-        expect(getByTestId('submit-monitor')).toBeEnabled()
+        expect(getByTestId('submit-monitor')).toBeAriaEnabled()
     })
 })

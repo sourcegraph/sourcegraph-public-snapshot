@@ -68,13 +68,13 @@ describe('SearchContextDropdown', () => {
 
     it('should be enabled if query is empty', () => {
         render(<SearchContextDropdown {...defaultProps} />)
-        expect(screen.getByTestId('dropdown-toggle')).toBeEnabled()
+        expect(screen.getByTestId('dropdown-toggle')).toBeAriaEnabled()
         expect(screen.getByTestId('dropdown-toggle')).toHaveAttribute('data-test-tooltip-content', '')
     })
 
     it('should be enabled if query does not contain context filter', () => {
         render(<SearchContextDropdown {...defaultProps} query="test (repo:foo or repo:python)" />)
-        expect(screen.getByTestId('dropdown-toggle')).toBeEnabled()
+        expect(screen.getByTestId('dropdown-toggle')).toBeAriaEnabled()
         expect(screen.getByTestId('dropdown-toggle')).toHaveAttribute('data-test-tooltip-content', '')
     })
 

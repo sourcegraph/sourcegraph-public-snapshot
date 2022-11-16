@@ -39,7 +39,7 @@ describe('FeedbackPrompt', () => {
             target: { value: sampleFeedback.feedback },
         })
 
-        expect(screen.getByText('Send')).toBeEnabled()
+        expect(screen.getByText('Send')).toBeAriaEnabled()
 
         userEvent.click(screen.getByText('Send'))
     }
@@ -53,7 +53,7 @@ describe('FeedbackPrompt', () => {
 
         userEvent.type(screen.getByLabelText('Send feedback to Sourcegraph'), sampleFeedback.feedback)
 
-        expect(screen.getByText('Send')).toBeEnabled()
+        expect(screen.getByText('Send')).toBeAriaEnabled()
     })
 
     test('should render submit success correctly', async () => {

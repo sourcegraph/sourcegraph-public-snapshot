@@ -15,6 +15,7 @@ declare var jsdom: import('jsdom').JSDOM
 declare global {
     namespace jest {
         interface Matchers<R, T> {
+            toBeAriaEnabled(): R
             toBeAriaDisabled(): R
         }
     }

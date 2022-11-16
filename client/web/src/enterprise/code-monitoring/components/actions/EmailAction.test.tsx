@@ -247,7 +247,7 @@ describe('EmailAction', () => {
 
             expect(getByTestId('send-test-email')).toHaveTextContent('Send test email')
 
-            expect(getByTestId('send-test-email')).toBeEnabled()
+            expect(getByTestId('send-test-email')).toBeAriaEnabled()
 
             expect(queryByTestId('send-test-email-again')).not.toBeInTheDocument()
             expect(queryByTestId('test-email-error')).toBeInTheDocument()

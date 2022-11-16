@@ -161,7 +161,7 @@ describe('ManageCodeMonitorPage', () => {
 
         userEvent.type(screen.getByTestId('name-input'), 'Test code monitor updated')
 
-        expect(submitButton).toBeEnabled()
+        expect(submitButton).toBeAriaEnabled()
     })
 
     test('Cancelling after changes have been made shows confirmation prompt', () => {

@@ -33,7 +33,7 @@ describe('WebhookAction', () => {
         expect(getByTestId('submit-action-webhook')).toBeAriaDisabled()
 
         userEvent.type(getByTestId('webhook-url'), 'https://example.com')
-        expect(getByTestId('submit-action-webhook')).toBeEnabled()
+        expect(getByTestId('submit-action-webhook')).toBeAriaEnabled()
 
         userEvent.click(getByTestId('include-results-toggle-webhook'))
 
@@ -67,13 +67,13 @@ describe('WebhookAction', () => {
         )
 
         userEvent.click(getByTestId('form-action-toggle-webhook'))
-        expect(getByTestId('submit-action-webhook')).toBeEnabled()
+        expect(getByTestId('submit-action-webhook')).toBeAriaEnabled()
 
         userEvent.clear(getByTestId('webhook-url'))
         expect(getByTestId('submit-action-webhook')).toBeAriaDisabled()
 
         userEvent.type(getByTestId('webhook-url'), 'https://example2.com')
-        expect(getByTestId('submit-action-webhook')).toBeEnabled()
+        expect(getByTestId('submit-action-webhook')).toBeAriaEnabled()
 
         userEvent.click(getByTestId('submit-action-webhook'))
 
@@ -283,7 +283,7 @@ describe('WebhookAction', () => {
 
             expect(getByTestId('send-test-webhook')).toHaveTextContent('Call webhook with test payload')
 
-            expect(getByTestId('send-test-webhook')).toBeEnabled()
+            expect(getByTestId('send-test-webhook')).toBeAriaEnabled()
 
             expect(queryByTestId('send-test-webhook-again')).not.toBeInTheDocument()
             expect(queryByTestId('test-webhook-error')).toBeInTheDocument()

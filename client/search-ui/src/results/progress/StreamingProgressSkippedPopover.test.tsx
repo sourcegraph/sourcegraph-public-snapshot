@@ -164,7 +164,7 @@ describe('StreamingProgressSkippedPopover', () => {
         const form = screen.getByTestId('popover-form')
         const searchAgainButton = within(form).getByRole('button')
         expect(searchAgainButton).toBeInTheDocument()
-        expect(searchAgainButton).toBeEnabled()
+        expect(searchAgainButton).toBeAriaEnabled()
     })
 
     it('should disable Search Again button if unchecking all items', () => {
@@ -214,7 +214,7 @@ describe('StreamingProgressSkippedPopover', () => {
 
         const form = screen.getByTestId('popover-form')
         const searchAgainButton = within(form).getByRole('button')
-        expect(searchAgainButton).toBeEnabled()
+        expect(searchAgainButton).toBeAriaEnabled()
 
         userEvent.click(checkboxes[1])
         expect(searchAgainButton).toBeAriaDisabled()

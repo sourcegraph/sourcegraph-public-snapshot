@@ -35,7 +35,7 @@ describe('SlackWebhookAction', () => {
         expect(getByTestId('submit-action-slack-webhook')).toBeAriaDisabled()
 
         userEvent.type(getByTestId('slack-webhook-url'), SLACK_URL)
-        expect(getByTestId('submit-action-slack-webhook')).toBeEnabled()
+        expect(getByTestId('submit-action-slack-webhook')).toBeAriaEnabled()
 
         userEvent.click(getByTestId('include-results-toggle-slack-webhook'))
 
@@ -69,13 +69,13 @@ describe('SlackWebhookAction', () => {
         )
 
         userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
-        expect(getByTestId('submit-action-slack-webhook')).toBeEnabled()
+        expect(getByTestId('submit-action-slack-webhook')).toBeAriaEnabled()
 
         userEvent.clear(getByTestId('slack-webhook-url'))
         expect(getByTestId('submit-action-slack-webhook')).toBeAriaDisabled()
 
         userEvent.type(getByTestId('slack-webhook-url'), SLACK_URL)
-        expect(getByTestId('submit-action-slack-webhook')).toBeEnabled()
+        expect(getByTestId('submit-action-slack-webhook')).toBeAriaEnabled()
 
         userEvent.click(getByTestId('submit-action-slack-webhook'))
 
@@ -285,7 +285,7 @@ describe('SlackWebhookAction', () => {
 
             expect(getByTestId('send-test-slack-webhook')).toHaveTextContent('Send test message')
 
-            expect(getByTestId('send-test-slack-webhook')).toBeEnabled()
+            expect(getByTestId('send-test-slack-webhook')).toBeAriaEnabled()
 
             expect(queryByTestId('send-test-slack-webhook-again')).not.toBeInTheDocument()
             expect(queryByTestId('test-slack-webhook-error')).toBeInTheDocument()

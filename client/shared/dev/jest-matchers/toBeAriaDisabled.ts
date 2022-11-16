@@ -9,7 +9,7 @@ export function toBeAriaDisabled(element: HTMLElement): { pass: boolean; message
         throw new Error('You should run this matcher over a valid html element')
     }
 
-    const pass = element.getAttribute('aria-disabled') === 'true'
+    const pass = element.getAttribute('aria-disabled') === 'true' || element.getAttribute('disabled') === 'true'
 
     const passMessage = `${matcherHint('.not.toBeAriaDisabled', 'received', '')}
         Expected element should not have an aria disabled state but received:
@@ -27,13 +27,3 @@ export function toBeAriaDisabled(element: HTMLElement): { pass: boolean; message
 }
 
 expect.extend({ toBeAriaDisabled })
-
-declare global {
-    // eslint-disable-next-line @typescript-eslint/no-namespace
-    namespace jest {
-        interface Matchers<R, T> {
-            toBeAriaDisabled(): R
-        }
-    }
-}
-
