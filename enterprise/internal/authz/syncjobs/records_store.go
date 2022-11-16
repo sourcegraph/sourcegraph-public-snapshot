@@ -44,7 +44,7 @@ func NewRecordsStore(logger log.Logger) *RecordsStore {
 
 func (r *RecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 	c.Watch(func() {
-		ttlMinutes := c.SiteConfig().AuthzSyncJobsLogsTTL
+		ttlMinutes := c.SiteConfig().AuthzSyncJobsRecordsTTL
 		if ttlMinutes == 0 {
 			ttlMinutes = defaultSyncJobsRecordsTTLMinutes
 		}

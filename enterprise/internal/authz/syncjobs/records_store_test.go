@@ -29,7 +29,7 @@ func TestSyncJobsRecordsStoreWatch(t *testing.T) {
 
 	cw := confWatcher{
 		conf: schema.SiteConfiguration{
-			AuthzSyncJobsLogsTTL: 5,
+			AuthzSyncJobsRecordsTTL: 5,
 		},
 	}
 
