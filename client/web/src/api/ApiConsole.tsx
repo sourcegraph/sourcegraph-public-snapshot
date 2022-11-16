@@ -7,10 +7,12 @@ import { catchError, debounceTime } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { LoadingSpinner, Button, Alert, Link } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+
+import { ApiConsoleToolbar } from './ApiConsoleToolbar'
 
 import styles from './ApiConsole.module.scss'
 
@@ -63,7 +65,6 @@ export class ApiConsole extends React.PureComponent<Props, State> {
 
     private updates = new Subject<Parameters>()
     private subscriptions = new Subscription()
-    private graphiQLRef: _graphiqlModule.default | null = null
 
     constructor(props: Props) {
         super(props)
@@ -163,37 +164,9 @@ export class ApiConsole extends React.PureComponent<Props, State> {
                     fetcher={this.fetcher}
                     defaultQuery={defaultQuery}
                     editorTheme="sourcegraph"
-                    ref={this.setGraphiQLRef}
                 >
                     <GraphiQL.Logo>GraphQL API console</GraphiQL.Logo>
-                    <GraphiQL.Toolbar>
-                        <div className="d-flex align-items-center">
-                            <Button
-                                variant="secondary"
-                                title="Prettify Query (Shift-Ctrl-P)"
-                                onClick={this.handlePrettifyQuery}
-                                className={styles.toolbarButton}
-                            >
-                                Prettify
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                title="Show History"
-                                onClick={this.handleToggleHistory}
-                                className={styles.toolbarButton}
-                            >
-                                History
-                            </Button>
-                            <Button to="/help/api/graphql" variant="link" as={Link}>
-                                Docs
-                            </Button>
-                            <Alert variant="warning" className="py-1 mb-0 ml-2 text-nowrap">
-                                <small>
-                                    The API console uses <strong>real production data.</strong>
-                                </small>
-                            </Alert>
-                        </div>
-                    </GraphiQL.Toolbar>
+                    <ApiConsoleToolbar />
                 </GraphiQL>
             </>
         )
@@ -202,7 +175,7 @@ export class ApiConsole extends React.PureComponent<Props, State> {
     // Update state.parameters when query/variables/operation name are changed
     // so that we can update the browser URL.
 
-    private onEditQuery = (newQuery: string): void =>
+    private onEditQuery = (newQuery?: string): void =>
         this.updateStateParameters(parameters => ({ ...parameters, query: newQuery }))
 
     private onEditVariables = (newVariables: string): void =>
@@ -218,28 +191,7 @@ export class ApiConsole extends React.PureComponent<Props, State> {
         )
     }
 
-    // Forward GraphiQL prettify/history buttons directly to their original
-    // implementation. We have to do this because it is impossible to inject
-    // children into the GraphiQL toolbar unless you completely specify your
-    // own.
-
-    private setGraphiQLRef = (reference: _graphiqlModule.default | null): void => {
-        this.graphiQLRef = reference
-    }
-    private handlePrettifyQuery = (): void => {
-        if (!this.graphiQLRef) {
-            return
-        }
-        this.graphiQLRef.handlePrettifyQuery()
-    }
-    private handleToggleHistory = (): void => {
-        if (!this.graphiQLRef) {
-            return
-        }
-        this.graphiQLRef.handleToggleHistory()
-    }
-
-    private fetcher = async (graphQLParameters: _graphiqlModule.GraphQLParams): Promise<string> => {
+    private fetcher = async (graphQLParameters: _graphiqlModule.FetcherParams): Promise<string> => {
         const headers = new Headers({
             'x-requested-with': 'Sourcegraph GraphQL Explorer',
         })

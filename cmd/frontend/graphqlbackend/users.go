@@ -31,7 +31,9 @@ func (r *schemaResolver) Users(ctx context.Context, args *usersArgs) (*userConne
 		return nil, err
 	}
 
-	var opt database.UsersListOptions
+	opt := database.UsersListOptions{
+		ExcludeSourcegraphOperators: true,
+	}
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}

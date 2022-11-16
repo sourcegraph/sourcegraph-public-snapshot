@@ -52,6 +52,17 @@ Sourcegraph's main features are:
 
 You can also try [Sourcegraph.com](https://sourcegraph.com/search), which is a public instance of Sourcegraph for use on open-source code only.
 
+## How is Sourcegraph licensed? 
+
+Sourcegraph offers two versions of its product: Sourcegraph Open Source (Sourcegraph OSS) and Sourcegraph Enterprise. 
+
+Sourcegraph Enterprise is Sourcegraph’s primary offering and includes all code intelligence platform features. Sourcegraph Enterprise is the best solution for enterprises who want to use Sourcegraph with their organization’s code. Sourcegraph OSS only includes universal code search functionality. 
+
+For more details, see the [Sourcegraph OSS vs. Sourcegraph Enterprise docs](./oss-enterprise.md).
+
+## How is Sourcegraph different than GitHub code search? 
+- [See how GitHub code search compares to Sourcegraph](./github-vs-sourcegraph.md)
+
 ---
 
 ## Code search
@@ -136,4 +147,4 @@ Sourcegraph allows you to get code navigation and code search on code files and 
 Sourcegraph’s editor integrations allow you search and navigate across all of your repositories without ever leaving your IDE or checking them out locally. Learn more about how to set them up [here](../integration/editor.md).
 
 ### Browser extension
-Our browser extension add code navigation within your code hosts (GitHub, Gitlab, Bitbucket, and Phabricator) directly via Chrome, Safari, and Firefox browsers. Learn more about how to set up the browser extension [here](../integration/browser_extension/index.md).
+Our browser extension add code navigation within your code hosts (GitHub, GitLab, Bitbucket, and Phabricator) directly via Chrome, Safari, and Firefox browsers. Learn more about how to set up the browser extension [here](../integration/browser_extension/index.md).

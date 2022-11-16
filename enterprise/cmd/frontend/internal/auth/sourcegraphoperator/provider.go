@@ -5,21 +5,24 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const providerType = "sourcegraph-operator"
+// ProviderType is the unique identifier of the Sourcegraph Operator
+// authentication provider.
+const ProviderType = "sourcegraph-operator"
 
-// Provider is an implementation of providers.Provider for the Sourcegraph
+// provider is an implementation of providers.Provider for the Sourcegraph
 // Operator authentication.
 type provider struct {
-	config schema.SourcegraphOperatorAuthProvider
+	config cloud.SchemaAuthProviderSourcegraphOperator
 	*openidconnect.Provider
 }
 
-// newProvider creates and returns a new Sourcegraph Operator authentication
+// NewProvider creates and returns a new Sourcegraph Operator authentication
 // provider using the given config.
-func newProvider(config schema.SourcegraphOperatorAuthProvider) providers.Provider {
+func NewProvider(config cloud.SchemaAuthProviderSourcegraphOperator) providers.Provider {
 	allowSignUp := true
 	return &provider{
 		config: config,
@@ -28,11 +31,11 @@ func newProvider(config schema.SourcegraphOperatorAuthProvider) providers.Provid
 				AllowSignup:        &allowSignUp,
 				ClientID:           config.ClientID,
 				ClientSecret:       config.ClientSecret,
-				ConfigID:           providerType,
+				ConfigID:           ProviderType,
 				DisplayName:        "Sourcegraph Operators",
 				Issuer:             config.Issuer,
 				RequireEmailDomain: "sourcegraph.com",
-				Type:               providerType,
+				Type:               ProviderType,
 			},
 			authPrefix,
 		).(*openidconnect.Provider),
@@ -41,14 +44,27 @@ func newProvider(config schema.SourcegraphOperatorAuthProvider) providers.Provid
 
 // Config implements providers.Provider.
 func (p *provider) Config() schema.AuthProviders {
+	// NOTE: Intentionally omitting rest of the information unless absolutely
+	// necessary because this provider is configured at the infrastructure level, and
+	// those fields may expose sensitive information should not be visible to
+	// non-Sourcegraph employees.
 	return schema.AuthProviders{
-		SourcegraphOperator: &p.config,
+		Openidconnect: &schema.OpenIDConnectAuthProvider{
+			ConfigID: ProviderType,
+		},
 	}
 }
 
-func (p *provider) lifecycleDuration() time.Duration {
-	if p.config.LifecycleDuration <= 0 {
+// LifecycleDuration returns the converted lifecycle duration from given minutes.
+// It returns the default duration (60 minutes) if the given minutes is
+// non-positive.
+func LifecycleDuration(minutes int) time.Duration {
+	if minutes <= 0 {
 		return 60 * time.Minute
 	}
-	return time.Duration(p.config.LifecycleDuration) * time.Minute
+	return time.Duration(minutes) * time.Minute
+}
+
+func (p *provider) lifecycleDuration() time.Duration {
+	return LifecycleDuration(p.config.LifecycleDuration)
 }

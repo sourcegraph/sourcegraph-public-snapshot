@@ -4,20 +4,20 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetry"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/worker/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
 	workerinsights "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/permissions"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetry"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -56,15 +56,18 @@ func main() {
 		"export-usage-telemetry":        telemetry.NewTelemetryJob(),
 		"webhook-build-job":             repos.NewWebhookBuildJob(),
 
+		"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
 		"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
 		"codeintel-autoindexing-janitor":              codeintel.NewAutoindexingJanitorJob(),
 		"codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),
-		"codeintel-codenav-ranking":                   codeintel.NewRankingGraphSerializerJob(),
 		"codeintel-commitgraph-updater":               codeintel.NewCommitGraphUpdaterJob(),
 		"codeintel-metrics-reporter":                  codeintel.NewMetricsReporterJob(),
 		"codeintel-upload-backfiller":                 codeintel.NewUploadBackfillerJob(),
 		"codeintel-upload-expirer":                    codeintel.NewUploadExpirerJob(),
 		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
+		"codeintel-upload-graph-exporter":             codeintel.NewGraphExporterJob(),
+
+		"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
 
 		// Note: experimental (not documented)
 		"codeintel-ranking-sourcer": codeintel.NewRankingSourcerJob(),

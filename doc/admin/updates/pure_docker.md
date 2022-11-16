@@ -14,7 +14,7 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 _Upgrade notes for the next version will appear here._
 
-## v4.0 ➔ v4.1.2
+## v4.0 ➔ v4.1.3
 
 As a template, perform the same actions as the following diffs in your own deployment:
 

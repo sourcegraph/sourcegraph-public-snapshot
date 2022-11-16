@@ -6,11 +6,10 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -35,15 +34,11 @@ func (j *cratesSyncerJob) Routines(startupCtx context.Context, logger log.Logger
 		return nil, err
 	}
 
-	gitserverClient := gitserver.New(db, observation.ScopedContext("codeintel", "cratesyncer", "gitserver"))
-
-	services, err := codeintel.InitServices()
-	if err != nil {
-		return nil, err
-	}
+	gitserverClient := gitserver.NewClient(db)
+	dependenciesService := dependencies.GetService(db)
 
 	return dependencies.CrateSyncerJob(
-		services.DependenciesService,
+		dependenciesService,
 		gitserverClient,
 		db.ExternalServices(),
 		observation.ContextWithLogger(logger),

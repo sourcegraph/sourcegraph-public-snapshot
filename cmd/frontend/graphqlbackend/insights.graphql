@@ -172,6 +172,31 @@ type InsightSeriesStatus {
     Indicates if the series is currently loading additional data
     """
     isLoadingData: Boolean
+
+    """
+    Data points that are flagged terminally incomplete for this series.
+    """
+    incompleteDatapoints: [IncompleteDatapointAlert!]!
+}
+
+"""
+Represents a terminally incomplete data point at a specific time, and optionally for a specific repository.
+"""
+interface IncompleteDatapointAlert {
+    """
+    The data point that is incomplete.
+    """
+    time: DateTime!
+}
+
+"""
+Represents a terminally incomplete data point at a specific time, and optionally for a specific repository.
+"""
+type TimeoutDatapointAlert implements IncompleteDatapointAlert {
+    """
+    The data point that is incomplete.
+    """
+    time: DateTime!
 }
 
 extend type Query {
@@ -446,6 +471,21 @@ extend type Query {
     Retrieve information about queued insights series and their breakout by status. Restricted to admins only.
     """
     insightSeriesQueryStatus: [InsightSeriesQueryStatus!]!
+
+    """
+    Retrieve information about an insight view and its status. Restricted to admins only.
+    """
+    insightViewDebug(id: ID!): InsightViewDebug
+}
+
+"""
+Debugging information related to an InsightView
+"""
+type InsightViewDebug {
+    """
+    A JSON dump of debug information for series on the insight view
+    """
+    raw: [String!]!
 }
 
 """

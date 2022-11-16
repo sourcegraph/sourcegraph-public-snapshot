@@ -13,6 +13,7 @@ import {
     MapMode,
     Compartment,
     Range,
+    EditorState,
 } from '@codemirror/state'
 import {
     EditorView,
@@ -28,6 +29,7 @@ import {
 import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
 import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
@@ -40,20 +42,53 @@ import { Node } from '@sourcegraph/shared/src/search/query/parser'
 import { Filter, KeywordKind } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
-import { createDefaultSuggestions, singleLine } from './extensions'
+import { createDefaultSuggestions, singleLine } from './codemirror'
+import { HISTORY_USER_EVENT, searchHistory as searchHistoryFacet } from './codemirror/history'
 import {
     decoratedTokens,
     queryTokens,
     parseInputAsQuery,
     setQueryParseOptions,
     parsedQuery,
-} from './extensions/parsedQuery'
+} from './codemirror/parsedQuery'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
+import { QueryInputProps } from './QueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
+
+export interface CodeMirrorQueryInputFacadeProps extends QueryInputProps {
+    /**
+     * Used to be compatible with MonacoQueryInput's interface, but we only
+     * support the `readOnly` flag.
+     */
+    editorOptions?: {
+        readOnly?: boolean
+    }
+
+    /**
+     * If set suggestions can be applied by pressing enter. In the past we
+     * didn't enable this behavior because it interfered with loading
+     * suggestions asynchronously, but CodeMirror allows us to disable selecting
+     * a suggestion by default. This is currently an experimental feature.
+     */
+    applySuggestionsOnEnter?: boolean
+
+    /**
+     * When provided the query input will allow the user to "cycle" through the
+     * serach history by pressing arrow up/down when the input is empty.
+     */
+    searchHistory?: RecentSearch[]
+
+    /**
+     * Callback to notify the parent component when the user cycles through the
+     * search history.
+     */
+    onSelectSearchFromHistory?: () => void
+}
 
 /**
  * This component provides a drop-in replacement for MonacoQueryInput. It
@@ -65,7 +100,9 @@ import styles from './CodeMirrorQueryInput.module.scss'
  * - Not supplying 'onSubmit' and setting 'preventNewLine' to false will result
  * in a new line being added when Enter is pressed
  */
-export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChildren<MonacoQueryInputProps>> = ({
+export const CodeMirrorMonacoFacade: React.FunctionComponent<
+    React.PropsWithChildren<CodeMirrorQueryInputFacadeProps>
+> = ({
     patternType,
     selectedSearchContextSpec,
     queryState,
@@ -84,19 +121,15 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     placeholder,
     editorOptions,
     ariaLabel = 'Search query',
+
     // CodeMirror implementation specific options
     applySuggestionsOnEnter = false,
-    suggestionSources,
-    defaultSuggestionsShowWhenEmpty = true,
-    showSuggestionsOnFocus = false,
+    searchHistory,
+    onSelectSearchFromHistory,
     // Used by the VSCode extension (which doesn't use this component directly,
     // but added for future compatibility)
     fetchStreamSuggestions = defaultFetchStreamSuggestions,
     onCompletionItemSelected,
-    // Not supported:
-    // editorClassName: This only seems to be used by MonacoField to position
-    // placeholder text properly. CodeMirror has built-in support for
-    // placeholders.
 }) => {
     // We use both, state and a ref, for the editor instance because we need to
     // re-run some hooks when the editor changes but we also need a stable
@@ -123,18 +156,8 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                 globbing,
                 isSourcegraphDotCom,
                 applyOnEnter: applySuggestionsOnEnter,
-                additionalSources: suggestionSources,
-                showWhenEmpty: defaultSuggestionsShowWhenEmpty,
             }),
-        [
-            selectedSearchContextSpec,
-            globbing,
-            isSourcegraphDotCom,
-            fetchStreamSuggestions,
-            applySuggestionsOnEnter,
-            suggestionSources,
-            defaultSuggestionsShowWhenEmpty,
-        ]
+        [selectedSearchContextSpec, globbing, isSourcegraphDotCom, fetchStreamSuggestions, applySuggestionsOnEnter]
     )
 
     const extensions = useMemo(() => {
@@ -155,51 +178,42 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         }
 
         if (placeholder) {
-            extensions.push(placeholderExtension(placeholder))
+            // Passing a DOM element instead of a string makes the CodeMirror
+            // extension set aria-hidden="true" on the placeholder, which is
+            // what we want.
+            const element = document.createElement('span')
+            element.append(document.createTextNode(placeholder))
+            extensions.push(placeholderExtension(element))
         }
 
         if (editorOptions?.readOnly) {
             extensions.push(EditorView.editable.of(false))
         }
 
-        if (showSuggestionsOnFocus) {
-            // This is currently used when search history suggestions are
-            // enabled. It looks like CodeMirror doesn't automatically trigger
-            // the autocompletion again when the cursor is at the start of the
-            // input after deleting some characters. This update listener makes
-            // sure that. Since `showSuggestionsOnFocus` is currently only
-            // enabled when we show search history suggestions, we use a single
-            // listener to handle that case too.
-            const TIMEOUT = 1000
-            let timer: number | null = null
-            const clear = (): void => {
-                if (timer !== null) {
-                    clearTimeout(timer)
-                }
-                timer = null
-            }
+        if (searchHistory) {
+            extensions.push(searchHistoryFacet.of(searchHistory))
+        }
 
+        if (onSelectSearchFromHistory) {
             extensions.push(
-                EditorView.updateListener.of(update => {
-                    if (update.view.state.doc.length === 0) {
-                        if (update.focusChanged && update.view.hasFocus) {
-                            startCompletion(update.view)
-                        } else if (update.docChanged) {
-                            timer = window.setTimeout(() => {
-                                timer = null
-                                if (update.view.hasFocus) {
-                                    startCompletion(update.view)
-                                }
-                            }, TIMEOUT)
-                        }
-                    } else {
-                        clear()
+                EditorState.transactionExtender.of(transaction => {
+                    if (transaction.isUserEvent(HISTORY_USER_EVENT)) {
+                        onSelectSearchFromHistory()
                     }
+                    return null
                 })
             )
         }
         return extensions
-    }, [ariaLabel, autocompletion, placeholder, preventNewLine, editorOptions, showSuggestionsOnFocus])
+    }, [
+        ariaLabel,
+        autocompletion,
+        placeholder,
+        preventNewLine,
+        editorOptions,
+        searchHistory,
+        onSelectSearchFromHistory,
+    ])
 
     // Update callback functions via effects. This avoids reconfiguring the
     // whole editor when a callback changes.
@@ -373,11 +387,13 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
         }, [editor, externalExtensions, extensions])
 
         return (
-            <div
-                ref={setContainer}
-                className={classNames(styles.root, className, 'test-query-input', 'test-editor')}
-                data-editor="codemirror6"
-            />
+            <TraceSpanProvider name="CodeMirrorQueryInput">
+                <div
+                    ref={setContainer}
+                    className={classNames(styles.root, className, 'test-query-input', 'test-editor')}
+                    data-editor="codemirror6"
+                />
+            </TraceSpanProvider>
         )
     }
 )

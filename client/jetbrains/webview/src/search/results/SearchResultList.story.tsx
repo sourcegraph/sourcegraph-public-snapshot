@@ -63,6 +63,8 @@ export const JetBrainsSearchResultListStory: Story = () => {
             message: 'Commit message',
             authorName: 'Test User',
             authorDate: AUTHOR_DATE,
+            committerName: 'Test User',
+            committerDate: AUTHOR_DATE,
             repoStars: 3,
             content: '',
             // Array of [line, character, length] triplets

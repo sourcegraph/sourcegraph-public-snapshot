@@ -3,6 +3,8 @@ package executorqueue
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -21,11 +23,11 @@ func Init(
 	enterpriseServices *enterprise.Services,
 	observationContext *observation.Context,
 ) error {
-	autoIndexingService := enterpriseServices.CodeIntelAutoIndexingService
 	codeintelUploadHandler := enterpriseServices.NewCodeIntelUploadHandler(false)
 	batchesWorkspaceFileGetHandler := enterpriseServices.BatchesChangesFileGetHandler
 	batchesWorkspaceFileExistsHandler := enterpriseServices.BatchesChangesFileGetHandler
 	accessToken := func() string { return conf.SiteConfig().ExecutorsAccessToken }
+	logger := log.Scoped("executorqueue", "")
 
 	// Register queues. If this set changes, be sure to also update the list of valid
 	// queue names in ./metrics/queue_allocation.go, and register a metrics exporter
@@ -33,11 +35,12 @@ func Init(
 	//
 	// Note: In order register a new queue type please change the validate() check code in enterprise/cmd/executor/config.go
 	queueOptions := []handler.QueueOptions{
-		codeintelqueue.QueueOptions(autoIndexingService, accessToken, observationContext),
+		codeintelqueue.QueueOptions(db, accessToken, observationContext),
 		batches.QueueOptions(db, accessToken, observationContext),
 	}
 
 	queueHandler, err := newExecutorQueueHandler(
+		logger,
 		db,
 		queueOptions,
 		accessToken,

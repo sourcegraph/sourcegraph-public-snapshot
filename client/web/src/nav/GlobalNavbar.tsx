@@ -11,6 +11,7 @@ import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
 import { SearchContextInputProps } from '@sourcegraph/search'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -26,9 +27,7 @@ import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { getFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
-import { renderShortcutKey } from '../components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { WebCommandListPopoverButton } from '../components/shared'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
@@ -75,6 +74,7 @@ export interface GlobalNavbarProps
     enableLegacyExtensions?: boolean
     branding?: typeof window.context.branding
     showKeyboardShortcutsHelp: () => void
+    showFeedbackModal: () => void
 
     setFuzzyFinderIsVisible: React.Dispatch<SetStateAction<boolean>>
 }
@@ -119,24 +119,9 @@ function FuzzyFinderNavItem(setFuzzyFinderVisible: React.Dispatch<SetStateAction
                 size="sm"
             >
                 <span aria-hidden={true} aria-label={isMacPlatform() ? 'command-k' : 'ctrl-k'}>
-                    {isMacPlatform() ? renderShortcutKey('Mod') + 'K' : [renderShortcutKey('Mod'), 'K'].join('+')}
+                    {shortcutDisplayName('Mod+K')}
                 </span>
             </Button>
-        </NavAction>
-    )
-}
-const AnalyticsNavItem: React.FunctionComponent = () => {
-    const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
-
-    if (isAdminAnalyticsDisabled) {
-        return null
-    }
-
-    return (
-        <NavAction className="d-none d-sm-flex">
-            <Link to="/site-admin" className={styles.link}>
-                Analytics
-            </Link>
         </NavAction>
     )
 }
@@ -155,6 +140,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     notebooksEnabled,
     extensionsController,
     enableLegacyExtensions,
+    showFeedbackModal,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -270,7 +256,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <>
                             <NavAction>
                                 <Link className={styles.link} to="https://about.sourcegraph.com">
-                                    About <span className="d-none d-sm-inline">Sourcegraph</span>
+                                    About
                                 </Link>
                             </NavAction>
 
@@ -285,26 +271,38 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     </Link>
                                 </NavAction>
                             )}
+
+                            <NavAction>
+                                <FeedbackPrompt
+                                    onSubmit={handleSubmitFeedback}
+                                    productResearchEnabled={true}
+                                    authenticatedUser={props.authenticatedUser}
+                                >
+                                    <PopoverTrigger
+                                        as={Button}
+                                        aria-label="Feedback"
+                                        variant="secondary"
+                                        outline={true}
+                                        size="sm"
+                                        className={styles.feedbackTrigger}
+                                    >
+                                        <span>Feedback</span>
+                                    </PopoverTrigger>
+                                </FeedbackPrompt>
+                            </NavAction>
                         </>
                     )}
-                    {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
-                    {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
-                    {props.authenticatedUser && (
-                        <NavAction>
-                            <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
-                                <PopoverTrigger
-                                    as={Button}
-                                    aria-label="Feedback"
-                                    variant="secondary"
-                                    outline={true}
-                                    size="sm"
-                                    className={styles.feedbackTrigger}
-                                >
-                                    <span>Feedback</span>
-                                </PopoverTrigger>
-                            </FeedbackPrompt>
-                        </NavAction>
+                    {props.authenticatedUser && isSourcegraphDotCom && (
+                        <ButtonLink
+                            className={styles.signUp}
+                            to="https://signup.sourcegraph.com"
+                            size="sm"
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                        >
+                            Try Sourcegraph Cloud
+                        </ButtonLink>
                     )}
+                    {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser && extensionsController !== null && enableLegacyExtensions && (
                         <NavAction>
                             <WebCommandListPopoverButton
@@ -364,24 +362,23 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                         props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                                     'browser-extension'
                                 }
+                                showFeedbackModal={showFeedbackModal}
                             />
                         </NavAction>
                     )}
                 </NavActions>
             </NavBar>
             {showSearchBox && (
-                <div className="w-100 px-3 pt-2">
-                    <div className="pb-2 border-bottom">
-                        <SearchNavbarItem
-                            {...props}
-                            location={location}
-                            history={history}
-                            isLightTheme={isLightTheme}
-                            isSourcegraphDotCom={isSourcegraphDotCom}
-                            searchContextsEnabled={searchContextsEnabled}
-                            isRepositoryRelatedPage={isRepositoryRelatedPage}
-                        />
-                    </div>
+                <div className="w-100 px-3 py-2 border-bottom">
+                    <SearchNavbarItem
+                        {...props}
+                        location={location}
+                        history={history}
+                        isLightTheme={isLightTheme}
+                        isSourcegraphDotCom={isSourcegraphDotCom}
+                        searchContextsEnabled={searchContextsEnabled}
+                        isRepositoryRelatedPage={isRepositoryRelatedPage}
+                    />
                 </div>
             )}
         </>

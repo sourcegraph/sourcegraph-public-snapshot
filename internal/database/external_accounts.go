@@ -7,12 +7,11 @@ import (
 	"strconv"
 	"strings"
 
+	gh "github.com/google/go-github/v41/github"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/log"
 
-	gh "github.com/google/go-github/v41/github"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -260,7 +259,7 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 	}
 	defer func() { err = tx.Done(err) }()
 
-	createdUser, err := UsersWith(s.logger, tx).CreateInTransaction(ctx, newUser)
+	createdUser, err := UsersWith(s.logger, tx).CreateInTransaction(ctx, newUser, &spec)
 	if err != nil {
 		return 0, err
 	}

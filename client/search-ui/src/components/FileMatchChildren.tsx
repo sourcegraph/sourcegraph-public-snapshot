@@ -16,6 +16,7 @@ import {
 } from '@sourcegraph/common'
 import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/search'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -27,7 +28,7 @@ import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-crea
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { useFocusOnLoadedMore } from '@sourcegraph/wildcard'
 
-import { CodeExcerpt, FetchFileParameters, onClickCodeExcerptHref } from './CodeExcerpt'
+import { CodeExcerpt, onClickCodeExcerptHref } from './CodeExcerpt'
 import { LastSyncedIcon } from './LastSyncedIcon'
 
 import styles from './FileMatchChildren.module.scss'

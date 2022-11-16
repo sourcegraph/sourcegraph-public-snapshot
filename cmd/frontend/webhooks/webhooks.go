@@ -76,7 +76,7 @@ type WebhookHandler func(ctx context.Context, db database.DB, codeHostURN extsvc
 
 func webhookHandler(logger log.Logger, db database.DB, wh *WebhookRouter) http.HandlerFunc {
 	logger = logger.Scoped("webhookHandler", "handler used to route webhooks")
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		uuidString := mux.Vars(r)["webhook_uuid"]
 		if uuidString == "" {
 			http.Error(w, "missing uuid", http.StatusBadRequest)
@@ -122,7 +122,7 @@ func webhookHandler(logger log.Logger, db database.DB, wh *WebhookRouter) http.H
 		}
 
 		http.Error(w, fmt.Sprintf("webhooks not implemented for code host kind %q", webhook.CodeHostKind), http.StatusNotImplemented)
-	})
+	}
 }
 
 // Dispatch accepts an event for a particular event type and dispatches it
@@ -131,6 +131,9 @@ func (h *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHost
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}
+	if _, ok := h.handlers[codeHostKind][eventType]; !ok {
+		return eventTypeNotFoundError{eventType: eventType, codeHostKind: codeHostKind}
+	}
 	for _, handler := range h.handlers[codeHostKind][eventType] {
 		// capture the handler variable within this loop
 		handler := handler
@@ -139,4 +142,13 @@ func (h *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHost
 		})
 	}
 	return g.Wait()
+}
+
+type eventTypeNotFoundError struct {
+	eventType    string
+	codeHostKind string
+}
+
+func (e eventTypeNotFoundError) Error() string {
+	return fmt.Sprintf("event type %s not supported for code host kind %s", e.eventType, e.codeHostKind)
 }

@@ -196,10 +196,17 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 
 		if m.Code >= minCode || m.Duration >= minDuration {
 			fields := make([]log.Field, 0, 10)
+
+			var url string
+			if strings.Contains(r.URL.Path, ".auth") {
+				url = r.URL.Path // omit sensitive query params
+			} else {
+				url = r.URL.String()
+			}
 			fields = append(fields,
 				log.String("route_name", fullRouteTitle),
 				log.String("method", r.Method),
-				log.String("url", truncate(r.URL.String(), 100)),
+				log.String("url", truncate(url, 100)),
 				log.Int("code", m.Code),
 				log.Duration("duration", m.Duration),
 				log.Bool("shouldTrace", policy.ShouldTrace(ctx)),

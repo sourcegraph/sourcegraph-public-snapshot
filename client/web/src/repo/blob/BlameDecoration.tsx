@@ -1,9 +1,11 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
+import { History } from 'history'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import { BehaviorSubject } from 'rxjs'
 
+import { createLinkClickHandler } from '@sourcegraph/shared/src/components/utils/linkClickHandler'
 import {
     createRectangle,
     Icon,
@@ -17,6 +19,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
+import { replaceRevisionInURL } from '../../util/url'
 import { BlameHunk } from '../blame/useBlameHunks'
 
 import styles from './BlameDecoration.module.scss'
@@ -104,9 +107,10 @@ const usePopover = ({
 export const BlameDecoration: React.FunctionComponent<{
     line: number // 1-based line number
     blameHunk?: BlameHunk
+    history: History
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
-}> = ({ line, blameHunk, onSelect, onDeselect }) => {
+}> = ({ line, blameHunk, history, onSelect, onDeselect }) => {
     const id = line?.toString() || ''
     const onOpen = useCallback(() => {
         onSelect?.(line)
@@ -124,6 +128,9 @@ export const BlameDecoration: React.FunctionComponent<{
         close,
         open,
     ])
+
+    // Prevent hitting the backend (full page reloads) for links that stay inside the app.
+    const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(history), [history])
 
     if (!blameHunk) {
         return null
@@ -164,7 +171,7 @@ export const BlameDecoration: React.FunctionComponent<{
                         {blameHunk.displayInfo.timestampString}
                     </div>
                     <hr className={classNames(styles.separator, 'm-0')} />
-                    <div className={classNames('px-3 d-flex align-items-center', styles.body)}>
+                    <div className={classNames('d-flex align-items-center', styles.block, styles.body)}>
                         <Icon
                             aria-hidden={true}
                             as={SourceCommitIcon}
@@ -180,6 +187,23 @@ export const BlameDecoration: React.FunctionComponent<{
                             {blameHunk.message}
                         </Link>
                     </div>
+                    {blameHunk.commit.parents.length > 0 && (
+                        <>
+                            <hr className={classNames(styles.separator, 'm-0')} />
+                            <div className={classNames('px-3', styles.block)}>
+                                <Link
+                                    to={
+                                        window.location.origin +
+                                        replaceRevisionInURL(window.location.href, blameHunk.commit.parents[0].oid)
+                                    }
+                                    onClick={handleParentCommitLinkClick}
+                                    className={styles.footerLink}
+                                >
+                                    View blame prior to this change
+                                </Link>
+                            </div>
+                        </>
+                    )}
                 </div>
             </PopoverContent>
         </Popover>

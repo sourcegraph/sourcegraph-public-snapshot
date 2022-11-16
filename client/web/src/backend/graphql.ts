@@ -4,18 +4,20 @@ import { Observable } from 'rxjs'
 import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 
-const getHeaders = (): Headers => {
-    const headers = new Headers({
+const getHeaders = (): { [header: string]: string } => {
+    const headers: { [header: string]: string } = {
         ...window?.context?.xhrHeaders,
         Accept: 'application/json',
         'Content-Type': 'application/json',
-    })
-    const searchParameters = new URLSearchParams(window.location.search)
-    if (searchParameters.get('trace') === '1') {
-        headers.set('X-Sourcegraph-Should-Trace', 'true')
     }
-    for (const feature of searchParameters.getAll('feat')) {
-        headers.append('X-Sourcegraph-Override-Feature', feature)
+    const parameters = new URLSearchParams(window.location.search)
+    const trace = parameters.get('trace')
+    if (trace) {
+        headers['X-Sourcegraph-Should-Trace'] = trace
+    }
+    const feat = parameters.getAll('feat')
+    if (feat.length) {
+        headers['X-Sourcegraph-Override-Feature'] = feat.join(',')
     }
     return headers
 }

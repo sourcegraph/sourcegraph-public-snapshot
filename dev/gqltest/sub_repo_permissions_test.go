@@ -22,12 +22,14 @@ const (
 func TestSubRepoPermissionsPerforce(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	createPerforceExternalService(t)
+	createPerforceExternalService(t, false)
 	userClient, repoName := createTestUserAndWaitForRepo(t)
 
 	// Test cases
 
+	// flaky test
 	t.Run("can read README.md", func(t *testing.T) {
+		t.Skip("skipping because flaky")
 		blob, err := userClient.GitBlob(repoName, "master", "README.md")
 		if err != nil {
 			t.Fatal(err)
@@ -55,7 +57,9 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 		}
 	})
 
+	// flaky test
 	t.Run("file list excludes excluded files", func(t *testing.T) {
+		t.Skip("skipping because flaky")
 		files, err := userClient.GitListFilenames(repoName, "master")
 		if err != nil {
 			t.Fatal(err)
@@ -77,7 +81,7 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 func TestSubRepoPermissionsSearch(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	createPerforceExternalService(t)
+	createPerforceExternalService(t, false)
 	userClient, _ := createTestUserAndWaitForRepo(t)
 
 	err := client.WaitForReposToBeIndexed(perforceRepoName)

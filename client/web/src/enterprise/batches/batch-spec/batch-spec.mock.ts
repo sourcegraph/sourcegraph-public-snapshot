@@ -285,16 +285,18 @@ export const mockWorkspace = (
                 __typename: 'ExecutionLogEntry',
             },
         ],
-        srcExec: {
-            command: ['src', 'batch', 'exec', '-f', 'input.json'],
-            durationMilliseconds: null,
-            exitCode: null,
-            key: 'step.src.batch-exec',
-            out:
-                'stdout: {"operation":"PREPARING_DOCKER_IMAGES","timestamp":"2022-04-21T06:26:59.055Z","status":"STARTED","metadata":{}}\nstdout: {"operation":"PREPARING_DOCKER_IMAGES","timestamp":"2022-04-21T06:26:59.055Z","status":"PROGRESS","metadata":{"total":1}}\nstdout: {"operation":"PREPARING_DOCKER_IMAGES","timestamp":"2022-04-21T06:26:59.188Z","status":"PROGRESS","metadata":{"done":1,"total":1}}\nstdout: {"operation":"PREPARING_DOCKER_IMAGES","timestamp":"2022-04-21T06:26:59.188Z","status":"SUCCESS","metadata":{}}\nstdout: {"operation":"DETERMINING_WORKSPACE_TYPE","timestamp":"2022-04-21T06:26:59.188Z","status":"STARTED","metadata":{}}\n',
-            startTime: subMinutes(now, 10).toISOString(),
-            __typename: 'ExecutionLogEntry',
-        },
+        srcExec: [
+            {
+                command: ['src', 'batch', 'exec', '-f', 'input.json'],
+                durationMilliseconds: null,
+                exitCode: null,
+                key: 'step.src.batch-exec',
+                out:
+                    'stdout: {"operation":"PREPARING_DOCKER_IMAGES","timestamp":"2022-04-21T06:26:59.055Z","status":"STARTED","metadata":{}}\nstdout: {"operation":"PREPARING_DOCKER_IMAGES","timestamp":"2022-04-21T06:26:59.055Z","status":"PROGRESS","metadata":{"total":1}}\nstdout: {"operation":"PREPARING_DOCKER_IMAGES","timestamp":"2022-04-21T06:26:59.188Z","status":"PROGRESS","metadata":{"done":1,"total":1}}\nstdout: {"operation":"PREPARING_DOCKER_IMAGES","timestamp":"2022-04-21T06:26:59.188Z","status":"SUCCESS","metadata":{}}\nstdout: {"operation":"DETERMINING_WORKSPACE_TYPE","timestamp":"2022-04-21T06:26:59.188Z","status":"STARTED","metadata":{}}\n',
+                startTime: subMinutes(now, 10).toISOString(),
+                __typename: 'ExecutionLogEntry',
+            },
+        ],
         teardown: [],
         ...workspace?.stages,
     },

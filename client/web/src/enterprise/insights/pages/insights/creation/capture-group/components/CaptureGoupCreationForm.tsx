@@ -200,7 +200,7 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
                 <CodeInsightTimeStepPicker
                     {...stepValue.input}
                     valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
-                    error={stepValue.meta.touched && stepValue.meta.error}
+                    error={(stepValue.meta.touched && stepValue.meta.error) || undefined}
                     errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
                     stepType={step.input.value}
                     onStepTypeChange={step.input.onChange}

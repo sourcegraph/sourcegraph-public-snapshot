@@ -1,4 +1,5 @@
 .user-avatar {
+    isolation: isolate;
     display: inline-flex;
     border-radius: 50%;
     text-transform: capitalize;

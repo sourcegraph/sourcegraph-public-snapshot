@@ -22,12 +22,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const (
@@ -36,9 +36,9 @@ const (
 	testIDToken  = "testIDToken"
 )
 
-// new OIDCIDServer returns a new running mock OIDC ID Provider service. It is
+// new OIDCIDServer returns a new running mock OIDC ID provider service. It is
 // the caller's responsibility to call Close().
-func newOIDCIDServer(t *testing.T, code string, providerConfig *schema.SourcegraphOperatorAuthProvider) (server *httptest.Server, emailPtr *string) {
+func newOIDCIDServer(t *testing.T, code string, providerConfig *cloud.SchemaAuthProviderSourcegraphOperator) (server *httptest.Server, emailPtr *string) {
 	s := http.NewServeMux()
 
 	s.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +100,7 @@ func newOIDCIDServer(t *testing.T, code string, providerConfig *schema.Sourcegra
 	})
 
 	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-		if op.ExternalAccount.ServiceType == providerType &&
+		if op.ExternalAccount.ServiceType == ProviderType &&
 			op.ExternalAccount.ServiceID == providerConfig.Issuer &&
 			op.ExternalAccount.ClientID == testClientID &&
 			op.ExternalAccount.AccountID == testOIDCUser {
@@ -119,17 +119,16 @@ func TestMiddleware(t *testing.T) {
 	defer cleanup()
 
 	const testCode = "testCode"
-	providerConfig := schema.SourcegraphOperatorAuthProvider{
+	providerConfig := cloud.SchemaAuthProviderSourcegraphOperator{
 		ClientID:          testClientID,
 		ClientSecret:      "testClientSecret",
 		LifecycleDuration: 60,
-		Type:              providerType,
 	}
 	oidcIDServer, emailPtr := newOIDCIDServer(t, testCode, &providerConfig)
 	defer oidcIDServer.Close()
 	providerConfig.Issuer = oidcIDServer.URL
 
-	mockProvider := newProvider(providerConfig).(*provider)
+	mockProvider := NewProvider(providerConfig).(*provider)
 	providers.MockProviders = []providers.Provider{mockProvider}
 	defer func() { providers.MockProviders = nil }()
 
@@ -144,7 +143,7 @@ func TestMiddleware(t *testing.T) {
 		[]*extsvc.Account{
 			{
 				AccountSpec: extsvc.AccountSpec{
-					ServiceType: providerType,
+					ServiceType: ProviderType,
 				},
 			},
 		},

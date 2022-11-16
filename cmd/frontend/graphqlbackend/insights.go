@@ -39,12 +39,12 @@ type InsightsResolver interface {
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
+	InsightViewDebug(ctx context.Context, args InsightViewDebugArgs) (InsightViewDebugResolver, error)
 }
 
 type SearchInsightLivePreviewArgs struct {
 	Input SearchInsightLivePreviewInput
 }
-
 type SearchInsightPreviewArgs struct {
 	Input SearchInsightPreviewInput
 }
@@ -75,11 +75,18 @@ type InsightsArgs struct {
 	Ids *[]graphql.ID
 }
 
+type InsightViewDebugArgs struct {
+	Id graphql.ID
+}
+
 type InsightsDataPointResolver interface {
 	DateTime() gqlutil.DateTime
 	Value() float64
 }
 
+type InsightViewDebugResolver interface {
+	Raw(context.Context) ([]string, error)
+}
 type InsightStatusResolver interface {
 	TotalPoints(context.Context) (int32, error)
 	PendingJobs(context.Context) (int32, error)
@@ -87,6 +94,7 @@ type InsightStatusResolver interface {
 	FailedJobs(context.Context) (int32, error)
 	BackfillQueuedAt(context.Context) *gqlutil.DateTime
 	IsLoadingData(context.Context) (*bool, error)
+	IncompleteDatapoints(ctx context.Context) ([]IncompleteDatapointAlert, error)
 }
 
 type InsightsPointsArgs struct {
@@ -300,13 +308,11 @@ type InsightSeriesQueryStatusResolver interface {
 	Failed(ctx context.Context) (int32, error)
 	Queued(ctx context.Context) (int32, error)
 }
-
 type InsightViewFiltersResolver interface {
 	IncludeRepoRegex(ctx context.Context) (*string, error)
 	ExcludeRepoRegex(ctx context.Context) (*string, error)
 	SearchContexts(ctx context.Context) (*[]string, error)
 }
-
 type InsightViewSeriesDisplayOptionsResolver interface {
 	SortOptions(ctx context.Context) (InsightViewSeriesSortOptionsResolver, error)
 	Limit(ctx context.Context) (*int32, error)
@@ -449,4 +455,13 @@ type DeleteInsightViewArgs struct {
 type SearchInsightLivePreviewSeriesResolver interface {
 	Points(ctx context.Context) ([]InsightsDataPointResolver, error)
 	Label(ctx context.Context) (string, error)
+}
+
+type IncompleteDatapointAlert interface {
+	ToTimeoutDatapointAlert() (TimeoutDatapointAlert, bool)
+	Time() gqlutil.DateTime
+}
+
+type TimeoutDatapointAlert interface {
+	Time() gqlutil.DateTime
 }

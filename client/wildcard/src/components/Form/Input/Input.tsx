@@ -3,6 +3,7 @@ import { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
 import { Label } from '../..'
@@ -31,7 +32,8 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     inputSymbol?: ReactNode
     /** Exclusive status */
     status?: InputStatus | `${InputStatus}`
-    error?: ReactNode
+    /** Optional error (validation) message. Rendered as Markdown. */
+    error?: string
     /** Disable input behavior */
     disabled?: boolean
     /** Determines the size of the input */
@@ -94,7 +96,7 @@ export const Input = forwardRef(function Input(props, reference) {
 
             {error && (
                 <small role="alert" aria-live="polite" className={classNames('text-danger', messageClassName)}>
-                    {error}
+                    <ErrorMessage error={error} />
                 </small>
             )}
 

@@ -24,20 +24,21 @@ type Symbol struct {
 const NULL CommitId = 0
 
 type Service struct {
-	logger               log.Logger
-	db                   *sql.DB
-	git                  GitserverClient
-	fetcher              fetcher.RepositoryFetcher
-	createParser         func() (ctags.Parser, error)
-	status               *ServiceStatus
-	repoUpdates          chan struct{}
-	maxRepos             int
-	logQueries           bool
-	repoCommitToDone     map[string]chan struct{}
-	repoCommitToDoneMu   sync.Mutex
-	indexRequestQueues   []chan indexRequest
-	symbolsCacheSize     int
-	pathSymbolsCacheSize int
+	logger                  log.Logger
+	db                      *sql.DB
+	git                     GitserverClient
+	fetcher                 fetcher.RepositoryFetcher
+	createParser            func() (ctags.Parser, error)
+	status                  *ServiceStatus
+	repoUpdates             chan struct{}
+	maxRepos                int
+	logQueries              bool
+	repoCommitToDone        map[string]chan struct{}
+	repoCommitToDoneMu      sync.Mutex
+	indexRequestQueues      []chan indexRequest
+	symbolsCacheSize        int
+	pathSymbolsCacheSize    int
+	searchLastIndexedCommit bool
 }
 
 func NewService(
@@ -51,6 +52,7 @@ func NewService(
 	indexRequestsQueueSize int,
 	symbolsCacheSize int,
 	pathSymbolsCacheSize int,
+	searchLastIndexedCommit bool,
 ) (*Service, error) {
 	indexRequestQueues := make([]chan indexRequest, maxConcurrentlyIndexing)
 	for i := 0; i < maxConcurrentlyIndexing; i++ {
@@ -60,20 +62,21 @@ func NewService(
 	logger := log.Scoped("service", "")
 
 	service := &Service{
-		logger:               logger,
-		db:                   db,
-		git:                  git,
-		fetcher:              fetcher,
-		createParser:         createParser,
-		status:               NewStatus(),
-		repoUpdates:          make(chan struct{}, 1),
-		maxRepos:             maxRepos,
-		logQueries:           logQueries,
-		repoCommitToDone:     map[string]chan struct{}{},
-		repoCommitToDoneMu:   sync.Mutex{},
-		indexRequestQueues:   indexRequestQueues,
-		symbolsCacheSize:     symbolsCacheSize,
-		pathSymbolsCacheSize: pathSymbolsCacheSize,
+		logger:                  logger,
+		db:                      db,
+		git:                     git,
+		fetcher:                 fetcher,
+		createParser:            createParser,
+		status:                  NewStatus(),
+		repoUpdates:             make(chan struct{}, 1),
+		maxRepos:                maxRepos,
+		logQueries:              logQueries,
+		repoCommitToDone:        map[string]chan struct{}{},
+		repoCommitToDoneMu:      sync.Mutex{},
+		indexRequestQueues:      indexRequestQueues,
+		symbolsCacheSize:        symbolsCacheSize,
+		pathSymbolsCacheSize:    pathSymbolsCacheSize,
+		searchLastIndexedCommit: searchLastIndexedCommit,
 	}
 
 	go service.startCleanupLoop()

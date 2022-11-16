@@ -3,13 +3,18 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
+	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -23,6 +28,9 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const defaultInterruptSeconds = 60
+const inProgressPollingInterval = time.Second * 5
 
 func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
 	db := config.InsightsDB
@@ -43,19 +51,23 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		MaxNumRetries:     3,
 	}, config.ObsContext)
 
-	task := inProgressHandler{
+	handlerConfig := newHandlerConfig()
+
+	task := &inProgressHandler{
 		workerStore:    workerStore,
 		backfillStore:  backfillStore,
 		seriesReader:   store.NewInsightStore(db),
 		insightsStore:  config.InsightStore,
 		backfillRunner: config.BackfillRunner,
 		repoStore:      config.RepoStore,
+		clock:          glock.NewRealClock(),
+		config:         handlerConfig,
 	}
 
-	worker := dbworker.NewWorker(ctx, workerStore, &task, workerutil.WorkerOptions{
+	worker := dbworker.NewWorker(ctx, workerStore, task, workerutil.WorkerOptions{
 		Name:              name,
 		NumHandlers:       1,
-		Interval:          5 * time.Second,
+		Interval:          inProgressPollingInterval,
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           workerutil.NewMetrics(config.ObsContext, name),
 	})
@@ -64,6 +76,17 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		Name:     fmt.Sprintf("%s_resetter", name),
 		Interval: time.Second * 20,
 		Metrics:  *dbworker.NewMetrics(config.ObsContext, name),
+	})
+
+	configLogger := log.Scoped("insightsInProgressConfigWatcher", "")
+	mu := sync.Mutex{}
+	conf.Watch(func() {
+		mu.Lock()
+		defer mu.Unlock()
+		oldVal := task.config.interruptAfter
+		newVal := getInterruptAfter()
+		task.config.interruptAfter = newVal
+		configLogger.Info("insights backfiller interrupt time changed", log.Duration("old", oldVal), log.Duration("new", newVal))
 	})
 
 	return worker, resetter, workerStore
@@ -76,6 +99,17 @@ type inProgressHandler struct {
 	repoStore      database.RepoStore
 	insightsStore  store.Interface
 	backfillRunner pipeline.Backfiller
+	config         handlerConfig
+
+	clock glock.Clock
+}
+
+type handlerConfig struct {
+	interruptAfter time.Duration
+}
+
+func newHandlerConfig() handlerConfig {
+	return handlerConfig{interruptAfter: getInterruptAfter()}
 }
 
 var _ workerutil.Handler = &inProgressHandler{}
@@ -116,44 +150,82 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 		log.Int("erroredRepos", itr.ErroredRepos()),
 		log.Int("totalErrors", itr.TotalErrors()))
 
-	type nextFunc func() (api.RepoID, bool, iterator.FinishFunc)
-	itrLoop := func(nextFunc nextFunc) error {
+	timeExpired := h.clock.After(h.config.interruptAfter)
+
+	itrConfig := iterator.IterationConfig{
+		MaxFailures: 3,
+		OnTerminal: func(ctx context.Context, tx *basestore.Store, repoId int32, terminalErr error) error {
+			reason := translateIncompleteReasons(terminalErr)
+			logger.Debug("insights backfill incomplete repo writing all datapoints",
+				log.Int32("repoId", repoId),
+				log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID),
+				log.Int("backfillId", backfillJob.Id),
+				log.Error(terminalErr),
+				log.String("reason", string(reason)))
+
+			id := int(repoId)
+			for _, frame := range frames {
+				tss := h.insightsStore.WithOther(tx)
+				if err := tss.AddIncompleteDatapoint(ctx, store.AddIncompleteDatapointInput{
+					SeriesID: series.ID,
+					RepoID:   &id,
+					Reason:   reason,
+					Time:     frame.From,
+				}); err != nil {
+					return errors.Wrap(err, "AddIncompleteDatapoint")
+				}
+			}
+			return nil
+		}}
+
+	type nextFunc func(config iterator.IterationConfig) (api.RepoID, bool, iterator.FinishFunc)
+	itrLoop := func(nextFunc nextFunc) (interrupted bool, _ error) {
 		for {
-			repoId, more, finish := nextFunc()
+			repoId, more, finish := nextFunc(itrConfig)
 			if !more {
 				break
 			}
-
-			repo, repoErr := h.repoStore.Get(ctx, repoId)
-			if repoErr != nil {
-				err = finish(ctx, h.backfillStore.Store, errors.Wrap(repoErr, "InProgressHandler.repoStore.Get"))
-				if err != nil {
-					return err
+			select {
+			case <-timeExpired:
+				return true, nil
+			default:
+				repo, repoErr := h.repoStore.Get(ctx, repoId)
+				if repoErr != nil {
+					err = finish(ctx, h.backfillStore.Store, errors.Wrap(repoErr, "InProgressHandler.repoStore.Get"))
+					if err != nil {
+						return false, err
+					}
+					continue
 				}
-				continue
-			}
 
-			logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
-			runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, Frames: frames})
-			if runErr != nil {
-				logger.Error("error during backfill execution", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id), log.Error(runErr))
-			}
-			err = finish(ctx, h.backfillStore.Store, runErr)
-			if err != nil {
-				return err
+				logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
+				runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, Frames: frames})
+				if runErr != nil {
+					logger.Error("error during backfill execution", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id), log.Error(runErr))
+				}
+				err = finish(ctx, h.backfillStore.Store, runErr)
+				if err != nil {
+					return false, err
+				}
 			}
 		}
-		return nil
+		return false, nil
 	}
 
 	logger.Debug("starting primary loop", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id))
-	if err := itrLoop(itr.NextWithFinish); err != nil {
+	if interrupted, err := itrLoop(itr.NextWithFinish); err != nil {
 		return errors.Wrap(err, "InProgressHandler.PrimaryLoop")
+	} else if interrupted {
+		logger.Info("interrupted insight series backfill", log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID), log.Int("backfillId", backfillJob.Id))
+		return h.doInterrupt(ctx, job)
 	}
 
 	logger.Debug("starting retry loop", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id))
-	if err := itrLoop(itr.NextRetryWithFinish); err != nil {
+	if interrupted, err := itrLoop(itr.NextRetryWithFinish); err != nil {
 		return errors.Wrap(err, "InProgressHandler.RetryLoop")
+	} else if interrupted {
+		logger.Info("interrupted insight series backfill retry", log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID), log.Int("backfillId", backfillJob.Id))
+		return h.doInterrupt(ctx, job)
 	}
 
 	if !itr.HasMore() && !itr.HasErrors() {
@@ -167,12 +239,28 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 			return err
 		}
 	} else {
-		// this is a rudimentary way of getting this job to retry. Eventually we should manually queue up work so that
-		// we aren't bound by the retry limits placed on the queue, but for now this will work.
-		return incompleteBackfillErr
+		// in this state we have some errors that will need reprocessing, we will place this job back in queue
+		return h.doInterrupt(ctx, job)
 	}
 
 	return nil
 }
 
-var incompleteBackfillErr error = errors.New("incomplete backfill")
+func (h *inProgressHandler) doInterrupt(ctx context.Context, job *BaseJob) error {
+	return h.workerStore.Requeue(ctx, job.ID, h.clock.Now().Add(inProgressPollingInterval))
+}
+
+func getInterruptAfter() time.Duration {
+	val := conf.Get().InsightsBackfillInterruptAfter
+	if val != 0 {
+		return time.Duration(val) * time.Second
+	}
+	return time.Duration(defaultInterruptSeconds) * time.Second
+}
+
+func translateIncompleteReasons(err error) store.IncompleteReason {
+	if errors.Is(err, queryrunner.SearchTimeoutError) {
+		return store.ReasonTimeout
+	}
+	return store.ReasonGeneric
+}
