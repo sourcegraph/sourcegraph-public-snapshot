@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"sync"
+
+	"github.com/google/go-github/v41/github"
 )
 
 type state struct {
@@ -38,13 +40,22 @@ var createTeamTableStmt = `CREATE TABLE IF NOT EXISTS teams (
   totalMembers INTEGER DEFAULT 0
 )`
 
+var createRepoTableStmt = `CREATE TABLE IF NOT EXISTS repos (
+    owner STRING,
+    name STRING PRIMARY KEY,
+    assignedTeams INTEGER DEFAULT 0,
+    assignedUsers INTEGER DEFAULT 0,
+    assignedOrgs INTEGER DEFAULT 0,
+    complete BOOLEAN DEFAULT FALSE
+)`
+
 func newState(path string) (*state, error) {
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, statement := range []string{createUserTableStmt, createOrgTableStmt, createTeamTableStmt} {
+	for _, statement := range []string{createUserTableStmt, createOrgTableStmt, createTeamTableStmt, createRepoTableStmt} {
 		stmt, err := db.Prepare(statement)
 		if err != nil {
 			return nil, err
@@ -81,6 +92,15 @@ type org struct {
 	Admin   string
 	Failed  string
 	Created bool
+}
+
+type repo struct {
+	Owner         string
+	Name          string
+	AssignedTeams int
+	AssignedUsers int
+	AssignedOrgs  int
+	Complete      bool
 }
 
 func (s *state) loadUsers() ([]*user, error) {
@@ -165,6 +185,27 @@ func (s *state) loadOrgs() ([]*org, error) {
 		orgs = append(orgs, &o)
 	}
 	return orgs, nil
+}
+
+func (s *state) loadRepos() ([]*repo, error) {
+	s.Lock()
+	defer s.Unlock()
+	rows, err := s.db.Query(`SELECT owner, name, assignedUsers, assignedTeams, assignedOrgs, completed FROM repos`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var repos []*repo
+	for rows.Next() {
+		var r repo
+		err = rows.Scan(&r.Owner, &r.Name, &r.AssignedUsers, &r.AssignedTeams, &r.AssignedOrgs, &r.Complete)
+		if err != nil {
+			return nil, err
+		}
+		repos = append(repos, &r)
+	}
+	return repos, nil
 }
 
 func generateNames(prefix string, count int) []string {
@@ -318,6 +359,21 @@ func (s *state) insertOrgs(logins []string, admin string) error {
 	}
 	for _, login := range logins {
 		if _, err = tx.Exec(`INSERT OR IGNORE INTO orgs(login, adminLogin) VALUES (?, ?)`, login, admin); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (s *state) insertRepos(repos []*github.Repository) error {
+	s.Lock()
+	defer s.Unlock()
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	for _, repo := range repos {
+		if _, err = tx.Exec(`INSERT OR IGNORE INTO repos(owner, name) VALUES (?, ?)`, *repo.Owner.Name, *repo.Name); err != nil {
 			return err
 		}
 	}

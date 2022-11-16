@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math"
 	"net/http"
 	"os"
 	"strings"
@@ -129,93 +128,110 @@ func main() {
 
 	g := group.New().WithMaxConcurrency(1000)
 	if cfg.action == "create" {
-		// load or generate users
-		var users []*user
-		if users, err = store.loadUsers(); err != nil {
+		//// load or generate users
+		//var users []*user
+		//if users, err = store.loadUsers(); err != nil {
+		//	log.Fatal(err)
+		//}
+		//
+		//if len(users) == 0 {
+		//	if users, err = store.generateUsers(cfg); err != nil {
+		//		log.Fatal(err)
+		//	}
+		//	writeSuccess(out, "generated user jobs in %s", cfg.resume)
+		//} else {
+		//	writeSuccess(out, "resuming user jobs from %s", cfg.resume)
+		//}
+		//
+		//// load or generate teams
+		//var teams []*team
+		//if teams, err = store.loadTeams(); err != nil {
+		//	log.Fatal(err)
+		//}
+		//
+		//if len(teams) == 0 {
+		//	if teams, err = store.generateTeams(cfg); err != nil {
+		//		log.Fatal(err)
+		//	}
+		//	writeSuccess(out, "generated team jobs in %s", cfg.resume)
+		//} else {
+		//	writeSuccess(out, "resuming team jobs from %s", cfg.resume)
+		//}
+		//
+		//bars := []output.ProgressBar{
+		//	{Label: "Creating orgs", Max: float64(cfg.orgCount)},
+		//	{Label: "Creating teams", Max: float64(cfg.teamCount)},
+		//	{Label: "Creating users", Max: float64(cfg.userCount)},
+		//	{Label: "Adding users to teams", Max: float64(cfg.teamCount * 50)},
+		//}
+		//progress = out.Progress(bars, nil)
+		//var usersDone int64
+		//var orgsDone int64
+		//var teamsDone int64
+		//var membershipsDone int64
+		//
+		//for _, o := range orgs {
+		//	currentOrg := o
+		//	g.Go(func() {
+		//		executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, &orgsDone)
+		//	})
+		//}
+		//g.Wait()
+		//
+		//for _, t := range teams {
+		//	currentTeam := t
+		//	g.Go(func() {
+		//		executeCreateTeam(ctx, currentTeam, &teamsDone)
+		//	})
+		//}
+		//g.Wait()
+		//
+		//for _, u := range users {
+		//	currentUser := u
+		//	g.Go(func() {
+		//		executeCreateUser(ctx, currentUser, &usersDone)
+		//	})
+		//}
+		//g.Wait()
+		//
+		//totalMemberships := len(teams) * 50
+		//membershipsPerUser := int(math.Ceil(float64(totalMemberships) / float64(cfg.userCount)))
+		//teamsToSkip := int(math.Ceil(float64(cfg.teamCount) / (float64(totalMemberships) / float64(cfg.userCount))))
+		//
+		//for i, u := range users {
+		//	currentUser := u
+		//	currentIter := i
+		//
+		//	g.Go(func() {
+		//		executeCreateTeamMembershipsForUser(
+		//			ctx,
+		//			&teamMembershipOpts{
+		//				currentUser:        currentUser,
+		//				teams:              teams,
+		//				membershipsPerUser: membershipsPerUser,
+		//				teamIndex:          currentIter,
+		//				teamIncrement:      teamsToSkip,
+		//			},
+		//			&membershipsDone)
+		//	})
+		//}
+
+		var repos []*repo
+		if repos, err = store.loadRepos(); err != nil {
 			log.Fatal(err)
 		}
 
-		if len(users) == 0 {
-			if users, err = store.generateUsers(cfg); err != nil {
+		if len(repos) == 0 {
+			remoteRepos := getGitHubRepos(ctx)
+
+			if err := store.insertRepos(remoteRepos); err != nil {
 				log.Fatal(err)
 			}
-			writeSuccess(out, "generated user jobs in %s", cfg.resume)
+			writeSuccess(out, "Fetched %d private repos and stored in state", len(remoteRepos))
 		} else {
-			writeSuccess(out, "resuming user jobs from %s", cfg.resume)
+			writeSuccess(out, "resuming repo jobs from %s", cfg.resume)
 		}
 
-		// load or generate teams
-		var teams []*team
-		if teams, err = store.loadTeams(); err != nil {
-			log.Fatal(err)
-		}
-
-		if len(teams) == 0 {
-			if teams, err = store.generateTeams(cfg); err != nil {
-				log.Fatal(err)
-			}
-			writeSuccess(out, "generated team jobs in %s", cfg.resume)
-		} else {
-			writeSuccess(out, "resuming team jobs from %s", cfg.resume)
-		}
-
-		bars := []output.ProgressBar{
-			{Label: "Creating orgs", Max: float64(cfg.orgCount)},
-			{Label: "Creating teams", Max: float64(cfg.teamCount)},
-			{Label: "Creating users", Max: float64(cfg.userCount)},
-			{Label: "Adding users to teams", Max: float64(cfg.teamCount * 50)},
-		}
-		progress = out.Progress(bars, nil)
-		var usersDone int64
-		var orgsDone int64
-		var teamsDone int64
-		var membershipsDone int64
-
-		for _, o := range orgs {
-			currentOrg := o
-			g.Go(func() {
-				executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, &orgsDone)
-			})
-		}
-		g.Wait()
-
-		for _, t := range teams {
-			currentTeam := t
-			g.Go(func() {
-				executeCreateTeam(ctx, currentTeam, &teamsDone)
-			})
-		}
-		g.Wait()
-
-		for _, u := range users {
-			currentUser := u
-			g.Go(func() {
-				executeCreateUser(ctx, currentUser, &usersDone)
-			})
-		}
-		g.Wait()
-
-		totalMemberships := len(teams) * 50
-		membershipsPerUser := int(math.Ceil(float64(totalMemberships) / float64(cfg.userCount)))
-		teamsToSkip := int(math.Ceil(float64(cfg.teamCount) / (float64(totalMemberships) / float64(cfg.userCount))))
-
-		for i, u := range users {
-			currentUser := u
-			currentIter := i
-
-			g.Go(func() {
-				executeCreateTeamMembershipsForUser(
-					ctx,
-					&teamMembershipOpts{
-						currentUser:        currentUser,
-						teams:              teams,
-						membershipsPerUser: membershipsPerUser,
-						teamIndex:          currentIter,
-						teamIncrement:      teamsToSkip,
-					},
-					&membershipsDone)
-			})
-		}
 		g.Wait()
 
 		allUsers, err := store.countAllUsers()
@@ -561,6 +577,32 @@ func getGitHubUsers(ctx context.Context) []*github.User {
 	}
 
 	return users
+}
+
+func getGitHubRepos(ctx context.Context) []*github.Repository {
+	var currentPage int
+	var repos []*github.Repository
+	for true {
+		writeInfo(out, "Fetching repo page %d", currentPage)
+		reposPage, _, err := gh.Repositories.ListByOrg(ctx, "blank200k", &github.RepositoryListByOrgOptions{
+			Type: "private",
+			ListOptions: github.ListOptions{
+				Page:    currentPage,
+				PerPage: 100,
+			},
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(reposPage) != 0 {
+			currentPage++
+			repos = append(repos, reposPage...)
+		} else {
+			break
+		}
+	}
+
+	return repos
 }
 
 func executeCreateUser(ctx context.Context, currentUser *user, usersDone *int64) {
