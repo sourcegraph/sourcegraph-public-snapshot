@@ -16801,7 +16801,7 @@ func (c ExecutorStoreWithFuncCall) Results() []interface{} {
 // testing.
 type MockExternalServiceStore struct {
 	// CancelSyncJobFunc is an instance of a mock function object
-	// controlling the behavior of the method Cancelsyncjobs.
+	// controlling the behavior of the method CancelSyncJob.
 	CancelSyncJobFunc *ExternalServiceStoreCancelSyncJobFunc
 	// CountFunc is an instance of a mock function object controlling the
 	// behavior of the method Count.

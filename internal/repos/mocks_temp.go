@@ -37,7 +37,7 @@ type MockStore struct {
 	// behavior of the method Done.
 	DoneFunc *StoreDoneFunc
 	// EnqueueSingleSyncJobFunc is an instance of a mock function object
-	// controlling the behavior of the method EnqueueSinglesyncjobs.
+	// controlling the behavior of the method EnqueueSingleSyncJob.
 	EnqueueSingleSyncJobFunc *StoreEnqueueSingleSyncJobFunc
 	// EnqueueSyncJobsFunc is an instance of a mock function object
 	// controlling the behavior of the method EnqueueSyncJobs.

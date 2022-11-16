@@ -1442,13 +1442,13 @@ RETURNING id
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !syncjobs.Cancel {
+	if !syncJob.Cancel {
 		t.Fatalf("syncjob not canceled")
 	}
-	if syncjobs.State != "processing" {
+	if syncJob.State != "processing" {
 		t.Fatalf("syncjob state unexpectedly changed")
 	}
-	if !syncjobs.FinishedAt.IsZero() {
+	if !syncJob.FinishedAt.IsZero() {
 		t.Fatalf("syncjob finishedAt is set but should not be")
 	}
 
@@ -1472,13 +1472,13 @@ RETURNING id
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !syncjobs.Cancel {
+	if !syncJob.Cancel {
 		t.Fatalf("syncjob not canceled")
 	}
-	if syncjobs.State != "canceled" {
+	if syncJob.State != "canceled" {
 		t.Fatalf("syncjob state not changed to 'canceled'")
 	}
-	if syncjobs.FinishedAt.IsZero() {
+	if syncJob.FinishedAt.IsZero() {
 		t.Fatalf("syncjob finishedAt is not set")
 	}
 
