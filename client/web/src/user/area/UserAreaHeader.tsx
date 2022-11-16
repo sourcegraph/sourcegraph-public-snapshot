@@ -63,7 +63,7 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
                         <PageHeader.Breadcrumb icon={path.icon}>{path.text}</PageHeader.Breadcrumb>
                     </PageHeader.Heading>
                 </PageHeader>
-                <div className="d-flex align-items-end justify-content-between">
+                <nav className="d-flex align-items-end justify-content-between" aria-label="User">
                     <ul className="nav nav-tabs w-100">
                         {navItems.map(
                             ({ to, label, exact, icon: ItemIcon, condition = () => true }) =>
@@ -86,7 +86,7 @@ export const UserAreaHeader: React.FunctionComponent<React.PropsWithChildren<Pro
                                 )
                         )}
                     </ul>
-                </div>
+                </nav>
             </div>
         </div>
     )

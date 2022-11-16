@@ -9,6 +9,7 @@ import {
     toViewStateHash,
 } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-types'
+import { SearchMode } from '@sourcegraph/search'
 
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { SearchPatternType } from '../graphql-operations'
@@ -527,7 +528,9 @@ export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
     caseSensitive: boolean,
-    searchContextSpec?: string
+
+    searchContextSpec?: string,
+    searchMode?: SearchMode
 ): string {
     const searchParameters = new URLSearchParams()
     let queryParameter = query
@@ -558,6 +561,8 @@ export function buildSearchURLQuery(
     if (caseParameter === 'yes') {
         searchParameters.set('case', caseParameter)
     }
+
+    searchParameters.set('sm', (searchMode || SearchMode.Precise).toString())
 
     return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }

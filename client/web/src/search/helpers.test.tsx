@@ -17,7 +17,7 @@ describe('search/helpers', () => {
                 source: 'home',
             })
             expect(history.location.search).toMatchInlineSnapshot(
-                '"?q=context:global+querystring&patternType=standard"'
+                '"?q=context:global+querystring&patternType=standard&sm=0"'
             )
         })
         test('should keep trace param when updating history', () => {
@@ -31,7 +31,7 @@ describe('search/helpers', () => {
                 source: 'home',
             })
             expect(history.location.search).toMatchInlineSnapshot(
-                '"?q=context:global+querystring&patternType=standard&trace=1"'
+                '"?q=context:global+querystring&patternType=standard&sm=0&trace=1"'
             )
         })
     })

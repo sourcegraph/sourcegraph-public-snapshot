@@ -76,6 +76,12 @@ const styleLoader = IS_DEVELOPMENT ? 'style-loader' : MiniCssExtractPlugin.loade
 
 const extensionHostWorker = /main\.worker\.ts$/
 
+// Used to ensure that we include all initial chunks into the Webpack manifest.
+const initialChunkNames = {
+  react: 'react',
+  opentelemetry: 'opentelemetry',
+}
+
 /** @type {import('webpack').Configuration} */
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
@@ -101,14 +107,14 @@ const config = {
     minimizer: [getTerserPlugin(), new CssMinimizerWebpackPlugin()],
     splitChunks: {
       cacheGroups: {
-        react: {
+        [initialChunkNames.react]: {
           test: /[/\\]node_modules[/\\](react|react-dom)[/\\]/,
-          name: 'react',
+          name: initialChunkNames.react,
           chunks: 'all',
         },
-        opentelemetry: {
+        [initialChunkNames.opentelemetry]: {
           test: /[/\\]node_modules[/\\](@opentelemetry)[/\\]/,
-          name: 'opentelemetry',
+          name: initialChunkNames.opentelemetry,
           chunks: 'all',
         },
       },
@@ -163,7 +169,8 @@ const config = {
         writeToFileEmit: true,
         fileName: 'webpack.manifest.json',
         // Only output files that are required to run the application.
-        filter: ({ isInitial, name }) => isInitial || name?.includes('react'),
+        filter: ({ isInitial, name }) =>
+          isInitial || Object.values(initialChunkNames).some(initialChunkName => name?.includes(initialChunkName)),
       }),
     ...(WEBPACK_SERVE_INDEX ? getHTMLWebpackPlugins() : []),
     WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),

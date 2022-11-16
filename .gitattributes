@@ -5,4 +5,4 @@ cmd/repo-updater/repos/testdata/** linguist-generated=true
 **/Cargo.lock linguist-generated=true
 **/*.pb.go linguist-generated=true
 CHANGELOG.md merge=union
-**/mock_*_test.go linguist-generated=true
+**/mocks*_*test.go linguist-generated=true

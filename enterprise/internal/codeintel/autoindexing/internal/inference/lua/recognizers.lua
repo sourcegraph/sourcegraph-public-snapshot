@@ -5,6 +5,7 @@ for _, name in ipairs {
   "go",
   "java",
   "python",
+  "ruby",
   "rust",
   "test",
   "typescript",

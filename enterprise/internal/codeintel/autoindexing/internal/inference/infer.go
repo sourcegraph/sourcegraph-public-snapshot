@@ -19,6 +19,7 @@ func InferRepositoryAndRevision(pkg precise.Package) (repoName api.RepoName, git
 		inferNpmRepositoryAndRevision,
 		inferRustRepositoryAndRevision,
 		inferPythonRepositoryAndRevision,
+		inferRubyRepositoryAndRevision,
 	} {
 		if repoName, gitTagOrCommit, ok := fn(pkg); ok {
 			return repoName, gitTagOrCommit, true
@@ -99,4 +100,19 @@ func inferPythonRepositoryAndRevision(pkg precise.Package) (api.RepoName, string
 	}
 
 	return pythonPkg.RepoName(), pkg.Version, true
+}
+
+func inferRubyRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
+	if pkg.Scheme != dependencies.RubyPackagesScheme {
+		return "", "", false
+	}
+
+	logger := log.Scoped("inferRubyRepositoryAndRevision", "")
+	rubyPkg, err := reposource.ParseRubyPackageFromName(reposource.PackageName(pkg.Name))
+	if err != nil {
+		logger.Error("invalid ruby package name in database", log.Error(err), log.String("pkg", pkg.Name))
+		return "", "", false
+	}
+
+	return rubyPkg.RepoName(), pkg.Version, true
 }

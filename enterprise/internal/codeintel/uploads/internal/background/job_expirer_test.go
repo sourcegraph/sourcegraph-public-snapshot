@@ -1,4 +1,4 @@
-package uploads
+package background
 
 import (
 	"context"
@@ -6,14 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
 
 	policiesEnterprise "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -21,23 +18,18 @@ import (
 
 func TestUploadExpirer(t *testing.T) {
 	now := timeutil.Now()
-	clock := glock.NewMockClock()
-	clock.SetCurrent(now)
 	uploadSvc := setupMockUploadService(now)
 	policySvc := setupMockPolicyService()
 	policyMatcher := testUploadExpirerMockPolicyMatcher()
-	expirationMetrics := background.NewExpirationMetrics(&observation.TestContext)
+	expirationMetrics := NewExpirationMetrics(&observation.TestContext)
 
-	uploadExpirer := &Service{
+	uploadExpirer := &expirer{
 		store:         uploadSvc,
 		policySvc:     policySvc,
 		policyMatcher: policyMatcher,
-		logger:        logtest.Scoped(t),
-		operations:    newOperations(&observation.TestContext),
-		clock:         clock,
 	}
 
-	if err := uploadExpirer.HandleExpiredUploadsBatch(context.Background(), expirationMetrics, background.ExpirerConfig{
+	if err := uploadExpirer.HandleExpiredUploadsBatch(context.Background(), expirationMetrics, ExpirerConfig{
 		RepositoryProcessDelay: 24 * time.Hour,
 		RepositoryBatchSize:    100,
 		UploadProcessDelay:     24 * time.Hour,

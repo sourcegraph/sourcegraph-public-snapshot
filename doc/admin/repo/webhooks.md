@@ -6,7 +6,7 @@ By default, Sourcegraph polls code hosts to keep repository contents up to date.
 
 Polling, however, falls short in cases where immediate updates are desired or when the number of repositories causes significant load on the code host.
 
-To address this, there is a repository update webhook that triggers a repository update on Sourcegraph. The webhook is authenticated using access tokens (which you can create at e.g. https://sourcegraph.example.com/site-admin/tokens).
+To address this, there is a repository update webhook that triggers a repository update on Sourcegraph within minutes. The webhook is authenticated using access tokens (which you can create at e.g. https://sourcegraph.example.com/site-admin/tokens).
 
 Here's an example using curl.
 

@@ -1,4 +1,4 @@
-package uploads
+package background
 
 import (
 	"context"
@@ -9,24 +9,16 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestBackfillCommittedAtBatch(t *testing.T) {
 	ctx := context.Background()
 	store := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(
-		store,
-		nil, // repoStore
-		nil, // lsifstore
-		gitserverClient,
-		nil, // ranking bucket
-		nil, // policySvc
-		nil, // policyMatcher
-		nil, // locker
-		&observation.TestContext,
-	)
+	svc := &backfiller{
+		store:           store,
+		gitserverClient: gitserverClient,
+	}
 
 	// Return self for txn
 	store.TransactFunc.SetDefaultReturn(store, nil)
@@ -98,17 +90,10 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 	ctx := context.Background()
 	store := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(
-		store,
-		nil, // repoStore
-		nil, // lsifstore
-		gitserverClient,
-		nil, // ranking bucket
-		nil, // policySvc
-		nil, // policyMatcher
-		nil, // locker
-		&observation.TestContext,
-	)
+	svc := &backfiller{
+		store:           store,
+		gitserverClient: gitserverClient,
+	}
 
 	// Return self for txn
 	store.TransactFunc.SetDefaultReturn(store, nil)

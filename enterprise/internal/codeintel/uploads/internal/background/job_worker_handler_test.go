@@ -1,4 +1,4 @@
-package uploads
+package background
 
 import (
 	"context"
@@ -60,12 +60,12 @@ func TestHandle(t *testing.T) {
 	expectedCommitDateStr := expectedCommitDate.Format(time.RFC3339)
 	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", expectedCommitDate, true, nil)
 
-	svc := &Service{
+	svc := &handler{
 		store:           mockDBStore,
-		repoStore:       mockRepoStore,
-		workerutilStore: mockWorkerStore,
 		lsifstore:       mockLSIFStore,
 		gitserverClient: gitserverClient,
+		repoStore:       mockRepoStore,
+		workerStore:     mockWorkerStore,
 	}
 
 	requeued, err := svc.HandleRawUpload(context.Background(), logtest.Scoped(t), upload, mockUploadStore, observation.TestTraceLogger(logtest.Scoped(t)))
@@ -183,13 +183,13 @@ func TestHandleError(t *testing.T) {
 	// Set a different tip commit
 	mockDBStore.SetRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
 
-	svc := &Service{
-		store:           mockDBStore,
-		repoStore:       mockRepoStore,
-		workerutilStore: mockWorkerStore,
-		lsifstore:       mockLSIFStore,
-		gitserverClient: gitserverClient,
+	svc := &handler{
+		store:     mockDBStore,
+		lsifstore: mockLSIFStore,
 		// lsifstore:       mockLSIFStore,
+		gitserverClient: gitserverClient,
+		repoStore:       mockRepoStore,
+		workerStore:     mockWorkerStore,
 	}
 
 	requeued, err := svc.HandleRawUpload(context.Background(), logtest.Scoped(t), upload, mockUploadStore, observation.TestTraceLogger(logtest.Scoped(t)))
@@ -235,11 +235,11 @@ func TestHandleCloneInProgress(t *testing.T) {
 		return "", &gitdomain.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
 	})
 
-	svc := &Service{
+	svc := &handler{
 		store:           mockDBStore,
-		repoStore:       mockRepoStore,
-		workerutilStore: mockWorkerStore,
 		gitserverClient: gitserverClient,
+		repoStore:       mockRepoStore,
+		workerStore:     mockWorkerStore,
 	}
 
 	requeued, err := svc.HandleRawUpload(context.Background(), logtest.Scoped(t), upload, mockUploadStore, observation.TestTraceLogger(logtest.Scoped(t)))

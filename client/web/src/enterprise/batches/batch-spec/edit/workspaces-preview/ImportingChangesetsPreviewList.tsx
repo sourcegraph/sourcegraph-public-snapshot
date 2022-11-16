@@ -37,7 +37,7 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<
         <H4 as={H3} className="align-self-start w-100 mt-4">
             Importing changesets
         </H4>
-        <ConnectionList className="list-group list-group-flush w-100">
+        <ConnectionList className="list-group list-group-flush w-100" aria-label="changesets to be imported">
             {connection?.nodes.map(node =>
                 node.__typename === 'VisibleChangesetSpec' ? (
                     <li className="w-100" key={node.id}>
