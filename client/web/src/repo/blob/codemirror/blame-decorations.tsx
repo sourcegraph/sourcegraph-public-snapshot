@@ -24,8 +24,6 @@ import { BlameDecoration } from '../BlameDecoration'
 
 import { blobPropsFacet } from '.'
 
-import styles from './blame-decorations.module.scss'
-
 const highlightedLineDecoration = Decoration.line({ class: 'highlighted-line' })
 const highlightedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'highlighted-line'
@@ -64,7 +62,7 @@ class DecorationWidget extends WidgetType {
     public toDOM(): HTMLElement {
         if (!this.container) {
             this.container = document.createElement('span')
-            this.container.classList.add(styles.decoration)
+            this.container.classList.add('blame-decoration')
 
             this.reactRoot = createRoot(this.container)
             this.reactRoot.render(
@@ -100,13 +98,10 @@ class DecorationWidget extends WidgetType {
 
 const checkboxes = (view: EditorView, facet: Facet<BlameHunk[], BlameHunk[]>): DecorationSet => {
     const widgets = []
-    // console.log(view.visibleRanges)
     const hunks = view.state.facet(facet)
-    // console.log(hunks)
     for (const { from, to } of view.visibleRanges) {
         for (let pos = from; pos <= to; ) {
             const line = view.state.doc.lineAt(pos)
-            // console.log(line)
             const hunk = hunks.find(h => h.startLine === line.number)
             const deco = Decoration.widget({
                 widget: new DecorationWidget(view, hunk),
@@ -137,5 +132,22 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                 decorations: ({ decorations }) => decorations,
             }
         ),
+        EditorView.theme({
+            '.cm-line': {
+                paddingLeft: '0 !important', // line code content left padding is handled by .blame-decoration right margin
+            },
+
+            '.blame-decoration': {
+                display: 'inline-block',
+                background: 'var(--body-bg)',
+                verticalAlign: 'bottom',
+
+                marginRight: '1rem',
+            },
+
+            '.selected-line .blame-decoration, .highlighted-line .blame-decoration': {
+                background: 'inherit',
+            },
+        }),
     ],
 })
