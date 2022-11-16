@@ -347,29 +347,31 @@ describe('codmirror completions', () => {
             ]
         `)
     })
+
+    const suggestionType = (query: string): string => suggestionTypeFromTokens(getTokens(query), { applyOnEnter: true })
     test('suggests repos for global queries', async () => {
-        expect(suggestionTypeFromTokens(getTokens('sourcegraph'))).toStrictEqual('repo')
+        expect(suggestionType('sourcegraph')).toStrictEqual('repo')
     })
 
     test('suggests files for repo-scoped queries', async () => {
-        expect(suggestionTypeFromTokens(getTokens('repo:sourcegraph local'))).toStrictEqual('path')
-        expect(suggestionTypeFromTokens(getTokens('r:sourcegraph local'))).toStrictEqual('path')
+        expect(suggestionType('repo:sourcegraph local')).toStrictEqual('path')
+        expect(suggestionType('r:sourcegraph local')).toStrictEqual('path')
     })
 
     test('suggests symbols for repo+file scoped queries', async () => {
-        expect(suggestionTypeFromTokens(getTokens('repo:sourcegraph file:local sym'))).toStrictEqual('symbol')
-        expect(suggestionTypeFromTokens(getTokens('repo:sourcegraph path:local sym'))).toStrictEqual('symbol')
-        expect(suggestionTypeFromTokens(getTokens('repo:sourcegraph f:local sym'))).toStrictEqual('symbol')
+        expect(suggestionType('repo:sourcegraph file:local sym')).toStrictEqual('symbol')
+        expect(suggestionType('repo:sourcegraph path:local sym')).toStrictEqual('symbol')
+        expect(suggestionType('repo:sourcegraph f:local sym')).toStrictEqual('symbol')
     })
 
     test('suggests symbols for type:symbol queries', async () => {
-        expect(suggestionTypeFromTokens(getTokens('type:symbol sym'))).toStrictEqual('symbol')
-        expect(suggestionTypeFromTokens(getTokens('repo:sourcegraph type:symbol sym'))).toStrictEqual('symbol')
-        expect(suggestionTypeFromTokens(getTokens('repo:src file:local type:symbol sym'))).toStrictEqual('symbol')
+        expect(suggestionType('type:symbol sym')).toStrictEqual('symbol')
+        expect(suggestionType('repo:sourcegraph type:symbol sym')).toStrictEqual('symbol')
+        expect(suggestionType('repo:src file:local type:symbol sym')).toStrictEqual('symbol')
     })
 
     test('suggests files for type:path queries', async () => {
-        expect(suggestionTypeFromTokens(getTokens('type:path sourcegraph'))).toStrictEqual('path')
-        expect(suggestionTypeFromTokens(getTokens('repo:foo type:path sourcegraph'))).toStrictEqual('path')
+        expect(suggestionType('type:path sourcegraph')).toStrictEqual('path')
+        expect(suggestionType('repo:foo type:path sourcegraph')).toStrictEqual('path')
     })
 })

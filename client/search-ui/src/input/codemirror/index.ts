@@ -89,6 +89,7 @@ export const createDefaultSuggestions = ({
             disableSymbolCompletion,
             disableFilterCompletion,
             showWhenEmpty,
+            applyOnEnter,
         }),
         history,
         onSubmit,

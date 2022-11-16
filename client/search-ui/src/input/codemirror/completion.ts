@@ -333,6 +333,7 @@ export interface DefaultSuggestionSourcesOptions {
     fetchSuggestions: (query: string, onAbort: (listener: () => void) => void) => Promise<SearchMatch[]>
     isSourcegraphDotCom: boolean
     globbing: boolean
+    applyOnEnter?: boolean
     disableFilterCompletion?: true
     disableSymbolCompletion?: true
     showWhenEmpty?: boolean
@@ -478,7 +479,7 @@ export function createDefaultSuggestionSources(
                 }
 
                 const results = await options.fetchSuggestions(
-                    getSuggestionQuery(tokens, token, suggestionTypeFromTokens(tokens)),
+                    getSuggestionQuery(tokens, token, suggestionTypeFromTokens(tokens, options)),
                     context.onAbort
                 )
                 if (results.length === 0) {
@@ -502,7 +503,10 @@ export function createDefaultSuggestionSources(
 }
 
 // Returns what kind of type to query for based on existing tokens in the query
-export function suggestionTypeFromTokens(tokens: Token[]): SearchMatch['type'] {
+export function suggestionTypeFromTokens(
+    tokens: Token[],
+    options: Pick<DefaultSuggestionSourcesOptions, 'applyOnEnter'>
+): SearchMatch['type'] {
     let isWithinRepo = false
     let isWithinFile = false
     for (const token of tokens) {
@@ -534,6 +538,9 @@ export function suggestionTypeFromTokens(tokens: Token[]): SearchMatch['type'] {
                 isWithinFile = true
                 break
         }
+    }
+    if (!options.applyOnEnter) {
+        return 'symbol'
     }
     if (isWithinRepo && isWithinFile) {
         return 'symbol'
