@@ -15,122 +15,21 @@ import (
 )
 
 func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types.CodeInsightsUsageStatistics, error) {
-	stats := types.CodeInsightsUsageStatistics{}
+	stats := &types.CodeInsightsUsageStatistics{}
 
-	const platformQuery = `
-	SELECT
-		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       			AS weekly_insights_page_views,
-		COUNT(*) FILTER (WHERE name = 'ViewInsightsGetStartedPage')         			AS weekly_insights_get_started_page_views,
-		COUNT(*) FILTER (WHERE name = 'StandaloneInsightPageViewed')					AS weekly_standalone_insight_page_views,
-		COUNT(*) FILTER (WHERE name = 'StandaloneInsightDashboardClick') 				AS weekly_standalone_dashboard_clicks,
-        COUNT(*) FILTER (WHERE name = 'StandaloneInsightPageEditClick') 				AS weekly_standalone_edit_clicks,
-		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsights')        			AS weekly_insights_unique_page_views,
-		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsightsGetStartedPage')  	AS weekly_insights_get_started_unique_page_views,
-		COUNT(distinct user_id) FILTER (WHERE name = 'StandaloneInsightPageViewed') 	AS weekly_standalone_insight_unique_page_views,
-		COUNT(distinct user_id) FILTER (WHERE name = 'StandaloneInsightDashboardClick') AS weekly_standalone_insight_unique_dashboard_clicks,
-		COUNT(distinct user_id) FILTER (WHERE name = 'StandaloneInsightPageEditClick')  AS weekly_standalone_insight_unique_edit_clicks,
-		COUNT(distinct user_id) FILTER (WHERE name = 'InsightAddition')					AS weekly_insight_creators,
-		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 							AS weekly_insight_configure_click,
-		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 							AS weekly_insight_add_more_click,
-		COUNT(*) FILTER (WHERE name = 'GroupResultsOpenSection') 						AS weekly_group_results_open_section,
-		COUNT(*) FILTER (WHERE name = 'GroupResultsCollapseSection') 					AS weekly_group_results_collapse_section,
-		COUNT(*) FILTER (WHERE name = 'GroupResultsInfoIconHover') 						AS weekly_group_results_info_icon_hover
-	FROM event_logs
-	WHERE name in ('ViewInsights', 'StandaloneInsightPageViewed', 'StandaloneInsightDashboardClick', 'StandaloneInsightPageEditClick',
-			'ViewInsightsGetStartedPage', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick', 'GroupResultsOpenSection',
-			'GroupResultsCollapseSection', 'GroupResultsInfoIconHover')
-		AND timestamp > DATE_TRUNC('week', $1::timestamp);
-	`
-
-	if err := db.QueryRowContext(ctx, platformQuery, timeNow()).Scan(
-		&stats.WeeklyInsightsPageViews,
-		&stats.WeeklyInsightsGetStartedPageViews,
-		&stats.WeeklyStandaloneInsightPageViews,
-		&stats.WeeklyStandaloneDashboardClicks,
-		&stats.WeeklyStandaloneEditClicks,
-		&stats.WeeklyInsightsUniquePageViews,
-		&stats.WeeklyInsightsGetStartedUniquePageViews,
-		&stats.WeeklyStandaloneInsightUniquePageViews,
-		&stats.WeeklyStandaloneInsightUniqueDashboardClicks,
-		&stats.WeeklyStandaloneInsightUniqueEditClicks,
-		&stats.WeeklyInsightCreators,
-		&stats.WeeklyInsightConfigureClick,
-		&stats.WeeklyInsightAddMoreClick,
-		&stats.WeeklyGroupResultsOpenSection,
-		&stats.WeeklyGroupResultsCollapseSection,
-		&stats.WeeklyGroupResultsInfoIconHover,
-	); err != nil {
-		return nil, err
-	}
-
-	const metricsByInsightQuery = `
-	SELECT argument ->> 'insightType'::text 					             		AS insight_type,
-        COUNT(*) FILTER (WHERE name = 'InsightAddition') 		             		AS additions,
-        COUNT(*) FILTER (WHERE name = 'InsightEdit') 			             		AS edits,
-        COUNT(*) FILTER (WHERE name = 'InsightRemoval') 		             		AS removals,
-		COUNT(*) FILTER (WHERE name = 'InsightHover') 			             		AS hovers,
-		COUNT(*) FILTER (WHERE name = 'InsightUICustomization') 			 		AS ui_customizations,
-		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick') 				 		AS data_point_clicks,
-		COUNT(*) FILTER (WHERE name = 'InsightFiltersChange') 				 		AS filters_change
-	FROM event_logs
-	WHERE name in ('InsightAddition', 'InsightEdit', 'InsightRemoval', 'InsightHover', 'InsightUICustomization', 'InsightDataPointClick', 'InsightFiltersChange')
-		AND timestamp > DATE_TRUNC('week', $1::timestamp)
-	GROUP BY insight_type;
-	`
-
-	weeklyUsageStatisticsByInsight := []*types.InsightUsageStatistics{}
-	rows, err := db.QueryContext(ctx, metricsByInsightQuery, timeNow())
-
+	err := withWeeklyUsage(ctx, db, stats)
 	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		weeklyInsightUsageStatistics := types.InsightUsageStatistics{}
-
-		if err := rows.Scan(
-			&weeklyInsightUsageStatistics.InsightType,
-			&weeklyInsightUsageStatistics.Additions,
-			&weeklyInsightUsageStatistics.Edits,
-			&weeklyInsightUsageStatistics.Removals,
-			&weeklyInsightUsageStatistics.Hovers,
-			&weeklyInsightUsageStatistics.UICustomizations,
-			&weeklyInsightUsageStatistics.DataPointClicks,
-			&weeklyInsightUsageStatistics.FiltersChange,
-		); err != nil {
-			return nil, err
-		}
-
-		weeklyUsageStatisticsByInsight = append(weeklyUsageStatisticsByInsight, &weeklyInsightUsageStatistics)
-	}
-	stats.WeeklyUsageStatisticsByInsight = weeklyUsageStatisticsByInsight
-
-	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "WeeklyUsage")
 	}
 
-	const weeklyFirstTimeCreatorsQuery = `
-	WITH first_times AS (
-		SELECT
-			user_id,
-			MIN(timestamp) as first_time
-		FROM event_logs
-		WHERE name = 'InsightAddition'
-		GROUP BY user_id
-		)
-	SELECT
-		DATE_TRUNC('week', $1::timestamp) AS week_start,
-		COUNT(distinct user_id) as weekly_first_time_insight_creators
-	FROM first_times
-	WHERE first_time > DATE_TRUNC('week', $1::timestamp);
-	`
+	err = weeklyMetricsByInsight(ctx, db, stats)
+	if err != nil {
+		return nil, errors.Wrap(err, "weeklyMetricsByInsight")
+	}
 
-	if err := db.QueryRowContext(ctx, weeklyFirstTimeCreatorsQuery, timeNow()).Scan(
-		&stats.WeekStart,
-		&stats.WeeklyFirstTimeInsightCreators,
-	); err != nil {
-		return nil, err
+	err = weeklyFirstTimeCreators(ctx, db, stats)
+	if err != nil {
+		return nil, errors.Wrap(err, "weeklyFirstTimeCreators")
 	}
 
 	weeklyUsage, err := GetCreationViewUsage(ctx, db, timeNow)
@@ -248,7 +147,124 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types
 	}
 	stats.WeeklySeriesBackfillTime = backfillTime
 
-	return &stats, nil
+	return stats, nil
+}
+
+func withWeeklyUsage(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics) error {
+	const platformQuery = `
+	SELECT
+		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       			AS weekly_insights_page_views,
+		COUNT(*) FILTER (WHERE name = 'ViewInsightsGetStartedPage')         			AS weekly_insights_get_started_page_views,
+		COUNT(*) FILTER (WHERE name = 'StandaloneInsightPageViewed')					AS weekly_standalone_insight_page_views,
+		COUNT(*) FILTER (WHERE name = 'StandaloneInsightDashboardClick') 				AS weekly_standalone_dashboard_clicks,
+        COUNT(*) FILTER (WHERE name = 'StandaloneInsightPageEditClick') 				AS weekly_standalone_edit_clicks,
+		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsights')        			AS weekly_insights_unique_page_views,
+		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsightsGetStartedPage')  	AS weekly_insights_get_started_unique_page_views,
+		COUNT(distinct user_id) FILTER (WHERE name = 'StandaloneInsightPageViewed') 	AS weekly_standalone_insight_unique_page_views,
+		COUNT(distinct user_id) FILTER (WHERE name = 'StandaloneInsightDashboardClick') AS weekly_standalone_insight_unique_dashboard_clicks,
+		COUNT(distinct user_id) FILTER (WHERE name = 'StandaloneInsightPageEditClick')  AS weekly_standalone_insight_unique_edit_clicks,
+		COUNT(distinct user_id) FILTER (WHERE name = 'InsightAddition')					AS weekly_insight_creators,
+		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 							AS weekly_insight_configure_click,
+		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 							AS weekly_insight_add_more_click,
+		COUNT(*) FILTER (WHERE name = 'GroupResultsOpenSection') 						AS weekly_group_results_open_section,
+		COUNT(*) FILTER (WHERE name = 'GroupResultsCollapseSection') 					AS weekly_group_results_collapse_section,
+		COUNT(*) FILTER (WHERE name = 'GroupResultsInfoIconHover') 						AS weekly_group_results_info_icon_hover
+	FROM event_logs
+	WHERE name in ('ViewInsights', 'StandaloneInsightPageViewed', 'StandaloneInsightDashboardClick', 'StandaloneInsightPageEditClick',
+			'ViewInsightsGetStartedPage', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick', 'GroupResultsOpenSection',
+			'GroupResultsCollapseSection', 'GroupResultsInfoIconHover')
+		AND timestamp > DATE_TRUNC('week', $1::timestamp);
+	`
+
+	if err := db.QueryRowContext(ctx, platformQuery, timeNow()).Scan(
+		&stats.WeeklyInsightsPageViews,
+		&stats.WeeklyInsightsGetStartedPageViews,
+		&stats.WeeklyStandaloneInsightPageViews,
+		&stats.WeeklyStandaloneDashboardClicks,
+		&stats.WeeklyStandaloneEditClicks,
+		&stats.WeeklyInsightsUniquePageViews,
+		&stats.WeeklyInsightsGetStartedUniquePageViews,
+		&stats.WeeklyStandaloneInsightUniquePageViews,
+		&stats.WeeklyStandaloneInsightUniqueDashboardClicks,
+		&stats.WeeklyStandaloneInsightUniqueEditClicks,
+		&stats.WeeklyInsightCreators,
+		&stats.WeeklyInsightConfigureClick,
+		&stats.WeeklyInsightAddMoreClick,
+		&stats.WeeklyGroupResultsOpenSection,
+		&stats.WeeklyGroupResultsCollapseSection,
+		&stats.WeeklyGroupResultsInfoIconHover,
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+func weeklyMetricsByInsight(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics) error {
+	const metricsByInsightQuery = `
+	SELECT argument ->> 'insightType'::text 					             		AS insight_type,
+        COUNT(*) FILTER (WHERE name = 'InsightAddition') 		             		AS additions,
+        COUNT(*) FILTER (WHERE name = 'InsightEdit') 			             		AS edits,
+        COUNT(*) FILTER (WHERE name = 'InsightRemoval') 		             		AS removals,
+		COUNT(*) FILTER (WHERE name = 'InsightHover') 			             		AS hovers,
+		COUNT(*) FILTER (WHERE name = 'InsightUICustomization') 			 		AS ui_customizations,
+		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick') 				 		AS data_point_clicks,
+		COUNT(*) FILTER (WHERE name = 'InsightFiltersChange') 				 		AS filters_change
+	FROM event_logs
+	WHERE name in ('InsightAddition', 'InsightEdit', 'InsightRemoval', 'InsightHover', 'InsightUICustomization', 'InsightDataPointClick', 'InsightFiltersChange')
+		AND timestamp > DATE_TRUNC('week', $1::timestamp)
+	GROUP BY insight_type;
+	`
+
+	var weeklyUsageStatisticsByInsight []*types.InsightUsageStatistics
+	rows, err := db.QueryContext(ctx, metricsByInsightQuery, timeNow())
+	if err != nil {
+		return err
+	}
+
+	for rows.Next() {
+		weeklyInsightUsageStatistics := types.InsightUsageStatistics{}
+		if err := rows.Scan(
+			&weeklyInsightUsageStatistics.InsightType,
+			&weeklyInsightUsageStatistics.Additions,
+			&weeklyInsightUsageStatistics.Edits,
+			&weeklyInsightUsageStatistics.Removals,
+			&weeklyInsightUsageStatistics.Hovers,
+			&weeklyInsightUsageStatistics.UICustomizations,
+			&weeklyInsightUsageStatistics.DataPointClicks,
+			&weeklyInsightUsageStatistics.FiltersChange,
+		); err != nil {
+			return err
+		}
+		weeklyUsageStatisticsByInsight = append(weeklyUsageStatisticsByInsight, &weeklyInsightUsageStatistics)
+	}
+	stats.WeeklyUsageStatisticsByInsight = weeklyUsageStatisticsByInsight
+	return nil
+}
+
+func weeklyFirstTimeCreators(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics) error {
+	const weeklyFirstTimeCreatorsQuery = `
+	WITH first_times AS (
+		SELECT
+			user_id,
+			MIN(timestamp) as first_time
+		FROM event_logs
+		WHERE name = 'InsightAddition'
+		GROUP BY user_id
+		)
+	SELECT
+		DATE_TRUNC('week', $1::timestamp) AS week_start,
+		COUNT(distinct user_id) as weekly_first_time_insight_creators
+	FROM first_times
+	WHERE first_time > DATE_TRUNC('week', $1::timestamp);
+	`
+
+	if err := db.QueryRowContext(ctx, weeklyFirstTimeCreatorsQuery, timeNow()).Scan(
+		&stats.WeekStart,
+		&stats.WeeklyFirstTimeInsightCreators,
+	); err != nil {
+		return err
+	}
+	return nil
 }
 
 func GetWeeklyTabClicks(ctx context.Context, db database.DB, sql string) ([]types.InsightGetStartedTabClickPing, error) {
