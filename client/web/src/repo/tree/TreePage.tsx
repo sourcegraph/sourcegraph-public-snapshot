@@ -397,6 +397,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                                         match={match}
                                                         settingsCascade={settingsCascade}
                                                         useBreadcrumb={useBreadcrumb}
+                                                        location={location}
                                                         {...props}
                                                     />
                                                 </RepoRevisionWrapper>
@@ -412,6 +413,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 repo={repo}
                                 revision={revision}
                                 commitID={commitID}
+                                location={location}
                                 {...props}
                             />
                         )}
