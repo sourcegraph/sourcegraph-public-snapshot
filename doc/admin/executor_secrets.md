@@ -37,7 +37,7 @@ Org 1 secret `GITHUB_TOKEN`: Can be used by batch changes created by any org mem
 ## Creating a new secret
 
 To create a global secret, go to **Site-admin** > **Executors/Secrets** and click **Add secret**.
-To create a user secret, go to your user profile from the navbar > **Executor secrets** and click **Add secret**.
+To create a user secret, go to your user profile from the navbar > **Settings** >  **Executor secrets** and click **Add secret**.
 To create an org secret, go to the org profile from the navbar > **Executor secrets** and click **Add secret**.
 
 Then, fill in a name for the secret. This will be the name of the environment variable it will be accessible as.
