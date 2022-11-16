@@ -104,7 +104,7 @@ const fetchBlameViaStreaming = memoizeObservable(
         filePath: string
     }): Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined> => {
         const hunks = new BehaviorSubject<Omit<BlameHunk, 'displayInfo'>[] | undefined>(undefined)
-        const assembledHunks: Omit<BlameHunk, 'displayInfo'>[] = []
+        let assembledHunks: Omit<BlameHunk, 'displayInfo'>[] = []
         let didEarlyFlush = false
         fetch(`/${repoName}${revision ? `@${revision}` : ''}/-/stream-blame/${filePath}`)
             .then(response => response.body)
@@ -152,6 +152,10 @@ const fetchBlameViaStreaming = memoizeObservable(
                             if (!didEarlyFlush && assembledHunks.length > 50) {
                                 didEarlyFlush = true
                                 hunks.next(assembledHunks)
+                                // React will not re-render if the hunks array is the same reference.
+                                // Since we need to create a new array, now is the best time since
+                                // hunk count is still low.
+                                assembledHunks = [...assembledHunks]
                             }
                         } catch (error) {
                             if (index === rows.length - 1) {
@@ -164,8 +168,8 @@ const fetchBlameViaStreaming = memoizeObservable(
                             throw error
                         }
                     }
-                    hunks.next(assembledHunks)
                 }
+                hunks.next(assembledHunks)
             })
             .catch(error => {
                 console.error(error)

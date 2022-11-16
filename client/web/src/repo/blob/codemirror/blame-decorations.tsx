@@ -133,9 +133,10 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                 const hunk = longestColumnDecorations(view.state.facet(facet))
                 return new BlameDecoratorMarker(view, hunk, true)
             },
-            // Markers need to be updated when theme changes
+            // Markers need to be updated when theme changes or the hunks change
             lineMarkerChange: update =>
-                update.startState.facet(EditorView.darkTheme) !== update.state.facet(EditorView.darkTheme),
+                update.startState.facet(EditorView.darkTheme) !== update.state.facet(EditorView.darkTheme) ||
+                update.startState.facet(facet) !== update.state.facet(facet),
         }),
         hoveredLine,
     ],
