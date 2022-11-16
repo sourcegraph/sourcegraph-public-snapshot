@@ -31,8 +31,8 @@ type permissionsSyncJobResolver struct{ s syncjobs.Status }
 var _ graphqlbackend.PermissionsSyncJobResolver = permissionsSyncJobResolver{}
 
 func (j permissionsSyncJobResolver) ID() graphql.ID {
-	// Use eventTime because RequestID can repeat
-	return relay.MarshalID("EventTime", j.s.Completed)
+	// Use eventTime because job ID can repeat
+	return relay.MarshalID("PermissionsSyncJob", j.s.Completed)
 }
 
 func (j permissionsSyncJobResolver) JobID() int32 { return j.s.JobID }
