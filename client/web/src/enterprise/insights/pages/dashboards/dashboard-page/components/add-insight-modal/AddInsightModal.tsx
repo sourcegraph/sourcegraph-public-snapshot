@@ -5,7 +5,7 @@ import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError } from '@sourcegraph/common'
+import { asError, isDefined } from '@sourcegraph/common'
 import { Button, Modal, H2, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import {
@@ -15,7 +15,6 @@ import {
 } from '../../../../../../../graphql-operations'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components'
 import { CodeInsightsBackendContext, CustomInsightDashboard } from '../../../../../core'
-import { isNotNull } from '../../../../../core/backend/utils/not-null'
 
 import {
     AddInsightFormValues,
@@ -106,9 +105,9 @@ function getDashboardInsightIds(data?: GetDashboardAccessibleInsightsResult): st
         return []
     }
 
-    return data.dashboardInsightsIds.nodes[0].views.nodes.filter(isNotNull).map(view => view.id)
+    return data.dashboardInsightsIds.nodes[0].views.nodes.filter(isDefined).map(view => view.id)
 }
 
 function getAvailableInsights(data?: GetDashboardAccessibleInsightsResult): AccessibleInsight[] {
-    return data?.accessibleInsights?.nodes.filter(isNotNull) ?? []
+    return data?.accessibleInsights?.nodes.filter(isDefined) ?? []
 }

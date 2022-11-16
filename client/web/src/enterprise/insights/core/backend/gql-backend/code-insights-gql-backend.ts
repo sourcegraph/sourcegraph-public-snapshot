@@ -14,6 +14,7 @@ import {
     RemoveInsightViewFromDashboardVariables,
 } from 'src/graphql-operations'
 
+import { isDefined } from '@sourcegraph/common'
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
 import { ALL_INSIGHTS_DASHBOARD } from '../../../constants'
@@ -35,7 +36,6 @@ import {
     InsightPreviewSettings,
     BackendInsightDatum,
 } from '../code-insights-backend-types'
-import { isNotNull } from '../utils/not-null'
 
 import { createInsightView } from './deserialization/create-insight-view'
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
@@ -70,7 +70,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     errorPolicy: 'all',
                 })
             ).pipe(
-                map(({ data }) => data.insightViews.nodes.filter(isNotNull).map(createInsightView)),
+                map(({ data }) => data.insightViews.nodes.filter(isDefined).map(createInsightView)),
                 map(insights => (withCompute ? insights : insights.filter(insight => !isComputeInsight(insight))))
             )
         }
@@ -87,7 +87,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         ).pipe(
             map(({ data }) => data.insightsDashboards.nodes[0]),
-            map(dashboard => dashboard.views?.nodes.filter(isNotNull).map(createInsightView) ?? []),
+            map(dashboard => dashboard.views?.nodes.filter(isDefined).map(createInsightView) ?? []),
             map(insights => (withCompute ? insights : insights.filter(insight => !isComputeInsight(insight))))
         )
     }
