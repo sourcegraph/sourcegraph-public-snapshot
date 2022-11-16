@@ -1,9 +1,9 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
 
 	"github.com/sourcegraph/log"
@@ -58,8 +58,8 @@ func (rustDependencySource) ParseVersionedPackageFromConfiguration(dep string) (
 
 func (rustDependencySource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
 	return reposource.ParseRustPackageFromName(name)
-
 }
+
 func (rustDependencySource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParseRustPackageFromRepoName(repoName)
 }
@@ -83,8 +83,7 @@ func (s *rustDependencySource) Download(ctx context.Context, dir string, dep rep
 
 // unpackRustPackages unpacks the given rust package archive into workDir, skipping any
 // files that aren't valid or that are potentially malicious.
-func unpackRustPackage(pkg []byte, workDir string) error {
-	r := bytes.NewReader(pkg)
+func unpackRustPackage(pkg io.Reader, workDir string) error {
 	opts := unpack.Opts{
 		SkipInvalid:    true,
 		SkipDuplicates: true,
@@ -101,7 +100,7 @@ func unpackRustPackage(pkg []byte, workDir string) error {
 		},
 	}
 
-	if err := unpack.Tgz(r, workDir, opts); err != nil {
+	if err := unpack.Tgz(pkg, workDir, opts); err != nil {
 		return err
 	}
 
