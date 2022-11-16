@@ -312,6 +312,9 @@ input FetchPermissionsOptions {
     invalidateCaches: Boolean
 }
 
+"""
+Permission sync jobs.
+"""
 type PermissionsSyncJobs {
     """
     Permission sync jobs.
@@ -319,11 +322,17 @@ type PermissionsSyncJobs {
     nodes: [PermissionsSyncJob!]!
 }
 
+"""
+Status types of permissions sync jobs.
+"""
 enum PermissionsSyncJobStatus {
     ERROR
     SUCCESS
 }
 
+"""
+State of a permission sync job.
+"""
 type PermissionsSyncJob {
     """
     Type of the sync job.
@@ -351,6 +360,9 @@ type PermissionsSyncJob {
     providers: [PermissionsProviderStatus!]!
 }
 
+"""
+State of a permissions provider during a sync job.
+"""
 type PermissionsProviderStatus {
     """
     Type of the provider.
