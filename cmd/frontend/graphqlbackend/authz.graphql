@@ -359,7 +359,8 @@ type PermissionsSyncJob {
     """
     status: PermissionsSyncJobStatus!
     """
-    Message describing the status of the sync job.
+    Message describing the status of the sync job - for example, the contents of any
+    errors.
     """
     message: String!
     """
@@ -385,7 +386,8 @@ type PermissionsProviderStatus {
     """
     status: PermissionsSyncJobStatus!
     """
-    Message describing the status of the sync job.
+    Message describing the status of the provider during a sync job - for example, the
+    contents of any errors and during which operation they occured.
     """
     message: String!
 }
