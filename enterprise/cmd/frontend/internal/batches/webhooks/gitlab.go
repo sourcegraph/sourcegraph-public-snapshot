@@ -30,7 +30,7 @@ var gitlabEvents = []string{
 }
 
 type GitLabWebhook struct {
-	*Webhook
+	*webhook
 
 	// failHandleEvent is here so that we can explicitly force a failure in the event
 	// handler in tests
@@ -38,7 +38,7 @@ type GitLabWebhook struct {
 }
 
 func NewGitLabWebhook(store *store.Store, gitserverClient gitserver.Client) *GitLabWebhook {
-	return &GitLabWebhook{Webhook: &Webhook{store, gitserverClient, extsvc.TypeGitLab}}
+	return &GitLabWebhook{webhook: &webhook{store, gitserverClient, extsvc.TypeGitLab}}
 }
 
 func (h *GitLabWebhook) Register(router *fewebhooks.WebhookRouter) {

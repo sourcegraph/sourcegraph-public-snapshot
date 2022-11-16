@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type Webhook struct {
+type webhook struct {
 	Store           *store.Store
 	gitserverClient gitserver.Client
 
@@ -35,7 +35,7 @@ type PR struct {
 	RepoExternalID string
 }
 
-func (h Webhook) getRepoForPR(
+func (h webhook) getRepoForPR(
 	ctx context.Context,
 	tx *store.Store,
 	pr PR,
@@ -89,7 +89,7 @@ type keyer interface {
 	Key() string
 }
 
-func (h Webhook) upsertChangesetEvent(
+func (h webhook) upsertChangesetEvent(
 	ctx context.Context,
 	externalServiceID extsvc.CodeHostBaseURL,
 	pr PR,
