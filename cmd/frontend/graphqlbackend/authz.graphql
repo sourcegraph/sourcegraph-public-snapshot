@@ -150,7 +150,7 @@ extend type Query {
         """
         Number of jobs returned. Maximum number of returned jobs is 500. Up to 100 jobs are returned by default.
         """
-        count: Int
+        first: Int
     ): PermissionsSyncJobs
 
     """

@@ -121,7 +121,7 @@ type PermissionsInfoResolver interface {
 
 type PermissionsSyncJobsArgs struct {
 	Status *string
-	Count  *int32
+	First  *int32
 }
 
 type PermissionsSyncJobsResolver interface {

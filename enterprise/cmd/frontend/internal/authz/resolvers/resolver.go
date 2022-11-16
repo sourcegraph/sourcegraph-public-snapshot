@@ -633,8 +633,8 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend
 	}
 
 	count := 100
-	if args.Count != nil {
-		count = int(*args.Count)
+	if args.First != nil {
+		count = int(*args.First)
 		if count > 500 {
 			count = 500
 		}
