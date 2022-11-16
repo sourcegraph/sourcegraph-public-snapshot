@@ -69,13 +69,11 @@ export const createDefaultSuggestions = ({
     disableFilterCompletion,
     disableSymbolCompletion,
     history,
-    onSubmit,
     applyOnEnter,
     showWhenEmpty,
 }: Omit<DefaultSuggestionSourcesOptions, 'fetchSuggestions'> & {
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>
     history?: H.History
-    onSubmit?: () => void
     /**
      * Whether or not to allow suggestions selection by Enter key.
      */
@@ -92,7 +90,6 @@ export const createDefaultSuggestions = ({
             applyOnEnter,
         }),
         history,
-        onSubmit,
         applyOnEnter
     ),
     loadingIndicator(),

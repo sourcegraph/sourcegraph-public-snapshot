@@ -129,7 +129,6 @@ export type StandardSuggestionSource = SuggestionSource<CompletionResult | null,
 export function searchQueryAutocompletion(
     sources: StandardSuggestionSource[],
     history?: H.History,
-    onSubmit?: () => void,
     // By default we do not enable suggestion selection with enter because that
     // interferes with the query submission logic.
     applyOnEnter = false
@@ -269,11 +268,7 @@ export function searchQueryAutocompletion(
                                   const hasUserPressedDownArrow = selectedCompletion(view.state) !== null
                                   if (hasUserPressedDownArrow) {
                                       view.dispatch({ effects: setSelectedCompletion(0) })
-                                      const hasAccepted = acceptCompletion(view)
-                                      if (hasAccepted) {
-                                          onSubmit?.()
-                                      }
-                                      return hasAccepted
+                                      return acceptCompletion(view)
                                   }
                                   return false
                               },
