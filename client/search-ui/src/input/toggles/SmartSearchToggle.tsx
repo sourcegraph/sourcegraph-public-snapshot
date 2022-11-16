@@ -55,7 +55,6 @@ export const SmartSearchToggle: React.FunctionComponent<SmartSearchToggleProps> 
                 <PopoverTrigger
                     as={Button}
                     className={classNames(
-                        'a11y-ignore',
                         styles.toggle,
                         smartStyles.button,
                         className,
