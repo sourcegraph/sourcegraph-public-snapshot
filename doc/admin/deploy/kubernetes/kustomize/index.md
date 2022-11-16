@@ -51,7 +51,7 @@ All changes should be made within a new `kustomization.yaml` file inside the [ov
 Once you have an overlay, run the following command in the directory where the `kustomization.yaml` file for your overlay is located to build the customized manifests for your deployment. The updated manifests with your customization can then be found inside the `.overlay_output.yaml`.
 
 ```bash
-$ kustomize build . > .overlay_output.yaml
+kustomize build . > .overlay_output.yaml
 ```
 
 > NOTE: This command will build a new set of manifests based on your overlay. It does not affect your current deployment until you run the apply command.
@@ -61,8 +61,7 @@ $ kustomize build . > .overlay_output.yaml
 In order to apply the customized manifests to your cluster, run the following command in the directory where the `kustomization.yaml` file for your overlay is located:
 
 ```bash
-# example: kustomize build . | kubectl apply -f -
-$ kustomize build . | kubectl apply -f -
+kustomize build . | kubectl apply -f -
 ```
 
 ### Kustomize with Helm
