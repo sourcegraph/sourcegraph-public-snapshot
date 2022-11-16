@@ -30,6 +30,9 @@ type AuthzResolver interface {
 	// Helpers
 	RepositoryPermissionsInfo(ctx context.Context, repoID graphql.ID) (PermissionsInfoResolver, error)
 	UserPermissionsInfo(ctx context.Context, userID graphql.ID) (PermissionsInfoResolver, error)
+
+	// Node types
+	NodeResolvers() map[string]NodeByIDFunc
 }
 
 type RepositoryIDArgs struct {
@@ -122,7 +125,7 @@ type PermissionsInfoResolver interface {
 
 type PermissionsSyncJobsArgs struct {
 	Status *string
-	First  *int32
+	First  int32
 }
 
 type PermissionsSyncJobsConnection interface {
@@ -132,7 +135,8 @@ type PermissionsSyncJobsConnection interface {
 }
 
 type PermissionsSyncJobResolver interface {
-	ID() graphql.ID
+	Node
+
 	JobID() int32
 	Type() string
 	Status() string

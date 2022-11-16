@@ -35,7 +35,8 @@ type Resolver struct {
 		SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
 	}
 	syncJobsRecords interface {
-		Get(ctx context.Context, first int) ([]syncjobs.Status, error)
+		Get(timestamp time.Time) (*syncjobs.Status, error)
+		GetAll(ctx context.Context, first int) ([]syncjobs.Status, error)
 	}
 }
 
@@ -632,15 +633,11 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend
 		return nil, err
 	}
 
-	count := 100
-	if args.First != nil {
-		count = int(*args.First)
-		if count > 500 {
-			count = 500
-		}
+	if args.First == 0 {
+		return nil, errors.Newf("expected non-zero 'first', got %d", args.First)
 	}
 
-	records, err := r.syncJobsRecords.Get(ctx, count)
+	records, err := r.syncJobsRecords.GetAll(ctx, int(args.First))
 	if err != nil {
 		return nil, err
 	}
@@ -659,4 +656,10 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend
 	}
 
 	return jobs, nil
+}
+
+func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
+	return map[string]graphqlbackend.NodeByIDFunc{
+		permissionsSyncJobKind: getPermissionsSyncJobByIDFunc(r),
+	}
 }

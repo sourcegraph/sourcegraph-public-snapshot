@@ -90,5 +90,5 @@ func (r *RecordsStore) Record(jobType string, jobID int32, providerStates []Prov
 	}
 
 	// Key by timestamp for sorting
-	r.cache.Set(strconv.FormatInt(record.Completed.UnixNano(), 10), val)
+	r.cache.Set(strconv.FormatInt(record.Completed.UTC().UnixNano(), 10), val)
 }

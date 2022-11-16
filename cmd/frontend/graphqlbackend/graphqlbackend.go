@@ -388,6 +388,9 @@ func NewSchema(
 		EnterpriseResolvers.authzResolver = authz
 		resolver.AuthzResolver = authz
 		schemas = append(schemas, authzSchema)
+		for kind, res := range authz.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
 	}
 
 	if codeMonitors != nil {
