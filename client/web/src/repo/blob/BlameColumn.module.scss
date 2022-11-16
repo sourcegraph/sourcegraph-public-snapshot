@@ -19,6 +19,13 @@
     vertical-align: bottom;
 }
 
+:global(.selected-line),
+:global(.highlighted-line) {
+    .codemirror-decoration {
+        background: inherit;
+    }
+}
+
 tr:global(.selected),
 tr:global(.highlighted) {
     .decoration {
