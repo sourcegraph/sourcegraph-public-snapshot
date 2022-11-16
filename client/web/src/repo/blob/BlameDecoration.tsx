@@ -134,7 +134,6 @@ export const BlameDecoration: React.FunctionComponent<{
 
     if (!blameHunk) {
         return <span className={classNames(styles.popoverTrigger, 'px-2')} />
-        // return null
     }
 
     return (

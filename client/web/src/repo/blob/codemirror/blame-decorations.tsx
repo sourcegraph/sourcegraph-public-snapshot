@@ -104,14 +104,6 @@ const decorate = (view: EditorView, facet: Facet<BlameHunk[], BlameHunk[]>): Dec
         for (let position = from; position <= to; ) {
             const line = view.state.doc.lineAt(position)
             const hunk = hunks.find(h => h.startLine === line.number)
-
-            // TODO: remove!
-            if (position === from) {
-                console.log('FIRST', line.number)
-            } else if (position === to) {
-                console.log('LAST', line.number)
-            }
-
             const decoration = Decoration.widget({
                 widget: new DecorationWidget(view, hunk),
             })
