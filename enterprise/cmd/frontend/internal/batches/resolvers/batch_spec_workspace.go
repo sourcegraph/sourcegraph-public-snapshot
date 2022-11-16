@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -121,6 +122,76 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 		return nil, nil
 	}
 
+	if r.execution != nil && r.execution.Version == 2 {
+		skippedSteps, err := batcheslib.SkippedStepsForRepo(r.batchSpec, r.repoResolver.Name(), r.workspace.FileMatches)
+		if err != nil {
+			return nil, err
+		}
+
+		resolvers := make([]graphqlbackend.BatchSpecWorkspaceStepResolver, 0, len(r.batchSpec.Steps))
+		for idx, step := range r.batchSpec.Steps {
+			skipped := false
+
+			// Mark all steps as skipped when a cached result was found.
+			if r.CachedResultFound() {
+				skipped = true
+			}
+
+			// Mark all steps as skipped when a workspace is skipped.
+			if r.workspace.Skipped {
+				skipped = true
+			}
+
+			// If we have marked the step as to-be-skipped, we have to translate
+			// that here into the workspace step info.
+			if _, ok := skippedSteps[idx]; ok {
+				skipped = true
+			}
+
+			var (
+				entry workerutil.ExecutionLogEntry
+				ok    bool
+			)
+			if r.execution != nil {
+				entry, ok = findExecutionLogEntry(r.execution, fmt.Sprintf("step.docker.step.%d.run", idx))
+			}
+
+			resolver := &batchSpecWorkspaceStepV2Resolver{
+				index:         idx,
+				step:          step,
+				skipped:       skipped,
+				logEntry:      entry,
+				logEntryFound: ok,
+				store:         r.store,
+				repo:          r.repoResolver,
+				baseRev:       r.workspace.Commit,
+			}
+
+			// See if we have a cache result for this step.
+			if cachedResult, ok := r.workspace.StepCacheResult(idx + 1); ok {
+				resolver.skipped = true
+				resolver.cachedResult = cachedResult.Value
+			} else if r.execution != nil {
+				e, ok := findExecutionLogEntry(r.execution, fmt.Sprintf("step.docker.step.%d.post", idx))
+				if ok {
+					ev := btypes.ParseJSONLogsFromOutput(e.Out)
+					for _, e := range ev {
+						if e.Operation == batcheslib.LogEventOperationCacheAfterStepResult {
+							m, ok := e.Metadata.(*batcheslib.CacheAfterStepResultMetadata)
+							if ok {
+								resolver.cachedResult = &m.Value
+							}
+						}
+					}
+				}
+			}
+
+			resolvers = append(resolvers, resolver)
+		}
+
+		return resolvers, nil
+	}
+
 	var stepInfo = make(map[int]*btypes.StepInfo)
 	var entryExitCode *int
 	if r.execution != nil {
@@ -165,11 +236,11 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 
 		// If we have marked the step as to-be-skipped, we have to translate
 		// that here into the workspace step info.
-		if _, ok := skippedSteps[int32(idx)]; ok {
+		if _, ok := skippedSteps[idx]; ok {
 			si.Skipped = true
 		}
 
-		resolver := &batchSpecWorkspaceStepResolver{
+		resolver := &batchSpecWorkspaceStepV1Resolver{
 			index:    idx,
 			step:     step,
 			stepInfo: si,
@@ -197,6 +268,9 @@ func (r *batchSpecWorkspaceResolver) Step(args graphqlbackend.BatchSpecWorkspace
 	// Check if step exists.
 	if int(args.Index) > len(r.batchSpec.Steps) {
 		return nil, nil
+	}
+	if args.Index <= 0 {
+		return nil, errors.New("invalid step index")
 	}
 
 	resolvers, err := r.computeStepResolvers()
@@ -460,17 +534,32 @@ type batchSpecWorkspaceStagesResolver struct {
 var _ graphqlbackend.BatchSpecWorkspaceStagesResolver = &batchSpecWorkspaceStagesResolver{}
 
 func (r *batchSpecWorkspaceStagesResolver) Setup() []graphqlbackend.ExecutionLogEntryResolver {
-	return r.executionLogEntryResolversWithPrefix("setup.")
+	res := r.executionLogEntryResolversWithPrefix("setup.")
+	// V2 execution has an additional "setup" step that applies the git diff of the previous
+	// cached result. This shall land under setup, so we fetch it additionally here.
+	a, found := findExecutionLogEntry(r.execution, "step.docker.apply-diff")
+	if found {
+		res = append(res, graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), a))
+	}
+	return res
 }
 
-func (r *batchSpecWorkspaceStagesResolver) SrcExec() graphqlbackend.ExecutionLogEntryResolver {
+func (r *batchSpecWorkspaceStagesResolver) SrcExec() []graphqlbackend.ExecutionLogEntryResolver {
+	// V1 execution uses a single `step.src.batch-exec` step, for backcompat we return just that
+	// here.
 	if entry, ok := findExecutionLogEntry(r.execution, "step.src.batch-exec"); ok {
-		return graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
+		return []graphqlbackend.ExecutionLogEntryResolver{graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)}
 	}
 
 	// Backcompat: The step was unnamed before.
 	if entry, ok := findExecutionLogEntry(r.execution, "step.src.0"); ok {
-		return graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
+		return []graphqlbackend.ExecutionLogEntryResolver{graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)}
+	}
+
+	if r.execution.Version == 2 {
+		// V2 execution: There are multiple execution steps involved in running
+		// a spec now: For each step N {N-pre, N, N-post}.
+		return r.executionLogEntryResolversWithPrefix("step.docker.step.")
 	}
 
 	return nil

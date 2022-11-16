@@ -315,3 +315,12 @@ func (r *webhookLogHeaderResolver) Name() string {
 func (r *webhookLogHeaderResolver) Values() []string {
 	return r.values
 }
+
+func marshalWebhookID(id int32) graphql.ID {
+	return relay.MarshalID("Webhook", id)
+}
+
+func unmarshalWebhookID(id graphql.ID) (hookID int32, err error) {
+	err = relay.UnmarshalSpec(id, &hookID)
+	return
+}

@@ -15,6 +15,7 @@ import {
     ViewUpdate,
     WidgetType,
 } from '@codemirror/view'
+import { History } from 'history'
 import { isEqual } from 'lodash'
 import { createRoot, Root } from 'react-dom/client'
 
@@ -22,6 +23,8 @@ import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMi
 
 import { BlameHunk } from '../../blame/useBlameHunks'
 import { BlameDecoration } from '../BlameDecoration'
+
+import { blobPropsFacet } from '.'
 
 import blameColumnStyles from '../BlameColumn.module.scss'
 
@@ -165,6 +168,7 @@ const longestColumnDecorations = (hunks?: BlameHunk[]): BlameHunk | undefined =>
 class BlameDecoratorMarker extends GutterMarker {
     private container: HTMLElement | null = null
     private reactRoot: Root | null = null
+    private state: { history: History }
 
     constructor(
         public view: EditorView,
@@ -172,6 +176,7 @@ class BlameDecoratorMarker extends GutterMarker {
         private isSpacer: boolean = false
     ) {
         super()
+        this.state = { history: this.view.state.facet(blobPropsFacet).history }
     }
 
     /* eslint-disable-next-line id-length*/
@@ -191,6 +196,7 @@ class BlameDecoratorMarker extends GutterMarker {
                      */
                     line={this.isSpacer ? 0 : this.hunk?.startLine ?? 0}
                     blameHunk={this.hunk}
+                    history={this.state.history}
                     onSelect={this.selectRow}
                     onDeselect={this.deselectRow}
                 />

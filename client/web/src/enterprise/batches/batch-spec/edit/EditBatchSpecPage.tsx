@@ -261,13 +261,14 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
             ) : (
                 <div className={styles.form}>
                     <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
-                    <div className={styles.editorContainer}>
+                    <div className={styles.editorContainer} role="region" aria-label="batch spec editor">
                         <H4 as={H3} className={styles.header}>
                             Batch spec
                         </H4>
                         {executionAlert}
                         <MonacoBatchSpecEditor
                             autoFocus={true}
+                            batchChangeNamespace={batchChange.namespace}
                             batchChangeName={batchChange.name}
                             className={styles.editor}
                             isLightTheme={isLightTheme}

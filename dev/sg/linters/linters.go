@@ -89,9 +89,10 @@ var Targets = []Target{
 			bashSyntax,
 		},
 	},
+	Formatting,
 }
 
-var FormattingTarget = Target{
+var Formatting = Target{
 	Name:        "format",
 	Description: "Check client code and docs for formatting errors",
 	Checks: []*linter{

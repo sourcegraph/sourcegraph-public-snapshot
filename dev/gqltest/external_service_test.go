@@ -161,25 +161,39 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 }
 
 func TestExternalService_Perforce(t *testing.T) {
-	checkPerforceEnvironment(t)
-	createPerforceExternalService(t)
-
 	const repoName = "perforce/test-perms"
-	err := client.WaitForReposToBeCloned(repoName)
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	blob, err := client.GitBlob(repoName, "master", "README.md")
-	if err != nil {
-		t.Fatal(err)
-	}
+	run := func(t *testing.T, useFusion bool) {
+		checkPerforceEnvironment(t)
+		// Make sure the repo wasn't already cloned by another test
+		if err := client.DeleteRepoFromDiskByName(repoName); err != nil {
+			t.Fatal(err)
+		}
+		createPerforceExternalService(t, useFusion)
 
-	wantBlob := `This depot is used to test user and group permissions.
+		err := client.WaitForReposToBeCloned(repoName)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		blob, err := client.GitBlob(repoName, "master", "README.md")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantBlob := `This depot is used to test user and group permissions.
 `
-	if diff := cmp.Diff(wantBlob, blob); diff != "" {
-		t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wantBlob, blob); diff != "" {
+			t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
+		}
 	}
+
+	t.Run("git-p4", func(t *testing.T) {
+		run(t, false)
+	})
+	t.Run("p4-fusion", func(t *testing.T) {
+		run(t, true)
+	})
 }
 
 func checkPerforceEnvironment(t *testing.T) {
@@ -188,11 +202,15 @@ func checkPerforceEnvironment(t *testing.T) {
 	}
 }
 
-func createPerforceExternalService(t *testing.T) {
+func createPerforceExternalService(t *testing.T, useP4Fusion bool) {
 	t.Helper()
 
 	type Authorization = struct {
 		SubRepoPermissions bool `json:"subRepoPermissions"`
+	}
+	type FusionClient = struct {
+		Enabled   bool `json:"enabled"`
+		LookAhead int  `json:"lookAhead,omitempty"`
 	}
 
 	// Set up external service
@@ -205,6 +223,7 @@ func createPerforceExternalService(t *testing.T) {
 			P4Password            string        `json:"p4.passwd"`
 			Depots                []string      `json:"depots"`
 			RepositoryPathPattern string        `json:"repositoryPathPattern"`
+			FusionClient          FusionClient  `json:"fusionClient"`
 			Authorization         Authorization `json:"authorization"`
 		}{
 			P4Port:                *perforcePort,
@@ -212,6 +231,10 @@ func createPerforceExternalService(t *testing.T) {
 			P4Password:            *perforcePassword,
 			Depots:                []string{"//test-perms/"},
 			RepositoryPathPattern: "perforce/{depot}",
+			FusionClient: FusionClient{
+				Enabled:   useP4Fusion,
+				LookAhead: 2000,
+			},
 			Authorization: Authorization{
 				SubRepoPermissions: true,
 			},
@@ -278,7 +301,7 @@ func TestExternalService_AsyncDeletion(t *testing.T) {
 func removeExternalServiceAfterTest(t *testing.T, esID string) {
 	t.Helper()
 	t.Cleanup(func() {
-		err := client.DeleteExternalService(esID, true)
+		err := client.DeleteExternalService(esID, false)
 		if err != nil {
 			t.Fatal(err)
 		}

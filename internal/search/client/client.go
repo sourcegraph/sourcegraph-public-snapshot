@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/grafana/regexp"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/zoekt"
 
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegraph/zoekt"
 )
 
 type SearchClient interface {
@@ -110,15 +112,16 @@ func (s *searchClient) Plan(
 	tr.LazyPrintf("parsing done")
 
 	inputs := &search.Inputs{
-		Plan:                plan,
-		Query:               plan.ToQ(),
-		OriginalQuery:       searchQuery,
-		SearchMode:          searchMode,
-		UserSettings:        settings,
-		OnSourcegraphDotCom: sourcegraphDotComMode,
-		Features:            ToFeatures(featureflag.FromContext(ctx), s.logger),
-		PatternType:         searchType,
-		Protocol:            protocol,
+		Plan:                   plan,
+		Query:                  plan.ToQ(),
+		OriginalQuery:          searchQuery,
+		SearchMode:             searchMode,
+		UserSettings:           settings,
+		OnSourcegraphDotCom:    sourcegraphDotComMode,
+		Features:               ToFeatures(featureflag.FromContext(ctx), s.logger),
+		PatternType:            searchType,
+		Protocol:               protocol,
+		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.db, s.logger), // Experimental: check site config to see if search sanitization is enabled
 	}
 
 	tr.LazyPrintf("Parsed query: %s", inputs.Query)
@@ -153,6 +156,50 @@ func (s *searchClient) JobClients() job.RuntimeClients {
 		SearcherURLs: s.searcherURLs,
 		Gitserver:    gitserver.NewClient(s.db),
 	}
+}
+
+func sanitizeSearchPatterns(ctx context.Context, db database.DB, log log.Logger) []*regexp.Regexp {
+	var sanitizePatterns []*regexp.Regexp
+	c := conf.Get()
+	if c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SearchSanitization != nil {
+		actr := actor.FromContext(ctx)
+		if actr.IsInternal() {
+			return []*regexp.Regexp{}
+		}
+
+		for _, pat := range c.ExperimentalFeatures.SearchSanitization.SanitizePatterns {
+			if re, err := regexp.Compile(pat); err != nil {
+				log.Warn("invalid regex pattern provided, ignoring")
+			} else {
+				sanitizePatterns = append(sanitizePatterns, re)
+			}
+		}
+
+		user, err := actr.User(ctx, db.Users())
+		if err != nil {
+			log.Warn("search being run as invalid user")
+			return sanitizePatterns
+		}
+
+		if user.SiteAdmin {
+			return []*regexp.Regexp{}
+		}
+
+		if c.ExperimentalFeatures.SearchSanitization.OrgName != "" {
+			orgStore := db.Orgs()
+			userOrgs, err := orgStore.GetByUserID(ctx, user.ID)
+			if err != nil {
+				return sanitizePatterns
+			}
+
+			for _, org := range userOrgs {
+				if org.Name == c.ExperimentalFeatures.SearchSanitization.OrgName {
+					return []*regexp.Regexp{}
+				}
+			}
+		}
+	}
+	return sanitizePatterns
 }
 
 type QueryError struct {
@@ -245,6 +292,7 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
 		AbLuckySearch:           flagSet.GetBoolOr("ab-lucky-search", false),
 		Ranking:                 flagSet.GetBoolOr("search-ranking", false),
+		RankingDampDocRanks:     flagSet.GetBoolOr("search-ranking-damp-doc-ranks", false),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
 	}
 }

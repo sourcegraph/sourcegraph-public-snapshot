@@ -17,7 +17,7 @@ import (
 )
 
 // All Sourcegraph Operator endpoints are under this path prefix.
-const authPrefix = auth.AuthURLPrefix + "/" + providerType
+const authPrefix = auth.AuthURLPrefix + "/" + ProviderType
 
 // Middleware is middleware for Sourcegraph Operator authentication, adding
 // endpoints under the auth path prefix ("/.auth") to enable the login flow and
@@ -26,10 +26,6 @@ const authPrefix = auth.AuthURLPrefix + "/" + providerType
 // 🚨SECURITY: See docstring of the openidconnect.Middleware for security details
 // because the Sourcegraph Operator authentication provider is a wrapper of the
 // OpenID Connect authentication provider.
-//
-// TODO(jchen): Init in enterprise/cmd/frontend/internal/auth/init.go once we
-// have figured out how to only allow load SOAP from SRC_CLOUD_SITE_CONFIG, see
-// https://github.com/sourcegraph/customer/issues/1427 for details.
 func Middleware(db database.DB) *auth.Middleware {
 	return &auth.Middleware{
 		API: func(next http.Handler) http.Handler {
@@ -70,7 +66,7 @@ const (
 )
 
 func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
-	logger := log.Scoped(providerType+".authHandler", "Sourcegraph Operator authentication handler")
+	logger := log.Scoped(ProviderType+".authHandler", "Sourcegraph Operator authentication handler")
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
@@ -93,12 +89,12 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 
 			p, ok := providers.GetProviderByConfigID(
 				providers.ConfigID{
-					Type: providerType,
-					ID:   providerType,
+					Type: ProviderType,
+					ID:   ProviderType,
 				},
 			).(*provider)
 			if !ok {
-				logger.Error("failed to get Sourcegraph Operator authentication provider", log.Error(errors.Errorf("no authentication provider found with ID %q", providerType)))
+				logger.Error("failed to get Sourcegraph Operator authentication provider", log.Error(errors.Errorf("no authentication provider found with ID %q", ProviderType)))
 				http.Error(w, "Misconfigured authentication provider.", http.StatusInternalServerError)
 				return
 			}
@@ -122,7 +118,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// If the "sourcegraph-operator" is the only external account associated with the
 			// user, that means the user is a pure Sourcegraph Operator which should have
 			// designated and aggressive session expiry.
-			if len(extAccts) == 1 && extAccts[0].ServiceType == providerType {
+			if len(extAccts) == 1 && extAccts[0].ServiceType == ProviderType {
 				// The user session will only live at most for the remaining duration from the
 				// "users.created_at" compared to the current time.
 				//

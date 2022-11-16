@@ -195,6 +195,12 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		}
 	}
 
+	{ // Apply search result sanitization post-filter if enabled
+		if len(inputs.SanitizeSearchPatterns) > 0 {
+			basicJob = NewSanitizeJob(inputs.SanitizeSearchPatterns, basicJob)
+		}
+	}
+
 	{ // Apply limit
 		maxResults := b.ToParseTree().MaxResults(inputs.DefaultLimit())
 		basicJob = NewLimitJob(maxResults, basicJob)

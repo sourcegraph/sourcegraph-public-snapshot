@@ -827,7 +827,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		s.Logger.Debug("retrieved stored repo, falling through", log.String("stored", fmt.Sprintf("%v", stored)))
 		fallthrough
 	case 1: // Existing repo, update.
-		s.Logger.Debug("exisitng repo")
+		s.Logger.Debug("existing repo")
 		modified := stored[0].Update(sourced)
 		if modified == types.RepoUnmodified {
 			d.Unmodified = append(d.Unmodified, stored[0])
@@ -926,7 +926,7 @@ func (s *Syncer) observeSync(
 		syncStarted.WithLabelValues(family, owner).Inc()
 
 		now := s.Now()
-		took := s.Now().Sub(began).Seconds()
+		took := now.Sub(began).Seconds()
 
 		lastSync.WithLabelValues(family).Set(float64(now.Unix()))
 

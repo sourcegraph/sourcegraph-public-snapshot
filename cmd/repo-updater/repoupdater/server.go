@@ -9,14 +9,12 @@ import (
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	stores "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -67,43 +65,15 @@ func (s *Server) Handler() http.Handler {
 	return mux
 }
 
-// TODO(tsenart): Reuse this function in all handlers.
-func (s *Server) respond(w http.ResponseWriter, code int, v any) {
-	switch val := v.(type) {
-	case error:
-		if val != nil {
-			s.Logger.Error("response value error", log.String("err", val.Error()))
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(code)
-			fmt.Fprintf(w, "%v", val)
-		}
-	default:
-		w.Header().Set("Content-Type", "application/json")
-		bs, err := json.Marshal(v)
-		if err != nil {
-			s.respond(w, http.StatusInternalServerError, err)
-			return
-		}
-
-		w.WriteHeader(code)
-		if _, err = w.Write(bs); err != nil {
-			s.Logger.Error("failed to write response", log.Error(err))
-		}
-	}
-}
-
 func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Request) {
 	var args protocol.RepoUpdateSchedulerInfoArgs
 	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		s.respond(w, http.StatusBadRequest, err)
 		return
 	}
 
 	result := s.Scheduler.ScheduleInfo(args.ID)
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	s.respond(w, http.StatusOK, result)
 }
 
 func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
@@ -129,10 +99,7 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	s.respond(w, http.StatusOK, result)
 }
 
 func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
@@ -199,17 +166,9 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	var genericSourcer repos.Sourcer
 	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
 	db := database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), s)
-	services, err := codeintel.GetServices(codeintel.Databases{
-		DB:          db,
-		CodeIntelDB: stores.NoopDB,
-	})
-	if err != nil {
-		logger.Error("failed to initialize codeintel services", log.Error(err))
-		http.Error(w, "failed to initialize dependencies", http.StatusInternalServerError)
-		return
-	}
+	dependenciesService := dependencies.GetService(db)
 	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
-	genericSourcer = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(services.DependenciesService))
+	genericSourcer = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependenciesService))
 
 	externalServiceID := req.ExternalServiceID
 
@@ -258,6 +217,30 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 
 	logger.Info("server.external-service-sync", log.Bool("synced", true))
 	s.respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{})
+}
+
+func (s *Server) respond(w http.ResponseWriter, code int, v any) {
+	switch val := v.(type) {
+	case error:
+		if val != nil {
+			s.Logger.Error("response value error", log.Error(val))
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			w.WriteHeader(code)
+			fmt.Fprintf(w, "%v", val)
+		}
+	default:
+		w.Header().Set("Content-Type", "application/json")
+		bs, err := json.Marshal(v)
+		if err != nil {
+			s.respond(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.WriteHeader(code)
+		if _, err = w.Write(bs); err != nil {
+			s.Logger.Error("failed to write response", log.Error(err))
+		}
+	}
 }
 
 func handleExternalServiceValidate(ctx context.Context, logger log.Logger, es *types.ExternalService, src repos.Source) (int, any) {

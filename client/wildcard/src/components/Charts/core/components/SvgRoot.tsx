@@ -16,6 +16,7 @@ import {
 import { AxisScale, TickRendererProps } from '@visx/axis'
 import { Group } from '@visx/group'
 import { scaleLinear } from '@visx/scale'
+import { ScaleTime } from 'd3-scale'
 import { noop } from 'lodash'
 import { useMergeRefs } from 'use-callback-ref'
 import useResizeObserver from 'use-resize-observer'
@@ -28,7 +29,7 @@ import { AxisBottom, AxisLeft } from './axis/Axis'
 import { getMaxTickWidth, Tick, TickProps } from './axis/Tick'
 import { GetScaleTicksOptions, getXScaleTicks } from './axis/tick-formatters'
 
-const DEFAULT_PADDING = { top: 16, right: 36, bottom: 0, left: 0 }
+const DEFAULT_PADDING = { top: 16, right: 36, bottom: 20, left: 0 }
 
 interface Padding {
     top: number
@@ -232,7 +233,7 @@ export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): R
     )
 }
 
-interface SvgContentProps<XScale extends AxisScale, YScale extends AxisScale> {
+interface SvgContentProps<XScale extends AxisScale | ScaleTime<any, any>, YScale extends AxisScale> {
     children: (input: { xScale: XScale; yScale: YScale; content: Rectangle }) => ReactNode
 }
 

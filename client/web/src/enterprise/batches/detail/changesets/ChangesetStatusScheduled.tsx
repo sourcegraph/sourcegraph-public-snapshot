@@ -42,12 +42,14 @@ interface Props {
     id: Scalars['ID']
     label: JSX.Element
     className?: string
+    role?: React.AriaRole
 }
 
 const DynamicChangesetStatusScheduled: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     id,
     label,
     className,
+    role,
 }) => {
     // Calculating the estimate is just expensive enough that we don't want to
     // do it for every changeset. (If we did, we'd just request the field when
@@ -87,7 +89,12 @@ const DynamicChangesetStatusScheduled: React.FunctionComponent<React.PropsWithCh
 
     return (
         <Tooltip content={tooltip}>
-            <div className={classNames(iconClassNames, className)} onMouseOver={onMouseOver} onFocus={onMouseOver}>
+            <div
+                className={classNames(iconClassNames, className)}
+                onMouseOver={onMouseOver}
+                onFocus={onMouseOver}
+                role={role}
+            >
                 <Icon svgPath={mdiTimerOutline} inline={false} aria-hidden={true} />
                 {label}
             </div>
@@ -96,9 +103,9 @@ const DynamicChangesetStatusScheduled: React.FunctionComponent<React.PropsWithCh
 }
 
 const StaticChangesetStatusScheduled: React.FunctionComponent<
-    React.PropsWithChildren<Pick<Props, 'label' | 'className'>>
-> = ({ label, className }) => (
-    <div className={classNames(iconClassNames, className)}>
+    React.PropsWithChildren<Pick<Props, 'label' | 'className' | 'role'>>
+> = ({ label, className, role }) => (
+    <div className={classNames(iconClassNames, className)} role={role}>
         <Icon svgPath={mdiTimerOutline} inline={false} aria-hidden={true} />
         {label}
     </div>
@@ -108,15 +115,16 @@ export const ChangesetStatusScheduled: React.FunctionComponent<React.PropsWithCh
     id,
     label = <span>Scheduled</span>,
     className,
+    role,
 }) => (
     // If there's no ID (for example, when previewing a batch change), then no
     // dynamic behaviour is required, and we can just return a static icon and
     // label. Otherwise, we need the whole dynamic shebang.
     <>
         {id ? (
-            <DynamicChangesetStatusScheduled id={id} label={label} className={className} />
+            <DynamicChangesetStatusScheduled id={id} label={label} className={className} role={role} />
         ) : (
-            <StaticChangesetStatusScheduled label={label} className={className} />
+            <StaticChangesetStatusScheduled label={label} className={className} role={role} />
         )}
     </>
 )

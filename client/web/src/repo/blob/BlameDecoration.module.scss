@@ -40,10 +40,15 @@
             color: var(--color-bg-2);
         }
 
-        .body {
+        .block {
             margin-top: 0.75rem;
             margin-bottom: 0.5rem;
             font-size: 0.75rem;
+        }
+
+        .body {
+            padding-left: 0.625rem;
+            padding-right: 1rem;
             line-height: 1.3333333333;
             color: var(--body-color);
         }
@@ -54,6 +59,10 @@
 
         .link {
             color: var(--body-color);
+        }
+
+        .footer-link {
+            font-weight: 500;
         }
     }
 }

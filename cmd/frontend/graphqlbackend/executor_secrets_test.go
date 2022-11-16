@@ -154,7 +154,7 @@ func TestSchemaResolver_UpdateExecutorSecret(t *testing.T) {
 		{
 			name: "Empty value",
 			args: UpdateExecutorSecretArgs{
-				ID: marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(globalSecret.Scope)), globalSecret.ID),
+				ID: marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(globalSecret.Scope))), globalSecret.ID),
 				// Empty value
 				Value: "",
 				Scope: ExecutorSecretScopeBatches,
@@ -165,7 +165,7 @@ func TestSchemaResolver_UpdateExecutorSecret(t *testing.T) {
 		{
 			name: "Update global secret",
 			args: UpdateExecutorSecretArgs{
-				ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(globalSecret.Scope)), globalSecret.ID),
+				ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(globalSecret.Scope))), globalSecret.ID),
 				Value: "1234",
 				Scope: ExecutorSecretScopeBatches,
 			},
@@ -174,7 +174,7 @@ func TestSchemaResolver_UpdateExecutorSecret(t *testing.T) {
 		{
 			name: "Update user secret",
 			args: UpdateExecutorSecretArgs{
-				ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(userSecret.Scope)), userSecret.ID),
+				ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(userSecret.Scope))), userSecret.ID),
 				Value: "1234",
 				Scope: ExecutorSecretScopeBatches,
 			},
@@ -244,7 +244,7 @@ func TestSchemaResolver_DeleteExecutorSecret(t *testing.T) {
 		{
 			name: "Delete global secret",
 			args: DeleteExecutorSecretArgs{
-				ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(globalSecret.Scope)), globalSecret.ID),
+				ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(globalSecret.Scope))), globalSecret.ID),
 				Scope: ExecutorSecretScopeBatches,
 			},
 			actor: actor.FromUser(user.ID),
@@ -252,7 +252,7 @@ func TestSchemaResolver_DeleteExecutorSecret(t *testing.T) {
 		{
 			name: "Delete user secret",
 			args: DeleteExecutorSecretArgs{
-				ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(userSecret.Scope)), userSecret.ID),
+				ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(userSecret.Scope))), userSecret.ID),
 				Scope: ExecutorSecretScopeBatches,
 			},
 			actor: actor.FromUser(user.ID),
@@ -573,7 +573,7 @@ func TestExecutorSecretsIntegration(t *testing.T) {
 		t.Fatal("invalid number of access logs found in DB")
 	}
 
-	s, err := NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := NewSchemaWithoutResolvers(db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -590,6 +590,7 @@ query ExecutorSecretsIntegrationTest {
 					id
 					key
 					scope
+					overwritesGlobalSecret
 					namespace {
 						id
 					}
@@ -637,7 +638,7 @@ query ExecutorSecretsIntegrationTest {
 				},
 				Nodes: []executorSecretsIntegrationTestResponseSecretNode{
 					{
-						ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(secret2.Scope)), secret2.ID),
+						ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(secret2.Scope))), secret2.ID),
 						Key:   "ASDF",
 						Scope: string(ExecutorSecretScopeBatches),
 						Namespace: executorSecretsIntegrationTestResponseNamespace{
@@ -646,8 +647,9 @@ query ExecutorSecretsIntegrationTest {
 						Creator: executorSecretsIntegrationTestResponseCreator{
 							ID: MarshalUserID(user.ID),
 						},
-						CreatedAt: secret2.CreatedAt.Format(time.RFC3339),
-						UpdatedAt: secret2.UpdatedAt.Format(time.RFC3339),
+						OverwritesGlobalSecret: true,
+						CreatedAt:              secret2.CreatedAt.Format(time.RFC3339),
+						UpdatedAt:              secret2.UpdatedAt.Format(time.RFC3339),
 						AccessLogs: executorSecretsIntegrationTestResponseAccessLogs{
 							TotalCount: 2,
 							PageInfo: executorSecretsIntegrationTestResponsePageInfo{
@@ -658,7 +660,7 @@ query ExecutorSecretsIntegrationTest {
 								{
 									ID: marshalExecutorSecretAccessLogID(als[0].ID),
 									ExecutorSecret: executorSecretsIntegrationTestResponseAccessLogExecutorSecret{
-										ID: marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(secret2.Scope)), secret2.ID),
+										ID: marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(secret2.Scope))), secret2.ID),
 									},
 									User: executorSecretsIntegrationTestResponseAccessLogUser{
 										ID: MarshalUserID(user.ID),
@@ -668,7 +670,7 @@ query ExecutorSecretsIntegrationTest {
 								{
 									ID: marshalExecutorSecretAccessLogID(als[1].ID),
 									ExecutorSecret: executorSecretsIntegrationTestResponseAccessLogExecutorSecret{
-										ID: marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(secret2.Scope)), secret2.ID),
+										ID: marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(secret2.Scope))), secret2.ID),
 									},
 									User: executorSecretsIntegrationTestResponseAccessLogUser{
 										ID: MarshalUserID(user.ID),
@@ -679,7 +681,7 @@ query ExecutorSecretsIntegrationTest {
 						},
 					},
 					{
-						ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(secret3.Scope)), secret3.ID),
+						ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(secret3.Scope))), secret3.ID),
 						Key:   "FOOBAR",
 						Scope: string(ExecutorSecretScopeBatches),
 						Namespace: executorSecretsIntegrationTestResponseNamespace{
@@ -688,8 +690,9 @@ query ExecutorSecretsIntegrationTest {
 						Creator: executorSecretsIntegrationTestResponseCreator{
 							ID: MarshalUserID(user.ID),
 						},
-						CreatedAt: secret3.CreatedAt.Format(time.RFC3339),
-						UpdatedAt: secret3.UpdatedAt.Format(time.RFC3339),
+						OverwritesGlobalSecret: false,
+						CreatedAt:              secret3.CreatedAt.Format(time.RFC3339),
+						UpdatedAt:              secret3.UpdatedAt.Format(time.RFC3339),
 						AccessLogs: executorSecretsIntegrationTestResponseAccessLogs{
 							TotalCount: 0,
 							PageInfo: executorSecretsIntegrationTestResponsePageInfo{
@@ -728,14 +731,15 @@ type executorSecretsIntegrationTestResponsePageInfo struct {
 }
 
 type executorSecretsIntegrationTestResponseSecretNode struct {
-	ID         graphql.ID                                       `json:"id"`
-	Key        string                                           `json:"key"`
-	Scope      string                                           `json:"scope"`
-	Namespace  executorSecretsIntegrationTestResponseNamespace  `json:"namespace"`
-	Creator    executorSecretsIntegrationTestResponseCreator    `json:"creator"`
-	CreatedAt  string                                           `json:"createdAt"`
-	UpdatedAt  string                                           `json:"updatedAt"`
-	AccessLogs executorSecretsIntegrationTestResponseAccessLogs `json:"accessLogs"`
+	ID                     graphql.ID                                       `json:"id"`
+	Key                    string                                           `json:"key"`
+	Scope                  string                                           `json:"scope"`
+	OverwritesGlobalSecret bool                                             `json:"overwritesGlobalSecret"`
+	Namespace              executorSecretsIntegrationTestResponseNamespace  `json:"namespace"`
+	Creator                executorSecretsIntegrationTestResponseCreator    `json:"creator"`
+	CreatedAt              string                                           `json:"createdAt"`
+	UpdatedAt              string                                           `json:"updatedAt"`
+	AccessLogs             executorSecretsIntegrationTestResponseAccessLogs `json:"accessLogs"`
 }
 
 type executorSecretsIntegrationTestResponseNamespace struct {
