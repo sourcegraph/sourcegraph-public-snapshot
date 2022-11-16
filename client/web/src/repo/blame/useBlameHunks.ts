@@ -106,7 +106,8 @@ const fetchBlameViaStreaming = memoizeObservable(
         const hunks = new BehaviorSubject<Omit<BlameHunk, 'displayInfo'>[] | undefined>(undefined)
         let assembledHunks: Omit<BlameHunk, 'displayInfo'>[] = []
         let didEarlyFlush = false
-        fetch(`/${repoName}${revision ? `@${revision}` : ''}/-/stream-blame/${filePath}`)
+        const repoAndRevisionPath = `/${repoName}${revision ? `@${revision}` : ''}`
+        fetch(`${repoAndRevisionPath}/-/stream-blame/${filePath}`)
             .then(response => response.body)
             .then(async body => {
                 if (body === null) {
@@ -131,7 +132,7 @@ const fetchBlameViaStreaming = memoizeObservable(
                                     startLine: hunk.StartLine,
                                     endLine: hunk.EndLine,
                                     message: hunk.Message,
-                                    rev: revision,
+                                    rev: hunk.CommitID,
                                     author: {
                                         date: hunk.Author.Date,
                                         person: {
@@ -141,7 +142,7 @@ const fetchBlameViaStreaming = memoizeObservable(
                                         },
                                     },
                                     commit: {
-                                        url: '',
+                                        url: `${repoAndRevisionPath}/-/commit/${hunk.CommitID}`,
                                     },
                                 })
                             }
