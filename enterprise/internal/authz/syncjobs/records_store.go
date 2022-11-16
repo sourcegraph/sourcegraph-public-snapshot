@@ -69,11 +69,11 @@ func (r *RecordsStore) Record(jobType string, jobID int32, providerStates []Prov
 	defer r.mux.Unlock()
 
 	record := Status{
-		RequestType: jobType,
-		RequestID:   jobID,
-		Completed:   completed,
-		Status:      "SUCCESS",
-		Providers:   providerStates,
+		JobType:   jobType,
+		JobID:     jobID,
+		Completed: completed,
+		Status:    "SUCCESS",
+		Providers: providerStates,
 	}
 	if err != nil {
 		record.Status = "ERROR"
@@ -83,7 +83,7 @@ func (r *RecordsStore) Record(jobType string, jobID int32, providerStates []Prov
 	val, err := json.Marshal(record)
 	if err != nil {
 		r.logger.Warn("failed to render entry",
-			log.Int32("requestID", record.RequestID),
+			log.Int32("requestID", record.JobID),
 			log.Error(err))
 		return
 	}

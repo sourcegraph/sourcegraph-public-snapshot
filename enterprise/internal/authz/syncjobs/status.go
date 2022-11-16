@@ -4,9 +4,9 @@ import "time"
 
 // Status describes the outcome of an authz sync job.
 type Status struct {
-	RequestType string    `json:"request_type"`
-	RequestID   int32     `json:"request_id"`
-	Completed   time.Time `json:"completed"`
+	JobType   string    `json:"job_type"`
+	JobID     int32     `json:"job_id"`
+	Completed time.Time `json:"completed"`
 
 	// Status is one of "ERROR" or "SUCCESS"
 	Status  string `json:"status"`

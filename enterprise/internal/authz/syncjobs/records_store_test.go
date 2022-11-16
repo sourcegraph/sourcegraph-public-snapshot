@@ -60,14 +60,14 @@ func TestSyncJobRecordsRecord(t *testing.T) {
 		c := memCache{}
 		s.cache = c
 		s.Record("repo", 12, []ProviderStatus{}, nil)
-		autogold.Want("record_success", memCache{"1136214245000000000": `{"request_type":"repo","request_id":12,"completed":"2006-01-02T15:04:05Z","status":"SUCCESS","message":"","providers":[]}`}).
+		autogold.Want("record_success", memCache{"1136214245000000000": `{"job_type":"repo","job_id":12,"completed":"2006-01-02T15:04:05Z","status":"SUCCESS","message":"","providers":[]}`}).
 			Equal(t, c)
 	})
 	t.Run("error", func(t *testing.T) {
 		c := memCache{}
 		s.cache = c
 		s.Record("repo", 12, []ProviderStatus{}, errors.New("oh no"))
-		autogold.Want("record_error", memCache{"1136214245000000000": `{"request_type":"repo","request_id":12,"completed":"2006-01-02T15:04:05Z","status":"ERROR","message":"oh no","providers":[]}`}).
+		autogold.Want("record_error", memCache{"1136214245000000000": `{"job_type":"repo","job_id":12,"completed":"2006-01-02T15:04:05Z","status":"ERROR","message":"oh no","providers":[]}`}).
 			Equal(t, c)
 	})
 }
