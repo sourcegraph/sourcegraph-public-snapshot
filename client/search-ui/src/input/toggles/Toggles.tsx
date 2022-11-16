@@ -1,9 +1,9 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback } from 'react'
 
 import { mdiCodeBrackets, mdiFormatLetterCase, mdiRegex } from '@mdi/js'
 import classNames from 'classnames'
 
-import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
+import { isMacPlatform } from '@sourcegraph/common'
 import {
     SearchPatternTypeProps,
     CaseSensitivityProps,
@@ -69,26 +69,12 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         setCaseSensitivity,
         searchMode,
         setSearchMode,
-        settingsCascade,
         className,
         selectedSearchContextSpec,
         submitSearch,
         showCopyQueryButton = true,
         structuralSearchDisabled,
     } = props
-
-    const defaultPatternTypeValue = useMemo(
-        () =>
-            (settingsCascade.final &&
-                !isErrorLike(settingsCascade.final) &&
-                (settingsCascade.final['search.defaultPatternType'] as SearchPatternType)) ||
-            SearchPatternType.standard,
-        [settingsCascade.final]
-    )
-
-    const showSmartSearch = useMemo(() => defaultPatternTypeValue === SearchPatternType.lucky, [
-        defaultPatternTypeValue,
-    ])
 
     const submitOnToggle = useCallback(
         (
@@ -204,15 +190,13 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         />
                     )}
                 </>
-                {(showSmartSearch || showCopyQueryButton) && <div className={styles.separator} />}
-                {showSmartSearch && (
-                    <SmartSearchToggle
-                        className="test-smart-search-toggle"
-                        isActive={searchMode === SearchMode.SmartSearch}
-                        onSelect={onSelectSmartSearch}
-                        interactive={props.interactive}
-                    />
-                )}
+                <div className={styles.separator} />
+                <SmartSearchToggle
+                    className="test-smart-search-toggle"
+                    isActive={searchMode === SearchMode.SmartSearch}
+                    onSelect={onSelectSmartSearch}
+                    interactive={props.interactive}
+                />
                 {showCopyQueryButton && (
                     <CopyQueryButton
                         fullQuery={fullQuery}
