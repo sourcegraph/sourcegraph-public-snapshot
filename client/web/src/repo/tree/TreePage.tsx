@@ -352,6 +352,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                             path={`${treeOrError.url}/-/commits/tab`}
                                             render={routeComponentProps => (
                                                 <RepoCommits
+                                                    filePath={filePath}
                                                     repo={repo}
                                                     revision={revision || ''}
                                                     useBreadcrumb={useBreadcrumb}

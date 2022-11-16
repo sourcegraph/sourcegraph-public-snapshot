@@ -32,7 +32,6 @@ import {
     GitCommitFields,
     Scalars,
     TreeCommits2Result,
-    TreeCommitsResult,
     TreePageRepositoryFields,
 } from '../../graphql-operations'
 import { fetchBlob } from '../blob/backend'
