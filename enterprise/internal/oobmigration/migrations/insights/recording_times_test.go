@@ -272,7 +272,7 @@ func TestBuildAndCalculate(t *testing.T) {
 	interval := timeInterval{week, 3}
 
 	existingPoints := []time.Time{
-		time.Date(2021, 12, 6, 0, 0, 0, 0, time.UTC),
+		time.Date(2021, 12, 16, 0, 0, 0, 0, time.UTC),
 		time.Date(2022, 1, 6, 0, 0, 0, 0, time.UTC),
 		time.Date(2022, 1, 27, 0, 0, 0, 0, time.UTC),
 		time.Date(2022, 2, 17, 0, 0, 0, 0, time.UTC),
@@ -286,7 +286,7 @@ func TestBuildAndCalculate(t *testing.T) {
 		time.Date(2022, 8, 4, 0, 0, 0, 0, time.UTC),
 		time.Date(2022, 8, 25, 21, 7, 55, 558154, time.UTC),
 		time.Date(2022, 9, 15, 21, 12, 38, 902339, time.UTC),
-		time.Date(2022, 9, 17, 18, 35, 8, 922635, time.UTC),
+		time.Date(2022, 10, 06, 00, 00, 00, 00, time.UTC),
 		time.Date(2022, 10, 27, 22, 25, 30, 390084, time.UTC),
 	}
 
