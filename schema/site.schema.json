@@ -1421,13 +1421,13 @@
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["10000"]]
+      "examples": [10000]
     },
     "observability.logSlowGraphQLRequests": {
       "description": "(debug) logs all GraphQL requests slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["10000"]]
+      "examples": [10000]
     },
     "insights.backfill.interruptAfter": {
       "description": "Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.",
@@ -1439,7 +1439,7 @@
       "description": "DEPRECATED: (debug) number of historical insights timeframes to populate",
       "type": "integer",
       "group": "Debug",
-      "examples": [["6"]]
+      "examples": [6]
     },
     "insights.historical.frameLength": {
       "description": "DEPRECATED: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.",
