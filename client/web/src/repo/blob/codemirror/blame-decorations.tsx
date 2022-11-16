@@ -96,18 +96,18 @@ class DecorationWidget extends WidgetType {
     }
 }
 
-const checkboxes = (view: EditorView, facet: Facet<BlameHunk[], BlameHunk[]>): DecorationSet => {
+const decorate = (view: EditorView, facet: Facet<BlameHunk[], BlameHunk[]>): DecorationSet => {
     const widgets = []
     const hunks = view.state.facet(facet)
     for (const { from, to } of view.visibleRanges) {
-        for (let pos = from; pos <= to; ) {
-            const line = view.state.doc.lineAt(pos)
+        for (let position = from; position <= to; ) {
+            const line = view.state.doc.lineAt(position)
             const hunk = hunks.find(h => h.startLine === line.number)
-            const deco = Decoration.widget({
+            const decoration = Decoration.widget({
                 widget: new DecorationWidget(view, hunk),
             })
-            widgets.push(deco.range(line.from))
-            pos = line.to + 1
+            widgets.push(decoration.range(line.from))
+            position = line.to + 1
         }
     }
     return Decoration.set(widgets)
@@ -125,7 +125,7 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                 public decorations: DecorationSet
 
                 constructor(view: EditorView) {
-                    this.decorations = checkboxes(view, facet)
+                    this.decorations = decorate(view, facet)
                 }
             },
             {
