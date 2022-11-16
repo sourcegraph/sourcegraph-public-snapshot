@@ -2035,7 +2035,7 @@ type SiteConfiguration struct {
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
 	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
-	// AuthzSyncJobsRecordsTTL description: EXPERIMENTAL: Time interval (in minutes) of how long to keep sync job records for.
+	// AuthzSyncJobsRecordsTTL description: EXPERIMENTAL: Time interval (in minutes) of how long to keep sync job records for. Set to a negative value to disable.
 	AuthzSyncJobsRecordsTTL int `json:"authz.syncJobsRecordsTTL,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
 	BatchChangesChangesetsRetention string `json:"batchChanges.changesetsRetention,omitempty"`

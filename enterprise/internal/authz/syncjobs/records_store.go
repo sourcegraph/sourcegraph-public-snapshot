@@ -16,7 +16,7 @@ import (
 const syncJobsRecordsPrefix = "authz/sync-job-records"
 
 // default documented in site.schema.json
-const defaultSyncJobsRecordsTTLMinutes = 15
+const defaultSyncJobsRecordsTTLMinutes = 5
 
 // RecordsStore is used to record the results of recent permissions syncing jobs for
 // diagnostic purposes.

@@ -995,9 +995,9 @@
       "default": 5
     },
     "authz.syncJobsRecordsTTL": {
-      "description": "EXPERIMENTAL: Time interval (in minutes) of how long to keep sync job records for.",
+      "description": "EXPERIMENTAL: Time interval (in minutes) of how long to keep sync job records for. Set to a negative value to disable.",
       "type": "integer",
-      "default": 15
+      "default": 5
     },
     "externalService.userMode": {
       "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
