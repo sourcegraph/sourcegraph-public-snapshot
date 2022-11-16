@@ -4,6 +4,9 @@ import { SemanticAttributes } from '@opentelemetry/semantic-conventions'
 
 import { getBrowserName } from '@sourcegraph/common'
 
+import { HistoryInstrumentation } from '../instrumentations/history'
+import { WindowLoadInstrumentation } from '../instrumentations/window-load'
+import { REACT_TRACER_NAME } from '../react'
 import {
     areOnTheSameTrace,
     isNavigationSpanName,
@@ -14,16 +17,56 @@ import {
 } from '../sdk'
 
 export enum ClientAttributes {
+    /**
+     * window.location information.
+     */
     LocationHref = 'window.location.href',
     LocationPathname = 'window.location.pathname',
     LocationSearch = 'window.location.search',
     PreviousLocationHref = 'window.prev_location.href',
+
+    /**
+     * Application specific information.
+     */
     AppVersion = 'app.version',
+
+    /**
+     * Browser information.
+     */
     BrowserName = 'browser.name',
+
+    /**
+     * Precomputed attributes used to build Honeycomb dashboards.
+     */
     TimeSinceWindowLoad = 'time.since_window_load',
     TimeSincePageView = 'time.since_page_view',
     TimeSinceAppMount = 'time.since_app_mount',
+
+    /**
+     * Open-telemetry collector configuration attributes.
+     */
+    /**
+     * This attribute is used to mark span as to be retained by the tail-sampler.
+     * in the open-telemetry collector.
+     *
+     * Recommended reading to understand how the policies are applied:
+     * https://sourcegraph.com/github.com/open-telemetry/opentelemetry-collector-contrib@71dd19d2e59cd1f8aa9844461089d5c17efaa0ca/-/blob/processor/tailsamplingprocessor/processor.go?L214
+     *
+     * Usage example in the open-telemetry collector:
+     * https://github.com/sourcegraph/deploy-sourcegraph-managed/blob/0953b7d33a2bc9b88a42f7a71c99ea05c37f27d4/sg/red/otel-collector/config.yaml#L54
+     */
+    SamplingRetain = 'sampling.retain',
 }
+
+/**
+ * Currently, we do not retain all spans from the @opentelemetry/fetch-instrumentation
+ * because we have a good volume of them in Honeycomb despite the global tail-sampling.
+ */
+const INSTRUMENTATION_LIBRARIES_TO_RETAIN_SPANS_FROM = new Set([
+    HistoryInstrumentation.instrumentationName,
+    WindowLoadInstrumentation.instrumentationName,
+    REACT_TRACER_NAME,
+])
 
 /**
  * Adds span attributes applicable to every span created on the client.
@@ -43,6 +86,14 @@ export class ClientAttributesSpanProcessor implements SpanProcessor {
             [ClientAttributes.BrowserName]: getBrowserName(),
             [SemanticAttributes.HTTP_USER_AGENT]: navigator.userAgent,
         })
+
+        // Disable tail-sampling only for specific instrumentations where the volume
+        // of collected spans is insufficient for data analysis.
+        if (INSTRUMENTATION_LIBRARIES_TO_RETAIN_SPANS_FROM.has(span.instrumentationLibrary.name)) {
+            // The string attribute is required here. It seems that there's no `BooleanAttribute` policy:
+            // https://sourcegraph.com/github.com/open-telemetry/opentelemetry-collector-contrib@71dd19d2e59cd1f8aa9844461089d5c17efaa0ca/-/blob/processor/tailsamplingprocessor/processor.go?L130-161
+            span.setAttribute(ClientAttributes.SamplingRetain, 'true')
+        }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-empty-function
