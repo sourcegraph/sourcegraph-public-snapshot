@@ -15,7 +15,7 @@ Indexed search increases the memory and storage requirements for Sourcegraph. Th
 Zoekt is Sourcegraph's indexing engine.
 
 When processing a repository, Zoekt splits the index it creates across
-one or more files on disk. These files are called \"shards.\"
+one or more files on disk. These files are called "shards."
 
 Zoekt uses [memory maps](https://en.wikipedia.org/wiki/Memory-mapped_file) to load all shards into memory to evaluate search queries. In most deployments, the total size of the search index (all the shards on disk) is much larger than the total amount of RAM available to Zoekt. Amongst other benefits, using [memory maps](https://en.wikipedia.org/wiki/Memory-mapped_file) allows Zoekt to:
 
