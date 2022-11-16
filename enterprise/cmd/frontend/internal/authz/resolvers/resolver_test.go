@@ -1727,7 +1727,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 			}(),
 			Query: `
 query {
-  permissionsSyncJobs(count:1) {
+  permissionsSyncJobs(first:1) {
     nodes {
 		id
 		type
