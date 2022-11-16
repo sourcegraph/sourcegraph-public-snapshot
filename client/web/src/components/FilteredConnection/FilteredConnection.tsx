@@ -21,8 +21,6 @@ import {
 
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 
-import { RepositoryOrderBy } from '../../graphql-operations'
-
 import { ConnectionNodes, ConnectionNodesDisplayProps, ConnectionNodesState, ConnectionProps } from './ConnectionNodes'
 import { Connection, ConnectionQueryArguments } from './ConnectionType'
 import { QUERY_KEY } from './constants'
@@ -112,10 +110,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}, HP = {}>
 /**
  * The arguments for the Props.queryConnection function.
  */
-export interface FilteredConnectionQueryArguments extends ConnectionQueryArguments {
-    orderBy: RepositoryOrderBy | null
-    descending: boolean | null
-}
+export interface FilteredConnectionQueryArguments extends ConnectionQueryArguments {}
 
 interface FilteredConnectionState<C extends Connection<N>, N> extends ConnectionNodesState {
     activeOrderValues: Map<string, OrderedConnectionOrderValue>
@@ -332,8 +327,6 @@ export class FilteredConnection<
                                 // subsequent request, only ask for one page of results.
                                 first: (queryCount === 1 && this.state.visible) || this.state.first,
                                 after: shouldRefresh ? undefined : this.state.after,
-                                orderBy: null,
-                                descending: false,
                                 query,
                                 ...(orderValues || filterValues ? this.buildArgs(orderValues, filterValues) : {}),
                             })
