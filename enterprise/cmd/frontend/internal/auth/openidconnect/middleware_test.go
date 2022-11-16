@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -143,6 +144,20 @@ func TestMiddleware(t *testing.T) {
 
 	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
+
+	securityLogs := database.NewStrictMockSecurityEventLogsStore()
+	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)
+	securityLogs.LogEventFunc.SetDefaultHook(func(_ context.Context, event *database.SecurityEvent) {
+		assert.Equal(t, "/.auth/openidconnect/callback", event.URL)
+		assert.Equal(t, "BACKEND", event.Source)
+		assert.NotNil(t, event.Timestamp)
+		if event.Name == database.SecurityEventOIDCLoginFailed {
+			assert.NotEmpty(t, event.AnonymousUserID)
+			assert.IsType(t, json.RawMessage{}, event.Argument)
+		} else {
+			assert.Equal(t, uint32(123), event.UserID)
+		}
+	})
 
 	if err := mockGetProviderValue.Refresh(context.Background()); err != nil {
 		t.Fatal(err)
@@ -339,6 +354,16 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 
 	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
+
+	securityLogs := database.NewStrictMockSecurityEventLogsStore()
+	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)
+	securityLogs.LogEventFunc.SetDefaultHook(func(_ context.Context, event *database.SecurityEvent) {
+		assert.Equal(t, "/.auth/openidconnect/callback", event.URL)
+		assert.Equal(t, "BACKEND", event.Source)
+		assert.NotNil(t, event.Timestamp)
+		assert.Equal(t, database.SecurityEventOIDCLoginSucceeded, event.Name)
+		assert.Equal(t, uint32(123), event.UserID)
+	})
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	authedHandler := Middleware(db).App(h)
