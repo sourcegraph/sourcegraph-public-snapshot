@@ -49,7 +49,7 @@ describe('FeedbackPrompt', () => {
     })
 
     test('should enable/disable submit button correctly', () => {
-        expect(screen.getByText('Send')).toBeDisabled()
+        expect(screen.getByText('Send')).toBeAriaDisabled()
 
         userEvent.type(screen.getByLabelText('Send feedback to Sourcegraph'), sampleFeedback.feedback)
 
