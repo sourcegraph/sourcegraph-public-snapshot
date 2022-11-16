@@ -470,6 +470,10 @@ type Mutation {
         """
         referrer: String
         """
+        Device session ID to identify the user's session for analytics.
+        """
+        deviceSessionID: String
+        """
         The additional argument information.
         """
         argument: String
@@ -849,6 +853,10 @@ input Event {
     Only captured and stored on Sourcegraph Cloud.
     """
     referrer: String
+    """
+    Device session ID to identify the user's session for analytics.
+    """
+    deviceSessionID: String
     """
     The additional argument information.
     """
