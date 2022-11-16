@@ -11,6 +11,7 @@ import {
     gutterLineClass,
     GutterMarker,
     ViewPlugin,
+    ViewUpdate,
     WidgetType,
 } from '@codemirror/view'
 import { History } from 'history'
@@ -103,6 +104,14 @@ const decorate = (view: EditorView, facet: Facet<BlameHunk[], BlameHunk[]>): Dec
         for (let position = from; position <= to; ) {
             const line = view.state.doc.lineAt(position)
             const hunk = hunks.find(h => h.startLine === line.number)
+
+            // TODO: remove!
+            if (position === from) {
+                console.log('FIRST', line.number)
+            } else if (position === to) {
+                console.log('LAST', line.number)
+            }
+
             const decoration = Decoration.widget({
                 widget: new DecorationWidget(view, hunk),
             })
@@ -126,6 +135,12 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
 
                 constructor(view: EditorView) {
                     this.decorations = decorate(view, facet)
+                }
+
+                public update(update: ViewUpdate) {
+                    if (update.docChanged || update.viewportChanged) {
+                        this.decorations = decorate(update.view, facet)
+                    }
                 }
             },
             {
