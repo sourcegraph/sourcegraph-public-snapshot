@@ -92,6 +92,7 @@ export const treePageRepositoryFragment = gql`
 `
 
 export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    location,
     repo,
     repoName,
     commitID,
