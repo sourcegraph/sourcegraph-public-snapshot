@@ -20,7 +20,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<React.PropsWith
                     <li>
                         Batch changes run on the server now support{' '}
                         <Link
-                            to="/help/batch_changes/references/batch_spec_yaml_reference.md#steps-env"
+                            to="/help/batch_changes/references/batch_spec_yaml_reference#steps-env"
                             rel="noopener"
                             target="_blank"
                         >
