@@ -231,11 +231,10 @@ func (s BitbucketCloudSource) GetNamespaceFork(ctx context.Context, targetRepo *
 
 	targetNamespace := testy + "-" + targetMeta.Slug
 
-	fmt.Printf("target meta name, %v ", targetMeta.Name)
-	fmt.Printf("target meta slug, %v ", targetMeta.Slug)
-	fmt.Printf("testy, %v ", testy)
+	fmt.Printf("target meta slug IS: %v ", targetMeta.Slug)
+	fmt.Printf("testy IS: %v ", testy)
 
-	fmt.Printf("target meta namespace, %v ", targetNamespace)
+	fmt.Printf("COMPLETE target meta namespace IS: %v ", targetNamespace)
 
 	fork, err := s.client.ForkRepository(ctx, targetMeta, bitbucketcloud.ForkInput{
 		Name:      &targetNamespace,
