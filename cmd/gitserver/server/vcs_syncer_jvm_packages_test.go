@@ -174,8 +174,8 @@ func createMaliciousJar(t *testing.T, name string) {
 	os.Symlink("/etc/passwd", "symlink")
 	defer os.Remove("symlink")
 
-	fi, err := os.Lstat("symlink")
-	header, err := zip.FileInfoHeader(fi)
+	fi, _ := os.Lstat("symlink")
+	header, _ := zip.FileInfoHeader(fi)
 	_, err = writer.CreateRaw(header)
 
 	assert.Nil(t, err)
