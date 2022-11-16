@@ -10,7 +10,6 @@
     :global(.line) {
         min-width: 1.5rem;
         text-align: right;
-        font-weight: inherit;
         user-select: none;
 
         &::before {
