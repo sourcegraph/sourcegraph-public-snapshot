@@ -79,10 +79,13 @@
         - RepoUpdaterClient
         - GitserverClient
         - UploadService
-        - AutoIndexingService
+        - IndexEnqueuer
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared
       interfaces:
         - PackageReferenceScanner
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store
+      interfaces:
+        - Store
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
       interfaces:
         - Store
