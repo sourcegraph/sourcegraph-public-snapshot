@@ -1728,6 +1728,8 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 			Query: `
 query {
   permissionsSyncJobs(first:1) {
+	totalCount
+	pageInfo { hasNextPage }
     nodes {
 		id
 		type
@@ -1763,7 +1765,11 @@ query {
 					}
 				]
 			}
-		]
+		],
+		"pageInfo": {
+			"hasNextPage": false
+		},
+		"totalCount": 1
 	}
 }`,
 		}})

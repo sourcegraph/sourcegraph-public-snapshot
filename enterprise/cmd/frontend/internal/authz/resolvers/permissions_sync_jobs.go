@@ -2,30 +2,37 @@ package resolvers
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
-type permissionsSyncJobsResolver struct {
-	jobs []graphqlbackend.PermissionsSyncJobResolver
+type permissionsSyncJobsConnection struct {
+	jobs []graphqlbackend.PermissionsSyncJob
 }
 
-var _ graphqlbackend.PermissionsSyncJobsResolver = &permissionsSyncJobsResolver{}
+var _ graphqlbackend.PermissionsSyncJobsConnection = &permissionsSyncJobsConnection{}
 
-func (r *permissionsSyncJobsResolver) Nodes() ([]graphqlbackend.PermissionsSyncJobResolver, error) {
-	return r.jobs, nil
+func (r *permissionsSyncJobsConnection) Nodes() []graphqlbackend.PermissionsSyncJob {
+	return r.jobs
+}
+
+// We don't yet support pagination, but we have the fields for future-compat
+func (r *permissionsSyncJobsConnection) TotalCount() int32 { return int32(len(r.jobs)) }
+func (r *permissionsSyncJobsConnection) PageInfo() *graphqlutil.PageInfo {
+	return graphqlutil.HasNextPage(false)
 }
 
 type permissionsSyncJobResolver struct{ s syncjobs.Status }
 
-var _ graphqlbackend.PermissionsSyncJobResolver = permissionsSyncJobResolver{}
+var _ graphqlbackend.PermissionsSyncJob = permissionsSyncJobResolver{}
 
 func (j permissionsSyncJobResolver) ID() int32 { return j.s.RequestID }
 
 func (j permissionsSyncJobResolver) Type() string { return j.s.RequestType }
 
-func (j permissionsSyncJobResolver) CompletedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: j.s.Completed}
+func (j permissionsSyncJobResolver) CompletedAt() *gqlutil.DateTime {
+	return &gqlutil.DateTime{Time: j.s.Completed}
 }
 
 func (j permissionsSyncJobResolver) Status() string { return j.s.Status }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -24,7 +25,7 @@ type AuthzResolver interface {
 	AuthorizedUsers(ctx context.Context, args *RepoAuthorizedUserArgs) (UserConnectionResolver, error)
 	BitbucketProjectPermissionJobs(ctx context.Context, args *BitbucketProjectPermissionJobsArgs) (BitbucketProjectsPermissionJobsResolver, error)
 	AuthzProviderTypes(ctx context.Context) ([]string, error)
-	PermissionsSyncJobs(ctx context.Context, args *PermissionsSyncJobsArgs) (PermissionsSyncJobsResolver, error)
+	PermissionsSyncJobs(ctx context.Context, args *PermissionsSyncJobsArgs) (PermissionsSyncJobsConnection, error)
 
 	// Helpers
 	RepositoryPermissionsInfo(ctx context.Context, repoID graphql.ID) (PermissionsInfoResolver, error)
@@ -124,16 +125,18 @@ type PermissionsSyncJobsArgs struct {
 	First  *int32
 }
 
-type PermissionsSyncJobsResolver interface {
-	Nodes() ([]PermissionsSyncJobResolver, error)
+type PermissionsSyncJobsConnection interface {
+	Nodes() []PermissionsSyncJob
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
 }
 
-type PermissionsSyncJobResolver interface {
+type PermissionsSyncJob interface {
 	Type() string
 	ID() int32
 	Status() string
 	Message() string
-	CompletedAt() gqlutil.DateTime
+	CompletedAt() *gqlutil.DateTime
 
 	Providers() ([]PermissionsProviderStatus, error)
 }

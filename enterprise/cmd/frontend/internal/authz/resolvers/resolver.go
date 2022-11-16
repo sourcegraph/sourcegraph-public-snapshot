@@ -626,7 +626,7 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 	}, nil
 }
 
-func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend.PermissionsSyncJobsArgs) (graphqlbackend.PermissionsSyncJobsResolver, error) {
+func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend.PermissionsSyncJobsArgs) (graphqlbackend.PermissionsSyncJobsConnection, error) {
 	// 🚨 SECURITY: Only site admins can query sync jobs records.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -645,10 +645,12 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend
 		return nil, err
 	}
 
-	jobs := &permissionsSyncJobsResolver{
-		jobs: make([]graphqlbackend.PermissionsSyncJobResolver, 0, len(records)),
+	jobs := &permissionsSyncJobsConnection{
+		jobs: make([]graphqlbackend.PermissionsSyncJob, 0, len(records)),
 	}
 	for _, j := range records {
+		// If status is not provided, add all - otherwise, check if the job's status
+		// matches the argument status.
 		if args.Status == nil {
 			jobs.jobs = append(jobs.jobs, permissionsSyncJobResolver{j})
 		} else if j.Status == *args.Status {

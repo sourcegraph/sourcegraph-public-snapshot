@@ -151,7 +151,7 @@ extend type Query {
         Number of jobs returned. Maximum number of returned jobs is 500. Up to 100 jobs are returned by default.
         """
         first: Int
-    ): PermissionsSyncJobs
+    ): PermissionsSyncJobsConnection
 
     """
     Returns a list of Bitbucket Project permissions sync jobs for a given set of parameters.
@@ -315,11 +315,19 @@ input FetchPermissionsOptions {
 """
 Permission sync jobs.
 """
-type PermissionsSyncJobs {
+type PermissionsSyncJobsConnection {
     """
     Permission sync jobs.
     """
     nodes: [PermissionsSyncJob!]!
+    """
+    The total number of jobs in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
 }
 
 """
@@ -345,7 +353,7 @@ type PermissionsSyncJob {
     """
     Completion time of the sync job.
     """
-    completedAt: DateTime!
+    completedAt: DateTime
     """
     Status of the sync job.
     """
