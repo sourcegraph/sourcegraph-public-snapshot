@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type recordingTimesMigrator struct {
@@ -45,6 +46,14 @@ func (m *recordingTimesMigrator) Progress(ctx context.Context, _ bool) (float64,
 	return progress, err
 }
 
+type seriesMetadata struct {
+	id             int
+	seriesID       string
+	createdAt      time.Time
+	lastRecordedAt time.Time
+	interval       timeInterval
+}
+
 func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 	if !insights.IsEnabled() {
 		return nil
@@ -55,63 +64,15 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	rows, err := tx.Query(ctx, sqlf.Sprintf(
-		"SELECT id, series_id, created_at, last_recorded_at, sample_interval_unit, sample_interval_value FROM insight_series WHERE supports_augmentation IS FALSE ORDER BY id LIMIT %s FOR UPDATE SKIP LOCKED",
-		m.batchSize,
-	))
+	series, err := selectSeriesMetadata(ctx, tx, m.batchSize)
 	if err != nil {
-		return err
-	}
-
-	series := make(map[int]seriesMetadata) // id -> metadata
-	for rows.Next() {
-		var id int
-		var seriesID string
-		var createdAt, lastRecordedAt time.Time
-		var sampleIntervalUnit string
-		var sampleIntervalValue int
-		if err := rows.Scan(
-			&id,
-			&seriesID,
-			&createdAt,
-			&lastRecordedAt,
-			&sampleIntervalUnit,
-			&sampleIntervalValue,
-		); err != nil {
-			return err
-		}
-		series[id] = seriesMetadata{
-			id:             id,
-			seriesID:       seriesID,
-			createdAt:      createdAt,
-			lastRecordedAt: lastRecordedAt,
-			interval: timeInterval{
-				unit:  intervalUnit(sampleIntervalUnit),
-				value: sampleIntervalValue,
-			},
-		}
-	}
-	if err = basestore.CloseRows(rows, err); err != nil {
-		return err
+		return errors.Wrap(err, "selectSeriesMetadata")
 	}
 
 	for id, metadata := range series {
-		recordingTimesRows, err := tx.Query(ctx, sqlf.Sprintf(
-			"SELECT DISTINCT time FROM series_points WHERE series_id = %s ORDER by time ASC", metadata.seriesID,
-		))
+		recordingTimes, err := selectExistingRecordingTimes(ctx, tx, metadata.seriesID)
 		if err != nil {
-			return err
-		}
-		var recordingTimes []time.Time
-		for rows.Next() {
-			var record time.Time
-			if err := recordingTimesRows.Scan(&record); err != nil {
-				return err
-			}
-			recordingTimes = append(recordingTimes, record)
-		}
-		if err = basestore.CloseRows(recordingTimesRows, err); err != nil {
-			return err
+			return errors.Wrap(err, "selectExistingRecordingTimes")
 		}
 
 		calculatedTimes := calculateRecordingTimes(metadata.createdAt, metadata.lastRecordedAt, metadata.interval, recordingTimes)
@@ -135,12 +96,68 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 	return nil
 }
 
-type seriesMetadata struct {
-	id             int
-	seriesID       string
-	createdAt      time.Time
-	lastRecordedAt time.Time
-	interval       timeInterval
+func selectSeriesMetadata(ctx context.Context, tx *basestore.Store, batchSize int) (map[int]seriesMetadata, error) {
+	rows, err := tx.Query(ctx, sqlf.Sprintf(
+		"SELECT id, series_id, created_at, last_recorded_at, sample_interval_unit, sample_interval_value FROM insight_series WHERE supports_augmentation IS FALSE ORDER BY id LIMIT %s FOR UPDATE SKIP LOCKED",
+		batchSize,
+	))
+	if err != nil {
+		return nil, err
+	}
+
+	series := make(map[int]seriesMetadata) // id -> metadata
+	for rows.Next() {
+		var id int
+		var seriesID string
+		var createdAt, lastRecordedAt time.Time
+		var sampleIntervalUnit string
+		var sampleIntervalValue int
+		if err := rows.Scan(
+			&id,
+			&seriesID,
+			&createdAt,
+			&lastRecordedAt,
+			&sampleIntervalUnit,
+			&sampleIntervalValue,
+		); err != nil {
+			return nil, err
+		}
+		series[id] = seriesMetadata{
+			id:             id,
+			seriesID:       seriesID,
+			createdAt:      createdAt,
+			lastRecordedAt: lastRecordedAt,
+			interval: timeInterval{
+				unit:  intervalUnit(sampleIntervalUnit),
+				value: sampleIntervalValue,
+			},
+		}
+	}
+	if err = basestore.CloseRows(rows, err); err != nil {
+		return nil, err
+	}
+	return series, nil
+}
+
+func selectExistingRecordingTimes(ctx context.Context, tx *basestore.Store, seriesID string) ([]time.Time, error) {
+	rows, err := tx.Query(ctx, sqlf.Sprintf(
+		"SELECT DISTINCT time FROM series_points WHERE series_id = %s ORDER by time ASC", seriesID,
+	))
+	if err != nil {
+		return nil, err
+	}
+	var recordingTimes []time.Time
+	for rows.Next() {
+		var record time.Time
+		if err := rows.Scan(&record); err != nil {
+			return nil, err
+		}
+		recordingTimes = append(recordingTimes, record)
+	}
+	if err = basestore.CloseRows(rows, err); err != nil {
+		return nil, err
+	}
+	return recordingTimes, nil
 }
 
 func (m *recordingTimesMigrator) Down(ctx context.Context) error {

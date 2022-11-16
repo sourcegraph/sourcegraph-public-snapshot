@@ -261,6 +261,39 @@ func Test_buildRecordingTimesBetween(t *testing.T) {
 	}
 }
 
+func TestBuildAndCalculate(t *testing.T) {
+	// This is a unit test based on a real insight to double-check a migration would return the desired times.
+
+	// 2022-08-04 20:10:04.573293
+	createdAt := time.Date(2022, 8, 4, 20, 10, 4, 573293, time.UTC)
+	// 2022-10-27 22:25:25.411322
+	lastRecordedAt := time.Date(2022, 10, 28, 22, 25, 25, 411322, time.UTC)
+
+	interval := timeInterval{week, 3}
+
+	existingPoints := []time.Time{
+		time.Date(2021, 12, 6, 0, 0, 0, 0, time.UTC),
+		time.Date(2022, 1, 6, 0, 0, 0, 0, time.UTC),
+		time.Date(2022, 1, 27, 0, 0, 0, 0, time.UTC),
+		time.Date(2022, 2, 17, 0, 0, 0, 0, time.UTC),
+		time.Date(2022, 3, 10, 0, 0, 0, 0, time.UTC),
+		time.Date(2022, 3, 31, 0, 0, 0, 0, time.UTC),
+		time.Date(2022, 4, 21, 0, 0, 0, 0, time.UTC),
+		time.Date(2022, 5, 12, 0, 0, 0, 0, time.UTC),
+		time.Date(2022, 6, 2, 0, 0, 0, 0, time.UTC),
+		time.Date(2022, 6, 23, 0, 0, 0, 0, time.UTC),
+		time.Date(2022, 7, 14, 0, 0, 0, 0, time.UTC),
+		time.Date(2022, 8, 4, 0, 0, 0, 0, time.UTC),
+		time.Date(2022, 8, 25, 21, 7, 55, 558154, time.UTC),
+		time.Date(2022, 9, 15, 21, 12, 38, 902339, time.UTC),
+		time.Date(2022, 9, 17, 18, 35, 8, 922635, time.UTC),
+		time.Date(2022, 10, 27, 22, 25, 30, 390084, time.UTC),
+	}
+
+	calculated := calculateRecordingTimes(createdAt, lastRecordedAt, interval, existingPoints)
+	autogold.Want("calculated matches existing", convert(existingPoints)).Equal(t, convert(calculated))
+}
+
 func convert(times []time.Time) []string {
 	var got []string
 	for _, result := range times {
