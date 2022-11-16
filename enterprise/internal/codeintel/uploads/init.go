@@ -71,7 +71,7 @@ func scopedContext(component string) *observation.Context {
 }
 
 func NewUploadProcessorJob(
-	uploadSvc UploadService,
+	uploadSvc *Service,
 	db database.DB,
 	uploadStore uploadstore.Store,
 	workerConcurrency int,
@@ -82,7 +82,10 @@ func NewUploadProcessorJob(
 ) goroutine.BackgroundRoutine {
 	uploadsProcessorStore := dbworkerstore.NewWithMetrics(db.Handle(), store.UploadWorkerStoreOptions, observationContext)
 	return background.NewUploadProcessorWorker(
-		uploadSvc,
+		uploadSvc.store,
+		uploadSvc.lsifstore,
+		uploadSvc.gitserverClient,
+		uploadSvc.repoStore,
 		uploadsProcessorStore,
 		uploadStore,
 		workerConcurrency,
@@ -93,20 +96,22 @@ func NewUploadProcessorJob(
 	)
 }
 
-func NewCommittedAtBackfillerJob(uploadSvc UploadService) []goroutine.BackgroundRoutine {
+func NewCommittedAtBackfillerJob(uploadSvc *Service) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewCommittedAtBackfiller(
-			uploadSvc,
+			uploadSvc.store,
+			uploadSvc.gitserverClient,
 			ConfigCommittedAtBackfillInst.Interval,
 			ConfigCommittedAtBackfillInst.BatchSize,
 		),
 	}
 }
 
-func NewJanitor(uploadSvc UploadService, gitserverClient GitserverClient, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func NewJanitor(uploadSvc *Service, gitserverClient GitserverClient, observationContext *observation.Context) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewJanitor(
-			uploadSvc,
+			uploadSvc.store,
+			uploadSvc.lsifstore,
 			gitserverClient,
 			ConfigJanitorInst.Interval,
 			background.JanitorConfig{
@@ -123,9 +128,9 @@ func NewJanitor(uploadSvc UploadService, gitserverClient GitserverClient, observ
 	}
 }
 
-func NewReconciler(uploadSvc UploadService, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func NewReconciler(uploadSvc *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		background.NewReconciler(uploadSvc, ConfigJanitorInst.Interval, ConfigJanitorInst.ReconcilerBatchSize, observationContext),
+		background.NewReconciler(uploadSvc.store, uploadSvc.lsifstore, ConfigJanitorInst.Interval, ConfigJanitorInst.ReconcilerBatchSize, observationContext),
 	}
 }
 
@@ -138,10 +143,12 @@ func NewResetters(db database.DB, observationContext *observation.Context) []gor
 	}
 }
 
-func NewCommitGraphUpdater(uploadSvc UploadService) []goroutine.BackgroundRoutine {
+func NewCommitGraphUpdater(uploadSvc *Service) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewCommitGraphUpdater(
-			uploadSvc,
+			uploadSvc.store,
+			uploadSvc.locker,
+			uploadSvc.gitserverClient,
 			ConfigCommitGraphInst.CommitGraphUpdateTaskInterval,
 			ConfigCommitGraphInst.MaxAgeForNonStaleBranches,
 			ConfigCommitGraphInst.MaxAgeForNonStaleTags,
@@ -149,10 +156,12 @@ func NewCommitGraphUpdater(uploadSvc UploadService) []goroutine.BackgroundRoutin
 	}
 }
 
-func NewExpirationTasks(uploadSvc UploadService, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func NewExpirationTasks(uploadSvc *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewUploadExpirer(
-			uploadSvc,
+			uploadSvc.store,
+			uploadSvc.policySvc,
+			uploadSvc.policyMatcher,
 			ConfigExpirationInst.ExpirerInterval,
 			background.ExpirerConfig{
 				RepositoryProcessDelay: ConfigExpirationInst.RepositoryProcessDelay,
