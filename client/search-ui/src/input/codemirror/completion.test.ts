@@ -20,7 +20,7 @@ async function getCompletionItems(
     token: Token,
     position: number,
     fetchSuggestions: () => Promise<SearchMatch[]>,
-    options?: { globbing?: boolean; isSourcegraphDotCom?: boolean; tokens: Token[] }
+    options?: { globbing?: boolean; isSourcegraphDotCom?: boolean; tokens?: Token[] }
 ) {
     const sources = createDefaultSuggestionSources({
         globbing: false,
@@ -246,8 +246,7 @@ describe('codmirror completions', () => {
                                 path: 'connect.go',
                                 repository: 'github.com/sourcegraph/jsonrpc2',
                             },
-                        ] as SearchMatch[],
-                    {}
+                        ] as SearchMatch[]
                 )
             )?.map(({ label, apply }) => ({ label, apply }))
         ).toStrictEqual([{ label: 'connect.go', apply: '^connect\\.go$ ' }])
