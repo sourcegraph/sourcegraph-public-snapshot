@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,13 +29,11 @@ func (h *WebhookRouter) HandleBitBucketServerWebhook(logger log.Logger, w http.R
 	err = h.Dispatch(ctx, eventType, extsvc.KindBitbucketServer, codeHostURN, e)
 	if err != nil {
 		logger.Error("Error handling bitbucket server webhook event", log.Error(err))
-		switch err.(type) {
-		case eventTypeNotFoundError:
+		if errcode.IsNotFound(err) {
 			http.Error(w, err.Error(), http.StatusNotFound)
-		default:
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-		return
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 

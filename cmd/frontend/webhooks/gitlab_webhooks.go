@@ -7,7 +7,9 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -49,13 +51,11 @@ func (h *WebhookRouter) HandleGitLabWebhook(logger log.Logger, w http.ResponseWr
 	err = h.Dispatch(ctx, eventKind.ObjectKind, extsvc.KindGitLab, codeHostURN, event)
 	if err != nil {
 		logger.Error("Error handling gitlab webhook event", log.Error(err))
-		switch err.(type) {
-		case eventTypeNotFoundError:
+		if errcode.IsNotFound(err) {
 			http.Error(w, err.Error(), http.StatusNotFound)
-		default:
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-		return
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 

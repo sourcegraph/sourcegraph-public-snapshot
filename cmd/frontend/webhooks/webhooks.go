@@ -150,6 +150,10 @@ type eventTypeNotFoundError struct {
 	codeHostKind string
 }
 
+func (e eventTypeNotFoundError) NotFound() bool {
+	return true
+}
+
 func (e eventTypeNotFoundError) Error() string {
 	return fmt.Sprintf("event type %s not supported for code host kind %s", e.eventType, e.codeHostKind)
 }

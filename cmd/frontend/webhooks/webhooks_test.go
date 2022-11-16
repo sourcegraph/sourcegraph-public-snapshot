@@ -171,6 +171,26 @@ func TestWebhooksHandler(t *testing.T) {
 		}
 	})
 
+	t.Run("not found handler returns 404", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWH.UUID)
+
+		h := hmac.New(sha1.New, []byte("githubsecret"))
+		payload := []byte(`{"body": "text"}`)
+		h.Write(payload)
+		res := h.Sum(nil)
+
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		require.NoError(t, err)
+		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
+		req.Header.Set("X-Github-Event", "member")
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
+
 	t.Run("GitHub with no secret returns 200", func(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWHNoSecret.UUID)
 
