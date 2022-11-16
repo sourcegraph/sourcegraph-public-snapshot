@@ -6131,7 +6131,7 @@ Query: `sum by (op)(increase(src_codeintel_npm_errors_total{op!="RunCommand",job
 
 #### gitserver: healthy_request_rate
 
-<p class="subtitle">Requests per second, by route, when status code is 200</p>
+<p class="subtitle">Requests per second, by route, when status code is 2xx</p>
 
 The number of healthy HTTP requests per second to internal HTTP api
 
@@ -6152,7 +6152,7 @@ Query: `sum by (route) (rate(src_http_request_duration_seconds_count{app="gitser
 
 #### gitserver: unhealthy_request_rate
 
-<p class="subtitle">Requests per second, by route, when status code is not 200</p>
+<p class="subtitle">Requests per second, by route, when status code is not 2xx</p>
 
 The number of unhealthy HTTP requests per second to internal HTTP api
 
@@ -6194,9 +6194,9 @@ Query: `sum by (code) (rate(src_http_request_duration_seconds_count{app="gitserv
 
 #### gitserver: 95th_percentile_healthy_requests
 
-<p class="subtitle">95th percentile duration by route, when status code is 200</p>
+<p class="subtitle">95th percentile duration by route, when status code is 2xx</p>
 
-The 95th percentile duration by route when the status code is 200 
+The 95th percentile duration by route when the status code is 2xx 
 
 This panel has no related alerts.
 
@@ -6215,9 +6215,9 @@ Query: `histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_buck
 
 #### gitserver: 95th_percentile_unhealthy_requests
 
-<p class="subtitle">95th percentile duration by route, when status code is not 200</p>
+<p class="subtitle">95th percentile duration by route, when status code is not 2xx</p>
 
-The 95th percentile duration by route when the status code is not 200 
+The 95th percentile duration by route when the status code is not 2xx 
 
 This panel has no related alerts.
 
@@ -13664,7 +13664,7 @@ Query: `sum by (op)(increase(src_codeintel_npm_errors_total{op!="RunCommand",job
 
 #### repo-updater: healthy_request_rate
 
-<p class="subtitle">Requests per second, by route, when status code is 200</p>
+<p class="subtitle">Requests per second, by route, when status code is 2xx</p>
 
 The number of healthy HTTP requests per second to internal HTTP api
 
@@ -13685,7 +13685,7 @@ Query: `sum by (route) (rate(src_http_request_duration_seconds_count{app="repo-u
 
 #### repo-updater: unhealthy_request_rate
 
-<p class="subtitle">Requests per second, by route, when status code is not 200</p>
+<p class="subtitle">Requests per second, by route, when status code is not 2xx</p>
 
 The number of unhealthy HTTP requests per second to internal HTTP api
 
@@ -13727,9 +13727,9 @@ Query: `sum by (code) (rate(src_http_request_duration_seconds_count{app="repo-up
 
 #### repo-updater: 95th_percentile_healthy_requests
 
-<p class="subtitle">95th percentile duration by route, when status code is 200</p>
+<p class="subtitle">95th percentile duration by route, when status code is 2xx</p>
 
-The 95th percentile duration by route when the status code is 200 
+The 95th percentile duration by route when the status code is 2xx 
 
 This panel has no related alerts.
 
@@ -13748,9 +13748,9 @@ Query: `histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_buck
 
 #### repo-updater: 95th_percentile_unhealthy_requests
 
-<p class="subtitle">95th percentile duration by route, when status code is not 200</p>
+<p class="subtitle">95th percentile duration by route, when status code is not 2xx</p>
 
-The 95th percentile duration by route when the status code is not 200 
+The 95th percentile duration by route when the status code is not 2xx 
 
 This panel has no related alerts.
 

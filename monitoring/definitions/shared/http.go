@@ -18,7 +18,7 @@ func (http) NewHandlersGroup(name string) monitoring.Group {
 			{
 				{
 					Name:           "healthy_request_rate",
-					Description:    "requests per second, by route, when status code is 200",
+					Description:    "requests per second, by route, when status code is 2xx",
 					Query:          fmt.Sprintf("sum by (route) (rate(src_http_request_duration_seconds_count{app=\"%s\",code=~\"2..\"}[5m]))", name),
 					NoAlert:        true,
 					Panel:          monitoring.Panel().LegendFormat("{{route}}").Unit(monitoring.Number),
@@ -27,7 +27,7 @@ func (http) NewHandlersGroup(name string) monitoring.Group {
 				},
 				{
 					Name:           "unhealthy_request_rate",
-					Description:    "requests per second, by route, when status code is not 200",
+					Description:    "requests per second, by route, when status code is not 2xx",
 					Query:          fmt.Sprintf("sum by (route) (rate(src_http_request_duration_seconds_count{app=\"%s\",code!~\"2..\"}[5m]))", name),
 					NoAlert:        true,
 					Panel:          monitoring.Panel().LegendFormat("{{route}}").Unit(monitoring.Number),
@@ -47,21 +47,21 @@ func (http) NewHandlersGroup(name string) monitoring.Group {
 			{
 				{
 					Name:           "95th_percentile_healthy_requests",
-					Description:    "95th percentile duration by route, when status code is 200",
+					Description:    "95th percentile duration by route, when status code is 2xx",
 					Query:          fmt.Sprintf("histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_bucket{app=\"%s\",code=~\"2..\"}[5m])) by (le, route))", name),
 					NoAlert:        true,
 					Panel:          monitoring.Panel().LegendFormat("{{route}}").Unit(monitoring.Seconds),
 					Owner:          monitoring.ObservableOwnerRepoManagement,
-					Interpretation: "The 95th percentile duration by route when the status code is 200 ",
+					Interpretation: "The 95th percentile duration by route when the status code is 2xx ",
 				},
 				{
 					Name:           "95th_percentile_unhealthy_requests",
-					Description:    "95th percentile duration by route, when status code is not 200",
+					Description:    "95th percentile duration by route, when status code is not 2xx",
 					Query:          fmt.Sprintf("histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_bucket{app=\"%s\",code!~\"2..\"}[5m])) by (le, route))", name),
 					NoAlert:        true,
 					Panel:          monitoring.Panel().LegendFormat("{{route}}").Unit(monitoring.Seconds),
 					Owner:          monitoring.ObservableOwnerRepoManagement,
-					Interpretation: "The 95th percentile duration by route when the status code is not 200 ",
+					Interpretation: "The 95th percentile duration by route when the status code is not 2xx ",
 				},
 			},
 		},
