@@ -569,14 +569,14 @@ export function buildGetStartedURL(cloudSignup?: boolean, returnTo?: string): st
      * sign-up flow to prioritize trial-starts.
      */
     const path = cloudSignup ? 'https://signup.sourcegraph.com' : '/sign-up'
-    
+
     if (path.includes('https')) {
         const url = new URL(path)
-    
+
         if (returnTo !== undefined) {
             url.searchParams.set('returnTo', returnTo)
         }
-    
+
         return url.toString()
     }
 
