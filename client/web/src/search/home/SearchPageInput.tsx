@@ -89,7 +89,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                     history: props.history,
                     patternType,
                     caseSensitive,
-                    searchMode,
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
                     addRecentSearch,
                     ...parameters,
@@ -103,7 +102,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             addRecentSearch,
             patternType,
             caseSensitive,
-            searchMode,
         ]
     )
 

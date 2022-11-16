@@ -148,7 +148,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                 .streamSearch(query, {
                     caseSensitive,
                     patternType,
-                    searchMode,
                     version: LATEST_VERSION,
                     trace: undefined,
                     chunkMatches: true,

@@ -1824,8 +1824,6 @@ type Settings struct {
 	SearchContextLines int `json:"search.contextLines,omitempty"`
 	// SearchDefaultCaseSensitive description: Whether query patterns are treated case sensitively. Patterns are case insensitive by default.
 	SearchDefaultCaseSensitive bool `json:"search.defaultCaseSensitive,omitempty"`
-	// SearchDefaultMode description: Defines default properties for search behavior. The default is `smart`, which provides query assistance that automatically runs alternative queries when appropriate. When `precise`, search behavior strictly searches for the precise meaning of the query.
-	SearchDefaultMode string `json:"search.defaultMode,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
 	// SearchGlobbing description: REMOVED. Previously an experimental setting to interpret file and repo patterns as glob syntax.
