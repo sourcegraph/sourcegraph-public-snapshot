@@ -120,7 +120,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
             <SvgAxisLeft />
 
             <SvgAxisBottom
-                pixelsPerTick={60}
+                pixelsPerTick={70}
                 minRotateAngle={20}
                 maxRotateAngle={60}
                 tickFormat={formatDateTick}

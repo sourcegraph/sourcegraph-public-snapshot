@@ -7,10 +7,11 @@ import { sortBy } from 'lodash'
 import { entries, escapeRegExp, flatMap, flow, groupBy, isEqual, map } from 'lodash/fp'
 import { NavLink, useLocation } from 'react-router-dom'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { useDebounce } from '@sourcegraph/wildcard'
+import { Alert, useDebounce } from '@sourcegraph/wildcard'
 
 import { useConnection } from '../components/FilteredConnection/hooks/useConnection'
 import {
@@ -18,7 +19,6 @@ import {
     ConnectionContainer,
     ConnectionLoading,
     ConnectionSummary,
-    ConnectionError,
     SummaryContainer,
     ShowMoreButton,
 } from '../components/FilteredConnection/ui'
@@ -196,7 +196,11 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
                     {query && summary}
                 </SummaryContainer>
             </div>
-            {error && <ConnectionError errors={[error.message]} compact={true} />}
+            {error && (
+                <Alert variant={error.message.includes('Estimated completion') ? 'info' : 'danger'}>
+                    <ErrorMessage error={error.message} />
+                </Alert>
+            )}
             {connection && (
                 <HierarchicalSymbols
                     symbols={connection.nodes}

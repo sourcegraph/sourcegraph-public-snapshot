@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -299,8 +301,8 @@ abc.txt
 
 	for i, test := range cases {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			if test.arg.IsStructuralPat && os.Getenv("CI") == "" {
-				t.Skip("skipping comby test when not on CI")
+			if test.arg.IsStructuralPat {
+				maybeSkipComby(t)
 			}
 
 			req := protocol.Request{
@@ -328,6 +330,19 @@ abc.txt
 				t.Fatalf("%s unexpected response:\n%s", test.arg.String(), d)
 			}
 		})
+	}
+}
+
+func maybeSkipComby(t *testing.T) {
+	t.Helper()
+	if os.Getenv("CI") != "" {
+		return
+	}
+	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
+		t.Skip("Skipping due to limitations in comby and M1")
+	}
+	if _, err := exec.LookPath("comby"); err != nil {
+		t.Skipf("skipping comby test when not on CI: %v", err)
 	}
 }
 

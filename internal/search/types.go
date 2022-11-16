@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
-	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -17,19 +17,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 // Inputs contains fields we set before kicking off search.
 type Inputs struct {
-	Plan                query.Plan // the comprehensive query plan
-	Query               query.Q    // the current basic query being evaluated, one part of query.Plan
-	OriginalQuery       string     // the raw string of the original search query
-	SearchMode          Mode
-	PatternType         query.SearchType
-	UserSettings        *schema.Settings
-	OnSourcegraphDotCom bool
-	Features            *Features
-	Protocol            Protocol
+	Plan                   query.Plan // the comprehensive query plan
+	Query                  query.Q    // the current basic query being evaluated, one part of query.Plan
+	OriginalQuery          string     // the raw string of the original search query
+	SearchMode             Mode
+	PatternType            query.SearchType
+	UserSettings           *schema.Settings
+	OnSourcegraphDotCom    bool
+	Features               *Features
+	Protocol               Protocol
+	SanitizeSearchPatterns []*regexp.Regexp
 }
 
 // MaxResults computes the limit for the query.

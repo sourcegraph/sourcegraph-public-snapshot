@@ -21,12 +21,12 @@ import (
 )
 
 type BitbucketCloudWebhook struct {
-	*Webhook
+	*webhook
 }
 
 func NewBitbucketCloudWebhook(store *store.Store, gitserverClient gitserver.Client) *BitbucketCloudWebhook {
 	return &BitbucketCloudWebhook{
-		Webhook: &Webhook{store, gitserverClient, extsvc.TypeBitbucketCloud},
+		webhook: &webhook{store, gitserverClient, extsvc.TypeBitbucketCloud},
 	}
 }
 

@@ -1,4 +1,4 @@
-package codenav
+package uploads
 
 import (
 	"bufio"
@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 	"google.golang.org/api/iterator"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/group"

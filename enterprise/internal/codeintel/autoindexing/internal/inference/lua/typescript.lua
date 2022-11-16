@@ -14,10 +14,18 @@ local exclude_paths = pattern.new_path_combine(shared.exclude_paths, {
 	pattern.new_path_segment("node_modules"),
 })
 
+local safe_decode = function(encoded)
+  local _, payload = pcall(function()
+    return json.decode(encoded)
+  end)
+
+  return payload
+end
+
 local check_lerna_file = function(root, contents_by_path)
 	local ancestors = path.ancestors(root)
 	for i = 1, #ancestors do
-		local payload = json.decode(contents_by_path[path.join(ancestors[i], "lerna.json")] or "")
+		local payload = safe_decode(contents_by_path[path.join(ancestors[i], "lerna.json")] or "")
 		if payload and payload["npmClient"] == "yarn" then
 			return true
 		end
@@ -30,7 +38,7 @@ local can_derive_node_version = function(root, paths, contents_by_path)
 	local ancestors = path.ancestors(root)
 
 	for i = 1, #ancestors do
-		local payload = json.decode(contents_by_path[path.join(ancestors[i], "package.json")] or "")
+		local payload = safe_decode(contents_by_path[path.join(ancestors[i], "package.json")] or "")
 		if payload and payload["engines"] and payload["engines"]["node"] then
 			return true
 		end

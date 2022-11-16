@@ -1,4 +1,4 @@
-package background
+package enqueuer
 
 import (
 	"fmt"
@@ -8,33 +8,28 @@ import (
 )
 
 type operations struct {
-	handleRankingGraphSerializer *observation.Operation
+	queueIndex           *observation.Operation
+	queueIndexForPackage *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
 	m := metrics.NewREDMetrics(
 		observationContext.Registerer,
-		"codeintel_codenav_background",
+		"codeintel_autoindexing_enqueuer",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.codenav.background.%s", name),
+			Name:              fmt.Sprintf("codeintel.autoindexing.enqueuer.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           m,
 		})
 	}
 
-	handleRankingGraphSerializer := observationContext.Operation(observation.Op{
-		Name:              "codeintel.codenav.HandleRankingGraphSerializer",
-		MetricLabelValues: []string{"HandleRankingGraphSerializer"},
-		Metrics:           m,
-	})
-
-	_ = op
 	return &operations{
-		handleRankingGraphSerializer: handleRankingGraphSerializer,
+		queueIndex:           op("QueueIndex"),
+		queueIndexForPackage: op("QueueIndexForPackage"),
 	}
 }

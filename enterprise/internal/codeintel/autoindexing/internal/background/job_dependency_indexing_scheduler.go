@@ -35,7 +35,7 @@ func NewDependencyIndexingScheduler(
 	repoStore ReposStore,
 	externalServiceStore ExternalServiceStore,
 	gitserverRepoStore GitserverRepoStore,
-	autoindexingSvc AutoIndexingService,
+	indexEnqueuer IndexEnqueuer,
 	repoUpdater RepoUpdaterClient,
 	metrics workerutil.WorkerObservability,
 	pollInterval time.Duration,
@@ -48,7 +48,7 @@ func NewDependencyIndexingScheduler(
 		repoStore:          repoStore,
 		extsvcStore:        externalServiceStore,
 		gitserverRepoStore: gitserverRepoStore,
-		indexEnqueuer:      autoindexingSvc,
+		indexEnqueuer:      indexEnqueuer,
 		workerStore:        dependencyIndexingStore,
 		repoUpdater:        repoUpdater,
 	}
@@ -65,7 +65,7 @@ func NewDependencyIndexingScheduler(
 type dependencyIndexingSchedulerHandler struct {
 	uploadsSvc         UploadService
 	repoStore          ReposStore
-	indexEnqueuer      AutoIndexingService
+	indexEnqueuer      IndexEnqueuer
 	extsvcStore        ExternalServiceStore
 	gitserverRepoStore GitserverRepoStore
 	workerStore        dbworkerstore.Store
