@@ -8,8 +8,10 @@ import {
     Decoration,
     DecorationSet,
     EditorView,
+    gutter,
     gutterLineClass,
     GutterMarker,
+    gutters,
     ViewPlugin,
     ViewUpdate,
     WidgetType,
@@ -98,6 +100,12 @@ class DecorationWidget extends WidgetType {
     }
 }
 
+const blameGutterElement = new (class extends GutterMarker {
+    toDOM(): HTMLElement {
+        return document.createElement('div')
+    }
+})()
+
 /**
  * Facet to show git blame decorations.
  */
@@ -105,6 +113,21 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
     combine: decorations => decorations.flat(),
     enables: facet => [
         hoveredLine,
+
+        // Render gutter with no content only to create a column with specified background.
+        // This column is used by .cm-content shifted to the left by var(--blame-decoration-width)
+        // to achieve column-like view of inline blame decorations.
+        gutter({
+            class: 'blame-gutter',
+            lineMarker: () => blameGutterElement,
+            initialSpacer: () => blameGutterElement,
+        }),
+
+        // By default, gutters are fixed, meaning they don't scroll along with the content horizontally (position: sticky).
+        // We override this behavior when blame decorations are shown to make inline decorations column-like view work.
+        gutters({ fixed: false }),
+
+        // Render blame hunks as line decorations.
         ViewPlugin.fromClass(
             class {
                 public decorations: DecorationSet
@@ -155,6 +178,18 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
 
             '.selected-line .blame-decoration, .highlighted-line .blame-decoration': {
                 background: 'inherit',
+            },
+
+            '.blame-gutter': {
+                background: 'var(--body-bg)',
+                width: 'var(--blame-decoration-width)',
+            },
+            // '.blame-gutter .cm-gutterElement': {
+            //     background: 'var(--color-bg-1)',
+            // },
+            '.cm-content': {
+                marginLeft: 'calc(var(--blame-decoration-width) * -1)', // Make .cm-content overflow .blame-gutter
+                zIndex: 201, // override default .cm-gutters z-index 200
             },
         }),
     ],
