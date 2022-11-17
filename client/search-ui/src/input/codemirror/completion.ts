@@ -267,7 +267,6 @@ export function searchQueryAutocompletion(
                                   // Otherwise apply the selected completion item
                                   const hasUserPressedDownArrow = selectedCompletion(view.state) !== null
                                   if (hasUserPressedDownArrow) {
-                                      view.dispatch({ effects: setSelectedCompletion(0) })
                                       return acceptCompletion(view)
                                   }
                                   return false
