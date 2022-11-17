@@ -265,7 +265,7 @@ Run the following commands in the root of your `deploy-sourcegraph` fork.
 
 First, modify the `migrator` manifest to update two fields: the `spec.template.spec.containers[0].args` field, which selects the target operation, and the `spec.template.spec.containers[0].image` field, which controls the version of the migrator binary (and, consequently, the set of embedded migration definitions).
 
-The following example uses `yq`, but these values can also be updated manually in thee `configure/migrator/migrator.Job.yaml` file.
+The following example uses `yq`, but these values may also be updated manually by opening the `configure/migrator/migrator.Job.yaml` file in an editor of your choice and editing the `image` and `args` key value pairs.
 
 ```bash
 export MIGRATOR_SOURCEGRAPH_VERSION="..."
@@ -280,6 +280,14 @@ yq eval -i \
 yq eval -i \
   '.spec.template.spec.containers[0].args = ["add", "quoted", "arguments"]' \
   configure/migrator/migrator.Job.yaml
+```
+
+The corresponding changes the `configure/migrator/migrator.Job.yaml` file would look something like this:
+```yaml
+image: "index.docker.io/sourcegraph/migrator:4.1.3@sha256:0dc6543f0a755e46d962ba572d501559915716fa55beb3aa644a52f081fcd57e"
+```
+```yaml
+args: ["upgrade", "--from=3.40.2", "--to=v4.1.2"]
 ```
 
 Next, apply the job and wait for it to complete.

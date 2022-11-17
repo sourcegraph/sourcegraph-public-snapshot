@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -33,7 +33,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 	)
 
 	ctx := context.Background()
-	logger := logtest.Scoped(t)
+	logger := logtest.NoOp(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	handler := sourcegraphOperatorCleanHandler{
 		db:                db,
@@ -64,7 +64,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 			Username: "morgan",
 		},
 		extsvc.AccountSpec{
-			ServiceType: sourcegraphoperator.ProviderType,
+			ServiceType: auth.SourcegraphOperatorProviderType,
 			ServiceID:   "https://sourcegraph.com",
 			ClientID:    "soap",
 			AccountID:   "morgan",
@@ -93,7 +93,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 			Username: "jordan",
 		},
 		extsvc.AccountSpec{
-			ServiceType: sourcegraphoperator.ProviderType,
+			ServiceType: auth.SourcegraphOperatorProviderType,
 			ServiceID:   "https://sourcegraph.com",
 			ClientID:    "soap",
 			AccountID:   "jordan",
@@ -108,7 +108,7 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 			Username: "riley",
 		},
 		extsvc.AccountSpec{
-			ServiceType: sourcegraphoperator.ProviderType,
+			ServiceType: auth.SourcegraphOperatorProviderType,
 			ServiceID:   "https://sourcegraph.com",
 			ClientID:    "soap",
 			AccountID:   "riley",

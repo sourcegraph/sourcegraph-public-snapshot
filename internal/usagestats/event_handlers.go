@@ -40,13 +40,14 @@ type Event struct {
 	CohortID         *string
 	// Referrer is only logged for Cloud events; therefore, this only goes to the BigQuery database
 	// and does not go to the Postgres DB.
-	Referrer       *string
-	Argument       json.RawMessage
-	PublicArgument json.RawMessage
-	UserProperties json.RawMessage
-	DeviceID       *string
-	InsertID       *string
-	EventID        *int32
+	Referrer        *string
+	Argument        json.RawMessage
+	PublicArgument  json.RawMessage
+	UserProperties  json.RawMessage
+	DeviceID        *string
+	InsertID        *string
+	EventID         *int32
+	DeviceSessionID *string
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
@@ -113,6 +114,7 @@ type bigQueryEvent struct {
 	PublicArgument  string  `json:"public_argument"`
 	DeviceID        *string `json:"device_id,omitempty"`
 	InsertID        *string `json:"insert_id,omitempty"`
+	DeviceSessionID *string `json:"device_session_id,omitempty"`
 }
 
 // publishSourcegraphDotComEvents publishes Sourcegraph.com events to BigQuery.
@@ -178,6 +180,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			PublicArgument:  string(event.PublicArgument),
 			DeviceID:        event.DeviceID,
 			InsertID:        event.InsertID,
+			DeviceSessionID: event.DeviceSessionID,
 		})
 		if err != nil {
 			return nil, err

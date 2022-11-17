@@ -184,7 +184,7 @@ exports[`SearchStatsPage renders 1`] = `
                 <td>
                   <a
                     class=""
-                    href="/search?q=abc+lang:a&patternType=literal"
+                    href="/search?q=abc+lang:a&patternType=literal&sm=0"
                   >
                     A
                   </a>
@@ -200,7 +200,7 @@ exports[`SearchStatsPage renders 1`] = `
                 <td>
                   <a
                     class=""
-                    href="/search?q=abc+lang:b&patternType=literal"
+                    href="/search?q=abc+lang:b&patternType=literal&sm=0"
                   >
                     B
                   </a>
@@ -216,7 +216,7 @@ exports[`SearchStatsPage renders 1`] = `
                 <td>
                   <a
                     class=""
-                    href="/search?q=abc+lang:c&patternType=literal"
+                    href="/search?q=abc+lang:c&patternType=literal&sm=0"
                   >
                     C
                   </a>
@@ -232,7 +232,7 @@ exports[`SearchStatsPage renders 1`] = `
                 <td>
                   <a
                     class=""
-                    href="/search?q=abc+lang:d&patternType=literal"
+                    href="/search?q=abc+lang:d&patternType=literal&sm=0"
                   >
                     D
                   </a>

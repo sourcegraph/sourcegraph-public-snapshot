@@ -59,6 +59,11 @@ type operations struct {
 
 	// Tags
 	getListTags *observation.Operation
+
+	numUploadsRead         prometheus.Counter
+	numBytesUploaded       prometheus.Counter
+	numStaleRecordsDeleted prometheus.Counter
+	numBytesDeleted        prometheus.Counter
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -76,6 +81,33 @@ func newOperations(observationContext *observation.Context) *operations {
 			Metrics:           m,
 		})
 	}
+
+	counter := func(name, help string) prometheus.Counter {
+		counter := prometheus.NewCounter(prometheus.CounterOpts{
+			Name: name,
+			Help: help,
+		})
+
+		observationContext.Registerer.MustRegister(counter)
+		return counter
+	}
+
+	numUploadsRead := counter(
+		"src_codeintel_uploads_ranking_uploads_read_total",
+		"The number of upload records read.",
+	)
+	numBytesUploaded := counter(
+		"src_codeintel_uploads_ranking_bytes_uploaded_total",
+		"The number of bytes uploaded to GCS.",
+	)
+	numStaleRecordsDeleted := counter(
+		"src_codeintel_uploads_ranking_stale_uploads_removed_total",
+		"The number of stale upload records removed from GCS.",
+	)
+	numBytesDeleted := counter(
+		"src_codeintel_uploads_ranking_bytes_deleted_total",
+		"The number of bytes deleted from GCS.",
+	)
 
 	return &operations{
 		// Commits
@@ -123,6 +155,11 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		// Tags
 		getListTags: op("GetListTags"),
+
+		numUploadsRead:         numUploadsRead,
+		numBytesUploaded:       numBytesUploaded,
+		numStaleRecordsDeleted: numStaleRecordsDeleted,
+		numBytesDeleted:        numBytesDeleted,
 	}
 }
 

@@ -1,6 +1,4 @@
 import { render, screen, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { assert, stub } from 'sinon'
 
 import { LineChart } from './LineChart'
 import { FLAT_SERIES } from './story/mocks'
@@ -53,24 +51,18 @@ describe('LineChart', () => {
 
     describe('should handle clicks', () => {
         it('on a point', () => {
-            const openStub = stub(window, 'open')
-
             renderChart(defaultArgs)
 
             // Query chart series list
             const series = screen.getByLabelText('Chart series')
-            const [firstPoint, secondPoint, thirdPoint] = within(series).getAllByRole('listitem')
+            const [firstSeries] = within(series).getAllByRole('listitem')
+            const [point00, point01, point02] = within(firstSeries).getAllByRole('listitem')
 
             // Spot checking multiple points
             // related issue https://github.com/sourcegraph/sourcegraph/issues/38304
-            userEvent.click(firstPoint)
-            userEvent.click(secondPoint)
-            userEvent.click(thirdPoint)
-
-            assert.alwaysCalledWith(openStub, 'https://google.com/search')
-            assert.calledThrice(openStub)
-
-            openStub.restore()
+            expect(point00).toHaveAttribute('href', 'https://google.com/search')
+            expect(point01).toHaveAttribute('href', 'https://google.com/search')
+            expect(point02).toHaveAttribute('href', 'https://google.com/search')
         })
     })
 })

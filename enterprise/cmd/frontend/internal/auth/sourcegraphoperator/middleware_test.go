@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -100,7 +101,7 @@ func newOIDCIDServer(t *testing.T, code string, providerConfig *cloud.SchemaAuth
 	})
 
 	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-		if op.ExternalAccount.ServiceType == ProviderType &&
+		if op.ExternalAccount.ServiceType == internalauth.SourcegraphOperatorProviderType &&
 			op.ExternalAccount.ServiceID == providerConfig.Issuer &&
 			op.ExternalAccount.ClientID == testClientID &&
 			op.ExternalAccount.AccountID == testOIDCUser {
@@ -143,7 +144,7 @@ func TestMiddleware(t *testing.T) {
 		[]*extsvc.Account{
 			{
 				AccountSpec: extsvc.AccountSpec{
-					ServiceType: ProviderType,
+					ServiceType: internalauth.SourcegraphOperatorProviderType,
 				},
 			},
 		},
@@ -152,6 +153,7 @@ func TestMiddleware(t *testing.T) {
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(usersStore)
 	db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
+	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	authedHandler := http.NewServeMux()
@@ -320,6 +322,10 @@ func TestMiddleware(t *testing.T) {
 				CreatedAt: time.Now().Add(-61 * time.Minute),
 			}, nil
 		})
+		usersStore.HardDeleteFunc.SetDefaultHook(func(ctx context.Context, _ int32) error {
+			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
+			return nil
+		})
 
 		state := &openidconnect.AuthnState{
 			CSRFToken:  "good",
@@ -350,5 +356,6 @@ func TestMiddleware(t *testing.T) {
 		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		assert.Contains(t, string(body), "The retrieved user account lifecycle has already expired")
+		mockrequire.Called(t, usersStore.HardDeleteFunc)
 	})
 }

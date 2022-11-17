@@ -74,7 +74,7 @@ describe('Code insights [Insight Card] should has a proper focus management ', (
                 assert.strictEqual(
                     await hasFocus(
                         driver,
-                        `[aria-label="Chart series"] > [role="listitem"]:nth-child(${lineIndex + 2}) a:nth-child(${
+                        `[aria-label="Chart series"] > [role="listitem"]:nth-child(${lineIndex + 1}) a:nth-child(${
                             pointIndex + 1
                         })`
                     ),

@@ -80,7 +80,7 @@ func (o *MarkFinalOptions) ToSQLConds(formatQuery func(query string, args ...any
 	return conds
 }
 
-// ErrExecutionLogEntryNotUpdated is retured by AddExecutionLogEntry and UpdateExecutionLogEntry, when
+// ErrExecutionLogEntryNotUpdated is returned by AddExecutionLogEntry and UpdateExecutionLogEntry, when
 // the log entry was not updated.
 var ErrExecutionLogEntryNotUpdated = errors.New("execution log entry not updated")
 
@@ -163,14 +163,6 @@ func (e *ExecutionLogEntry) Scan(value any) error {
 
 func (e ExecutionLogEntry) Value() (driver.Value, error) {
 	return json.Marshal(e)
-}
-
-func ExecutionLogEntries(raw []workerutil.ExecutionLogEntry) (entries []ExecutionLogEntry) {
-	for _, entry := range raw {
-		entries = append(entries, ExecutionLogEntry(entry))
-	}
-
-	return entries
 }
 
 type store struct {
@@ -290,7 +282,7 @@ type ResultsetScanFn func(rows *sql.Rows, err error) ([]workerutil.Record, error
 
 // New creates a new store with the given database handle and options.
 func New(logger log.Logger, handle basestore.TransactableHandle, options Options) Store {
-	return NewWithMetrics(handle, options, &observation.TestContext)
+	return NewWithMetrics(handle, options, observation.ContextWithLogger(logger))
 }
 
 func NewWithMetrics(handle basestore.TransactableHandle, options Options, observationContext *observation.Context) Store {

@@ -41,16 +41,20 @@ const focusSelectedLine = ViewPlugin.fromClass(
 
                 if (line) {
                     window.requestAnimationFrame(() => {
-                        const closestNode = this.view.domAtPos(line.from).node
+                        // Start from the line number of the current position, adding the additional count to get
+                        // to a single character (if the character is present in the position)
+                        const closestNode = this.view.domAtPos(line.from + (selection.character ?? 0)).node
 
-                        // Loosely find closest element.
-                        // Note: This is usually only be `closestNode` if the line is empty.
                         const closestElement =
                             closestNode instanceof HTMLElement ? closestNode : closestNode.parentElement
 
-                        const target = closestElement?.hasAttribute('data-line-focusable')
-                            ? closestElement
-                            : closestElement?.closest<HTMLElement>('[data-line-focusable]')
+                        // We will be trying to focus a data-token-link element in the event we were given a character position,
+                        // otherwise we still want to default to focusing the entire line
+                        const target =
+                            closestElement?.hasAttribute('data-token-link') ||
+                            closestElement?.hasAttribute('data-line-focusable')
+                                ? closestElement
+                                : closestElement?.closest<HTMLElement>('[data-token-link],[data-line-focusable]')
 
                         target?.focus()
                     })

@@ -1,69 +1,79 @@
+import { QueryResult } from '@apollo/client'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { Observable } from 'rxjs'
-import { map, tap, mapTo } from 'rxjs/operators'
+import { map, mapTo, tap } from 'rxjs/operators'
 
-import { createAggregateError, resetAllMemoizationCaches, repeatUntil } from '@sourcegraph/common'
+import { createAggregateError, repeatUntil, resetAllMemoizationCaches } from '@sourcegraph/common'
 import {
     createInvalidGraphQLMutationResponseError,
     dataOrThrowErrors,
-    isErrorGraphQLResult,
     gql,
+    isErrorGraphQLResult,
+    useQuery,
 } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import { useConnection, UseConnectionResult } from '../components/FilteredConnection/hooks/useConnection'
 import {
-    RepositoriesVariables,
-    RepositoriesResult,
-    ExternalServiceKind,
-    UserActivePeriod,
-    OrganizationsResult,
-    OrganizationsVariables,
-    OrganizationsConnectionFields,
+    AllConfigResult,
+    CheckMirrorRepositoryConnectionResult,
+    CreateUserResult,
     DeleteOrganizationResult,
     DeleteOrganizationVariables,
-    Scalars,
-    SiteUpdateCheckVariables,
-    SiteUpdateCheckResult,
-    UpdateSiteConfigurationResult,
-    UpdateSiteConfigurationVariables,
-    ReloadSiteResult,
-    ReloadSiteVariables,
-    SetUserIsSiteAdminResult,
-    SetUserIsSiteAdminVariables,
-    InvalidateSessionsByIDResult,
-    InvalidateSessionsByIDVariables,
     DeleteUserResult,
     DeleteUserVariables,
-    ScheduleRepositoryPermissionsSyncResult,
-    ScheduleRepositoryPermissionsSyncVariables,
+    ExternalServiceKind,
+    FeatureFlagFields,
+    FeatureFlagsResult,
+    FeatureFlagsVariables,
+    InvalidateSessionsByIDResult,
+    InvalidateSessionsByIDVariables,
+    OrganizationsConnectionFields,
+    OrganizationsResult,
+    OrganizationsVariables,
     OutOfBandMigrationFields,
     OutOfBandMigrationsResult,
     OutOfBandMigrationsVariables,
+    RandomizeUserPasswordResult,
+    ReloadSiteResult,
+    ReloadSiteVariables,
+    RepositoriesResult,
+    RepositoriesVariables,
+    RepositoryOrderBy,
+    Scalars,
+    ScheduleRepositoryPermissionsSyncResult,
+    ScheduleRepositoryPermissionsSyncVariables,
+    SetUserIsSiteAdminResult,
+    SetUserIsSiteAdminVariables,
     SetUserTagResult,
     SetUserTagVariables,
-    FeatureFlagsResult,
-    FeatureFlagsVariables,
-    FeatureFlagFields,
     SiteAdminAccessTokenConnectionFields,
-    SiteAdminAccessTokensVariables,
     SiteAdminAccessTokensResult,
-    CheckMirrorRepositoryConnectionResult,
-    UsersResult,
-    SiteUsageStatisticsResult,
-    SiteResult,
-    AllConfigResult,
-    RandomizeUserPasswordResult,
-    CreateUserResult,
-    SiteMonitoringStatisticsResult,
+    SiteAdminAccessTokensVariables,
     SiteAdminSettingsCascadeFields,
+    SiteMonitoringStatisticsResult,
+    SiteResult,
+    SiteUpdateCheckResult,
+    SiteUpdateCheckVariables,
+    SiteUsageStatisticsResult,
+    UpdateSiteConfigurationResult,
+    UpdateSiteConfigurationVariables,
+    UserActivePeriod,
+    UsersResult,
     UserUsageStatisticsResult,
+    WebhookByIdResult,
+    WebhookByIdVariables,
+    WebhookFields,
+    WebhookLogFields,
+    WebhookLogsByWebhookIDResult,
+    WebhookLogsByWebhookIDVariables,
     WebhooksListResult,
     WebhooksListVariables,
-    WebhookFields,
 } from '../graphql-operations'
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
+
+import { WEBHOOK_LOGS_BY_ID } from './webhooks/backend'
 
 /**
  * Fetches all users.
@@ -216,6 +226,8 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                 $notIndexed: Boolean
                 $failedFetch: Boolean
                 $cloneStatus: CloneStatus
+                $orderBy: RepositoryOrderBy
+                $descending: Boolean
             ) {
                 repositories(
                     first: $first
@@ -224,6 +236,8 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                     notIndexed: $notIndexed
                     failedFetch: $failedFetch
                     cloneStatus: $cloneStatus
+                    orderBy: $orderBy
+                    descending: $descending
                 ) {
                     nodes {
                         ...SiteAdminRepositoryFields
@@ -244,6 +258,8 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
             first: args.first ?? null,
             query: args.query ?? null,
             cloneStatus: args.cloneStatus ?? null,
+            orderBy: args.orderBy ?? RepositoryOrderBy.REPOSITORY_NAME,
+            descending: args.descending ?? false,
         }
     ).pipe(
         map(dataOrThrowErrors),
@@ -898,7 +914,7 @@ export const SITE_EXTERNAL_SERVICE_CONFIG = gql`
     }
 `
 
-export const WEBHOOKS = gql`
+const WEBHOOK_FIELDS_FRAGMENT = gql`
     fragment WebhookFields on Webhook {
         id
         uuid
@@ -908,7 +924,20 @@ export const WEBHOOKS = gql`
         secret
         updatedAt
         createdAt
+        createdBy {
+            username
+            url
+        }
+        updatedBy {
+            username
+            url
+        }
     }
+`
+
+export const WEBHOOKS = gql`
+    ${WEBHOOK_FIELDS_FRAGMENT}
+
     query WebhooksList {
         webhooks {
             nodes {
@@ -922,6 +951,17 @@ export const WEBHOOKS = gql`
     }
 `
 
+export const WEBHOOK_BY_ID = gql`
+    ${WEBHOOK_FIELDS_FRAGMENT}
+
+    query WebhookById($id: ID!) {
+        node(id: $id) {
+            __typename
+            ...WebhookFields
+        }
+    }
+`
+
 export const useWebhooksConnection = (): UseConnectionResult<WebhookFields> =>
     useConnection<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
@@ -929,5 +969,30 @@ export const useWebhooksConnection = (): UseConnectionResult<WebhookFields> =>
         getConnection: result => {
             const { webhooks } = dataOrThrowErrors(result)
             return webhooks
+        },
+    })
+
+export const useWebhookQuery = (id: string): QueryResult<WebhookByIdResult, WebhookByIdVariables> =>
+    useQuery<WebhookByIdResult, WebhookByIdVariables>(WEBHOOK_BY_ID, {
+        variables: { id },
+    })
+
+export const useWebhookLogsConnection = (
+    webhookID: string,
+    first: number,
+    onlyErrors: boolean
+): UseConnectionResult<WebhookLogFields> =>
+    useConnection<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables, WebhookLogFields>({
+        query: WEBHOOK_LOGS_BY_ID,
+        variables: {
+            first: first ?? 20,
+            after: null,
+            onlyErrors,
+            onlyUnmatched: false,
+            webhookID,
+        },
+        getConnection: result => {
+            const { webhookLogs } = dataOrThrowErrors(result)
+            return webhookLogs
         },
     })
