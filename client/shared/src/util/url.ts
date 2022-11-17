@@ -568,19 +568,20 @@ export function buildGetStartedURL(cloudSignup?: boolean, returnTo?: string): st
      * non customer instances like .com should direct users through our cloud
      * sign-up flow to prioritize trial-starts.
      */
-    const path = cloudSignup ? 'https://signup.sourcegraph.com' : '/sign-up'
+    const path = cloudSignup ? 'https://signup.sourcegraph.com' : 'https://sourcegraph.com/sign-up'
 
-    if (path.includes('https')) {
-        const url = new URL(path)
+    const url = new URL(path)
 
-        if (returnTo !== undefined) {
-            url.searchParams.set('returnTo', returnTo)
-        }
-
-        return url.toString()
+    if (returnTo !== undefined) {        
+        url.searchParams.set('returnTo', returnTo)
     }
 
-    return path
+    // Local sign-ups use relative URLs
+    if (!cloudSignup) {
+        return `${url.pathname}${url.search}`
+    }
+
+    return url.toString()
 }
 
 /** The results of parsing a repo-revision string like "my/repo@my/revision". */
