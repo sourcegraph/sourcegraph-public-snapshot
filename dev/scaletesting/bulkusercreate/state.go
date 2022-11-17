@@ -190,7 +190,7 @@ func (s *state) loadOrgs() ([]*org, error) {
 func (s *state) loadRepos() ([]*repo, error) {
 	s.Lock()
 	defer s.Unlock()
-	rows, err := s.db.Query(`SELECT owner, name, assignedUsers, assignedTeams, assignedOrgs, completed FROM repos`)
+	rows, err := s.db.Query(`SELECT owner, name, assignedUsers, assignedTeams, assignedOrgs, complete FROM repos`)
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +373,7 @@ func (s *state) insertRepos(repos []*github.Repository) error {
 		return err
 	}
 	for _, repo := range repos {
-		if _, err = tx.Exec(`INSERT OR IGNORE INTO repos(owner, name) VALUES (?, ?)`, *repo.Owner.Name, *repo.Name); err != nil {
+		if _, err = tx.Exec(`INSERT OR IGNORE INTO repos(owner, name) VALUES (?, ?)`, *repo.Owner.Login, *repo.Name); err != nil {
 			return err
 		}
 	}

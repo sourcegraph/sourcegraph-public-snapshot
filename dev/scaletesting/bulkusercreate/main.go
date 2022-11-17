@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"encoding/csv"
 	"flag"
 	"fmt"
 	"log"
@@ -26,13 +27,14 @@ type config struct {
 	githubUser     string
 	githubPassword string
 
-	userCount int
-	teamCount int
-	orgCount  int
-	orgAdmin  string
-	action    string
-	resume    string
-	retry     int
+	userCount      int
+	teamCount      int
+	orgCount       int
+	orgAdmin       string
+	action         string
+	resume         string
+	retry          int
+	generateTokens bool
 }
 
 var (
@@ -43,6 +45,11 @@ var (
 	gh       *github.Client
 	progress output.Progress
 )
+
+type userToken struct {
+	login string
+	token string
+}
 
 func main() {
 	var cfg config
@@ -59,6 +66,7 @@ func main() {
 	flag.IntVar(&cfg.retry, "retry", 5, "Retries count")
 	flag.StringVar(&cfg.action, "action", "create", "Whether to 'create' or 'delete' users")
 	flag.StringVar(&cfg.resume, "resume", "state.db", "Temporary state to use to resume progress if interrupted")
+	flag.BoolVar(&cfg.generateTokens, "generateTokens", false, "Generate new impersonation OAuth tokens for users")
 
 	flag.Parse()
 
@@ -128,73 +136,75 @@ func main() {
 
 	g := group.New().WithMaxConcurrency(1000)
 	if cfg.action == "create" {
-		//// load or generate users
-		//var users []*user
-		//if users, err = store.loadUsers(); err != nil {
-		//	log.Fatal(err)
-		//}
-		//
-		//if len(users) == 0 {
-		//	if users, err = store.generateUsers(cfg); err != nil {
-		//		log.Fatal(err)
-		//	}
-		//	writeSuccess(out, "generated user jobs in %s", cfg.resume)
-		//} else {
-		//	writeSuccess(out, "resuming user jobs from %s", cfg.resume)
-		//}
-		//
-		//// load or generate teams
-		//var teams []*team
-		//if teams, err = store.loadTeams(); err != nil {
-		//	log.Fatal(err)
-		//}
-		//
-		//if len(teams) == 0 {
-		//	if teams, err = store.generateTeams(cfg); err != nil {
-		//		log.Fatal(err)
-		//	}
-		//	writeSuccess(out, "generated team jobs in %s", cfg.resume)
-		//} else {
-		//	writeSuccess(out, "resuming team jobs from %s", cfg.resume)
-		//}
-		//
-		//bars := []output.ProgressBar{
-		//	{Label: "Creating orgs", Max: float64(cfg.orgCount)},
-		//	{Label: "Creating teams", Max: float64(cfg.teamCount)},
-		//	{Label: "Creating users", Max: float64(cfg.userCount)},
-		//	{Label: "Adding users to teams", Max: float64(cfg.teamCount * 50)},
-		//}
-		//progress = out.Progress(bars, nil)
-		//var usersDone int64
-		//var orgsDone int64
-		//var teamsDone int64
+		// load or generate users
+		var users []*user
+		if users, err = store.loadUsers(); err != nil {
+			log.Fatal(err)
+		}
+
+		if len(users) == 0 {
+			if users, err = store.generateUsers(cfg); err != nil {
+				log.Fatal(err)
+			}
+			writeSuccess(out, "generated user jobs in %s", cfg.resume)
+		} else {
+			writeSuccess(out, "resuming user jobs from %s", cfg.resume)
+		}
+
+		// load or generate teams
+		var teams []*team
+		if teams, err = store.loadTeams(); err != nil {
+			log.Fatal(err)
+		}
+
+		if len(teams) == 0 {
+			if teams, err = store.generateTeams(cfg); err != nil {
+				log.Fatal(err)
+			}
+			writeSuccess(out, "generated team jobs in %s", cfg.resume)
+		} else {
+			writeSuccess(out, "resuming team jobs from %s", cfg.resume)
+		}
+
+		bars := []output.ProgressBar{
+			{Label: "Creating orgs", Max: float64(cfg.orgCount)},
+			{Label: "Creating teams", Max: float64(cfg.teamCount)},
+			{Label: "Creating users", Max: float64(cfg.userCount)},
+			{Label: "Generating OAuth tokens", Max: float64(cfg.userCount)},
+			//{Label: "Adding users to teams", Max: float64(cfg.teamCount * 50)},
+		}
+		progress = out.Progress(bars, nil)
+		var usersDone int64
+		var orgsDone int64
+		var teamsDone int64
+		var tokensDone int64
 		//var membershipsDone int64
-		//
-		//for _, o := range orgs {
-		//	currentOrg := o
-		//	g.Go(func() {
-		//		executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, &orgsDone)
-		//	})
-		//}
-		//g.Wait()
-		//
-		//for _, t := range teams {
-		//	currentTeam := t
-		//	g.Go(func() {
-		//		executeCreateTeam(ctx, currentTeam, &teamsDone)
-		//	})
-		//}
-		//g.Wait()
-		//
-		//for _, u := range users {
-		//	currentUser := u
-		//	g.Go(func() {
-		//		executeCreateUser(ctx, currentUser, &usersDone)
-		//	})
-		//}
-		//g.Wait()
-		//
-		//totalMemberships := len(teams) * 50
+
+		for _, o := range orgs {
+			currentOrg := o
+			g.Go(func() {
+				executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, &orgsDone)
+			})
+		}
+		g.Wait()
+
+		for _, t := range teams {
+			currentTeam := t
+			g.Go(func() {
+				executeCreateTeam(ctx, currentTeam, &teamsDone)
+			})
+		}
+		g.Wait()
+
+		for _, u := range users {
+			currentUser := u
+			g.Go(func() {
+				executeCreateUser(ctx, currentUser, &usersDone)
+			})
+		}
+		g.Wait()
+
+		//totalMemberships := len(teams) * 8
 		//membershipsPerUser := int(math.Ceil(float64(totalMemberships) / float64(cfg.userCount)))
 		//teamsToSkip := int(math.Ceil(float64(cfg.teamCount) / (float64(totalMemberships) / float64(cfg.userCount))))
 		//
@@ -215,7 +225,7 @@ func main() {
 		//			&membershipsDone)
 		//	})
 		//}
-
+		//
 		var repos []*repo
 		if repos, err = store.loadRepos(); err != nil {
 			log.Fatal(err)
@@ -230,6 +240,35 @@ func main() {
 			writeSuccess(out, "Fetched %d private repos and stored in state", len(remoteRepos))
 		} else {
 			writeSuccess(out, "resuming repo jobs from %s", cfg.resume)
+		}
+
+		if cfg.generateTokens {
+			tg := group.NewWithResults[userToken]().WithMaxConcurrency(1000)
+			for _, u := range users {
+				tg.Go(func() userToken {
+					token := executeCreateUserImpersonationToken(ctx, u)
+					atomic.AddInt64(&tokensDone, 1)
+					progress.SetValue(3, float64(tokensDone))
+					return userToken{
+						login: u.Login,
+						token: token,
+					}
+				})
+			}
+
+			csvFile, err := os.Create("users.csv")
+			if err != nil {
+				log.Fatalf("Failed creating csv: %s", err)
+			}
+			defer csvFile.Close()
+			csvwriter := csv.NewWriter(csvFile)
+			defer csvwriter.Flush()
+			_ = csvwriter.Write([]string{"login", "token"})
+			for _, pair := range tg.Wait() {
+				if err = csvwriter.Write([]string{pair.login, pair.token}); err != nil {
+					log.Fatalln("error writing pair to file", err)
+				}
+			}
 		}
 
 		g.Wait()
@@ -580,155 +619,174 @@ func getGitHubUsers(ctx context.Context) []*github.User {
 }
 
 func getGitHubRepos(ctx context.Context) []*github.Repository {
-	var currentPage int
-	var repos []*github.Repository
-	for true {
-		writeInfo(out, "Fetching repo page %d", currentPage)
-		reposPage, _, err := gh.Repositories.ListByOrg(ctx, "blank200k", &github.RepositoryListByOrgOptions{
-			Type: "private",
-			ListOptions: github.ListOptions{
-				Page:    currentPage,
-				PerPage: 100,
-			},
+	g := group.NewWithResults[[]*github.Repository]().WithMaxConcurrency(250)
+	// 200k repos + some buffer space returning empty pages
+	for i := 0; i < 2050; i++ {
+		writeInfo(out, "Fetching repo page %d", i)
+		page := i
+		g.Go(func() []*github.Repository {
+			var resp *github.Response
+			var reposPage []*github.Repository
+			var err error
+			for resp == nil || resp.StatusCode == 502 || resp.StatusCode == 504 {
+				if resp != nil && (resp.StatusCode == 502 || resp.StatusCode == 504) {
+					writeInfo(out, "Response status %d, retrying in a minute", resp.StatusCode)
+					time.Sleep(time.Minute)
+				}
+				reposPage, resp, err = gh.Repositories.ListByOrg(ctx, "blank200k", &github.RepositoryListByOrgOptions{
+					Type: "private",
+					ListOptions: github.ListOptions{
+						Page:    page,
+						PerPage: 100,
+					},
+				})
+				if err != nil {
+					log.Print(err)
+				}
+			}
+			return reposPage
 		})
-		if err != nil {
-			log.Fatal(err)
-		}
-		if len(reposPage) != 0 {
-			currentPage++
-			repos = append(repos, reposPage...)
-		} else {
-			break
-		}
 	}
-
+	var repos []*github.Repository
+	for _, repo := range g.Wait() {
+		repos = append(repos, repo...)
+	}
 	return repos
 }
 
-func executeCreateUser(ctx context.Context, currentUser *user, usersDone *int64) {
-	if currentUser.Created && currentUser.Failed == "" {
+func executeCreateUser(ctx context.Context, u *user, usersDone *int64) {
+	if u.Created && u.Failed == "" {
 		atomic.AddInt64(usersDone, 1)
 		progress.SetValue(2, float64(*usersDone))
 		return
 	}
 
-	existingUser, resp, uErr := gh.Users.Get(ctx, currentUser.Login)
+	existingUser, resp, uErr := gh.Users.Get(ctx, u.Login)
 	if uErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "Failed to get user %s, reason: %s", currentUser.Login, uErr)
+		writeFailure(out, "Failed to get user %s, reason: %s", u.Login, uErr)
 		return
 	}
 
 	uErr = nil
 	if existingUser != nil {
-		currentUser.Created = true
-		currentUser.Failed = ""
-		if uErr = store.saveUser(currentUser); uErr != nil {
+		u.Created = true
+		u.Failed = ""
+		if uErr = store.saveUser(u); uErr != nil {
 			log.Fatal(uErr)
 		}
-		writeInfo(out, "user with login %s already exists", currentUser.Login)
+		//writeInfo(out, "user with login %s already exists", u.Login)
 		atomic.AddInt64(usersDone, 1)
 		progress.SetValue(2, float64(*usersDone))
 		return
 	}
 
-	_, _, uErr = gh.Admin.CreateUser(ctx, currentUser.Login, currentUser.Email)
+	_, _, uErr = gh.Admin.CreateUser(ctx, u.Login, u.Email)
 	if uErr != nil {
-		writeFailure(out, "Failed to create user with login %s, reason: %s", currentUser.Login, uErr)
-		currentUser.Failed = uErr.Error()
-		if uErr = store.saveUser(currentUser); uErr != nil {
+		writeFailure(out, "Failed to create user with login %s, reason: %s", u.Login, uErr)
+		u.Failed = uErr.Error()
+		if uErr = store.saveUser(u); uErr != nil {
 			log.Fatal(uErr)
 		}
 		return
 	}
 
-	currentUser.Created = true
-	currentUser.Failed = ""
+	u.Created = true
+	u.Failed = ""
 	atomic.AddInt64(usersDone, 1)
 	progress.SetValue(2, float64(*usersDone))
-	if uErr = store.saveUser(currentUser); uErr != nil {
+	if uErr = store.saveUser(u); uErr != nil {
 		log.Fatal(uErr)
 	}
 
-	//writeSuccess(out, "Created user with login %s", currentUser.Login)
+	//writeSuccess(out, "Created user with login %s", u.Login)
 }
 
-func executeCreateTeam(ctx context.Context, currentTeam *team, teamsDone *int64) {
-	if currentTeam.Created && currentTeam.Failed == "" {
+func executeCreateUserImpersonationToken(ctx context.Context, u *user) string {
+	auth, _, err := gh.Admin.CreateUserImpersonation(ctx, u.Login, &github.ImpersonateUserOptions{Scopes: []string{"repo"}})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return auth.GetToken()
+}
+
+func executeCreateTeam(ctx context.Context, t *team, teamsDone *int64) {
+	if t.Created && t.Failed == "" {
 		atomic.AddInt64(teamsDone, 1)
 		progress.SetValue(1, float64(*teamsDone))
 		return
 	}
 
-	existingTeam, resp, tErr := gh.Teams.GetTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
+	existingTeam, resp, tErr := gh.Teams.GetTeamBySlug(ctx, t.Org, t.Name)
 
 	if tErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "failed to get team with name %s, reason: %s", currentTeam.Name, tErr)
+		writeFailure(out, "failed to get team with name %s, reason: %s", t.Name, tErr)
 		return
 	}
 
 	tErr = nil
 	if existingTeam != nil {
-		currentTeam.Created = true
-		currentTeam.Failed = ""
+		t.Created = true
+		t.Failed = ""
 		atomic.AddInt64(teamsDone, 1)
 		progress.SetValue(1, float64(*teamsDone))
 
-		if tErr = store.saveTeam(currentTeam); tErr != nil {
+		if tErr = store.saveTeam(t); tErr != nil {
 			log.Fatal(tErr)
 		}
 	} else {
 		// Create the team if not exists
-		if _, _, tErr = gh.Teams.CreateTeam(ctx, currentTeam.Org, github.NewTeam{Name: currentTeam.Name}); tErr != nil {
-			writeFailure(out, "Failed to create team with name %s, reason: %s", currentTeam.Name, tErr)
-			currentTeam.Failed = tErr.Error()
-			if tErr = store.saveTeam(currentTeam); tErr != nil {
+		if _, _, tErr = gh.Teams.CreateTeam(ctx, t.Org, github.NewTeam{Name: t.Name}); tErr != nil {
+			writeFailure(out, "Failed to create team with name %s, reason: %s", t.Name, tErr)
+			t.Failed = tErr.Error()
+			if tErr = store.saveTeam(t); tErr != nil {
 				log.Fatal(tErr)
 			}
 		}
 
-		currentTeam.Created = true
-		currentTeam.Failed = ""
+		t.Created = true
+		t.Failed = ""
 		atomic.AddInt64(teamsDone, 1)
 		progress.SetValue(1, float64(*teamsDone))
 
-		if tErr = store.saveTeam(currentTeam); tErr != nil {
+		if tErr = store.saveTeam(t); tErr != nil {
 			log.Fatal(tErr)
 		}
 	}
 }
 
-func executeCreateOrg(ctx context.Context, currentOrg *org, orgAdmin string, orgsDone *int64) {
-	if currentOrg.Created && currentOrg.Failed == "" {
+func executeCreateOrg(ctx context.Context, o *org, orgAdmin string, orgsDone *int64) {
+	if o.Created && o.Failed == "" {
 		atomic.AddInt64(orgsDone, 1)
 		progress.SetValue(0, float64(*orgsDone))
 		return
 	}
 
-	existingOrg, resp, oErr := gh.Organizations.Get(ctx, currentOrg.Login)
+	existingOrg, resp, oErr := gh.Organizations.Get(ctx, o.Login)
 	if oErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "Failed to get org %s, reason: %s", currentOrg.Login, oErr)
+		writeFailure(out, "Failed to get org %s, reason: %s", o.Login, oErr)
 		return
 	}
 
 	oErr = nil
 	if existingOrg != nil {
-		currentOrg.Created = true
-		currentOrg.Failed = ""
+		o.Created = true
+		o.Failed = ""
 		atomic.AddInt64(orgsDone, 1)
 		progress.SetValue(0, float64(*orgsDone))
 
-		if oErr = store.saveOrg(currentOrg); oErr != nil {
+		if oErr = store.saveOrg(o); oErr != nil {
 			log.Fatal(oErr)
 		}
 		return
 	}
 
-	_, _, oErr = gh.Admin.CreateOrg(ctx, &github.Organization{Login: &currentOrg.Login}, orgAdmin)
+	_, _, oErr = gh.Admin.CreateOrg(ctx, &github.Organization{Login: &o.Login}, orgAdmin)
 
 	if oErr != nil {
-		writeFailure(out, "Failed to create org with login %s, reason: %s", currentOrg.Login, oErr)
-		currentOrg.Failed = oErr.Error()
-		if oErr = store.saveOrg(currentOrg); oErr != nil {
+		writeFailure(out, "Failed to create org with login %s, reason: %s", o.Login, oErr)
+		o.Failed = oErr.Error()
+		if oErr = store.saveOrg(o); oErr != nil {
 			log.Fatal(oErr)
 		}
 		return
@@ -737,13 +795,13 @@ func executeCreateOrg(ctx context.Context, currentOrg *org, orgAdmin string, org
 	atomic.AddInt64(orgsDone, 1)
 	progress.SetValue(0, float64(*orgsDone))
 
-	currentOrg.Created = true
-	currentOrg.Failed = ""
-	if oErr = store.saveOrg(currentOrg); oErr != nil {
+	o.Created = true
+	o.Failed = ""
+	if oErr = store.saveOrg(o); oErr != nil {
 		log.Fatal(oErr)
 	}
 
-	//writeSuccess(out, "Created org with login %s", currentOrg.Login)
+	//writeSuccess(out, "Created org with login %s", o.Login)
 }
 
 func writeSuccess(out *output.Output, format string, a ...any) {
