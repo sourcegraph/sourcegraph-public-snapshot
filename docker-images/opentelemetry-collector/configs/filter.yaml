@@ -26,9 +26,9 @@ extensions:
 service:
   extensions: [health_check,zpages]
   pipelines:
-    traces:
+    traces/web-app:
       receivers: [otlp]
-      processors: [tail_sampling]
+      processors: [filter/web-app]
       exporters: [jaeger]
 
 processors:
@@ -57,3 +57,10 @@ processors:
             probabilistic: {sampling_percentage: 10}
           }
         ]
+  filter/ui:
+    spans:
+      # ONLY include traces where 'service.name' matches "web-app" and exclude ALL other traces from the pipeline
+      include:
+        match_type: regexp
+        services:
+          - "web-app"
