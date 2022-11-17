@@ -216,6 +216,9 @@ var allowedOverrideMap = map[int]struct{}{
 	1000000001: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
 	1000000004: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
 	1000000010: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
+
+	// batch changes
+	1663871069: {}, // https://github.com/sourcegraph/sourcegraph/pull/43390 - normalized string 'draft'
 }
 
 func overrideAllowed(id int) bool {

@@ -534,6 +534,59 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1665053848,
+				"Name": "add_insight_series_recording_times",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS insight_series_recording_times (\n\tinsight_series_id int,\n\trecording_time timestamptz,\n\tsnapshot bool,\n\tUNIQUE (insight_series_id, recording_time),\n\tCONSTRAINT insight_series_id_fkey FOREIGN KEY (insight_series_id) REFERENCES insight_series (id) ON DELETE CASCADE\n);",
+				"DownQuery": "DROP TABLE IF EXISTS insight_series_recording_times;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1664984848
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1666632478,
+				"Name": "add_supports_augmentation_column",
+				"UpQuery": "ALTER TABLE IF EXISTS insight_series\n\tADD COLUMN IF NOT EXISTS supports_augmentation BOOLEAN NOT NULL DEFAULT TRUE;\n\nUPDATE insight_series SET supports_augmentation = FALSE;",
+				"DownQuery": "ALTER TABLE IF EXISTS insight_series DROP COLUMN IF EXISTS supports_augmentation;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1665053848,
+					1665616961
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1666729025,
+				"Name": "incomplete_points",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS insight_series_incomplete_points\n(\n    id        SERIAL CONSTRAINT insight_series_incomplete_points_pk PRIMARY KEY,\n    series_id INT                         NOT NULL,\n    reason    TEXT                        NOT NULL,\n    time      TIMESTAMP WITHOUT TIME ZONE NOT NULL,\n    repo_id   INT,\n\n    CONSTRAINT insight_series_incomplete_points_series_id_fk\n        FOREIGN KEY (series_id) REFERENCES insight_series (id) ON DELETE CASCADE\n);\n\nCREATE UNIQUE INDEX IF NOT EXISTS insight_series_incomplete_points_unique_idx\n    ON insight_series_incomplete_points (series_id, reason, time, repo_id);",
+				"DownQuery": "DROP TABLE IF EXISTS insight_series_incomplete_points;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1666632478
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667309737,
+				"Name": "backfill cost groups",
+				"UpQuery": "CREATE OR REPLACE VIEW insights_jobs_backfill_in_progress AS\nSELECT\n    jobs.*,\n    isb.state AS backfill_state,\n    isb.estimated_cost,\n    width_bucket(isb.estimated_cost, 0, max(isb.estimated_cost+1) over (), 4) cost_bucket\nFROM insights_background_jobs jobs\n         JOIN insight_series_backfill isb ON jobs.backfill_id = isb.id\nWHERE isb.state = 'processing';",
+				"DownQuery": "-- Undo the changes made in the up migration\ndrop view if exists insights_jobs_backfill_in_progress;\n\nCREATE OR REPLACE VIEW insights_jobs_backfill_in_progress AS\nSELECT jobs.*, isb.state AS backfill_state, isb.estimated_cost\nFROM insights_background_jobs jobs\n         JOIN insight_series_backfill isb ON jobs.backfill_id = isb.id\nWHERE isb.state = 'processing';",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1666632478
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -708,6 +761,14 @@
 				"RootID": 1000000027,
 				"LeafIDs": [
 					1665616961
+				],
+				"PreCreation": false
+			},
+			"v4.2.0": {
+				"RootID": 1000000027,
+				"LeafIDs": [
+					1666729025,
+					1667309737
 				],
 				"PreCreation": false
 			}
@@ -1202,6 +1263,19 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1666727108,
+				"Name": "Add codeintel_last_reconcile table",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS codeintel_last_reconcile (\n    dump_id integer NOT NULL UNIQUE,\n    last_reconcile_at timestamp with time zone NOT NULL\n);\n\nCOMMENT ON TABLE codeintel_last_reconcile IS 'Stores the last time processed LSIF data was reconciled with the other database.';\n\nCREATE INDEX IF NOT EXISTS codeintel_last_reconcile_last_reconcile_at_dump_id ON codeintel_last_reconcile(last_reconcile_at, dump_id);",
+				"DownQuery": "DROP TABLE IF EXISTS codeintel_last_reconcile;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1665531314
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -1380,6 +1454,13 @@
 				"RootID": 1000000033,
 				"LeafIDs": [
 					1665531314
+				],
+				"PreCreation": false
+			},
+			"v4.2.0": {
+				"RootID": 1000000033,
+				"LeafIDs": [
+					1666727108
 				],
 				"PreCreation": false
 			}
@@ -6717,13 +6798,28 @@
 			{
 				"ID": 1663871069,
 				"Name": "changeset specs null published",
-				"UpQuery": "UPDATE changeset_specs\nSET published = NULL\nWHERE published = 'null';\n\nALTER TABLE changeset_specs\n    DROP CONSTRAINT IF EXISTS changeset_specs_published_valid_values,\n    ADD CONSTRAINT changeset_specs_published_valid_values CHECK (published = 'true' OR published = 'false' OR\n                                                                 published = '\"draft\"' OR published IS NULL);",
+				"UpQuery": "UPDATE changeset_specs\nSET published = NULL\nWHERE published = 'null';\n\nUPDATE changeset_specs\nSET published = '\"draft\"'\nWHERE published = 'draft';\n\nALTER TABLE changeset_specs\n    DROP CONSTRAINT IF EXISTS changeset_specs_published_valid_values,\n    ADD CONSTRAINT changeset_specs_published_valid_values CHECK (published = 'true' OR published = 'false' OR\n                                                                 published = '\"draft\"' OR published IS NULL);",
 				"DownQuery": "ALTER TABLE changeset_specs\n    DROP CONSTRAINT IF EXISTS changeset_specs_published_valid_values;",
 				"Privileged": false,
 				"NonIdempotent": false,
 				"Parents": [
 					1660711451,
 					1662467128
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1664897165,
+				"Name": "executor_secrets",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS executor_secrets (\n    id SERIAL PRIMARY KEY,\n    key text NOT NULL,\n    value bytea NOT NULL,\n    scope text NOT NULL,\n    encryption_key_id text,\n    namespace_user_id integer REFERENCES users(id) ON DELETE CASCADE,\n    namespace_org_id integer REFERENCES orgs(id) ON DELETE CASCADE,\n    created_at timestamp with time zone NOT NULL DEFAULT NOW(),\n    updated_at timestamp with time zone NOT NULL DEFAULT NOW(),\n    creator_id integer REFERENCES users(id) ON DELETE SET NULL\n);\n\nCOMMENT ON COLUMN executor_secrets.creator_id IS 'NULL, if the user has been deleted.';\n\n-- Enforce uniqueness of the key in a given namespace.\nCREATE UNIQUE INDEX IF NOT EXISTS executor_secrets_unique_key_namespace_user ON executor_secrets (key, namespace_user_id, scope) WHERE namespace_user_id IS NOT NULL;\nCREATE UNIQUE INDEX IF NOT EXISTS executor_secrets_unique_key_namespace_org ON executor_secrets (key, namespace_org_id, scope) WHERE namespace_org_id IS NOT NULL;\n-- Enforce uniqueness of the key in the global namespace. NULL is a fun type :)\nCREATE UNIQUE INDEX IF NOT EXISTS executor_secrets_unique_key_global ON executor_secrets(key, scope) WHERE namespace_user_id IS NULL AND namespace_org_id IS NULL;\n\nCREATE TABLE IF NOT EXISTS executor_secret_access_logs (\n    id SERIAL PRIMARY KEY,\n    executor_secret_id integer NOT NULL REFERENCES executor_secrets(id) ON DELETE CASCADE,\n    user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,\n    created_at timestamp with time zone NOT NULL DEFAULT NOW()\n);",
+				"DownQuery": "DROP TABLE IF EXISTS executor_secret_access_logs;\nDROP TABLE IF EXISTS executor_secrets;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1663665519,
+					1663871069,
+					1664300936
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
@@ -6811,6 +6907,20 @@
 				"IndexMetadata": null
 			},
 			{
+				"ID": 1665477911,
+				"Name": "add_zoekt_repos_table",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS zoekt_repos (\n    repo_id integer NOT NULL PRIMARY KEY REFERENCES repo(id) ON DELETE CASCADE,\n    branches jsonb DEFAULT '[]'::jsonb NOT NULL,\n\n    index_status text DEFAULT 'not_indexed'::text NOT NULL,\n\n    updated_at timestamp with time zone DEFAULT now() NOT NULL,\n    created_at timestamp with time zone DEFAULT now() NOT NULL\n);\n\nCREATE INDEX IF NOT EXISTS zoekt_repos_index_status ON zoekt_repos USING btree (index_status);\n\nCREATE OR REPLACE FUNCTION func_insert_zoekt_repo() RETURNS TRIGGER AS $$\nBEGIN\n  INSERT INTO zoekt_repos (repo_id) VALUES (NEW.id);\n\n  RETURN NULL;\nEND;\n$$ LANGUAGE plpgsql;\n\nDROP TRIGGER IF EXISTS trig_create_zoekt_repo_on_repo_insert on repo;\n\nCREATE TRIGGER trig_create_zoekt_repo_on_repo_insert\nAFTER INSERT\nON repo\nFOR EACH ROW\nEXECUTE FUNCTION func_insert_zoekt_repo();",
+				"DownQuery": "DROP TRIGGER IF EXISTS trig_create_zoekt_repo_on_repo_insert ON repo;\nDROP FUNCTION IF EXISTS func_insert_zoekt_repo();\n\nDROP TABLE IF EXISTS zoekt_repos;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1662636054,
+					1665399117
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
 				"ID": 1665488828,
 				"Name": "add columns to webhooks table",
 				"UpQuery": "ALTER TABLE webhooks\n    DROP COLUMN IF EXISTS created_by_user_id,\n    DROP COLUMN IF EXISTS updated_by_user_id,\n    ADD COLUMN created_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,\n    ADD COLUMN updated_by_user_id INTEGER DEFAULT NULL REFERENCES users(id) ON DELETE SET NULL;\n\nCOMMENT ON COLUMN webhooks.created_by_user_id IS 'ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted).';\nCOMMENT ON COLUMN webhooks.updated_by_user_id IS 'ID of a user, who updated the webhook. If NULL, then the user does not exist (never existed or was deleted).';",
@@ -6880,6 +6990,541 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1666034720,
+				"Name": "Add lsif_upload references (gc) scan timestamp",
+				"UpQuery": "ALTER TABLE\n    lsif_uploads\nADD\n    COLUMN IF NOT EXISTS last_referenced_scan_at timestamp with time zone;\n\nCOMMENT ON COLUMN lsif_uploads.last_referenced_scan_at IS 'The last time this upload was known to be referenced by another (possibly expired) index.';",
+				"DownQuery": "ALTER TABLE\n    lsif_uploads DROP COLUMN IF EXISTS last_referenced_scan_at;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1665420690,
+					1665488828,
+					1665524865,
+					1665588249
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1666131819,
+				"Name": "Add lsif_upload traversal scan timestamp",
+				"UpQuery": "ALTER TABLE\n    lsif_uploads\nADD\n    COLUMN IF NOT EXISTS last_traversal_scan_at timestamp with time zone;\n\nCOMMENT ON COLUMN lsif_uploads.last_traversal_scan_at IS 'The last time this upload was known to be reachable by a non-expired index.';",
+				"DownQuery": "ALTER TABLE\n    lsif_uploads DROP COLUMN IF EXISTS last_traversal_scan_at;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1665646849,
+					1665770699,
+					1666034720
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1666145729,
+				"Name": "Add lsif_indexes.should__reindex",
+				"UpQuery": "ALTER TABLE lsif_indexes ADD COLUMN IF NOT EXISTS should_reindex boolean NOT NULL DEFAULT false;\n\nDROP VIEW IF EXISTS lsif_indexes_with_repository_name;\n\nCREATE VIEW lsif_indexes_with_repository_name AS\n SELECT u.id,\n    u.commit,\n    u.queued_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.process_after,\n    u.num_resets,\n    u.num_failures,\n    u.docker_steps,\n    u.root,\n    u.indexer,\n    u.indexer_args,\n    u.outfile,\n    u.log_contents,\n    u.execution_logs,\n    u.local_steps,\n    u.should_reindex,\n    r.name AS repository_name\n   FROM (lsif_indexes u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);",
+				"DownQuery": "DROP VIEW IF EXISTS lsif_indexes_with_repository_name;\n\nCREATE VIEW lsif_indexes_with_repository_name AS\n SELECT u.id,\n    u.commit,\n    u.queued_at,\n    u.state,\n    u.failure_message,\n    u.started_at,\n    u.finished_at,\n    u.repository_id,\n    u.process_after,\n    u.num_resets,\n    u.num_failures,\n    u.docker_steps,\n    u.root,\n    u.indexer,\n    u.indexer_args,\n    u.outfile,\n    u.log_contents,\n    u.execution_logs,\n    u.local_steps,\n    r.name AS repository_name\n   FROM (lsif_indexes u\n     JOIN repo r ON ((r.id = u.repository_id)))\n  WHERE (r.deleted_at IS NULL);\n\nALTER TABLE lsif_indexes DROP COLUMN IF EXISTS should_reindex;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1665420690,
+					1665488828,
+					1665524865,
+					1665588249
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1666344635,
+				"Name": "fill_zoekt_repos_table",
+				"UpQuery": "INSERT INTO zoekt_repos (repo_id)\nSELECT id\nFROM repo\nLEFT JOIN zoekt_repos zr ON repo.id = zr.repo_id\nWHERE zr.repo_id IS NULL\nON CONFLICT (repo_id) DO NOTHING;",
+				"DownQuery": "-- No undo",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1665477911,
+					1666131819,
+					1666145729
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1666524436,
+				"Name": "Add missing state index on lsif_dependency_indexing_jobs table",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS lsif_dependency_indexing_jobs_state ON lsif_dependency_indexing_jobs (state);",
+				"DownQuery": "DROP INDEX IF EXISTS lsif_dependency_indexing_jobs_state;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1666131819,
+					1666145729
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "lsif_dependency_indexing_jobs",
+					"IndexName": "lsif_dependency_indexing_jobs_state"
+				}
+			},
+			{
+				"ID": 1666598814,
+				"Name": "Add missing state index on lsif_dependency_syncing_jobs table",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs (state);",
+				"DownQuery": "DROP INDEX IF EXISTS lsif_dependency_syncing_jobs_state;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1666524436
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "lsif_dependency_syncing_jobs",
+					"IndexName": "lsif_dependency_syncing_jobs_state"
+				}
+			},
+			{
+				"ID": 1666598828,
+				"Name": "Add missing state index on batch_spec_resolution_jobs table",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS batch_spec_resolution_jobs_state ON batch_spec_resolution_jobs (state);",
+				"DownQuery": "DROP INDEX IF EXISTS batch_spec_resolution_jobs_state;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1666598814
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "batch_spec_resolution_jobs",
+					"IndexName": "batch_spec_resolution_jobs_state"
+				}
+			},
+			{
+				"ID": 1666598983,
+				"Name": "Add missing state index on gitserver_relocator_jobs table",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS gitserver_relocator_jobs_state ON gitserver_relocator_jobs (state);",
+				"DownQuery": "DROP INDEX IF EXISTS gitserver_relocator_jobs_state;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1666598828
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "gitserver_relocator_jobs",
+					"IndexName": "gitserver_relocator_jobs_state"
+				}
+			},
+			{
+				"ID": 1666598987,
+				"Name": "Add missing state index on webhook_build_jobs table",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS webhook_build_jobs_state ON webhook_build_jobs (state);",
+				"DownQuery": "DROP INDEX IF EXISTS webhook_build_jobs_state;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1666598983
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "webhook_build_jobs",
+					"IndexName": "webhook_build_jobs_state"
+				}
+			},
+			{
+				"ID": 1666598990,
+				"Name": "add columns to webhooks table",
+				"UpQuery": "ALTER TABLE webhook_logs\n    ADD COLUMN IF NOT EXISTS webhook_id INTEGER REFERENCES webhooks(id) ON DELETE CASCADE;",
+				"DownQuery": "ALTER TABLE webhook_logs\n     DROP COLUMN IF EXISTS webhook_id;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1666598987
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1666717223,
+				"Name": "Add codeintel_ranking_exports table",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS codeintel_ranking_exports (\n    upload_id integer NOT NULL,\n    graph_key text NOT NULL,\n    locked_at timestamp with time zone NOT NULL DEFAULT NOW(),\n    PRIMARY KEY (upload_id, graph_key),\n    FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE\n);",
+				"DownQuery": "DROP TABLE IF EXISTS codeintel_ranking_exports;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1666598987
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1666886757,
+				"Name": "add_event_logs_user_id_timestamp_index",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS event_logs_user_id_timestamp ON event_logs(user_id, timestamp);",
+				"DownQuery": "DROP INDEX IF EXISTS event_logs_user_id_timestamp;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1664897165,
+					1666598990,
+					1666717223
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "event_logs",
+					"IndexName": "event_logs_user_id_timestamp"
+				}
+			},
+			{
+				"ID": 1666904087,
+				"Name": "Add codeintel_path_rank_inputs table",
+				"UpQuery": "CREATE\nOR REPLACE AGGREGATE sg_jsonb_concat_agg(jsonb) (\n    SFUNC = 'jsonb_concat',\n    STYPE = jsonb,\n    INITCOND = '{}'\n);\n\nALTER TABLE\n    codeintel_path_ranks\nALTER COLUMN\n    payload TYPE jsonb USING payload :: jsonb;\n\nCREATE TABLE IF NOT EXISTS codeintel_path_rank_inputs(\n    id BIGSERIAL PRIMARY KEY,\n    graph_key text NOT NULL,\n    input_filename text NOT NULL,\n    repository_name text NOT NULL,\n    payload jsonb NOT NULL,\n    processed boolean NOT NULL DEFAULT false,\n    UNIQUE (graph_key, input_filename, repository_name)\n);\n\nCREATE INDEX IF NOT EXISTS codeintel_path_rank_graph_key_id_repository_name_processed ON codeintel_path_rank_inputs(graph_key, id, repository_name)\nWHERE\n    NOT processed;\n\nCOMMENT ON TABLE codeintel_path_rank_inputs IS 'Sharded inputs from Spark jobs that will subsequently be written into `codeintel_path_ranks`.';",
+				"DownQuery": "DROP TABLE IF EXISTS codeintel_path_rank_inputs;\n\nALTER TABLE\n    codeintel_path_ranks\nALTER COLUMN\n    payload TYPE text USING payload :: text;\n\nDROP AGGREGATE IF EXISTS sg_jsonb_concat_agg(jsonb);",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1664897165,
+					1666344635,
+					1666598990,
+					1666717223
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1666939263,
+				"Name": "add_index_on_event_logs_user_id_name",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS event_logs_user_id_name ON event_logs (user_id, name);",
+				"DownQuery": "DROP INDEX IF EXISTS event_logs_user_id_name;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1664897165,
+					1666344635,
+					1666598990,
+					1666717223
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "event_logs",
+					"IndexName": "event_logs_user_id_name"
+				}
+			},
+			{
+				"ID": 1667220502,
+				"Name": "Add precision to codeintel_path_ranks",
+				"UpQuery": "DELETE FROM\n    codeintel_path_ranks;\n\nALTER TABLE\n    codeintel_path_ranks\nADD\n    COLUMN IF NOT EXISTS precision float NOT NULL;",
+				"DownQuery": "ALTER TABLE\n    codeintel_path_ranks DROP COLUMN IF EXISTS precision;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1666886757,
+					1666904087,
+					1666939263
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667220626,
+				"Name": "Rename codeintel_path_ranks key",
+				"UpQuery": "-- Rename default constraint name to something we can control\nALTER TABLE codeintel_path_ranks DROP CONSTRAINT IF EXISTS codeintel_path_ranks_repository_id_key;\nCREATE UNIQUE INDEX IF NOT EXISTS codeintel_path_ranks_repository_id ON codeintel_path_ranks (repository_id);",
+				"DownQuery": "-- Note: same as up.sql\nALTER TABLE codeintel_path_ranks DROP CONSTRAINT IF EXISTS codeintel_path_ranks_repository_id_key;\nCREATE UNIQUE INDEX IF NOT EXISTS codeintel_path_ranks_repository_id ON codeintel_path_ranks (repository_id);",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667220502
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667220628,
+				"Name": "Update codeintel_path_ranks unique constraint to include precision",
+				"UpQuery": "DROP INDEX IF EXISTS codeintel_path_ranks_repository_id;\n\nCREATE UNIQUE INDEX IF NOT EXISTS codeintel_path_ranks_repository_id_precision ON codeintel_path_ranks (repository_id, precision);",
+				"DownQuery": "DROP INDEX IF EXISTS codeintel_path_ranks_repository_id_precision;\n\nCREATE UNIQUE INDEX IF NOT EXISTS codeintel_path_ranks_repository_id ON codeintel_path_ranks (repository_id);",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667220626
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667220768,
+				"Name": "Add precision to codeintel_path_rank_inputs",
+				"UpQuery": "ALTER TABLE\n    codeintel_path_rank_inputs\nADD\n    COLUMN IF NOT EXISTS precision float NOT NULL;",
+				"DownQuery": "ALTER TABLE\n    codeintel_path_rank_inputs DROP COLUMN IF EXISTS precision;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667220628
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667222952,
+				"Name": "Add codeintel ranking timestamps",
+				"UpQuery": "ALTER TABLE\n    codeintel_path_ranks\nADD\n    COLUMN IF NOT EXISTS updated_at timestamp with time zone NOT NULL DEFAULT NOW();\n\nCREATE INDEX IF NOT EXISTS codeintel_path_ranks_updated_at ON codeintel_path_ranks(updated_at) INCLUDE (repository_id);\n\nCREATE OR REPLACE FUNCTION update_codeintel_path_ranks_updated_at_column() RETURNS TRIGGER AS\n$$ BEGIN\n    NEW.updated_at = NOW();\n    RETURN NEW;\nEND;\n$$ language 'plpgsql';\n\nDROP TRIGGER IF EXISTS update_codeintel_path_ranks_updated_at ON codeintel_path_ranks;\nCREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW EXECUTE PROCEDURE update_codeintel_path_ranks_updated_at_column();",
+				"DownQuery": "DROP TRIGGER IF EXISTS update_codeintel_path_ranks_updated_at ON codeintel_path_ranks;\nDROP FUNCTION IF EXISTS update_codeintel_path_ranks_updated_at_column;\nDROP INDEX IF EXISTS codeintel_path_ranks_updated_at;\nALTER TABLE codeintel_path_ranks DROP COLUMN IF EXISTS updated_at;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1666886757,
+					1666904087,
+					1666939263
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667259203,
+				"Name": "Add graph_key to codeintel_path_ranks",
+				"UpQuery": "ALTER TABLE\n    codeintel_path_ranks\nADD\n    COLUMN IF NOT EXISTS graph_key text;",
+				"DownQuery": "ALTER TABLE\n    codeintel_path_ranks DROP COLUMN IF EXISTS graph_key;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667220768,
+					1667222952
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667313173,
+				"Name": "Add index to lsif_uploads_visible_at_tip",
+				"UpQuery": "CREATE INDEX IF NOT EXISTS lsif_uploads_visible_at_tip_is_default_branch ON lsif_uploads_visible_at_tip(upload_id)\nWHERE\n    is_default_branch;",
+				"DownQuery": "DROP INDEX IF EXISTS lsif_uploads_visible_at_tip_is_default_branch;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667259203
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667395984,
+				"Name": "Remove filter from lsif_references",
+				"UpQuery": "ALTER TABLE\n    lsif_references DROP COLUMN IF EXISTS filter;",
+				"DownQuery": "ALTER TABLE\n    lsif_references\nADD\n    COLUMN IF NOT EXISTS filter bytea;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667313173
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667433265,
+				"Name": "Add last_reconcile to lsif_uploads table",
+				"UpQuery": "ALTER TABLE\n    lsif_uploads\nADD\n    COLUMN IF NOT EXISTS last_reconcile_at timestamp with time zone;\n\nCREATE INDEX IF NOT EXISTS lsif_uploads_last_reconcile_at ON lsif_uploads(last_reconcile_at, id)\nWHERE\n    state = 'completed';",
+				"DownQuery": "DROP INDEX IF EXISTS lsif_uploads_last_reconcile_at;\n\nALTER TABLE\n    lsif_uploads DROP COLUMN IF EXISTS last_reconcile_at;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667395984
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667497565,
+				"Name": "Fix cascade behavior for codeintel_ranking_exports",
+				"UpQuery": "-- Change primary key\nALTER TABLE codeintel_ranking_exports DROP CONSTRAINT IF EXISTS codeintel_ranking_exports_pkey;\nALTER TABLE codeintel_ranking_exports ADD COLUMN IF NOT EXISTS id SERIAL NOT NULL;\nALTER TABLE codeintel_ranking_exports ADD PRIMARY KEY (id);\n\n-- Make column + foreign key nullable\nALTER TABLE codeintel_ranking_exports DROP CONSTRAINT IF EXISTS codeintel_ranking_exports_upload_id_fkey;\nALTER TABLE codeintel_ranking_exports ALTER COLUMN upload_id DROP NOT NULL;\nALTER TABLE codeintel_ranking_exports ADD CONSTRAINT codeintel_ranking_exports_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL;\n\n-- Emulate old primary key index\nCREATE UNIQUE INDEX IF NOT EXISTS codeintel_ranking_exports_upload_id_graph_key ON codeintel_ranking_exports(upload_id, graph_key);\n\n-- Add prefix to control authoritative GCS paths as we might set upload_id to NULL now\nALTER TABLE codeintel_ranking_exports ADD COLUMN IF NOT EXISTS object_prefix TEXT;",
+				"DownQuery": "-- Drop dependent constraints\nALTER TABLE codeintel_ranking_exports DROP CONSTRAINT IF EXISTS codeintel_ranking_exports_pkey;\n\n-- Make column + foreign key non-nullable\nALTER TABLE codeintel_ranking_exports DROP CONSTRAINT IF EXISTS codeintel_ranking_exports_upload_id_fkey;\nDELETE FROM codeintel_ranking_exports WHERE upload_id IS NULL;\nALTER TABLE codeintel_ranking_exports ALTER COLUMN upload_id SET NOT NULL;\nALTER TABLE codeintel_ranking_exports ADD CONSTRAINT codeintel_ranking_exports_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;\n\n-- Restore the old primary key\nALTER TABLE codeintel_ranking_exports DROP COLUMN IF EXISTS id;\nALTER TABLE codeintel_ranking_exports ADD PRIMARY KEY (upload_id, graph_key);\n\n-- Drop now duplicate index\nDROP INDEX IF EXISTS codeintel_ranking_exports_upload_id_graph_key;\n\n-- Drop new column\nALTER TABLE codeintel_ranking_exports DROP COLUMN IF EXISTS object_prefix;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667395984
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667500111,
+				"Name": "Fix codeintel_path_ranks trigger condition",
+				"UpQuery": "DROP TRIGGER IF EXISTS update_codeintel_path_ranks_updated_at ON codeintel_path_ranks;\nCREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (NEW IS DISTINCT FROM OLD) EXECUTE PROCEDURE update_codeintel_path_ranks_updated_at_column();",
+				"DownQuery": "DROP TRIGGER IF EXISTS update_codeintel_path_ranks_updated_at ON codeintel_path_ranks;\nCREATE TRIGGER update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW EXECUTE PROCEDURE update_codeintel_path_ranks_updated_at_column();",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667395984
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667825028,
+				"Name": "Add SSBC execution V2 flag",
+				"UpQuery": "ALTER TABLE batch_spec_workspace_execution_jobs ADD COLUMN IF NOT EXISTS version integer NOT NULL DEFAULT 1;\n\nDROP VIEW batch_spec_workspace_execution_jobs_with_rank;\nCREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS (\n    SELECT\n        j.*,\n        q.place_in_global_queue,\n        q.place_in_user_queue\n    FROM\n        batch_spec_workspace_execution_jobs j\n    LEFT JOIN batch_spec_workspace_execution_queue q ON j.id = q.id\n);",
+				"DownQuery": "DROP VIEW batch_spec_workspace_execution_jobs_with_rank;\nCREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS (\n    SELECT\n        j.id,\n        j.batch_spec_workspace_id,\n        j.state,\n        j.failure_message,\n        j.started_at,\n        j.finished_at,\n        j.process_after,\n        j.num_resets,\n        j.num_failures,\n        j.execution_logs,\n        j.worker_hostname,\n        j.last_heartbeat_at,\n        j.created_at,\n        j.updated_at,\n        j.cancel,\n        j.queued_at,\n        j.user_id,\n        q.place_in_global_queue,\n        q.place_in_user_queue\n    FROM\n        batch_spec_workspace_execution_jobs j\n    LEFT JOIN batch_spec_workspace_execution_queue q ON j.id = q.id\n);\n\nALTER TABLE batch_spec_workspace_execution_jobs DROP COLUMN IF EXISTS version;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667433265,
+					1667497565,
+					1667500111
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667848448,
+				"Name": "Flip index field order",
+				"UpQuery": "-- Effectively replaces codeintel_path_rank_graph_key_id_repository_name_processed\nCREATE INDEX IF NOT EXISTS codeintel_path_rank_inputs_graph_key_repository_name_id_processed ON codeintel_path_rank_inputs(graph_key, repository_name, id)\nWHERE\n    NOT processed;",
+				"DownQuery": "DROP INDEX IF EXISTS codeintel_path_rank_inputs_graph_key_repository_name_id_processed;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667433265,
+					1667497565,
+					1667500111
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667863757,
+				"Name": "Drop old index",
+				"UpQuery": "DROP INDEX IF EXISTS codeintel_path_rank_graph_key_id_repository_name_processed;",
+				"DownQuery": "CREATE INDEX IF NOT EXISTS codeintel_path_rank_graph_key_id_repository_name_processed ON codeintel_path_rank_inputs(graph_key, id, repository_name)\nWHERE\n    NOT processed;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667848448
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667917030,
+				"Name": "Fix codeintel_ranking_exports index order",
+				"UpQuery": "CREATE UNIQUE INDEX IF NOT EXISTS codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports(graph_key, upload_id);\n\nDROP INDEX IF EXISTS codeintel_ranking_exports_upload_id_graph_key;",
+				"DownQuery": "CREATE UNIQUE INDEX IF NOT EXISTS codeintel_ranking_exports_upload_id_graph_key ON codeintel_ranking_exports(upload_id, graph_key);\n\nDROP INDEX IF EXISTS codeintel_ranking_exports_graph_key_upload_id;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667863757
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1667950421,
+				"Name": "Speed up ListSourcegraphDotComIndexableRepos",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS repo_dotcom_indexable_repos_idx ON repo (stars DESC NULLS LAST) INCLUDE (id, name)\nWHERE\n    deleted_at IS NULL AND blocked IS NULL AND (\n        (repo.stars \u003e= 5 AND NOT COALESCE(fork, false) AND NOT archived)\n        OR\n        (lower(repo.name) ~ '^(src\\.fedoraproject\\.org|maven|npm|jdk)')\n    );",
+				"DownQuery": "DROP INDEX IF EXISTS repo_dotcom_indexable_repos_idx;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667917030
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "repo",
+					"IndexName": "repo_dotcom_indexable_repos_idx"
+				}
+			},
+			{
+				"ID": 1667952974,
+				"Name": "Speed up ListSourcegraphDotComIndexableRepos (part 2)",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS gitserver_repos_not_explicitly_cloned_idx ON gitserver_repos (repo_id) WHERE clone_status \u003c\u003e 'cloned';",
+				"DownQuery": "DROP INDEX IF EXISTS gitserver_repos_not_explicitly_cloned_idx;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667950421
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "gitserver_repos",
+					"IndexName": "gitserver_repos_not_explicitly_cloned_idx"
+				}
+			},
+			{
+				"ID": 1668174127,
+				"Name": "Add gitserver_repos_last_changed_idx",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS gitserver_repos_last_changed_idx ON gitserver_repos(last_changed, repo_id);",
+				"DownQuery": "DROP INDEX IF EXISTS gitserver_repos_last_changed_idx;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667825028,
+					1667952974
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "gitserver_repos",
+					"IndexName": "gitserver_repos_last_changed_idx"
+				}
+			},
+			{
+				"ID": 1668184279,
+				"Name": "remove git_status column from gitserver_repos table",
+				"UpQuery": "-- Perform migration here.\n--\n-- See /migrations/README.md. Highlights:\n--  * Make migrations idempotent (use IF EXISTS)\n--  * Make migrations backwards-compatible (old readers/writers must continue to work)\n--  * If you are using CREATE INDEX CONCURRENTLY, then make sure that only one statement\n--    is defined per file, and that each such statement is NOT wrapped in a transaction.\n--    Each such migration must also declare \"createIndexConcurrently: true\" in their\n--    associated metadata.yaml file.\n--  * If you are modifying Postgres extensions, you must also declare \"privileged: true\"\n--    in the associated metadata.yaml file.\n\nALTER TABLE gitserver_repos DROP COLUMN IF EXISTS repo_status;",
+				"DownQuery": "-- Undo the changes made in the up migration\nALTER TABLE gitserver_repos\nADD COLUMN IF NOT EXISTS repo_status text;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1668174127
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1668179496,
+				"Name": "Add event_logs_name_timestamp",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS event_logs_name_timestamp ON event_logs(name, timestamp desc);",
+				"DownQuery": "DROP INDEX IF EXISTS event_logs_name_timestamp;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1667825028,
+					1667952974
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "event_logs",
+					"IndexName": "event_logs_name_timestamp"
+				}
+			},
+			{
+				"ID": 1668179619,
+				"Name": "Drop redundant index",
+				"UpQuery": "DROP INDEX IF EXISTS event_logs_name;",
+				"DownQuery": "CREATE INDEX IF NOT EXISTS event_logs_name ON event_logs(name);",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1668179496
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1668603582,
+				"Name": "add gitserver.repo_size_bytes index",
+				"UpQuery": "CREATE INDEX CONCURRENTLY IF NOT EXISTS gitserver_repo_size_bytes\n    ON gitserver_repos USING btree (repo_size_bytes);",
+				"DownQuery": "DROP INDEX IF EXISTS gitserver_repo_size_bytes;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1668179619,
+					1668184279
+				],
+				"IsCreateIndexConcurrently": true,
+				"IndexMetadata": {
+					"TableName": "gitserver_repos",
+					"IndexName": "gitserver_repo_size_bytes"
+				}
 			}
 		],
 		"BoundsByRev": {
@@ -7072,6 +7717,13 @@
 				"LeafIDs": [
 					1665646849,
 					1665770699
+				],
+				"PreCreation": false
+			},
+			"v4.2.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1668603582
 				],
 				"PreCreation": false
 			}
