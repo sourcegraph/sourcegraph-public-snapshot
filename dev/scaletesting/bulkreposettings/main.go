@@ -176,7 +176,7 @@ var app = &cli.App{
 						results := g.Wait()
 
 						// Check that we actually got errors
-						errs := make([]error, 0)
+						errs := []error{}
 						for _, r := range results {
 							if r != nil {
 								errs = append(errs, r)
