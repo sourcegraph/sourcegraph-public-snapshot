@@ -96,7 +96,7 @@ func Tgz(r io.Reader, dir string, opt Opts) error {
 		return err
 	}
 
-	r = &biReader{readers: [2]io.Reader{bytes.NewReader(gzipMagicBytes[:]), r}}
+	r = &biReader{bytes.NewReader(gzipMagicBytes[:]), r}
 
 	// Some archives aren't compressed at all, despite the tgz extension.
 	// Try to untar them without gzip decompression.
