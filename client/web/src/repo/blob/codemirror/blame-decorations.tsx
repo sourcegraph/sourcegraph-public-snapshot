@@ -97,23 +97,6 @@ class DecorationWidget extends WidgetType {
     }
 }
 
-const decorate = (view: EditorView, facet: Facet<BlameHunk[], BlameHunk[]>): DecorationSet => {
-    const widgets = []
-    const hunks = view.state.facet(facet)
-    for (const { from, to } of view.visibleRanges) {
-        for (let position = from; position <= to; ) {
-            const line = view.state.doc.lineAt(position)
-            const hunk = hunks.find(h => h.startLine === line.number)
-            const decoration = Decoration.widget({
-                widget: new DecorationWidget(view, hunk),
-            })
-            widgets.push(decoration.range(line.from))
-            position = line.to + 1
-        }
-    }
-    return Decoration.set(widgets)
-}
-
 /**
  * Facet to show git blame decorations.
  */
@@ -126,13 +109,30 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                 public decorations: DecorationSet
 
                 constructor(view: EditorView) {
-                    this.decorations = decorate(view, facet)
+                    this.decorations = this.computeDecorations(view, facet)
                 }
 
                 public update(update: ViewUpdate) {
                     if (update.docChanged || update.viewportChanged) {
-                        this.decorations = decorate(update.view, facet)
+                        this.decorations = this.computeDecorations(update.view, facet)
                     }
+                }
+
+                private computeDecorations(view: EditorView, facet: Facet<BlameHunk[], BlameHunk[]>): DecorationSet {
+                    const widgets = []
+                    const hunks = view.state.facet(facet)
+                    for (const { from, to } of view.visibleRanges) {
+                        for (let position = from; position <= to; ) {
+                            const line = view.state.doc.lineAt(position)
+                            const hunk = hunks.find(h => h.startLine === line.number)
+                            const decoration = Decoration.widget({
+                                widget: new DecorationWidget(view, hunk),
+                            })
+                            widgets.push(decoration.range(line.from))
+                            position = line.to + 1
+                        }
+                    }
+                    return Decoration.set(widgets)
                 }
             },
             {
