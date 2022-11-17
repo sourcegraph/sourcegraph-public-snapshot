@@ -15,6 +15,7 @@ import (
 
 const (
 	perforceRepoName = "perforce/test-perms"
+	testPermsDepot   = "test-perms"
 	aliceEmail       = "alice@perforce.sgdev.org"
 	aliceUsername    = "alice"
 )
@@ -22,7 +23,7 @@ const (
 func TestSubRepoPermissionsPerforce(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	createPerforceExternalService(t, false)
+	createPerforceExternalService(t, testPermsDepot, false)
 	userClient, repoName := createTestUserAndWaitForRepo(t)
 
 	// Test cases
@@ -81,7 +82,7 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 func TestSubRepoPermissionsSearch(t *testing.T) {
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
-	createPerforceExternalService(t, false)
+	createPerforceExternalService(t, testPermsDepot, false)
 	userClient, _ := createTestUserAndWaitForRepo(t)
 
 	err := client.WaitForReposToBeIndexed(perforceRepoName)
