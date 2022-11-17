@@ -60,10 +60,15 @@ const savedSearchFragment = gql`
 `
 
 export const SAVED_SEARCHES_PAGE_QUERY = gql`
-    query SavedSearchesPage($namespaceType: String!, $namespaceId: ID!, $limit: Int!, $offset: Int!) {
-        savedSearches: savedSearchesByNamespace(namespaceType: $namespaceType, namespaceId: $namespaceId) {
+    query SavedSearchesPage($namespaceType: String!, $namespaceId: ID!, $first: Int!, $after: String) {
+        savedSearches: savedSearchesByNamespace(
+            namespaceType: $namespaceType
+            namespaceId: $namespaceId
+            first: $first
+            after: $after
+        ) {
             totalCount
-            nodes(limit: $limit, offset: $offset) {
+            nodes {
                 ...SavedSearchFields
             }
         }

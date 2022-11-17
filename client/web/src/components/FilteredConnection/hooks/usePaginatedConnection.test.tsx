@@ -7,19 +7,25 @@ import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shar
 import { Text } from '@sourcegraph/wildcard'
 
 import {
-    TestConnectionQueryFields,
-    TestConnectionQueryResult,
-    TestConnectionQueryVariables,
+    TestPaginatedConnectionQueryFields,
+    TestPaginatedConnectionQueryResult,
+    TestPaginatedConnectionQueryVariables,
 } from '../../../graphql-operations'
 
-import { useConnection } from './useConnection'
+import { usePaginatedConnection } from './usePaginatedConnection'
 
-const TEST_CONNECTION_QUERY = gql`
-    query TestConnectionQuery($first: Int) {
-        repositories(first: $first) {
+const TEST_PAGINATED_CONNECTION_QUERY = gql`
+    query TestPaginatedConnectionQuery($first: Int, $last: Int, $after: String, $before: String) {
+        savedSearchesByNamespace(
+            namespaceType: "Org"
+            namespaceId: "1"
+            first: $first
+            last: $last
+            after: $after
+            before: $before
+        ) {
             nodes {
-                id
-                name
+                ...TestPaginatedConnectionQueryFields
             }
             totalCount
             pageInfo {
@@ -29,28 +35,37 @@ const TEST_CONNECTION_QUERY = gql`
         }
     }
 
-    fragment TestConnectionQueryFields on Repository {
-        name
+    fragment TestPaginatedConnectionQueryFields on SavedSearch {
         id
+        description
     }
 `
 
+const PAGE_SIZE = 3
+
 const TestComponent = () => {
-    const { connection, fetchMore, hasNextPage } = useConnection<
-        TestConnectionQueryResult,
-        TestConnectionQueryVariables,
-        TestConnectionQueryFields
+    const {
+        connection,
+        nextPage,
+        hasNextPage,
+        previousPage,
+        hasPreviousPage,
+        firstPage,
+        lastPage,
+    } = usePaginatedConnection<
+        TestPaginatedConnectionQueryResult,
+        TestPaginatedConnectionQueryVariables,
+        TestPaginatedConnectionQueryFields
     >({
-        query: TEST_CONNECTION_QUERY,
-        variables: {
-            first: 1,
-        },
+        query: TEST_PAGINATED_CONNECTION_QUERY,
+        variables: {},
         getConnection: result => {
             const data = dataOrThrowErrors(result)
-            return data.repositories
+            return data.savedSearchesByNamespace
         },
         options: {
             useURL: true,
+            pageSize: PAGE_SIZE,
         },
     })
 
@@ -58,16 +73,26 @@ const TestComponent = () => {
         <>
             <ul>
                 {connection?.nodes.map((node, index) => (
-                    <li key={index}>{node.name}</li>
+                    <li key={index.toString()}>{node.description}</li>
                 ))}
             </ul>
-
             {connection?.totalCount && <Text>Total count: {connection.totalCount}</Text>}
-            {hasNextPage && (
-                <button type="button" onClick={fetchMore}>
-                    Fetch more
+            <button type="button" onClick={firstPage}>
+                First page
+            </button>
+            {connection?.pageInfo?.hasNextPage && (
+                <button type="button" onClick={nextPage}>
+                    Next page
                 </button>
             )}
+            {connection?.pageInfo?.hasPreviousPage && (
+                <button type="button" onClick={previousPage}>
+                    Previous page
+                </button>
+            )}
+            <button type="button" onClick={lastPage}>
+                Last page
+            </button>
         </>
     )
 }
@@ -75,69 +100,118 @@ const TestComponent = () => {
 const generateMockRequest = ({
     after,
     first,
+    last,
+    before,
 }: {
-    after?: string
-    first: number
-}): MockedResponse<TestConnectionQueryResult>['request'] => ({
-    query: getDocumentNode(TEST_CONNECTION_QUERY),
+    after: string | null
+    first: number | null
+    before: string | null
+    last: number | null
+}): MockedResponse<TestPaginatedConnectionQueryResult>['request'] => ({
+    query: getDocumentNode(TEST_PAGINATED_CONNECTION_QUERY),
     variables: {
         after,
         first,
+        last,
+        before,
     },
 })
 
 const generateMockResult = ({
+    startCursor,
+    hasPreviousPage,
     endCursor,
     hasNextPage,
     nodes,
     totalCount,
 }: {
+    startCursor: string | null
+    hasPreviousPage: boolean
     endCursor: string | null
     hasNextPage: boolean
-    nodes: TestConnectionQueryFields[]
+    nodes: TestPaginatedConnectionQueryFields[]
     totalCount: number
-}): MockedResponse<TestConnectionQueryResult>['result'] => ({
+}): MockedResponse<TestPaginatedConnectionQueryResult>['result'] => ({
     data: {
-        repositories: {
+        savedSearchesByNamespace: {
             nodes,
             pageInfo: {
+                startCursor,
                 endCursor,
                 hasNextPage,
+                hasPreviousPage,
             },
             totalCount,
         },
     },
 })
 
-describe('useConnection', () => {
-    const fetchNextPage = async (renderResult: RenderWithBrandedContextResult) => {
-        const fetchMoreButton = renderResult.getByText('Fetch more')
-        fireEvent.click(fetchMoreButton)
+const goToNextPage = async (renderResult: RenderWithBrandedContextResult) => {
+    const fetchMoreButton = renderResult.getByText('Next page')
+    fireEvent.click(fetchMoreButton)
+    // Skip loading state
+    await waitForNextApolloResponse()
+}
 
-        // Skip loading state
-        await waitForNextApolloResponse()
+const mockResultNodes: TestPaginatedConnectionQueryFields[] = [
+    { __typename: 'SavedSearch', id: '1', description: 'result 1' },
+    { __typename: 'SavedSearch', id: '2', description: 'result 2' },
+    { __typename: 'SavedSearch', id: '3', description: 'result 3' },
+    { __typename: 'SavedSearch', id: '4', description: 'result 4' },
+    { __typename: 'SavedSearch', id: '5', description: 'result 5' },
+    { __typename: 'SavedSearch', id: '6', description: 'result 6' },
+    { __typename: 'SavedSearch', id: '7', description: 'result 7' },
+    { __typename: 'SavedSearch', id: '8', description: 'result 8' },
+    { __typename: 'SavedSearch', id: '9', description: 'result 9' },
+    { __typename: 'SavedSearch', id: '10', description: 'result 10' },
+]
+
+const getCursorForId = (id: string): string => `cursor:${id}`
+
+const generateMockCursorResponsesForEveryPage = (
+    nodes: TestPaginatedConnectionQueryFields[]
+): MockedResponse<TestPaginatedConnectionQueryResult>[] => {
+    const responses: MockedResponse<TestPaginatedConnectionQueryResult>[] = []
+
+    const totalPages = Math.ceil(nodes.length / PAGE_SIZE)
+    for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
+        const nodesOnPage = nodes.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE)
+
+        const after = pageIndex === 0 ? null : getCursorForId(nodes[pageIndex * PAGE_SIZE - 1].id)
+        const before = pageIndex === totalPages - 1 ? null : getCursorForId(nodes[(pageIndex + 1) * PAGE_SIZE].id)
+
+        // Forward request
+        responses.push({
+            request: generateMockRequest({ after, first: PAGE_SIZE, last: null, before: null }),
+            result: generateMockResult({
+                nodes: nodesOnPage,
+                totalCount: nodes.length,
+                startCursor: nodesOnPage.length > 0 ? getCursorForId(nodesOnPage[0].id) : null,
+                endCursor: nodesOnPage.length > 0 ? getCursorForId(nodesOnPage[nodesOnPage.length - 1].id) : null,
+                hasNextPage: pageIndex < totalPages - 1,
+                hasPreviousPage: pageIndex > 0,
+            }),
+        })
+
+        // Backward request
+        responses.push({
+            request: generateMockRequest({ before, last: PAGE_SIZE, after: null, first: null }),
+            result: generateMockResult({
+                nodes: nodesOnPage,
+                totalCount: nodes.length,
+                startCursor: nodesOnPage.length > 0 ? getCursorForId(nodesOnPage[0].id) : null,
+                endCursor: nodesOnPage.length > 0 ? getCursorForId(nodesOnPage[nodesOnPage.length - 1].id) : null,
+                hasNextPage: pageIndex < totalPages - 1,
+                hasPreviousPage: pageIndex > 0,
+            }),
+        })
     }
 
-    const mockResultNodes: TestConnectionQueryFields[] = [
-        {
-            id: 'A',
-            name: 'repo-A',
-        },
-        {
-            id: 'B',
-            name: 'repo-B',
-        },
-        {
-            id: 'C',
-            name: 'repo-C',
-        },
-        {
-            id: 'D',
-            name: 'repo-D',
-        },
-    ]
+    return responses
+}
 
-    const renderWithMocks = async (mocks: MockedResponse<TestConnectionQueryResult>[], route = '/') => {
+describe('usePaginatedConnection', () => {
+    const renderWithMocks = async (mocks: MockedResponse<TestPaginatedConnectionQueryResult>[], route = '/') => {
         const renderResult = renderWithBrandedContext(
             <MockedTestProvider mocks={mocks}>
                 <TestComponent />
@@ -152,204 +226,112 @@ describe('useConnection', () => {
     }
 
     describe('Cursor based pagination', () => {
-        const generateMockCursorResponses = (
-            nodes: TestConnectionQueryFields[]
-        ): MockedResponse<TestConnectionQueryResult>[] =>
-            nodes.map((node, index) => {
-                const isFirstPage = index === 0
-                const cursor = !isFirstPage ? String(index) : undefined
-                return {
-                    request: generateMockRequest({ after: cursor, first: 1 }),
-                    result: generateMockResult({
-                        nodes: [node],
-                        endCursor: String(index + 1),
-                        hasNextPage: index !== nodes.length - 1,
-                        totalCount: nodes.length,
-                    }),
-                }
-            })
+        const cursorMocks = generateMockCursorResponsesForEveryPage(mockResultNodes)
 
-        const cursorMocks = generateMockCursorResponses(mockResultNodes)
-
-        it('renders correct result', async () => {
-            const queries = await renderWithMocks(cursorMocks)
-            expect(queries.getAllByRole('listitem').length).toBe(1)
-            expect(queries.getByText('repo-A')).toBeVisible()
-            expect(queries.getByText('Total count: 4')).toBeVisible()
-            expect(queries.getByText('Fetch more')).toBeVisible()
-            expect(queries.history.location.search).toBe('')
-        })
-
-        it('fetches next page of results correctly', async () => {
+        it('renders the first page', async () => {
             const queries = await renderWithMocks(cursorMocks)
 
-            // Fetch first page
-            await fetchNextPage(queries)
-
-            // Both pages are now displayed
-            expect(queries.getAllByRole('listitem').length).toBe(2)
-            expect(queries.getByText('repo-A')).toBeVisible()
-            expect(queries.getByText('repo-B')).toBeVisible()
-            expect(queries.getByText('Total count: 4')).toBeVisible()
-            expect(queries.getByText('Fetch more')).toBeVisible()
-
-            // URL updates to match visible results
-            expect(queries.history.location.search).toBe('?visible=2')
-        })
-
-        it('fetches final page of results correctly', async () => {
-            const queries = await renderWithMocks(cursorMocks)
-
-            // Fetch all pages
-            await fetchNextPage(queries)
-            await fetchNextPage(queries)
-            await fetchNextPage(queries)
-
-            // All pages of results are displayed
-            expect(queries.getAllByRole('listitem').length).toBe(4)
-            expect(queries.getByText('repo-A')).toBeVisible()
-            expect(queries.getByText('repo-B')).toBeVisible()
-            expect(queries.getByText('repo-C')).toBeVisible()
-            expect(queries.getByText('repo-D')).toBeVisible()
-            expect(queries.getByText('Total count: 4')).toBeVisible()
-
-            // Fetch more button is now no longer visible
-            expect(queries.queryByText('Fetch more')).not.toBeInTheDocument()
-
-            // URL updates to match visible results
-            expect(queries.history.location.search).toBe('?visible=4')
-        })
-
-        it('fetches correct amount of results when navigating directly with a URL', async () => {
-            // We need to add an extra mock here, as we will derive a different `first` variable from `visible` in the URL.
-            const mockFromVisible: MockedResponse<TestConnectionQueryResult> = {
-                request: generateMockRequest({ first: 3 }),
-                result: generateMockResult({
-                    nodes: [mockResultNodes[0], mockResultNodes[1], mockResultNodes[2]],
-                    hasNextPage: true,
-                    endCursor: '3',
-                    totalCount: 4,
-                }),
-            }
-
-            const queries = await renderWithMocks([...cursorMocks, mockFromVisible], '/?visible=3')
-
-            // Renders 3 results without having to manually fetch
             expect(queries.getAllByRole('listitem').length).toBe(3)
-            expect(queries.getByText('repo-A')).toBeVisible()
-            expect(queries.getByText('repo-B')).toBeVisible()
-            expect(queries.getByText('repo-C')).toBeVisible()
-            expect(queries.getByText('Total count: 4')).toBeVisible()
+            expect(queries.getByText('result 1')).toBeVisible()
+            expect(queries.getByText('result 2')).toBeVisible()
+            expect(queries.getByText('result 3')).toBeVisible()
+            expect(queries.getByText('Total count: 10')).toBeVisible()
 
-            // Fetching next page should work as usual
-            await fetchNextPage(queries)
-            expect(queries.getAllByRole('listitem').length).toBe(4)
-            expect(queries.getByText('repo-C')).toBeVisible()
-            expect(queries.getByText('repo-D')).toBeVisible()
-            expect(queries.getByText('Total count: 4')).toBeVisible()
-
-            // URL should be overidden
-            expect(queries.history.location.search).toBe('?visible=4')
-        })
-    })
-
-    describe('Batch based pagination', () => {
-        const batchedMocks: MockedResponse<TestConnectionQueryResult>[] = [
-            {
-                request: generateMockRequest({ first: 1 }),
-                result: generateMockResult({
-                    nodes: [mockResultNodes[0]],
-                    endCursor: null,
-                    hasNextPage: true,
-                    totalCount: 4,
-                }),
-            },
-            {
-                request: generateMockRequest({ first: 2 }),
-                result: generateMockResult({
-                    nodes: [mockResultNodes[0], mockResultNodes[1]],
-                    endCursor: null,
-                    hasNextPage: true,
-                    totalCount: 4,
-                }),
-            },
-            {
-                request: generateMockRequest({ first: 4 }),
-                result: generateMockResult({
-                    nodes: mockResultNodes,
-                    endCursor: null,
-                    hasNextPage: false,
-                    totalCount: 4,
-                }),
-            },
-        ]
-
-        it('renders correct result', async () => {
-            const queries = await renderWithMocks(batchedMocks)
-            expect(queries.getAllByRole('listitem').length).toBe(1)
-            expect(queries.getByText('repo-A')).toBeVisible()
-            expect(queries.getByText('Total count: 4')).toBeVisible()
-            expect(queries.getByText('Fetch more')).toBeVisible()
-            expect(queries.history.location.search).toBe('')
+            expect(queries.getByText('First page')).toBeVisible()
+            expect(queries.getByText('Previous page')).not.toBeInTheDocument()
+            expect(queries.getByText('Next page')).toBeVisible()
+            expect(queries.getByText('Last page')).toBeVisible()
         })
 
-        it('fetches next page of results correctly', async () => {
-            const queries = await renderWithMocks(batchedMocks)
+        it('renders the next page', async () => {
+            const queries = await renderWithMocks(cursorMocks)
 
-            // Fetch first page
-            await fetchNextPage(queries)
+            await goToNextPage(queries)
 
-            // Both pages are now displayed
-            expect(queries.getAllByRole('listitem').length).toBe(2)
-            expect(queries.getByText('repo-A')).toBeVisible()
-            expect(queries.getByText('repo-B')).toBeVisible()
-            expect(queries.getByText('Total count: 4')).toBeVisible()
-            expect(queries.getByText('Fetch more')).toBeVisible()
+            expect(queries.getAllByRole('listitem').length).toBe(3)
+            expect(queries.getByText('result 4')).toBeVisible()
+            expect(queries.getByText('result 5')).toBeVisible()
+            expect(queries.getByText('result 6')).toBeVisible()
+            expect(queries.getByText('Total count: 10')).toBeVisible()
 
-            // URL updates to match the new request
-            expect(queries.history.location.search).toBe('?first=2')
+            console.log(queries.debug())
+
+            expect(queries.getByText('First page')).toBeVisible()
+            expect(queries.getByText('Previous page')).toBeVisible()
+            expect(queries.getByText('Next page')).toBeVisible()
+            expect(queries.getByText('Last page')).toBeVisible()
         })
 
-        it('fetches final page of results correctly', async () => {
-            const queries = await renderWithMocks(batchedMocks)
+        // it('fetches next page of results correctly', async () => {
+        //     const queries = await renderWithMocks(cursorMocks)
 
-            // Fetch both pages
-            await fetchNextPage(queries)
-            await fetchNextPage(queries)
+        //     // Fetch first page
+        //     await fetchNextPage(queries)
 
-            // All pages of results are displayed
-            expect(queries.getAllByRole('listitem').length).toBe(4)
-            expect(queries.getByText('repo-A')).toBeVisible()
-            expect(queries.getByText('repo-B')).toBeVisible()
-            expect(queries.getByText('repo-C')).toBeVisible()
-            expect(queries.getByText('repo-D')).toBeVisible()
-            expect(queries.getByText('Total count: 4')).toBeVisible()
+        //     // Both pages are now displayed
+        //     expect(queries.getAllByRole('listitem').length).toBe(2)
+        //     expect(queries.getByText('repo-A')).toBeVisible()
+        //     expect(queries.getByText('repo-B')).toBeVisible()
+        //     expect(queries.getByText('Total count: 4')).toBeVisible()
+        //     expect(queries.getByText('Fetch more')).toBeVisible()
 
-            // Fetch more button is now no longer visible
-            expect(queries.queryByText('Fetch more')).not.toBeInTheDocument()
+        //     // URL updates to match visible results
+        //     expect(queries.history.location.search).toBe('?visible=2')
+        // })
 
-            // URL updates to match the new request
-            expect(queries.history.location.search).toBe('?first=4')
-        })
+        // it('fetches final page of results correctly', async () => {
+        //     const queries = await renderWithMocks(cursorMocks)
 
-        it('fetches correct amount of results when navigating directly with a URL', async () => {
-            const queries = await renderWithMocks(batchedMocks, '/?first=2')
+        //     // Fetch all pages
+        //     await fetchNextPage(queries)
+        //     await fetchNextPage(queries)
+        //     await fetchNextPage(queries)
 
-            // Renders 2 results without having to manually fetch
-            expect(queries.getAllByRole('listitem').length).toBe(2)
-            expect(queries.getByText('repo-A')).toBeVisible()
-            expect(queries.getByText('repo-B')).toBeVisible()
-            expect(queries.getByText('Total count: 4')).toBeVisible()
+        //     // All pages of results are displayed
+        //     expect(queries.getAllByRole('listitem').length).toBe(4)
+        //     expect(queries.getByText('repo-A')).toBeVisible()
+        //     expect(queries.getByText('repo-B')).toBeVisible()
+        //     expect(queries.getByText('repo-C')).toBeVisible()
+        //     expect(queries.getByText('repo-D')).toBeVisible()
+        //     expect(queries.getByText('Total count: 4')).toBeVisible()
 
-            // Fetching next page should work as usual
-            await fetchNextPage(queries)
-            expect(queries.getAllByRole('listitem').length).toBe(4)
-            expect(queries.getByText('repo-C')).toBeVisible()
-            expect(queries.getByText('repo-D')).toBeVisible()
-            expect(queries.getByText('Total count: 4')).toBeVisible()
+        //     // Fetch more button is now no longer visible
+        //     expect(queries.queryByText('Fetch more')).not.toBeInTheDocument()
 
-            // URL should be overidden
-            expect(queries.history.location.search).toBe('?first=4')
-        })
+        //     // URL updates to match visible results
+        //     expect(queries.history.location.search).toBe('?visible=4')
+        // })
+
+        // it('fetches correct amount of results when navigating directly with a URL', async () => {
+        //     // We need to add an extra mock here, as we will derive a different `first` variable from `visible` in the URL.
+        //     const mockFromVisible: MockedResponse<TestPaginatedConnectionQueryResult> = {
+        //         request: generateMockRequest({ first: 3 }),
+        //         result: generateMockResult({
+        //             nodes: [mockResultNodes[0], mockResultNodes[1], mockResultNodes[2]],
+        //             hasNextPage: true,
+        //             endCursor: '3',
+        //             totalCount: 4,
+        //         }),
+        //     }
+
+        //     const queries = await renderWithMocks([...cursorMocks, mockFromVisible], '/?visible=3')
+
+        //     // Renders 3 results without having to manually fetch
+        //     expect(queries.getAllByRole('listitem').length).toBe(3)
+        //     expect(queries.getByText('repo-A')).toBeVisible()
+        //     expect(queries.getByText('repo-B')).toBeVisible()
+        //     expect(queries.getByText('repo-C')).toBeVisible()
+        //     expect(queries.getByText('Total count: 4')).toBeVisible()
+
+        //     // Fetching next page should work as usual
+        //     await fetchNextPage(queries)
+        //     expect(queries.getAllByRole('listitem').length).toBe(4)
+        //     expect(queries.getByText('repo-C')).toBeVisible()
+        //     expect(queries.getByText('repo-D')).toBeVisible()
+        //     expect(queries.getByText('Total count: 4')).toBeVisible()
+
+        //     // URL should be overidden
+        //     expect(queries.history.location.search).toBe('?visible=4')
+        // })
     })
 })
