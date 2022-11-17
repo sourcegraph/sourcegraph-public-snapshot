@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { fetchEventSource } from '@microsoft/fetch-event-source'
 
 import { formatDistanceStrict } from 'date-fns'
 import { truncate } from 'lodash'
@@ -107,74 +108,130 @@ const fetchBlameViaStreaming = memoizeObservable(
         let assembledHunks: Omit<BlameHunk, 'displayInfo'>[] = []
         let didEarlyFlush = false
         const repoAndRevisionPath = `/${repoName}${revision ? `@${revision}` : ''}`
-        fetch(`${repoAndRevisionPath}/-/stream-blame/${filePath}`)
-            .then(response => response.body)
-            .then(async body => {
-                if (body === null) {
-                    throw new Error('No response')
+
+        fetchEventSource(`${repoAndRevisionPath}/-/stream-blame/${filePath}`, {
+          method: 'GET',
+          headers: {
+            'X-Requested-With': 'Sourcegraph',
+          },
+          onmessage(event) {
+            if (event.event === 'hunk') {
+              const rawHunks = JSON.parse(event.data)
+              for (const hunk of rawHunks) {
+                assembledHunks.push({
+                  startLine: hunk.StartLine,
+                  endLine: hunk.EndLine,
+                  message: hunk.Message,
+                  rev: hunk.CommitID,
+                  author: {
+                    date: hunk.Author.Date,
+                    person: {
+                      email: hunk.Author.Email,
+                      displayName: hunk.Author.Name,
+                      user: null,
+                    },
+                  },
+                  commit: {
+                    url: `${repoAndRevisionPath}/-/commit/${hunk.CommitID}`,
+                  },
+                })
+
+                // For large responses we want to do a first render pass when we have
+                // a sensible amount of chunks loaded the first time. We batch the rest
+                // for the second flush after everything is assembled.
+                if (!didEarlyFlush && assembledHunks.length > 50) {
+                  didEarlyFlush = true
+                  hunks.next(assembledHunks)
+                  // React will not re-render if the hunks array is the same reference.
+                  // Since we need to create a new array, now is the best time since
+                  // hunk count is still low.
+                  assembledHunks = [...assembledHunks]
                 }
+              }
+              hunks.next(assembledHunks)
+            }
+          },
+          onerror(event) {
+            console.error(event)
+          },
+        }).then(
+        () => hunks.complete(),
+          error => hunks.error(error)
+        )
 
-                const reader = body.getReader()
-                let result
-                let previousPartialResponse = ''
-                while (!(result = await reader.read()).done) {
-                    const rawString = previousPartialResponse + new TextDecoder('utf-8').decode(result.value)
-                    previousPartialResponse = ''
-                    const rows = rawString.split('\n')
-
-                    for (const [index, row] of rows.entries()) {
-                        try {
-                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                            const rawHunks: RawStreamHunk[] = JSON.parse(row)
-
-                            for (const hunk of rawHunks) {
-                                assembledHunks.push({
-                                    startLine: hunk.StartLine,
-                                    endLine: hunk.EndLine,
-                                    message: hunk.Message,
-                                    rev: hunk.CommitID,
-                                    author: {
-                                        date: hunk.Author.Date,
-                                        person: {
-                                            email: hunk.Author.Email,
-                                            displayName: hunk.Author.Name,
-                                            user: null,
-                                        },
-                                    },
-                                    commit: {
-                                        url: `${repoAndRevisionPath}/-/commit/${hunk.CommitID}`,
-                                    },
-                                })
-                            }
-
-                            // For large responses we want to do a first render pass when we have
-                            // a sensible amount of chunks loaded the first time. We batch the rest
-                            // for the second flush after everything is assembled.
-                            if (!didEarlyFlush && assembledHunks.length > 50) {
-                                didEarlyFlush = true
-                                hunks.next(assembledHunks)
-                                // React will not re-render if the hunks array is the same reference.
-                                // Since we need to create a new array, now is the best time since
-                                // hunk count is still low.
-                                assembledHunks = [...assembledHunks]
-                            }
-                        } catch (error) {
-                            if (index === rows.length - 1) {
-                                // When a JSON parse error happens, it's likely that the last row
-                                // was only partially received. We store it and append it to the
-                                // start of the next response.
-                                previousPartialResponse = row
-                                continue
-                            }
-                            throw error
-                        }
-                    }
-                }
-                hunks.next(assembledHunks)
-            })
-            .catch(error => {
-                console.error(error)
-            })
+    // fetch(`${repoAndRevisionPath}/-/stream-blame/${filePath}`)
+    //     .then(response => response.body)
+    //     .then(async body => {
+    //         if (body === null) {
+    //             throw new Error('No response')
+    //         }
+    //
+    //         const reader = body.getReader()
+    //         let result
+    //         let previousPartialResponse = ''
+        //         while (!(result = await reader.read()).done) {
+        //             const rawString = previousPartialResponse + new TextDecoder('utf-8').decode(result.value)
+        //             previousPartialResponse = ''
+        //             const rows = rawString.split('\n\n')
+        //
+        //             for (const [index, row] of rows.entries()) {
+        //                 try {
+        //                   const lines = rows.split('\n')
+        //                     if (row[0].startsWith("event: hunk")) {
+        //                       const raw = row[1].substring(6)
+        //                       const rawHunks: RawStreamHunk[] = JSON.parse(raw)
+        //                       for (const hunk of rawHunks) {
+        //                         assembledHunks.push({
+        //                           startLine: hunk.StartLine,
+        //                           endLine: hunk.EndLine,
+        //                           message: hunk.Message,
+        //                           rev: hunk.CommitID,
+        //                           author: {
+        //                             date: hunk.Author.Date,
+        //                             person: {
+        //                               email: hunk.Author.Email,
+        //                               displayName: hunk.Author.Name,
+        //                               user: null,
+        //                             },
+        //                           },
+        //                           commit: {
+        //                             url: `${repoAndRevisionPath}/-/commit/${hunk.CommitID}`,
+        //                           },
+        //                         })
+        //                       }
+        //
+        //                       // For large responses we want to do a first render pass when we have
+        //                       // a sensible amount of chunks loaded the first time. We batch the rest
+        //                       // for the second flush after everything is assembled.
+        //                       if (!didEarlyFlush && assembledHunks.length > 50) {
+        //                         didEarlyFlush = true
+        //                         hunks.next(assembledHunks)
+        //                         // React will not re-render if the hunks array is the same reference.
+        //                         // Since we need to create a new array, now is the best time since
+        //                         // hunk count is still low.
+        //                         assembledHunks = [...assembledHunks]
+        //                       }
+        //                     }
+        //                     if (row[0].startsWith("event: done")) {
+        //                       continue
+        //                     }
+        //                 } catch (error) {
+        //                     if (index === rows.length - 1) {
+        //                         // When a JSON parse error happens, it's likely that the last row
+        //                         // was only partially received. We store it and append it to the
+        //                         // start of the next response.
+        //                         previousPartialResponse = row
+        //                         continue
+        //                     }
+        //                     throw error
+        //                 }
+        //             }
+        //         }
+        //         hunks.next(assembledHunks)
+        //     })
+        //     .catch(error => {
+        //         console.error(error)
+        //     })
 
         return hunks
     },
