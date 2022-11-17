@@ -299,7 +299,8 @@ const hierarchyOf = (symbols: SymbolNodeFields[]): SymbolWithChildren[] => {
         const symbolWithChildren = fullNameToSymbolWithChildren.get(fullName) || { ...symbol, children: [] }
         fullNameToSymbolWithChildren.set(fullName, symbolWithChildren)
 
-        const parentFullName = fullName.split('.').slice(0, -1).join('.')
+        const parentFullName =
+            symbol.__typename === 'Symbol' ? symbol.containerName : fullName.split('.').slice(0, -1).join('.')
         if (!parentFullName) {
             // No parent, add to top-level
             topLevelSymbols.push(symbolWithChildren)
