@@ -87,6 +87,10 @@ const (
 //
 // File permissions in the tarball are not respected; all files are marked read-write.
 func Tgz(r io.Reader, dir string, opt Opts) error {
+	// We read the first two bytes to check if theyre equal to the gzip magic numbers 1f0b.
+	// If not, it may be a tar file with an incorrect file extension. We build a biReader from
+	// the two bytes + the remaining io.Reader argument, as reading the io.Reader is a
+	// destructive operation.
 	var gzipMagicBytes [2]byte
 	if _, err := io.ReadAtLeast(r, gzipMagicBytes[:], 2); err != nil {
 		return err
@@ -179,9 +183,9 @@ func extractTarFile(tr *tar.Reader, h *tar.Header, dir string) error {
 
 	// We need to be able to traverse directories and read/modify files.
 	if mode.IsDir() {
-		mode |= 0700
+		mode |= 0o700
 	} else if mode.IsRegular() {
-		mode |= 0600
+		mode |= 0o600
 	}
 
 	switch h.Typeflag {
@@ -216,14 +220,14 @@ func extractZipFile(f *zip.File, dir string) error {
 
 	switch {
 	case mode.IsDir():
-		return os.MkdirAll(path, mode|0700)
+		return os.MkdirAll(path, mode|0o700)
 	case mode.IsRegular():
 		r, err := f.Open()
 		if err != nil {
 			return errors.Wrap(err, "failed to open zip file for reading")
 		}
 		defer r.Close()
-		return writeFile(path, r, int64(f.UncompressedSize64), mode|0600)
+		return writeFile(path, r, int64(f.UncompressedSize64), mode|0o600)
 	case mode&os.ModeSymlink != 0:
 		target, err := readZipFile(f)
 		if err != nil {
@@ -317,7 +321,7 @@ func writeHardLink(path string, target string) error {
 }
 
 func withDir(path string, fn func() error) error {
-	err := os.MkdirAll(filepath.Dir(path), 0770)
+	err := os.MkdirAll(filepath.Dir(path), 0o770)
 	if err != nil {
 		return err
 	}
