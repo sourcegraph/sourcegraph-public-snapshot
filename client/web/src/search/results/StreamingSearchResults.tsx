@@ -20,6 +20,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useDeepMemo } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -97,7 +98,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const extensionHostAPI =
         extensionsController !== null && window.context.enableLegacyExtensions ? extensionsController.extHostAPI : null
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
-    const featureOverrides = useMemo(() => new URLSearchParams(location.search).getAll('feat') ?? [], [location.search])
+    const featureOverrides = useDeepMemo(
+        // Nested use memo here is used for avoiding extra object calculation step on each render
+        useMemo(() => new URLSearchParams(location.search).getAll('feat') ?? [], [location.search])
+    )
 
     const options: StreamSearchOptions = useMemo(
         () => ({
