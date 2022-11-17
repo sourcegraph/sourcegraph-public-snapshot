@@ -40,6 +40,23 @@
     }
 }
 
+// Handle a special case for Button as="input" type="checkbox | radio"
+// since button doesn't use disabled attribute we enforce/mimic the native
+// disabled control styles.
+input.btn {
+    &[aria-disabled='true'] {
+        cursor: not-allowed;
+
+        :global(.theme-light) & {
+            filter: brightness(0.9)
+        }
+
+        :global(.theme-dark) & {
+            filter: brightness(0.5)
+        }
+    }
+}
+
 .btn-link {
     color: var(--link-color);
     background-color: var(--link-1);
