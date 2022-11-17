@@ -117,8 +117,6 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         },
     })
 
-    console.log(connection)
-
     // We store the refetchAll callback in a ref since it will update when
     // variables or result length change and we need to call an up-to-date
     // version in the useEffect below to refetch the proper results.
