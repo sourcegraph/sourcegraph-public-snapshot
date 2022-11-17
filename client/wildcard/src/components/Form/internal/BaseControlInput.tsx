@@ -31,7 +31,7 @@ export const BaseControlInput: React.FunctionComponent<React.PropsWithChildren<C
                 <input
                     ref={reference}
                     type={type}
-                    className={classNames('form-check-input', getValidStyle(isValid), className)}
+                    className={classNames('form-check-input', getValidStyle(isValid), className, styles.input)}
                     {...props}
                 />
                 {'label' in props && (

@@ -1,3 +1,7 @@
 .label:hover {
     color: var(--input-label-hover-color);
 }
+
+.input:disabled {
+    cursor: not-allowed;
+}
