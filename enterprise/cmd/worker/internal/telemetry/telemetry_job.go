@@ -73,29 +73,31 @@ func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.Back
 	}
 	operation := observationContext.Operation(observation.Op{})
 
-	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents)
+	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), newBookmarkStoreSecurity(db), sendEvents)
 	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, th, operation)
 }
 
 type sendEventsCallbackFunc func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error
 
 type telemetryHandler struct {
-	logger             log.Logger
-	eventLogStore      database.EventLogStore
-	globalStateStore   database.GlobalStateStore
-	userEmailsStore    database.UserEmailsStore
-	bookmarkStore      bookmarkStore
-	sendEventsCallback sendEventsCallbackFunc
+	logger             		log.Logger
+	eventLogStore      		database.EventLogStore
+	globalStateStore   		database.GlobalStateStore
+	userEmailsStore    		database.UserEmailsStore
+	bookmarkStore      		bookmarkStore
+	bookmarkStoreSecurity 	bookmarkStoreSecurity
+	sendEventsCallback 		sendEventsCallbackFunc
 }
 
-func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEmailsStore database.UserEmailsStore, globalStateStore database.GlobalStateStore, bookmarkStore bookmarkStore, sendEventsCallback sendEventsCallbackFunc) *telemetryHandler {
+func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEmailsStore database.UserEmailsStore, globalStateStore database.GlobalStateStore, bookmarkStore bookmarkStore, bookmarkStoreSecurity bookmarkStoreSecurity, sendEventsCallback sendEventsCallbackFunc) *telemetryHandler {
 	return &telemetryHandler{
-		logger:             logger,
-		eventLogStore:      store,
-		sendEventsCallback: sendEventsCallback,
-		globalStateStore:   globalStateStore,
-		userEmailsStore:    userEmailsStore,
-		bookmarkStore:      bookmarkStore,
+		logger:             	logger,
+		eventLogStore:      	store,
+		sendEventsCallback: 	sendEventsCallback,
+		globalStateStore:   	globalStateStore,
+		userEmailsStore:    	userEmailsStore,
+		bookmarkStore:      	bookmarkStore,
+		bookmarkStoreSecurity:	bookmarkStoreSecurity,
 	}
 }
 
@@ -121,12 +123,14 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 	batchSize := getBatchSize()
 
 	bookmark, err := t.bookmarkStore.GetBookmark(ctx)
+
 	if err != nil {
 		return errors.Wrap(err, "GetBookmark")
 	}
 	t.logger.Info("fetching events from bookmark", log.Int("bookmark_id", bookmark))
 
 	all, err := t.eventLogStore.ListExportableEvents(ctx, bookmark, batchSize)
+
 	if err != nil {
 		return errors.Wrap(err, "eventLogStore.ListExportableEvents")
 	}
@@ -142,7 +146,33 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 		return errors.Wrap(err, "telemetryHandler.sendEvents")
 	}
 
-	return t.bookmarkStore.UpdateBookmark(ctx, maxId)
+	t.bookmarkStore.UpdateBookmark(ctx, maxId)
+
+	bookmarkSecurity, err := t.bookmarkStoreSecurity.GetBookmarkSecurity(ctx)
+
+	if err != nil {
+		return errors.Wrap(err, "GetBookmarkSecurity")
+	}
+	t.logger.Info("fetching security events from bookmark", log.Int("bookmark_id", bookmarkSecurity)
+
+	all, err := t.securityEventLogStore.ListExportableEvents(ctx, bookmarkSecurity, batchSize)
+
+	if err != nil {
+		return errors.Wrap(err, "securityEventLogStore.ListExportableEvents")
+	}
+	if len(all) == 0 {
+		return nil
+	}
+
+	maxId := int(all[len(all)-1].ID)
+	t.logger.Info("telemetryHandler executed", log.Int("event count", len(all)), log.Int("maxId", maxId))
+
+	err = t.sendEventsCallback(ctx, all, topicConfig, instanceMetadata)
+	if err != nil {
+		return errors.Wrap(err, "telemetryHandler.sendSecurityEvents")
+	}
+
+	return t.bookmarkStoreSecurity.UpdateBookmarkSecurity(ctx, maxId)
 }
 
 // This package level client is to prevent race conditions when mocking this configuration in tests.
@@ -302,13 +332,26 @@ type bmStore struct {
 	*basestore.Store
 }
 
+type bmStoreSecurity struct {
+	*basestore.Store
+}
+
 func newBookmarkStore(db database.DB) bookmarkStore {
+	return &bmStore{Store: basestore.NewWithHandle(db.Handle())}
+}
+
+func newBookmarkStoreSecurity(db database.DB) bookmarkStoreSecurity {
 	return &bmStore{Store: basestore.NewWithHandle(db.Handle())}
 }
 
 type bookmarkStore interface {
 	GetBookmark(ctx context.Context) (int, error)
 	UpdateBookmark(ctx context.Context, val int) error
+}
+
+type bookmarkStoreSecurity interface {
+	GetBookmarkSecurity(ctx context.Context) (int, error)
+	UpdateBookmarkSecurity(ctx context.Context, val int) error
 }
 
 func (s *bmStore) GetBookmark(ctx context.Context) (_ int, err error) {
@@ -329,6 +372,36 @@ func (s *bmStore) GetBookmark(ctx context.Context) (_ int, err error) {
 	return val, err
 }
 
+func (s *bmStore) GetBookmarkSecurity(ctx context.Context) (_ int, err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	val, found, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf("select bookmark_id from security_event_logs_scrape_state order by id limit 1;")))
+	if err != nil {
+		return 0, err
+	}
+	if !found {
+		// generate a row and return the value
+		return basestore.ScanInt(tx.QueryRow(ctx, sqlf.Sprintf("INSERT INTO security_event_logs_scrape_state (bookmark_id) SELECT MAX(id) FROM security_event_logs RETURNING bookmark_id;")))
+	}
+	return val, err
+}
+
 func (s *bmStore) UpdateBookmark(ctx context.Context, val int) error {
 	return s.Exec(ctx, sqlf.Sprintf("UPDATE event_logs_scrape_state SET bookmark_id = %S WHERE id = (SELECT id FROM event_logs_scrape_state ORDER BY id LIMIT 1);", val))
+}
+
+func (s *bmStore) UpdateBookmarkSecurity(ctx context.Context, val int) error {
+	return s.Exec(ctx, sqlf.Sprintf("UPDATE security_event_logs_scrape_state SET bookmark_id = %S WHERE id = (SELECT id FROM security_event_logs_scrape_state ORDER BY id LIMIT 1);", val))
+}
+
+func newBookmarkStore(db database.DB) bookmarkStore {
+	return &bmStore{Store: basestore.NewWithHandle(db.Handle())}
+}
+
+func newBookmarkStoreSecurity(db database.DB) bookmarkStoreSecurity {
+	return &bmStoreSecurity{Store: basestore.NewWithHandle(db.Handle())}
 }
