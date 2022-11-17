@@ -64,7 +64,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 		cmd = exec.CommandContext(ctx, "p4-fusion",
 			"--path", depot+"...",
 			"--client", s.FusionConfig.Client,
-			"--user", username,
+			"--user", "WRONG_USER",
 			"--src", tmpPath,
 			"--networkThreads", strconv.Itoa(s.FusionConfig.NetworkThreads),
 			"--printBatch", strconv.Itoa(s.FusionConfig.PrintBatch),
