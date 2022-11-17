@@ -16,8 +16,8 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Button, Alert, Icon, H4, Text } from '@sourcegraph/wildcard'
 
+import { CheckboxTooltip } from '../../../../components/CheckboxTooltip'
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
-import { InputTooltip } from '../../../../components/InputTooltip'
 import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
@@ -96,10 +96,9 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
             </Button>
             {selectable ? (
                 <div className="p-2">
-                    {/* eslint-disable-next-line no-restricted-syntax*/}
-                    <InputTooltip
+                    {}
+                    <CheckboxTooltip
                         id={`select-changeset-${node.id}`}
-                        type="checkbox"
                         checked={selected}
                         onChange={toggleSelected}
                         disabled={!viewerCanAdminister}

@@ -2,7 +2,7 @@ import React from 'react'
 
 import { H3, H5 } from '@sourcegraph/wildcard'
 
-import { InputTooltip } from '../../../../components/InputTooltip'
+import { CheckboxTooltip } from '../../../../components/CheckboxTooltip'
 
 import styles from './BatchChangeChangesetsHeader.module.scss'
 
@@ -18,9 +18,7 @@ export const BatchChangeChangesetsHeader: React.FunctionComponent<
     <li className={styles.listItem}>
         <span className="d-none d-md-block" />
         {toggleSelectAll && (
-            // eslint-disable-next-line no-restricted-syntax
-            <InputTooltip
-                type="checkbox"
+            <CheckboxTooltip
                 className="ml-2"
                 checked={allSelected}
                 onChange={toggleSelectAll}

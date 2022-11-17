@@ -1,4 +1,13 @@
-.container {
-    display: flex;
-    position: relative;
+.checkbox-wrapper {
+    // Fixes checkbox internal wrapper height
+    line-height: 0;
+
+    margin: 0;
+    padding: 0;
+}
+
+.checkbox {
+    position: static;
+    margin: 0;
+    padding: 0;
 }

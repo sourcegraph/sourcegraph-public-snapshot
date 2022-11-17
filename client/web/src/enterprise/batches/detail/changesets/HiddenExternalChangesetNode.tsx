@@ -3,7 +3,7 @@ import React from 'react'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { InputTooltip } from '../../../../components/InputTooltip'
+import { CheckboxTooltip } from '../../../../components/CheckboxTooltip'
 import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
 
 import { ChangesetStatusCell } from './ChangesetStatusCell'
@@ -21,10 +21,8 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<
     <>
         <span className="d-none d-sm-block" />
         <div className="p-2">
-            {/* eslint-disable-next-line no-restricted-syntax*/}
-            <InputTooltip
+            <CheckboxTooltip
                 id={`select-changeset-${node.id}`}
-                type="checkbox"
                 checked={false}
                 disabled={true}
                 tooltip="You do not have permission to perform a bulk operation on this changeset"

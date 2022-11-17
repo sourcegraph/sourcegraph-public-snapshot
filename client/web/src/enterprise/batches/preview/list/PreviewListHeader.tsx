@@ -2,7 +2,7 @@ import React from 'react'
 
 import { H3, H5 } from '@sourcegraph/wildcard'
 
-import { InputTooltip } from '../../../../components/InputTooltip'
+import { CheckboxTooltip } from '../../../../components/CheckboxTooltip'
 
 import styles from './PreviewListHeader.module.scss'
 
@@ -19,9 +19,7 @@ export const PreviewListHeader: React.FunctionComponent<React.PropsWithChildren<
         <span className="p-2 d-none d-sm-block" />
         {toggleSelectAll && (
             <div className="d-flex p-2 align-items-center">
-                {/* eslint-disable-next-line no-restricted-syntax*/}
-                <InputTooltip
-                    type="checkbox"
+                <CheckboxTooltip
                     checked={allSelected}
                     onChange={toggleSelectAll}
                     tooltip="Click to select all changesets"
