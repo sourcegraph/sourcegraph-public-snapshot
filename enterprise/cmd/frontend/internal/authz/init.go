@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -31,7 +32,14 @@ import (
 
 var clock = timeutil.Now
 
-func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(
+	ctx context.Context,
+	db database.DB,
+	_ codeintel.Services,
+	_ conftypes.UnifiedWatchable,
+	enterpriseServices *enterprise.Services,
+	observationContext *observation.Context,
+) error {
 	database.ValidateExternalServiceConfig = edb.ValidateExternalServiceConfig
 	database.AuthzWith = func(other basestore.ShareableStore) database.AuthzStore {
 		return edb.NewAuthzStore(observationContext.Logger, db, clock)
@@ -45,6 +53,10 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, ent
 		_, providers, seriousProblems, warnings, _ :=
 			eiauthz.ProvidersFromConfig(ctx, cfg, extsvcStore, db)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
+
+		// Validating the connection may make a cross service call, so we should use an
+		// internal actor.
+		ctx := actor.WithInternalActor(ctx)
 
 		// Add connection validation issue
 		for _, p := range providers {

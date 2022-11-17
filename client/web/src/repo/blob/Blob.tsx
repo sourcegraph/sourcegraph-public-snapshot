@@ -87,6 +87,7 @@ import { Code, useObservable } from '@sourcegraph/wildcard'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
+import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunk } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -129,6 +130,9 @@ export interface BlobProps
     // and clicking on any line should navigate to that specific line.
     navigateToLineOnAnyClick?: boolean
 
+    // Enables keyboard navigation across precise code intelligence
+    tokenKeyboardNavigation?: boolean
+
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
     nav?: (url: string) => void
@@ -148,6 +152,14 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
 
     /** LSIF syntax-highlighting data */
     lsif?: string
+
+    stencil?: BlobStencilFields[]
+
+    /** If present, the file is stored in Git LFS (large file storage). */
+    lfs?: { byteSize: Scalars['BigInt'] } | null
+
+    /** External URLs for the file */
+    externalURLs?: ExternalLinkFields[]
 }
 
 const domFunctions = {
@@ -396,6 +408,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             platformContext,
         ]
     )
+    useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
 
     const customHistoryAction = props.nav
     // Update URL when clicking on a line (which will trigger the line highlighting defined below)
@@ -878,6 +891,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     isBlameVisible={props.isBlameVisible}
                     blameHunks={props.blameHunks}
                     codeViewElements={codeViewElements}
+                    history={props.history}
                 />
 
                 {groupedDecorations &&

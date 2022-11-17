@@ -7,16 +7,29 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // NewBeforeCreateUserHook returns a BeforeCreateUserHook closure with the given UsersStore
 // that determines whether new user is allowed to be created.
-func NewBeforeCreateUserHook() func(context.Context, database.DB) error {
-	return func(ctx context.Context, db database.DB) error {
+func NewBeforeCreateUserHook() func(context.Context, database.DB, *extsvc.AccountSpec) error {
+	return func(ctx context.Context, db database.DB, spec *extsvc.AccountSpec) error {
+		// Exempt user accounts that are created by the Sourcegraph Operator
+		// authentication provider.
+		//
+		// NOTE: It is important to make sure the Sourcegraph Operator authentication
+		// provider is actually enabled.
+		if spec != nil && spec.ServiceType == auth.SourcegraphOperatorProviderType &&
+			cloud.SiteConfig().SourcegraphOperatorAuthProviderEnabled() {
+			return nil
+		}
+
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
 			return err
@@ -74,8 +87,7 @@ func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) er
 			return err
 		}
 
-		// Nil info indicates no license, thus Free tier
-		if info == nil {
+		if info.Plan() == licensing.PlanFree0 {
 			store := tx.Users()
 			user.SiteAdmin = true
 			if err := store.SetIsSiteAdmin(ctx, user.ID, user.SiteAdmin); err != nil {
@@ -100,7 +112,7 @@ func NewBeforeSetUserIsSiteAdmin() func(isSiteAdmin bool) error {
 			return err
 		}
 
-		if info != nil {
+		if info != nil && info.Plan() != licensing.PlanFree0 {
 			return nil
 		}
 

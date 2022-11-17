@@ -190,9 +190,8 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	return s.store.List(ctx, opt)
 }
 
-// ListIndexable calls database.ListMinimalRepos, with tracing. It lists
-// ALL indexable repos which could include private user added repos.
-// In addition, it only lists cloned repositories.
+// ListIndexable calls database.ListMinimalRepos, with tracing. It lists ALL
+// indexable repos. In addition, it only lists cloned repositories.
 //
 // The intended call site for this is the logic which assigns repositories to
 // zoekt shards.
@@ -211,9 +210,11 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 		return s.cache.List(ctx)
 	}
 
-	trueP := true
+	if !conf.SearchIndexEnabled() {
+		return []types.MinimalRepo{}, nil
+	}
+
 	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{
-		Index:      &trueP,
 		OnlyCloned: true,
 	})
 }

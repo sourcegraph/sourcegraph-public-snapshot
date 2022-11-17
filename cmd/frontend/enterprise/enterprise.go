@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,33 +18,45 @@ import (
 // Services is a bag of HTTP handlers and factory functions that are registered by the
 // enterprise frontend setup hook.
 type Services struct {
-	GitHubWebhook                   webhooks.Registerer
-	GitLabWebhook                   http.Handler
-	BitbucketServerWebhook          http.Handler
-	BitbucketCloudWebhook           http.Handler
+	// Batch Changes Services
+	BatchesGitHubWebhook            webhooks.Registerer
+	BatchesGitLabWebhook            webhooks.RegistererHandler
+	BatchesBitbucketServerWebhook   http.Handler
+	BatchesBitbucketCloudWebhook    http.Handler
 	BatchesChangesFileGetHandler    http.Handler
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
-	NewCodeIntelUploadHandler       NewCodeIntelUploadHandler
-	NewExecutorProxyHandler         NewExecutorProxyHandler
-	NewGitHubAppSetupHandler        NewGitHubAppSetupHandler
-	NewComputeStreamHandler         NewComputeStreamHandler
-	AuthzResolver                   graphqlbackend.AuthzResolver
-	BatchChangesResolver            graphqlbackend.BatchChangesResolver
-	CodeIntelResolver               graphqlbackend.CodeIntelResolver
-	InsightsResolver                graphqlbackend.InsightsResolver
-	CodeMonitorsResolver            graphqlbackend.CodeMonitorsResolver
-	LicenseResolver                 graphqlbackend.LicenseResolver
-	DotcomResolver                  graphqlbackend.DotcomRootResolver
-	SearchContextsResolver          graphqlbackend.SearchContextsResolver
-	NotebooksResolver               graphqlbackend.NotebooksResolver
-	ComputeResolver                 graphqlbackend.ComputeResolver
-	InsightsAggregationResolver     graphqlbackend.InsightsAggregationResolver
+
+	GitHubSyncWebhook           webhooks.Registerer
+	NewCodeIntelUploadHandler   NewCodeIntelUploadHandler
+	RankingService              RankingService
+	NewExecutorProxyHandler     NewExecutorProxyHandler
+	NewGitHubAppSetupHandler    NewGitHubAppSetupHandler
+	NewComputeStreamHandler     NewComputeStreamHandler
+	AuthzResolver               graphqlbackend.AuthzResolver
+	BatchChangesResolver        graphqlbackend.BatchChangesResolver
+	CodeIntelResolver           graphqlbackend.CodeIntelResolver
+	InsightsResolver            graphqlbackend.InsightsResolver
+	CodeMonitorsResolver        graphqlbackend.CodeMonitorsResolver
+	LicenseResolver             graphqlbackend.LicenseResolver
+	DotcomResolver              graphqlbackend.DotcomRootResolver
+	SearchContextsResolver      graphqlbackend.SearchContextsResolver
+	NotebooksResolver           graphqlbackend.NotebooksResolver
+	ComputeResolver             graphqlbackend.ComputeResolver
+	InsightsAggregationResolver graphqlbackend.InsightsAggregationResolver
+	WebhooksResolver            graphqlbackend.WebhooksResolver
 }
 
 // NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
 // resulting handler skips auth checks when the internal flag is true.
 type NewCodeIntelUploadHandler func(internal bool) http.Handler
+
+// RankingService is a subset of codeintel.ranking.Service methods we use.
+type RankingService interface {
+	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
+	GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error)
+	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error)
+}
 
 // NewExecutorProxyHandler creates a new proxy handler for routes accessible to the
 // executor services deployed separately from the k8s cluster. This handler is protected
@@ -59,14 +73,16 @@ type NewComputeStreamHandler func() http.Handler
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
 	return Services{
-		GitHubWebhook:                   registerFunc(func(webhook *webhooks.GitHubWebhook) {}),
-		GitLabWebhook:                   makeNotFoundHandler("gitlab webhook"),
-		BitbucketServerWebhook:          makeNotFoundHandler("bitbucket server webhook"),
-		BitbucketCloudWebhook:           makeNotFoundHandler("bitbucket cloud webhook"),
+		GitHubSyncWebhook:               &emptyWebhookHandler{name: "github sync webhook"},
+		BatchesGitHubWebhook:            &emptyWebhookHandler{name: "batches github webhook"},
+		BatchesGitLabWebhook:            &emptyWebhookHandler{name: "batches gitlab webhook"},
+		BatchesBitbucketServerWebhook:   makeNotFoundHandler("batches bitbucket server webhook"),
+		BatchesBitbucketCloudWebhook:    makeNotFoundHandler("batches bitbucket cloud webhook"),
 		BatchesChangesFileGetHandler:    makeNotFoundHandler("batches file get handler"),
 		BatchesChangesFileExistsHandler: makeNotFoundHandler("batches file exists handler"),
 		BatchesChangesFileUploadHandler: makeNotFoundHandler("batches file upload handler"),
 		NewCodeIntelUploadHandler:       func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
+		RankingService:                  stubRankingService{},
 		NewExecutorProxyHandler:         func() http.Handler { return makeNotFoundHandler("executor proxy") },
 		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
 		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
@@ -81,16 +97,20 @@ func makeNotFoundHandler(handlerName string) http.Handler {
 	})
 }
 
-type registerFunc func(webhook *webhooks.GitHubWebhook)
+type emptyWebhookHandler struct {
+	name string
+}
 
-func (fn registerFunc) Register(w *webhooks.GitHubWebhook) {
-	fn(w)
+func (e *emptyWebhookHandler) Register(w *webhooks.WebhookRouter) {}
+
+func (e *emptyWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	makeNotFoundHandler(e.name)
 }
 
 type ErrBatchChangesDisabledDotcom struct{}
 
 func (e ErrBatchChangesDisabledDotcom) Error() string {
-	return "access to batch changes on Sourcegraph.com is currently not available"
+	return "batch changes is not available on Sourcegraph.com; use Sourcegraph Cloud or self-hosted instead"
 }
 
 type ErrBatchChangesDisabled struct{}
@@ -131,4 +151,18 @@ func BatchChangesEnabledForUser(ctx context.Context, db database.DB) error {
 		return ErrBatchChangesDisabledForUser{}
 	}
 	return nil
+}
+
+type stubRankingService struct{}
+
+func (s stubRankingService) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
+	return nil, nil
+}
+
+func (s stubRankingService) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error) {
+	return nil, nil
+}
+
+func (s stubRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
+	return nil, nil
 }

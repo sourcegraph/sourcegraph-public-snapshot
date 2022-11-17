@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -202,9 +203,6 @@ func TestRepository_DefaultBranch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gsClient := gitserver.NewMockClient()
 			gsClient.GetDefaultBranchFunc.SetDefaultReturn(tt.getDefaultBranchRefName, "", tt.getDefaultBranchErr)
-			t.Cleanup(func() {
-				gitserver.Mocks.ResolveRevision = nil
-			})
 
 			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}, logger: logtest.Scoped(t), gitserverClient: gsClient}
 			branch, err := res.DefaultBranch(ctx)
@@ -230,6 +228,10 @@ func TestRepository_DefaultBranch(t *testing.T) {
 
 func TestRepository_KVPs(t *testing.T) {
 	ctx := context.Background()
+
+	flags := map[string]bool{"repository-metadata": true}
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
+
 	logger := logtest.Scoped(t)
 	db := database.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	users := database.NewMockUserStore()

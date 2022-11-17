@@ -25,7 +25,7 @@ export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<Tre
     codeIntelligenceEnabled,
     batchChangesEnabled,
 }) => (
-    <ButtonGroup>
+    <ButtonGroup className="flex-wrap">
         <Button to={`${tree.url}/-/commits`} variant="secondary" outline={true} as={Link}>
             <Icon aria-hidden={true} svgPath={mdiSourceCommit} /> Commits
         </Button>

@@ -3,7 +3,6 @@ package background
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -12,11 +11,12 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/segmentio/ksuid"
+
 	sglog "github.com/sourcegraph/log"
-	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -28,10 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -88,7 +86,6 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	repoStore := database.NewDBWith(observationContext.Logger, workerBaseStore).Repos()
 
 	iterator := discovery.NewAllReposIterator(
-		dbcache.NewIndexableReposLister(observationContext.Logger, repoStore),
 		repoStore,
 		time.Now,
 		envvar.SourcegraphDotComMode(),
@@ -104,14 +101,6 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 	enq.analyzer.frameFilter = compression.NewHistoricalFilter(true, maxTime, edb.NewInsightsDBWith(insightsStore))
 	enq.repoIterator = iterator.ForEach
 	enq.featureFlagStore = ffs
-
-	defaultRateLimit := rate.Limit(20.0)
-	getRateLimit := getRateLimit(defaultRateLimit)
-	go conf.Watch(func() {
-		val := getRateLimit()
-		log15.Info(fmt.Sprintf("Updating insights/historical-worker rate limit value=%v", val))
-		enq.analyzer.limiter.SetLimit(val)
-	})
 
 	// We specify 30s here, so insights are queued regularly for processing. The queue itself is rate limited.
 	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 30*time.Second, goroutine.NewHandlerWithErrorMessage(
@@ -161,6 +150,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 	var repositories []string
 	uniques := make(map[string]any)
 	stats := make(statistics)
+	seriesRecordingTimes := make([]itypes.InsightSeriesRecordingTimes, 0, len(definitions))
 
 	// build a unique set of repositories - this will be useful to construct an inverted index of repo -> series
 	for _, definition := range definitions {
@@ -171,6 +161,14 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 				uniques[repository] = struct{}{}
 			}
 		}
+		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+			Unit:  itypes.IntervalUnit(definition.SampleIntervalUnit),
+			Value: definition.SampleIntervalValue,
+		}, definition.CreatedAt.Truncate(time.Hour*24))
+		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
+			InsightSeriesID: definition.ID,
+			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
+		})
 	}
 
 	frontend := database.NewDBWith(s.logger, s.workerBaseStore)
@@ -212,19 +210,23 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 			return err
 		}
 	}
+
+	if err := s.insightsStore.SetInsightSeriesRecordingTimes(ctx, seriesRecordingTimes); err != nil {
+		return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
+	}
+
 	return nil
 }
 
 func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer {
-	defaultRateLimit := rate.Limit(20.0)
-	getRateLimit := getRateLimit(defaultRateLimit)
-	limiter := ratelimit.NewInstrumentedLimiter("HistoricalEnqueuer", rate.NewLimiter(getRateLimit(), 1))
+
+	limiter := limiter.HistoricalWorkRate()
 
 	return backfillAnalyzer{
 		statistics:         statistics,
 		frameFilter:        &compression.NoopFilter{},
 		limiter:            limiter,
-		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: discovery.GitFirstEverCommit}).gitFirstEverCommit,
+		gitFirstEverCommit: discovery.NewCachedGitFirstEverCommit().GitFirstEverCommit,
 		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
 			return gitserver.NewClient(frontend).Commits(ctx, repoName, gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 		},
@@ -237,6 +239,7 @@ func globalBackfiller(logger sglog.Logger, workerBaseStore *basestore.Store, dat
 	statistics := make(statistics)
 
 	historicalEnqueuer := &historicalEnqueuer{
+		logger:          logger,
 		now:             time.Now,
 		insightsStore:   insightsStore,
 		dataSeriesStore: dataSeriesStore,
@@ -250,21 +253,6 @@ func globalBackfiller(logger sglog.Logger, workerBaseStore *basestore.Store, dat
 	}
 
 	return historicalEnqueuer
-}
-
-func getRateLimit(defaultValue rate.Limit) func() rate.Limit {
-	return func() rate.Limit {
-		val := conf.Get().InsightsHistoricalWorkerRateLimit
-
-		var result rate.Limit
-		if val == nil {
-			result = defaultValue
-		} else {
-			result = rate.Limit(*val)
-		}
-
-		return result
-	}
 }
 
 type statistics map[string]*repoBackfillStatistics
@@ -324,6 +312,8 @@ type RepoStore interface {
 //  3. Ensure we perform work slowly, linearly, and with yielding/sleeping between any substantial
 //     work being performed.
 type historicalEnqueuer struct {
+	logger sglog.Logger
+
 	// Required fields used for mocking in tests.
 	now                   func() time.Time
 	insightsStore         store.Interface
@@ -356,6 +346,9 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	// is responsible for calculating the work needed to backfill an insight series _without_ a user context. Repository permissions
 	// are filtered at view time of an insight.
 	ctx = actor.WithInternalActor(ctx)
+	if h.logger == nil {
+		h.logger = sglog.Scoped("HistoricalEnqueuer", "")
+	}
 
 	convertJITInsights := true
 	deprecateJITInsights, _ := h.featureFlagStore.GetFeatureFlag(ctx, "code_insights_deprecate_jit")
@@ -368,7 +361,7 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	}
 
 	// Discover all global insights on the instance.
-	log15.Debug("Fetching data series for historical")
+	h.logger.Debug("Fetching data series for historical")
 	foundInsights, err := h.dataSeriesStore.GetDataSeries(ctx, store.GetDataSeriesArgs{BackfillNotQueued: true, GlobalOnly: true})
 	if err != nil {
 		return errors.Wrap(err, "Discover")
@@ -380,10 +373,10 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 
 	var multi error
 	for _, series := range foundInsights {
-		log15.Info("Loaded insight data series for historical processing", "series_id", series.SeriesID)
+		h.logger.Info("Loaded insight data series for historical processing", sglog.String("series_id", series.SeriesID))
 		incrementErr := h.dataSeriesStore.IncrementBackfillAttempts(ctx, series)
 		if incrementErr != nil {
-			log15.Warn("unable to update backfill attempts", "seriesId", series.SeriesID)
+			h.logger.Warn("unable to update backfill attempts", sglog.String("seriesId", series.SeriesID))
 		}
 	}
 
@@ -398,23 +391,22 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 	}
 
 	for seriesId, backfillStatistics := range h.statistics {
-		log15.Info("backfill statistics", "seriesId", seriesId, "stats", *backfillStatistics)
+		h.logger.Info("backfill statistics", sglog.String("seriesId", seriesId), sglog.String("stats", backfillStatistics.String()))
 	}
 
 	return multi
 }
 
 func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
-
-	log15.Debug("fetching scoped search series that need a backfill")
+	h.logger.Debug("fetching scoped search series that need a backfill")
 	foundSeries, err := h.dataSeriesStore.GetScopedSearchSeriesNeedBackfill(ctx)
 	if err != nil {
-		log15.Error("unable to find series to convert to backfilled", "error", err)
+		h.logger.Error("unable to find series to convert to backfilled", sglog.Error(err))
 		return
 	}
 
 	for _, series := range foundSeries {
-		log15.Info("loaded just in time data series for conversion to backfilled", "series_id", series.SeriesID)
+		h.logger.Info("loaded just in time data series for conversion to backfilled", sglog.String("series_id", series.SeriesID))
 
 		oldSeriesId := series.SeriesID
 		series.SeriesID = ksuid.New().String()
@@ -423,29 +415,26 @@ func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 		// Update the backfill attempts adjusts created date and inserts the new series_ID
 		incrementErr := h.dataSeriesStore.StartJustInTimeConversionAttempt(ctx, series)
 		if incrementErr != nil {
-			log15.Warn("unable to start jit conversion", "seriesId", oldSeriesId, "error", err)
+			h.logger.Warn("unable to start jit conversion", sglog.String("seriesId", oldSeriesId), sglog.Error(err))
 			continue
 		}
 
-		err = h.scopedBackfiller.ScopedBackfill(ctx, []itypes.InsightSeries{series})
+		err := h.scopedBackfiller.ScopedBackfill(ctx, []itypes.InsightSeries{series})
 		if err != nil {
-			log15.Error("unable to backfill scoped series", "series_id", series.SeriesID, "error", err)
+			h.logger.Error("unable to backfill scoped series", sglog.String("series_id", series.SeriesID), sglog.Error(err))
 			continue
 		}
 
 		err = h.dataSeriesStore.CompleteJustInTimeConversionAttempt(ctx, series)
 		if err != nil {
-			log15.Error("unable to complete insight from jit to backfilled", "series_id", series.SeriesID, "error", err)
+			h.logger.Error("unable to complete insight from jit to backfilled", sglog.String("series_id", series.SeriesID), sglog.Error(err))
 		}
 
 		err = queryrunner.PurgeJobsForSeries(ctx, h.scopedBackfiller.workerBaseStore, oldSeriesId)
 		if err != nil {
-			log15.Warn("unable to purge jobs for old seriesID", "seriesId", oldSeriesId, "error", err)
+			h.logger.Warn("unable to purge jobs for old seriesID", sglog.String("seriesId", oldSeriesId), sglog.Error(err))
 		}
-
 	}
-
-	return
 }
 
 func markInsightsComplete(ctx context.Context, completed []itypes.InsightSeries, dataSeriesStore store.DataSeriesStore) {
@@ -487,8 +476,24 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 		}
 		return nil
 	})
+
+	seriesRecordingTimes := make([]itypes.InsightSeriesRecordingTimes, 0, len(definitions))
+	for _, series := range definitions {
+		frames := timeseries.BuildFrames(12, timeseries.TimeInterval{
+			Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
+			Value: series.SampleIntervalValue,
+		}, series.CreatedAt.Truncate(time.Hour*24))
+		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
+			InsightSeriesID: series.ID,
+			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
+		})
+	}
+	if err := h.insightsStore.SetInsightSeriesRecordingTimes(ctx, seriesRecordingTimes); err != nil {
+		return errors.Wrap(err, "SetInsightSeriesRecordingTimes")
+	}
+
 	if multi != nil {
-		log15.Error("historical_enqueuer.buildFrames - multierror", "err", multi)
+		h.logger.Error("historical_enqueuer.buildFrames - multierror", sglog.Error(multi))
 	}
 	return hardErr
 }

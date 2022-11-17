@@ -3,7 +3,7 @@ export { Button, ButtonGroup, BUTTON_SIZES } from './Button'
 export type { ButtonGroupProps } from './Button'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
-export { LineChart, BarChart, PieChart, LegendList, LegendItem, ScrollBox, ParentSize } from './Charts'
+export { LineChart, BarChart, PieChart, LegendList, LegendItem, LegendItemPoint, ScrollBox, ParentSize } from './Charts'
 export {
     Checkbox,
     FlexTextArea,
@@ -23,7 +23,7 @@ export { Tabs, Tab, TabList, TabPanel, TabPanels, useTabsContext } from './Tabs'
 export { SourcegraphIcon } from './SourcegraphIcon'
 export { Badge, ProductStatusBadge, BADGE_VARIANTS, PRODUCT_STATUSES } from './Badge'
 export { Panel } from './Panel'
-export { Tooltip } from './Tooltip'
+export { Tooltip, TooltipOpenChangeReason } from './Tooltip'
 export { Card, CardBody, CardHeader, CardList, CardSubtitle, CardText, CardTitle, CardFooter } from './Card'
 export { Icon } from './Icon'
 export { ButtonLink } from './ButtonLink'
@@ -43,6 +43,9 @@ export {
     PopoverOpenEventReason,
     EMPTY_RECTANGLE,
     createRectangle,
+    usePopoverContext,
+    Flipping,
+    Strategy,
 } from './Popover'
 export { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 export {
@@ -71,7 +74,7 @@ export type { MenuLinkProps, MenuItemProps } from './Menu'
 export type { TabsProps, TabListProps, TabProps, TabPanelProps, TabPanelsProps } from './Tabs'
 export type { IconProps, IconType } from './Icon'
 export type { Point } from './Popover'
-export type { TooltipProps } from './Tooltip'
+export type { TooltipProps, TooltipOpenEvent } from './Tooltip'
 export type { HeadingProps, HeadingElement } from './Typography'
 export type { BadgeProps, BadgeVariantType, ProductStatusType, BaseProductStatusBadgeProps } from './Badge'
 export type { ModalProps } from './Modal'

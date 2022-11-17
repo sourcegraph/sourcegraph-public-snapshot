@@ -1,6 +1,7 @@
 import { useCallback, useRef, useEffect, FormEvent, useMemo, useState, FC } from 'react'
 
 import { mdiClose } from '@mdi/js'
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
@@ -279,6 +280,7 @@ export const SearchContextMenuItem: FC<SearchContextMenuItemProps> = props => {
     return (
         <ComboboxOption
             value={spec}
+            selected={selected}
             data-testid="search-context-menu-item"
             data-search-context-spec={spec}
             data-selected={selected || undefined}
@@ -288,14 +290,18 @@ export const SearchContextMenuItem: FC<SearchContextMenuItemProps> = props => {
                 <small data-testid="search-context-menu-item-name" className={styles.itemName}>
                     <ComboboxOptionText />
                 </small>
-            </Tooltip>{' '}
+            </Tooltip>
+            {descriptionOrQuery && <VisuallyHidden>,</VisuallyHidden>}{' '}
             <Tooltip content={descriptionOrQuery}>
                 <small className={styles.itemDescription}>{descriptionOrQuery}</small>
             </Tooltip>
             {isDefault && (
-                <Badge variant="secondary" className={classNames('text-uppercase', styles.itemDefault)}>
-                    Default
-                </Badge>
+                <>
+                    <VisuallyHidden>,</VisuallyHidden>
+                    <Badge variant="secondary" className={classNames('text-uppercase', styles.itemDefault)}>
+                        Default
+                    </Badge>
+                </>
             )}
         </ComboboxOption>
     )

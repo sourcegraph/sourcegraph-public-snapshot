@@ -45,10 +45,6 @@ type Request struct {
 	// the fetch will still happen in the background so future requests don't have to wait.
 	FetchTimeout string
 
-	// Endpoint(s) for reaching Zoekt. See description in
-	// endpoint.go:Static(...)
-	IndexerEndpoints []string
-
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
@@ -96,10 +92,6 @@ type PatternInfo struct {
 	// ExcludePattern); it is not possible in general to construct a single
 	// glob or Go regexp that represents multiple such patterns ANDed together.
 	IncludePatterns []string
-
-	// IncludeExcludePatternAreRegExps indicates that ExcludePattern, IncludePattern,
-	// and IncludePatterns are regular expressions (not globs).
-	PathPatternsAreRegExps bool
 
 	// IncludeExcludePatternAreCaseSensitive indicates that ExcludePattern, IncludePattern,
 	// and IncludePatterns are case sensitive.
@@ -167,10 +159,7 @@ func (p *PatternInfo) String() string {
 		args = append(args, fmt.Sprintf("select:%s", p.Select))
 	}
 
-	path := "glob"
-	if p.PathPatternsAreRegExps {
-		path = "f"
-	}
+	path := "f"
 	if p.PathPatternsAreCaseSensitive {
 		path = "F"
 	}

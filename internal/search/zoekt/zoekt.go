@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -94,6 +95,9 @@ type Options struct {
 	// GlobalSearch is true if we are doing a search were we skip computing
 	// NumRepos and instead rely on zoekt.
 	GlobalSearch bool
+
+	// Features are feature flags that can affect behaviour of searcher.
+	Features search.Features
 }
 
 func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
@@ -103,6 +107,45 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		SpanContext:  spanContext,
 		MaxWallTime:  defaultTimeout,
 		ChunkMatches: true,
+	}
+
+	if o.Features.Debug {
+		searchOpts.DebugScore = true
+	}
+
+	if o.Features.Ranking {
+		limit := int(o.FileMatchLimit)
+
+		// Tell each zoekt replica to not send back more than limit results.
+		searchOpts.MaxDocDisplayCount = limit
+
+		// These are reasonable default amounts of work to do per shard and
+		// replica respectively.
+		searchOpts.ShardMaxMatchCount = 10_000
+		searchOpts.TotalMaxMatchCount = 100_000
+
+		// If we are searching for large limits, raise the amount of work we
+		// are willing to do per shard and zoekt replica respectively.
+		if limit > searchOpts.ShardMaxMatchCount {
+			searchOpts.ShardMaxMatchCount = limit
+		}
+		if limit > searchOpts.TotalMaxMatchCount {
+			searchOpts.TotalMaxMatchCount = limit
+		}
+
+		// This enables our stream based ranking were we wait upto 500ms to
+		// collect results before ranking.
+		searchOpts.FlushWallTime = 500 * time.Millisecond
+
+		// This enables the use of PageRank scores if they are available.
+		searchOpts.UseDocumentRanks = true
+
+		// This damps the impact of document ranks on the final ranking.
+		if o.Features.RankingDampDocRanks {
+			searchOpts.RanksDampingFactor = 0.5
+		}
+
+		return searchOpts
 	}
 
 	if userProbablyWantsToWaitLonger := o.FileMatchLimit > limits.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {
@@ -115,8 +158,6 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		k := o.resultCountFactor()
 		searchOpts.ShardMaxMatchCount = 100 * k
 		searchOpts.TotalMaxMatchCount = 100 * k
-		searchOpts.ShardMaxImportantMatch = 15 * k
-		searchOpts.TotalMaxImportantMatch = 25 * k
 		// Ask for 2000 more results so we have results to populate
 		// RepoStatusLimitHit.
 		searchOpts.MaxDocDisplayCount = int(o.FileMatchLimit) + 2000

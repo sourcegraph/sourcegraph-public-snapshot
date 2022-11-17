@@ -38,13 +38,17 @@ func formatFirecrackerCommand(spec CommandSpec, name string, options Options) co
 	rawOrDockerCommand := formatRawOrDockerCommand(spec, firecrackerContainerDir, options)
 
 	innerCommand := shellquote.Join(rawOrDockerCommand.Command...)
-	if len(rawOrDockerCommand.Env) > 0 {
-		// If we have env vars that are arguments to the command we need to escape them
-		quotedEnv := quoteEnv(rawOrDockerCommand.Env)
-		innerCommand = fmt.Sprintf("%s %s", strings.Join(quotedEnv, " "), innerCommand)
+
+	// Note: src-cli run commands don't receive env vars in firecracker so we
+	// have to prepend them inline to the script.
+	// TODO: This branch should disappear when we make src-cli a non-special cased
+	// thing.
+	if spec.Image == "" && len(rawOrDockerCommand.Env) > 0 {
+		innerCommand = fmt.Sprintf("%s %s", strings.Join(quoteEnv(rawOrDockerCommand.Env), " "), innerCommand)
 	}
+
 	if rawOrDockerCommand.Dir != "" {
-		innerCommand = fmt.Sprintf("cd %s && %s", rawOrDockerCommand.Dir, innerCommand)
+		innerCommand = fmt.Sprintf("cd %s && %s", shellquote.Join(rawOrDockerCommand.Dir), innerCommand)
 	}
 
 	return command{
@@ -123,8 +127,8 @@ type dockerDaemonConfig struct {
 // for the optional docker daemon config file.
 const dockerDaemonConfigFilename = "docker-daemon.json"
 
-func newDockerDaemonConfig(tmpDir, mirrorAddress string) (_ string, err error) {
-	c, err := json.Marshal(&dockerDaemonConfig{RegistryMirrors: []string{mirrorAddress}})
+func newDockerDaemonConfig(tmpDir string, mirrorAddresses []string) (_ string, err error) {
+	c, err := json.Marshal(&dockerDaemonConfig{RegistryMirrors: mirrorAddresses})
 	if err != nil {
 		return "", errors.Wrap(err, "marshalling docker daemon config")
 	}
@@ -139,9 +143,9 @@ func newDockerDaemonConfig(tmpDir, mirrorAddress string) (_ string, err error) {
 // it will be mounted into the new virtual machine instance and executed.
 func setupFirecracker(ctx context.Context, runner commandRunner, logger Logger, name, workspaceDevice, tmpDir string, options Options, operations *Operations) error {
 	var daemonConfigFile string
-	if options.FirecrackerOptions.DockerRegistryMirrorURL != "" {
+	if len(options.FirecrackerOptions.DockerRegistryMirrorURLs) > 0 {
 		var err error
-		daemonConfigFile, err = newDockerDaemonConfig(tmpDir, options.FirecrackerOptions.DockerRegistryMirrorURL)
+		daemonConfigFile, err = newDockerDaemonConfig(tmpDir, options.FirecrackerOptions.DockerRegistryMirrorURLs)
 		if err != nil {
 			return err
 		}

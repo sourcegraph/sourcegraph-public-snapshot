@@ -17,12 +17,9 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/prometheus/client_golang/prometheus"
+	sglog "github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2/store/redigostore"
 	"go.opentelemetry.io/otel"
-
-	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
-
-	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -34,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
+	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -120,7 +118,7 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable) enterprise.Services) error {
+func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) enterprise.Services) error {
 	ctx := context.Background()
 
 	log.SetFlags(0)
@@ -203,7 +201,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
 	}
-	ui.InitRouter(db, enterprise.CodeIntelResolver)
+	ui.InitRouter(db)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
@@ -254,6 +252,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 
 	siteid.Init(db)
 
+	globals.WatchBranding()
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 	globals.WatchPermissionsUserMapping()
 
@@ -278,6 +277,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		enterprise.NotebooksResolver,
 		enterprise.ComputeResolver,
 		enterprise.InsightsAggregationResolver,
+		enterprise.WebhooksResolver,
 	)
 	if err != nil {
 		return err
@@ -328,10 +328,11 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 		schema,
 		rateLimiter,
 		&httpapi.Handlers{
-			GitHubWebhook:                   enterprise.GitHubWebhook,
-			GitLabWebhook:                   enterprise.GitLabWebhook,
-			BitbucketServerWebhook:          enterprise.BitbucketServerWebhook,
-			BitbucketCloudWebhook:           enterprise.BitbucketCloudWebhook,
+			GitHubSyncWebhook:               enterprise.GitHubSyncWebhook,
+			BatchesGitHubWebhook:            enterprise.BatchesGitHubWebhook,
+			BatchesGitLabWebhook:            enterprise.BatchesGitLabWebhook,
+			BatchesBitbucketServerWebhook:   enterprise.BatchesBitbucketServerWebhook,
+			BatchesBitbucketCloudWebhook:    enterprise.BatchesBitbucketCloudWebhook,
 			BatchesChangesFileGetHandler:    enterprise.BatchesChangesFileGetHandler,
 			BatchesChangesFileExistsHandler: enterprise.BatchesChangesFileExistsHandler,
 			BatchesChangesFileUploadHandler: enterprise.BatchesChangesFileUploadHandler,
@@ -352,7 +353,12 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(
+	schema *graphql.Schema,
+	db database.DB,
+	enterprise enterprise.Services,
+	rateLimiter graphqlbackend.LimitWatcher,
+) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
@@ -367,6 +373,7 @@ func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterpri
 		schema,
 		db,
 		enterprise.NewCodeIntelUploadHandler,
+		enterprise.RankingService,
 		enterprise.NewComputeStreamHandler,
 		rateLimiter,
 	)

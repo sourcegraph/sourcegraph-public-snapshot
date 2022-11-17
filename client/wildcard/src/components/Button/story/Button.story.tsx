@@ -242,6 +242,54 @@ export const Group: Story = () => {
                 </ButtonGroup>{' '}
                 Example with primary outline buttons
             </div>
+            <div className="mb-2">
+                <ButtonGroup aria-label="Basic example">
+                    {(['Left', 'Middle', 'Right'] as const).map(option => (
+                        <Button
+                            key={option}
+                            className={classNames(option === active && 'active')}
+                            onClick={() => setActive(option)}
+                            aria-pressed={option === active}
+                            variant="secondary"
+                        >
+                            {option}
+                        </Button>
+                    ))}
+                </ButtonGroup>{' '}
+                Example with secondary buttons
+            </div>
+            <div className="mb-2">
+                <ButtonGroup aria-label="Basic example">
+                    {(['Left', 'Middle', 'Right'] as const).map(option => (
+                        <Button
+                            key={option}
+                            className={classNames(option === active && 'active')}
+                            onClick={() => setActive(option)}
+                            aria-pressed={option === active}
+                            variant="primary"
+                        >
+                            {option}
+                        </Button>
+                    ))}
+                </ButtonGroup>{' '}
+                Example with primary buttons
+            </div>
+            <div className="mb-2">
+                <ButtonGroup aria-label="Basic example">
+                    {(['Left', 'Middle', 'Right'] as const).map(option => (
+                        <Button
+                            key={option}
+                            className={classNames(option === active && 'active')}
+                            onClick={() => setActive(option)}
+                            aria-pressed={option === active}
+                            variant="link"
+                        >
+                            {option}
+                        </Button>
+                    ))}
+                </ButtonGroup>{' '}
+                Example with link buttons
+            </div>
 
             <H2 className="mt-3">With Tooltips</H2>
             <div className="mb-2">

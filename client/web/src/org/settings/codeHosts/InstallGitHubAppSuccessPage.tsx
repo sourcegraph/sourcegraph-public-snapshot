@@ -9,7 +9,7 @@ import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { useQueryStringParameters } from '../../members/utils'
 
-import styles from './AppLogo.module.scss'
+import styles from './InstallGitHubAppSuccessPage.module.scss'
 
 interface GitHubAppInstallation {
     id: number
@@ -65,7 +65,7 @@ export const InstallGitHubAppSuccessPage: React.FunctionComponent<React.PropsWit
                             />
                         )}
                     </div>
-                    <H2 className="text-center">Sourcegraph Cloud for GitHub installed on {data?.account.login}</H2>
+                    <H2 className="text-center">Sourcegraph.com for GitHub installed on {data?.account.login}</H2>
                     <br />
                     <Text alignment="center" className="mr-3 ml-3">
                         <b>One more thing:</b> to finish setup, let the requestor know that the Sourcegraph Cloud for

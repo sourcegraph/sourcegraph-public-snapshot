@@ -4,7 +4,7 @@ import * as H from 'history'
 import { map } from 'rxjs/operators'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, H5 } from '@sourcegraph/wildcard'
+import { Container, H3, H5 } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
 import { RepoBatchChange, RepositoryFields } from '../../../graphql-operations'
@@ -55,7 +55,7 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
     )
 
     return (
-        <Container>
+        <Container role="region" aria-label="batch changes">
             <FilteredConnection<RepoBatchChange, Omit<BatchChangeNodeProps, 'node'>>
                 history={history}
                 location={location}
@@ -72,13 +72,12 @@ export const RepoBatchChanges: React.FunctionComponent<React.PropsWithChildren<P
                 defaultFirst={15}
                 noun="batch change"
                 pluralNoun="batch changes"
-                listComponent="div"
                 listClassName={styles.batchChangesGrid}
                 withCenteredSummary={true}
                 headComponent={RepoBatchChangesHeader}
                 cursorPaging={true}
                 noSummaryIfAllNodesVisible={true}
-                emptyElement={<GettingStarted />}
+                emptyElement={<GettingStarted isSourcegraphDotCom={false} />}
             />
         </Container>
     )
@@ -89,10 +88,20 @@ export const RepoBatchChangesHeader: React.FunctionComponent<React.PropsWithChil
         {/* Empty filler elements for the spaces in the grid that don't need headers */}
         <span />
         <span />
-        <H5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Status</H5>
-        <H5 className="p-2 d-none d-md-block text-uppercase text-nowrap">Changeset information</H5>
-        <H5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Check state</H5>
-        <H5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Review state</H5>
-        <H5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">Changes</H5>
+        <H5 as={H3} aria-hidden={true} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+            Status
+        </H5>
+        <H5 as={H3} aria-hidden={true} className="p-2 d-none d-md-block text-uppercase text-nowrap">
+            Changeset information
+        </H5>
+        <H5 as={H3} aria-hidden={true} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+            Check state
+        </H5>
+        <H5 as={H3} aria-hidden={true} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+            Review state
+        </H5>
+        <H5 as={H3} aria-hidden={true} className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">
+            Changes
+        </H5>
     </>
 )

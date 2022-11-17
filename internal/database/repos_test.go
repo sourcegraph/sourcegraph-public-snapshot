@@ -53,17 +53,32 @@ func repoNames(repos []*types.Repo) []api.RepoName {
 func createRepo(ctx context.Context, t *testing.T, db DB, repo *types.Repo) {
 	t.Helper()
 
-	op := InsertRepoOp{
-		Name:         repo.Name,
-		Private:      repo.Private,
-		ExternalRepo: repo.ExternalRepo,
-		Description:  repo.Description,
-		Fork:         repo.Fork,
-		Archived:     repo.Archived,
-	}
+	op := createInsertRepoOp(repo, 0)
 
 	if err := upsertRepo(ctx, db, op); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func createRepoWithSize(ctx context.Context, t *testing.T, db DB, repo *types.Repo, size int64) {
+	t.Helper()
+
+	op := createInsertRepoOp(repo, size)
+
+	if err := upsertRepo(ctx, db, op); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func createInsertRepoOp(repo *types.Repo, size int64) InsertRepoOp {
+	return InsertRepoOp{
+		Name:              repo.Name,
+		Private:           repo.Private,
+		ExternalRepo:      repo.ExternalRepo,
+		Description:       repo.Description,
+		Fork:              repo.Fork,
+		Archived:          repo.Archived,
+		GitserverRepoSize: size,
 	}
 }
 
@@ -124,12 +139,13 @@ func reposFromRepoNames(names []types.MinimalRepo) []*types.Repo {
 
 // InsertRepoOp represents an operation to insert a repository.
 type InsertRepoOp struct {
-	Name         api.RepoName
-	Description  string
-	Fork         bool
-	Archived     bool
-	Private      bool
-	ExternalRepo api.ExternalRepoSpec
+	Name              api.RepoName
+	Description       string
+	Fork              bool
+	Archived          bool
+	Private           bool
+	ExternalRepo      api.ExternalRepoSpec
+	GitserverRepoSize int64
 }
 
 const upsertSQL = `
@@ -178,7 +194,7 @@ INSERT INTO repo (
     $7 AS archived,
     $8 AS private
   WHERE NOT EXISTS (SELECT 1 FROM upsert)
-)`
+) RETURNING id`
 
 // upsertRepo updates the repository if it already exists (keyed on name) and
 // inserts it if it does not.
@@ -207,7 +223,7 @@ func upsertRepo(ctx context.Context, db DB, op InsertRepoOp) error {
 		return nil
 	}
 
-	_, err = s.Handle().ExecContext(
+	qrc := s.Handle().QueryRowContext(
 		ctx,
 		upsertSQL,
 		op.Name,
@@ -219,6 +235,19 @@ func upsertRepo(ctx context.Context, db DB, op InsertRepoOp) error {
 		op.Archived,
 		op.Private,
 	)
+	err = qrc.Err()
+
+	// Set size if specified
+	if op.GitserverRepoSize > 0 {
+		var lastInsertId int64
+		err2 := qrc.Scan(&lastInsertId)
+		if err2 != nil {
+			return err2
+		}
+		_, err = s.Handle().ExecContext(ctx, `UPDATE gitserver_repos set repo_size_bytes = $1 where repo_id = $2`,
+			op.GitserverRepoSize, lastInsertId)
+
+	}
 
 	return err
 }
@@ -775,6 +804,17 @@ func TestRepos_List_LastChanged(t *testing.T) {
 	setGitserverRepoCloneStatus(t, db, r2.Name, types.CloneStatusCloned)
 	setGitserverRepoLastChanged(t, db, r2.Name, now)
 
+	// we create a repo that has recently had new page rank scores committed to the database
+	r3 := mustCreate(ctx, t, db, &types.Repo{Name: "ranked"})
+	setGitserverRepoCloneStatus(t, db, r3.Name, types.CloneStatusCloned)
+	setGitserverRepoLastChanged(t, db, r3.Name, now.Add(-time.Hour))
+	{
+		_, err := db.Handle().ExecContext(ctx, `INSERT INTO codeintel_path_ranks (repository_id, precision, updated_at, payload) VALUES ($1, 0, $2, '{}'::jsonb)`, r3.ID, now)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
 	// Our test helpers don't do updated_at, so manually doing it.
 	_, err := db.Handle().ExecContext(ctx, "update repo set updated_at = $1", now.Add(-24*time.Hour))
 	if err != nil {
@@ -782,9 +822,9 @@ func TestRepos_List_LastChanged(t *testing.T) {
 	}
 
 	// will have update_at set to now, so should be included as often as new.
-	r3 := mustCreate(ctx, t, db, &types.Repo{Name: "newMeta"})
-	setGitserverRepoCloneStatus(t, db, r3.Name, types.CloneStatusCloned)
-	setGitserverRepoLastChanged(t, db, r3.Name, now.Add(-24*time.Hour))
+	r4 := mustCreate(ctx, t, db, &types.Repo{Name: "newMeta"})
+	setGitserverRepoCloneStatus(t, db, r4.Name, types.CloneStatusCloned)
+	setGitserverRepoLastChanged(t, db, r4.Name, now.Add(-24*time.Hour))
 	_, err = db.Handle().ExecContext(ctx, "update repo set updated_at = $1 where name = 'newMeta'", now)
 	if err != nil {
 		t.Fatal(err)
@@ -792,9 +832,9 @@ func TestRepos_List_LastChanged(t *testing.T) {
 
 	// we create two search contexts, with one being updated recently only
 	// including "newSearchContext".
-	r4 := mustCreate(ctx, t, db, &types.Repo{Name: "newSearchContext"})
-	setGitserverRepoCloneStatus(t, db, r4.Name, types.CloneStatusCloned)
-	setGitserverRepoLastChanged(t, db, r4.Name, now.Add(-24*time.Hour))
+	r5 := mustCreate(ctx, t, db, &types.Repo{Name: "newSearchContext"})
+	setGitserverRepoCloneStatus(t, db, r5.Name, types.CloneStatusCloned)
+	setGitserverRepoLastChanged(t, db, r5.Name, now.Add(-24*time.Hour))
 	{
 		mkSearchContext := func(name string, opts ReposListOptions) {
 			t.Helper()
@@ -829,15 +869,15 @@ func TestRepos_List_LastChanged(t *testing.T) {
 		Want           []string
 	}{{
 		Name: "not specified",
-		Want: []string{"old", "new", "newMeta", "newSearchContext"},
+		Want: []string{"old", "new", "ranked", "newMeta", "newSearchContext"},
 	}, {
 		Name:           "old",
 		MinLastChanged: now.Add(-24 * time.Hour),
-		Want:           []string{"old", "new", "newMeta", "newSearchContext"},
+		Want:           []string{"old", "new", "ranked", "newMeta", "newSearchContext"},
 	}, {
 		Name:           "new",
 		MinLastChanged: now.Add(-time.Minute),
-		Want:           []string{"new", "newMeta", "newSearchContext"},
+		Want:           []string{"new", "ranked", "newMeta", "newSearchContext"},
 	}, {
 		Name:           "none",
 		MinLastChanged: now.Add(time.Minute),
@@ -1031,6 +1071,11 @@ func TestRepos_List_correct_ranking(t *testing.T) {
 	}
 }
 
+type repoAndSize struct {
+	repo *types.Repo
+	size int64
+}
+
 // Test sort
 func TestRepos_List_sort(t *testing.T) {
 	if testing.Short() {
@@ -1042,17 +1087,17 @@ func TestRepos_List_sort(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := actor.WithInternalActor(context.Background())
 
-	createdRepos := []*types.Repo{
-		{Name: "c/def"},
-		{Name: "def/mno"},
-		{Name: "b/def"},
-		{Name: "abc/m"},
-		{Name: "abc/def"},
-		{Name: "def/jkl"},
-		{Name: "def/ghi"},
+	reposAndSizes := []*repoAndSize{
+		{repo: &types.Repo{Name: "c/def"}, size: 20},
+		{repo: &types.Repo{Name: "def/mno"}, size: 30},
+		{repo: &types.Repo{Name: "b/def"}, size: 40},
+		{repo: &types.Repo{Name: "abc/m"}, size: 50},
+		{repo: &types.Repo{Name: "abc/def"}, size: 60},
+		{repo: &types.Repo{Name: "def/jkl"}, size: 70},
+		{repo: &types.Repo{Name: "def/ghi"}, size: 10},
 	}
-	for _, repo := range createdRepos {
-		createRepo(ctx, t, db, repo)
+	for _, repoAndSize := range reposAndSizes {
+		createRepoWithSize(ctx, t, db, repoAndSize.repo, repoAndSize.size)
 	}
 	tests := []struct {
 		query   string
@@ -1088,6 +1133,14 @@ func TestRepos_List_sort(t *testing.T) {
 				Descending: true,
 			}},
 			want: []api.RepoName{"def/ghi", "def/jkl", "abc/def", "b/def", "def/mno", "c/def"},
+		},
+		{
+			query: "",
+			orderBy: RepoListOrderBy{{
+				Field:      RepoListSize,
+				Descending: false,
+			}},
+			want: []api.RepoName{"def/ghi", "c/def", "def/mno", "b/def", "abc/m", "abc/def", "def/jkl"},
 		},
 	}
 	for _, test := range tests {
@@ -2691,7 +2744,7 @@ func TestRepos_Create(t *testing.T) {
 	})
 }
 
-func TestListIndexableRepos(t *testing.T) {
+func TestListSourcegraphDotComIndexableRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -2713,9 +2766,9 @@ func TestListIndexableRepos(t *testing.T) {
 		},
 		{
 			ID:      api.RepoID(3),
-			Name:    "github.com/foo/bar3",
+			Name:    "github.com/baz/bar3",
+			Stars:   15,
 			Private: true,
-			Stars:   0, // Will still be returned because it gets added by a user.
 		},
 		{
 			ID:    api.RepoID(4),
@@ -2742,9 +2795,6 @@ func TestListIndexableRepos(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.ExecContext(ctx, `INSERT INTO users(id, username) VALUES (1, 'bob')`); err != nil {
-		t.Fatal(err)
-	}
 	for _, r := range reposToAdd {
 		blocked, err := json.Marshal(r.Blocked)
 		if err != nil {
@@ -2759,7 +2809,7 @@ func TestListIndexableRepos(t *testing.T) {
 		}
 
 		if r.Private {
-			if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, $2, 1);`, r.ID, r.Name); err != nil {
+			if _, err := db.ExecContext(ctx, `INSERT INTO external_service_repos VALUES (1, $1, $2);`, r.ID, r.Name); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -2776,34 +2826,24 @@ func TestListIndexableRepos(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		opts ListIndexableReposOptions
+		opts ListSourcegraphDotComIndexableReposOptions
 		want []api.RepoID
 	}{
 		{
 			name: "no opts",
-			want: []api.RepoID{2, 1}, // No private repos returned by default
-		},
-		{
-			name: "only uncloned",
-			opts: ListIndexableReposOptions{CloneStatus: types.CloneStatusNotCloned},
-			want: []api.RepoID{1},
-		},
-		{
-			name: "include private",
-			opts: ListIndexableReposOptions{IncludePrivate: true},
 			want: []api.RepoID{2, 1, 3},
 		},
 		{
-			name: "limit 1",
-			opts: ListIndexableReposOptions{LimitOffset: &LimitOffset{Limit: 1}},
-			want: []api.RepoID{2},
+			name: "only uncloned",
+			opts: ListSourcegraphDotComIndexableReposOptions{CloneStatus: types.CloneStatusNotCloned},
+			want: []api.RepoID{1},
 		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			repos, err := db.Repos().ListIndexableRepos(ctx, tc.opts)
+			repos, err := db.Repos().ListSourcegraphDotComIndexableRepos(ctx, tc.opts)
 			if err != nil {
 				t.Fatal(err)
 			}

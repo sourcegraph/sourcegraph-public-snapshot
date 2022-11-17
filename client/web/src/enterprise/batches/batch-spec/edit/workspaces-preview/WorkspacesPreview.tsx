@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import { mdiAlert, mdiMagnify } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { animated, useSpring } from 'react-spring'
 
@@ -43,10 +44,15 @@ const WAITING_MESSAGES = [
     "So, how's your day? (Still looking for matching workspaces...)",
     'Are you staying hydrated? (Still looking for matching workspaces...)',
     "Hold your horses, we're still not done yet...",
+    "A Go developer walks into a bar and tries to defer their bill, but they can't start a tab. (Sorry.)",
 ]
 
 /* The time to wait until we display the next waiting message, in seconds. */
 const WAITING_MESSAGE_INTERVAL = 10
+
+/** The minimum number of resolved workspaces at which we'll show a warning
+ * about Batch Changes performance. */
+const WORKSPACE_WARNING_MIN_TOTAL_COUNT = 2000
 
 interface WorkspacesPreviewProps {
     isReadOnly?: boolean
@@ -202,7 +208,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                     </div>
                 )}
             </H4>
-            <animated.div style={exampleStyle} className={styles.onExample}>
+            <animated.div style={exampleStyle} className={styles.onExample} aria-hidden={!exampleOpen}>
                 <div ref={exampleReference} className="pt-2 pb-3">
                     {/* Hide the copy button while the example is closed so that it's not focusable. */}
                     <CodeSnippet
@@ -278,6 +284,9 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             {!isReadOnly && (
                 <div className="d-flex flex-column align-items-center w-100 mb-3">
                     {error && <ErrorAlert error={error} className="w-100 mb-0" />}
+                    <VisuallyHidden role="status">
+                        {isWorkspacesPreviewInProgress ? 'Preview loading' : ''}
+                    </VisuallyHidden>
                     <div className={styles.iconContainer} aria-hidden={true}>
                         <PreviewLoadingSpinner
                             className={classNames({ [styles.hidden]: !isWorkspacesPreviewInProgress })}
@@ -286,6 +295,11 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                     </div>
                     {ctaInstructions}
                     {ctaButton}
+                </div>
+            )}
+            {totalCount !== null && totalCount >= WORKSPACE_WARNING_MIN_TOTAL_COUNT && (
+                <div className="d-flex flex-column align-items-center w-100 mb-3">
+                    <CTASizeWarning totalCount={totalCount} />
                 </div>
             )}
             {(hasPreviewed || isReadOnly) && (
@@ -334,3 +348,17 @@ const CTAInstruction: React.FunctionComponent<React.PropsWithChildren<{ active: 
         </animated.div>
     )
 }
+
+const CTASizeWarning: React.FunctionComponent<React.PropsWithChildren<{ totalCount: number }>> = ({ totalCount }) => (
+    <Alert variant="warning">
+        <div className="mb-2">
+            <strong>
+                It's over <s>9000</s> {WORKSPACE_WARNING_MIN_TOTAL_COUNT}!
+            </strong>
+        </div>
+        Batch changes with more than {WORKSPACE_WARNING_MIN_TOTAL_COUNT} workspaces may be unwieldy to manage. We're
+        working on providing more filtering options, and you can continue with this batch change if you want, but you
+        may want to break it into {Math.ceil(totalCount / WORKSPACE_WARNING_MIN_TOTAL_COUNT)} or more batch changes if
+        you can.
+    </Alert>
+)

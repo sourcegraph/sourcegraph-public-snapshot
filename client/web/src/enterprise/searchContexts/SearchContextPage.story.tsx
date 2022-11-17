@@ -2,7 +2,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { NEVER, Observable, of, throwError } from 'rxjs'
 
-import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
+import { SearchContextFields, SearchContextRepositoryRevisionsFields } from '@sourcegraph/search'
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
@@ -21,13 +21,13 @@ const config: Meta = {
 
 export default config
 
-const repositories: ISearchContextRepositoryRevisions[] = [
+const repositories: SearchContextRepositoryRevisionsFields[] = [
     {
         __typename: 'SearchContextRepositoryRevisions',
         repository: {
             __typename: 'Repository',
             name: 'github.com/example/example',
-        } as IRepository,
+        },
         revisions: ['REVISION1', 'REVISION2'],
     },
     {
@@ -35,12 +35,12 @@ const repositories: ISearchContextRepositoryRevisions[] = [
         repository: {
             __typename: 'Repository',
             name: 'github.com/example/really-really-really-really-really-really-long-name',
-        } as IRepository,
+        },
         revisions: ['REVISION3', 'LONG-LONG-LONG-LONG-LONG-LONG-LONG-LONG-REVISION'],
     },
 ]
 
-const mockContext: ISearchContext = {
+const mockContext: SearchContextFields = {
     __typename: 'SearchContext',
     id: '1',
     spec: 'public-ctx',
@@ -55,9 +55,9 @@ const mockContext: ISearchContext = {
     viewerCanManage: true,
 }
 
-const fetchPublicContext = (): Observable<ISearchContext> => of(mockContext)
+const fetchPublicContext = (): Observable<SearchContextFields> => of(mockContext)
 
-const fetchPrivateContext = (): Observable<ISearchContext> =>
+const fetchPrivateContext = (): Observable<SearchContextFields> =>
     of({
         ...mockContext,
         spec: 'private-ctx',
@@ -66,7 +66,7 @@ const fetchPrivateContext = (): Observable<ISearchContext> =>
         public: false,
     })
 
-const fetchAutoDefinedContext = (): Observable<ISearchContext> =>
+const fetchAutoDefinedContext = (): Observable<SearchContextFields> =>
     of({
         ...mockContext,
         autoDefined: true,

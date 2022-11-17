@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type externalAccountResolver struct {
@@ -50,8 +51,12 @@ func (r *externalAccountResolver) ServiceType() string { return r.account.Servic
 func (r *externalAccountResolver) ServiceID() string   { return r.account.ServiceID }
 func (r *externalAccountResolver) ClientID() string    { return r.account.ClientID }
 func (r *externalAccountResolver) AccountID() string   { return r.account.AccountID }
-func (r *externalAccountResolver) CreatedAt() DateTime { return DateTime{Time: r.account.CreatedAt} }
-func (r *externalAccountResolver) UpdatedAt() DateTime { return DateTime{Time: r.account.UpdatedAt} }
+func (r *externalAccountResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.account.CreatedAt}
+}
+func (r *externalAccountResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.account.UpdatedAt}
+}
 
 func (r *externalAccountResolver) RefreshURL() *string {
 	// TODO(sqs): Not supported.

@@ -83,13 +83,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 	// run in a clean VM.
 	commandLogger := command.NewLogger(h.store, job, record.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
 	defer func() {
-		flushErr := commandLogger.Flush()
-		if flushErr != nil {
-			if err != nil {
-				err = errors.Append(err, flushErr)
-			} else {
-				err = flushErr
-			}
+		if flushErr := commandLogger.Flush(); flushErr != nil {
+			err = errors.Append(err, flushErr)
 		}
 	}()
 
@@ -146,8 +141,14 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 
 	// Invoke each docker step sequentially
 	for i, dockerStep := range job.DockerSteps {
+		var key string
+		if dockerStep.Key != "" {
+			key = fmt.Sprintf("step.docker.%s", dockerStep.Key)
+		} else {
+			key = fmt.Sprintf("step.docker.%d", i)
+		}
 		dockerStepCommand := command.CommandSpec{
-			Key:        fmt.Sprintf("step.docker.%d", i),
+			Key:        key,
 			Image:      dockerStep.Image,
 			ScriptPath: workspace.ScriptFilenames()[i],
 			Dir:        dockerStep.Dir,
@@ -164,15 +165,22 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 
 	// Invoke each src-cli step sequentially
 	for i, cliStep := range job.CliSteps {
-		logger.Info(fmt.Sprintf("Running src-cli step #%d", i))
+		var key string
+		if cliStep.Key != "" {
+			key = fmt.Sprintf("step.src.%s", cliStep.Key)
+		} else {
+			key = fmt.Sprintf("step.src.%d", i)
+		}
 
 		cliStepCommand := command.CommandSpec{
-			Key:       fmt.Sprintf("step.src.%d", i),
+			Key:       key,
 			Command:   append([]string{"src"}, cliStep.Commands...),
 			Dir:       cliStep.Dir,
 			Env:       cliStep.Env,
 			Operation: h.operations.Exec,
 		}
+
+		logger.Info(fmt.Sprintf("Running src-cli step #%d", i))
 
 		if err := runner.Run(ctx, cliStepCommand); err != nil {
 			return errors.Wrap(err, "failed to perform src-cli step")

@@ -115,6 +115,10 @@ export const calculateMatchGroupsSorted = (
     maxMatches: number,
     context: number
 ): { matches: MatchItem[]; grouped: MatchGroup[] } => {
+    if (matches.length === 0) {
+        return { matches: [], grouped: [] }
+    }
+
     const sortedMatches = matches.sort((a, b) => {
         if (a.startLine < b.startLine) {
             return -1

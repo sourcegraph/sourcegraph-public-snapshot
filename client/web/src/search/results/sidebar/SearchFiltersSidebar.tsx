@@ -2,7 +2,7 @@ import { FC, ReactNode, ReactElement, useCallback, useMemo, HTMLAttributes, memo
 
 import { mdiInformationOutline } from '@mdi/js'
 
-import { QueryStateUpdate, QueryUpdate } from '@sourcegraph/search'
+import { QueryStateUpdate, QueryUpdate, SearchPatternType } from '@sourcegraph/search'
 import {
     SearchSidebar,
     SearchSidebarSection,
@@ -14,7 +14,6 @@ import {
     getFiltersOfKind,
     useLastRepoName,
 } from '@sourcegraph/search-ui'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -108,7 +107,8 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
             {showAggregationPanel && enableSearchAggregations && aggregationUIMode === AggregationUIMode.Sidebar && (
                 <SearchSidebarSection
                     sectionId={SectionID.GROUPED_BY}
-                    header={<CustomAggregationHeading telemetryService={props.telemetryService} />}
+                    header="Group results by"
+                    postHeader={<CustomAggregationHeading telemetryService={props.telemetryService} />}
                     // SearchAggregations content contains component that makes a few API network requests
                     // in order to prevent these calls if this section is collapsed we turn off force render
                     // for collapse section component
@@ -136,16 +136,15 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 })}
             </SearchSidebarSection>
 
-            <SearchSidebarSection sectionId={SectionID.LANGUAGES} header="Languages">
+            <SearchSidebarSection sectionId={SectionID.LANGUAGES} header="Languages" minItems={2}>
                 {getDynamicFilterLinks(filters, ['lang'], onDynamicFilterClicked, label => `Search ${label} files`)}
             </SearchSidebarSection>
 
             <SearchSidebarSection
                 sectionId={SectionID.REPOSITORIES}
                 header="Repositories"
-                showSearch={true}
-                minItems={1}
-                noResultText={getRepoFilterNoResultText}
+                searchOptions={{ ariaLabel: 'Find repositories', noResultText: getRepoFilterNoResultText }}
+                minItems={2}
             >
                 {getRepoFilterLinks(repoFilters, onDynamicFilterClicked)}
             </SearchSidebarSection>
@@ -161,8 +160,10 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
                 <SearchSidebarSection
                     sectionId={SectionID.REVISIONS}
                     header="Revisions"
-                    showSearch={true}
-                    clearSearchOnChange={repoName}
+                    searchOptions={{
+                        ariaLabel: 'Find revisions',
+                        clearSearchOnChange: repoName,
+                    }}
                 >
                     {getRevisions({ repoName, onFilterClick: onSearchSubmit })}
                 </SearchSidebarSection>
@@ -171,10 +172,12 @@ export const SearchFiltersSidebar: FC<PropsWithChildren<SearchFiltersSidebarProp
             <SearchSidebarSection
                 sectionId={SectionID.SEARCH_REFERENCE}
                 header="Search reference"
-                showSearch={true}
-                // search reference should always preserve the filter
-                // (false is just an arbitrary but static value)
-                clearSearchOnChange={false}
+                searchOptions={{
+                    ariaLabel: 'Find filters',
+                    // search reference should always preserve the filter
+                    // (false is just an arbitrary but static value)
+                    clearSearchOnChange: false,
+                }}
             >
                 {getSearchReferenceFactory({ telemetryService, setQueryState: onNavbarQueryChange })}
             </SearchSidebarSection>
@@ -196,15 +199,12 @@ const getRepoFilterNoResultText = (repoFilterLinks: ReactElement[]): ReactNode =
 )
 
 const CustomAggregationHeading: FC<TelemetryProps> = ({ telemetryService }) => (
-    <>
-        Group results by
-        <Tooltip content="Aggregation is based on results with no count limitation (count:all).">
-            <Icon
-                aria-label="Info icon about aggregation run"
-                size="md"
-                svgPath={mdiInformationOutline}
-                onMouseEnter={() => telemetryService.log(GroupResultsPing.InfoIconHover)}
-            />
-        </Tooltip>
-    </>
+    <Tooltip content="Aggregation is based on results with no count limitation (count:all).">
+        <Icon
+            aria-label="(Aggregation is based on results with no count limitation (count:all).)"
+            size="md"
+            svgPath={mdiInformationOutline}
+            onMouseEnter={() => telemetryService.log(GroupResultsPing.InfoIconHover)}
+        />
+    </Tooltip>
 )

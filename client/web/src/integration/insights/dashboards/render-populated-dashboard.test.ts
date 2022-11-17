@@ -71,7 +71,9 @@ describe('Code insights populated dashboard', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/EACH_TYPE_OF_INSIGHT')
 
-        const dashboardSelectButton = await driver.page.waitForSelector('[data-testid="dashboard-select-button"')
+        const dashboardSelectButton = await driver.page.waitForSelector(
+            '[aria-label="Choose a dashboard, Each Type of Insight"]'
+        )
 
         assert(dashboardSelectButton)
 
@@ -88,6 +90,12 @@ describe('Code insights populated dashboard', () => {
             SEARCH_BASED_INSIGHT.presentation.title,
             COMPUTE_INSIGHT.presentation.title,
         ]
+
+        await driver.page.waitForSelector(`[aria-label="${CAPTURE_GROUP_INSIGHT.presentation.title} insight`)
+        await driver.page.waitForSelector(`[aria-label="${LANG_STATS_INSIGHT.presentation.title} insight`)
+        await driver.page.waitForSelector(`[aria-label="${SEARCH_BASED_INSIGHT.presentation.title} insight`)
+        await driver.page.waitForSelector(`[aria-label="${COMPUTE_INSIGHT.presentation.title} insight`)
+
         const foundLinks = await getLinks(driver.page, expectedLinks)
 
         assert.deepStrictEqual(expectedLinks, foundLinks)

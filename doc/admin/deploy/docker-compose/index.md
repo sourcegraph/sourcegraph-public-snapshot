@@ -4,12 +4,12 @@ Setting up Docker applications with [multiple containers](https://www.docker.com
 
 This guide will take you through how to install Sourcegraph with Docker Compose on a server, which could be the local machine, a server on a local network, or cloud-hosted server. You can also follow one of the available *cloud-specific guides* listed below to prepare and install Sourcegraph on a supported cloud environment:
 
-- [Deploy Sourcegraph with Docker Compose on Amazon Web Services](../../deploy/docker-compose/aws.md)
-  - [Launch a Sourcegraph AMI Instance](../../deploy/aws-ami.md)
-  - [Launch a Sourcegraph Instance with AWS One-Click](../../deploy/docker-compose/aws-oneclick.md)
-- [Deploy Sourcegraph with Docker Compose on Azure](../../deploy/docker-compose/azure.md)
-- [Deploy Sourcegraph with Docker Compose on DigitalOcean](../../deploy/docker-compose/digitalocean.md)
-- [Deploy Sourcegraph with Docker Compose on Google Cloud](../../deploy/docker-compose/google_cloud.md)
+<div class="getting-started">
+  <a class="btn btn-secondary text-center" href="aws">AWS</a>
+  <a class="btn btn-secondary text-center" href="azure">Azure</a>
+  <a class="btn btn-secondary text-center" href="digitalocean">DigitalOcean</a>
+  <a class="btn btn-secondary text-center" href="google_cloud">Google Cloud</a>
+</div>
 
 ## Prerequisites
 
@@ -44,7 +44,11 @@ A step by step guide to install Sourcegraph with Docker Compose.
 
 <span class="badge badge-note">RECOMMENDED</span> We **strongly recommend** you to deploy Sourcegraph using your own fork (or private copy) of the deployment repository as this allows you to track customizations made to the [Sourcegraph docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) easily. It also makes upgrading your instance easier in the future.
 
+> NOTE: When forking the repository, make sure the box labeled, "Copy the master branch only", is unchecked. Checking this box will prevent the repository tags from being copied and will result in an error in a later step. 
+
+
 > WARNING: In GitHub, the forks of public repositories are also public. Create a private copy following the [official docs on duplicating a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository) is strongly recommended if you plan to store secrets (SSL certificates, external Postgres credentials, etc.) within the repository. However, the preferable approach would be to use a Secrets Management Service. 
+
 
 #### Create a public or private copy of the deployment repository
 
@@ -114,7 +118,7 @@ Continue with the following steps *after* you have created a public or private c
 
 ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v4.0.1"
+  export SOURCEGRAPH_VERSION="v4.1.3"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
 ```

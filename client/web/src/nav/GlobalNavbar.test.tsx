@@ -47,6 +47,10 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     showKeyboardShortcutsHelp: () => undefined,
+    setFuzzyFinderIsVisible: () => undefined,
+    notebooksEnabled: true,
+    codeMonitoringEnabled: true,
+    showFeedbackModal: () => undefined,
 }
 
 describe('GlobalNavbar', () => {

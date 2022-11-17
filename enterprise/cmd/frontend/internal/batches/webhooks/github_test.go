@@ -16,6 +16,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	gh "github.com/google/go-github/v43/github"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -25,9 +26,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -153,12 +156,18 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = syncer.SyncChangeset(ctx, s, src, githubRepo, changeset)
+
+		gsClient := gitserver.NewMockClient()
+		gsClient.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+			return "", nil
+		})
+
+		err = syncer.SyncChangeset(ctx, s, gsClient, src, githubRepo, changeset)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		hook := NewGitHubWebhook(s)
+		hook := NewGitHubWebhook(s, gsClient)
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
 		if err != nil {
@@ -177,9 +186,11 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
 						handler := webhooks.GitHubWebhook{
-							ExternalServices: esStore,
+							WebhookRouter: &webhooks.WebhookRouter{
+								DB: db,
+							},
 						}
-						hook.Register(&handler)
+						hook.Register(handler.WebhookRouter)
 
 						u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://example.com/")
 						if err != nil {
@@ -238,8 +249,9 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			// unexpected input.
 			n := 10156
 			action := "this is a bad action"
-
-			if err := hook.handleGitHubWebhook(ctx, extSvc, &gh.PullRequestEvent{
+			u, err := extsvc.NewCodeHostBaseURL("github.com")
+			require.NoError(t, err)
+			if err := hook.handleGitHubWebhook(ctx, db, u, &gh.PullRequestEvent{
 				Number: &n,
 				Repo: &gh.Repository{
 					NodeID: &githubRepo.ExternalRepo.ID,

@@ -6,10 +6,12 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/background/cratesyncer"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type cratesSyncerJob struct{}
@@ -27,10 +29,18 @@ func (j *cratesSyncerJob) Config() []env.Config {
 }
 
 func (j *cratesSyncerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
 
-	return cratesyncer.NewCrateSyncer(services.DependenciesService), nil
+	gitserverClient := gitserver.NewClient(db)
+	dependenciesService := dependencies.GetService(db)
+
+	return dependencies.CrateSyncerJob(
+		dependenciesService,
+		gitserverClient,
+		db.ExternalServices(),
+		observation.ContextWithLogger(logger),
+	), nil
 }

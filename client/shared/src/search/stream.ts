@@ -5,6 +5,7 @@ import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operator
 import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { SearchMode } from '@sourcegraph/search'
 
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../schema'
@@ -40,6 +41,7 @@ export interface PathMatch {
     repoLastFetched?: string
     branches?: string[]
     commit?: string
+    debug?: string
 }
 
 export interface ContentMatch {
@@ -54,6 +56,7 @@ export interface ContentMatch {
     lineMatches?: LineMatch[]
     chunkMatches?: ChunkMatch[]
     hunks?: DecoratedHunk[]
+    debug?: string
 }
 
 export interface DecoratedHunk {
@@ -79,7 +82,7 @@ export interface Location {
     column: number
 }
 
-interface LineMatch {
+export interface LineMatch {
     line: string
     lineNumber: number
     offsetAndLengths: number[][]
@@ -102,6 +105,7 @@ export interface SymbolMatch {
     branches?: string[]
     commit?: string
     symbols: MatchedSymbol[]
+    debug?: string
 }
 
 export interface MatchedSymbol {
@@ -128,6 +132,8 @@ export interface CommitMatch {
     message: string
     authorName: string
     authorDate: string
+    committerName: string
+    committerDate: string
     repoStars?: number
     repoLastFetched?: string
 
@@ -434,6 +440,8 @@ export interface StreamSearchOptions {
     patternType: SearchPatternType
     caseSensitive: boolean
     trace: string | undefined
+    featureOverrides?: string[]
+    searchMode?: SearchMode
     sourcegraphURL?: string
     decorationKinds?: string[]
     decorationContextLines?: number
@@ -448,8 +456,10 @@ function initiateSearchStream(
         patternType,
         caseSensitive,
         trace,
+        featureOverrides,
         decorationKinds,
         decorationContextLines,
+        searchMode = SearchMode.Precise,
         displayLimit = 1500,
         sourcegraphURL = '',
         chunkMatches = false,
@@ -463,6 +473,7 @@ function initiateSearchStream(
             ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
             ['v', version],
             ['t', patternType as string],
+            ['sm', searchMode.toString()],
             ['dl', '0'],
             ['dk', (decorationKinds || ['html']).join('|')],
             ['dc', (decorationContextLines || '1').toString()],
@@ -471,6 +482,9 @@ function initiateSearchStream(
         ]
         if (trace) {
             parameters.push(['trace', trace])
+        }
+        for (const v of featureOverrides || []) {
+            parameters.push(['feat', v])
         }
         const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
 

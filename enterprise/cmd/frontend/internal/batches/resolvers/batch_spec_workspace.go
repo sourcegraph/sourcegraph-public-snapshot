@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -14,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	gql "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -121,10 +122,84 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 		return nil, nil
 	}
 
+	if r.execution != nil && r.execution.Version == 2 {
+		skippedSteps, err := batcheslib.SkippedStepsForRepo(r.batchSpec, r.repoResolver.Name(), r.workspace.FileMatches)
+		if err != nil {
+			return nil, err
+		}
+
+		resolvers := make([]graphqlbackend.BatchSpecWorkspaceStepResolver, 0, len(r.batchSpec.Steps))
+		for idx, step := range r.batchSpec.Steps {
+			skipped := false
+
+			// Mark all steps as skipped when a cached result was found.
+			if r.CachedResultFound() {
+				skipped = true
+			}
+
+			// Mark all steps as skipped when a workspace is skipped.
+			if r.workspace.Skipped {
+				skipped = true
+			}
+
+			// If we have marked the step as to-be-skipped, we have to translate
+			// that here into the workspace step info.
+			if _, ok := skippedSteps[idx]; ok {
+				skipped = true
+			}
+
+			var (
+				entry workerutil.ExecutionLogEntry
+				ok    bool
+			)
+			if r.execution != nil {
+				entry, ok = findExecutionLogEntry(r.execution, fmt.Sprintf("step.docker.step.%d.run", idx))
+			}
+
+			resolver := &batchSpecWorkspaceStepV2Resolver{
+				index:         idx,
+				step:          step,
+				skipped:       skipped,
+				logEntry:      entry,
+				logEntryFound: ok,
+				store:         r.store,
+				repo:          r.repoResolver,
+				baseRev:       r.workspace.Commit,
+			}
+
+			// See if we have a cache result for this step.
+			if cachedResult, ok := r.workspace.StepCacheResult(idx + 1); ok {
+				resolver.skipped = true
+				resolver.cachedResult = cachedResult.Value
+			} else if r.execution != nil {
+				e, ok := findExecutionLogEntry(r.execution, fmt.Sprintf("step.docker.step.%d.post", idx))
+				if ok {
+					ev := btypes.ParseJSONLogsFromOutput(e.Out)
+					for _, e := range ev {
+						if e.Operation == batcheslib.LogEventOperationCacheAfterStepResult {
+							m, ok := e.Metadata.(*batcheslib.CacheAfterStepResultMetadata)
+							if ok {
+								resolver.cachedResult = &m.Value
+							}
+						}
+					}
+				}
+			}
+
+			resolvers = append(resolvers, resolver)
+		}
+
+		return resolvers, nil
+	}
+
 	var stepInfo = make(map[int]*btypes.StepInfo)
 	var entryExitCode *int
 	if r.execution != nil {
-		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
+		entry, ok := findExecutionLogEntry(r.execution, "step.src.batch-exec")
+		// Backcompat: The step was unnamed before.
+		if !ok {
+			entry, ok = findExecutionLogEntry(r.execution, "step.src.0")
+		}
 		if ok {
 			logLines := btypes.ParseJSONLogsFromOutput(entry.Out)
 			stepInfo = btypes.ParseLogLines(entry, logLines)
@@ -161,11 +236,11 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 
 		// If we have marked the step as to-be-skipped, we have to translate
 		// that here into the workspace step info.
-		if _, ok := skippedSteps[int32(idx)]; ok {
+		if _, ok := skippedSteps[idx]; ok {
 			si.Skipped = true
 		}
 
-		resolver := &batchSpecWorkspaceStepResolver{
+		resolver := &batchSpecWorkspaceStepV1Resolver{
 			index:    idx,
 			step:     step,
 			stepInfo: si,
@@ -193,6 +268,9 @@ func (r *batchSpecWorkspaceResolver) Step(args graphqlbackend.BatchSpecWorkspace
 	// Check if step exists.
 	if int(args.Index) > len(r.batchSpec.Steps) {
 		return nil, nil
+	}
+	if args.Index <= 0 {
+		return nil, errors.New("invalid step index")
 	}
 
 	resolvers, err := r.computeStepResolvers()
@@ -242,7 +320,7 @@ func (r *batchSpecWorkspaceResolver) Stages() graphqlbackend.BatchSpecWorkspaceS
 	return &batchSpecWorkspaceStagesResolver{store: r.store, execution: r.execution}
 }
 
-func (r *batchSpecWorkspaceResolver) StartedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceResolver) StartedAt() *gqlutil.DateTime {
 	if r.workspace.Skipped {
 		return nil
 	}
@@ -252,10 +330,10 @@ func (r *batchSpecWorkspaceResolver) StartedAt() *graphqlbackend.DateTime {
 	if r.execution.StartedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.execution.StartedAt}
+	return &gqlutil.DateTime{Time: r.execution.StartedAt}
 }
 
-func (r *batchSpecWorkspaceResolver) QueuedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceResolver) QueuedAt() *gqlutil.DateTime {
 	if r.workspace.Skipped {
 		return nil
 	}
@@ -265,10 +343,10 @@ func (r *batchSpecWorkspaceResolver) QueuedAt() *graphqlbackend.DateTime {
 	if r.execution.CreatedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.execution.CreatedAt}
+	return &gqlutil.DateTime{Time: r.execution.CreatedAt}
 }
 
-func (r *batchSpecWorkspaceResolver) FinishedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceResolver) FinishedAt() *gqlutil.DateTime {
 	if r.workspace.Skipped {
 		return nil
 	}
@@ -278,7 +356,7 @@ func (r *batchSpecWorkspaceResolver) FinishedAt() *graphqlbackend.DateTime {
 	if r.execution.FinishedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.execution.FinishedAt}
+	return &gqlutil.DateTime{Time: r.execution.FinishedAt}
 }
 
 func (r *batchSpecWorkspaceResolver) FailureMessage() *string {
@@ -425,7 +503,7 @@ func (r *batchSpecWorkspaceResolver) PlaceInGlobalQueue() *int32 {
 	return &i32
 }
 
-func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*gql.ExecutorResolver, error) {
+func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*graphqlbackend.ExecutorResolver, error) {
 	if r.execution == nil {
 		return nil, nil
 	}
@@ -437,12 +515,15 @@ func (r *batchSpecWorkspaceResolver) Executor(ctx context.Context) (*gql.Executo
 		return nil, nil
 	}
 
-	executor, err := gql.New(r.store.DatabaseDB()).ExecutorByHostname(ctx, r.execution.WorkerHostname)
+	e, found, err := r.store.DatabaseDB().Executors().GetByHostname(ctx, r.execution.WorkerHostname)
 	if err != nil {
 		return nil, err
 	}
+	if !found {
+		return nil, nil
+	}
 
-	return executor, nil
+	return graphqlbackend.NewExecutorResolver(e), nil
 }
 
 type batchSpecWorkspaceStagesResolver struct {
@@ -453,12 +534,32 @@ type batchSpecWorkspaceStagesResolver struct {
 var _ graphqlbackend.BatchSpecWorkspaceStagesResolver = &batchSpecWorkspaceStagesResolver{}
 
 func (r *batchSpecWorkspaceStagesResolver) Setup() []graphqlbackend.ExecutionLogEntryResolver {
-	return r.executionLogEntryResolversWithPrefix("setup.")
+	res := r.executionLogEntryResolversWithPrefix("setup.")
+	// V2 execution has an additional "setup" step that applies the git diff of the previous
+	// cached result. This shall land under setup, so we fetch it additionally here.
+	a, found := findExecutionLogEntry(r.execution, "step.docker.apply-diff")
+	if found {
+		res = append(res, graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), a))
+	}
+	return res
 }
 
-func (r *batchSpecWorkspaceStagesResolver) SrcExec() graphqlbackend.ExecutionLogEntryResolver {
+func (r *batchSpecWorkspaceStagesResolver) SrcExec() []graphqlbackend.ExecutionLogEntryResolver {
+	// V1 execution uses a single `step.src.batch-exec` step, for backcompat we return just that
+	// here.
+	if entry, ok := findExecutionLogEntry(r.execution, "step.src.batch-exec"); ok {
+		return []graphqlbackend.ExecutionLogEntryResolver{graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)}
+	}
+
+	// Backcompat: The step was unnamed before.
 	if entry, ok := findExecutionLogEntry(r.execution, "step.src.0"); ok {
-		return graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
+		return []graphqlbackend.ExecutionLogEntryResolver{graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)}
+	}
+
+	if r.execution.Version == 2 {
+		// V2 execution: There are multiple execution steps involved in running
+		// a spec now: For each step N {N-pre, N, N-post}.
+		return r.executionLogEntryResolversWithPrefix("step.docker.step.")
 	}
 
 	return nil

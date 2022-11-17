@@ -11,14 +11,12 @@ import (
 	"strconv"
 	"time"
 
-	"go.opentelemetry.io/otel"
-	"golang.org/x/time/rate"
-
 	"github.com/getsentry/sentry-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -27,8 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -142,14 +139,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		services, err := codeintel.GetServices(codeintel.Databases{
-			DB:          db,
-			CodeIntelDB: stores.NoopDB,
-		})
-		if err != nil {
-			logger.Fatal("failed to initialize codeintelservices", log.Error(err))
-		}
-		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(services.DependenciesService), repos.ObservedSource(sourcerLogger, m))
+		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.GetService(db)), repos.ObservedSource(sourcerLogger, m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
@@ -552,11 +542,10 @@ func syncScheduler(ctx context.Context, logger log.Logger, sched *repos.UpdateSc
 		if envvar.SourcegraphDotComMode() {
 			// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
 			// scheduler
-			opts := database.ListIndexableReposOptions{
-				CloneStatus:    types.CloneStatusNotCloned,
-				IncludePrivate: true,
+			opts := database.ListSourcegraphDotComIndexableReposOptions{
+				CloneStatus: types.CloneStatusNotCloned,
 			}
-			indexable, err := baseRepoStore.ListIndexableRepos(ctx, opts)
+			indexable, err := baseRepoStore.ListSourcegraphDotComIndexableRepos(ctx, opts)
 			if err != nil {
 				logger.Error("listing indexable repos", log.Error(err))
 				return

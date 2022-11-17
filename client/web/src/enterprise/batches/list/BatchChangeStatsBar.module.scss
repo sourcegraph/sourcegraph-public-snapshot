@@ -1,0 +1,33 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.stats-bar {
+    gap: 1rem;
+    padding: 1.5rem;
+    background-color: var(--color-bg-1);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.left-side {
+    @media (--sm-breakpoint-up) {
+        flex-grow: 1;
+        margin-bottom: 0;
+    }
+    display: flex;
+    margin-bottom: 1rem;
+}
+
+.right-side {
+    @media (--sm-breakpoint-up) {
+        justify-content: flex-end;
+    }
+    display: flex;
+    flex-shrink: 0;
+}
+
+.stat-label {
+    font-weight: normal;
+    font-size: 0.875rem;
+}

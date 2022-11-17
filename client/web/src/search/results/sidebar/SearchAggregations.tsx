@@ -2,7 +2,7 @@ import { FC, useEffect, useState, memo } from 'react'
 
 import { mdiArrowExpand } from '@mdi/js'
 
-import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchAggregationMode, SearchPatternType } from '@sourcegraph/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -58,6 +58,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
         proactive,
         caseSensitive,
         extendedTimeout,
+        telemetryService,
     })
 
     // When query is updated reset extendedTimeout as per business rules
@@ -112,7 +113,7 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
     }
 
     return (
-        <article className="pt-2">
+        <div className="pt-2">
             <AggregationModeControls
                 availability={data?.searchQueryAggregate?.modeAvailability}
                 loading={loading}
@@ -153,6 +154,8 @@ export const SearchAggregations: FC<SearchAggregationsProps> = memo(props => {
                     </footer>
                 </>
             )}
-        </article>
+        </div>
     )
 })
+
+SearchAggregations.displayName = 'SearchAggregations'

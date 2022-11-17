@@ -119,11 +119,12 @@ type extendedDriver struct {
 // CheckNamedValue into one that does, by accessing the underlying conn from the
 // original driver that does implement these methods.
 type extendedConn struct {
-	driver.ExecerContext
-	driver.QueryerContext
 	driver.Conn
 	driver.ConnPrepareContext
 	driver.ConnBeginTx
+
+	execerContext  driver.ExecerContext
+	queryerContext driver.QueryerContext
 }
 
 var _ driver.Pinger = &extendedConn{}
@@ -161,11 +162,11 @@ func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 
 	// Build the extended connection.
 	return &extendedConn{
-		ExecerContext:      c.(any).(driver.ExecerContext),
-		QueryerContext:     c.(any).(driver.QueryerContext),
 		Conn:               c.(any).(driver.Conn),
 		ConnPrepareContext: c.(any).(driver.ConnPrepareContext),
 		ConnBeginTx:        c.(any).(driver.ConnBeginTx),
+		execerContext:      c.(any).(driver.ExecerContext),
+		queryerContext:     c.(any).(driver.QueryerContext),
 	}, nil
 }
 
@@ -186,6 +187,16 @@ func (n *extendedConn) ResetSession(ctx context.Context) error {
 
 func (n *extendedConn) CheckNamedValue(namedValue *driver.NamedValue) error {
 	return n.rawConn().(driver.NamedValueChecker).CheckNamedValue(namedValue)
+}
+
+func (n *extendedConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	ctx, query = instrumentQuery(ctx, query, len(args))
+	return n.execerContext.ExecContext(ctx, query, args)
+}
+
+func (n *extendedConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	ctx, query = instrumentQuery(ctx, query, len(args))
+	return n.queryerContext.QueryContext(ctx, query, args)
 }
 
 func registerPostgresProxy() {

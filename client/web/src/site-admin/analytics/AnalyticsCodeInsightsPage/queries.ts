@@ -1,14 +1,16 @@
 import { gql } from '@sourcegraph/http-client'
 
 const analyticsStatItemFragment = gql`
-    fragment AnalyticsStatItemFragment on AnalyticsStatItem {
+    fragment InsightsStatItemFragment on AnalyticsStatItem {
         nodes {
             date
             count
+            uniqueUsers
             registeredUsers
         }
         summary {
             totalCount
+            totalUniqueUsers
             totalRegisteredUsers
         }
     }
@@ -20,10 +22,10 @@ export const INSIGHTS_STATISTICS = gql`
             analytics {
                 codeInsights(dateRange: $dateRange, grouping: $grouping) {
                     insightHovers {
-                        ...AnalyticsStatItemFragment
+                        ...InsightsStatItemFragment
                     }
                     insightDataPointClicks {
-                        ...AnalyticsStatItemFragment
+                        ...InsightsStatItemFragment
                     }
                 }
             }

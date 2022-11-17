@@ -12,10 +12,11 @@ import (
 	"go.opentelemetry.io/otel"
 
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
+	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/lsifuploadstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -116,12 +117,15 @@ func main() {
 	}
 
 	// Initialize worker
-	worker := services.UploadsService.NewWorker(
+	worker := uploads.NewUploadProcessorJob(
+		services.UploadsService,
+		db,
 		uploadStore,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
 		config.WorkerPollInterval,
 		config.MaximumRuntimePerJob,
+		observationContext,
 	)
 
 	// Initialize health server
@@ -163,7 +167,7 @@ func mustInitializeDB() *sql.DB {
 	return sqlDB
 }
 
-func mustInitializeCodeIntelDB() stores.CodeIntelDB {
+func mustInitializeCodeIntelDB() codeintelshared.CodeIntelDB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
@@ -173,7 +177,7 @@ func mustInitializeCodeIntelDB() stores.CodeIntelDB {
 		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
 
-	return stores.NewCodeIntelDB(db)
+	return codeintelshared.NewCodeIntelDB(db)
 }
 
 func makeObservationContext(observationContext *observation.Context, withHoney bool) *observation.Context {

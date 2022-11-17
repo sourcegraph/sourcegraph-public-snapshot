@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 // This file just contains stub GraphQL resolvers and data types for Code Insights which merely
@@ -15,7 +16,6 @@ import (
 // InsightsResolver is the root resolver.
 type InsightsResolver interface {
 	// Queries
-	Insights(ctx context.Context, args *InsightsArgs) (InsightConnectionResolver, error)
 	InsightsDashboards(ctx context.Context, args *InsightsDashboardsArgs) (InsightsDashboardConnectionResolver, error)
 	InsightViews(ctx context.Context, args *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
 
@@ -39,12 +39,12 @@ type InsightsResolver interface {
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
+	InsightViewDebug(ctx context.Context, args InsightViewDebugArgs) (InsightViewDebugResolver, error)
 }
 
 type SearchInsightLivePreviewArgs struct {
 	Input SearchInsightLivePreviewInput
 }
-
 type SearchInsightPreviewArgs struct {
 	Input SearchInsightPreviewInput
 }
@@ -75,22 +75,31 @@ type InsightsArgs struct {
 	Ids *[]graphql.ID
 }
 
+type InsightViewDebugArgs struct {
+	Id graphql.ID
+}
+
 type InsightsDataPointResolver interface {
-	DateTime() DateTime
+	DateTime() gqlutil.DateTime
 	Value() float64
 }
 
+type InsightViewDebugResolver interface {
+	Raw(context.Context) ([]string, error)
+}
 type InsightStatusResolver interface {
-	TotalPoints() int32
-	PendingJobs() int32
-	CompletedJobs() int32
-	FailedJobs() int32
-	BackfillQueuedAt() *DateTime
+	TotalPoints(context.Context) (int32, error)
+	PendingJobs(context.Context) (int32, error)
+	CompletedJobs(context.Context) (int32, error)
+	FailedJobs(context.Context) (int32, error)
+	BackfillQueuedAt(context.Context) *gqlutil.DateTime
+	IsLoadingData(context.Context) (*bool, error)
+	IncompleteDatapoints(ctx context.Context) ([]IncompleteDatapointAlert, error)
 }
 
 type InsightsPointsArgs struct {
-	From             *DateTime
-	To               *DateTime
+	From             *gqlutil.DateTime
+	To               *gqlutil.DateTime
 	IncludeRepoRegex *string
 	ExcludeRepoRegex *string
 }
@@ -118,7 +127,7 @@ type InsightConnectionResolver interface {
 
 type InsightDirtyQueryResolver interface {
 	Reason(ctx context.Context) string
-	Time(ctx context.Context) DateTime
+	Time(ctx context.Context) gqlutil.DateTime
 	Count(ctx context.Context) int32
 }
 
@@ -299,13 +308,11 @@ type InsightSeriesQueryStatusResolver interface {
 	Failed(ctx context.Context) (int32, error)
 	Queued(ctx context.Context) (int32, error)
 }
-
 type InsightViewFiltersResolver interface {
 	IncludeRepoRegex(ctx context.Context) (*string, error)
 	ExcludeRepoRegex(ctx context.Context) (*string, error)
 	SearchContexts(ctx context.Context) (*[]string, error)
 }
-
 type InsightViewSeriesDisplayOptionsResolver interface {
 	SortOptions(ctx context.Context) (InsightViewSeriesSortOptionsResolver, error)
 	Limit(ctx context.Context) (*int32, error)
@@ -448,4 +455,13 @@ type DeleteInsightViewArgs struct {
 type SearchInsightLivePreviewSeriesResolver interface {
 	Points(ctx context.Context) ([]InsightsDataPointResolver, error)
 	Label(ctx context.Context) (string, error)
+}
+
+type IncompleteDatapointAlert interface {
+	ToTimeoutDatapointAlert() (TimeoutDatapointAlert, bool)
+	Time() gqlutil.DateTime
+}
+
+type TimeoutDatapointAlert interface {
+	Time() gqlutil.DateTime
 }

@@ -23,7 +23,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -82,7 +81,15 @@ type RepoStore interface {
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	GetRepoDescriptionsByIDs(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
-	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
+	// ListSourcegraphDotComIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
+	// This includes all non-forked, non-archived repos with >= listSourcegraphDotComIndexableReposMinStars stars,
+	// plus all repos from the following data sources:
+	// - src.fedoraproject.org
+	// - maven
+	// - NPM
+	// - JDK
+	// THIS QUERY SHOULD NEVER BE USED OUTSIDE OF SOURCEGRAPH.COM.
+	ListSourcegraphDotComIndexableRepos(context.Context, ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error)
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
 	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
@@ -408,7 +415,6 @@ func (r *repoKVPs) Scan(value any) error {
 }
 
 const listReposQueryFmtstr = `
--- source: internal/database/repos.go:list
 %%s -- Populates "queryPrefix", i.e. CTEs
 SELECT %s
 FROM repo
@@ -564,6 +570,8 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = &struct{}{}
 	case extsvc.TypeRustPackages:
 		r.Metadata = &struct{}{}
+	case extsvc.TypeRubyPackages:
+		r.Metadata = &struct{}{}
 	default:
 		logger.Warn("unknown service type", log.String("type", typ))
 		return nil
@@ -677,12 +685,6 @@ type ReposListOptions struct {
 	// OnlyPrivate excludes non-private repositories from the list.
 	OnlyPrivate bool
 
-	// Index when set will only include repositories which should be indexed
-	// if true. If false it will exclude repositories which should be
-	// indexed. An example use case of this is for indexed search only
-	// indexing a subset of repositories.
-	Index *bool
-
 	// List of fields by which to order the return repositories.
 	OrderBy RepoListOrderBy
 
@@ -786,6 +788,7 @@ const (
 	RepoListName      RepoListColumn = "name"
 	RepoListID        RepoListColumn = "id"
 	RepoListStars     RepoListColumn = "stars"
+	RepoListSize      RepoListColumn = "gr.repo_size_bytes"
 )
 
 // List lists repositories in the Sourcegraph repository
@@ -799,8 +802,7 @@ func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 		tr.Finish()
 	}()
 
-	// always having ID in ORDER BY helps Postgres create a more performant query plan
-	if len(opt.OrderBy) == 0 || (len(opt.OrderBy) == 1 && opt.OrderBy[0].Field != RepoListID) {
+	if len(opt.OrderBy) == 0 {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
 
@@ -1022,9 +1024,10 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	}
 	if !opt.MinLastChanged.IsZero() {
 		conds := []*sqlf.Query{
-			sqlf.Sprintf("gr.last_changed >= %s", opt.MinLastChanged),
+			sqlf.Sprintf("EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id AND gr.last_changed >= %s)", opt.MinLastChanged),
+			sqlf.Sprintf("EXISTS (SELECT 1 FROM codeintel_path_ranks pr WHERE pr.repository_id = repo.id AND pr.updated_at >= %s)", opt.MinLastChanged),
 			sqlf.Sprintf("COALESCE(repo.updated_at, repo.created_at) >= %s", opt.MinLastChanged),
-			sqlf.Sprintf("repo.id IN (SELECT scr.repo_id FROM search_context_repos scr LEFT JOIN search_contexts sc ON scr.search_context_id = sc.id WHERE sc.updated_at >= %s)", opt.MinLastChanged),
+			sqlf.Sprintf("EXISTS (SELECT 1 FROM search_context_repos scr LEFT JOIN search_contexts sc ON scr.search_context_id = sc.id WHERE scr.repo_id = repo.id AND sc.updated_at >= %s)", opt.MinLastChanged),
 		}
 		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(conds, " OR ")))
 	}
@@ -1065,16 +1068,6 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		where = append(where, sqlf.Sprintf("uri = ANY (%s)", pq.Array(opt.URIs)))
 	}
 
-	if opt.Index != nil {
-		// We don't currently have an index column, but when we want the
-		// indexable repositories to be a subset it will live in the database
-		// layer. So we do the filtering here.
-		indexAll := conf.SearchIndexEnabled()
-		if indexAll != *opt.Index {
-			where = append(where, sqlf.Sprintf("false"))
-		}
-	}
-
 	if (len(opt.ExternalServiceIDs) != 0 && (opt.UserID != 0 || opt.OrgID != 0)) ||
 		(opt.UserID != 0 && opt.OrgID != 0) {
 		return nil, errors.New("options ExternalServiceIDs, UserID and OrgID are mutually exclusive")
@@ -1096,7 +1089,8 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos || opt.CloneStatus != types.CloneStatusUnknown {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.joinGitserverRepos ||
+		opt.CloneStatus != types.CloneStatusUnknown || containsSizeField(opt.OrderBy) {
 		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 
@@ -1173,6 +1167,15 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	return q, nil
 }
 
+func containsSizeField(orderBy RepoListOrderBy) bool {
+	for _, field := range orderBy {
+		if field.Field == RepoListSize {
+			return true
+		}
+	}
+	return false
+}
+
 const userReposCTEFmtstr = `
 SELECT repo_id as id FROM external_service_repos WHERE user_id = %d
 `
@@ -1181,62 +1184,51 @@ const userPublicReposCTEFmtstr = `
 SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
 `
 
-type ListIndexableReposOptions struct {
+type ListSourcegraphDotComIndexableReposOptions struct {
 	// CloneStatus if set will only return indexable repos of that clone
 	// status.
 	CloneStatus types.CloneStatus
-
-	// IncludePrivate when true will include user added private repos.
-	IncludePrivate bool
-
-	*LimitOffset
 }
 
-var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
-	"SRC_INDEXABLE_REPOS_MIN_STARS",
-	"8",
-	"Minimum stars needed for a public repo to be indexed on sourcegraph.com",
-))
+// listSourcegraphDotComIndexableReposMinStars is the minimum number of stars needed for a public
+// repo to be indexed on sourcegraph.com.
+const listSourcegraphDotComIndexableReposMinStars = 5
 
-// ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
-// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars as well as user or org added repos.
-func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.MinimalRepo, err error) {
+func (s *repoStore) ListSourcegraphDotComIndexableRepos(ctx context.Context, opts ListSourcegraphDotComIndexableReposOptions) (results []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	var where, joins []*sqlf.Query
-
+	var joins, where []*sqlf.Query
 	if opts.CloneStatus != types.CloneStatusUnknown {
-		joins = append(joins, sqlf.Sprintf(
-			"JOIN gitserver_repos gr ON gr.repo_id = repo.id",
-		))
-		where = append(where, sqlf.Sprintf(
-			"gr.clone_status = %s", opts.CloneStatus,
-		))
-	}
-
-	if !opts.IncludePrivate {
-		where = append(where, sqlf.Sprintf("NOT repo.private"))
+		if opts.CloneStatus == types.CloneStatusCloned {
+			// **Performance optimization case**:
+			//
+			// sourcegraph.com (at the time of this comment) has 2.8M cloned and 10k uncloned _indexable_ repos.
+			// At this scale, it is much faster (and logically equivalent) to perform an anti-join on the inverse
+			// set (i.e., filter out non-cloned repos) than a join on the target set (i.e., retaining cloned repos).
+			//
+			// If these scales change significantly this optimization should be reconsidered. The original query
+			// plans informing this change are available at https://github.com/sourcegraph/sourcegraph/pull/44129.
+			joins = append(joins, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id AND gr.clone_status <> %s", types.CloneStatusCloned))
+			where = append(where, sqlf.Sprintf("gr.repo_id IS NULL"))
+		} else {
+			// Normal case: Filter out rows that do not have a gitserver repo with the target status
+			joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id AND gr.clone_status = %s", opts.CloneStatus))
+		}
 	}
 
 	if len(where) == 0 {
 		where = append(where, sqlf.Sprintf("TRUE"))
 	}
 
-	minStars := listIndexableReposMinStars
-	if minStars == 0 {
-		minStars = 8
-	}
-
 	q := sqlf.Sprintf(
-		listIndexableReposQuery,
+		listSourcegraphDotComIndexableReposQuery,
 		sqlf.Join(joins, "\n"),
-		minStars,
+		listSourcegraphDotComIndexableReposMinStars,
 		sqlf.Join(where, "\nAND"),
-		opts.LimitOffset.SQL(),
 	)
 
 	rows, err := s.Query(ctx, q)
@@ -1259,44 +1251,26 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 	return results, nil
 }
 
-const listIndexableReposQuery = `
--- source: internal/database/repos.go:ListIndexableRepos
+// N.B. This query's exact conditions are mirrored in the Postgres index
+// repo_dotcom_indexable_repos_idx. Any substantial changes to this query
+// may require an associated index redefinition.
+const listSourcegraphDotComIndexableReposQuery = `
 SELECT
-	repo.id, repo.name, repo.stars
+	repo.id,
+	repo.name,
+	repo.stars
 FROM repo
 %s
 WHERE
+	deleted_at IS NULL AND
+	blocked IS NULL AND
 	(
 		(repo.stars >= %s AND NOT COALESCE(fork, false) AND NOT archived)
 		OR
 		lower(repo.name) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'
-		OR
-		repo.id IN (
-			SELECT
-				repo_id
-			FROM
-				external_service_repos
-			WHERE
-				external_service_repos.user_id IS NOT NULL
-				OR
-				external_service_repos.org_id IS NOT NULL
-
-			UNION ALL
-
-			SELECT
-				repo_id
-			FROM
-				user_public_repos
-		)
-	)
-	AND
-	deleted_at IS NULL
-	AND
-	blocked IS NULL
-	AND
+	) AND
 	%s
 ORDER BY stars DESC NULLS LAST
-%s
 `
 
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.
@@ -1376,14 +1350,14 @@ func newRepoRecord(r *types.Repo) (*repoRecord, error) {
 	return &repoRecord{
 		ID:                  r.ID,
 		Name:                string(r.Name),
-		URI:                 nullStringColumn(r.URI),
+		URI:                 dbutil.NullStringColumn(r.URI),
 		Description:         r.Description,
 		CreatedAt:           r.CreatedAt.UTC(),
-		UpdatedAt:           nullTimeColumn(r.UpdatedAt),
-		DeletedAt:           nullTimeColumn(r.DeletedAt),
-		ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
-		ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
-		ExternalID:          nullStringColumn(r.ExternalRepo.ID),
+		UpdatedAt:           dbutil.NullTimeColumn(r.UpdatedAt),
+		DeletedAt:           dbutil.NullTimeColumn(r.DeletedAt),
+		ExternalServiceType: dbutil.NullStringColumn(r.ExternalRepo.ServiceType),
+		ExternalServiceID:   dbutil.NullStringColumn(r.ExternalRepo.ServiceID),
+		ExternalID:          dbutil.NullStringColumn(r.ExternalRepo.ID),
 		Archived:            r.Archived,
 		Fork:                r.Fork,
 		Stars:               r.Stars,
@@ -1391,27 +1365,6 @@ func newRepoRecord(r *types.Repo) (*repoRecord, error) {
 		Metadata:            metadata,
 		Sources:             sources,
 	}, nil
-}
-
-func nullTimeColumn(t time.Time) *time.Time {
-	if t.IsZero() {
-		return nil
-	}
-	return &t
-}
-
-func nullInt32Column(n int32) *int32 {
-	if n == 0 {
-		return nil
-	}
-	return &n
-}
-
-func nullStringColumn(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
 
 func metadataColumn(metadata any) (msg json.RawMessage, err error) {
@@ -1597,7 +1550,6 @@ AND repo.id = repo_ids.id::int
 `
 
 const getFirstRepoNamesByCloneURLQueryFmtstr = `
--- source:internal/database/repos.go:GetFirstRepoNameByCloneURL
 SELECT
 	name
 FROM

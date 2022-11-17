@@ -2,7 +2,8 @@ import React from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { MockedResponse } from '@apollo/client/testing'
-import { waitFor } from '@testing-library/react'
+import { within } from '@testing-library/dom'
+import { act, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
@@ -22,9 +23,9 @@ import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../../../cor
 import {
     GET_DASHBOARD_INSIGHTS_GQL,
     GET_INSIGHTS_GQL,
-    GET_INSIGHTS_DASHBOARDS_GQL,
     GET_INSIGHTS_DASHBOARD_OWNERS_GQL,
 } from '../../../core/backend/gql-backend'
+import { GET_INSIGHT_DASHBOARDS_GQL } from '../../../core/hooks/use-insight-dashboards'
 
 import { GET_ACCESSIBLE_INSIGHTS_LIST } from './components/add-insight-modal'
 import { DashboardsContentPage } from './DashboardsContentPage'
@@ -86,8 +87,7 @@ const userMock = {
 const mocks: MockedResponse[] = [
     {
         request: {
-            query: GET_INSIGHTS_DASHBOARDS_GQL,
-            // variables: { id: undefined },
+            query: GET_INSIGHT_DASHBOARDS_GQL,
         },
         result: {
             data: { insightsDashboards: { nodes: [mockDashboard, mockDashboard2] }, currentUser: userMock },
@@ -95,7 +95,7 @@ const mocks: MockedResponse[] = [
     } as MockedResponse<InsightsDashboardsResult>,
     {
         request: {
-            query: GET_INSIGHTS_DASHBOARDS_GQL,
+            query: GET_INSIGHT_DASHBOARDS_GQL,
             variables: { id: 'foo' },
         },
         result: {
@@ -175,10 +175,13 @@ const triggerDashboardMenuItem = async (
     const dashboardMenu = await waitFor(() => screen.getByRole('img', { name: 'dashboard options' }))
     user.click(dashboardMenu)
 
-    const dashboardMenuItem = screen.getByRole('menuitem', { name: buttonText })
+    const dialog = screen.getByRole('dialog', { hidden: true })
+    const dashboardMenuItem = within(dialog).getByText(buttonText)
 
-    dashboardMenuItem.focus()
-    user.click(dashboardMenuItem)
+    act(() => {
+        dashboardMenuItem.focus()
+        user.click(dashboardMenuItem)
+    })
 }
 
 beforeEach(() => {
@@ -212,8 +215,12 @@ describe('DashboardsContent', () => {
         const chooseDashboard = await waitFor(() => screen.getByRole('button', { name: /Choose a dashboard/ }))
         user.click(chooseDashboard)
 
-        const dashboard2 = screen.getByRole('option', { name: /Global Dashboard 2/ })
-        user.click(dashboard2)
+        const coboboxPopover = screen.getByRole('dialog', { hidden: true })
+        const dashboard2 = coboboxPopover.querySelector('[title="Global Dashboard 2"]')
+
+        if (dashboard2) {
+            user.click(dashboard2)
+        }
 
         expect(history.location.pathname).toEqual('/insights/dashboards/bar')
     })

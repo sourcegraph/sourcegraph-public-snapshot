@@ -9,6 +9,7 @@ import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike, pluralize } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
 import { MatchGroup, MatchItem } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
@@ -26,7 +27,6 @@ import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/s
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge } from '@sourcegraph/wildcard'
 
-import { FetchFileParameters } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainerProps, ResultContainer } from './ResultContainer'
@@ -125,7 +125,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
             const contextLinesSetting =
                 isSettingsValid(props.settingsCascade) &&
                 props.settingsCascade.final &&
-                (props.settingsCascade.final['search.contextLines'] as number | undefined)
+                props.settingsCascade.final['search.contextLines']
 
             if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
                 return contextLinesSetting
@@ -148,7 +148,20 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                       startLine: match.contentStart.line,
                       endLine: match.ranges[match.ranges.length - 1].end.line,
                       aggregableBadges: match.aggregableBadges,
-                  })) || []
+                  })) ||
+                  result.lineMatches?.map(match => ({
+                      highlightRanges: match.offsetAndLengths.map(offsetAndLength => ({
+                          startLine: match.lineNumber,
+                          startCharacter: offsetAndLength[0],
+                          endLine: match.lineNumber,
+                          endCharacter: offsetAndLength[0] + offsetAndLength[1],
+                      })),
+                      content: match.line,
+                      startLine: match.lineNumber,
+                      endLine: match.lineNumber,
+                      aggregableBadges: match.aggregableBadges,
+                  })) ||
+                  []
                 : [],
         [result]
     )
@@ -208,6 +221,7 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
         repoName: result.repository,
         repoStars: result.repoStars,
         repoLastFetched: result.repoLastFetched,
+        rankingDebug: result.debug,
         onResultClicked: props.onSelect,
         className: props.containerClassName,
         resultsClassName: props.result.type === 'symbol' ? styles.symbols : undefined,

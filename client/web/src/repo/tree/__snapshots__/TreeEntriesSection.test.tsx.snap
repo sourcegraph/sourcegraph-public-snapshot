@@ -39,7 +39,6 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
             >
               <small
                 class="text-monospace font-weight-normal test-file-decoration-text after"
-                data-state="closed"
               >
                 src decoration
               </small>
@@ -82,7 +81,6 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
             >
               <small
                 class="text-monospace font-weight-normal test-file-decoration-text after"
-                data-state="closed"
               >
                 testdata decoration
               </small>
@@ -192,7 +190,6 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
             >
               <small
                 class="text-monospace font-weight-normal test-file-decoration-text after"
-                data-state="closed"
               >
                 testutils decoration
               </small>
@@ -235,7 +232,6 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
             >
               <small
                 class="text-monospace font-weight-normal test-file-decoration-text after"
-                data-state="closed"
               >
                 typings decoration
               </small>
@@ -345,7 +341,6 @@ exports[`TreeEntriesSection should render only direct children 1`] = `
             >
               <small
                 class="text-monospace font-weight-normal test-file-decoration-text after"
-                data-state="closed"
               >
                 ref decoration
               </small>

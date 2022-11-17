@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -104,11 +105,13 @@ func (r *outOfBandMigrationResolver) Deprecated() *string {
 	return strptr(r.m.Deprecated.String())
 }
 
-func (r *outOfBandMigrationResolver) Progress() float64      { return r.m.Progress }
-func (r *outOfBandMigrationResolver) Created() DateTime      { return DateTime{r.m.Created} }
-func (r *outOfBandMigrationResolver) LastUpdated() *DateTime { return DateTimeOrNil(r.m.LastUpdated) }
-func (r *outOfBandMigrationResolver) NonDestructive() bool   { return r.m.NonDestructive }
-func (r *outOfBandMigrationResolver) ApplyReverse() bool     { return r.m.ApplyReverse }
+func (r *outOfBandMigrationResolver) Progress() float64         { return r.m.Progress }
+func (r *outOfBandMigrationResolver) Created() gqlutil.DateTime { return gqlutil.DateTime{r.m.Created} }
+func (r *outOfBandMigrationResolver) LastUpdated() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.m.LastUpdated)
+}
+func (r *outOfBandMigrationResolver) NonDestructive() bool { return r.m.NonDestructive }
+func (r *outOfBandMigrationResolver) ApplyReverse() bool   { return r.m.ApplyReverse }
 
 func (r *outOfBandMigrationResolver) Errors() []*outOfBandMigrationErrorResolver {
 	resolvers := make([]*outOfBandMigrationErrorResolver, 0, len(r.m.Errors))
@@ -124,5 +127,7 @@ type outOfBandMigrationErrorResolver struct {
 	e oobmigration.MigrationError
 }
 
-func (r *outOfBandMigrationErrorResolver) Message() string   { return r.e.Message }
-func (r *outOfBandMigrationErrorResolver) Created() DateTime { return DateTime{r.e.Created} }
+func (r *outOfBandMigrationErrorResolver) Message() string { return r.e.Message }
+func (r *outOfBandMigrationErrorResolver) Created() gqlutil.DateTime {
+	return gqlutil.DateTime{r.e.Created}
+}

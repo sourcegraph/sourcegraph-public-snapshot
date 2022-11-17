@@ -12,7 +12,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
-import { TimeSavedCalculator } from '../components/TimeSavedCalculatorGroup'
+import { TimeSavedCalculator, TimeSavedCalculatorProps } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
@@ -73,7 +73,7 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
         ]
         const legends: ValueLegendListProps['items'] = [
             {
-                value: creations.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
+                value: creations.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: aggregation.selected === 'count' ? 'Notebooks created' : 'Users created notebooks',
                 color: 'var(--cyan)',
                 tooltip:
@@ -82,7 +82,7 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                         : 'The number of users who created notebooks in the timeframe.',
             },
             {
-                value: views.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
+                value: views.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: aggregation.selected === 'count' ? 'Notebook views' : 'Users viewed notebooks',
                 color: 'var(--orange)',
                 tooltip:
@@ -91,7 +91,7 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                         : 'The number of users who viewed notebooks in the timeframe.',
             },
             {
-                value: blockRuns.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalRegisteredUsers'],
+                value: blockRuns.summary[aggregation.selected === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: aggregation.selected === 'count' ? 'Block runs' : 'Users ran blocks',
                 color: 'var(--body-color)',
                 position: 'right',
@@ -102,15 +102,16 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
             },
         ]
 
-        const calculatorProps = {
+        const calculatorProps: TimeSavedCalculatorProps = {
             page: 'Notebooks',
             label: 'Views',
             color: 'var(--body-color)',
             dateRange: dateRange.value,
             value: views.summary.totalCount,
-            minPerItem: 5,
+            defaultMinPerItem: 5,
             description:
                 'Notebooks reduce the time it takes to create living documentation and share it. Each notebook view accounts for time saved by both creators and consumers of notebooks.',
+            temporarySettingsKey: 'search.notebooks.minSavedPerView',
         }
 
         return [stats, legends, calculatorProps]

@@ -54,7 +54,7 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 	}
 
 	// If a license exists, warnings never need to be shown.
-	if info, err := GetConfiguredProductLicenseInfo(); info != nil {
+	if info, err := GetConfiguredProductLicenseInfo(); info != nil && !IsFreePlan(info) {
 		return false, err
 	}
 	// If OSS, warnings never need to be shown.
@@ -62,10 +62,18 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 
-	userCount, err := r.db.Users().Count(ctx, nil)
+	userCount, err := r.db.Users().Count(
+		ctx,
+		&database.UsersListOptions{
+			ExcludeSourcegraphOperators: true,
+		},
+	)
 	if err != nil {
 		return false, err
 	}
 
 	return *NoLicenseWarningUserCount <= int32(userCount), nil
 }
+
+func (r *siteResolver) ExternalServicesFromFile() bool          { return extsvcConfigFile != "" }
+func (r *siteResolver) AllowEditExternalServicesWithFile() bool { return extsvcConfigAllowEdits }

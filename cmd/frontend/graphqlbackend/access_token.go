@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 // accessTokenResolver resolves an access token.
@@ -61,8 +62,10 @@ func (r *accessTokenResolver) Creator(ctx context.Context) (*UserResolver, error
 	return UserByIDInt32(ctx, r.db, r.accessToken.CreatorUserID)
 }
 
-func (r *accessTokenResolver) CreatedAt() DateTime { return DateTime{Time: r.accessToken.CreatedAt} }
+func (r *accessTokenResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.accessToken.CreatedAt}
+}
 
-func (r *accessTokenResolver) LastUsedAt() *DateTime {
-	return DateTimeOrNil(r.accessToken.LastUsedAt)
+func (r *accessTokenResolver) LastUsedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.accessToken.LastUsedAt)
 }

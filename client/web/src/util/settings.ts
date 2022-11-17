@@ -1,4 +1,5 @@
 import { isErrorLike } from '@sourcegraph/common'
+import { SearchMode } from '@sourcegraph/search'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SettingsCascadeOrError, SettingsSubjectCommonFields } from '@sourcegraph/shared/src/settings/settings'
 
@@ -24,6 +25,20 @@ export function viewerSubjectFromSettings(
         return cascade.subjects[0].subject
     }
     return siteSubjectNoAdmin()
+}
+
+/**
+ * Returns the user-configured default search mode or undefined if not
+ * configured by the user.
+ */
+export function defaultSearchModeFromSettings(settingsCascade: SettingsCascadeOrError): SearchMode | undefined {
+    switch (getFromSettings(settingsCascade, 'search.defaultMode')) {
+        case 'precise':
+            return SearchMode.Precise
+        case 'smart':
+            return SearchMode.SmartSearch
+    }
+    return undefined
 }
 
 /**

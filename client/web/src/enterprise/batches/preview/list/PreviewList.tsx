@@ -121,7 +121,7 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
     const showSelectRow = selected === 'all' || selected.size > 0
 
     return (
-        <Container>
+        <Container role="region" aria-label="preview changesets">
             {showSelectRow && queryArguments ? (
                 <PreviewSelectRow
                     queryPublishableChangesetSpecIDs={queryPublishableChangesetSpecIDs}
@@ -155,7 +155,6 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
                 history={history}
                 location={location}
                 useURLQuery={true}
-                listComponent="div"
                 listClassName={styles.previewListGrid}
                 headComponent={PreviewListHeader}
                 headComponentProps={{

@@ -246,6 +246,12 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
+        "rubyPackages": {
+          "description": "Allow adding Ruby package host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "pagure": {
           "description": "Allow adding Pagure code host connections",
           "type": "string",
@@ -303,7 +309,7 @@
           }
         },
         "customGitFetch": {
-          "description": "JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.",
+          "description": "JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. To enable this feature set environment variable `ENABLE_CUSTOM_GIT_FETCH` as `true` on gitserver.",
           "type": "array",
           "items": {
             "title": "CustomGitFetchMapping",
@@ -513,6 +519,24 @@
             }
           }
         },
+        "search.sanitization": {
+          "description": "Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.",
+          "type": "object",
+          "properties": {
+            "sanitizePatterns": {
+              "description": "An array of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. Values added to this array must be valid Go regular expressions. Site admins will not have their search results sanitized.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "regex"
+              }
+            },
+            "orgName": {
+              "description": "Optionally specify the name of an organization within this Sourcegraph instance containing users whose searches should not be sanitized. Admins: ensure that ALL members of this org are trusted users. If no org exists with the given name then there will be no effect. If no org name is specified then all non-admin users will have their searches sanitized if this feature is enabled.",
+              "type": "string"
+            }
+          }
+        },
         "enableGithubInternalRepoVisibility": {
           "description": "Enable support for visilibity of internal Github repositories",
           "type": "boolean",
@@ -539,11 +563,20 @@
         "enableLegacyExtensions": {
           "description": "Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).",
           "type": "boolean",
-          "default": false,
-          "!go": { "pointer": true }
+          "default": false
         },
         "insightsAlternateLoadingStrategy": {
           "description": "Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.",
+          "type": "boolean",
+          "default": false
+        },
+        "hideSourcegraphOperatorLogin": {
+          "description": "Enables hiding Sourcegraph operator auth provider on login page.",
+          "type": "boolean",
+          "default": false
+        },
+        "insightsBackfillerV2": {
+          "description": "Use v2 of the insights backfiller which backfills a series at a time.",
           "type": "boolean",
           "default": false
         }
@@ -667,6 +700,15 @@
       "!go": { "pointer": true },
       "group": "Code intelligence",
       "default": false
+    },
+    "codeIntelAutoIndexing.indexerMap": {
+      "description": "Overrides the default Docker images used by auto-indexing.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "group": "Code intelligence",
+      "default": null
     },
     "codeIntelAutoIndexing.policyRepositoryMatchLimit": {
       "description": "The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.",
@@ -952,6 +994,11 @@
       "type": "integer",
       "default": 5
     },
+    "authz.syncJobsRecordsTTL": {
+      "description": "EXPERIMENTAL: Time interval (in minutes) of how long to keep sync job records for. Set to a negative value to disable.",
+      "type": "integer",
+      "default": 5
+    },
     "externalService.userMode": {
       "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
       "type": "string",
@@ -1115,6 +1162,26 @@
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },
+    "executors.srcCLIImage": {
+      "description": "The image to use for src-cli in executors. Use this value to pull from a custom image registry.",
+      "type": "string",
+      "default": "sourcegraph/src-cli"
+    },
+    "executors.srcCLIImageTag": {
+      "description": "The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
+      "type": "string",
+      "examples": ["4.1.0"]
+    },
+    "executors.batcheshelperImage": {
+      "description": "The image to use for batch changes in executors. Use this value to pull from a custom image registry.",
+      "type": "string",
+      "default": "sourcegraph/batcheshelper"
+    },
+    "executors.batcheshelperImageTag": {
+      "description": "The tag to use for the batcheshelper image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
+      "type": "string",
+      "examples": ["4.1.0"]
+    },
     "executors.accessToken": {
       "description": "The shared secret between Sourcegraph and executors.",
       "type": "string",
@@ -1200,20 +1267,15 @@
             }
           }
         },
-        "gitserver.accessLogs": {
-          "description": "DEPRECATED: Enable gitserver access logging. Use auditLog.gitserverAccess instead.",
-          "type": "boolean",
-          "default": false
-        },
         "auditLog": {
           "description": "EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)",
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "securityEvents": {
-              "description": "Capture security events as part of the audit log.",
+            "internalTraffic": {
+              "description": "Capture security events performed by the internal traffic (adds significant noise).",
               "type": "boolean",
-              "default": true
+              "default": false
             },
             "graphQL": {
               "description": "Capture GraphQL requests and responses as part of the audit log.",
@@ -1224,14 +1286,21 @@
               "description": "Capture gitserver access logs as part of the audit log.",
               "type": "boolean",
               "default": false
+            },
+            "severityLevel": {
+              "description": "Severity logging level for the audit log.",
+              "type": "string",
+              "enum": ["DEBUG", "INFO", "WARN", "ERROR"],
+              "default": "INFO"
             }
           },
-          "required": ["securityEvents", "graphQL", "gitserverAccess"],
+          "required": ["internalTraffic", "graphQL", "gitserverAccess"],
           "examples": [
             {
-              "securityEvents": true,
+              "internalTraffic": false,
               "graphQL": false,
-              "gitserverAccess": false
+              "gitserverAccess": false,
+              "severityLevel": "INFO"
             }
           ]
         }
@@ -1357,28 +1426,34 @@
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["10000"]]
+      "examples": [10000]
     },
     "observability.logSlowGraphQLRequests": {
       "description": "(debug) logs all GraphQL requests slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["10000"]]
+      "examples": [10000]
+    },
+    "insights.backfill.interruptAfter": {
+      "description": "Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 60
     },
     "insights.historical.frames": {
-      "description": "(debug) number of historical insights timeframes to populate",
+      "description": "DEPRECATED: (debug) number of historical insights timeframes to populate",
       "type": "integer",
       "group": "Debug",
-      "examples": [["6"]]
+      "examples": [6]
     },
     "insights.historical.frameLength": {
-      "description": "(debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.",
+      "description": "DEPRECATED: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.",
       "type": "string",
       "group": "Debug",
       "examples": ["30d"]
     },
     "insights.historical.speedFactor": {
-      "description": "(debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.",
+      "description": "DEPRECATED: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.",
       "!go": { "pointer": true },
       "type": "number",
       "group": "Debug",
@@ -1395,9 +1470,16 @@
       "description": "Maximum number of Code Insights queries initiated per second on a worker node.",
       "type": "number",
       "group": "CodeInsights",
-      "default": 2,
+      "default": 20,
       "examples": [10.0, 0.5],
       "!go": { "pointer": true }
+    },
+    "insights.query.worker.rateLimitBurst": {
+      "description": "The allowed burst rate for the Code Insights queries per second rate limiter.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 20,
+      "examples": [10, 20]
     },
     "insights.compute.graphql": {
       "description": "DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
@@ -1666,13 +1748,15 @@
       "description": "The site wide maximum number of repos that can be added by non site admins",
       "type": "integer",
       "default": 200000,
-      "group": "Misc."
+      "group": "Misc.",
+      "deprecationMessage": "Deprecated as we no longer support user added code"
     },
     "userRepos.maxPerUser": {
       "description": "The per user maximum number of repos that can be added by non site admins",
       "type": "integer",
       "default": 2000,
-      "group": "Misc."
+      "group": "Misc.",
+      "deprecationMessage": "Deprecated as we no longer support user added code"
     },
     "productResearchPage.enabled": {
       "description": "Enables users access to the product research page in their settings.",
@@ -1705,6 +1789,12 @@
           "$ref": "#/definitions/EncryptionKey"
         },
         "webhookLogKey": {
+          "$ref": "#/definitions/EncryptionKey"
+        },
+        "webhookKey": {
+          "$ref": "#/definitions/EncryptionKey"
+        },
+        "executorSecretKey": {
           "$ref": "#/definitions/EncryptionKey"
         }
       }

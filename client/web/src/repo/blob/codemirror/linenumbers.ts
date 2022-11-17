@@ -1,34 +1,43 @@
 import {
     Annotation,
+    EditorState,
     Extension,
-    RangeSet,
     Range,
+    RangeSet,
     RangeSetBuilder,
     StateEffect,
     StateField,
-    EditorState,
 } from '@codemirror/state'
 import {
-    EditorView,
     Decoration,
-    lineNumbers,
-    ViewPlugin,
-    PluginValue,
-    ViewUpdate,
-    GutterMarker,
+    EditorView,
     gutterLineClass,
+    GutterMarker,
+    lineNumbers,
+    PluginValue,
+    ViewPlugin,
+    ViewUpdate,
 } from '@codemirror/view'
 
 import { isValidLineRange, preciseOffsetAtCoords } from './utils'
+
+/**
+ * The MouseEvent uses numbers to indicate which button was pressed.
+ * See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button#value
+ */
+const MOUSE_MAIN_BUTTON = 0
 
 /**
  * Represents the currently selected line range. null means no lines are
  * selected. Line numbers are 1-based.
  * endLine may be smaller than line
  */
-export type SelectedLineRange = { line: number; endLine?: number } | null
+export type SelectedLineRange = { line: number; character?: number; endLine?: number } | null
 
-const selectedLineDecoration = Decoration.line({ class: 'selected-line' })
+const selectedLineDecoration = Decoration.line({
+    class: 'selected-line',
+    attributes: { tabIndex: '-1', 'data-line-focusable': '' },
+})
 const selectedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'selected-line'
 })()
@@ -113,7 +122,10 @@ const lineSelectionSource = Annotation.define<'gutter'>()
 const scrollIntoView = ViewPlugin.fromClass(
     class implements PluginValue {
         private lastSelectedLines: SelectedLineRange | null = null
-        constructor(private readonly view: EditorView) {}
+        constructor(private readonly view: EditorView) {
+            this.lastSelectedLines = this.view.state.field(selectedLines)
+            this.scrollIntoView(this.lastSelectedLines)
+        }
 
         public update(update: ViewUpdate): void {
             const currentSelectedLines = update.state.field(selectedLines)
@@ -183,6 +195,11 @@ function selectOnClick({ onSelection }: SelectableLineNumbersConfig): Extension 
         }),
         EditorView.domEventHandlers({
             mousedown(event, view) {
+                if (event.button !== MOUSE_MAIN_BUTTON) {
+                    // Only handle clicks with the main button
+                    return
+                }
+
                 maybeSelectLine = true
                 preventTextSelection = false
 
@@ -201,7 +218,7 @@ function selectOnClick({ onSelection }: SelectableLineNumbersConfig): Extension 
             mouseup(event, view) {
                 preventTextSelection = false
 
-                if (!maybeSelectLine) {
+                if (!maybeSelectLine || event.button !== MOUSE_MAIN_BUTTON) {
                     return
                 }
 
@@ -267,6 +284,11 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
         lineNumbers({
             domEventHandlers: {
                 mousedown(view, block, event) {
+                    const mouseEvent = event as MouseEvent // make TypeScript happy
+                    if (mouseEvent.button !== MOUSE_MAIN_BUTTON) {
+                        return false
+                    }
+
                     const line = view.state.doc.lineAt(block.from).number
                     if (config.navigateToLineOnAnyClick) {
                         // Only support single line selection when navigateToLineOnAnyClick is true.
@@ -277,7 +299,7 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                     } else {
                         const range = view.state.field(selectedLines)
                         view.dispatch({
-                            effects: (event as MouseEvent).shiftKey
+                            effects: mouseEvent.shiftKey
                                 ? setEndLine.of(line)
                                 : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
                             annotations: lineSelectionSource.of('gutter'),
@@ -288,7 +310,11 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
 
                     dragging = true
 
-                    function onmouseup(): void {
+                    function onmouseup(event: MouseEvent): void {
+                        if (event.button !== MOUSE_MAIN_BUTTON) {
+                            return
+                        }
+
                         dragging = false
                         window.removeEventListener('mouseup', onmouseup)
                         window.removeEventListener('mousemove', onmousemove)
@@ -304,6 +330,8 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                                     annotations: lineSelectionSource.of('gutter'),
                                 })
                             }
+                            // Prevents the browser from selecting the line
+                            // numbers as text
                             event.preventDefault()
                         }
                     }
@@ -363,7 +391,7 @@ function normalizeLineRange(range: SelectedLineRange): SelectedLineRange {
  * outside of the editor viewport).
  */
 function shouldScrollIntoView(view: EditorView, range: SelectedLineRange): boolean {
-    if (!range) {
+    if (!range || !isValidLineRange(range, view.state.doc)) {
         return false
     }
 

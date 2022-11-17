@@ -1,16 +1,19 @@
-// Because @visx/annotation HTMLLabel doesn't have api for
-// passing custom CSS class to the Label component container
-// we have to get this element through CSS Cascade
-.label div {
-    background-color: var(--body-bg);
-    border: 1px solid var(--border-color);
-    padding: 0.25rem 0.5rem;
-    display: flex;
-    flex-direction: column;
+.label {
+    pointer-events: inherit !important;
+
+    // Because @visx/annotation HTMLLabel doesn't have api for
+    // passing custom CSS class to the Label component container
+    // we have to get this element through CSS Cascade
+    div {
+        background-color: var(--body-bg);
+        border: 1px solid var(--border-color);
+        padding: 0.25rem 0.5rem;
+    }
 }
 
 .label-title {
     font-weight: 400;
+    font-size: 1rem;
     color: var(--body-color);
     background-color: var(--body-bg);
     text-decoration: none;

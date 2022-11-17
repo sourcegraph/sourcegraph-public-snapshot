@@ -193,22 +193,13 @@ func (s *TextSearchJob) searchFilesInRepo(
 		return false, err
 	}
 
-	// Structural and hybrid search both speak to zoekt so need the endpoints.
-	var indexerEndpoints []string
-	if info.IsStructuralPat || s.Features.HybridSearch {
-		indexerEndpoints, err = search.Indexers().Map.Endpoints()
-		if err != nil {
-			return false, err
-		}
-	}
-
 	onMatches := func(searcherMatches []*protocol.FileMatch) {
 		stream.Send(streaming.SearchEvent{
 			Results: convertMatches(repo, commit, &rev, searcherMatches, s.PathRegexps),
 		})
 	}
 
-	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, indexerEndpoints, s.Features, onMatches)
+	return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
 }
 
 // convert converts a set of searcher matches into []result.Match

@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"path/filepath"
 	"testing"
+
+	"github.com/sourcegraph/log/logtest"
 )
 
 func TestGitserverProxySimple(t *testing.T) {
@@ -24,7 +26,7 @@ func TestGitserverProxySimple(t *testing.T) {
 	gs := NewMockGitserverClient()
 	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
 
-	proxyServer := httptest.NewServer(gitserverProxy(gs, "/info/refs"))
+	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/info/refs"))
 	defer proxyServer.Close()
 
 	req, err := http.NewRequest("GET", proxyServer.URL, nil)
@@ -63,7 +65,7 @@ func TestGitserverProxyTargetPath(t *testing.T) {
 	gs := NewMockGitserverClient()
 	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
 
-	proxyServer := httptest.NewServer(gitserverProxy(gs, "/foo"))
+	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/foo"))
 	defer proxyServer.Close()
 
 	req, err := http.NewRequest("GET", proxyServer.URL, nil)
@@ -95,7 +97,7 @@ func TestGitserverProxyHeaders(t *testing.T) {
 	gs := NewMockGitserverClient()
 	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
 
-	proxyServer := httptest.NewServer(gitserverProxy(gs, "/test"))
+	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/test"))
 	defer proxyServer.Close()
 
 	req, err := http.NewRequest("GET", proxyServer.URL, nil)
@@ -143,7 +145,7 @@ func TestGitserverProxyRedirectWithPayload(t *testing.T) {
 	gs := NewMockGitserverClient()
 	gs.AddrForRepoFunc.PushReturn(url.Host, nil)
 
-	proxyServer := httptest.NewServer(gitserverProxy(gs, "/test"))
+	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/test"))
 	defer proxyServer.Close()
 
 	req, err := http.NewRequest("POST", proxyServer.URL, bytes.NewReader([]byte("foobarbaz")))

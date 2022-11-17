@@ -23,16 +23,14 @@ func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, nil)
 	defaultBranchRef := "refs/heads/main"
-	gitserver.Mocks.ResolveRevision = func(rev string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	gsClient := gitserver.NewMockClient()
+	gsClient.GetDefaultBranchFunc.SetDefaultReturn(defaultBranchRef, "", nil)
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, rev string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		if rev != defaultBranchRef && strings.HasSuffix(rev, defaultBranchRef) {
 			return "", errors.New("x")
 		}
 		return api.CommitID("deadbeef"), nil
-	}
-	gsClient := gitserver.NewMockClient()
-	gsClient.GetDefaultBranchFunc.SetDefaultReturn(defaultBranchRef, "", nil)
-
-	defer gitserver.ResetMocks()
+	})
 
 	repoIndexResolver := &repositoryTextSearchIndexResolver{
 		repo: NewRepositoryResolver(db, gsClient, &types.Repo{Name: "alice/repo"}),

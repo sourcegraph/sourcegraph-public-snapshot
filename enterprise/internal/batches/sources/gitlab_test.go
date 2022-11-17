@@ -976,7 +976,7 @@ type gitLabChangesetSourceTestProvider struct {
 // objects, along with a handful of methods to mock underlying
 // internal/extsvc/gitlab functions.
 func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTestProvider {
-	prov := gitlab.NewClientProvider("Test", &url.URL{}, &panicDoer{}, nil)
+	prov := gitlab.NewClientProvider("Test", &url.URL{}, &panicDoer{})
 	repo := &types.Repo{Metadata: &gitlab.Project{}}
 	p := &gitLabChangesetSourceTestProvider{
 		changeset: &Changeset{

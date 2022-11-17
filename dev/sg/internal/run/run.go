@@ -107,6 +107,10 @@ func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cm
 		return err
 	}
 
+	if err := writePid(); err != nil {
+		return err
+	}
+
 	wg.Wait()
 
 	select {

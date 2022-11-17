@@ -161,7 +161,7 @@ func ParseDiff(files []string) (diff Diff) {
 		if err == nil {
 			b := make([]byte, 19) // "#!/usr/bin/env bash" = 19 chars
 			_, _ = f.Read(b)
-			if bytes.Compare(b[0:2], []byte("#!")) == 0 && bytes.Contains(b, []byte("bash")) {
+			if bytes.Equal(b[0:2], []byte("#!")) && bytes.Contains(b, []byte("bash")) {
 				// If the file starts with a shebang and has "bash" somewhere after, it's most probably
 				// some shell script.
 				diff |= Shell

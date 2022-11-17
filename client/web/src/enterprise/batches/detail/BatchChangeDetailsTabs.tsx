@@ -6,7 +6,6 @@ import { useHistory, useLocation } from 'react-router'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -14,7 +13,7 @@ import { Badge, Container, Icon, Tab, TabPanel, TabPanels } from '@sourcegraph/w
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { resetFilteredConnectionURLQuery } from '../../../components/FilteredConnection'
-import { BatchSpecState, BatchChangeFields } from '../../../graphql-operations'
+import { BatchSpecState, BatchChangeFields, BatchSpecSource } from '../../../graphql-operations'
 import { BatchChangeTabList, BatchChangeTabs } from '../BatchChangeTabs'
 import { BatchSpec, BatchSpecDownloadButton, BatchSpecMeta } from '../BatchSpec'
 import { BatchChangeBatchSpecList } from '../BatchSpecsPage'
@@ -33,7 +32,7 @@ import styles from './BatchChangeDetailsTabs.module.scss'
 export enum TabName {
     Changesets = 'changesets',
     Chart = 'chart',
-    // Non-SSBC
+    // Non-SSBC or SSBC with viewerCanAdminister=false
     Spec = 'spec',
     // SSBC-only
     Executions = 'executions',
@@ -41,20 +40,20 @@ export enum TabName {
     BulkOperations = 'bulkoperations',
 }
 
-const getTabIndex = (tabName: string, isExecutionEnabled: boolean): number =>
+const getTabIndex = (tabName: string, shouldDisplayExecutionsTab: boolean): number =>
     ([
         TabName.Changesets,
         TabName.Chart,
-        isExecutionEnabled ? TabName.Executions : TabName.Spec,
+        shouldDisplayExecutionsTab ? TabName.Executions : TabName.Spec,
         TabName.Archived,
         TabName.BulkOperations,
     ] as string[]).indexOf(tabName)
 
-const getTabName = (tabIndex: number, isExecutionEnabled: boolean): TabName =>
+const getTabName = (tabIndex: number, shouldDisplayExecutionsTab: boolean): TabName =>
     [
         TabName.Changesets,
         TabName.Chart,
-        isExecutionEnabled ? TabName.Executions : TabName.Spec,
+        shouldDisplayExecutionsTab ? TabName.Executions : TabName.Spec,
         TabName.Archived,
         TabName.BulkOperations,
     ][tabIndex]
@@ -98,7 +97,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
 }) => {
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
-    const executingCount = useMemo(
+    const pendingExecutionsCount = useMemo(
         () =>
             batchChange.batchSpecs.nodes.filter(
                 node => node.state === BatchSpecState.PROCESSING || node.state === BatchSpecState.QUEUED
@@ -107,14 +106,15 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
     )
 
     const isBatchSpecLocallyCreated = batchChange.currentSpec.source === BatchSpecSource.LOCAL
-    const shouldDisplayOldUI = !isExecutionEnabled || isBatchSpecLocallyCreated
+    const shouldDisplayExecutionsTab =
+        isExecutionEnabled && !isBatchSpecLocallyCreated && batchChange.viewerCanAdminister
 
     // We track the current tab in a URL parameter so that tabs are easy to navigate to
     // and share.
     const history = useHistory()
     const location = useLocation()
     const initialURLTab = new URLSearchParams(location.search).get('tab')
-    const defaultTabIndex = getTabIndex(initialURLTab || initialTab, isExecutionEnabled) || 0
+    const defaultTabIndex = getTabIndex(initialURLTab || initialTab, shouldDisplayExecutionsTab) || 0
 
     // The executions tab uses an additional custom short URL, "/executions".
     const [customShortPath, setCustomShortPath] = useState(
@@ -126,7 +126,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
             const urlParameters = new URLSearchParams(location.search)
             resetFilteredConnectionURLQuery(urlParameters)
 
-            const newTabName = getTabName(index, isExecutionEnabled)
+            const newTabName = getTabName(index, shouldDisplayExecutionsTab)
 
             // The executions tab uses a custom short URL.
             if (newTabName === TabName.Executions) {
@@ -142,7 +142,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                 if (index === 0) {
                     urlParameters.delete('tab')
                 } else {
-                    urlParameters.set('tab', getTabName(index, isExecutionEnabled))
+                    urlParameters.set('tab', getTabName(index, shouldDisplayExecutionsTab))
                 }
                 // Make sure to unset the custom short path, if we were previously on a
                 // tab that had one.
@@ -154,20 +154,23 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                 history.replace({ ...newLocation, search: urlParameters.toString() })
             }
         },
-        [history, location, isExecutionEnabled, customShortPath]
+        [history, location, shouldDisplayExecutionsTab, customShortPath]
     )
+
+    const changesetCount = batchChange.changesetsStats.total - batchChange.changesetsStats.archived
+    const executionsCount = `${pendingExecutionsCount}${batchChange.batchSpecs.pageInfo.hasNextPage && '+'}`
 
     return (
         <BatchChangeTabs defaultIndex={defaultTabIndex} onChange={onTabChange}>
             <BatchChangeTabList>
-                <Tab>
+                <Tab aria-label={`Changesets (${changesetCount} total)`}>
                     <span>
                         <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiSourceBranch} />
                         <span className="text-content" data-tab-content="Changesets">
                             Changesets
                         </span>
                         <Badge variant="secondary" pill={true} className="ml-2">
-                            {batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
+                            {changesetCount}
                         </Badge>
                     </span>
                 </Tab>
@@ -179,7 +182,25 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         </span>
                     </span>
                 </Tab>
-                {shouldDisplayOldUI ? (
+                {shouldDisplayExecutionsTab ? (
+                    <Tab
+                        aria-label={`Executions${
+                            pendingExecutionsCount > 0 ? ' (' + executionsCount + 'total active)' : ''
+                        }`}
+                    >
+                        <span>
+                            <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiFileDocument} />
+                            <span className="text-content" data-tab-content="Executions">
+                                Executions
+                            </span>
+                            {pendingExecutionsCount > 0 && (
+                                <Badge variant="warning" pill={true} className="ml-2">
+                                    {executionsCount}
+                                </Badge>
+                            )}
+                        </span>
+                    </Tab>
+                ) : (
                     <Tab>
                         <span>
                             <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiFileDocument} />
@@ -188,22 +209,8 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                             </span>
                         </span>
                     </Tab>
-                ) : (
-                    <Tab>
-                        <span>
-                            <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiFileDocument} />
-                            <span className="text-content" data-tab-content="Executions">
-                                Executions
-                            </span>
-                            {executingCount > 0 && (
-                                <Badge variant="warning" pill={true} className="ml-2">
-                                    {executingCount} {batchChange.batchSpecs.pageInfo.hasNextPage && <>+</>}
-                                </Badge>
-                            )}
-                        </span>
-                    </Tab>
                 )}
-                <Tab>
+                <Tab aria-label={`Archived (${batchChange.changesetsStats.archived} total)`}>
                     <span>
                         <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiArchive} />
                         <span className="text-content" data-tab-content="Archived">
@@ -214,7 +221,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         </Badge>
                     </span>
                 </Tab>
-                <Tab>
+                <Tab aria-label={`Bulk operations (${batchChange.bulkOperations.totalCount} total)`}>
                     <span>
                         <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiMonitorStar} />
                         <span className="text-content" data-tab-content="Bulk operations">
@@ -254,7 +261,17 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                     />
                 </TabPanel>
                 <TabPanel>
-                    {shouldDisplayOldUI ? (
+                    {shouldDisplayExecutionsTab ? (
+                        <Container>
+                            <BatchChangeBatchSpecList
+                                history={history}
+                                location={location}
+                                batchChangeID={batchChange.id}
+                                currentSpecID={batchChange.currentSpec.id}
+                                isLightTheme={isLightTheme}
+                            />
+                        </Container>
+                    ) : (
                         <>
                             <div className="d-flex flex-wrap justify-content-between align-items-baseline mb-2 test-batches-spec">
                                 <BatchSpecMeta
@@ -277,16 +294,6 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                 />
                             </Container>
                         </>
-                    ) : (
-                        <Container>
-                            <BatchChangeBatchSpecList
-                                history={history}
-                                location={location}
-                                batchChangeID={batchChange.id}
-                                currentSpecID={batchChange.currentSpec.id}
-                                isLightTheme={isLightTheme}
-                            />
-                        </Container>
                     )}
                 </TabPanel>
                 <TabPanel>

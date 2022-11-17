@@ -6,7 +6,7 @@ import classNames from 'classnames'
 
 import { gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { Link, Icon, useFocusOnLoadedMore } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { RecentFilesFragment } from '../../graphql-operations'
@@ -18,7 +18,6 @@ import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
 import { useComputeResults } from './useComputeResults'
-import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
 
 import styles from './RecentSearchesPanel.module.scss'
 interface Props extends TelemetryProps {

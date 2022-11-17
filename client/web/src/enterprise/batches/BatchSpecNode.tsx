@@ -44,7 +44,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
     }, [isExpanded])
 
     return (
-        <>
+        <li className={styles.node}>
             <span className={styles.nodeSeparator} />
             <Button
                 variant="icon"
@@ -114,7 +114,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                     />
                 </div>
             )}
-        </>
+        </li>
     )
 }
 

@@ -106,7 +106,9 @@ describe('Blob viewer', () => {
                 Blob: () => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
+                                __typename: 'VirtualFile',
                                 content: '// Log to console\nconsole.log("Hello world")\n// Third line',
                                 richHTML: '',
                                 highlight: {
@@ -190,7 +192,9 @@ describe('Blob viewer', () => {
                 Blob: () => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
+                                __typename: 'VirtualFile',
                                 content: '// Log to console\nconsole.log("Hello world")',
                                 richHTML: '',
                                 highlight: {
@@ -461,7 +465,9 @@ describe('Blob viewer', () => {
                 Blob: () => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
+                                __typename: 'VirtualFile',
                                 content: '// Log to console\nconsole.log("Hello world")\n// Third line',
                                 richHTML: '',
                                 highlight: {
@@ -755,7 +761,11 @@ describe('Blob viewer', () => {
                     return {
                         repository: {
                             commit: {
-                                file,
+                                file: {
+                                    __typename: 'VirtualFile',
+                                    ...file,
+                                },
+                                blob: null,
                             },
                         },
                     }
@@ -921,7 +931,9 @@ describe('Blob viewer', () => {
                 Blob: ({ filePath }) => ({
                     repository: {
                         commit: {
+                            blob: null,
                             file: {
+                                __typename: 'VirtualFile',
                                 content: `// file path: ${filePath}\nconsole.log("Hello world")`,
                                 richHTML: '',
                                 highlight: {

@@ -42,7 +42,7 @@ func TestRedirects(t *testing.T) {
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
-		InitRouter(db, nil)
+		InitRouter(db)
 		rw := httptest.NewRecorder()
 		req, err := http.NewRequest("GET", path, nil)
 		if err != nil {
@@ -64,7 +64,7 @@ func TestRedirects(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
 		t.Run("root", func(t *testing.T) {
-			check(t, "/", http.StatusTemporaryRedirect, "https://about.sourcegraph.com", "Mozilla/5.0")
+			check(t, "/", http.StatusTemporaryRedirect, "/search", "Mozilla/5.0")
 		})
 	})
 

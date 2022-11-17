@@ -90,10 +90,10 @@ export const AllOptionsPages: Story = (args = {}) => (
 
             <div className="d-flex justify-content-center mt-5">
                 <div className="mx-4">
-                    <H3 className="text-center">On Sourcegraph Cloud</H3>
+                    <H3 className="text-center">On Sourcegraph.com</H3>
                     <OptionsPageWrapper
                         requestPermissionsHandler={requestPermissionsHandler}
-                        showSourcegraphCloudAlert={true}
+                        showSourcegraphComAlert={true}
                         sourcegraphUrl={args.sourcegraphUrl}
                         version={args.version}
                     />
@@ -111,13 +111,13 @@ export const AllOptionsPages: Story = (args = {}) => (
             <H2 className="mt-5 text-center">Not synced repository</H2>
             <div className="d-flex justify-content-center mb-3">
                 <div className="mx-4">
-                    <H3 className="text-center">Sourcegraph Cloud</H3>
+                    <H3 className="text-center">Sourcegraph.com</H3>
                     <OptionsPageWrapper
                         sourcegraphUrl="https://sourcegraph.com"
                         currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
                         hasRepoSyncError={true}
                         requestPermissionsHandler={requestPermissionsHandler}
-                        showSourcegraphCloudAlert={args.showSourcegraphCloudAlert}
+                        showSourcegraphComAlert={args.showSourcegraphComAlert}
                         version={args.version}
                     />
                 </div>
@@ -152,7 +152,7 @@ AllOptionsPages.argTypes = {
         control: { type: 'text' },
         defaultValue: '0.0.0',
     },
-    showSourcegraphCloudAlert: {
+    showSourcegraphComAlert: {
         control: { type: 'boolean' },
         defaultValue: false,
     },

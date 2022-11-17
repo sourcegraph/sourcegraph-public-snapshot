@@ -114,6 +114,10 @@ export class Notebook {
         }
     }
 
+    public getBlockIndex(id: string): number {
+        return this.blockOrder.indexOf(id)
+    }
+
     public getBlocks(): Block[] {
         return this.blockOrder.map(blockId => {
             const block = this.blocks.get(blockId)
@@ -169,6 +173,7 @@ export class Notebook {
                             patternType: SearchPatternType.standard,
                             caseSensitive: false,
                             trace: undefined,
+                            chunkMatches: true,
                         }
                     ).pipe(startWith(emptyAggregateResults)),
                 })

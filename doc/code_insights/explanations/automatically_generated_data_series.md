@@ -44,9 +44,13 @@ On Sourcegraph instances on earlier versions than 3.43, you can only use a singl
 
 You cannot combinatorially combine capture groups. Queries containing multiple capture groups will return data series with a label for a single capture group only. For example, `([0-9])\.([0-9])\.([0-9])` will match results like 1.2.3, 4.5.6, and 4.5.7, but will return data series for 1, 2, 3, 4, 5, 6, and 7 individually. (If you made the string one capture group `([0-9]\.[0-9]\.[0-9])` instead, it would return series and counts for 1.2.3, 4.5.6, and 4.5.7). 
 
-### No commit or diff search 
+### Searches are limited to file content
 
-You can't use capture groups in queries for `type:commit` or `type:diff`. 
+You can't use capture groups in queries for `type:commit`, `type:repo`, `type:path`, `type:diff`, or `type:symbol`. 
+
+### Match values are limited to a 100 characters
+
+Any matches that return values over a 100 characters will be truncated. This is to avoid issues when storing the data.
 
 ### Regular expression capture group resources
 

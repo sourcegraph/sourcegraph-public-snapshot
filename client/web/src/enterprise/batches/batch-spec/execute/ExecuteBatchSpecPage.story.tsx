@@ -5,7 +5,6 @@ import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, MockedResponses, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import {
     EMPTY_SETTINGS_CASCADE,
     SettingsOrgSubject,
@@ -16,6 +15,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '../../../../components/WebStory'
 import {
     BatchSpecExecutionFields,
+    BatchSpecSource,
     BatchSpecWorkspaceResolutionState,
     BatchSpecWorkspaceState,
     VisibleBatchSpecWorkspaceFields,

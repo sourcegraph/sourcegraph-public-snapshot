@@ -12,13 +12,18 @@ import {
     updateQuery,
     InitialParametersSource,
     SearchPatternType,
+    SearchMode,
 } from '@sourcegraph/search'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { ParsedSearchURL } from '../search'
 import { submitSearch } from '../search/helpers'
-import { defaultCaseSensitiveFromSettings, defaultPatternTypeFromSettings } from '../util/settings'
+import {
+    defaultCaseSensitiveFromSettings,
+    defaultPatternTypeFromSettings,
+    defaultSearchModeFromSettings,
+} from '../util/settings'
 
 export interface NavbarQueryState extends SearchQueryState {}
 
@@ -27,6 +32,7 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     queryState: { query: '' },
     searchCaseSensitivity: false,
     searchPatternType: SearchPatternType.standard,
+    searchMode: SearchMode.SmartSearch,
     searchQueryFromURL: '',
 
     setQueryState: queryStateUpdate => {
@@ -42,10 +48,11 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
             queryState: { query },
             searchCaseSensitivity: caseSensitive,
             searchPatternType: patternType,
+            searchMode: searchMode,
         } = get()
         const updatedQuery = updateQuery(query, updates)
         if (canSubmitSearch(query, parameters.selectedSearchContextSpec)) {
-            submitSearch({ ...parameters, query: updatedQuery, caseSensitive, patternType })
+            submitSearch({ ...parameters, query: updatedQuery, caseSensitive, patternType, searchMode })
         }
     },
 }))
@@ -56,6 +63,10 @@ export function setSearchPatternType(searchPatternType: SearchPatternType): void
 
 export function setSearchCaseSensitivity(searchCaseSensitivity: boolean): void {
     useNavbarQueryState.setState({ searchCaseSensitivity })
+}
+
+export function setSearchMode(searchMode: SearchMode): void {
+    useNavbarQueryState.setState({ searchMode })
 }
 
 /**
@@ -74,7 +85,12 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
     const newState: Partial<
         Pick<
             NavbarQueryState,
-            'queryState' | 'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL' | 'parametersSource'
+            | 'queryState'
+            | 'searchPatternType'
+            | 'searchCaseSensitivity'
+            | 'searchQueryFromURL'
+            | 'parametersSource'
+            | 'searchMode'
         >
     > = {}
 
@@ -87,6 +103,7 @@ export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = p
         }
         newState.queryState = { query }
         newState.searchQueryFromURL = parsedSearchURL.query
+        newState.searchMode = parsedSearchURL.searchMode
     }
 
     // The way Zustand is designed makes it difficult to build up a partial new
@@ -103,7 +120,7 @@ export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Setti
     }
 
     const newState: Partial<
-        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'parametersSource'>
+        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'parametersSource' | 'searchMode'>
     > = {
         parametersSource: InitialParametersSource.USER_SETTINGS,
     }
@@ -111,6 +128,11 @@ export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Setti
     const caseSensitive = defaultCaseSensitiveFromSettings(settings)
     if (caseSensitive !== undefined) {
         newState.searchCaseSensitivity = caseSensitive
+    }
+
+    const searchMode = defaultSearchModeFromSettings(settings)
+    if (searchMode !== undefined) {
+        newState.searchMode = searchMode
     }
 
     const searchPatternType = defaultPatternTypeFromSettings(settings)
@@ -137,6 +159,6 @@ export function buildSearchURLQueryFromQueryState(parameters: BuildSearchQueryUR
         parameters.patternType ?? currentState.searchPatternType,
         parameters.caseSensitive ?? currentState.searchCaseSensitivity,
         parameters.searchContextSpec,
-        parameters.searchParametersList
+        parameters.searchMode ?? currentState.searchMode
     )
 }

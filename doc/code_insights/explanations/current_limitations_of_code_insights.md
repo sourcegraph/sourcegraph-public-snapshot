@@ -59,6 +59,11 @@ There are a few factors to consider with respect to scale and expected performan
   1. If there are many insight creators the insights will take longer to calculate.
   2. If there are more insight viewers loading times of charts may be impacted.
 
+
+## Creating insights over specific branches and revisions
+
+Code Insights does not yet support running over specific revisions. 
+
 ## Feature parity limitations 
 
 ### Features currently available only on insights over all your repositories

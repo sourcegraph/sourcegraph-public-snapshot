@@ -6,13 +6,17 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Container, PageHeader, Link, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
-import { UserAreaUserFields } from '../../../graphql-operations'
+import {
+    ProductSubscriptionFields,
+    ProductSubscriptionsResult,
+    ProductSubscriptionsVariables,
+    UserAreaUserFields,
+} from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import {
     productSubscriptionFragment,
@@ -26,7 +30,7 @@ interface Props extends RouteComponentProps<{}> {
 }
 
 class FilteredProductSubscriptionConnection extends FilteredConnection<
-    GQL.IProductSubscription,
+    ProductSubscriptionFields,
     ProductSubscriptionNodeProps
 > {}
 
@@ -41,9 +45,9 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
     }, [])
 
     const queryLicenses = useCallback(
-        (args: { first?: number }): Observable<GQL.IProductSubscriptionConnection> => {
-            const variables: GQL.IProductSubscriptionsOnDotcomQueryArguments = {
-                first: args.first,
+        (args: { first?: number }): Observable<ProductSubscriptionsResult['dotcom']['productSubscriptions']> => {
+            const variables: ProductSubscriptionsVariables = {
+                first: args.first ?? null,
                 account: props.user.id,
             }
             return queryGraphQL(
@@ -84,8 +88,17 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                 path={[{ text: 'Subscriptions' }]}
                 description={
                     <>
-                        Contact us to purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
-                        <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
+                        <>
+                            Search your private code with{' '}
+                            <Link
+                                to="https://signup.sourcegraph.com/"
+                                onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                            >
+                                Sourcegraph Cloud
+                            </Link>{' '}
+                            or contact us to purchase a subscription for a self-hosted Sourcegraph instance. See{' '}
+                            <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
+                        </>
                     </>
                 }
                 className="mb-3"

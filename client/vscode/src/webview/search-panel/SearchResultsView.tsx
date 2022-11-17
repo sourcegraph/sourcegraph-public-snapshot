@@ -9,16 +9,11 @@ import {
     fetchAutoDefinedSearchContexts,
     getUserSearchContextNamespaces,
     QueryState,
+    SearchMode,
 } from '@sourcegraph/search'
-import {
-    IEditor,
-    SearchBox,
-    StreamingProgress,
-    StreamingSearchResultsList,
-    FetchFileParameters,
-} from '@sourcegraph/search-ui'
+import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import {
     appendContextFilter,
@@ -90,6 +85,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     queryState: newState,
                     searchCaseSensitivity: context.submittedSearchQueryState?.searchCaseSensitivity,
                     searchPatternType: context.submittedSearchQueryState?.searchPatternType,
+                    searchMode: context.submittedSearchQueryState?.searchMode,
                 })
                 .catch(error => {
                     // TODO surface error to users
@@ -100,6 +96,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
             extensionCoreAPI,
             context.submittedSearchQueryState.searchCaseSensitivity,
             context.submittedSearchQueryState.searchPatternType,
+            context.submittedSearchQueryState.searchMode,
         ]
     )
 
@@ -134,19 +131,27 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     }, [platformContext, context.submittedSearchQueryState.queryState.query])
 
     const onSubmit = useCallback(
-        (options?: { caseSensitive?: boolean; patternType?: SearchPatternType; newQuery?: string }) => {
+        (options?: {
+            caseSensitive?: boolean
+            patternType?: SearchPatternType
+            newQuery?: string
+            searchMode?: SearchMode
+        }) => {
             const previousSearchQueryState = context.submittedSearchQueryState
 
             const query = options?.newQuery ?? userQueryState.query
             const caseSensitive = options?.caseSensitive ?? previousSearchQueryState.searchCaseSensitivity
             const patternType = options?.patternType ?? previousSearchQueryState.searchPatternType
+            const searchMode = options?.searchMode ?? previousSearchQueryState.searchMode
 
             extensionCoreAPI
                 .streamSearch(query, {
                     caseSensitive,
                     patternType,
+                    searchMode,
                     version: LATEST_VERSION,
                     trace: undefined,
+                    chunkMatches: true,
                 })
                 .then(() => {
                     editorReference.current?.focus()
@@ -162,6 +167,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     queryState: { query },
                     searchCaseSensitivity: caseSensitive,
                     searchPatternType: patternType,
+                    searchMode,
                 })
                 .catch(error => {
                     // TODO surface error to users
@@ -237,6 +243,13 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         [onSubmit]
     )
 
+    const setSearchMode = useCallback(
+        (searchMode: SearchMode) => {
+            onSubmit({ searchMode })
+        },
+        [onSubmit]
+    )
+
     const fetchHighlightedFileLineRangesWithContext = useCallback(
         (parameters: FetchFileParameters) => fetchHighlightedFileLineRanges({ ...parameters, platformContext }),
         [platformContext]
@@ -275,7 +288,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         [context.submittedSearchQueryState.queryState, platformContext, onSubmit]
     )
 
-    const onShareResultsClick = useCallback((): void => {
+    const onShareResultsClick = useCallback(async (): Promise<void> => {
         const queryState = context.submittedSearchQueryState
 
         const path = `/search?${buildSearchURLQuery(
@@ -284,9 +297,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
             queryState.searchCaseSensitivity,
             context.selectedSearchContextSpec
         )}&utm_campaign=vscode-extension&utm_medium=direct_traffic&utm_source=vscode-extension&utm_content=save-search`
-        extensionCoreAPI.copyLink(new URL(path, instanceURL).href).catch(error => {
-            console.error('Error copying search link to clipboard:', error)
-        })
+        await extensionCoreAPI.copyLink(new URL(path, instanceURL).href)
         platformContext.telemetryService.log('VSCEShareLinkClick')
     }, [context, instanceURL, extensionCoreAPI, platformContext])
 
@@ -324,6 +335,8 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     setCaseSensitivity={setCaseSensitivity}
                     patternType={context.submittedSearchQueryState?.searchPatternType}
                     setPatternType={setPatternType}
+                    searchMode={context.submittedSearchQueryState?.searchMode}
+                    setSearchMode={setSearchMode}
                     isSourcegraphDotCom={isSourcegraphDotCom}
                     structuralSearchDisabled={false}
                     queryState={userQueryState}

@@ -134,12 +134,16 @@ func TestPerformPurge(t *testing.T) {
 	}
 
 	_, err = queryrunner.EnqueueJob(ctx, workerBaseStore, &queryrunner.Job{
-		SeriesID:    doNotWantSeries,
-		SearchQuery: "delete_me",
-		RecordTime:  &now,
-		Cost:        5,
-		Priority:    5,
-		PersistMode: string(store.RecordMode),
+		SearchJob: queryrunner.SearchJob{
+			SeriesID:    doNotWantSeries,
+			SearchQuery: "delete_me",
+			RecordTime:  &now,
+			PersistMode: string(store.RecordMode),
+		},
+
+		Cost:     5,
+		Priority: 5,
+
 		State:       "queued",
 		NumResets:   0,
 		NumFailures: 0,
@@ -148,12 +152,15 @@ func TestPerformPurge(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = queryrunner.EnqueueJob(ctx, workerBaseStore, &queryrunner.Job{
-		SeriesID:    wantSeries,
-		SearchQuery: "should_remain",
-		RecordTime:  &now,
+		SearchJob: queryrunner.SearchJob{
+			SeriesID:    wantSeries,
+			SearchQuery: "should_remain",
+			RecordTime:  &now,
+			PersistMode: string(store.RecordMode),
+		},
+
 		Cost:        3,
 		Priority:    3,
-		PersistMode: string(store.RecordMode),
 		State:       "queued",
 		NumResets:   0,
 		NumFailures: 0,

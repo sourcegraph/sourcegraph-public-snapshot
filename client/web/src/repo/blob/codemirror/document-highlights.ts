@@ -19,14 +19,14 @@ import {
 } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, ViewPlugin } from '@codemirror/view'
 import { from, fromEvent, Observable, Subscription } from 'rxjs'
-import { switchMap, filter, mergeAll, map, tap } from 'rxjs/operators'
+import { switchMap, filter, mergeAll, map, tap, distinctUntilChanged } from 'rxjs/operators'
 
 import { DocumentHighlight } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
 import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
-import { offsetToUIPosition, positionToOffset, distinctWordAtCoords, sortRangeValuesByStart } from './utils'
+import { offsetToUIPosition, positionToOffset, preciseWordAtCoords, sortRangeValuesByStart } from './utils'
 
 type DocumentHighlightsSource = (position: Position) => Observable<DocumentHighlight[]>
 
@@ -130,7 +130,10 @@ class DocumentHighlightsManager {
     ) {
         this.querySubscription = fromEvent<MouseEvent>(this.view.contentDOM, 'mousemove')
             .pipe(
-                distinctWordAtCoords(this.view),
+                map(event => preciseWordAtCoords(this.view, event)),
+                distinctUntilChanged(
+                    (previous, current) => previous?.from === current?.from && previous?.to === current?.to
+                ),
                 tap(word => {
                     if (!word) {
                         this.clearHighlights()
