@@ -1,0 +1,34 @@
+@import 'open-color/open-color.css';
+@import '@sourcegraph/wildcard/src/global-styles/colors.scss';
+@import '@sourcegraph/wildcard/src/global-styles/variables.scss';
+
+@import '@sourcegraph/wildcard/src/global-styles/functions.scss';
+@import '@sourcegraph/wildcard/src/global-styles/mixins.scss';
+@import '@sourcegraph/wildcard/src/global-styles/reboot.scss';
+@import '@sourcegraph/wildcard/src/global-styles/utilities/text.scss';
+@import '@sourcegraph/wildcard/src/global-styles/utilities/border-radius.scss';
+
+@import '@sourcegraph/wildcard/src/global-styles/typography.scss';
+@import '@sourcegraph/wildcard/src/global-styles/code.scss';
+@import '@sourcegraph/wildcard/src/global-styles/icons.scss';
+@import '@sourcegraph/wildcard/src/global-styles/utilities.scss';
+@import '@sourcegraph/wildcard/src/global-styles/dropdown.scss';
+@import '@sourcegraph/wildcard/src/global-styles/forms.scss';
+
+:root {
+    --navbar-height: 2.5rem;
+    font-family: var(--font-body);
+    color: var(--color-text);
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    background-color: var(--body-bg);
+    overflow: hidden;
+    font-size: 14px;
+}
+
+.match-highlight {
+    background-color: var(--mark-bg);
+}

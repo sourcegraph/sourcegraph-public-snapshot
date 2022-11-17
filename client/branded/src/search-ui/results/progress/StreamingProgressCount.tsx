@@ -12,6 +12,9 @@ import { StreamingProgressProps } from './StreamingProgress'
 
 import styles from './StreamingProgressCount.module.scss'
 
+import { limitHit } from './utils'
+export { limitHit }
+
 const abbreviateNumber = (number: number): string => {
     if (number < 1e3) {
         return number.toString()
@@ -24,9 +27,6 @@ const abbreviateNumber = (number: number): string => {
     }
     return (number / 1e9).toFixed(1) + 'b'
 }
-
-export const limitHit = (progress: Progress): boolean =>
-    progress.skipped.some(skipped => skipped.reason.indexOf('-limit') > 0)
 
 export const getProgressText = (progress: Progress): { visibleText: string; readText: string } => {
     const contentWithoutTimeUnit =
