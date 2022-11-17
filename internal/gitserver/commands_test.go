@@ -1885,7 +1885,11 @@ func TestRepository_Commits_options(t *testing.T) {
 		}
 		// Added for awareness if this error message changes. Insights record last repo indexing and consider empty
 		// repos a success case.
-		t.Run("empty repo", func(t *testing.T) {
+		subRepo := ""
+		if checker != nil {
+			subRepo = " sub repo enabled"
+		}
+		t.Run("empty repo"+subRepo, func(t *testing.T) {
 			repo := MakeGitRepository(t)
 			before := ""
 			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
@@ -1893,11 +1897,13 @@ func TestRepository_Commits_options(t *testing.T) {
 			if err == nil {
 				t.Error("expected error, got nil")
 			}
-			wantErrPrefix := `git command [git log --format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00 --after=` + after
-			wantErrSuffix := `--date-order] failed (output: ""): exit status 128`
-			errString := err.Error()
-			if !strings.HasPrefix(errString, wantErrPrefix) || !strings.HasSuffix(errString, wantErrSuffix) {
-				t.Errorf("expected prefix and suffix [%s] [%s], got full [%s]", wantErrPrefix, wantErrSuffix, errString)
+			wantErr := `git command [git log --format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00 --after=` + after + " --date-order"
+			if subRepo != "" {
+				wantErr += " --name-only"
+			}
+			wantErr += `] failed (output: ""): exit status 128`
+			if err.Error() != wantErr {
+				t.Errorf("expected:%v got:%v", wantErr, err.Error())
 			}
 		})
 	}
