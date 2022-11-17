@@ -1024,10 +1024,10 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		where = append(where, sqlf.Sprintf("gr.clone_status = %s", opt.CloneStatus))
 	}
 	if opt.NoIndexed {
-		where = append(where, sqlf.Sprintf("COALESCE(zr.index_status, 'not_indexed') = 'not_indexed'"))
+		where = append(where, sqlf.Sprintf("zr.index_status = 'not_indexed'"))
 	}
 	if opt.OnlyIndexed {
-		where = append(where, sqlf.Sprintf("COALESCE(zr.index_status, 'not_indexed') = 'indexed'"))
+		where = append(where, sqlf.Sprintf("zr.index_status = 'indexed'"))
 	}
 
 	if opt.FailedFetch {
@@ -1104,7 +1104,7 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 	if opt.OnlyIndexed || opt.NoIndexed {
-		joins = append(joins, sqlf.Sprintf("LEFT JOIN zoekt_repos zr ON zr.repo_id = repo.id"))
+		joins = append(joins, sqlf.Sprintf("JOIN zoekt_repos zr ON zr.repo_id = repo.id"))
 	}
 
 	if len(opt.KVPFilters) > 0 {
