@@ -165,7 +165,7 @@ func TestWithCreationPings(t *testing.T) {
 	}
 
 	stats := &types.CodeInsightsUsageStatistics{}
-	err = GetCreationViewUsage(ctx, db, stats, now)
+	err = getCreationViewUsage(ctx, db, stats, now)
 	if err != nil {
 		t.Fatal(err)
 	}
