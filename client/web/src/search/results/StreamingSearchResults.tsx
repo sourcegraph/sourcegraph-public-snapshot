@@ -99,6 +99,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         extensionsController !== null && window.context.enableLegacyExtensions ? extensionsController.extHostAPI : null
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
     const featureOverrides = useDeepMemo(
+        // Nested use memo here is used for avoiding extra object calculation step on each render
         useMemo(() => new URLSearchParams(location.search).getAll('feat') ?? [], [location.search])
     )
 
