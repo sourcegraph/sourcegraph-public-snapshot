@@ -1,6 +1,7 @@
 package rcache
 
 import (
+	"context"
 	"reflect"
 	"strconv"
 	"testing"
@@ -200,6 +201,23 @@ func TestCache_Increase(t *testing.T) {
 		_, ok = c.Get("a")
 		return !ok
 	}, 5*time.Second, 50*time.Millisecond, "rcache.increase did not respect expiration")
+}
+
+func TestCache_ListKeys(t *testing.T) {
+	SetupForTest(t)
+
+	c := NewWithTTL("some_prefix:", 1)
+	c.SetMulti(
+		[2]string{"foobar", "123"},
+		[2]string{"bazbar", "456"},
+		[2]string{"barfoo", "234"},
+	)
+
+	keys, err := c.ListKeys(context.Background())
+	assert.NoError(t, err)
+	for _, k := range []string{"foobar", "bazbar", "barfoo"} {
+		assert.Contains(t, keys, k)
+	}
 }
 
 func bytes(s ...string) [][]byte {

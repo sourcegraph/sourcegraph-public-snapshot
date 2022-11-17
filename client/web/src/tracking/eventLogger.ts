@@ -18,6 +18,7 @@ export const COHORT_ID_KEY = 'sourcegraphCohortId'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
 export const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
 export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
+export const DEVICE_SESSION_ID_KEY = 'sourcegraphSessionId'
 
 const EXTENSION_MARKER_ID = '#sourcegraph-app-background'
 
@@ -80,6 +81,20 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
         expires: 365,
+        // Enforce HTTPS
+        secure: true,
+        // We only read the cookie with JS so we don't need to send it cross-site nor on initial page requests.
+        // However, we do need it on page redirects when users sign up via OAuth, hence using the Lax policy.
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite
+        sameSite: 'Lax',
+        // Specify the Domain attribute to ensure subdomains (about.sourcegraph.com) can receive this cookie.
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies#define_where_cookies_are_sent
+        domain: location.hostname,
+    }
+
+    private readonly deviceSessionCookieSettings: CookieAttributes = {
+        // ~30 minutes expiry, but renewed on activity.
+        expires: 0.0208,
         // Enforce HTTPS
         secure: true,
         // We only read the cookie with JS so we don't need to send it cross-site nor on initial page requests.
@@ -216,6 +231,15 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
         this.lastSourceURL = lastSourceURL
         return lastSourceURL
+    }
+
+    public getDeviceSessionID(): string {
+        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY)
+        if (!deviceSessionID || deviceSessionID === '') {
+            deviceSessionID = uuid.v4()
+            cookies.set(DEVICE_SESSION_ID_KEY, deviceSessionID, this.deviceSessionCookieSettings)
+        }
+        return deviceSessionID
     }
 
     // Device ID is a require field for Amplitude events.

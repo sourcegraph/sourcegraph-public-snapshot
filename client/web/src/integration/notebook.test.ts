@@ -422,7 +422,7 @@ describe('Search Notebook', () => {
         )
 
         // Wait for highlighted code to load
-        await driver.page.waitForSelector(`${fileBlockSelector} th.line`, { visible: true })
+        await driver.page.waitForSelector(`${fileBlockSelector} td.line`, { visible: true })
 
         // Refocus the entire block (prevents jumping content for below actions)
         await driver.page.click(fileBlockSelector)
@@ -617,7 +617,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.click(`${symbolBlockSelector} [data-testid="symbol-suggestion-button"]`)
 
         // Wait for highlighted code to load
-        await driver.page.waitForSelector(`${symbolBlockSelector} th.line`, { visible: true })
+        await driver.page.waitForSelector(`${symbolBlockSelector} td.line`, { visible: true })
 
         // Refocus the entire block (prevents jumping content for below actions)
         await driver.page.click(symbolBlockSelector)
@@ -708,7 +708,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         const fileBlockSelector = blockSelector(blockIds[2])
 
         // Wait for highlighted code to load
-        await driver.page.waitForSelector(`${fileBlockSelector} th.line`, { visible: true })
+        await driver.page.waitForSelector(`${fileBlockSelector} td.line`, { visible: true })
 
         const fileBlockHeaderText = await getFileBlockHeaderText(fileBlockSelector)
         expect(fileBlockHeaderText).toEqual('sourcegraph/sourcegraph›client/search/src/index.ts')

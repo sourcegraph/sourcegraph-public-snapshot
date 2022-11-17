@@ -244,7 +244,9 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                 key={node.id}
                 className={classNames(styles.gitCommitNode, styles.gitCommitNodeCompact, className)}
             >
-                <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
+                <div
+                    className={classNames('w-100 d-flex justify-content-between align-items-center flex-wrap-reverse')}
+                >
                     {bylineElement}
                     <small className={classNames('text-muted', styles.messageTimestamp)}>
                         <Timestamp
@@ -321,7 +323,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                     </>
                 ) : (
                     <div>
-                        <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
+                        <div className={styles.innerWrapper}>
                             {bylineElement}
                             {messageElement}
                             <Link to={node.canonicalURL}>{oidElement}</Link>

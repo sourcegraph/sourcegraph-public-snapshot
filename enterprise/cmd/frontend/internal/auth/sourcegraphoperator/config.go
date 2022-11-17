@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
@@ -18,7 +19,7 @@ import (
 func GetOIDCProvider(id string) *openidconnect.Provider {
 	p, ok := providers.GetProviderByConfigID(
 		providers.ConfigID{
-			Type: ProviderType,
+			Type: auth.SourcegraphOperatorProviderType,
 			ID:   id,
 		},
 	).(*provider)
@@ -37,13 +38,13 @@ func Init() {
 	conf.ContributeValidator(validateConfig)
 
 	p := NewProvider(*cloudSiteConfig.AuthProviders.SourcegraphOperator)
-	logger := log.Scoped(ProviderType, "Sourcegraph Operator config watch")
+	logger := log.Scoped(auth.SourcegraphOperatorProviderType, "Sourcegraph Operator config watch")
 	go func() {
 		if err := p.Refresh(context.Background()); err != nil {
 			logger.Error("failed to fetch Sourcegraph Operator service provider metadata", log.Error(err))
 		}
 	}()
-	providers.Update(ProviderType, []providers.Provider{p})
+	providers.Update(auth.SourcegraphOperatorProviderType, []providers.Provider{p})
 }
 
 func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {

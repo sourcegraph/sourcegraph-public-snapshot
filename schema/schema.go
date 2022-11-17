@@ -1824,6 +1824,8 @@ type Settings struct {
 	SearchContextLines int `json:"search.contextLines,omitempty"`
 	// SearchDefaultCaseSensitive description: Whether query patterns are treated case sensitively. Patterns are case insensitive by default.
 	SearchDefaultCaseSensitive bool `json:"search.defaultCaseSensitive,omitempty"`
+	// SearchDefaultMode description: Defines default properties for search behavior. The default is `smart`, which provides query assistance that automatically runs alternative queries when appropriate. When `precise`, search behavior strictly searches for the precise meaning of the query.
+	SearchDefaultMode string `json:"search.defaultMode,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
 	// SearchGlobbing description: REMOVED. Previously an experimental setting to interpret file and repo patterns as glob syntax.
@@ -2035,6 +2037,8 @@ type SiteConfiguration struct {
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
 	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
+	// AuthzSyncJobsRecordsTTL description: EXPERIMENTAL: Time interval (in minutes) of how long to keep sync job records for. Set to a negative value to disable.
+	AuthzSyncJobsRecordsTTL int `json:"authz.syncJobsRecordsTTL,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
 	BatchChangesChangesetsRetention string `json:"batchChanges.changesetsRetention,omitempty"`
 	// BatchChangesDisableWebhooksWarning description: Hides Batch Changes warnings about webhooks not being configured.
