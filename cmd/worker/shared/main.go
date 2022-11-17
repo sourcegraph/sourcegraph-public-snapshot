@@ -244,7 +244,7 @@ func runRoutinesConcurrently(logger log.Logger, jobs map[string]job.Job) chan ro
 
 		go func(name string) {
 			defer wg.Done()
-
+			jobLogger.Debug("Initializing job inside goroutine")
 			routines, err := jobs[name].Routines(ctx, jobLogger)
 			results <- routinesResult{name, routines, err}
 
