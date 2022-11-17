@@ -339,7 +339,6 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 			}
 		}
 	}
-
 	return board, nil
 }
 
