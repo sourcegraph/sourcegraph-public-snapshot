@@ -124,12 +124,11 @@ func cveCheck(cmd *cli.Context) error {
 
 func downloadUrl(uri string, w io.Writer) (err error) {
 	std.Out.WriteLine(output.Styledf(output.StylePending, "Downloading url: %s", uri))
-	client := http.Client{}
-	resp, err := client.Get(uri)
+	resp, err := http.Get(uri)
 	if err != nil {
 		return err
 	}
-	defer func() { err = resp.Body.Close() }()
+	defer resp.Body.Close()
 
 	_, err = io.Copy(w, resp.Body)
 	if err != nil {
