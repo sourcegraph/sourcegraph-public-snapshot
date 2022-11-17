@@ -223,7 +223,7 @@ func upsertRepo(ctx context.Context, db DB, op InsertRepoOp) error {
 		return nil
 	}
 
-	result := s.Handle().QueryRowContext(
+	qrc := s.Handle().QueryRowContext(
 		ctx,
 		upsertSQL,
 		op.Name,
@@ -235,11 +235,12 @@ func upsertRepo(ctx context.Context, db DB, op InsertRepoOp) error {
 		op.Archived,
 		op.Private,
 	)
+	err = qrc.Err()
 
 	// Set size if specified
 	if op.GitserverRepoSize > 0 {
 		var lastInsertId int64
-		err2 := result.Scan(&lastInsertId)
+		err2 := qrc.Scan(&lastInsertId)
 		if err2 != nil {
 			return err2
 		}
