@@ -179,10 +179,11 @@ func TestExternalService_Perforce(t *testing.T) {
 		},
 		{
 			name:      "p4 fusion",
-			depot:     "michelle-test",
+			depot:     "integration-test-depot",
 			useFusion: true,
-			blobPath:  "main.go",
-			wantBlob:  "package main\n\nimport \"fmt\"\nfunc main() {\n\tfmt.Println(\"hello\")\n}\n",
+			blobPath:  "path.txt",
+			wantBlob: `./
+`,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
