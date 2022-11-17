@@ -1,8 +1,14 @@
-import { Line, Text } from '@codemirror/state'
+import { Line, SelectionRange, Text } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 
 import { Position } from '@sourcegraph/extension-api-types'
 import { UIPositionSpec, UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+
+/**
+ * The MouseEvent uses numbers to indicate which button was pressed.
+ * See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button#value
+ */
+export const MOUSE_MAIN_BUTTON = 0
 
 export function zeroToOneBasedPosition(position: Position): { line: number; character: number } {
     return {
@@ -153,6 +159,10 @@ export function preciseWordAtCoords(
     }
 
     return null
+}
+
+export function isSelectionInsideDocument(selection: SelectionRange, doc: Text): boolean {
+    return selection.from >= 0 && selection.to < doc.length
 }
 
 /**

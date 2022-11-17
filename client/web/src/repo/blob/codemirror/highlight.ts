@@ -13,7 +13,7 @@ import { positionToOffset } from './utils'
  * server with a lineIndex map (implemented as array), for fast lookup by line
  * number, with minimal additional impact on memory (e.g. garbage collection).
  */
-interface HighlightIndex {
+export interface HighlightIndex {
     occurrences: Occurrence[]
     lineIndex: (number | undefined)[]
 }
@@ -23,7 +23,7 @@ interface HighlightIndex {
  * NOTE: This assumes that the data is sorted and does not contain overlapping
  * ranges.
  */
-function createHighlightTable(info: BlobInfo): HighlightIndex {
+export function createHighlightTable(info: BlobInfo): HighlightIndex {
     const lineIndex: (number | undefined)[] = []
 
     if (!info.lsif) {

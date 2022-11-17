@@ -151,6 +151,16 @@ const languages: Language[] = languageSpecs.map(spec => ({
     providers: createProviders(spec, hasImplementationsField, new RedactingLogger(console)),
 }))
 
+// Returns true if the provided language supports "Find implementations"
+export function hasFindImplementationsSupport(language: string): boolean {
+    for (const spec of languageSpecs) {
+        if (spec.languageID === language) {
+            return spec.textDocumentImplemenationSupport ?? false
+        }
+    }
+    return false
+}
+
 function selectorForSpec(languageSpec: LanguageSpec): DocumentSelector {
     return [
         { language: languageSpec.languageID },

@@ -81,7 +81,8 @@ export interface ActionContribution {
      */
     commandArguments?: (TemplateExpression | number | boolean | null | object | any[])[]
 
-    /** The title that succinctly describes what this action does. */
+    /** The title that succinctly describes what this action does. The question
+     * mark '?' renders the MDI HelpCircleOutline icon. */
     title?: TemplateExpression
 
     /** The title that succinctly describes what this action is even though it's disabled. */
