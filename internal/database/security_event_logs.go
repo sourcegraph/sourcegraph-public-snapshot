@@ -112,3 +112,8 @@ func (s *securityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent)
 		trace.Logger(ctx, s.logger).Error(string(e.Name), log.String("event", string(j)), log.Error(err))
 	}
 }
+
+func (s *securityEventLogsStore) ListExportableEvents(ctx context.Context, after, limit int) ([]*types.SecurityEvent, error) {
+	suffix := "WHERE security_event_logs.id > %d AND name IN (SELECT event_name FROM security_event_logs_export_allowlist) ORDER BY security_event_logs.id LIMIT %d"
+	return s.getBySQL(ctx sqlf.Sprintf(suffix, after, limit))
+}
