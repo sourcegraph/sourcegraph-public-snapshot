@@ -216,13 +216,6 @@ func (s BitbucketCloudSource) MergeChangeset(ctx context.Context, cs *Changeset,
 func (s BitbucketCloudSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
 	targetMeta := targetRepo.Metadata.(*bitbucketcloud.Repo)
 
-	// Figure out if we already have the repo.
-	if fork, err := s.client.Repo(ctx, namespace, targetMeta.Slug); err == nil {
-		return s.copyRepoAsFork(targetRepo, fork)
-	} else if !errcode.IsNotFound(err) {
-		return nil, errors.Wrap(err, "checking for fork existence")
-	}
-
 	targetMetaNamespace, err := targetMeta.Namespace()
 	if err != nil {
 		return nil, errors.Wrap(err, "forking repository")
@@ -230,12 +223,16 @@ func (s BitbucketCloudSource) GetNamespaceFork(ctx context.Context, targetRepo *
 
 	targetRepoNamespace := targetMetaNamespace + "-" + targetMeta.Slug
 
-	targetFullName := string(bitbucketcloud.ForkInputWorkspace(namespace)) + "/" + targetRepoNamespace
+	// Figure out if we already have the repo.
+	if fork, err := s.client.Repo(ctx, namespace, targetRepoNamespace); err == nil {
+		return s.copyRepoAsFork(targetRepo, fork)
+	} else if !errcode.IsNotFound(err) {
+		return nil, errors.Wrap(err, "checking for fork existence")
+	}
 
 	fork, err := s.client.ForkRepository(ctx, targetMeta, bitbucketcloud.ForkInput{
 		Name:      &targetRepoNamespace,
 		Workspace: bitbucketcloud.ForkInputWorkspace(namespace),
-		FullName:  &targetFullName,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "forking repository")
