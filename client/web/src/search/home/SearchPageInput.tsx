@@ -23,7 +23,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../../auth'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Notices } from '../../global/Notices'
 import {
     useExperimentalFeatures,
@@ -75,7 +74,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
-    const [showSearchHistory] = useFeatureFlag('search-input-show-history')
     const { recentSearches, addRecentSearch } = useRecentSearches()
 
     const submitSearchOnChange = useCallback(
@@ -141,14 +139,13 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                             queryState={props.queryState}
                             onChange={props.setQueryState}
                             onSubmit={onSubmit}
-                            autoFocus={!showSearchHistory && !isTouchOnlyDevice && props.autoFocus !== false}
+                            autoFocus={!isTouchOnlyDevice && props.autoFocus !== false}
                             isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                             structuralSearchDisabled={
                                 window.context?.experimentalFeatures?.structuralSearch === 'disabled'
                             }
                             applySuggestionsOnEnter={applySuggestionsOnEnter}
-                            showCopyQueryButton={!showSearchHistory}
-                            showSearchHistory={showSearchHistory}
+                            showSearchHistory={true}
                             recentSearches={recentSearches}
                         />
                     </TraceSpanProvider>

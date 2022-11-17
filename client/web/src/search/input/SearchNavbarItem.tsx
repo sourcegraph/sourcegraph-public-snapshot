@@ -13,7 +13,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 
@@ -71,7 +70,6 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
-    const [showSearchHistory] = useFeatureFlag('search-input-show-history')
     const { recentSearches, addRecentSearch } = useRecentSearches()
 
     const submitSearchOnChange = useCallback(
@@ -121,7 +119,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                 hideHelpButton={isSearchPage}
-                showSearchHistory={showSearchHistory}
+                showSearchHistory={true}
                 recentSearches={recentSearches}
             />
         </Form>
