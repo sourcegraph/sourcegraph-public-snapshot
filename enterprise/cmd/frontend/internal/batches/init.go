@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/window"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -44,10 +44,10 @@ func Init(
 	// Register enterprise services.
 	gitserverClient := gitserver.NewClient(db)
 	enterpriseServices.BatchChangesResolver = resolvers.New(bstore, gitserverClient)
-	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient)
-	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient)
-	enterpriseServices.BitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient)
-	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(bstore, gitserverClient)
+	enterpriseServices.BatchesGitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient)
+	enterpriseServices.BatchesBitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient)
+	enterpriseServices.BatchesBitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient)
+	enterpriseServices.BatchesGitLabWebhook = webhooks.NewGitLabWebhook(bstore, gitserverClient)
 
 	operations := httpapi.NewOperations(observationContext)
 	fileHandler := httpapi.NewFileHandler(db, bstore, operations)

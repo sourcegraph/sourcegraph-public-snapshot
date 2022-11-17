@@ -161,6 +161,9 @@ func generateSearchRecordingsStream(ctx context.Context, job *SearchJob, recordT
 	if len(tr.Errors) > 0 {
 		return nil, classifiedError(tr.Errors, types.Search)
 	}
+	if tr.DidTimeout {
+		return nil, SearchTimeoutError
+	}
 	if len(tr.Alerts) > 0 {
 		return nil, errors.Errorf("streaming search: alerts: %v", tr.Alerts)
 	}

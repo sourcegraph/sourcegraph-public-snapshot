@@ -31,9 +31,9 @@ type repositoryStatsResolver struct {
 func (r *repositoryStatsResolver) GitDirBytes(ctx context.Context) (BigInt, error) {
 	gitDirBytes, err := r.computeGitDirBytes(ctx)
 	if err != nil {
-		return BigInt{}, err
+		return 0, err
 	}
-	return BigInt{Int: gitDirBytes}, nil
+	return BigInt(gitDirBytes), nil
 
 }
 
@@ -82,9 +82,9 @@ func min(a, b int32) int32 {
 func (r *repositoryStatsResolver) IndexedLinesCount(ctx context.Context) (BigInt, error) {
 	_, indexedLinesCount, err := r.computeIndexedStats(ctx)
 	if err != nil {
-		return BigInt{}, err
+		return 0, err
 	}
-	return BigInt{Int: indexedLinesCount}, nil
+	return BigInt(indexedLinesCount), nil
 }
 
 func (r *repositoryStatsResolver) computeIndexedStats(ctx context.Context) (int32, int64, error) {

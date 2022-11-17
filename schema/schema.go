@@ -112,13 +112,12 @@ type AuthProviderCommon struct {
 	DisplayName string `json:"displayName,omitempty"`
 }
 type AuthProviders struct {
-	Builtin             *BuiltinAuthProvider
-	Saml                *SAMLAuthProvider
-	Openidconnect       *OpenIDConnectAuthProvider
-	SourcegraphOperator *SourcegraphOperatorAuthProvider
-	HttpHeader          *HTTPHeaderAuthProvider
-	Github              *GitHubAuthProvider
-	Gitlab              *GitLabAuthProvider
+	Builtin       *BuiltinAuthProvider
+	Saml          *SAMLAuthProvider
+	Openidconnect *OpenIDConnectAuthProvider
+	HttpHeader    *HTTPHeaderAuthProvider
+	Github        *GitHubAuthProvider
+	Gitlab        *GitLabAuthProvider
 }
 
 func (v AuthProviders) MarshalJSON() ([]byte, error) {
@@ -130,9 +129,6 @@ func (v AuthProviders) MarshalJSON() ([]byte, error) {
 	}
 	if v.Openidconnect != nil {
 		return json.Marshal(v.Openidconnect)
-	}
-	if v.SourcegraphOperator != nil {
-		return json.Marshal(v.SourcegraphOperator)
 	}
 	if v.HttpHeader != nil {
 		return json.Marshal(v.HttpHeader)
@@ -165,10 +161,8 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.Openidconnect)
 	case "saml":
 		return json.Unmarshal(data, &v.Saml)
-	case "sourcegraph-operator":
-		return json.Unmarshal(data, &v.SourcegraphOperator)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "sourcegraph-operator", "http-header", "github", "gitlab"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
 type BackendInsight struct {
@@ -673,6 +667,8 @@ type ExperimentalFeatures struct {
 	SearchIndexQueryContexts bool `json:"search.index.query.contexts,omitempty"`
 	// SearchIndexRevisions description: An array of objects describing rules for extra revisions (branch, ref, tag, commit sha, etc) to be indexed for all repositories that match them. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
 	SearchIndexRevisions []*SearchIndexRevisionsRule `json:"search.index.revisions,omitempty"`
+	// SearchSanitization description: Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.
+	SearchSanitization *SearchSanitization `json:"search.sanitization,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: DEPRECATED. Always on. Will be removed in 3.19.
 	SearchMultipleRevisionsPerRepository *bool `json:"searchMultipleRevisionsPerRepository,omitempty"`
 	// StructuralSearch description: Enables structural search.
@@ -1488,7 +1484,7 @@ type PerforceConnection struct {
 	MaxChanges float64 `json:"maxChanges,omitempty"`
 	// P4Client description: Client specified as an option for p4 CLI (P4CLIENT, also enables '--use-client-spec')
 	P4Client string `json:"p4.client,omitempty"`
-	// P4Passwd description: The ticket value for the user (P4PASSWD).
+	// P4Passwd description: The ticket value for the user (P4PASSWD). You can get this by running `p4 login -p` or `p4 login -pa`. It should look like `6211C5E719EDE6925855039E8F5CC3D2`.
 	P4Passwd string `json:"p4.passwd"`
 	// P4Port description: The Perforce Server address to be used for p4 CLI (P4PORT).
 	P4Port string `json:"p4.port"`
@@ -1704,6 +1700,14 @@ type SearchLimits struct {
 	// MaxTimeoutSeconds description: The maximum value for "timeout:" that search will respect. "timeout:" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Defaults to 1 minute.
 	MaxTimeoutSeconds int `json:"maxTimeoutSeconds,omitempty"`
 }
+
+// SearchSanitization description: Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.
+type SearchSanitization struct {
+	// OrgName description: Optionally specify the name of an organization within this Sourcegraph instance containing users whose searches should not be sanitized. Admins: ensure that ALL members of this org are trusted users. If no org exists with the given name then there will be no effect. If no org name is specified then all non-admin users will have their searches sanitized if this feature is enabled.
+	OrgName string `json:"orgName,omitempty"`
+	// SanitizePatterns description: An array of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. Values added to this array must be valid Go regular expressions. Site admins will not have their search results sanitized.
+	SanitizePatterns []string `json:"sanitizePatterns,omitempty"`
+}
 type SearchSavedQueries struct {
 	// Description description: Description of this saved query
 	Description string `json:"description"`
@@ -1820,6 +1824,8 @@ type Settings struct {
 	SearchContextLines int `json:"search.contextLines,omitempty"`
 	// SearchDefaultCaseSensitive description: Whether query patterns are treated case sensitively. Patterns are case insensitive by default.
 	SearchDefaultCaseSensitive bool `json:"search.defaultCaseSensitive,omitempty"`
+	// SearchDefaultMode description: Defines default properties for search behavior. The default is `smart`, which provides query assistance that automatically runs alternative queries when appropriate. When `precise`, search behavior strictly searches for the precise meaning of the query.
+	SearchDefaultMode string `json:"search.defaultMode,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
 	// SearchGlobbing description: REMOVED. Previously an experimental setting to interpret file and repo patterns as glob syntax.
@@ -2031,6 +2037,8 @@ type SiteConfiguration struct {
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
 	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
+	// AuthzSyncJobsRecordsTTL description: EXPERIMENTAL: Time interval (in minutes) of how long to keep sync job records for. Set to a negative value to disable.
+	AuthzSyncJobsRecordsTTL int `json:"authz.syncJobsRecordsTTL,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
 	BatchChangesChangesetsRetention string `json:"batchChanges.changesetsRetention,omitempty"`
 	// BatchChangesDisableWebhooksWarning description: Hides Batch Changes warnings about webhooks not being configured.
@@ -2226,19 +2234,6 @@ type SiteConfiguration struct {
 	UserReposMaxPerUser int `json:"userRepos.maxPerUser,omitempty"`
 	// WebhookLogging description: Configuration for logging incoming webhooks.
 	WebhookLogging *WebhookLogging `json:"webhook.logging,omitempty"`
-}
-
-// SourcegraphOperatorAuthProvider description: Configures the Sourcegraph Operator authentication provider for SSO. This is only available in managed instances on Sourcegraph Cloud.
-type SourcegraphOperatorAuthProvider struct {
-	// ClientID description: The client ID of the Sourcegraph Operator client for this site.
-	ClientID string `json:"clientID"`
-	// ClientSecret description: The client secret of the Sourcegraph Operator client for this site.
-	ClientSecret string `json:"clientSecret"`
-	// Issuer description: The URL of the Sourcegraph Operator issuer.
-	Issuer string `json:"issuer"`
-	// LifecycleDuration description: The duration before the user accounts created by this authentication provider to be automatically deleted in minutes.
-	LifecycleDuration int    `json:"lifecycleDuration,omitempty"`
-	Type              string `json:"type"`
 }
 
 // SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.

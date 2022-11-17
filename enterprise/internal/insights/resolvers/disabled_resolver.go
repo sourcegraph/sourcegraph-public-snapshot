@@ -82,3 +82,7 @@ func (r *disabledResolver) SearchInsightPreview(ctx context.Context, args graphq
 func (r *disabledResolver) SearchQueryAggregate(ctx context.Context, args graphqlbackend.SearchQueryArgs) (graphqlbackend.SearchQueryAggregateResolver, error) {
 	return nil, errors.New(r.reason)
 }
+
+func (r *disabledResolver) InsightViewDebug(ctx context.Context, args graphqlbackend.InsightViewDebugArgs) (graphqlbackend.InsightViewDebugResolver, error) {
+	return nil, errors.New(r.reason)
+}

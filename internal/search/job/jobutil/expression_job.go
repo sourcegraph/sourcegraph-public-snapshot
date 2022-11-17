@@ -63,10 +63,6 @@ func (a *AndJob) Run(ctx context.Context, clients job.RuntimeClients, stream str
 	}
 
 	err = g.Wait()
-
-	if !sentResults.Load() && limitHit.Load() {
-		maxAlerter.Add(search.AlertForCappedAndExpression())
-	}
 	return maxAlerter.Alert, g.Wait()
 }
 

@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/charmbracelet/glamour v0.5.0
 	github.com/cockroachdb/errors v1.9.0
-	github.com/derision-test/go-mockgen v1.3.6
+	github.com/derision-test/go-mockgen v1.3.7
 	github.com/fatih/color v1.13.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gobwas/glob v0.2.3

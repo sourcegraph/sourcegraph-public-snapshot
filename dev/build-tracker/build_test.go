@@ -113,3 +113,29 @@ func TestBuildStoreAdd(t *testing.T) {
 		assert.Equal(t, build.ConsecutiveFailure, 0)
 	})
 }
+
+func TestBuildFailedJobs(t *testing.T) {
+	state := "done"
+	pipeline := "bobheadxi"
+	exitCode := 1
+	eventFailed := func(name string, buildNumber int) *Event {
+		return &Event{Name: "job.finished", Build: buildkite.Build{State: &state, Number: &buildNumber}, Pipeline: buildkite.Pipeline{Name: &pipeline}, Job: buildkite.Job{Name: &name, ExitStatus: &exitCode}}
+	}
+
+	store := NewBuildStore(logtest.Scoped(t))
+
+	t.Run("failed jobs should contain different jobs", func(t *testing.T) {
+		store.Add(eventFailed("Test 1", 1))
+		store.Add(eventFailed("Test 2", 1))
+		store.Add(eventFailed("Test 3", 1))
+
+		build := store.GetByBuildNumber(1)
+
+		unique := make(map[string]int)
+		for _, j := range build.failedJobs() {
+			unique[j.name()] += 1
+		}
+
+		assert.Equal(t, 3, len(unique))
+	})
+}

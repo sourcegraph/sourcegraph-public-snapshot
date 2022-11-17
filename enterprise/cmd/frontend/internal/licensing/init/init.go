@@ -15,8 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/resolvers"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -154,5 +154,10 @@ type usersStore struct {
 }
 
 func (u *usersStore) Count(ctx context.Context) (int, error) {
-	return u.db.Users().Count(ctx, nil)
+	return u.db.Users().Count(
+		ctx,
+		&database.UsersListOptions{
+			ExcludeSourcegraphOperators: true,
+		},
+	)
 }

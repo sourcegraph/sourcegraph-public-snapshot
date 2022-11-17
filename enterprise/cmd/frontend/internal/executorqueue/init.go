@@ -3,6 +3,8 @@ package executorqueue
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -25,6 +27,7 @@ func Init(
 	batchesWorkspaceFileGetHandler := enterpriseServices.BatchesChangesFileGetHandler
 	batchesWorkspaceFileExistsHandler := enterpriseServices.BatchesChangesFileGetHandler
 	accessToken := func() string { return conf.SiteConfig().ExecutorsAccessToken }
+	logger := log.Scoped("executorqueue", "")
 
 	// Register queues. If this set changes, be sure to also update the list of valid
 	// queue names in ./metrics/queue_allocation.go, and register a metrics exporter
@@ -37,6 +40,7 @@ func Init(
 	}
 
 	queueHandler, err := newExecutorQueueHandler(
+		logger,
 		db,
 		queueOptions,
 		accessToken,

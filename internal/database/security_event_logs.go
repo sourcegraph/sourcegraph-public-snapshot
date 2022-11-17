@@ -51,6 +51,9 @@ const (
 
 	SecurityEventGitLabAuthSucceeded SecurityEventName = "GitLabAuthSucceeded"
 	SecurityEventGitLabAuthFailed    SecurityEventName = "GitLabAuthFailed"
+
+	SecurityEventOIDCLoginSucceeded SecurityEventName = "SecurityEventOIDCLoginSucceeded"
+	SecurityEventOIDCLoginFailed    SecurityEventName = "SecurityEventOIDCLoginFailed"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.

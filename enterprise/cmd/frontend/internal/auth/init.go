@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -28,6 +27,7 @@ import (
 func Init(logger log.Logger, db database.DB) {
 	logger = logger.Scoped("auth", "provides enterprise authentication middleware")
 	openidconnect.Init()
+	sourcegraphoperator.Init()
 	saml.Init()
 	httpheader.Init()
 	githuboauth.Init(logger, db)
@@ -36,6 +36,7 @@ func Init(logger log.Logger, db database.DB) {
 	// Register enterprise auth middleware
 	auth.RegisterMiddlewares(
 		openidconnect.Middleware(db),
+		sourcegraphoperator.Middleware(db),
 		saml.Middleware(db),
 		httpheader.Middleware(db),
 		githuboauth.Middleware(db),
@@ -97,18 +98,31 @@ func Init(logger log.Logger, db database.DB) {
 }
 
 func ssoSignOutHandler(w http.ResponseWriter, r *http.Request) {
+	logger := log.Scoped("ssoSignOutHandler", "Signing out from SSO providers")
 	for _, p := range conf.Get().AuthProviders {
 		var err error
 		switch {
-		case p.SourcegraphOperator != nil:
-			_, err = openidconnect.SignOut(w, r, sourcegraphoperator.SessionKey, sourcegraphoperator.GetOIDCProvider)
 		case p.Openidconnect != nil:
 			_, err = openidconnect.SignOut(w, r, openidconnect.SessionKey, openidconnect.GetProvider)
 		case p.Saml != nil:
 			_, err = saml.SignOut(w, r)
 		}
 		if err != nil {
-			log15.Error("Error clearing auth provider session data.", "err", err)
+			logger.Error("failed to clear auth provider session data", log.Error(err))
+		}
+	}
+
+	if p := sourcegraphoperator.GetOIDCProvider(sourcegraphoperator.ProviderType); p != nil {
+		_, err := openidconnect.SignOut(
+			w,
+			r,
+			sourcegraphoperator.SessionKey,
+			func(string) *openidconnect.Provider {
+				return p
+			},
+		)
+		if err != nil {
+			logger.Error("failed to clear auth provider session data", log.Error(err))
 		}
 	}
 }

@@ -56,16 +56,31 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	assert := func(t *testing.T, wantRepoCount, wantStatusCount int, options IterateRepoGitserverStatusOptions) {
 		var statusCount int
 		var seen []api.RepoName
-		err := db.GitserverRepos().IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
-			seen = append(seen, repo.Name)
-			statusCount++
-			if repo.GitserverRepo.RepoID == 0 {
-				t.Fatal("GitServerRepo has zero id")
+		var iterationCount int
+		// Test iteration path with 1 per page.
+		options.BatchSize = 1
+		for {
+
+			repos, nextCursor, err := db.GitserverRepos().IterateRepoGitserverStatus(ctx, options)
+			if err != nil {
+				t.Fatal(err)
 			}
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
+			for _, repo := range repos {
+				seen = append(seen, repo.Name)
+				statusCount++
+				if repo.GitserverRepo.RepoID == 0 {
+					t.Fatal("GitServerRepo has zero id")
+				}
+			}
+			if nextCursor == 0 {
+				break
+			}
+			options.NextCursor = nextCursor
+
+			iterationCount++
+			if iterationCount > 50 {
+				t.Fatal("infinite iteration loop")
+			}
 		}
 
 		t.Logf("Seen: %v", seen)

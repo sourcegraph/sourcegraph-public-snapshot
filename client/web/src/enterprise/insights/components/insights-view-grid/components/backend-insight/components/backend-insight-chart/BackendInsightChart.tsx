@@ -1,10 +1,10 @@
-import React, { FC, useMemo } from 'react'
+import React, { FC, MouseEvent, useMemo } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
-import { BarChart, ScrollBox, LegendList, LegendItem, Series } from '@sourcegraph/wildcard'
+import { BarChart, ScrollBox, LegendList, LegendItem, Button, Series, LegendItemPoint } from '@sourcegraph/wildcard'
 
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
 import { BackendInsightData, InsightContent } from '../../../../../../core'
@@ -13,10 +13,6 @@ import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
 
 import styles from './BackendInsightChart.module.scss'
-
-function getLineColor(series: Series<any>): string {
-    return series.color ?? 'var(--gray-07)'
-}
 
 /**
  * If width of the chart is less than this var width value we should put the legend
@@ -54,7 +50,6 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
     const { locked, isFetchingHistoricalData, data, zeroYAxisMin, className, onDatumClick, seriesToggleState } = props
     const { ref, width = 0 } = useResizeObserver()
-    const { setHoveredId } = seriesToggleState
 
     const isEmptyDataset = useMemo(() => hasNoData(data), [data])
 
@@ -111,7 +106,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                     </ParentSize>
 
                     {isSeriesLikeInsight && (
-                        <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
+                        <ScrollBox className={styles.legendListContainer}>
                             <SeriesLegends series={data.content.series} seriesToggleState={seriesToggleState} />
                         </ScrollBox>
                     )}
@@ -149,30 +144,50 @@ interface SeriesLegendsProps {
 const SeriesLegends: FC<SeriesLegendsProps> = props => {
     const { series, seriesToggleState } = props
 
+    // Non-interactive static legend list
+    if (series.length <= 1) {
+        return (
+            <LegendList className={styles.legendList}>
+                {series.map(item => (
+                    <LegendItem key={item.id as string} name={item.name} color={item.color} />
+                ))}
+            </LegendList>
+        )
+    }
+
     const { setHoveredId, isSeriesSelected, isSeriesHovered, toggle } = seriesToggleState
 
+    // Interactive legends list
     return (
-        <LegendList className={styles.legendList}>
+        <LegendList
+            className={styles.legendList}
+            // Prevent accidental dragging events
+            onMouseDown={(event: MouseEvent<HTMLElement>) => event.stopPropagation()}
+        >
             {series.map(item => (
                 <LegendItem
                     key={item.id as string}
-                    color={getLineColor(item)}
-                    name={item.name}
-                    selected={isSeriesSelected(`${item.id}`)}
-                    hovered={isSeriesHovered(`${item.id}`)}
-                    className={classNames(styles.legendListItem, {
-                        [styles.clickable]: series.length > 1,
-                    })}
-                    onClick={() =>
-                        toggle(
-                            `${item.id}`,
-                            series.map(series => `${series.id}`)
-                        )
-                    }
-                    onMouseEnter={() => setHoveredId(`${item.id}`)}
-                    // prevent accidental dragging events
-                    onMouseDown={event => event.stopPropagation()}
-                />
+                    active={isSeriesHovered(`${item.id}`) || isSeriesSelected(`${item.id}`)}
+                >
+                    <Button
+                        role="checkbox"
+                        aria-checked={isSeriesSelected(`${item.id}`)}
+                        className={styles.legendListItem}
+                        onPointerEnter={() => setHoveredId(`${item.id}`)}
+                        onPointerLeave={() => setHoveredId(undefined)}
+                        onFocus={() => setHoveredId(`${item.id}`)}
+                        onBlur={() => setHoveredId(undefined)}
+                        onClick={() =>
+                            toggle(
+                                `${item.id}`,
+                                series.map(series => `${series.id}`)
+                            )
+                        }
+                    >
+                        <LegendItemPoint color={item.color} />
+                        {item.name}
+                    </Button>
+                </LegendItem>
             ))}
         </LegendList>
     )

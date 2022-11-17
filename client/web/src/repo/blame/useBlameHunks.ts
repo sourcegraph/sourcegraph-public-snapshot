@@ -61,6 +61,9 @@ const fetchBlame = memoizeObservable(
                                     rev
                                     commit {
                                         url
+                                        parents {
+                                            oid
+                                        }
                                     }
                                 }
                             }

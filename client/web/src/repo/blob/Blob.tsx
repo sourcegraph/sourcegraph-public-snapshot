@@ -87,7 +87,7 @@ import { Code, useObservable } from '@sourcegraph/wildcard'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
-import { BlobStencilFields } from '../../graphql-operations'
+import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunk } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -154,6 +154,12 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     lsif?: string
 
     stencil?: BlobStencilFields[]
+
+    /** If present, the file is stored in Git LFS (large file storage). */
+    lfs?: { byteSize: Scalars['BigInt'] } | null
+
+    /** External URLs for the file */
+    externalURLs?: ExternalLinkFields[]
 }
 
 const domFunctions = {
@@ -185,7 +191,7 @@ const domFunctions = {
         if (!row) {
             throw new Error('Could not find closest row for codeCell')
         }
-        const numberCell = row.querySelector<HTMLTableCellElement>('th.line')
+        const numberCell = row.querySelector<HTMLTableCellElement>('td.line')
         if (!numberCell || !numberCell.dataset.line) {
             throw new Error('Could not find line number')
         }
@@ -885,6 +891,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     isBlameVisible={props.isBlameVisible}
                     blameHunks={props.blameHunks}
                     codeViewElements={codeViewElements}
+                    history={props.history}
                 />
 
                 {groupedDecorations &&
