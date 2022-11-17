@@ -359,17 +359,16 @@ func Test_IsEmptyRepoError(t *testing.T) {
 	t.Parallel()
 
 	defaultDate := time.Date(2022, 07, 01, 12, 12, 12, 10, time.UTC)
-	defaultError := generateEmptyRepoErrorMessage(defaultDate, nil, false)
+	defaultError := errors.New(generateEmptyRepoErrorMessagePrefix(defaultDate, nil) + emptyRepoErrMessageSuffix)
 
 	testCases := []struct {
-		err      error
-		after    time.Time
-		until    *time.Time
-		nameOnly bool
-		want     autogold.Value
+		err   error
+		after time.Time
+		until *time.Time
+		want  autogold.Value
 	}{
 		{
-			err:   errors.New(defaultError),
+			err:   defaultError,
 			after: defaultDate,
 			until: nil,
 			want:  autogold.Want("EmptyRepo", true),
@@ -393,23 +392,21 @@ func Test_IsEmptyRepoError(t *testing.T) {
 			want:  autogold.Want("NestedNotEmptyRepoError", false),
 		},
 		{
-			err:   errors.New(generateEmptyRepoErrorMessage(defaultDate, &defaultDate, false)),
+			err:   errors.New(generateEmptyRepoErrorMessagePrefix(defaultDate, &defaultDate) + emptyRepoErrMessageSuffix),
 			after: defaultDate,
 			until: &defaultDate,
 			want:  autogold.Want("EmptyRepoUntil", true),
 		},
 		{
-			err:      errors.New(generateEmptyRepoErrorMessage(defaultDate, nil, true)),
-			after:    defaultDate,
-			nameOnly: true,
-			want:     autogold.Want("EmptyRepoSubRepoPermissions", true),
+			err:   errors.New(generateEmptyRepoErrorMessagePrefix(defaultDate, nil) + emptyRepoErrMessageSuffixWithNameOnly),
+			after: defaultDate,
+			want:  autogold.Want("EmptyRepoSubRepoPermissions", true),
 		},
 		{
-			err:      errors.New(generateEmptyRepoErrorMessage(defaultDate, &defaultDate, true)),
-			after:    defaultDate,
-			until:    &defaultDate,
-			nameOnly: true,
-			want:     autogold.Want("EmptyRepoUntilSubRepoPermissions", true),
+			err:   errors.New(generateEmptyRepoErrorMessagePrefix(defaultDate, &defaultDate) + emptyRepoErrMessageSuffixWithNameOnly),
+			after: defaultDate,
+			until: &defaultDate,
+			want:  autogold.Want("EmptyRepoUntilSubRepoPermissions", true),
 		},
 		{
 			err:   errors.New("A different error"),
@@ -426,7 +423,7 @@ func Test_IsEmptyRepoError(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
-			got := isCommitEmptyRepoError(tc.err, tc.after, tc.until, tc.nameOnly)
+			got := isCommitEmptyRepoError(tc.err, tc.after, tc.until)
 			tc.want.Equal(t, got)
 		})
 	}

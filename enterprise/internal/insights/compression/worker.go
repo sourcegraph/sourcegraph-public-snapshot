@@ -202,28 +202,28 @@ func (i *CommitIndexer) indexNextWindow(name string, id api.RepoID, windowDurati
 }
 
 const (
-	emptyRepoErrMessagePrefix = `git command [git log --format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00`
-	emptyRepoErrMessageSuffix = `] failed (output: ""): exit status 128`
+	emptyRepoErrMessagePrefix             = `git command [git log --format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00`
+	emptyRepoErrMessageSuffix             = `--date-order] failed (output: ""): exit status 128`
+	emptyRepoErrMessageSuffixWithNameOnly = `--date-order --name-only] failed (output: ""): exit status 128`
 )
 
-func generateEmptyRepoErrorMessage(after time.Time, until *time.Time, nameOnly bool) string {
-	fullMessage := emptyRepoErrMessagePrefix + " --after=" + after.Format(time.RFC3339)
+func generateEmptyRepoErrorMessagePrefix(after time.Time, until *time.Time) string {
+	fullPrefix := emptyRepoErrMessagePrefix + " --after=" + after.Format(time.RFC3339)
 	if until != nil {
-		fullMessage += " --before=" + until.Format(time.RFC3339)
+		fullPrefix += " --before=" + until.Format(time.RFC3339)
 	}
-	fullMessage += " --date-order"
-	if nameOnly {
-		fullMessage += " --name-only"
-	}
-	return fullMessage + emptyRepoErrMessageSuffix
+	return fullPrefix + emptyRepoErrMessageSuffix
 }
 
-func isCommitEmptyRepoError(err error, after time.Time, until *time.Time, nameOnly bool) bool {
-	if err == nil {
-		return false
-	}
-	if strings.Contains(err.Error(), generateEmptyRepoErrorMessage(after, until, nameOnly)) {
-		return true
+func isCommitEmptyRepoError(err error, after time.Time, until *time.Time) bool {
+	for err != nil {
+		unwrappedErr := err
+		errString := unwrappedErr.Error()
+		if strings.HasPrefix(errString, generateEmptyRepoErrorMessagePrefix(after, until)) &&
+			(strings.HasPrefix(errString, emptyRepoErrMessagePrefix) || strings.HasPrefix(errString, emptyRepoErrMessageSuffixWithNameOnly)) {
+			return true
+		}
+		err = errors.Unwrap(unwrappedErr)
 	}
 	return false
 }
@@ -238,13 +238,9 @@ func getCommits(ctx context.Context, db database.DB, name api.RepoName, after ti
 		before = until.Format(time.RFC3339)
 	}
 
-	opts := gitserver.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}
-	if authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) {
-		opts.NameOnly = true
-	}
-	commits, err := gitserver.NewClient(db).Commits(ctx, name, opts, authz.DefaultSubRepoPermsChecker)
+	commits, err := gitserver.NewClient(db).Commits(ctx, name, gitserver.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
-		if isCommitEmptyRepoError(err, after, until, opts.NameOnly) {
+		if isCommitEmptyRepoError(err, after, until) {
 			log15.Info("insights-job.background.CommitIndexer.getCommits: empty repo - updating success metadata", "repository", name)
 			err = nil
 		} else {
