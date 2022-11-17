@@ -32,6 +32,7 @@ import (
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -43,11 +44,13 @@ var (
 	}, []string{"type", "field", "error", "source", "request_name"})
 )
 
-type prometheusTracer struct {
+type requestTracer struct {
+	DB     database.DB
 	tracer trace.OpenTracingTracer
+	logger sglog.Logger
 }
 
-func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
+func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
 	start := time.Now()
 	var finish trace.TraceQueryFinishFunc
 	if policy.ShouldTrace(ctx) {
@@ -62,6 +65,48 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 	a := actor.FromContext(ctx)
 	if a.IsAuthenticated() {
 		currentUserID = a.UID
+	}
+
+	// 🚨 SECURITY: We want to log every single operation the Sourcegraph operator
+	// has done on the instance, so we need to do additional logging here. Sometimes
+	// we would end up having logging twice for the same operation (here and the web
+	// app), but we would not want to risk missing logging operations. Also in the
+	// future, we expect audit logging of Sourcegraph operators to live outside the
+	// instance, which makes this pattern less of a concern in terms of redundancy.
+	if a.SourcegraphOperator {
+		const eventName = "SourcegraphOperatorGraphQLRequest"
+		args, err := json.Marshal(map[string]any{
+			"queryString": queryString,
+			"variables":   variables,
+		})
+		if err != nil {
+			t.logger.Error(
+				"failed to marshal JSON for event log argument",
+				sglog.String("eventName", eventName),
+				sglog.Error(err),
+			)
+		}
+
+		// NOTE: It is important to propagate the correct context that carries the
+		// information of the actor, especially whether the actor is a Sourcegraph
+		// operator or not.
+		err = usagestats.LogEvent(
+			ctx,
+			t.DB,
+			usagestats.Event{
+				EventName: eventName,
+				UserID:    a.UID,
+				Argument:  args,
+				Source:    "BACKEND",
+			},
+		)
+		if err != nil {
+			t.logger.Error(
+				"failed to log event",
+				sglog.String("eventName", eventName),
+				sglog.Error(err),
+			)
+		}
 	}
 
 	// Requests made by our JS frontend and other internal things will have a concrete name attached to the
@@ -96,7 +141,7 @@ VARIABLES
 	}
 }
 
-func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
+func (requestTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
 	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
@@ -111,7 +156,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	}
 }
 
-func (t prometheusTracer) TraceValidation(ctx context.Context) trace.TraceValidationFinishFunc {
+func (t requestTracer) TraceValidation(ctx context.Context) trace.TraceValidationFinishFunc {
 	var finish trace.TraceValidationFinishFunc
 	if policy.ShouldTrace(ctx) {
 		finish = t.tracer.TraceValidation(ctx)
@@ -461,10 +506,14 @@ func NewSchema(
 		}
 	}
 
+	logger := sglog.Scoped("GraphQL", "general GraphQL logging")
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
-		graphql.Tracer(&prometheusTracer{}),
+		graphql.Tracer(&requestTracer{
+			DB:     db,
+			logger: logger,
+		}),
 		graphql.UseStringDescriptions(),
 	)
 }

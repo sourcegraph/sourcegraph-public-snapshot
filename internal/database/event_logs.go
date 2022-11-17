@@ -10,16 +10,17 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
-
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -216,11 +217,26 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 		return *in
 	}
 
+	actor := actor.FromContext(ctx)
 	rowValues := make(chan []any, len(events))
 	for _, event := range events {
 		featureFlags, err := json.Marshal(event.EvaluatedFlagSet)
 		if err != nil {
 			return err
+		}
+
+		// Add an attribution for Sourcegraph operator to be distinguished in our analytics pipelines
+		publicArgument := coalesce(event.PublicArgument)
+		if actor.SourcegraphOperator {
+			result, err := jsonc.Edit(
+				string(publicArgument),
+				true,
+				"sourcegraph_operator",
+			)
+			publicArgument = json.RawMessage(result)
+			if err != nil {
+				return errors.Wrap(err, `edit "public_argument" for Sourcegraph operator`)
+			}
 		}
 
 		rowValues <- []any{
@@ -233,7 +249,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			event.AnonymousUserID,
 			event.Source,
 			coalesce(event.Argument),
-			coalesce(event.PublicArgument),
+			publicArgument,
 			version.Version(),
 			event.Timestamp.UTC(),
 			featureFlags,
