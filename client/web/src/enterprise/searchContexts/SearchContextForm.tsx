@@ -7,7 +7,7 @@ import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { QueryState, SearchContextProps } from '@sourcegraph/search'
+import { QueryState, SearchContextFields, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery, LazyMonacoQueryInput } from '@sourcegraph/search-ui'
 import {
     Scalars,
@@ -16,7 +16,6 @@ import {
     SearchPatternType,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
@@ -116,7 +115,7 @@ export interface SearchContextFormProps
         TelemetryProps,
         Pick<SearchContextProps, 'deleteSearchContext'>,
         PlatformContextProps<'requestGraphQL'> {
-    searchContext?: ISearchContext
+    searchContext?: SearchContextFields
     query?: string
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
@@ -125,10 +124,10 @@ export interface SearchContextFormProps
         id: Scalars['ID'] | undefined,
         searchContext: SearchContextInput,
         repositories: SearchContextRepositoryRevisionsInput[]
-    ) => Observable<ISearchContext>
+    ) => Observable<SearchContextFields>
 }
 
-const searchContextVisibility = (searchContext: ISearchContext): SelectedVisibility =>
+const searchContextVisibility = (searchContext: SearchContextFields): SelectedVisibility =>
     searchContext.public ? 'public' : 'private'
 
 type RepositoriesParseResult =
@@ -138,7 +137,7 @@ type RepositoriesParseResult =
       }
     | {
           type: 'repositories'
-          repositories: ISearchContextRepositoryRevisionsInput[]
+          repositories: SearchContextRepositoryRevisionsInput[]
       }
 
 export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<SearchContextFormProps>> = props => {
@@ -152,6 +151,8 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
     } = props
     const history = useHistory()
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     const [name, setName] = useState(searchContext ? searchContext.name : '')
     const [description, setDescription] = useState(searchContext ? searchContext.description : '')
@@ -232,7 +233,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                         map(repositories => {
                             const repositoryNameToID = new Map(repositories.map(({ id, name }) => [name, id]))
                             const errors: Error[] = []
-                            const validRepositories: ISearchContextRepositoryRevisionsInput[] = []
+                            const validRepositories: SearchContextRepositoryRevisionsInput[] = []
                             for (const { repository, revisions } of config) {
                                 const repositoryID = repositoryNameToID.get(repository)
                                 if (repositoryID) {
@@ -459,6 +460,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                                 onChange={setQueryState}
                                 globbing={false}
                                 preventNewLine={false}
+                                applySuggestionsOnEnter={applySuggestionsOnEnter}
                             />
                         </div>
                         <div className={classNames(styles.searchContextFormQueryLabel, 'text-muted')}>

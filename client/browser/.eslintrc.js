@@ -5,5 +5,8 @@ module.exports = {
     ...baseConfig.parserOptions,
     project: [__dirname + '/tsconfig.json', __dirname + '/src/end-to-end/tsconfig.json'],
   },
+  rules: {
+    'no-console': 'off',
+  },
   overrides: baseConfig.overrides,
 }

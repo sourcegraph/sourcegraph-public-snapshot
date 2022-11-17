@@ -76,9 +76,8 @@ func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	_, ctx, parentStream, finish := job.StartSpan(ctx, parentStream, f)
 	defer func() { finish(alert, err) }()
 
-	dedupingStream := streaming.NewDedupingStream(parentStream)
 	// Count stream results to know whether to run generated queries
-	stream := streaming.NewResultCountingStream(dedupingStream)
+	stream := streaming.NewResultCountingStream(parentStream)
 
 	var maxAlerter search.MaxAlerter
 	var errs errors.MultiError
@@ -88,37 +87,37 @@ func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	}
 	maxAlerter.Add(alert)
 
-	initialResultSetSize := stream.Count()
-	if initialResultSetSize >= RESULT_THRESHOLD {
+	originalResultSetSize := stream.Count()
+	if originalResultSetSize >= RESULT_THRESHOLD {
+		return alert, err
+	}
+
+	if originalResultSetSize > 0 {
+		// TODO(@rvantonder): Only run additional searches if the
+		// original query strictly returned NO results. This clamp will
+		// be removed to also add additional results pending
+		// optimizations: https://github.com/sourcegraph/sourcegraph/issues/43721.
 		return alert, err
 	}
 
 	var luckyAlertType alertobserver.LuckyAlertType
-	if initialResultSetSize == 0 {
+	if originalResultSetSize == 0 {
 		luckyAlertType = alertobserver.LuckyAlertPure
 	} else {
 		luckyAlertType = alertobserver.LuckyAlertAdded
 	}
-	generated := &alertobserver.ErrLuckyQueries{Type: luckyAlertType, ProposedQueries: []*search.ProposedQuery{}}
+	generated := &alertobserver.ErrLuckyQueries{Type: luckyAlertType, ProposedQueries: []*search.QueryDescription{}}
 	var autoQ *autoQuery
 	for _, next := range f.generators {
-		for {
+		for next != nil {
 			autoQ, next = next()
-			if autoQ == nil {
-				if next == nil {
-					// No query and generator is exhausted.
-					break
-				}
-				continue
-			}
-
 			j := f.newGeneratedJob(autoQ)
 			if j == nil {
 				// Generated an invalid job with this query, just continue.
 				continue
 			}
 			alert, err = j.Run(ctx, clients, stream)
-			if stream.Count()-initialResultSetSize >= RESULT_THRESHOLD {
+			if stream.Count()-originalResultSetSize >= RESULT_THRESHOLD {
 				// We've sent additional results up to the maximum bound. Let's stop here.
 				var lErr *alertobserver.ErrLuckyQueries
 				if errors.As(err, &lErr) {
@@ -139,10 +138,6 @@ func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClie
 			}
 
 			maxAlerter.Add(alert)
-
-			if next == nil {
-				break
-			}
 		}
 	}
 
@@ -225,14 +220,19 @@ func (n *notifier) New(count int) error {
 	if count == limits.DefaultMaxSearchResultsStreaming {
 		resultCountString = fmt.Sprintf("%d+ results", count)
 	} else if count == 1 {
-		resultCountString = fmt.Sprintf("1 result")
+		resultCountString = "1 result"
 	} else {
 		resultCountString = fmt.Sprintf("%d additional results", count)
 	}
+	annotations := make(map[search.AnnotationName]string)
+	annotations[search.ResultCount] = resultCountString
 
 	return &alertobserver.ErrLuckyQueries{
-		ProposedQueries: []*search.ProposedQuery{{
-			Description: fmt.Sprintf("%s (%s)", n.description, resultCountString),
+		ProposedQueries: []*search.QueryDescription{{
+			Description: n.description,
+			Annotations: map[search.AnnotationName]string{
+				search.ResultCount: resultCountString,
+			},
 			Query:       query.StringHuman(n.query.ToParseTree()),
 			PatternType: query.SearchTypeLucky,
 		}},

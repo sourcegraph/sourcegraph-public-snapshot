@@ -1,10 +1,11 @@
 import * as path from 'path'
 import * as readline from 'readline'
-import { URL } from 'url'
 
 import execa from 'execa'
 import { readFile, writeFile, mkdir } from 'mz/fs'
 import fetch from 'node-fetch'
+
+const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
 
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 export function formatDate(date: Date): string {
@@ -59,18 +60,6 @@ export function getWeekNumber(date: Date): number {
     const firstJan = new Date(date.getFullYear(), 0, 1)
     const day = 86400000
     return Math.ceil(((date.valueOf() - firstJan.valueOf()) / day + firstJan.getDay() + 1) / 7)
-}
-
-export function hubSpotFeedbackFormStub(version: string): string {
-    const link = `[this feedback form](${hubSpotFeedbackFormURL(version)})`
-    return `*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out ${link}.*`
-}
-
-function hubSpotFeedbackFormURL(version: string): string {
-    const url = new URL('https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku')
-    url.searchParams.set('update_version', version)
-
-    return url.toString()
 }
 
 export async function ensureDocker(): Promise<execa.ExecaReturnValue<string>> {
@@ -160,6 +149,26 @@ export async function ensureSrcCliUpToDate(): Promise<void> {
             process.exit(1)
         }
     }
+}
+
+export function ensureSrcCliEndpoint(): void {
+    const srcEndpoint = process.env.SRC_ENDPOINT
+    if (srcEndpoint !== SOURCEGRAPH_RELEASE_INSTANCE_URL) {
+        throw new Error(`the $SRC_ENDPOINT provided doesn't match what is expected by the release tool.
+Expected $SRC_ENDPOINT to be "${SOURCEGRAPH_RELEASE_INSTANCE_URL}"`)
+    }
+}
+
+export async function getLatestTag(owner: string, repo: string): Promise<string> {
+    const latestTag = await fetch(`https://api.github.com/repos/${owner}/${repo}/tags`, {
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+        },
+    })
+        .then(response => response.json())
+        .then(json => json[0].name)
+    return latestTag
 }
 
 interface ContainerRegistryCredential {

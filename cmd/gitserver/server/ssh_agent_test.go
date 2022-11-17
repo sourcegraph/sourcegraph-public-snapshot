@@ -7,6 +7,8 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,7 +21,7 @@ func TestSSHAgent(t *testing.T) {
 	}
 
 	// Spawn the agent using the keypair from above.
-	a, err := newSSHAgent([]byte(keypair.PrivateKey), []byte(keypair.Passphrase))
+	a, err := newSSHAgent(logtest.Scoped(t), []byte(keypair.PrivateKey), []byte(keypair.Passphrase))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -8,23 +8,26 @@ import { combineLatest, from, Observable, of, Subject, Subscription } from 'rxjs
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { asError, createAggregateError, ErrorLike, isErrorLike, isDefined } from '@sourcegraph/common'
+import { asError, createAggregateError, ErrorLike, isErrorLike, isDefined, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { getConfiguredSideloadedExtension } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { extensionIDsFromSettings } from '@sourcegraph/shared/src/extensions/extension'
 import { queryConfiguredRegistryExtensions } from '@sourcegraph/shared/src/extensions/helpers'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { gqlToCascade, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import {
+    gqlToCascade,
+    SettingsCascadeProps,
+    SettingsSubject,
+    SubjectSettingsContents,
+} from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
-import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { mergeSettingsSchemas } from './configuration'
@@ -37,7 +40,7 @@ const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = 
 /** Props shared by SettingsArea and its sub-pages. */
 interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCascadeProps, ThemeProps, TelemetryProps {
     /** The subject whose settings to edit. */
-    subject: Pick<GQL.SettingsSubject, '__typename' | 'id'>
+    subject: Pick<SettingsSubject & SubjectSettingsContents, '__typename' | 'id'>
 
     /**
      * The currently authenticated user, NOT (necessarily) the user who is the subject of the page.
@@ -45,8 +48,9 @@ interface SettingsAreaPageCommonProps extends PlatformContextProps, SettingsCasc
     authenticatedUser: AuthenticatedUser | null
 }
 
+type SettingsCascadeSubject = (SettingsSubject & SubjectSettingsContents)[]
 interface SettingsData {
-    subjects: GQL.ISettingsCascade['subjects']
+    subjects: SettingsCascadeSubject
     settingsJSONSchema: { $id: string }
 }
 
@@ -109,7 +113,7 @@ export class SettingsArea extends React.Component<Props, State> {
                 )
                 .subscribe(
                     stateUpdate => this.setState(stateUpdate),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
         )
 
@@ -126,7 +130,7 @@ export class SettingsArea extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         if (this.state.dataOrError === LOADING) {
-            return null // loading
+            return <LoadingSpinner inline={false} />
         }
         if (isErrorLike(this.state.dataOrError)) {
             return (
@@ -170,8 +174,11 @@ export class SettingsArea extends React.Component<Props, State> {
 
         return (
             <div className={classNames('h-100 d-flex flex-column', this.props.className)}>
-                <PageTitle title="Settings" />
-                <PageHeader headingElement="h2" path={[{ text: `${term} settings` }]} className="mb-3" />
+                <PageHeader className="mb-3">
+                    <PageHeader.Heading as="h3" styleAs="h2">
+                        <PageHeader.Breadcrumb>{`${term} settings`}</PageHeader.Breadcrumb>
+                    </PageHeader.Heading>
+                </PageHeader>
                 {this.props.extraHeader}
                 <Switch>
                     <Route
@@ -188,21 +195,21 @@ export class SettingsArea extends React.Component<Props, State> {
 
     private onUpdate = (): void => this.refreshRequests.next()
 
-    private getMergedSettingsJSONSchema(cascade: Pick<GQL.ISettingsCascade, 'subjects'>): Observable<{ $id: string }> {
+    private getMergedSettingsJSONSchema(cascade: { subjects: SettingsCascadeSubject }): Observable<{ $id: string }> {
         return combineLatest([
             queryConfiguredRegistryExtensions(
                 this.props.platformContext,
                 extensionIDsFromSettings(gqlToCascade(cascade))
             ).pipe(
                 catchError(error => {
-                    console.warn('Unable to get extension settings JSON Schemas for settings editor.', { error })
+                    logger.warn('Unable to get extension settings JSON Schemas for settings editor.', { error })
                     return of([])
                 })
             ),
             from(this.props.platformContext.sideloadedExtensionURL).pipe(
                 switchMap(url => (url ? getConfiguredSideloadedExtension(url) : of(null))),
                 catchError(error => {
-                    console.error('Error sideloading extension', error)
+                    logger.error('Error sideloading extension', error)
                     return of(null)
                 })
             ),
@@ -220,7 +227,7 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 }
 
-function fetchSettingsCascade(subject: Scalars['ID']): Observable<Pick<GQL.ISettingsCascade, 'subjects'>> {
+function fetchSettingsCascade(subject: Scalars['ID']): Observable<{ subjects: SettingsCascadeSubject }> {
     return queryGraphQL(
         gql`
             query SettingsCascade($subject: ID!) {

@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 
 	"github.com/keegancsmith/sqlf"
@@ -88,9 +87,9 @@ func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJ
 				payload,
 				c.State.ToDB(),
 				c.FailureMessage,
-				nullTimeColumn(c.StartedAt),
-				nullTimeColumn(c.FinishedAt),
-				nullTimeColumn(c.ProcessAfter),
+				dbutil.NullTimeColumn(c.StartedAt),
+				dbutil.NullTimeColumn(c.FinishedAt),
+				dbutil.NullTimeColumn(c.ProcessAfter),
 				c.NumResets,
 				c.NumFailures,
 				c.CreatedAt,
@@ -148,7 +147,6 @@ func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (
 }
 
 var getChangesetJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/changeset_jobs.go:GetChangesetJob
 SELECT %s FROM changeset_jobs
 INNER JOIN changesets ON changesets.id = changeset_jobs.changeset_id
 INNER JOIN repo ON repo.id = changesets.repo_id
@@ -208,29 +206,4 @@ func scanChangesetJob(c *btypes.ChangesetJob, s dbutil.Scanner) error {
 		return errors.Errorf("unknown job type %q", c.JobType)
 	}
 	return json.Unmarshal(raw, &c.Payload)
-}
-
-func scanFirstChangesetJob(rows *sql.Rows, err error) (*btypes.ChangesetJob, bool, error) {
-	jobs, err := scanChangesetJobs(rows, err)
-	if err != nil || len(jobs) == 0 {
-		return nil, false, err
-	}
-	return jobs[0], true, nil
-}
-
-func scanChangesetJobs(rows *sql.Rows, queryErr error) ([]*btypes.ChangesetJob, error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-
-	var jobs []*btypes.ChangesetJob
-
-	return jobs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
-		var j btypes.ChangesetJob
-		if err = scanChangesetJob(&j, sc); err != nil {
-			return err
-		}
-		jobs = append(jobs, &j)
-		return nil
-	})
 }

@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchMode, SearchPatternType } from '@sourcegraph/search'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { getFullQuery, Toggles } from './Toggles'
@@ -8,11 +8,15 @@ import { getFullQuery, Toggles } from './Toggles'
 describe('Toggles', () => {
     describe('getFullQuery', () => {
         test('query without search context, case insensitive, literal', () => {
-            expect(getFullQuery('foo', '', false, SearchPatternType.literal)).toBe('foo patternType:literal')
+            expect(getFullQuery('foo', '', false, SearchPatternType.standard)).toMatchInlineSnapshot(
+                '"foo patternType:standard"'
+            )
         })
 
         test('query without search context, case sensitive, literal', () => {
-            expect(getFullQuery('foo', '', true, SearchPatternType.literal)).toBe('foo patternType:literal case:yes')
+            expect(getFullQuery('foo', '', true, SearchPatternType.standard)).toMatchInlineSnapshot(
+                '"foo patternType:standard case:yes"'
+            )
         })
 
         test('query without search context, case sensitive, regexp', () => {
@@ -37,10 +41,12 @@ describe('Toggles', () => {
             renderWithBrandedContext(
                 <Toggles
                     navbarSearchQuery="(case:yes foo) or (case:no bar)"
-                    patternType={SearchPatternType.literal}
+                    patternType={SearchPatternType.standard}
                     setPatternType={() => undefined}
                     caseSensitive={false}
                     setCaseSensitivity={() => undefined}
+                    searchMode={SearchMode.Precise}
+                    setSearchMode={() => undefined}
                     settingsCascade={{ subjects: null, final: {} }}
                     selectedSearchContextSpec="global"
                 />
@@ -53,10 +59,12 @@ describe('Toggles', () => {
             renderWithBrandedContext(
                 <Toggles
                     navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
-                    patternType={SearchPatternType.literal}
+                    patternType={SearchPatternType.standard}
                     setPatternType={() => undefined}
                     caseSensitive={false}
                     setCaseSensitivity={() => undefined}
+                    searchMode={SearchMode.Precise}
+                    setSearchMode={() => undefined}
                     settingsCascade={{ subjects: null, final: {} }}
                     selectedSearchContextSpec="global"
                 />
@@ -68,10 +76,12 @@ describe('Toggles', () => {
             renderWithBrandedContext(
                 <Toggles
                     navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
-                    patternType={SearchPatternType.literal}
+                    patternType={SearchPatternType.standard}
                     setPatternType={() => undefined}
                     caseSensitive={false}
                     setCaseSensitivity={() => undefined}
+                    searchMode={SearchMode.Precise}
+                    setSearchMode={() => undefined}
                     settingsCascade={{ subjects: null, final: {} }}
                     selectedSearchContextSpec="global"
                 />

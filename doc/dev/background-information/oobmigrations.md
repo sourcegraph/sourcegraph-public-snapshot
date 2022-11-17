@@ -8,10 +8,11 @@ Out-of-band migrations allow for application-specific logic to exist in a migrat
 - re-hashing passwords
 - decoding and interpreting opaque payloads
 - fetching data from another remote API or data store based on existing data
-
-Additionally, the estimated _scale_ of data may be too large to migrate on application startup in an efficient manner - in which case an out of band migration is suitable.
+- transforming large scale data
 
 Remember - the longer we block application startup on migrations, the more vulnerable an instance will become to downtime as no _new_ frontend containers will be able to service requests. In these cases, you should define an _out of band_ migration, which is run in the background of the application over time instead of at startup.
+
+Some background tasks may seem initially well-suited for an out-of-band migration, but may actually be better installed as a permanent background job that runs periodically. Such jobs include data transformations that require external state to determine its progress. For example, database encryption jobs were originally written as out-of-band migrations. However, changing the external key in the site configuration can drop progress back to 0%, despite having already ran to completion.
 
 ## Overview
 
@@ -126,6 +127,12 @@ Now that we can read both formats, it is safe to start writing all _new_ records
 
 #### Step 4: Register migrator
 
+> WARNING: The code that runs the out of band migration must exist in-tree, even after the migration has been deprecated.
+>
+> This is because we need to support upgrading older instances using a newer migrator, which must also run these migrations. This code should be written in a way that isolates it from changing behaviors in other parts of the code base. Where possible, stick to directly defining SQL queries and importing only utility libraries.
+>
+> Inlining types into the migrator implementation post-deprecation is a good idea to "lock" the migration behavior in-place.
+
 Next, we need to move all of the existing data in the old format into the new format. We'll first define a migrator instance.
 
 ```go
@@ -143,7 +150,7 @@ func NewMigrator(store *basestore.Store) oobmigration.Migrator {
 This migrator reports progress by counting the number of records with its new field populated over the total number of records (and special-cases empty tables as being completely converted as no records are in the old format).
 
 ```go
-func (m *migrator) Progress(ctx context.Context) (float64, error) {
+func (m *migrator) Progress(ctx context.Context, _ bool) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			CASE c2.count WHEN 0 THEN 1 ELSE
@@ -156,6 +163,8 @@ func (m *migrator) Progress(ctx context.Context) (float64, error) {
 	return progress, err
 }
 ```
+
+In the case of enterprise migrations you will want your `Progress` function to report success [if your enterprise feature is disabled](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/oobmigration/migrations/insights/migrator.go?L36-38). 
 
 In the forward migration direction, we want to select a record that is in the previous format (we can tell here by the absence of a `payload2` field), and update that record with the result of some external computation. Here, we're going to rely on an oracle function `oldToNew` that converts the old format into the new format.
 
@@ -173,7 +182,7 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 	// that many worker instances can run the same migration concurrently
 	// without them all trying to convert the same record.
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
-		"SELECT id, payload FROM skunk_payloads WHERE payload2 IS NULL LIMIT %s FOR UPDATE SKIP LOCKED",
+		"SELECT id, payload FROM skunk_payloads WHERE payload2 IS NULL ORDER BY id LIMIT %s FOR UPDATE SKIP LOCKED",
 		BatchSize,
 	))
 	if err != nil {
@@ -292,11 +301,11 @@ New fields can be added to the existing migration metadata entry in the file `in
   description: Re-encode our skunky data
   non_destructive: true
   is_enterprise: true 
-  introduced_major_version: 3
-  introduced_minor_version: 34
+  introduced_version_major: 3
+  introduced_version_minor: 34
   # NEW FIELDS:
-  deprecated_major_version: 3   -- The current major release
-  deprecated_minor_version: 39  -- The current minor release
+  deprecated_version_major: 3   -- The upcoming major release
+  deprecated_version_minor: 39  -- The upcoming minor release
 ```
 
 This date may be known at the time the migration is created, in which case it is fine to set both the introduced and the deprecated fields at the same time.
@@ -305,9 +314,20 @@ Note that it is not advised to set the deprecated version to the minor release o
 
 #### Step 6: Deprecation
 
-On or after the deprecation version of a migration, we can begin clean-up. This involves:
+Despite an out of band migration being marked deprecated, it may still need to be executed by multi-version upgrades in a later version. For this reason it is not safe to delete any code from the out of band migrations until _after_ the deprecation version falls out of the [supported multi-version upgrade window](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@39996f3159a0466624bc3a57689560c6bdebb60c/-/blob/internal/database/migration/shared/upgradedata/cmd/generator/consts.go?L24).
 
-- unregistering the migrator instance
-- removing the migrator code
-- cleaning up any backwards-compatible read routines to support only the new format
-- dropping columns that are no longer used by the new minimum supported format
+As an alternative to deleting the code, the out of band migration can be isolated from any dependencies outside of the out of band migration. For example copying any types, functions, and other code that is used to execute the migration. Once isolated, the migration can be considered frozen and effectively ignored. To see an example, [see the Code Insights settings migration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@39996f3159a0466624bc3a57689560c6bdebb60c/-/tree/enterprise/internal/oobmigration/migrations/insights)
+
+It is important to note that breaking changes to the database using an in-band migration are safe to execute after the marked deprecation version for the out of band migration, even if they would logically break the code of the out of band migration. This is because [the multi-version upgrade will execute the out of band migration sequentially with in-band migrations](https://storage.googleapis.com/sourcegraph-assets/blog/multi-version-upgrades/mvu-oobmigrations.png). Once executed, the out of band migration will see the database in the state it was at when prior to being marked deprecated.
+
+To clarify, here is a concrete example of a valid series of events to deprecate an out of band migration:
+
+```
+3.41 - table A is introduced
+3.42 - table B is introduced
+3.43 - an out of band migration is created to migrate from A -> B
+3.45 - the out of band migration is marked deprecated and isolated in the codebase
+3.46 - table A is removed
+
+3.48 - a user successfully performs a multi-verion upgrade from 3.40 -> 3.48, including the out of band migration
+```

@@ -28,15 +28,15 @@ import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/WebHoverOverlay'
 import { NotebookFields } from '../../graphql-operations'
 import { getLSPTextDocumentPositionParameters } from '../../repo/blob/Blob'
-import { PageRoutes } from '../../routes.constants'
+import { EnterprisePageRoutes } from '../../routes.constants'
 import { SearchStreamingProps } from '../../search'
+import { useExperimentalFeatures } from '../../stores'
 import { NotebookComputeBlock } from '../blocks/compute/NotebookComputeBlock'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
 import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
 
-import { NotebookBlockSeparator } from './NotebookBlockSeparator'
 import { NotebookCommandPaletteInput } from './NotebookCommandPaletteInput'
 import { NotebookOutline } from './NotebookOutline'
 import { focusBlockElement, useNotebookEventHandlers } from './useNotebookEventHandlers'
@@ -54,11 +54,8 @@ export interface NotebookComponentProps
     isReadOnly?: boolean
     blocks: BlockInit[]
     authenticatedUser: AuthenticatedUser | null
-    extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'>
-    platformContext: Pick<
-        PlatformContext,
-        'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'
-    >
+    extensionsController: Pick<ExtensionsController, 'extHostAPI' | 'executeCommand'> | null
+    platformContext: Pick<PlatformContext, 'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>
     exportedFileName: string
     isEmbedded?: boolean
     outlineContainerElement?: HTMLElement | null
@@ -113,19 +110,26 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         settingsCascade,
         outlineContainerElement,
     }) => {
+        const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
+            features => features.enableGoImportsSearchQueryTransform
+        )
         const notebook = useMemo(
             () =>
                 new Notebook(initialBlocks, {
-                    extensionHostAPI: extensionsController.extHostAPI,
+                    extensionHostAPI: extensionsController !== null ? extensionsController.extHostAPI : null,
                     fetchHighlightedFileLineRanges,
+                    enableGoImportsSearchQueryTransform,
                 }),
-            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController.extHostAPI]
+            [initialBlocks, fetchHighlightedFileLineRanges, extensionsController, enableGoImportsSearchQueryTransform]
         )
 
         const notebookElement = useRef<HTMLDivElement | null>(null)
         const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
+        const [blockInserterIndex, setBlockInserterIndex] = useState<number>(-1)
+
         const [blocks, setBlocks] = useState<Block[]>(notebook.getBlocks())
         const commandPaletteInputReference = useRef<HTMLInputElement>(null)
+        const floatingCommandPaletteInputReference = useRef<HTMLInputElement>(null)
         const debouncedOnSerializeBlocks = useMemo(() => debounce(onSerializeBlocks, 400), [onSerializeBlocks])
 
         const updateBlocks = useCallback(
@@ -154,7 +158,12 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
             [isReadOnly, setSelectedBlockId]
         )
 
-        const focusBlock = useCallback((blockId: string) => focusBlockElement(blockId, isReadOnly), [isReadOnly])
+        const focusBlock = useCallback(
+            (blockId: string) => {
+                focusBlockElement(blockId, isReadOnly)
+            },
+            [isReadOnly]
+        )
 
         // Update the blocks if the notebook instance changes (when new initializer blocks are provided)
         useEffect(() => setBlocks(notebook.getBlocks()), [notebook])
@@ -230,6 +239,30 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
             [notebook, updateBlocks]
         )
 
+        const onNewBlock = useCallback(
+            (id: string) => {
+                if (isReadOnly) {
+                    return
+                }
+                const idx = notebook.getBlockIndex(id)
+                setBlockInserterIndex(idx + 1)
+                selectBlock(null)
+            },
+            [isReadOnly, notebook, selectBlock]
+        )
+
+        const dismissNewBlockPalette = useCallback(() => {
+            if (isReadOnly) {
+                return
+            }
+            if (blocks.length === 0) {
+                return
+            }
+            const blockToSelectIndex = blockInserterIndex - 1
+            selectBlock(blocks[blockToSelectIndex].id)
+            setBlockInserterIndex(-1)
+        }, [isReadOnly, blocks, selectBlock, blockInserterIndex])
+
         const onAddBlock = useCallback(
             (index: number, blockInput: BlockInput) => {
                 if (isReadOnly) {
@@ -243,11 +276,13 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                     notebook.runBlockById(addedBlock.id)
                 }
                 selectBlock(addedBlock.id)
+                focusBlock(addedBlock.id)
+                setBlockInserterIndex(-1)
                 updateBlocks()
 
                 telemetryService.log('SearchNotebookAddBlock', { type: addedBlock.type }, { type: addedBlock.type })
             },
-            [notebook, isReadOnly, telemetryService, updateBlocks, selectBlock]
+            [isReadOnly, notebook, selectBlock, focusBlock, updateBlocks, telemetryService]
         )
 
         const onDeleteBlock = useCallback(
@@ -327,17 +362,20 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 notebook,
                 selectedBlockId,
                 commandPaletteInputReference,
+                floatingCommandPaletteInputReference,
                 isReadOnly,
                 selectBlock,
                 onMoveBlock,
                 onRunBlock,
                 onDeleteBlock,
                 onDuplicateBlock,
+                onNewBlock,
             }),
             [
                 notebook,
                 onDeleteBlock,
                 onDuplicateBlock,
+                onNewBlock,
                 onMoveBlock,
                 onRunBlock,
                 selectedBlockId,
@@ -406,16 +444,21 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
 
         const renderBlock = useCallback(
             (block: Block) => {
+                const isSelected = selectedBlockId === block.id
+                const isSomethingElseSelected =
+                    (selectedBlockId !== null && selectedBlockId !== block.id) || blockInserterIndex !== -1
                 const blockProps = {
                     onRunBlock,
                     onBlockInputChange,
                     onDeleteBlock,
+                    onNewBlock,
+                    onAddBlock,
                     onMoveBlock,
                     onDuplicateBlock,
                     isLightTheme,
                     isReadOnly,
-                    isSelected: selectedBlockId === block.id,
-                    isOtherBlockSelected: selectedBlockId !== null && selectedBlockId !== block.id,
+                    isSelected,
+                    showMenu: isSelected || !isSomethingElseSelected,
                 }
 
                 switch (block.type) {
@@ -471,6 +514,8 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 onRunBlock,
                 onBlockInputChange,
                 onDeleteBlock,
+                onNewBlock,
+                onAddBlock,
                 onMoveBlock,
                 onDuplicateBlock,
                 isEmbedded,
@@ -487,6 +532,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 settingsCascade,
                 platformContext,
                 authenticatedUser,
+                blockInserterIndex,
             ]
         )
 
@@ -504,7 +550,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         }, [])
 
         if (copiedNotebookOrError && !isErrorLike(copiedNotebookOrError) && copiedNotebookOrError !== LOADING) {
-            return <Redirect to={PageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} />
+            return <Redirect to={EnterprisePageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} />
         }
 
         return (
@@ -512,7 +558,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 className={classNames(styles.searchNotebook, isReadOnly && 'is-read-only-notebook')}
                 ref={notebookElement}
             >
-                <div className="pb-1 px-3">
+                <div className={classNames(styles.header, 'pb-1', 'px-3')}>
                     <Button
                         className="mr-2"
                         variant="primary"
@@ -551,12 +597,21 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 </div>
                 {blocks.map((block, blockIndex) => (
                     <div key={block.id}>
-                        <NotebookBlockSeparator isReadOnly={isReadOnly} index={blockIndex} onAddBlock={onAddBlock} />
+                        {blockInserterIndex === blockIndex && (
+                            <NotebookCommandPaletteInput
+                                hasFocus={true}
+                                ref={floatingCommandPaletteInputReference}
+                                index={blockIndex}
+                                onAddBlock={onAddBlock}
+                                onShouldDismiss={dismissNewBlockPalette}
+                            />
+                        )}
                         {renderBlock(block)}
                     </div>
                 ))}
                 {!isReadOnly && (
                     <NotebookCommandPaletteInput
+                        hasFocus={blockInserterIndex === blocks.length}
                         ref={commandPaletteInputReference}
                         index={blocks.length}
                         onAddBlock={onAddBlock}
@@ -570,7 +625,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                         blocks={blocks}
                     />
                 )}
-                {hoverState.hoverOverlayProps && (
+                {hoverState.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...hoverState.hoverOverlayProps}
                         platformContext={platformContext}

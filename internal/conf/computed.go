@@ -3,8 +3,6 @@ package conf
 import (
 	"context"
 	"log"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -13,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -164,15 +164,48 @@ func ExecutorsFrontendURL() string {
 	return current.ExternalURL
 }
 
-func CodeIntelAutoIndexingEnabled() bool {
-	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
-		return *enabled
+func ExecutorsSrcCLIImage() string {
+	current := Get()
+	if current.ExecutorsSrcCLIImage != "" {
+		return current.ExecutorsSrcCLIImage
 	}
-	return false
+
+	return "sourcegraph/src-cli"
 }
 
-func CodeIntelLockfileIndexingEnabled() bool {
-	if enabled := Get().CodeIntelLockfileIndexingEnabled; enabled != nil {
+func ExecutorsSrcCLIImageTag() string {
+	current := Get()
+	if current.ExecutorsSrcCLIImageTag != "" {
+		return current.ExecutorsSrcCLIImageTag
+	}
+
+	return srccli.MinimumVersion
+}
+
+func ExecutorsBatcheshelperImage() string {
+	current := Get()
+	if current.ExecutorsBatcheshelperImage != "" {
+		return current.ExecutorsBatcheshelperImage
+	}
+
+	return "sourcegraph/batcheshelper"
+}
+
+func ExecutorsBatcheshelperImageTag() string {
+	current := Get()
+	if current.ExecutorsBatcheshelperImageTag != "" {
+		return current.ExecutorsBatcheshelperImageTag
+	}
+
+	if version.IsDev(version.Version()) {
+		return "insiders"
+	}
+
+	return version.Version()
+}
+
+func CodeIntelAutoIndexingEnabled() bool {
+	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
 		return *enabled
 	}
 	return false
@@ -192,11 +225,6 @@ func CodeIntelAutoIndexingPolicyRepositoryMatchLimit() int {
 	}
 
 	return *val
-}
-
-func CodeInsightsGQLApiEnabled() bool {
-	enabled, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
-	return !enabled
 }
 
 func ProductResearchPageEnabled() bool {
@@ -254,14 +282,6 @@ func EventLoggingEnabled() bool {
 
 func StructuralSearchEnabled() bool {
 	val := ExperimentalFeatures().StructuralSearch
-	if val == "" {
-		return true
-	}
-	return val == "enabled"
-}
-
-func DependenciesSearchEnabled() bool {
-	val := ExperimentalFeatures().DependenciesSearch
 	if val == "" {
 		return true
 	}
@@ -444,22 +464,6 @@ func GitMaxConcurrentClones() int {
 	v := Get().GitMaxConcurrentClones
 	if v <= 0 {
 		return 5
-	}
-	return v
-}
-
-func UserReposMaxPerUser() int {
-	v := Get().UserReposMaxPerUser
-	if v == 0 {
-		return 2000
-	}
-	return v
-}
-
-func UserReposMaxPerSite() int {
-	v := Get().UserReposMaxPerSite
-	if v == 0 {
-		return 200000
 	}
 	return v
 }

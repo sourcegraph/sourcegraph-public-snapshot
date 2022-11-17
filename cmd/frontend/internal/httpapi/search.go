@@ -8,10 +8,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/zoekt"
+	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -19,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -46,7 +50,10 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 // searchIndexerServer has handlers that zoekt-sourcegraph-indexserver
 // interacts with (search-indexer).
 type searchIndexerServer struct {
-	db database.DB
+	db     database.DB
+	logger log.Logger
+
+	gitserverClient gitserver.Client
 	// ListIndexable returns the repositories to index.
 	ListIndexable func(context.Context) ([]types.MinimalRepo, error)
 
@@ -70,6 +77,9 @@ type searchIndexerServer struct {
 		// Enabled is true if horizontal indexed search is enabled.
 		Enabled() bool
 	}
+
+	// Ranking is a service that provides ranking scores for various code objects.
+	Ranking enterprise.RankingService
 
 	// MinLastChangedDisabled is a feature flag for disabling more efficient
 	// polling by zoekt. This can be removed after v3.34 is cut (Dec 2021).
@@ -104,7 +114,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 	}
 
 	if len(indexedIDs) == 0 {
-		http.Error(w, "atleast one repoID required", http.StatusBadRequest)
+		http.Error(w, "at least one repoID required", http.StatusBadRequest)
 		return nil
 	}
 
@@ -145,6 +155,15 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		indexedIDs = filtered
 	}
 
+	rankingLastUpdatedAt, err := h.Ranking.LastUpdatedAt(ctx, indexedIDs)
+	if err != nil {
+		h.logger.Warn("failed to get ranking last updated timestamps, falling back to no ranking",
+			log.Int("repos", len(indexedIDs)),
+			log.Error(err),
+		)
+		rankingLastUpdatedAt = make(map[api.RepoID]time.Time)
+	}
+
 	getRepoIndexOptions := func(repoID int32) (*searchbackend.RepoIndexOptions, error) {
 		if loadReposErr != nil {
 			return nil, loadReposErr
@@ -158,7 +177,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		getVersion := func(branch string) (string, error) {
 			metricGetVersion.Inc()
 			// Do not to trigger a repo-updater lookup since this is a batch job.
-			commitID, err := gitserver.NewClient(h.db).ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
+			commitID, err := h.gitserverClient.ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
 				NoEnsureRevision: true,
 			})
 			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
@@ -171,6 +190,11 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 
 		priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, string(repo.Name))
 
+		var documentRanksVersion string
+		if t, ok := rankingLastUpdatedAt[api.RepoID(repoID)]; ok {
+			documentRanksVersion = t.String()
+		}
+
 		return &searchbackend.RepoIndexOptions{
 			Name:       string(repo.Name),
 			RepoID:     int32(repo.ID),
@@ -179,6 +203,8 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 			Fork:       repo.Fork,
 			Archived:   repo.Archived,
 			GetVersion: getVersion,
+
+			DocumentRanksVersion: documentRanksVersion,
 		}, nil
 	}
 
@@ -228,10 +254,10 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 
 	if h.Indexers.Enabled() {
 		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, len(opt.IndexedIDs))
+		add := func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil }
 		if len(opt.IndexedIDs) > 0 {
-			err = h.RepoStore.StreamMinimalRepos(r.Context(), database.ReposListOptions{
-				IDs: opt.IndexedIDs,
-			}, func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil })
+			opts := database.ReposListOptions{IDs: opt.IndexedIDs}
+			err = h.RepoStore.StreamMinimalRepos(r.Context(), opts, add)
 			if err != nil {
 				return err
 			}
@@ -266,3 +292,65 @@ var metricGetVersion = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_search_get_version_total",
 	Help: "The total number of times we poll gitserver for the version of a indexable branch.",
 })
+
+func (h *searchIndexerServer) serveRepoRank(w http.ResponseWriter, r *http.Request) error {
+	return serveRank(h.Ranking.GetRepoRank, w, r)
+}
+
+func (h *searchIndexerServer) serveDocumentRanks(w http.ResponseWriter, r *http.Request) error {
+	return serveRank(h.Ranking.GetDocumentRanks, w, r)
+}
+
+func serveRank[T []float64 | map[string][]float64](
+	f func(ctx context.Context, name api.RepoName) (r T, err error),
+	w http.ResponseWriter,
+	r *http.Request,
+) error {
+	ctx := r.Context()
+
+	repoName := api.RepoName(mux.Vars(r)["RepoName"])
+
+	rank, err := f(ctx, repoName)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return nil
+		}
+		return err
+	}
+
+	b, err := json.Marshal(rank)
+	if err != nil {
+		return err
+	}
+
+	_, _ = w.Write(b)
+	return nil
+}
+
+func (h *searchIndexerServer) handleIndexStatusUpdate(w http.ResponseWriter, r *http.Request) error {
+	var body struct {
+		Repositories []struct {
+			RepoID   uint32
+			Branches []zoekt.RepositoryBranch
+		}
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		return errors.Wrap(err, "failed to decode request body")
+	}
+
+	var (
+		ids     = make([]int32, len(body.Repositories))
+		minimal = make(map[uint32]*zoekt.MinimalRepoListEntry, len(body.Repositories))
+	)
+
+	for i, repo := range body.Repositories {
+		ids[i] = int32(repo.RepoID)
+		minimal[repo.RepoID] = &zoekt.MinimalRepoListEntry{Branches: repo.Branches}
+	}
+
+	h.logger.Info("updating index status", log.Int32s("repositories", ids))
+
+	return h.db.ZoektRepos().UpdateIndexStatuses(r.Context(), minimal)
+}

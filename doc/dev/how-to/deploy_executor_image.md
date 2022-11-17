@@ -2,7 +2,7 @@
 
 This guide documents how to deploy a new image of [executors](../../../admin/executors.md) to the following [Sourcegraph instances](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/deployments/instances):
 
-* [Sourcegraph Cloud](https://sourcegraph.com)
+* [Sourcegraph.com](https://sourcegraph.com)
 * [k8s.sgdev.org](https://k8s.sgdev.org)
 
 ## Requirements

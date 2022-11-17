@@ -255,15 +255,17 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 
 	ctx := context.Background()
 
-	user1 := types.User{
-		ID: 1,
+	user1, err := db.Users().Create(ctx, database.NewUser{Username: "user1"})
+	if err != nil {
+		t.Fatal(err)
 	}
-	user2 := types.User{
-		ID: 2,
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "user2"})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	// Test single user
-	err := logLocalEvents(ctx, db, []Event{{
+	err = logLocalEvents(ctx, db, []Event{{
 		EventName:        "ViewBlob",
 		URL:              "https://sourcegraph.example.com/",
 		UserID:           user1.ID,
@@ -362,11 +364,13 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 
 	db := setupForTest(t)
 
-	user1 := types.User{
-		ID: 1,
+	user1, err := db.Users().Create(ctx, database.NewUser{Username: "user1"})
+	if err != nil {
+		t.Fatal(err)
 	}
-	user2 := types.User{
-		ID: 2,
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "user2"})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	// hardcode "now" as 2018/03/31
@@ -380,7 +384,7 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 
 	// 2018/02/27 (2 users, 1 registered)
 	mockTimeNow(oneMonthFourDaysAgo)
-	err := logLocalEvents(ctx, db, []Event{{
+	err = logLocalEvents(ctx, db, []Event{{
 		EventName:        "ViewBlob",
 		URL:              "https://sourcegraph.example.com/",
 		UserID:           user1.ID,
@@ -594,18 +598,20 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 
 	wantMAUs := []*types.SiteActivityPeriod{
 		{
-			StartTime:            time.Date(2018, 3, 1, 0, 0, 0, 0, time.UTC),
-			UserCount:            4,
-			RegisteredUserCount:  2,
-			AnonymousUserCount:   2,
-			IntegrationUserCount: 2,
+			StartTime:           time.Date(2018, 3, 1, 0, 0, 0, 0, time.UTC),
+			UserCount:           4,
+			RegisteredUserCount: 2,
+			AnonymousUserCount:  2,
+			// IntegrationUserCount deprecated, always returns zero.
+			IntegrationUserCount: 0,
 		},
 		{
-			StartTime:            time.Date(2018, 2, 1, 0, 0, 0, 0, time.UTC),
-			UserCount:            3,
-			RegisteredUserCount:  1,
-			AnonymousUserCount:   2,
-			IntegrationUserCount: 1,
+			StartTime:           time.Date(2018, 2, 1, 0, 0, 0, 0, time.UTC),
+			UserCount:           3,
+			RegisteredUserCount: 1,
+			AnonymousUserCount:  2,
+			// IntegrationUserCount deprecated, always returns zero.
+			IntegrationUserCount: 0,
 		},
 		{
 			StartTime: time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -614,21 +620,23 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 
 	wantWAUs := []*types.SiteActivityPeriod{
 		{
-			StartTime:            time.Date(2018, 3, 25, 0, 0, 0, 0, time.UTC),
-			UserCount:            2,
-			RegisteredUserCount:  2,
-			AnonymousUserCount:   0,
-			IntegrationUserCount: 1,
+			StartTime:           time.Date(2018, 3, 25, 0, 0, 0, 0, time.UTC),
+			UserCount:           2,
+			RegisteredUserCount: 2,
+			AnonymousUserCount:  0,
+			// IntegrationUserCount deprecated, always returns zero.
+			IntegrationUserCount: 0,
 		},
 		{
 			StartTime: time.Date(2018, 3, 18, 0, 0, 0, 0, time.UTC),
 		},
 		{
-			StartTime:            time.Date(2018, 3, 11, 0, 0, 0, 0, time.UTC),
-			UserCount:            3,
-			RegisteredUserCount:  1,
-			AnonymousUserCount:   2,
-			IntegrationUserCount: 1,
+			StartTime:           time.Date(2018, 3, 11, 0, 0, 0, 0, time.UTC),
+			UserCount:           3,
+			RegisteredUserCount: 1,
+			AnonymousUserCount:  2,
+			// IntegrationUserCount deprecated, always returns zero.
+			IntegrationUserCount: 0,
 		},
 		{
 			StartTime: time.Date(2018, 3, 04, 0, 0, 0, 0, time.UTC),
@@ -646,20 +654,22 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 			StartTime: time.Date(2018, 3, 29, 0, 0, 0, 0, time.UTC),
 		},
 		{
-			StartTime:            time.Date(2018, 3, 28, 0, 0, 0, 0, time.UTC),
-			UserCount:            2,
-			RegisteredUserCount:  2,
-			AnonymousUserCount:   0,
-			IntegrationUserCount: 1,
+			StartTime:           time.Date(2018, 3, 28, 0, 0, 0, 0, time.UTC),
+			UserCount:           2,
+			RegisteredUserCount: 2,
+			AnonymousUserCount:  0,
+			// IntegrationUserCount deprecated, always returns zero.
+			IntegrationUserCount: 0,
 		},
 		{
 			StartTime: time.Date(2018, 3, 27, 0, 0, 0, 0, time.UTC),
 		},
 		{
-			StartTime:            time.Date(2018, 3, 26, 0, 0, 0, 0, time.UTC),
-			UserCount:            1,
-			RegisteredUserCount:  1,
-			AnonymousUserCount:   0,
+			StartTime:           time.Date(2018, 3, 26, 0, 0, 0, 0, time.UTC),
+			UserCount:           1,
+			RegisteredUserCount: 1,
+			AnonymousUserCount:  0,
+			// IntegrationUserCount deprecated, always returns zero.
 			IntegrationUserCount: 0,
 		},
 		{

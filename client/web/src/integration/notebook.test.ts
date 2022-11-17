@@ -5,18 +5,23 @@ import { subDays } from 'date-fns'
 import expect from 'expect'
 
 import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/search'
-import { NotebookBlockType, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { NotebookBlock, SymbolKind } from '@sourcegraph/shared/src/schema'
+import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { CreateNotebookBlockInput, NotebookFields, WebGraphQlOperations } from '../graphql-operations'
+import {
+    CreateNotebookBlockInput,
+    NotebookFields,
+    WebGraphQlOperations,
+    NotebookBlockType,
+    SymbolKind,
+} from '../graphql-operations'
 import { BlockType } from '../notebooks'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
-import { createRepositoryRedirectResult, createResolveRevisionResult } from './graphQlResponseHelpers'
+import { createResolveRepoRevisionResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
 import { percySnapshotWithVariants } from './utils'
@@ -28,6 +33,7 @@ const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = 
             subjects: [
                 {
                     __typename: 'DefaultSettings',
+                    id: 'TestDefaultSettingsID',
                     settingsURL: null,
                     viewerCanAdminister: false,
                     latestSettings: {
@@ -80,7 +86,7 @@ const notebookFixture = (id: string, title: string, blocks: NotebookFields['bloc
     blocks,
 })
 
-const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookBlock => {
+const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookFields['blocks'][number] => {
     switch (block.type) {
         case NotebookBlockType.MARKDOWN:
             return { __typename: 'MarkdownBlock', id: block.id, markdownInput: block.markdownInput ?? '' }
@@ -170,19 +176,7 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     ...commonWebGraphQlResults,
     ...highlightFileResult,
     ...viewerSettings,
-    GetTemporarySettings: () => ({
-        temporarySettings: {
-            __typename: 'TemporarySettings',
-            contents: JSON.stringify({
-                'user.daysActiveCount': 1,
-                'user.lastDayActive': new Date().toDateString(),
-                'search.usedNonGlobalContext': true,
-                'search.notebooks.gettingStartedTabSeen': true,
-            }),
-        },
-    }),
-    RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
-    ResolveRev: () => createResolveRevisionResult('/github.com/sourcegraph/sourcegraph'),
+    ResolveRepoRev: () => createResolveRepoRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FetchNotebook: ({ id }) => ({
         node: notebookFixture(id, 'Notebook Title', [
             { __typename: 'MarkdownBlock', id: '1', markdownInput: '# Title' },
@@ -216,6 +210,9 @@ describe('Search Notebook', () => {
         })
         testContext.overrideGraphQL(commonSearchGraphQLResults)
         testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
+        testContext.overrideInitialTemporarySettings({
+            'search.notebooks.gettingStartedTabSeen': true,
+        })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())

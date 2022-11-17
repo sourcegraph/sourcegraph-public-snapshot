@@ -3,10 +3,10 @@ package backend
 import (
 	"sync"
 
-	"github.com/google/zoekt"
-	"github.com/google/zoekt/rpc"
-	zoektstream "github.com/google/zoekt/stream"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegraph/zoekt/rpc"
+	zoektstream "github.com/sourcegraph/zoekt/stream"
 )
 
 // We don't use the normal factory for internal requests because we disable
@@ -31,16 +31,6 @@ type ZoektStreamFunc func(*zoekt.SearchResult)
 
 func (f ZoektStreamFunc) Send(event *zoekt.SearchResult) {
 	f(event)
-}
-
-// StreamSearchEvent has fields optionally set representing events that happen
-// during a search.
-//
-// This is a Sourcegraph extension.
-type StreamSearchEvent struct {
-	// SearchResult is non-nil if this event is a search result. These should be
-	// combined with previous and later SearchResults.
-	SearchResult *zoekt.SearchResult
 }
 
 // ZoektDialer is a function that returns a zoekt.Streamer for the given endpoint.

@@ -141,10 +141,15 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                             'd-flex justify-content-center align-items-center flex-column mx-1'
                         )}
                     >
-                        <Tooltip content="The diff changed">
-                            <Icon aria-label="The diff changed" svgPath={mdiFileDocumentEditOutline} />
+                        <Tooltip content="The diff for this changeset has been updated">
+                            <Icon
+                                aria-label="The diff for this changeset has been updated"
+                                svgPath={mdiFileDocumentEditOutline}
+                            />
                         </Tooltip>
-                        <span className="text-nowrap">Diff</span>
+                        <span className="text-nowrap" aria-hidden={true}>
+                            Diff
+                        </span>
                     </div>
                 )}
                 {(node.delta.authorNameChanged || node.delta.authorEmailChanged) && (
@@ -508,7 +513,7 @@ const References: React.FunctionComponent<React.PropsWithChildren<{ spec: Visibl
 const ApplyDiffStat: React.FunctionComponent<React.PropsWithChildren<{ spec: VisibleChangesetApplyPreviewFields }>> = ({
     spec,
 }) => {
-    let diffStat: { added: number; changed: number; deleted: number }
+    let diffStat: { added: number; deleted: number }
     if (spec.targets.__typename === 'VisibleApplyPreviewTargetsDetach') {
         if (!spec.targets.changeset.diffStat) {
             return null

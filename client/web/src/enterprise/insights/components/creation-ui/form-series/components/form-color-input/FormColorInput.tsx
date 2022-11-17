@@ -60,3 +60,5 @@ export const FormColorInput: React.FunctionComponent<React.PropsWithChildren<For
         </fieldset>
     )
 })
+
+FormColorInput.displayName = 'FormColorInput'

@@ -123,6 +123,7 @@ describe('Extension Registry', () => {
             currentTest: this.currentTest!,
             directory: __dirname,
         })
+        testContext.overrideJsContext({ enableLegacyExtensions: true })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
@@ -136,6 +137,7 @@ describe('Extension Registry', () => {
                     subjects: [
                         {
                             __typename: 'DefaultSettings',
+                            id: 'TestDefaultSettingsID',
                             settingsURL: null,
                             viewerCanAdminister: false,
                             latestSettings: {

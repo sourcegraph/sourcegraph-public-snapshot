@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { mdiSourceRepositoryMultiple, mdiGithub, mdiGitlab, mdiBitbucket } from '@mdi/js'
 import classNames from 'classnames'
@@ -6,9 +6,8 @@ import * as H from 'history'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextInputProps, SearchContextProps } from '@sourcegraph/search'
+import { QueryState, SearchContextInputProps, SearchContextProps } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -34,10 +33,9 @@ export interface CommunitySearchContextPageProps
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
-        ActivationProps,
         TelemetryProps,
         ExtensionsControllerProps<'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
+        PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         SearchContextInputProps,
         Pick<SearchContextProps, 'fetchSearchContextBySpec'> {
     authenticatedUser: AuthenticatedUser | null
@@ -56,6 +54,10 @@ export const CommunitySearchContextPage: React.FunctionComponent<
     React.PropsWithChildren<CommunitySearchContextPageProps>
 > = (props: CommunitySearchContextPageProps) => {
     const LOADING = 'loading' as const
+
+    const [queryState, setQueryState] = useState<QueryState>({
+        query: '',
+    })
 
     useEffect(
         () =>
@@ -113,12 +115,16 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                 {props.communitySearchContextMetadata.lowProfile ? (
                     <SearchPageInput
                         {...props}
+                        queryState={queryState}
+                        setQueryState={setQueryState}
                         selectedSearchContextSpec={props.communitySearchContextMetadata.spec}
                         source="communitySearchContextPage"
                     />
                 ) : (
                     <SearchPageInput
                         {...props}
+                        queryState={queryState}
+                        setQueryState={setQueryState}
                         selectedSearchContextSpec={props.communitySearchContextMetadata.spec}
                         source="communitySearchContextPage"
                     />
@@ -238,7 +244,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
                 </Link>
             </>
         )}
-        {repo.startsWith('bitbucket.com') && (
+        {repo.startsWith('bitbucket.org') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
                     <Icon className={styles.repoListIcon} aria-hidden={true} svgPath={mdiBitbucket} />

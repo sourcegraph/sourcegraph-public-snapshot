@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { closeCompletion, startCompletion } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
-import { Diagnostic as CMDiagnostic, linter } from '@codemirror/lint'
+import { Diagnostic as CMDiagnostic, linter, LintSource } from '@codemirror/lint'
 import {
     EditorSelection,
     Extension,
@@ -13,6 +13,7 @@ import {
     MapMode,
     Compartment,
     Range,
+    EditorState,
 } from '@codemirror/state'
 import {
     EditorView,
@@ -25,13 +26,14 @@ import {
     TooltipView,
     WidgetType,
 } from '@codemirror/view'
-import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
-import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { useCodeMirror, createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
@@ -40,20 +42,53 @@ import { Node } from '@sourcegraph/shared/src/search/query/parser'
 import { Filter, KeywordKind } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
-import { createDefaultSuggestions, createUpdateableField, singleLine } from './extensions'
+import { createDefaultSuggestions, singleLine } from './codemirror'
+import { HISTORY_USER_EVENT, searchHistory as searchHistoryFacet } from './codemirror/history'
 import {
     decoratedTokens,
     queryTokens,
     parseInputAsQuery,
     setQueryParseOptions,
     parsedQuery,
-} from './extensions/parsedQuery'
+} from './codemirror/parsedQuery'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
+import { QueryInputProps } from './QueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
+
+export interface CodeMirrorQueryInputFacadeProps extends QueryInputProps {
+    /**
+     * Used to be compatible with MonacoQueryInput's interface, but we only
+     * support the `readOnly` flag.
+     */
+    editorOptions?: {
+        readOnly?: boolean
+    }
+
+    /**
+     * If set suggestions can be applied by pressing enter. In the past we
+     * didn't enable this behavior because it interfered with loading
+     * suggestions asynchronously, but CodeMirror allows us to disable selecting
+     * a suggestion by default. This is currently an experimental feature.
+     */
+    applySuggestionsOnEnter?: boolean
+
+    /**
+     * When provided the query input will allow the user to "cycle" through the
+     * serach history by pressing arrow up/down when the input is empty.
+     */
+    searchHistory?: RecentSearch[]
+
+    /**
+     * Callback to notify the parent component when the user cycles through the
+     * search history.
+     */
+    onSelectSearchFromHistory?: () => void
+}
 
 /**
  * This component provides a drop-in replacement for MonacoQueryInput. It
@@ -65,7 +100,9 @@ import styles from './CodeMirrorQueryInput.module.scss'
  * - Not supplying 'onSubmit' and setting 'preventNewLine' to false will result
  * in a new line being added when Enter is pressed
  */
-export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChildren<MonacoQueryInputProps>> = ({
+export const CodeMirrorMonacoFacade: React.FunctionComponent<
+    React.PropsWithChildren<CodeMirrorQueryInputFacadeProps>
+> = ({
     patternType,
     selectedSearchContextSpec,
     queryState,
@@ -76,7 +113,6 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     onBlur,
     isSourcegraphDotCom,
     globbing,
-    onHandleFuzzyFinder,
     onEditorCreated,
     interpretComments,
     isLightTheme,
@@ -85,14 +121,15 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     placeholder,
     editorOptions,
     ariaLabel = 'Search query',
+
+    // CodeMirror implementation specific options
+    applySuggestionsOnEnter = false,
+    searchHistory,
+    onSelectSearchFromHistory,
     // Used by the VSCode extension (which doesn't use this component directly,
     // but added for future compatibility)
     fetchStreamSuggestions = defaultFetchStreamSuggestions,
     onCompletionItemSelected,
-    // Not supported:
-    // editorClassName: This only seems to be used by MonacoField to position
-    // placeholder text properly. CodeMirror has built-in support for
-    // placeholders.
 }) => {
     // We use both, state and a ref, for the editor instance because we need to
     // re-run some hooks when the editor changes but we also need a stable
@@ -118,8 +155,9 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                     fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
                 globbing,
                 isSourcegraphDotCom,
+                applyOnEnter: applySuggestionsOnEnter,
             }),
-        [selectedSearchContextSpec, globbing, isSourcegraphDotCom, fetchStreamSuggestions]
+        [selectedSearchContextSpec, globbing, isSourcegraphDotCom, fetchStreamSuggestions, applySuggestionsOnEnter]
     )
 
     const extensions = useMemo(() => {
@@ -131,7 +169,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
 
         if (preventNewLine) {
             // NOTE: If a submit handler is assigned to the query input then the pressing
-            // enter won't insert a line break anyway. In that case, this exnteions ensures
+            // enter won't insert a line break anyway. In that case, this extensions ensures
             // that line breaks are stripped from pasted input.
             extensions.push(singleLine)
         } else {
@@ -140,14 +178,42 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
         }
 
         if (placeholder) {
-            extensions.push(placeholderExtension(placeholder))
+            // Passing a DOM element instead of a string makes the CodeMirror
+            // extension set aria-hidden="true" on the placeholder, which is
+            // what we want.
+            const element = document.createElement('span')
+            element.append(document.createTextNode(placeholder))
+            extensions.push(placeholderExtension(element))
         }
 
         if (editorOptions?.readOnly) {
             extensions.push(EditorView.editable.of(false))
         }
+
+        if (searchHistory) {
+            extensions.push(searchHistoryFacet.of(searchHistory))
+        }
+
+        if (onSelectSearchFromHistory) {
+            extensions.push(
+                EditorState.transactionExtender.of(transaction => {
+                    if (transaction.isUserEvent(HISTORY_USER_EVENT)) {
+                        onSelectSearchFromHistory()
+                    }
+                    return null
+                })
+            )
+        }
         return extensions
-    }, [ariaLabel, autocompletion, placeholder, preventNewLine, editorOptions])
+    }, [
+        ariaLabel,
+        autocompletion,
+        placeholder,
+        preventNewLine,
+        editorOptions,
+        searchHistory,
+        onSelectSearchFromHistory,
+    ])
 
     // Update callback functions via effects. This avoids reconfiguring the
     // whole editor when a callback changes.
@@ -159,10 +225,9 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                 onFocus,
                 onBlur,
                 onCompletionItemSelected,
-                onHandleFuzzyFinder,
             })
         }
-    }, [editor, onChange, onSubmit, onFocus, onBlur, onCompletionItemSelected, onHandleFuzzyFinder])
+    }, [editor, onChange, onSubmit, onFocus, onBlur, onCompletionItemSelected])
 
     // Always focus the editor on 'selectedSearchContextSpec' change
     useEffect(() => {
@@ -271,7 +336,7 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
                     history(),
                     themeExtension.of(EditorView.darkTheme.of(isLightTheme === false)),
                     parseInputAsQuery({ patternType, interpretComments }),
-                    queryDiagnostic,
+                    queryDiagnostic(),
                     // The precedence of these extensions needs to be decreased
                     // explicitly, otherwise the diagnostic indicators will be
                     // hidden behind the highlight background color
@@ -322,11 +387,13 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
         }, [editor, externalExtensions, extensions])
 
         return (
-            <div
-                ref={setContainer}
-                className={classNames(styles.root, className, 'test-query-input', 'test-editor')}
-                data-editor="codemirror6"
-            />
+            <TraceSpanProvider name="CodeMirrorQueryInput">
+                <div
+                    ref={setContainer}
+                    className={classNames(styles.root, className, 'test-query-input', 'test-editor')}
+                    data-editor="codemirror6"
+                />
+            </TraceSpanProvider>
         )
     }
 )
@@ -382,75 +449,56 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
 // Instead of creating a separate field for every handler, all handlers are set
 // via a single field to keep complexity manageable.
 const [callbacksField, setCallbacks] = createUpdateableField<
-    Pick<
-        MonacoQueryInputProps,
-        'onChange' | 'onSubmit' | 'onFocus' | 'onBlur' | 'onCompletionItemSelected' | 'onHandleFuzzyFinder'
-    >
->(
-    callbacks => [
-        Prec.high(
-            keymap.of([
-                {
-                    key: 'Enter',
-                    run: view => {
-                        const { onSubmit } = view.state.field(callbacks)
-                        if (onSubmit) {
-                            // Cancel/close any open completion popovers
-                            closeCompletion(view)
-                            onSubmit()
-                            return true
-                        }
-                        return false
-                    },
-                },
-            ])
-        ),
+    Pick<MonacoQueryInputProps, 'onChange' | 'onSubmit' | 'onFocus' | 'onBlur' | 'onCompletionItemSelected'>
+>({ onChange: () => {} }, callbacks => [
+    Prec.high(
         keymap.of([
             {
-                key: 'Mod-k',
+                key: 'Enter',
                 run: view => {
-                    const { onHandleFuzzyFinder } = view.state.field(callbacks)
-                    if (onHandleFuzzyFinder) {
-                        onHandleFuzzyFinder(true)
+                    const { onSubmit } = view.state.field(callbacks)
+                    if (onSubmit) {
+                        // Cancel/close any open completion popovers
+                        closeCompletion(view)
+                        onSubmit()
                         return true
                     }
                     return false
                 },
             },
-        ]),
-        EditorView.updateListener.of((update: ViewUpdate) => {
-            const { state, view } = update
-            const { onChange, onFocus, onBlur, onCompletionItemSelected } = state.field(callbacks)
+        ])
+    ),
+    EditorView.updateListener.of((update: ViewUpdate) => {
+        const { state, view } = update
+        const { onChange, onFocus, onBlur, onCompletionItemSelected } = state.field(callbacks)
 
-            if (update.docChanged) {
-                onChange({
-                    query: state.sliceDoc(),
-                    changeSource: QueryChangeSource.userInput,
-                })
-            }
+        if (update.docChanged) {
+            onChange({
+                query: state.sliceDoc(),
+                changeSource: QueryChangeSource.userInput,
+            })
+        }
 
-            // The focus and blur event handlers are implemented via state update handlers
-            // because it appears that binding them as DOM event handlers triggers them at
-            // the moment they are bound if the editor is already in that state ((not)
-            // focused). See https://github.com/sourcegraph/sourcegraph/issues/37721#issuecomment-1166300433
-            if (update.focusChanged) {
-                if (view.hasFocus) {
-                    onFocus?.()
-                } else {
-                    closeCompletion(view)
-                    onBlur?.()
-                }
+        // The focus and blur event handlers are implemented via state update handlers
+        // because it appears that binding them as DOM event handlers triggers them at
+        // the moment they are bound if the editor is already in that state ((not)
+        // focused). See https://github.com/sourcegraph/sourcegraph/issues/37721#issuecomment-1166300433
+        if (update.focusChanged) {
+            if (view.hasFocus) {
+                onFocus?.()
+            } else {
+                closeCompletion(view)
+                onBlur?.()
             }
-            if (
-                onCompletionItemSelected &&
-                update.transactions.some(transaction => transaction.isUserEvent('input.complete'))
-            ) {
-                onCompletionItemSelected()
-            }
-        }),
-    ],
-    { onChange: () => {} }
-)
+        }
+        if (
+            onCompletionItemSelected &&
+            update.transactions.some(transaction => transaction.isUserEvent('input.complete'))
+        ) {
+            onCompletionItemSelected()
+        }
+    }),
+])
 
 // Defines decorators for syntax highlighting
 const tokenDecorators: { [key: string]: Decoration } = {}
@@ -730,38 +778,58 @@ function getTokensTooltipInformation(
     return { tokensAtCursor, range, value: values.join('') }
 }
 
-// Hooks query diagnostics into the editor.
-// The facet stores the diagnostics data which is used by the text decoration
-// and the tooltip extensions.
-const queryDiagnostic: Extension = [
-    linter(
-        view => {
-            const query = view.state.facet(queryTokens)
-            return query.tokens.length > 0 ? getDiagnostics(query.tokens, query.patternType).map(toCMDiagnostic) : []
-        },
-        {
-            delay: 200,
-        }
-    ),
-    EditorView.theme({
-        '.cm-diagnosticText': {
-            display: 'block',
-        },
-        '.cm-diagnosticAction': {
-            color: 'var(--body-color)',
-            borderColor: 'var(--secondary)',
-            backgroundColor: 'var(--secondary)',
-            borderRadius: 'var(--border-radius)',
-            padding: 'var(--btn-padding-y-sm) .5rem',
-            fontSize: 'calc(min(0.75rem, 0.9166666667em))',
-            lineHeight: '1rem',
-            margin: '0.5rem 0 0 0',
-        },
-        '.cm-diagnosticAction + .cm-diagnosticAction': {
-            marginLeft: '1rem',
-        },
-    }),
-]
+/**
+ * Sets up client side query validation.
+ */
+function queryDiagnostic(): Extension {
+    // The setup is a bit "strange" because @codemirror/lint only triggers
+    // linting when the document changes. But in our case the linting rules
+    // change depending on the query "type" (regexp, structural, ...). Changing
+    // the query type does not involve changing the document and to linting
+    // wouldn't be triggered. To work around this we explictly reconfigure the
+    // linter via a compartment when the parsed query changes but the document
+    // hadsn't change. This queues a new linting pass.
+    // See
+    // - https://discuss.codemirror.net/t/can-we-manually-force-linting-even-if-the-document-hasnt-changed/3570/2
+    // - https://github.com/sourcegraph/sourcegraph/issues/43836
+    //
+    const source: LintSource = view => {
+        const query = view.state.facet(queryTokens)
+        return query.tokens.length > 0 ? getDiagnostics(query.tokens, query.patternType).map(toCMDiagnostic) : []
+    }
+    const config = {
+        delay: 200,
+    }
+
+    const linterCompartment = new Compartment()
+
+    return [
+        linterCompartment.of(linter(source, config)),
+        EditorView.updateListener.of(update => {
+            if (update.state.facet(queryTokens) !== update.startState.facet(queryTokens) && !update.docChanged) {
+                update.view.dispatch({ effects: linterCompartment.reconfigure(linter(source, config)) })
+            }
+        }),
+        EditorView.theme({
+            '.cm-diagnosticText': {
+                display: 'block',
+            },
+            '.cm-diagnosticAction': {
+                color: 'var(--body-color)',
+                borderColor: 'var(--secondary)',
+                backgroundColor: 'var(--secondary)',
+                borderRadius: 'var(--border-radius)',
+                padding: 'var(--btn-padding-y-sm) .5rem',
+                fontSize: 'calc(min(0.75rem, 0.9166666667em))',
+                lineHeight: '1rem',
+                margin: '0.5rem 0 0 0',
+            },
+            '.cm-diagnosticAction + .cm-diagnosticAction': {
+                marginLeft: '1rem',
+            },
+        }),
+    ]
+}
 
 function renderMarkdownNode(message: string): Element {
     const div = document.createElement('div')

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import { useCallback, FC } from 'react'
 
 import { mdiHelpCircleOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -7,9 +7,9 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import {
     PopoverTrigger,
     PopoverContent,
+    PopoverTail,
     Popover,
     Button,
-    Alert,
     Position,
     Link,
     MenuDivider,
@@ -23,30 +23,28 @@ import styles from './SearchHelpDropdownButton.module.scss'
 
 interface SearchHelpDropdownButtonProps extends TelemetryProps {
     isSourcegraphDotCom?: boolean
+    className?: string
 }
 
 /**
  * A dropdown button that shows a menu with reference documentation for Sourcegraph search query
  * syntax.
  */
-export const SearchHelpDropdownButton: React.FunctionComponent<
-    React.PropsWithChildren<SearchHelpDropdownButtonProps>
-> = ({ isSourcegraphDotCom, telemetryService }) => {
-    const [isOpen, setIsOpen] = useState(false)
-    const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen])
+export const SearchHelpDropdownButton: FC<SearchHelpDropdownButtonProps> = props => {
+    const { isSourcegraphDotCom, className, telemetryService } = props
+
     const onQueryDocumentationLinkClicked = useCallback(() => {
         telemetryService.log('SearchHelpDropdownQueryDocsLinkClicked')
-        toggleIsOpen()
-    }, [toggleIsOpen, telemetryService])
-    const documentationUrlPrefix = isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help'
+    }, [telemetryService])
 
     return (
-        <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
+        <Popover>
             <PopoverTrigger
                 as={Button}
                 variant="link"
-                className={classNames('px-2 d-flex align-items-center cursor-pointer', styles.triggerButton)}
                 aria-label="Quick help for search"
+                className={classNames(className, styles.triggerButton)}
+                onClick={onQueryDocumentationLinkClicked}
             >
                 <Icon
                     aria-hidden={true}
@@ -54,7 +52,8 @@ export const SearchHelpDropdownButton: React.FunctionComponent<
                     svgPath={mdiHelpCircleOutline}
                 />
             </PopoverTrigger>
-            <PopoverContent position={Position.bottomEnd} className={classNames('pb-0', styles.content)}>
+
+            <PopoverContent position={Position.bottom} className={styles.content}>
                 <MenuHeader>
                     <strong>Search reference</strong>
                 </MenuHeader>
@@ -68,7 +67,7 @@ export const SearchHelpDropdownButton: React.FunctionComponent<
                         <span className="text-muted small">Regexp:</span> <Code weight="bold">(read|write)File</Code>
                     </li>
                     <li>
-                        <span className="text-muted small">Exact:</span> <Code weight="bold">"fs.open(f)"</Code>
+                        <span className="text-muted small">Exact:</span> <Code weight="bold">fs.open(f)</Code>
                     </li>
                 </ul>
                 <MenuDivider />
@@ -125,18 +124,13 @@ export const SearchHelpDropdownButton: React.FunctionComponent<
                     target="_blank"
                     rel="noopener"
                     as={Link}
-                    to={`${documentationUrlPrefix}/code_search/reference/queries`}
+                    to="/help/code_search/reference/queries"
                     onClick={onQueryDocumentationLinkClicked}
                 >
                     <Icon aria-hidden={true} className="small" svgPath={mdiOpenInNew} /> All search keywords
                 </MenuText>
-                {isSourcegraphDotCom && (
-                    <Alert className="small rounded-0 mb-0 mt-1" variant="info">
-                        On Sourcegraph.com, use a <Code>repo:</Code> filter to narrow your search to &le;500
-                        repositories.
-                    </Alert>
-                )}
             </PopoverContent>
+            <PopoverTail size="sm" />
         </Popover>
     )
 }

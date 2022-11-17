@@ -10,16 +10,15 @@ import { catchError, concatMap, map, tap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, Button, Link, PageHeader, Container, Icon, Code, Label } from '@sourcegraph/wildcard'
+import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { Button, Code, Container, Icon, Label, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { PageTitle } from '../../../components/PageTitle'
 import { RegistryPublisher, toExtensionID } from '../../../extensions/extension/extension'
+import { Scalars, CreateRegistryExtensionResult } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from '../extension/RegistryExtensionForm'
 
@@ -41,7 +40,7 @@ interface State {
     publisher?: Scalars['ID']
 
     /** The creation result, undefined while loading, or an error. */
-    creationOrError?: 'loading' | GQL.IExtensionRegistryCreateExtensionResult | ErrorLike
+    creationOrError?: 'loading' | CreateRegistryExtensionResult['extensionRegistry']['createExtension'] | ErrorLike
 }
 
 /** A page with a form to create a new extension in the extension registry. */
@@ -68,7 +67,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                     )
                 ).subscribe(
                     stateUpdate => this.setState(stateUpdate as State),
-                    error => console.error(error)
+                    error => logger.error(error)
                 )
             )
 
@@ -92,7 +91,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                     )
                     .subscribe(
                         stateUpdate => this.setState(stateUpdate as State),
-                        error => console.error(error)
+                        error => logger.error(error)
                     )
             )
 
@@ -134,15 +133,15 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                         ]}
                         description={
                             <>
-                                <Link target="_blank" rel="noopener" to="/help/extensions/authoring">
+                                <Link target="_blank" rel="noopener" to="/help/extensions">
                                     Learn more
                                 </Link>{' '}
-                                about authoring Sourcegraph extensions{' '}
+                                about Sourcegraph extensions{' '}
                                 <Link
-                                    aria-label="Learn more about extensions authoring"
+                                    aria-label="Learn more about extensions"
                                     target="_blank"
                                     rel="noopener"
-                                    to="/help/extensions/authoring"
+                                    to="/help/extensions"
                                 >
                                     <Icon aria-hidden={true} as={HelpCircleOutline} />
                                 </Link>

@@ -3,12 +3,13 @@ import { FunctionComponent } from 'react'
 import { upperFirst } from 'lodash'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { pluralize } from '@sourcegraph/common'
 
 import { LSIFIndexState, LSIFUploadState } from '../../../../graphql-operations'
 
 export interface CodeIntelStateDescriptionProps {
     typeName: string
-    pluralTypeName: string
+    pluralTypeName?: string
     state: LSIFUploadState | LSIFIndexState
     placeInQueue?: number | null
     failure?: string | null
@@ -30,7 +31,11 @@ export const CodeIntelStateDescription: FunctionComponent<React.PropsWithChildre
     ) : state === LSIFUploadState.QUEUED || state === LSIFIndexState.QUEUED ? (
         <span className={className}>
             {upperFirst(typeName)} is queued.{' '}
-            <CodeIntelStateDescriptionPlaceInQueue placeInQueue={placeInQueue} pluralTypeName={pluralTypeName} />
+            <CodeIntelStateDescriptionPlaceInQueue
+                placeInQueue={placeInQueue}
+                typeName={typeName}
+                pluralTypeName={pluralTypeName}
+            />
         </span>
     ) : state === LSIFUploadState.PROCESSING || state === LSIFIndexState.PROCESSING ? (
         <span className={className}>{upperFirst(typeName)} is currently being processed...</span>
@@ -46,11 +51,23 @@ export const CodeIntelStateDescription: FunctionComponent<React.PropsWithChildre
 
 export interface CodeIntelStateDescriptionPlaceInQueueProps {
     placeInQueue?: number | null
-    pluralTypeName: string
+    typeName: string
+    pluralTypeName?: string
 }
 
 const CodeIntelStateDescriptionPlaceInQueue: FunctionComponent<
     React.PropsWithChildren<CodeIntelStateDescriptionPlaceInQueueProps>
-> = ({ placeInQueue, pluralTypeName }) => (
-    <>{placeInQueue ? `There are ${placeInQueue} ${pluralTypeName} ahead of this one.` : ''}</>
-)
+> = ({ placeInQueue, typeName, pluralTypeName }) => {
+    if (placeInQueue === 1) {
+        return <>This {typeName} is up next for processing.</>
+    }
+    return (
+        <>
+            {placeInQueue
+                ? `There are ${placeInQueue - 1} ${
+                      pluralTypeName !== undefined ? pluralTypeName : pluralize(typeName, placeInQueue - 1)
+                  } ahead of this one.`
+                : ''}
+        </>
+    )
+}

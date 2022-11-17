@@ -7,7 +7,6 @@ import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Link, Code } from '@sourcegraph/wildcard'
@@ -36,15 +35,13 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     as,
     index,
 }) => {
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
             <span
                 className={classNames(
                     'test-search-result-label flex-grow-1',
                     styles.titleInner,
-                    coreWorkflowImprovementsEnabled && styles.mutedRepoFileLink
+                    styles.mutedRepoFileLink
                 )}
             >
                 <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
@@ -63,7 +60,8 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                     <VisuallyHidden>,</VisuallyHidden>
                 </Code>{' '}
                 <VisuallyHidden>Commited</VisuallyHidden>
-                <Timestamp date={result.authorDate} noAbout={true} strict={true} />
+                {/* Display commit date in UTC to match behavior of before/after filters */}
+                <Timestamp date={result.committerDate} noAbout={true} strict={true} utc={true} />
             </Link>
             {result.repoStars && <div className={styles.divider} />}
         </div>

@@ -8,7 +8,7 @@ The **"Dependencies"** sections give a short, high-level overview of dependencie
 
 You can click on each component to jump to its respective code repository or subtree. <a href="./architecture.svg" target="_blank">Open in new tab</a>
 
-<!-- 
+<!--
 Auto-generated from ./doc/dev/background-information/architecture/architecture.dot
 Run cd ./doc/dev/background-information/architecture && ./generate.sh to update the .svg
 -->
@@ -64,15 +64,15 @@ If you want to learn more about search:
 
 Code navigation surfaces data (for example: doc comments for a symbol) and actions (for example: go to definition, find references) based on our semantic understanding of code (unlike search, which is completely text based).
 
-By default, Sourcegraph provides imprecise [search-based code navigation](../../../code_intelligence/explanations/search_based_code_intelligence.md). This reuses all the architecture that makes search fast, but it can result in false positives (for example: finding two definitions for a symbol, or references that aren't actually references), or false negatives (for example: not able to find the definition or all references). This is the default because it works with no extra configuration and is pretty good for many use cases and languages. We support a lot of languages this way because it only requires writing a few regular expressions.
+By default, Sourcegraph provides imprecise [search-based code navigation](../../../code_navigation/explanations/search_based_code_navigation.md). This reuses all the architecture that makes search fast, but it can result in false positives (for example: finding two definitions for a symbol, or references that aren't actually references), or false negatives (for example: not able to find the definition or all references). This is the default because it works with no extra configuration and is pretty good for many use cases and languages. We support a lot of languages this way because it only requires writing a few regular expressions.
 
-With some setup, customers can enable [precise code navigation](../../../code_intelligence/explanations/precise_code_intelligence.md). Repositories add a step to their build pipeline that computes the index for that revision of code and uploads it to Sourcegraph. We have to write language specific indexers, so adding precise code navigation support for new languages is a non-trivial task.
+With some setup, customers can enable [precise code navigation](../../../code_navigation/explanations/precise_code_navigation.md). Repositories add a step to their build pipeline that computes the index for that revision of code and uploads it to Sourcegraph. We have to write language specific indexers, so adding precise code navigation support for new languages is a non-trivial task.
 
 If you want to learn more about code navigation:
 
-- [Code navigation product documentation](../../../code_intelligence/index.md)
+- [Code navigation product documentation](../../../code_navigation/index.md)
 - [Code navigation developer documentation](../codeintel/index.md)
-- [Available indexers](../../../code_intelligence/references/indexers.md)
+- [Available indexers](../../../code_navigation/references/indexers.md)
 
 ### Dependencies
 
@@ -115,7 +115,7 @@ Code insights surface higher-level, aggregated information to leaders in enginee
 For example, code insights can track the number of matches of a search query over time, the number of code navigation diagnostic warnings in a code base, usage of different programming languages, or even data from external services, like test coverage from Codecov.
 Sample use cases for this are for tracking migrations, usage of libraries across an organization, tech debt, code base health, and much more.
 
-Code Insights are persisted in a separate databased called `codeinsights-db`. The web application interacts with the backend through a [GraphQL API](../../../code_insights/references/code_insights_graphql_api.md).
+Code Insights are persisted in a separate databased called `codeinsights-db`. The web application interacts with the backend through a [GraphQL API](../../../api/graphql/managing-code-insights-with-api.md).
 
 Code Insights makes use of data from the `frontend` database for repository metadata, as well as repository permissions to filter time series data.
 
@@ -124,7 +124,7 @@ For code insights being run just-in-time in the client, the performance of code 
 These insights are relatively fast as long as the scope doesn't include many repositories (or large monorepos), but performance degrades when trying to include a lot of repositories. Insights
 that are processed in the background are rate limited and will perform approximately 28,000 queries per hour when fully saturated on default settings.
 
-There is also a feature flag left over from the original development of the early stage product that we retained in case a customer who doesn't purchase it ever has a justified need to disable insights. You can set `"experimentalFeatures": { "codeInsights": false }` in your settings to disable insights. 
+There is also a feature flag left over from the original development of the early stage product that we retained in case a customer who doesn't purchase it ever has a justified need to disable insights. You can set `"experimentalFeatures": { "codeInsights": false }` in your settings to disable insights.
 
 If you want to learn more about code insights:
 
@@ -206,6 +206,8 @@ If you want to learn more about native integrations:
   - Uses the GraphQL API to resolve repositories and revisions on code hosts
 
 ## Sourcegraph extension API
+
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph September release. [Learn more](../../../extensions/deprecation.md).
 
 The Sourcegraph extension API allows developers to write extensions that extend the functionality of Sourcegraph.
 

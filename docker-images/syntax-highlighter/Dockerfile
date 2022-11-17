@@ -14,17 +14,17 @@ RUN cp ./target/release/syntect_server /syntect_server
 ################################
 # Build http-server-stabilizer #
 ################################
-FROM golang:1.15.2-alpine@sha256:fc801399d044a8e01f125eeb5aa3f160a0d12d6e03ba17a1d0b22ce50dfede81 as hss
+FROM golang:1.19-alpine@sha256:70df3b8f9f099da7f60f0b32480015165e3d0b51bfacf9e255b59f3dd6bd2828 as hss
 
 RUN apk add --no-cache git>=2.26.3
-RUN git clone https://github.com/slimsag/http-server-stabilizer /repo
+RUN git clone --branch v1.0.5 --single-branch https://github.com/sourcegraph/http-server-stabilizer /repo
 WORKDIR /repo
-RUN git checkout v1.0.4 && go build -o /http-server-stabilizer .
+RUN go build -o /http-server-stabilizer .
 
 #######################
 # Compile final image #
 #######################
-FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7
+FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e
 COPY --from=ss syntect_server /
 COPY --from=hss http-server-stabilizer /
 

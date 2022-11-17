@@ -10,6 +10,7 @@ const mapValues = require('lodash/mapValues')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const webpack = require('webpack')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
+const { StatsWriterPlugin } = require('webpack-stats-plugin')
 
 const {
   ROOT_PATH,
@@ -25,7 +26,6 @@ const {
   getMonacoTTFRule,
   getBasicCSSLoader,
   getStatoscopePlugin,
-  STATOSCOPE_STATS,
 } = require('@sourcegraph/build-config')
 
 const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG } = require('./dev/utils')
@@ -38,14 +38,18 @@ const {
   INTEGRATION_TESTS,
   ENTERPRISE,
   EMBED_DEVELOPMENT,
-  ENABLE_MONITORING,
+  ENABLE_SENTRY,
+  ENABLE_OPEN_TELEMETRY,
   SOURCEGRAPH_API_URL,
-  WEBPACK_SERVE_INDEX,
   WEBPACK_BUNDLE_ANALYZER,
+  WEBPACK_EXPORT_STATS_FILENAME,
+  WEBPACK_SERVE_INDEX,
+  WEBPACK_STATS_NAME,
   WEBPACK_USE_NAMED_CHUNKS,
+  WEBPACK_DEVELOPMENT_DEVTOOL,
   SENTRY_UPLOAD_SOURCE_MAPS,
   COMMIT_SHA,
-  RELEASE_CANDIDATE_VERSION,
+  VERSION,
   SENTRY_DOT_COM_AUTH_TOKEN,
   SENTRY_ORGANIZATION,
   SENTRY_PROJECT,
@@ -56,10 +60,10 @@ const IS_EMBED_ENTRY_POINT_ENABLED = ENTERPRISE && (IS_PRODUCTION || (IS_DEVELOP
 
 const RUNTIME_ENV_VARIABLES = {
   NODE_ENV,
-  ENABLE_MONITORING,
+  ENABLE_SENTRY,
+  ENABLE_OPEN_TELEMETRY,
   INTEGRATION_TESTS,
   COMMIT_SHA,
-  RELEASE_CANDIDATE_VERSION,
   ...(WEBPACK_SERVE_INDEX && { SOURCEGRAPH_API_URL }),
 }
 
@@ -72,19 +76,23 @@ const styleLoader = IS_DEVELOPMENT ? 'style-loader' : MiniCssExtractPlugin.loade
 
 const extensionHostWorker = /main\.worker\.ts$/
 
+// Used to ensure that we include all initial chunks into the Webpack manifest.
+const initialChunkNames = {
+  react: 'react',
+  opentelemetry: 'opentelemetry',
+}
+
 /** @type {import('webpack').Configuration} */
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
   mode: IS_PRODUCTION ? 'production' : 'development',
-  stats: WEBPACK_BUNDLE_ANALYZER
-    ? STATOSCOPE_STATS
-    : {
-        // Minimize logging in case if Webpack is used along with multiple other services.
-        // Use `normal` output preset in case of running standalone web server.
-        preset: WEBPACK_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors-warnings',
-        errorDetails: true,
-        timings: true,
-      },
+  stats: {
+    // Minimize logging in case if Webpack is used along with multiple other services.
+    // Use `normal` output preset in case of running standalone web server.
+    preset: WEBPACK_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors-warnings',
+    errorDetails: true,
+    timings: true,
+  },
   infrastructureLogging: {
     // Controls webpack-dev-server logging level.
     level: 'warn',
@@ -99,9 +107,14 @@ const config = {
     minimizer: [getTerserPlugin(), new CssMinimizerWebpackPlugin()],
     splitChunks: {
       cacheGroups: {
-        react: {
+        [initialChunkNames.react]: {
           test: /[/\\]node_modules[/\\](react|react-dom)[/\\]/,
-          name: 'react',
+          name: initialChunkNames.react,
+          chunks: 'all',
+        },
+        [initialChunkNames.opentelemetry]: {
+          test: /[/\\]node_modules[/\\](@opentelemetry)[/\\]/,
+          name: initialChunkNames.opentelemetry,
           chunks: 'all',
         },
       },
@@ -137,7 +150,7 @@ const config = {
     globalObject: 'self',
     pathinfo: false,
   },
-  devtool: IS_PRODUCTION ? 'source-map' : 'eval-cheap-module-source-map',
+  devtool: IS_PRODUCTION ? 'source-map' : WEBPACK_DEVELOPMENT_DEVTOOL,
   plugins: [
     new webpack.DefinePlugin({
       'process.env': mapValues(RUNTIME_ENV_VARIABLES, JSON.stringify),
@@ -145,7 +158,10 @@ const config = {
     getProvidePlugin(),
     new MiniCssExtractPlugin({
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
-      filename: IS_PRODUCTION ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
+      filename:
+        IS_PRODUCTION && !WEBPACK_USE_NAMED_CHUNKS
+          ? 'styles/[name].[contenthash].bundle.css'
+          : 'styles/[name].bundle.css',
     }),
     getMonacoWebpackPlugin(),
     !WEBPACK_SERVE_INDEX &&
@@ -153,10 +169,11 @@ const config = {
         writeToFileEmit: true,
         fileName: 'webpack.manifest.json',
         // Only output files that are required to run the application.
-        filter: ({ isInitial, name }) => isInitial || name?.includes('react'),
+        filter: ({ isInitial, name }) =>
+          isInitial || Object.values(initialChunkNames).some(initialChunkName => name?.includes(initialChunkName)),
       }),
     ...(WEBPACK_SERVE_INDEX ? getHTMLWebpackPlugins() : []),
-    WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(),
+    WEBPACK_BUNDLE_ANALYZER && getStatoscopePlugin(WEBPACK_STATS_NAME),
     isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     IS_PRODUCTION &&
@@ -184,14 +201,34 @@ const config = {
          */
         threshold: 10240,
       }),
-    RELEASE_CANDIDATE_VERSION &&
+    VERSION &&
       SENTRY_UPLOAD_SOURCE_MAPS &&
       new SentryWebpackPlugin({
+        silent: true,
         org: SENTRY_ORGANIZATION,
         project: SENTRY_PROJECT,
         authToken: SENTRY_DOT_COM_AUTH_TOKEN,
-        release: `frontend@${RELEASE_CANDIDATE_VERSION}`,
-        include: path.join(STATIC_ASSETS_PATH, 'scripts'),
+        release: `frontend@${VERSION}`,
+        include: path.join(STATIC_ASSETS_PATH, 'scripts', '*.map'),
+      }),
+    WEBPACK_EXPORT_STATS_FILENAME &&
+      new StatsWriterPlugin({
+        filename: WEBPACK_EXPORT_STATS_FILENAME,
+        stats: {
+          all: false, // disable all the stats
+          hash: true, // compilation hash
+          entrypoints: true,
+          chunks: true,
+          chunkModules: true, // modules
+          ids: true, // IDs of modules and chunks (webpack 5)
+          cachedAssets: true, // information about the cached assets (webpack 5)
+          nestedModules: true, // concatenated modules
+          usedExports: true,
+          assets: true,
+          chunkOrigins: true, // chunks origins stats (to find out which modules require a chunk)
+          timings: true, // modules timing information
+          performance: true, // info about oversized assets
+        },
       }),
   ].filter(Boolean),
   resolve: {
@@ -215,7 +252,7 @@ const config = {
           {
             loader: 'babel-loader',
             options: {
-              cacheDirectory: true,
+              cacheDirectory: !IS_PRODUCTION,
               ...(isHotReloadEnabled && { plugins: ['react-refresh/babel'] }),
             },
           },

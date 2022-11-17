@@ -13,14 +13,21 @@ The document content can set class names and IDs on elements (for example, Markd
 */
 
 :root {
+    /* You cannot use vars in media queries, so these are used just for reference. */
+    --breakpoint-sm: 640px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 1024px;
+    --breakpoint-xl: 1280px;
+    --breakpoint-2xl: 1536px;
     --sidebar-breakpoint-width: 800px; /* hide sidebar if narrower */
     --index-breakpoint-width: 1200px; /* show index before (not to the right) if narrower */
+
     --width: 1200px;
     --sidebar-width: 230px;
     --spacing: 1rem;
     --gutter: calc(2*var(--spacing));
 
-    --base-font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+    --base-font-family: "Source Sans Pro",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
     --monospace-font-family: "SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
 
     --note-color: #bce8f1;
@@ -287,6 +294,12 @@ body > #sidebar .nav-section ul ul {
     font-size: 90%;
     padding-left: var(--spacing);
 }
+body > #sidebar .nav-section ul ul li.active-subsection {
+    font-weight: bold;
+}
+body > #sidebar .nav-section ul ul li.active-subsection a {
+    color: var(--text-color);
+}
 body > #sidebar .nav-section li.collapse ul {
     display: none;
 }
@@ -307,6 +320,7 @@ body > #sidebar #theme button {
     background-color: transparent;
     font-family: var(--base-font-family);
     font-size: 1rem;
+    cursor: pointer;
 }
 body > #sidebar #theme button:not(.active) {
     color: var(--text-muted);
@@ -595,6 +609,9 @@ body > #page > main > #content {
 .markdown-body aside.experimental {
     border-color: var(--experimental-color);
 }
+.markdown-body aside.beta {
+    border-color: var(--beta-color);
+}
 
 .markdown-body table {
     display: block;
@@ -662,8 +679,6 @@ body > #page > main > #content {
 
 
 /* SEARCH RESULT */
-.search-result {
-}
 .search-result h1, .search-result h2, .search-result h3 {
   font-weight: normal;
 }
@@ -682,8 +697,6 @@ body > #page > main > #content {
 .search-result .document-result-path {
   color: var(--search-result-path-color);
   font-size: 0.8rem;
-}
-.search-result .section-results {
 }
 .search-result .section-result {
   margin: 0.25rem 0;
@@ -943,4 +956,140 @@ body.theme-dark .markdown-body .chroma.sgquery .ss { color: #ff6b6b; background-
 .markdown-body .getting-started .btn span {
   color: var(--link-color);
   font-weight: bold;
+}
+
+/* Home Page - index.md */
+.markdown-body .w-100 {
+    min-width: 100%;
+}
+
+.markdown-body .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1em;
+    margin-bottom: 1em;
+}
+
+.markdown-body .btn-app {
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: none;
+    padding-top: 1.5rem !important;
+    width: 100%;
+    border-radius: 1em;
+    border: 2px solid var(--input-focus-border);
+    color: var(--text-color);
+    background-color: var(--sidebar-bg);
+    text-align: center;
+    font-weight: 500;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+}
+
+.markdown-body .btn-app:hover {
+    box-shadow: 0 0 10px var(--link-color);
+}
+
+.markdown-body .btn-app > img {
+    height: 4em;
+}
+
+.markdown-body .btn-app > p {
+    margin-bottom: 0 !important;
+}
+
+.markdown-body .btn-app > h3 {
+    font-size: 1.5em;
+    font-weight: 400;
+    margin-top: .2em;
+    margin-bottom: 1em;
+}
+
+.markdown-body .btn-icon {
+    font-weight: 500;
+    text-align: center;
+    color: var(--text-color);
+}
+
+.markdown-body .btn-app:hover, .btn-icon:hover {
+    color: var(--link-color);
+    box-shadow: 0 0 10px var(--link-color);
+}
+
+.markdown-body .btn-secondary {
+    background-color: var(--sidebar-bg);
+}
+
+/* Cloud CTA */
+a.cloud-cta {
+    text-decoration: none;
+}
+.cloud-cta {
+    background: #270741;
+    min-height: 100px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 4px;
+}
+.cloud-cta-copy {
+    padding-right: 20px;
+}
+.cloud-cta h2 {
+    color: #E8D1FF !important;
+    margin: 0 0 4px 0 !important;
+    font-size: 19px;
+    line-height: 21px;
+}
+.cloud-cta h3,
+.cloud-cta p {
+    color: #ffffff;
+    margin: 0;
+}
+.cloud-cta h3 {
+    font-size: 15px;
+    line-height: 17px;
+}
+.cloud-cta p {
+    font-size: 14px;
+    margin-top: 15px;
+}
+.cloud-cta-btn-container {
+    margin-top: 20px;
+    max-width: 179px;
+    width: 100%;
+}
+.cloud-cta .visual-btn {
+    background: #ffffff;
+    color: #5033E1;
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 3px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+.cloud-cta:hover .visual-btn {
+    background: #5033E1;
+    color: #ffffff;
+}
+@media only screen and (min-width: 640px /* --breakpoint-sm */) {
+    .cloud-cta {
+        flex-direction: row;
+        align-items: center;
+    }
+    .cloud-cta-btn-container {
+        margin: 0 0 0 auto;
+    }
+}
+@media only screen and (min-width: 1024px /* --breakpoint-lg */) {
+    .cloud-cta {
+        background: #270741 url('/assets/cloud-cta-illustration.svg') no-repeat left top;
+    }
+    .cloud-cta-copy {
+        margin-left: 115px;
+    }
+    .cloud-cta-btn-container {
+        margin: 0 40px 0 auto;
+    }
 }

@@ -2,12 +2,22 @@
 
 exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
 <DocumentFragment>
+  <p
+    class="mx-3 mt-3"
+  >
+    Found 2 results from 2 repositories.
+  </p>
+  <h3
+    class="h3 mx-3"
+  >
+    Some results skipped:
+  </h3>
   <div
     class="pt-2 w-100 streamingSkippedItem streamingSkippedItemWarn"
   >
     <button
       aria-expanded="true"
-      class="btn btnOutlineDanger button p-2 w-100 bg-transparent border-0"
+      class="btn btnDanger btnOutline button p-2 w-100 bg-transparent border-0"
       role="button"
       type="button"
     >
@@ -69,7 +79,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   >
     <button
       aria-expanded="false"
-      class="btn btnOutlineDanger button p-2 w-100 bg-transparent border-0"
+      class="btn btnDanger btnOutline button p-2 w-100 bg-transparent border-0"
       role="button"
       type="button"
     >
@@ -131,7 +141,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   >
     <button
       aria-expanded="false"
-      class="btn btnOutlinePrimary button p-2 w-100 bg-transparent border-0"
+      class="btn btnPrimary btnOutline button p-2 w-100 bg-transparent border-0"
       role="button"
       type="button"
     >
@@ -193,7 +203,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   >
     <button
       aria-expanded="false"
-      class="btn btnOutlinePrimary button p-2 w-100 bg-transparent border-0"
+      class="btn btnPrimary btnOutline button p-2 w-100 bg-transparent border-0"
       role="button"
       type="button"
     >
@@ -255,7 +265,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
   >
     <button
       aria-expanded="false"
-      class="btn btnOutlinePrimary button p-2 w-100 bg-transparent border-0"
+      class="btn btnPrimary btnOutline button p-2 w-100 bg-transparent border-0"
       role="button"
       type="button"
     >

@@ -4,22 +4,22 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"regexp/syntax"
 	"strings"
 	"time"
 	"unicode/utf8"
 
 	"github.com/grafana/regexp"
-	"github.com/grafana/regexp/syntax"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/zoekt/query"
 )
 
 // readerGrep is responsible for finding LineMatches. It is not concurrency
@@ -53,7 +53,7 @@ type readerGrep struct {
 
 	// matchPath is compiled from the include/exclude path patterns and reports
 	// whether a file path matches (and should be searched).
-	matchPath pathmatch.PathMatcher
+	matchPath *pathMatcher
 
 	// literalSubstring is used to test if a file is worth considering for
 	// matches. literalSubstring is guaranteed to appear in any match found by
@@ -81,15 +81,25 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 			// regex engine to consider newlines for anchors (^$).
 			expr = "(?m:" + expr + ")"
 		}
-		if !p.IsCaseSensitive {
-			// We don't just use (?i) because regexp library doesn't seem
-			// to contain good optimizations for case insensitive
-			// search. Instead we lowercase the input and pattern.
+
+		// Transforms on the parsed regex
+		{
 			re, err := syntax.Parse(expr, syntax.Perl)
 			if err != nil {
 				return nil, err
 			}
-			casetransform.LowerRegexpASCII(re)
+
+			if !p.IsCaseSensitive {
+				// We don't just use (?i) because regexp library doesn't seem
+				// to contain good optimizations for case insensitive
+				// search. Instead we lowercase the input and pattern.
+				casetransform.LowerRegexpASCII(re)
+			}
+
+			// OptimizeRegexp currently only converts capture groups into
+			// non-capture groups (faster for stdlib regexp to execute).
+			re = query.OptimizeRegexp(re, syntax.Perl)
+
 			expr = re.String()
 		}
 
@@ -111,11 +121,7 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 		}
 	}
 
-	pathOptions := pathmatch.CompileOptions{
-		RegExp:        p.PathPatternsAreRegExps,
-		CaseSensitive: p.PathPatternsAreCaseSensitive,
-	}
-	matchPath, err := pathmatch.CompilePathPatterns(p.IncludePatterns, p.ExcludePattern, pathOptions)
+	matchPath, err := compilePathPatterns(p.IncludePatterns, p.ExcludePattern, p.PathPatternsAreCaseSensitive)
 	if err != nil {
 		return nil, err
 	}

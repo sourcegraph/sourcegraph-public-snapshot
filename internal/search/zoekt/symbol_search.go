@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	zoektquery "github.com/google/zoekt/query"
 	"github.com/opentracing/opentracing-go/log"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -19,6 +19,7 @@ type SymbolSearchJob struct {
 	Query          zoektquery.Q
 	FileMatchLimit int32
 	Select         filter.SelectPath
+	Features       search.Features
 	Since          func(time.Time) time.Duration `json:"-"` // since if non-nil will be used instead of time.Since. For tests
 }
 
@@ -42,7 +43,7 @@ func (z *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	err = zoektSearch(ctx, z.Repos, z.Query, search.SymbolRequest, clients.Zoekt, z.FileMatchLimit, z.Select, since, stream)
+	err = zoektSearch(ctx, z.Repos, z.Query, nil, search.SymbolRequest, clients.Zoekt, z.FileMatchLimit, z.Select, z.Features, since, stream)
 	if err != nil {
 		tr.LogFields(log.Error(err))
 		// Only record error if we haven't timed out.
@@ -99,7 +100,7 @@ func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 
 	// always search for symbols in indexed repositories when searching the repo universe.
-	err = DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, stream)
+	err = DoZoektSearchGlobal(ctx, clients.Zoekt, s.ZoektArgs, nil, stream)
 	if err != nil {
 		tr.LogFields(log.Error(err))
 		// Only record error if we haven't timed out.

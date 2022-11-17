@@ -291,7 +291,7 @@ func newMockProvider(t *testing.T, db database.DB, clientID, clientSecret, baseU
 		ClientID:     clientID,
 		AllowOrgs:    []string{"myorg"},
 	}}
-	mp.Provider, problems = parseProvider(cfg.Github, db, cfg)
+	mp.Provider, problems = parseProvider(logtest.Scoped(t), cfg.Github, db, cfg)
 	if len(problems) > 0 {
 		t.Fatalf("Expected 0 problems, but got %d: %+v", len(problems), problems)
 	}

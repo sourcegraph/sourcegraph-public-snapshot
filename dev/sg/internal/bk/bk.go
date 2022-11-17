@@ -44,26 +44,22 @@ func retrieveToken(ctx context.Context, out *std.Output) (string, error) {
 		return tok, nil
 	}
 
-	sec, err := secrets.FromContext(ctx)
+	store, err := secrets.FromContext(ctx)
 	if err != nil {
 		return "", err
 	}
-	bkSecrets := buildkiteSecrets{}
-	err = sec.Get("buildkite", &bkSecrets)
-	if errors.Is(err, secrets.ErrSecretNotFound) {
-		str, err := getTokenFromUser(out)
-		if err != nil {
-			return "", nil
-		}
-		if err := sec.PutAndSave("buildkite", buildkiteSecrets{Token: str}); err != nil {
-			return "", err
-		}
-		return str, nil
-	}
+
+	token, err := store.GetExternal(ctx, secrets.ExternalSecret{
+		Project: "sourcegraph-local-dev",
+		Name:    "SG_BUILDKITE_TOKEN",
+	}, func(_ context.Context) (string, error) {
+		return getTokenFromUser(out)
+	})
+
 	if err != nil {
 		return "", err
 	}
-	return bkSecrets.Token, nil
+	return token, nil
 }
 
 // getTokenFromUser prompts the user for a slack OAuth token.
@@ -94,6 +90,7 @@ func NewClient(ctx context.Context, out *std.Output) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	config, err := buildkite.NewTokenConfig(token, false)
 	if err != nil {
 		return nil, errors.Newf("failed to init buildkite config: %w", err)
@@ -126,15 +123,29 @@ func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string
 func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number string) (*buildkite.Build, error) {
 	b, _, err := c.bk.Builds.Get(BuildkiteOrg, pipeline, number, nil)
 	if err != nil {
-		return nil, err
-	}
-	if err != nil {
 		if strings.Contains(err.Error(), "404 Not Found") {
 			return nil, errors.New("no build found")
 		}
 		return nil, err
 	}
 	return b, nil
+}
+
+func (c *Client) GetBuildByCommit(ctx context.Context, pipeline string, commit string) (*buildkite.Build, error) {
+	b, _, err := c.bk.Builds.ListByPipeline(BuildkiteOrg, pipeline, &buildkite.BuildsListOptions{
+		Commit: commit,
+	})
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil, errors.New("no build found")
+		}
+		return nil, err
+	}
+	if len(b) == 0 {
+		return nil, errors.New("no build found")
+	}
+	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
+	return &b[0], nil
 }
 
 // ListArtifactsByBuildNumber queries the Buildkite API and retrieves all the artifacts for a particular build

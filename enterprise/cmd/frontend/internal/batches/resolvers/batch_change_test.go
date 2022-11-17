@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -32,20 +32,20 @@ func TestBatchChangeResolver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, true).ID
+	userID := bt.CreateTestUser(t, db, true).ID
 	orgName := "test-batch-change-resolver-org"
-	orgID := ct.InsertTestOrg(t, db, orgName)
+	orgID := bt.CreateTestOrg(t, db, orgName).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
 	batchSpec := &btypes.BatchSpec{
-		RawSpec:        ct.TestRawBatchSpec,
+		RawSpec:        bt.TestRawBatchSpec,
 		UserID:         userID,
 		NamespaceOrgID: orgID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
@@ -58,11 +58,11 @@ func TestBatchChangeResolver(t *testing.T) {
 		LastAppliedAt:  now,
 		BatchSpecID:    batchSpec.ID,
 	}
-	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
+	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,6 @@ func TestBatchChangeResolver(t *testing.T) {
 		Namespace:     apitest.UserOrg{ID: namespaceAPIID, Name: orgName},
 		Creator:       apiUser,
 		LastApplier:   apiUser,
-		SpecCreator:   apiUser,
 		LastAppliedAt: marshalDateTime(t, now),
 		URL:           fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, batchChange.Name),
 		CreatedAt:     marshalDateTime(t, now),
@@ -108,14 +107,13 @@ func TestBatchChangeResolver(t *testing.T) {
 	}
 
 	// Now soft-delete the user and check we can still access the batch change in the org namespace.
-	err = database.UsersWith(logger, cstore).Delete(ctx, userID)
+	err = database.UsersWith(logger, bstore).Delete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	wantBatchChange.Creator = nil
 	wantBatchChange.LastApplier = nil
-	wantBatchChange.SpecCreator = nil
 
 	{
 		var response struct{ Node apitest.BatchChange }
@@ -127,7 +125,7 @@ func TestBatchChangeResolver(t *testing.T) {
 	}
 
 	// Now hard-delete the user and check we can still access the batch change in the org namespace.
-	err = database.UsersWith(logger, cstore).HardDelete(ctx, userID)
+	err = database.UsersWith(logger, bstore).HardDelete(ctx, userID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,20 +149,20 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Non-created-from-raw, attached to batch change
-	batchSpec1, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
+	batchSpec1, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,7 +170,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	batchSpec1.NamespaceUserID = userID
 
 	// Non-created-from-raw, not attached to batch change
-	batchSpec2, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
+	batchSpec2, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,7 +178,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	batchSpec2.NamespaceUserID = userID
 
 	// created-from-raw, not attached to batch change
-	batchSpec3, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
+	batchSpec3, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -189,7 +187,7 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 	batchSpec3.CreatedFromRaw = true
 
 	for _, bs := range []*btypes.BatchSpec{batchSpec1, batchSpec2, batchSpec3} {
-		if err := cstore.CreateBatchSpec(ctx, bs); err != nil {
+		if err := bstore.CreateBatchSpec(ctx, bs); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -206,14 +204,14 @@ func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
 		BatchSpecID:     batchSpec1.ID,
 	}
 
-	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
+	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
 
 	assertBatchSpecsInResponse(t, userCtx, s, batchChange.ID, batchSpec1, batchSpec2, batchSpec3)
 
 	// When viewed as another user we don't want the created-from-raw batch spec to be returned
-	otherUserID := ct.CreateTestUser(t, db, false).ID
+	otherUserID := bt.CreateTestUser(t, db, false).ID
 	otherUserCtx := actor.WithActor(ctx, actor.FromUser(otherUserID))
 	assertBatchSpecsInResponse(t, otherUserCtx, s, batchChange.ID, batchSpec1, batchSpec2)
 }
@@ -259,7 +257,6 @@ query($batchChange: ID!){
       id, name, description, state
       creator { ...u }
       lastApplier    { ...u }
-      specCreator    { ...u }
       lastAppliedAt
       createdAt
       updatedAt
@@ -283,7 +280,6 @@ query($namespace: ID!, $name: String!){
     id, name, description, state
     creator { ...u }
     lastApplier    { ...u }
-    specCreator    { ...u }
     lastAppliedAt
     createdAt
     updatedAt

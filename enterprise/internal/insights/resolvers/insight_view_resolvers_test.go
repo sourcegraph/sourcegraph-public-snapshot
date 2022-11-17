@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -389,4 +390,159 @@ type fakeSearchContextLoader struct {
 
 func (f *fakeSearchContextLoader) GetByName(ctx context.Context, name string) (*internalTypes.SearchContext, error) {
 	return f.mocks[name], nil
+}
+
+func TestRemoveClosePoints(t *testing.T) {
+	getPoint := func(month time.Month, day, hour, minute int) store.SeriesPoint {
+		return store.SeriesPoint{
+			Time:  time.Date(2021, month, day, hour, minute, 0, 0, time.UTC),
+			Value: 1,
+		}
+	}
+	getPointWithYear := func(year, day int) store.SeriesPoint {
+		return store.SeriesPoint{
+			Time:  time.Date(year, time.April, day, 0, 0, 0, 0, time.UTC),
+			Value: 1,
+		}
+	}
+	tests := []struct {
+		name   string
+		points []store.SeriesPoint
+		series types.InsightViewSeries
+		want   []store.SeriesPoint
+	}{
+		{name: "test hour",
+			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Hour), SampleIntervalValue: 1},
+			points: []store.SeriesPoint{
+				getPoint(4, 15, 2, 0),
+				getPoint(4, 15, 3, 0),
+				getPoint(4, 15, 4, 0),
+				getPoint(4, 15, 4, 8),
+				getPoint(4, 15, 5, 0),
+			},
+			want: []store.SeriesPoint{
+				getPoint(4, 15, 2, 0),
+				getPoint(4, 15, 3, 0),
+				getPoint(4, 15, 4, 0),
+				getPoint(4, 15, 5, 0),
+			},
+		},
+		{name: "test day",
+			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Day), SampleIntervalValue: 2},
+			points: []store.SeriesPoint{
+				getPoint(4, 3, 0, 0),
+				getPoint(4, 5, 0, 0),
+				getPoint(4, 7, 0, 0),
+				getPoint(4, 9, 2, 8),
+				getPoint(4, 9, 5, 0),
+				getPoint(4, 11, 1, 0),
+			},
+			want: []store.SeriesPoint{
+				getPoint(4, 3, 0, 0),
+				getPoint(4, 5, 0, 0),
+				getPoint(4, 7, 0, 0),
+				getPoint(4, 9, 2, 8),
+				getPoint(4, 11, 1, 0),
+			},
+		},
+		{name: "test week",
+			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Week), SampleIntervalValue: 1},
+			points: []store.SeriesPoint{
+				getPoint(4, 1, 0, 0),
+				getPoint(4, 8, 0, 0),
+				getPoint(4, 15, 0, 0),
+				getPoint(4, 22, 2, 8),
+				getPoint(4, 22, 14, 0),
+				getPoint(4, 30, 1, 0),
+			},
+			want: []store.SeriesPoint{
+				getPoint(4, 1, 0, 0),
+				getPoint(4, 8, 0, 0),
+				getPoint(4, 15, 0, 0),
+				getPoint(4, 22, 2, 8),
+				getPoint(4, 30, 1, 0),
+			},
+		},
+		{name: "test month",
+			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Month), SampleIntervalValue: 1},
+			points: []store.SeriesPoint{
+				getPoint(4, 1, 0, 0),
+				getPoint(5, 1, 0, 0),
+				getPoint(6, 1, 0, 0),
+				getPoint(7, 1, 2, 8),
+				getPoint(7, 2, 12, 0),
+				getPoint(7, 15, 1, 0),
+			},
+			want: []store.SeriesPoint{
+				getPoint(4, 1, 0, 0),
+				getPoint(5, 1, 0, 0),
+				getPoint(6, 1, 0, 0),
+				getPoint(7, 1, 2, 8),
+				getPoint(7, 15, 1, 0),
+			},
+		},
+		{name: "test year",
+			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Year), SampleIntervalValue: 1},
+			points: []store.SeriesPoint{
+				getPointWithYear(2018, 0),
+				getPointWithYear(2019, 0),
+				getPointWithYear(2020, 0),
+				getPointWithYear(2021, 0),
+				getPointWithYear(2021, 5),
+				getPointWithYear(2022, 0),
+			},
+			want: []store.SeriesPoint{
+				getPointWithYear(2018, 0),
+				getPointWithYear(2019, 0),
+				getPointWithYear(2020, 0),
+				getPointWithYear(2021, 0),
+				getPointWithYear(2022, 0),
+			},
+		},
+		{name: "test no points",
+			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Week), SampleIntervalValue: 1},
+			points: []store.SeriesPoint{},
+			want:   []store.SeriesPoint{},
+		},
+		{name: "test no close points, no snapshots",
+			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Month), SampleIntervalValue: 1},
+			points: []store.SeriesPoint{
+				getPoint(4, 1, 0, 0),
+				getPoint(5, 1, 0, 0),
+				getPoint(6, 1, 0, 0),
+				getPoint(7, 1, 0, 0),
+			},
+			want: []store.SeriesPoint{
+				getPoint(4, 1, 0, 0),
+				getPoint(5, 1, 0, 0),
+				getPoint(6, 1, 0, 0),
+				getPoint(7, 1, 0, 0),
+			},
+		},
+		{name: "test no close points, one snapshot",
+			series: types.InsightViewSeries{SampleIntervalUnit: string(types.Month), SampleIntervalValue: 1},
+			points: []store.SeriesPoint{
+				getPoint(4, 1, 0, 0),
+				getPoint(5, 1, 0, 0),
+				getPoint(6, 1, 0, 0),
+				getPoint(7, 1, 0, 0),
+				getPoint(7, 2, 2, 8),
+			},
+			want: []store.SeriesPoint{
+				getPoint(4, 1, 0, 0),
+				getPoint(5, 1, 0, 0),
+				getPoint(6, 1, 0, 0),
+				getPoint(7, 1, 0, 0),
+				getPoint(7, 2, 2, 8),
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := removeClosePoints(test.points, test.series)
+			if diff := cmp.Diff(test.want, got); diff != "" {
+				t.Errorf("unexpected points result (want/got): %v", diff)
+			}
+		})
+	}
 }

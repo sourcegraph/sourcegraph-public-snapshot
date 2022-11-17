@@ -1,3 +1,17 @@
+// ------------------- Start reboot.scss styles imported from Bootstrap ----------------------
+
+table {
+    border-collapse: collapse; // Prevent double borders
+}
+
+th {
+    // Matches default `<td>` alignment by inheriting from the `<body>`, or the
+    // closest parent with a set `text-align`.
+    text-align: inherit;
+}
+
+// ------------------- End reboot.scss styles imported from Bootstrap ----------------------
+
 .table {
     --table-cell-padding: 0.625rem;
     --table-border-width: 1px;

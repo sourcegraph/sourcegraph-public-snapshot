@@ -1,11 +1,10 @@
 import { ApolloClient, gql } from '@apollo/client'
 
 import { GetInsightPreviewResult, GetInsightPreviewVariables } from '../../../../../../graphql-operations'
+import { DATA_SERIES_COLORS_LIST, MAX_NUMBER_OF_SERIES } from '../../../../constants'
 import { BackendInsightDatum, InsightPreviewSettings, SeriesChartContent } from '../../code-insights-backend-types'
-import { DATA_SERIES_COLORS_LIST, generateLinkURL, InsightDataSeriesData } from '../../utils/create-line-chart-content'
+import { generateLinkURL, InsightDataSeriesData } from '../../utils/create-line-chart-content'
 import { getStepInterval } from '../utils/get-step-interval'
-
-import { MAX_NUMBER_OF_SERIES } from './get-backend-insight-data/deserializators'
 
 const GET_INSIGHT_PREVIEW_GQL = gql`
     query GetInsightPreview($input: SearchInsightPreviewInput!) {
@@ -74,12 +73,21 @@ export const getInsightsPreview = (
 
             // TODO Revisit live preview and dashboard insight resolver methods in order to
             // improve series data handling and manipulation
-            const seriesMetadata = indexedSeries.map((generatedSeries, index) => ({
-                id: generatedSeries.seriesId,
-                name: generatedSeries.label,
-                query: inputMetadata[`${generatedSeries.label}-${index}`]?.query || '',
-                stroke: getColorForSeries(generatedSeries.label, index),
-            }))
+            const seriesMetadata = indexedSeries.map((generatedSeries, index) => {
+                // inputMetaData is keyed using the label provided by the user.
+                // Capture groups do not have a label, so we omit the label and look
+                // for a meta object without it.
+                // Note we only support 1 capture group right now, so the "index" is always 0.
+                // https://github.com/sourcegraph/sourcegraph/issues/38098
+                const metaData = inputMetadata[`${generatedSeries.label}-${index}`] ?? inputMetadata[`-${0}`]
+
+                return {
+                    id: generatedSeries.seriesId,
+                    name: generatedSeries.label,
+                    query: metaData?.query || '',
+                    stroke: getColorForSeries(generatedSeries.label, index),
+                }
+            })
 
             const seriesDefinitionMap = Object.fromEntries(
                 seriesMetadata.map(definition => [definition.id, definition])

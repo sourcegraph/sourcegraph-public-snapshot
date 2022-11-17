@@ -3,7 +3,16 @@ package telemetry
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strconv"
 	"time"
+
+	"cloud.google.com/go/pubsub"
+	"go.opentelemetry.io/otel"
+
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -11,8 +20,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 
-	"cloud.google.com/go/pubsub"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -21,7 +28,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
@@ -48,36 +54,105 @@ func (t *telemetryJob) Config() []env.Config {
 	return nil
 }
 
-func (t *telemetryJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (t *telemetryJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	if !isEnabled() {
 		return nil, nil
 	}
 	logger.Info("Usage telemetry export enabled - initializing background routine")
 
-	sqlDB, err := workerdb.Init()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
 
-	db := database.NewDB(logger, sqlDB)
-
 	return []goroutine.BackgroundRoutine{
 		newBackgroundTelemetryJob(logger, db),
+		queueSizeMetricJob(db),
 	}, nil
+}
+
+func queueSizeMetricJob(db database.DB) goroutine.BackgroundRoutine {
+	job := &queueSizeJob{
+		db: db,
+		sizeGauge: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: "src",
+			Name:      "telemetry_job_queue_size_total",
+			Help:      "Current number of events waiting to be scraped.",
+		}),
+		throughputGauge: promauto.NewGauge(prometheus.GaugeOpts{
+			Namespace: "src",
+			Name:      "telemetry_job_max_throughput",
+			Help:      "Currently configured maximum throughput per second.",
+		}),
+	}
+	return goroutine.NewPeriodicGoroutine(context.Background(), time.Minute*5, job)
+}
+
+type queueSizeJob struct {
+	db              database.DB
+	sizeGauge       prometheus.Gauge
+	throughputGauge prometheus.Gauge
+}
+
+func (j *queueSizeJob) Handle(ctx context.Context) error {
+	bookmarkStore := newBookmarkStore(j.db)
+	bookmark, err := bookmarkStore.GetBookmark(ctx)
+	if err != nil {
+		return errors.Wrap(err, "queueSizeJob.GetBookmark")
+	}
+
+	store := basestore.NewWithHandle(j.db.Handle())
+	val, err := basestore.ScanInt(store.QueryRow(ctx, sqlf.Sprintf("select count(*) from event_logs where id > %d and name in (select event_name from event_logs_export_allowlist);", bookmark)))
+	if err != nil {
+		return errors.Wrap(err, "queueSizeJob.GetCount")
+	}
+	j.sizeGauge.Set(float64(val))
+
+	batchSize := getBatchSize()
+	throughput := float64(batchSize) / float64(JobCooldownDuration/time.Second)
+	j.throughputGauge.Set(throughput)
+
+	return nil
 }
 
 func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.BackgroundRoutine {
 	observationContext := &observation.Context{
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.NewRegistry(),
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
+		Registerer: prometheus.DefaultRegisterer,
 	}
-	operation := observationContext.Operation(observation.Op{})
-
-	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), newBookmarkStoreSecurity(db), sendEvents)
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, th, operation)
+	handlerMetrics := newHandlerMetrics(observationContext)
+	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents, handlerMetrics)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), JobCooldownDuration, th, handlerMetrics.handler)
 }
 
-type sendEventsCallbackFunc func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error
+type sendEventsCallbackFunc func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error
+
+func newHandlerMetrics(observationContext *observation.Context) *handlerMetrics {
+	redM := metrics.NewREDMetrics(
+		observationContext.Registerer,
+		"telemetry_job",
+		metrics.WithLabels("op"),
+	)
+
+	op := func(name string) *observation.Operation {
+		return observationContext.Operation(observation.Op{
+			Name:              fmt.Sprintf("telemetry_job.telemetry_handler.%s", name),
+			MetricLabelValues: []string{name},
+			Metrics:           redM,
+		})
+	}
+	return &handlerMetrics{
+		sendEvents:  op("SendEvents"),
+		fetchEvents: op("FetchEvents"),
+		handler:     op("Handler"),
+	}
+}
+
+type handlerMetrics struct {
+	handler     *observation.Operation
+	sendEvents  *observation.Operation
+	fetchEvents *observation.Operation
+}
 
 type telemetryHandler struct {
 	logger             		log.Logger
@@ -87,9 +162,10 @@ type telemetryHandler struct {
 	bookmarkStore      		bookmarkStore
 	bookmarkStoreSecurity 	bookmarkStoreSecurity
 	sendEventsCallback 		sendEventsCallbackFunc
+	metrics            		*handlerMetrics
 }
 
-func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEmailsStore database.UserEmailsStore, globalStateStore database.GlobalStateStore, bookmarkStore bookmarkStore, bookmarkStoreSecurity bookmarkStoreSecurity, sendEventsCallback sendEventsCallbackFunc) *telemetryHandler {
+func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEmailsStore database.UserEmailsStore, globalStateStore database.GlobalStateStore, bookmarkStore bookmarkStore, bookmarkStoreSecurity bookmarkStoreSecurity, sendEventsCallback sendEventsCallbackFunc, metrics *handlerMetrics) *telemetryHandler {
 	return &telemetryHandler{
 		logger:             	logger,
 		eventLogStore:      	store,
@@ -98,18 +174,19 @@ func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEm
 		userEmailsStore:    	userEmailsStore,
 		bookmarkStore:      	bookmarkStore,
 		bookmarkStoreSecurity:	bookmarkStoreSecurity,
+		metrics:            	metrics,
 	}
 }
 
 var disabledErr = errors.New("Usage telemetry export is disabled, but the background job is attempting to execute. This means the configuration was disabled without restarting the worker service. This job is aborting, and no telemetry will be exported.")
 
 const MaxEventsCountDefault = 1000
+const JobCooldownDuration = time.Second * 60
 
-func (t *telemetryHandler) Handle(ctx context.Context) error {
+func (t *telemetryHandler) Handle(ctx context.Context) (err error) {
 	if !isEnabled() {
 		return disabledErr
 	}
-
 	topicConfig, err := getTopicConfig()
 	if err != nil {
 		return errors.Wrap(err, "getTopicConfig")
@@ -128,9 +205,9 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 	}
 	t.logger.Info("fetching events from bookmark", log.Int("bookmark_id", bookmark))
 
-	all, err := t.eventLogStore.ListExportableEvents(ctx, bookmark, batchSize)
+	all, err := fetchEvents(ctx, bookmark, batchSize, t.eventLogStore, t.metrics)
 	if err != nil {
-		return errors.Wrap(err, "eventLogStore.ListExportableEvents")
+		return errors.Wrap(err, "fetchEvents")
 	}
 	if len(all) == 0 {
 		return nil
@@ -139,24 +216,22 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 	maxId := int(all[len(all)-1].ID)
 	t.logger.Info("telemetryHandler executed", log.Int("event count", len(all)), log.Int("maxId", maxId))
 
-	err = t.sendEventsCallback(ctx, all, topicConfig, instanceMetadata)
+	err = sendBatch(ctx, all, topicConfig, instanceMetadata, t.metrics, t.sendEventsCallback)
 	if err != nil {
-		return errors.Wrap(err, "telemetryHandler.sendEvents")
+		return errors.Wrap(err, "sendBatch")
 	}
 
 	t.bookmarkStore.UpdateBookmark(ctx, maxId)
 
 	bookmarkSecurity, err := t.bookmarkStoreSecurity.GetBookmarkSecurity(ctx)
-
 	if err != nil {
 		return errors.Wrap(err, "GetBookmarkSecurity")
 	}
-	t.logger.Info("fetching security events from bookmark", log.Int("bookmark_id", bookmarkSecurity)
+	t.logger.Info("fetching security events from bookmark", log.Int("bookmark_id", bookmarkSecurity))
 
-	all, err := t.securityEventLogStore.ListExportableEvents(ctx, bookmarkSecurity, batchSize)
-
+	all, err := fetchEvents(ctx, bookmarkSecurity, batchSize, t.securityEventLogStore, t.metrics)
 	if err != nil {
-		return errors.Wrap(err, "securityEventLogStore.ListExportableEvents")
+		return errors.Wrap(err, "fetchEvents")
 	}
 	if len(all) == 0 {
 		return nil
@@ -165,32 +240,51 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 	maxId := int(all[len(all)-1].ID)
 	t.logger.Info("telemetryHandler executed", log.Int("event count", len(all)), log.Int("maxId", maxId))
 
-	err = t.sendEventsCallback(ctx, all, topicConfig, instanceMetadata)
+	err = sendBatch(ctx, all, topicConfig, instanceMetadata, t.metrics, t.sendEventsCallback)
 	if err != nil {
-		return errors.Wrap(err, "telemetryHandler.sendSecurityEvents")
+		return errors.Wrap(err, "sendBatch")
 	}
 
+	t.bookmarkStore.UpdateBookmark(ctx, maxId)
+
 	return t.bookmarkStoreSecurity.UpdateBookmarkSecurity(ctx, maxId)
+}
+
+// sendBatch wraps the send events callback in a metric
+func sendBatch(ctx context.Context, events []*database.Event, topicConfig topicConfig, metadata instanceMetadata, metrics *handlerMetrics, callback sendEventsCallbackFunc) (err error) {
+	ctx, _, endObservation := metrics.sendEvents.With(ctx, &err, observation.Args{})
+	sentCount := 0
+	defer func() { endObservation(float64(sentCount), observation.Args{}) }()
+
+	err = callback(ctx, events, topicConfig, metadata)
+	if err != nil {
+		return err
+	}
+	sentCount = len(events)
+	return nil
+}
+
+// fetchEvents wraps the event data fetch in a metric
+func fetchEvents(ctx context.Context, bookmark, batchSize int, eventLogStore database.EventLogStore, metrics *handlerMetrics) (results []*database.Event, err error) {
+	ctx, _, endObservation := metrics.fetchEvents.With(ctx, &err, observation.Args{})
+	defer func() { endObservation(float64(len(results)), observation.Args{}) }()
+
+	return eventLogStore.ListExportableEvents(ctx, bookmark, batchSize)
 }
 
 // This package level client is to prevent race conditions when mocking this configuration in tests.
 var confClient = conf.DefaultClient()
 
 func isEnabled() bool {
-	ptr := confClient.Get().ExportUsageTelemetry
-	if ptr != nil {
-		return ptr.Enabled
-	}
-
-	return false
+	return enabled
 }
 
 func getBatchSize() int {
-	val := confClient.Get().ExportUsageTelemetry.BatchSize
-	if val <= 0 {
-		val = MaxEventsCountDefault
+	config := confClient.Get()
+	if config == nil || config.ExportUsageTelemetry == nil || config.ExportUsageTelemetry.BatchSize <= 0 {
+		return MaxEventsCountDefault
 	}
-	return val
+	return config.ExportUsageTelemetry.BatchSize
 }
 
 type topicConfig struct {
@@ -201,18 +295,35 @@ type topicConfig struct {
 func getTopicConfig() (topicConfig, error) {
 	var config topicConfig
 
-	config.topicName = confClient.Get().ExportUsageTelemetry.TopicName
+	config.topicName = topicName
 	if config.topicName == "" {
 		return config, errors.New("missing topic name to export usage data")
 	}
-	config.projectName = confClient.Get().ExportUsageTelemetry.TopicProjectName
+	config.projectName = projectName
 	if config.projectName == "" {
 		return config, errors.New("missing project name to export usage data")
 	}
 	return config, nil
 }
 
-func buildBigQueryObject(event *types.Event, metadata *instanceMetadata) *bigQueryEvent {
+const (
+	enabledEnvVar     = "EXPORT_USAGE_DATA_ENABLED"
+	topicNameEnvVar   = "EXPORT_USAGE_DATA_TOPIC_NAME"
+	projectNameEnvVar = "EXPORT_USAGE_DATA_TOPIC_PROJECT"
+)
+
+var enabled, _ = strconv.ParseBool(env.Get(enabledEnvVar, "false", "Export usage data from this Sourcegraph instance to centralized Sourcegraph analytics (requires restart)."))
+var topicName = env.Get(topicNameEnvVar, "", "GCP pubsub topic name for event level data usage exporter")
+var projectName = env.Get(projectNameEnvVar, "", "GCP project name for pubsub topic for event level data usage exporter")
+
+func emptyIfNil(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func buildBigQueryObject(event *database.Event, metadata *instanceMetadata) *bigQueryEvent {
 	return &bigQueryEvent{
 		EventName:         event.Name,
 		UserID:            int(event.UserID),
@@ -220,16 +331,23 @@ func buildBigQueryObject(event *types.Event, metadata *instanceMetadata) *bigQue
 		URL:               "", // omitting URL intentionally
 		Source:            event.Source,
 		Timestamp:         event.Timestamp.Format(time.RFC3339),
-		PublicArgument:    event.Argument,
+		PublicArgument:    string(event.Argument),
 		Version:           event.Version, // sending event Version since these events could be scraped from the past
 		SiteID:            metadata.SiteID,
 		LicenseKey:        metadata.LicenseKey,
 		DeployType:        metadata.DeployType,
 		InitialAdminEmail: metadata.InitialAdminEmail,
+		FeatureFlags:      string(event.EvaluatedFlagSet.Json()),
+		CohortID:          event.CohortID,
+		FirstSourceURL:    emptyIfNil(event.FirstSourceURL),
+		LastSourceURL:     emptyIfNil(event.LastSourceURL),
+		Referrer:          emptyIfNil(event.Referrer),
+		DeviceID:          event.DeviceID,
+		InsertID:          event.InsertID,
 	}
 }
 
-func sendEvents(ctx context.Context, events []*types.Event, config topicConfig, metadata instanceMetadata) error {
+func sendEvents(ctx context.Context, events []*database.Event, config topicConfig, metadata instanceMetadata) error {
 	client, err := pubsub.NewClient(ctx, config.projectName)
 	if err != nil {
 		return errors.Wrap(err, "pubsub.NewClient")

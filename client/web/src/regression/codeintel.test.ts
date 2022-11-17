@@ -1,15 +1,16 @@
 import { applyEdits, JSONPath, modify } from 'jsonc-parser'
 import { describe, before, after, test } from 'mocha'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
+import { ExternalServiceKind } from '../graphql-operations'
+
 import { ensureTestExternalService, getUser, setTosAccepted, setUserSiteAdmin } from './util/api'
 import { GraphQLClient } from './util/GraphQlClient'
-import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
+import { ensureSignedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { getTestTools } from './util/init'
 import { TestResourceManager } from './util/TestResourceManager'
 
@@ -29,12 +30,12 @@ describe('Code graph regression test suite', () => {
         'testUserPassword'
     )
     const testExternalServiceInfo = {
-        kind: GQL.ExternalServiceKind.GITHUB,
+        kind: ExternalServiceKind.GITHUB,
         uniqueDisplayName: '[TEST] GitHub (codeintel.test.ts)',
     }
 
     const testRepoSlugs = [
-        'sourcegraph/sourcegraph',
+        'sourcegraph/run',
         'sourcegraph-testing/prometheus-common',
         'sourcegraph-testing/prometheus-client-golang',
         'sourcegraph-testing/prometheus-redefinitions',
@@ -53,7 +54,7 @@ describe('Code graph regression test suite', () => {
         outerResourceManager.add(
             'User',
             testUsername,
-            await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+            await ensureSignedInOrCreateTestUser(driver, gqlClient, {
                 username: testUsername,
                 deleteIfExists: true,
                 ...config,

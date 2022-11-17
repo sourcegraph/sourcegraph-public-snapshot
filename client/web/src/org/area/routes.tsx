@@ -3,7 +3,6 @@ import { Redirect } from 'react-router'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { namespaceAreaRoutes } from '../../namespaces/routes'
-import { OpenBetaGetStartedPage } from '../openBeta/GettingStarted'
 
 import { OrgAreaRoute } from './OrgArea'
 
@@ -17,7 +16,7 @@ const redirectToOrganizationProfile: OrgAreaRoute['render'] = props => (
 export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     {
         path: '/getstarted',
-        render: props => <OpenBetaGetStartedPage {...props} />,
+        render: props => <Redirect to={`/organizations/${props.org.name}/settings/members`} />,
     },
     {
         path: '/settings/members',
@@ -26,7 +25,14 @@ export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     },
     {
         path: '/settings',
-        render: props => <OrgSettingsArea {...props} isLightTheme={props.isLightTheme} />,
+        render: props => (
+            <OrgSettingsArea
+                {...props}
+                routes={props.orgSettingsAreaRoutes}
+                sideBarItems={props.orgSettingsSideBarItems}
+                isLightTheme={props.isLightTheme}
+            />
+        ),
     },
     ...namespaceAreaRoutes,
 

@@ -11,12 +11,13 @@ import {
     SearchQueryState,
     updateQuery,
     InitialParametersSource,
+    SearchPatternType,
+    SearchMode,
 } from '@sourcegraph/search'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { parseSearchURL } from '../search'
+import { ParsedSearchURL } from '../search'
 import { submitSearch } from '../search/helpers'
 import { defaultCaseSensitiveFromSettings, defaultPatternTypeFromSettings } from '../util/settings'
 
@@ -26,7 +27,8 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     parametersSource: InitialParametersSource.DEFAULT,
     queryState: { query: '' },
     searchCaseSensitivity: false,
-    searchPatternType: SearchPatternType.literal,
+    searchPatternType: SearchPatternType.standard,
+    searchMode: SearchMode.Precise,
     searchQueryFromURL: '',
 
     setQueryState: queryStateUpdate => {
@@ -42,10 +44,11 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
             queryState: { query },
             searchCaseSensitivity: caseSensitive,
             searchPatternType: patternType,
+            searchMode: searchMode,
         } = get()
         const updatedQuery = updateQuery(query, updates)
         if (canSubmitSearch(query, parameters.selectedSearchContextSpec)) {
-            submitSearch({ ...parameters, query: updatedQuery, caseSensitive, patternType })
+            submitSearch({ ...parameters, query: updatedQuery, caseSensitive, patternType, searchMode })
         }
     },
 }))
@@ -58,10 +61,18 @@ export function setSearchCaseSensitivity(searchCaseSensitivity: boolean): void {
     useNavbarQueryState.setState({ searchCaseSensitivity })
 }
 
+export function setSearchMode(searchMode: SearchMode): void {
+    useNavbarQueryState.setState({ searchMode })
+}
+
 /**
- * Update or initialize query state related data from URL search parameters
+ * Update or initialize query state related data from URL search parameters.
+ *
+ * @param parsedSearchURL contains the information extracted from a URL
+ * @param query can be used to specify the query to use when it differs from
+ * the one contained in the URL (e.g. when the context:... filter got removed)
  */
-export function setQueryStateFromURL(urlParameters: string): void {
+export function setQueryStateFromURL(parsedSearchURL: ParsedSearchURL, query = parsedSearchURL.query ?? ''): void {
     if (useNavbarQueryState.getState().parametersSource > InitialParametersSource.URL) {
         return
     }
@@ -70,11 +81,14 @@ export function setQueryStateFromURL(urlParameters: string): void {
     const newState: Partial<
         Pick<
             NavbarQueryState,
-            'searchPatternType' | 'searchCaseSensitivity' | 'searchQueryFromURL' | 'parametersSource'
+            | 'queryState'
+            | 'searchPatternType'
+            | 'searchCaseSensitivity'
+            | 'searchQueryFromURL'
+            | 'parametersSource'
+            | 'searchMode'
         >
     > = {}
-
-    const parsedSearchURL = parseSearchURL(urlParameters)
 
     if (parsedSearchURL.query) {
         // Only update flags if the URL contains a search query.
@@ -83,9 +97,10 @@ export function setQueryStateFromURL(urlParameters: string): void {
         if (parsedSearchURL.patternType !== undefined) {
             newState.searchPatternType = parsedSearchURL.patternType
         }
+        newState.queryState = { query }
+        newState.searchQueryFromURL = parsedSearchURL.query
+        newState.searchMode = parsedSearchURL.searchMode
     }
-
-    newState.searchQueryFromURL = parsedSearchURL.query ?? ''
 
     // The way Zustand is designed makes it difficult to build up a partial new
     // state object, hence the cast to any here.
@@ -135,6 +150,6 @@ export function buildSearchURLQueryFromQueryState(parameters: BuildSearchQueryUR
         parameters.patternType ?? currentState.searchPatternType,
         parameters.caseSensitive ?? currentState.searchCaseSensitivity,
         parameters.searchContextSpec,
-        parameters.searchParametersList
+        parameters.searchMode ?? currentState.searchMode
     )
 }

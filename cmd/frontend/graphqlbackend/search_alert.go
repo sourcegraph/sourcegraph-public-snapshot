@@ -38,13 +38,13 @@ func (a searchAlertResolver) PrometheusType() string {
 	return a.alert.PrometheusType
 }
 
-func (a searchAlertResolver) ProposedQueries() *[]*searchQueryDescription {
+func (a searchAlertResolver) ProposedQueries() *[]*searchQueryDescriptionResolver {
 	if len(a.alert.ProposedQueries) == 0 {
 		return nil
 	}
-	var proposedQueries []*searchQueryDescription
+	var proposedQueries []*searchQueryDescriptionResolver
 	for _, q := range a.alert.ProposedQueries {
-		proposedQueries = append(proposedQueries, &searchQueryDescription{q})
+		proposedQueries = append(proposedQueries, &searchQueryDescriptionResolver{q})
 	}
 	return &proposedQueries
 }

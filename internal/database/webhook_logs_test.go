@@ -8,11 +8,13 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	keytesting "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,7 +39,7 @@ func TestWebhookLogStore(t *testing.T) {
 
 			store := tx.WebhookLogs(nil)
 
-			log := createWebhookLog(0, http.StatusCreated, time.Now())
+			log := createWebhookLog(0, 0, http.StatusCreated, time.Now())
 			err = store.Create(ctx, log)
 			assert.Nil(t, err)
 
@@ -52,8 +54,13 @@ func TestWebhookLogStore(t *testing.T) {
 			err = row.Scan(&haveReq, &haveResp)
 			assert.Nil(t, err)
 
-			wantReq, _ := json.Marshal(&log.Request)
-			wantResp, _ := json.Marshal(&log.Response)
+			logRequest, err := log.Request.Decrypt(ctx)
+			assert.Nil(t, err)
+			logResponse, err := log.Response.Decrypt(ctx)
+			assert.Nil(t, err)
+
+			wantReq, _ := json.Marshal(logRequest)
+			wantResp, _ := json.Marshal(logResponse)
 
 			assert.Equal(t, string(wantReq), string(haveReq))
 			assert.Equal(t, string(wantResp), string(haveResp))
@@ -66,10 +73,10 @@ func TestWebhookLogStore(t *testing.T) {
 			assert.Nil(t, err)
 			defer func() { _ = tx.Done(errors.New("rollback")) }()
 
-			store := tx.WebhookLogs(keytesting.TestKey{})
+			store := tx.WebhookLogs(et.ByteaTestKey{})
 
 			// Weirdly, Go doesn't have a HTTP constant for "418 I'm a Teapot".
-			log := createWebhookLog(0, 418, time.Now())
+			log := createWebhookLog(0, 0, 418, time.Now())
 			err = store.Create(ctx, log)
 			assert.Nil(t, err)
 
@@ -84,8 +91,13 @@ func TestWebhookLogStore(t *testing.T) {
 			err = row.Scan(&haveReq, &haveResp)
 			assert.Nil(t, err)
 
-			wantReq, _ := json.Marshal(&log.Request)
-			wantResp, _ := json.Marshal(&log.Response)
+			logRequest, err := log.Request.Decrypt(ctx)
+			assert.Nil(t, err)
+			logResponse, err := log.Response.Decrypt(ctx)
+			assert.Nil(t, err)
+
+			wantReq, _ := json.Marshal(logRequest)
+			wantResp, _ := json.Marshal(logResponse)
 
 			assert.NotEqual(t, string(wantReq), string(haveReq))
 			assert.NotEqual(t, string(wantResp), string(haveResp))
@@ -98,9 +110,9 @@ func TestWebhookLogStore(t *testing.T) {
 			assert.Nil(t, err)
 			defer func() { _ = tx.Done(errors.New("rollback")) }()
 
-			store := tx.WebhookLogs(&keytesting.BadKey{})
+			store := tx.WebhookLogs(&et.BadKey{Err: errors.New("uh-oh")})
 
-			log := createWebhookLog(0, http.StatusExpectationFailed, time.Now())
+			log := createWebhookLog(0, 0, http.StatusExpectationFailed, time.Now())
 			err = store.Create(ctx, log)
 			assert.NotNil(t, err)
 		})
@@ -113,9 +125,9 @@ func TestWebhookLogStore(t *testing.T) {
 		assert.Nil(t, err)
 		defer func() { _ = tx.Done(errors.New("rollback")) }()
 
-		store := tx.WebhookLogs(keytesting.TestKey{})
+		store := tx.WebhookLogs(et.TestKey{})
 
-		log := createWebhookLog(0, http.StatusInternalServerError, time.Now())
+		log := createWebhookLog(0, 0, http.StatusInternalServerError, time.Now())
 		err = store.Create(ctx, log)
 		assert.Nil(t, err)
 
@@ -131,8 +143,12 @@ func TestWebhookLogStore(t *testing.T) {
 		})
 
 		t.Run("different key", func(t *testing.T) {
-			store := tx.WebhookLogs(&keytesting.TransparentKey{})
-			_, err := store.GetByID(ctx, log.ID)
+			store := tx.WebhookLogs(&et.TransparentKey{})
+			v, err := store.GetByID(ctx, log.ID)
+			assert.Nil(t, err)
+
+			// error on decode
+			_, err = v.Request.Decrypt(ctx)
 			assert.NotNil(t, err)
 		})
 	})
@@ -148,19 +164,27 @@ func TestWebhookLogStore(t *testing.T) {
 		es := &types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab",
-			Config:      "{}",
+			Config:      extsvc.NewEmptyGitLabConfig(),
 		}
 		assert.Nil(t, esStore.Upsert(ctx, es))
 
-		store := tx.WebhookLogs(keytesting.TestKey{})
+		whStore := tx.Webhooks(keyring.Default().WebhookKey)
+		wh, err := whStore.Create(ctx, extsvc.KindGitHub, "http://github.com", 0, nil)
+		require.NoError(t, err)
+
+		store := tx.WebhookLogs(et.TestKey{})
 
 		okTime := time.Date(2021, 10, 29, 18, 46, 0, 0, time.UTC)
-		okLog := createWebhookLog(es.ID, http.StatusOK, okTime)
-		store.Create(ctx, okLog)
+		okLog := createWebhookLog(es.ID, wh.ID, http.StatusOK, okTime)
+		if err := store.Create(ctx, okLog); err != nil {
+			t.Fatal(err)
+		}
 
 		errTime := time.Date(2021, 10, 29, 18, 47, 0, 0, time.UTC)
-		errLog := createWebhookLog(0, http.StatusInternalServerError, errTime)
-		store.Create(ctx, errLog)
+		errLog := createWebhookLog(0, 0, http.StatusInternalServerError, errTime)
+		if err := store.Create(ctx, errLog); err != nil {
+			t.Fatal(err)
+		}
 
 		for name, tc := range map[string]struct {
 			opts WebhookLogListOpts
@@ -185,6 +209,18 @@ func TestWebhookLogStore(t *testing.T) {
 			},
 			"external service without results": {
 				opts: WebhookLogListOpts{ExternalServiceID: int64Ptr(es.ID + 1)},
+				want: []*types.WebhookLog{},
+			},
+			"specific webhook id": {
+				opts: WebhookLogListOpts{WebhookID: int32Ptr(wh.ID)},
+				want: []*types.WebhookLog{okLog},
+			},
+			"no webhook id": {
+				opts: WebhookLogListOpts{WebhookID: int32Ptr(0)},
+				want: []*types.WebhookLog{errLog},
+			},
+			"webhook id without results": {
+				opts: WebhookLogListOpts{WebhookID: int32Ptr(wh.ID + 1)},
 				want: []*types.WebhookLog{},
 			},
 			"both within time range": {
@@ -264,18 +300,18 @@ func TestWebhookLogStore(t *testing.T) {
 		es := &types.ExternalService{
 			Kind:        extsvc.KindGitLab,
 			DisplayName: "GitLab",
-			Config:      "{}",
+			Config:      extsvc.NewEmptyGitLabConfig(),
 		}
 		assert.Nil(t, esStore.Upsert(ctx, es))
 
-		store := tx.WebhookLogs(keytesting.TestKey{})
+		store := tx.WebhookLogs(et.TestKey{})
 		retention, err := time.ParseDuration("24h")
 		assert.Nil(t, err)
 
-		stale := createWebhookLog(es.ID, http.StatusOK, time.Now().Add(-(2 * retention)))
+		stale := createWebhookLog(es.ID, 0, http.StatusOK, time.Now().Add(-(2 * retention)))
 		store.Create(ctx, stale)
 
-		fresh := createWebhookLog(0, http.StatusInternalServerError, time.Now())
+		fresh := createWebhookLog(0, 0, http.StatusInternalServerError, time.Now())
 		store.Create(ctx, fresh)
 
 		err = store.DeleteStale(ctx, retention)
@@ -287,10 +323,14 @@ func TestWebhookLogStore(t *testing.T) {
 	})
 }
 
-func createWebhookLog(externalServiceID int64, statusCode int, receivedAt time.Time) *types.WebhookLog {
+func createWebhookLog(externalServiceID int64, webhookID int32, statusCode int, receivedAt time.Time) *types.WebhookLog {
 	var id *int64
 	if externalServiceID != 0 {
 		id = &externalServiceID
+	}
+	var whID *int32
+	if webhookID != 0 {
+		whID = &webhookID
 	}
 
 	requestHeader := http.Header{}
@@ -302,17 +342,19 @@ func createWebhookLog(externalServiceID int64, statusCode int, receivedAt time.T
 	return &types.WebhookLog{
 		ReceivedAt:        receivedAt,
 		ExternalServiceID: id,
+		WebhookID:         whID,
 		StatusCode:        statusCode,
-		Request: types.WebhookLogMessage{
+		Request: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
 			Header: requestHeader,
 			Body:   []byte("request"),
-		},
-		Response: types.WebhookLogMessage{
+		}),
+		Response: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
 			Header: responseHeader,
 			Body:   []byte("response"),
-		},
+		}),
 	}
 }
 
 func int64Ptr(v int64) *int64        { return &v }
+func int32Ptr(v int32) *int32        { return &v }
 func timePtr(v time.Time) *time.Time { return &v }

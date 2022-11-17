@@ -1,12 +1,11 @@
-import React, { Ref, useContext, useMemo, useRef, useState } from 'react'
+import React, { forwardRef, useContext, useMemo, useState } from 'react'
 
 import { useMergeRefs } from 'use-callback-ref'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, useDeepMemo } from '@sourcegraph/wildcard'
+import { Link, ParentSize, useDeepMemo } from '@sourcegraph/wildcard'
 
-import { ParentSize } from '../../../../../../charts'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 import { CodeInsightsBackendContext, LangStatsInsight } from '../../../../core'
 import { InsightContentType } from '../../../../core/types/insight/common'
@@ -31,7 +30,6 @@ import styles from './BuiltInInsight.module.scss'
 
 interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
     insight: LangStatsInsight
-    innerRef: Ref<HTMLElement>
     resizing: boolean
 }
 
@@ -43,20 +41,18 @@ interface BuiltInInsightProps extends TelemetryProps, React.HTMLAttributes<HTMLE
  * Component sends FE network request to get and process information but does that in
  * main work thread instead of using Extension API.
  */
-export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
-    const { insight, resizing, telemetryService, innerRef, ...otherProps } = props
+export const BuiltInInsight = forwardRef<HTMLElement, BuiltInInsightProps>((props, ref) => {
+    const { insight, resizing, telemetryService, children, ...attributes } = props
+
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
     const { currentDashboard, dashboards } = useContext(InsightContext)
     const seriesToggleState = useSeriesToggle()
 
-    const insightCardReference = useRef<HTMLDivElement>(null)
-    const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
-
+    const cardRef = useMergeRefs([ref])
     const cachedInsight = useDeepMemo(insight)
-
     const { state, isVisible } = useInsightData(
         useMemo(() => () => getBuiltInInsightData({ insight: cachedInsight }), [getBuiltInInsightData, cachedInsight]),
-        insightCardReference
+        cardRef
     )
 
     // Visual line chart settings
@@ -69,9 +65,11 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
 
     return (
         <InsightCard
-            {...otherProps}
-            ref={mergedInsightCardReference}
+            {...attributes}
+            ref={cardRef}
             data-testid={`insight-card.${insight.id}`}
+            aria-label={`${insight.title} insight`}
+            role="listitem"
             onMouseEnter={trackMouseEnter}
             onMouseLeave={trackMouseLeave}
         >
@@ -139,8 +137,8 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
             {
                 // Passing children props explicitly to render any top-level content like
                 // resize-handler from the react-grid-layout library
-                isVisible && otherProps.children
+                isVisible && children
             }
         </InsightCard>
     )
-}
+})

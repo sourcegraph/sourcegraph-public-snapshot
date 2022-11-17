@@ -1,0 +1,75 @@
+// stylelint-disable selector-class-pattern
+
+/*
+* The 'react-calendar' is imported without styles but with predefined BEM-classes.
+* This file styles the calendar to follow Sourcegraph designs styles.
+*/
+.container {
+    width: 21rem;
+    display: inline-block;
+
+    :global {
+        .react-calendar {
+            &__navigation__arrow,
+            &__navigation__label,
+            &__tile {
+                background-color: inherit;
+                border: none;
+                padding: 0.25rem;
+            }
+
+            &__navigation {
+                display: flex;
+                margin-bottom: 0.5rem;
+
+                &__arrow {
+                    border: 1px solid var(--secondary);
+                    margin: 0 0.25rem;
+                    border-radius: 0.25rem;
+                    padding-left: 0.5rem;
+                    padding-right: 0.5rem;
+                }
+
+                &__label {
+                    font-weight: bold;
+                    pointer-events: none;
+                }
+            }
+
+            &__month-view__weekdays {
+                &__weekday {
+                    text-align: center;
+                    font-weight: bold;
+                }
+            }
+
+            &__tile {
+                &--rangeStart {
+                    border-top-left-radius: 0.25rem;
+                }
+                &--rangeEnd {
+                    border-bottom-right-radius: 0.25rem;
+                }
+                &--rangeBothEnds {
+                    border-radius: 0.25rem;
+                }
+                &--active {
+                    background-color: var(--primary-2);
+                }
+                &:disabled {
+                    color: var(--secondary);
+                }
+            }
+
+            &__month-view__days__day--neighboringMonth {
+                color: var(--text-muted);
+            }
+        }
+    }
+}
+
+.highlight-today :global(.react-calendar__tile--now) {
+    font-weight: 500;
+    text-decoration: underline;
+    text-decoration-thickness: 0.1rem;
+}

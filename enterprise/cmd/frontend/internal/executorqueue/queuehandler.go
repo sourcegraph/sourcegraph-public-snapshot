@@ -8,15 +8,18 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	executorDB "github.com/sourcegraph/sourcegraph/internal/services/executors/store/db"
+	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 )
 
-func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler) (func() http.Handler, error) {
-	executorStore := executorDB.New(db)
+func newExecutorQueueHandler(logger log.Logger, db database.DB, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler, batchesWorkspaceFileGetHandler http.Handler, batchesWorkspaceFileExistsHandler http.Handler) (func() http.Handler, error) {
+	metricsStore := metricsstore.NewDistributedStore("executors:")
+	executorStore := db.Executors()
 	gitserverClient := gitserver.NewClient(db)
 
 	factory := func() http.Handler {
@@ -25,16 +28,23 @@ func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions
 		base.StrictSlash(true)
 
 		// Proxy /info/refs and /git-upload-pack to gitservice for git clone/fetch.
-		base.Path("/git/{RepoName:.*}/info/refs").Handler(gitserverProxy(gitserverClient, "/info/refs"))
-		base.Path("/git/{RepoName:.*}/git-upload-pack").Handler(gitserverProxy(gitserverClient, "/git-upload-pack"))
+		base.Path("/git/{RepoName:.*}/info/refs").Handler(gitserverProxy(logger, gitserverClient, "/info/refs"))
+		base.Path("/git/{RepoName:.*}/git-upload-pack").Handler(gitserverProxy(logger, gitserverClient, "/git-upload-pack"))
 
 		// Serve the executor queue API.
-		handler.SetupRoutes(executorStore, queueOptions, base.PathPrefix("/queue/").Subrouter())
+		handler.SetupRoutes(executorStore, metricsStore, queueOptions, base.PathPrefix("/queue/").Subrouter())
 
 		// Upload LSIF indexes without a sudo access token or github tokens.
 		base.Path("/lsif/upload").Methods("POST").Handler(uploadHandler)
 
-		return actor.HTTPMiddleware(authMiddleware(accessToken, base))
+		base.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Handler(batchesWorkspaceFileGetHandler)
+		base.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Handler(batchesWorkspaceFileExistsHandler)
+
+		// Make sure requests to these endpoints are treated as an internal actor.
+		// We treat executors as internal and the executor secret is an internal actor
+		// access token.
+		// Also ensure that proper executor authentication is provided.
+		return authMiddleware(accessToken, withInternalActor(base))
 	}
 
 	return factory, nil
@@ -77,6 +87,7 @@ func validateExecutorToken(w http.ResponseWriter, r *http.Request, expectedAcces
 	}
 	if token == "" {
 		http.Error(w, "no token value in the HTTP Authorization request header (recommended) or basic auth (deprecated)", http.StatusUnauthorized)
+		return false
 	}
 
 	if token != expectedAccessToken {
@@ -85,4 +96,13 @@ func validateExecutorToken(w http.ResponseWriter, r *http.Request, expectedAcces
 	}
 
 	return true
+}
+
+// withInternalActor ensures that the request handling is running as an internal actor.
+func withInternalActor(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+
+		next.ServeHTTP(rw, req.WithContext(actor.WithInternalActor(ctx)))
+	})
 }

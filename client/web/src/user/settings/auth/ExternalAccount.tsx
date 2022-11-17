@@ -30,10 +30,39 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const navigateToAuthProvider = useCallback((): void => {
         setIsLoading(true)
-        window.location.assign(`${authProvider.authenticationURL as string}&redirect=${window.location.href}`)
-    }, [authProvider.authenticationURL])
+
+        if (authProvider.serviceType === 'saml') {
+            window.location.assign(authProvider.authenticationURL)
+        } else {
+            window.location.assign(`${authProvider.authenticationURL}&redirect=${window.location.href}`)
+        }
+    }, [authProvider.serviceType, authProvider.authenticationURL])
 
     const { icon: AccountIcon } = account
+
+    let accountConnection: JSX.Element | string
+    switch (authProvider.serviceType) {
+        case 'openidconnect':
+        case 'saml':
+            accountConnection = account.external ? account.external.userName : 'Not connected'
+            break
+        default:
+            accountConnection = (
+                <>
+                    {account.external?.userUrl ? (
+                        <>
+                            {account.external.userName} (
+                            <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
+                                @{account.external.userLogin}
+                            </Link>
+                            )
+                        </>
+                    ) : (
+                        'Not connected'
+                    )}
+                </>
+            )
+    }
 
     return (
         <div className="d-flex align-items-start">
@@ -50,20 +79,8 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
                 <AccountIcon className="mb-0 mr-2" />
             </div>
             <div className="flex-1 flex-column">
-                <H3 className="m-0">{account.name}</H3>
-                <div className="text-muted">
-                    {account.external ? (
-                        <>
-                            {account.external.userName} (
-                            <Link to={account.external.userUrl} target="_blank" rel="noopener noreferrer">
-                                @{account.external.userLogin}
-                            </Link>
-                            )
-                        </>
-                    ) : (
-                        'Not connected'
-                    )}
-                </div>
+                <H3 className="m-0">{authProvider.displayName}</H3>
+                <div className="text-muted">{accountConnection}</div>
             </div>
             <div className="align-self-center">
                 {account.external ? (
@@ -74,7 +91,7 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
                     <LoaderButton
                         loading={isLoading}
                         label="Add"
-                        className="btn-block"
+                        display="block"
                         onClick={navigateToAuthProvider}
                         variant="success"
                     />

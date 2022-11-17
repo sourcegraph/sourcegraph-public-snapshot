@@ -1,6 +1,7 @@
 package ci
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -26,15 +27,18 @@ type CoreTestOperationsOptions struct {
 	MinimumUpgradeableVersion  string
 	ClientLintOnlyChangedFiles bool
 	ForceReadyForReview        bool
+	// for addWebApp
+	CacheBundleSize      bool
+	CreateBundleSizeDiff bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
 // notably, this is what is used to define operations that run on PRs. Please read the
 // following notes:
 //
-// - opts should be used ONLY to adjust the behaviour of specific steps, e.g. by adding
-//   flags and not as a condition for adding steps or commands.
-// - be careful not to add duplicate steps.
+//   - opts should be used ONLY to adjust the behaviour of specific steps, e.g. by adding
+//     flags and not as a condition for adding steps or commands.
+//   - be careful not to add duplicate steps.
 //
 // If the conditions for the addition of an operation cannot be expressed using the above
 // arguments, please add it to the switch case within `GeneratePipeline` instead.
@@ -43,17 +47,13 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops := operations.NewSet()
 
 	// Simple, fast-ish linter checks
-	linterOps := operations.NewNamedSet("Linters and static analysis",
-		// lightweight check that works over a lot of stuff - we are okay with running
-		// these on all PRs
-		addPrettier)
+	linterOps := operations.NewNamedSet("Linters and static analysis")
 	if diff.Has(changed.GraphQL) {
 		linterOps.Append(addGraphQLLint)
 	}
 	if targets := changed.GetLinterTargets(diff); len(targets) > 0 {
 		linterOps.Append(addSgLints(targets))
 	}
-
 	ops.Merge(linterOps)
 
 	if diff.Has(changed.Client | changed.GraphQL) {
@@ -62,7 +62,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			clientIntegrationTests,
 			clientChromaticTests(opts),
 			frontendTests,                // ~4.5m
-			addWebApp,                    // ~5.5m
+			addWebApp(opts),              // ~5.5m
 			addBrowserExtensionUnitTests, // ~4.5m
 			addJetBrainsUnitTests,        // ~2.5m
 			addTypescriptCheck,           // ~4m
@@ -109,7 +109,23 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 		cmd = cmd + "-v "
 	}
 
-	cmd = cmd + "lint -annotations " + strings.Join(targets, " ")
+	var (
+		branch = os.Getenv("BUILDKITE_BRANCH")
+		tag    = os.Getenv("BUILDKITE_TAG")
+		// evaluates what type of pipeline run this is
+		runType = runtype.Compute(tag, branch, map[string]string{
+			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
+			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
+			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
+		})
+	)
+
+	formatCheck := ""
+	if runType.Is(runtype.MainBranch) || runType.Is(runtype.MainDryRun) {
+		formatCheck = "--skip-format-check "
+	}
+
+	cmd = cmd + "lint -annotations -fail-fast=false " + formatCheck + strings.Join(targets, " ")
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":pineapple::lint-roller: Run sg lint",
@@ -150,13 +166,6 @@ func addGraphQLLint(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/yarn-run.sh lint:graphql"))
 }
 
-// yarn ~41s + ~30s
-func addPrettier(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: Prettier",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-run.sh format:check"))
-}
-
 // Adds Typescript check.
 func addTypescriptCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":typescript: Build TS",
@@ -187,51 +196,62 @@ func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
-func addWebApp(pipeline *bk.Pipeline) {
-	// Webapp build
-	pipeline.AddStep(":webpack::globe_with_meridians: Build",
-		withYarnCache(),
-		bk.Cmd("dev/ci/yarn-build.sh client/web"),
-		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", ""))
+func addWebApp(opts CoreTestOperationsOptions) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		// Webapp build
+		pipeline.AddStep(":webpack::globe_with_meridians: Build",
+			withYarnCache(),
+			bk.Cmd("dev/ci/yarn-build.sh client/web"),
+			bk.Env("NODE_ENV", "production"),
+			bk.Env("ENTERPRISE", ""))
 
-	// Webapp enterprise build
-	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
+		addWebEnterpriseBuild(pipeline, opts)
+
+		// Webapp tests
+		pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
+			withYarnCache(),
+			bk.AnnotatedCmd("dev/ci/yarn-test.sh client/web", bk.AnnotatedCmdOpts{
+				TestReports: &bk.TestReportOpts{
+					TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
+				},
+			}),
+			bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
+	}
+}
+
+// Webapp enterprise build
+func addWebEnterpriseBuild(pipeline *bk.Pipeline, opts CoreTestOperationsOptions) {
+	commit := os.Getenv("BUILDKITE_COMMIT")
+	branch := os.Getenv("BUILDKITE_BRANCH")
+
+	cmds := []bk.StepOpt{
 		withYarnCache(),
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
 		bk.Env("ENTERPRISE", "1"),
 		bk.Env("CHECK_BUNDLESIZE", "1"),
 		// To ensure the Bundlesize output can be diffed to the baseline on main
-		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"))
+		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"),
+	}
 
-	// Webapp tests
-	pipeline.AddStep(":jest::globe_with_meridians: Test (client/web)",
-		withYarnCache(),
-		bk.AnnotatedCmd("dev/ci/yarn-test.sh client/web", bk.AnnotatedCmdOpts{
-			TestReports: &bk.TestReportOpts{
-				TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_FRONTEND_UNIT_TEST_SUITE_API_KEY",
-			},
-		}),
-		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
-}
+	if opts.CacheBundleSize {
+		cmds = append(cmds,
+			// Emit a stats.json file for bundle size diffs
+			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
+			withBundleSizeCache(commit))
+	}
 
-// Adds steps for building webapp with the Sentry Webpack plugin enabled to upload sourcemaps
-// Only builds webapp without ENTERPRISE=1, no tests are performed. Should only run on release branches.
-func buildWebAppWithSentrySourcemaps(version string) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		// Webapp build with Sentry's webpack plugin enabled
-		pipeline.AddStep(":webpack::globe_with_meridians: Build and upload sourcemaps to Sentry",
-			withYarnCache(),
-			bk.Cmd("dev/ci/yarn-build.sh client/web"),
-			bk.Env("NODE_ENV", "production"),
-			bk.Env("ENTERPRISE", ""),
-			bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
-			bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
-			bk.Env("SENTRY_PROJECT", "sourcegraph-dot-com"),
-			bk.Env("RELEASE_CANDIDATE_VERSION", version),
+	if opts.CreateBundleSizeDiff {
+		cmds = append(cmds,
+			// Emit a stats.json file for bundle size diffs
+			bk.Env("WEBPACK_EXPORT_STATS_FILENAME", "stats-"+commit+".json"),
+			bk.Env("BRANCH", branch),
+			bk.Env("COMMIT", commit),
+			bk.Cmd("dev/ci/report-bundle-diff.sh"),
 		)
 	}
+
+	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build", cmds...)
 }
 
 var browsers = []string{"chrome"}
@@ -245,10 +265,10 @@ func addVsceIntegrationTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
 		":vscode: Puppeteer tests for VS Code extension",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
-		bk.Cmd("yarn --cwd client/vscode -s build:test"),
-		bk.Cmd("yarn --cwd client/vscode -s test-integration --verbose"),
+		bk.Cmd("yarn workspace @sourcegraph/vscode run build:test"),
+		bk.Cmd("yarn workspace @sourcegraph/vscode run test-integration --verbose"),
 		bk.AutomaticRetry(1),
 	)
 }
@@ -267,8 +287,8 @@ func addBrowserExtensionIntegrationTests(parallelTestCount int) operations.Opera
 				bk.Env("POLLYJS_MODE", "replay"), // ensure that we use existing recordings
 				bk.Env("PERCY_ON", "true"),
 				bk.Env("PERCY_PARALLEL_TOTAL", strconv.Itoa(testCount)),
-				bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-				bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+				bk.Cmd("yarn --immutable --network-timeout 60000"),
+				bk.Cmd("yarn workspace @sourcegraph/browser run build"),
 				bk.Cmd("yarn run cover-browser-integration"),
 				bk.Cmd("yarn nyc report -r json"),
 				bk.Cmd("dev/ci/codecov.sh -c -F typescript -F integration"),
@@ -287,9 +307,9 @@ func recordBrowserExtensionIntegrationTests(pipeline *bk.Pipeline) {
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "false"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
-			bk.Cmd("yarn workspace @sourcegraph/browser -s run record-integration"),
+			bk.Cmd("yarn --immutable --network-timeout 60000"),
+			bk.Cmd("yarn workspace @sourcegraph/browser run build"),
+			bk.Cmd("yarn workspace @sourcegraph/browser run record-integration"),
 			// Retry may help in case if command failed due to hitting the rate limit or similar kind of error on the code host:
 			// https://docs.github.com/en/rest/reference/search#rate-limit
 			bk.AutomaticRetry(1),
@@ -312,9 +332,9 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
-		bk.Cmd("yarn --cwd client/jetbrains -s build"),
+		bk.Cmd("yarn workspace @sourcegraph/jetbrains run build"),
 	)
 }
 
@@ -371,7 +391,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		}
 
 		// Upload storybook to Chromatic
-		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded"
+		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded --build-script-name=storybook:build"
 		if opts.ChromaticShouldAutoAccept {
 			chromaticCommand += " --auto-accept-changes"
 		} else {
@@ -443,8 +463,6 @@ func buildGoTests(f func(description, testSuffix string)) {
 	// This is a bandage solution to speed up the go tests by running the slowest ones
 	// concurrently. As a results, the PR time affecting only Go code is divided by two.
 	slowGoTestPackages := []string{
-		"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore",                  // 224s
-		"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore",                // 122s
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                       // 82+162s
 		"github.com/sourcegraph/sourcegraph/internal/database",                                  // 253s
 		"github.com/sourcegraph/sourcegraph/internal/repos",                                     // 106s
@@ -452,6 +470,7 @@ func buildGoTests(f func(description, testSuffix string)) {
 		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                       // 100s
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/database",                       // 94s
 		"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers", // 152s
+		"github.com/sourcegraph/sourcegraph/dev/sg",                                             // small, but much more practical to have it in its own job
 	}
 
 	f("all", "exclude "+strings.Join(slowGoTestPackages, " "))
@@ -492,9 +511,9 @@ func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 			bk.Env("BROWSER", browser),
 			bk.Env("LOG_BROWSER_CONSOLE", "true"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
-			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-			bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
-			bk.Cmd("yarn -s mocha ./client/browser/src/end-to-end/github.test.ts ./client/browser/src/end-to-end/gitlab.test.ts"),
+			bk.Cmd("yarn --immutable --network-timeout 60000"),
+			bk.Cmd("yarn workspace @sourcegraph/browser run build"),
+			bk.Cmd("yarn mocha ./client/browser/src/end-to-end/github.test.ts ./client/browser/src/end-to-end/gitlab.test.ts"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
 }
@@ -508,21 +527,21 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	// Release to the Chrome Webstore
 	pipeline.AddStep(":rocket::chrome: Extension release",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
+		bk.Cmd("yarn workspace @sourcegraph/browser run build"),
 		bk.Cmd("yarn workspace @sourcegraph/browser release:chrome"))
 
 	// Build and self sign the FF add-on and upload it to a storage bucket
 	pipeline.AddStep(":rocket::firefox: Extension release",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
 		bk.Cmd("yarn workspace @sourcegraph/browser release:firefox"))
 
 	// Release to npm
 	pipeline.AddStep(":rocket::npm: npm Release",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("yarn workspace @sourcegraph/browser -s run build"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
+		bk.Cmd("yarn workspace @sourcegraph/browser run build"),
 		bk.Cmd("yarn workspace @sourcegraph/browser release:npm"))
 }
 
@@ -531,9 +550,9 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 	// Publish extension to the VS Code Marketplace
 	pipeline.AddStep(":vscode: Extension release",
 		withYarnCache(),
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn --immutable --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
-		bk.Cmd("yarn --cwd client/vscode -s run release"))
+		bk.Cmd("yarn workspace @sourcegraph/vscode run release"))
 }
 
 // Adds a Buildkite pipeline "Wait".
@@ -555,11 +574,18 @@ func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
 func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		version := semver.MustParse(minimumUpgradeableVersion)
+
+		// HACK: we can't just subtract a single minor version once we roll over to 4.0,
+		// so hard-code the previous minor version.
+		previousMinorVersion := fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1)
+		if version.Major() == 4 && version.Minor() == 0 {
+			previousMinorVersion = "3.43"
+		}
+
 		for _, branch := range []string{
 			// Most recent major.minor
 			fmt.Sprintf("%d.%d", version.Major(), version.Minor()),
-			// The previous major.minor-1
-			fmt.Sprintf("%d.%d", version.Major(), version.Minor()-1),
+			previousMinorVersion,
 		} {
 			name := fmt.Sprintf(":stethoscope: Trigger %s release branch healthcheck build", branch)
 			pipeline.AddTrigger(name, "sourcegraph",
@@ -608,7 +634,9 @@ func serverE2E(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("dev/ci/integration/e2e/run.sh"),
+			bk.AnnotatedCmd("dev/ci/integration/e2e/run.sh", bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{},
+			}),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -627,7 +655,9 @@ func serverQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("dev/ci/integration/qa/run.sh"),
+			bk.AnnotatedCmd("dev/ci/integration/qa/run.sh", bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{},
+			}),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -683,7 +713,7 @@ func candidateImageStepKey(app string) string {
 // tags once the e2e tests pass.
 //
 // Version is the actual version of the code, and
-func buildCandidateDockerImage(app, version, tag string) operations.Operation {
+func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
 		localImage := "sourcegraph/" + image + ":" + version
@@ -694,6 +724,16 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", localImage),
 			bk.Env("VERSION", version),
+		}
+
+		// Add Sentry environment variables if we are building off main branch
+		// to enable building the webapp with source maps enabled
+		if uploadSourcemaps {
+			cmds = append(cmds,
+				bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
+				bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
+				bk.Env("SENTRY_PROJECT", "sourcegraph-dot-com"),
+			)
 		}
 
 		// Allow all build scripts to emit info annotations
@@ -712,18 +752,28 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 		} else {
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {
-				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
-				if _, err := os.Stat(filepath.Join("enterprise/cmd", app)); err != nil {
-					return "cmd/" + app
+				folder := app
+				if app == "gitserver-ms-git" {
+					// experimental, build a git-ms fork flavored version
+					// Hack owners: @jhchabran, @varsanojidan
+					folder = "gitserver"
 				}
-				return "enterprise/cmd/" + app
+				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
+				if _, err := os.Stat(filepath.Join("enterprise/cmd", folder)); err != nil {
+					return "cmd/" + folder
+				}
+				return "enterprise/cmd/" + folder
 			}()
 			preBuildScript := cmdDir + "/pre-build.sh"
 			if _, err := os.Stat(preBuildScript); err == nil {
 				// Allow all
 				cmds = append(cmds, bk.AnnotatedCmd(preBuildScript, buildAnnotationOptions))
 			}
-			cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh", buildAnnotationOptions))
+			if app == "gitserver-ms-git" {
+				cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh --microsoft-git", buildAnnotationOptions))
+			} else {
+				cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh", buildAnnotationOptions))
+			}
 		}
 
 		devImage := images.DevRegistryImage(app, tag)
@@ -784,6 +834,11 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 		devImage := images.DevRegistryImage(app, "")
 		publishImage := images.PublishedRegistryImage(app, "")
 
+		if app == "gitserver-ms-git" && !c.RunType.Is(runtype.MainBranch) {
+			// Just NOP if we're not on main, we don't want to publish anything involving this experiment.
+			return
+		}
+
 		var images []string
 		for _, image := range []string{publishImage, devImage} {
 			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
@@ -825,12 +880,30 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 	}
 }
 
+// executorImageFamilyForConfig returns the image family to be used for the build.
+// This defaults to `-nightly`, and will be `-$MAJOR-$MINOR` for a tagged release
+// build.
+func executorImageFamilyForConfig(c Config) string {
+	imageFamily := "sourcegraph-executors-nightly"
+	if c.RunType.Is(runtype.TaggedRelease) {
+		ver, err := semver.NewVersion(c.Version)
+		if err != nil {
+			panic("cannot parse version")
+		}
+		imageFamily = fmt.Sprintf("sourcegraph-executors-%d-%d", ver.Major(), ver.Minor())
+	}
+	return imageFamily
+}
+
 // ~15m (building executor base VM)
-func buildExecutor(version string, skipHashCompare bool) operations.Operation {
+func buildExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
+		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.Key(candidateImageStepKey("executor.vm-image")),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", c.Version),
+			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		if !skipHashCompare {
 			compareHashScript := "./enterprise/dev/ci/scripts/compare-hash.sh"
@@ -846,12 +919,29 @@ func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 	}
 }
 
-func publishExecutor(version string, skipHashCompare bool) operations.Operation {
+func buildExecutorBinary(c Config) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		stepOpts := []bk.StepOpt{
+			bk.Key(candidateImageStepKey("executor.binary")),
+			bk.Env("VERSION", c.Version),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/build_binary.sh"))
+
+		pipeline.AddStep(":construction: Build executor binary", stepOpts...)
+	}
+}
+
+func publishExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		candidateBuildStep := candidateImageStepKey("executor.vm-image")
+		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", c.Version),
+			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		if !skipHashCompare {
 			// Publish iff not soft-failed on previous step
@@ -868,12 +958,45 @@ func publishExecutor(version string, skipHashCompare bool) operations.Operation 
 	}
 }
 
-// ~15m (building executor docker mirror base VM)
-func buildExecutorDockerMirror(version string) operations.Operation {
+func publishExecutorBinary(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
+		candidateBuildStep := candidateImageStepKey("executor.binary")
+		stepOpts := []bk.StepOpt{
+			bk.DependsOn(candidateBuildStep),
+			bk.Env("VERSION", c.Version),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/release_binary.sh"))
+
+		pipeline.AddStep(":white_check_mark: Publish executor binary", stepOpts...)
+	}
+}
+
+// executorDockerMirrorImageFamilyForConfig returns the image family to be used for the build.
+// This defaults to `-nightly`, and will be `-$MAJOR-$MINOR` for a tagged release
+// build.
+func executorDockerMirrorImageFamilyForConfig(c Config) string {
+	imageFamily := "sourcegraph-executors-docker-mirror-nightly"
+	if c.RunType.Is(runtype.TaggedRelease) {
+		ver, err := semver.NewVersion(c.Version)
+		if err != nil {
+			panic("cannot parse version")
+		}
+		imageFamily = fmt.Sprintf("sourcegraph-executors-docker-mirror-%d-%d", ver.Major(), ver.Minor())
+	}
+	return imageFamily
+}
+
+// ~15m (building executor docker mirror base VM)
+func buildExecutorDockerMirror(c Config) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		imageFamily := executorDockerMirrorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.Key(candidateImageStepKey("executor-docker-miror.vm-image")),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", c.Version),
+			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/build.sh"))
@@ -882,12 +1005,15 @@ func buildExecutorDockerMirror(version string) operations.Operation {
 	}
 }
 
-func publishExecutorDockerMirror(version string) operations.Operation {
+func publishExecutorDockerMirror(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		candidateBuildStep := candidateImageStepKey("executor-docker-miror.vm-image")
+		imageFamily := executorDockerMirrorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", c.Version),
+			bk.Env("IMAGE_FAMILY", imageFamily),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
@@ -902,6 +1028,36 @@ func uploadBuildeventTrace() operations.Operation {
 			bk.Cmd("./enterprise/dev/ci/scripts/upload-buildevent-report.sh"),
 		)
 	}
+}
+
+func exposeBuildMetadata(c Config) (operations.Operation, error) {
+	overview := struct {
+		RunType      string       `json:"RunType"`
+		Version      string       `json:"Version"`
+		Diff         string       `json:"Diff"`
+		MessageFlags MessageFlags `json:"MessageFlags"`
+	}{
+		RunType:      c.RunType.String(),
+		Diff:         c.Diff.String(),
+		MessageFlags: c.MessageFlags,
+	}
+	data, err := json.Marshal(&overview)
+	if err != nil {
+		return nil, err
+	}
+
+	return func(p *bk.Pipeline) {
+		p.AddStep(":memo::pipeline: Pipeline metadata",
+			bk.SoftFail(),
+			bk.Env("BUILD_METADATA", string(data)),
+			bk.AnnotatedCmd("dev/ci/gen-metadata-annotation.sh", bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{
+					Type:         bk.AnnotationTypeInfo,
+					IncludeNames: false,
+				},
+			}),
+		)
+	}, nil
 }
 
 // Request render.com to create client preview app for current PR

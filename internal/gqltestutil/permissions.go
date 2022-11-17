@@ -27,6 +27,61 @@ mutation ScheduleRepositoryPermissionsSync($repository: ID!) {
 	return nil
 }
 
+// ScheduleUserPermissionsSync schedules a permissions syncing request for
+// the given user.
+func (c *Client) ScheduleUserPermissionsSync(id string) error {
+	const query = `
+mutation ScheduleUserPermissionsSync($user: ID!) {
+	scheduleUserPermissionsSync(user: $user) {
+		alwaysNil
+	}
+}
+`
+	variables := map[string]any{
+		"user": id,
+	}
+	err := c.GraphQL("", query, variables, nil)
+	if err != nil {
+		return errors.Wrap(err, "request GraphQL")
+	}
+	return nil
+}
+
+// UserPermissionsInfo returns permissions information of the given
+// user.
+//
+// This method requires the authenticated user to be a site admin.
+func (c *Client) UserPermissionsInfo(name string) (*PermissionsInfo, error) {
+	const query = `
+query UserPermissionsInfo($name: String!) {
+	user(username: $name) {
+		permissionsInfo {
+			syncedAt
+			updatedAt
+			permissions
+			unrestricted
+		}
+	}
+}
+`
+	variables := map[string]any{
+		"name": name,
+	}
+	var resp struct {
+		Data struct {
+			User struct {
+				*PermissionsInfo `json:"permissionsInfo"`
+			} `json:"user"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.User.PermissionsInfo, nil
+}
+
 type BitbucketProjectPermsSyncArgs struct {
 	ProjectKey      string
 	CodeHost        string
@@ -105,6 +160,20 @@ query BitbucketProjectPermissionJobs($projectKeys: [String!], $status: String, $
 		job := resp.Data.Jobs.Nodes[0]
 		return job.State, job.FailureMessage, nil
 	}
+}
+
+func (c *Client) AuthzProviderTypes() ([]string, error) {
+	const query = `query { authzProviderTypes }`
+	var resp struct {
+		Data struct {
+			AuthzProviderTypes []string `json:"authzProviderTypes"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, nil, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+	return resp.Data.AuthzProviderTypes, nil
 }
 
 // UsersWithPendingPermissions returns bind IDs of users with pending permissions

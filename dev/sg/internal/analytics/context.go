@@ -31,7 +31,7 @@ func WithContext(ctx context.Context, sgVersion string) (context.Context, error)
 	provider := oteltracesdk.NewTracerProvider(
 		oteltracesdk.WithResource(newResource(log.Resource{
 			Name:       "sg",
-			Namespace:  "dev",
+			Namespace:  sgVersion,
 			Version:    sgVersion,
 			InstanceID: identity,
 		})),

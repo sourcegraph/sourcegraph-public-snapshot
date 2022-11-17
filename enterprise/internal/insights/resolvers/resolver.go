@@ -2,23 +2,29 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var _ graphqlbackend.InsightsResolver = &Resolver{}
+var _ graphqlbackend.InsightsAggregationResolver = &AggregationResolver{}
 
 // baseInsightResolver is a "super" resolver for all other insights resolvers. Since insights interacts with multiple
 // database and multiple Stores, this is a convenient way to propagate those stores without having to drill individual
@@ -28,9 +34,10 @@ type baseInsightResolver struct {
 	timeSeriesStore *store.Store
 	dashboardStore  *store.DBDashboardStore
 	workerBaseStore *basestore.Store
+	scheduler       *scheduler.Scheduler
 
 	// including the DB references for any one off stores that may need to be created.
-	insightsDB dbutil.DB
+	insightsDB edb.InsightsDB
 	postgresDB database.DB
 }
 
@@ -38,6 +45,7 @@ func WithBase(insightsDB edb.InsightsDB, primaryDB database.DB, clock func() tim
 	insightStore := store.NewInsightStore(insightsDB)
 	timeSeriesStore := store.NewWithClock(insightsDB, store.NewInsightPermissionStore(primaryDB), clock)
 	dashboardStore := store.NewDashboardStore(insightsDB)
+	scheduler := scheduler.NewScheduler(insightsDB)
 	workerBaseStore := basestore.NewWithHandle(primaryDB.Handle())
 
 	return &baseInsightResolver{
@@ -45,6 +53,7 @@ func WithBase(insightsDB edb.InsightsDB, primaryDB database.DB, clock func() tim
 		timeSeriesStore: timeSeriesStore,
 		dashboardStore:  dashboardStore,
 		workerBaseStore: workerBaseStore,
+		scheduler:       scheduler,
 		insightsDB:      insightsDB,
 		postgresDB:      primaryDB,
 	}
@@ -56,7 +65,6 @@ type Resolver struct {
 	timeSeriesStore      store.Interface
 	insightMetadataStore store.InsightMetadataStore
 	dataSeriesStore      store.DataSeriesStore
-	backfiller           *background.ScopedBackfiller
 	insightEnqueuer      *background.InsightEnqueuer
 
 	baseInsightResolver
@@ -77,26 +85,8 @@ func newWithClock(db edb.InsightsDB, postgres database.DB, clock func() time.Tim
 		timeSeriesStore:      base.timeSeriesStore,
 		insightMetadataStore: base.insightStore,
 		dataSeriesStore:      base.insightStore,
-		backfiller:           background.NewScopedBackfiller(base.workerBaseStore, base.timeSeriesStore),
 		insightEnqueuer:      background.NewInsightEnqueuer(clock, base.workerBaseStore),
 	}
-}
-
-func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsArgs) (graphqlbackend.InsightConnectionResolver, error) {
-	var idList []string
-	if args != nil && args.Ids != nil {
-		idList = make([]string, len(*args.Ids))
-		for i, id := range *args.Ids {
-			idList[i] = string(id)
-		}
-	}
-	return &insightConnectionResolver{
-		insightsStore:        r.timeSeriesStore,
-		workerBaseStore:      r.workerBaseStore,
-		insightMetadataStore: r.insightMetadataStore,
-		ids:                  idList,
-		orgStore:             database.NewDBWith(r.logger, r.workerBaseStore).Orgs(),
-	}, nil
 }
 
 func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
@@ -105,10 +95,6 @@ func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.
 		orgStore:            r.postgresDB.Orgs(),
 		args:                args,
 	}, nil
-}
-
-func (r *Resolver) SearchQueryInsights(ctx context.Context, args graphqlbackend.SearchQueryInsightsArgs) (graphqlbackend.SearchQueryInsightsResult, error) {
-	return newSearchQueryInsightUnionResolver(args.Query, args.PatternType)
 }
 
 // 🚨 SECURITY
@@ -129,4 +115,52 @@ func getUserPermissions(ctx context.Context, orgStore database.OrgStore) (userId
 		}
 	}
 	return
+}
+
+// AggregationResolver is the GraphQL resolver for insights aggregations.
+type AggregationResolver struct {
+	postgresDB database.DB
+	logger     log.Logger
+	operations *aggregationsOperations
+}
+
+func NewAggregationResolver(postgres database.DB, observationContext *observation.Context) graphqlbackend.InsightsAggregationResolver {
+	return &AggregationResolver{
+		logger:     log.Scoped("AggregationResolver", ""),
+		postgresDB: postgres,
+		operations: newAggregationsOperations(observationContext),
+	}
+}
+
+func (r *AggregationResolver) SearchQueryAggregate(ctx context.Context, args graphqlbackend.SearchQueryArgs) (graphqlbackend.SearchQueryAggregateResolver, error) {
+	return &searchAggregateResolver{
+		postgresDB:  r.postgresDB,
+		searchQuery: args.Query,
+		patternType: args.PatternType,
+		operations:  r.operations,
+	}, nil
+}
+
+type aggregationsOperations struct {
+	aggregations *observation.Operation
+}
+
+func newAggregationsOperations(observationContext *observation.Context) *aggregationsOperations {
+	redM := metrics.NewREDMetrics(
+		observationContext.Registerer,
+		"insights_aggregations",
+		metrics.WithLabels("op", "extended_mode", "aggregation_mode"),
+	)
+
+	op := func(name string) *observation.Operation {
+		return observationContext.Operation(observation.Op{
+			Name:              fmt.Sprintf("insights_aggregations.%s", name),
+			MetricLabelValues: []string{name},
+			Metrics:           redM,
+		})
+	}
+
+	return &aggregationsOperations{
+		aggregations: op("Aggregations"),
+	}
 }

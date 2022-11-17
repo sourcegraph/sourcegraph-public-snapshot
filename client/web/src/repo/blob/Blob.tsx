@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
-import { isEqual, sortBy } from 'lodash'
+import { isEqual } from 'lodash'
 import {
     BehaviorSubject,
     combineLatest,
@@ -31,7 +31,6 @@ import {
     throttleTime,
     withLatestFrom,
 } from 'rxjs/operators'
-import { TextDocumentDecorationType } from 'sourcegraph'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -54,16 +53,13 @@ import {
     toPositionOrRangeQueryParameter,
     addLineRangeQueryParameter,
     formatSearchParameters,
+    logger,
 } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import {
-    createDecorationType,
-    DecorationMapByLine,
-    groupDecorationsByLine,
-} from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -91,10 +87,11 @@ import { Code, useObservable } from '@sourcegraph/wildcard'
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
-import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
+import { BlobStencilFields, ExternalLinkFields, Scalars } from '../../graphql-operations'
+import { BlameHunk } from '../blame/useBlameHunks'
 import { HoverThresholdProps } from '../RepoContainer'
 
-import { ColumnDecorator } from './ColumnDecorator'
+import { BlameColumn } from './BlameColumn'
 import { LineDecorator } from './LineDecorator'
 
 import styles from './Blob.module.scss'
@@ -104,15 +101,20 @@ import styles from './Blob.module.scss'
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
-const blameDecorationType = createDecorationType('git-extras')({ display: 'column' })
+// Logical grouping of props that are only used by the CodeMirror blob view
+// implementation.
+interface CodeMirrorBlobProps {
+    overrideBrowserSearchKeybinding?: boolean
+}
 
 export interface BlobProps
     extends SettingsCascadeProps,
-        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings'>,
         TelemetryProps,
         HoverThresholdProps,
         ExtensionsControllerProps,
-        ThemeProps {
+        ThemeProps,
+        CodeMirrorBlobProps {
     location: H.Location
     history: H.History
     className: string
@@ -124,6 +126,12 @@ export interface BlobProps
     // Experimental reference panel
     disableStatusBar: boolean
     disableDecorations: boolean
+    // When navigateToLineOnAnyClick=true, the code intel popover is disabled
+    // and clicking on any line should navigate to that specific line.
+    navigateToLineOnAnyClick?: boolean
+
+    // Enables keyboard navigation across precise code intelligence
+    tokenKeyboardNavigation?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
@@ -131,7 +139,8 @@ export interface BlobProps
     role?: string
     ariaLabel?: string
 
-    blameDecorations?: TextDocumentDecoration[]
+    isBlameVisible?: boolean
+    blameHunks?: BlameHunk[]
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -143,6 +152,14 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
 
     /** LSIF syntax-highlighting data */
     lsif?: string
+
+    stencil?: BlobStencilFields[]
+
+    /** If present, the file is stored in Git LFS (large file storage). */
+    lfs?: { byteSize: Scalars['BigInt'] } | null
+
+    /** External URLs for the file */
+    externalURLs?: ExternalLinkFields[]
 }
 
 const domFunctions = {
@@ -252,7 +269,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             codeViewReference.current = codeView
             codeViewElements.next(codeView)
         },
-        [codeViewElements]
+        // We dangerousSetInnerHTML and modify the <code> element.
+        // We need to listen to blobInfo to ensure that we correctly
+        // respond whenever this element updates.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [codeViewElements, blobInfo.html]
     )
 
     // Emits on changes from URL search params
@@ -300,7 +321,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         []
     )
 
-    useEffect(() => {
+    // Need to use deep compare effect to avoid infinite loop in the tabbed references panel.
+    useDeepCompareEffect(() => {
         nextBlobInfoChange(blobInfo)
         return () => {
             // Clean up for any resources used by the previous viewer.
@@ -314,9 +336,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         }
     }, [blobInfo, nextBlobInfoChange, viewerUpdates])
 
-    const [decorationsOrError, setDecorationsOrError] = useState<
-        [TextDocumentDecorationType, TextDocumentDecoration[]][] | Error | undefined
-    >()
+    const [decorationsOrError, setDecorationsOrError] = useState<TextDocumentDecoration[] | Error | undefined>()
 
     const popoverCloses = useMemo(() => new Subject<void>(), [])
     const nextPopoverClose = useCallback((click: void) => popoverCloses.next(click), [popoverCloses])
@@ -388,7 +408,9 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             platformContext,
         ]
     )
+    useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
 
+    const customHistoryAction = props.nav
     // Update URL when clicking on a line (which will trigger the line highlighting defined below)
     useObservable(
         useMemo(
@@ -405,10 +427,12 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         window.getSelection()!.removeAllRanges()
 
                         const position = locateTarget(event.target as HTMLElement, domFunctions)
+                        if (!position) {
+                            return
+                        }
                         let query: string | undefined
                         let replace = false
                         if (
-                            position &&
                             event.shiftKey &&
                             hoverifier.hoverState.selectedPosition &&
                             hoverifier.hoverState.selectedPosition.line !== undefined
@@ -434,8 +458,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                             // will always be added.
                             const currentPosition = parseQueryAndHash(location.search, location.hash)
                             replace = Boolean(
-                                position &&
-                                    currentPosition.line &&
+                                currentPosition.line &&
                                     !currentPosition.endLine &&
                                     Math.abs(position.line - currentPosition.line) < 11
                             )
@@ -444,20 +467,34 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         const parameters = new URLSearchParams(location.search)
                         parameters.delete('popover')
 
-                        if (position && !('character' in position)) {
-                            // Only change the URL when clicking on blank space on the line (not on
-                            // characters). Otherwise, this would interfere with go to definition.
-                            updateBrowserHistoryIfChanged(
-                                props.history,
-                                location,
-                                addLineRangeQueryParameter(parameters, query),
-                                replace
-                            )
+                        const isClickOnBlankSpace = !('character' in position)
+                        if (isClickOnBlankSpace || props.navigateToLineOnAnyClick) {
+                            if (customHistoryAction) {
+                                const entry: H.LocationDescriptor<unknown> = {
+                                    ...location,
+                                    search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
+                                }
+                                customHistoryAction(props.history.createHref(entry))
+                            } else {
+                                updateBrowserHistoryIfChanged(
+                                    props.history,
+                                    location,
+                                    addLineRangeQueryParameter(parameters, query),
+                                    replace
+                                )
+                            }
                         }
                     }),
                     mapTo(undefined)
                 ),
-            [codeViewElements, hoverifier.hoverState.selectedPosition, location, props.history]
+            [
+                codeViewElements,
+                hoverifier.hoverState.selectedPosition,
+                location,
+                props.history,
+                props.navigateToLineOnAnyClick,
+                customHistoryAction,
+            ]
         )
     )
 
@@ -487,55 +524,55 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     }, [parsedHash, blobInfo])
 
     // EXTENSION FEATURES
-
     // Data source for `viewerUpdates`
     useObservable(
         useMemo(
             () =>
-                combineLatest([
-                    blobInfoChanges,
-                    // Use the initial position when the document is opened.
-                    // Don't want to create new viewers on position change
-                    locationPositions.pipe(first()),
-                    from(extensionsController.extHostAPI),
-                    settingsChanges,
-                ]).pipe(
-                    concatMap(([blobInfo, initialPosition, extensionHostAPI]) => {
-                        const uri = toURIWithPath(blobInfo)
+                extensionsController !== null
+                    ? combineLatest([
+                          blobInfoChanges,
+                          // Use the initial position when the document is opened.
+                          // Don't want to create new viewers on position change
+                          locationPositions.pipe(first()),
+                          from(extensionsController.extHostAPI),
+                          settingsChanges,
+                      ]).pipe(
+                          concatMap(([blobInfo, initialPosition, extensionHostAPI]) => {
+                              const uri = toURIWithPath(blobInfo)
+                              return from(
+                                  Promise.all([
+                                      // This call should be made before adding viewer, but since
+                                      // messages to web worker are handled in order, we can use Promise.all
+                                      extensionHostAPI.addTextDocumentIfNotExists({
+                                          uri,
+                                          languageId: blobInfo.mode,
+                                          text: blobInfo.content,
+                                      }),
+                                      extensionHostAPI.addViewerIfNotExists({
+                                          type: 'CodeEditor' as const,
+                                          resource: uri,
+                                          selections: lprToSelectionsZeroIndexed(initialPosition),
+                                          isActive: true,
+                                      }),
+                                  ])
+                              ).pipe(map(([, viewerId]) => ({ viewerId, blobInfo, extensionHostAPI })))
+                          }),
+                          tap(({ viewerId, blobInfo, extensionHostAPI }) => {
+                              const subscriptions = new Subscription()
 
-                        return from(
-                            Promise.all([
-                                // This call should be made before adding viewer, but since
-                                // messages to web worker are handled in order, we can use Promise.all
-                                extensionHostAPI.addTextDocumentIfNotExists({
-                                    uri,
-                                    languageId: blobInfo.mode,
-                                    text: blobInfo.content,
-                                }),
-                                extensionHostAPI.addViewerIfNotExists({
-                                    type: 'CodeEditor' as const,
-                                    resource: uri,
-                                    selections: lprToSelectionsZeroIndexed(initialPosition),
-                                    isActive: true,
-                                }),
-                            ])
-                        ).pipe(map(([, viewerId]) => ({ viewerId, blobInfo, extensionHostAPI })))
-                    }),
-                    tap(({ viewerId, blobInfo, extensionHostAPI }) => {
-                        const subscriptions = new Subscription()
+                              // Cleanup on navigation between/away from viewers
+                              subscriptions.add(() => {
+                                  extensionHostAPI
+                                      .removeViewer(viewerId)
+                                      .catch(error => logger.error('Error removing viewer from extension host', error))
+                              })
 
-                        // Cleanup on navigation between/away from viewers
-                        subscriptions.add(() => {
-                            extensionHostAPI
-                                .removeViewer(viewerId)
-                                .catch(error => console.error('Error removing viewer from extension host', error))
-                        })
-
-                        viewerUpdates.next({ viewerId, blobInfo, extensionHostAPI, subscriptions })
-                    }),
-                    mapTo(undefined)
-                ),
-            [blobInfoChanges, locationPositions, extensionsController.extHostAPI, settingsChanges, viewerUpdates]
+                              viewerUpdates.next({ viewerId, blobInfo, extensionHostAPI, subscriptions })
+                          }),
+                          mapTo(undefined)
+                      )
+                    : EMPTY,
+            [blobInfoChanges, locationPositions, extensionsController, settingsChanges, viewerUpdates]
         )
     )
 
@@ -603,7 +640,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                                 viewerData.extensionHostAPI
                                     .setEditorSelections(viewerData.viewerId, lprToSelectionsZeroIndexed(position))
                                     .catch(error =>
-                                        console.error('Error updating editor selections on extension host', error)
+                                        logger.error('Error updating editor selections on extension host', error)
                                     )
                             })
                         )
@@ -646,50 +683,19 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     // Warm cache for references panel. Eventually display a loading indicator
     useObservable(
-        useMemo(() => haveInitialExtensionsLoaded(extensionsController.extHostAPI), [extensionsController.extHostAPI])
+        useMemo(
+            () =>
+                extensionsController !== null ? haveInitialExtensionsLoaded(extensionsController.extHostAPI) : EMPTY,
+            [extensionsController]
+        )
     )
 
-    const enableExtensionsDecorationsColumnView = enableExtensionsDecorationsColumnViewFromSettings(settingsCascade)
-
-    // Memoize column and inline decorations to avoid clearing and setting decorations
-    // in `ColumnDecorator`s or `LineDecorator`s on renders in which decorations haven't changed.
-    const decorations: {
-        column: [TextDocumentDecorationType, DecorationMapByLine][]
-        inline: DecorationMapByLine
-    } = useMemo(() => {
-        const blameDecorationsByLine = props.blameDecorations && groupDecorationsByLine(props.blameDecorations)
-        const columnWithBlame: [TextDocumentDecorationType, DecorationMapByLine][] =
-            !props.disableDecorations && blameDecorationsByLine ? [[blameDecorationType, blameDecorationsByLine]] : []
-
-        if (decorationsOrError && !isErrorLike(decorationsOrError)) {
-            const { column, inline } = decorationsOrError.reduce(
-                (accumulator, [type, items]) => {
-                    if (enableExtensionsDecorationsColumnView && type.config.display === 'column') {
-                        const groupedByLine = groupDecorationsByLine(items)
-                        if (groupedByLine.size > 0) {
-                            accumulator.column.push([type, groupedByLine])
-                        }
-                    } else {
-                        accumulator.inline.push(...items)
-                    }
-
-                    return accumulator
-                },
-                {
-                    column: columnWithBlame,
-                    inline: [] as TextDocumentDecoration[],
-                }
-            )
-
-            return {
-                // if extension contributes with a few decoration types let them go one by one
-                column: sortBy(column, ([{ extensionID }]) => extensionID),
-                inline: groupDecorationsByLine(inline),
-            }
-        }
-
-        return { column: columnWithBlame, inline: new Map() }
-    }, [props.disableDecorations, props.blameDecorations, decorationsOrError, enableExtensionsDecorationsColumnView])
+    // Memoize `groupedDecorations` to avoid clearing and setting decorations in `LineDecorator`s on renders in which
+    // decorations haven't changed.
+    const groupedDecorations = useMemo(
+        () => decorationsOrError && !isErrorLike(decorationsOrError) && groupDecorationsByLine(decorationsOrError),
+        [decorationsOrError]
+    )
 
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
@@ -797,19 +803,23 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 const firstRow = table.rows[0]
                 const lastRow = table.rows[table.rows.length - 1]
 
-                if (firstRow && !firstRow.querySelector('.top-spacer')) {
+                if (firstRow) {
                     for (const cell of firstRow.cells) {
-                        const spacer = document.createElement('div')
-                        spacer.classList.add('top-spacer')
-                        cell.prepend(spacer)
+                        if (!cell.querySelector('.top-spacer')) {
+                            const spacer = document.createElement('div')
+                            spacer.classList.add('top-spacer')
+                            cell.prepend(spacer)
+                        }
                     }
                 }
 
-                if (lastRow && !lastRow.querySelector('.bottom-spacer')) {
+                if (lastRow) {
                     for (const cell of lastRow.cells) {
-                        const spacer = document.createElement('div')
-                        spacer.classList.add('bottom-spacer')
-                        cell.append(spacer)
+                        if (!cell.querySelector('.bottom-spacer')) {
+                            const spacer = document.createElement('div')
+                            spacer.classList.add('bottom-spacer')
+                            cell.append(spacer)
+                        }
                     }
                 }
             }
@@ -819,6 +829,29 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             subscription.unsubscribe()
         }
     }, [codeViewElements])
+
+    // Add the `.clickable-row` CSS class to all rows to give visual hints that they're clickable.
+    useLayoutEffect(() => {
+        if (!props.navigateToLineOnAnyClick) {
+            return
+        }
+
+        const subscription = codeViewElements.subscribe(codeView => {
+            if (codeView) {
+                const table = codeView.firstElementChild as HTMLTableElement
+                for (const row of table.rows) {
+                    if (row.cells.length === 0) {
+                        continue
+                    }
+                    row.className = styles.clickableRow
+                }
+            }
+        })
+
+        return () => {
+            subscription.unsubscribe()
+        }
+    }, [codeViewElements, props.navigateToLineOnAnyClick])
 
     const logEventOnCopy = useCallback(() => {
         props.telemetryService.log(...codeCopiedEvent('blob'))
@@ -842,7 +875,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         __html: blobInfo.html,
                     }}
                 />
-                {hoverState.hoverOverlayProps && (
+                {!props.navigateToLineOnAnyClick && hoverState.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...props}
                         {...hoverState.hoverOverlayProps}
@@ -854,34 +887,32 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     />
                 )}
 
-                {decorations.column.map(([{ extensionID }, items]) => (
-                    <ColumnDecorator
-                        key={extensionID}
-                        isLightTheme={isLightTheme}
-                        extensionID={extensionID!}
-                        decorations={items}
-                        codeViewElements={codeViewElements}
-                    />
-                ))}
+                <BlameColumn
+                    isBlameVisible={props.isBlameVisible}
+                    blameHunks={props.blameHunks}
+                    codeViewElements={codeViewElements}
+                    history={props.history}
+                />
 
-                {iterate(decorations.inline)
-                    .map(([line, items]) => {
-                        const portalID = toPortalID(line)
-                        return (
-                            <LineDecorator
-                                isLightTheme={isLightTheme}
-                                key={`${portalID}-${blobInfo.filePath}`}
-                                portalID={portalID}
-                                getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
-                                line={line}
-                                decorations={items}
-                                codeViewElements={codeViewElements}
-                            />
-                        )
-                    })
-                    .toArray()}
+                {groupedDecorations &&
+                    iterate(groupedDecorations)
+                        .map(([line, items]) => {
+                            const portalID = toPortalID(line)
+                            return (
+                                <LineDecorator
+                                    isLightTheme={isLightTheme}
+                                    key={`${portalID}-${blobInfo.filePath}`}
+                                    portalID={portalID}
+                                    getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
+                                    line={line}
+                                    decorations={items}
+                                    codeViewElements={codeViewElements}
+                                />
+                            )
+                        })
+                        .toArray()}
             </div>
-            {!props.disableStatusBar && (
+            {!props.disableStatusBar && extensionsController !== null && window.context.enableLegacyExtensions && (
                 <StatusBar
                     getStatusBarItems={getStatusBarItems}
                     extensionsController={extensionsController}

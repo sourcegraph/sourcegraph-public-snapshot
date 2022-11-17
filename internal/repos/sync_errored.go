@@ -9,8 +9,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -46,14 +46,14 @@ func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimit
 func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *ratelimit.InstrumentedLimiter) error {
 	erroredRepoGauge.Set(0)
 	s.setTotalErroredRepos(ctx)
-	err := s.Store.GitserverReposStore().IterateWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
+	err := s.Store.GitserverReposStore().IterateWithNonemptyLastError(ctx, func(repo api.RepoName) error {
 		err := rateLimiter.Wait(ctx)
 		if err != nil {
 			return errors.Errorf("error waiting for rate limiter: %s", err)
 		}
-		_, err = s.SyncRepo(ctx, repo.Name, false)
+		_, err = s.SyncRepo(ctx, repo, false)
 		if err != nil {
-			s.Logger.Error("error syncing repo", log.String("repo", string(repo.Name)), log.Error(err))
+			s.Logger.Error("error syncing repo", log.String("repo", string(repo)), log.Error(err))
 		}
 		erroredRepoGauge.Inc()
 		return nil

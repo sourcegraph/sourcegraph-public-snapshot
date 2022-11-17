@@ -11,9 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -36,31 +37,28 @@ var (
 // relevant to Batch Changes, normalizes those events into ChangesetEvents
 // and upserts them to the database.
 type GitHubWebhook struct {
-	*Webhook
+	*webhook
 }
 
-func NewGitHubWebhook(store *store.Store) *GitHubWebhook {
-	return &GitHubWebhook{&Webhook{store, extsvc.TypeGitHub}}
+func NewGitHubWebhook(store *store.Store, gitserverClient gitserver.Client) *GitHubWebhook {
+	return &GitHubWebhook{&webhook{store, gitserverClient, extsvc.TypeGitHub}}
 }
 
 // Register registers this webhook handler to handle events with the passed webhook router
-func (h *GitHubWebhook) Register(router *webhooks.GitHubWebhook) {
+func (h *GitHubWebhook) Register(router *webhooks.WebhookRouter) {
 	router.Register(
 		h.handleGitHubWebhook,
+		extsvc.KindGitHub,
 		githubEvents...,
 	)
 }
 
 // handleGithubWebhook is the entry point for webhooks from the webhook router, see the events
 // it's registered to handle in GitHubWebhook.Register
-func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload any) error {
+func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, payload any) error {
 	var m error
-	externalServiceID, err := extractExternalServiceID(extSvc)
-	if err != nil {
-		return err
-	}
 
-	prs, ev := h.convertEvent(ctx, externalServiceID, payload)
+	prs, ev := h.convertEvent(ctx, codeHostURN, payload)
 
 	if ev == nil {
 		// We don't recognize this event type, we don't need to do any more work.
@@ -74,7 +72,7 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.E
 			continue
 		}
 
-		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
+		err := h.upsertChangesetEvent(ctx, codeHostURN, pr, ev)
 		if err != nil {
 			m = errors.Append(m, err)
 		}
@@ -82,7 +80,7 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, extSvc *types.E
 	return m
 }
 
-func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID string, theirs any) (prs []PR, ours keyer) {
+func (h *GitHubWebhook) convertEvent(ctx context.Context, codeHostURN extsvc.CodeHostBaseURL, theirs any) (prs []PR, ours keyer) {
 	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
@@ -184,7 +182,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID stri
 
 		spec := api.ExternalRepoSpec{
 			ID:          repoExternalID,
-			ServiceID:   externalServiceID,
+			ServiceID:   codeHostURN.String(),
 			ServiceType: extsvc.TypeGitHub,
 		}
 

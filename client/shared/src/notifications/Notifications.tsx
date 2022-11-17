@@ -5,12 +5,12 @@ import { from, merge, Subscription } from 'rxjs'
 import { delay, map, mergeMap, switchMap, takeWhile } from 'rxjs/operators'
 import { tabbable } from 'tabbable'
 
-import { asError } from '@sourcegraph/common'
+import { asError, logger } from '@sourcegraph/common'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
 import { NotificationType } from '../api/extension/extensionHostApi'
 import { syncRemoteSubscription } from '../api/util'
-import { ExtensionsControllerProps } from '../extensions/controller'
+import { RequiredExtensionsControllerProps } from '../extensions/controller'
 
 import { Notification } from './notification'
 import { NotificationItem, NotificationItemProps } from './NotificationItem'
@@ -18,7 +18,7 @@ import { NotificationItem, NotificationItemProps } from './NotificationItem'
 import styles from './Notifications.module.scss'
 
 export interface NotificationsProps
-    extends ExtensionsControllerProps,
+    extends RequiredExtensionsControllerProps,
         Pick<NotificationItemProps, 'notificationItemStyleProps'> {}
 
 interface NotificationsState {
@@ -180,7 +180,7 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
                     [HAS_NOTIFICATIONS_CONTEXT_KEY]: this.state.notifications.length > 0,
                 })
             )
-            .catch(error => console.error('Error updating context for notifications', error))
+            .catch(error => logger.error('Error updating context for notifications', error))
     }
 
     public componentWillUnmount(): void {

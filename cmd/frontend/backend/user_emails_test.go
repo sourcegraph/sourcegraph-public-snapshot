@@ -8,6 +8,7 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -177,7 +178,7 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UsersFunc.SetDefaultReturn(users)
 
-	if err := UserEmails.SendUserEmailOnFieldUpdate(context.Background(), db, 123, "updated password"); err != nil {
+	if err := UserEmails.SendUserEmailOnFieldUpdate(context.Background(), logtest.Scoped(t), db, 123, "updated password"); err != nil {
 		t.Fatal(err)
 	}
 	if sent == nil {

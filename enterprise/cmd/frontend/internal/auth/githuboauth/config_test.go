@@ -137,10 +137,57 @@ func TestParseConfig(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "2 GitHub configs with the same Url",
+			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+				AuthProviders: []schema.AuthProviders{{
+					Github: &schema.GitHubAuthProvider{
+						ClientID:     "myclientid",
+						ClientSecret: "myclientsecret",
+						DisplayName:  "GitHub",
+						Type:         extsvc.TypeGitHub,
+						Url:          "https://github.com",
+						AllowOrgs:    []string{"myorg"},
+					},
+				}, {
+					Github: &schema.GitHubAuthProvider{
+						ClientID:     "myclientid2",
+						ClientSecret: "myclientsecret2",
+						DisplayName:  "GitHub Duplicate",
+						Type:         extsvc.TypeGitHub,
+						Url:          "https://github.com",
+					},
+				}},
+			}}},
+			wantProviders: []Provider{
+				{
+					GitHubAuthProvider: &schema.GitHubAuthProvider{
+						ClientID:     "myclientid",
+						ClientSecret: "myclientsecret",
+						DisplayName:  "GitHub",
+						Type:         extsvc.TypeGitHub,
+						Url:          "https://github.com",
+						AllowOrgs:    []string{"myorg"},
+					},
+					Provider: provider("https://github.com/", oauth2.Config{
+						ClientID:     "myclientid",
+						ClientSecret: "myclientsecret",
+						Endpoint: oauth2.Endpoint{
+							AuthURL:  "https://github.com/login/oauth/authorize",
+							TokenURL: "https://github.com/login/oauth/access_token",
+						},
+						Scopes: []string{"user:email", "repo", "read:org"},
+					}),
+				},
+			},
+			wantProblems: []string{
+				`Cannot have more than one auth provider with url "https://github.com/", only the first one will be used`,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotProviders, gotProblems := parseConfig(tt.args.cfg, db)
+			gotProviders, gotProblems := parseConfig(logtest.Scoped(t), tt.args.cfg, db)
 			gotConfigs := make([]oauth2.Config, len(gotProviders))
 			for k, p := range gotProviders {
 				if p, ok := p.Provider.(*oauth.Provider); ok {

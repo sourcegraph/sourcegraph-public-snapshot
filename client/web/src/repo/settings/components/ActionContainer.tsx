@@ -5,7 +5,7 @@ import * as H from 'history'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
-import { Button, H4, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonProps, H4, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './ActionContainer.module.scss'
 
@@ -33,7 +33,7 @@ export const BaseActionContainer: React.FunctionComponent<
 interface Props {
     title: React.ReactNode
     description: React.ReactNode
-    buttonClassName?: string
+    buttonVariant?: ButtonProps['variant']
     buttonLabel: React.ReactNode
     buttonSubtitle?: string
     buttonDisabled?: boolean
@@ -80,8 +80,8 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                     <>
                         <Tooltip content={this.props.buttonSubtitle}>
                             <Button
-                                className={classNames(styles.btn, this.props.buttonClassName)}
-                                variant={this.props.buttonClassName ? undefined : 'primary'}
+                                className={styles.btn}
+                                variant={this.props.buttonVariant || 'primary'}
                                 onClick={this.onClick}
                                 disabled={this.props.buttonDisabled || this.state.loading}
                             >

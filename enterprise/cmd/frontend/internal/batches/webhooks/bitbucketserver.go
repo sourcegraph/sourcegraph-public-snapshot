@@ -15,18 +15,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type BitbucketServerWebhook struct {
-	*Webhook
+	*webhook
 }
 
-func NewBitbucketServerWebhook(store *store.Store) *BitbucketServerWebhook {
+func NewBitbucketServerWebhook(store *store.Store, gitserverClient gitserver.Client) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook: &Webhook{store, extsvc.TypeBitbucketServer},
+		webhook: &webhook{store, gitserverClient, extsvc.TypeBitbucketServer},
 	}
 }
 
@@ -43,7 +44,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	// internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
 
-	externalServiceID, err := extractExternalServiceID(extSvc)
+	externalServiceID, err := extractExternalServiceID(ctx, extSvc)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -101,7 +102,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (any, *types.Extern
 			continue
 		}
 
-		c, _ := e.Configuration()
+		c, _ := e.Configuration(r.Context())
 		con, ok := c.(*schema.BitbucketServerConnection)
 		if !ok {
 			continue

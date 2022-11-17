@@ -24,13 +24,13 @@ func TestSetExternalServiceID(t *testing.T) {
 	SetExternalServiceID(ctx, 1)
 
 	// Make sure it can handle an invalid setter.
-	invalidCtx := context.WithValue(ctx, setterContextKey, func() {
+	invalidCtx := context.WithValue(ctx, extSvcIDSetterContextKey, func() {
 		panic("if we get as far as calling this, that's a bug")
 	})
 	SetExternalServiceID(invalidCtx, 1)
 
 	// Now the real case: a valid setter.
-	validCtx := context.WithValue(ctx, setterContextKey, func(id int64) {
+	validCtx := context.WithValue(ctx, extSvcIDSetterContextKey, func(id int64) {
 		assert.EqualValues(t, 42, id)
 	})
 	SetExternalServiceID(validCtx, 42)
@@ -75,13 +75,21 @@ func TestLogMiddleware(t *testing.T) {
 	t.Run("logging enabled", func(t *testing.T) {
 		store := database.NewMockWebhookLogStore()
 		store.CreateFunc.SetDefaultHook(func(c context.Context, log *types.WebhookLog) error {
+			logRequest, err := log.Request.Decrypt(c)
+			if err != nil {
+				return err
+			}
+			logResponse, err := log.Response.Decrypt(c)
+			if err != nil {
+				return err
+			}
+
 			assert.Equal(t, es, *log.ExternalServiceID)
 			assert.Equal(t, http.StatusCreated, log.StatusCode)
-			assert.Equal(t, "GET", log.Request.Method)
-			assert.Equal(t, "HTTP/1.1", log.Request.Version)
-			assert.Equal(t, "bar", log.Response.Header.Get("foo"))
-			assert.Equal(t, content, log.Response.Body)
-
+			assert.Equal(t, "GET", logRequest.Method)
+			assert.Equal(t, "HTTP/1.1", logRequest.Version)
+			assert.Equal(t, "bar", logResponse.Header.Get("foo"))
+			assert.Equal(t, content, logResponse.Body)
 			return nil
 		})
 

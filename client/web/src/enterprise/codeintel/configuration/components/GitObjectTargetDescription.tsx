@@ -1,8 +1,6 @@
 import { FunctionComponent } from 'react'
 
-import { GitObjectType } from '@sourcegraph/shared/src/schema'
-
-import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
+import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../../graphql-operations'
 
 export const GitObjectTargetDescription: FunctionComponent<
     React.PropsWithChildren<{ policy: CodeIntelligenceConfigurationPolicyFields }>

@@ -1,19 +1,23 @@
 import { Observable } from 'rxjs'
 import * as vscode from 'vscode'
 
+import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 
+import { getProxyAgent } from '../backend/fetch'
 import { initializeSourcegraphSettings } from '../backend/sourcegraphSettings'
 import { initializeCodeIntel } from '../code-intel/initialize'
 import { ExtensionCoreAPI } from '../contract'
 import { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
 import { SearchPatternType } from '../graphql-operations'
+import { endpointRequestHeadersSetting, endpointSetting } from '../settings/endpointSetting'
 
 import {
     initializeHelpSidebarWebview,
     initializeSearchPanelWebview,
     initializeSearchSidebarWebview,
 } from './initialize'
+import { scretTokenKey } from './platform/AuthProvider'
 
 // Track current active webview panel to make sure only one panel exists at a time
 let currentSearchPanel: vscode.WebviewPanel | 'initializing' | undefined
@@ -40,13 +44,10 @@ export function registerWebviews({
     // Register URI Handler to resolve data sending back from Browser
     const handleUri = async (uri: vscode.Uri): Promise<void> => {
         const token = new URLSearchParams(uri.query).get('code')
-        // const returnedNonce = new URLSearchParams(uri.query).get('nonce')
         // TODO: Decrypt token
         // TODO: Match returnedNonce to stored nonce
         if (token && token.length > 8) {
-            await vscode.workspace
-                .getConfiguration('sourcegraph')
-                .update('accessToken', token, vscode.ConfigurationTarget.Global)
+            await context.secrets.store(scretTokenKey, token)
             await vscode.window.showInformationMessage('Token has been retreived and updated successfully')
         }
     }
@@ -54,6 +55,21 @@ export function registerWebviews({
     context.subscriptions.push(
         vscode.window.registerUriHandler({
             handleUri,
+        })
+    )
+
+    // Update `EventSource` Authorization header on access token / headers change.
+    // It will also be changed when the token has been changed --handled by Auth Provider
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration(async config => {
+            const session = await vscode.authentication.getSession(endpointSetting(), [], { forceNewSession: false })
+            if (config.affectsConfiguration('sourcegraph.requestHeaders') && session) {
+                const newCustomHeaders = endpointRequestHeadersSetting()
+                polyfillEventSource(
+                    session.accessToken ? { Authorization: `token ${session.accessToken}`, ...newCustomHeaders } : {},
+                    getProxyAgent()
+                )
+            }
         })
     )
 
@@ -117,7 +133,7 @@ export function registerWebviews({
 
             if (selectedQuery) {
                 extensionCoreAPI.streamSearch(selectedQuery, {
-                    patternType: SearchPatternType.literal,
+                    patternType: SearchPatternType.standard,
                     caseSensitive: false,
                     version: LATEST_VERSION,
                     trace: undefined,
@@ -221,4 +237,20 @@ function focusFileExplorer(): void {
             console.error(error)
         }
     )
+}
+
+export async function openSourcegraphLinks(uri: string): Promise<void> {
+    await vscode.env.openExternal(vscode.Uri.parse(uri))
+    return
+}
+
+export async function copySourcegraphLinks(uri: string): Promise<void> {
+    try {
+        await vscode.env.clipboard.writeText(uri)
+        await vscode.window.showInformationMessage('Link Copied!')
+    } catch (error) {
+        console.error('Error copying search link to clipboard:', error)
+    }
+
+    return
 }

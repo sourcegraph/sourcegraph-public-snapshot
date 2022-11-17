@@ -47,10 +47,7 @@ export const MonitorLogNode: React.FunctionComponent<
     return (
         <li className={styles.container}>
             <div className="d-flex align-items-center">
-                <Button
-                    onClick={toggleExpanded}
-                    className="btn-icon text-left pl-0 border-0 d-flex align-items-center flex-1"
-                >
+                <Button onClick={toggleExpanded} className="text-left pl-0 border-0 d-flex align-items-center flex-1">
                     {expanded ? (
                         <Icon
                             className="mr-2 flex-shrink-0"

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v2"
 )
 
 func TestParseBatchSpec(t *testing.T) {
@@ -28,7 +29,7 @@ changesetTemplate:
   published: false
 `
 
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		_, err := ParseBatchSpec([]byte(spec))
 		if err != nil {
 			t.Fatalf("parsing valid spec returned error: %s", err)
 		}
@@ -45,7 +46,7 @@ steps:
     container: alpine:3
 `
 
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		_, err := ParseBatchSpec([]byte(spec))
 		if err == nil {
 			t.Fatal("no error returned")
 		}
@@ -75,7 +76,7 @@ changesetTemplate:
   published: false
 `
 
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		_, err := ParseBatchSpec([]byte(spec))
 		if err == nil {
 			t.Fatal("no error returned")
 		}
@@ -83,38 +84,6 @@ changesetTemplate:
 		// We expect this error to be user-friendly, which is why we test for
 		// it specifically here.
 		wantErr := `The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed.`
-		haveErr := err.Error()
-		if haveErr != wantErr {
-			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
-		}
-	})
-
-	t.Run("uses unsupported conditional exec", func(t *testing.T) {
-		const spec = `
-name: hello-world
-description: Add Hello World to READMEs
-on:
-  - repositoriesMatchingQuery: file:README.md
-steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
-    if: "false"
-    container: alpine:3
-
-changesetTemplate:
-  title: Hello World
-  body: My first batch change!
-  branch: hello-world
-  commit:
-    message: Append Hello World to all README.md files
-  published: false
-`
-
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
-		if err == nil {
-			t.Fatal("no error returned")
-		}
-
-		wantErr := `step 1 in batch spec uses the 'if' attribute for conditional execution, which is not supported in this Sourcegraph version`
 		haveErr := err.Error()
 		if haveErr != wantErr {
 			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
@@ -154,7 +123,7 @@ changesetTemplate:
 			{raw: `foobar`, want: "foobar"},
 		} {
 			spec := fmt.Sprintf(specTemplate, tt.raw)
-			batchSpec, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{AllowConditionalExec: true})
+			batchSpec, err := ParseBatchSpec([]byte(spec))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -185,7 +154,7 @@ changesetTemplate:
   published: false
 `
 
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		_, err := ParseBatchSpec([]byte(spec))
 		if err == nil {
 			t.Fatal("no error returned")
 		}
@@ -217,7 +186,7 @@ changesetTemplate:
   commit:
     message: Test
 `
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		_, err := ParseBatchSpec([]byte(spec))
 		assert.Equal(t, "step 1 mount path contains invalid characters", err.Error())
 	})
 
@@ -238,7 +207,7 @@ changesetTemplate:
   commit:
     message: Test
 `
-		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		_, err := ParseBatchSpec([]byte(spec))
 		assert.Equal(t, "step 1 mount mountpoint contains invalid characters", err.Error())
 	})
 }
@@ -291,7 +260,7 @@ func TestOnQueryOrRepository_Branches(t *testing.T) {
 func TestSkippedStepsForRepo(t *testing.T) {
 	tests := map[string]struct {
 		spec        *BatchSpec
-		wantSkipped []int32
+		wantSkipped []int
 	}{
 		"no if": {
 			spec: &BatchSpec{
@@ -299,7 +268,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 1"},
 				},
 			},
-			wantSkipped: []int32{},
+			wantSkipped: []int{},
 		},
 
 		"if has static true value": {
@@ -308,7 +277,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 1", If: "true"},
 				},
 			},
-			wantSkipped: []int32{},
+			wantSkipped: []int{},
 		},
 
 		"one of many steps has if with static true value": {
@@ -319,7 +288,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 3"},
 				},
 			},
-			wantSkipped: []int32{},
+			wantSkipped: []int{},
 		},
 
 		"if has static non-true value": {
@@ -328,7 +297,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 1", If: "this is not true"},
 				},
 			},
-			wantSkipped: []int32{0},
+			wantSkipped: []int{0},
 		},
 
 		"one of many steps has if with static non-true value": {
@@ -339,7 +308,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 3"},
 				},
 			},
-			wantSkipped: []int32{1},
+			wantSkipped: []int{1},
 		},
 
 		"if expression that can be partially evaluated to true": {
@@ -348,7 +317,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 1", If: `${{ matches repository.name "github.com/sourcegraph/src*" }}`},
 				},
 			},
-			wantSkipped: []int32{},
+			wantSkipped: []int{},
 		},
 
 		"if expression that can be partially evaluated to false": {
@@ -357,7 +326,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 1", If: `${{ matches repository.name "horse" }}`},
 				},
 			},
-			wantSkipped: []int32{0},
+			wantSkipped: []int{0},
 		},
 
 		"one of many steps has if expression that can be evaluated to false": {
@@ -368,7 +337,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 3"},
 				},
 			},
-			wantSkipped: []int32{1},
+			wantSkipped: []int{1},
 		},
 
 		"if expression that can NOT be partially evaluated": {
@@ -377,7 +346,7 @@ func TestSkippedStepsForRepo(t *testing.T) {
 					{Run: "echo 1", If: `${{ eq outputs.value "foobar" }}`},
 				},
 			},
-			wantSkipped: []int32{},
+			wantSkipped: []int{},
 		},
 	}
 
@@ -389,12 +358,12 @@ func TestSkippedStepsForRepo(t *testing.T) {
 			}
 
 			want := tt.wantSkipped
-			sort.Sort(sortableInt32(want))
-			have := make([]int32, 0, len(haveSkipped))
+			sort.Sort(sortableInt(want))
+			have := make([]int, 0, len(haveSkipped))
 			for s := range haveSkipped {
 				have = append(have, s)
 			}
-			sort.Sort(sortableInt32(have))
+			sort.Sort(sortableInt(have))
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
 			}
@@ -402,10 +371,47 @@ func TestSkippedStepsForRepo(t *testing.T) {
 	}
 }
 
-type sortableInt32 []int32
+type sortableInt []int
 
-func (s sortableInt32) Len() int { return len(s) }
+func (s sortableInt) Len() int { return len(s) }
 
-func (s sortableInt32) Less(i, j int) bool { return s[i] < s[j] }
+func (s sortableInt) Less(i, j int) bool { return s[i] < s[j] }
 
-func (s sortableInt32) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s sortableInt) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+func TestBatchSpec_RequiredEnvVars(t *testing.T) {
+	for name, tc := range map[string]struct {
+		in   string
+		want []string
+	}{
+		"no steps": {
+			in:   `steps:`,
+			want: []string{},
+		},
+		"no env vars": {
+			in:   `steps: [run: asdf]`,
+			want: []string{},
+		},
+		"static variable": {
+			in:   `steps: [{run: asdf, env: [a: b]}]`,
+			want: []string{},
+		},
+		"dynamic variable": {
+			in:   `steps: [{run: asdf, env: [a]}]`,
+			want: []string{"a"},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var spec BatchSpec
+			err := yaml.Unmarshal([]byte(tc.in), &spec)
+			if err != nil {
+				t.Fatal(err)
+			}
+			have := spec.RequiredEnvVars()
+
+			if diff := cmp.Diff(have, tc.want); diff != "" {
+				t.Errorf("unexpected value: have=%q want=%q", have, tc.want)
+			}
+		})
+	}
+}

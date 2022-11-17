@@ -1,30 +1,80 @@
 /* eslint-disable react/forbid-dom-props */
-import React from 'react'
+import React, { useMemo } from 'react'
 
 import classNames from 'classnames'
+import { useLocation } from 'react-router'
 
-import { Text } from '@sourcegraph/wildcard'
+import { Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { formatNumber } from '../utils'
 
 import styles from './index.module.scss'
 
 interface ValueLegendItemProps {
-    color: string
+    color?: string
     description: string
-    value: number
+    value: number | string
+    tooltip?: string
+    className?: string
+    filter?: { name: string; value: string }
 }
 
-const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({ value, color, description }) => (
-    <div className="d-flex flex-column align-items-center mr-4 justify-content-center">
-        <span style={{ color }} className={styles.count}>
-            {formatNumber(value)}
-        </span>
-        <Text as="span" alignment="center" className={styles.textWrap}>
-            {description}
-        </Text>
-    </div>
-)
+export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
+    value,
+    color = 'var(--body-color)',
+    description,
+    tooltip,
+    className,
+    filter,
+}) => {
+    const formattedNumber = useMemo(() => (typeof value === 'number' ? formatNumber(value) : value), [value])
+    const unformattedNumber = `${value}`
+    const location = useLocation()
+
+    const searchParams = useMemo(() => {
+        const search = new URLSearchParams(location.search)
+        if (filter) {
+            search.set(filter.name, filter.value)
+        }
+        return search
+    }, [filter, location.search])
+
+    return (
+        <div className={classNames('d-flex flex-column align-items-center mr-4 justify-content-center', className)}>
+            <Tooltip content={formattedNumber !== unformattedNumber ? unformattedNumber : undefined}>
+                {filter ? (
+                    <Link to={`?${searchParams.toString()}`} style={{ color }} className={styles.count}>
+                        {formattedNumber}
+                    </Link>
+                ) : (
+                    <span style={{ color }} className={styles.count}>
+                        {formattedNumber}
+                    </span>
+                )}
+            </Tooltip>
+            <Tooltip content={tooltip}>
+                {filter ? (
+                    <Link
+                        to={`?${searchParams.toString()}`}
+                        className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
+                    >
+                        {description}
+                        {tooltip && <span className={styles.linkColor}>*</span>}
+                    </Link>
+                ) : (
+                    <Text
+                        as="span"
+                        alignment="center"
+                        className={classNames(styles.textWrap, tooltip && 'cursor-pointer', 'text-muted')}
+                    >
+                        {description}
+                        {tooltip && <span className={styles.linkColor}>*</span>}
+                    </Text>
+                )}
+            </Tooltip>
+        </div>
+    )
+}
 
 export interface ValueLegendListProps {
     className?: string

@@ -15,9 +15,10 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,7 +29,7 @@ func editorRev(ctx context.Context, logger log.Logger, db database.DB, repoName 
 	if rev == "HEAD" {
 		return ""
 	}
-	repos := backend.NewRepos(logger, db)
+	repos := backend.NewRepos(logger, db, gitserver.NewClient(db))
 	repo, err := repos.GetByName(ctx, repoName)
 	if err != nil {
 		// We weren't able to fetch the repo. This means it either doesn't
@@ -59,14 +60,6 @@ func editorRev(ctx context.Context, logger log.Logger, db database.DB, repoName 
 type editorRequest struct {
 	logger log.Logger
 	db     database.DB
-
-	// Fields that are required in all requests.
-	editor  string // editor name, e.g. "Atom", "Sublime", etc.
-	version string // editor extension version
-
-	// Fields that are optional in all requests.
-	utmProductName    string // Editor product name. Only present in JetBrains today (e.g. "IntelliJ", "GoLand")
-	utmProductVersion string // Editor product version. Only present in JetBrains today.
 
 	// openFileRequest is non-nil if this is an "open file on Sourcegraph" request.
 	openFileRequest *editorOpenFileRequest
@@ -105,17 +98,6 @@ type editorSearchRequest struct {
 	// Optional unix filepath relative to the repository root. When present, the search
 	// will be performed with a file: search filter.
 	file string
-}
-
-// addTracking adds the tracking ?utm_... parameters to the given query values.
-func (r *editorRequest) addTracking(q url.Values) {
-	q.Add("utm_source", r.editor+"-"+r.version)
-	if r.utmProductName != "" {
-		q.Add("utm_product_name", r.utmProductName)
-	}
-	if r.utmProductVersion != "" {
-		q.Add("utm_product_version", r.utmProductVersion)
-	}
 }
 
 // searchRedirect returns the redirect URL for the pre-validated search request.
@@ -169,7 +151,6 @@ func (r *editorRequest) searchRedirect(ctx context.Context) (string, error) {
 	q := u.Query()
 	q.Add("q", searchQuery)
 	q.Add("patternType", "literal")
-	r.addTracking(q)
 	u.RawQuery = q.Encode()
 	return u.String(), nil
 }
@@ -198,12 +179,16 @@ func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 	u := &url.URL{Path: path.Join("/", string(repoName)+rev, "/-/blob/", of.file)}
 	q := u.Query()
 	if of.startRow == of.endRow && of.startCol == of.endCol {
-		q.Add(fmt.Sprintf("L%d:%d", of.startRow+1, of.startCol+1), "")
+		q.Add(fmt.Sprintf("L%d", of.startRow+1), "")
 	} else {
 		q.Add(fmt.Sprintf("L%d:%d-%d:%d", of.startRow+1, of.startCol+1, of.endRow+1, of.endCol+1), "")
 	}
-	r.addTracking(q)
-	u.RawQuery = q.Encode()
+	// Since the line information is added as the key as a query parameter with
+	// an empty value, the URL encoding will add an = sign followed by an empty
+	// string.
+	//
+	// Since we don't want the equal sign as it provides no value, we remove it.
+	u.RawQuery = strings.TrimSuffix(q.Encode(), "=")
 	return u.String(), nil
 }
 
@@ -219,18 +204,13 @@ func (r *editorRequest) redirectURL(ctx context.Context) (string, error) {
 
 // parseEditorRequest parses an editor request from the search query values.
 func parseEditorRequest(db database.DB, q url.Values) (*editorRequest, error) {
+	if q == nil {
+		return nil, errors.New("could not determine query string")
+	}
+
 	v := &editorRequest{
-		db:                db,
-		editor:            q.Get("editor"),
-		version:           q.Get("version"),
-		utmProductName:    q.Get("utm_product_name"),
-		utmProductVersion: q.Get("utm_product_name"),
-	}
-	if v.editor == "" {
-		return nil, errors.New("expected URL parameter missing: editor=$EDITOR_NAME")
-	}
-	if v.version == "" {
-		return nil, errors.New("expected URL parameter missing: version=$EDITOR_EXTENSION_VERSION")
+		db:     db,
+		logger: log.Scoped("editor", "requests from editors."),
 	}
 
 	if search := q.Get("search"); search != "" {

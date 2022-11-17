@@ -235,11 +235,8 @@ func (c *Client) SchedulePermsSync(ctx context.Context, args protocol.PermsSyncR
 }
 
 // SyncExternalService requests the given external service to be synced.
-func (c *Client) SyncExternalService(
-	ctx context.Context,
-	svc api.ExternalService,
-) (*protocol.ExternalServiceSyncResult, error) {
-	req := &protocol.ExternalServiceSyncRequest{ExternalServiceID: svc.ID, ExternalService: svc}
+func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error) {
+	req := &protocol.ExternalServiceSyncRequest{ExternalServiceID: externalServiceID}
 	resp, err := c.httpPost(ctx, "sync-external-service", req)
 	if err != nil {
 		return nil, err
@@ -253,8 +250,6 @@ func (c *Client) SyncExternalService(
 
 	var result protocol.ExternalServiceSyncResult
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		// TODO(tsenart): Use response type for unmarshalling errors too.
-		// This needs to be done after rolling out the response type in prod.
 		return nil, errors.New(string(bs))
 	} else if len(bs) == 0 {
 		return &result, nil

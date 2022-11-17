@@ -7,23 +7,27 @@ import type * as sourcegraph from 'sourcegraph'
 import { encodeURIPathComponent } from '@sourcegraph/common'
 import { ExtensionManifest } from '@sourcegraph/shared/src/extensions/extensionManifest'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { DiffHunkLineType, RepositoryContributorsResult, WebGraphQlOperations } from '../graphql-operations'
+import {
+    DiffHunkLineType,
+    RepositoryContributorsResult,
+    WebGraphQlOperations,
+    ExternalServiceKind,
+} from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import {
-    createRepositoryRedirectResult,
-    createResolveRevisionResult,
+    createResolveRepoRevisionResult,
     createFileExternalLinksResult,
     createTreeEntriesResult,
     createBlobContentResult,
     createRepoChangesetsStatsResult,
     createFileNamesResult,
+    createResolveCloningRepoRevisionResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants } from './utils'
@@ -34,9 +38,8 @@ export const getCommonRepositoryGraphQlResults = (
     fileEntries: string[] = []
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
     ...commonWebGraphQlResults,
-    RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
     RepoChangesetsStats: () => createRepoChangesetsStatsResult(),
-    ResolveRev: () => createResolveRevisionResult(repositoryName),
+    ResolveRepoRev: () => createResolveRepoRevisionResult(repositoryName),
     FileNames: () => createFileNamesResult(),
     FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
     TreeEntries: () => createTreeEntriesResult(repositoryUrl, fileEntries),
@@ -278,7 +281,9 @@ describe('Repository', () => {
                             subject: 'update LSIF indexing CI workflow',
                             body: null,
                             author: {
+                                __typename: 'Signature',
                                 person: {
+                                    __typename: 'Person',
                                     avatarURL: '',
                                     name: 'garo (they/them)',
                                     email: 'gbrik@users.noreply.github.com',
@@ -288,7 +293,9 @@ describe('Repository', () => {
                                 date: '2020-04-29T18:40:54Z',
                             },
                             committer: {
+                                __typename: 'Signature',
                                 person: {
+                                    __typename: 'Person',
                                     avatarURL: '',
                                     name: 'GitHub',
                                     email: 'noreply@github.com',
@@ -299,12 +306,14 @@ describe('Repository', () => {
                             },
                             parents: [
                                 {
+                                    __typename: 'GitCommit',
                                     oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                     abbreviatedOID: '96c4efa',
                                     url:
                                         '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                 },
                                 {
+                                    __typename: 'GitCommit',
                                     oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                     abbreviatedOID: '9e615b1',
                                     url:
@@ -315,12 +324,14 @@ describe('Repository', () => {
                             canonicalURL: commitUrl,
                             externalURLs: [
                                 {
+                                    __typename: 'ExternalLink',
                                     url:
                                         'https://github.com/sourcegraph/jsonrpc2/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                                     serviceKind: ExternalServiceKind.GITHUB,
                                 },
                             ],
                             tree: {
+                                __typename: 'GitTree',
                                 canonicalURL:
                                     '/github.com/sourcegraph/jsonrpc2@15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                             },
@@ -569,6 +580,28 @@ describe('Repository', () => {
             assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
         })
 
+        it('shows repo cloning in progress page', async () => {
+            const shortRepositoryName = 'sourcegraph/jsonrpc2'
+            const repositoryName = `github.com/${shortRepositoryName}`
+            const repositorySourcegraphUrl = `/${repositoryName}`
+
+            testContext.overrideGraphQL({
+                ...commonWebGraphQlResults,
+                ...getCommonRepositoryGraphQlResults(repositoryName, repositorySourcegraphUrl, ['readme.md']),
+                // Return cloning error instead of the successful GraphQL result here.
+                ResolveRepoRev: () => createResolveCloningRepoRevisionResult(repositoryName),
+            })
+
+            await driver.page.goto(driver.sourcegraphBaseUrl + repositorySourcegraphUrl)
+
+            // Wait for clone in progress message before Percy snapshot.
+            await driver.page.waitForSelector('[data-testid="hero-page-subtitle"]')
+            // Verify that we show the respective message in the UI.
+            await assertSelectorHasText('[data-testid="hero-page-subtitle"]', 'Cloning in progress')
+
+            await percySnapshotWithVariants(driver.page, 'Repository cloning in progress page')
+        })
+
         it('works with spaces in the repository name', async () => {
             const shortRepositoryName = 'my org/repo with spaces'
             const repositoryName = `github.com/${shortRepositoryName}`
@@ -603,7 +636,7 @@ describe('Repository', () => {
             const repositoryName = `github.com/${shortRepositoryName}`
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
-                ResolveRev: () => createResolveRevisionResult(repositoryName),
+                ResolveRepoRev: () => createResolveRepoRevisionResult(repositoryName),
                 RepositoryGitCommits: () => ({
                     __typename: 'Query',
                     node: {
@@ -791,7 +824,6 @@ describe('Repository', () => {
                         },
                     },
                 }),
-                RepositoryRedirect: () => createRepositoryRedirectResult(repositoryName),
             })
             await driver.page.goto(driver.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph/-/commits')
             await driver.page.waitForSelector('[data-testid="commits-page"]', { visible: true })
@@ -1055,6 +1087,7 @@ describe('Repository', () => {
         }
 
         it('file decorations work on tree page and sidebar', async () => {
+            testContext.overrideJsContext({ enableLegacyExtensions: true })
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}`)
 
             try {

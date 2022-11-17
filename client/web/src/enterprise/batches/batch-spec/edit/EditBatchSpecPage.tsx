@@ -10,7 +10,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Icon, LoadingSpinner, H3, H4, Alert } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../components/HeroPage'
-import { useFeatureFlag } from '../../../../featureFlags/useFeatureFlag'
 import {
     CheckExecutorsAccessTokenResult,
     CheckExecutorsAccessTokenVariables,
@@ -18,7 +17,6 @@ import {
     GetBatchChangeToEditVariables,
     Scalars,
 } from '../../../../graphql-operations'
-// import { BatchSpecDownloadLink } from '../../BatchSpec'
 import { BatchSpecDownloadLink } from '../../BatchSpec'
 import { EXECUTORS, GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
@@ -165,12 +163,6 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
         false
     )
 
-    /**
-     * For managed instances we want to hide the `run server side` button by default. To do this we make use of a
-     * feature flag to ensure Managed Instances.
-     */
-    const [isRunBatchSpecButtonHidden] = useFeatureFlag('hide-run-batch-spec-for-mi', false)
-
     const activeExecutorsActionButtons = (
         <>
             <RunBatchSpecButton
@@ -214,15 +206,9 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 </Button>
             )}
 
-            {!isRunBatchSpecButtonHidden && (
-                <Button
-                    className={styles.downloadLink}
-                    variant="link"
-                    onClick={() => setIsRunServerSideModalOpen(true)}
-                >
-                    or run server-side
-                </Button>
-            )}
+            <Button className={styles.downloadLink} variant="link" onClick={() => setIsRunServerSideModalOpen(true)}>
+                or run server-side
+            </Button>
         </>
     )
 
@@ -275,13 +261,14 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
             ) : (
                 <div className={styles.form}>
                     <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
-                    <div className={styles.editorContainer}>
+                    <div className={styles.editorContainer} role="region" aria-label="batch spec editor">
                         <H4 as={H3} className={styles.header}>
                             Batch spec
                         </H4>
                         {executionAlert}
                         <MonacoBatchSpecEditor
                             autoFocus={true}
+                            batchChangeNamespace={batchChange.namespace}
                             batchChangeName={batchChange.name}
                             className={styles.editor}
                             isLightTheme={isLightTheme}

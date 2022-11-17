@@ -1,9 +1,8 @@
-import React, { useContext, useMemo } from 'react'
+import { useContext, useMemo, FC, HTMLAttributes } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { useDeepMemo, Text } from '@sourcegraph/wildcard'
+import { useDeepMemo, Text, Series } from '@sourcegraph/wildcard'
 
-import { Series } from '../../../../../charts'
 import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
 import {
     SeriesChart,
@@ -32,18 +31,17 @@ export interface LivePreviewSeries {
     stroke: string
 }
 
-interface LineChartLivePreviewProps {
+interface LineChartLivePreviewProps extends HTMLAttributes<HTMLElement> {
     disabled: boolean
     repositories: string
     stepValue: string
     step: InsightStep
     isAllReposMode: boolean
-    className?: string
     series: LivePreviewSeries[]
 }
 
-export const LineChartLivePreview: React.FunctionComponent<LineChartLivePreviewProps> = props => {
-    const { disabled, repositories, stepValue, step, series, isAllReposMode, className } = props
+export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
+    const { disabled, repositories, stepValue, step, series, isAllReposMode, ...attributes } = props
     const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
     const seriesToggleState = useSeriesToggle()
 
@@ -75,7 +73,7 @@ export const LineChartLivePreview: React.FunctionComponent<LineChartLivePreviewP
     const { state, update } = useLivePreview(getLivePreview)
 
     return (
-        <aside className={className}>
+        <aside {...attributes}>
             <LivePreviewUpdateButton disabled={disabled} onClick={update} />
 
             <LivePreviewCard>

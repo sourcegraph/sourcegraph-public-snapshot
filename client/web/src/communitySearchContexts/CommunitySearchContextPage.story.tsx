@@ -4,9 +4,8 @@ import { subDays } from 'date-fns'
 import { EMPTY, NEVER, Observable, of } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
+import { SearchContextFields } from '@sourcegraph/search'
 import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
@@ -18,7 +17,7 @@ import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
 import { useExperimentalFeatures } from '../stores'
-import { ThemePreference } from '../stores/themeState'
+import { ThemePreference } from '../theme'
 
 import { cncf } from './cncf'
 import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
@@ -48,7 +47,6 @@ const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = 
 }
 
 const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
-    forceUpdateTooltip: () => undefined,
     settings: NEVER,
     sourcegraphURL: '',
     requestGraphQL: () => EMPTY,
@@ -69,7 +67,7 @@ const authUser: AuthenticatedUser = {
         nodes: [
             { id: '0', settingsURL: '#', displayName: 'Acme Corp' },
             { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
-        ] as GQL.IOrg[],
+        ] as AuthenticatedUser['organizations']['nodes'],
     },
     tags: [],
     viewerCanAdminister: true,
@@ -79,13 +77,13 @@ const authUser: AuthenticatedUser = {
     emails: [],
 }
 
-const repositories: ISearchContextRepositoryRevisions[] = [
+const repositories: SearchContextFields['repositories'] = [
     {
         __typename: 'SearchContextRepositoryRevisions',
         repository: {
             __typename: 'Repository',
             name: 'github.com/example/example2',
-        } as IRepository,
+        },
         revisions: ['main'],
     },
     {
@@ -93,12 +91,12 @@ const repositories: ISearchContextRepositoryRevisions[] = [
         repository: {
             __typename: 'Repository',
             name: 'github.com/example/example1',
-        } as IRepository,
+        },
         revisions: ['main'],
     },
 ]
 
-const fetchCommunitySearchContext = (): Observable<ISearchContext> =>
+const fetchCommunitySearchContext = (): Observable<SearchContextFields> =>
     of({
         __typename: 'SearchContext',
         id: '1',
@@ -119,7 +117,7 @@ const commonProps = () =>
         settingsCascade: NOOP_SETTINGS_CASCADE,
         onThemePreferenceChange: action('onThemePreferenceChange'),
         parsedSearchQuery: 'r:golang/oauth2 test f:travis',
-        patternType: SearchPatternType.literal,
+        patternType: SearchPatternType.standard,
         setPatternType: action('setPatternType'),
         caseSensitive: false,
         extensionsController: { ...EXTENSIONS_CONTROLLER },

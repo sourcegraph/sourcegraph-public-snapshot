@@ -1,27 +1,27 @@
-import React, { useEffect, useCallback, useMemo } from 'react'
+import React, { useEffect, useCallback } from 'react'
 
 import * as H from 'history'
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { H1 } from '@sourcegraph/wildcard'
+import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { Heading, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { GitCommitFields, RepositoryFields, Scalars } from '../../graphql-operations'
+import { GitCommitFields, RepositoryFields, RepositoryGitCommitsResult, Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { externalLinkFieldsFragment } from '../backend'
-import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 
 import styles from './RepositoryCommitsPage.module.scss'
+
+type RepositoryGitCommitsRepository = Extract<RepositoryGitCommitsResult['node'], { __typename?: 'Repository' }>
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {
@@ -76,7 +76,7 @@ const fetchGitCommits = (args: {
     revspec: string
     first?: number
     query?: string
-}): Observable<GQL.IGitCommitConnection> =>
+}): Observable<NonNullable<RepositoryGitCommitsRepository['commit']>['ancestors']> =>
     queryGraphQL(
         gql`
             query RepositoryGitCommits($repo: ID!, $revspec: String!, $first: Int, $query: String) {
@@ -103,7 +103,7 @@ const fetchGitCommits = (args: {
             if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as GQL.IRepository
+            const repo = data.node as RepositoryGitCommitsRepository
             if (!repo.commit || !repo.commit.ancestors) {
                 throw createAggregateError(errors)
             }
@@ -111,19 +111,17 @@ const fetchGitCommits = (args: {
         })
     )
 
-interface Props
-    extends RepoHeaderContributionsLifecycleProps,
-        Partial<RevisionSpec>,
-        ResolvedRevisionSpec,
-        BreadcrumbSetters {
-    repo: RepositoryFields
+export interface RepositoryCommitsPageProps extends RevisionSpec, BreadcrumbSetters {
+    repo: RepositoryFields | undefined
 
     history: H.History
     location: H.Location
 }
 
+const BREADCRUMB = { key: 'commits', element: <>Commits</> }
+
 /** A page that shows a repository's commits at the current revision. */
-export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChildren<RepositoryCommitsPageProps>> = ({
     useBreadcrumb,
     ...props
 }) => {
@@ -131,19 +129,32 @@ export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChild
         eventLogger.logViewEvent('RepositoryCommits')
     }, [])
 
-    useBreadcrumb(useMemo(() => ({ key: 'commits', element: <>Commits</> }), []))
+    useBreadcrumb(BREADCRUMB)
 
     const queryCommits = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<GQL.IGitCommitConnection> =>
-            fetchGitCommits({ ...args, repo: props.repo.id, revspec: props.commitID }),
-        [props.repo.id, props.commitID]
+        (
+            args: FilteredConnectionQueryArguments
+        ): Observable<NonNullable<RepositoryGitCommitsRepository['commit']>['ancestors']> => {
+            if (!props.repo?.id) {
+                return of()
+            }
+
+            return fetchGitCommits({ ...args, repo: props.repo?.id, revspec: props.revision })
+        },
+        [props.repo?.id, props.revision]
     )
+
+    if (!props.repo) {
+        return <LoadingSpinner />
+    }
 
     return (
         <div className={styles.repositoryCommitsPage} data-testid="commits-page">
             <PageTitle title="Commits" />
             <div className={styles.content}>
-                <H1>View commits from this repository</H1>
+                <Heading as="h2" styleAs="h1">
+                    View commits from this repository
+                </Heading>
                 <FilteredConnection<
                     GitCommitFields,
                     Pick<GitCommitNodeProps, 'className' | 'compact' | 'wrapperElement'>

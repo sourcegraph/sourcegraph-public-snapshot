@@ -2,8 +2,8 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
@@ -40,9 +40,7 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "batch_spec_workspace_execution_worker_store",
 	TableName:         "batch_spec_workspace_execution_jobs",
 	ColumnExpressions: batchSpecWorkspaceExecutionJobColumnsWithNullQueue.ToSqlf(),
-	Scan: func(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-		return scanFirstBatchSpecWorkspaceExecutionJob(rows, err)
-	},
+	Scan:              dbworkerstore.BuildWorkerScan(buildRecordScanner(ScanBatchSpecWorkspaceExecutionJob)),
 	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_execution_jobs.place_in_global_queue"),
 	StalledMaxAge:     batchSpecWorkspaceExecutionJobStalledJobMaximumAge,
 	MaxNumResets:      batchSpecWorkspaceExecutionJobMaximumNumResets,
@@ -236,7 +234,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 			return false, errors.Wrap(err, "failed to build db changeset specs")
 		}
 		changesetSpec.BatchSpecID = batchSpec.ID
-		changesetSpec.RepoID = repo.ID
+		changesetSpec.BaseRepoID = repo.ID
 		changesetSpec.UserID = batchSpec.UserID
 
 		specs = append(specs, changesetSpec)
@@ -289,7 +287,6 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context
 }
 
 const setChangesetSpecIDsOnBatchSpecWorkspaceQueryFmtstr = `
--- source: enterprise/internal/batches/store/worker_workspace_execution.go:setChangesetSpecIDs
 UPDATE
 	batch_spec_workspaces
 SET
@@ -338,21 +335,16 @@ func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) []*batcheslib.
 		return nil
 	}
 
-	var (
-		entry workerutil.ExecutionLogEntry
-		found bool
-	)
+	entries := []*batcheslib.LogEvent{}
 
 	for _, e := range logs {
-		if e.Key == "step.src.0" {
-			entry = e
-			found = true
-			break
+		// V1 executions used either `step.src.0` or `step.src.batch-exec` (after named keys were introduced).
+		// From V2 on, every step has a step in the scheme of `step.docker.step.%d.post` that emits the
+		// AfterStepResult. This will be revised when we are able to upload artifacts from executions.
+		if strings.HasSuffix(e.Key, ".post") || e.Key == "step.src.0" || e.Key == "step.src.batch-exec" {
+			entries = append(entries, btypes.ParseJSONLogsFromOutput(e.Out)...)
 		}
 	}
-	if !found {
-		return nil
-	}
 
-	return btypes.ParseJSONLogsFromOutput(entry.Out)
+	return entries
 }

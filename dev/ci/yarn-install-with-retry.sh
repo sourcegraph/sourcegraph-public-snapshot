@@ -10,12 +10,12 @@ while : ; do
     echo "--- ✂️ timeout reached, aborting".
     exit 1
   fi
-  if yarn --mutex network --frozen-lockfile --network-timeout 30000 --silent "$@" 2> >(tee "$tmp_log">&2); then
+  if yarn --immutable --network-timeout 30000 "$@" 2> >(tee "$tmp_log">&2); then
     break
   fi
 
   if grep -q "An unexpected error occurred" < "$tmp_log"; then
-    echo "--- 🔌 possible transient error found, trying again..." 
+    echo "--- 🔌 possible transient error found, trying again..."
   else
     break
   fi

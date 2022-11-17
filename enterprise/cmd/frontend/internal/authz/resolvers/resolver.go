@@ -8,17 +8,19 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -32,16 +34,16 @@ type Resolver struct {
 	repoupdaterClient interface {
 		SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
 	}
+	syncJobsRecords interface {
+		Get(timestamp time.Time) (*syncjobs.Status, error)
+		GetAll(ctx context.Context, first int) ([]syncjobs.Status, error)
+	}
 }
 
-// checkLicense returns a user-facing error if the ACLs feature is not purchased
+// checkLicense returns a user-facing error if the provided feature is not purchased
 // with the current license or any error occurred while validating the licence.
-func (r *Resolver) checkLicense() error {
-	if !licensing.EnforceTiers {
-		return nil
-	}
-
-	err := licensing.Check(licensing.FeatureACLs)
+func (r *Resolver) checkLicense(feature licensing.Feature) error {
+	err := licensing.Check(feature)
 	if err != nil {
 		if licensing.IsFeatureNotActivated(err) {
 			return err
@@ -57,6 +59,7 @@ func NewResolver(db database.DB, clock func() time.Time) graphqlbackend.AuthzRes
 	return &Resolver{
 		db:                edb.NewEnterpriseDB(db),
 		repoupdaterClient: repoupdater.DefaultClient,
+		syncJobsRecords:   syncjobs.NewRecordsReader(),
 	}
 }
 
@@ -65,12 +68,12 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	if err := r.checkLicense(); err != nil {
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -136,11 +139,12 @@ func (r *Resolver) SetRepositoryPermissionsUnrestricted(ctx context.Context, arg
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
-	if err := r.checkLicense(); err != nil {
+
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
 		return nil, err
 	}
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -161,12 +165,12 @@ func (r *Resolver) SetRepositoryPermissionsUnrestricted(ctx context.Context, arg
 }
 
 func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *graphqlbackend.RepositoryIDArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.checkLicense(); err != nil {
+	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -185,12 +189,12 @@ func (r *Resolver) ScheduleRepositoryPermissionsSync(ctx context.Context, args *
 }
 
 func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphqlbackend.UserPermissionsSyncArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := r.checkLicense(); err != nil {
+	if err := r.checkLicense(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -213,16 +217,15 @@ func (r *Resolver) ScheduleUserPermissionsSync(ctx context.Context, args *graphq
 }
 
 func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.SubRepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
+		return nil, err
+	}
 	if envvar.SourcegraphDotComMode() {
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	if err := r.checkLicense(); err != nil {
-		return nil, err
-	}
-
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -253,14 +256,50 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 	}
 
 	for _, perm := range args.UserPermissions {
+		if (perm.PathIncludes == nil || perm.PathExcludes == nil) && perm.Paths == nil {
+			return nil, errors.New("either both pathIncludes and pathExcludes needs to be set, or paths needs to be set")
+		}
+	}
+
+	for _, perm := range args.UserPermissions {
 		userID, ok := mapping[perm.BindID]
 		if !ok {
 			return nil, errors.Errorf("user %q not found", perm.BindID)
 		}
 
+		var paths []string
+		if perm.Paths == nil {
+			paths = make([]string, 0, len(*perm.PathIncludes)+len(*perm.PathExcludes))
+			for _, include := range *perm.PathIncludes {
+				if !strings.HasPrefix(include, "/") { // ensure leading slash
+					include = "/" + include
+				}
+				paths = append(paths, include)
+			}
+			for _, exclude := range *perm.PathExcludes {
+				if !strings.HasPrefix(exclude, "/") { // ensure leading slash
+					exclude = "/" + exclude
+				}
+				paths = append(paths, "-"+exclude) // excludes start with a minus (-)
+			}
+		} else {
+			paths = make([]string, 0, len(*perm.Paths))
+			for _, path := range *perm.Paths {
+				if strings.HasPrefix(path, "-") {
+					if !strings.HasPrefix(path, "-/") {
+						path = "-/" + strings.TrimPrefix(path, "-")
+					}
+				} else {
+					if !strings.HasPrefix(path, "/") {
+						path = "/" + path
+					}
+				}
+				paths = append(paths, path)
+			}
+		}
+
 		if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
-			PathIncludes: perm.PathIncludes,
-			PathExcludes: perm.PathExcludes,
+			Paths: paths,
 		}); err != nil {
 			return nil, errors.Wrap(err, "upserting sub-repo permissions")
 		}
@@ -276,11 +315,11 @@ func (r *Resolver) SetRepositoryPermissionsForBitbucketProject(
 		return nil, errDisabledSourcegraphDotCom
 	}
 
-	if err := r.checkLicense(); err != nil {
+	if err := r.checkLicense(licensing.FeatureExplicitPermissionsAPI); err != nil {
 		return nil, err
 	}
 
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -320,7 +359,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 	}
 
 	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -381,7 +420,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 
 func (r *Resolver) UsersWithPendingPermissions(ctx context.Context) ([]string, error) {
 	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -390,7 +429,7 @@ func (r *Resolver) UsersWithPendingPermissions(ctx context.Context) ([]string, e
 
 func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.RepoAuthorizedUserArgs) (graphqlbackend.UserConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -424,6 +463,19 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 	}, nil
 }
 
+func (r *Resolver) AuthzProviderTypes(ctx context.Context) ([]string, error) {
+	// 🚨 SECURITY: Only site admins can query for authz providers.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+	_, providers := authz.GetProviders()
+	providerTypes := make([]string, 0, len(providers))
+	for _, p := range providers {
+		providerTypes = append(providerTypes, p.ServiceType())
+	}
+	return providerTypes, nil
+}
+
 var jobStatuses = map[string]bool{
 	"queued":     true,
 	"processing": true,
@@ -438,7 +490,7 @@ func (r *Resolver) BitbucketProjectPermissionJobs(ctx context.Context, args *gra
 		return nil, errDisabledSourcegraphDotCom
 	}
 	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	loweredAndTrimmedStatus := strings.ToLower(strings.TrimSpace(getOrDefault(args.Status)))
@@ -488,15 +540,15 @@ func (r *permissionsInfoResolver) Permissions() []string {
 	return strings.Split(strings.ToUpper(r.perms.String()), ",")
 }
 
-func (r *permissionsInfoResolver) SyncedAt() *graphqlbackend.DateTime {
+func (r *permissionsInfoResolver) SyncedAt() *gqlutil.DateTime {
 	if r.syncedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.syncedAt}
+	return &gqlutil.DateTime{Time: r.syncedAt}
 }
 
-func (r *permissionsInfoResolver) UpdatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.updatedAt}
+func (r *permissionsInfoResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.updatedAt}
 }
 
 func (r *permissionsInfoResolver) Unrestricted() bool {
@@ -505,7 +557,7 @@ func (r *permissionsInfoResolver) Unrestricted() bool {
 
 func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
 	// 🚨 SECURITY: Only site admins can query repository permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -541,7 +593,7 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 
 func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
 	// 🚨 SECURITY: Only site admins can query user permissions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -573,4 +625,41 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 		syncedAt:  p.SyncedAt,
 		updatedAt: p.UpdatedAt,
 	}, nil
+}
+
+func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend.PermissionsSyncJobsArgs) (graphqlbackend.PermissionsSyncJobsConnection, error) {
+	// 🚨 SECURITY: Only site admins can query sync jobs records.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	if args.First == 0 {
+		return nil, errors.Newf("expected non-zero 'first', got %d", args.First)
+	}
+
+	records, err := r.syncJobsRecords.GetAll(ctx, int(args.First))
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := &permissionsSyncJobsConnection{
+		jobs: make([]graphqlbackend.PermissionsSyncJobResolver, 0, len(records)),
+	}
+	for _, j := range records {
+		// If status is not provided, add all - otherwise, check if the job's status
+		// matches the argument status.
+		if args.Status == nil {
+			jobs.jobs = append(jobs.jobs, permissionsSyncJobResolver{j})
+		} else if j.Status == *args.Status {
+			jobs.jobs = append(jobs.jobs, permissionsSyncJobResolver{j})
+		}
+	}
+
+	return jobs, nil
+}
+
+func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
+	return map[string]graphqlbackend.NodeByIDFunc{
+		permissionsSyncJobKind: getPermissionsSyncJobByIDFunc(r),
+	}
 }

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -34,20 +35,20 @@ func TestLatestPingHandler(t *testing.T) {
 
 	tests := []struct {
 		desc     string
-		pingFn   func(ctx context.Context) (*types.Event, error)
+		pingFn   func(ctx context.Context) (*database.Event, error)
 		wantBody string
 	}{
 		{
 			desc: "with no ping events recorded",
-			pingFn: func(ctx context.Context) (*types.Event, error) {
-				return &types.Event{Argument: `{}`}, nil
+			pingFn: func(ctx context.Context) (*database.Event, error) {
+				return &database.Event{Argument: json.RawMessage(`{}`)}, nil
 			},
 			wantBody: `{}`,
 		},
 		{
 			desc: "with ping events recorded",
-			pingFn: func(ctx context.Context) (*types.Event, error) {
-				return &types.Event{Argument: `{"key": "value"}`}, nil
+			pingFn: func(ctx context.Context) (*database.Event, error) {
+				return &database.Event{Argument: json.RawMessage(`{"key": "value"}`)}, nil
 			},
 			wantBody: `{"key": "value"}`,
 		},

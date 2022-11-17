@@ -4,12 +4,10 @@ import { mdiPlus } from '@mdi/js'
 import * as H from 'history'
 import { Redirect } from 'react-router'
 import { Subject } from 'rxjs'
-import { tap } from 'rxjs/operators'
 
 import { isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Button, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
+import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
@@ -17,15 +15,20 @@ import { FilteredConnection, FilteredConnectionQueryArguments } from '../Filtere
 import { PageTitle } from '../PageTitle'
 
 import { queryExternalServices as _queryExternalServices } from './backend'
+import { ExternalServiceEditingDisabledAlert } from './ExternalServiceEditingDisabledAlert'
+import { ExternalServiceEditingTemporaryAlert } from './ExternalServiceEditingTemporaryAlert'
 import { ExternalServiceNodeProps, ExternalServiceNode } from './ExternalServiceNode'
 
-interface Props extends ActivationProps, TelemetryProps {
+interface Props extends TelemetryProps {
     history: H.History
     location: H.Location
     routingPrefix: string
     afterDeleteRoute: string
     userID?: Scalars['ID']
     authenticatedUser: Pick<AuthenticatedUser, 'id'>
+
+    externalServicesFromFile: boolean
+    allowEditExternalServicesWithFile: boolean
 
     /** For testing only. */
     queryExternalServices?: typeof _queryExternalServices
@@ -39,10 +42,11 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
     history,
     location,
     routingPrefix,
-    activation,
     userID,
     telemetryService,
     authenticatedUser,
+    externalServicesFromFile,
+    allowEditExternalServicesWithFile,
     queryExternalServices = _queryExternalServices,
 }) => {
     useEffect(() => {
@@ -57,16 +61,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                 first: args.first ?? null,
                 after: args.after ?? null,
                 namespace: userID ?? null,
-            }).pipe(
-                tap(externalServices => {
-                    if (activation && externalServices.totalCount > 0) {
-                        activation.update({ ConnectedCodeHost: true })
-                    }
-                })
-            ),
-        // Activation changes in here, so we cannot recreate the callback on change,
-        // or queryConnection will constantly change, resulting in infinite refetch loops.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+            }),
         [userID, queryExternalServices]
     )
 
@@ -78,6 +73,8 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
             setNoExternalServices(connection.totalCount === 0)
         }
     }, [])
+
+    const editingDisabled = !!externalServicesFromFile && !allowEditExternalServicesWithFile
 
     const isManagingOtherUser = !!userID && userID !== authenticatedUser.id
 
@@ -94,19 +91,23 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                 actions={
                     <>
                         {!isManagingOtherUser && (
-                            <Button
+                            <ButtonLink
                                 className="test-goto-add-external-service-page"
                                 to={`${routingPrefix}/external-services/new`}
                                 variant="primary"
                                 as={Link}
+                                disabled={editingDisabled}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
-                            </Button>
+                            </ButtonLink>
                         )}
                     </>
                 }
                 className="mb-3"
             />
+
+            {editingDisabled && <ExternalServiceEditingDisabledAlert />}
+            {externalServicesFromFile && allowEditExternalServicesWithFile && <ExternalServiceEditingTemporaryAlert />}
 
             <Container className="mb-3">
                 <FilteredConnection<
@@ -119,6 +120,7 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                     listClassName="list-group list-group-flush mb-0"
                     noun="code host"
                     pluralNoun="code hosts"
+                    withCenteredSummary={true}
                     queryConnection={queryConnection}
                     nodeComponent={ExternalServiceNode}
                     nodeComponentProps={{
@@ -126,9 +128,9 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
                         history,
                         routingPrefix,
                         afterDeleteRoute,
+                        editingDisabled,
                     }}
                     hideSearch={true}
-                    noSummaryIfAllNodesVisible={true}
                     cursorPaging={true}
                     updates={updates}
                     history={history}

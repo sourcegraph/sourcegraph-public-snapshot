@@ -7,13 +7,15 @@ import (
 )
 
 type Search struct {
+	Ctx       context.Context
 	DateRange string
+	Grouping  string
 	DB        database.DB
 	Cache     bool
 }
 
 func (s *Search) Searches() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"SearchResultsQueried"})
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.Ctx, s.DB, s.Cache, s.DateRange, s.Grouping, []string{"SearchResultsQueried"})
 	if err != nil {
 		return nil, err
 	}
@@ -21,6 +23,7 @@ func (s *Search) Searches() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
+		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Search:Searches",
@@ -29,7 +32,7 @@ func (s *Search) Searches() (*AnalyticsFetcher, error) {
 }
 
 func (s *Search) ResultClicks() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"SearchResultClicked"})
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.Ctx, s.DB, s.Cache, s.DateRange, s.Grouping, []string{"SearchResultClicked"})
 	if err != nil {
 		return nil, err
 	}
@@ -37,6 +40,7 @@ func (s *Search) ResultClicks() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
+		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Search:ResultClicked",
@@ -44,7 +48,7 @@ func (s *Search) ResultClicks() (*AnalyticsFetcher, error) {
 }
 
 func (s *Search) FileViews() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"ViewBlob"})
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.Ctx, s.DB, s.Cache, s.DateRange, s.Grouping, []string{"ViewBlob"})
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +56,7 @@ func (s *Search) FileViews() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
+		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Search:FileViews",
@@ -60,7 +65,7 @@ func (s *Search) FileViews() (*AnalyticsFetcher, error) {
 }
 
 func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.Ctx, s.DB, s.Cache, s.DateRange, s.Grouping, []string{
 		"GoToCodeHostClicked",
 		"vscode.open.file",
 		"openInAtom.open.file",
@@ -74,6 +79,7 @@ func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
 	return &AnalyticsFetcher{
 		db:           s.DB,
 		dateRange:    s.DateRange,
+		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "Search:FileOpens",
@@ -81,8 +87,25 @@ func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
 	}, nil
 }
 
+func (s *Search) CodeCopied() (*AnalyticsFetcher, error) {
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.Ctx, s.DB, s.Cache, s.DateRange, s.Grouping, []string{"CodeCopied"})
+	if err != nil {
+		return nil, err
+	}
+
+	return &AnalyticsFetcher{
+		db:           s.DB,
+		dateRange:    s.DateRange,
+		grouping:     s.Grouping,
+		nodesQuery:   nodesQuery,
+		summaryQuery: summaryQuery,
+		group:        "Search:CodeCopied",
+		cache:        s.Cache,
+	}, nil
+}
+
 func (s *Search) CacheAll(ctx context.Context) error {
-	fetcherBuilders := []func() (*AnalyticsFetcher, error){s.Searches, s.FileViews, s.FileOpens, s.ResultClicks}
+	fetcherBuilders := []func() (*AnalyticsFetcher, error){s.Searches, s.FileViews, s.FileOpens, s.ResultClicks, s.CodeCopied}
 	for _, buildFetcher := range fetcherBuilders {
 		fetcher, err := buildFetcher()
 		if err != nil {

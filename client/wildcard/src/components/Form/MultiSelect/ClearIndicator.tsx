@@ -3,7 +3,7 @@ import { ReactElement } from 'react'
 import { mdiClose } from '@mdi/js'
 import { components, ClearIndicatorProps } from 'react-select'
 
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon } from '../../Icon'
 
 import { MultiSelectOption } from './types'
 

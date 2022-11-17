@@ -7,18 +7,18 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"regexp/syntax"
 	"sort"
 	"strconv"
 	"testing"
 	"testing/iotest"
 
 	"github.com/grafana/regexp"
-	"github.com/grafana/regexp/syntax"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func BenchmarkSearchRegex_large_fixed(b *testing.B) {
@@ -87,6 +87,18 @@ func BenchmarkSearchRegex_large_re_anchor(b *testing.B) {
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
 			Pattern:         "^func +[A-Z]",
+			IsRegExp:        true,
+			IsCaseSensitive: true,
+		},
+	})
+}
+
+func BenchmarkSearchRegex_large_capture_group(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
+		Repo:   "github.com/golang/go",
+		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
+		PatternInfo: protocol.PatternInfo{
+			Pattern:         "(TODO|FIXME)",
 			IsRegExp:        true,
 			IsCaseSensitive: true,
 		},
@@ -162,6 +174,18 @@ func BenchmarkSearchRegex_small_re_anchor(b *testing.B) {
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
 			Pattern:         "^func +[A-Z]",
+			IsRegExp:        true,
+			IsCaseSensitive: true,
+		},
+	})
+}
+
+func BenchmarkSearchRegex_small_capture_group(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
+		Repo:   "github.com/sourcegraph/go-langserver",
+		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+		PatternInfo: protocol.PatternInfo{
+			Pattern:         "(TODO|FIXME)",
 			IsRegExp:        true,
 			IsCaseSensitive: true,
 		},
@@ -376,9 +400,8 @@ func TestPathMatches(t *testing.T) {
 	}
 
 	rg, err := compile(&protocol.PatternInfo{
-		Pattern:                "",
-		IncludePatterns:        []string{"a", "b"},
-		PathPatternsAreRegExps: true,
+		Pattern:         "",
+		IncludePatterns: []string{"a", "b"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -401,8 +424,9 @@ func TestPathMatches(t *testing.T) {
 
 // githubStore fetches from github and caches across test runs.
 var githubStore = &Store{
-	FetchTar: fetchTarFromGithub,
-	Path:     "/tmp/search_test/store",
+	FetchTar:           fetchTarFromGithub,
+	Path:               "/tmp/search_test/store",
+	ObservationContext: &observation.TestContext,
 }
 
 func fetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
@@ -416,7 +440,7 @@ func init() {
 }
 
 func TestRegexSearch(t *testing.T) {
-	match, err := pathmatch.CompilePathPatterns([]string{`a\.go`}, `README\.md`, pathmatch.CompileOptions{RegExp: true})
+	match, err := compilePathPatterns([]string{`a\.go`}, `README\.md`, false)
 	if err != nil {
 		t.Fatal(err)
 	}

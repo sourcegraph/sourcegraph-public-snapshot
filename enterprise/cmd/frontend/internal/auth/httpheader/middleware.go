@@ -8,6 +8,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -41,26 +42,21 @@ func Middleware(db database.DB) *auth.Middleware {
 // 🚨 SECURITY
 func middleware(db database.DB) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		const misconfiguredMessage = "Misconfigured http-header auth provider."
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authProvider, multiple := getProviderConfig()
-			if multiple {
-				log15.Error("At most 1 HTTP header auth provider may be set in site config.")
-				http.Error(w, misconfiguredMessage, http.StatusInternalServerError)
-				return
-			}
-			if authProvider == nil {
+			authProvider, ok := providers.GetProviderByConfigID(providers.ConfigID{Type: providerType}).(*provider)
+			if !ok {
 				next.ServeHTTP(w, r)
 				return
 			}
-			if authProvider.UsernameHeader == "" {
+
+			if authProvider.c.UsernameHeader == "" {
 				log15.Error("No HTTP header set for username (set the http-header auth provider's usernameHeader property).")
 				http.Error(w, "misconfigured http-header auth provider", http.StatusInternalServerError)
 				return
 			}
 
-			rawUsername := strings.TrimPrefix(r.Header.Get(authProvider.UsernameHeader), authProvider.StripUsernameHeaderPrefix)
-			rawEmail := strings.TrimPrefix(r.Header.Get(authProvider.EmailHeader), authProvider.StripUsernameHeaderPrefix)
+			rawUsername := strings.TrimPrefix(r.Header.Get(authProvider.c.UsernameHeader), authProvider.c.StripUsernameHeaderPrefix)
+			rawEmail := strings.TrimPrefix(r.Header.Get(authProvider.c.EmailHeader), authProvider.c.StripUsernameHeaderPrefix)
 
 			// Continue onto next auth provider if no header is set (in case the auth proxy allows
 			// unauthenticated users to bypass it, which some do). Also respect already authenticated
@@ -113,7 +109,7 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 				LookUpByUsername: rawEmail == "", // if the email is provided, we should look up by email, otherwise username
 			})
 			if err != nil {
-				log15.Error("unable to get/create user from SSO header", "header", authProvider.UsernameHeader, "rawUsername", rawUsername, "err", err, "userErr", safeErrMsg)
+				log15.Error("unable to get/create user from SSO header", "header", authProvider.c.UsernameHeader, "rawUsername", rawUsername, "err", err, "userErr", safeErrMsg)
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
 			}

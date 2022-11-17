@@ -1,11 +1,20 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
-import { Scalars } from '../../../../../graphql-operations'
+import { useHistory, useLocation } from 'react-router'
+import { delay, repeatWhen, retryWhen, filter, tap } from 'rxjs/operators'
+
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
+import { ConnectionError } from '../../../../../components/FilteredConnection/ui'
+import {
+    Scalars,
+    VisibleBatchSpecWorkspaceListFields,
+    HiddenBatchSpecWorkspaceListFields,
+} from '../../../../../graphql-operations'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
-import { useWorkspacesListConnection } from '../backend'
+import { queryWorkspacesList as _queryWorkspacesList } from '../backend'
 
 import { WorkspaceFilterRow, WorkspaceFilters } from './WorkspacesFilterRow'
-import { WorkspacesList } from './WorkspacesList'
+import { WorkspacesListItem, WorkspacesListItemProps } from './WorkspacesListItem'
 
 import styles from './Workspaces.module.scss'
 
@@ -15,18 +24,50 @@ export interface WorkspacesProps {
     selectedNode?: Scalars['ID']
     /** The URL path to the execution page this workspaces list is shown on. */
     executionURL: string
+    /** For testing only. */
+    queryWorkspacesList?: typeof _queryWorkspacesList
 }
 
 export const Workspaces: React.FunctionComponent<React.PropsWithChildren<WorkspacesProps>> = ({
     batchSpecID,
     selectedNode,
     executionURL,
+    queryWorkspacesList = _queryWorkspacesList,
 }) => {
-    const [filters, setFilters] = useState<WorkspaceFilters>()
-    const workspacesConnection = useWorkspacesListConnection(
-        batchSpecID,
-        filters?.search ?? null,
-        filters?.state ?? null
+    const history = useHistory()
+    const location = useLocation()
+
+    const [filters, setFilters] = useState<WorkspaceFilters>({ state: null, search: null })
+    const [error, setError] = useState<string>()
+
+    const queryWorkspacesListConnection = useCallback(
+        (args: FilteredConnectionQueryArguments) =>
+            queryWorkspacesList({
+                batchSpecID,
+                first: args.first ?? null,
+                after: args.after ?? null,
+                search: filters.search ?? null,
+                state: filters.state ?? null,
+            }).pipe(
+                repeatWhen(notifier => notifier.pipe(delay(2500))),
+                retryWhen(errors =>
+                    errors.pipe(
+                        filter(error => {
+                            // Capture the error, but don't throw it so the data in the
+                            // connection remains visible.
+                            setError(error)
+                            return true
+                        }),
+                        // Retry after 5s.
+                        delay(5000)
+                    )
+                ),
+                tap(() => {
+                    // Reset the error when the query succeeds.
+                    setError(undefined)
+                })
+            ),
+        [batchSpecID, filters.search, filters.state, queryWorkspacesList]
     )
 
     return (
@@ -34,10 +75,29 @@ export const Workspaces: React.FunctionComponent<React.PropsWithChildren<Workspa
             <WorkspacesListHeader>Workspaces</WorkspacesListHeader>
             <WorkspaceFilterRow onFiltersChange={setFilters} />
             <div className={styles.listContainer}>
-                <WorkspacesList
-                    workspacesConnection={workspacesConnection}
-                    selectedNode={selectedNode}
-                    executionURL={executionURL}
+                {error && <ConnectionError errors={[error]} className="mb-2" />}
+                {/* We need to use FilteredConnection over the new composable API here because we
+                still have to use observables for this connection query. See query docstring for
+                more details. */}
+                <FilteredConnection<
+                    VisibleBatchSpecWorkspaceListFields | HiddenBatchSpecWorkspaceListFields,
+                    Omit<WorkspacesListItemProps, 'node'>
+                >
+                    nodeComponent={WorkspacesListItem}
+                    nodeComponentProps={{
+                        selectedNode,
+                        executionURL,
+                    }}
+                    queryConnection={queryWorkspacesListConnection}
+                    hideSearch={true}
+                    history={history}
+                    location={location}
+                    defaultFirst={20}
+                    noun="workspace"
+                    pluralNoun="workspaces"
+                    useURLQuery={true}
+                    noSummaryIfAllNodesVisible={true}
+                    withCenteredSummary={true}
                 />
             </div>
         </div>

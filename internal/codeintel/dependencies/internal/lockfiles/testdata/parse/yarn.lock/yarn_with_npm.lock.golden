@@ -1,8 +1,0 @@
-{
-  "Dependencies": [
-    "jquery@3.6.0"
-  ],
-  "Graph": {
-    "jquery@3.6.0": {}
-  }
-}

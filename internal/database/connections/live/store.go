@@ -14,6 +14,7 @@ import (
 type Store interface {
 	runner.Store
 	EnsureSchemaTable(ctx context.Context) error
+	BackfillSchemaVersions(ctx context.Context) error
 }
 
 type StoreFactory func(db *sql.DB, migrationsTable string) Store
@@ -28,6 +29,14 @@ func initStore(ctx context.Context, newStore StoreFactory, db *sql.DB, schema *s
 	store := newStore(db, schema.MigrationsTableName)
 
 	if err := store.EnsureSchemaTable(ctx); err != nil {
+		if closeErr := db.Close(); closeErr != nil {
+			err = errors.Append(err, closeErr)
+		}
+
+		return nil, err
+	}
+
+	if err := store.BackfillSchemaVersions(ctx); err != nil {
 		if closeErr := db.Close(); closeErr != nil {
 			err = errors.Append(err, closeErr)
 		}

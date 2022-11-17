@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 )
 
 type EngineType int
@@ -19,6 +20,15 @@ const (
 	EngineTreeSitter
 	EngineSyntect
 )
+
+// Converts an engine type to the corresponding parameter value for the syntax
+// highlighting request. Defaults to "syntec".
+func getEngineParameter(engine EngineType) string {
+	if engine == EngineTreeSitter {
+		return gosyntect.SyntaxEngineTreesitter
+	}
+	return gosyntect.SyntaxEngineSyntect
+}
 
 type SyntaxEngineQuery struct {
 	Engine           EngineType

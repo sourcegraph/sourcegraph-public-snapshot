@@ -40,12 +40,7 @@ func TestExternalService(t *testing.T) {
 		if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 			t.Fatal(err)
 		}
-		defer func() {
-			err := client.DeleteExternalService(esID, false)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
+		removeExternalServiceAfterTest(t, esID)
 
 		err = client.WaitForReposToBeCloned(slug)
 		if err != nil {
@@ -99,12 +94,7 @@ func TestExternalService_AWSCodeCommit(t *testing.T) {
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
-	defer func() {
-		err := client.DeleteExternalService(esID, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+	removeExternalServiceAfterTest(t, esID)
 
 	const repoName = "aws/test"
 	err = client.WaitForReposToBeCloned(repoName)
@@ -151,12 +141,7 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
-	defer func() {
-		err := client.DeleteExternalService(esID, false)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+	removeExternalServiceAfterTest(t, esID)
 
 	const repoName = "bbs/SOURCEGRAPH/jsonrpc2"
 	err = client.WaitForReposToBeCloned(repoName)
@@ -176,43 +161,56 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 }
 
 func TestExternalService_Perforce(t *testing.T) {
-	checkPerforceEnvironment(t)
-	createPerforceExternalService(t)
-
 	const repoName = "perforce/test-perms"
-	err := client.WaitForReposToBeCloned(repoName)
-	if err != nil {
-		t.Fatal(err)
-	}
 
-	blob, err := client.GitBlob(repoName, "master", "README.md")
-	if err != nil {
-		t.Fatal(err)
-	}
+	run := func(t *testing.T, useFusion bool) {
+		checkPerforceEnvironment(t)
+		// Make sure the repo wasn't already cloned by another test
+		if err := client.DeleteRepoFromDiskByName(repoName); err != nil {
+			t.Fatal(err)
+		}
+		createPerforceExternalService(t, useFusion)
 
-	wantBlob := `This depot is used to test user and group permissions.
+		err := client.WaitForReposToBeCloned(repoName)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		blob, err := client.GitBlob(repoName, "master", "README.md")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		wantBlob := `This depot is used to test user and group permissions.
 `
-	if diff := cmp.Diff(wantBlob, blob); diff != "" {
-		t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wantBlob, blob); diff != "" {
+			t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
+		}
 	}
+
+	t.Run("git-p4", func(t *testing.T) {
+		run(t, false)
+	})
+	t.Run("p4-fusion", func(t *testing.T) {
+		run(t, true)
+	})
 }
 
 func checkPerforceEnvironment(t *testing.T) {
-	// context: https://sourcegraph.slack.com/archives/C07KZF47K/p1658178309055259
-	// But it seems that there is still an issue with P4 and they're currently timing out.
-	// cc @mollylogue
-	t.Skip("Currently broken")
-
 	if len(*perforcePort) == 0 || len(*perforceUser) == 0 || len(*perforcePassword) == 0 {
 		t.Skip("Environment variables PERFORCE_PORT, PERFORCE_USER or PERFORCE_PASSWORD are not set")
 	}
 }
 
-func createPerforceExternalService(t *testing.T) {
+func createPerforceExternalService(t *testing.T, useP4Fusion bool) {
 	t.Helper()
 
 	type Authorization = struct {
 		SubRepoPermissions bool `json:"subRepoPermissions"`
+	}
+	type FusionClient = struct {
+		Enabled   bool `json:"enabled"`
+		LookAhead int  `json:"lookAhead,omitempty"`
 	}
 
 	// Set up external service
@@ -225,6 +223,7 @@ func createPerforceExternalService(t *testing.T) {
 			P4Password            string        `json:"p4.passwd"`
 			Depots                []string      `json:"depots"`
 			RepositoryPathPattern string        `json:"repositoryPathPattern"`
+			FusionClient          FusionClient  `json:"fusionClient"`
 			Authorization         Authorization `json:"authorization"`
 		}{
 			P4Port:                *perforcePort,
@@ -232,6 +231,10 @@ func createPerforceExternalService(t *testing.T) {
 			P4Password:            *perforcePassword,
 			Depots:                []string{"//test-perms/"},
 			RepositoryPathPattern: "perforce/{depot}",
+			FusionClient: FusionClient{
+				Enabled:   useP4Fusion,
+				LookAhead: 2000,
+			},
 			Authorization: Authorization{
 				SubRepoPermissions: true,
 			},
@@ -243,12 +246,7 @@ func createPerforceExternalService(t *testing.T) {
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() {
-		err := client.DeleteExternalService(esID, true)
-		if err != nil {
-			t.Fatal(err)
-		}
-	})
+	removeExternalServiceAfterTest(t, esID)
 }
 
 func TestExternalService_AsyncDeletion(t *testing.T) {
@@ -298,4 +296,14 @@ func TestExternalService_AsyncDeletion(t *testing.T) {
 	if !strings.Contains(err.Error(), "external service not found") {
 		t.Fatalf("Not found error should be returned, got: %s", err.Error())
 	}
+}
+
+func removeExternalServiceAfterTest(t *testing.T, esID string) {
+	t.Helper()
+	t.Cleanup(func() {
+		err := client.DeleteExternalService(esID, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
 }

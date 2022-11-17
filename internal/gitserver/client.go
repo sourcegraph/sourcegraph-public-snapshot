@@ -25,6 +25,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
@@ -57,7 +58,6 @@ var (
 
 var ClientMocks, emptyClientMocks struct {
 	GetObject               func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
-	RepoInfo                func(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error)
 	Archive                 func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
 	LocalGitserver          bool
 	LocalGitCommandReposDir string
@@ -71,25 +71,14 @@ func ResetClientMocks() {
 
 var _ Client = &clientImplementor{}
 
-// NewClient returns a new gitserver.Client instantiated with default arguments
-// and httpcli.Doer.
+// NewClient returns a new gitserver.Client.
 func NewClient(db database.DB) Client {
-	return newClientImplementor(db)
-}
-
-func newClientImplementor(db database.DB) *clientImplementor {
 	return &clientImplementor{
-		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client instantiated with default arguments and httpcli.Doer."),
+		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client"),
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
-		pinned: func() map[string]string {
-			cfg := conf.Get()
-			if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.GitServerPinnedRepos != nil {
-				return cfg.ExperimentalFeatures.GitServerPinnedRepos
-			}
-			return map[string]string{}
-		},
+		pinned:      pinnedReposFromConfig,
 		db:          db,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
@@ -101,16 +90,15 @@ func newClientImplementor(db database.DB) *clientImplementor {
 	}
 }
 
+// NewTestClient returns a test client that will use the given hard coded list of
+// addresses instead of reading them from config.
 func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 	return &clientImplementor{
 		logger: sglog.Scoped("NewTestClient", "Test New client"),
 		addrs: func() []string {
 			return addrs
 		},
-		pinned: func() map[string]string {
-			// nothing needs to be pinned for the tests
-			return conf.Get().ExperimentalFeatures.GitServerPinnedRepos
-		},
+		pinned:      pinnedReposFromConfig,
 		httpClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
 		// Use the binary name for userAgent. This should effectively identify
@@ -120,6 +108,77 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 		db:         db,
 		operations: newOperations(&observation.TestContext),
 	}
+}
+
+// NewMockClientWithExecReader return new MockClient with provided mocked
+// behaviour of ExecReader function.
+func NewMockClientWithExecReader(execReader func(context.Context, api.RepoName, []string) (io.ReadCloser, error)) *MockClient {
+	client := NewMockClient()
+	// NOTE: This hook is the same as DiffFunc, but with `execReader` used above
+	client.DiffFunc.SetDefaultHook(func(ctx context.Context, opts DiffOptions, checker authz.SubRepoPermissionChecker) (*DiffFileIterator, error) {
+		if opts.Base == DevNullSHA {
+			opts.RangeType = ".."
+		} else if opts.RangeType != ".." {
+			opts.RangeType = "..."
+		}
+
+		rangeSpec := opts.Base + opts.RangeType + opts.Head
+		if strings.HasPrefix(rangeSpec, "-") || strings.HasPrefix(rangeSpec, ".") {
+			return nil, errors.Errorf("invalid diff range argument: %q", rangeSpec)
+		}
+
+		// Here is where all the mocking happens!
+		rdr, err := execReader(ctx, opts.Repo, append([]string{
+			"diff",
+			"--find-renames",
+			"--full-index",
+			"--inter-hunk-context=3",
+			"--no-prefix",
+			rangeSpec,
+			"--",
+		}, opts.Paths...))
+		if err != nil {
+			return nil, errors.Wrap(err, "executing git diff")
+		}
+
+		return &DiffFileIterator{
+			rdr:            rdr,
+			mfdr:           diff.NewMultiFileDiffReader(rdr),
+			fileFilterFunc: getFilterFunc(ctx, checker, opts.Repo),
+		}, nil
+	})
+
+	// NOTE: This hook is the same as DiffPath, but with `execReader` used above
+	client.DiffPathFunc.SetDefaultHook(func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
+		a := actor.FromContext(ctx)
+		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil {
+			return nil, err
+		} else if !hasAccess {
+			return nil, os.ErrNotExist
+		}
+		// Here is where all the mocking happens!
+		reader, err := execReader(ctx, repo, []string{"diff", sourceCommit, targetCommit, "--", path})
+		if err != nil {
+			return nil, err
+		}
+		defer reader.Close()
+
+		output, err := io.ReadAll(reader)
+		if err != nil {
+			return nil, err
+		}
+		if len(output) == 0 {
+			return nil, nil
+		}
+
+		d, err := diff.NewFileDiffReader(bytes.NewReader(output)).Read()
+		if err != nil {
+			return nil, err
+		}
+		return d.Hunks, nil
+	})
+
+	return client
 }
 
 // clientImplementor is a gitserver client.
@@ -164,9 +223,6 @@ type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(context.Context, api.RepoName) (string, error)
 
-	// Archive produces an archive from a Git repository.
-	Archive(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
-
 	// ArchiveReader streams back the file contents of an archived git repo.
 	ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options ArchiveOptions) (io.ReadCloser, error)
 
@@ -183,19 +239,12 @@ type Client interface {
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
 
 	// GetDefaultBranch returns the name of the default branch and the commit it's
-	// currently at from the given repository.
+	// currently at from the given repository. If short is true, then `main` instead
+	// of `refs/heads/main` would be returned.
 	//
 	// If the repository is empty or currently being cloned, empty values and no
 	// error are returned.
-	GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error)
-
-	// GetDefaultBranchShort returns the short name of the default branch for the
-	// given repository and the commit it's currently at. A short name would return
-	// something like `main` instead of `refs/heads/main`.
-	//
-	// If the repository is empty or currently being cloned, empty values and no
-	// error are returned.
-	GetDefaultBranchShort(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error)
+	GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error)
 
 	// GetObject fetches git object data in the supplied repo
 	GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
@@ -245,15 +294,6 @@ type Client interface {
 	// into an equivalent set of commit hashes
 	ResolveRevisions(_ context.Context, repo api.RepoName, _ []protocol.RevisionSpecifier) ([]string, error)
 
-	// RepoInfo retrieves information about one or more repositories on gitserver.
-	//
-	// The repository not existing is not an error; in that case, RepoInfoResponse.Results[i].Cloned
-	// will be false and the error will be nil.
-	//
-	// If multiple errors occurred, an incomplete result is returned along with an
-	// error.errors.
-	RepoInfo(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error)
-
 	// ReposStats will return a map of the ReposStats for each gitserver in a
 	// map. If we fail to fetch a stat from a gitserver, it won't be in the
 	// returned map and will be appended to the error. If no errors occur err will
@@ -274,6 +314,9 @@ type Client interface {
 	// recently (within the Since duration specified in the request), the
 	// update won't happen.
 	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
+
+	// RequestRepoClone is an asynchronous request to clone a repository.
+	RequestRepoClone(context.Context, api.RepoName) (*protocol.RepoCloneResponse, error)
 
 	// Search executes a search as specified by args, streaming the results as
 	// it goes by calling onMatches with each set of results it receives in
@@ -368,6 +411,11 @@ type Client interface {
 	// LsFiles returns the output of `git ls-files`
 	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
 
+	// LFSSmudge returns a reader of the contents from LFS of the LFS pointer
+	// at path. If the path is not an LFS pointer, the file contents from git
+	// are returned instead.
+	LFSSmudge(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error)
+
 	// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
 	// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
 	// their associated repository or commit are unresolvable.
@@ -388,9 +436,8 @@ type Client interface {
 	// revspecs).
 	GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error)
 
-	// ShortLog
-	// TODO: Rename to something like PersonCount?
-	ShortLog(ctx context.Context, repo api.RepoName, opt ShortLogOptions) ([]*gitdomain.PersonCount, error)
+	// ContributorCount returns the number of commits grouped by contributor
+	ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error)
 
 	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
 	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
@@ -543,67 +590,6 @@ func (c *clientImplementor) archiveURL(ctx context.Context, repo api.RepoName, o
 	}, nil
 }
 
-func (c *clientImplementor) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error) {
-	if ClientMocks.Archive != nil {
-		return ClientMocks.Archive(ctx, repo, opt)
-	}
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
-	span.SetTag("Repo", repo)
-	span.SetTag("Treeish", opt.Treeish)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(log.Error(err))
-		}
-		span.Finish()
-	}()
-
-	// Check that ctx is not expired.
-	if err := ctx.Err(); err != nil {
-		deadlineExceededCounter.Inc()
-		return nil, err
-	}
-
-	u, err := c.archiveURL(ctx, repo, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-		return &archiveReader{
-			base: &cmdReader{
-				rc:      resp.Body,
-				trailer: resp.Trailer,
-			},
-			repo: repo,
-			spec: opt.Treeish,
-		}, nil
-	case http.StatusNotFound:
-		var payload protocol.NotFoundPayload
-		if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-			resp.Body.Close()
-			return nil, err
-		}
-		resp.Body.Close()
-		return nil, &badRequestError{
-			error: &gitdomain.RepoNotExistError{
-				Repo:            repo,
-				CloneInProgress: payload.CloneInProgress,
-				CloneProgress:   payload.CloneProgress,
-			},
-		}
-	default:
-		resp.Body.Close()
-		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-}
-
 type badRequestError struct{ error }
 
 func (e badRequestError) BadRequest() bool { return true }
@@ -633,6 +619,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, _ htt
 		Repo:           repoName,
 		EnsureRevision: c.EnsureRevision(),
 		Args:           c.args[1:],
+		Stdin:          c.stdin,
 		NoTimeout:      c.noTimeout,
 	}
 	resp, err := c.execFn(ctx, repoName, "exec", req)
@@ -751,16 +738,12 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 		return nil, nil, err
 	}
 
-	switch resp.StatusCode {
-	case http.StatusOK:
-		return resp.Body, resp.Trailer, nil
-
-	default:
-		// Read response body at best effort
-		body, _ := io.ReadAll(resp.Body)
-		_ = resp.Body.Close()
-		return nil, nil, errors.Errorf("unexpected status code: %d - %s", resp.StatusCode, body)
+	if resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close()
+		return nil, nil, errors.Errorf("unexpected status code: %d - %s", resp.StatusCode, readResponseBody(resp.Body))
 	}
+
+	return resp.Body, resp.Trailer, nil
 }
 
 var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
@@ -818,8 +801,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		logger.Log(log.Int("resp.StatusCode", resp.StatusCode))
 
 		if resp.StatusCode != http.StatusOK {
-			body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-			return errors.Newf("http status %d: %s", resp.StatusCode, body)
+			return errors.Newf("http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200)))
 		}
 
 		var response protocol.BatchLogResponse
@@ -949,8 +931,11 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, body)}
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "RepoInfo",
+			Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
 	}
 
 	var info *protocol.RepoUpdateResponse
@@ -980,17 +965,39 @@ func (c *clientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
 		return nil, &url.Error{
 			URL: resp.Request.URL.String(),
 			Op:  "RepoMigrate",
-			Err: errors.Errorf("RepoMigrate: http status %d: %s", resp.StatusCode, body),
+			Err: errors.Errorf("RepoMigrate: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
 		}
 	}
 
 	var info *protocol.RepoUpdateResponse
 	err = json.NewDecoder(resp.Body).Decode(&info)
 
+	return info, err
+}
+
+// RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
+func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
+	req := &protocol.RepoCloneRequest{
+		Repo: repo,
+	}
+	resp, err := c.httpPost(ctx, repo, "repo-clone", req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "RepoInfo",
+			Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
+	}
+
+	var info *protocol.RepoCloneResponse
+	err = json.NewDecoder(resp.Body).Decode(&info)
 	return info, err
 }
 
@@ -1010,16 +1017,12 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 		return err
 	}
 	defer r.Body.Close()
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return err
-	}
 	if r.StatusCode != http.StatusOK {
-		return errors.Errorf("gitserver error (status code %d): %s", r.StatusCode, string(body))
+		return errors.Errorf("gitserver error (status code %d): %s", r.StatusCode, readResponseBody(r.Body))
 	}
 
 	var resp protocol.IsRepoCloneableResponse
-	if err := json.Unmarshal(body, &resp); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&resp); err != nil {
 		return err
 	}
 
@@ -1125,101 +1128,6 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 	return &res, err
 }
 
-func (c *clientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
-	if ClientMocks.RepoInfo != nil {
-		return ClientMocks.RepoInfo(ctx, repos...)
-	}
-
-	totalShards := len(c.Addrs())
-	shards := make(map[string]*protocol.RepoInfoRequest, totalShards)
-
-	// Build a map of each shards -> [list of repos that belong to that shard]. We do this so that
-	// we can send only one request with the entire list of repos for that shard. This allows us to
-	// get away with making only N HTTP requests, where N is the total number of shards.
-	for _, r := range repos {
-		addr, err := c.AddrForRepo(ctx, r)
-		if err != nil {
-			return nil, err
-		}
-
-		repoInfoReq := shards[addr]
-		if repoInfoReq == nil {
-			repoInfoReq = new(protocol.RepoInfoRequest)
-			shards[addr] = repoInfoReq
-		}
-
-		repoInfoReq.Repos = append(repoInfoReq.Repos, r)
-	}
-
-	type op struct {
-		req *protocol.RepoInfoRequest
-		res *protocol.RepoInfoResponse
-		err error
-	}
-
-	ch := make(chan op, len(shards))
-	for _, req := range shards {
-		go func(o op) {
-			var resp *http.Response
-			resp, o.err = c.httpPost(ctx, o.req.Repos[0], "repos", o.req)
-			if o.err != nil {
-				ch <- o
-				return
-			}
-
-			defer resp.Body.Close()
-			if resp.StatusCode != http.StatusOK {
-				msg := fmt.Sprintf("RepoInfo: http status code: %d", resp.StatusCode)
-				content, err := io.ReadAll(resp.Body)
-				if err != nil {
-					msg = fmt.Sprintf("%s, failed to read response body, error: %v", msg, err)
-				}
-
-				// strings.TrimSpace is needed to remove trailing \n characters that is added by the
-				// server. We use http.Error in the server which in turn uses fmt.Fprintln to format
-				// the error message. And in translation that newline gets escapted into a \n
-				// character.  For what the error message would look in the UI without
-				// strings.TrimSpace, see attached screenshots in this pull request:
-				// https://github.com/sourcegraph/sourcegraph/pull/39358.
-				msg = fmt.Sprintf("%s, reason: %q", msg, strings.TrimSpace(string(content)))
-
-				o.err = &url.Error{
-					URL: resp.Request.URL.String(),
-					Op:  "RepoInfo",
-					Err: errors.New(msg),
-				}
-
-				ch <- o
-				return // we never get an error status code AND result
-			}
-
-			o.res = new(protocol.RepoInfoResponse)
-			o.err = json.NewDecoder(resp.Body).Decode(o.res)
-			ch <- o
-		}(op{req: req})
-	}
-
-	var err error
-	res := protocol.RepoInfoResponse{
-		Results: make(map[api.RepoName]*protocol.RepoInfo),
-	}
-
-	for i := 0; i < cap(ch); i++ {
-		o := <-ch
-
-		if o.err != nil {
-			err = errors.Append(err, o.err)
-			continue
-		}
-
-		for repo, info := range o.res.Results {
-			res.Results[repo] = info
-		}
-	}
-
-	return &res, err
-}
-
 func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
@@ -1235,12 +1143,7 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 }
 
 func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*protocol.ReposStats, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", "http://"+addr+"/repos-stats", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.do(ctx, "", "GET", fmt.Sprintf("http://%s/repos-stats", addr), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1281,9 +1184,11 @@ func (c *clientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, f
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		// best-effort inclusion of body in error message
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return &url.Error{URL: resp.Request.URL.String(), Op: "RepoRemove", Err: errors.Errorf("RepoRemove: http status %d: %s", resp.StatusCode, string(body))}
+		return &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "RepoRemove",
+			Err: errors.Errorf("RepoRemove: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		}
 	}
 	return nil
 }
@@ -1317,8 +1222,11 @@ func (c *clientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoNa
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
-//nolint:unparam // unparam complains that `method` always has same value across call-sites, but that's OK
-// do performs a request to a gitserver instance based on the address in the uri argument.
+// do performs a request to a gitserver instance based on the address in the uri
+// argument.
+//
+// Repo parameter is optional. If it is provided, then "repo" attribute is added
+// to trace span.
 func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
@@ -1327,6 +1235,11 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
 	defer func() {
+		if repo != "" {
+			span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
+		} else {
+			span.LogKV("method", method, "path", parsedURL.Path)
+		}
 		span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -1342,6 +1255,10 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", c.userAgent)
+
+	// Set header so that the server knows the request is from us.
+	req.Header.Set("X-Requested-With", "Sourcegraph")
+
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {
@@ -1360,23 +1277,28 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
 	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
-
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
+	if resp.StatusCode != http.StatusOK {
 		c.logger.Warn("reading gitserver create-commit-from-patch response", sglog.Error(err))
-		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: errors.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, err.Error())}
+		return "", &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "CreateCommitFromPatch",
+			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.Status, readResponseBody(resp.Body)),
+		}
 	}
 
 	var res protocol.CreateCommitFromPatchResponse
-	err = json.Unmarshal(data, &res)
-	if err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
-		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: errors.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, string(data))}
+		return "", &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "CreateCommitFromPatch",
+			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %v", resp.StatusCode, err),
+		}
 	}
 
 	if res.Error != nil {
@@ -1400,17 +1322,23 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
+	if resp.StatusCode != http.StatusOK {
 		c.logger.Warn("reading gitserver get-object response", sglog.Error(err))
-		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "GetObject", Err: errors.Errorf("GetObject: http status %d %s", resp.StatusCode, err.Error())}
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "GetObject",
+			Err: errors.Errorf("GetObject: http status %d, %s", resp.StatusCode, readResponseBody(resp.Body)),
+		}
 	}
 
 	var res protocol.GetObjectResponse
-	err = json.Unmarshal(data, &res)
-	if err != nil {
+	if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		c.logger.Warn("decoding gitserver get-object response", sglog.Error(err))
-		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "GetObject", Err: errors.Errorf("GetObject: http status %d %s", resp.StatusCode, string(data))}
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "GetObject",
+			Err: errors.Errorf("GetObject: http status %d, failed to decode response body: %v", resp.StatusCode, err),
+		}
 	}
 
 	return &res.Object, nil
@@ -1477,4 +1405,38 @@ func shouldUseRendezvousHashing(ctx context.Context, db database.DB, repo string
 func getPinnedRepoAddr(repo string, pinnedServers map[string]string) (bool, string) {
 	pinned, found := pinnedServers[repo]
 	return found, pinned
+}
+
+// readResponseBody will attempt to read the body of the HTTP response and return it as a
+// string. However, in the unlikely scenario that it fails to read the body, it will encode and
+// return the error message as a string.
+//
+// This allows us to use this function directly without yet another if err != nil check. As a
+// result, this function should **only** be used when we're attempting to return the body's content
+// as part of an error. In such scenarios we don't need to return the potential error from reading
+// the body, but can get away with returning that error as a string itself.
+//
+// This is an unusual pattern of not returning an error. Be careful of replicating this in other
+// parts of the code.
+func readResponseBody(body io.Reader) string {
+	content, err := io.ReadAll(body)
+	if err != nil {
+		return fmt.Sprintf("failed to read response body, error: %v", err)
+	}
+
+	// strings.TrimSpace is needed to remove trailing \n characters that is added by the
+	// server. We use http.Error in the server which in turn uses fmt.Fprintln to format
+	// the error message. And in translation that newline gets escapted into a \n
+	// character.  For what the error message would look in the UI without
+	// strings.TrimSpace, see attached screenshots in this pull request:
+	// https://github.com/sourcegraph/sourcegraph/pull/39358.
+	return strings.TrimSpace(string(content))
+}
+
+func pinnedReposFromConfig() map[string]string {
+	cfg := conf.Get()
+	if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.GitServerPinnedRepos != nil {
+		return cfg.ExperimentalFeatures.GitServerPinnedRepos
+	}
+	return map[string]string{}
 }

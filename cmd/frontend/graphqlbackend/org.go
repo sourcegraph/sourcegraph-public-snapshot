@@ -2,21 +2,22 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -30,7 +31,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 	// 🚨 SECURITY: Only org members can get org details on Cloud
 	if envvar.SourcegraphDotComMode() {
 		hasAccess := func() error {
-			if backend.CheckOrgAccess(ctx, r.db, org.ID) == nil {
+			if auth.CheckOrgAccess(ctx, r.db, org.ID) == nil {
 				return nil
 			}
 
@@ -47,7 +48,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 		}
 		if err := hasAccess(); err != nil {
 			// site admin can access org ID
-			if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
+			if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
 				onlyOrgID := &types.Org{ID: org.ID}
 				return &OrgResolver{db: r.db, org: onlyOrgID}, nil
 			}
@@ -81,7 +82,7 @@ func orgByIDInt32WithForcedAccess(ctx context.Context, db database.DB, orgID int
 	// 🚨 SECURITY: Only org members can get org details on Cloud
 	//              And all invited users by email
 	if !forceAccess && envvar.SourcegraphDotComMode() {
-		err := backend.CheckOrgAccess(ctx, db, orgID)
+		err := auth.CheckOrgAccess(ctx, db, orgID)
 		if err != nil {
 			hasAccess := false
 			// allow invited user to view org details
@@ -138,30 +139,50 @@ func (o *OrgResolver) URL() string { return "/organizations/" + o.org.Name }
 
 func (o *OrgResolver) SettingsURL() *string { return strptr(o.URL() + "/settings") }
 
-func (o *OrgResolver) CreatedAt() DateTime { return DateTime{Time: o.org.CreatedAt} }
+func (o *OrgResolver) CreatedAt() gqlutil.DateTime { return gqlutil.DateTime{Time: o.org.CreatedAt} }
 
-func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
+type MembersConnectionArgs struct {
+	First *int32
+	After *string
+	Query *string
+}
+
+func (o *OrgResolver) Members(ctx context.Context, args *MembersConnectionArgs) (*userConnectionResolver, error) {
 	// 🚨 SECURITY: Only org members can list other org members.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
-		if err == backend.ErrNotAnOrgMember {
-			return nil, errors.New("must be a member of this organization to view members")
-		}
+	if err := checkMembersAccess(ctx, o.db, o.org.ID); err != nil {
 		return nil, err
 	}
 
-	memberships, err := o.db.OrgMembers().GetByOrgID(ctx, o.org.ID)
-	if err != nil {
-		return nil, err
+	// For backward compatibility, the query needs to work with no pagination
+	limitOffset := &database.LimitOffset{
+		Limit: 1000,
 	}
-	users := make([]*types.User, len(memberships))
-	for i, membership := range memberships {
-		user, err := o.db.Users().GetByID(ctx, membership.UserID)
+
+	if args.First != nil {
+		limitOffset.Limit = int(*args.First)
+	}
+
+	if args.After != nil {
+		cursor, err := strconv.ParseInt(*args.After, 10, 32)
 		if err != nil {
 			return nil, err
 		}
-		users[i] = user
+		limitOffset.Offset = int(cursor)
 	}
-	return &staticUserConnectionResolver{db: o.db, users: users}, nil
+
+	query := ""
+	if args.Query != nil {
+		query = *args.Query
+	}
+
+	return &userConnectionResolver{
+		db: o.db,
+		opt: database.UsersListOptions{
+			Query:       query,
+			OrgID:       o.org.ID,
+			LimitOffset: limitOffset,
+		},
+	}, nil
 }
 
 func (o *OrgResolver) settingsSubject() api.SettingsSubject {
@@ -171,7 +192,7 @@ func (o *OrgResolver) settingsSubject() api.SettingsSubject {
 func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	// 🚨 SECURITY: Only organization members and site admins (not on cloud) may access the settings,
 	// because they may contain secrets or other sensitive data.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
 		return nil, err
 	}
 
@@ -211,7 +232,7 @@ func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizatio
 }
 
 func (o *OrgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err == backend.ErrNotAuthenticated || err == backend.ErrNotAnOrgMember {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err == auth.ErrNotAuthenticated || err == auth.ErrNotAnOrgMember {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -330,7 +351,7 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 
@@ -357,7 +378,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that is being modified, or a
 	// site admin.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 	memberCount, err := r.db.OrgMembers().MemberCount(ctx, orgID)
@@ -383,10 +404,10 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 }
 
 func (r *schemaResolver) siteAdminSelfRemoving(ctx context.Context, userID int32) bool {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return false
 	}
-	if err := backend.CheckSameUser(ctx, userID); err != nil {
+	if err := auth.CheckSameUser(ctx, userID); err != nil {
 		return false
 	}
 	return true
@@ -404,13 +425,13 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 
 	// 🚨 SECURITY: Do not allow direct add on Cloud unless the site admin is a member of the org
 	if envvar.SourcegraphDotComMode() {
-		if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+		if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
 			return nil, errors.Errorf("Must be a member of the organization to add members", err)
 		}
 	}
 	// 🚨 SECURITY: Must be a site admin to immediately add a user to an organization (bypassing the
 	// invitation step).
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -431,48 +452,4 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 		)
 	}
 	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) AddOrgsOpenBetaStats(ctx context.Context, args *struct {
-	Stats JSONCString
-}) (*graphql.ID, error) {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return nil, errors.New("no current user")
-	}
-	if args == nil || !json.Valid([]byte(args.Stats)) {
-		return nil, errors.New("must supply valid json")
-	}
-
-	id, err := r.db.Orgs().AddOrgsOpenBetaStats(ctx, a.UID, string(args.Stats))
-	if err != nil {
-		return nil, err
-	}
-
-	graphqlID := graphql.ID(id)
-	return &graphqlID, nil
-}
-
-type ListOrgRepositoriesArgs struct {
-	First              *int32
-	Query              *string
-	After              *string
-	Cloned             bool
-	NotCloned          bool
-	Indexed            bool
-	NotIndexed         bool
-	ExternalServiceIDs *[]*graphql.ID
-	OrderBy            *string
-	Descending         bool
-}
-
-func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {
-	if EnterpriseResolvers.orgRepositoryResolver == nil {
-		return nil, errors.New("listing organization repositories is not supported")
-	}
-	return EnterpriseResolvers.orgRepositoryResolver.OrgRepositories(ctx, args, o.org)
-}
-
-type OrgRepositoryResolver interface {
-	OrgRepositories(ctx context.Context, args *ListOrgRepositoriesArgs, org *types.Org) (RepositoryConnectionResolver, error)
 }

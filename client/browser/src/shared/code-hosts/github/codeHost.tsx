@@ -37,7 +37,7 @@ import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
 import { setElementTooltip } from './tooltip'
-import { getFileContainers, parseURL, getFilePath } from './util'
+import { getFileContainers, parseURL, getFilePath, getSelectorFor } from './util'
 
 import styles from './codeHost.module.scss'
 
@@ -162,21 +162,32 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountElement.style.verticalAlign = 'middle'
     mountElement.style.alignItems = 'center'
     mountElement.className = className
+
+    // new GitHub UI
+    const container = codeViewElement.querySelector('#repos-sticky-header')?.childNodes[0]?.childNodes[0]?.childNodes[1]
+        ?.childNodes[1] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
+    if (container instanceof HTMLElement) {
+        container.prepend(mountElement)
+        return mountElement
+    }
+
+    // old GitHub UI (e.g., GHE)
     const rawURLLink = codeViewElement.querySelector('#raw-url')
     const buttonGroup = rawURLLink?.closest('.BtnGroup')
-    if (!buttonGroup?.parentNode) {
-        throw new Error('File actions not found')
+    if (buttonGroup?.parentNode) {
+        buttonGroup.parentNode.insertBefore(mountElement, buttonGroup)
+        return mountElement
     }
-    buttonGroup.parentNode.insertBefore(mountElement, buttonGroup)
-    return mountElement
+
+    throw new Error('Failed to create file toolbar mount node: container not found.')
 }
 
 /**
  * Matches the modern single-file code view, or snippets embedded in comments.
  *
  */
-export const fileLineContainerResolver: ViewResolver<CodeView> = {
-    selector: '.js-file-line-container',
+const fileLineContainerResolver: ViewResolver<CodeView> = {
+    selector: getSelectorFor('blobContainer'),
     resolveView: (fileLineContainer: HTMLElement): CodeView | null => {
         const embeddedBlobWrapper = fileLineContainer.closest('.blob-wrapper-embedded')
         if (embeddedBlobWrapper) {

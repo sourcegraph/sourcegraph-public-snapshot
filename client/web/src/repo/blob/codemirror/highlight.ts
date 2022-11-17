@@ -1,7 +1,12 @@
-import { Extension, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
-import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { Facet, RangeSetBuilder } from '@codemirror/state'
+import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
 
-import { JsonDocument, JsonOccurrence, SyntaxKind } from '../../../lsif/lsif-typed'
+import { logger } from '@sourcegraph/common'
+import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+
+import { BlobInfo } from '../Blob'
+
+import { positionToOffset } from './utils'
 
 /**
  * This data structure combines the syntax highlighting data received from the
@@ -9,7 +14,7 @@ import { JsonDocument, JsonOccurrence, SyntaxKind } from '../../../lsif/lsif-typ
  * number, with minimal additional impact on memory (e.g. garbage collection).
  */
 interface HighlightIndex {
-    occurrences: JsonOccurrence[]
+    occurrences: Occurrence[]
     lineIndex: (number | undefined)[]
 }
 
@@ -18,143 +23,134 @@ interface HighlightIndex {
  * NOTE: This assumes that the data is sorted and does not contain overlapping
  * ranges.
  */
-function createHighlightTable(json: string | undefined): HighlightIndex {
+function createHighlightTable(info: BlobInfo): HighlightIndex {
     const lineIndex: (number | undefined)[] = []
 
-    if (!json) {
+    if (!info.lsif) {
         return { occurrences: [], lineIndex }
     }
 
     try {
-        const occurrences = (JSON.parse(json) as JsonDocument).occurrences ?? []
+        const occurrences = Occurrence.fromInfo(info)
         let previousEndline: number | undefined
 
         for (let index = 0; index < occurrences.length; index++) {
             const current = occurrences[index]
-            const startLine = current.range[0]
-            const endLine = current.range.length === 3 ? startLine : current.range[2]
 
-            if (previousEndline !== startLine) {
+            if (previousEndline !== current.range.start.line) {
                 // Only use the current index if there isn't already an occurence on
                 // the current line.
-                lineIndex[startLine] = index
+                lineIndex[current.range.start.line] = index
             }
 
-            if (startLine !== endLine) {
-                lineIndex[endLine] = index
+            if (!current.range.isSingleLine()) {
+                lineIndex[current.range.end.line] = index
             }
 
-            previousEndline = endLine
+            previousEndline = current.range.end.line
         }
 
         return { occurrences, lineIndex }
-    } catch {
-        console.error(`Unable to process SCIP highlight data: ${json}`)
+    } catch (error) {
+        logger.error(`Unable to process SCIP highlight data: ${info.lsif}`, error)
         return { occurrences: [], lineIndex }
     }
 }
 
-/**
- * Set JSON encoded SCIP highlighting data
- */
-export const setSCIPData = StateEffect.define<string>()
+class SyntaxHighlightManager implements PluginValue {
+    private decorationCache: Partial<Record<SyntaxKind, Decoration>> = {}
+    public decorations: DecorationSet = Decoration.none
 
-/**
- * Extension to convert SCIP-encoded highlighting information to decorations.
- * The SCIP data should be set/updated via the `setSCIPData` effect.
- */
-export function syntaxHighlight(initialSCIPJSON: string | undefined): Extension {
-    return StateField.define<HighlightIndex>({
-        create: () => createHighlightTable(initialSCIPJSON),
+    constructor(view: EditorView) {
+        this.decorations = this.computeDecorations(view)
+    }
 
-        update(value, transaction) {
-            let newSCIPData = ''
+    public update(update: ViewUpdate): void {
+        if (update.viewportChanged) {
+            this.decorations = this.computeDecorations(update.view)
+        }
+    }
 
-            for (const effect of transaction.effects) {
-                if (effect.is(setSCIPData)) {
-                    newSCIPData = effect.value
-                    break
-                }
+    private computeDecorations(view: EditorView): DecorationSet {
+        const builder = new RangeSetBuilder<Decoration>()
+        try {
+            const { from, to } = view.viewport
+
+            // Determine the start and end lines of the current viewport
+            const fromLine = view.state.doc.lineAt(from)
+            const toLine = view.state.doc.lineAt(to)
+
+            const { occurrences, lineIndex } = view.state.facet(syntaxHighlight)
+
+            // Find index of first relevant token
+            let startIndex: number | undefined
+            {
+                let line = fromLine.number - 1
+                do {
+                    startIndex = lineIndex[line++]
+                } while (startIndex === undefined && line < lineIndex.length)
             }
 
-            return newSCIPData ? createHighlightTable(newSCIPData) : value
-        },
+            // Cache current line object
+            let line = fromLine
 
-        provide: field =>
-            ViewPlugin.fromClass(
-                class {
-                    private decorationCache: Partial<Record<SyntaxKind, Decoration>> = {}
-                    public decorations: DecorationSet = Decoration.none
+            if (startIndex !== undefined) {
+                // Iterate over the rendered line (numbers) and get the
+                // corresponding occurrences from the highlighting table.
+                const textDocument = view.state.doc
 
-                    constructor(view: EditorView) {
-                        this.decorations = this.computeDecorations(view)
+                for (let index = startIndex; index < occurrences.length; index++) {
+                    const occurrence = occurrences[index]
+                    const occurenceStartLine = occurrence.range.start.line + 1
+
+                    if (occurenceStartLine > toLine.number) {
+                        break
                     }
 
-                    public update(update: ViewUpdate): void {
-                        if (update.viewportChanged) {
-                            this.decorations = this.computeDecorations(update.view)
-                        }
+                    if (occurrence.kind === undefined) {
+                        continue
                     }
 
-                    private computeDecorations(view: EditorView): DecorationSet {
-                        const { from, to } = view.viewport
-
-                        // Determine the start and end lines of the current viewport
-                        const fromLine = view.state.doc.lineAt(from)
-                        const toLine = view.state.doc.lineAt(to)
-
-                        const { occurrences, lineIndex } = view.state.field(field)
-
-                        // Find index of first relevant token
-                        let startIndex: number | undefined
-                        {
-                            let line = fromLine.number - 1
-                            do {
-                                startIndex = lineIndex[line++]
-                            } while (startIndex === undefined && line < lineIndex.length)
+                    // Fetch new line information if necessary
+                    if (line.number !== occurenceStartLine) {
+                        // If the next occurrence doesn't map to a valid
+                        // document position, stop
+                        if (occurenceStartLine > textDocument.lines) {
+                            break
                         }
-
-                        const builder = new RangeSetBuilder<Decoration>()
-
-                        // Cache current line object
-                        let line = fromLine
-
-                        if (startIndex !== undefined) {
-                            // Iterate over the rendered line (numbers) and get the
-                            // corresponding occurrences from the highlighting table.
-                            for (let index = startIndex; index < occurrences.length; index++) {
-                                const occurrence = occurrences[index]
-
-                                if (occurrence.range[0] > toLine.number) {
-                                    break
-                                }
-
-                                if (occurrence.syntaxKind === undefined) {
-                                    continue
-                                }
-
-                                // Fetch new line information if necessary
-                                if (line.number !== occurrence.range[0] + 1) {
-                                    line = view.state.doc.line(occurrence.range[0] + 1)
-                                }
-
-                                builder.add(
-                                    line.from + occurrence.range[1],
-                                    occurrence.range.length === 3
-                                        ? line.from + occurrence.range[2]
-                                        : view.state.doc.line(occurrence.range[2] + 1).from + occurrence.range[3],
-                                    this.decorationCache[occurrence.syntaxKind] ||
-                                        (this.decorationCache[occurrence.syntaxKind] = Decoration.mark({
-                                            class: `hl-typed-${SyntaxKind[occurrence.syntaxKind]}`,
-                                        }))
-                                )
-                            }
-                        }
-
-                        return builder.finish()
+                        line = textDocument.line(occurenceStartLine)
                     }
-                },
-                { decorations: plugin => plugin.decorations }
-            ),
-    })
+
+                    const from = Math.min(line.from + occurrence.range.start.character, line.to)
+                    // Should the range end be not a valid position in the
+                    // document we fall back to the end of the current line
+                    const to = occurrence.range.isSingleLine()
+                        ? Math.min(line.from + occurrence.range.end.character, line.to)
+                        : positionToOffset(textDocument, occurrence.range.end) ?? line.to
+
+                    const decoration =
+                        this.decorationCache[occurrence.kind] ||
+                        (this.decorationCache[occurrence.kind] = Decoration.mark({
+                            class: `hl-typed-${SyntaxKind[occurrence.kind]}`,
+                        }))
+                    builder.add(from, to, decoration)
+                }
+            }
+        } catch (error) {
+            logger.error('Failed to compute decorations from SCIP occurrences', error)
+        }
+        return builder.finish()
+    }
 }
+
+/**
+ * Facet for providing syntax highlighting information from a {@link BlobInfo}
+ * object.
+ */
+export const syntaxHighlight = Facet.define<BlobInfo, HighlightIndex>({
+    static: true,
+    compareInput: (blobInfoA, blobInfoB) => blobInfoA.lsif === blobInfoB.lsif,
+    combine: blobInfos =>
+        blobInfos[0]?.lsif ? createHighlightTable(blobInfos[0]) : { occurrences: [], lineIndex: [] },
+    enables: ViewPlugin.fromClass(SyntaxHighlightManager, { decorations: plugin => plugin.decorations }),
+})

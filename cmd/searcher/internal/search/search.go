@@ -2,13 +2,13 @@
 // a specific commit.
 //
 // Architecture Notes:
-//  * Archive is fetched from gitserver
-//  * Simple HTTP API exposed
-//  * Currently no concept of authorization
-//  * On disk cache of fetched archives to reduce load on gitserver
-//  * Run search on archive. Rely on OS file buffers
-//  * Simple to scale up since stateless
-//  * Use ingress with affinity to increase local cache hit ratio
+//   - Archive is fetched from gitserver
+//   - Simple HTTP API exposed
+//   - Currently no concept of authorization
+//   - On disk cache of fetched archives to reduce load on gitserver
+//   - Run search on archive. Rely on OS file buffers
+//   - Simple to scale up since stateless
+//   - Use ingress with affinity to increase local cache hit ratio
 package search
 
 import (
@@ -18,24 +18,22 @@ import (
 	"math"
 	"net"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
-	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	nettrace "golang.org/x/net/trace"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -51,11 +49,18 @@ type Service struct {
 	Store *Store
 	Log   log.Logger
 
+	Indexed zoekt.Streamer
+
 	// GitDiffSymbols returns the stdout of running "git diff -z --name-status
 	// --no-renames commitA commitB" against repo.
 	//
 	// TODO Git client should be exposing a better API here.
 	GitDiffSymbols func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
+
+	// MaxTotalPathsLength is the maximum sum of lengths of all paths in a
+	// single call to git archive. This mainly needs to be less than ARG_MAX
+	// for the exec.Command on gitserver.
+	MaxTotalPathsLength int
 }
 
 // ServeHTTP handles HTTP based search requests
@@ -136,39 +141,35 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
-	tr := nettrace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
-	tr.LazyPrintf("%s", p.Pattern)
+	var tr *trace.Trace
+	tr, ctx = trace.New(ctx, "search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
+	defer tr.Finish()
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Search")
-	ext.Component.Set(span, "service")
-	span.SetTag("repo", p.Repo)
-	span.SetTag("url", p.URL)
-	span.SetTag("commit", p.Commit)
-	span.SetTag("pattern", p.Pattern)
-	span.SetTag("isRegExp", strconv.FormatBool(p.IsRegExp))
-	span.SetTag("isStructuralPat", strconv.FormatBool(p.IsStructuralPat))
-	span.SetTag("languages", p.Languages)
-	span.SetTag("isWordMatch", strconv.FormatBool(p.IsWordMatch))
-	span.SetTag("isCaseSensitive", strconv.FormatBool(p.IsCaseSensitive))
-	span.SetTag("pathPatternsAreRegExps", strconv.FormatBool(p.PathPatternsAreRegExps))
-	span.SetTag("pathPatternsAreCaseSensitive", strconv.FormatBool(p.PathPatternsAreCaseSensitive))
-	span.SetTag("limit", p.Limit)
-	span.SetTag("patternMatchesContent", p.PatternMatchesContent)
-	span.SetTag("patternMatchesPath", p.PatternMatchesPath)
-	span.SetTag("indexerEndpoints", p.IndexerEndpoints)
-	span.SetTag("select", p.Select)
+	tr.LazyPrintf("%s", p.Pattern)
+	tr.SetAttributes(
+		attribute.String("repo", string(p.Repo)),
+		attribute.String("url", p.URL),
+		attribute.String("commit", string(p.Commit)),
+		attribute.String("pattern", p.Pattern),
+		attribute.Bool("isRegExp", p.IsRegExp),
+		attribute.StringSlice("languages", p.Languages),
+		attribute.Bool("isWordMatch", p.IsWordMatch),
+		attribute.Bool("isCaseSensitive", p.IsCaseSensitive),
+		attribute.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive),
+		attribute.Int("limit", p.Limit),
+		attribute.Bool("patternMatchesContent", p.PatternMatchesContent),
+		attribute.Bool("patternMatchesPath", p.PatternMatchesPath),
+		attribute.String("select", p.Select),
+	)
 	defer func(start time.Time) {
 		code := "200"
 		// We often have canceled and timed out requests. We do not want to
 		// record them as errors to avoid noise
 		if ctx.Err() == context.Canceled {
 			code = "canceled"
-			span.SetTag("err", err)
+			tr.SetError(err)
 		} else if err != nil {
-			tr.LazyPrintf("error: %v", err)
-			tr.SetError()
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
+			tr.SetError(err)
 			if errcode.IsBadRequest(err) {
 				code = "400"
 			} else if errcode.IsTemporary(err) {
@@ -178,11 +179,9 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			}
 		}
 		tr.LazyPrintf("code=%s matches=%d limitHit=%v", code, sender.SentCount(), sender.LimitHit())
-		tr.Finish()
 		metricRequestTotal.WithLabelValues(code).Inc()
-		span.LogFields(otlog.Int("matches.len", sender.SentCount()))
-		span.SetTag("limitHit", sender.LimitHit())
-		span.Finish()
+		tr.AddEvent("matches", attribute.Int("matches.len", sender.SentCount()))
+		tr.SetAttributes(attribute.Bool("limitHit", sender.LimitHit()))
 		s.Log.Debug("search request",
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),
@@ -197,14 +196,13 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			log.Int("matches", sender.SentCount()),
 			log.String("code", code),
 			log.Duration("duration", time.Since(start)),
-			log.Strings("indexerEndpoints", p.IndexerEndpoints),
 			log.Error(err))
 	}(time.Now())
 
 	if p.IsStructuralPat && p.Indexed {
 		// Execute the new structural search path that directly calls Zoekt.
 		// TODO use limit in indexed structural search
-		return structuralSearchWithZoekt(ctx, p, sender)
+		return structuralSearchWithZoekt(ctx, s.Indexed, p, sender)
 	}
 
 	// Compile pattern before fetching from store incase it is bad.
@@ -246,7 +244,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 			return errors.Wrap(err, "hybrid search failed")
 		}
 		if !ok {
-			s.Log.Warn("hybrid search is falling back to normal unindexed search",
+			s.Log.Debug("hybrid search is falling back to normal unindexed search",
 				log.String("repo", string(p.Repo)),
 				log.String("commit", string(p.Commit)))
 		} else {
@@ -275,10 +273,9 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 
 	nFiles := uint64(len(zf.Files))
 	bytes := int64(len(zf.Data))
-	tr.LazyPrintf("files=%d bytes=%d", nFiles, bytes)
-	span.LogFields(
-		otlog.Uint64("archive.files", nFiles),
-		otlog.Int64("archive.size", bytes))
+	tr.AddEvent("archive",
+		attribute.Int64("archive.files", int64(nFiles)),
+		attribute.Int64("archive.size", bytes))
 	metricArchiveFiles.Observe(float64(nFiles))
 	metricArchiveSize.Observe(float64(bytes))
 

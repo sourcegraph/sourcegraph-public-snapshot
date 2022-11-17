@@ -515,13 +515,20 @@ func conjunction(left, right Basic) Basic {
 // pattern node, just not in any of the parameters.
 //
 // For example, the query
-//   repo:a (file:b OR file:c)
+//
+//	repo:a (file:b OR file:c)
+//
 // is transformed to
-//   (repo:a file:b) OR (repo:a file:c)
+//
+//	(repo:a file:b) OR (repo:a file:c)
+//
 // but the query
-//   (repo:a OR repo:b) (b OR c)
+//
+//	(repo:a OR repo:b) (b OR c)
+//
 // is transformed to
-//   (repo:a (b OR c)) OR (repo:b (b OR c))
+//
+//	(repo:a (b OR c)) OR (repo:b (b OR c))
 func BuildPlan(query []Node) Plan {
 	return distribute([]Basic{}, query)
 }
@@ -655,7 +662,7 @@ func space(patterns []Pattern) []Node {
 //
 // The callback parameter defines how the function concatenates patterns. The
 // return value of callback is substituted in-place in the tree.
-func substituteConcat(callback func([]Pattern) []Node) func(nodes []Node) []Node {
+func substituteConcat(callback func([]Pattern) []Node) func([]Node) []Node {
 	isPattern := func(node Node) bool {
 		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
 			return true

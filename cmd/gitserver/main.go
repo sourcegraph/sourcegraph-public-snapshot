@@ -11,28 +11,25 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
+	"github.com/getsentry/sentry-go"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/log"
 	"github.com/tidwall/gjson"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
-	sentrylib "github.com/getsentry/sentry-go"
-
-	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -41,15 +38,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -58,7 +56,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -71,8 +68,8 @@ var (
 	wantPctFree                    = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
 	janitorInterval                = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
 	syncRepoStateInterval          = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
-	syncRepoStateBatchSize         = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
-	syncRepoStateUpsertPerSecond   = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
+	syncRepoStateBatchSize         = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of updates to perform per batch")
+	syncRepoStateUpdatePerSecond   = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of updated rows allowed per second across all gitserver instances")
 	batchLogGlobalConcurrencyLimit = env.MustGetInt("SRC_BATCH_LOG_GLOBAL_CONCURRENCY_LIMIT", 256, "The maximum number of in-flight Git commands from all /batch-log requests combined")
 
 	// 80 per second (4800 per minute) is well below our alert threshold of 30k per minute.
@@ -90,14 +87,17 @@ func main() {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+	}, log.NewSentrySinkWith(
+		log.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
+		},
+	))
 	defer liblog.Sync()
 
 	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	trace.Init()
 	profiler.Init()
 
 	logger := log.Scoped("server", "the gitserver service")
@@ -121,7 +121,7 @@ func main() {
 	db := database.NewDB(logger, sqlDB)
 
 	repoStore := db.Repos()
-	depsSvc := livedependencies.GetService(db, nil)
+	dependenciesSvc := dependencies.GetService(db)
 	externalServiceStore := db.ExternalServices()
 
 	err = keyring.Init(ctx)
@@ -142,7 +142,7 @@ func main() {
 			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, depsSvc, repo)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, reposDir)
 		},
 		Hostname:                hostname.Get(),
 		DB:                      db,
@@ -152,7 +152,7 @@ func main() {
 
 	observationContext := &observation.Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	gitserver.RegisterMetrics(db, observationContext)
@@ -168,9 +168,10 @@ func main() {
 	// Create Handler now since it also initializes state
 	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := gitserver.Handler()
-	handler = actor.HTTPMiddleware(handler)
+	handler = actor.HTTPMiddleware(logger, handler)
 	handler = requestclient.HTTPMiddleware(handler)
-	handler = ot.HTTPMiddleware(trace.HTTPMiddleware(logger, handler, conf.DefaultClient()))
+	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
+	handler = instrumentation.HTTPMiddleware("", handler)
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -185,10 +186,10 @@ func main() {
 		logger.Warn("error performing initial site level rate limit sync", log.Error(err))
 	}
 
-	go syncRateLimiters(ctx, externalServiceStore, rateLimitSyncerLimitPerSecond)
+	go syncRateLimiters(ctx, logger, externalServiceStore, rateLimitSyncerLimitPerSecond)
 	go debugserver.NewServerRoutine(ready).Start()
-	go gitserver.Janitor(janitorInterval)
-	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpsertPerSecond)
+	go gitserver.Janitor(actor.WithInternalActor(ctx), janitorInterval)
+	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpdatePerSecond)
 
 	gitserver.StartClonePipeline(ctx)
 
@@ -342,19 +343,23 @@ func getRemoteURLFunc(
 			continue
 		}
 
-		dotcomConfig := conf.SiteConfig().Dotcom
-		if envvar.SourcegraphDotComMode() &&
-			repos.IsGitHubAppCloudEnabled(dotcomConfig) &&
+		gitHubAppConfig := conf.SiteConfig().GitHubApp
+		if repos.IsGitHubAppEnabled(gitHubAppConfig) &&
 			svc.Kind == extsvc.KindGitHub {
-			installationID := gjson.Get(svc.Config, "githubAppInstallationID").Int()
+			rawConfig, err := svc.Config.Decrypt(ctx)
+			if err != nil {
+				return "", err
+			}
+			installationID := gjson.Get(rawConfig, "githubAppInstallationID").Int()
 			if installationID > 0 {
-				svc.Config, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, dotcomConfig, installationID, cli)
+				rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, gitHubAppConfig, installationID, cli)
 				if err != nil {
 					return "", errors.Wrap(err, "edit GitHub App external service config token")
 				}
+				svc.Config.Set(rawConfig)
 			}
 		}
-		return repos.CloneURL(log.Scoped("repos.CloneURL", ""), svc.Kind, svc.Config, r)
+		return repos.EncryptableCloneURL(ctx, log.Scoped("repos.CloneURL", ""), svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
 }
@@ -366,13 +371,14 @@ func editGitHubAppExternalServiceConfigToken(
 	ctx context.Context,
 	externalServiceStore database.ExternalServiceStore,
 	svc *types.ExternalService,
-	dotcomConfig *schema.Dotcom,
+	rawConfig string,
+	gitHubAppConfig *schema.GitHubApp,
 	installationID int64,
 	cli httpcli.Doer,
 ) (string, error) {
 	logger := log.Scoped("editGitHubAppExternalServiceConfigToken", "updates the 'token' field of the given external service")
 
-	baseURL, err := url.Parse(gjson.Get(svc.Config, "url").String())
+	baseURL, err := url.Parse(gjson.Get(rawConfig, "url").String())
 	if err != nil {
 		return "", errors.Wrap(err, "parse base URL")
 	}
@@ -382,19 +388,34 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Errorf("only GitHub App on GitHub.com is supported, but got %q", baseURL)
 	}
 
-	pkey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
-	if err != nil {
-		return "", errors.Wrap(err, "decode private key")
+	var pkey []byte
+	var appID string
+
+	if gitHubAppConfig != nil {
+		pkey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
+		if err != nil {
+			return "", errors.Wrap(err, "decode private key")
+		}
+
+		appID = gitHubAppConfig.AppID
+	} else {
+		return "", errors.Wrap(err, "no site-level GitHub App config found")
 	}
 
-	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, pkey)
+	var c schema.GitHubConnection
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
+		return "", nil
+	}
+
+	appAuther, err := github.NewGitHubAppAuthenticator(appID, pkey)
 	if err != nil {
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}
 
-	client := github.NewV3Client(logger, svc.URN(), apiURL, auther, cli)
+	scopedLogger := logger.Scoped("app", "github client for github app").With(log.String("appID", appID))
+	appClient := github.NewV3Client(scopedLogger, svc.URN(), apiURL, appAuther, cli)
 
-	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, log.Scoped("GetOrRenewGitHubAppInstallationAccessToken", ""), externalServiceStore, svc, client, installationID)
+	token, err := appClient.CreateAppInstallationAccessToken(ctx, installationID)
 	if err != nil {
 		return "", errors.Wrap(err, "get or renew GitHub App installation access token")
 	}
@@ -402,11 +423,16 @@ func editGitHubAppExternalServiceConfigToken(
 	// NOTE: Use `json.Marshal` breaks the actual external service config that fails
 	// validation with missing "repos" property when no repository has been selected,
 	// due to generated JSON tag of ",omitempty".
-	config, err := jsonc.Edit(svc.Config, token, "token")
+	config, err := jsonc.Edit(rawConfig, token.Token, "token")
 	if err != nil {
 		return "", errors.Wrap(err, "edit token")
 	}
-	return config, nil
+	err = externalServiceStore.Update(ctx, conf.Get().AuthProviders, svc.ID,
+		&database.ExternalServiceUpdate{
+			Config:         &config,
+			TokenExpiresAt: token.ExpiresAt,
+		})
+	return config, err
 }
 
 func getVCSSyncer(
@@ -415,6 +441,7 @@ func getVCSSyncer(
 	repoStore database.RepoStore,
 	depsSvc *dependencies.Service,
 	repo api.RepoName,
+	reposDir string,
 ) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
@@ -430,7 +457,11 @@ func getVCSSyncer(
 			if err != nil {
 				return "", errors.Wrap(err, "get external service")
 			}
-			normalized, err := jsonc.Parse(extSvc.Config)
+			rawConfig, err := extSvc.Config.Decrypt(ctx)
+			if err != nil {
+				return "", err
+			}
+			normalized, err := jsonc.Parse(rawConfig)
 			if err != nil {
 				return "", errors.Wrap(err, "normalize JSON")
 			}
@@ -448,10 +479,18 @@ func getVCSSyncer(
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
+
+		p4Home := filepath.Join(reposDir, server.P4HomeName)
+		// Ensure the directory exists
+		if err := os.MkdirAll(p4Home, os.ModePerm); err != nil {
+			return nil, errors.Wrapf(err, "ensuring p4Home exists: %q", p4Home)
+		}
+
 		return &server.PerforceDepotSyncer{
 			MaxChanges:   int(c.MaxChanges),
 			Client:       c.P4Client,
 			FusionConfig: configureFusionClient(c),
+			P4Home:       p4Home,
 		}, nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
@@ -491,6 +530,14 @@ func getVCSSyncer(
 		}
 		cli := crates.NewClient(urn, httpcli.ExternalDoer)
 		return server.NewRustPackagesSyncer(&c, depsSvc, cli), nil
+	case extsvc.TypeRubyPackages:
+		var c schema.RubyPackagesConnection
+		urn, err := extractOptions(&c)
+		if err != nil {
+			return nil, err
+		}
+		cli := rubygems.NewClient(urn, c.Repository, httpcli.ExternalDoer)
+		return server.NewRubyPackagesSyncer(&c, depsSvc, cli), nil
 	}
 	return &server.GitRepoSyncer{}, nil
 }
@@ -501,15 +548,15 @@ func syncSiteLevelExternalServiceRateLimiters(ctx context.Context, store databas
 		return errors.Wrap(err, "listing external services")
 	}
 	syncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store, repos.RateLimitSyncerOpts{})
-	return syncer.SyncServices(svcs)
+	return syncer.SyncServices(ctx, svcs)
 }
 
 // Sync rate limiters from config. Since we don't have a trigger that watches for
 // changes to rate limits we'll run this periodically in the background.
-func syncRateLimiters(ctx context.Context, store database.ExternalServiceStore, perSecond int) {
+func syncRateLimiters(ctx context.Context, logger log.Logger, store database.ExternalServiceStore, perSecond int) {
 	backoff := 5 * time.Second
 	batchSize := 50
-	logger := log.Scoped("syncRateLimiters", "sync rate limiters from config")
+	logger = logger.Scoped("syncRateLimiters", "sync rate limiters from config")
 
 	// perSecond should be spread across all gitserver instances and we want to wait
 	// until we know about at least one instance.

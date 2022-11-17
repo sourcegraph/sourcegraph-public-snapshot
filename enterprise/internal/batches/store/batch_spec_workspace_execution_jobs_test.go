@@ -11,12 +11,12 @@ import (
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
+func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	jobs := make([]*btypes.BatchSpecWorkspaceExecutionJob, 0, 3)
 	for i := 0; i < cap(jobs); i++ {
 		job := &btypes.BatchSpecWorkspaceExecutionJob{
@@ -29,7 +29,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 
 	t.Run("Create", func(t *testing.T) {
 		for idx, job := range jobs {
-			if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+			if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 				t.Fatal(err)
 			}
 
@@ -134,7 +134,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				job.PlaceInGlobalQueue = 0
 			}
 
-			ct.UpdateJobState(t, ctx, s, job)
+			bt.UpdateJobState(t, ctx, s, job)
 		}
 
 		t.Run("All", func(t *testing.T) {
@@ -196,16 +196,16 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 
 			jobs[0].State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
 			jobs[0].FailureMessage = &message1
-			ct.UpdateJobState(t, ctx, s, jobs[0])
+			bt.UpdateJobState(t, ctx, s, jobs[0])
 
 			// has a failure message, but it's outdated, because job is processing
 			jobs[1].State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 			jobs[1].FailureMessage = &message2
-			ct.UpdateJobState(t, ctx, s, jobs[1])
+			bt.UpdateJobState(t, ctx, s, jobs[1])
 
 			jobs[2].State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
 			jobs[2].FailureMessage = &message3
-			ct.UpdateJobState(t, ctx, s, jobs[2])
+			bt.UpdateJobState(t, ctx, s, jobs[2])
 
 			wantIDs := []int64{jobs[0].ID, jobs[2].ID}
 
@@ -377,7 +377,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				}
 
 				job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID, UserID: spec.UserID}
-				if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+				if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 					t.Fatal(err)
 				}
 				specJobIDs = append(specJobIDs, job.ID)

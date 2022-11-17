@@ -1,6 +1,5 @@
-import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { Suspense, useCallback, useRef, useState } from 'react'
 
-import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
@@ -8,61 +7,62 @@ import { Observable } from 'rxjs'
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { isMacPlatform } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Panel, useObservable } from '@sourcegraph/wildcard'
+import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
-import { BatchChangesProps } from './batches'
-import { CodeIntelligenceProps } from './codeintel'
+import { AuthenticatedUser } from './auth'
+import type { BatchChangesProps } from './batches'
+import type { CodeIntelligenceProps } from './codeintel'
+import { CodeMonitoringProps } from './codeMonitoring'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
-import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
-import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
-import { excludeExtensionsRoute } from './extensions/extensions'
-import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
+import type { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
+import type { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
+import type { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
+import { useHandleSubmitFeedback } from './hooks'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import type { BlockInput } from './notebooks'
+import type { BlockInput, NotebookProps } from './notebooks'
 import { OrgAreaRoute } from './org/area/OrgArea'
-import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
-import { RepoContainerRoute } from './repo/RepoContainer'
+import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
+import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
+import type { OrgSettingsSidebarItems } from './org/settings/OrgSettingsSidebar'
+import type { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
-import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
-import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
-import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
+import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
+import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
+import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
+import type { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
 import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
-import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps, parseSearchURL } from './search'
+import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
-import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
-import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { setQueryStateFromURL } from './stores'
-import { useThemeProps } from './theme'
-import { UserAreaRoute } from './user/area/UserArea'
-import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
-import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
-import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { useExtensionsAsCoreFeaturesFromSettings } from './util/settings'
+import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
+import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
+import { useTheme, useThemeProps } from './theme'
+import type { UserAreaRoute } from './user/area/UserArea'
+import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
+import type { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
+import { getExperimentalFeatures } from './util/get-experimental-features'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
@@ -73,16 +73,17 @@ export interface LayoutProps
         PlatformContextProps,
         ExtensionsControllerProps,
         TelemetryProps,
-        ActivationProps,
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
         CodeIntelligenceProps,
-        BatchChangesProps {
+        BatchChangesProps,
+        NotebookProps,
+        CodeMonitoringProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
-    extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
-    extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
+    extensionsAreaRoutes?: readonly ExtensionsAreaRoute[]
+    extensionsAreaHeaderActionButtons?: readonly ExtensionsAreaHeaderActionButton[]
     siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
@@ -90,6 +91,8 @@ export interface LayoutProps
     userAreaRoutes: readonly UserAreaRoute[]
     userSettingsSideBarItems: UserSettingsSidebarItems
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
+    orgSettingsSideBarItems: OrgSettingsSidebarItems
+    orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
     orgAreaRoutes: readonly OrgAreaRoute[]
     repoContainerRoutes: readonly RepoContainerRoute[]
@@ -115,7 +118,6 @@ export interface LayoutProps
     isSourcegraphDotCom: boolean
     children?: never
 }
-
 /**
  * Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
  * https://github.com/sourcegraph/sourcegraph/issues/36251
@@ -123,34 +125,21 @@ export interface LayoutProps
 const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
 
 export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps>> = props => {
-    const extensionsAsCoreFeatures = useExtensionsAsCoreFeaturesFromSettings(props.settingsCascade)
-    const routes = extensionsAsCoreFeatures ? excludeExtensionsRoute(props.routes) : props.routes
-    const routeMatch = routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
+    const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
-    const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
-    const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
-    const isSearchNotebookListPage = props.location.pathname === PageRoutes.Notebooks
+    const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
+    const isSearchNotebookListPage = props.location.pathname === EnterprisePageRoutes.Notebooks
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
-    // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
-    const { history, selectedSearchContextSpec, location, setSelectedSearchContextSpec } = props
-
-    useEffect(() => setQueryStateFromURL(location.search), [location.search])
-
-    const { query = '' } = useMemo(() => parseSearchURL(location.search), [location.search])
-
-    const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
-
-    useEffect(() => {
-        // Only override filters from URL if there is a search query
-        if (query) {
-            if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
-                setSelectedSearchContextSpec(searchContextSpec)
-            }
-        }
-    }, [history, selectedSearchContextSpec, query, setSelectedSearchContextSpec, searchContextSpec])
+    let { fuzzyFinder } = getExperimentalFeatures(props.settingsCascade.final)
+    if (fuzzyFinder === undefined) {
+        // Happens even when `"default": true` is defined in
+        // settings.schema.json.
+        fuzzyFinder = true
+    }
+    const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
@@ -165,16 +154,11 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         props.location.pathname === PageRoutes.PasswordReset ||
         props.location.pathname === PageRoutes.Welcome
 
-    // TODO Change this behavior when we have global focus management system
-    // Need to know this for disable autofocus on nav search input
-    // and preserve autofocus for first textarea at survey page, creation UI etc.
-    const isSearchAutoFocusRequired = routeMatch === PageRoutes.Survey || routeMatch === EnterprisePageRoutes.Insights
-
-    const authRequired = useObservable(authRequiredObservable)
-
     const themeProps = useThemeProps()
+    const themeState = useTheme()
+    const themeStateRef = useRef(themeState)
+    themeStateRef.current = themeState
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     const breadcrumbProps = useBreadcrumbs()
 
@@ -182,8 +166,14 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
 
     const showHelpShortcut = useKeyboardShortcut('keyboardShortcutsHelp')
     const [keyboardShortcutsHelpOpen, setKeyboardShortcutsHelpOpen] = useState(false)
+    const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
     const showKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(true), [])
     const hideKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(false), [])
+    const showFeedbackModal = useCallback(() => setFeedbackModalOpen(true), [])
+
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch,
+    })
 
     // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
     // const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
@@ -199,14 +189,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
     }
 
-    // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
-    // If a user has not accepted the Terms of Service yet, show the modal to force them to accept
-    // before continuing to use Sourcegraph. This is only done on self-hosted Sourcegraph Server;
-    // cloud users are all considered to have accepted regarless of the value of `tosAccepted`.
-    // if (!props.isSourcegraphDotCom && !tosAccepted) {
-    //     return <TosConsentModal afterTosAccepted={afterTosAccepted} />
-    // }
-
     const context: LayoutRouteComponentProps<any> = {
         ...props,
         ...themeProps,
@@ -218,25 +200,36 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         <div
             className={classNames(
                 styles.layout,
-                enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME,
-                coreWorkflowImprovementsEnabled && 'core-workflow-improvements-enabled'
+                enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME
             )}
         >
             {showHelpShortcut?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={showKeyboardShortcutsHelp} />
             ))}
             <KeyboardShortcutsHelp isOpen={keyboardShortcutsHelpOpen} onDismiss={hideKeyboardShortcutsHelp} />
+
+            {feedbackModalOpen && (
+                <FeedbackPrompt
+                    onSubmit={handleSubmitFeedback}
+                    modal={true}
+                    openByDefault={true}
+                    authenticatedUser={props.authenticatedUser}
+                    onClose={() => setFeedbackModalOpen(false)}
+                />
+            )}
+
             <GlobalAlerts
                 authenticatedUser={props.authenticatedUser}
                 settingsCascade={props.settingsCascade}
                 isSourcegraphDotCom={props.isSourcegraphDotCom}
             />
-            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && (
+                <SurveyToast authenticatedUser={props.authenticatedUser} />
+            )}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
                     {...themeProps}
-                    authRequired={!!authRequired}
                     showSearchBox={
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
@@ -244,17 +237,11 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         !isSearchConsolePage &&
                         !isSearchNotebooksPage
                     }
-                    variant={
-                        isSearchHomepage
-                            ? 'low-profile'
-                            : isCommunitySearchContextPage
-                            ? 'low-profile-with-logo'
-                            : 'default'
-                    }
-                    minimalNavLinks={minimalNavLinks}
-                    isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
+                    setFuzzyFinderIsVisible={setFuzzyFinderVisible}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
+                    showFeedbackModal={showFeedbackModal}
+                    enableLegacyExtensions={window.context.enableLegacyExtensions}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
@@ -267,7 +254,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     }
                 >
                     <Switch>
-                        {routes.map(
+                        {props.routes.map(
                             ({ render, condition = () => true, ...route }) =>
                                 condition(context) && (
                                     <Route
@@ -308,9 +295,22 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 platformContext={props.platformContext}
                 history={props.history}
             />
-            <GlobalDebug {...props} />
+            {props.extensionsController !== null ? (
+                <GlobalDebug {...props} extensionsController={props.extensionsController} />
+            ) : null}
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
                 <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
+            )}
+            {fuzzyFinder && (
+                <LazyFuzzyFinder
+                    isVisible={isFuzzyFinderVisible}
+                    setIsVisible={setFuzzyFinderVisible}
+                    themeState={themeStateRef}
+                    isRepositoryRelatedPage={isRepositoryRelatedPage}
+                    settingsCascade={props.settingsCascade}
+                    telemetryService={props.telemetryService}
+                    location={props.location}
+                />
             )}
         </div>
     )

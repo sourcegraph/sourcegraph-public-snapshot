@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchalert "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,7 +17,7 @@ import (
 
 // NewAlertJob creates a job that translates errors from child jobs
 // into alerts when necessary.
-func NewAlertJob(inputs *run.SearchInputs, child job.Job) job.Job {
+func NewAlertJob(inputs *search.Inputs, child job.Job) job.Job {
 	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
@@ -29,7 +28,7 @@ func NewAlertJob(inputs *run.SearchInputs, child job.Job) job.Job {
 }
 
 type alertJob struct {
-	inputs *run.SearchInputs
+	inputs *search.Inputs
 	child  job.Job
 }
 
@@ -43,12 +42,12 @@ func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream s
 	jobAlert, err := j.child.Run(ctx, clients, statsObserver)
 
 	ao := searchalert.Observer{
-		Logger:       clients.Logger,
-		Db:           clients.DB,
-		Zoekt:        clients.Zoekt,
-		Searcher:     clients.SearcherURLs,
-		SearchInputs: j.inputs,
-		HasResults:   countingStream.Count() > 0,
+		Logger:     clients.Logger,
+		Db:         clients.DB,
+		Zoekt:      clients.Zoekt,
+		Searcher:   clients.SearcherURLs,
+		Inputs:     j.inputs,
+		HasResults: countingStream.Count() > 0,
 	}
 	if err != nil {
 		ao.Error(ctx, err)

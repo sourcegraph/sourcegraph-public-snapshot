@@ -9,9 +9,10 @@ import (
 	"github.com/hexops/autogold"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -60,11 +61,6 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 
 	featureFlagStore.GetFeatureFlagFunc.SetDefaultReturn(&mockedFeatureFlag, nil)
 
-	settingStore := discovery.NewMockSettingStore()
-	if p.settings != nil {
-		settingStore.GetLatestFunc.SetDefaultReturn(p.settings, nil)
-	}
-
 	dataSeriesStore := store.NewMockDataSeriesStore()
 	dataSeriesStore.GetDataSeriesFunc.SetDefaultReturn([]itypes.InsightSeries{
 		{
@@ -108,10 +104,6 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 			return 100, nil
 		}
 		return 0, nil
-	})
-	insightsStore.RecordSeriesPointFunc.SetDefaultHook(func(ctx context.Context, args store.RecordSeriesPointArgs) error {
-		r.operations = append(r.operations, fmt.Sprintf("recordSeriesPoint(point=%v, repoName=%v)", args.Point.String(), *args.RepoName))
-		return nil
 	})
 
 	repoStore := NewMockRepoStore()
@@ -170,6 +162,7 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 	}
 
 	historicalEnqueuer := &historicalEnqueuer{
+		logger:                logtest.Scoped(t),
 		now:                   clock,
 		insightsStore:         insightsStore,
 		enqueueQueryRunnerJob: enqueueQueryRunnerJob,

@@ -35,6 +35,7 @@ const (
 	SearchTypeStructural
 	SearchTypeLucky
 	SearchTypeStandard
+	SearchTypeKeyword
 )
 
 func (s SearchType) String() string {
@@ -49,6 +50,8 @@ func (s SearchType) String() string {
 		return "structural"
 	case SearchTypeLucky:
 		return "lucky"
+	case SearchTypeKeyword:
+		return "keyword"
 	default:
 		return fmt.Sprintf("unknown{%d}", s)
 	}
@@ -151,7 +154,7 @@ func (q Q) Repositories() (repos []string, negatedRepos []string) {
 }
 
 func (q Q) Dependencies() (dependencies []string) {
-	VisitPredicate(q, func(field, name, value string) {
+	VisitPredicate(q, func(field, name, value string, _ bool) {
 		if field == FieldRepo && (name == "dependencies" || name == "deps") {
 			dependencies = append(dependencies, value)
 		}
@@ -160,7 +163,7 @@ func (q Q) Dependencies() (dependencies []string) {
 }
 
 func (q Q) Dependents() (dependents []string) {
-	VisitPredicate(q, func(field, name, value string) {
+	VisitPredicate(q, func(field, name, value string, _ bool) {
 		if field == FieldRepo && (name == "dependents" || name == "revdeps") {
 			dependents = append(dependents, value)
 		}
@@ -200,10 +203,11 @@ func (p Plan) ToQ() Q {
 
 // Basic represents a leaf expression to evaluate in our search engine. A basic
 // query comprises:
-//   (1) a single search pattern expression, which may contain
-//       'and' or 'or' operators; and
-//   (2) parameters that scope the evaluation of search
-//       patterns (e.g., to repos, files, etc.).
+//
+//	(1) a single search pattern expression, which may contain
+//	    'and' or 'or' operators; and
+//	(2) parameters that scope the evaluation of search
+//	    patterns (e.g., to repos, files, etc.).
 type Basic struct {
 	Parameters
 	Pattern Node
@@ -337,9 +341,9 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 }
 
 // RepoHasFileContentArgs represents the args of any of the following predicates:
-// - repo:contains.file(f)
-// - repo:contains.content(c)
-// - repo:contains(file:f content:c)
+// - repo:contains.file(path:foo content:bar) || repo:has.file(path:foo content:bar)
+// - repo:contains.path(foo) || repo:has.path(foo)
+// - repo:contains.content(c) || repo:has.content(c)
 // - repohasfile:f
 type RepoHasFileContentArgs struct {
 	// At least one of these strings should be non-empty
@@ -357,25 +361,25 @@ func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 		})
 	})
 
-	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate, negated bool) {
+	VisitTypedPredicate(nodes, func(pred *RepoContainsPathPredicate) {
 		res = append(res, RepoHasFileContentArgs{
 			Path:    pred.Pattern,
-			Negated: negated,
+			Negated: pred.Negated,
 		})
 	})
 
-	VisitTypedPredicate(nodes, func(pred *RepoContainsContentPredicate, negated bool) {
+	VisitTypedPredicate(nodes, func(pred *RepoContainsContentPredicate) {
 		res = append(res, RepoHasFileContentArgs{
 			Content: pred.Pattern,
-			Negated: negated,
+			Negated: pred.Negated,
 		})
 	})
 
-	VisitTypedPredicate(nodes, func(pred *RepoContainsPredicate, negated bool) {
+	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate) {
 		res = append(res, RepoHasFileContentArgs{
-			Path:    pred.File,
+			Path:    pred.Path,
 			Content: pred.Content,
-			Negated: negated,
+			Negated: pred.Negated,
 		})
 	})
 
@@ -383,40 +387,61 @@ func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 }
 
 func (p Parameters) FileContainsContent() (include []string) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldFile && (name == "contains" || name == "contains.content") {
-			var pred FileContainsContentPredicate
-			pred.ParseParams(value)
-			include = append(include, pred.Pattern)
-		}
+	VisitTypedPredicate(toNodes(p), func(pred *FileContainsContentPredicate) {
+		include = append(include, pred.Pattern)
 	})
 	return include
 }
 
-func (p Parameters) RepoContainsCommitAfter() (value string) {
-	nodes := toNodes(p)
-
-	// Look for values of repohascommitafter:
-	value = p.FindValue(FieldRepoHasCommitAfter)
-
-	// Look for values of repo:contains.commit.after()
-	VisitTypedPredicate(nodes, func(pred *RepoContainsCommitAfterPredicate, _ bool) {
-		value = pred.TimeRef
-	})
-
-	return value
+type RepoHasCommitAfterArgs struct {
+	TimeRef string
+	Negated bool
 }
 
-func (p Parameters) FileHasOwner() (include, exclude []string) {
-	VisitTypedPredicate(toNodes(p), func(pred *FileHasOwnerPredicate, negated bool) {
-		if negated {
-			exclude = append(exclude, pred.Owner)
-		} else {
-			include = append(include, pred.Owner)
+func (p Parameters) RepoContainsCommitAfter() (res *RepoHasCommitAfterArgs) {
+	// Look for values of repohascommitafter:
+	p.FindParameter(FieldRepoHasCommitAfter, func(value string, negated bool, annotation Annotation) {
+		res = &RepoHasCommitAfterArgs{
+			TimeRef: value,
+			Negated: negated,
 		}
 	})
 
-	return include, exclude
+	// Look for values of repo:contains.commit.after()
+	nodes := toNodes(p)
+	VisitTypedPredicate(nodes, func(pred *RepoContainsCommitAfterPredicate) {
+		res = &RepoHasCommitAfterArgs{
+			TimeRef: pred.TimeRef,
+			Negated: pred.Negated,
+		}
+	})
+
+	return res
+}
+
+type RepoKVPFilter struct {
+	Key     string
+	Value   *string
+	Negated bool
+}
+
+func (p Parameters) RepoHasKVPs() (res []RepoKVPFilter) {
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasKVPPredicate) {
+		res = append(res, RepoKVPFilter{
+			Key:     pred.Key,
+			Value:   &pred.Value,
+			Negated: pred.Negated,
+		})
+	})
+
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasTagPredicate) {
+		res = append(res, RepoKVPFilter{
+			Key:     pred.Key,
+			Negated: pred.Negated,
+		})
+	})
+
+	return res
 }
 
 // Exists returns whether a parameter exists in the query (whether negated or not).
@@ -428,28 +453,8 @@ func (p Parameters) Exists(field string) bool {
 	return found
 }
 
-func (p Parameters) Dependencies() (preds []RepoDependenciesPredicate) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldRepo && (name == "dependencies" || name == "deps") {
-			var pred RepoDependenciesPredicate
-			pred.ParseParams(value)
-			preds = append(preds, pred)
-		}
-	})
-	return preds
-}
-
-func (p Parameters) Dependents() (dependents []string) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldRepo && (name == "revdeps" || name == "dependents") {
-			dependents = append(dependents, value)
-		}
-	})
-	return dependents
-}
-
 func (p Parameters) RepoHasDescription() (descriptionPatterns []string) {
-	VisitTypedPredicate(toNodes(p), func(pred *RepoHasDescriptionPredicate, _ bool) {
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasDescriptionPredicate) {
 		split := strings.Split(pred.Pattern, " ")
 		descriptionPatterns = append(descriptionPatterns, "(?:"+strings.Join(split, ").*?(?:")+")")
 	})

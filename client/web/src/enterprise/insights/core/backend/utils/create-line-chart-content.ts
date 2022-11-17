@@ -2,17 +2,15 @@ import { formatISO } from 'date-fns'
 import { escapeRegExp } from 'lodash'
 
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { Series } from '@sourcegraph/wildcard'
 
-import { Series } from '../../../../../charts'
 import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
 import { PageRoutes } from '../../../../../routes.constants'
-import { DATA_SERIES_COLORS } from '../../../constants'
 import { BackendInsight, InsightFilters, SearchBasedInsightSeries } from '../../types'
 import { BackendInsightDatum, SeriesChartContent } from '../code-insights-backend-types'
 
 import { getParsedSeriesMetadata } from './parse-series-metadata'
 
-export const DATA_SERIES_COLORS_LIST = Object.values(DATA_SERIES_COLORS)
 type SeriesDefinition = Record<string, SearchBasedInsightSeries>
 
 /**

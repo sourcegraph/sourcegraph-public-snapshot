@@ -12,6 +12,16 @@ import { ActionProps } from '../FormActionArea'
 import { EmailAction, SEND_TEST_EMAIL } from './EmailAction'
 
 describe('EmailAction', () => {
+    const origContext = window.context
+    beforeEach(() => {
+        window.context = {
+            emailEnabled: true,
+        } as any
+    })
+    afterEach(() => {
+        window.context = origContext
+    })
+
     const props: ActionProps = {
         action: undefined,
         setAction: sinon.stub(),

@@ -3,10 +3,11 @@ import { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 
 import { Label } from '../..'
-import { useAutoFocus } from '../../../hooks/useAutoFocus'
+import { useAutoFocus } from '../../../hooks'
 import { ForwardReferenceComponent } from '../../../types'
 
 import styles from './Input.module.scss'
@@ -31,7 +32,8 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     inputSymbol?: ReactNode
     /** Exclusive status */
     status?: InputStatus | `${InputStatus}`
-    error?: ReactNode
+    /** Optional error (validation) message. Rendered as Markdown. */
+    error?: string
     /** Disable input behavior */
     disabled?: boolean
     /** Determines the size of the input */
@@ -41,7 +43,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 /**
  * Displays the input with description, error message, visual invalid and valid states.
  */
-export const Input = forwardRef((props, reference) => {
+export const Input = forwardRef(function Input(props, reference) {
     const {
         as: Component = 'input',
         type = 'text',
@@ -71,8 +73,11 @@ export const Input = forwardRef((props, reference) => {
                 loading={status === InputStatus.loading}
             >
                 <Component
-                    disabled={disabled}
+                    {...otherProps}
                     type={type}
+                    disabled={disabled}
+                    ref={mergedReference}
+                    autoFocus={autoFocus}
                     className={classNames(
                         inputClassName,
                         status === InputStatus.loading && styles.inputLoading,
@@ -84,19 +89,17 @@ export const Input = forwardRef((props, reference) => {
                             'form-control-sm': variant === 'small',
                         }
                     )}
-                    {...otherProps}
-                    ref={mergedReference}
-                    autoFocus={autoFocus}
                 />
 
                 {inputSymbol}
             </LoaderInput>
 
             {error && (
-                <small role="alert" className={classNames('text-danger', messageClassName)}>
-                    {error}
+                <small role="alert" aria-live="polite" className={classNames('text-danger', messageClassName)}>
+                    <ErrorMessage error={error} />
                 </small>
             )}
+
             {!error && message && <small className={classNames('text-muted', messageClassName)}>{message}</small>}
         </>
     )

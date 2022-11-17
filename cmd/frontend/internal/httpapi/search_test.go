@@ -10,9 +10,11 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/zoekt"
+	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -32,17 +34,20 @@ func TestServeConfiguration(t *testing.T) {
 		Name:  "6",
 		Stars: 6,
 	}}
+
+	gsClient := gitserver.NewMockClient()
+	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		return api.CommitID("!" + spec), nil
+	})
+
 	srv := &searchIndexerServer{
-		RepoStore: &fakeRepoStore{Repos: repos},
+		RepoStore:       &fakeRepoStore{Repos: repos},
+		gitserverClient: gsClient,
 		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 			return map[api.RepoID][]string{6: {"a", "b"}}, nil
 		},
+		Ranking: &fakeRankingService{},
 	}
-
-	gitserver.Mocks.ResolveRevision = func(spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		return api.CommitID("!" + spec), nil
-	}
-	t.Cleanup(func() { gitserver.Mocks.ResolveRevision = nil })
 
 	data := url.Values{
 		"repoID": []string{"1", "5", "6"},
@@ -225,6 +230,18 @@ func (f *fakeRepoStore) StreamMinimalRepos(ctx context.Context, opt database.Rep
 	return nil
 }
 
+type fakeRankingService struct{}
+
+func (*fakeRankingService) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
+	return map[api.RepoID]time.Time{}, nil
+}
+func (*fakeRankingService) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error) {
+	return nil, nil
+}
+func (*fakeRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string][]float64, err error) {
+	return nil, nil
+}
+
 // suffixIndexers mocks Indexers. ReposSubset will return all repoNames with
 // the suffix of hostname.
 type suffixIndexers bool
@@ -274,5 +291,47 @@ func TestRepoRankFromConfig(t *testing.T) {
 		if got != tc.want {
 			t.Errorf("got score %v, want %v, repo %q config %v", got, tc.want, tc.name, tc.rankScores)
 		}
+	}
+}
+
+func TestIndexStatusUpdate(t *testing.T) {
+	logger := logtest.Scoped(t)
+
+	body := `{"Repositories": [{"RepoID": 1234, "Branches": [{"Name": "main", "Version": "f00b4r"}]}]}`
+	wantBranches := []zoekt.RepositoryBranch{{Name: "main", Version: "f00b4r"}}
+	called := false
+
+	zoektReposStore := database.NewMockZoektReposStore()
+	zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed map[uint32]*zoekt.MinimalRepoListEntry) error {
+		entry, ok := indexed[1234]
+		if !ok {
+			t.Fatalf("wrong repo ID")
+		}
+		if d := cmp.Diff(entry.Branches, wantBranches); d != "" {
+			t.Fatalf("ids mismatch (-want +got):\n%s", d)
+		}
+		called = true
+		return nil
+	})
+
+	db := database.NewMockDB()
+	db.ZoektReposFunc.SetDefaultReturn(zoektReposStore)
+
+	srv := &searchIndexerServer{db: db, logger: logger}
+
+	req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(body)))
+	w := httptest.NewRecorder()
+
+	if err := srv.handleIndexStatusUpdate(w, req); err != nil {
+		t.Fatal(err)
+	}
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("got status %v", resp.StatusCode)
+	}
+
+	if !called {
+		t.Fatalf("not called")
 	}
 }

@@ -28,6 +28,8 @@ export const ConnectionPopoverTabs: React.FunctionComponent<React.PropsWithChild
     ...rest
 }) => (
     <div className={classNames(styles.connectionPopover, className)}>
-        <Tabs {...rest}>{children}</Tabs>
+        <Tabs {...rest} className={styles.tabs}>
+            {children}
+        </Tabs>
     </div>
 )

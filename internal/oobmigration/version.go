@@ -20,19 +20,34 @@ func NewVersion(major, minor int) Version {
 	}
 }
 
-var versionPattern = lazyregexp.New(`^v?(\d+)\.(\d+)(?:\.\d+)?$`)
+var versionPattern = lazyregexp.New(`^v?(\d+)\.(\d+)(?:\.(\d+))?$`)
 
 // NewVersionFromString parses the major and minor version from the given string. If
 // the string does not look like a parseable version, a false-valued flag is returned.
 func NewVersionFromString(v string) (Version, bool) {
-	if matches := versionPattern.FindStringSubmatch(v); len(matches) >= 3 {
-		major, _ := strconv.Atoi(matches[1])
-		minor, _ := strconv.Atoi(matches[2])
+	version, _, ok := NewVersionAndPatchFromString(v)
+	return version, ok
+}
 
-		return NewVersion(major, minor), true
+// NewVersionFromString parses the major and minor version from the given string. If
+// the string does not look like a parseable version, a false-valued flag is returned.
+// If the input string also supplies a patch version, it is returned. If a patch is
+// not supplied this value is zero.
+func NewVersionAndPatchFromString(v string) (Version, int, bool) {
+	matches := versionPattern.FindStringSubmatch(v)
+	if len(matches) < 3 {
+		return Version{}, 0, false
 	}
 
-	return Version{}, false
+	major, _ := strconv.Atoi(matches[1])
+	minor, _ := strconv.Atoi(matches[2])
+
+	if len(matches) == 3 {
+		return NewVersion(major, minor), 0, true
+	}
+
+	patch, _ := strconv.Atoi(matches[3])
+	return NewVersion(major, minor), patch, true
 }
 
 func (v Version) String() string {
@@ -40,15 +55,19 @@ func (v Version) String() string {
 }
 
 func (v Version) GitTag() string {
-	return fmt.Sprintf("v%d.%d.0", v.Major, v.Minor)
+	return v.GitTagWithPatch(0)
+}
+
+func (v Version) GitTagWithPatch(patch int) string {
+	return fmt.Sprintf("v%d.%d.%d", v.Major, v.Minor, patch)
+}
+
+var lastMinorVersionInMajorRelease = map[int]int{
+	3: 43, // 3.43.0 -> 4.0.0
 }
 
 // Next returns the next minor version immediately following the receiver.
 func (v Version) Next() Version {
-	lastMinorVersionInMajorRelease := map[int]int{
-		3: 43, // 3.43.0 -> 4.0.0
-	}
-
 	if minor, ok := lastMinorVersionInMajorRelease[v.Major]; ok && minor == v.Minor {
 		// We're at terminal minor version for some major release
 		// :tada:
@@ -60,11 +79,21 @@ func (v Version) Next() Version {
 	return NewVersion(v.Major, v.Minor+1)
 }
 
+// Previous returns the previous minor version immediately preceding the receiver.
+func (v Version) Previous() (Version, bool) {
+	if v.Minor == 0 {
+		minor, ok := lastMinorVersionInMajorRelease[v.Major-1]
+		return NewVersion(v.Major-1, minor), ok
+	}
+
+	return NewVersion(v.Major, v.Minor-1), true
+}
+
 // UpgradeRange returns all minor versions in the closed interval [from, to].
 // An error is returned if the interval would be empty.
 func UpgradeRange(from, to Version) ([]Version, error) {
 	if CompareVersions(from, to) != VersionOrderBefore {
-		return nil, errors.Newf("invalid range (from=%s > to=%s)", from, to)
+		return nil, errors.Newf("invalid range (from=%s >= to=%s)", from, to)
 	}
 
 	var versions []Version

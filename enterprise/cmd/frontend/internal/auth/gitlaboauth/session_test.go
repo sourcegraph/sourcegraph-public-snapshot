@@ -380,7 +380,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 			{
 				Kind:        extsvc.KindGitLab,
 				DisplayName: fmt.Sprintf("GitLab (%s)", glUser.Username),
-				Config: fmt.Sprintf(`
+				Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
 {
   "url": "%s",
   "token": "%s",
@@ -389,7 +389,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
   "token.oauth.expiry": %d,
   "projectQuery": ["projects?id_before=0"]
 }
-`, mockGitLabCom.ServiceID, "a-token-that-should-be-replaced", "old-refresh-token", expiry.Add(-1*time.Hour).Unix()),
+`, mockGitLabCom.ServiceID, "a-token-that-should-be-replaced", "old-refresh-token", expiry.Add(-1*time.Hour).Unix())),
 
 				NamespaceUserID: act.UID,
 				CreatedAt:       now,
@@ -419,7 +419,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	want := &types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: fmt.Sprintf("GitLab (%s)", glUser.Username),
-		Config: fmt.Sprintf(`
+		Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
 {
   "url": "%s",
   "token": "%s",
@@ -428,7 +428,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
   "token.oauth.expiry": %d,
   "projectQuery": ["projects?id_before=0"]
 }
-`, mockGitLabCom.ServiceID, tok.AccessToken, tok.RefreshToken, tok.Expiry.Unix()),
+`, mockGitLabCom.ServiceID, tok.AccessToken, tok.RefreshToken, tok.Expiry.Unix())),
 		NamespaceUserID: act.UID,
 		CreatedAt:       now,
 		UpdatedAt:       now,

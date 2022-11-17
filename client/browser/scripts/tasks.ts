@@ -22,7 +22,7 @@ const EXTENSION_PERMISSIONS_ALL_URLS = Boolean(
 
 export type BuildEnvironment = 'dev' | 'prod'
 
-type Browser = 'firefox' | 'chrome' | 'safari'
+type Browser = 'firefox' | 'chrome' | 'safari' | 'edge'
 
 const BUILDS_DIR = 'build'
 
@@ -52,6 +52,7 @@ function ensurePaths(browser?: Browser): void {
         shelljs.mkdir('-p', `build/${browser}`)
     } else {
         shelljs.mkdir('-p', 'build/chrome')
+        shelljs.mkdir('-p', 'build/edge')
         shelljs.mkdir('-p', 'build/firefox')
         shelljs.mkdir('-p', 'build/safari')
     }
@@ -111,7 +112,7 @@ function copyExtensionAssets(toDirectory: string): void {
  *
  * The pre-requisite step is to first clone, build, and copy into `build/extensions`.
  */
-function copyInlineExtensions(toDirectory: string): void {
+export function copyInlineExtensions(toDirectory: string): void {
     shelljs.cp('-R', 'build/extensions', toDirectory)
 }
 
@@ -133,6 +134,7 @@ export function copyIntegrationAssets(): void {
 const BROWSER_TITLES = {
     firefox: 'Firefox',
     chrome: 'Chrome',
+    edge: 'Edge',
     safari: 'Safari',
 } as const
 
@@ -142,6 +144,7 @@ const BROWSER_TITLES = {
 const BROWSER_BUNDLE_ZIPS: Partial<Record<Browser, string>> = {
     firefox: 'firefox-bundle.xpi',
     chrome: 'chrome-bundle.zip',
+    edge: 'edge-bundle.zip',
 }
 
 /**
@@ -149,6 +152,7 @@ const BROWSER_BUNDLE_ZIPS: Partial<Record<Browser, string>> = {
  */
 const BROWSER_BLOCKLIST = {
     chrome: ['applications'] as const,
+    edge: ['applications'] as const,
     firefox: ['key'] as const,
     safari: [] as const,
 }
@@ -158,8 +162,6 @@ function writeSchema(writeDirectory: string): void {
 }
 
 const version = process.env.BROWSER_EXTENSION_VERSION || utcVersion()
-
-const shouldBuildWithInlineExtensions = (browser: Browser): boolean => browser === 'firefox'
 
 function writeManifest(environment: BuildEnvironment, browser: Browser, writeDirectory: string): void {
     const extensionInfo = cloneDeep(manifestSpec)
@@ -190,14 +192,9 @@ function writeManifest(environment: BuildEnvironment, browser: Browser, writeDir
         }
     }
 
-    if (shouldBuildWithInlineExtensions(browser)) {
-        // Add the inline extensions to web accessible resources
-        manifest.web_accessible_resources = manifest.web_accessible_resources || []
-        manifest.web_accessible_resources.push('extensions/*')
-
-        // Revert the CSP to default, in order to remove the `blob` policy exception.
-        delete manifest.content_security_policy
-    }
+    // Add the inline extensions to web accessible resources
+    manifest.web_accessible_resources = manifest.web_accessible_resources || []
+    manifest.web_accessible_resources.push('extensions/*')
 
     delete manifest.$schema
 
@@ -226,9 +223,7 @@ const buildForBrowser = curry((browser: Browser, environment: BuildEnvironment):
     writeSchema(buildDirectory)
 
     copyExtensionAssets(buildDirectory)
-    if (shouldBuildWithInlineExtensions(browser)) {
-        copyInlineExtensions(buildDirectory)
-    }
+    copyInlineExtensions(buildDirectory)
 
     // Create a bundle by zipping the web extension directory.
     const browserBundleZip = BROWSER_BUNDLE_ZIPS[browser]
@@ -250,4 +245,5 @@ const buildForBrowser = curry((browser: Browser, environment: BuildEnvironment):
 
 export const buildFirefox = buildForBrowser('firefox')
 export const buildChrome = buildForBrowser('chrome')
+export const buildEdge = buildForBrowser('edge')
 export const buildSafari = buildForBrowser('safari')

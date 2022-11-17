@@ -1,16 +1,3 @@
-extend type Query {
-    """
-    [Experimental] Query for all insights and return their aggregations.
-    """
-    insights(
-        """
-        An (optional) array of insight unique ids that will filter the results by the provided values. If omitted, all available insights will return.
-        """
-        ids: [ID!]
-    ): InsightConnection
-        @deprecated(reason: "Use insightViews instead. This is deprecated and will be removed in a future release.")
-}
-
 """
 A list of insights.
 """
@@ -180,6 +167,36 @@ type InsightSeriesStatus {
     effectively be used as a status that the insight is still processing if returned null.
     """
     backfillQueuedAt: DateTime
+
+    """
+    Indicates if the series is currently loading additional data
+    """
+    isLoadingData: Boolean
+
+    """
+    Data points that are flagged terminally incomplete for this series.
+    """
+    incompleteDatapoints: [IncompleteDatapointAlert!]!
+}
+
+"""
+Represents a terminally incomplete data point at a specific time, and optionally for a specific repository.
+"""
+interface IncompleteDatapointAlert {
+    """
+    The data point that is incomplete.
+    """
+    time: DateTime!
+}
+
+"""
+Represents a terminally incomplete data point at a specific time, and optionally for a specific repository.
+"""
+type TimeoutDatapointAlert implements IncompleteDatapointAlert {
+    """
+    The data point that is incomplete.
+    """
+    time: DateTime!
 }
 
 extend type Query {
@@ -209,129 +226,6 @@ extend type Query {
     Generate an ephemeral set of time series for a code insight, generally for the purposes of live preview.
     """
     searchInsightPreview(input: SearchInsightPreviewInput!): [SearchInsightLivePreviewSeries!]!
-
-    """
-    Returns insights that have matches in this file. This query is experimental and should be considered unstable in the API.
-    """
-    relatedInsightsInline(input: RelatedInsightsInput!): [RelatedInsightInline!]!
-
-    """
-    Returns insights that match the given file. This query is experimental and should be considered unstable in the API.
-    """
-    relatedInsightsForFile(input: RelatedInsightsInput!): [RelatedInsight!]!
-
-    """
-    Returns insights that match the given repo. This query is experimental and should be considered unstable in the API.
-    """
-    relatedInsightsForRepo(input: RelatedInsightsRepoInput!): [RelatedInsight!]!
-
-    """
-    Returns insights based on a search query. This is experimental and should be considered unstable in the API.
-    """
-    searchQueryInsights(
-        """
-        The search query
-        """
-        query: String!
-        """
-        The search pattern type
-        """
-        patternType: SearchPatternType = literal
-    ): SearchQueryInsightsResult
-}
-
-"""
-SearchQueryInsights are Insights that are available based on a search query. This type is experimental and should be considered unstable in the API.
-"""
-type SearchQueryInsights {
-    """
-    30 day percentage change in result count rounded to nearest whole number
-    """
-    thirtyDayPercentChange: Int!
-
-    """
-    insight preview
-    """
-    preview: [SearchInsightLivePreviewSeries!]!
-}
-
-"""
-Indicates that search query insights are not available. This type is experimental and should be considered unstable in the API.
-"""
-type SearchQueryInsightsNotAvailable {
-    """
-    message regrading the unavailablity of search query insights.
-    """
-    message: String!
-}
-
-"""
-Defines search query insights for a specified search query.
-"""
-union SearchQueryInsightsResult = SearchQueryInsights | SearchQueryInsightsNotAvailable
-
-"""
-Input for getting insights related to a file. This input type is experimental and should be considered unstable in the API.
-"""
-input RelatedInsightsInput {
-    """
-    The repo name for the file
-    """
-    repo: String!
-    """
-    The revision number
-    """
-    revision: String!
-    """
-    The path to the file
-    """
-    file: String!
-}
-
-"""
-Input for getting insights related to a repo. This input type is experimental and should be considered unstable in the API.
-"""
-input RelatedInsightsRepoInput {
-    """
-    The repo name for the file
-    """
-    repo: String!
-    """
-    The revision number
-    """
-    revision: String!
-}
-
-"""
-Metadata for finding where an insight matches in a file. This type is experimental and should be considered unstable in the API.
-"""
-type RelatedInsightInline {
-    """
-    Insight view id
-    """
-    viewId: String!
-    """
-    Insight title
-    """
-    title: String!
-    """
-    An array of line numbers where matches are found
-    """
-    lineNumbers: [Int!]!
-}
-
-"""
-Metadata for a related insight. This type is experimental and should be considered unstable in the API.
-"""
-type RelatedInsight {
-    """
-    Insight view id
-    """
-    viewId: String!
-    """
-    Insight title
-    """
-    title: String!
 }
 
 extend type Mutation {
@@ -577,6 +471,21 @@ extend type Query {
     Retrieve information about queued insights series and their breakout by status. Restricted to admins only.
     """
     insightSeriesQueryStatus: [InsightSeriesQueryStatus!]!
+
+    """
+    Retrieve information about an insight view and its status. Restricted to admins only.
+    """
+    insightViewDebug(id: ID!): InsightViewDebug
+}
+
+"""
+Debugging information related to an InsightView
+"""
+type InsightViewDebug {
+    """
+    A JSON dump of debug information for series on the insight view
+    """
+    raw: [String!]!
 }
 
 """
@@ -1058,7 +967,7 @@ type InsightView implements Node {
     """
     The total number of series on this insight.
     """
-    seriesCount: Int!
+    seriesCount: Int
 }
 
 """

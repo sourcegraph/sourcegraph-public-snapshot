@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,12 +19,16 @@ type PerforceDepotSyncer struct {
 	// MaxChanges indicates to only import at most n changes when possible.
 	MaxChanges int
 
-	// Client configures the client to use with p4 and enables use of a client spec to
-	// find the list of interesting files in p4.
+	// Client configures the client to use with p4 and enables use of a client spec
+	// to find the list of interesting files in p4.
 	Client string
 
-	// FusionConfig contains information about the experimental p4-fusion client
+	// FusionConfig contains information about the experimental p4-fusion client.
 	FusionConfig FusionConfig
+
+	// P4Home is a directory we will pass to `git p4` commands as the
+	// $HOME directory as it requires this to write cache data.
+	P4Home string
 }
 
 func (s *PerforceDepotSyncer) Type() string {
@@ -70,6 +75,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
 			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
 			"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
+			"--noColor", "true",
 		)
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
@@ -94,9 +100,6 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 		return errors.Wrap(err, "ping with trust")
 	}
 
-	// Example: git p4 sync --max-changes 1000
-	args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
-
 	var cmd *exec.Cmd
 	if s.FusionConfig.Enabled {
 		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
@@ -115,8 +118,11 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
 			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
 			"--fsyncEnable", strconv.FormatBool(s.FusionConfig.FsyncEnable),
+			"--noColor", "true",
 		)
 	} else {
+		// Example: git p4 sync --max-changes 1000
+		args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
 		cmd = exec.CommandContext(ctx, "git", args...)
 	}
 	cmd.Env = s.p4CommandEnv(host, username, password)
@@ -144,7 +150,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 }
 
 // RemoteShowCommand returns the command to be executed for showing Git remote of a Perforce depot.
-func (s *PerforceDepotSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
+func (s *PerforceDepotSyncer) RemoteShowCommand(ctx context.Context, _ *vcs.URL) (cmd *exec.Cmd, err error) {
 	// Remote info is encoded as in the current repository
 	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
 }
@@ -166,9 +172,17 @@ func (s *PerforceDepotSyncer) p4CommandEnv(host, username, password string) []st
 		"P4USER="+username,
 		"P4PASSWD="+password,
 	)
+
 	if s.Client != "" {
 		env = append(env, "P4CLIENT="+s.Client)
 	}
+
+	if s.P4Home != "" {
+		// git p4 commands write to $HOME/.gitp4-usercache.txt, we should pass in a
+		// directory under our control and ensure that it is writeable.
+		env = append(env, "HOME="+s.P4Home)
+	}
+
 	return env
 }
 
@@ -223,11 +237,21 @@ func p4ping(ctx context.Context, host, username, password string) error {
 			err = ctxerr
 		}
 		if len(out) > 0 {
-			err = errors.Errorf("%s (output follows)\n\n%s", err, out)
+			err = errors.Errorf("%s (output follows)\n\n%s", err, specifyCommandInErrorMessage(string(out), cmd))
 		}
 		return err
 	}
 	return nil
+}
+
+func specifyCommandInErrorMessage(errorMsg string, command *exec.Cmd) string {
+	if !strings.Contains(errorMsg, "this operation") {
+		return errorMsg
+	}
+	if len(command.Args) == 0 {
+		return errorMsg
+	}
+	return strings.Replace(errorMsg, "this operation", fmt.Sprintf("`%s`", strings.Join(command.Args, " ")), 1)
 }
 
 // p4pingWithTrust attempts to ping the Perforce server and performs a trust operation when needed.

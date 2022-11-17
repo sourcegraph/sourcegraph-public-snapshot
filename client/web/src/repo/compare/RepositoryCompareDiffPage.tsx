@@ -12,7 +12,6 @@ import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
@@ -20,8 +19,11 @@ import { fileDiffFields, diffStatFields } from '../../backend/diff'
 import { queryGraphQL } from '../../backend/graphql'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
+import { RepositoryComparisonDiffResult } from '../../graphql-operations'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+
+export type RepositoryComparisonDiff = Extract<RepositoryComparisonDiffResult['node'], { __typename?: 'Repository' }>
 
 export function queryRepositoryComparisonFileDiffs(args: {
     repo: Scalars['ID']
@@ -29,14 +31,22 @@ export function queryRepositoryComparisonFileDiffs(args: {
     head: string | null
     first?: number
     after?: string | null
-}): Observable<GQL.IFileDiffConnection> {
+    paths?: string[]
+}): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> {
     return queryGraphQL(
         gql`
-            query RepositoryComparisonDiff($repo: ID!, $base: String, $head: String, $first: Int, $after: String) {
+            query RepositoryComparisonDiff(
+                $repo: ID!
+                $base: String
+                $head: String
+                $first: Int
+                $after: String
+                $paths: [String!]
+            ) {
                 node(id: $repo) {
                     ... on Repository {
                         comparison(base: $base, head: $head) {
-                            fileDiffs(first: $first, after: $after) {
+                            fileDiffs(first: $first, after: $after, paths: $paths) {
                                 nodes {
                                     ...FileDiffFields
                                 }
@@ -64,7 +74,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
             if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as GQL.IRepository
+            const repo = data.node as RepositoryComparisonDiff
             if (!repo.comparison || !repo.comparison.fileDiffs || errors) {
                 throw createAggregateError(errors)
             }
@@ -84,12 +94,17 @@ interface RepositoryCompareDiffPageProps
 
     /** The head of the comparison. */
     head: { repoName: string; repoID: Scalars['ID']; revision: string | null; commitID: string }
+
+    /** An optional path of a specific file to compare */
+    path: string | null
+
     hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
 }
 
 /** A page with the file diffs in the comparison. */
 export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCompareDiffPageProps> {
     public render(): JSX.Element | null {
+        const { extensionsController } = this.props
         return (
             <div className="repository-compare-page">
                 <FileDiffConnection
@@ -98,16 +113,20 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     pluralNoun="changed files"
                     queryConnection={this.queryDiffs}
                     nodeComponent={FileDiffNode}
-                    nodeComponentProps={{
-                        ...this.props,
-                        extensionInfo: {
-                            base: { ...this.props.base, revision: this.props.base.revision || 'HEAD' },
-                            head: { ...this.props.head, revision: this.props.head.revision || 'HEAD' },
-                            hoverifier: this.props.hoverifier,
-                            extensionsController: this.props.extensionsController,
-                        },
-                        lineNumbers: true,
-                    }}
+                    nodeComponentProps={
+                        extensionsController !== null
+                            ? {
+                                  ...this.props,
+                                  extensionInfo: {
+                                      base: { ...this.props.base, revision: this.props.base.revision || 'HEAD' },
+                                      head: { ...this.props.head, revision: this.props.head.revision || 'HEAD' },
+                                      hoverifier: this.props.hoverifier,
+                                      extensionsController,
+                                  },
+                                  lineNumbers: true,
+                              }
+                            : undefined
+                    }
                     defaultFirst={15}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
@@ -119,11 +138,14 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
         )
     }
 
-    private queryDiffs = (args: { first?: number }): Observable<GQL.IFileDiffConnection> =>
+    private queryDiffs = (args: { first?: number }): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
         queryRepositoryComparisonFileDiffs({
             ...args,
             repo: this.props.repo.id,
             base: this.props.base.commitID,
             head: this.props.head.commitID,
+            // All of our user journeys are designed for just a single file path, so the component APIs are set up to
+            // enforce that, even though the GraphQL query is able to support any number of paths
+            paths: this.props.path ? [this.props.path] : [],
         })
 }

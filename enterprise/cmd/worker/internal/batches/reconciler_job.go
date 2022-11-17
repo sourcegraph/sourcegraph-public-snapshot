@@ -3,8 +3,8 @@ package batches
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -37,7 +37,7 @@ func (j *reconcilerJob) Config() []env.Config {
 func (j *reconcilerJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("routines", "reconciler job routines"),
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 	workCtx := actor.WithInternalActor(context.Background())
@@ -57,7 +57,9 @@ func (j *reconcilerJob) Routines(_ context.Context, logger log.Logger) ([]gorout
 		bstore,
 		reconcilerStore,
 		gitserver.NewClient(bstore.DatabaseDB()),
-		sources.NewSourcer(httpcli.NewExternalClientFactory()),
+		sources.NewSourcer(httpcli.NewExternalClientFactory(
+			httpcli.NewLoggingMiddleware(logger.Scoped("sourcer", "batches sourcer")),
+		)),
 		observationContext,
 	)
 

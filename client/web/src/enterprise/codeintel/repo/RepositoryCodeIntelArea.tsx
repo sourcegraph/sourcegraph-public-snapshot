@@ -14,6 +14,7 @@ import { RepositoryFields } from '../../../graphql-operations'
 import { RouteDescriptor } from '../../../util/contributions'
 import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeIntelConfigurationPage'
 import { CodeIntelConfigurationPolicyPageProps } from '../configuration/pages/CodeIntelConfigurationPolicyPage'
+import { CodeIntelInferenceConfigurationPageProps } from '../configuration/pages/CodeIntelInferenceConfigurationPage'
 import { CodeIntelRepositoryIndexConfigurationPageProps } from '../configuration/pages/CodeIntelRepositoryIndexConfigurationPage'
 import { CodeIntelIndexesPageProps } from '../indexes/pages/CodeIntelIndexesPage'
 import { CodeIntelIndexPageProps } from '../indexes/pages/CodeIntelIndexPage'
@@ -51,6 +52,11 @@ const CodeIntelConfigurationPage = lazyComponent<CodeIntelConfigurationPageProps
     () => import('../configuration/pages/CodeIntelConfigurationPage'),
     'CodeIntelConfigurationPage'
 )
+
+const CodeIntelInferenceConfigurationPage = lazyComponent<
+    CodeIntelInferenceConfigurationPageProps,
+    'CodeIntelInferenceConfigurationPage'
+>(() => import('../configuration/pages/CodeIntelInferenceConfigurationPage'), 'CodeIntelInferenceConfigurationPage')
 
 const RepositoryIndexConfigurationPage = lazyComponent<
     CodeIntelRepositoryIndexConfigurationPageProps,
@@ -104,6 +110,11 @@ export const routes: readonly CodeIntelAreaRoute[] = [
         render: props => <RepositoryIndexConfigurationPage {...props} />,
     },
     {
+        path: '/inference-configuration',
+        exact: true,
+        render: props => <CodeIntelInferenceConfigurationPage {...props} />,
+    },
+    {
         path: '/configuration/:id',
         exact: true,
         render: props => <CodeIntelConfigurationPolicyPage {...props} />,
@@ -133,7 +144,7 @@ export interface RepositoryCodeIntelAreaPageProps
 
 const sidebarRoutes: CodeIntelSideBarGroups = [
     {
-        header: { label: 'Code graph' },
+        header: { label: 'Code graph data' },
         items: [
             {
                 to: '/uploads',
@@ -163,7 +174,7 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
 export const RepositoryCodeIntelArea: React.FunctionComponent<
     React.PropsWithChildren<RepositoryCodeIntelAreaPageProps>
 > = ({ match, useBreadcrumb, ...props }) => {
-    useBreadcrumb(useMemo(() => ({ key: 'code-intelligence', element: 'Code Graph' }), []))
+    useBreadcrumb(useMemo(() => ({ key: 'code-intelligence', element: 'Code graph data' }), []))
 
     return (
         <div className="container d-flex mt-3">

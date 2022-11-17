@@ -1,15 +1,14 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
-import { boolean } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
-import { Button, Position } from '@sourcegraph/wildcard'
 
-import { Popover, PopoverContent, PopoverOpenEvent, PopoverTail, PopoverTrigger } from '..'
+import { Popover, PopoverContent, PopoverOpenEvent, PopoverTail, PopoverTrigger, Position } from '..'
+import { Button } from '../../Button'
 import { createRectangle, Point, Strategy } from '../tether'
 
 import styles from './Popover.story.module.scss'
@@ -400,14 +399,14 @@ export const WithControlledState: Story = () => {
     )
 }
 
-export const WithNestedScrollParents: Story = () => {
-    const constrainToScrollParents = boolean('constrainToScrollParents', true)
+export const WithNestedScrollParents: Story = (args = {}) => {
+    const constrainToScrollParents = args.constrainToScrollParents
 
     return (
         <ScrollCenterBox title="Root scroll block" className={styles.root}>
             <div className={styles.spreadContentBlock}>
                 <ScrollCenterBox
-                    title="Sub scroll block (see knobs panel for rendering tooltip outside of the scroll container"
+                    title="Sub scroll block (see controls panel for rendering tooltip outside of the scroll container"
                     className={classNames(styles.container, styles.containerAsSubRoot)}
                 >
                     <div className={styles.content}>
@@ -439,6 +438,12 @@ export const WithNestedScrollParents: Story = () => {
             </div>
         </ScrollCenterBox>
     )
+}
+WithNestedScrollParents.argTypes = {
+    constrainToScrollParents: {
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
 }
 
 export const WithVirtualTarget: Story = () => {
@@ -488,7 +493,7 @@ export const WithVirtualTarget: Story = () => {
     )
 }
 
-export const WithTail: Story = () => (
+export const WithTail: Story = (args = {}) => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>
             <Popover>
@@ -508,11 +513,19 @@ export const WithTail: Story = () => (
                     </div>
                 </PopoverContent>
 
-                <PopoverTail />
+                <PopoverTail size={args.size} />
             </Popover>
         </div>
     </ScrollCenterBox>
 )
+
+WithTail.argTypes = {
+    size: {
+        control: 'radio',
+        options: ['sm', 'md', 'lg'],
+        defaultValue: 'sm',
+    },
+}
 
 interface ScrollCenterBoxProps extends React.HTMLAttributes<HTMLDivElement> {
     title: string

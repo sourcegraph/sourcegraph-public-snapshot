@@ -8,12 +8,12 @@ import { filter, first, mapTo, switchMap } from 'rxjs/operators'
 import { tabbable } from 'tabbable'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { isDefined } from '@sourcegraph/common'
+import { isDefined, logger } from '@sourcegraph/common'
 import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { syncRemoteSubscription } from '@sourcegraph/shared/src/api/util'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { RequiredExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Badge, Button, useObservable, Link, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
@@ -21,7 +21,8 @@ import { useCarousel } from '../../components/useCarousel'
 
 import styles from './StatusBar.module.scss'
 
-interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand' | 'registerCommand'> {
+interface StatusBarProps
+    extends RequiredExtensionsControllerProps<'extHostAPI' | 'executeCommand' | 'registerCommand'> {
     getStatusBarItems: () => Observable<StatusBarItemWithKey[] | 'loading'>
     className?: string
     statusBarItemClassName?: string
@@ -122,7 +123,7 @@ export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBa
                         })
                     )
                 })
-                .catch(error => console.error('Error registering "Focus status bar" command', error))
+                .catch(error => logger.error('Error registering "Focus status bar" command', error))
         }
 
         return () => subscription.unsubscribe()
@@ -219,7 +220,7 @@ const StatusBarItem: React.FunctionComponent<
             className?: string
             component?: JSX.Element
             location: H.Location
-        } & ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>
+        } & RequiredExtensionsControllerProps<'extHostAPI' | 'executeCommand'>
     >
 > = ({ statusBarItem, className, component, extensionsController, location }) => {
     const [commandState, setCommandState] = useState<'loading' | null>(null)

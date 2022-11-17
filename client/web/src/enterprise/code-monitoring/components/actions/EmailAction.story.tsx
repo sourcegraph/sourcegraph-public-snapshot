@@ -33,6 +33,7 @@ const action: ActionProps['action'] = {
     enabled: true,
     includeResults: false,
 }
+window.context.emailEnabled = true
 
 export const EmailActionStory: Story = () => (
     <WebStory>

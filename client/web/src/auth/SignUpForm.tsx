@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiHelpCircleOutline, mdiGithub, mdiGitlab } from '@mdi/js'
+import { mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
 import cookies from 'js-cookie'
 import { Observable, of } from 'rxjs'
@@ -15,16 +15,15 @@ import {
     ValidationOptions,
     deriveInputClassName,
 } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon, Checkbox, Label, Text } from '@sourcegraph/wildcard'
+import { Link, Icon, Label, Text, Button, AnchorLink } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../components/LoaderButton'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
-import { enterpriseTrial } from '../util/features'
 import { validatePassword, getPasswordRequirements } from '../util/security'
 
 import { OrDivider } from './OrDivider'
-import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
+import { PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import { SignupEmailField } from './SignupEmailField'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
@@ -33,7 +32,6 @@ export interface SignUpArguments {
     email: string
     username: string
     password: string
-    requestedTrial: boolean
     anonymousUserId?: string
     firstSourceUrl?: string
     lastSourceUrl?: string
@@ -55,7 +53,7 @@ interface SignUpFormProps {
         | 'authMinPasswordLength'
     >
 
-    // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service and trial section.
+    // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service.
     experimental?: boolean
 }
 
@@ -72,7 +70,6 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
     experimental = false,
 }) => {
     const [loading, setLoading] = useState(false)
-    const [requestedTrial, setRequestedTrial] = useState(false)
     const [error, setError] = useState<Error | null>(null)
 
     const signUpFieldValidators: Record<'email' | 'username' | 'password', ValidationOptions> = useMemo(
@@ -119,7 +116,6 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                 email: emailState.value,
                 username: usernameState.value,
                 password: passwordState.value,
-                requestedTrial,
                 anonymousUserId: cookies.get(ANONYMOUS_USER_ID_KEY),
                 firstSourceUrl: cookies.get(FIRST_SOURCE_URL_KEY),
                 lastSourceUrl: cookies.get(LAST_SOURCE_URL_KEY),
@@ -129,17 +125,13 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
             })
             eventLogger.log('InitiateSignUp')
         },
-        [onSignUp, disabled, emailState, usernameState, passwordState, requestedTrial]
+        [onSignUp, disabled, emailState, usernameState, passwordState]
     )
-
-    const onRequestTrialFieldChange = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {
-        setRequestedTrial(event.target.checked)
-    }, [])
 
     const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)
 
     const onClickExternalAuthSignup = useCallback(
-        (type: AuthProvider['serviceType']): React.MouseEventHandler<HTMLButtonElement> => () => {
+        (type: AuthProvider['serviceType']) => () => {
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
             eventLogger.log('SignupInitiated', { type }, { type })
@@ -238,34 +230,14 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                         {getPasswordRequirements(context)}
                     </small>
                 </div>
-                {!experimental && enterpriseTrial && (
-                    <div className="form-group">
-                        <Checkbox
-                            onChange={onRequestTrialFieldChange}
-                            id="EnterpriseTrialCheck"
-                            label={
-                                <>
-                                    Try Sourcegraph Enterprise free for
-                                    <span className="text-nowrap">
-                                        {' '}
-                                        30 days{' '}
-                                        <Link target="_blank" rel="noopener" to="https://about.sourcegraph.com/pricing">
-                                            <Icon aria-label="See Sourcegraph pricing" svgPath={mdiHelpCircleOutline} />
-                                        </Link>
-                                    </span>
-                                </>
-                            }
-                        />
-                    </div>
-                )}
                 <div className="form-group mb-0">
                     <LoaderButton
                         loading={loading}
                         label={buttonLabel || 'Register'}
                         type="submit"
                         disabled={disabled}
-                        className="btn-block"
                         variant="primary"
+                        display="block"
                     />
                 </div>
                 {context.sourcegraphDotComMode && (
@@ -276,11 +248,11 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             // here because this list will not be updated during this component's lifetime.
                             <div className="mb-2" key={index}>
                                 <Button
-                                    href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
-                                    className="btn-block"
+                                    to={provider.authenticationURL}
+                                    display="block"
                                     onClick={onClickExternalAuthSignup(provider.serviceType)}
                                     variant="secondary"
-                                    as="a"
+                                    as={AnchorLink}
                                 >
                                     {provider.serviceType === 'github' ? (
                                         <Icon aria-hidden={true} svgPath={mdiGithub} />

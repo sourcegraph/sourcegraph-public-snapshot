@@ -5,9 +5,9 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
-import type { ExecutorsListPageProps } from '../executors/ExecutorsListPage'
+import type { ExecutorsSiteAdminAreaProps } from '../executors/ExecutorsSiteAdminArea'
 
-export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
+export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = ([
     ...siteAdminAreaRoutes,
     {
         path: '/license',
@@ -75,11 +75,16 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('./SiteAdminExternalAccountsPage'), 'SiteAdminExternalAccountsPage'),
         exact: true,
     },
-    {
-        path: '/registry/extensions',
-        render: lazyComponent(() => import('./SiteAdminRegistryExtensionsPage'), 'SiteAdminRegistryExtensionsPage'),
-        exact: true,
-    },
+    window.context.enableLegacyExtensions
+        ? {
+              path: '/registry/extensions',
+              render: lazyComponent(
+                  () => import('./SiteAdminRegistryExtensionsPage'),
+                  'SiteAdminRegistryExtensionsPage'
+              ),
+              exact: true,
+          }
+        : undefined,
 
     {
         path: '/batch-changes',
@@ -137,26 +142,6 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
 
-    // Lockfile indexes & dependency search routes
-    {
-        path: '/code-graph/lockfiles',
-        render: lazyComponent(
-            () => import('../codeintel/lockfiles/pages/CodeIntelLockfilesPage'),
-            'CodeIntelLockfilesPage'
-        ),
-        exact: true,
-        condition: () => Boolean(window.context?.codeIntelLockfileIndexingEnabled),
-    },
-    {
-        path: '/code-graph/lockfiles/:id',
-        render: lazyComponent(
-            () => import('../codeintel/lockfiles/pages/CodeIntelLockfilePage'),
-            'CodeIntelLockfilePage'
-        ),
-        exact: true,
-        condition: () => Boolean(window.context?.codeIntelLockfileIndexingEnabled),
-    },
-
     // Code graph configuration
     {
         path: '/code-graph/configuration',
@@ -174,6 +159,14 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         ),
         exact: true,
     },
+    {
+        path: '/code-graph/inference-configuration',
+        render: lazyComponent(
+            () => import('../codeintel/configuration/pages/CodeIntelInferenceConfigurationPage'),
+            'CodeIntelInferenceConfigurationPage'
+        ),
+        exact: true,
+    },
 
     // Legacy routes
     {
@@ -185,17 +178,10 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     // Executor routes
     {
         path: '/executors',
-        render: lazyComponent<ExecutorsListPageProps, 'ExecutorsListPage'>(
-            () => import('../executors/ExecutorsListPage'),
-            'ExecutorsListPage'
+        render: lazyComponent<ExecutorsSiteAdminAreaProps, 'ExecutorsSiteAdminArea'>(
+            () => import('../executors/ExecutorsSiteAdminArea'),
+            'ExecutorsSiteAdminArea'
         ),
-        exact: true,
         condition: () => Boolean(window.context?.executorsEnabled),
     },
-    // Organization routes
-    {
-        path: '/organizations/early-access-orgs-code',
-        render: lazyComponent(() => import('../organizations/EarlyAccessOrgsCodeForm'), 'EarlyAccessOrgsCodeForm'),
-        exact: true,
-    },
-]
+] as readonly (SiteAdminAreaRoute | undefined)[]).filter(Boolean) as readonly SiteAdminAreaRoute[]

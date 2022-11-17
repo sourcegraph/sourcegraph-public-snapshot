@@ -13,13 +13,12 @@ import (
 // If you already set the family manually on the logger scope, then you might want to use
 // trace.Context(ctx) instead.
 func Logger(ctx context.Context, l log.Logger) log.Logger {
+	// Attach details about internal/trace
 	if t := TraceFromContext(ctx); t != nil {
 		if t.family != "" {
 			l = l.Scoped(t.family, "trace family")
 		}
-		if tc := Context(ctx); tc != nil {
-			l = l.WithTrace(*tc)
-		}
 	}
-	return l
+	// Attach any trace (WithTrace no-ops if empty trace is provided)
+	return l.WithTrace(Context(ctx))
 }

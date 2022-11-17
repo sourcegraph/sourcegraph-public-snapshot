@@ -1,120 +1,130 @@
----
-title: 'Sourcegraph docs'
----
+# Sourcegraph
 
-<a href="https://sourcegraph.com"><picture><source srcset="assets/logo-theme-dark.svg" media="(prefers-color-scheme: dark)"/><img alt="Sourcegraph" src="assets/logo-theme-light.svg" height="48px" /></picture></a>
+Sourcegraph is a code search and intelligence platform. Devs use it to search, understand, and fix code across large codebases.
 
-<p class="subtitle">Universal Code Search: Move fast, even in big codebases.</p>
+To try Sourcegraph on 2 million open-source repositories, visit [Sourcegraph.com](https://sourcegraph.com/search).
 
-<p class="lead">
-Find and fix things across all of your code faster with Sourcegraph. Onboard to a new codebase, make large-scale refactors, increase efficiency, address security risks, root-cause incidents, and more.
-</p>
+## Deploy Sourcegraph
 
-This website is home to Sourcegraph's feature, administration (including deployment and configuration), and development documentation.
+Sourcegraph is runnable in a variety of environments, from cloud to self-hosted to your local machine.
 
-<div class="cta-group">
-<a class="btn btn-primary" href="#getting-started">★ Try Sourcegraph now</a>
-<a class="btn" href="#core-documentation">Core docs</a>
-<a class="btn" href="https://about.sourcegraph.com/">About Sourcegraph</a>
+<a href="admin/deploy" target="_blank">Learn more about our deployment methods</a>
+
+### Cloud
+
+<div>
+  <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
+    <div class="cloud-cta-copy">
+      <h2>Sourcegraph Cloud</h2>
+      <h3>A single-tenant instance managed by Sourcegraph</h3>
+    </div>
+    <div class="cloud-cta-btn-container">
+      <div class="visual-btn">Sign up</div>
+    </div>
+  </a>
 </div>
 
-## Getting started
+### Self-hosted
+
+<div class="grid">
+  <!-- AWS AMI-->
+  <a class="btn-app btn" href="/admin/deploy/machine-images/aws-ami">
+    <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
+    <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
+    <h3>AWS</h3>
+    <p>Launch a pre-configured Sourcegraph instance from an AWS AMI</p>
+  </a>
+</div>
+<div class="grid">
+  <!-- GCE Images-->
+  <a class="btn-app btn" href="/admin/deploy/machine-images/gce">
+    <img alt="aws-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/googlecloud.png" />
+    <h3>Google Compute Engine</h3>
+    <p>Launch a pre-configured Sourcegraph instance from a GCE Image</p>
+  </a>
+</div>
+<div class="grid">
+  <!-- Azure -->
+  <a class="btn-app btn" href="/admin/deploy/docker-compose/azure">
+    <img alt="azure-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/azure.png"/>
+    <h3>Azure</h3>
+    <p>Deploy onto Microsoft Azure</p>
+  </a>
+  <!-- AWS One Click-->
+  <a class="btn-app btn" href="/admin/deploy/docker-compose/aws-oneclick">
+    <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
+    <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
+    <h3>AWS One-Click</h3>
+    <span class="badge badge-warning">Coming soon</span> 
+    <!-- <p>Deploy onto AWS in one click</p> -->
+  </a>
+  <!-- Digital Ocean -->
+  <a class="btn-app btn" href="/admin/deploy/docker-compose/digitalocean">
+    <img alt="digital-ocean-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/DigitalOcean.png"/>
+    <h3>DigitalOcean</h3>
+    <p>Deploy onto DigitalOcean</p>
+  </a>
+  <!-- Docker Compose -->
+  <a class="btn-app btn" href="/admin/deploy/docker-compose">
+    <img alt="docker-compose-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
+    <h3>Docker Compose</h3>
+    <p>Deploy with Docker Compose</p>
+  </a>
+  <!-- Others -->
+  <a class="btn-app btn" href="/admin/deploy">
+    <img alt="private-cloud-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/cloud.png"/>
+    <h3>Private cloud</h3>
+    <p>Deploy into a generic cloud environment</p>
+  </a>
+  <!-- Kubernetes -->
+  <a class="btn-app btn" href="/admin/deploy/kubernetes">
+    <img alt="kubernetes-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/kubernetes.png"/>
+    <h3>Kubernetes</h3>
+	  <p>Deploy a multi-node cluster</p>
+    <p><strong>Enterprise-only</strong></p>
+  </a>
+</div>
+
+### Local machine
+
+<div class="grid">
+  <a class="btn-app btn" href="/admin/deploy/docker-single-container">
+    <img alt="docker-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
+    <h3>Docker Container</h3>
+    <p>Spin up a local Sourcegraph instance with pure docker</p>
+  </a>
+  <a class="btn-app btn" href="/admin/deploy/single-node/k3s">
+    <img alt="k3s-logo" src="/assets/other-logos/k3s.png"/>
+    <h3>K3s</h3>
+    <p>Spin up a local Sourcegraph instance with Kubernetes</p>
+  </a>
+  <a class="btn-app btn" href="/admin/deploy/single-node/minikube">
+    <img alt="minikube-logo" src="/assets/other-logos/minikube.png"/>
+    <h3>Minikube</h3>
+    <p>Spin up a local Sourcegraph instance with Kubernetes</p>
+  </a>
+  <div></div>
+</div>
+
+---
+
+## Quickstart
 
 <div class="getting-started">
-  <a href="https://sourcegraph.com/search" class="btn btn-primary" alt="Sourcegraph.com">
-   <span>★ Sourcegraph.com</span>
-   </br>
-   <b>Search millions of open source repositories.</b> No installation required.
+  <a href="getting-started" class="btn" alt="Run through the Quickstart guide">
+    <span>Sourcegraph 101</span>
+    <p>Learn how to use Sourcegraph.</p>
   </a>
-
-  <a href="admin/deploy" class="btn btn-primary" alt="Self-host">
-   <span>★ Self-hosted instance</span>
-   </br>
-   Deploy and manage your own Sourcegraph instance. <b>Recommended for production deployments.</b>
+  <a href="getting-started/tour" class="btn" alt="Read the src reference">
+    <span>Sourcegraph Tour</span>
+    <p>Take a tour of Sourcegraph’s features using real-world examples and use cases.</p>
   </a>
 </div>
 
-<div class="getting-started">
-  <a href="admin/deploy/managed" class="btn" alt="Managed instance">
-   <span>Managed instance</span>
-   </br>
-    Get a Sourcegraph instance provisioned and managed by the Sourcegraph team.
-  </a>
+## Community
 
-  <a href="#quick-install" class="btn" alt="Quick install">
-   <span>Local instance</span>
-   </br>
-   Quickly set up and try out Sourcegraph locally using Docker.
-  </a>
-</div>
-
-<span class="virtual-br"></span>
-
-> NOTE: Looking for how to *use* Sourcegraph? Refer to our [Using Sourcegraph guide](./getting-started/index.md)!
-
-<span class="virtual-br"></span>
-
-> NOTE: Unsure where to start, or need help? [Reach out to us](#get-help)!
-
-### Try Sourcegraph locally
-
-You can quickly try out Sourcegraph locally using Docker, which takes only a few minutes and lets you try out all of its features:
-
-<!--
-  DO NOT CHANGE THIS TO A CODEBLOCK.
-  We want line breaks for readability, but backslashes to escape them do not work cross-platform.
-  This uses line breaks that are rendered but not copy-pasted to the clipboard.
--->
-
-<pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run -d<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.42.0<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
-</pre>
-
-For next steps, visit the [Docker deployment documentation](admin/deploy/docker-single-container/index.md).
-
-> NOTE: Due to the Windows enviroment, using Sourcegraph with Windows currently isn't fully supported. Testing instructions for running Sourcegraph locally on a Windows machine can be found [here](admin/deploy/docker-single-container/index.md#testing-sourcegraph-on-windows)
-
-> WARNING: **We *do not* recommend using this method for a production instance** - see [Getting started](#getting-started) for more options.
-
-## Core documentation
-
-### Features and tutorials
-
-- [Tour](getting-started/tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
-- [Using Sourcegraph](getting-started/index.md)
-- [How to run a Sourcegraph trial](adopt/trial/index.md) at your company
-- [Integrations](integration/index.md) with GitHub, GitLab, Bitbucket, etc.
-- [Extensions](extensions/index.md)
-- [Chrome and Firefox browser extensions](integration/browser_extension.md)
-- [Site Administrator Quickstart](admin/how-to/site-admin-quickstart.md)
-
-### Reference
-
-- [Query syntax reference](code_search/reference/queries.md)
-- [API Documentation](api/index.md)
-- [Sourcegraph changelog](./CHANGELOG.md)
-
-## Cloud documentation
-
-- [Sourcegraph Cloud](code_search/explanations/sourcegraph_cloud.md)
-- [Differences between Sourcegraph Cloud and self-hosted](cloud/cloud_ent_on-prem_comparison.md)
-- [Indexing open source code in Sourcegraph Cloud](cloud/indexing_open_source_code.md)
-
-## Self-hosted documentation
-
-- [Deploy](admin/deploy/index.md) or [update](admin/updates/index.md) Sourcegraph
-- [Administration](admin/index.md)
-
-## Other links
-
-- [Contributing to Sourcegraph](dev/index.md)
-- [Sourcegraph handbook](https://handbook.sourcegraph.com/)
-- [Sourcegraph blog](https://about.sourcegraph.com/blog/)
-- [@sourcegraph on Twitter](https://twitter.com/sourcegraph)
-- [Product Roadmap](https://handbook.sourcegraph.com/product#roadmap)
-
-## Get help
-
-- [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide)
-- [Tweet (@sourcegraph)](https://twitter.com/sourcegraph)
-- [Talk to an engineer](https://info.sourcegraph.com/talk-to-a-developer)
-- [Talk to a product specialist](https://about.sourcegraph.com/contact/request-info/)
+* [Blog](https://about.sourcegraph.com/blog/)
+* [Discord](https://discord.gg/s2qDtYGnAE)
+* [Twitter](https://twitter.com/sourcegraph)
+* [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
+* [Contact us](https://about.sourcegraph.com/contact)

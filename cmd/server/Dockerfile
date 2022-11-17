@@ -1,5 +1,5 @@
 # Install p4 CLI (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7 AS p4cli
+FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e AS p4cli
 
 # hadolint ignore=DL3003
 RUN wget http://cdist2.perforce.com/perforce/r21.2/bin.linux26x86_64/p4 && \
@@ -7,13 +7,13 @@ RUN wget http://cdist2.perforce.com/perforce/r21.2/bin.linux26x86_64/p4 && \
     chmod +x /usr/local/bin/p4
 
 # Install p4-fusion (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7 AS p4-fusion
+FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e AS p4-fusion
 
 COPY p4-fusion-install-alpine.sh /p4-fusion-install-alpine.sh
 RUN /p4-fusion-install-alpine.sh
 
 # Install coursier (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7 AS coursier
+FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e AS coursier
 
 # TODO(code-intel): replace with official streams when musl builds are upstreamed
 RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/download/v0.5.6/cs-musl.zip && \
@@ -21,7 +21,7 @@ RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/downl
     mv cs-musl /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
-FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7
+FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e
 # TODO(security): This container should not be running as root!
 #
 # The default user in sourcegraph/alpine is a non-root `sourcegraph` user but because old deployments
@@ -41,10 +41,12 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 RUN apk add --no-cache --verbose \
     # [NOTE: git-version-min-requirement]
-    # We require git 2.34.1 because we use git-repack with flag --write-midx.
-    'git>=2.34.1' \
+    # We require git 2.38+ because we need a fix for this vulnerability to be included:
+    # https://github.blog/2022-04-12-git-security-vulnerability-announced/
+    'git>=2.38.1' \
+    git-lfs \
     git-p4 \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.15/main  \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main  \
     # NOTE that the Postgres version we run is different
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
@@ -74,7 +76,7 @@ COPY --from=docker.io/sourcegraph/syntect_server:21-08-31_c330964@sha256:759f331
 
 
 # install minio (keep this up to date with docker-images/minio/Dockerfile)
-ENV MINIO_VERSION=RELEASE.2022-05-08T23-50-31Z
+ENV MINIO_VERSION=RELEASE.2022-09-17T00-09-45Z
 RUN wget "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.$MINIO_VERSION" && \
     chmod +x "minio.$MINIO_VERSION" && \
     mv "minio.$MINIO_VERSION" /usr/local/bin/minio

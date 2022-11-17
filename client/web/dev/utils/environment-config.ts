@@ -33,13 +33,19 @@ export const ENVIRONMENT_CONFIG = {
     WEBPACK_SERVE_INDEX: getEnvironmentBoolean('WEBPACK_SERVE_INDEX'),
     // Enables `StatoscopeWebpackPlugin` that allows to analyze application bundle.
     WEBPACK_BUNDLE_ANALYZER: getEnvironmentBoolean('WEBPACK_BUNDLE_ANALYZER'),
-    // Allow overriding default Webpack naming behavior for debugging
+    // The name used to generate Statoscope JSON stats and HTML report in the `/ui/assets` folder.
+    WEBPACK_STATS_NAME: process.env.WEBPACK_STATS_NAME,
+    // Allow overriding default Webpack naming behavior for debugging.
     WEBPACK_USE_NAMED_CHUNKS: getEnvironmentBoolean('WEBPACK_USE_NAMED_CHUNKS'),
+    // Enables the plugin that write Webpack stats to disk.
+    WEBPACK_EXPORT_STATS_FILENAME: process.env.WEBPACK_EXPORT_STATS_FILENAME,
+    // Allow to adjust https://webpack.js.org/configuration/devtool/ in the dev environment.
+    WEBPACK_DEVELOPMENT_DEVTOOL: process.env.WEBPACK_DEVELOPMENT_DEVTOOL || 'eval-cheap-module-source-map',
 
     // The commit SHA the client bundle was built with.
     COMMIT_SHA: process.env.COMMIT_SHA,
-    // New release candidate version.
-    RELEASE_CANDIDATE_VERSION: process.env.RELEASE_CANDIDATE_VERSION,
+    // The current Docker image version, use to associate builds with Sentry's source maps.
+    VERSION: process.env.VERSION,
     // Should sourcemaps be uploaded to Sentry.
     SENTRY_UPLOAD_SOURCE_MAPS: getEnvironmentBoolean('SENTRY_UPLOAD_SOURCE_MAPS'),
     // Sentry's Dotcom project's authentication token
@@ -62,7 +68,9 @@ export const ENVIRONMENT_CONFIG = {
     SOURCEGRAPHDOTCOM_MODE: getEnvironmentBoolean('SOURCEGRAPHDOTCOM_MODE'),
 
     // Is reporting to Sentry enabled.
-    ENABLE_MONITORING: getEnvironmentBoolean('ENABLE_MONITORING'),
+    ENABLE_SENTRY: getEnvironmentBoolean('ENABLE_SENTRY'),
+    // Is OpenTelemetry instrumentation enabled.
+    ENABLE_OPEN_TELEMETRY: getEnvironmentBoolean('ENABLE_OPEN_TELEMETRY'),
 
     /**
      * ----------------------------------------
@@ -74,6 +82,7 @@ export const ENVIRONMENT_CONFIG = {
     SOURCEGRAPH_HTTPS_PORT: Number(process.env.SOURCEGRAPH_HTTPS_PORT) || 3443,
     SOURCEGRAPH_HTTP_PORT: Number(process.env.SOURCEGRAPH_HTTP_PORT) || 3080,
     SITE_CONFIG_PATH: process.env.SITE_CONFIG_PATH || DEFAULT_SITE_CONFIG_PATH,
+    CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT: process.env.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT || '-/debug/otlp',
 }
 
 const { SOURCEGRAPH_HTTPS_DOMAIN, SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTP_PORT } = ENVIRONMENT_CONFIG

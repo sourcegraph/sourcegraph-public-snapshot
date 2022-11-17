@@ -1,6 +1,6 @@
 # Using Perforce depots with Sourcegraph
 
-Sourcegraph supports [Perforce](https://perforce.com) depots using the [git p4](https://git-scm.com/docs/git-p4) adapter. This creates an equivalent Git repository from a Perforce depot. An experimental feature can be enabled to [configure Perforce depots through the Sourcegraph UI](#add-a-perforce-code-host). For Sourcegraph <3.25.1, Sourcegraph's tool for serving local directories is required - see [adding depots using `src serve-git`](#add-perforce-depos-using-src-serve-git).
+Sourcegraph supports [Perforce](https://perforce.com) depots using the [git p4](https://git-scm.com/docs/git-p4) adapter or [p4-fusion](https://github.com/salesforce/p4-fusion). This creates an equivalent Git repository from a Perforce depot. An experimental feature can be enabled to [configure Perforce depots through the Sourcegraph UI](#add-a-perforce-code-host). For Sourcegraph <3.25.1, Sourcegraph's tool for serving local directories is required - see [adding depots using `src serve-git`](#add-perforce-depos-using-src-serve-git).
 
 Screenshot of using Sourcegraph for code navigation in a Perforce depot:
 
@@ -25,12 +25,7 @@ Adding Perforce depots as an [external code host](../external_service/index.md) 
 
 To connect Perforce to Sourcegraph:
 
-1. Depending on whether you are a site admin or user:
-   1. *Site admin*: Go to **Site admin > Manage code hosts > Add code host**
-   1. *User*: Go to **Settings > Code host connections**.
-
-        > NOTE: That adding code hosts as a user is currently in private beta.
-
+1. Go to **Site admin > Manage code hosts > Add code host**
 2. Select **Perforce**.
 3. Configure the connection to Perforce using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 4. Click **Add repositories**.
@@ -53,7 +48,7 @@ Notable things about depot syncing:
 
 #### Using p4-fusion for faster syncing
 
-We support optionally using the [p4-fusion](https://github.com/salesforce/p4-fusion) tool:
+We optionally support using the [p4-fusion](https://github.com/salesforce/p4-fusion) tool and it will likely become our default in future:
 
 > A fast Perforce depot to Git repository converter using the Helix Core C/C++ API as an attempt to mitigate the performance bottlenecks in git-p4.py.
 
@@ -84,9 +79,9 @@ To enable permissions syncing for Perforce depots using [Perforce permissions ta
 }
 ```
 
-> WARNING: Sourcegraph only supports repository-level permissions and does not match the granularity of [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). Some notable disparities include:
+> WARNING: By default Sourcegraph only supports repository-level permissions and does not match the granularity of [Perforce permissions tables](https://www.perforce.com/manuals/cmdref/Content/CmdRef/p4_protect.html). Some notable disparities include:
 >
-> - [file-level permissions are not supported](#file-level-permissions). Read on to learn more about the workaround.
+> - [file-level permissions are not fully supported](#file-level-permissions). Read on to learn more about the workaround.
 > - [the host field from protections are not supported](#known-issues-and-limitations).
 
 > NOTE: We are testing an experimental feature that will allow syncing permissions with full granularity, details [here](#experimental-support-for-path-level-permissions)
@@ -187,7 +182,7 @@ Permissions will be synced in the background based on your [Perforce permissions
 
 As long as a user has been granted at least `Read` permissions in Perforce they will be able to view content in Sourcegraph.
 
-As a special case, if a user is not allowed to read any file included in a commit, the entire commit will be hidden.
+As a special case, commits in which a user does not have permissions to read any files are hidden. If a user can read a subset of files in a commit, only those files are shown.
 
 ## Add Perforce depots using `src serve-git`
 

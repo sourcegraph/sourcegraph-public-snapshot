@@ -86,7 +86,7 @@ type WorkerOptions struct {
 	MaximumRuntimePerJob time.Duration
 
 	// Metrics configures logging, tracing, and metrics for the work loop.
-	Metrics WorkerMetrics
+	Metrics WorkerObservability
 }
 
 func NewWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions) *Worker {
@@ -312,7 +312,11 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	// Create context and span based on the root context
-	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(policy.WithShouldTrace(w.rootCtx, true), w.options.Name)
+	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(
+		// TODO tail-based sampling once its a thing, until then, we can configure on a per-job basis
+		policy.WithShouldTrace(w.rootCtx, w.options.Metrics.traceSampler(record)),
+		w.options.Name,
+	)
 	handleCtx, cancel := context.WithCancel(workerCtxWithSpan)
 	processLog := trace.Logger(workerCtxWithSpan, w.options.Metrics.logger)
 
@@ -372,8 +376,15 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 // handle processes the given record. This method returns an error only if there is an issue updating
 // the record to a terminal state - no handler errors will bubble up.
 func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err error) {
-	ctx, handleLog, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
-	defer endOperation(1, observation.Args{})
+	var handleErr error
+	ctx, handleLog, endOperation := w.options.Metrics.operations.handle.With(ctx, &handleErr, observation.Args{})
+	defer func() {
+		// prioritize handleErr in `operations.handle.With` without bubbling handleErr up if non-nil
+		if handleErr == nil && err != nil {
+			handleErr = err
+		}
+		endOperation(1, observation.Args{})
+	}()
 
 	// If a maximum runtime is configured, set a deadline on the handle context.
 	if w.options.MaximumRuntimePerJob > 0 {
@@ -383,7 +394,7 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 	}
 
 	// Open namespace for logger to avoid key collisions on fields
-	handleErr := w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
+	handleErr = w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
 
 	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
 		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))

@@ -43,8 +43,6 @@ export interface Props extends ThemeProps {
      * Called when the user presses the key binding for "save" (Ctrl+S/Cmd+S).
      */
     onDidSave?: () => void
-
-    extensionsAsCoreFeatures?: boolean
 }
 
 interface State {}
@@ -81,7 +79,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             componentUpdates.pipe(distinctUntilKeyChanged('jsonSchema')).subscribe(props => {
                 if (this.monaco) {
-                    setDiagnosticsOptions(this.monaco, props.jsonSchema, this.props.extensionsAsCoreFeatures || false)
+                    setDiagnosticsOptions(this.monaco, props.jsonSchema)
                 }
             })
         )
@@ -152,7 +150,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
 
         this.disposables.push(registerRedactedHover(monaco))
 
-        setDiagnosticsOptions(monaco, this.props.jsonSchema, this.props.extensionsAsCoreFeatures || false)
+        setDiagnosticsOptions(monaco, this.props.jsonSchema)
 
         // Only listen to 1 event each to avoid receiving events from other Monaco editors on the
         // same page (if there are multiple).
@@ -265,13 +263,9 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     }
 }
 
-function setDiagnosticsOptions(
-    editor: typeof monaco,
-    jsonSchema: JSONSchema | undefined,
-    extensionsAsCoreFeatures: boolean
-): void {
+function setDiagnosticsOptions(editor: typeof monaco, jsonSchema: JSONSchema | undefined): void {
     const schema = { ...settingsSchema, properties: { ...settingsSchema.properties } }
-    if (extensionsAsCoreFeatures) {
+    if (!window.context.enableLegacyExtensions) {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- we need to remove this key conditionally, but not from the schema
         // @ts-ignore
         delete schema.properties.extensions

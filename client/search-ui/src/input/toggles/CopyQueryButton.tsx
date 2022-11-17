@@ -1,15 +1,14 @@
 import React, { useCallback, useRef, useEffect } from 'react'
 
-import { mdiClipboardOutline } from '@mdi/js'
+import { mdiContentCopy } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
-import { Shortcut } from '@slimsag/react-shortcuts'
-import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
-import { Button, Icon, DeprecatedTooltipController, useEventObservable, Tooltip } from '@sourcegraph/wildcard'
+import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
+import { Button, Icon, useEventObservable, Tooltip } from '@sourcegraph/wildcard'
 
 interface Props {
     fullQuery: string
@@ -32,11 +31,16 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const [nextClick, copied] = useEventObservable(
         useCallback(
-            (clicks: Observable<React.MouseEvent>) =>
+            (clicks: Observable<React.MouseEvent<HTMLButtonElement>>) =>
                 clicks.pipe(
                     tap(copyFullQuery),
+                    // There is an issue in copyFullQuery where the focus
+                    // is removed from the button; this patches it.
+                    tap(event => {
+                        event.preventDefault()
+                        event.currentTarget.focus()
+                    }),
                     switchMapTo(merge(of(true), of(false).pipe(delay(2000)))),
-                    tap(() => DeprecatedTooltipController.forceUpdate()),
                     startWith(false)
                 ),
             [copyFullQuery]
@@ -51,13 +55,13 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
             {copied && <VisuallyHidden aria-live="polite">Copied!</VisuallyHidden>}
             <Tooltip content={copied ? 'Copied!' : copyFullQueryTooltip}>
                 <Button
-                    className={classNames('btn-icon', props.className)}
+                    className={props.className}
                     variant="icon"
                     size="sm"
                     aria-label={copyFullQueryTooltip}
                     onClick={nextClick}
                 >
-                    <Icon aria-hidden={true} svgPath={mdiClipboardOutline} />
+                    <Icon aria-hidden={true} svgPath={mdiContentCopy} />
                 </Button>
             </Tooltip>
             {fullCopyShortcut?.keybindings.map((keybinding, index) => (

@@ -38,11 +38,20 @@ export const parameters: Parameters = {
     },
     // disables snapshotting for all stories by default
     chromatic: { disableSnapshot: true },
+    // This fixes an issue where some stories with knobs wound up in a state of infinite recursion
+    // See https://github.com/storybookjs/storybook/issues/15051
+    docs: { source: { type: 'code' } },
 }
 
 configureActions({ depth: 100, limit: 20 })
 
 setLinkComponent(AnchorLink)
+
+// Default to light theme for Chromatic and "Open canvas in new tab" button.
+// addon-dark-mode will override this if it's running.
+if (!document.body.classList.contains('theme-dark')) {
+    document.body.classList.add('theme-light')
+}
 
 // Default to light theme for Chromatic and "Open canvas in new tab" button.
 // addon-dark-mode will override this if it's running.

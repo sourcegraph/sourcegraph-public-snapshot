@@ -7,7 +7,7 @@ This document describes how our backend systems serve search results to clients.
 There are a few ways to perform a search with Sourcegraph:
 
 1. Typing a query into the search bar of the Sourcegraph web application.
-2. Typing a query into your browser's location bar after configuring a [browser search engine shortcut](https://docs.sourcegraph.com/integration/browser_search_engine).
+2. Typing a query into your browser's location bar after configuring a [browser search engine shortcut](https://docs.sourcegraph.com/integration/browser_extension/how-tos/browser_search_engine).
 3. Using the [src CLI command](https://github.com/sourcegraph/src-cli).
 
 Clients use either the [Streaming API](../../../api/stream_api/index.md) or the [search query](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%5Cbsearch%5C%28+file:schema.graphql&patternType=regexp) in our GraphQL API. Both are exposed in our [frontend](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd/frontend) service.

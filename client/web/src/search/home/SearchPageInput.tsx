@@ -1,36 +1,40 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useCallback } from 'react'
 
 import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
 import shallow from 'zustand/shallow'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import {
     SearchContextInputProps,
     CaseSensitivityProps,
     SearchPatternTypeProps,
     SubmitSearchParameters,
     canSubmitSearch,
+    QueryState,
+    SearchModeProps,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../../auth'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Notices } from '../../global/Notices'
 import {
     useExperimentalFeatures,
     useNavbarQueryState,
     setSearchCaseSensitivity,
     setSearchPatternType,
+    setSearchMode,
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
-import { QuickLinks } from '../QuickLinks'
+import { useRecentSearches } from '../input/useRecentSearches'
 
 import styles from './SearchPageInput.module.scss'
 
@@ -38,9 +42,8 @@ interface Props
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
-        ActivationProps,
         TelemetryProps,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
+        PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
         SearchContextInputProps {
     authenticatedUser: AuthenticatedUser | null
@@ -49,44 +52,35 @@ interface Props
     isSourcegraphDotCom: boolean
     /** Whether globbing is enabled for filters. */
     globbing: boolean
-    /** A query fragment to appear at the beginning of the input. */
-    queryPrefix?: string
-    /** A query fragment to be prepended to queries. This will not appear in the input until a search is submitted. */
-    hiddenQueryPrefix?: string
     autoFocus?: boolean
+    queryState: QueryState
+    setQueryState: (newState: QueryState) => void
 }
 
 const queryStateSelector = (
     state: NavbarQueryState
-): Pick<CaseSensitivityProps, 'caseSensitive'> & SearchPatternTypeProps => ({
+): Pick<CaseSensitivityProps, 'caseSensitive'> & SearchPatternTypeProps & Pick<SearchModeProps, 'searchMode'> => ({
     caseSensitive: state.searchCaseSensitivity,
     patternType: state.searchPatternType,
+    searchMode: state.searchMode,
 })
 
 export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
-    /** The value entered by the user in the query input */
-    const [userQueryState, setUserQueryState] = useState({
-        query: props.queryPrefix ? props.queryPrefix : '',
-    })
-    const { caseSensitive, patternType } = useNavbarQueryState(queryStateSelector, shallow)
+    const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
     )
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
-    useEffect(() => {
-        setUserQueryState({ query: props.queryPrefix || '' })
-    }, [props.queryPrefix])
-
-    const quickLinks =
-        (isSettingsValid<Settings>(props.settingsCascade) && props.settingsCascade.final.quicklinks) || []
+    const [showSearchHistory] = useFeatureFlag('search-input-show-history')
+    const { recentSearches, addRecentSearch } = useRecentSearches()
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
-            const query = props.hiddenQueryPrefix
-                ? `${props.hiddenQueryPrefix} ${userQueryState.query}`
-                : userQueryState.query
+            const query = props.queryState.query
 
             if (canSubmitSearch(query, props.selectedSearchContextSpec)) {
                 submitSearch({
@@ -95,20 +89,19 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                     history: props.history,
                     patternType,
                     caseSensitive,
-                    activation: props.activation,
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    addRecentSearch,
                     ...parameters,
                 })
             }
         },
         [
+            props.queryState.query,
+            props.selectedSearchContextSpec,
             props.history,
+            addRecentSearch,
             patternType,
             caseSensitive,
-            props.activation,
-            props.selectedSearchContextSpec,
-            props.hiddenQueryPrefix,
-            userQueryState.query,
         ]
     )
 
@@ -131,25 +124,33 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
                 <div data-search-page-input-container={true} className={styles.inputContainer}>
-                    <SearchBox
-                        {...props}
-                        editorComponent={editorComponent}
-                        showSearchContext={showSearchContext}
-                        showSearchContextManagement={showSearchContextManagement}
-                        caseSensitive={caseSensitive}
-                        patternType={patternType}
-                        setPatternType={setSearchPatternType}
-                        setCaseSensitivity={setSearchCaseSensitivity}
-                        submitSearchOnToggle={submitSearchOnChange}
-                        queryState={userQueryState}
-                        onChange={setUserQueryState}
-                        onSubmit={onSubmit}
-                        autoFocus={!isTouchOnlyDevice && props.autoFocus !== false}
-                        isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
-                        structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
-                    />
+                    <TraceSpanProvider name="SearchBox">
+                        <SearchBox
+                            {...props}
+                            editorComponent={editorComponent}
+                            showSearchContext={showSearchContext}
+                            showSearchContextManagement={showSearchContextManagement}
+                            caseSensitive={caseSensitive}
+                            patternType={patternType}
+                            setPatternType={setSearchPatternType}
+                            setCaseSensitivity={setSearchCaseSensitivity}
+                            searchMode={searchMode}
+                            setSearchMode={setSearchMode}
+                            queryState={props.queryState}
+                            onChange={props.setQueryState}
+                            onSubmit={onSubmit}
+                            autoFocus={!showSearchHistory && !isTouchOnlyDevice && props.autoFocus !== false}
+                            isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
+                            structuralSearchDisabled={
+                                window.context?.experimentalFeatures?.structuralSearch === 'disabled'
+                            }
+                            applySuggestionsOnEnter={applySuggestionsOnEnter}
+                            showCopyQueryButton={!showSearchHistory}
+                            showSearchHistory={showSearchHistory}
+                            recentSearches={recentSearches}
+                        />
+                    </TraceSpanProvider>
                 </div>
-                <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
             </Form>
         </div>

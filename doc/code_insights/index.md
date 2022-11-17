@@ -45,6 +45,7 @@ Code Insights is based on our universal code search, making it precise and confi
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ Quickstart</a>
 <a class="btn" href="language_insight_quickstart">Language Insight Quickstart</a>
+<a href="https://www.youtube.com/watch?v=fMCUJQHfbUA" class="btn" alt="Watch the Code Insights demo video">Demo video</a>
 <a class="btn" href="references/requirements">Requirements</a>
 </div>
 
@@ -54,6 +55,7 @@ Code Insights is based on our universal code search, making it precise and confi
 - [Automatically generated data series for version or pattern tracking](explanations/automatically_generated_data_series.md)
 - [Code Insights filters](explanations/code_insights_filters.md)
 - [Current limitations of Code Insights](explanations/current_limitations_of_code_insights.md)
+- [Search-screen search results aggregations](explanations/search_results_aggregations.md)
 - [Viewing code insights](explanations/viewing_code_insights.md)
 
 ## [How-tos](how-tos/index.md)
@@ -69,3 +71,4 @@ Code Insights is based on our universal code search, making it precise and confi
 - [Licensing and limited access](references/license.md)
 - [Managing code insights with the API](../api/graphql/managing-code-insights-with-api.md)
 - [Requirements](references/requirements.md)
+

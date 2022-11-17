@@ -1,10 +1,14 @@
 import { Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
-import { GitObjectType, LSIFIndexState } from '@sourcegraph/shared/src/schema'
-
 import { WebStory } from '../../../../components/WebStory'
-import { LsifUploadFields, LSIFUploadState, AuditLogOperation } from '../../../../graphql-operations'
+import {
+    LsifUploadFields,
+    LSIFUploadState,
+    AuditLogOperation,
+    GitObjectType,
+    LSIFIndexState,
+} from '../../../../graphql-operations'
 
 import { CodeIntelUploadPage, CodeIntelUploadPageProps } from './CodeIntelUploadPage'
 
@@ -105,6 +109,10 @@ const story: Meta = {
         component: CodeIntelUploadPage,
         chromatic: {
             viewports: [320, 576, 978, 1440],
+        },
+        controls: {
+            hideNoControlsWarning: true,
+            exclude: ['now', 'queryLsifUploadsList', 'queryLisfUploadFields', 'queryRetentionMatches'],
         },
     },
 }

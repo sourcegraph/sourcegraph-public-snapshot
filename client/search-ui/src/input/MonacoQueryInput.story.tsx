@@ -1,7 +1,7 @@
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
+import { SearchPatternType } from '@sourcegraph/search'
 
 import { MonacoQueryInput, MonacoQueryInputProps } from './MonacoQueryInput'
 
@@ -26,12 +26,11 @@ const defaultProps: MonacoQueryInputProps = {
     globbing: false,
     queryState: { query: 'hello repo:test' },
     isSourcegraphDotCom: false,
-    patternType: SearchPatternType.literal,
+    patternType: SearchPatternType.standard,
     caseSensitive: false,
     selectedSearchContextSpec: 'global',
     onChange: () => {},
     onSubmit: () => {},
-    onHandleFuzzyFinder: () => {},
 }
 
 export const MonacoQueryInputStory: Story = () => (

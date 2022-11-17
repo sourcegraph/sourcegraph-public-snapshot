@@ -8,7 +8,7 @@ import { CompatRouter } from 'react-router-dom-v5-compat'
 import { EMPTY, NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { SearchQueryStateStoreProvider } from '@sourcegraph/search'
+import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/search'
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -19,7 +19,8 @@ import {
     HIGHLIGHTED_FILE_LINES_REQUEST,
     MULTIPLE_SEARCH_RESULT,
     REPO_MATCH_RESULT,
-    RESULT,
+    CHUNK_MATCH_RESULT,
+    LINE_MATCH_RESULT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
@@ -46,7 +47,7 @@ describe('StreamingSearchResults', () => {
             subjects: null,
             final: null,
         },
-        platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER, requestGraphQL: () => EMPTY },
+        platformContext: { settings: NEVER, requestGraphQL: () => EMPTY, sourcegraphURL: 'https://sourcegraph.com' },
 
         streamSearch: () => of(MULTIPLE_SEARCH_RESULT),
 
@@ -80,12 +81,23 @@ describe('StreamingSearchResults', () => {
         siteAdmin: true,
     } as AuthenticatedUser
 
+    // Modified from https://sourcegraph.com/github.com/reach/reach-ui@26c826684729e51e45eef29aa4316df19c0e2c03/-/blob/test/utils.tsx?L105
+    // userEvent.click does not work for Reach menu items. Use this function from Reach's official test code instead.
+    function simualateMenuItemClick(element: HTMLElement) {
+        fireEvent.mouseEnter(element)
+        fireEvent.keyDown(element, { key: ' ' })
+        fireEvent.keyUp(element, { key: ' ' })
+    }
+
     beforeEach(() => {
         useNavbarQueryState.setState({
             searchCaseSensitivity: false,
             searchQueryFromURL: 'r:golang/oauth2 test f:travis',
         })
         useExperimentalFeatures.setState({ showSearchContext: true, codeMonitoring: false })
+        window.context = {
+            enableLegacyExtensions: false,
+        } as any
     })
 
     it('should call streaming search API with the right parameters from URL', async () => {
@@ -102,10 +114,13 @@ describe('StreamingSearchResults', () => {
 
         expect(receivedQuery).toEqual('r:golang/oauth2 test f:travis')
         expect(receivedOptions).toEqual({
-            version: 'V2',
+            version: 'V3',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
+            searchMode: SearchMode.Precise,
             trace: undefined,
+            chunkMatches: true,
+            featureOverrides: [],
         })
     })
 
@@ -120,34 +135,32 @@ describe('StreamingSearchResults', () => {
         expect(screen.getAllByTestId('streaming-progress-count')[0]).toHaveTextContent(expectedString)
     })
 
-    it('should expand and collapse results when event from infobar is triggered', () => {
+    it('should expand and collapse results when event from infobar is triggered', async () => {
         renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(COLLAPSABLE_SEARCH_RESULT)} />)
 
-        expect(screen.getByTestId('search-result-expand-btn')).toHaveAttribute(
-            'data-test-tooltip-content',
-            'Show more matches on all results'
-        )
+        screen
+            .getAllByTestId('result-container')
+            .map(element => expect(element).toHaveAttribute('data-expanded', 'false'))
 
-        screen.getAllByTestId('result-container').map(element => {
-            expect(element).toHaveAttribute('data-expanded', 'false')
-        })
-
-        userEvent.click(screen.getByTestId('search-result-expand-btn'))
-
-        expect(screen.getByTestId('search-result-expand-btn')).toHaveAttribute(
-            'data-test-tooltip-content',
-            'Hide more matches on all results'
-        )
+        userEvent.click(await screen.findByLabelText(/Open search actions menu/))
+        simualateMenuItemClick(await screen.findByText(/Expand all/, { selector: '[role=menuitem]' }))
 
         screen
             .getAllByTestId('result-container')
             .map(element => expect(element).toHaveAttribute('data-expanded', 'true'))
+
+        userEvent.click(await screen.findByLabelText(/Open search actions menu/))
+        simualateMenuItemClick(await screen.findByText(/Collapse all/, { selector: '[role=menuitem]' }))
+
+        screen
+            .getAllByTestId('result-container')
+            .map(element => expect(element).toHaveAttribute('data-expanded', 'false'))
     })
 
     it('should render correct components for file match and repository match', () => {
         const results: AggregateStreamingSearchResults = {
             ...streamingSearchResult,
-            results: [RESULT, REPO_MATCH_RESULT],
+            results: [CHUNK_MATCH_RESULT, REPO_MATCH_RESULT],
         }
         renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />)
         expect(screen.getAllByTestId('result-container').length).toBe(2)
@@ -155,6 +168,18 @@ describe('StreamingSearchResults', () => {
 
         expect(screen.getAllByTestId('result-container')[0]).toHaveAttribute('data-result-type', 'content')
         expect(screen.getAllByTestId('result-container')[1]).toHaveAttribute('data-result-type', 'repo')
+    })
+
+    it('should render correct components for file match using legacy line match format', () => {
+        const results: AggregateStreamingSearchResults = {
+            ...streamingSearchResult,
+            results: [LINE_MATCH_RESULT],
+        }
+
+        renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />)
+        expect(screen.getAllByTestId('result-container').length).toBe(1)
+
+        expect(screen.getAllByTestId('result-container')[0]).toHaveAttribute('data-result-type', 'content')
     })
 
     it('should log view, query, and results fetched events', () => {
@@ -191,27 +216,19 @@ describe('StreamingSearchResults', () => {
         expect(screen.queryByTestId('saved-search-modal')).not.toBeInTheDocument()
     })
 
-    it('should open saved search modal when triggering event from infobar', () => {
+    it('should open and close saved search modal if events trigger', async () => {
         renderWrapper(<StreamingSearchResults {...defaultProps} authenticatedUser={mockUser} />)
-        const savedSearchButton = screen.getByRole('button', { name: 'Save search' })
+        userEvent.click(await screen.findByLabelText(/Open search actions menu/))
+        simualateMenuItemClick(await screen.findByText(/Save search/, { selector: '[role=menuitem]' }))
 
-        expect(savedSearchButton).toHaveAttribute('href', '')
-        userEvent.click(savedSearchButton)
-        expect(screen.getByTestId('saved-search-modal')).toBeInTheDocument()
-    })
-
-    it('should close saved search modal if close event triggers', async () => {
-        renderWrapper(<StreamingSearchResults {...defaultProps} authenticatedUser={mockUser} />)
-        userEvent.click(await screen.findByText(/save search/i, { selector: 'a' }))
-
-        fireEvent.keyDown(screen.getByText(/save search query to:/i), {
+        fireEvent.keyDown(await screen.findByText(/Save search query to:/), {
             key: 'Escape',
             code: 'Escape',
             keyCode: 27,
             charCode: 27,
         })
 
-        expect(screen.queryByText(/save search query to:/i)).not.toBeInTheDocument()
+        expect(screen.queryByText(/Save search query to:/)).not.toBeInTheDocument()
     })
 
     it('should start a new search with added params when onSearchAgain event is triggered', async () => {
@@ -270,7 +287,7 @@ describe('StreamingSearchResults', () => {
 
             renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />)
 
-            userEvent.click(await screen.findByText(/some results excluded/i))
+            userEvent.click((await screen.findAllByText(/results in/i))[0])
             const allChecks = await screen.findAllByTestId(/^streaming-progress-skipped-suggest-check/)
 
             for (const check of allChecks) {

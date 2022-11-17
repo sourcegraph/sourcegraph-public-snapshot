@@ -25,10 +25,14 @@ func GitServer() *monitoring.Dashboard {
 		Description: "Stores, manages, and operates Git repositories.",
 		Variables: []monitoring.ContainerVariable{
 			{
-				Label:        "Shard",
-				Name:         "shard",
-				OptionsQuery: "label_values(src_gitserver_exec_running, instance)",
-				Multi:        true,
+				Label: "Shard",
+				Name:  "shard",
+				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+					Query:         "src_gitserver_exec_running",
+					LabelName:     "instance",
+					ExampleOption: "gitserver-0:6060",
+				},
+				Multi: true,
 			},
 		},
 		Groups: []monitoring.Group{
@@ -416,6 +420,17 @@ func GitServer() *monitoring.Dashboard {
 					},
 					{
 						{
+							Name:           "non_existent_repos_removed",
+							Description:    "repositories removed because they are not defined in the DB",
+							Query:          "sum by (instance) (increase(src_gitserver_non_existing_repos_removed[5m]))",
+							NoAlert:        true,
+							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerRepoManagement,
+							Interpretation: "Repositoriess removed because they are not defined in the DB",
+						},
+					},
+					{
+						{
 							Name:           "sg_maintenance_reason",
 							Description:    "successful sg maintenance jobs over 1h (by reason)",
 							Query:          `sum by (reason) (rate(src_gitserver_maintenance_status{success="true"}[1h]))`,
@@ -484,6 +499,18 @@ func GitServer() *monitoring.Dashboard {
 					},
 				},
 			},
+			shared.NewDiskMetricsGroup(
+				shared.DiskMetricsGroupOptions{
+					DiskTitle: "repos",
+
+					MetricMountNameLabel: "reposDir",
+					MetricNamespace:      "gitserver",
+
+					ServiceName:         "gitserver",
+					InstanceFilterRegex: `${shard:regex}`,
+				},
+				monitoring.ObservableOwnerRepoManagement,
+			),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
 			shared.CodeIntelligence.NewNpmGroup(containerName),

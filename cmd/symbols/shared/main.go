@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
+	"github.com/getsentry/sentry-go"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel"
 
-	sentrylib "github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
@@ -31,18 +31,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 const addr = ":3184"
 
-type SetupFunc func(observationContext *observation.Context, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error)
+type SetupFunc func(observationContext *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error)
 
 func Main(setup SetupFunc) {
 	// Initialization
@@ -52,13 +52,16 @@ func Main(setup SetupFunc) {
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
+	}, log.NewSentrySinkWith(
+		log.SentrySink{
+			ClientOptions: sentry.ClientOptions{SampleRate: 0.2},
+		},
+	)) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
 	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
-	trace.Init()
 	profiler.Init()
 
 	routines := []goroutine.BackgroundRoutine{}
@@ -67,11 +70,11 @@ func Main(setup SetupFunc) {
 	logger := log.Scoped("service", "the symbols service")
 	observationContext := &observation.Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 		HoneyDataset: &honey.Dataset{
 			Name:       "codeintel-symbols",
-			SampleRate: 5,
+			SampleRate: 20,
 		},
 	}
 
@@ -104,7 +107,7 @@ func Main(setup SetupFunc) {
 	gitserverClient := gitserver.NewClient(db, observationContext)
 	repositoryFetcherConfig := types.LoadRepositoryFetcherConfig(env.BaseConfig{})
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, repositoryFetcherConfig.MaxTotalPathsLength, int64(repositoryFetcherConfig.MaxFileSizeKb)*1000, observationContext)
-	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationContext, gitserverClient, repositoryFetcher)
+	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationContext, db, gitserverClient, repositoryFetcher)
 	if err != nil {
 		logger.Fatal("Failed to set up", log.Error(err))
 	}
@@ -116,9 +119,10 @@ func Main(setup SetupFunc) {
 
 	// Create HTTP server
 	handler := api.NewHandler(searchFunc, gitserverClient.ReadFile, handleStatus, ctagsBinary)
+	handler = handlePanic(logger, handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
-	handler = ot.HTTPMiddleware(handler)
-	handler = actor.HTTPMiddleware(handler)
+	handler = instrumentation.HTTPMiddleware("", handler)
+	handler = actor.HTTPMiddleware(logger, handler)
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
@@ -142,4 +146,18 @@ func mustInitializeFrontendDB(logger log.Logger, observationContext *observation
 	}
 
 	return db
+}
+
+func handlePanic(logger log.Logger, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				err := fmt.Sprintf("%v", rec)
+				http.Error(w, fmt.Sprintf("%v", rec), http.StatusInternalServerError)
+				logger.Error("recovered from panic", log.String("err", err))
+			}
+		}()
+
+		next.ServeHTTP(w, r)
+	})
 }

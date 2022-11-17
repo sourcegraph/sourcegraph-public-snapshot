@@ -23,22 +23,22 @@ import (
 // return a modified base store with no methods from the outer layer. All other methods
 // of the base store are available on the outer layer without needing to be re-defined.
 //
-//     type SprocketStore struct {
-//         *basestore.Store
-//     }
+//	type SprocketStore struct {
+//	    *basestore.Store
+//	}
 //
-//     func NewWithDB(database dbutil.DB) *SprocketStore {
-//         return &SprocketStore{Store: basestore.NewWithDB(database, sql.TxOptions{})}
-//     }
+//	func NewWithDB(database dbutil.DB) *SprocketStore {
+//	    return &SprocketStore{Store: basestore.NewWithDB(database, sql.TxOptions{})}
+//	}
 //
-//     func (s *SprocketStore) With(other basestore.ShareableStore) *SprocketStore {
-//         return &SprocketStore{Store: s.Store.With(other)}
-//     }
+//	func (s *SprocketStore) With(other basestore.ShareableStore) *SprocketStore {
+//	    return &SprocketStore{Store: s.Store.With(other)}
+//	}
 //
-//     func (s *SprocketStore) Transact(ctx context.Context) (*SprocketStore, error) {
-//         txBase, err := s.Store.Transact(ctx)
-//         return &SprocketStore{Store: txBase}, err
-//     }
+//	func (s *SprocketStore) Transact(ctx context.Context) (*SprocketStore, error) {
+//	    txBase, err := s.Store.Transact(ctx)
+//	    return &SprocketStore{Store: txBase}, err
+//	}
 type Store struct {
 	handle TransactableHandle
 }
@@ -67,12 +67,12 @@ func (s *Store) Handle() TransactableHandle {
 // This method should be used when two distinct store instances need to perform an
 // operation within the same shared transaction.
 //
-//     txn1 := store1.Transact(ctx) // Creates a transaction
-//     txn2 := store2.With(txn1)    // References the same transaction
+//	txn1 := store1.Transact(ctx) // Creates a transaction
+//	txn2 := store2.With(txn1)    // References the same transaction
 //
-//     txn1.A(ctx) // Occurs within shared transaction
-//     txn2.B(ctx) // Occurs within shared transaction
-//     txn1.Done() // closes shared transaction
+//	txn1.A(ctx) // Occurs within shared transaction
+//	txn2.B(ctx) // Occurs within shared transaction
+//	txn1.Done() // closes shared transaction
 //
 // Note that once a handle is shared between two stores, committing or rolling back
 // a transaction will affect the handle of both stores. Most notably, two stores that

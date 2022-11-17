@@ -30,6 +30,26 @@ Rate limiting uses the [leaky bucket algorithm](https://en.wikipedia.org/wiki/Le
 
 Practically speaking, this means that the given rate can be thought of more as an average than as a simple resource allocation. If there are always changesets in the queue, a rate of `10/hour` means that a changeset will be reconciled approximately every six minutes, rather than ten changesets being simultaneously reconciled at the start of each hour.
 
+### Avoiding hitting rate limits
+
+Keep in mind that if you configure a rollout window that is too aggressive, you risk exceeding your code hosts' API rate limits. We recommend maintaining a rate that is no faster than `5/minute`; however, you can refer to your code host's API docs if you wish to increase it beyond this recommendation:
+
+* [GitHub](https://docs.github.com/en/graphql/overview/resource-limitations#rate-limit)
+* [GitLab](https://docs.gitlab.com/ee/user/gitlab_com/index.html#gitlabcom-specific-rate-limits)
+* [Bitbucket Cloud](https://support.atlassian.com/bitbucket-cloud/docs/api-request-limits/)
+
+When using a [global service account token](../../batch_changes/how-tos/configuring_credentials.md#global-service-account-tokens) with Batch Changes, keep in mind that this token will also be used for other Batch Changes <> code host interactions, too.
+
+You may encounter this error when publishing changesets to GitHub:
+
+> **Failed to run operations on changeset**
+>
+> Creating changeset: error in GraphQL response: was submitted too quickly
+
+In addition to their normal API rate limits, GitHub also has an internal _content creation_ limit, which is an intentional restriction on the platform to combat abuse by automated actors. At the time of writing, the specifics of this limit remain undocumented, due largely to the fact that it is dynamically determined (see [this GitHub issue](https://github.com/cli/cli/issues/4801)). However, the behavior of the limit is that it only permits a fixed number of resources to be created per minute and per hour, and exceeding this limit triggers a temporary hour-long suspension during which time no additional resources of this type can be created.
+
+Presently, Batch Changes does not automatically work around this limit (feature request tracked [here](https://github.com/sourcegraph/sourcegraph/issues/39847)). The current guidance if you do encounter this issue is to just to wait an hour and then try again.
+
 ### Rollout window object
 
 A rollout window is a JSON object that looks as follows:

@@ -16,6 +16,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -44,6 +46,13 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 }
 
 func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
+	logger := s.Logger.Scoped("createCommitFromPatch", "").
+		With(
+			log.String("repo", string(req.Repo)),
+			log.String("baseCommit", string(req.BaseCommit)),
+			log.String("targetRef", req.TargetRef),
+		)
+
 	var resp protocol.CreateCommitFromPatchResponse
 
 	repo := string(protocol.NormalizeRepo(req.Repo))
@@ -70,7 +79,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	if err != nil {
-		s.Logger.Error("Failed to get remote URL", log.String("ref", ref), log.Error(err))
+		logger.Error("Failed to get remote URL", log.Error(err))
 		resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
 		return http.StatusInternalServerError, resp
 	}
@@ -92,7 +101,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: make tmp repo"))
 		return http.StatusInternalServerError, resp
 	}
-	defer cleanUpTmpRepo(tmpRepoDir)
+	defer cleanUpTmpRepo(logger, tmpRepoDir)
 
 	argsToString := func(args []string) string {
 		return strings.Join(args, " ")
@@ -101,10 +110,14 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// Temporary logging command wrapper
 	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
 	run := func(cmd *exec.Cmd, reason string) ([]byte, error) {
+		if !gitdomain.IsAllowedGitCmd(logger, cmd.Args[1:]) {
+			return nil, errors.New("command not on allow list")
+		}
+
 		t := time.Now()
 		out, err := runWith(ctx, cmd, true, nil)
 
-		logger := s.Logger.With(
+		logger := logger.With(
 			log.String("prefix", prefix),
 			log.String("command", argsToString(cmd.Args)),
 			log.Duration("duration", time.Since(t)),
@@ -115,7 +128,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 			resp.SetError(repo, argsToString(cmd.Args), string(out), errors.Wrap(err, "gitserver: "+reason))
 			logger.Warn("command failed", log.Error(err))
 		} else {
-			s.Logger.Info("command ran successfully")
+			logger.Info("command ran successfully")
 		}
 		return out, err
 	}
@@ -123,7 +136,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	if req.UniqueRef {
 		refs, err := repoRemoteRefs(ctx, remoteURL, ref)
 		if err != nil {
-			s.Logger.Error("Failed to get remote refs", log.String("ref", ref), log.Error(err))
+			logger.Error("Failed to get remote refs", log.Error(err))
 			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
 			return http.StatusInternalServerError, resp
 		}
@@ -164,22 +177,21 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
 
 	if out, err := run(cmd, "basing staging on base rev"); err != nil {
-		s.Logger.Error("Failed to base the temporary repo on the base revision.",
-			log.String("ref", ref),
-			log.String("base", string(req.BaseCommit)),
+		logger.Error("Failed to base the temporary repo on the base revision",
 			log.String("output", string(out)),
 		)
 		return http.StatusInternalServerError, resp
 	}
 
 	applyArgs := append([]string{"apply", "--cached"}, req.GitApplyArgs...)
+
 	cmd = exec.CommandContext(ctx, "git", applyArgs...)
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
 	cmd.Stdin = strings.NewReader(req.Patch)
 
 	if out, err := run(cmd, "applying patch"); err != nil {
-		s.Logger.Error("Failed to apply patch.", log.String("ref", ref), log.String("output", string(out)))
+		logger.Error("Failed to apply patch", log.String("output", string(out)))
 		return http.StatusInternalServerError, resp
 	}
 
@@ -218,7 +230,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}...)
 
 	if out, err := run(cmd, "committing patch"); err != nil {
-		s.Logger.Error("Failed to commit patch.", log.String("ref", ref), log.String("output", string(out)))
+		logger.Error("Failed to commit patch.", log.String("output", string(out)))
 		return http.StatusInternalServerError, resp
 	}
 
@@ -274,7 +286,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 			// it in the background.
 			// This is used to pass the private key to be used when pushing to the remote,
 			// without the need to store it on the disk.
-			agent, err := newSSHAgent([]byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
+			agent, err := newSSHAgent(logger, []byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
 			if err != nil {
 				resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
 				return http.StatusInternalServerError, resp
@@ -292,7 +304,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		}
 
 		if out, err = run(cmd, "pushing ref"); err != nil {
-			s.Logger.Error("Failed to push", log.String("ref", ref), log.String("commit", cmtHash), log.String("output", string(out)))
+			logger.Error("Failed to push", log.String("commit", cmtHash), log.String("output", string(out)))
 			return http.StatusInternalServerError, resp
 		}
 	}
@@ -303,16 +315,15 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd.Dir = repoGitDir
 
 	if out, err = run(cmd, "creating ref"); err != nil {
-		s.Logger.Error("Failed to create ref for commit.", log.String("ref", ref), log.String("commit", cmtHash), log.String("output", string(out)))
+		logger.Error("Failed to create ref for commit.", log.String("commit", cmtHash), log.String("output", string(out)))
 		return http.StatusInternalServerError, resp
 	}
 
 	return http.StatusOK, resp
 }
 
-func cleanUpTmpRepo(path string) {
+func cleanUpTmpRepo(logger log.Logger, path string) {
 	err := os.RemoveAll(path)
-	logger := log.Scoped("cleanUpTmpRepo", "cleans up temp Repo")
 	if err != nil {
 		logger.Warn("unable to clean up tmp repo", log.String("path", path), log.Error(err))
 	}

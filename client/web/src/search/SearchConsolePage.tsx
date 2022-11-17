@@ -22,7 +22,8 @@ import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
-import { SearchUserNeedsCodeHost } from '../user/settings/codeHosts/OrgUserNeedsCodeHost'
+import { useExperimentalFeatures } from '../stores'
+import { eventLogger } from '../tracking/eventLogger'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
@@ -42,12 +43,14 @@ interface SearchConsolePageProps
 }
 
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
-    const {
-        globbing,
-        streamSearch,
-        extensionsController: { extHostAPI: extensionHostAPI },
-        isSourcegraphDotCom,
-    } = props
+    const { globbing, streamSearch, extensionsController, isSourcegraphDotCom } = props
+    const extensionHostAPI =
+        extensionsController !== null && window.context.enableLegacyExtensions ? extensionsController.extHostAPI : null
+    const enableGoImportsSearchQueryTransform = useExperimentalFeatures(
+        features => features.enableGoImportsSearchQueryTransform
+    )
+    const applySuggestionsOnEnter =
+        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
@@ -63,12 +66,16 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
     }, [props.history, searchQuery])
 
     const transformedQuery = useMemo(() => {
-        const query = parseSearchURLQuery(props.location.search)
+        let query = parseSearchURLQuery(props.location.search)
+        query = query?.replace(/\/\/.*/g, '') || ''
+
         return transformSearchQuery({
-            query: query?.replace(/\/\/.*/g, '') || '',
+            query,
             extensionHostAPIPromise: extensionHostAPI,
+            enableGoImportsSearchQueryTransform,
+            eventLogger,
         })
-    }, [props.location.search, extensionHostAPI])
+    }, [props.location.search, extensionHostAPI, enableGoImportsSearchQueryTransform])
 
     const autocompletion = useMemo(
         () =>
@@ -76,8 +83,9 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                 fetchSuggestions: query => fetchStreamSuggestions(query),
                 globbing,
                 isSourcegraphDotCom,
+                applyOnEnter: applySuggestionsOnEnter,
             }),
-        [globbing, isSourcegraphDotCom]
+        [globbing, isSourcegraphDotCom, applySuggestionsOnEnter]
     )
 
     const extensions = useMemo(
@@ -95,7 +103,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
             () =>
                 streamSearch(transformedQuery, {
                     version: LATEST_VERSION,
-                    patternType: patternType ?? SearchPatternType.literal,
+                    patternType: patternType ?? SearchPatternType.standard,
                     caseSensitive: false,
                     trace: undefined,
                 }).pipe(debounceTime(500)),
@@ -133,7 +141,6 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                                 results={results}
                                 showSearchContext={false}
                                 assetsRoot={window.context?.assetsRoot || ''}
-                                renderSearchUserNeedsCodeHost={user => <SearchUserNeedsCodeHost user={user} />}
                                 executedQuery={props.location.search}
                             />
                         ))}

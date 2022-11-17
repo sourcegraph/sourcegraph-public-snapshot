@@ -16,6 +16,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	gh "github.com/google/go-github/v43/github"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -23,10 +24,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -47,7 +51,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 
 		rcache.SetupForTest(t)
 
-		ct.TruncateTables(t, db, "changeset_events", "changesets")
+		bt.TruncateTables(t, db, "changeset_events", "changesets")
 
 		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "github-webhooks")
 		defer save()
@@ -62,20 +66,20 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
-			Config: ct.MarshalJSON(t, &schema.GitHubConnection{
+			Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitHubConnection{
 				Url:      "https://github.com",
-				Token:    token,
 				Repos:    []string{"sourcegraph/sourcegraph"},
 				Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
-			}),
+				Token:    "abc",
+			})),
 		}
 
 		err := esStore.Upsert(ctx, extSvc)
 		if err != nil {
-			t.Fatal(t)
+			t.Fatal(err)
 		}
 
-		githubSrc, err := repos.NewGithubSource(logtest.Scoped(t), db.ExternalServices(), extSvc, cf)
+		githubSrc, err := repos.NewGithubSource(ctx, logtest.Scoped(t), db.ExternalServices(), extSvc, cf)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -91,6 +95,16 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		}
 
 		s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+		if err := s.CreateSiteCredential(ctx, &btypes.SiteCredential{
+			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
+			ExternalServiceID:   githubRepo.ExternalRepo.ServiceID,
+		},
+			&auth.OAuthBearerTokenWithSSH{
+				OAuthBearerToken: auth.OAuthBearerToken{Token: token},
+			},
+		); err != nil {
+			t.Fatal(err)
+		}
 		sourcer := sources.NewSourcer(cf)
 
 		spec := &btypes.BatchSpec{
@@ -132,22 +146,28 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		// Set up mocks to prevent the diffstat computation from trying to
 		// use a real gitserver, and so we can control what diff is used to
 		// create the diffstat.
-		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+		state := bt.MockChangesetSyncState(&protocol.RepoInfo{
 			Name: "repo",
 			VCS:  protocol.VCSInfo{URL: "https://example.com/repo/"},
 		})
 		defer state.Unmock()
 
-		src, err := sourcer.ForRepo(ctx, s, githubRepo)
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = syncer.SyncChangeset(ctx, s, src, githubRepo, changeset)
+		src, err := sourcer.ForChangeset(ctx, s, changeset)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		hook := NewGitHubWebhook(s)
+		gsClient := gitserver.NewMockClient()
+		gsClient.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+			return "", nil
+		})
+
+		err = syncer.SyncChangeset(ctx, s, gsClient, src, githubRepo, changeset)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		hook := NewGitHubWebhook(s, gsClient)
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
 		if err != nil {
@@ -158,7 +178,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			_, name := path.Split(fixtureFile)
 			name = strings.TrimSuffix(name, ".json")
 			t.Run(name, func(t *testing.T) {
-				ct.TruncateTables(t, db, "changeset_events")
+				bt.TruncateTables(t, db, "changeset_events")
 
 				tc := loadWebhookTestCase(t, fixtureFile)
 
@@ -166,9 +186,11 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
 						handler := webhooks.GitHubWebhook{
-							ExternalServices: esStore,
+							WebhookRouter: &webhooks.WebhookRouter{
+								DB: db,
+							},
 						}
-						hook.Register(&handler)
+						hook.Register(handler.WebhookRouter)
 
 						u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://example.com/")
 						if err != nil {
@@ -227,8 +249,9 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			// unexpected input.
 			n := 10156
 			action := "this is a bad action"
-
-			if err := hook.handleGitHubWebhook(ctx, extSvc, &gh.PullRequestEvent{
+			u, err := extsvc.NewCodeHostBaseURL("github.com")
+			require.NoError(t, err)
+			if err := hook.handleGitHubWebhook(ctx, db, u, &gh.PullRequestEvent{
 				Number: &n,
 				Repo: &gh.Repository{
 					NodeID: &githubRepo.ExternalRepo.ID,

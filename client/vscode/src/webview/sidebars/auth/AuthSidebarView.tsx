@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
 import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { Alert, Text, Link, Input, H5 } from '@sourcegraph/wildcard'
+import { Alert, Text, Link, Input, H5, Button } from '@sourcegraph/wildcard'
 
 import {
     VSCE_LINK_DOTCOM,
@@ -36,12 +36,13 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
 }) => {
     const [state, setState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
     const [hasAccount, setHasAccount] = useState(authenticatedUser?.username !== undefined)
-    const [usePrivateInstance, setUsePrivateInstance] = useState(false)
+    const [usePrivateInstance, setUsePrivateInstance] = useState(true)
     const signUpURL = VSCE_LINK_AUTH('sign-up')
     const instanceHostname = useMemo(() => new URL(instanceURL).hostname, [instanceURL])
     const [hostname, setHostname] = useState(instanceHostname)
     const [accessToken, setAccessToken] = useState<string | undefined>('initial')
     const [endpointUrl, setEndpointUrl] = useState(instanceURL)
+    const sourcegraphDotCom = 'https://www.sourcegraph.com'
     const isSourcegraphDotCom = useMemo(() => {
         const hostname = new URL(instanceURL).hostname
         if (hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com') {
@@ -63,12 +64,24 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     // assumes the extension was started with a bad token because
                     // user should be autheticated automatically if token is valid
                     if (endpointUrl && token) {
-                        setState('failure')
+                        extensionCoreAPI
+                            .removeAccessToken()
+                            .then(() => {
+                                setAccessToken('REMOVED')
+                                setState('failure')
+                            })
+                            .catch(() => {})
                     }
                 })
                 .catch(error => console.error(error))
         }
-    }, [accessToken, endpointUrl, extensionCoreAPI.getAccessToken])
+    }, [
+        accessToken,
+        endpointUrl,
+        extensionCoreAPI,
+        extensionCoreAPI.getAccessToken,
+        extensionCoreAPI.removeAccessToken,
+    ])
 
     const onTokenInputChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setAccessToken(event.target.value)
@@ -78,6 +91,13 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
         setEndpointUrl(event.target.value)
     }, [])
 
+    const onInstanceTypeChange = useCallback(() => {
+        setUsePrivateInstance(!usePrivateInstance)
+        if (!usePrivateInstance) {
+            setEndpointUrl(sourcegraphDotCom)
+        }
+    }, [usePrivateInstance])
+
     const validateAccessToken: React.FormEventHandler<HTMLFormElement> = (event): void => {
         event.preventDefault()
         if (state !== 'validating' && accessToken) {
@@ -86,30 +106,35 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 variables: {},
                 mightContainPrivateInfo: true,
                 overrideAccessToken: accessToken,
-                overrideSourcegraphURL: '',
+                overrideSourcegraphURL: endpointUrl,
             }
             if (usePrivateInstance) {
                 setHostname(new URL(endpointUrl).hostname)
                 authStateVariables.overrideSourcegraphURL = endpointUrl
             }
-            setState('validating')
-            const currentAuthStateResult = platformContext
-                .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>(authStateVariables)
-                .toPromise()
-
-            currentAuthStateResult
-                .then(async ({ data }) => {
-                    if (data?.currentUser) {
-                        setState('success')
-                        // Update access token and instance url in user config for the extension
-                        await extensionCoreAPI.setEndpointUri(endpointUrl, accessToken)
+            try {
+                setState('validating')
+                const currentAuthStateResult = platformContext
+                    .requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>(authStateVariables)
+                    .toPromise()
+                currentAuthStateResult
+                    .then(async ({ data }) => {
+                        if (data?.currentUser) {
+                            await extensionCoreAPI.setEndpointUri(accessToken, endpointUrl)
+                            setState('success')
+                            return
+                        }
+                        setState('failure')
                         return
-                    }
-                    setState('failure')
-                    return
-                })
-                // v2/debt: Disambiguate network vs auth errors like we do in the browser extension.
-                .catch(() => setState('failure'))
+                    })
+                    // v2/debt: Disambiguate network vs auth errors like we do in the browser extension.
+                    .catch(() => {
+                        setState('failure')
+                    })
+            } catch (error) {
+                setState('failure')
+                console.error(error)
+            }
         }
         // If successful, update setting. This form will no longer be rendered
     }
@@ -129,9 +154,9 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
     const renderCommon = (content: JSX.Element): JSX.Element => (
         <div className={classNames(styles.ctaContainer)}>
             <Form onSubmit={validateAccessToken}>
-                <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
+                <Button variant="secondary" outline={true} className={styles.ctaTitle}>
                     <H5 className="flex-grow-1">Search your private code</H5>
-                </button>
+                </Button>
                 {content}
             </Form>
         </div>
@@ -145,18 +170,14 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     multiple repositories & commit history, monitor code changes, save searches, and more.
                 </Text>
                 <Link to={signUpURL}>
-                    <VSCodeButton
-                        type="button"
+                    <Button
+                        as={VSCodeButton}
                         onClick={onSignUpClick}
-                        className={classNames(
-                            'btn my-1 p-0',
-                            styles.ctaButton,
-                            styles.ctaButtonWrapperWithContextBelow
-                        )}
+                        className={classNames('my-1 p-0', styles.ctaButton, styles.ctaButtonWrapperWithContextBelow)}
                         autofocus={false}
                     >
                         Create an account
-                    </VSCodeButton>
+                    </Button>
                 </Link>
                 <VSCodeLink className="my-0" onClick={() => setHasAccount(true)}>
                     Have an account?
@@ -191,17 +212,18 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
             {isSourcegraphDotCom && authenticatedUser?.displayName === 'sourcegraph' && (
                 <Text className={classNames(styles.ctaParagraph)}>
                     <Link to={isSourcegraphDotCom}>
-                        <VSCodeButton
-                            type="button"
+                        <Button
+                            as={VSCodeButton}
+                            onClick={onSignUpClick}
                             className={classNames(
-                                'btn my-1 p-0',
+                                'my-1 p-0',
                                 styles.ctaButton,
                                 styles.ctaButtonWrapperWithContextBelow
                             )}
                             autofocus={false}
                         >
                             Continue in browser
-                        </VSCodeButton>
+                        </Button>
                     </Link>
                 </Text>
             )}
@@ -242,13 +264,14 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                     />
                 </Text>
             )}
-            <VSCodeButton
+            <Button
+                as={VSCodeButton}
                 type="submit"
                 disabled={state === 'validating'}
-                className={classNames('btn my-1 p-0', styles.ctaButton, styles.ctaButtonWrapperWithContextBelow)}
+                className={classNames('my-1 p-0', styles.ctaButton, styles.ctaButtonWrapperWithContextBelow)}
             >
                 Authenticate account
-            </VSCodeButton>
+            </Button>
             {state === 'failure' && (
                 <Alert variant="danger" className={classNames(styles.ctaParagraph, 'my-1')}>
                     Unable to verify your access token for {hostname}. Please try again with a new access token or
@@ -256,7 +279,7 @@ export const AuthSidebarView: React.FunctionComponent<React.PropsWithChildren<Au
                 </Alert>
             )}
             <Text className="my-0">
-                <VSCodeLink onClick={() => setUsePrivateInstance(!usePrivateInstance)}>
+                <VSCodeLink onClick={() => onInstanceTypeChange()}>
                     {!usePrivateInstance ? 'Need to connect to a private instance?' : 'Not a private instance user?'}
                 </VSCodeLink>
             </Text>
@@ -277,9 +300,9 @@ export const AuthSidebarCta: React.FunctionComponent<React.PropsWithChildren<Aut
 
     return (
         <div>
-            <button type="button" className={classNames('btn btn-outline-secondary', styles.ctaTitle)}>
+            <Button variant="secondary" outline={true} className={styles.ctaTitle}>
                 <H5 className="flex-grow-1">Welcome</H5>
-            </button>
+            </Button>
             <Text className={classNames(styles.ctaParagraph)}>
                 The Sourcegraph extension allows you to search millions of open source repositories without cloning them
                 to your local machine.

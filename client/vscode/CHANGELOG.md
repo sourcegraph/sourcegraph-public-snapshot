@@ -10,7 +10,61 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ### Changes
 
-- `Internal:` Automate release step for Open-VSX registry [issues/37704](https://github.com/sourcegraph/sourcegraph/issues/37704)
+### Fixes
+
+## 2.2.14
+
+### Changes
+
+- Implement proxy support in the process that has access to node APIs [issues/41181](https://github.com/sourcegraph/sourcegraph/issues/41181)
+
+### Fixes
+
+## 2.2.13
+
+### Changes
+
+- Support for logical multiline matches in the UI for Sourcegraph instance versions >= 3.42.0 [pull/43007](https://github.com/sourcegraph/sourcegraph/pull/43007)
+- Tokens will now be stored in secret storage and removed from user settings [issues/36731](https://github.com/sourcegraph/sourcegraph/issues/36731)
+- Users can now log in through the built-in [authentication API](https://code.visualstudio.com/api/references/vscode-api#authentication) [issues/36731](https://github.com/sourcegraph/sourcegraph/issues/36731)
+- Add log out button to `Help and Feedback` sidebar under `User` [issues/36731](https://github.com/sourcegraph/sourcegraph/issues/36731)
+
+### Fixes
+
+- Fix issue where pattern type was always set to `literal` for Sourcegraph instance versions earlier than v3.43.0, which was overriding regex/structural toggles [pull/43005](https://github.com/sourcegraph/sourcegraph/pull/43005)
+
+## 2.2.12
+
+### Changes
+
+### Fixes
+
+- Vary search pattern type depending on Sourcegraph instance version: [issues/41236](https://github.com/sourcegraph/sourcegraph/issues/41236), [pull/42178](https://github.com/sourcegraph/sourcegraph/pull/42178)
+
+## 2.2.10
+
+### Changes
+
+- Remove tracking parameters from all shareable URLs [pull/42022](https://github.com/sourcegraph/sourcegraph/pull/42022)
+
+### Fixes
+
+- Fix Sourcegraph blob link generation: [issues/42060](https://github.com/sourcegraph/sourcegraph/issues/42060), [pull/42065](https://github.com/sourcegraph/sourcegraph/pull/42065)
+
+## 2.2.9
+
+### Changes
+
+### Fixes
+
+- Fix an issue that prevented search results on some older Sourcegraph instance versions to not render properly [pull/40621](https://github.com/sourcegraph/sourcegraph/pull/40621)
+
+## 2.2.8
+
+### Changes
+
+- `Internal:` Automate release step for Open-VSX registry: [issues/37704](https://github.com/sourcegraph/sourcegraph/issues/37704)
+- Remove integrations banners and corresponding pings: [issues/38625](https://github.com/sourcegraph/sourcegraph/issues/38625), [pull/38715](https://github.com/sourcegraph/sourcegraph/pull/38715), [pull/38862](https://github.com/sourcegraph/sourcegraph/pull/38862)
 
 ### Fixes
 

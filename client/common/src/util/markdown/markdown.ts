@@ -6,6 +6,8 @@ import { marked } from 'marked'
 import sanitize from 'sanitize-html'
 import { Overwrite } from 'utility-types'
 
+import { logger } from '../logger'
+
 /**
  * Escapes HTML by replacing characters like `<` with their HTML escape sequences like `&lt;`
  */
@@ -37,7 +39,7 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
         }
         return highlightAuto(code).value
     } catch (error) {
-        console.warn('Error syntax-highlighting hover markdown code block', error)
+        logger.warn('Error syntax-highlighting hover markdown code block', error)
         return escapeHTML(code)
     }
 }
@@ -57,6 +59,8 @@ export const renderMarkdown = (
     options: {
         /** Whether to render line breaks as HTML `<br>`s */
         breaks?: boolean
+        /** Whether to disable autolinks. Explicit links using `[text](url)` are still allowed. */
+        disableAutolinks?: boolean
         renderer?: marked.Renderer
         headerPrefix?: string
     } & (
@@ -73,6 +77,15 @@ export const renderMarkdown = (
           }
     ) = {}
 ): string => {
+    const tokenizer = new marked.Tokenizer()
+    if (options.disableAutolinks) {
+        // Why the odd double-casting below?
+        // Because returning undefined is the recommended way to easily disable autolinks
+        // but the type definition does not allow it.
+        // More context here: https://github.com/markedjs/marked/issues/882
+        tokenizer.url = () => (undefined as unknown) as marked.Tokens.Link
+    }
+
     const rendered = marked(markdown, {
         gfm: true,
         breaks: options.breaks,
@@ -80,6 +93,7 @@ export const renderMarkdown = (
         highlight: (code, language) => highlightCodeSafe(code, language),
         renderer: options.renderer,
         headerPrefix: options.headerPrefix ?? '',
+        tokenizer,
     })
 
     let sanitizeOptions: Overwrite<sanitize.IOptions, sanitize.IDefaults>
@@ -103,7 +117,6 @@ export const renderMarkdown = (
                 'img',
                 'picture',
                 'source',
-                'object',
                 'svg',
                 'rect',
                 'defs',
@@ -124,8 +137,6 @@ export const renderMarkdown = (
                 img: [...sanitize.defaults.allowedAttributes.img, 'alt', 'width', 'height', 'align', 'style'],
                 // Support different images depending on media queries (e.g. color theme, reduced motion)
                 source: ['srcset', 'media'],
-                // Support SVGs for code insights.
-                object: ['data', { name: 'type', values: ['image/svg+xml'] }, 'width'],
                 svg: ['width', 'height', 'viewbox', 'version', 'preserveaspectratio', 'style'],
                 rect: ['x', 'y', 'width', 'height', 'transform', ...svgPresentationAttributes],
                 path: ['d', ...svgPresentationAttributes],

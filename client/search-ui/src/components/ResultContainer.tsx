@@ -1,11 +1,11 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-import { mdiArrowCollapseUp, mdiChevronDown, mdiArrowExpandDown, mdiChevronLeft, mdiChevronUp } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { formatRepositoryStarCount } from '../util/stars'
 
@@ -81,7 +81,7 @@ export interface ResultContainerProps {
     /**
      * The result type
      */
-    resultType?: string
+    resultType?: SearchMatch['type']
 
     /**
      * The name of the repository
@@ -99,6 +99,11 @@ export interface ResultContainerProps {
     repoLastFetched?: string
 
     /**
+     * A string sent down explaining ranking for a file when debug is enabled.
+     */
+    rankingDebug?: string
+
+    /**
      * Click event for when the result is clicked
      */
     onResultClicked?: () => void
@@ -114,6 +119,14 @@ export interface ResultContainerProps {
     index: number
 }
 
+const accessibleResultType: Record<SearchMatch['type'], string> = {
+    symbol: 'symbol',
+    content: 'file content',
+    repo: 'repository',
+    path: 'file path',
+    commit: 'commit',
+}
+
 /**
  * The container component for a result in the SearchResults component.
  */
@@ -125,13 +138,12 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     expandLabel,
     collapsedChildren,
     expandedChildren,
-    icon,
     title,
     titleClassName,
     description,
-    matchCountLabel,
     repoName,
     repoStars,
+    rankingDebug,
     onResultClicked,
     className,
     resultsClassName,
@@ -139,7 +151,6 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     as: Component = 'div',
     index,
 }) => {
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
 
@@ -152,13 +163,13 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
         }
 
         // Scroll back to top of result when collapsing
-        if (coreWorkflowImprovementsEnabled && expanded) {
+        if (expanded) {
             setTimeout(() => {
                 const reducedMotion = !window.matchMedia('(prefers-reduced-motion: no-preference)').matches
                 rootRef.current?.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' })
             }, 0)
         }
-    }, [collapsible, coreWorkflowImprovementsEnabled, expanded])
+    }, [collapsible, expanded])
 
     const trackReferencePanelClick = (): void => {
         if (onResultClicked) {
@@ -177,22 +188,9 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
         >
             <article aria-labelledby={`result-container-${index}`}>
                 <div className={styles.header} id={`result-container-${index}`}>
-                    {!coreWorkflowImprovementsEnabled && (
-                        <>
-                            <Icon
-                                className="flex-shrink-0"
-                                as={icon}
-                                {...(resultType
-                                    ? {
-                                          'aria-label': `${resultType} result`,
-                                      }
-                                    : {
-                                          'aria-hidden': true,
-                                      })}
-                            />
-                            <div className={classNames('mx-1', styles.headerDivider)} />
-                        </>
-                    )}
+                    {/* Add a result type to be read out to screen readers only, so that screen reader users can
+                    easily scan the search results list (for example, by navigating by landmarks). */}
+                    <span className="sr-only">{resultType ? accessibleResultType[resultType] : 'search'} result,</span>
                     <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0 mr-1" />
                     <div
                         className={classNames(styles.headerTitle, titleClassName)}
@@ -203,42 +201,6 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                             <span className={classNames('ml-2', styles.headerDescription)}>{description}</span>
                         )}
                     </div>
-                    {!coreWorkflowImprovementsEnabled && matchCountLabel && (
-                        <span className="d-flex align-items-center">
-                            <small>{matchCountLabel}</small>
-                            {collapsible && <div className={classNames('mx-2', styles.headerDivider)} />}
-                        </span>
-                    )}
-                    {!coreWorkflowImprovementsEnabled && collapsible && (
-                        <Button
-                            data-testid="toggle-matches-container"
-                            className={classNames('py-0', styles.toggleMatchesContainer)}
-                            onClick={toggle}
-                            variant="link"
-                            size="sm"
-                        >
-                            {expanded ? (
-                                <>
-                                    {collapseLabel && (
-                                        <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowCollapseUp} />
-                                    )}
-                                    {collapseLabel}
-                                    {!collapseLabel && <Icon aria-hidden={true} svgPath={mdiChevronDown} />}
-                                </>
-                            ) : (
-                                <>
-                                    {expandLabel && (
-                                        <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowExpandDown} />
-                                    )}
-                                    {expandLabel}
-                                    {!expandLabel && <Icon aria-hidden={true} svgPath={mdiChevronLeft} />}
-                                </>
-                            )}
-                        </Button>
-                    )}
-                    {!coreWorkflowImprovementsEnabled && matchCountLabel && formattedRepositoryStarCount && (
-                        <div className={classNames('mx-2', styles.headerDivider)} />
-                    )}
                     {formattedRepositoryStarCount && (
                         <span className="d-flex align-items-center">
                             <SearchResultStar aria-label={`${repoStars} stars`} />
@@ -246,14 +208,10 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                         </span>
                     )}
                 </div>
-                <div
-                    className={classNames(
-                        coreWorkflowImprovementsEnabled && styles.collapsibleResults,
-                        resultsClassName
-                    )}
-                >
+                {rankingDebug && <div>{rankingDebug}</div>}
+                <div className={classNames(styles.collapsibleResults, resultsClassName)}>
                     <div>{expanded ? expandedChildren : collapsedChildren}</div>
-                    {coreWorkflowImprovementsEnabled && collapsible && (
+                    {collapsible && (
                         <button
                             type="button"
                             className={classNames(
@@ -261,6 +219,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                                 expanded && styles.toggleMatchesButtonExpanded
                             )}
                             onClick={toggle}
+                            data-testid="toggle-matches-container"
                         >
                             <Icon aria-hidden={true} svgPath={expanded ? mdiChevronUp : mdiChevronDown} />
                             <span className={styles.toggleMatchesButtonText}>

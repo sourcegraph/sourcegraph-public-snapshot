@@ -5,26 +5,24 @@ import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
+import { validate as validateUUID } from 'uuid'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { LoadingSpinner, useObservable, Link, CardHeader, CardBody, Card, CardFooter, H2 } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Link, H2 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
-import { mailtoSales } from '../../../productSubscription/helpers'
+import { ProductSubscriptionFieldsOnSubscriptionPage, UserAreaUserFields } from '../../../graphql-operations'
 import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
-import { ProductSubscriptionBilling } from './ProductSubscriptionBilling'
-import { ProductSubscriptionHistory } from './ProductSubscriptionHistory'
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
 
 interface Props extends Pick<RouteComponentProps<{ subscriptionUUID: string }>, 'match'> {
-    user: Pick<GQL.IUser, 'settingsURL'>
+    user: Pick<UserAreaUserFields, 'settingsURL'>
 
     /** For mocking in tests only. */
     _queryProductSubscription?: typeof queryProductSubscription
@@ -44,6 +42,9 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
     _queryProductSubscription = queryProductSubscription,
 }) => {
     useEffect(() => eventLogger.logViewEvent('UserSubscriptionsProductSubscription'), [])
+
+    const isValidUUID = validateUUID(subscriptionUUID)
+    const validationError = !isValidUUID && new Error('Subscription ID is not a valid UUID')
 
     /**
      * The product subscription, or loading, or an error.
@@ -77,75 +78,27 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
             </div>
             {productSubscription === LOADING ? (
                 <LoadingSpinner />
-            ) : isErrorLike(productSubscription) ? (
-                <ErrorAlert className="my-2" error={productSubscription} />
+            ) : !isValidUUID || isErrorLike(productSubscription) ? (
+                <ErrorAlert className="my-2" error={validationError || productSubscription} />
             ) : (
                 <>
                     <H2>Subscription {productSubscription.name}</H2>
-                    {(productSubscription.invoiceItem || productSubscription.activeLicense?.info) && (
+                    {productSubscription.activeLicense?.info && (
                         <UserProductSubscriptionStatus
                             subscriptionName={productSubscription.name}
-                            productNameWithBrand={
-                                productSubscription.activeLicense?.info
-                                    ? productSubscription.activeLicense.info.productNameWithBrand
-                                    : productSubscription.invoiceItem!.plan.nameWithBrand
-                            }
-                            userCount={
-                                productSubscription.activeLicense?.info
-                                    ? productSubscription.activeLicense.info.userCount
-                                    : productSubscription.invoiceItem!.userCount
-                            }
-                            expiresAt={
-                                productSubscription.activeLicense?.info
-                                    ? parseISO(productSubscription.activeLicense.info.expiresAt)
-                                    : parseISO(productSubscription.invoiceItem!.expiresAt)
-                            }
+                            productNameWithBrand={productSubscription.activeLicense?.info.productNameWithBrand}
+                            userCount={productSubscription.activeLicense?.info.userCount}
+                            expiresAt={parseISO(productSubscription.activeLicense.info.expiresAt)}
                             licenseKey={productSubscription.activeLicense?.licenseKey ?? null}
                         />
                     )}
-                    <Card className="mt-3">
-                        <CardHeader>Billing</CardHeader>
-                        {productSubscription.invoiceItem ? (
-                            <>
-                                <ProductSubscriptionBilling productSubscription={productSubscription} />
-                                <CardFooter>
-                                    <Link
-                                        to={mailtoSales({
-                                            subject: `Change payment method for subscription ${productSubscription.name}`,
-                                        })}
-                                    >
-                                        Contact sales
-                                    </Link>{' '}
-                                    to change your payment method.
-                                </CardFooter>
-                            </>
-                        ) : (
-                            <CardBody>
-                                <span className="text-muted ">
-                                    No billing information is associated with this subscription.{' '}
-                                    <Link
-                                        to={mailtoSales({
-                                            subject: `Billing for subscription ${productSubscription.name}`,
-                                        })}
-                                    >
-                                        Contact sales
-                                    </Link>{' '}
-                                    for help.
-                                </span>
-                            </CardBody>
-                        )}
-                    </Card>
-                    <Card className="mt-3">
-                        <CardHeader>History</CardHeader>
-                        <ProductSubscriptionHistory productSubscription={productSubscription} />
-                    </Card>
                 </>
             )}
         </div>
     )
 }
 
-function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscription> {
+function queryProductSubscription(uuid: string): Observable<ProductSubscriptionFieldsOnSubscriptionPage> {
     return queryGraphQL(
         gql`
             query ProductSubscription($uuid: String!) {
@@ -167,23 +120,6 @@ function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscrip
                         email
                         verified
                     }
-                }
-                invoiceItem {
-                    plan {
-                        billingPlanID
-                        name
-                        nameWithBrand
-                        pricePerUserPerYear
-                    }
-                    userCount
-                    expiresAt
-                }
-                events {
-                    id
-                    date
-                    title
-                    description
-                    url
                 }
                 activeLicense {
                     licenseKey

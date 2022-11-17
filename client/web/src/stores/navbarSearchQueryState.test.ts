@@ -1,5 +1,7 @@
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
+import { parseSearchURL } from '../search'
+
 import { setQueryStateFromSettings, setQueryStateFromURL, useNavbarQueryState } from './navbarSearchQueryState'
 
 describe('navbar query state', () => {
@@ -28,28 +30,54 @@ describe('navbar query state', () => {
     })
 
     describe('set state from URL', () => {
-        it('sets the search pattern from URL parementer', () => {
-            setQueryStateFromURL('q=context:global+&patternType=regexp')
+        it('sets the query from URL', () => {
+            setQueryStateFromURL(parseSearchURL('q=test'))
+
+            expect(useNavbarQueryState.getState().queryState).toHaveProperty('query', 'test')
+        })
+
+        it('prefers query parameter over parsed query', () => {
+            setQueryStateFromURL(parseSearchURL('q=test'), 'testparameter')
+
+            expect(useNavbarQueryState.getState().queryState).toHaveProperty('query', 'testparameter')
+        })
+
+        it('sets the search pattern from URL parameter', () => {
+            setQueryStateFromURL(parseSearchURL('q=context:global+&patternType=regexp'))
 
             expect(useNavbarQueryState.getState()).toHaveProperty('searchPatternType', SearchPatternType.regexp)
         })
 
         it('sets the search pattern from filter', () => {
-            setQueryStateFromURL('q=context:global+&patternType=regexp')
+            setQueryStateFromURL(parseSearchURL('q=context:global+patterntype:regexp'))
 
             expect(useNavbarQueryState.getState()).toHaveProperty('searchPatternType', SearchPatternType.regexp)
         })
 
+        it('should not set patternType if query is empty', () => {
+            useNavbarQueryState.setState({ searchPatternType: SearchPatternType.standard })
+            setQueryStateFromURL(parseSearchURL('q=patterntype:regexp'))
+
+            expect(useNavbarQueryState.getState()).toHaveProperty('searchPatternType', SearchPatternType.standard)
+        })
+
         it('sets case sensitivity from filter', () => {
-            setQueryStateFromURL('q=context:global+case:yes')
+            setQueryStateFromURL(parseSearchURL('q=context:global+case:yes'))
 
             expect(useNavbarQueryState.getState()).toHaveProperty('searchCaseSensitivity', true)
         })
 
-        it('sets case sensitivity from URL paramster', () => {
-            setQueryStateFromURL('q=context:global+&case=yes')
+        it('sets case sensitivity from URL parameter', () => {
+            setQueryStateFromURL(parseSearchURL('q=context:global+&case=yes'))
 
             expect(useNavbarQueryState.getState()).toHaveProperty('searchCaseSensitivity', true)
+        })
+
+        it('should not update caseSensitive from filter if query is empty', () => {
+            useNavbarQueryState.setState({ searchCaseSensitivity: false })
+            setQueryStateFromURL(parseSearchURL('q=case:yes'))
+
+            expect(useNavbarQueryState.getState().searchCaseSensitivity).toBe(false)
         })
     })
 
@@ -64,12 +92,13 @@ describe('navbar query state', () => {
                     'search.defaultPatternType': SearchPatternType.structural,
                 },
             })
-            setQueryStateFromURL('q=context:global+&patternType=regexp')
+            setQueryStateFromURL(parseSearchURL('q=context:global+&patternType=regexp'))
 
             expect(useNavbarQueryState.getState()).toHaveProperty('searchPatternType', SearchPatternType.regexp)
         })
+
         it('prefers user settings over settings from empty URL', () => {
-            setQueryStateFromURL('')
+            setQueryStateFromURL(parseSearchURL(''))
             setQueryStateFromSettings({
                 subjects: [],
                 final: {
@@ -81,7 +110,7 @@ describe('navbar query state', () => {
         })
 
         it('does not prefer user settings over settings from URL', () => {
-            setQueryStateFromURL('q=context:global+&patternType=regexp')
+            setQueryStateFromURL(parseSearchURL('q=context:global+&patternType=regexp'))
             setQueryStateFromSettings({
                 subjects: [],
                 final: {

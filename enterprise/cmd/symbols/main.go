@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/rockskip"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -35,7 +35,7 @@ func main() {
 	repoToSize := map[string]int64{}
 
 	if env.Get("USE_ROCKSKIP", "false", "use Rockskip to index the repos specified in ROCKSKIP_REPOS, or repos over ROCKSKIP_MIN_REPO_SIZE_MB in size") == "true" {
-		shared.Main(func(observationContext *observation.Context, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
+		shared.Main(func(observationContext *observation.Context, db database.DB, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
 			rockskipSearchFunc, rockskipHandleStatus, rockskipBackgroundRoutines, rockskipCtagsCommand, err := SetupRockskip(observationContext, gitserverClient, repositoryFetcher)
 			if err != nil {
 				return nil, nil, nil, "", err
@@ -43,7 +43,7 @@ func main() {
 
 			// The blanks are the SQLite status endpoint (it's always nil) and the ctags command (same as
 			// Rockskip's).
-			sqliteSearchFunc, _, sqliteBackgroundRoutines, _, err := shared.SetupSqlite(observationContext, gitserverClient, repositoryFetcher)
+			sqliteSearchFunc, _, sqliteBackgroundRoutines, _, err := shared.SetupSqlite(observationContext, db, gitserverClient, repositoryFetcher)
 			if err != nil {
 				return nil, nil, nil, "", err
 			}
@@ -62,12 +62,11 @@ func main() {
 					if _, ok := repoToSize[string(args.Repo)]; ok {
 						size = repoToSize[string(args.Repo)]
 					} else {
-						ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-						defer cancel()
-						size, err = gitserverClient.GetRepoSize(ctx, args.Repo)
+						info, err := db.GitserverRepos().GetByName(ctx, args.Repo)
 						if err != nil {
 							return sqliteSearchFunc(ctx, args)
 						}
+						size := info.RepoSizeBytes
 						repoToSize[string(args.Repo)] = size
 					}
 
@@ -101,7 +100,7 @@ func SetupRockskip(observationContext *observation.Context, gitserverClient symb
 	createParser := func() (ctags.Parser, error) {
 		return symbolsParser.SpawnCtags(log.Scoped("parser", "ctags parser"), config.Ctags)
 	}
-	server, err := rockskip.NewService(codeintelDB, gitserverClient, repositoryFetcher, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize)
+	server, err := rockskip.NewService(codeintelDB, gitserverClient, repositoryFetcher, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize, config.SearchLastIndexedCommit)
 	if err != nil {
 		return nil, nil, nil, config.Ctags.Command, err
 	}
@@ -118,6 +117,7 @@ type RockskipConfig struct {
 	MaxConcurrentlyIndexing int
 	SymbolsCacheSize        int
 	PathSymbolsCacheSize    int
+	SearchLastIndexedCommit bool
 }
 
 func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
@@ -130,6 +130,7 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "4", "maximum number of repositories being indexed at a time (also limits ctags processes)"),
 		SymbolsCacheSize:        baseConfig.GetInt("SYMBOLS_CACHE_SIZE", "100000", "how many tuples of (path, symbol name, int ID) to cache in memory"),
 		PathSymbolsCacheSize:    baseConfig.GetInt("PATH_SYMBOLS_CACHE_SIZE", "10000", "how many sets of symbols for files to cache in memory"),
+		SearchLastIndexedCommit: baseConfig.GetBool("SEARCH_LAST_INDEXED_COMMIT", "false", "falls back to searching the most recently indexed commit if the requested commit is not indexed"),
 	}
 }
 

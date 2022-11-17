@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
@@ -14,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -34,20 +35,20 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
 	batchSpec := &btypes.BatchSpec{
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, batchSpec); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
 		t.Fatal(err)
 	}
 
-	esStore := database.ExternalServicesWith(logger, cstore)
-	repoStore := database.ReposWith(logger, cstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
+	repoStore := database.ReposWith(logger, bstore)
 
 	rs := make([]*types.Repo, 0, 3)
 	for i := 0; i < cap(rs); i++ {
@@ -62,22 +63,22 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 	changesetSpecs := make([]*btypes.ChangesetSpec, 0, len(rs))
 	for i, r := range rs {
 		repoID := graphqlbackend.MarshalRepositoryID(r.ID)
-		s, err := btypes.NewChangesetSpecFromRaw(ct.NewRawChangesetSpecGitBranch(repoID, fmt.Sprintf("d34db33f-%d", i)))
+		s, err := btypes.NewChangesetSpecFromRaw(bt.NewRawChangesetSpecGitBranch(repoID, fmt.Sprintf("d34db33f-%d", i)))
 		if err != nil {
 			t.Fatal(err)
 		}
 		s.BatchSpecID = batchSpec.ID
 		s.UserID = userID
-		s.RepoID = r.ID
+		s.BaseRepoID = r.ID
 
-		if err := cstore.CreateChangesetSpec(ctx, s); err != nil {
+		if err := bstore.CreateChangesetSpec(ctx, s); err != nil {
 			t.Fatal(err)
 		}
 
 		changesetSpecs = append(changesetSpecs, s)
 	}
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(db, &Resolver{store: bstore})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -199,7 +200,7 @@ func TestRewirerMappings(t *testing.T) {
 			publishA = &btypes.RewirerMapping{ChangesetSpecID: 4}
 			publishB = &btypes.RewirerMapping{ChangesetSpecID: 5}
 		)
-		rmf := newRewirerMappingsFacade(nil, 0, nil)
+		rmf := newRewirerMappingsFacade(nil, gitserver.NewMockClient(), 0, nil)
 		rmf.All = btypes.RewirerMappings{detach, hidden, noAction, publishA, publishB}
 		addResolverFixture(rmf, detach, &mockChangesetApplyPreviewResolver{
 			visible: &mockVisibleChangesetApplyPreviewResolver{
@@ -401,7 +402,7 @@ func TestRewirerMappings(t *testing.T) {
 		}
 
 		s := &store.Store{}
-		rmf := newRewirerMappingsFacade(s, 1, nil)
+		rmf := newRewirerMappingsFacade(s, gitserver.NewMockClient(), 1, nil)
 		rmf.batchChange = &btypes.BatchChange{}
 
 		mapping := &btypes.RewirerMapping{}

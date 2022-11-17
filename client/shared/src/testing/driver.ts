@@ -21,7 +21,7 @@ import { from, fromEvent, merge, Subscription } from 'rxjs'
 import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
-import { isDefined } from '@sourcegraph/common'
+import { isDefined, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, GraphQLResult } from '@sourcegraph/http-client'
 
 import { ExternalServiceKind } from '../graphql-operations'
@@ -199,12 +199,12 @@ export class Driver {
                             )
                         )
                     )
-                    .subscribe(formattedLine => console.log(formattedLine))
+                    .subscribe(formattedLine => logger.log(formattedLine))
             )
         }
     }
 
-    public async ensureLoggedIn({
+    public async ensureSignedIn({
         username,
         password,
         email,
@@ -221,11 +221,6 @@ export class Driver {
          * 2. Redirect to /site-admin/init
          */
         await this.page.goto(this.sourcegraphBaseUrl, { waitUntil: 'networkidle0' })
-        await this.page.evaluate(() => {
-            localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
-            localStorage.setItem('has-dismissed-integrations-toast', 'true')
-            localStorage.setItem('has-dismissed-survey-toast', 'true')
-        })
 
         const url = new URL(this.page.url())
 
@@ -295,7 +290,7 @@ export class Driver {
         if (!this.keepBrowser) {
             await this.browser.close()
         }
-        console.log(
+        logger.log(
             '\n  Visited routes:\n' +
                 [
                     ...new Set(
@@ -407,7 +402,7 @@ export class Driver {
         }
 
         // Navigate to the add external service page.
-        console.log('Adding external service of kind', kind)
+        logger.log('Adding external service of kind', kind)
         await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
         await this.page.waitForSelector(`[data-test-external-service-card-link="${kind.toUpperCase()}"]`, {
             visible: true,
@@ -781,7 +776,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
     )
 
     // Apply defaults
-    const resolvedOptions: typeof config & typeof options = {
+    const resolvedOptions: DriverOptions = {
         ...config,
         ...options,
     }
@@ -800,7 +795,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
     args.push(`--window-size=${config.windowWidth},${config.windowHeight}`)
     if (process.getuid() === 0) {
         // TODO don't run as root in CI
-        console.warn('Running as root, disabling sandbox')
+        logger.warn('Running as root, disabling sandbox')
         args.push('--no-sandbox', '--disable-setuid-sandbox')
     }
     if (loadExtension) {

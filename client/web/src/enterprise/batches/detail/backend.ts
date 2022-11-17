@@ -48,6 +48,7 @@ import {
     AvailableBulkOperationsResult,
     BulkOperationType,
 } from '../../../graphql-operations'
+import { VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT } from '../MissingCredentialsAlert'
 
 const changesetsStatsFragment = gql`
     fragment ChangesetsStatsFields on ChangesetsStats {
@@ -103,9 +104,18 @@ const batchChangeFragment = gql`
         url
         name
         namespace {
+            __typename
             id
             namespaceName
             url
+            ... on User {
+                displayName
+                username
+            }
+            ... on Org {
+                displayName
+                name
+            }
         }
         description
 
@@ -162,6 +172,9 @@ const batchChangeFragment = gql`
                 }
                 totalCount
             }
+            viewerBatchChangesCodeHosts(onlyWithoutCredential: true) {
+                ...ViewerBatchChangesCodeHostsFields
+            }
         }
 
         # TODO: We ought to be able to filter these by state, but because state is only computed
@@ -188,6 +201,8 @@ const batchChangeFragment = gql`
     ${changesetsStatsFragment}
 
     ${diffStatFields}
+
+    ${VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT}
 
     fragment ActiveBulkOperationFields on BulkOperation {
         __typename

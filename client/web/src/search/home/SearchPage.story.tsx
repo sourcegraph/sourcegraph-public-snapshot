@@ -16,7 +16,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { WebStory } from '../../components/WebStory'
 import { MockedFeatureFlagsProvider } from '../../featureFlags/FeatureFlagsProvider'
 import { useExperimentalFeatures } from '../../stores'
-import { ThemePreference } from '../../stores/themeState'
+import { ThemePreference } from '../../theme'
 import {
     HOME_PANELS_QUERY,
     RECENTLY_SEARCHED_REPOSITORIES_TO_LOAD,
@@ -117,46 +117,22 @@ function getMocks({
     ]
 }
 
-export const CloudWithPanels: Story = () => (
+export const CloudAuthedHome: Story = () => (
     <WebStory>
-        {webProps => {
-            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
-            return (
-                <MockedTestProvider
-                    mocks={getMocks({
-                        enableSavedSearches: false,
-                        enableCollaborators: false,
-                    })}
-                >
-                    <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
-                </MockedTestProvider>
-            )
-        }}
+        {webProps => (
+            <MockedTestProvider
+                mocks={getMocks({
+                    enableSavedSearches: false,
+                    enableCollaborators: false,
+                })}
+            >
+                <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
+            </MockedTestProvider>
+        )}
     </WebStory>
 )
 
-CloudWithPanels.storyName = 'Cloud with panels'
-
-export const CloudWithPanelsAndCollaborators: Story = () => (
-    <WebStory>
-        {webProps => {
-            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
-            useExperimentalFeatures.setState({ homepageUserInvitation: true })
-            return (
-                <MockedTestProvider
-                    mocks={getMocks({
-                        enableSavedSearches: false,
-                        enableCollaborators: true,
-                    })}
-                >
-                    <SearchPage {...defaultProps(webProps)} isSourcegraphDotCom={true} />
-                </MockedTestProvider>
-            )
-        }}
-    </WebStory>
-)
-
-CloudWithPanelsAndCollaborators.storyName = 'Cloud with panels and collaborators'
+CloudAuthedHome.storyName = 'Cloud authenticated home'
 
 export const CloudMarketingHome: Story = () => (
     <WebStory>
@@ -170,22 +146,19 @@ export const CloudMarketingHome: Story = () => (
 
 CloudMarketingHome.storyName = 'Cloud marketing home'
 
-export const ServerWithPanels: Story = () => (
+export const ServerHome: Story = () => (
     <WebStory>
-        {webProps => {
-            useExperimentalFeatures.setState({ showEnterpriseHomePanels: true })
-            return (
-                <MockedTestProvider
-                    mocks={getMocks({
-                        enableSavedSearches: true,
-                        enableCollaborators: false,
-                    })}
-                >
-                    <SearchPage {...defaultProps(webProps)} />
-                </MockedTestProvider>
-            )
-        }}
+        {webProps => (
+            <MockedTestProvider
+                mocks={getMocks({
+                    enableSavedSearches: true,
+                    enableCollaborators: false,
+                })}
+            >
+                <SearchPage {...defaultProps(webProps)} />
+            </MockedTestProvider>
+        )}
     </WebStory>
 )
 
-ServerWithPanels.storyName = 'Server with panels'
+ServerHome.storyName = 'Server home'

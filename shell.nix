@@ -1,4 +1,4 @@
-# Experimental support for developing in nix. Please reach out to @keegan if
+# Experimental support for developing in nix. Please reach out to @keegan or @noah if
 # you encounter any issues.
 #
 # Things it does differently:
@@ -8,38 +8,14 @@
 #
 # Status: everything works on linux. Go1.17 is currently broken on
 # darwin. https://github.com/NixOS/nixpkgs/commit/9675a865c9c3eeec36c06361f7215e109925654c
-
+{ pkgs }:
 let
-  # Pin a specific version of universal-ctags to the same version as in cmd/symbols/ctags-install-alpine.sh.
-  ctags-overlay = (self: super: {
-    universal-ctags = super.universal-ctags.overrideAttrs (old: {
-      version = "5.9.20220403.0";
-      src = super.fetchFromGitHub {
-        owner = "universal-ctags";
-        repo = "ctags";
-        rev = "f95bb3497f53748c2b6afc7f298cff218103ab90";
-        sha256 = "sha256-pd89KERQj6K11Nue3YFNO+NLOJGqcMnHkeqtWvMFk38=";
-      };
-      # disable checks, else we get `make[1]: *** No rule to make target 'optlib/cmake.c'.  Stop.`
-      doCheck = false;
-      checkFlags = [ ];
-    });
-  });
-  # Pin a specific version of nixpkgs to ensure we get the same packages.
-  pkgs = import
-    (fetchTarball {
-      url =
-        "https://github.com/NixOS/nixpkgs/archive/cbe587c735b734405f56803e267820ee1559e6c1.tar.gz";
-      sha256 = "0jii8slqbwbvrngf9911z3al1s80v7kk8idma9p9k0d5fm3g4z7h";
-    })
-    { overlays = [ ctags-overlay ]; };
   # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"
   # like zoekt expects.
   universal-ctags = pkgs.writeScriptBin "universal-ctags" ''
     #!${pkgs.stdenv.shell}
     exec ${pkgs.universal-ctags}/bin/ctags "$@"
   '';
-
 in
 pkgs.mkShell {
   name = "sourcegraph-dev";
@@ -59,10 +35,11 @@ pkgs.mkShell {
     universal-ctags
 
     # Build our backend.
-    go_1_18
+    go_1_19
 
     # Lots of our tooling and go tests rely on git et al.
     git
+    git-lfs
     parallel
     nssTools
 
@@ -77,6 +54,8 @@ pkgs.mkShell {
     (yarn.override { nodejs = nodejs-16_x; })
     nodePackages.typescript
 
+    # Rust utils for syntax-highlighter service,
+    # currently not pinned to the same versions.
     cargo
     rustc
     rustfmt
@@ -89,6 +68,7 @@ pkgs.mkShell {
     . ./dev/nix/shell-hook.sh
   '';
 
+  # Fix for using Delve https://github.com/sourcegraph/sourcegraph/pull/35885
   hardeningDisable = [ "fortify" ];
 
   # By explicitly setting this environment variable we avoid starting up
@@ -96,4 +76,6 @@ pkgs.mkShell {
   CTAGS_COMMAND = "${universal-ctags}/bin/universal-ctags";
 
   RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+
+  DEV_WEB_BUILDER = "esbuild";
 }

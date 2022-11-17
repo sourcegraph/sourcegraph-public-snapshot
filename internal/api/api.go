@@ -157,24 +157,6 @@ type Settings struct {
 	CreatedAt    time.Time       // the date when this settings value was created
 }
 
-// ExternalService represents a complete external service record.
-// TODO(eseliger): Remove this post the 3.43 release.
-type ExternalService struct {
-	ID              int64
-	Kind            string
-	DisplayName     string
-	Config          string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       time.Time
-	LastSyncAt      time.Time
-	NextSyncAt      time.Time
-	NamespaceUserID int32
-	NamespaceOrgID  int32
-	Unrestricted    bool
-	CloudDefault    bool
-}
-
 func cmp(a, b string) int {
 	switch {
 	case a < b:

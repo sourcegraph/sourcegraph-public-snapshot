@@ -2,7 +2,6 @@ package jsonc
 
 import (
 	"encoding/json"
-	"strings"
 
 	"github.com/sourcegraph/jsonx"
 
@@ -16,30 +15,21 @@ func Unmarshal(text string, v any) error {
 	if err != nil {
 		return err
 	}
-	if strings.TrimSpace(text) == "" {
-		return nil
-	}
 	return json.Unmarshal(data, v)
 }
 
 // Parse converts JSON with comments, trailing commas, and some types of syntax errors into standard
-// JSON. If there is an error that it can't unambiguously resolve, it returns the error.
+// JSON. If there is an error that it can't unambiguously resolve, it returns the error. If the
+// error is non-nil, it always returns a valid JSON document.
 func Parse(text string) ([]byte, error) {
 	data, errs := jsonx.Parse(text, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
 	if len(errs) > 0 {
 		return data, errors.Errorf("failed to parse JSON: %v", errs)
 	}
-	return data, nil
-}
-
-// Normalize is like Parse, except it ignores errors and always returns valid JSON, even if that
-// JSON is a subset of the input.
-func Normalize(input string) []byte {
-	output, _ := jsonx.Parse(input, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
-	if len(output) == 0 {
-		return []byte("{}")
+	if data == nil {
+		return []byte("null"), nil
 	}
-	return output
+	return data, nil
 }
 
 var DefaultFormatOptions = jsonx.FormatOptions{InsertSpaces: true, TabSize: 2}

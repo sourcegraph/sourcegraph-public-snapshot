@@ -23,7 +23,6 @@ import styles from './Tree.module.scss'
 
 interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
     history: H.History
-    location: H.Location
     scrollRootSelector?: string
 
     /** The tree entry that is currently active, or '' if none (which means the root). */
@@ -34,6 +33,7 @@ interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, Tel
     /** The localStorage key that stores the current size of the (resizable) RepoRevisionSidebar. */
     sizeKey: string
     repoID: Scalars['ID']
+    enableMergedFileSymbolSidebar: boolean
 }
 
 interface State {
@@ -325,7 +325,6 @@ export class Tree extends React.PureComponent<Props, State> {
                     activeNode={this.state.activeNode}
                     activePath={this.props.activePath}
                     depth={0}
-                    location={this.props.location}
                     repoID={this.props.repoID}
                     repoName={this.props.repoName}
                     revision={this.props.revision}
@@ -346,6 +345,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     extensionsController={this.props.extensionsController}
                     isLightTheme={this.props.isLightTheme}
                     telemetryService={this.props.telemetryService}
+                    enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
                 />
             </div>
         )

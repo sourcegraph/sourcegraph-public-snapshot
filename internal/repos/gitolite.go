@@ -29,9 +29,13 @@ type GitoliteSource struct {
 }
 
 // NewGitoliteSource returns a new GitoliteSource from the given external service.
-func NewGitoliteSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
+func NewGitoliteSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
+	rawConfig, err := svc.Config.Decrypt(ctx)
+	if err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
 	var c schema.GitoliteConnection
-	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
 
@@ -40,7 +44,8 @@ func NewGitoliteSource(svc *types.ExternalService, cf *httpcli.Factory) (*Gitoli
 		// The provided httpcli.Factory is one used for external services - however,
 		// GitoliteSource asks gitserver to communicate to gitolite instead, so we
 		// have to ensure that the actor transport used for internal clients is provided.
-		httpcli.ActorTransportOpt)
+		httpcli.ActorTransportOpt,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +82,12 @@ func (s *GitoliteSource) ListRepos(ctx context.Context, results chan SourceResul
 	for _, r := range all {
 		repo := s.makeRepo(r)
 		if !s.excludes(r, repo) {
-			results <- SourceResult{Source: s, Repo: repo}
+			select {
+			case <-ctx.Done():
+				results <- SourceResult{Err: ctx.Err()}
+				return
+			case results <- SourceResult{Source: s, Repo: repo}:
+			}
 		}
 	}
 }

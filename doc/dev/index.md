@@ -93,7 +93,6 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Developing code insights](background-information/insights/index.md)
 - [Developing code monitoring](background-information/codemonitoring/index.md)
 - [Developing observability](background-information/observability/index.md)
-- [Developing Sourcegraph extensions](background-information/sourcegraph_extensions.md)
 - [Dependencies and generated code](background-information/dependencies_and_codegen.md)
 - [Code reviews](background-information/pull_request_reviews.md)
 - [Commit messages](background-information/commit_messages.md)
@@ -157,6 +156,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 
 - [How to add support for a language](how-to/add_support_for_a_language.md)
 - [How to use feature flags](how-to/use_feature_flags.md)
+- [How to add caching](how-to/add_caching.md)
 
 ### Observability
 
@@ -165,7 +165,11 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 - [How to find monitoring](how-to/find_monitoring.md)
 - [How to add monitoring](how-to/add_monitoring.md)
 - [Set up local monitoring development](how-to/monitoring_local_dev.md)
-- [Set up local OpenTelemetry development](how-to/otel_local_dev.md)
+- [Set up local OpenTelemetry development](how-to/opentelemetry_local_dev.md)
+
+### Plans and licenses
+
+- [How to generate a license key for testing and debugging](how-to/generate_license_key_for_testing.md)
 
 ### Documentation
 
@@ -182,6 +186,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 - Testing against code hosts
   - [Configure a test instance of Phabricator and Gitolite](how-to/configure_phabricator_gitolite.md)
   - [Test a Phabricator and Gitolite instance](how-to/test_phabricator.md)
+  - [Sync repositories from gitolite.sgdev.org](how-to/sync_repositories_from_gitolite_sgdev_org.md)
 
 ## [Contributing](./contributing/index.md)
 

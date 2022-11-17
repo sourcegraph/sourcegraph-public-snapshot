@@ -17,27 +17,31 @@ export interface CodeIntelRepositoryIndexConfigurationPageProps extends ThemePro
     history: H.History
 }
 
-export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<
-    React.PropsWithChildren<CodeIntelRepositoryIndexConfigurationPageProps>
-> = ({ repo, authenticatedUser, history, telemetryService, ...props }) => {
+export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<CodeIntelRepositoryIndexConfigurationPageProps> = ({
+    repo,
+    authenticatedUser,
+    history,
+    telemetryService,
+    ...props
+}) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelRepositoryIndexConfiguration'), [telemetryService])
 
     return (
         <>
-            <PageTitle title="Precise code graph repository index configuration" />
+            <PageTitle title="Code graph data repository index configuration" />
             <CodeIntelConfigurationPageHeader>
                 <PageHeader
                     headingElement="h2"
                     path={[
                         {
-                            text: <>Precise code graph repository index configuration</>,
+                            text: <>Code graph data repository index configuration</>,
                         },
                     ]}
                     description={
                         <>
                             Provide explicit index job configuration to customize how this repository is indexed. See
                             the{' '}
-                            <Link to="https://docs.sourcegraph.com/code_intelligence/references/auto_indexing_configuration">
+                            <Link to="/help/code_navigation/references/auto_indexing_configuration">
                                 reference guide
                             </Link>{' '}
                             for more information.

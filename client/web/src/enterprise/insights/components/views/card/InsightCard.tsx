@@ -1,23 +1,74 @@
-import React, { forwardRef, HTMLAttributes, ReactNode } from 'react'
+import React, {
+    FC,
+    forwardRef,
+    HTMLAttributes,
+    ReactNode,
+    PropsWithChildren,
+    useState,
+    FocusEvent,
+    createContext,
+    useMemo,
+    useContext,
+} from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { Card, ForwardReferenceComponent, H2, H4, LoadingSpinner } from '@sourcegraph/wildcard'
+import {
+    Card,
+    ForwardReferenceComponent,
+    H2,
+    H4,
+    LoadingSpinner,
+    LegendItem,
+    LegendList,
+    Series,
+} from '@sourcegraph/wildcard'
 
-import { getLineColor, LegendItem, LegendList, Series } from '../../../../../charts'
 import { ErrorBoundary } from '../../../../../components/ErrorBoundary'
 
 import styles from './InsightCard.module.scss'
 
+interface CardContextData {
+    isFocused: boolean
+}
+
+const CardContext = createContext<CardContextData>({ isFocused: false })
+
 const InsightCard = forwardRef(function InsightCard(props, reference) {
-    const { title, children, className, as = 'section', ...otherProps } = props
+    const { title, children, className, as = 'section', ...attributes } = props
+
+    const [isFocused, setFocused] = useState(false)
+
+    const handleFocusCapture = (): void => {
+        if (!isFocused) {
+            setFocused(true)
+        }
+    }
+
+    const handleBlurCapture = (event: FocusEvent): void => {
+        const nextFocusTarget = event.relatedTarget as Element | null
+
+        if (!event.currentTarget.contains(nextFocusTarget)) {
+            setFocused(false)
+        }
+    }
 
     return (
-        <Card as={as} tabIndex={0} ref={reference} {...otherProps} className={classNames(className, styles.view)}>
-            <ErrorBoundary location={useLocation()} className={styles.errorBoundary}>
-                {children}
-            </ErrorBoundary>
+        <Card
+            as={as}
+            ref={reference}
+            tabIndex={0}
+            className={classNames(className, styles.view)}
+            onFocusCapture={handleFocusCapture}
+            onBlurCapture={handleBlurCapture}
+            {...attributes}
+        >
+            <CardContext.Provider value={useMemo(() => ({ isFocused }), [isFocused])}>
+                <ErrorBoundary location={useLocation()} className={styles.errorBoundary}>
+                    {children}
+                </ErrorBoundary>
+            </CardContext.Provider>
         </Card>
     )
 }) as ForwardReferenceComponent<'section'>
@@ -68,12 +119,17 @@ const InsightCardHeader = forwardRef(function InsightCardHeader(props, reference
     )
 }) as ForwardReferenceComponent<'header', InsightCardTitleProps>
 
-const InsightCardLoading: React.FunctionComponent<React.PropsWithChildren<unknown>> = props => (
-    <InsightCardBanner>
-        <LoadingSpinner />
-        {props.children}
-    </InsightCardBanner>
-)
+const InsightCardLoading: FC<PropsWithChildren<HTMLAttributes<HTMLElement>>> = props => {
+    const { 'aria-label': ariaLabel = 'Insight loading', children, ...attributes } = props
+    const { isFocused } = useContext(CardContext)
+
+    return (
+        <InsightCardBanner {...attributes}>
+            <LoadingSpinner aria-label={ariaLabel} aria-live={isFocused ? 'polite' : 'off'} />
+            {children}
+        </InsightCardBanner>
+    )
+}
 
 const InsightCardBanner: React.FunctionComponent<React.PropsWithChildren<HTMLAttributes<HTMLDivElement>>> = props => (
     <div {...props} className={classNames(styles.loadingContent, props.className)}>
@@ -91,7 +147,7 @@ const InsightCardLegend: React.FunctionComponent<React.PropsWithChildren<Insight
     return (
         <LegendList {...attributes}>
             {series.map(series => (
-                <LegendItem key={series.id} color={getLineColor(series)} name={series.name} />
+                <LegendItem key={series.id} color={series.color} name={series.name} />
             ))}
         </LegendList>
     )

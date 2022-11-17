@@ -1,9 +1,5 @@
 .extension-banner {
     background: transparent;
-
-    h2 {
-        font-weight: 500;
-    }
 }
 
 .body-text {
@@ -14,4 +10,8 @@
 .icon {
     height: calc(4rem - 2px); /* stylelint-disable-line */
     width: calc(4.5rem - 3px); /* stylelint-disable-line */
+}
+
+.heading {
+    font-weight: 500;
 }

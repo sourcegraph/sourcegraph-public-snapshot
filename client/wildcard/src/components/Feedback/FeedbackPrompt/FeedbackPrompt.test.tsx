@@ -8,7 +8,6 @@ import { PopoverTrigger } from '../../Popover'
 import { FeedbackPrompt } from '.'
 
 const sampleFeedback = {
-    score: 4,
     feedback: 'Lorem ipsum dolor sit amet',
 }
 
@@ -17,7 +16,12 @@ describe('FeedbackPrompt', () => {
 
     beforeEach(() => {
         render(
-            <FeedbackPrompt openByDefault={true} onSubmit={onSubmit} productResearchEnabled={true}>
+            <FeedbackPrompt
+                openByDefault={true}
+                onSubmit={onSubmit}
+                productResearchEnabled={true}
+                authenticatedUser={null}
+            >
                 <PopoverTrigger as={Button} aria-label="Feedback" variant="secondary" outline={true} size="sm">
                     <span>Feedback</span>
                 </PopoverTrigger>
@@ -31,8 +35,7 @@ describe('FeedbackPrompt', () => {
     })
 
     const submitFeedback = () => {
-        userEvent.click(screen.getByLabelText('Very Happy'))
-        fireEvent.change(screen.getByPlaceholderText('What’s going well? What could be better?'), {
+        fireEvent.change(screen.getByLabelText('Send feedback to Sourcegraph'), {
             target: { value: sampleFeedback.feedback },
         })
 
@@ -46,11 +49,9 @@ describe('FeedbackPrompt', () => {
     })
 
     test('should enable/disable submit button correctly', () => {
-        userEvent.click(screen.getByLabelText('Very Happy'))
-
         expect(screen.getByText('Send')).toBeDisabled()
 
-        userEvent.type(screen.getByPlaceholderText('What’s going well? What could be better?'), sampleFeedback.feedback)
+        userEvent.type(screen.getByLabelText('Send feedback to Sourcegraph'), sampleFeedback.feedback)
 
         expect(screen.getByText('Send')).toBeEnabled()
     })
@@ -61,7 +62,7 @@ describe('FeedbackPrompt', () => {
         submitFeedback()
 
         expect(await screen.findByText(/thank you for your help/i)).toBeInTheDocument()
-        sinon.assert.calledWith(onSubmit, sampleFeedback.feedback, sampleFeedback.score)
+        sinon.assert.calledWith(onSubmit, sampleFeedback.feedback)
 
         expect(document.body).toMatchSnapshot()
     })
@@ -72,7 +73,7 @@ describe('FeedbackPrompt', () => {
         submitFeedback()
 
         expect(await screen.findByText(/something went really wrong/i)).toBeInTheDocument()
-        sinon.assert.calledWith(onSubmit, sampleFeedback.feedback, sampleFeedback.score)
+        sinon.assert.calledWith(onSubmit, sampleFeedback.feedback)
 
         expect(document.body).toMatchSnapshot()
     })

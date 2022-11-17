@@ -31,12 +31,9 @@ import (
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/execute"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -88,11 +85,12 @@ func (c *SearchResultsResolver) repositoryResolvers(ctx context.Context, ids []a
 		return nil, nil
 	}
 
+	gsClient := gitserver.NewClient(c.db)
 	resolvers := make([]*RepositoryResolver, 0, len(ids))
 	err := c.db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
 		IDs: ids,
 	}, func(repo *types.MinimalRepo) {
-		resolvers = append(resolvers, NewRepositoryResolver(c.db, repo.ToRepo()))
+		resolvers = append(resolvers, NewRepositoryResolver(c.db, gsClient, repo.ToRepo()))
 	})
 	if err != nil {
 		return nil, err
@@ -142,11 +140,12 @@ func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultRe
 		Rev  string
 	}
 	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
+	gsClient := gitserver.NewClient(db)
 	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := NewRepositoryResolver(db, repoName.ToRepo())
+		resolver := NewRepositoryResolver(db, gsClient, repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver
@@ -338,8 +337,9 @@ loop:
 			panic("SearchResults.Sparkline unexpected union type state")
 		}
 	}
-	span := opentracing.SpanFromContext(ctx)
-	span.SetTag("blame_ops", blameOps)
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		span.SetTag("blame_ops", blameOps)
+	}
 	return sparkline, nil
 }
 
@@ -360,7 +360,7 @@ var (
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs, durationMs int32) {
+func LogSearchLatency(ctx context.Context, db database.DB, si *search.Inputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
 	defer tr.Finish()
 	var types []string
@@ -439,16 +439,6 @@ func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs,
 	}
 }
 
-func (r *searchResolver) JobClients() job.RuntimeClients {
-	return job.RuntimeClients{
-		Logger:       r.logger,
-		DB:           r.db,
-		Zoekt:        r.zoekt,
-		SearcherURLs: r.searcherURLs,
-		Gitserver:    gitserver.NewClient(r.db),
-	}
-}
-
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
 	searchResponseCounter.WithLabelValues(
 		status,
@@ -465,7 +455,7 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 	).Observe(elapsed.Seconds())
 }
 
-func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInputs, srr *SearchResultsResolver, err error) {
+func logBatch(ctx context.Context, db database.DB, searchInputs *search.Inputs, srr *SearchResultsResolver, err error) {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 	wg.Add(1)
@@ -511,7 +501,7 @@ func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInput
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
-	alert, err := execute.Execute(ctx, agg, r.SearchInputs, r.JobClients())
+	alert, err := r.client.Execute(ctx, agg, r.SearchInputs)
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
 	logBatch(ctx, r.db, r.SearchInputs, srr, err)
@@ -590,6 +580,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err := json.Unmarshal(jsonRes, &stats); err != nil {
 			return nil, err
 		}
+		stats.logger = r.logger.Scoped("searchResultsStats", "provides status on search results")
 		stats.sr = r
 		return stats, nil
 	}
@@ -610,7 +601,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 			return nil, err
 		}
 		agg := streaming.NewAggregatingStream()
-		alert, err := j.Run(ctx, r.JobClients(), agg)
+		alert, err := j.Run(ctx, r.client.JobClients(), agg)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
@@ -649,6 +640,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		return nil, err // sparkline generation failed, so don't cache.
 	}
 	stats = &searchResultsStats{
+		logger:                  r.logger.Scoped("searchResultsStats", "provides status on search results"),
 		JApproximateResultCount: v.ApproximateResultCount(),
 		JSparkline:              sparkline,
 		sr:                      r,

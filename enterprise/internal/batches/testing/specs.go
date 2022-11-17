@@ -22,9 +22,10 @@ const TestRawBatchSpec = `{
     {
       "run": "echo 'foobar'",
       "container": "alpine",
-      "env": {
-        "PATH": "/work/foobar:$PATH"
-      }
+      "env": [
+		{ "PATH": "/work/foobar:$PATH" },
+		"FOO"
+	  ]
     }
   ],
   "changesetTemplate": {
@@ -48,7 +49,8 @@ steps:
 - run: echo 'foobar'
   container: alpine
   env:
-    PATH: "/work/foobar:$PATH"
+    - PATH: "/work/foobar:$PATH"
+    - FOO
 changesetTemplate:
   title: Hello World
   body: My first batch change!
@@ -75,7 +77,7 @@ func BuildRawBatchSpecWithImportChangesets(t *testing.T, imports []batcheslib.Im
 	return string(marshaledRawSpec)
 }
 
-var ChangesetSpecDiffStat = &diff.Stat{Added: 1, Changed: 2, Deleted: 1}
+var ChangesetSpecDiffStat = &diff.Stat{Added: 3, Deleted: 3}
 
 const ChangesetSpecAuthorEmail = "mary@example.com"
 const ChangesetSpecDiff = `diff --git INSTALL.md INSTALL.md

@@ -30,18 +30,13 @@ describe('VS Code extension', () => {
         )
     })
 
-    afterEach(async () => {
-        // Close Remote File
-        await vsCodeDriver.page.waitForSelector('.tabs-container .active .tab-actions', { visible: true })
-        await vsCodeDriver.page.click('.tabs-container .active .tab-actions', { delay: 50 })
-        // Close Search Panel
-        await vsCodeDriver.page.waitForSelector('.tabs-container .active .tab-actions', { visible: true })
-        await vsCodeDriver.page.click('.tabs-container .active .tab-actions', { delay: 50 })
-    })
-
-    // Debt: reset VS Code extension state between test cases in `afterEach` once we
-    // have multiple tests. This will likely involve just closing the search panel.
-    // afterEach(async () => {})
+    // TODO: Reset VS Code extension state between test cases in `afterEach`
+    // once we have multiple tests. This will likely involve just closing the
+    // search panel.
+    //
+    // This was initially attempted before (#40470) but was failing in the CI
+    // while the actual functionality kept working (tested locally) and needs
+    // fixing before we add more test cases to the suite.
 
     it('works', async () => {
         const { Extensions } = setupExtensionMocking({
@@ -146,6 +141,8 @@ describe('VS Code extension', () => {
         } catch {
             throw new Error('Timeout waiting for search results to render after nevigating back from repo display page')
         }
+
+        await vsCodeDriver.page.waitForTimeout(10000)
 
         // Look for file title
         const remoteFileTitle = await vsCodeDriver.page.title()

@@ -56,6 +56,11 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 	handledPackages := make(map[reposource.PackageName]struct{})
 
 	for _, dep := range deps {
+		if err := ctx.Err(); err != nil {
+			results <- SourceResult{Source: s, Err: err}
+			return
+		}
+
 		if _, ok := handledPackages[dep.PackageSyntax()]; !ok {
 			_, err := getPackage(ctx, s.src, dep.PackageSyntax())
 			if err != nil {
@@ -172,8 +177,10 @@ func (s *PackagesSource) makeRepo(dep reposource.Package) *types.Repo {
 
 func getPackage(ctx context.Context, s packagesSource, name reposource.PackageName) (reposource.Package, error) {
 	switch d := s.(type) {
-	case packagesDownloadSource:
-		return d.GetPackage(ctx, name)
+	// Downloading package descriptions is disabled due to performance issues, causing sync times to take >12hr.
+	// Don't re-enable the case below without fixing https://github.com/sourcegraph/sourcegraph/issues/39653.
+	//case packagesDownloadSource:
+	//	return d.GetPackage(ctx, name)
 	default:
 		return d.ParsePackageFromName(name)
 	}

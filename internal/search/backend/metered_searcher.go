@@ -5,15 +5,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/zoekt"
-	"github.com/google/zoekt/query"
 	"github.com/keegancsmith/rpc"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegraph/zoekt/query"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -69,6 +70,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		event = honey.NewEvent("search-zoekt")
 		event.AddField("category", cat)
 		event.AddField("query", qStr)
+		event.AddField("actor", actor.FromContext(ctx).UIDString())
 		for _, t := range tags {
 			event.AddField(t.Key, t.Value)
 		}
@@ -86,10 +88,10 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			log.Int("opts.shard_max_match_count", opts.ShardMaxMatchCount),
 			log.Int("opts.shard_repo_max_match_count", opts.ShardRepoMaxMatchCount),
 			log.Int("opts.total_max_match_count", opts.TotalMaxMatchCount),
-			log.Int("opts.shard_max_important_match", opts.ShardMaxImportantMatch),
-			log.Int("opts.total_max_important_match", opts.TotalMaxImportantMatch),
 			log.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
+			log.Int64("opts.flush_wall_time_ms", opts.FlushWallTime.Milliseconds()),
 			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
+			log.Bool("opts.use_document_ranks", opts.UseDocumentRanks),
 		}
 		tr.LogFields(fields...)
 		event.AddLogFields(fields)
@@ -98,7 +100,9 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	if isLeaf && opts != nil && policy.ShouldTrace(ctx) {
 		// Replace any existing spanContext with a new one, given we've done additional tracing
 		spanContext := make(map[string]string)
-		if err := ot.GetTracer(ctx).Inject(opentracing.SpanFromContext(ctx).Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil {
+		if span := opentracing.SpanFromContext(ctx); span == nil {
+			m.log.Warn("ctx does not have a trace span associated with it")
+		} else if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err == nil {
 			newOpts := *opts
 			newOpts.SpanContext = spanContext
 			opts = &newOpts

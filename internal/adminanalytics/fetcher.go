@@ -14,6 +14,7 @@ type AnalyticsFetcher struct {
 	db           database.DB
 	group        string
 	dateRange    string
+	grouping     string
 	nodesQuery   *sqlf.Query
 	summaryQuery *sqlf.Query
 	cache        bool
@@ -39,8 +40,9 @@ func (n *AnalyticsNode) UniqueUsers() float64 { return n.Data.UniqueUsers }
 func (n *AnalyticsNode) RegisteredUsers() float64 { return n.Data.RegisteredUsers }
 
 func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) {
-	cacheKey := fmt.Sprintf(`%s:%s:%s`, f.group, f.dateRange, "nodes")
-	if f.cache == true {
+	cacheKey := fmt.Sprintf(`%s:%s:%s:%s`, f.group, f.dateRange, f.grouping, "nodes")
+
+	if f.cache {
 		if nodes, err := getArrayFromCache[AnalyticsNode](cacheKey); err == nil {
 			return nodes, nil
 		}
@@ -65,10 +67,6 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		nodes = append(nodes, &AnalyticsNode{data})
 	}
 
-	if _, err := setArrayToCache(cacheKey, nodes); err != nil {
-		return nil, err
-	}
-
 	now := time.Now()
 	to := now
 	daysOffset := 1
@@ -77,7 +75,7 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		return nil, err
 	}
 
-	if f.dateRange == "LAST_THREE_MONTHS" {
+	if f.grouping == Weekly {
 		to = now.AddDate(0, 0, -int(now.Weekday())+1) // monday of current week
 		daysOffset = 7
 	}
@@ -108,6 +106,10 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		allNodes = append(allNodes, node)
 	}
 
+	if _, err := setArrayToCache(cacheKey, allNodes); err != nil {
+		return nil, err
+	}
+
 	return allNodes, nil
 
 }
@@ -134,8 +136,8 @@ func (s *AnalyticsSummary) TotalUniqueUsers() float64 { return s.Data.TotalUniqu
 func (s *AnalyticsSummary) TotalRegisteredUsers() float64 { return s.Data.TotalRegisteredUsers }
 
 func (f *AnalyticsFetcher) Summary(ctx context.Context) (*AnalyticsSummary, error) {
-	cacheKey := fmt.Sprintf(`%s:%s:%s`, f.group, f.dateRange, "summary")
-	if f.cache == true {
+	cacheKey := fmt.Sprintf(`%s:%s:%s:%s`, f.group, f.dateRange, f.grouping, "summary")
+	if f.cache {
 		if summary, err := getItemFromCache[AnalyticsSummary](cacheKey); err == nil {
 			return summary, nil
 		}

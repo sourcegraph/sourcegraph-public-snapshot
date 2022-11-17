@@ -1,11 +1,60 @@
 # Sourcegraph Changelog
 
+## [Unreleased]
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [2.1.0]
+
+### Added
+
+- Perforce support [pull/43807](https://github.com/sourcegraph/sourcegraph/pull/43807)
+- Multi-repo project support [pull/43807](https://github.com/sourcegraph/sourcegraph/pull/43807)
+
+### Changed
+
+- Now using the VCS API bundled with the IDE rather than relying on the `git`
+  command [pull/43807](https://github.com/sourcegraph/sourcegraph/pull/43807)
+
+## [2.0.2]
+
+### Added
+
+- Added feature to specify auth headers [pull/42692](https://github.com/sourcegraph/sourcegraph/pull/42692)
+
+### Removed
+
+- Removed tracking parameters from all shareable URLs [pull/42022](https://github.com/sourcegraph/sourcegraph/pull/42022)
+
+### Fixed
+
+- Remove pointer cursor in the web view. [pull/41845](https://github.com/sourcegraph/sourcegraph/pull/41845)
+- Updated “Learn more” URL to link the blog post in the update notification [pull/41846](https://github.com/sourcegraph/sourcegraph/pull/41846)
+- Made the plugin compatible with versions 3.42.0 and below [pull/42105](https://github.com/sourcegraph/sourcegraph/pull/42105)
+
+## [2.0.1]
+
+- Improve Fedora Linux compatibility: Using `BrowserUtil.browse()` rather than `Desktop.getDesktop().browse()` to open
+  links in the browser.
+
 ## [2.0.0]
 
-- Added a new UI to search with Sourcegraph from inside the IDE. Open it with <kbd>Alt+S</kbd> (<kbd>⌥S</kbd> on Mac) by default.
+- Added a new UI to search with Sourcegraph from inside the IDE. Open it with <kbd>Alt+S</kbd> (<kbd>⌥S</kbd> on Mac) by
+  default.
 - Added a settings UI to conveniently configure the plugin
 - General revamp on the existing features
-- Source code is now at [https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains)
+- Source code is now
+  at [https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains)
 
 ## [1.2.4]
 

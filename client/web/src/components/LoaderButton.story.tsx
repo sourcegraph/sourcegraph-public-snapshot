@@ -29,9 +29,7 @@ export const Inline: Story = () => (
 )
 
 export const Block: Story = () => (
-    <WebStory>
-        {() => <LoaderButton loading={true} label="loader button" className="btn-block" variant="primary" />}
-    </WebStory>
+    <WebStory>{() => <LoaderButton loading={true} label="loader button" display="block" variant="primary" />}</WebStory>
 )
 
 export const WithLabel: Story = () => (
@@ -41,7 +39,7 @@ export const WithLabel: Story = () => (
                 alwaysShowLabel={true}
                 loading={true}
                 label="loader button"
-                className="btn-block"
+                display="block"
                 variant="primary"
             />
         )}

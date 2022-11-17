@@ -1,6 +1,12 @@
-$filter-input-height: 2.5rem;
+:root {
+    --filter-input-height: 2.5rem;
+    --group-header-font-size: 0.875rem;
+    --group-divider-height: 0.25rem;
+    --card-header-height: 1.5rem;
+}
+
 .filter {
-    height: $filter-input-height;
+    height: var(--filter-input-height);
     padding-left: 1rem;
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
@@ -17,7 +23,7 @@ $filter-input-height: 2.5rem;
     }
 
     input::placeholder {
-        font-size: 0.6875rem;
+        font-size: 0.75rem;
         color: var(--gray-07);
     }
 
@@ -32,11 +38,8 @@ $filter-input-height: 2.5rem;
     }
 }
 
-$group-header-font-size: 0.75rem;
-$group-divider-height: 0.25rem;
-
 .repo-location-group {
-    margin-bottom: $group-divider-height;
+    margin-bottom: var(--group-divider-height);
 
     &:last-child {
         margin-bottom: 0;
@@ -53,13 +56,13 @@ $group-divider-height: 0.25rem;
 
         &--repo-name {
             padding-left: 0.6rem;
-            font-size: $group-header-font-size;
+            font-size: var(--group-header-font-size);
         }
     }
 }
 
 .location-group {
-    margin-bottom: $group-divider-height;
+    margin-bottom: var(--group-divider-height);
 
     &:last-child {
         margin-bottom: 0;
@@ -81,7 +84,7 @@ $group-divider-height: 0.25rem;
             justify-content: space-between;
 
             font-weight: 400;
-            font-size: $group-header-font-size;
+            font-size: var(--group-header-font-size);
 
             mark {
                 padding-left: 0;
@@ -93,7 +96,34 @@ $group-divider-height: 0.25rem;
 }
 
 .location {
-    button {
+    display: flex;
+    flex-direction: column;
+    min-height: 18px;
+
+    &:not(:last-child) > &--link {
+        border-bottom: 1px solid var(--body-bg);
+    }
+
+    &--active {
+        background-color: var(--color-bg-3);
+    }
+
+    &--link:hover {
+        background-color: var(--color-bg-2);
+        cursor: pointer;
+    }
+
+    &--active:hover {
+        // Needed to override `&--link:hover`
+        background-color: var(--color-bg-3);
+    }
+
+    &--link {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        color: inherit;
+
         padding-top: 0;
         padding-bottom: 0;
         width: 100%;
@@ -104,12 +134,18 @@ $group-divider-height: 0.25rem;
         // Avoid line number and filename getting put on different lines
         white-space: nowrap;
         padding-left: 0;
-        border: none;
         font-family: 'SF Mono', monospace;
-    }
 
-    button:hover {
-        background-color: var(--color-bg-2);
+        border: none;
+
+        &--code-excerpt {
+            flex: 1;
+            width: 100%;
+
+            :global(.line) {
+                min-width: 2.5rem;
+            }
+        }
     }
 
     code {
@@ -125,28 +161,6 @@ $group-divider-height: 0.25rem;
         font-weight: 400;
         font-size: 0.75rem;
     }
-
-    &--active {
-        background-color: var(--color-bg-2);
-    }
-
-    &--link {
-        color: inherit;
-
-        &--line-number {
-            font-family: 'SF Mono', monospace;
-            font-weight: 400;
-            color: var(--line-number-color);
-            min-width: 2.5rem;
-            text-align: right;
-            display: inline-block;
-            margin-right: 0.5rem;
-
-            font-style: normal;
-            font-size: 0.75rem;
-            line-height: 136%;
-        }
-    }
 }
 
 .location-container {
@@ -161,12 +175,12 @@ $group-divider-height: 0.25rem;
         overflow: scroll;
         -ms-overflow-style: none;
     }
+
     ul::-webkit-scrollbar {
         display: none;
     }
 }
 
-$card-header-height: 1.5rem;
 .card-header {
     padding-top: 0.1rem;
     padding-bottom: 0.1rem;
@@ -174,7 +188,7 @@ $card-header-height: 1.5rem;
 
     border: none;
 
-    height: $card-header-height;
+    height: var(--card-header-height);
 
     background-color: var(--body-bg);
 
@@ -222,7 +236,7 @@ $card-header-height: 1.5rem;
 
 // Lists of locations (definitions, references, implementations) on the left
 .location-lists {
-    height: calc(100% - #{$filter-input-height} - #{$card-header-height});
+    height: calc(100% - var(--filter-input-height) - var(--card-header-height));
     overflow: auto;
 }
 
@@ -239,6 +253,6 @@ $card-header-height: 1.5rem;
     &--code {
         // The code view needs to be scrollable.
         // Its height needs to be "100% - <size-of-header-that-has-filename>"
-        height: calc(100% - #{$card-header-height});
+        height: calc(100% - var(--card-header-height));
     }
 }

@@ -78,3 +78,7 @@ resource.labels.container_name="frontend"
 "[COMPANY]" AND "updatecheck"
 ```
 6. Locally: To see non-critical pings locally, you will need to update your site configuration such that `disableNonCriticalTelemetry` is set to false. It is set to `true` by default. For Sourcegraph employees you should change this in your `dev-private` repo under `enterprise/dev/site-config.json`. 
+
+## Adding critical telemetry
+
+Background: [This function](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/app/updatecheck/client.go?L371) collects the data points to be sent back to Sourcegraph for ingestion. Everything in [this IF statement](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/app/updatecheck/client.go?L424) is captured if the instance is set to allow non-critical telemetry; everything outside of it is collected if the instance does not allow non-critical telemetry. 

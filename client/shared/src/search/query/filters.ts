@@ -184,7 +184,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     Record<Exclude<FilterType, NegatableFilter>, BaseFilterDefinition> = {
     [FilterType.after]: {
         alias: 'since',
-        description: 'Commits made after a certain date',
+        description: 'Commits made after a certain date (in UTC)',
         placeholder: '"time frame"',
     },
     [FilterType.archived]: {
@@ -199,7 +199,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.before]: {
         alias: 'until',
-        description: 'Commits made before a certain date',
+        description: 'Commits made before a certain date (in UTC)',
         placeholder: '"time frame"',
     },
     [FilterType.case]: {
@@ -258,8 +258,8 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         placeholder: '"content"',
     },
     [FilterType.patterntype]: {
-        discreteValues: () => ['regexp', 'structural', 'literal'].map(value => ({ label: value })),
-        description: 'The pattern type (regexp, literal, structural) in use',
+        discreteValues: () => ['regexp', 'structural', 'literal', 'standard'].map(value => ({ label: value })),
+        description: 'The pattern type (standard, regexp, literal, structural) in use',
         singular: true,
     },
     [FilterType.repo]: {

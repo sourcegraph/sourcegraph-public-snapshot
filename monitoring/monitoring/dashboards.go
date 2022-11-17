@@ -101,7 +101,7 @@ func observablePanelID(groupIndex, rowIndex, observableIndex int) uint {
 // primarily used in the URL, e.g. /-/debug/grafana/d/syntect-server/<UID> and allows us to have
 // static URLs we can document like:
 //
-// 	Go to https://sourcegraph.example.com/-/debug/grafana/d/syntect-server/syntect-server
+//	Go to https://sourcegraph.example.com/-/debug/grafana/d/syntect-server/syntect-server
 //
 // Instead of having to describe all the steps to navigate there because the UID is random.
 func isValidGrafanaUID(s string) bool {

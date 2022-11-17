@@ -11,7 +11,16 @@
     @extend .border;
 }
 
+.lfs-text {
+    max-width: 18rem;
+}
+
 .blob {
     flex: 1;
     position: relative;
+
+    &:focus-within {
+        outline: 0;
+        box-shadow: var(--focus-box-shadow);
+    }
 }

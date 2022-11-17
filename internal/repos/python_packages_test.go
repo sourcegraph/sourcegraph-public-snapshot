@@ -42,7 +42,7 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 
 	svc := types.ExternalService{
 		Kind: extsvc.KindPythonPackages,
-		Config: marshalJSON(t, &schema.PythonPackagesConnection{
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.PythonPackagesConnection{
 			Urls: []string{
 				"https://pypi.org/simple",
 			},
@@ -52,13 +52,13 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 				"randio==0.1.1",
 				"pytimeparse==1.1.8",
 			},
-		}),
+		})),
 	}
 
 	cf, save := newClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
-	src, err := NewPythonPackagesSource(&svc, cf)
+	src, err := NewPythonPackagesSource(ctx, &svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

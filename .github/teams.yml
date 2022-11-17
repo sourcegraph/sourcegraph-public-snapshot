@@ -1,11 +1,8 @@
-team/frontend-platform:
-  - '@alicjasuska'
+team/code-exploration:
   - '@umpox'
   - '@valerybugakov'
-  - '@jasongornall'
   - '@lrhacker'
-  - '@plibither8'
-  - '@lmelende20'
+  - '@philipp-spiess'
 
 team/iam:
   - '@unknwon'

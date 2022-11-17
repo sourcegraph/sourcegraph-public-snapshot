@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -107,6 +106,9 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 		WeeklyStandaloneInsightUniqueDashboardClicks: &zeroInt,
 		WeeklyStandaloneInsightPageViews:             &zeroInt,
 		WeeklyStandaloneEditClicks:                   &zeroInt,
+		WeeklyGroupResultsOpenSection:                &zeroInt,
+		WeeklyGroupResultsCollapseSection:            &zeroInt,
+		WeeklyGroupResultsInfoIconHover:              &zeroInt,
 	}
 
 	wantedWeeklyUsage := []types.AggregatedPingStats{
@@ -116,6 +118,15 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 	want.WeeklyAggregatedUsage = wantedWeeklyUsage
 	want.InsightTimeIntervals = []types.InsightTimeIntervalPing{}
 	want.InsightOrgVisible = []types.OrgVisibleInsightPing{}
+
+	want.WeeklyGroupResultsExpandedViewOpen = []types.GroupResultExpandedViewPing{}
+	want.WeeklyGroupResultsExpandedViewCollapse = []types.GroupResultExpandedViewPing{}
+	want.WeeklyGroupResultsChartBarHover = []types.GroupResultPing{}
+	want.WeeklyGroupResultsChartBarClick = []types.GroupResultPing{}
+	want.WeeklyGroupResultsAggregationModeClicked = []types.GroupResultPing{}
+	want.WeeklyGroupResultsAggregationModeDisabledHover = []types.GroupResultPing{}
+	want.WeeklyGroupResultsSearches = []types.GroupResultSearchPing{}
+	want.WeeklySeriesBackfillTime = []types.InsightsBackfillTimePing{}
 
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)

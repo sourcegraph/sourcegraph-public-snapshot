@@ -3,9 +3,7 @@ package trace
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/log"
-	"github.com/uber/jaeger-client-go"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -19,7 +17,7 @@ const traceKey = traceContextKey("trace")
 // SpanContext. External callers should likely use CopyContext, as this properly propagates all
 // tracing context from one context to another.
 func contextWithTrace(ctx context.Context, tr *Trace) context.Context {
-	ctx = opentracing.ContextWithSpan(ctx, tr.span)
+	ctx = oteltrace.ContextWithSpan(ctx, tr.oteltraceSpan)
 	ctx = context.WithValue(ctx, traceKey, tr)
 	return ctx
 }
@@ -46,37 +44,20 @@ func CopyContext(ctx context.Context, from context.Context) context.Context {
 // ID returns a trace ID, if any, found in the given context. If you need both trace and
 // span ID, use trace.Context.
 func ID(ctx context.Context) string {
-	span := Context(ctx)
-	if span == nil {
-		return ""
-	}
-	return span.TraceID
+	return Context(ctx).TraceID
 }
 
 // Context retrieves the full trace context, if any, from context - this includes
 // both TraceID and SpanID.
-func Context(ctx context.Context) *log.TraceContext {
-	span := opentracing.SpanFromContext(ctx)
-	if span == nil {
-		return nil
-	}
-
-	// try Jaeger ("opentracing") span
-	if jaegerSpan, ok := span.Context().(jaeger.SpanContext); ok {
-		return &log.TraceContext{
-			TraceID: jaegerSpan.TraceID().String(),
-			SpanID:  jaegerSpan.SpanID().String(),
-		}
-	}
-
-	// try bridged OpenTelemetry span
-	if otelSpan := oteltrace.SpanFromContext(ctx).SpanContext(); otelSpan.IsValid() {
-		return &log.TraceContext{
+func Context(ctx context.Context) log.TraceContext {
+	// get the OpenTelemetry span, which is always present via the OpenTracing bridge
+	if otelSpan := oteltrace.SpanContextFromContext(ctx); otelSpan.IsValid() {
+		return log.TraceContext{
 			TraceID: otelSpan.TraceID().String(),
 			SpanID:  otelSpan.SpanID().String(),
 		}
 	}
 
 	// no span found
-	return nil
+	return log.TraceContext{}
 }

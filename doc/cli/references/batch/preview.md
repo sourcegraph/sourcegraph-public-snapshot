@@ -8,7 +8,7 @@
 | `-allow-unsupported` | Allow unsupported code hosts. | `false` |
 | `-apply` | Ignored. | `false` |
 | `-cache` | Directory for caching results and repository archives. | `~/.cache/sourcegraph/batch` |
-| `-clean-archives` | If true, deletes downloaded repository archives after executing batch spec steps. | `true` |
+| `-clean-archives` | If true, deletes downloaded repository archives after executing batch spec steps. Note that only the archives related to the actual repositories matched by the batch spec will be cleaned up, and clean up will not occur if src exits unexpectedly. | `true` |
 | `-clear-cache` | If true, clears the execution cache and executes all steps anew. | `false` |
 | `-dump-requests` | Log GraphQL requests and responses to stdout | `false` |
 | `-f` | The batch spec file to read, or - to read from standard input. |  |
@@ -40,7 +40,7 @@ Usage of 'src batch preview':
   -cache string
     	Directory for caching results and repository archives. (default "~/.cache/sourcegraph/batch")
   -clean-archives
-    	If true, deletes downloaded repository archives after executing batch spec steps. (default true)
+    	If true, deletes downloaded repository archives after executing batch spec steps. Note that only the archives related to the actual repositories matched by the batch spec will be cleaned up, and clean up will not occur if src exits unexpectedly. (default true)
   -clear-cache
     	If true, clears the execution cache and executes all steps anew.
   -dump-requests

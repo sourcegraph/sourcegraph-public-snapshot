@@ -15,21 +15,24 @@ import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/ext
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, H2, Text, useObservable } from '@sourcegraph/wildcard'
+import { Button, Heading, Text, useObservable } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { GitCommitFields, Scalars, TreePageRepositoryFields } from '../../graphql-operations'
+import { GitCommitFields, Scalars, TreeCommitsResult, TreePageRepositoryFields } from '../../graphql-operations'
 import { GitCommitNodeProps, GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
 
 import styles from './TreePage.module.scss'
+
+export type TreeCommitsRepositoryCommit = NonNullable<
+    Extract<TreeCommitsResult['node'], { __typename: 'Repository' }>['commit']
+>
 
 export const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -38,7 +41,7 @@ export const fetchTreeCommits = memoizeObservable(
         first?: number
         filePath?: string
         after?: string
-    }): Observable<GQL.IGitCommitConnection> =>
+    }): Observable<TreeCommitsRepositoryCommit['ancestors']> =>
         queryGraphQL(
             gql`
                 query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
@@ -114,7 +117,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         ) ?? {}
 
     const queryCommits = useCallback(
-        (args: { first?: number }): Observable<GQL.IGitCommitConnection> => {
+        (args: { first?: number }): Observable<TreeCommitsRepositoryCommit['ancestors']> => {
             const after: string | undefined = showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
             return fetchTreeCommits({
                 ...args,
@@ -172,10 +175,14 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         </div>
     )
 
+    const { extensionsController } = props
+
     return (
         <>
             <section className={classNames('test-tree-entries mb-3', styles.section)}>
-                <H2>Files and directories</H2>
+                <Heading as="h3" styleAs="h2">
+                    Files and directories
+                </Heading>
                 <TreeEntriesSection
                     parentPath={filePath}
                     entries={tree.entries}
@@ -183,26 +190,38 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                     isLightTheme={props.isLightTheme}
                 />
             </section>
-            <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
-                {items => (
-                    <section className={styles.section}>
-                        <H2>Actions</H2>
-                        {items.map(item => (
-                            <Button
-                                {...props}
-                                key={item.action.id}
-                                {...item}
-                                className="mr-1 mb-1"
-                                variant="secondary"
-                                as={ActionItem}
-                            />
-                        ))}
-                    </section>
-                )}
-            </ActionsContainer>
+            {extensionsController !== null && window.context.enableLegacyExtensions ? (
+                <ActionsContainer
+                    {...props}
+                    extensionsController={extensionsController}
+                    menu={ContributableMenu.DirectoryPage}
+                    empty={null}
+                >
+                    {items => (
+                        <section className={styles.section}>
+                            <Heading as="h3" styleAs="h2">
+                                Actions
+                            </Heading>
+                            {items.map(item => (
+                                <Button
+                                    {...props}
+                                    extensionsController={extensionsController}
+                                    key={item.action.id}
+                                    {...item}
+                                    className="mr-1 mb-1"
+                                    variant="secondary"
+                                    as={ActionItem}
+                                />
+                            ))}
+                        </section>
+                    )}
+                </ActionsContainer>
+            ) : null}
 
             <div className={styles.section}>
-                <H2>Changes</H2>
+                <Heading as="h3" styleAs="h2">
+                    Changes
+                </Heading>
                 <FilteredConnection<
                     GitCommitFields,
                     Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName' | 'wrapperElement'>

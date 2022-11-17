@@ -15,10 +15,6 @@ func NewDisabledResolver(reason string) graphqlbackend.InsightsResolver {
 	return &disabledResolver{reason}
 }
 
-func (r *disabledResolver) Insights(ctx context.Context, args *graphqlbackend.InsightsArgs) (graphqlbackend.InsightConnectionResolver, error) {
-	return nil, errors.New(r.reason)
-}
-
 func (r *disabledResolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
 	return nil, errors.New(r.reason)
 }
@@ -83,18 +79,10 @@ func (r *disabledResolver) SearchInsightPreview(ctx context.Context, args graphq
 	return nil, errors.New(r.reason)
 }
 
-func (r *disabledResolver) RelatedInsightsInline(ctx context.Context, args graphqlbackend.RelatedInsightsArgs) ([]graphqlbackend.RelatedInsightsInlineResolver, error) {
+func (r *disabledResolver) SearchQueryAggregate(ctx context.Context, args graphqlbackend.SearchQueryArgs) (graphqlbackend.SearchQueryAggregateResolver, error) {
 	return nil, errors.New(r.reason)
 }
 
-func (r *disabledResolver) RelatedInsightsForFile(ctx context.Context, args graphqlbackend.RelatedInsightsArgs) ([]graphqlbackend.RelatedInsightsResolver, error) {
-	return nil, errors.New(r.reason)
-}
-
-func (r *disabledResolver) RelatedInsightsForRepo(ctx context.Context, args graphqlbackend.RelatedInsightsRepoArgs) ([]graphqlbackend.RelatedInsightsResolver, error) {
-	return nil, errors.New(r.reason)
-}
-
-func (r *disabledResolver) SearchQueryInsights(ctx context.Context, args graphqlbackend.SearchQueryInsightsArgs) (graphqlbackend.SearchQueryInsightsResult, error) {
+func (r *disabledResolver) InsightViewDebug(ctx context.Context, args graphqlbackend.InsightViewDebugArgs) (graphqlbackend.InsightViewDebugResolver, error) {
 	return nil, errors.New(r.reason)
 }

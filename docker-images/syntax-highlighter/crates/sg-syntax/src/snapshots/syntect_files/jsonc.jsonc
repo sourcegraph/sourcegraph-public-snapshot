@@ -1,0 +1,5 @@
+{
+    // Comment
+    "hello": "world",
+    "list": [null, 1, 2.0, true, false]
+}

@@ -3,10 +3,9 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { ForwardReferenceComponent } from '../../../types'
-import { getAlignmentStyle, getFontWeightStyle, getModeStyle, TypographyProps } from '../utils'
+import { TypographyProps } from '../utils'
 
-import typographyStyles from '../Typography.module.scss'
-import styles from './Label.module.scss'
+import { getLabelClassName } from './utils'
 
 interface LabelProps extends React.HTMLAttributes<HTMLLabelElement>, TypographyProps {
     size?: 'small' | 'base'
@@ -33,14 +32,7 @@ export const Label = React.forwardRef((props, reference) => {
         <Component
             ref={reference}
             className={classNames(
-                styles.label,
-                isUnderline && styles.labelUnderline,
-                isUppercase && styles.labelUppercase,
-                size === 'small' && typographyStyles.small,
-                weight && getFontWeightStyle({ weight }),
-                alignment && getAlignmentStyle({ alignment }),
-                mode && getModeStyle({ mode }),
-                mode === 'single-line' && styles.labelSingleLine,
+                getLabelClassName({ isUppercase, isUnderline, alignment, weight, size, mode }),
                 className
             )}
             {...rest}

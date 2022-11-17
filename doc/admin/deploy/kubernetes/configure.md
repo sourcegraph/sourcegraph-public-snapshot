@@ -82,7 +82,7 @@ git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph
 - Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
 
 ```bash
-  export SOURCEGRAPH_VERSION="v3.42.0"
+  export SOURCEGRAPH_VERSION="v4.1.3"
   git checkout $SOURCEGRAPH_VERSION -b release
 ```
 
@@ -115,7 +115,7 @@ See [the official documentation](https://kubernetes.io/docs/tasks/administer-clu
 
 ### Google Cloud Platform (GCP)
 
-#### Kubernetes 1.19 and higher
+**For Kubernetes 1.19 and higher**
 
 1. Please read and follow the [official documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for enabling the persistent disk CSI driver on a [new](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_a_new_cluster) or [existing](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver#enabling_the_on_an_existing_cluster) cluster.
 
@@ -142,7 +142,7 @@ volumeBindingMode: WaitForFirstConsumer
 
 ### Amazon Web Services (AWS)
 
-#### Kubernetes 1.19 and higher
+**For Kubernetes 1.19 and higher**
 
 1. Follow the [official instructions](https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html) to deploy the Amazon Elastic Block Store (Amazon EBS) Container Storage Interface (CSI) driver.
 
@@ -169,7 +169,7 @@ allowVolumeExpansion: true
 
 ### Azure
 
-#### Kubernetes 1.19 and higher
+**For Kubernetes 1.19 and higher**
 
 > WARNING: If you are deploying on Azure, you **must** ensure that your cluster is created with support for CSI storage drivers [(link)](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)). This **can not** be enabled after the fact
 
@@ -197,6 +197,26 @@ allowVolumeExpansion: true
 
 [Additional documentation](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers).
 
+
+### Rancher Kubernetes Engine (RKE)
+
+If you are using Trident as your storage orchestrator, you must have [fsType](https://docs.netapp.com/us-en/trident/trident-reference/objects.html#storage-pool-selection-attributes) defined in your storageClass for it to respect the volume ownership required by Sourcegraph. When [fsType](https://docs.netapp.com/us-en/trident/trident-reference/objects.html#storage-pool-selection-attributes) is not set, all the files within the cluster will be owned by user 99 (NOBODY), resulting in permission issues for all Sourcegraph databases.
+
+```yaml
+apiVersion: storage.k8s.io/v1beta1
+kind: StorageClass
+metadata:
+  name: sourcegraph
+  labels:
+    deploy: sourcegraph
+provisioner: netapp.io/trident
+parameters:
+  <Trident Parameters>
+  fsType: <ext4, ext3, xfs, etc.>
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+```
 
 ### Other cloud providers
 
@@ -289,7 +309,7 @@ work):
 
 Add a network rule that allows ingress traffic to port 30080 (HTTP) on at least one node.
 
-#### [Google Cloud Platform Firewall rules](https://cloud.google.com/compute/docs/vpc/using-firewalls).
+#### Google Cloud Platform Firewall
 
 - Expose the necessary ports.
 
@@ -328,9 +348,31 @@ kubectl get pods -l app=sourcegraph-frontend -o=custom-columns=NODE:.spec.nodeNa
 kubectl get node $NODE -o wide
 ```
 
-#### [AWS Security Group rules](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_SecurityGroups.html).
+Learn more about [Google Cloud Platform Firewall rules](https://cloud.google.com/compute/docs/vpc/using-firewalls).
+
+#### AWS Security Group
 
 Sourcegraph should now be accessible at `$EXTERNAL_ADDR:30080`, where `$EXTERNAL_ADDR` is the address of _any_ node in the cluster.
+
+Learn more about [AWS Security Group rules](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_SecurityGroups.html).
+
+#### Rancher Kubernetes Engine
+
+Make the following changes if your [Rancher Kubernetes Engine (RKE)](https://rancher.com/docs/rke/latest/en/) cluster is configured to use [NodePort](https://docs.ranchermanager.rancher.io/v2.0-v2.4/how-to-guides/new-user-guides/migrate-from-v1.6-v2.x/expose-services#nodeport):
+
+- Change the type of the `sourcegraph-frontend` service in [base/frontend/sourcegraph-frontend.Service.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Service.yaml) from `ClusterIP` to `NodePort`:
+
+```diff
+spec:
+  ports:
+  - name: http
+    port: 30080
++    nodePort: 30080
+-  type: ClusterIP
++  type: NodePort
+```
+
+> NOTE: Check with your upstream admin for the the correct nodePort value.
 
 ### Using NetworkPolicy
 
@@ -517,32 +559,23 @@ spec:
             value: "<REDIS_STORE_DSN>"
 ```
 
-## Connect to an external Jaeger instance
+## OpenTelemetry Collector
 
-If you have an existing Jaeger instance you would like to connect Sourcegraph to (instead of running the Jaeger instance inside the Sourcegraph cluster), do:
+Learn more about Sourcegraph's integrations with the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) in our [OpenTelemetry documentation](../../observability/opentelemetry.md).
 
-1. Remove the `base/jaeger` directory: `rm -rf base/jaeger`
-1. Update the Jaeger agent containers to point to your Jaeger collector.
-   1. Find all instances of Jaeger agent (`grep -R 'jaegertracing/jaeger-agent'`).
-   1. Update the `args` field of the Jaeger agent container configuration to point to the external
-      collector. E.g.,
-      ```
-      args:
-        - --reporter.grpc.host-port=external-jaeger-collector-host:14250
-        - --reporter.type=grpc
-      ```
-1. Apply these changes to the cluster.
+### Configure a tracing backend
 
-### Disable Jaeger entirely
+Sourcegraph currently supports exporting tracing data to several backends. Refer to [OpenTelemetry](../../observability/opentelemetry.md) for detailed descriptions on how to configure your backend of choice.
 
-To disable Jaeger entirely, do:
+By default, the collector is [configured to export trace data by logging](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/logging.yaml). Follow these steps to add a config for a different backend:
 
-1. Update the Sourcegraph [site
-   configuration](https://docs.sourcegraph.com/admin/config/site_config) to remove the
-   `observability.tracing` field.
-1. Remove the `base/jaeger` directory: `rm -rf base/jaeger`
-1. Remove the jaeger agent containers from each `*.Deployment.yaml` and `*.StatefulSet.yaml` file.
-1. Apply these changes to the cluster.
+1. Modify [base/otel-collector/otel-collector.ConfigMap.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/base/otel-collector/otel-collector.ConfigMap.yaml). Make the necessary changes to the `exporters` and `service` blocks to connect to your backend as described in the documentation linked above.
+1. Modify [base/otel-collector/otel-collector.Deployment.yaml](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/base/otel-collector/otel-collector.Deployment.yaml). Update the `command` of the `otel-collector` container to point to the mounted config by changing the flag to `"--config=/etc/otel-collector/conf/config.yaml"`.
+1. Apply the edited `ConfigMap` and `Deployment` manifests.
+
+#### Enable the bundled Jaeger deployment
+
+If you do not currently have any tracing backend configured, you can enable Jaeger's [Collector](https://www.jaegertracing.io/docs/1.37/architecture/#collector) and [Query](https://www.jaegertracing.io/docs/1.37/architecture/#query) components by using the [Jaeger overlay](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/tree/overlays/jaeger), which will also configure exporting trace data to this instance. Read the [Overlays](./kustomize.md#overlays) section below about overlays.
 
 ## Install without cluster-wide RBAC
 
@@ -554,9 +587,7 @@ If using cluster roles and cluster rolebinding RBAC is not an option, then you c
 
 Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https://about.sourcegraph.com/pricing).
 
-- Create an account on or sign in to sourcegraph.com, and go to https://sourcegraph.com/subscriptions/new to obtain a license key.
-
-- Once you have a license key, add it to your [site configuration](https://docs.sourcegraph.com/admin/config/site_config).
+Once you have a license key, add it to your [site configuration](https://docs.sourcegraph.com/admin/config/site_config).
 
 ## Environment variables
 

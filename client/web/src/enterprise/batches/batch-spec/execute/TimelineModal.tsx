@@ -9,7 +9,7 @@ import { isDefined } from '../../../../codeintel/util/helpers'
 import { ExecutionLogEntry } from '../../../../components/ExecutionLogEntry'
 import { Timeline, TimelineStage } from '../../../../components/Timeline'
 import { BatchSpecWorkspaceState, VisibleBatchSpecWorkspaceFields } from '../../../../graphql-operations'
-import { ExecutorNode } from '../../../executors/ExecutorsListPage'
+import { ExecutorNode } from '../../../executors/instances/ExecutorNode'
 
 import styles from './TimelineModal.module.scss'
 
@@ -132,13 +132,13 @@ const batchPreviewStage = (
     if (execution.stages === null) {
         return undefined
     }
-    return !execution.stages.srcExec
+    return execution.stages.srcExec.length === 0
         ? undefined
         : {
               text: 'Create batch spec preview',
-              details: (
-                  <ExecutionLogEntry key={execution.stages.srcExec.key} logEntry={execution.stages.srcExec} now={now} />
-              ),
+              details: execution.stages.srcExec.map(logEntry => (
+                  <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
+              )),
               ...genericStage(execution.stages.srcExec, expandedByDefault),
           }
 }

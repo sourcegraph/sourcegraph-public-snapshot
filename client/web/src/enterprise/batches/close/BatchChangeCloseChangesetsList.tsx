@@ -169,7 +169,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<React.Props
                     emptyElement={<CloseChangesetsListEmptyElement />}
                     withCenteredSummary={true}
                 />
-                {hoverState?.hoverOverlayProps && (
+                {hoverState?.hoverOverlayProps && extensionsController !== null && (
                     <WebHoverOverlay
                         {...hoverState.hoverOverlayProps}
                         nav={url => history.push(url)}

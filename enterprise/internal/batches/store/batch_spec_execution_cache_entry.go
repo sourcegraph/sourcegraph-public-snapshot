@@ -81,7 +81,6 @@ func (s *Store) createBatchSpecExecutionCacheEntryQuery(ce *btypes.BatchSpecExec
 }
 
 var createBatchSpecExecutionCacheEntryQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:CreateBatchSpecExecutionCacheEntry
 INSERT INTO batch_spec_execution_cache_entries (%s)
 VALUES ` + batchSpecExecutionCacheEntryInsertColumns.FmtStr() + `
 ON CONFLICT ON CONSTRAINT batch_spec_execution_cache_entries_user_id_key_unique
@@ -129,7 +128,6 @@ func (s *Store) ListBatchSpecExecutionCacheEntries(ctx context.Context, opts Lis
 }
 
 var listBatchSpecExecutionCacheEntriesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:ListBatchSpecExecutionCacheEntries
 SELECT %s FROM batch_spec_execution_cache_entries
 WHERE %s
 `
@@ -150,7 +148,6 @@ func listBatchSpecExecutionCacheEntriesQuery(opts *ListBatchSpecExecutionCacheEn
 }
 
 const markUsedBatchSpecExecutionCacheEntriesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:MarkUsedBatchSpecExecutionCacheEntries
 UPDATE
 	batch_spec_execution_cache_entries
 SET last_used_at = %s
@@ -178,7 +175,6 @@ func (s *Store) MarkUsedBatchSpecExecutionCacheEntries(ctx context.Context, ids 
 // maxCacheSize again. Also, cache entries from older cache versions are always
 // deleted.
 const cleanBatchSpecExecutionEntriesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:CleanBatchSpecExecutionEntries
 WITH total_size AS (
   SELECT sum(octet_length(value)) AS total FROM batch_spec_execution_cache_entries
 ),

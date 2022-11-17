@@ -1,7 +1,7 @@
 // Theme
 const currentThemePreference = () => localStorage.getItem('theme-preference') || 'auto'
 const themePreferenceButtons = () => document.querySelectorAll('body > #sidebar #theme button[data-theme-preference]')
-const currentTheme = (pref=currentThemePreference()) => pref === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' : pref
+const currentTheme = (pref = currentThemePreference()) => pref === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' : pref
 const applyThemePreference = (pref) => {
   localStorage.setItem('theme-preference', pref)
   applyTheme()
@@ -40,11 +40,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const style = document.createElement('style')
   for (const link of document.querySelectorAll('body > #sidebar .nav-section.tree a')) {
     const current = link.pathname === pagePath
-    const expand = pagePath === link.pathname || pagePath.startsWith(link.pathname + '/')
+    const expand = current || pagePath.startsWith(link.pathname + '/')
+    const subsection = link.pathname.split('/').length >= 3
 
     const item = link.parentNode
     item.classList.toggle('current', current)
     item.classList.toggle('expand', expand)
+    item.classList.toggle('active-subsection', subsection && expand)
     item.classList.toggle('collapse', !expand)
   }
 })
@@ -101,4 +103,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (startSourcegraphCommand) {
     startSourcegraphCommand.addEventListener('click', gaConversionOnStartSourcegraphCommands)
   }
+})
+
+// Cloud CTA clicks
+document.addEventListener('DOMContentLoaded', () => {
+  const cloudCTAs = document.querySelectorAll('.cloud-cta')
+
+  cloudCTAs.forEach(cloudCTA => {
+    cloudCTA.addEventListener('click', () => {
+      if (window && window.plausible) {
+        window.plausible('ClickedOnFreeTrialCTA')
+      }
+    })
+  })
 })

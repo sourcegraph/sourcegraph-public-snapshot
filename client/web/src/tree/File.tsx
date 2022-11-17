@@ -2,20 +2,22 @@
 import * as React from 'react'
 import { useEffect, useState } from 'react'
 
-import { mdiSourceRepository } from '@mdi/js'
+import { mdiSourceRepository, mdiFileDocumentOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { FileDecoration } from 'sourcegraph'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
+import { PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { InlineSymbolsResult, Scalars } from '../graphql-operations'
+import { InlineSymbolsResult } from '../graphql-operations'
+import { fetchBlob, usePrefetchBlobFormat } from '../repo/blob/backend'
+import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
 import {
@@ -30,10 +32,12 @@ import {
 } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
 import { FileDecorator } from './FileDecorator'
+import { useTreeRootContext } from './TreeContext'
 import { TreeLayerProps } from './TreeLayer'
-import { TreeEntryInfo, treePadding } from './util'
+import { TreeEntryInfo, getTreeItemOffset } from './util'
 
 import styles from './File.module.scss'
+import treeStyles from './Tree.module.scss'
 
 interface FileProps extends ThemeProps {
     fileDecorations?: FileDecoration[]
@@ -46,105 +50,129 @@ interface FileProps extends ThemeProps {
     linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
     isActive: boolean
     isSelected: boolean
-
-    // For core workflow inline symbols redesign
-    repoID: Scalars['ID']
-    revision: string
-    location: H.Location
+    customIconPath?: string
+    enableMergedFileSymbolSidebar: boolean
+    isGoUpTreeLink?: boolean
 }
 
 export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> = props => {
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const {
+        isActive,
+        isSelected,
+        isGoUpTreeLink,
+        className,
+        entryInfo,
+        linkRowClick,
+        noopRowClick,
+        fileDecorations,
+        isLightTheme,
+        depth,
+        index,
+        enableMergedFileSymbolSidebar,
+        customIconPath,
+    } = props
+
+    const { revision, repoName } = useTreeRootContext()
+    const isSidebarFilePrefetchEnabled = useExperimentalFeatures(
+        features => features.enableSidebarFilePrefetch ?? false
+    )
+    const prefetchBlobFormat = usePrefetchBlobFormat()
 
     const renderedFileDecorations = (
         <FileDecorator
             // If component is not specified, or it is 'sidebar', render it.
-            fileDecorations={props.fileDecorations?.filter(decoration => decoration?.where !== 'page')}
-            isLightTheme={props.isLightTheme}
-            isActive={props.isActive}
+            fileDecorations={fileDecorations?.filter(decoration => decoration?.where !== 'page')}
+            isLightTheme={isLightTheme}
+            isActive={isActive}
         />
     )
 
-    const padding = treePadding(props.depth, false)
+    const offsetStyle = getTreeItemOffset(depth)
 
     return (
         <>
-            <TreeRow
-                key={props.entryInfo.path}
-                className={props.className}
-                isActive={props.isActive}
-                isSelected={props.isSelected}
-            >
+            <TreeRow key={entryInfo.path} className={className} isActive={isActive} isSelected={isSelected}>
                 <TreeLayerCell className="test-sidebar-file-decorable">
-                    {props.entryInfo.submodule ? (
-                        props.entryInfo.url ? (
+                    {entryInfo.submodule ? (
+                        entryInfo.url ? (
                             <TreeLayerRowContentsLink
-                                to={props.entryInfo.url}
-                                onClick={props.linkRowClick}
+                                to={entryInfo.url}
+                                onClick={linkRowClick}
                                 draggable={false}
-                                title={'Submodule: ' + props.entryInfo.submodule.url}
-                                data-tree-path={props.entryInfo.path}
+                                title={'Submodule: ' + entryInfo.submodule.url}
+                                data-tree-path={entryInfo.path}
                             >
                                 <TreeLayerRowContentsText>
                                     {/* TODO Improve accessibility: https://github.com/sourcegraph/sourcegraph/issues/12916 */}
-                                    <TreeRowIcon style={treePadding(props.depth, true)} onClick={props.noopRowClick}>
+                                    <TreeRowIcon style={offsetStyle} onClick={noopRowClick}>
                                         <Icon aria-hidden={true} svgPath={mdiSourceRepository} />
                                     </TreeRowIcon>
                                     <TreeRowLabel className="test-file-decorable-name">
-                                        {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
+                                        {entryInfo.name} @ {entryInfo.submodule.commit.slice(0, 7)}
                                     </TreeRowLabel>
                                     {renderedFileDecorations}
                                 </TreeLayerRowContentsText>
                             </TreeLayerRowContentsLink>
                         ) : (
-                            <TreeLayerRowContents title={'Submodule: ' + props.entryInfo.submodule.url}>
+                            <TreeLayerRowContents title={'Submodule: ' + entryInfo.submodule.url}>
                                 <TreeLayerRowContentsText>
-                                    <TreeRowIcon style={treePadding(props.depth, true)}>
+                                    <TreeRowIcon style={offsetStyle}>
                                         <Icon aria-hidden={true} svgPath={mdiSourceRepository} />
                                     </TreeRowIcon>
                                     <TreeRowLabel className="test-file-decorable-name">
-                                        {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
+                                        {entryInfo.name} @ {entryInfo.submodule.commit.slice(0, 7)}
                                     </TreeRowLabel>
                                     {renderedFileDecorations}
                                 </TreeLayerRowContentsText>
                             </TreeLayerRowContents>
                         )
                     ) : (
-                        <TreeLayerRowContentsLink
+                        <PrefetchableFile
+                            isPrefetchEnabled={isSidebarFilePrefetchEnabled && !isActive && !isGoUpTreeLink}
+                            prefetch={params =>
+                                fetchBlob({
+                                    ...params,
+                                    format: prefetchBlobFormat,
+                                })
+                            }
+                            isSelected={isSelected}
+                            revision={revision}
+                            repoName={repoName}
+                            filePath={entryInfo.path}
+                            as={TreeLayerRowContentsLink}
                             className="test-tree-file-link"
-                            to={props.entryInfo.url}
-                            onClick={props.linkRowClick}
-                            data-tree-path={props.entryInfo.path}
+                            to={entryInfo.url}
+                            onClick={linkRowClick}
+                            data-tree-path={entryInfo.path}
                             draggable={false}
-                            title={props.entryInfo.path}
+                            title={entryInfo.path}
                             // needed because of dynamic styling
-                            style={padding}
+                            style={offsetStyle}
                             tabIndex={-1}
                         >
-                            <TreeLayerRowContentsText className="d-flex flex-row flex-1 justify-content-between">
-                                <span className="test-file-decorable-name">{props.entryInfo.name}</span>
+                            <TreeLayerRowContentsText className="d-flex">
+                                <TreeRowIcon onClick={noopRowClick}>
+                                    <Icon
+                                        className={treeStyles.treeIcon}
+                                        svgPath={customIconPath || mdiFileDocumentOutline}
+                                        aria-hidden={true}
+                                    />
+                                </TreeRowIcon>
+                                <TreeRowLabel className="test-file-decorable-name">{entryInfo.name}</TreeRowLabel>
                                 {renderedFileDecorations}
                             </TreeLayerRowContentsText>
-                        </TreeLayerRowContentsLink>
+                        </PrefetchableFile>
                     )}
-                    {props.index === MAX_TREE_ENTRIES - 1 && (
+                    {index === MAX_TREE_ENTRIES - 1 && (
                         <TreeRowAlert
                             variant="warning"
-                            style={treePadding(props.depth, true)}
+                            style={getTreeItemOffset(depth + 1)}
                             error="Too many entries. Use search to find a specific file."
                         />
                     )}
                 </TreeLayerCell>
             </TreeRow>
-            {coreWorkflowImprovementsEnabled && props.isActive && (
-                <Symbols
-                    repoID={props.repoID}
-                    revision={props.revision}
-                    activePath={props.entryInfo.path}
-                    location={props.location}
-                    style={padding}
-                />
-            )}
+            {enableMergedFileSymbolSidebar && isActive && <Symbols activePath={entryInfo.path} style={offsetStyle} />}
         </>
     )
 }
@@ -196,10 +224,12 @@ export const SYMBOLS_QUERY = gql`
 `
 
 interface SymbolsProps
-    extends Pick<TreeLayerProps, 'repoID' | 'revision' | 'activePath' | 'location'>,
+    extends Pick<TreeLayerProps, 'activePath'>,
         Pick<React.HTMLAttributes<HTMLDivElement>, 'style'> {}
 
-const Symbols: React.FunctionComponent<SymbolsProps> = ({ repoID, revision, activePath, location, style }) => {
+const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, style }) => {
+    const location = useLocation()
+    const { repoID, revision } = useTreeRootContext()
     const { data, loading, error } = useQuery<InlineSymbolsResult>(SYMBOLS_QUERY, {
         variables: {
             repo: repoID,

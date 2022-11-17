@@ -22,10 +22,10 @@ import {
     useForm,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
-import { ComputeLivePreview } from '../../ComputeLivePreview'
 import { CreateComputeInsightFormFields } from '../types'
 
 import { ComputeInsightMapPicker } from './ComputeInsightMapPicker'
+import { ComputeLivePreview } from './ComputeLivePreview'
 
 const INITIAL_INSIGHT_VALUES: CreateComputeInsightFormFields = {
     series: [createDefaultEditSeries({ edit: true })],
@@ -114,7 +114,12 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
 
     return (
         <CreationUiLayout {...attributes}>
-            <CreationUIForm noValidate={true} onSubmit={handleSubmit} onReset={handleFormReset}>
+            <CreationUIForm
+                aria-label="Group results Insight creation form"
+                noValidate={true}
+                onSubmit={handleSubmit}
+                onReset={handleFormReset}
+            >
                 <FormGroup
                     name="insight repositories"
                     title="Targeted repositories"
@@ -132,13 +137,13 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     />
                 </FormGroup>
 
-                <hr className="my-4 w-100" />
+                <hr aria-hidden={true} className="my-4 w-100" />
 
                 <FormGroup
                     innerRef={series.input.ref}
                     name="data series group"
                     title="Data series"
-                    error={series.meta.touched && series.meta.error}
+                    error={(series.meta.touched && series.meta.error) || undefined}
                     subtitle={
                         licensed
                             ? 'Add any number of data series to your chart'
@@ -149,7 +154,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                         seriesField={series}
                         repositories={repositories.input.value}
                         showValidationErrorsOnMount={formAPI.submitted}
-                        showColorPicker={false}
+                        hasAddNewSeriesButton={false}
                         queryFieldDescription={
                             <ul className="pl-3">
                                 <li>
@@ -167,13 +172,13 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     />
                 </FormGroup>
 
-                <hr className="my-4 w-100" />
+                <hr aria-hidden={true} className="my-4 w-100" />
 
                 <FormGroup name="map result" title="Map result">
                     <ComputeInsightMapPicker series={validSeries} {...groupBy.input} />
                 </FormGroup>
 
-                <hr className="my-4 w-100" />
+                <hr aria-hidden={true} className="my-4 w-100" />
 
                 <FormGroup name="chart settings group" title="Chart settings">
                     <Input
@@ -186,7 +191,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     />
                 </FormGroup>
 
-                <hr className="my-4 w-100" />
+                <hr aria-hidden={true} className="my-4 w-100" />
 
                 {children({
                     submitting: formAPI.submitting,

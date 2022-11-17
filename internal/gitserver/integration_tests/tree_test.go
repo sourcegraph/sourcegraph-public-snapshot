@@ -11,6 +11,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -49,8 +51,7 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 	srpGetter := database.NewMockSubRepoPermsStore()
 	testSubRepoPerms := map[api.RepoName]authz.SubRepoPermissions{
 		repo: {
-			PathIncludes: []string{"**"},
-			PathExcludes: []string{"app/**"},
+			Paths: []string{"/**", "-/app/**"},
 		},
 	}
 	srpGetter.GetByUserFunc.SetDefaultReturn(testSubRepoPerms, nil)
@@ -60,23 +61,26 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 	}
 
 	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 	client := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses)
 	files, err := client.ReadDir(ctx, checker, repo, commitID, "", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
-	if len(files) != 1 {
-		t.Fatalf("expected only one file to be returned, got %d", len(files))
-	}
-	if files[0].Name() != "file1" {
-		t.Errorf("unexpected file returned from ReadDir: %s", files[0].Name())
-	}
+
+	// Because we have a wildcard matcher we still allow directory visibility
+	assert.Len(t, files, 1)
+	assert.Equal(t, "file1", files[0].Name())
+	assert.False(t, files[0].IsDir())
 }
 
 func TestRepository_FileSystem(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 
 	// In all tests, repo should contain three commits. The first commit
 	// (whose ID is in the 'first' field) has a file at dir1/file1 with the
@@ -273,6 +277,8 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 
 	// The repo contains 3 files: one whose filename includes a
 	// non-ASCII char, one whose filename contains a double quote, and
@@ -346,6 +352,8 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 
 	submodDir := InitGitRepository(t,
 		"touch f",

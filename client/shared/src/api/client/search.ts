@@ -4,7 +4,10 @@ import { Remote } from 'comlink'
 import { from, Observable, of, TimeoutError } from 'rxjs'
 import { catchError, filter, first, switchMap, timeout } from 'rxjs/operators'
 
+import { logger } from '@sourcegraph/common'
+
 import { FlatExtensionHostAPI } from '../contract'
+import { SharedEventLogger } from '../sharedEventLogger'
 
 import { wrapRemoteObservable } from './api/common'
 
@@ -16,10 +19,24 @@ const TRANSFORM_QUERY_TIMEOUT = 3000
 export function transformSearchQuery({
     query,
     extensionHostAPIPromise,
+    enableGoImportsSearchQueryTransform,
+    eventLogger,
 }: {
     query: string
-    extensionHostAPIPromise: Promise<Remote<FlatExtensionHostAPI>>
+    extensionHostAPIPromise: null | Promise<Remote<FlatExtensionHostAPI>>
+    enableGoImportsSearchQueryTransform: undefined | boolean
+    eventLogger: SharedEventLogger
 }): Observable<string> {
+    // We apply any non-extension transform before we send the query to the
+    // extensions since we want these to take presedence over the extensions.
+    if (enableGoImportsSearchQueryTransform === undefined || enableGoImportsSearchQueryTransform) {
+        query = goImportsTransform(query, eventLogger)
+    }
+
+    if (extensionHostAPIPromise === null) {
+        return of(query)
+    }
+
     return from(extensionHostAPIPromise).pipe(
         switchMap(extensionHostAPI =>
             // Since we won't re-compute on subsequent extension activation, ensure that
@@ -42,9 +59,31 @@ export function transformSearchQuery({
         timeout(TRANSFORM_QUERY_TIMEOUT),
         catchError(error => {
             if (error instanceof TimeoutError) {
-                console.error(`Extension query transformers took more than ${TRANSFORM_QUERY_TIMEOUT}ms`)
+                logger.error(`Extension query transformers took more than ${TRANSFORM_QUERY_TIMEOUT}ms`)
             }
             return of(query)
         })
     )
+}
+
+function goImportsTransform(query: string, eventLogger: SharedEventLogger): string {
+    const goImportsRegex = /\bgo.imports:(\S*)/
+    if (query.match(goImportsRegex)) {
+        // Get package name
+        const packageFilter = query.match(goImportsRegex)
+        const packageName = packageFilter && packageFilter.length >= 1 ? packageFilter[1] : ''
+
+        // Package imported in grouped import statements
+        const matchPackage = '^\\t"[^\\s]*' + packageName + '[^\\s]*"$'
+        // Match packages with aliases
+        const matchAlias = '\\t[\\w/]*\\s"[^\\s]*' + packageName + '[^\\s]*"$'
+        // Match packages in single import statement
+        const matchSingle = 'import\\s"[^\\s]*' + packageName + '[^\\s]*"$'
+        const finalRegex = `(${matchPackage}|${matchAlias}|${matchSingle}) lang:go `
+
+        eventLogger.log('GoImportsSearchQueryTransformed')
+
+        return query.replace(goImportsRegex, finalRegex)
+    }
+    return query
 }

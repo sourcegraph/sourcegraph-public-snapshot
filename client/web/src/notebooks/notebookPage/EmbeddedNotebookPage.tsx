@@ -5,8 +5,10 @@ import { NEVER } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
-import { fetchHighlightedFileLineRanges as fetchHighlightedFileLineRangesShared } from '@sourcegraph/shared/src/backend/file'
+import {
+    FetchFileParameters,
+    fetchHighlightedFileLineRanges as fetchHighlightedFileLineRangesShared,
+} from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
@@ -28,7 +30,7 @@ interface EmbeddedNotebookPageProps
             | 'authenticatedUser'
             | 'settingsCascade'
         >,
-        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     notebookId: string
 }
@@ -41,7 +43,7 @@ export const EmbeddedNotebookPage: React.FunctionComponent<React.PropsWithChildr
     extensionsController,
     ...props
 }) => {
-    useEffect(() => eventLogger.logViewEvent('EmbeddedNotebookPage'), [])
+    useEffect(() => eventLogger.logPageView('EmbeddedNotebookPage'), [])
 
     const notebookOrError = useObservable(
         useMemo(

@@ -1,17 +1,18 @@
 import React, { useCallback, useContext, useMemo, useState } from 'react'
 
-import { mdiCheckCircle, mdiHelpCircleOutline } from '@mdi/js'
+import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import { CircularProgressbar } from 'react-circular-progressbar'
 import { useHistory } from 'react-router-dom'
 
 import { isExternalLink } from '@sourcegraph/common'
 import { ModalVideo } from '@sourcegraph/search-ui'
-import { Button, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { ItemPicker } from '../ItemPicker'
 
 import { TourContext } from './context'
+import { TourNewTabLink } from './TourNewTabLink'
 import { TourTaskType, TourLanguage, TourTaskStepType } from './types'
 import { isLanguageRequired, getTourTaskStepActionValue } from './utils'
 
@@ -37,7 +38,10 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
     const { language, onLanguageSelect, onStepClick, onRestart } = useContext(TourContext)
 
     const handleLinkClick = useCallback(
-        (event: React.MouseEvent<HTMLAnchorElement>, step: TourTaskStepType) => {
+        (
+            event: React.MouseEvent<HTMLElement, MouseEvent> | React.KeyboardEvent<HTMLElement>,
+            step: TourTaskStepType
+        ) => {
             onStepClick(step, language)
             if (isLanguageRequired(step) && !language) {
                 event.preventDefault()
@@ -145,18 +149,13 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                                 </Link>
                             )}
                             {step.action.type === 'new-tab-link' && (
-                                <Link
-                                    className={classNames(
-                                        'flex-grow-1',
-                                        step.action.variant === 'button-primary' && 'btn btn-primary'
-                                    )}
+                                <TourNewTabLink
+                                    step={step}
+                                    variant={step.action.variant === 'button-primary' ? 'button' : 'link'}
+                                    className={classNames('flex-grow-1')}
                                     to={getTourTaskStepActionValue(step, language)}
-                                    onClick={event => handleLinkClick(event, step)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    {step.label}
-                                </Link>
+                                    onClick={handleLinkClick}
+                                />
                             )}
                             {step.action.type === 'restart' && (
                                 <div className="flex-grow">
@@ -182,16 +181,6 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                                     src={getTourTaskStepActionValue(step, language)}
                                     onToggle={isOpen => handleVideoToggle(isOpen, step)}
                                 />
-                            )}
-                            {step.tooltip && (
-                                <Tooltip content={step.tooltip}>
-                                    <Icon
-                                        size="sm"
-                                        className={classNames('ml-1', styles.colorLink)}
-                                        aria-label={step.tooltip}
-                                        svgPath={mdiHelpCircleOutline}
-                                    />
-                                </Tooltip>
                             )}
                             {(isMultiStep || !title) && step.isCompleted && (
                                 <Icon
