@@ -7,6 +7,8 @@ import (
 
 	"github.com/gorilla/mux"
 
+	otlog "github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -14,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // serveStreamBlame returns a HTTP handler that streams back the results of running
@@ -29,6 +32,9 @@ func serveStreamBlame(logger log.Logger, db database.DB, gitserverClient gitserv
 			w.WriteHeader(404)
 			return
 		}
+		tr, ctx := trace.New(r.Context(), "blame.Stream", "")
+		defer tr.Finish()
+		r = r.WithContext(ctx)
 
 		if _, ok := mux.Vars(r)["Repo"]; !ok {
 			w.WriteHeader(http.StatusBadRequest)
@@ -40,9 +46,21 @@ func serveStreamBlame(logger log.Logger, db database.DB, gitserverClient gitserv
 
 		streamWriter, err := streamhttp.NewWriter(w)
 		if err != nil {
-			// tr.SetError(err)
+			tr.SetError(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+		// Log events to trace
+		streamWriter.StatHook = func(stat streamhttp.WriterStat) {
+			fields := []otlog.Field{
+				otlog.String("streamhttp.Event", stat.Event),
+				otlog.Int("bytes", stat.Bytes),
+				otlog.Int64("duration_ms", stat.Duration.Milliseconds()),
+			}
+			if stat.Error != nil {
+				fields = append(fields, otlog.Error(stat.Error))
+			}
+			tr.LogFields(fields...)
 		}
 
 		if strings.HasPrefix(requestedPath, "/") {
@@ -53,6 +71,7 @@ func serveStreamBlame(logger log.Logger, db database.DB, gitserverClient gitserv
 			NewestCommit: commitID,
 		})
 		if err != nil {
+			tr.SetError(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -60,6 +79,7 @@ func serveStreamBlame(logger log.Logger, db database.DB, gitserverClient gitserv
 		for {
 			hunk, done, err := hunkReader.Read()
 			if err != nil {
+				tr.SetError(err)
 				http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 				return
 			}
@@ -68,6 +88,7 @@ func serveStreamBlame(logger log.Logger, db database.DB, gitserverClient gitserv
 				return
 			}
 			if err := streamWriter.Event("hunk", hunk); err != nil {
+				tr.SetError(err)
 				http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 				return
 			}
