@@ -19,7 +19,7 @@ one or more files on disk. These files are called "shards."
 
 Zoekt uses [memory maps](https://en.wikipedia.org/wiki/Memory-mapped_file) to load all shards into memory to evaluate search queries. In most deployments, the total size of the search index (all the shards on disk) is much larger than the total amount of RAM available to Zoekt. Amongst other benefits, using [memory maps](https://en.wikipedia.org/wiki/Memory-mapped_file) allows Zoekt to:
 
-- Leverage [demand paging](https://en.wikipedia.org/wiki/Demand_paging):only read the shard file from the disk if Zoekt tries to read that portion of the file (and it isn't already in RAM)
+- Leverage [demand paging](https://en.wikipedia.org/wiki/Demand_paging): only read the shard file from the disk if Zoekt tries to read that portion of the file (and it isn't already in RAM)
 - Leverage the kernel's [page cache](https://en.wikipedia.org/wiki/Page_cache): keep the most frequently accessed pages in RAM and evict them when the system is under memory pressure
 
 #### Consideration: RAM versus Disk
