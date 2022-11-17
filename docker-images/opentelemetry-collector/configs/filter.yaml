@@ -61,6 +61,6 @@ processors:
     spans:
       # ONLY include traces where 'service.name' matches "web-app" and exclude ALL other traces from the pipeline
       include:
-        match_type: regexp
+        match_type: strict
         services:
           - "web-app"
