@@ -20,7 +20,7 @@ import (
 )
 
 func TestTgzFallback(t *testing.T) {
-	tar := makeTar(t, &fileInfo{path: "foo", contents: "bar", mode: 0655})
+	tar := makeTar(t, &fileInfo{path: "foo", contents: "bar", mode: 0o655})
 
 	t.Run("with-io-read-seeker", func(t *testing.T) {
 		err := Tgz(bytes.NewReader(tar), t.TempDir(), Opts{})
@@ -74,32 +74,32 @@ func TestUnpack(t *testing.T) {
 					},
 				},
 				in: []*fileInfo{
-					{path: "big", contents: "E_TOO_BIG", mode: 0655},
-					{path: "bar/baz", contents: "bar", mode: 0655},
-					{path: "bar", contents: "bar", mode: 0655},
-					{path: "foo/bar", contents: "bar", mode: 0655},
+					{path: "big", contents: "E_TOO_BIG", mode: 0o655},
+					{path: "bar/baz", contents: "bar", mode: 0o655},
+					{path: "bar", contents: "bar", mode: 0o655},
+					{path: "foo/bar", contents: "bar", mode: 0o655},
 				},
 				out: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655, size: 3},
-					{path: "foo", mode: fs.ModeDir | 0750},
-					{path: "foo/bar", contents: "bar", mode: 0655, size: 3},
+					{path: "bar", contents: "bar", mode: 0o655, size: 3},
+					{path: "foo", mode: fs.ModeDir | 0o750},
+					{path: "foo/bar", contents: "bar", mode: 0o655, size: 3},
 				},
 			},
 			{
 				packer: p,
 				name:   "empty-dirs",
 				in: []*fileInfo{
-					{path: "foo", mode: fs.ModeDir | 0740},
+					{path: "foo", mode: fs.ModeDir | 0o740},
 				},
 				out: []*fileInfo{
-					{path: "foo", mode: fs.ModeDir | 0740},
+					{path: "foo", mode: fs.ModeDir | 0o740},
 				},
 			},
 			{
 				packer: p,
 				name:   "illegal-file-path",
 				in: []*fileInfo{
-					{path: "../../etc/passwd", contents: "foo", mode: 0655},
+					{path: "../../etc/passwd", contents: "foo", mode: 0o655},
 				},
 				err: "../../etc/passwd: illegal file path",
 			},
@@ -124,24 +124,24 @@ func TestUnpack(t *testing.T) {
 				name:   "skip-invalid",
 				opts:   Opts{SkipInvalid: true},
 				in: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655},
-					{path: "../../etc/passwd", contents: "foo", mode: 0655},
+					{path: "bar", contents: "bar", mode: 0o655},
+					{path: "../../etc/passwd", contents: "foo", mode: 0o655},
 					{path: "passwd", contents: "../../etc/passwd", mode: fs.ModeSymlink},
 					{path: "passwd", contents: "/etc/passwd", mode: fs.ModeSymlink},
 				},
 				out: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655, size: 3},
+					{path: "bar", contents: "bar", mode: 0o655, size: 3},
 				},
 			},
 			{
 				packer: p,
 				name:   "symbolic-link",
 				in: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655},
+					{path: "bar", contents: "bar", mode: 0o655},
 					{path: "foo", contents: "bar", mode: fs.ModeSymlink},
 				},
 				out: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655, size: 3},
+					{path: "bar", contents: "bar", mode: 0o655, size: 3},
 					{path: "foo", contents: "bar", mode: fs.ModeSymlink, size: 3},
 				},
 			},
@@ -150,29 +150,29 @@ func TestUnpack(t *testing.T) {
 				name:   "dir-permissions",
 				in: []*fileInfo{
 					{path: "dir", mode: fs.ModeDir},
-					{path: "dir/file1", contents: "x", mode: 0000},
-					{path: "dir/file2", contents: "x", mode: 0200},
-					{path: "dir/file3", contents: "x", mode: 0400},
-					{path: "dir/file4", contents: "x", mode: 0600},
+					{path: "dir/file1", contents: "x", mode: 0o000},
+					{path: "dir/file2", contents: "x", mode: 0o200},
+					{path: "dir/file3", contents: "x", mode: 0o400},
+					{path: "dir/file4", contents: "x", mode: 0o600},
 				},
 				out: []*fileInfo{
-					{path: "dir", mode: fs.ModeDir | 0700},
-					{path: "dir/file1", contents: "x", mode: 0600, size: 1},
-					{path: "dir/file2", contents: "x", mode: 0600, size: 1},
-					{path: "dir/file3", contents: "x", mode: 0600, size: 1},
-					{path: "dir/file4", contents: "x", mode: 0600, size: 1},
+					{path: "dir", mode: fs.ModeDir | 0o700},
+					{path: "dir/file1", contents: "x", mode: 0o600, size: 1},
+					{path: "dir/file2", contents: "x", mode: 0o600, size: 1},
+					{path: "dir/file3", contents: "x", mode: 0o600, size: 1},
+					{path: "dir/file4", contents: "x", mode: 0o600, size: 1},
 				},
 			},
 			{
 				packer: p,
 				name:   "duplicates",
 				in: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655},
-					{path: "bar", contents: "bar", mode: 0655},
+					{path: "bar", contents: "bar", mode: 0o655},
+					{path: "bar", contents: "bar", mode: 0o655},
 				},
 				errContains: "/bar: file exists",
 				out: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655, size: 3},
+					{path: "bar", contents: "bar", mode: 0o655, size: 3},
 				},
 			},
 			{
@@ -180,11 +180,11 @@ func TestUnpack(t *testing.T) {
 				name:   "skip-duplicates",
 				opts:   Opts{SkipDuplicates: true},
 				in: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655},
-					{path: "bar", contents: "bar", mode: 0655},
+					{path: "bar", contents: "bar", mode: 0o655},
+					{path: "bar", contents: "bar", mode: 0o655},
 				},
 				out: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655, size: 3},
+					{path: "bar", contents: "bar", mode: 0o655, size: 3},
 				},
 			},
 		}...)

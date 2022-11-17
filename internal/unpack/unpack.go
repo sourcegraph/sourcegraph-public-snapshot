@@ -77,37 +77,35 @@ func Zip(r io.ReaderAt, size int64, dir string, opt Opts) error {
 	return nil
 }
 
+// copied https://sourcegraph.com/github.com/golang/go@52d9e41ac303cfed4c4cfe86ec6d663a18c3448d/-/blob/src/compress/gzip/gunzip.go?L20-21
+const (
+	gzipID1 = 0x1f
+	gzipID2 = 0x8b
+)
+
 // Tgz unpacks the contents of the given gzip compressed tarball under dir.
 //
 // File permissions in the tarball are not respected; all files are marked read-write.
 func Tgz(r io.Reader, dir string, opt Opts) error {
-	// Since we fallback to untar the input reader if it isn't
-	// a gzipped tar, we need to seek back the bytes already read
-	// from gzip.NewReader() trying to read a gzip header, so make
-	// sure we have an io.ReadSeeker.
-	tgz, ok := r.(io.ReadSeeker)
-	if !ok {
-		bs, err := io.ReadAll(r)
-		if err != nil {
-			return err
-		}
-		tgz = bytes.NewReader(bs)
-	}
-
-	gzr, err := gzip.NewReader(tgz)
-	if err != nil {
-		if err == gzip.ErrHeader || err == gzip.ErrChecksum {
-			// Some archives aren't compressed at all, despite the tgz extension.
-			// Try to untar them without gzip decompression.
-			if _, err = tgz.Seek(0, io.SeekStart); err != nil {
-				return err
-			}
-			return Tar(tgz, dir, opt)
-		}
+	var gzipMagicBytes [2]byte
+	if _, err := io.ReadAtLeast(r, gzipMagicBytes[:], 2); err != nil {
 		return err
 	}
 
+	r = &biReader{readers: [2]io.Reader{bytes.NewReader(gzipMagicBytes[:]), r}}
+
+	// Some archives aren't compressed at all, despite the tgz extension.
+	// Try to untar them without gzip decompression.
+	if gzipMagicBytes[0] != gzipID1 || gzipMagicBytes[1] != gzipID2 {
+		return Tar(r, dir, opt)
+	}
+
+	gzr, err := gzip.NewReader(r)
+	if err != nil {
+		return err
+	}
 	defer gzr.Close()
+
 	return Tar(gzr, dir, opt)
 }
 
