@@ -93,12 +93,12 @@ var app = &cli.App{
 						if len(repos) == 0 {
 							logger.Info("Using GithubRepoFetcher")
 							repoIter = &GithubRepoFetcher{
-								client:    gh,
-								repoType:  "public", // we're only interested in public repos to change visibility
-								org:       org,
-								pageStart: 0,
-								done:      false,
-								err:       nil,
+								client:   gh,
+								repoType: "public", // we're only interested in public repos to change visibility
+								org:      org,
+								page:     0,
+								done:     false,
+								err:      nil,
 							}
 
 							t, err := getTotalPublicRepos(ctx, gh, org)
@@ -109,7 +109,7 @@ var app = &cli.App{
 							total = int64(t)
 						} else {
 							logger.Info("Using StaticRepoFecther")
-							repoIter = &StaticRepoFetcher{
+							repoIter = &MockRepoFetcher{
 								repos:    repos,
 								iterSize: 10,
 								start:    0,
@@ -219,56 +219,56 @@ type MockRepoFetcher struct {
 	start    int
 }
 
-// Err returns the last error (if any) encountered by Iter. For StaticRepoFetcher, this retuns nil always
-func (s *StaticRepoFetcher) Err() error {
+// Err returns the last error (if any) encountered by Iter. For MockRepoFetcher, this retuns nil always
+func (m *MockRepoFetcher) Err() error {
 	return nil
 }
 
 // Done determines whether this Iter can produce more items. When start >= length of repos, then this will return true
-func (s *StaticRepoFetcher) Done() bool {
-	return s.start >= len(s.repos)
+func (m *MockRepoFetcher) Done() bool {
+	return m.start >= len(m.repos)
 }
 
 // Next returns the next set of Repos. The amount of repos returned is determined by iterSize. When Done() is true,
 // nil is returned.
-func (s *StaticRepoFetcher) Next(_ context.Context) []*store.Repo {
-	if s.iterSize == 0 {
-		s.iterSize = 10
+func (m *MockRepoFetcher) Next(_ context.Context) []*store.Repo {
+	if m.iterSize == 0 {
+		m.iterSize = 10
 	}
-	if s.Done() {
+	if m.Done() {
 		return nil
 	}
-	if s.start+s.iterSize > len(s.repos) {
-		results := s.repos[s.start:]
-		s.start = len(s.repos)
+	if m.start+m.iterSize > len(m.repos) {
+		results := m.repos[m.start:]
+		m.start = len(m.repos)
 		return results
 	}
 
-	results := s.repos[s.start : s.start+s.iterSize]
+	results := m.repos[m.start : m.start+m.iterSize]
 	// advance the start index
-	s.start += s.iterSize
+	m.start += m.iterSize
 	return results
 
 }
 
 type GithubRepoFetcher struct {
-	client    *github.Client
-	repoType  string
-	org       string
-	page int
+	client   *github.Client
+	repoType string
+	org      string
+	page     int
 	perPage  int
-	done      bool
-	err       error
+	done     bool
+	err      error
 }
 
 // Done determines whether more repos can be retrieved from Github.
-func (f *GithubRepoFetcher) Done() bool {
-	return f.done
+func (g *GithubRepoFetcher) Done() bool {
+	return g.done
 }
 
 // Err returns the last error encountered by Iter
-func (f *GithubRepoFetcher) Err() error {
-	return f.err
+func (g *GithubRepoFetcher) Err() error {
+	return g.err
 }
 
 // Next retrieves the next set of repos by contact Github. The amount of repos fetched is determined by pageSize.
@@ -277,35 +277,35 @@ func (f *GithubRepoFetcher) Err() error {
 // Done() will also return true.
 //
 // If any error is encountered during retrieval of Repos the err value will be set and can be retrieved with Err()
-func (f *GithubRepoFetcher) Next(ctx context.Context) []*store.Repo {
-	if f.done {
+func (g *GithubRepoFetcher) Next(ctx context.Context) []*store.Repo {
+	if g.done {
 		return nil
 	}
 
-	results, next, err := f.listRepos(ctx, f.org, f.pageStart, f.pageSize)
+	results, next, err := g.listRepos(ctx, g.org, g.page, g.perPage)
 	if err != nil {
-		f.err = err
+		g.err = err
 		return nil
 	}
 
 	// when next is 0, it means the Github api returned the nextPage as 0, which indicates that there are not more pages to fetch
 	if next > 0 {
 		// Ensure that the next request starts at the next page
-		f.pageStart = next
+		g.page = next
 	} else {
-		f.done = true
+		g.done = true
 	}
 
 	return results
 }
 
-func (f *GithubRepoFetcher) listRepos(ctx context.Context, org string, start int, size int) ([]*store.Repo, int, error) {
+func (g *GithubRepoFetcher) listRepos(ctx context.Context, org string, start int, size int) ([]*store.Repo, int, error) {
 	opts := github.RepositoryListByOrgOptions{
-		Type:        f.repoType,
+		Type:        g.repoType,
 		ListOptions: github.ListOptions{Page: start, PerPage: size},
 	}
 
-	repos, resp, err := f.client.Repositories.ListByOrg(ctx, org, &opts)
+	repos, resp, err := g.client.Repositories.ListByOrg(ctx, org, &opts)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -323,13 +323,12 @@ func (f *GithubRepoFetcher) listRepos(ctx context.Context, org string, start int
 	}
 
 	next := resp.NextPage
-	if next == 0 {
-		if f.pageStart != resp.LastPage {
-			next = resp.LastPage
-		}
+	// If next page is 0 we're at the last page, so set the last page
+	if next == 0 && g.page != resp.LastPage {
+		next = resp.LastPage
 	}
 
-	return res, resp.NextPage, nil
+	return res, next, nil
 }
 
 func getTotalPublicRepos(ctx context.Context, client *github.Client, org string) (int, error) {
