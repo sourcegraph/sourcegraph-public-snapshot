@@ -245,11 +245,7 @@ export class FilteredConnection<
                 .pipe(
                     // Track whether the query or the active order or filter changed
                     scan<
-                        [
-                            string,
-                            Map<string, FilteredConnectionFilterValue> | undefined,
-                            { forceRefresh: boolean }
-                        ],
+                        [string, Map<string, FilteredConnectionFilterValue> | undefined, { forceRefresh: boolean }],
                         {
                             query: string
                             filterValues: Map<string, FilteredConnectionFilterValue> | undefined
@@ -264,9 +260,7 @@ export class FilteredConnection<
                             query: currentQuery,
                             filterValues: currentFilterValues,
                             shouldRefresh:
-                                forceRefresh ||
-                                query !== currentQuery ||
-                                filterValues !== currentFilterValues,
+                                forceRefresh || query !== currentQuery || filterValues !== currentFilterValues,
                             queryCount: queryCount + 1,
                         }),
                         {
@@ -616,9 +610,7 @@ export class FilteredConnection<
         this.showMoreClicks.next()
     }
 
-    private buildArgs = (
-        filterValues: Map<string, FilteredConnectionFilterValue>
-    ): FilteredConnectionArgs => {
+    private buildArgs = (filterValues: Map<string, FilteredConnectionFilterValue>): FilteredConnectionArgs => {
         let args: FilteredConnectionArgs = {}
         for (const key of filterValues.keys()) {
             const value = filterValues.get(key)
