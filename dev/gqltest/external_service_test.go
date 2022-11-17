@@ -300,7 +300,7 @@ func TestExternalService_AsyncDeletion(t *testing.T) {
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
-	err = client.DeleteExternalService(esID, true)
+	err = client.DeleteExternalService(esID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -324,7 +324,7 @@ func TestExternalService_AsyncDeletion(t *testing.T) {
 func removeExternalServiceAfterTest(t *testing.T, esID string) {
 	t.Helper()
 	t.Cleanup(func() {
-		err := client.DeleteExternalService(esID, false)
+		err := client.DeleteExternalService(esID)
 		if err != nil {
 			t.Fatal(err)
 		}
