@@ -44,6 +44,11 @@
 // since button doesn't use disabled attribute we enforce/mimic the native
 // disabled control styles.
 input.btn {
+    &:focus {
+        outline: 2px solid var(--primary-2);
+        outline-offset: 2px;
+    }
+
     &[aria-disabled='true'] {
         cursor: not-allowed;
 
