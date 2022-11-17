@@ -122,7 +122,7 @@ func (s *jvmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 }
 
 func unzipJarFile(jarPath, destination string) (err error) {
-	logger := log.Scoped("unzipJarFile", "unzipJarFile the given jvm archive into workDir")
+	logger := log.Scoped("unzipJarFile", "unzipJarFile unpacks the given jvm archive into workDir")
 	workDir := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
 
 	zipFile, err := os.ReadFile(jarPath)
