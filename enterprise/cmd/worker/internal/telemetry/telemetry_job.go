@@ -123,14 +123,12 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 	batchSize := getBatchSize()
 
 	bookmark, err := t.bookmarkStore.GetBookmark(ctx)
-
 	if err != nil {
 		return errors.Wrap(err, "GetBookmark")
 	}
 	t.logger.Info("fetching events from bookmark", log.Int("bookmark_id", bookmark))
 
 	all, err := t.eventLogStore.ListExportableEvents(ctx, bookmark, batchSize)
-
 	if err != nil {
 		return errors.Wrap(err, "eventLogStore.ListExportableEvents")
 	}
@@ -396,12 +394,4 @@ func (s *bmStore) UpdateBookmark(ctx context.Context, val int) error {
 
 func (s *bmStore) UpdateBookmarkSecurity(ctx context.Context, val int) error {
 	return s.Exec(ctx, sqlf.Sprintf("UPDATE security_event_logs_scrape_state SET bookmark_id = %S WHERE id = (SELECT id FROM security_event_logs_scrape_state ORDER BY id LIMIT 1);", val))
-}
-
-func newBookmarkStore(db database.DB) bookmarkStore {
-	return &bmStore{Store: basestore.NewWithHandle(db.Handle())}
-}
-
-func newBookmarkStoreSecurity(db database.DB) bookmarkStoreSecurity {
-	return &bmStoreSecurity{Store: basestore.NewWithHandle(db.Handle())}
 }
