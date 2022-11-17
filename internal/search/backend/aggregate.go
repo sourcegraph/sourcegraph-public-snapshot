@@ -125,13 +125,14 @@ func newFlushCollectSender(opts *zoekt.SearchOptions, maxSizeBytes int, sender z
 
 	// stopCollectingAndFlush will send what we have collected and all future
 	// sends will go via sender directly.
-	stopCollectingAndFlush := func(reason string) {
+	stopCollectingAndFlush := func(reason zoekt.FlushReason) {
 		if collectSender == nil {
 			return
 		}
 
 		if agg, ok := collectSender.Done(); ok {
-			metricFinalAggregateSize.WithLabelValues(reason).Observe(float64(len(agg.Files)))
+			metricFinalAggregateSize.WithLabelValues(reason.String()).Observe(float64(len(agg.Files)))
+			agg.FlushReason = reason
 			sender.Send(agg)
 		}
 
@@ -150,7 +151,7 @@ func newFlushCollectSender(opts *zoekt.SearchOptions, maxSizeBytes int, sender z
 			timer.Stop()
 		case <-timer.C:
 			mu.Lock()
-			stopCollectingAndFlush("timer_expired")
+			stopCollectingAndFlush(zoekt.FlushReasonTimerExpired)
 			mu.Unlock()
 		}
 	}()
@@ -163,7 +164,7 @@ func newFlushCollectSender(opts *zoekt.SearchOptions, maxSizeBytes int, sender z
 				// Protect against too large aggregates. This should be the exception and only
 				// happen for queries yielding an extreme number of results.
 				if maxSizeBytes >= 0 && collectSender.sizeBytes > uint64(maxSizeBytes) {
-					stopCollectingAndFlush("max_size_reached")
+					stopCollectingAndFlush(zoekt.FlushReasonMaxSize)
 
 				}
 			} else {
@@ -172,7 +173,7 @@ func newFlushCollectSender(opts *zoekt.SearchOptions, maxSizeBytes int, sender z
 			mu.Unlock()
 		}), func() {
 			mu.Lock()
-			stopCollectingAndFlush("final_flush")
+			stopCollectingAndFlush(zoekt.FlushReasonFinalFlush)
 			mu.Unlock()
 		}
 }
