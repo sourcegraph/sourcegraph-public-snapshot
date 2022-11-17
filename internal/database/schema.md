@@ -1470,6 +1470,7 @@ Indexes:
  repo_size_bytes | bigint                   |           |          | 
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
+    "gitserver_repo_size_bytes" btree (repo_size_bytes)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
     "gitserver_repos_cloning_status_idx" btree (repo_id) WHERE clone_status = 'cloning'::text
     "gitserver_repos_last_changed_idx" btree (last_changed, repo_id)

@@ -40,6 +40,7 @@ import {
     ReloadSiteVariables,
     RepositoriesResult,
     RepositoriesVariables,
+    RepositoryOrderBy,
     Scalars,
     ScheduleRepositoryPermissionsSyncResult,
     ScheduleRepositoryPermissionsSyncVariables,
@@ -225,6 +226,8 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                 $notIndexed: Boolean
                 $failedFetch: Boolean
                 $cloneStatus: CloneStatus
+                $orderBy: RepositoryOrderBy
+                $descending: Boolean
             ) {
                 repositories(
                     first: $first
@@ -233,6 +236,8 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
                     notIndexed: $notIndexed
                     failedFetch: $failedFetch
                     cloneStatus: $cloneStatus
+                    orderBy: $orderBy
+                    descending: $descending
                 ) {
                     nodes {
                         ...SiteAdminRepositoryFields
@@ -253,6 +258,8 @@ function fetchAllRepositories(args: Partial<RepositoriesVariables>): Observable<
             first: args.first ?? null,
             query: args.query ?? null,
             cloneStatus: args.cloneStatus ?? null,
+            orderBy: args.orderBy ?? RepositoryOrderBy.REPOSITORY_NAME,
+            descending: args.descending ?? false,
         }
     ).pipe(
         map(dataOrThrowErrors),
