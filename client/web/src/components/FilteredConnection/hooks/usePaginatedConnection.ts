@@ -131,17 +131,38 @@ export const usePaginatedConnection = <TResult, TVariables extends PaginatedConn
     //     visibleResultCount: connection?.nodes.length,
     // })
 
-    const nextPage = async (): Promise<void> => {
+    const nextPage = useCallback(async (): Promise<void> => {
         const cursor = connection?.pageInfo?.endCursor
+        if (!cursor) {
+            throw new Error('No cursor available for next page')
+        }
         await refetch({
             ...variables,
             ...{ after: cursor, first: pageSize, last: null, before: null },
         })
-    }
-
-    const firstPage = useCallback(async (): Promise<void> => {}, [])
-    const lastPage = useCallback(async (): Promise<void> => {}, [])
-    const previousPage = useCallback(async (): Promise<void> => {}, [])
+    }, [connection?.pageInfo?.endCursor, pageSize, refetch, variables])
+    const previousPage = useCallback(async (): Promise<void> => {
+        const cursor = connection?.pageInfo?.startCursor
+        if (!cursor) {
+            throw new Error('No cursor available for next page')
+        }
+        await refetch({
+            ...variables,
+            ...{ after: null, first: null, last: pageSize, before: ncursorull },
+        })
+    }, [connection?.pageInfo?.startCursor, pageSize, refetch, variables])
+    const firstPage = useCallback(async (): Promise<void> => {
+        await refetch({
+            ...variables,
+            ...{ after: null, first: pageSize, last: null, before: null },
+        })
+    }, [pageSize, refetch, variables])
+    const lastPage = useCallback(async (): Promise<void> => {
+        await refetch({
+            ...variables,
+            ...{ after: null, first: null, last: pageSize, before: null },
+        })
+    }, [pageSize, refetch, variables])
 
     return {
         connection,
