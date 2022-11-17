@@ -279,8 +279,6 @@ func (e *httpError) NotFound() bool {
 }
 
 func urlFromConfig(config *schema.BitbucketCloudConnection) (*url.URL, error) {
-	fmt.Printf("RepositoryPathPattern: %v ", config.RepositoryPathPattern)
-
 	if config.ApiURL == "" {
 		return url.Parse("https://api.bitbucket.org")
 	}

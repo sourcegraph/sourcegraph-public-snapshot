@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
@@ -224,17 +223,12 @@ func (s BitbucketCloudSource) GetNamespaceFork(ctx context.Context, targetRepo *
 		return nil, errors.Wrap(err, "checking for fork existence")
 	}
 
-	testy, err := targetMeta.Namespace()
+	targetMetaNamespace, err := targetMeta.Namespace()
 	if err != nil {
 		return nil, errors.Wrap(err, "forking repository")
 	}
 
-	targetNamespace := testy + "-" + targetMeta.Slug
-
-	fmt.Printf("target meta slug IS: %v ", targetMeta.Slug)
-	fmt.Printf("testy IS: %v ", testy)
-
-	fmt.Printf("COMPLETE target meta namespace IS: %v ", targetNamespace)
+	targetNamespace := targetMetaNamespace + "-" + targetMeta.Slug
 
 	fork, err := s.client.ForkRepository(ctx, targetMeta, bitbucketcloud.ForkInput{
 		Name:      &targetNamespace,
