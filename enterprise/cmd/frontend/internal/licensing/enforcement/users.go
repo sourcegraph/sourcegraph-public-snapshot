@@ -7,9 +7,9 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -25,7 +25,7 @@ func NewBeforeCreateUserHook() func(context.Context, database.DB, *extsvc.Accoun
 		//
 		// NOTE: It is important to make sure the Sourcegraph Operator authentication
 		// provider is actually enabled.
-		if spec != nil && spec.ServiceType == sourcegraphoperator.ProviderType &&
+		if spec != nil && spec.ServiceType == auth.SourcegraphOperatorProviderType &&
 			cloud.SiteConfig().SourcegraphOperatorAuthProviderEnabled() {
 			return nil
 		}

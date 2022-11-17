@@ -6,15 +6,15 @@ import { Point } from '@visx/point'
 interface UseChartEventHandlersProps {
     onPointerMove: (point: Point) => void
     onPointerLeave: () => void
-    onFocusOut: FocusEventHandler<SVGSVGElement>
-    onClick: MouseEventHandler<SVGSVGElement>
+    onFocusOut: FocusEventHandler<SVGGraphicsElement>
+    onClick: MouseEventHandler<SVGGraphicsElement>
 }
 
 interface ChartHandlers {
-    onPointerMove: PointerEventHandler<SVGSVGElement>
-    onPointerLeave: PointerEventHandler<SVGSVGElement>
-    onBlurCapture: FocusEventHandler<SVGSVGElement>
-    onClick: MouseEventHandler<SVGSVGElement>
+    onPointerMove: PointerEventHandler<SVGGraphicsElement>
+    onPointerLeave: PointerEventHandler<SVGGraphicsElement>
+    onBlurCapture: FocusEventHandler<SVGGraphicsElement>
+    onClick: MouseEventHandler<SVGGraphicsElement>
 }
 
 /**

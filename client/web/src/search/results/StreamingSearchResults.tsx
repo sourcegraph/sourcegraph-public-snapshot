@@ -6,7 +6,7 @@ import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
-import { QueryUpdate, SearchContextProps, SearchMode } from '@sourcegraph/search'
+import { QueryUpdate, SearchContextProps } from '@sourcegraph/search'
 import { StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
@@ -106,7 +106,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             caseSensitive,
             trace,
             featureOverrides,
-            searchMode: patternType === SearchPatternType.lucky ? SearchMode.SmartSearch : searchMode,
+            searchMode,
             chunkMatches: true,
         }),
         [caseSensitive, patternType, searchMode, trace, featureOverrides]

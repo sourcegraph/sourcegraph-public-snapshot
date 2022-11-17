@@ -36,6 +36,7 @@ func TestReferences(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
+	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
@@ -43,7 +44,7 @@ func TestReferences(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, 50)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
 	uploads := []types.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
@@ -99,6 +100,7 @@ func TestReferencesWithSubRepoPermissions(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
+	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
@@ -106,7 +108,7 @@ func TestReferencesWithSubRepoPermissions(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, 50)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
 	uploads := []types.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
@@ -173,6 +175,7 @@ func TestReferencesRemote(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
+	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
@@ -180,7 +183,7 @@ func TestReferencesRemote(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, 50)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
 	uploads := []types.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
@@ -348,6 +351,7 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitServer := codeintelgitserver.New(database.NewMockDB(), &observation.TestContext)
+	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, mockGitserverClient, &observation.TestContext)
@@ -355,7 +359,7 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, 50)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
 	uploads := []types.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
