@@ -188,6 +188,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	logger.Warn("going into handleExternalServiceValidate")
 	statusCode, resp := handleExternalServiceValidate(ctx, logger, es, genericSrc)
 	if statusCode > 0 {
 		s.respond(w, statusCode, resp)
@@ -265,6 +266,8 @@ func handleExternalServiceValidate(ctx context.Context, logger log.Logger, es *t
 
 func externalServiceValidate(ctx context.Context, es *types.ExternalService, src repos.Source) error {
 	if !es.DeletedAt.IsZero() {
+
+		fmt.Println("early exit because it's deleted")
 		// We don't need to check deleted services.
 		return nil
 	}

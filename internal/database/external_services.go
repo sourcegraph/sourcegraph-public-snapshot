@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -657,6 +656,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		return nil
 	}
 
+	e.logger.Warn("fooo")
 	authProviders := conf.Get().AuthProviders
 	for _, s := range svcs {
 		rawConfig, err := s.Config.Decrypt(ctx)
@@ -691,6 +691,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			return err
 		}
 	}
+	e.logger.Warn("bar")
 
 	tx, err := e.transact(ctx)
 	if err != nil {
@@ -703,6 +704,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	var deleted []int64
 	for _, es := range svcs {
 		if es.ID != 0 && es.IsDeleted() {
+			e.logger.Warn("lol it's deleted")
 			deleted = append(deleted, es.ID)
 		}
 	}
@@ -722,6 +724,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		}
 	}
 
+	e.logger.Warn("starting the upsert")
 	q, err := tx.upsertExternalServicesQuery(ctx, svcs)
 	if err != nil {
 		return err
@@ -733,6 +736,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
+	e.logger.Warn("ending the upsert")
 	i := 0
 	for rows.Next() {
 		var encryptedConfig, keyID string
@@ -765,6 +769,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 }
 
 func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, svcs []*types.ExternalService) (*sqlf.Query, error) {
+	ids := make([]int64, 0, len(svcs))
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
 		encryptedConfig, keyID, err := s.Config.Encrypt(ctx, e.getEncryptionKey())
@@ -789,10 +794,12 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			s.CloudDefault,
 			s.HasWebhooks,
 		))
+		ids = append(ids, s.ID)
 	}
 
 	return sqlf.Sprintf(
 		upsertExternalServicesQueryFmtstr,
+		pq.Array(ids),
 		sqlf.Join(vals, ",\n"),
 	), nil
 }
@@ -802,6 +809,9 @@ const upsertExternalServicesQueryValueFmtstr = `
 `
 
 const upsertExternalServicesQueryFmtstr = `
+WITH can_lock AS (
+	SELECT id FROM external_services WHERE id = ANY (%s) AND deleted_at IS NULL FOR UPDATE SKIP LOCKED
+)
 INSERT INTO external_services (
   id,
   kind,
@@ -836,6 +846,7 @@ SET
   unrestricted       = excluded.unrestricted,
   cloud_default      = excluded.cloud_default,
   has_webhooks       = excluded.has_webhooks
+WHERE EXISTS (SELECT 1 FROM can_lock WHERE can_lock.id = id)
 RETURNING
 	id,
 	kind,
@@ -992,15 +1003,49 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// We take an advisory lock here and also when syncing an external service to
-	// ensure that they can't happen at the same time.
-	lock := locker.NewWith(tx, "external_service")
-	locked, err := lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", id)), false)
+	// Load the external service *for update* so that no sync job can be created
+	_, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
+	SELECT id
+	FROM external_services
+	WHERE id = %s AND deleted_at IS NULL
+	FOR UPDATE`, id)))
 	if err != nil {
-		return errors.Wrap(err, "getting advisory lock")
+		return err
 	}
-	if !locked {
-		return errors.Errorf("could not get advisory lock for service %d", id)
+	if !ok {
+		return &externalServiceNotFoundError{id: id}
+	}
+
+	// Cancel all currently running sync jobs, *outside* the transaction.
+	err = e.CancelSyncJobByExternalServiceID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < 100; i++ {
+		e.logger.Warn("sleeping while deleting lol", log.Int("i", i))
+		time.Sleep(1 * time.Second)
+	}
+
+	// Wait until all the sync jobs we just canceled are done executing to
+	// ensure that we delete all repositories and no new ones are inserted.
+	runningJobsCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
+
+	for {
+		if err := runningJobsCtx.Err(); err != nil {
+			return err
+		}
+
+		jobsRunning, err := e.CheckRunningSyncJobs(runningJobsCtx, id)
+		if err != nil {
+			return err
+		}
+
+		if !jobsRunning {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
 	}
 
 	// Create a temporary table where we'll store repos affected by the deletion of
@@ -1288,6 +1333,54 @@ WHERE
 		return &errSyncJobNotFound{id: id}
 	}
 	return nil
+}
+
+func (e *externalServiceStore) CancelSyncJobByExternalServiceID(ctx context.Context, id int64) error {
+	now := timeutil.Now()
+	// TODO: use a query builder
+	q := sqlf.Sprintf(`
+UPDATE
+	external_service_sync_jobs
+SET
+	cancel = TRUE,
+	-- If the sync job is still queued, we directly abort, otherwise we keep the
+	-- state, so the worker can do teardown and, at some point, mark it failed itself.
+	state = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.state ELSE 'canceled' END,
+	finished_at = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.finished_at ELSE %s END
+WHERE
+	external_service_id = %s
+	AND
+	state IN ('queued', 'processing')
+`, now, id)
+
+	res, err := e.ExecResult(ctx, q)
+	if err != nil {
+		return err
+	}
+	af, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if af != 1 {
+		return &errSyncJobNotFound{id: id}
+	}
+	return nil
+}
+
+func (e *externalServiceStore) CheckRunningSyncJobs(ctx context.Context, id int64) (bool, error) {
+	// TODO: use a query builder
+	q := sqlf.Sprintf(`
+SELECT 1
+FROM external_service_sync_jobs
+WHERE
+	external_service_id = %s
+	AND
+	state IN ('queued', 'processing')
+LIMIT 1
+`, id)
+
+	_, ok, err := basestore.ScanFirstInt(e.Query(ctx, q))
+	return ok, err
 }
 
 func (e *externalServiceStore) GetLatestSyncErrors(ctx context.Context) (map[int64]string, error) {

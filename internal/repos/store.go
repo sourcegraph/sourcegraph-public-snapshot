@@ -583,19 +583,26 @@ RETURNING updated_at
 
 func (s *store) EnqueueSingleSyncJob(ctx context.Context, extSvcID int64) (err error) {
 	q := sqlf.Sprintf(`
-INSERT INTO external_service_sync_jobs (external_service_id)
-SELECT %s
-WHERE NOT EXISTS (
-	SELECT
+WITH es AS (
+	SELECT id
 	FROM external_services es
-	LEFT JOIN external_service_sync_jobs j ON es.id = j.external_service_id
-	WHERE es.id = %s
-	AND (
-		j.state IN ('queued', 'processing')
-		OR es.cloud_default
-	)
+	WHERE
+		id = %s
+		AND NOT cloud_default
+		AND deleted_at IS NULL
+	FOR UPDATE
 )
-`, extSvcID, extSvcID)
+INSERT INTO external_service_sync_jobs (external_service_id)
+SELECT es.id
+FROM es
+WHERE NOT EXISTS (
+	SELECT 1
+	FROM external_service_sync_jobs j
+	WHERE
+		es.id = j.external_service_id
+		AND j.state IN ('queued', 'processing')
+)
+`, extSvcID)
 	return s.Exec(ctx, q)
 }
 
@@ -629,6 +636,8 @@ WITH due AS (
     AND deleted_at IS NULL
     AND LOWER(kind) != 'phabricator'
     AND %s
+	FOR UPDATE OF external_services -- We query 'FOR UPDATE' so we don't enqueue
+                                    -- sync jobs while an external service is being deleted.
 ),
 busy AS (
     SELECT DISTINCT external_service_id id FROM external_service_sync_jobs

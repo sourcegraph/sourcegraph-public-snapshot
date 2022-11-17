@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -503,6 +502,8 @@ func (s *Syncer) SyncExternalService(
 	logger := s.Logger.With(log.Int64("externalServiceID", externalServiceID))
 	logger.Info("syncing external service")
 
+	logger.Warn("SyncExternalService")
+
 	// Ensure the job field is recorded when monitoring external API calls
 	ctx = metrics.ContextWithTask(ctx, "SyncExternalService")
 
@@ -514,39 +515,40 @@ func (s *Syncer) SyncExternalService(
 	// want to hold a lock on the external_services table for too long.
 	svc, err = s.Store.ExternalServiceStore().GetByID(ctx, externalServiceID)
 	if err != nil {
+		logger.Warn("could not find ext svc", log.Int64("extsvcid", externalServiceID))
 		return errors.Wrap(err, "fetching external services")
 	}
 
 	// We take an advisory lock here and also when deleting an external service to
 	// ensure that they can't happen at the same time.
-	lock := locker.NewWith(s.Store, "external_service")
+	// lock := locker.NewWith(s.Store, "external_service")
 
-	var locked bool
-	var unlock locker.UnlockFunc
-	// We need both code paths here since our production code doesn't use a
-	// transaction but most of our tests DO run in transactions in order to make
-	// rolling back test state easier.
-	if s.Store.Handle().InTransaction() {
-		locked, err = lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
-		if err != nil {
-			return errors.Wrap(err, "getting advisory lock")
-		}
-		if !locked {
-			return errors.Errorf("could not get advisory lock for service %d", svc.ID)
-		}
-	} else {
-		// We're NOT in a transaction
-		locked, unlock, err = lock.Lock(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
-		if err != nil {
-			return errors.Wrap(err, "getting advisory lock")
-		}
-		if !locked {
-			return errors.Errorf("could not get advisory lock for service %d", svc.ID)
-		}
-		defer func() {
-			err = unlock(err)
-		}()
-	}
+	// var locked bool
+	// var unlock locker.UnlockFunc
+	// // We need both code paths here since our production code doesn't use a
+	// // transaction but most of our tests DO run in transactions in order to make
+	// // rolling back test state easier.
+	// if s.Store.Handle().InTransaction() {
+	// 	locked, err = lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
+	// 	if err != nil {
+	// 		return errors.Wrap(err, "getting advisory lock")
+	// 	}
+	// 	if !locked {
+	// 		return errors.Errorf("could not get advisory lock for service %d", svc.ID)
+	// 	}
+	// } else {
+	// 	// We're NOT in a transaction
+	// 	locked, unlock, err = lock.Lock(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
+	// 	if err != nil {
+	// 		return errors.Wrap(err, "getting advisory lock")
+	// 	}
+	// 	if !locked {
+	// 		return errors.Errorf("could not get advisory lock for service %d", svc.ID)
+	// 	}
+	// 	defer func() {
+	// 		err = unlock(err)
+	// 	}()
+	// }
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -561,9 +563,7 @@ func (s *Syncer) SyncExternalService(
 		svc.NextSyncAt = now.Add(interval)
 		svc.LastSyncAt = now
 
-		// We use context.Background() here because we want this update to
-		// succeed even if the job has been canceled.
-		if err := s.Store.ExternalServiceStore().Upsert(context.Background(), svc); err != nil {
+		if err := s.Store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
 			// We only want to log this error, not return it
 			logger.Error("upserting external service", log.Error(err))
 		}
@@ -596,6 +596,14 @@ func (s *Syncer) SyncExternalService(
 	results := make(chan SourceResult)
 	go func() {
 		s.Logger.Debug("listing repos asynchronously")
+		for i := 0; i < 100; i++ {
+			if ctx.Err() != nil {
+				s.Logger.Warn("sleep done cause context is canceled", log.Int("i", i))
+				break
+			}
+			s.Logger.Warn("sleeping for one second", log.Int("i", i))
+			time.Sleep(1 * time.Second)
+		}
 		src.ListRepos(ctx, results)
 		close(results)
 	}()
@@ -618,7 +626,9 @@ func (s *Syncer) SyncExternalService(
 	var syncProgress SyncProgress
 	// Record the final progress state
 	defer func() {
-		if err := progressRecorder(ctx, syncProgress, true); err != nil {
+		// Use a different context here so that we make sure to record progress
+		// even if context has been canceled
+		if err := progressRecorder(context.Background(), syncProgress, true); err != nil {
 			logger.Error("recording final sync progress", log.Error(err))
 		}
 	}()
