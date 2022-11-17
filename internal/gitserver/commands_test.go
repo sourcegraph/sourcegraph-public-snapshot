@@ -1883,6 +1883,23 @@ func TestRepository_Commits_options(t *testing.T) {
 				testCommits(ctx, label, repo, test.opt, checker, test.wantTotal, test.wantCommits, t)
 			})
 		}
+		// Added for awareness if this error message changes. Insights record last repo indexing and consider empty
+		// repos a success case.
+		t.Run("empty repo", func(t *testing.T) {
+			repo := MakeGitRepository(t)
+			before := ""
+			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
+			_, err := NewClient(database.NewMockDB()).Commits(ctx, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before}, checker)
+			if err == nil {
+				t.Error("expected error, got nil")
+			}
+			wantErrPrefix := `git command [git log --format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00 --after=` + after
+			wantErrSuffix := `--date-order] failed (output: ""): exit status 128`
+			errString := err.Error()
+			if !strings.HasPrefix(errString, wantErrPrefix) || !strings.HasSuffix(errString, wantErrSuffix) {
+				t.Errorf("expected prefix and suffix [%s] [%s], got full [%s]", wantErrPrefix, wantErrSuffix, errString)
+			}
+		})
 	}
 	runCommitsTests(nil)
 	checker := getTestSubRepoPermsChecker()
