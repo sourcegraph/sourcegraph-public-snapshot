@@ -63,7 +63,6 @@ type ForkInput struct {
 	HasIssues   *bool              `json:"has_issues,omitempty"`
 	HasWiki     *bool              `json:"has_wiki,omitempty"`
 	Project     *ForkInputProject  `json:"project,omitempty"`
-	FullName    *string            `json:"fullname,omitempty"`
 }
 
 // ForkRepository forks the given upstream repository.

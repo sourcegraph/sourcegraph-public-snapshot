@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -322,13 +321,6 @@ func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githu
 	if err != nil {
 		return nil, errors.New("parsing repo name")
 	}
-
-	fmt.Printf("owner: %v ", owner)
-	fmt.Printf("name: %v", name)
-	fmt.Printf("target meta: %v ", targetMeta)
-
-	//do i need something here like saying if repo exists change the name ?
-	// name = *namespace
 
 	fork, err := client.Fork(ctx, owner, name, namespace)
 
