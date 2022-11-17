@@ -978,6 +978,22 @@ Contains state for the periodic telemetry job that scrapes events if enabled.
 
 **bookmark_id**: Bookmarks the maximum most recent successful event_logs.id that was scraped
 
+# Table "public.security_event_logs_export_allowlist"
+ ```
+    Column   |  Type   | Collation | Nullable |                         Default                         
+ ------------+---------+-----------+----------+---------------------------------------------------------
+  id         | integer |           | not null | nextval('security_event_logs_export_allowlist_id_seq'::regclass)
+  event_name | text    |           | not null | 
+ Indexes:
+     "security_event_logs_export_allowlist_pkey" PRIMARY KEY, btree (id)
+     "security_event_logs_export_allowlist_event_name_idx" UNIQUE, btree (event_name)
+
+ ```
+
+ An allowlist of security events that are approved for export if the scraping job is enabled
+
+ **event_name**: Name of the security event that corresponds to security_event_logs.name
+
 # Table "public.executor_heartbeats"
 ```
       Column      |           Type           | Collation | Nullable |                     Default                     
