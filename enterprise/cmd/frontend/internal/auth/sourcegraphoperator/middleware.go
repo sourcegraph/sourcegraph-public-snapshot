@@ -134,6 +134,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 							SourcegraphOperator: true,
 						},
 					)
+					logger.Debug("hard deleting expired Sourcegraph Operator user account", log.Int32("userID", result.User.ID))
 					err = db.Users().HardDelete(ctx, result.User.ID)
 					if err != nil {
 						logger.Error("failed to proactively clean up the expire user account", log.Error(err))
