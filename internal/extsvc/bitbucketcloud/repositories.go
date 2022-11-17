@@ -63,6 +63,7 @@ type ForkInput struct {
 	HasIssues   *bool              `json:"has_issues,omitempty"`
 	HasWiki     *bool              `json:"has_wiki,omitempty"`
 	Project     *ForkInputProject  `json:"project,omitempty"`
+	FullName    *string            `json:"fullname,omitempty"`
 }
 
 // ForkRepository forks the given upstream repository.
@@ -72,7 +73,7 @@ func (c *client) ForkRepository(ctx context.Context, upstream *Repo, input ForkI
 		return nil, errors.Wrap(err, "marshalling request")
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/forks", upstream.FullName), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/forks", *input.FullName), bytes.NewBuffer(data))
 	if err != nil {
 		return nil, errors.Wrap(err, "creating request")
 	}

@@ -228,11 +228,14 @@ func (s BitbucketCloudSource) GetNamespaceFork(ctx context.Context, targetRepo *
 		return nil, errors.Wrap(err, "forking repository")
 	}
 
-	targetNamespace := targetMetaNamespace + "-" + targetMeta.Slug
+	targetRepoNamespace := targetMetaNamespace + "-" + targetMeta.Slug
+
+	targetFullName := string(bitbucketcloud.ForkInputWorkspace(namespace)) + "/" + targetRepoNamespace
 
 	fork, err := s.client.ForkRepository(ctx, targetMeta, bitbucketcloud.ForkInput{
-		Name:      &targetNamespace,
+		Name:      &targetRepoNamespace,
 		Workspace: bitbucketcloud.ForkInputWorkspace(namespace),
+		FullName:  &targetFullName,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "forking repository")
