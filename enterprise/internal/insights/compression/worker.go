@@ -209,7 +209,7 @@ const (
 func generateEmptyRepoErrorMessage(after time.Time, until *time.Time) string {
 	fullEmptyRepoErrMessage := emptyRepoErrMessagePrefix + " --after=" + after.Format(time.RFC3339)
 	if until != nil {
-		fullEmptyRepoErrMessage += " --before=" + until.Format(time.RFC3339Nano)
+		fullEmptyRepoErrMessage += " --before=" + until.Format(time.RFC3339)
 	}
 	return fullEmptyRepoErrMessage + emptyRepoErrMessageSuffix
 }
