@@ -28,7 +28,6 @@ import {
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
-import { OrderedConnectionOrderingOption } from '../components/FilteredConnection/OrderControl'
 import { PageTitle } from '../components/PageTitle'
 import {
     RepositoriesResult,
@@ -90,7 +89,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
 
 interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
-const ORDERING_OPTIONS: OrderedConnectionOrderingOption[] = [
+const FILTERS: FilteredConnectionFilter[] = [
     {
         id: 'order',
         label: 'Order',
@@ -134,9 +133,6 @@ const ORDERING_OPTIONS: OrderedConnectionOrderingOption[] = [
             },
         ],
     },
-]
-
-const FILTERS: FilteredConnectionFilter[] = [
     {
         id: 'status',
         label: 'Status',
@@ -337,7 +333,6 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                     queryConnection={queryRepositories}
                     nodeComponent={RepositoryNode}
                     inputClassName="flex-1"
-                    orderingOptions={ORDERING_OPTIONS}
                     filters={FILTERS}
                     history={history}
                     location={location}

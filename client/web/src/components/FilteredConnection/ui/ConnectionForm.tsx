@@ -7,7 +7,6 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useAutoFocus, Input } from '@sourcegraph/wildcard'
 
 import { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from '../FilterControl'
-import { OrderControl, OrderedConnectionOrderingOption, OrderedConnectionOrderValue } from '../OrderControl'
 
 import styles from './ConnectionForm.module.scss'
 
@@ -35,20 +34,6 @@ export interface ConnectionFormProps {
 
     /** Autofocuses the filter input field. */
     autoFocus?: boolean
-
-    /**
-     * Ordering options to display next to the order input field.
-     *
-     * Ordering options are mutually exclusive.
-     */
-    orderingOptions?: OrderedConnectionOrderingOption[]
-
-    onOrderingOptionSelect?: (
-        orderingOption: OrderedConnectionOrderingOption,
-        value: OrderedConnectionOrderValue
-    ) => void
-
-    orderValues?: Map<string, OrderedConnectionOrderValue>
 
     /**
      * Filters to display next to the filter input field.
@@ -82,9 +67,6 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
             inputValue,
             onInputChange,
             autoFocus,
-            orderingOptions,
-            onOrderingOptionSelect,
-            orderValues,
             filters,
             onFilterSelect,
             filterValues,
@@ -107,15 +89,6 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
                 className={classNames(styles.form, !compact && styles.noncompact, formClassName)}
                 onSubmit={handleSubmit}
             >
-                {orderingOptions && onOrderingOptionSelect && orderValues && (
-                    <OrderControl
-                        orderingOptions={orderingOptions}
-                        onValueSelect={onOrderingOptionSelect}
-                        values={orderValues}
-                    >
-                        {additionalFilterElement}
-                    </OrderControl>
-                )}
                 {filters && onFilterSelect && filterValues && (
                     <FilterControl filters={filters} onValueSelect={onFilterSelect} values={filterValues}>
                         {additionalFilterElement}

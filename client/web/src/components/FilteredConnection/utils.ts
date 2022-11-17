@@ -8,7 +8,6 @@ import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { Connection } from './ConnectionType'
 import { QUERY_KEY } from './constants'
 import type { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
-import { OrderedConnectionOrderingOption, OrderedConnectionOrderValue } from './OrderControl'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
 export const hasID = (value: unknown): value is { id: Scalars['ID'] } =>
@@ -19,30 +18,6 @@ export const hasDisplayName = (value: unknown): value is { displayName: Scalars[
     value !== null &&
     hasProperty('displayName')(value) &&
     typeof value.displayName === 'string'
-
-export const getOrderFromURL = (
-    searchParameters: URLSearchParams,
-    orderingOptions: OrderedConnectionOrderingOption[] | undefined
-): Map<string, OrderedConnectionOrderValue> => {
-    const values: Map<string, OrderedConnectionOrderValue> = new Map<string, OrderedConnectionOrderValue>()
-
-    if (orderingOptions === undefined || orderingOptions.length === 0) {
-        return values
-    }
-    for (const option of orderingOptions) {
-        const urlValue = searchParameters.get(option.id)
-        if (urlValue !== null) {
-            const value = option.values.find(value => value.value === urlValue)
-            if (value !== undefined) {
-                values.set(option.id, value)
-                continue
-            }
-        }
-        // couldn't find a value, add default
-        values.set(option.id, option.values[0])
-    }
-    return values
-}
 
 export const getFilterFromURL = (
     searchParameters: URLSearchParams,
@@ -95,9 +70,7 @@ export interface GetUrlQueryParameters {
         default: number
     }
     query?: string
-    orderValues?: Map<string, OrderedConnectionOrderValue>
     filterValues?: Map<string, FilteredConnectionFilterValue>
-    orderingOptions?: OrderedConnectionOrderingOption[]
     filters?: FilteredConnectionFilter[]
     visibleResultCount?: number
     search: Location['search']
@@ -109,10 +82,8 @@ export interface GetUrlQueryParameters {
 export const getUrlQuery = ({
     first,
     query,
-    orderValues,
     filterValues,
     visibleResultCount,
-    orderingOptions,
     filters,
     search,
 }: GetUrlQueryParameters): string => {
@@ -136,19 +107,6 @@ export const getUrlQuery = ({
                 searchParameters.set(filter.id, value.value)
             } else {
                 searchParameters.delete(filter.id)
-            }
-        }
-    }
-    if (orderValues && orderingOptions) {
-        for (const orderingOption of orderingOptions) {
-            const value = orderValues.get(orderingOption.id)
-            if (value === undefined) {
-                continue
-            }
-            if (value !== orderingOption.values[0]) {
-                searchParameters.set(orderingOption.id, value.value)
-            } else {
-                searchParameters.delete(orderingOption.id)
             }
         }
     }

@@ -25,10 +25,9 @@ import { ConnectionNodes, ConnectionNodesDisplayProps, ConnectionNodesState, Con
 import { Connection, ConnectionQueryArguments } from './ConnectionType'
 import { QUERY_KEY } from './constants'
 import { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
-import { OrderedConnectionOrderingOption, OrderedConnectionOrderValue } from './OrderControl'
 import { ConnectionContainer, ConnectionError, ConnectionForm, ConnectionLoading } from './ui'
 import type { ConnectionFormProps } from './ui/ConnectionForm'
-import { getFilterFromURL, getOrderFromURL, getUrlQuery, hasID, parseQueryInt } from './utils'
+import { getFilterFromURL, getUrlQuery, hasID, parseQueryInt } from './utils'
 
 /**
  * Fields that belong in FilteredConnectionProps and that don't depend on the type parameters. These are the fields
@@ -113,7 +112,6 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}, HP = {}>
 export interface FilteredConnectionQueryArguments extends ConnectionQueryArguments {}
 
 interface FilteredConnectionState<C extends Connection<N>, N> extends ConnectionNodesState {
-    activeOrderValues: Map<string, OrderedConnectionOrderValue>
     activeFilterValues: Map<string, FilteredConnectionFilterValue>
 
     /** The fetched connection data or an error (if an error occurred). */
@@ -153,7 +151,6 @@ export class FilteredConnection<
     }
 
     private queryInputChanges = new Subject<string>()
-    private activeOrderValuesChanges = new Subject<Map<string, OrderedConnectionOrderValue>>()
     private activeFilterValuesChanges = new Subject<Map<string, FilteredConnectionFilterValue>>()
     private showMoreClicks = new Subject<void>()
     private componentUpdates = new Subject<FilteredConnectionProps<C, N, NP, HP>>()
@@ -181,9 +178,6 @@ export class FilteredConnection<
         this.state = {
             loading: true,
             query: (!this.props.hideSearch && this.props.useURLQuery && searchParameters.get(QUERY_KEY)) || '',
-            activeOrderValues:
-                (this.props.useURLQuery && getOrderFromURL(searchParameters, this.props.orderingOptions)) ||
-                new Map<string, OrderedConnectionOrderValue>(),
             activeFilterValues:
                 (this.props.useURLQuery && getFilterFromURL(searchParameters, this.props.filters)) ||
                 new Map<string, FilteredConnectionFilterValue>(),
@@ -193,7 +187,6 @@ export class FilteredConnection<
     }
 
     public componentDidMount(): void {
-        const activeOrderValuesChanges = this.activeOrderValuesChanges.pipe(startWith(this.state.activeOrderValues))
         const activeFilterValuesChanges = this.activeFilterValuesChanges.pipe(startWith(this.state.activeFilterValues))
 
         const queryChanges = (this.props.querySubject
@@ -212,29 +205,6 @@ export class FilteredConnection<
          */
         const refreshRequests = new Subject<{ forceRefresh: boolean }>()
 
-        this.subscriptions.add(
-            activeOrderValuesChanges
-                .pipe(
-                    tap(values => {
-                        if (
-                            this.props.orderingOptions === undefined ||
-                            this.props.onOrderingOptionSelect === undefined
-                        ) {
-                            return
-                        }
-                        for (const orderingOption of this.props.orderingOptions) {
-                            if (this.props.onOrderingOptionSelect) {
-                                const value = values.get(orderingOption.id)
-                                if (value === undefined) {
-                                    continue
-                                }
-                                this.props.onOrderingOptionSelect(orderingOption, value)
-                            }
-                        }
-                    })
-                )
-                .subscribe()
-        )
         this.subscriptions.add(
             activeFilterValuesChanges
                 .pipe(
@@ -257,13 +227,6 @@ export class FilteredConnection<
         )
 
         this.subscriptions.add(
-            // Use this.activeOrderChanges not activeOrderChanges so that it doesn't trigger on the initial mount
-            // (it doesn't need to).
-            this.activeOrderValuesChanges.subscribe(values => {
-                this.setState({ activeOrderValues: new Map(values) })
-            })
-        )
-        this.subscriptions.add(
             // Use this.activeFilterChanges not activeFilterChanges so that it doesn't trigger on the initial mount
             // (it doesn't need to).
             this.activeFilterValuesChanges.subscribe(values => {
@@ -274,7 +237,6 @@ export class FilteredConnection<
         this.subscriptions.add(
             combineLatest([
                 queryChanges,
-                activeOrderValuesChanges,
                 activeFilterValuesChanges,
                 refreshRequests.pipe(
                     startWith<{ forceRefresh: boolean }>({ forceRefresh: false })
@@ -285,41 +247,36 @@ export class FilteredConnection<
                     scan<
                         [
                             string,
-                            Map<string, OrderedConnectionOrderValue> | undefined,
                             Map<string, FilteredConnectionFilterValue> | undefined,
                             { forceRefresh: boolean }
                         ],
                         {
                             query: string
-                            orderValues: Map<string, OrderedConnectionOrderValue> | undefined
                             filterValues: Map<string, FilteredConnectionFilterValue> | undefined
                             shouldRefresh: boolean
                             queryCount: number
                         }
                     >(
                         (
-                            { query, orderValues, filterValues, queryCount },
-                            [currentQuery, currentFilterValues, currentOrderValues, { forceRefresh }]
+                            { query, filterValues, queryCount },
+                            [currentQuery, currentFilterValues, { forceRefresh }]
                         ) => ({
                             query: currentQuery,
-                            orderValues: currentOrderValues,
                             filterValues: currentFilterValues,
                             shouldRefresh:
                                 forceRefresh ||
                                 query !== currentQuery ||
-                                orderValues !== currentOrderValues ||
                                 filterValues !== currentFilterValues,
                             queryCount: queryCount + 1,
                         }),
                         {
                             query: this.state.query,
-                            orderValues: this.state.activeOrderValues,
                             filterValues: this.state.activeFilterValues,
                             shouldRefresh: false,
                             queryCount: 0,
                         }
                     ),
-                    switchMap(({ query, orderValues, filterValues, shouldRefresh, queryCount }) => {
+                    switchMap(({ query, filterValues, shouldRefresh, queryCount }) => {
                         const result = this.props
                             .queryConnection({
                                 // If this is our first query and we were supplied a value for `visible`,
@@ -328,7 +285,7 @@ export class FilteredConnection<
                                 first: (queryCount === 1 && this.state.visible) || this.state.first,
                                 after: shouldRefresh ? undefined : this.state.after,
                                 query,
-                                ...(orderValues || filterValues ? this.buildArgs(orderValues, filterValues) : {}),
+                                ...(filterValues ? this.buildArgs(filterValues) : {}),
                             })
                             .pipe(
                                 catchError(error => [asError(error)]),
@@ -416,7 +373,7 @@ export class FilteredConnection<
                             this.props.onUpdate(
                                 connectionOrError,
                                 this.state.query,
-                                this.buildArgs(this.state.activeOrderValues, this.state.activeFilterValues)
+                                this.buildArgs(this.state.activeFilterValues)
                             )
                         }
                         this.setState({ connectionOrError, ...rest })
@@ -493,7 +450,6 @@ export class FilteredConnection<
                     distinctUntilChanged(),
                     map(searchParams => new URLSearchParams(searchParams)),
                     map((searchParams: URLSearchParams) => ({
-                        newOrderValues: getOrderFromURL(searchParams, this.props.orderingOptions),
                         newFilterValues: getFilterFromURL(searchParams, this.props.filters),
                     })),
                     // Map is compared by reference, so by default distinctUntilChanged
@@ -502,9 +458,8 @@ export class FilteredConnection<
                     distinctUntilChanged((prev, next) => isEqual(prev, next)),
                     skip(1)
                 )
-                .subscribe(({ newFilterValues, newOrderValues }) => {
+                .subscribe(({ newFilterValues }) => {
                     if (this.props.useURLQuery) {
-                        this.activeOrderValuesChanges.next(newOrderValues)
                         this.activeFilterValuesChanges.next(newFilterValues)
                     }
                 })
@@ -516,13 +471,11 @@ export class FilteredConnection<
     private urlQuery({
         first,
         query,
-        orderValues,
         filterValues,
         visibleResultCount,
     }: {
         first?: number
         query?: string
-        orderValues?: Map<string, OrderedConnectionOrderValue>
         filterValues?: Map<string, FilteredConnectionFilterValue>
         visibleResultCount?: number
     }): string {
@@ -531,9 +484,6 @@ export class FilteredConnection<
         }
         if (!query) {
             query = this.state.query
-        }
-        if (!orderValues) {
-            orderValues = this.state.activeOrderValues
         }
         if (!filterValues) {
             filterValues = this.state.activeFilterValues
@@ -546,11 +496,9 @@ export class FilteredConnection<
                 // Always set through `defaultProps`
                 default: this.props.defaultFirst!,
             },
-            orderValues,
             filterValues,
             visibleResultCount,
             search: this.props.location.search,
-            orderingOptions: this.props.orderingOptions,
             filters: this.props.filters,
         })
     }
@@ -580,7 +528,7 @@ export class FilteredConnection<
 
         return (
             <ConnectionContainer compact={this.props.compact} className={this.props.className}>
-                {(!this.props.hideSearch || this.props.orderingOptions || this.props.filters) && (
+                {(!this.props.hideSearch || this.props.filters) && (
                     <ConnectionForm
                         ref={this.setFilterRef}
                         hideSearch={this.props.hideSearch}
@@ -590,9 +538,6 @@ export class FilteredConnection<
                         inputValue={this.state.query}
                         onInputChange={this.onChange}
                         autoFocus={this.props.autoFocus}
-                        orderingOptions={this.props.orderingOptions}
-                        onOrderingOptionSelect={this.onDidSelectOrderValue}
-                        orderValues={this.state.activeOrderValues}
                         filters={this.props.filters}
                         onFilterSelect={this.onDidSelectFilterValue}
                         filterValues={this.state.activeFilterValues}
@@ -658,18 +603,6 @@ export class FilteredConnection<
         this.queryInputChanges.next(event.currentTarget.value)
     }
 
-    private onDidSelectOrderValue = (
-        orderingOption: OrderedConnectionOrderingOption,
-        value: OrderedConnectionOrderValue
-    ): void => {
-        if (this.props.orderingOptions === undefined) {
-            return
-        }
-        const values = new Map(this.state.activeOrderValues)
-        values.set(orderingOption.id, value)
-        this.activeOrderValuesChanges.next(values)
-    }
-
     private onDidSelectFilterValue = (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue): void => {
         if (this.props.filters === undefined) {
             return
@@ -684,27 +617,15 @@ export class FilteredConnection<
     }
 
     private buildArgs = (
-        orderValues?: Map<string, OrderedConnectionOrderValue>,
-        filterValues?: Map<string, FilteredConnectionFilterValue>
+        filterValues: Map<string, FilteredConnectionFilterValue>
     ): FilteredConnectionArgs => {
         let args: FilteredConnectionArgs = {}
-        if (orderValues) {
-            for (const key of orderValues.keys()) {
-                const value = orderValues.get(key)
-                if (value === undefined) {
-                    continue
-                }
-                args = { ...args, ...value.args }
+        for (const key of filterValues.keys()) {
+            const value = filterValues.get(key)
+            if (value === undefined) {
+                continue
             }
-        }
-        if (filterValues) {
-            for (const key of filterValues.keys()) {
-                const value = filterValues.get(key)
-                if (value === undefined) {
-                    continue
-                }
-                args = { ...args, ...value.args }
-            }
+            args = { ...args, ...value.args }
         }
         return args
     }
