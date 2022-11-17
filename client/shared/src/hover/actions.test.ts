@@ -77,7 +77,7 @@ beforeEach(() => {
     urlToFile = sinon.stub<Parameters<PlatformContext['urlToFile']>, string>().callsFake(toPrettyBlobURL)
 })
 
-const requestGraphQL: PlatformContext['requestGraphQL'] = <R>({ variables }: { variables: { [key: string]: any } }) =>
+const requestGraphQL: PlatformContext['requestGraphQL'] = (({ variables }: { variables: { [key: string]: any } }) =>
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     of({
         data: {
@@ -88,7 +88,7 @@ const requestGraphQL: PlatformContext['requestGraphQL'] = <R>({ variables }: { v
                 },
             },
         },
-    } as SuccessGraphQLResult<any>)
+    } as SuccessGraphQLResult<any>)) as PlatformContext['requestGraphQL']
 
 const scheduler = (): TestScheduler => new TestScheduler((actual, expected) => expect(actual).toStrictEqual(expected))
 

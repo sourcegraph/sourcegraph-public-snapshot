@@ -343,7 +343,7 @@ const shouldRenderOverlay = (state: InternalHoverifierState<{}, {}, {}>): boolea
  * @template D The type of the hover content data.
  * @template A The type of an action.
  */
-const internalToExternalState = <C extends object, D, A>(
+const internalToExternalState = <C extends object, D extends {}, A extends {}>(
     internalState: InternalHoverifierState<C, D, A>
 ): HoverState<C, D, A> => ({
     hoveredToken: internalState.hoveredToken,
@@ -414,7 +414,7 @@ export type ContextResolver<C extends object> = (hoveredToken: HoveredToken) => 
  * @template D The type of the hover content data.
  * @template A The type of an action.
  */
-export function createHoverifier<C extends object, D, A>({
+export function createHoverifier<C extends object, D extends {}, A extends {}>({
     pinOptions,
     hoverOverlayElements,
     hoverOverlayRerenders,

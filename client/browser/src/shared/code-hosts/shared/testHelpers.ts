@@ -89,7 +89,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
  */
 export const mockRequestGraphQL = (
     responseMap: GraphQLResponseMap = DEFAULT_GRAPHQL_RESPONSES
-): PlatformContext['requestGraphQL'] => <R, V = object>({
+): PlatformContext['requestGraphQL'] => <_, V>({
     request,
     variables,
     mightContainPrivateInfo,
@@ -103,5 +103,5 @@ export const mockRequestGraphQL = (
     if (!requestName || !responseMap[requestName]) {
         return throwError(new Error(`No mock for GraphQL request ${String(requestName)}`))
     }
-    return responseMap[requestName](variables, mightContainPrivateInfo)
+    return responseMap[requestName](variables as { [key: string]: any }, mightContainPrivateInfo)
 }
