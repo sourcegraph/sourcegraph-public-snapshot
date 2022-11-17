@@ -572,7 +572,7 @@ export function buildGetStartedURL(cloudSignup?: boolean, returnTo?: string): st
 
     const url = new URL(path)
 
-    if (returnTo !== undefined) {        
+    if (returnTo !== undefined) {
         url.searchParams.set('returnTo', returnTo)
     }
 
