@@ -46,6 +46,8 @@ var referenceUriFlag = cli.StringFlag{
 	Aliases:  []string{"u"},
 }
 
+var cvePattern = regexp.MustCompile(`<\w+>(CVE-\d+-\d+)<\/\w+>`)
+
 func cveCheck(cmd *cli.Context) error {
 	std.Out.WriteLine(output.Styledf(output.StylePending, "Checking release for approved CVEs..."))
 
@@ -62,14 +64,13 @@ func cveCheck(cmd *cli.Context) error {
 		return errors.Wrap(err, "unable to list artifacts by build number")
 	}
 
-	var hbBuf bytes.Buffer
-	err = downloadUrl(referenceUrl, &hbBuf)
+	var refBuf bytes.Buffer
+	err = downloadUrl(referenceUrl, &refBuf)
 	if err != nil {
-		return errors.Wrap(err, "unable to download reference uri")
+		return errors.Wrap(err, "unable to download reference url")
 	}
-	hbPage := hbBuf.String()
-	if len(hbPage) == 0 {
-		return errors.New("provided reference uri does not have any contents")
+	if refBuf.Len() == 0 {
+		return errors.New("provided reference url does not have any contents")
 	}
 
 	var foundCVE []string
@@ -78,11 +79,6 @@ func cveCheck(cmd *cli.Context) error {
 	for _, artifact := range artifacts {
 		name := *artifact.Filename
 		url := *artifact.DownloadURL
-
-		pattern, err := regexp.Compile(`<\w+>(CVE.*)<\/\w+>`)
-		if err != nil {
-			return errors.Wrap(err, "failed to build regexp pattern")
-		}
 
 		if strings.HasSuffix(*artifact.Filename, "security-report.html") {
 			std.Out.WriteLine(output.Styledf(output.StylePending, "Checking security report: %s %s", name, url))
@@ -93,16 +89,10 @@ func cveCheck(cmd *cli.Context) error {
 				return errors.Newf("failed to download security artifact %q at %s: %w", name, url, err)
 			}
 
-			matches := pattern.FindAllStringSubmatch(buf.String(), -1)
-			for _, match := range matches {
-				cve := strings.TrimSpace(match[1])
-				foundCVE = append(foundCVE, cve)
-				if !strings.Contains(hbPage, cve) {
-					unapprovedCVE = append(unapprovedCVE, cve)
-				}
-			}
+			foundCVE = append(foundCVE, extractCVEs(cvePattern, buf.String())...)
 		}
 	}
+	unapprovedCVE = findUnapprovedCVEs(foundCVE, refBuf.String())
 
 	std.Out.WriteLine(output.Styledf(output.StyleBold, "Found %d CVEs in the build", len(foundCVE)))
 	if verbose {
@@ -120,6 +110,26 @@ func cveCheck(cmd *cli.Context) error {
 	}
 
 	return nil
+}
+
+func findUnapprovedCVEs(all []string, referenceDocument string) []string {
+	var unapproved []string
+	for _, cve := range all {
+		if !strings.Contains(referenceDocument, cve) {
+			unapproved = append(unapproved, cve)
+		}
+	}
+	return unapproved
+}
+
+func extractCVEs(pattern *regexp.Regexp, document string) []string {
+	var found []string
+	matches := pattern.FindAllStringSubmatch(document, -1)
+	for _, match := range matches {
+		cve := strings.TrimSpace(match[1])
+		found = append(found, cve)
+	}
+	return found
 }
 
 func downloadUrl(uri string, w io.Writer) (err error) {
