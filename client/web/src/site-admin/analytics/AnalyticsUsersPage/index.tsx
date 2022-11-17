@@ -170,7 +170,7 @@ export const AnalyticsUsersPage: FC<RouteComponentProps> = () => {
                                     getDatumColor={() => 'var(--bar-color)'}
                                     getDatumFadeColor={() => 'var(--bar-fade-color)'}
                                     getDatumHoverValueLabel={datum =>
-                                        datum.value + (uniqueOrPercentage === 'unique' ? '' : '%')
+                                        `${datum.value}${uniqueOrPercentage !== 'unique' ? '%' : ''}`
                                     }
                                 />
                             )}
