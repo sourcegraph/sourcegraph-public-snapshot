@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"encoding/json"
 	"html"
 	"net/http"
 	"strings"
@@ -14,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 )
 
 // serveStreamBlame returns a HTTP handler that streams back the results of running
@@ -56,17 +55,12 @@ func serveStreamBlame(db database.DB, gitserverClient gitserver.Client) handlerF
 		}
 		requestedPath := mux.Vars(r)["Path"]
 
-		flusher, ok := w.(http.Flusher)
-		if !ok {
-			return errors.New("http flushing not supported")
+		streamWriter, err := streamhttp.NewWriter(w)
+		if err != nil {
+			// tr.SetError(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-
-		w.Header().Set("Content-Type", "text/event-stream")
-		w.Header().Set("Cache-Control", "no-cache")
-		w.Header().Set("Connection", "keep-alive")
-		w.Header().Set("Transfer-Encoding", "chunked")
-
-		w.Header().Set("X-Accel-Buffering", "no")
 
 		if strings.HasPrefix(requestedPath, "/") {
 			requestedPath = strings.TrimLeft(requestedPath, "/")
@@ -86,17 +80,12 @@ func serveStreamBlame(db database.DB, gitserverClient gitserver.Client) handlerF
 				return err
 			}
 			if done {
+				streamWriter.Event("done", map[string]any{})
 				return nil
 			}
-			encoded, err := json.Marshal(hunk)
-			if err != nil {
+			if err := streamWriter.Event("hunk", hunk); err != nil {
 				return err
 			}
-			encoded = append(encoded, []byte("\n")...)
-			if _, err = w.Write(encoded); err != nil {
-				return err
-			}
-			flusher.Flush()
 		}
 	}
 }
