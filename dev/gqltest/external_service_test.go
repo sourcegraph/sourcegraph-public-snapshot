@@ -188,7 +188,8 @@ func TestExternalService_Perforce(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			repoName := "perforce/" + tc.depot
 			checkPerforceEnvironment(t)
-			createPerforceExternalService(t, tc.depot, tc.useFusion)
+			cleanup := createPerforceExternalService(t, tc.depot, tc.useFusion)
+			t.Cleanup(cleanup)
 
 			err := client.WaitForReposToBeCloned(repoName)
 			if err != nil {
@@ -212,8 +213,9 @@ func checkPerforceEnvironment(t *testing.T) {
 }
 
 // createPerforceExternalService creates an Perforce external service that
-// includes the supplied depot.
-func createPerforceExternalService(t *testing.T, depot string, useP4Fusion bool) {
+// includes the supplied depot. It returns a function to cleanup after the test
+// which will delete the depot from disk and remove the external service.
+func createPerforceExternalService(t *testing.T, depot string, useP4Fusion bool) func() {
 	t.Helper()
 
 	type Authorization = struct {
@@ -257,7 +259,16 @@ func createPerforceExternalService(t *testing.T, depot string, useP4Fusion bool)
 	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
 		t.Fatal(err)
 	}
-	removeExternalServiceAfterTest(t, esID)
+
+	return func() {
+		if err := client.DeleteRepoFromDiskByName("perforce/" + depot); err != nil {
+			t.Fatalf("removing depot from disk: %v", err)
+		}
+
+		if err := client.DeleteExternalService(esID, false); err != nil {
+			t.Fatalf("removing external service: %v", err)
+		}
+	}
 }
 
 func TestExternalService_AsyncDeletion(t *testing.T) {
