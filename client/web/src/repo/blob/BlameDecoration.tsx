@@ -108,9 +108,10 @@ export const BlameDecoration: React.FunctionComponent<{
     line: number // 1-based line number
     blameHunk?: BlameHunk
     history: History
+    shouldRenderEmptyDecoration?: boolean
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
-}> = ({ line, blameHunk, history, onSelect, onDeselect }) => {
+}> = ({ line, blameHunk, history, shouldRenderEmptyDecoration, onSelect, onDeselect }) => {
     const id = line?.toString() || ''
     const onOpen = useCallback(() => {
         onSelect?.(line)
@@ -133,7 +134,7 @@ export const BlameDecoration: React.FunctionComponent<{
     const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(history), [history])
 
     if (!blameHunk) {
-        return <span className={classNames(styles.popoverTrigger, 'px-2')} />
+        return shouldRenderEmptyDecoration ? <span className={classNames(styles.popoverTrigger, 'px-2')} /> : null
     }
 
     return (

@@ -71,6 +71,7 @@ class DecorationWidget extends WidgetType {
                     line={this.hunk?.startLine ?? 0}
                     blameHunk={this.hunk}
                     history={this.state.history}
+                    shouldRenderEmptyDecoration={true}
                     onSelect={this.selectRow}
                     onDeselect={this.deselectRow}
                 />
