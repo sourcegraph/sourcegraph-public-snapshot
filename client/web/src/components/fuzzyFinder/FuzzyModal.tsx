@@ -406,7 +406,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                         ))}
                     </TabPanels>
                 ) : (
-                    <div className={styles.results}>{queryResult.jsxElement}</div>
+                    <div className={classNames(styles.results, 'overflow-auto')}>{queryResult.jsxElement}</div>
                 )}
                 <div className={styles.divider} />
                 <div className={styles.footer}>
