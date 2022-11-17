@@ -53,11 +53,11 @@ input.btn {
         cursor: not-allowed;
 
         :global(.theme-light) & {
-            filter: brightness(0.9)
+            filter: brightness(0.9);
         }
 
         :global(.theme-dark) & {
-            filter: brightness(0.5)
+            filter: brightness(0.5);
         }
     }
 }
