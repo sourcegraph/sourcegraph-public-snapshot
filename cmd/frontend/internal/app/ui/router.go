@@ -54,7 +54,6 @@ const (
 	routeTree                    = "tree"
 	routeBlob                    = "blob"
 	routeRaw                     = "raw"
-	routeStreamBlame             = "stream-blame"
 	routeOrganizations           = "org"
 	routeSettings                = "settings"
 	routeSiteAdmin               = "site-admin"
@@ -198,8 +197,6 @@ func newRouter() *mux.Router {
 
 	// raw
 	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw)
-	// TODO: Probably the wrong path
-	repoRev.Path("/stream-blame{Path:.*}").Methods("GET", "HEAD").Name(routeStreamBlame)
 
 	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repo.PathPrefix("/settings").Methods("GET").Name(routeRepoSettings)
@@ -368,8 +365,6 @@ func initRouter(db database.DB, router *mux.Router) {
 
 	// raw
 	router.Get(routeRaw).Handler(handler(db, serveRaw(db, gitserver.NewClient(db))))
-
-	router.Get(routeStreamBlame).Handler(handler(db, serveStreamBlame(db, gitserver.NewClient(db))))
 
 	// All other routes that are not found.
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

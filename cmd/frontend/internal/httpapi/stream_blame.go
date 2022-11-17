@@ -1,14 +1,14 @@
-package ui
+package httpapi
 
 import (
 	"html"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -22,37 +22,20 @@ import (
 // before that.
 //
 //	http://localhost:3080/github.com/gorilla/mux/-/stream-blame/mux.go
-func serveStreamBlame(db database.DB, gitserverClient gitserver.Client) handlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) (err error) {
+func serveStreamBlame(logger log.Logger, db database.DB, gitserverClient gitserver.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		flags := featureflag.FromContext(r.Context())
 		if !flags.GetBoolOr("enable-streaming-git-blame", false) {
 			w.WriteHeader(404)
 			return
 		}
 
-		var common *Common
-		for {
-			// newCommon provides various repository handling features that we want, so
-			// we use it but discard the resulting structure. It provides:
-			//
-			// - Repo redirection
-			// - Gitserver content updating
-			// - Consistent error handling (permissions, revision not found, repo not found, etc).
-			//
-			common, err = newCommon(w, r, db, globals.Branding().BrandName, noIndex, serveError)
-			if err != nil {
-				return err
-			}
-			if common == nil {
-				return nil // request was handled
-			}
-			if common.Repo == nil {
-				// Repository is cloning.
-				time.Sleep(5 * time.Second)
-				continue
-			}
-			break
+		if _, ok := mux.Vars(r)["Repo"]; !ok {
+			w.WriteHeader(http.StatusBadRequest)
 		}
+
+		repo, commitID, err := handlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vars(r))
+
 		requestedPath := mux.Vars(r)["Path"]
 
 		streamWriter, err := streamhttp.NewWriter(w)
@@ -66,25 +49,27 @@ func serveStreamBlame(db database.DB, gitserverClient gitserver.Client) handlerF
 			requestedPath = strings.TrimLeft(requestedPath, "/")
 		}
 
-		hunkReader, err := gitserverClient.StreamBlameFile(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, requestedPath, &gitserver.BlameOptions{
-			NewestCommit: common.CommitID,
+		hunkReader, err := gitserverClient.StreamBlameFile(r.Context(), authz.DefaultSubRepoPermsChecker, repo.Name, requestedPath, &gitserver.BlameOptions{
+			NewestCommit: commitID,
 		})
 		if err != nil {
-			return err
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 
 		for {
 			hunk, done, err := hunkReader.Read()
 			if err != nil {
 				http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
-				return err
+				return
 			}
 			if done {
 				streamWriter.Event("done", map[string]any{})
-				return nil
+				return
 			}
 			if err := streamWriter.Event("hunk", hunk); err != nil {
-				return err
+				http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
+				return
 			}
 		}
 	}

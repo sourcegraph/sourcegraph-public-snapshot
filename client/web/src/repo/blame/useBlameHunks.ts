@@ -107,12 +107,13 @@ const fetchBlameViaStreaming = memoizeObservable(
         const hunks = new BehaviorSubject<Omit<BlameHunk, 'displayInfo'>[] | undefined>(undefined)
         let assembledHunks: Omit<BlameHunk, 'displayInfo'>[] = []
         let didEarlyFlush = false
-        const repoAndRevisionPath = `/${repoName}${revision ? `@${revision}` : ''}`
+        const repoAndRevisionPath = `/.api/blame/${repoName}${revision ? `@${revision}` : ''}`
 
-        fetchEventSource(`${repoAndRevisionPath}/-/stream-blame/${filePath}`, {
+        fetchEventSource(`${repoAndRevisionPath}/stream/${filePath}`, {
           method: 'GET',
           headers: {
             'X-Requested-With': 'Sourcegraph',
+            'X-Sourcegraph-Should-Trace': 1,
           },
           onmessage(event) {
             if (event.event === 'hunk') {
