@@ -656,7 +656,6 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		return nil
 	}
 
-	e.logger.Warn("fooo")
 	authProviders := conf.Get().AuthProviders
 	for _, s := range svcs {
 		rawConfig, err := s.Config.Decrypt(ctx)
@@ -691,7 +690,6 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			return err
 		}
 	}
-	e.logger.Warn("bar")
 
 	tx, err := e.transact(ctx)
 	if err != nil {
@@ -704,7 +702,6 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	var deleted []int64
 	for _, es := range svcs {
 		if es.ID != 0 && es.IsDeleted() {
-			e.logger.Warn("lol it's deleted")
 			deleted = append(deleted, es.ID)
 		}
 	}
@@ -724,7 +721,6 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		}
 	}
 
-	e.logger.Warn("starting the upsert")
 	q, err := tx.upsertExternalServicesQuery(ctx, svcs)
 	if err != nil {
 		return err
@@ -736,7 +732,6 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	e.logger.Warn("ending the upsert")
 	i := 0
 	for rows.Next() {
 		var encryptedConfig, keyID string
@@ -1020,11 +1015,6 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	err = e.CancelSyncJobByExternalServiceID(ctx, id)
 	if err != nil {
 		return err
-	}
-
-	for i := 0; i < 100; i++ {
-		e.logger.Warn("sleeping while deleting lol", log.Int("i", i))
-		time.Sleep(1 * time.Second)
 	}
 
 	// Wait until all the sync jobs we just canceled are done executing to
@@ -1368,7 +1358,6 @@ WHERE
 }
 
 func (e *externalServiceStore) CheckRunningSyncJobs(ctx context.Context, id int64) (bool, error) {
-	// TODO: use a query builder
 	q := sqlf.Sprintf(`
 SELECT 1
 FROM external_service_sync_jobs
