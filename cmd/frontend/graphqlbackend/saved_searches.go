@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -133,9 +134,8 @@ func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResol
 func (r *schemaResolver) SavedSearchesByNamespace(ctx context.Context, args *struct {
 	NamespaceType string
 	NamespaceId   graphql.ID
-
-	*ConnectionNodesArgs
-}) (*savedSearchesConnectionResolver, error) {
+	graphqlutil.ConnectionResolverArgs
+}) (*graphqlutil.ConnectionResolver[savedSearchResolver], error) {
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
 		return nil, errors.New("user is not authenticated")
@@ -180,59 +180,31 @@ func (r *schemaResolver) SavedSearchesByNamespace(ctx context.Context, args *str
 		return nil, errors.New(`wrong namespaceType provided. Only "Org" and "User" allowed.`)
 	}
 
-	return &savedSearchesConnectionResolver{
-		r.db,
-		userID,
-		orgID,
-		&ConnectionNodesArgs{
-			args.First,
-			args.Last,
-			args.After,
-			args.Before,
-		},
-	}, nil
-}
+	connectionStore := &savedSearchesConnectionStore{ctx, r.db, userID, orgID}
 
-type savedSearchesConnectionResolver struct {
-	db             database.DB
-	userID         *int32
-	orgID          *int32
-	connectionArgs *ConnectionNodesArgs
-}
-
-func (s *savedSearchesConnectionResolver) TotalCount(ctx context.Context) (float64, error) {
-	totalCount, err := s.db.SavedSearches().CountSavedSearchesByOrgOrUser(ctx, s.userID, s.orgID)
-	if err != nil {
-		return 0, err
+	connectionArgs := &graphqlutil.ConnectionResolverArgs{
+		First:  args.First,
+		Last:   args.Last,
+		After:  args.After,
+		Before: args.Before,
 	}
 
-	return totalCount, nil
+	return graphqlutil.NewConnectionResolver[savedSearchResolver](connectionStore, connectionArgs), nil
 }
 
-/*
-	hasNextPage
-
-
-
-	hasPrevPage
-*/
-
-type ConnectionNodesArgs struct {
-	First  *int32
-	Last   *int32
-	After  *string
-	Before *string
+type savedSearchesConnectionStore struct {
+	ctx    context.Context
+	db     database.DB
+	userID *int32
+	orgID  *int32
 }
 
-func (a *ConnectionNodesArgs) toPaginationArgs() *database.PaginationArgs {
-	if a == nil {
-		return nil
-	}
-	return &database.PaginationArgs{a.First, a.Last, a.After, a.Before}
+func (s *savedSearchesConnectionStore) ComputeTotal() (*int32, error) {
+	return s.db.SavedSearches().CountSavedSearchesByOrgOrUser(s.ctx, s.userID, s.orgID)
 }
 
-func (s *savedSearchesConnectionResolver) Nodes(ctx context.Context) ([]*savedSearchResolver, error) {
-	allSavedSearches, err := s.db.SavedSearches().ListSavedSearchesByOrgOrUser(ctx, s.userID, s.orgID, s.connectionArgs.toPaginationArgs())
+func (s *savedSearchesConnectionStore) ComputeNodes(args *database.PaginationArgs) ([]*savedSearchResolver, error) {
+	allSavedSearches, err := s.db.SavedSearches().ListSavedSearchesByOrgOrUser(s.ctx, s.userID, s.orgID, args)
 	if err != nil {
 		return nil, err
 	}
@@ -243,34 +215,6 @@ func (s *savedSearchesConnectionResolver) Nodes(ctx context.Context) ([]*savedSe
 	}
 
 	return savedSearches, nil
-}
-
-type NewPageInfo struct {
-	connectionArgs *ConnectionNodesArgs
-}
-
-func (p *NewPageInfo) HasNextPage() bool {
-	return false
-}
-
-func (p *NewPageInfo) HasPreviousPage() bool {
-	return false
-}
-
-func (p *NewPageInfo) EndCursor() *string {
-	cursor := ""
-
-	return &cursor
-}
-
-func (p *NewPageInfo) StartCursor() *string {
-	cursor := ""
-
-	return &cursor
-}
-
-func (s *savedSearchesConnectionResolver) PageInfo(ctx context.Context) (*NewPageInfo, error) {
-	return nil, nil
 }
 
 func (r *schemaResolver) SendSavedSearchTestNotification(ctx context.Context, args *struct {

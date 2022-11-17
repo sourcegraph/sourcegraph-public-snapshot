@@ -23,7 +23,7 @@ type SavedSearchStore interface {
 	ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error)
 	ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error)
 	ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *PaginationArgs) ([]*types.SavedSearch, error)
-	CountSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (float64, error)
+	CountSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (*int32, error)
 	Transact(context.Context) (SavedSearchStore, error)
 	Update(context.Context, *types.SavedSearch) (*types.SavedSearch, error)
 	With(basestore.ShareableStore) SavedSearchStore
@@ -253,18 +253,17 @@ func (s *savedSearchStore) ListSavedSearchesByOrgOrUser(ctx context.Context, use
 	conds := sqlf.Sprintf("WHERE user_id=%v OR org_id=%v", userID, orgID)
 
 	if paginationArgs != nil {
-		where, order, err := paginationArgs.SQL()
+		queryArgs, err := paginationArgs.SQL()
 		if err != nil {
 			return nil, errors.Wrap(err, "PaginationArgsContext")
 		}
 
-		if where != nil {
-			conds = sqlf.Sprintf(`%v AND (%v)`, conds, where)
+		if queryArgs.Where != nil {
+			conds = sqlf.Sprintf(`%v AND %v`, conds, queryArgs.Where)
 		}
 
-		if order != nil {
-			conds = sqlf.Sprintf(`%v ORDER BY %v`, conds, order)
-		}
+		conds = queryArgs.AppendOrder(conds)
+		conds = queryArgs.AppendLimit(conds)
 	}
 
 	query := sqlf.Sprintf(`SELECT
@@ -300,14 +299,14 @@ func (s *savedSearchStore) ListSavedSearchesByOrgOrUser(ctx context.Context, use
 // user is an admin. It is the callers responsibility to ensure only admins or
 // members of the specified organization can access the returned saved
 // searches.
-func (s *savedSearchStore) CountSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (float64, error) {
+func (s *savedSearchStore) CountSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (*int32, error) {
 	conds := sqlf.Sprintf("WHERE user_id=%v OR org_id=%v", userID, orgID)
 	query := sqlf.Sprintf(`SELECT COUNT(*) FROM saved_searches %v`, conds)
 
-	var count float64
+	var count *int32
 	err := s.Handle().QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "QueryContext")
+		return nil, errors.Wrap(err, "QueryContext")
 	}
 
 	return count, nil

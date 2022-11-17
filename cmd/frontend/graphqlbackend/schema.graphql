@@ -2499,7 +2499,7 @@ type Connection {
     """
     Total count of saved searches for the user under the organisation.
     """
-    totalCount: Float!
+    totalCount: Int!
     """
     Paginated list of saved searches for the current user and the provided organisation.
     """

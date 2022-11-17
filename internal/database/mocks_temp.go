@@ -34482,7 +34482,7 @@ type MockSavedSearchStore struct {
 func NewMockSavedSearchStore() *MockSavedSearchStore {
 	return &MockSavedSearchStore{
 		CountSavedSearchesByOrgOrUserFunc: &SavedSearchStoreCountSavedSearchesByOrgOrUserFunc{
-			defaultHook: func(context.Context, *int32, *int32) (r0 float64, r1 error) {
+			defaultHook: func(context.Context, *int32, *int32) (r0 *int32, r1 error) {
 				return
 			},
 		},
@@ -34554,7 +34554,7 @@ func NewMockSavedSearchStore() *MockSavedSearchStore {
 func NewStrictMockSavedSearchStore() *MockSavedSearchStore {
 	return &MockSavedSearchStore{
 		CountSavedSearchesByOrgOrUserFunc: &SavedSearchStoreCountSavedSearchesByOrgOrUserFunc{
-			defaultHook: func(context.Context, *int32, *int32) (float64, error) {
+			defaultHook: func(context.Context, *int32, *int32) (*int32, error) {
 				panic("unexpected invocation of MockSavedSearchStore.CountSavedSearchesByOrgOrUser")
 			},
 		},
@@ -34672,15 +34672,15 @@ func NewMockSavedSearchStoreFrom(i SavedSearchStore) *MockSavedSearchStore {
 // when the CountSavedSearchesByOrgOrUser method of the parent
 // MockSavedSearchStore instance is invoked.
 type SavedSearchStoreCountSavedSearchesByOrgOrUserFunc struct {
-	defaultHook func(context.Context, *int32, *int32) (float64, error)
-	hooks       []func(context.Context, *int32, *int32) (float64, error)
+	defaultHook func(context.Context, *int32, *int32) (*int32, error)
+	hooks       []func(context.Context, *int32, *int32) (*int32, error)
 	history     []SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall
 	mutex       sync.Mutex
 }
 
 // CountSavedSearchesByOrgOrUser delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockSavedSearchStore) CountSavedSearchesByOrgOrUser(v0 context.Context, v1 *int32, v2 *int32) (float64, error) {
+func (m *MockSavedSearchStore) CountSavedSearchesByOrgOrUser(v0 context.Context, v1 *int32, v2 *int32) (*int32, error) {
 	r0, r1 := m.CountSavedSearchesByOrgOrUserFunc.nextHook()(v0, v1, v2)
 	m.CountSavedSearchesByOrgOrUserFunc.appendCall(SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -34689,7 +34689,7 @@ func (m *MockSavedSearchStore) CountSavedSearchesByOrgOrUser(v0 context.Context,
 // SetDefaultHook sets function that is called when the
 // CountSavedSearchesByOrgOrUser method of the parent MockSavedSearchStore
 // instance is invoked and the hook queue is empty.
-func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) SetDefaultHook(hook func(context.Context, *int32, *int32) (float64, error)) {
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) SetDefaultHook(hook func(context.Context, *int32, *int32) (*int32, error)) {
 	f.defaultHook = hook
 }
 
@@ -34698,7 +34698,7 @@ func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) SetDefaultHook(hook 
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) PushHook(hook func(context.Context, *int32, *int32) (float64, error)) {
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) PushHook(hook func(context.Context, *int32, *int32) (*int32, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -34706,20 +34706,20 @@ func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) PushHook(hook func(c
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) SetDefaultReturn(r0 float64, r1 error) {
-	f.SetDefaultHook(func(context.Context, *int32, *int32) (float64, error) {
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) SetDefaultReturn(r0 *int32, r1 error) {
+	f.SetDefaultHook(func(context.Context, *int32, *int32) (*int32, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) PushReturn(r0 float64, r1 error) {
-	f.PushHook(func(context.Context, *int32, *int32) (float64, error) {
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) PushReturn(r0 *int32, r1 error) {
+	f.PushHook(func(context.Context, *int32, *int32) (*int32, error) {
 		return r0, r1
 	})
 }
 
-func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) nextHook() func(context.Context, *int32, *int32) (float64, error) {
+func (f *SavedSearchStoreCountSavedSearchesByOrgOrUserFunc) nextHook() func(context.Context, *int32, *int32) (*int32, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -34765,7 +34765,7 @@ type SavedSearchStoreCountSavedSearchesByOrgOrUserFuncCall struct {
 	Arg2 *int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 float64
+	Result0 *int32
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
