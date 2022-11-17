@@ -104,7 +104,6 @@ func cveCheck(cmd *cli.Context) error {
 		}
 	}
 
-	// verbose := verboseFlag.Get(cmd)
 	std.Out.WriteLine(output.Styledf(output.StyleBold, "Found %d CVEs in the build", len(foundCVE)))
 	if verbose {
 		for _, s := range foundCVE {
