@@ -1,11 +1,13 @@
 import { Extension, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { Remote } from 'comlink'
 import { History } from 'history'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { concatMap, debounceTime, map } from 'rxjs/operators'
 import { DeepNonNullable } from 'utility-types'
 
 import { logger, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 import { toPrettyBlobURL, UIRange } from '@sourcegraph/shared/src/util/url'
 
@@ -171,16 +173,15 @@ function tokenLinksToRangeSet(view: EditorView, links: TokenLink[]): DecorationS
     const builder = new RangeSetBuilder<Decoration>()
 
     try {
-        for (const { range, url } of links) {
+        for (const { range } of links) {
             const from = view.state.doc.line(range.start.line + 1).from + range.start.character
             const to = view.state.doc.line(range.end.line + 1).from + range.end.character
             const decoration = Decoration.mark({
                 attributes: {
                     class: 'sourcegraph-token-link',
-                    href: url,
                     'data-token-link': '',
                 },
-                tagName: 'a',
+                tagName: 'span',
             })
             builder.add(from, to, decoration)
         }
@@ -239,6 +240,7 @@ const tokenLinks = StateField.define<TokenLink[]>({
 })
 
 interface TokensAsLinksConfiguration {
+    codeintel?: Remote<FlatExtensionHostAPI>
     history: History
     blobInfo: BlobInfo
     preloadGoToDefinition: boolean
@@ -265,7 +267,7 @@ const INTERACTIVE_OCCURRENCE_KINDS = new Set([
     SyntaxKind.IdentifierAttribute,
 ])
 
-const isInteractiveOccurrence = (occurence: Occurrence): boolean => {
+export const isInteractiveOccurrence = (occurence: Occurrence): boolean => {
     if (!occurence.kind) {
         return false
     }
@@ -273,16 +275,15 @@ const isInteractiveOccurrence = (occurence: Occurrence): boolean => {
     return INTERACTIVE_OCCURRENCE_KINDS.has(occurence.kind)
 }
 
-export const tokensAsLinks = ({ history, blobInfo, preloadGoToDefinition }: TokensAsLinksConfiguration): Extension => {
-    /**
-     * Prefer precise code intelligence ranges, fall back to making certain Occurences interactive.
-     */
-    const ranges =
-        blobInfo.stencil && blobInfo.stencil.length > 0
-            ? blobInfo.stencil.map(range => range)
-            : Occurrence.fromInfo(blobInfo)
-                  .filter(isInteractiveOccurrence)
-                  .map(({ range }) => range)
+export const tokensAsLinks = ({
+    codeintel,
+    history,
+    blobInfo,
+    preloadGoToDefinition,
+}: TokensAsLinksConfiguration): Extension => {
+    const ranges = Occurrence.fromInfo(blobInfo)
+        .filter(isInteractiveOccurrence)
+        .map(({ range }) => range)
 
     const referencesLinks =
         ranges.map(range => ({

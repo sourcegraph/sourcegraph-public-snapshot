@@ -64,7 +64,7 @@ import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
-import { fetchBlob, fetchStencil } from './backend'
+import { fetchBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
@@ -286,24 +286,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                 ),
             [repoName, revision, filePath, enableCodeMirror, mode]
         )
-    )
-
-    /**
-     * Fetches stencil ranges for the current document.
-     * Used to provide keyboard navigation within the blob view.
-     */
-    const stencil = useObservable(
-        useMemo(() => {
-            if (!enableTokenKeyboardNavigation) {
-                return of(undefined)
-            }
-
-            return fetchStencil({
-                repoName,
-                revision,
-                filePath,
-            })
-        }, [enableTokenKeyboardNavigation, filePath, repoName, revision])
     )
 
     const blobInfoOrError = enableLazyBlobSyntaxHighlighting
@@ -549,7 +531,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     <BlobComponent
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}
-                        blobInfo={{ ...blobInfoOrError, commitID, stencil }}
+                        blobInfo={{ ...blobInfoOrError, commitID }}
                         wrapCode={wrapCode}
                         platformContext={props.platformContext}
                         extensionsController={props.extensionsController}

@@ -18,6 +18,11 @@ export interface JsonOccurrence {
 
 export class Position implements sourcegraph.Position {
     constructor(public readonly line: number, public readonly character: number) {}
+
+    public asOneBased(): Position {
+        return new Position(this.line + 1, this.character + 1)
+    }
+
     public static fromPosition(position: sourcegraph.Position): Position {
         return new Position(position.line, position.character)
     }
@@ -44,10 +49,20 @@ export class Position implements sourcegraph.Position {
         return this.character - other.character
     }
 }
+
 export class Range {
     constructor(public readonly start: Position, public readonly end: Position) {}
     public static fromNumbers(startLine: number, startCharacter: number, endLine: number, endCharacter: number): Range {
         return new Range(new Position(startLine, startCharacter), new Position(endLine, endCharacter))
+    }
+    public static fromRange(range: sourcegraph.Range): Range {
+        return new Range(Position.fromPosition(range.start), Position.fromPosition(range.end))
+    }
+    public characterDistance(position: sourcegraph.Position): number {
+        return Math.min(
+            Math.abs(position.character - this.start.character),
+            Math.abs(position.character - this.end.character)
+        )
     }
     public contains(position: sourcegraph.Position): boolean {
         return this.start.isSmallerOrEqual(position) && this.end.isGreater(position)
@@ -66,6 +81,9 @@ export class Range {
     }
     public isSingleLine(): boolean {
         return this.start.line === this.end.line
+    }
+    public asOneBased(): Range {
+        return new Range(this.start.asOneBased(), this.end.asOneBased())
     }
     public compare(other: Range): number {
         const byStart = this.start.compare(other.start)

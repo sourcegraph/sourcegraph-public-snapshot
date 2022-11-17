@@ -316,6 +316,13 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                             `#fuzzy-modal-result-${focusIndex} .${linkStyle}`
                         )
                         fileAnchor?.click()
+                        requestAnimationFrame(() => {
+                            const editor = document.querySelector<HTMLElement>('.cm-content')
+                            console.log({ editor })
+                            if (editor) {
+                                editor.focus()
+                            }
+                        })
                     }
                     break
                 default:

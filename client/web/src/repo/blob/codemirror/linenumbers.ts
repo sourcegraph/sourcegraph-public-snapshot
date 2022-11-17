@@ -390,7 +390,7 @@ function normalizeLineRange(range: SelectedLineRange): SelectedLineRange {
  * of *rendered* lines, not just *visible* lines (some lines are rendered
  * outside of the editor viewport).
  */
-function shouldScrollIntoView(view: EditorView, range: SelectedLineRange): boolean {
+export function shouldScrollIntoView(view: EditorView, range: SelectedLineRange): boolean {
     if (!range || !isValidLineRange(range, view.state.doc)) {
         return false
     }
