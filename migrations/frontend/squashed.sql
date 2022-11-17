@@ -2915,6 +2915,44 @@ COMMENT ON COLUMN security_event_logs.argument IS 'An arbitrary JSON blob contai
 
 COMMENT ON COLUMN security_event_logs.version IS 'The version of Sourcegraph which generated the event.';
 
+CREATE TABLE security_event_logs_export_allowlist (
+    id integer NOT NULL,
+    event_name text NOT NULL
+);
+
+COMMENT ON TABLE security_event_logs_export_allowlist IS 'An allowlist of security events that are approved for export if the scraping job is enabled';
+
+COMMENT ON COLUMN security_event_logs_export_allowlist.event_name IS 'Name of the security event that corresponds to security_event_logs.name';
+
+CREATE SEQUENCE security_event_logs_export_allowlist_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE security_event_logs_export_allowlist_id_seq OWNED BY security_event_logs_export_allowlist.id;
+
+CREATE TABLE security_event_logs_scrape_state (
+    id integer NOT NULL,
+    bookmark_id integer NOT NULL
+);
+
+COMMENT ON TABLE security_event_logs_scrape_state IS 'Contains state for the periodic telemetry job that scrapes security events if enabled.';
+
+COMMENT ON COLUMN security_event_logs_scrape_state.bookmark_id IS 'Bookmarks the maximum most recent successful security_event_logs.id that was scraped';
+
+CREATE SEQUENCE security_event_logs_scrape_state_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE security_event_logs_scrape_state_id_seq OWNED BY security_event_logs_scrape_state.id;
+
 CREATE SEQUENCE security_event_logs_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -3297,6 +3335,10 @@ ALTER TABLE ONLY search_contexts ALTER COLUMN id SET DEFAULT nextval('search_con
 
 ALTER TABLE ONLY security_event_logs ALTER COLUMN id SET DEFAULT nextval('security_event_logs_id_seq'::regclass);
 
+ALTER TABLE ONLY security_event_logs_export_allowlist ALTER COLUMN id SET DEFAULT nextval('security_event_logs_export_allowlist_id_seq'::regclass);
+
+ALTER TABLE ONLY security_event_logs_scrape_state ALTER COLUMN id SET DEFAULT nextval('security_event_logs_scrape_state_id_seq'::regclass);
+
 ALTER TABLE ONLY settings ALTER COLUMN id SET DEFAULT nextval('settings_id_seq'::regclass);
 
 ALTER TABLE ONLY survey_responses ALTER COLUMN id SET DEFAULT nextval('survey_responses_id_seq'::regclass);
@@ -3591,6 +3633,9 @@ ALTER TABLE ONLY search_contexts
 
 ALTER TABLE ONLY security_event_logs
     ADD CONSTRAINT security_event_logs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY security_event_logs_scrape_state
+    ADD CONSTRAINT security_event_logs_scrape_state_pk PRIMARY KEY (id);
 
 ALTER TABLE ONLY settings
     ADD CONSTRAINT settings_pkey PRIMARY KEY (id);
@@ -3930,6 +3975,8 @@ CREATE UNIQUE INDEX search_contexts_name_without_namespace_unique ON search_cont
 CREATE INDEX search_contexts_query_idx ON search_contexts USING btree (query);
 
 CREATE INDEX security_event_logs_timestamp ON security_event_logs USING btree ("timestamp");
+
+CREATE UNIQUE INDEX security_event_logs_export_allowlist_event_name_idx ON security_event_logs_export_allowlist USING btree (event_name);
 
 CREATE INDEX settings_global_id ON settings USING btree (id DESC) WHERE ((user_id IS NULL) AND (org_id IS NULL));
 
