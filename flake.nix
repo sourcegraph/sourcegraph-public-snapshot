@@ -35,5 +35,28 @@
           checkFlags = [ ];
         });
       };
+
+      # recursiveUpdate is just for recursively merging sets
+      packages = nixpkgs.lib.recursiveUpdate
+        {
+          aarch64-darwin.p4-fusion = self.packages.x86_64-darwin.p4-fusion;
+          x86_64-linux.p4-fusion-portable = self.packages.x86_64-linux.p4-fusion.overrideAttrs (oldAttrs: {
+            # patch the ELF interpreter for non-nix(os) distros.
+            postFixup = ''
+              patchelf \
+                --set-interpreter /lib64/ld-linux-x86-64.so.2 \
+                $out/bin/p4-fusion
+            '';
+          });
+        }
+        (
+          nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" ] (system:
+            let pkgs = import nixpkgs { inherit system; };
+            in
+            {
+              p4-fusion = pkgs.callPackage ./p4-fusion.nix { };
+            }
+          )
+        );
     };
 }
