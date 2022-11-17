@@ -60,12 +60,19 @@ We adhere to the [general Sourcegraph principles for testing](https://docs.sourc
 2.  (optional) If this is a non-patch release, update the changelog. Add a new section `## $MAJOR.MINOR` to [`CHANGELOG.md`](https://github.com/sourcegraph/src-cli/blob/main/CHANGELOG.md#unreleased) immediately under `## Unreleased changes`. Add new empty `Added`, `Changed`, `Fixed`, and `Removed` sections under `## Unreleased changes`. Open a pull request with the new changelog. Get the pull request merged before completing the next step.
 3.  `VERSION=9.9.9 ./release.sh` (replace `9.9.9` with the version you are releasing)
 4.  GitHub will automatically perform the release via the [Build and Release action](https://github.com/sourcegraph/src-cli/actions?query=workflow%3ABuild+and+Release). Once it has finished, **you need to confirm**:
-    1. The [curl commands in the README](README.markdown#installation) fetch the latest version above.
-    2. The [releases section of the repo sidebar](https://github.com/sourcegraph/src-cli) shows the correct version.
+    1. The brew formula shows the correct version.
+       ```shell
+        brew info sourcegraph/src-cli/src-cli
+       ```
+    2. The npm library shows the correct version.
+        ```shell
+        npm show @sourcegraph/src version
+       ```
+    3. The [releases section of the repo sidebar](https://github.com/sourcegraph/src-cli) shows the correct version.
 5.  Make the necessary updates to the main Sourcegraph repo:
     1. Update the `MinimumVersion` constant in the [src-cli package](https://github.com/sourcegraph/sourcegraph/tree/main/internal/src-cli/consts.go).
-    2. Update the reference documentation by running `go generate ./doc/cli/references`.
-    3. Commit the changes, and open a PR.
+    2. Commit the changes, and open a PR.
+ 6. Once the version bump PR is merged and the commit is live on dotcom, check that the [curl commands in the README](README.markdown#installation) also fetch the new latest version.
 
 ### Patch releases
 
