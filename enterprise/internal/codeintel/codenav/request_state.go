@@ -36,7 +36,7 @@ func NewRequestState(
 	commit string,
 	path string,
 	maxIndexes int,
-	hunkCacheSize int,
+	hunkCache HunkCache,
 ) RequestState {
 	r := &RequestState{
 		RepositoryID: int(repo.ID),
@@ -45,7 +45,7 @@ func NewRequestState(
 	}
 	r.SetUploadsDataLoader(uploads)
 	r.SetAuthChecker(authChecker)
-	r.SetLocalGitTreeTranslator(gitclient, repo, commit, path, hunkCacheSize)
+	r.SetLocalGitTreeTranslator(gitclient, repo, commit, path, hunkCache)
 	r.SetLocalCommitCache(gitclient)
 	r.SetMaximumIndexesPerMonikerSearch(maxIndexes)
 
@@ -75,12 +75,7 @@ func (r *RequestState) SetUploadsDataLoader(uploads []types.Dump) {
 	}
 }
 
-func (r *RequestState) SetLocalGitTreeTranslator(client GitserverClient, repo *sgTypes.Repo, commit, path string, hunkCacheSize int) error {
-	hunkCache, err := NewHunkCache(hunkCacheSize)
-	if err != nil {
-		return err
-	}
-
+func (r *RequestState) SetLocalGitTreeTranslator(client GitserverClient, repo *sgTypes.Repo, commit, path string, hunkCache HunkCache) error {
 	args := &requestArgs{
 		repo:   repo,
 		commit: commit,

@@ -12,7 +12,7 @@ use syntect::{
 /// <table>
 ///   <tbody>
 ///     <tr>
-///       <th class="line" data-line="1">
+///       <td class="line" data-line="1">
 ///       <td class="code">
 ///         <span class="hl-source hl-go">
 ///           <span class="hl-keyword hl-control hl-go">package</span>
@@ -181,7 +181,7 @@ fn close_table(s: &mut String) {
 fn open_row(s: &mut String, i: usize) {
     write!(
         s,
-        "<tr><th class=\"line\" data-line=\"{}\"/><td class=\"code\"><div>",
+        "<tr><td class=\"line\" data-line=\"{}\"/><td class=\"code\"><div>",
         i + 1
     )
     .unwrap();
@@ -256,7 +256,7 @@ mod tests {
         let expected = "<table>\
                             <tbody>\
                                 <tr>\
-                                    <th class=\"line\" data-line=\"1\"/>\
+                                    <td class=\"line\" data-line=\"1\"/>\
                                     <td class=\"code\">\
                                         <div>\
                                             <span class=\"hl-source hl-go\">\
@@ -286,7 +286,7 @@ mod tests {
         let expected = "<table>\
                             <tbody>\
                                 <tr>\
-                                    <th class=\"line\" data-line=\"1\"/>\
+                                    <td class=\"line\" data-line=\"1\"/>\
                                     <td class=\"code\">\
                                         <div>&lt;div&gt;test&lt;/div&gt;</div>\
                                     </td>\
@@ -310,7 +310,7 @@ mod tests {
         let expected = "<table>\
                             <tbody>\
                                 <tr>\
-                                    <th class=\"line\" data-line=\"1\"/>\
+                                    <td class=\"line\" data-line=\"1\"/>\
                                     <td class=\"code\">\
                                         <div>package main\n</div>\
                                     </td>\
@@ -335,7 +335,7 @@ mod tests {
         let expected = "<table>\
                             <tbody>\
                                 <tr>\
-                                    <th class=\"line\" data-line=\"1\"/>\
+                                    <td class=\"line\" data-line=\"1\"/>\
                                     <td class=\"code\">\
                                         <div>\
                                             <span class=\"hl-source hl-java\">\
@@ -359,7 +359,7 @@ mod tests {
                                     </td>\
                                 </tr>\
                                 <tr>\
-                                    <th class=\"line\" data-line=\"2\"/>\
+                                    <td class=\"line\" data-line=\"2\"/>\
                                     <td class=\"code\">\
                                         <div>\
                                             <span class=\"hl-source hl-java\">\n</span>\
@@ -367,7 +367,7 @@ mod tests {
                                     </td>\
                                 </tr>\
                                 <tr>\
-                                    <th class=\"line\" data-line=\"3\"/>\
+                                    <td class=\"line\" data-line=\"3\"/>\
                                     <td class=\"code\">\
                                         <div>\
                                             <span class=\"hl-source hl-java\">\

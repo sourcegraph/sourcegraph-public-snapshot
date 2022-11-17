@@ -37,11 +37,11 @@ var (
 // relevant to Batch Changes, normalizes those events into ChangesetEvents
 // and upserts them to the database.
 type GitHubWebhook struct {
-	*Webhook
+	*webhook
 }
 
 func NewGitHubWebhook(store *store.Store, gitserverClient gitserver.Client) *GitHubWebhook {
-	return &GitHubWebhook{&Webhook{store, gitserverClient, extsvc.TypeGitHub}}
+	return &GitHubWebhook{&webhook{store, gitserverClient, extsvc.TypeGitHub}}
 }
 
 // Register registers this webhook handler to handle events with the passed webhook router

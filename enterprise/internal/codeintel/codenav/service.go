@@ -4,11 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"cloud.google.com/go/storage"
 	traceLog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/background"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
@@ -24,14 +22,12 @@ import (
 )
 
 type Service struct {
-	store          store.Store
-	lsifstore      lsifstore.LsifStore
-	gitserver      GitserverClient
-	uploadSvc      UploadService
-	rankingBucket  *storage.BucketHandle
-	backgroundJobs background.BackgroundJob
-	operations     *operations
-	logger         log.Logger
+	store      store.Store
+	lsifstore  lsifstore.LsifStore
+	gitserver  GitserverClient
+	uploadSvc  UploadService
+	operations *operations
+	logger     log.Logger
 }
 
 func newService(
@@ -39,23 +35,17 @@ func newService(
 	lsifstore lsifstore.LsifStore,
 	uploadSvc UploadService,
 	gitserver GitserverClient,
-	rankingBucket *storage.BucketHandle,
-	backgroundJobs background.BackgroundJob,
 	observationContext *observation.Context,
 ) *Service {
 	return &Service{
-		store:          store,
-		lsifstore:      lsifstore,
-		gitserver:      gitserver,
-		uploadSvc:      uploadSvc,
-		rankingBucket:  rankingBucket,
-		backgroundJobs: backgroundJobs,
-		operations:     newOperations(observationContext),
-		logger:         log.Scoped("codenav", ""),
+		store:      store,
+		lsifstore:  lsifstore,
+		gitserver:  gitserver,
+		uploadSvc:  uploadSvc,
+		operations: newOperations(observationContext),
+		logger:     log.Scoped("codenav", ""),
 	}
 }
-
-func GetBackgroundJobs(s *Service) background.BackgroundJob { return s.backgroundJobs }
 
 // GetHover returns the set of locations defining the symbol at the given position.
 func (s *Service) GetHover(ctx context.Context, args shared.RequestArgs, requestState RequestState) (_ string, _ types.Range, _ bool, err error) {

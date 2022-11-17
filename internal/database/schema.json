@@ -10703,6 +10703,16 @@
           "ConstraintDefinition": "PRIMARY KEY (repo_id)"
         },
         {
+          "Name": "gitserver_repo_size_bytes",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX gitserver_repo_size_bytes ON gitserver_repos USING btree (repo_size_bytes)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "gitserver_repos_cloned_status_idx",
           "IsPrimaryKey": false,
           "IsUnique": false,

@@ -303,3 +303,8 @@ func (r *NodeResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, b
 	n, ok := r.Node.(BatchWorkspaceFileResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToPermissionsSyncJob() (PermissionsSyncJobResolver, bool) {
+	n, ok := r.Node.(PermissionsSyncJobResolver)
+	return n, ok
+}

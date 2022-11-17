@@ -2,6 +2,9 @@
 
 This document will walk you through the steps of removing a repository from Sourcegraph. 
 
+> NOTE: If your Sourcegraph version is at 4.1 or later, you can now use the `reclone` button to accomplish the steps
+> below with one click of a button. You can find this feature in the "mirroring" settings of the repo in question.
+
 ## Prerequisites
 
 This document assumes that you have:
