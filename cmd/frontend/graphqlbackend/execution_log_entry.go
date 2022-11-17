@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -14,7 +13,7 @@ type ExecutionLogEntryResolver interface {
 	Command() []string
 	StartTime() gqlutil.DateTime
 	ExitCode() *int32
-	Out(ctx context.Context) (string, error)
+	Out(ctx context.Context) string
 	DurationMilliseconds() *int32
 }
 
@@ -55,15 +54,6 @@ func (r *executionLogEntryResolver) DurationMilliseconds() *int32 {
 	return &val
 }
 
-func (r *executionLogEntryResolver) Out(ctx context.Context) (string, error) {
-	// 🚨 SECURITY: Only site admins can view executor log contents.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if err != auth.ErrMustBeSiteAdmin {
-			return "", err
-		}
-
-		return "", nil
-	}
-
-	return r.entry.Out, nil
+func (r *executionLogEntryResolver) Out(ctx context.Context) string {
+	return r.entry.Out
 }
