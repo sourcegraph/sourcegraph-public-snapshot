@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -50,6 +51,8 @@ func (j *sourcegraphOperatorCleaner) Routines(_ context.Context, logger log.Logg
 		return nil, errors.Wrap(err, "init DB")
 	}
 
+	logger.Debug("registering Sourcegraph Operator user account cleanup routine")
+
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(
 			context.Background(),
@@ -57,6 +60,7 @@ func (j *sourcegraphOperatorCleaner) Routines(_ context.Context, logger log.Logg
 			&sourcegraphOperatorCleanHandler{
 				db:                db,
 				lifecycleDuration: sourcegraphoperator.LifecycleDuration(cloudSiteConfig.AuthProviders.SourcegraphOperator.LifecycleDuration),
+				logger:            logger.Scoped("SourcegraphOperatorCleaner", ""),
 			},
 		),
 	}, nil
@@ -67,12 +71,14 @@ var _ goroutine.Handler = (*sourcegraphOperatorCleanHandler)(nil)
 type sourcegraphOperatorCleanHandler struct {
 	db                database.DB
 	lifecycleDuration time.Duration
+	logger            log.Logger
 }
 
 // Handle hard deletes expired Sourcegraph Operator user accounts based on the
 // configured lifecycle duration every minute. It skips users that have external
 // accounts connected other than service type "sourcegraph-operator".
 func (h *sourcegraphOperatorCleanHandler) Handle(ctx context.Context) error {
+	h.logger.Debug("starting Sourcegraph Operator user account cleanup")
 	q := sqlf.Sprintf(`
 SELECT user_id
 FROM users
@@ -99,6 +105,7 @@ GROUP BY user_id HAVING COUNT(*) = 1
 			SourcegraphOperator: true,
 		},
 	)
+	h.logger.Debug("hard deleting expired Sourcegraph Operator user accounts", log.String("userIDs", fmt.Sprintf("%v", userIDs)))
 	err = h.db.Users().HardDeleteList(ctx, userIDs)
 	if err != nil && !errcode.IsNotFound(err) {
 		return errors.Wrap(err, "hard delete users")
