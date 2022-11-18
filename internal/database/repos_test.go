@@ -18,6 +18,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -116,6 +117,21 @@ func setGitserverRepoLastError(t *testing.T, db DB, name api.RepoName, msg strin
 	err := db.GitserverRepos().SetLastError(context.Background(), name, msg, shardID)
 	if err != nil {
 		t.Fatalf("failed to set last error: %s", err)
+	}
+}
+
+func setZoektIndexed(t *testing.T, db DB, name api.RepoName) {
+	t.Helper()
+	ctx := context.Background()
+	repo, err := db.Repos().GetByName(ctx, name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.ZoektRepos().UpdateIndexStatuses(ctx, map[uint32]*zoekt.MinimalRepoListEntry{
+		uint32(repo.ID): {},
+	})
+	if err != nil {
+		t.Fatalf("failed to set indexed status of %q: %s", name, err)
 	}
 }
 
@@ -765,6 +781,53 @@ func TestRepos_List_cloned(t *testing.T) {
 		// These don't make sense, but we test that both conditions are used
 		{"OnlyCloned && CloneStatus=Cloning", ReposListOptions{OnlyCloned: true, CloneStatus: types.CloneStatusCloning}, nil},
 		{"NoCloned && CloneStatus=Cloned", ReposListOptions{NoCloned: true, CloneStatus: types.CloneStatusCloned}, nil},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			repos, err := db.Repos().List(ctx, test.opt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertJSONEqual(t, test.want, repos)
+		})
+	}
+}
+
+func TestRepos_List_indexed(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := actor.WithInternalActor(context.Background())
+
+	var repos []*types.Repo
+	for _, data := range []struct {
+		repo    *types.Repo
+		indexed bool
+	}{
+		{repo: &types.Repo{Name: "repo-0"}, indexed: true},
+		{repo: &types.Repo{Name: "repo-1"}, indexed: false},
+	} {
+		repo := mustCreate(ctx, t, db, data.repo)
+		if data.indexed {
+			setZoektIndexed(t, db, repo.Name)
+		}
+		repos = append(repos, repo)
+	}
+
+	tests := []struct {
+		name string
+		opt  ReposListOptions
+		want []*types.Repo
+	}{
+		{"Default", ReposListOptions{}, repos},
+		{"OnlyIndexed", ReposListOptions{OnlyIndexed: true}, repos[0:1]},
+		{"NoIndexed", ReposListOptions{NoIndexed: true}, repos[1:2]},
+		{"NoIndexed && OnlyIndexed", ReposListOptions{NoIndexed: true, OnlyIndexed: true}, nil},
 	}
 
 	for _, test := range tests {

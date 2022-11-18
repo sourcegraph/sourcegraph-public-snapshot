@@ -676,6 +676,12 @@ type ReposListOptions struct {
 	// OnlyCloned excludes non-cloned repositories from the list.
 	OnlyCloned bool
 
+	// NoIndexed excludes repositories that are indexed by zoekt from the list.
+	NoIndexed bool
+
+	// OnlyIndexed excludes repositories that are not indexed by zoekt from the list.
+	OnlyIndexed bool
+
 	// CloneStatus if set will only return repos of that clone status.
 	CloneStatus types.CloneStatus
 
@@ -1018,6 +1024,12 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	if opt.CloneStatus != types.CloneStatusUnknown {
 		where = append(where, sqlf.Sprintf("gr.clone_status = %s", opt.CloneStatus))
 	}
+	if opt.NoIndexed {
+		where = append(where, sqlf.Sprintf("zr.index_status = 'not_indexed'"))
+	}
+	if opt.OnlyIndexed {
+		where = append(where, sqlf.Sprintf("zr.index_status = 'indexed'"))
+	}
 
 	if opt.FailedFetch {
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
@@ -1092,6 +1104,9 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.joinGitserverRepos ||
 		opt.CloneStatus != types.CloneStatusUnknown || containsSizeField(opt.OrderBy) {
 		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
+	}
+	if opt.OnlyIndexed || opt.NoIndexed {
+		joins = append(joins, sqlf.Sprintf("JOIN zoekt_repos zr ON zr.repo_id = repo.id"))
 	}
 
 	if len(opt.KVPFilters) > 0 {
