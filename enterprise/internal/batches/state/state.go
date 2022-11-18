@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -29,11 +28,11 @@ import (
 
 // SetDerivedState will update the external state fields on the Changeset based
 // on the current state of the changeset and associated events.
-func SetDerivedState(ctx context.Context, repoStore database.RepoStore, client gitserver.Client, c *btypes.Changeset, es []*btypes.ChangesetEvent) {
+func SetDerivedState(ctx context.Context, repoStore database.RepoStore, client gitserver.Client, c *btypes.Changeset) {
 	// Copy so that we can sort without mutating the argument
-	events := make(ChangesetEvents, len(es))
-	copy(events, es)
-	sort.Sort(events)
+	// events := make(ChangesetEvents, len(es))
+	// copy(events, es)
+	// sort.Sort(events)
 
 	logger := log.Scoped("SetDerivedState", "")
 
@@ -46,20 +45,20 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, client g
 		return
 	}
 
-	c.ExternalCheckState = computeCheckState(c, events)
+	c.ExternalCheckState = computeCheckState(c)
 
-	history, err := computeHistory(c, events)
-	if err != nil {
-		logger.Warn("Computing changeset history", log.Error(err))
-		return
-	}
+	// history, err := computeHistory(c, events)
+	// if err != nil {
+	// 	logger.Warn("Computing changeset history", log.Error(err))
+	// 	return
+	// }
 
-	if state, err := computeExternalState(c, history, repo); err != nil {
+	if state, err := computeExternalState(c, repo); err != nil {
 		logger.Warn("Computing external changeset state", log.Error(err))
 	} else {
 		c.ExternalState = state
 	}
-	if state, err := computeReviewState(c, history); err != nil {
+	if state, err := computeReviewState(c); err != nil {
 		logger.Warn("Computing changeset review state", log.Error(err))
 	} else {
 		c.ExternalReviewState = state
@@ -99,19 +98,19 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, client g
 // computeCheckState computes the overall check state based on the current
 // synced check state and any webhook events that have arrived after the most
 // recent sync.
-func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.ChangesetCheckState {
+func computeCheckState(c *btypes.Changeset) btypes.ChangesetCheckState {
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
-		return computeGitHubCheckState(c.UpdatedAt, m, events)
+		return computeGitHubCheckState(c.UpdatedAt, m)
 
 	case *bitbucketserver.PullRequest:
-		return computeBitbucketServerBuildStatus(c.UpdatedAt, m, events)
+		return computeBitbucketServerBuildStatus(c.UpdatedAt, m)
 
 	case *gitlab.MergeRequest:
-		return computeGitLabCheckState(c.UpdatedAt, m, events)
+		return computeGitLabCheckState(c.UpdatedAt, m)
 
 	case *bbcs.AnnotatedPullRequest:
-		return computeBitbucketCloudBuildState(c.UpdatedAt, m, events)
+		return computeBitbucketCloudBuildState(c.UpdatedAt, m)
 	}
 
 	return btypes.ChangesetCheckStateUnknown
@@ -119,44 +118,20 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 
 // computeExternalState computes the external state for the changeset and its
 // associated events.
-func computeExternalState(c *btypes.Changeset, history []changesetStatesAtTime, repo *types.Repo) (btypes.ChangesetExternalState, error) {
+func computeExternalState(c *btypes.Changeset, repo *types.Repo) (btypes.ChangesetExternalState, error) {
 	if repo.Archived {
 		return btypes.ChangesetExternalStateReadOnly, nil
 	}
-	if len(history) == 0 {
-		return computeSingleChangesetExternalState(c)
-	}
-	newestDataPoint := history[len(history)-1]
-	if c.UpdatedAt.After(newestDataPoint.t) {
-		return computeSingleChangesetExternalState(c)
-	}
-	return newestDataPoint.externalState, nil
+	return computeSingleChangesetExternalState(c)
 }
 
 // computeReviewState computes the review state for the changeset and its
 // associated events. The events should be presorted.
-func computeReviewState(c *btypes.Changeset, history []changesetStatesAtTime) (btypes.ChangesetReviewState, error) {
-	if len(history) == 0 {
-		return computeSingleChangesetReviewState(c)
-	}
-
-	newestDataPoint := history[len(history)-1]
-
-	// GitHub only stores the ReviewState in events, we can't look at the
-	// Changeset.
-	if c.ExternalServiceType == extsvc.TypeGitHub {
-		return newestDataPoint.reviewState, nil
-	}
-
-	// For other codehosts we check whether the Changeset is newer or the
-	// events and use the newest entity to get the reviewstate.
-	if c.UpdatedAt.After(newestDataPoint.t) {
-		return computeSingleChangesetReviewState(c)
-	}
-	return newestDataPoint.reviewState, nil
+func computeReviewState(c *btypes.Changeset) (btypes.ChangesetReviewState, error) {
+	return computeSingleChangesetReviewState(c)
 }
 
-func computeBitbucketServerBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
+func computeBitbucketServerBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullRequest) btypes.ChangesetCheckState {
 	var latestCommit bitbucketserver.Commit
 	for _, c := range pr.Commits {
 		if latestCommit.CommitterTimestamp <= c.CommitterTimestamp {
@@ -169,21 +144,6 @@ func computeBitbucketServerBuildStatus(lastSynced time.Time, pr *bitbucketserver
 	// States from last sync
 	for _, status := range pr.CommitStatus {
 		stateMap[status.Key()] = parseBitbucketServerBuildState(status.Status.State)
-	}
-
-	// Add any events we've received since our last sync
-	for _, e := range events {
-		switch m := e.Metadata.(type) {
-		case *bitbucketserver.CommitStatus:
-			if m.Commit != latestCommit.ID {
-				continue
-			}
-			dateAdded := unixMilliToTime(m.Status.DateAdded)
-			if dateAdded.Before(lastSynced) {
-				continue
-			}
-			stateMap[m.Key()] = parseBitbucketServerBuildState(m.Status.State)
-		}
 	}
 
 	states := make([]btypes.ChangesetCheckState, 0, len(stateMap))
@@ -207,27 +167,12 @@ func parseBitbucketServerBuildState(s string) btypes.ChangesetCheckState {
 	}
 }
 
-func computeBitbucketCloudBuildState(lastSynced time.Time, apr *bbcs.AnnotatedPullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
+func computeBitbucketCloudBuildState(lastSynced time.Time, apr *bbcs.AnnotatedPullRequest) btypes.ChangesetCheckState {
 	stateMap := make(map[string]btypes.ChangesetCheckState)
 
 	// States from last sync.
 	for _, status := range apr.Statuses {
 		stateMap[status.Key()] = parseBitbucketCloudBuildState(status.State)
-	}
-
-	// Add any events we've received since our last sync.
-	addState := func(key string, status *bitbucketcloud.CommitStatus) {
-		if lastSynced.Before(status.CreatedOn) {
-			stateMap[key] = parseBitbucketCloudBuildState(status.State)
-		}
-	}
-	for _, e := range events {
-		switch m := e.Metadata.(type) {
-		case *bitbucketcloud.RepoCommitStatusCreatedEvent:
-			addState(m.Key(), &m.CommitStatus)
-		case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
-			addState(m.Key(), &m.CommitStatus)
-		}
 	}
 
 	states := make([]btypes.ChangesetCheckState, 0, len(stateMap))
@@ -251,10 +196,10 @@ func parseBitbucketCloudBuildState(s bitbucketcloud.PullRequestStatusState) btyp
 	}
 }
 
-func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
+func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest) btypes.ChangesetCheckState {
 	// We should only consider the latest commit. This could be from a sync or a webhook that
 	// has occurred later
-	var latestCommitTime time.Time
+	// var latestCommitTime time.Time
 	var latestOID string
 	statusPerContext := make(map[string]btypes.ChangesetCheckState)
 	statusPerCheckSuite := make(map[string]btypes.ChangesetCheckState)
@@ -263,7 +208,7 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 	if len(pr.Commits.Nodes) > 0 {
 		// We only request the most recent commit
 		commit := pr.Commits.Nodes[0]
-		latestCommitTime = commit.Commit.CommittedDate
+		// latestCommitTime = commit.Commit.CommittedDate
 		latestOID = commit.Commit.OID
 		// Calc status per context for the most recent synced commit
 		for _, c := range commit.Commit.Status.Contexts {
@@ -284,37 +229,6 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 	}
 
 	var statuses []*github.CommitStatus
-	// Get all status updates that have happened since our last sync
-	for _, e := range events {
-		switch m := e.Metadata.(type) {
-		case *github.CommitStatus:
-			if m.ReceivedAt.After(lastSynced) {
-				statuses = append(statuses, m)
-			}
-		case *github.PullRequestCommit:
-			if m.Commit.CommittedDate.After(latestCommitTime) {
-				latestCommitTime = m.Commit.CommittedDate
-				latestOID = m.Commit.OID
-				// statusPerContext is now out of date, reset it
-				for k := range statusPerContext {
-					delete(statusPerContext, k)
-				}
-			}
-		case *github.CheckSuite:
-			if (m.Status == "QUEUED" || m.Status == "COMPLETED") && len(m.CheckRuns.Nodes) == 0 {
-				// Ignore suites with no runs.
-				// See previous comment.
-				continue
-			}
-			if m.ReceivedAt.After(lastSynced) {
-				statusPerCheckSuite[m.ID] = parseGithubCheckSuiteState(m.Status, m.Conclusion)
-			}
-		case *github.CheckRun:
-			if m.ReceivedAt.After(lastSynced) {
-				statusPerCheckRun[m.ID] = parseGithubCheckSuiteState(m.Status, m.Conclusion)
-			}
-		}
-	}
 
 	if len(statuses) > 0 {
 		// Update the statuses using any new webhook events for the latest commit
@@ -407,7 +321,7 @@ func parseGithubCheckSuiteState(status, conclusion string) btypes.ChangesetCheck
 	return btypes.ChangesetCheckStateUnknown
 }
 
-func computeGitLabCheckState(lastSynced time.Time, mr *gitlab.MergeRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
+func computeGitLabCheckState(lastSynced time.Time, mr *gitlab.MergeRequest) btypes.ChangesetCheckState {
 	// GitLab pipelines aren't tied to commits in the same way that GitHub
 	// checks are. We're simply looking for the most recent pipeline run that
 	// was associated with the merge request, which may live in a changeset
@@ -416,44 +330,29 @@ func computeGitLabCheckState(lastSynced time.Time, mr *gitlab.MergeRequest, even
 	// exists for other code hosts because that's essentially what the pipeline
 	// is, except GitLab handles the details of combining the job states.
 
-	// Let's figure out what the last pipeline event we saw in the events was.
-	var lastPipelineEvent *gitlab.Pipeline
-	for _, e := range events {
-		switch m := e.Metadata.(type) {
-		case *gitlab.Pipeline:
-			if lastPipelineEvent == nil || lastPipelineEvent.CreatedAt.Before(m.CreatedAt.Time) {
-				lastPipelineEvent = m
-			}
+	// OK, so we've either synced since the last pipeline event or there
+	// just aren't any events, therefore the source of truth is the merge
+	// request. The process here is pretty straightforward: the latest
+	// pipeline wins. They _should_ be in descending order, but we'll sort
+	// them just to be sure.
+
+	// First up, a special case: if there are no pipelines, we'll try to use
+	// HeadPipeline. If that's empty, then we'll shrug and say we don't
+	// know.
+	if len(mr.Pipelines) == 0 {
+		if mr.HeadPipeline != nil {
+			return parseGitLabPipelineStatus(mr.HeadPipeline.Status)
 		}
+		return btypes.ChangesetCheckStateUnknown
 	}
 
-	if lastPipelineEvent == nil || lastPipelineEvent.CreatedAt.Before(lastSynced) {
-		// OK, so we've either synced since the last pipeline event or there
-		// just aren't any events, therefore the source of truth is the merge
-		// request. The process here is pretty straightforward: the latest
-		// pipeline wins. They _should_ be in descending order, but we'll sort
-		// them just to be sure.
+	// Sort into descending order so that the pipeline at index 0 is the latest.
+	pipelines := mr.Pipelines
+	sort.Slice(pipelines, func(i, j int) bool {
+		return pipelines[i].CreatedAt.After(pipelines[j].CreatedAt.Time)
+	})
 
-		// First up, a special case: if there are no pipelines, we'll try to use
-		// HeadPipeline. If that's empty, then we'll shrug and say we don't
-		// know.
-		if len(mr.Pipelines) == 0 {
-			if mr.HeadPipeline != nil {
-				return parseGitLabPipelineStatus(mr.HeadPipeline.Status)
-			}
-			return btypes.ChangesetCheckStateUnknown
-		}
-
-		// Sort into descending order so that the pipeline at index 0 is the latest.
-		pipelines := mr.Pipelines
-		sort.Slice(pipelines, func(i, j int) bool {
-			return pipelines[i].CreatedAt.After(pipelines[j].CreatedAt.Time)
-		})
-
-		return parseGitLabPipelineStatus(pipelines[0].Status)
-	}
-
-	return parseGitLabPipelineStatus(lastPipelineEvent.Status)
+	return parseGitLabPipelineStatus(pipelines[0].Status)
 }
 
 func parseGitLabPipelineStatus(status gitlab.PipelineStatus) btypes.ChangesetCheckState {
@@ -699,12 +598,10 @@ var ComputeLabelsRequiredEventTypes = []btypes.ChangesetEventKind{
 // of labels found in the Changeset and looking at ChangesetEvents that have
 // occurred after the Changeset.UpdatedAt.
 // The events should be presorted.
-func ComputeLabels(c *btypes.Changeset, events ChangesetEvents) []btypes.ChangesetLabel {
+func ComputeLabels(c *btypes.Changeset) []btypes.ChangesetLabel {
 	var current []btypes.ChangesetLabel
-	var since time.Time
 	if c != nil {
 		current = c.Labels()
-		since = c.UpdatedAt
 	}
 
 	// Iterate through all label events to get the current set
@@ -712,24 +609,7 @@ func ComputeLabels(c *btypes.Changeset, events ChangesetEvents) []btypes.Changes
 	for _, l := range current {
 		set[l.Name] = l
 	}
-	for _, event := range events {
-		switch e := event.Metadata.(type) {
-		case *github.LabelEvent:
-			if e.CreatedAt.Before(since) {
-				continue
-			}
-			if e.Removed {
-				delete(set, e.Label.Name)
-				continue
-			}
 
-			set[e.Label.Name] = btypes.ChangesetLabel{
-				Name:        e.Label.Name,
-				Color:       e.Label.Color,
-				Description: e.Label.Description,
-			}
-		}
-	}
 	labels := make([]btypes.ChangesetLabel, 0, len(set))
 	for _, label := range set {
 		labels = append(labels, label)

@@ -180,7 +180,6 @@ type PullRequest struct {
 	HeadRepository PullRequestRepo
 	Participants   []Actor
 	Labels         struct{ Nodes []Label }
-	TimelineItems  []TimelineItem
 	Commits        struct{ Nodes []CommitWithChecks }
 	IsDraft        bool
 	CreatedAt      time.Time
@@ -451,81 +450,6 @@ func (e LabelEvent) Key() string {
 	return fmt.Sprintf("%s:%s:%d", e.Label.ID, action, e.CreatedAt.UnixNano())
 }
 
-type TimelineItemConnection struct {
-	PageInfo PageInfo
-	Nodes    []TimelineItem
-}
-
-// TimelineItem is a union type of all supported pull request timeline items.
-type TimelineItem struct {
-	Type string
-	Item any
-}
-
-// UnmarshalJSON knows how to unmarshal a TimelineItem as produced
-// by json.Marshal or as returned by the GitHub GraphQL API.
-func (i *TimelineItem) UnmarshalJSON(data []byte) error {
-	v := struct {
-		Typename *string `json:"__typename"`
-		Type     *string
-		Item     json.RawMessage
-	}{
-		Typename: &i.Type,
-		Type:     &i.Type,
-	}
-
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-
-	switch i.Type {
-	case "AssignedEvent":
-		i.Item = new(AssignedEvent)
-	case "ClosedEvent":
-		i.Item = new(ClosedEvent)
-	case "IssueComment":
-		i.Item = new(IssueComment)
-	case "RenamedTitleEvent":
-		i.Item = new(RenamedTitleEvent)
-	case "MergedEvent":
-		i.Item = new(MergedEvent)
-	case "PullRequestReview":
-		i.Item = new(PullRequestReview)
-	case "PullRequestReviewComment":
-		i.Item = new(PullRequestReviewComment)
-	case "PullRequestReviewThread":
-		i.Item = new(PullRequestReviewThread)
-	case "PullRequestCommit":
-		i.Item = new(PullRequestCommit)
-	case "ReopenedEvent":
-		i.Item = new(ReopenedEvent)
-	case "ReviewDismissedEvent":
-		i.Item = new(ReviewDismissedEvent)
-	case "ReviewRequestRemovedEvent":
-		i.Item = new(ReviewRequestRemovedEvent)
-	case "ReviewRequestedEvent":
-		i.Item = new(ReviewRequestedEvent)
-	case "ReadyForReviewEvent":
-		i.Item = new(ReadyForReviewEvent)
-	case "ConvertToDraftEvent":
-		i.Item = new(ConvertToDraftEvent)
-	case "UnassignedEvent":
-		i.Item = new(UnassignedEvent)
-	case "LabeledEvent":
-		i.Item = new(LabelEvent)
-	case "UnlabeledEvent":
-		i.Item = &LabelEvent{Removed: true}
-	default:
-		return errors.Errorf("unknown timeline item type %q", i.Type)
-	}
-
-	if len(v.Item) > 0 {
-		data = v.Item
-	}
-
-	return json.Unmarshal(data, i.Item)
-}
-
 type CreatePullRequestInput struct {
 	// The Node ID of the repository.
 	RepositoryID string `json:"repositoryId"`
@@ -564,8 +488,7 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 		CreatePullRequest struct {
 			PullRequest struct {
 				PullRequest
-				Participants  struct{ Nodes []Actor }
-				TimelineItems TimelineItemConnection
+				Participants struct{ Nodes []Actor }
 			} `json:"pullRequest"`
 		} `json:"createPullRequest"`
 	}
@@ -590,16 +513,8 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 		return nil, handlePullRequestError(err)
 	}
 
-	ti := result.CreatePullRequest.PullRequest.TimelineItems
 	pr := &result.CreatePullRequest.PullRequest.PullRequest
-	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.CreatePullRequest.PullRequest.Participants.Nodes
-
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
-	if err != nil {
-		return nil, err
-	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return pr, nil
 }
@@ -637,8 +552,7 @@ func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestI
 		UpdatePullRequest struct {
 			PullRequest struct {
 				PullRequest
-				Participants  struct{ Nodes []Actor }
-				TimelineItems TimelineItemConnection
+				Participants struct{ Nodes []Actor }
 			} `json:"pullRequest"`
 		} `json:"updatePullRequest"`
 	}
@@ -649,16 +563,8 @@ func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestI
 		return nil, handlePullRequestError(err)
 	}
 
-	ti := result.UpdatePullRequest.PullRequest.TimelineItems
 	pr := &result.UpdatePullRequest.PullRequest.PullRequest
-	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.UpdatePullRequest.PullRequest.Participants.Nodes
-
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
-	if err != nil {
-		return nil, err
-	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return pr, nil
 }
@@ -684,8 +590,7 @@ func (c *V4Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRe
 		MarkPullRequestReadyForReview struct {
 			PullRequest struct {
 				PullRequest
-				Participants  struct{ Nodes []Actor }
-				TimelineItems TimelineItemConnection
+				Participants struct{ Nodes []Actor }
 			} `json:"pullRequest"`
 		} `json:"markPullRequestReadyForReview"`
 	}
@@ -698,16 +603,8 @@ func (c *V4Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRe
 		return err
 	}
 
-	ti := result.MarkPullRequestReadyForReview.PullRequest.TimelineItems
 	*pr = result.MarkPullRequestReadyForReview.PullRequest.PullRequest
-	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.MarkPullRequestReadyForReview.PullRequest.Participants.Nodes
-
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
-	if err != nil {
-		return err
-	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return nil
 }
@@ -733,8 +630,7 @@ func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error 
 		ClosePullRequest struct {
 			PullRequest struct {
 				PullRequest
-				Participants  struct{ Nodes []Actor }
-				TimelineItems TimelineItemConnection
+				Participants struct{ Nodes []Actor }
 			} `json:"pullRequest"`
 		} `json:"closePullRequest"`
 	}
@@ -747,16 +643,8 @@ func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error 
 		return err
 	}
 
-	ti := result.ClosePullRequest.PullRequest.TimelineItems
 	*pr = result.ClosePullRequest.PullRequest.PullRequest
-	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.ClosePullRequest.PullRequest.Participants.Nodes
-
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
-	if err != nil {
-		return err
-	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return nil
 }
@@ -782,8 +670,7 @@ func (c *V4Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error
 		ReopenPullRequest struct {
 			PullRequest struct {
 				PullRequest
-				Participants  struct{ Nodes []Actor }
-				TimelineItems TimelineItemConnection
+				Participants struct{ Nodes []Actor }
 			} `json:"pullRequest"`
 		} `json:"reopenPullRequest"`
 	}
@@ -796,16 +683,8 @@ func (c *V4Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error
 		return err
 	}
 
-	ti := result.ReopenPullRequest.PullRequest.TimelineItems
 	*pr = result.ReopenPullRequest.PullRequest.PullRequest
-	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.ReopenPullRequest.PullRequest.Participants.Nodes
-
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
-	if err != nil {
-		return err
-	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return nil
 }
@@ -835,8 +714,7 @@ query($owner: String!, $name: String!, $number: Int!) {
 		Repository struct {
 			PullRequest struct {
 				PullRequest
-				Participants  struct{ Nodes []Actor }
-				TimelineItems TimelineItemConnection
+				Participants struct{ Nodes []Actor }
 			}
 		}
 	}
@@ -863,16 +741,8 @@ query($owner: String!, $name: String!, $number: Int!) {
 		return err
 	}
 
-	ti := result.Repository.PullRequest.TimelineItems
 	*pr = result.Repository.PullRequest.PullRequest
-	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.Repository.PullRequest.Participants.Nodes
-
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
-	if err != nil {
-		return err
-	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return nil
 }
@@ -901,8 +771,7 @@ func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, ba
 			PullRequests struct {
 				Nodes []*struct {
 					PullRequest
-					Participants  struct{ Nodes []Actor }
-					TimelineItems TimelineItemConnection
+					Participants struct{ Nodes []Actor }
 				}
 			}
 		}
@@ -919,13 +788,6 @@ func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, ba
 	node := results.Repository.PullRequests.Nodes[0]
 	pr := node.PullRequest
 	pr.Participants = node.Participants.Nodes
-	pr.TimelineItems = node.TimelineItems.Nodes
-
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, node.TimelineItems.PageInfo)
-	if err != nil {
-		return nil, err
-	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
 
 	return &pr, nil
 }
@@ -977,8 +839,7 @@ func (c *V4Client) MergePullRequest(ctx context.Context, pr *PullRequest, squash
 		MergePullRequest struct {
 			PullRequest struct {
 				PullRequest
-				Participants  struct{ Nodes []Actor }
-				TimelineItems TimelineItemConnection
+				Participants struct{ Nodes []Actor }
 			} `json:"pullRequest"`
 		} `json:"mergePullRequest"`
 	}
@@ -998,76 +859,10 @@ func (c *V4Client) MergePullRequest(ctx context.Context, pr *PullRequest, squash
 		return err
 	}
 
-	ti := result.MergePullRequest.PullRequest.TimelineItems
 	*pr = result.MergePullRequest.PullRequest.PullRequest
-	pr.TimelineItems = ti.Nodes
 	pr.Participants = result.MergePullRequest.PullRequest.Participants.Nodes
 
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
-	if err != nil {
-		return err
-	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
 	return nil
-}
-
-func (c *V4Client) loadRemainingTimelineItems(ctx context.Context, prID string, pageInfo PageInfo) (items []TimelineItem, err error) {
-	version := c.determineGitHubVersion(ctx)
-	timelineItemTypes, err := timelineItemTypes(version)
-	if err != nil {
-		return nil, err
-	}
-	timelineItemsFragment, err := timelineItemsFragment(version)
-	if err != nil {
-		return nil, err
-	}
-	pi := pageInfo
-	for pi.HasNextPage {
-		var q strings.Builder
-		q.WriteString(prCommonFragments)
-		q.WriteString(timelineItemsFragment)
-		q.WriteString(fmt.Sprintf(`query {
-  node(id: %q) {
-    ... on PullRequest {
-      __typename
-      timelineItems(first: 250, after: %q, itemTypes: [`+timelineItemTypes+`]) {
-        pageInfo {
-          hasNextPage
-          endCursor
-        }
-        nodes {
-          __typename
-          ...timelineItems
-        }
-      }
-    }
-  }
-}
-`, prID, pi.EndCursor))
-
-		var results struct {
-			Node struct {
-				TypeName      string `json:"__typename"`
-				TimelineItems TimelineItemConnection
-			}
-		}
-
-		err = c.requestGraphQL(ctx, q.String(), nil, &results)
-		if err != nil {
-			return
-		}
-
-		if results.Node.TypeName != "PullRequest" {
-			return nil, errors.Errorf("invalid node type received, want PullRequest, got %s", results.Node.TypeName)
-		}
-
-		items = append(items, results.Node.TimelineItems.Nodes...)
-		if !results.Node.TimelineItems.PageInfo.HasNextPage {
-			break
-		}
-		pi = results.Node.TimelineItems.PageInfo
-	}
-	return
 }
 
 // abbreviateRef removes the "refs/heads/" prefix from a given ref. If the ref
@@ -1078,25 +873,12 @@ func abbreviateRef(ref string) string {
 	return strings.TrimPrefix(ref, "refs/heads/")
 }
 
-// timelineItemTypes contains all the types requested via GraphQL from the timelineItems connection on a pull request.
-const timelineItemTypesFmtStr = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT, READY_FOR_REVIEW_EVENT`
-
 var (
 	ghe220Semver, _             = semver.NewConstraint("~2.20.0")
 	ghe221PlusOrDotComSemver, _ = semver.NewConstraint(">= 2.21.0")
 	ghe300PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.0.0")
 	ghe330PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.3.0")
 )
-
-func timelineItemTypes(version *semver.Version) (string, error) {
-	if ghe220Semver.Check(version) {
-		return timelineItemTypesFmtStr, nil
-	}
-	if ghe221PlusOrDotComSemver.Check(version) {
-		return timelineItemTypesFmtStr + `, CONVERT_TO_DRAFT_EVENT`, nil
-	}
-	return "", errors.Errorf("unsupported version of GitHub: %s", version)
-}
 
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
 // https://developer.github.com/v4/explorer/
@@ -1114,231 +896,6 @@ fragment label on Label {
   id
 }
 `
-
-// This fragment was formatted using the "prettify" button in the GitHub API explorer:
-// https://developer.github.com/v4/explorer/
-const timelineItemsFragmentFmtstr = `
-fragment commit on Commit {
-  oid
-  message
-  messageHeadline
-  committedDate
-  pushedDate
-  url
-  committer {
-    avatarUrl
-    email
-    name
-    user {
-      ...actor
-    }
-  }
-}
-
-fragment review on PullRequestReview {
-  databaseId
-  author {
-    ...actor
-  }
-  authorAssociation
-  body
-  state
-  url
-  createdAt
-  updatedAt
-  commit {
-    ...commit
-  }
-  includesCreatedEdit
-}
-
-fragment timelineItems on PullRequestTimelineItems {
-  ... on AssignedEvent {
-    actor {
-      ...actor
-    }
-    assignee {
-      ...actor
-    }
-    createdAt
-  }
-  ... on ClosedEvent {
-    actor {
-      ...actor
-    }
-    createdAt
-    url
-  }
-  ... on IssueComment {
-    databaseId
-    author {
-      ...actor
-    }
-    authorAssociation
-    body
-    createdAt
-    editor {
-      ...actor
-    }
-    url
-    updatedAt
-    includesCreatedEdit
-    publishedAt
-  }
-  ... on RenamedTitleEvent {
-    actor {
-      ...actor
-    }
-    previousTitle
-    currentTitle
-    createdAt
-  }
-  ... on MergedEvent {
-    actor {
-      ...actor
-    }
-    mergeRefName
-    url
-    commit {
-      ...commit
-    }
-    createdAt
-  }
-  ... on PullRequestReview {
-    ...review
-  }
-  ... on PullRequestReviewThread {
-    comments(last: 100) {
-      nodes {
-        databaseId
-        author {
-          ...actor
-        }
-        authorAssociation
-        editor {
-          ...actor
-        }
-        commit {
-          ...commit
-        }
-        body
-        state
-        url
-        createdAt
-        updatedAt
-        includesCreatedEdit
-      }
-    }
-  }
-  ... on ReopenedEvent {
-    actor {
-      ...actor
-    }
-    createdAt
-  }
-  ... on ReviewDismissedEvent {
-    actor {
-      ...actor
-    }
-    review {
-      ...review
-    }
-    dismissalMessage
-    createdAt
-  }
-  ... on ReviewRequestRemovedEvent {
-    actor {
-      ...actor
-    }
-    requestedReviewer {
-      ...actor
-    }
-    requestedTeam: requestedReviewer {
-      ... on Team {
-        name
-        url
-        avatarUrl
-      }
-    }
-    createdAt
-  }
-  ... on ReviewRequestedEvent {
-    actor {
-      ...actor
-    }
-    requestedReviewer {
-      ...actor
-    }
-    requestedTeam: requestedReviewer {
-      ... on Team {
-        name
-        url
-        avatarUrl
-      }
-    }
-    createdAt
-  }
-  ... on ReadyForReviewEvent {
-    actor {
-      ...actor
-    }
-    createdAt
-  }
-  ... on UnassignedEvent {
-    actor {
-      ...actor
-    }
-    assignee {
-      ...actor
-    }
-    createdAt
-  }
-  ... on LabeledEvent {
-    actor {
-      ...actor
-    }
-    label {
-      ...label
-    }
-    createdAt
-  }
-  ... on UnlabeledEvent {
-    actor {
-      ...actor
-    }
-    label {
-      ...label
-    }
-    createdAt
-  }
-  ... on PullRequestCommit {
-    commit {
-      ...commit
-    }
-  }
-  %s
-}
-`
-
-const convertToDraftEventFmtstr = `
-  ... on ConvertToDraftEvent {
-    actor {
-	  ...actor
-	}
-	createdAt
-  }
-`
-
-func timelineItemsFragment(version *semver.Version) (string, error) {
-	if ghe220Semver.Check(version) {
-		// GHE 2.20 doesn't know about the ConvertToDraftEvent type.
-		return fmt.Sprintf(timelineItemsFragmentFmtstr, ""), nil
-	}
-	if ghe221PlusOrDotComSemver.Check(version) {
-		return fmt.Sprintf(timelineItemsFragmentFmtstr, convertToDraftEventFmtstr), nil
-	}
-	return "", errors.Errorf("unsupported version of GitHub: %s", version)
-}
 
 // This fragment was formatted using the "prettify" button in the GitHub API explorer:
 // https://developer.github.com/v4/explorer/
@@ -1422,34 +979,16 @@ fragment pr on PullRequest {
       ...prCommit
     }
   }
-  timelineItems(first: 250, itemTypes: [%s]) {
-    pageInfo {
-      hasNextPage
-      endCursor
-    }
-    nodes {
-      __typename
-      ...timelineItems
-    }
-  }
 }
 `
 
 func pullRequestFragments(version *semver.Version) (string, error) {
-	timelineItemTypes, err := timelineItemTypes(version)
-	if err != nil {
-		return "", err
-	}
-	timelineItemsFragment, err := timelineItemsFragment(version)
-	if err != nil {
-		return "", err
-	}
 	if ghe220Semver.Check(version) {
 		// Don't ask for isDraft for ghe 2.20.
-		return fmt.Sprintf(timelineItemsFragment+pullRequestFragmentsFmtstr, "", timelineItemTypes), nil
+		return fmt.Sprintf(pullRequestFragmentsFmtstr, ""), nil
 	}
 	if ghe221PlusOrDotComSemver.Check(version) {
-		return fmt.Sprintf(timelineItemsFragment+pullRequestFragmentsFmtstr, "isDraft", timelineItemTypes), nil
+		return fmt.Sprintf(pullRequestFragmentsFmtstr, "isDraft"), nil
 	}
 	return "", errors.Errorf("unsupported version of GitHub: %s", version)
 }

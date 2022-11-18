@@ -691,39 +691,6 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 	return err
 }
 
-// LoadPullRequestActivities loads the given PullRequest's timeline of activities,
-// returning an error in case of failure.
-func (c *Client) LoadPullRequestActivities(ctx context.Context, pr *PullRequest) (err error) {
-	if pr.ToRef.Repository.Slug == "" {
-		return errors.New("repository slug empty")
-	}
-
-	if pr.ToRef.Repository.Project.Key == "" {
-		return errors.New("project key empty")
-	}
-
-	path := fmt.Sprintf(
-		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/activities",
-		pr.ToRef.Repository.Project.Key,
-		pr.ToRef.Repository.Slug,
-		pr.ID,
-	)
-
-	t := &PageToken{Limit: 1000}
-
-	var activities []*Activity
-	for t.HasMore() {
-		var page []*Activity
-		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
-			return err
-		}
-		activities = append(activities, page...)
-	}
-
-	pr.Activities = activities
-	return nil
-}
-
 func (c *Client) LoadPullRequestCommits(ctx context.Context, pr *PullRequest) (err error) {
 	if pr.ToRef.Repository.Slug == "" {
 		return errors.New("repository slug empty")
@@ -1223,7 +1190,7 @@ type PullRequest struct {
 		} `json:"self"`
 	} `json:"links"`
 
-	Activities   []*Activity     `json:"activities,omitempty"`
+	// Activities   []*Activity     `json:"activities,omitempty"`
 	Commits      []*Commit       `json:"commits,omitempty"`
 	CommitStatus []*CommitStatus `json:"commit_status,omitempty"`
 

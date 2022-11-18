@@ -179,17 +179,17 @@ func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.Changese
 		return err
 	}
 
-	events, err := cs.Changeset.Events()
-	if err != nil {
-		log15.Error("Events", "err", err)
-		return errcode.MakeNonRetryable(err)
-	}
-	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(b.tx.DatabaseDB()), cs.Changeset, events)
+	// events, err := cs.Changeset.Events()
+	// if err != nil {
+	// 	log15.Error("Events", "err", err)
+	// 	return errcode.MakeNonRetryable(err)
+	// }
+	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(b.tx.DatabaseDB()), cs.Changeset)
 
-	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
-		log15.Error("UpsertChangesetEvents", "err", err)
-		return errcode.MakeNonRetryable(err)
-	}
+	// if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
+	// 	log15.Error("UpsertChangesetEvents", "err", err)
+	// 	return errcode.MakeNonRetryable(err)
+	// }
 
 	if err := b.tx.UpdateChangesetCodeHostState(ctx, cs.Changeset); err != nil {
 		log15.Error("UpdateChangeset", "err", err)
@@ -214,17 +214,17 @@ func (b *bulkProcessor) closeChangeset(ctx context.Context) (err error) {
 		return err
 	}
 
-	events, err := cs.Changeset.Events()
-	if err != nil {
-		log15.Error("Events", "err", err)
-		return errcode.MakeNonRetryable(err)
-	}
-	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(b.tx.DatabaseDB()), cs.Changeset, events)
+	// events, err := cs.Changeset.Events()
+	// if err != nil {
+	// 	log15.Error("Events", "err", err)
+	// 	return errcode.MakeNonRetryable(err)
+	// }
+	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(b.tx.DatabaseDB()), cs.Changeset)
 
-	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
-		log15.Error("UpsertChangesetEvents", "err", err)
-		return errcode.MakeNonRetryable(err)
-	}
+	// if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
+	// 	log15.Error("UpsertChangesetEvents", "err", err)
+	// 	return errcode.MakeNonRetryable(err)
+	// }
 
 	if err := b.tx.UpdateChangesetCodeHostState(ctx, cs.Changeset); err != nil {
 		log15.Error("UpdateChangeset", "err", err)

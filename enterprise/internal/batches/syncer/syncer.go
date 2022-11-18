@@ -517,11 +517,11 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, client gitserver.Cl
 		}
 	}
 
-	events, err := c.Events()
-	if err != nil {
-		return err
-	}
-	state.SetDerivedState(ctx, syncStore.Repos(), client, c, events)
+	// events, err := c.Events()
+	// if err != nil {
+	// 	return err
+	// }
+	state.SetDerivedState(ctx, syncStore.Repos(), client, c)
 
 	tx, err := syncStore.Transact(ctx)
 	if err != nil {
@@ -532,10 +532,5 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, client gitserver.Cl
 	// Reset syncer error message state.
 	c.SyncErrorMessage = nil
 
-	err = tx.UpdateChangesetCodeHostState(ctx, c)
-	if err != nil {
-		return err
-	}
-
-	return tx.UpsertChangesetEvents(ctx, events...)
+	return tx.UpdateChangesetCodeHostState(ctx, c)
 }

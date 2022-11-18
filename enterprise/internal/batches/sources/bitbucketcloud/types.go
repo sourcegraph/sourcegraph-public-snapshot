@@ -8,5 +8,5 @@ import "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 // changesets.
 type AnnotatedPullRequest struct {
 	*bitbucketcloud.PullRequest
-	Statuses []*bitbucketcloud.PullRequestStatus
+	// Statuses []*bitbucketcloud.PullRequestStatus
 }

@@ -10,8 +10,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
@@ -133,17 +131,12 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 		}
 	}
 
-	events, err := e.ch.Events()
-	if err != nil {
-		log15.Error("Events", "err", err)
-		return errcode.MakeNonRetryable(err)
-	}
-	state.SetDerivedState(ctx, e.tx.Repos(), e.client, e.ch, events)
-
-	if err := e.tx.UpsertChangesetEvents(ctx, events...); err != nil {
-		log15.Error("UpsertChangesetEvents", "err", err)
-		return err
-	}
+	// events, err := e.ch.Events()
+	// if err != nil {
+	// 	log15.Error("Events", "err", err)
+	// 	return errcode.MakeNonRetryable(err)
+	// }
+	state.SetDerivedState(ctx, e.tx.Repos(), e.client, e.ch)
 
 	return e.tx.UpdateChangeset(ctx, e.ch)
 }

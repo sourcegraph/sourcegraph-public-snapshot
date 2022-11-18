@@ -275,21 +275,6 @@ func (s *GitLabSource) ReopenChangeset(ctx context.Context, c *Changeset) error 
 }
 
 func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest) error {
-	notes, err := s.getMergeRequestNotes(ctx, project, mr)
-	if err != nil {
-		return errors.Wrap(err, "retrieving notes")
-	}
-
-	events, err := s.getMergeRequestResourceStateEvents(ctx, project, mr)
-	if err != nil {
-		return errors.Wrap(err, "retrieving resource state events")
-	}
-
-	pipelines, err := s.getMergeRequestPipelines(ctx, project, mr)
-	if err != nil {
-		return errors.Wrap(err, "retrieving pipelines")
-	}
-
 	if mr.SourceProjectID != mr.ProjectID {
 		project, err := s.client.GetProject(ctx, gitlab.GetProjectOp{
 			ID: int(mr.SourceProjectID),
@@ -308,9 +293,6 @@ func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gi
 		mr.SourceProjectNamespace = ""
 	}
 
-	mr.Notes = notes
-	mr.Pipelines = pipelines
-	mr.ResourceStateEvents = events
 	return nil
 }
 

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
 
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
@@ -578,175 +577,175 @@ func (c *Changeset) URL() (s string, err error) {
 }
 
 // Events returns the deduplicated list of ChangesetEvents from the Changeset's metadata.
-func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
-	uniqueEvents := make(map[string]struct{})
+// func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
+// 	uniqueEvents := make(map[string]struct{})
 
-	appendEvent := func(e *ChangesetEvent) {
-		k := string(e.Kind) + e.Key
-		if _, ok := uniqueEvents[k]; ok {
-			log15.Info("dropping duplicate changeset event", "changeset_id", e.ChangesetID, "kind", e.Kind, "key", e.Key)
-			return
-		}
-		uniqueEvents[k] = struct{}{}
-		events = append(events, e)
-	}
+// 	appendEvent := func(e *ChangesetEvent) {
+// 		k := string(e.Kind) + e.Key
+// 		if _, ok := uniqueEvents[k]; ok {
+// 			log15.Info("dropping duplicate changeset event", "changeset_id", e.ChangesetID, "kind", e.Kind, "key", e.Key)
+// 			return
+// 		}
+// 		uniqueEvents[k] = struct{}{}
+// 		events = append(events, e)
+// 	}
 
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		events = make([]*ChangesetEvent, 0, len(m.TimelineItems))
-		for _, ti := range m.TimelineItems {
-			ev := ChangesetEvent{ChangesetID: c.ID}
+// 	switch m := c.Metadata.(type) {
+// 	case *github.PullRequest:
+// 		events = make([]*ChangesetEvent, 0, len(m.TimelineItems))
+// 		for _, ti := range m.TimelineItems {
+// 			ev := ChangesetEvent{ChangesetID: c.ID}
 
-			switch e := ti.Item.(type) {
-			case *github.PullRequestReviewThread:
-				for _, c := range e.Comments {
-					ev := ev
-					ev.Key = c.Key()
-					if ev.Kind, err = ChangesetEventKindFor(c); err != nil {
-						return
-					}
-					ev.Metadata = c
-					appendEvent(&ev)
-				}
+// 			switch e := ti.Item.(type) {
+// 			case *github.PullRequestReviewThread:
+// 				for _, c := range e.Comments {
+// 					ev := ev
+// 					ev.Key = c.Key()
+// 					if ev.Kind, err = ChangesetEventKindFor(c); err != nil {
+// 						return
+// 					}
+// 					ev.Metadata = c
+// 					appendEvent(&ev)
+// 				}
 
-			case *github.ReviewRequestedEvent:
-				// If the reviewer of a ReviewRequestedEvent has been deleted,
-				// the fields are blank and we cannot match the event to an
-				// entry in the database and/or reliably use it, so we drop it.
-				if e.ReviewerDeleted() {
-					continue
-				}
-				ev.Key = e.Key()
-				if ev.Kind, err = ChangesetEventKindFor(e); err != nil {
-					return
-				}
-				ev.Metadata = e
-				appendEvent(&ev)
+// 			case *github.ReviewRequestedEvent:
+// 				// If the reviewer of a ReviewRequestedEvent has been deleted,
+// 				// the fields are blank and we cannot match the event to an
+// 				// entry in the database and/or reliably use it, so we drop it.
+// 				if e.ReviewerDeleted() {
+// 					continue
+// 				}
+// 				ev.Key = e.Key()
+// 				if ev.Kind, err = ChangesetEventKindFor(e); err != nil {
+// 					return
+// 				}
+// 				ev.Metadata = e
+// 				appendEvent(&ev)
 
-			default:
-				ev.Key = ti.Item.(Keyer).Key()
-				if ev.Kind, err = ChangesetEventKindFor(ti.Item); err != nil {
-					return
-				}
-				ev.Metadata = ti.Item
-				appendEvent(&ev)
-			}
-		}
+// 			default:
+// 				ev.Key = ti.Item.(Keyer).Key()
+// 				if ev.Kind, err = ChangesetEventKindFor(ti.Item); err != nil {
+// 					return
+// 				}
+// 				ev.Metadata = ti.Item
+// 				appendEvent(&ev)
+// 			}
+// 		}
 
-	case *bitbucketserver.PullRequest:
-		events = make([]*ChangesetEvent, 0, len(m.Activities)+len(m.CommitStatus))
+// 	case *bitbucketserver.PullRequest:
+// 		events = make([]*ChangesetEvent, 0, len(m.Activities)+len(m.CommitStatus))
 
-		addEvent := func(e Keyer) error {
-			kind, err := ChangesetEventKindFor(e)
-			if err != nil {
-				return err
-			}
+// 		addEvent := func(e Keyer) error {
+// 			kind, err := ChangesetEventKindFor(e)
+// 			if err != nil {
+// 				return err
+// 			}
 
-			appendEvent(&ChangesetEvent{
-				ChangesetID: c.ID,
-				Key:         e.Key(),
-				Kind:        kind,
-				Metadata:    e,
-			})
-			return nil
-		}
-		for _, a := range m.Activities {
-			if err = addEvent(a); err != nil {
-				return
-			}
-		}
-		for _, s := range m.CommitStatus {
-			if err = addEvent(s); err != nil {
-				return
-			}
-		}
+// 			appendEvent(&ChangesetEvent{
+// 				ChangesetID: c.ID,
+// 				Key:         e.Key(),
+// 				Kind:        kind,
+// 				Metadata:    e,
+// 			})
+// 			return nil
+// 		}
+// 		for _, a := range m.Activities {
+// 			if err = addEvent(a); err != nil {
+// 				return
+// 			}
+// 		}
+// 		for _, s := range m.CommitStatus {
+// 			if err = addEvent(s); err != nil {
+// 				return
+// 			}
+// 		}
 
-	case *gitlab.MergeRequest:
-		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.ResourceStateEvents)+len(m.Pipelines))
-		var kind ChangesetEventKind
+// 	case *gitlab.MergeRequest:
+// 		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.ResourceStateEvents)+len(m.Pipelines))
+// 		var kind ChangesetEventKind
 
-		for _, note := range m.Notes {
-			if event := note.ToEvent(); event != nil {
-				if kind, err = ChangesetEventKindFor(event); err != nil {
-					return
-				}
-				appendEvent(&ChangesetEvent{
-					ChangesetID: c.ID,
-					Key:         event.(Keyer).Key(),
-					Kind:        kind,
-					Metadata:    event,
-				})
-			}
-		}
+// 		for _, note := range m.Notes {
+// 			if event := note.ToEvent(); event != nil {
+// 				if kind, err = ChangesetEventKindFor(event); err != nil {
+// 					return
+// 				}
+// 				appendEvent(&ChangesetEvent{
+// 					ChangesetID: c.ID,
+// 					Key:         event.(Keyer).Key(),
+// 					Kind:        kind,
+// 					Metadata:    event,
+// 				})
+// 			}
+// 		}
 
-		for _, e := range m.ResourceStateEvents {
-			if event := e.ToEvent(); event != nil {
-				if kind, err = ChangesetEventKindFor(event); err != nil {
-					return
-				}
-				appendEvent(&ChangesetEvent{
-					ChangesetID: c.ID,
-					Key:         event.(Keyer).Key(),
-					Kind:        kind,
-					Metadata:    event,
-				})
-			}
-		}
+// 		for _, e := range m.ResourceStateEvents {
+// 			if event := e.ToEvent(); event != nil {
+// 				if kind, err = ChangesetEventKindFor(event); err != nil {
+// 					return
+// 				}
+// 				appendEvent(&ChangesetEvent{
+// 					ChangesetID: c.ID,
+// 					Key:         event.(Keyer).Key(),
+// 					Kind:        kind,
+// 					Metadata:    event,
+// 				})
+// 			}
+// 		}
 
-		for _, pipeline := range m.Pipelines {
-			if kind, err = ChangesetEventKindFor(pipeline); err != nil {
-				return
-			}
-			appendEvent(&ChangesetEvent{
-				ChangesetID: c.ID,
-				Key:         pipeline.Key(),
-				Kind:        kind,
-				Metadata:    pipeline,
-			})
-		}
+// 		for _, pipeline := range m.Pipelines {
+// 			if kind, err = ChangesetEventKindFor(pipeline); err != nil {
+// 				return
+// 			}
+// 			appendEvent(&ChangesetEvent{
+// 				ChangesetID: c.ID,
+// 				Key:         pipeline.Key(),
+// 				Kind:        kind,
+// 				Metadata:    pipeline,
+// 			})
+// 		}
 
-	case *bbcs.AnnotatedPullRequest:
-		// There are two types of event that we create from an annotated pull
-		// request: review events, based on the participants within the pull
-		// request, and check events, based on the commit statuses.
-		//
-		// Unlike some other code host types, we don't need to handle general
-		// comments, as we can access the historical data required through more
-		// specialised APIs.
+// 	case *bbcs.AnnotatedPullRequest:
+// 		// There are two types of event that we create from an annotated pull
+// 		// request: review events, based on the participants within the pull
+// 		// request, and check events, based on the commit statuses.
+// 		//
+// 		// Unlike some other code host types, we don't need to handle general
+// 		// comments, as we can access the historical data required through more
+// 		// specialised APIs.
 
-		var kind ChangesetEventKind
+// 		var kind ChangesetEventKind
 
-		for _, participant := range m.Participants {
-			if kind, err = ChangesetEventKindFor(&participant); err != nil {
-				return
-			}
-			appendEvent(&ChangesetEvent{
-				ChangesetID: c.ID,
-				// There's no unique ID within the participant structure itself,
-				// but the combination of the user UUID, the repo UUID, and the
-				// PR ID should be unique. We can't implement this as a Keyer on
-				// the participant because it requires knowledge of things
-				// outside the struct.
-				Key:      m.Destination.Repo.UUID + ":" + strconv.FormatInt(m.ID, 10) + ":" + participant.User.UUID,
-				Kind:     kind,
-				Metadata: participant,
-			})
-		}
+// 		for _, participant := range m.Participants {
+// 			if kind, err = ChangesetEventKindFor(&participant); err != nil {
+// 				return
+// 			}
+// 			appendEvent(&ChangesetEvent{
+// 				ChangesetID: c.ID,
+// 				// There's no unique ID within the participant structure itself,
+// 				// but the combination of the user UUID, the repo UUID, and the
+// 				// PR ID should be unique. We can't implement this as a Keyer on
+// 				// the participant because it requires knowledge of things
+// 				// outside the struct.
+// 				Key:      m.Destination.Repo.UUID + ":" + strconv.FormatInt(m.ID, 10) + ":" + participant.User.UUID,
+// 				Kind:     kind,
+// 				Metadata: participant,
+// 			})
+// 		}
 
-		for _, status := range m.Statuses {
-			if kind, err = ChangesetEventKindFor(status); err != nil {
-				return
-			}
-			appendEvent(&ChangesetEvent{
-				ChangesetID: c.ID,
-				Key:         status.Key(),
-				Kind:        kind,
-				Metadata:    status,
-			})
-		}
-	}
-	return events, nil
-}
+// 		for _, status := range m.Statuses {
+// 			if kind, err = ChangesetEventKindFor(status); err != nil {
+// 				return
+// 			}
+// 			appendEvent(&ChangesetEvent{
+// 				ChangesetID: c.ID,
+// 				Key:         status.Key(),
+// 				Kind:        kind,
+// 				Metadata:    status,
+// 			})
+// 		}
+// 	}
+// 	return events, nil
+// }
 
 // HeadRefOid returns the git ObjectID of the HEAD reference associated with
 // Changeset on the codehost. If the codehost doesn't include the ObjectID, an

@@ -2,13 +2,13 @@ package resolvers
 
 import (
 	"context"
-	"sort"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -223,26 +223,26 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 		return nil, err
 	}
 
-	var es []*btypes.ChangesetEvent
-	changesetIDs := cs.IDs()
-	if len(changesetIDs) > 0 {
-		eventsOpts := store.ListChangesetEventsOpts{ChangesetIDs: changesetIDs, Kinds: state.RequiredEventTypesForHistory}
-		es, _, err = r.store.ListChangesetEvents(ctx, eventsOpts)
-		if err != nil {
-			return nil, err
-		}
-	}
+	// var es []*btypes.ChangesetEvent
+	// changesetIDs := cs.IDs()
+	// if len(changesetIDs) > 0 {
+	// 	eventsOpts := store.ListChangesetEventsOpts{ChangesetIDs: changesetIDs, Kinds: state.RequiredEventTypesForHistory}
+	// 	es, _, err = r.store.ListChangesetEvents(ctx, eventsOpts)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 	// Sort all events once by their timestamps, CalcCounts depends on it.
-	events := state.ChangesetEvents(es)
-	sort.Sort(events)
+	// events := state.ChangesetEvents(es)
+	// sort.Sort(events)
 
 	// Determine timeframe.
 	now := r.store.Clock()()
 	weekAgo := now.Add(-7 * 24 * time.Hour)
 	start := r.batchChange.CreatedAt.UTC()
-	if len(events) > 0 {
-		start = events[0].Timestamp().UTC()
-	}
+	// if len(events) > 0 {
+	// 	start = events[0].Timestamp().UTC()
+	// }
 	// At least a week lookback, more if the batch change was created earlier.
 	if start.After(weekAgo) {
 		start = weekAgo
@@ -255,7 +255,7 @@ func (r *batchChangeResolver) ChangesetCountsOverTime(
 		end = args.To.Time.UTC()
 	}
 
-	counts, err := state.CalcCounts(start, end, cs, es...)
+	counts, err := state.CalcCounts(start, end, cs)
 	if err != nil {
 		return nil, err
 	}

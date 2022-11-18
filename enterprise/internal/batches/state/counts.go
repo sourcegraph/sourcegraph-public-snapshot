@@ -43,69 +43,10 @@ func (cc *ChangesetCounts) String() string {
 // The number of ChangesetCounts returned is always `timestampCount`. Between
 // start and end, it generates `timestampCount` datapoints with each ChangesetCounts
 // representing a point in time. `es` are expected to be pre-sorted.
-func CalcCounts(start, end time.Time, cs []*btypes.Changeset, es ...*btypes.ChangesetEvent) ([]*ChangesetCounts, error) {
-	ts := GenerateTimestamps(start, end)
-	counts := make([]*ChangesetCounts, len(ts))
-	for i, t := range ts {
-		counts[i] = &ChangesetCounts{Time: t}
-	}
+func CalcCounts(start, end time.Time, cs []*btypes.Changeset) ([]*ChangesetCounts, error) {
+	// todo: reimplement
 
-	// Grouping Events by their Changeset ID
-	byChangesetID := make(map[int64]ChangesetEvents)
-	for _, e := range es {
-		id := e.Changeset()
-		byChangesetID[id] = append(byChangesetID[id], e)
-	}
-
-	// Map Events to their Changeset
-	byChangeset := make(map[*btypes.Changeset]ChangesetEvents)
-	for _, c := range cs {
-		byChangeset[c] = byChangesetID[c.ID]
-	}
-
-	for changeset, csEvents := range byChangeset {
-		// Compute history of changeset
-		history, err := computeHistory(changeset, csEvents)
-		if err != nil {
-			return counts, err
-		}
-
-		// Go through every point in time we want to record and check the
-		// states of the changeset at that point in time
-		for _, c := range counts {
-			states, ok := history.StatesAtTime(c.Time)
-			if !ok {
-				// Changeset didn't exist yet
-				continue
-			}
-
-			c.Total++
-			switch states.externalState {
-			case btypes.ChangesetExternalStateDraft:
-				c.Draft++
-			case btypes.ChangesetExternalStateOpen:
-				c.Open++
-				switch states.reviewState {
-				case btypes.ChangesetReviewStatePending:
-					c.OpenPending++
-				case btypes.ChangesetReviewStateApproved:
-					c.OpenApproved++
-				case btypes.ChangesetReviewStateChangesRequested:
-					c.OpenChangesRequested++
-				}
-
-			case btypes.ChangesetExternalStateMerged:
-				c.Merged++
-			case btypes.ChangesetExternalStateClosed,
-				btypes.ChangesetExternalStateReadOnly:
-				// We'll lump read-only into closed, rather than trying to add another
-				// state.
-				c.Closed++
-			}
-		}
-	}
-
-	return counts, nil
+	return []*ChangesetCounts{}, nil
 }
 
 func GenerateTimestamps(start, end time.Time) []time.Time {

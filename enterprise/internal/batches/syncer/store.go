@@ -15,7 +15,7 @@ type SyncStore interface {
 	ListChangesetSyncData(context.Context, store.ListChangesetSyncDataOpts) ([]*btypes.ChangesetSyncData, error)
 	GetChangeset(context.Context, store.GetChangesetOpts) (*btypes.Changeset, error)
 	UpdateChangesetCodeHostState(ctx context.Context, cs *btypes.Changeset) error
-	UpsertChangesetEvents(ctx context.Context, cs ...*btypes.ChangesetEvent) error
+	// UpsertChangesetEvents(ctx context.Context, cs ...*btypes.ChangesetEvent) error
 	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
 	Transact(context.Context) (*store.Store, error)
 	Repos() database.RepoStore

@@ -181,10 +181,6 @@ func (s BitbucketServerSource) LoadChangeset(ctx context.Context, cs *Changeset)
 }
 
 func (s BitbucketServerSource) loadPullRequestData(ctx context.Context, pr *bitbucketserver.PullRequest) error {
-	if err := s.client.LoadPullRequestActivities(ctx, pr); err != nil {
-		return errors.Wrap(err, "loading pr activities")
-	}
-
 	if err := s.client.LoadPullRequestCommits(ctx, pr); err != nil {
 		return errors.Wrap(err, "loading pr commits")
 	}

@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -392,22 +391,22 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 		return []graphqlbackend.ChangesetLabelResolver{}, nil
 	}
 
-	opts := store.ListChangesetEventsOpts{
-		ChangesetIDs: []int64{r.changeset.ID},
-		Kinds:        state.ComputeLabelsRequiredEventTypes,
-	}
-	es, _, err := r.store.ListChangesetEvents(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-	// ComputeLabels expects the events to be pre-sorted.
-	sort.Sort(state.ChangesetEvents(es))
+	// opts := store.ListChangesetEventsOpts{
+	// 	ChangesetIDs: []int64{r.changeset.ID},
+	// 	Kinds:        state.ComputeLabelsRequiredEventTypes,
+	// }
+	// es, _, err := r.store.ListChangesetEvents(ctx, opts)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// // ComputeLabels expects the events to be pre-sorted.
+	// sort.Sort(state.ChangesetEvents(es))
 
 	// We use changeset labels as the source of truth as they can be renamed
 	// or removed but we'll also take into account any changeset events that
 	// have happened since the last sync in order to reflect changes that
 	// have come in via webhooks
-	labels := state.ComputeLabels(r.changeset, es)
+	labels := state.ComputeLabels(r.changeset)
 	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(labels))
 	for _, l := range labels {
 		resolvers = append(resolvers, &changesetLabelResolver{label: l})
