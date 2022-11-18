@@ -107,9 +107,7 @@ export const DynamicInsightPreview: FC<DynamicInsightPreviewProps> = props => {
                 </LivePreviewChart>
             )}
 
-            {state.status === LivePreviewStatus.Data && (
-                <LivePreviewLegend series={state.data as Series<unknown>[]} />
-            )}
+            {state.status === LivePreviewStatus.Data && <LivePreviewLegend series={state.data as Series<unknown>[]} />}
         </LivePreviewCard>
     )
 }

@@ -44,6 +44,13 @@ interface Result<R> {
     refetch: () => {}
 }
 
+/**
+ * Series insight (search based and capture group insights) live preview hook.
+ * It's used primarily for presenting insight live preview data in the creation UI pages.
+ *
+ * All data for insight live preview isn't stored in the code insights DB tables
+ * instead, it's calculated on the fly in query time on the backend.
+ */
 export function useLivePreviewSeriesInsight(props: Props): Result<Series<Datum>[]> {
     const { skip, repositories, step, series } = props
     const [unit, value] = getStepInterval(step)

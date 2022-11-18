@@ -20,6 +20,16 @@ interface Result<R> {
     refetch: () => {}
 }
 
+/**
+ * [Experimental] Compute insight live preview hook.
+ *
+ * It's used primarily for presenting insight live preview data in the compute
+ * creation UI pages. Due to lack of compute insight API compute preview is built on
+ * series insight live preview hook.
+ *
+ * All data for insight live preview isn't stored in the code insights DB tables
+ * instead, it's calculated on the fly in query time on the backend.
+ */
 export function useLivePreviewComputeInsight(props: Props): Result<ComputeDatum[]> {
     const { skip, repositories, series, groupBy } = props
 
@@ -42,7 +52,7 @@ export function useLivePreviewComputeInsight(props: Props): Result<ComputeDatum[
         return {
             state: {
                 status: LivePreviewStatus.Data,
-                data: mapSeriesToCompute(series, state.data.series),
+                data: mapSeriesToCompute(series, state.data),
             },
             refetch,
         }
