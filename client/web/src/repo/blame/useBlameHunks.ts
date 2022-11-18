@@ -30,7 +30,6 @@ export type BlameHunk = NonNullable<
     NonNullable<NonNullable<GitBlameResult['repository']>['commit']>['blob']
 >['blame'][number] & { displayInfo: BlameHunkDisplayInfo }
 
-// TODO: Instead of GraphQL API use the `stream-blame` endpoint, stream hunks back
 const fetchBlameViaGraphQL = memoizeObservable(
     ({
         repoName,
