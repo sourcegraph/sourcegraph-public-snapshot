@@ -39,7 +39,7 @@ func SetupRoutes(executorStore database.ExecutorStore, metricsStore metricsstore
 			"markErrored":             h.handleMarkErrored,
 			"markFailed":              h.handleMarkFailed,
 			"heartbeat":               h.handleHeartbeat,
-			// TODO: This endpoint can be removed in Sourcegraph 4.3.
+			// TODO: This endpoint can be removed in Sourcegraph 4.4.
 			"canceledJobs": h.handleCanceledJobs,
 		}
 		for path, handler := range routes {
@@ -170,13 +170,13 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 			return http.StatusOK, apiclient.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
 		}
 
-		// TODO: Remove in Sourcegraph 4.3.
+		// TODO: Remove in Sourcegraph 4.4.
 		return http.StatusOK, knownIDs, err
 	})
 }
 
 // POST /{queueName}/canceledJobs
-// TODO: This handler can be removed in Sourcegraph 4.3.
+// TODO: This handler can be removed in Sourcegraph 4.4.
 func (h *handler) handleCanceledJobs(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.CanceledJobsRequest
 

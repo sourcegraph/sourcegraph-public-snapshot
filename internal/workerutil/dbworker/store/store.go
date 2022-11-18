@@ -95,7 +95,8 @@ type Store interface {
 	// The supplied conditions may use the alias provided in `ViewName`, if one was supplied.
 	Dequeue(ctx context.Context, workerHostname string, conditions []*sqlf.Query) (workerutil.Record, bool, error)
 
-	// Heartbeat marks the given record as currently being processed.
+	// Heartbeat marks the given records as currently being processed and returns the list of records that are
+	// still known to the database (to detect lost jobs) and jobs that are marked as to be canceled.
 	Heartbeat(ctx context.Context, ids []int, options HeartbeatOptions) (knownIDs, cancelIDs []int, err error)
 
 	// Requeue updates the state of the record with the given identifier to queued and adds a processing delay before

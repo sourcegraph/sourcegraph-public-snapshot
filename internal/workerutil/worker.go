@@ -30,7 +30,6 @@ type Worker struct {
 	options          WorkerOptions
 	dequeueClock     glock.Clock
 	heartbeatClock   glock.Clock
-	cancelClock      glock.Clock
 	shutdownClock    glock.Clock
 	numDequeues      int             // tracks number of dequeue attempts
 	handlerSemaphore chan struct{}   // tracks available handler slots
@@ -87,10 +86,10 @@ type WorkerOptions struct {
 
 func NewWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions) *Worker {
 	clock := glock.NewRealClock()
-	return newWorker(ctx, store, handler, options, clock, clock, clock, clock)
+	return newWorker(ctx, store, handler, options, clock, clock, clock)
 }
 
-func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, mainClock, heartbeatClock, cancelClock, shutdownClock glock.Clock) *Worker {
+func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, mainClock, heartbeatClock, shutdownClock glock.Clock) *Worker {
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/workerutil:newWorker")
 	}
@@ -117,7 +116,6 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 		options:          options,
 		dequeueClock:     mainClock,
 		heartbeatClock:   heartbeatClock,
-		cancelClock:      cancelClock,
 		shutdownClock:    shutdownClock,
 		handlerSemaphore: handlerSemaphore,
 		rootCtx:          ctx,

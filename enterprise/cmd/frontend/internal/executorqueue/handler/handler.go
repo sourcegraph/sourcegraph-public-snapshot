@@ -187,8 +187,10 @@ func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []
 
 // canceled reaches to the queueOptions.FetchCanceled to determine jobs that need
 // to be canceled.
-// This endpoint is deprecated and should be removed in Sourcegraph 4.3.
+// This endpoint is deprecated and should be removed in Sourcegraph 4.4.
 func (h *handler) canceled(ctx context.Context, executorName string, knownIDs []int) (canceledIDs []int, err error) {
+	// The Heartbeat method now handles both heartbeats and cancellation. For backcompat,
+	// we fall back to this method.
 	_, canceledIDs, err = h.Store.Heartbeat(ctx, knownIDs, store.HeartbeatOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,

@@ -268,6 +268,7 @@ const (
 )
 
 type HeartbeatRequest struct {
+	// TODO: This field is set to become unneccesary in Sourcegraph 4.4.
 	Version ExecutorAPIVersion `json:"version"`
 
 	ExecutorName string `json:"executorName"`
@@ -286,13 +287,12 @@ type HeartbeatRequest struct {
 	PrometheusMetrics string `json:"prometheusMetrics"`
 }
 
-// TODO: Not compatible with Sourcegraph 4.2.
 type HeartbeatResponse struct {
 	KnownIDs  []int `json:"knownIds"`
 	CancelIDs []int `json:"cancelIds"`
 }
 
-// TODO: Deprecated. Can be removed in Sourcegraph 4.3.
+// TODO: Deprecated. Can be removed in Sourcegraph 4.4.
 type CanceledJobsRequest struct {
 	KnownJobIDs  []int  `json:"knownJobIds"`
 	ExecutorName string `json:"executorName"`
