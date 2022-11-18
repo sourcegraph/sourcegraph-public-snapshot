@@ -46,7 +46,7 @@ import {
     mdiWrench,
 } from '@mdi/js'
 import * as H from 'history'
-import { capitalize, isEqual, startCase } from 'lodash'
+import { isEqual, startCase } from 'lodash'
 
 import { isDefined } from '@sourcegraph/common'
 import { SymbolKind } from '@sourcegraph/search'
@@ -65,8 +65,9 @@ import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
-import { queryTokens } from './parsedQuery'
 import { formatRepositoryStarCount } from '../../util'
+
+import { queryTokens } from './parsedQuery'
 
 type CompletionType = SymbolKind | 'queryfilter' | 'repository' | 'searchhistory'
 
