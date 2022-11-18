@@ -592,7 +592,7 @@ func GetSearchContextSpec(searchContext *types.SearchContext) string {
 	}
 }
 
-func IsSearchContextUserDefault(ctx context.Context, db database.DB, searchContextID int64) bool {
+func CurrentUserHasSearchContextAsDefault(ctx context.Context, db database.DB, searchContextID int64) bool {
 	user, err := auth.CurrentUser(ctx, db)
 	if err != nil {
 		return false
@@ -607,4 +607,21 @@ func IsSearchContextUserDefault(ctx context.Context, db database.DB, searchConte
 	}
 
 	return defaultSearchContextID == searchContextID
+}
+
+func CurrentUserHasStarredSearchContext(ctx context.Context, db database.DB, searchContextID int64) bool {
+	user, err := auth.CurrentUser(ctx, db)
+	if err != nil {
+		return false
+	}
+	if user == nil {
+		return false
+	}
+
+	userHasStarred, err := db.SearchContexts().GetUserStarForSearchContext(ctx, user.ID, searchContextID)
+	if err != nil {
+		return false
+	}
+
+	return userHasStarred
 }

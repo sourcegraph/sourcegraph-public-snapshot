@@ -78,7 +78,8 @@ extend type Query {
         """
         namespaces: [ID] = []
         """
-        Sort field. Despite the value, the results are always sorted with the user's default context first,
+        Sort field.
+        TODO: Despite the value, the results are always sorted with the user's default context first,
         followed by the user's starred contexts, followed by the rest of the contexts. This controls the order
         of these internal groups.
         """

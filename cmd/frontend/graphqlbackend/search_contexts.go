@@ -44,6 +44,7 @@ type SearchContextResolver interface {
 	Namespace(ctx context.Context) (*NamespaceResolver, error)
 	ViewerCanManage(ctx context.Context) bool
 	ViewerHasAsDefault(ctx context.Context) bool
+	ViewerHasStarred(ctx context.Context) bool
 	Repositories(ctx context.Context) ([]SearchContextRepositoryRevisionsResolver, error)
 	Query() string
 }

@@ -41,6 +41,7 @@ type SearchContextsStore interface {
 	Transact(context.Context) (SearchContextsStore, error)
 	UpdateSearchContextWithRepositoryRevisions(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error)
 	GetUserDefaultSearchContextID(ctx context.Context, userID int32) (int64, error)
+	GetUserStarForSearchContext(ctx context.Context, userID int32, searchContextID int64) (bool, error)
 }
 
 type searchContextsStore struct {
@@ -619,4 +620,19 @@ func (s *searchContextsStore) GetUserDefaultSearchContextID(ctx context.Context,
 	}
 
 	return id, nil
+}
+
+func (s *searchContextsStore) GetUserStarForSearchContext(ctx context.Context, userID int32, searchContextID int64) (bool, error) {
+	if a := actor.FromContext(ctx); !a.IsInternal() {
+		return false, errors.New("GetUserStarForSearchContext can only be accessed by an internal actor")
+	}
+
+	q := sqlf.Sprintf(`SELECT COUNT(*) FROM search_context_stars WHERE user_id = %d AND search_context_id = %d`, userID, searchContextID)
+
+	var count int
+	err := s.QueryRow(ctx, q).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
