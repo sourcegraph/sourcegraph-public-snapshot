@@ -101,7 +101,7 @@ class DecorationWidget extends WidgetType {
 }
 
 const blameGutterElement = new (class extends GutterMarker {
-    toDOM(): HTMLElement {
+    public toDOM(): HTMLElement {
         return document.createElement('div')
     }
 })()
@@ -136,7 +136,7 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                     this.decorations = this.computeDecorations(view, facet)
                 }
 
-                public update(update: ViewUpdate) {
+                public update(update: ViewUpdate): void {
                     if (update.docChanged || update.viewportChanged) {
                         this.decorations = this.computeDecorations(update.view, facet)
                     }
@@ -148,9 +148,9 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                     for (const { from, to } of view.visibleRanges) {
                         for (let position = from; position <= to; ) {
                             const line = view.state.doc.lineAt(position)
-                            const hunk = hunks.find(h => h.startLine === line.number)
+                            const matchingHunk = hunks.find(hunk => hunk.startLine === line.number)
                             const decoration = Decoration.widget({
-                                widget: new DecorationWidget(view, hunk),
+                                widget: new DecorationWidget(view, matchingHunk),
                             })
                             widgets.push(decoration.range(line.from))
                             position = line.to + 1
