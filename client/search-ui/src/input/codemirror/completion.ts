@@ -14,7 +14,7 @@ import {
     setSelectedCompletion,
 } from '@codemirror/autocomplete'
 import { Extension, Prec } from '@codemirror/state'
-import { keymap, EditorView, KeyBinding } from '@codemirror/view'
+import { keymap, EditorView } from '@codemirror/view'
 import {
     mdiCodeArray,
     mdiCodeBraces,
@@ -28,6 +28,7 @@ import {
     mdiFunction,
     mdiHistory,
     mdiKey,
+    mdiLightningBoltCircle,
     mdiLink,
     mdiMatrix,
     mdiNull,
@@ -146,6 +147,22 @@ export function searchQueryAutocompletion(
 
     // Customizing how completion items are rendered
     const addToOptions: NonNullable<Parameters<typeof autocompletion>[0]>['addToOptions'] = [
+        {
+            render(completion) {
+                if (!applyOnEnter) {
+                    return null
+                }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+                const url = (completion as any)?.url as string
+                if (!url) {
+                    return null
+                }
+                // Display a lightning bolt to indicate this is an "instant" search result.
+                return createSVGIcon(mdiLightningBoltCircle, '')
+            },
+            // Before the label
+            position: 19,
+        },
         // This renders the completion icon
         {
             render(completion) {
