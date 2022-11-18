@@ -69,6 +69,7 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
 }
 
 const identity = <T,>(argument: T): T => argument
+const DEFAULT_LINE_CHART_PADDING = { top: 16, right: 18, bottom: 20, left: 0 }
 
 /**
  * Visual component that renders svg line chart with pre-defined sizes, tooltip,
@@ -116,7 +117,15 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
     )
 
     return (
-        <SvgRoot {...attributes} width={width} height={height} xScale={xScale} yScale={yScale} role="group">
+        <SvgRoot
+            {...attributes}
+            role="group"
+            width={width}
+            height={height}
+            xScale={xScale}
+            yScale={yScale}
+            padding={DEFAULT_LINE_CHART_PADDING}
+        >
             <SvgAxisLeft />
 
             <SvgAxisBottom
