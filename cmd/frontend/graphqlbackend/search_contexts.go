@@ -43,6 +43,7 @@ type SearchContextResolver interface {
 	UpdatedAt() gqlutil.DateTime
 	Namespace(ctx context.Context) (*NamespaceResolver, error)
 	ViewerCanManage(ctx context.Context) bool
+	ViewerHasAsDefault(ctx context.Context) bool
 	Repositories(ctx context.Context) ([]SearchContextRepositoryRevisionsResolver, error)
 	Query() string
 }

@@ -591,3 +591,20 @@ func GetSearchContextSpec(searchContext *types.SearchContext) string {
 		return searchContextSpecPrefix + namespaceName + "/" + searchContext.Name
 	}
 }
+
+func IsSearchContextUserDefault(ctx context.Context, db database.DB, searchContextID int64) bool {
+	user, err := auth.CurrentUser(ctx, db)
+	if err != nil {
+		return false
+	}
+	if user == nil {
+		return false
+	}
+
+	defaultSearchContextID, err := db.SearchContexts().GetUserDefaultSearchContextID(ctx, user.ID)
+	if err != nil {
+		return false
+	}
+
+	return defaultSearchContextID == searchContextID
+}

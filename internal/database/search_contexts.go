@@ -40,6 +40,7 @@ type SearchContextsStore interface {
 	SetSearchContextRepositoryRevisions(context.Context, int64, []*types.SearchContextRepositoryRevisions) error
 	Transact(context.Context) (SearchContextsStore, error)
 	UpdateSearchContextWithRepositoryRevisions(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error)
+	GetUserDefaultSearchContextID(ctx context.Context, userID int32) (int64, error)
 }
 
 type searchContextsStore struct {
@@ -602,4 +603,20 @@ func (s *searchContextsStore) GetAllQueries(ctx context.Context) (qs []string, _
 	q := sqlf.Sprintf(`SELECT array_agg(query) FROM search_contexts WHERE query IS NOT NULL`)
 
 	return qs, s.QueryRow(ctx, q).Scan(pq.Array(&qs))
+}
+
+func (s *searchContextsStore) GetUserDefaultSearchContextID(ctx context.Context, userID int32) (int64, error) {
+	if a := actor.FromContext(ctx); !a.IsInternal() {
+		return 0, errors.New("GetUserDefaultSearchContextID can only be accessed by an internal actor")
+	}
+
+	q := sqlf.Sprintf(`SELECT search_context_id FROM search_context_default WHERE user_id = %d`, userID)
+
+	var id int64
+	err := s.QueryRow(ctx, q).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+
+	return id, nil
 }

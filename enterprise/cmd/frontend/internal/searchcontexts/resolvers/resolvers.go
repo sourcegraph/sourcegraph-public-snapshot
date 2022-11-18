@@ -392,6 +392,10 @@ func (r *searchContextResolver) ViewerCanManage(ctx context.Context) bool {
 	return !searchcontexts.IsAutoDefinedSearchContext(r.sc) && hasWriteAccess
 }
 
+func (r *searchContextResolver) ViewerHasAsDefault(ctx context.Context) bool {
+	return searchcontexts.IsSearchContextUserDefault(ctx, r.db, r.sc.ID)
+}
+
 func (r *searchContextResolver) Repositories(ctx context.Context) ([]graphqlbackend.SearchContextRepositoryRevisionsResolver, error) {
 	if searchcontexts.IsAutoDefinedSearchContext(r.sc) {
 		return []graphqlbackend.SearchContextRepositoryRevisionsResolver{}, nil
