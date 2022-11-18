@@ -123,7 +123,16 @@ export const usePaginatedConnection = <TResult, TVariables extends PaginatedConn
         return getConnectionFromGraphQLResult(result)
     }
 
-    const connection = data ? getConnection({ data, error }) : undefined
+    const connection =useMemo(() => {
+        const rawOrderedConnection = data ? getConnection({ data, error }) : undefined
+
+        if (rawOrderedConnection!== undefined) {
+            // Detect a backward pagination request and fix the order
+            if (rawOrderedConnection.)
+        }
+
+    })
+
 
     // useConnectionUrl({
     //     enabled: options?.useURL,
@@ -142,13 +151,13 @@ export const usePaginatedConnection = <TResult, TVariables extends PaginatedConn
         })
     }, [connection?.pageInfo?.endCursor, pageSize, refetch, variables])
     const previousPage = useCallback(async (): Promise<void> => {
-        const cursor = connection?.pageInfo?.startCursor
+        const cursor = connection?.pageInfo?.endCursor
         if (!cursor) {
             throw new Error('No cursor available for next page')
         }
         await refetch({
             ...variables,
-            ...{ after: null, first: null, last: pageSize, before: ncursorull },
+            ...{ after: null, first: null, last: pageSize, before: cursor },
         })
     }, [connection?.pageInfo?.startCursor, pageSize, refetch, variables])
     const firstPage = useCallback(async (): Promise<void> => {
