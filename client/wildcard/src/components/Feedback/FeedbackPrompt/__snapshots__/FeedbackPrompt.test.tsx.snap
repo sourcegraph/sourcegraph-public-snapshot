@@ -70,8 +70,8 @@ exports[`FeedbackPrompt should render correctly 1`] = `
           You're not signed in. Please tell us how to contact you if you want a reply.
         </p>
         <button
+          aria-disabled="true"
           class="button"
-          disabled=""
           role="menuitem"
           type="submit"
         >
@@ -176,6 +176,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
           </span>
         </div>
         <button
+          aria-disabled="false"
           class="button"
           role="menuitem"
           type="submit"
