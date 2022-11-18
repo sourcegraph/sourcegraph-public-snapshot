@@ -56,10 +56,15 @@ export const AllStates: Story = args => {
     const initialSelected = CHANGESET_IDS.slice(0, args.selectedChangesets)
     const initialVisible = CHANGESET_IDS.slice(0, args.visibleChangesets)
 
-    const createAvailableOperationsQuery = (bulkOperations: BulkOperationType[]): typeof _queryAvailableBulkOperations => () => of(bulkOperations)
+    const createAvailableOperationsQuery = (
+        bulkOperations: BulkOperationType[]
+    ): typeof _queryAvailableBulkOperations => () => of(bulkOperations)
 
     const allAvailableBulkOperationsQuery = createAvailableOperationsQuery(allBulkOperations)
-    const commentAndDetachBulkOperationsQuery = createAvailableOperationsQuery([BulkOperationType.COMMENT, BulkOperationType.DETACH])
+    const commentAndDetachBulkOperationsQuery = createAvailableOperationsQuery([
+        BulkOperationType.COMMENT,
+        BulkOperationType.DETACH,
+    ])
 
     return (
         <WebStory>
@@ -291,7 +296,9 @@ export const AllStates: Story = args => {
                         />
                     </MultiSelectContextProvider>
                     <hr />
-                    <H3 className="mt-3">Half visible, half selectable, half selected with a subset of available bulk operations</H3>
+                    <H3 className="mt-3">
+                        Half visible, half selectable, half selected with a subset of available bulk operations
+                    </H3>
                     <MultiSelectContextProvider
                         initialSelected={HALF_CHANGESET_IDS}
                         initialVisible={HALF_CHANGESET_IDS}
