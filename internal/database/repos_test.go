@@ -128,7 +128,7 @@ func setZoektIndexed(t *testing.T, db DB, name api.RepoName) {
 		t.Fatal(err)
 	}
 	err = db.ZoektRepos().UpdateIndexStatuses(ctx, map[uint32]*zoekt.MinimalRepoListEntry{
-		uint32(repo.ID): &zoekt.MinimalRepoListEntry{},
+		uint32(repo.ID): {},
 	})
 	if err != nil {
 		t.Fatalf("failed to set indexed status of %q: %s", name, err)
