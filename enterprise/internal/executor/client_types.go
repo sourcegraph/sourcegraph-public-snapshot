@@ -261,7 +261,15 @@ type MarkErroredRequest struct {
 	ErrorMessage string `json:"errorMessage"`
 }
 
+type ExecutorAPIVersion string
+
+const (
+	ExecutorAPIVersion2 ExecutorAPIVersion = "V2"
+)
+
 type HeartbeatRequest struct {
+	Version ExecutorAPIVersion `json:"version"`
+
 	ExecutorName string `json:"executorName"`
 	JobIDs       []int  `json:"jobIds"`
 

@@ -165,8 +165,13 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 		}()
 
 		knownIDs, cancelIDs, err := h.heartbeat(r.Context(), executor, payload.JobIDs)
-		// TODO: Not backwards compatible.
-		return http.StatusOK, apiclient.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
+
+		if payload.Version == apiclient.ExecutorAPIVersion2 {
+			return http.StatusOK, apiclient.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
+		}
+
+		// TODO: Remove in Sourcegraph 4.3.
+		return http.StatusOK, knownIDs, err
 	})
 }
 
