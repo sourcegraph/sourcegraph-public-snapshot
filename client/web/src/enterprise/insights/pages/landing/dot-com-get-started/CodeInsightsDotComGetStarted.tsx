@@ -29,10 +29,6 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
         telemetryService.logViewEvent('CloudInsightsGetStartedPage')
     }, [telemetryService])
 
-    const handleInstallLocalInstanceClick = (): void => {
-        telemetryService.log('CloudCodeInsightsGetStartedInstallInstance')
-    }
-
     return (
         <CodeInsightsLandingPageContext.Provider value={DOT_COM_CONTEXT}>
             <Page>
@@ -42,7 +38,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                     actions={
                         <Button
                             as={Link}
-                            to="/insights/"
+                            to="https://signup.sourcegraph.com/"
                             variant="primary"
                             onClick={() => telemetryService.log('ClickedOnCloudCTA', { url: window.location.href })}
                         >

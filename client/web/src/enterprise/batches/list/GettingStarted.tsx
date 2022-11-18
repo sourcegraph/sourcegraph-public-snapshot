@@ -7,6 +7,8 @@ import { Container, H2, H3, Link, Text, Icon } from '@sourcegraph/wildcard'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CtaBanner } from '../../../components/CtaBanner'
 
+import { eventLogger } from '../../../tracking/eventLogger'
+
 export interface GettingStartedProps {
     isSourcegraphDotCom: boolean
     className?: string
@@ -78,7 +80,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                 <Icon className="mr-2 text-merged" size="md" aria-hidden={true} svgPath={mdiArrowRight} />
                 <p className="mb-0">
                     To automate changes across your team's private repos,{' '}
-                    <Link to="https://signup.sourcegraph.com/" onClick={() => telemetryService.log('ClickedOnCloudCTA', { url: window.location.href })}>
+                    <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}>
                         try Sourcegraph Cloud
                     </Link>.
                 </p>
