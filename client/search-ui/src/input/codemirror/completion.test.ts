@@ -353,9 +353,9 @@ describe('codmirror completions', () => {
         expect(suggestionType('sourcegraph')).toStrictEqual('repo')
     })
 
-    test('suggests files for repo-scoped queries', async () => {
-        expect(suggestionType('repo:sourcegraph local')).toStrictEqual('path')
-        expect(suggestionType('r:sourcegraph local')).toStrictEqual('path')
+    test('suggests symbols for repo-scoped queries', async () => {
+        expect(suggestionType('repo:sourcegraph local')).toStrictEqual('symbol')
+        expect(suggestionType('r:sourcegraph local')).toStrictEqual('symbol')
     })
 
     test('suggests symbols for repo+file scoped queries', async () => {

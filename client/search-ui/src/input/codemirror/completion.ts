@@ -201,48 +201,28 @@ export function searchQueryAutocompletion(
         },
     ]
 
-    const completionKeymapWithTabInsteadOfEnter: KeyBinding[] = completionKeymap.map(keybinding => {
-        const { run } = keybinding
-        return keybinding.key === 'Enter'
-            ? {
-                  ...keybinding,
-                  key: 'Tab',
-                  run: run
-                      ? (view: EditorView) => {
-                            if (applyOnEnter && selectedCompletion(view.state) === null) {
-                                if (currentCompletions(view.state).length > 0) {
-                                    view.dispatch({ effects: setSelectedCompletion(0) })
-                                    acceptCompletion(view)
-                                    return true
-                                }
-                                return false
-                            }
-                            return run(view)
-                        }
-                      : undefined,
-              }
-            : keybinding
-    })
-
     return [
-        // Uses the default keymapping but changes accepting suggestions from Enter
-        // to Tab
         Prec.highest(
             keymap.of(
                 applyOnEnter
                     ? [
-                          ...completionKeymapWithTabInsteadOfEnter.map(keybinding => {
+                          ...completionKeymap.map(keybinding => {
                               const { run } = keybinding
-                              if (keybinding.key !== 'Tab' || run === undefined) {
+                              if (keybinding.key !== 'Enter' || run === undefined) {
                                   return keybinding
                               }
+                              // Override `Enter` into `Tab` and automatically
+                              // accept the first suggestion without an explicit
+                              // `DownArrow` to mirror the behavior of the old
+                              // "Tab to complete" behavior.
                               return {
                                   ...keybinding,
+                                  key: 'Tab',
                                   run(view: EditorView) {
-                                      // Accept the first suggestion on 'Tab' to
-                                      // preserve feature compatibility with the
-                                      // old non-Enter behavior.
-                                      if (applyOnEnter && selectedCompletion(view.state) === null) {
+                                      if (selectedCompletion(view.state) === null) {
+                                          // No completion is selected because we
+                                          // disable the `selectOnOpen` option
+                                          // when applyOnEnter is true.
                                           if (currentCompletions(view.state).length > 0) {
                                               view.dispatch({ effects: setSelectedCompletion(0) })
                                               acceptCompletion(view)
@@ -273,7 +253,10 @@ export function searchQueryAutocompletion(
                               },
                           },
                       ]
-                    : completionKeymapWithTabInsteadOfEnter
+                    : // Uses the default keymapping but changes accepting suggestions from Enter to Tab
+                      completionKeymap.map(keybinding =>
+                          keybinding.key === 'Enter' ? { ...keybinding, key: 'Tab' } : keybinding
+                      )
             )
         ),
         EditorView.theme({
@@ -537,11 +520,10 @@ export function suggestionTypeFromTokens(
     if (!options.applyOnEnter) {
         return 'symbol'
     }
-    if (isWithinRepo && isWithinFile) {
+    // We don't suggest paths because it's easier to get completions for files
+    // with the `file:QUERY` filter compared to `type:symbol QUERY`.
+    if (isWithinRepo || isWithinFile) {
         return 'symbol'
-    }
-    if (isWithinRepo) {
-        return 'path'
     }
     return 'repo'
 }
