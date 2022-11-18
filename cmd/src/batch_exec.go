@@ -33,6 +33,7 @@ const (
 type executorModeFlags struct {
 	timeout           time.Duration
 	file              string
+	runAsImageUser    bool
 	tempDir           string
 	repoDir           string
 	workspaceFilesDir string
@@ -42,6 +43,7 @@ func newExecutorModeFlags(flagSet *flag.FlagSet) (f *executorModeFlags) {
 	f = &executorModeFlags{}
 	flagSet.DurationVar(&f.timeout, "timeout", 60*time.Minute, "The maximum duration a single batch spec step can take.")
 	flagSet.StringVar(&f.file, "f", "", "The workspace execution input file to read.")
+	flagSet.BoolVar(&f.runAsImageUser, "run-as-image-user", false, "True to run step containers as the default image user; if false or omitted, containers are always run as root.")
 	flagSet.StringVar(&f.tempDir, "tmp", "", "Directory for storing temporary data.")
 	flagSet.StringVar(&f.repoDir, "repo", "", "Path of the checked out repo on disk.")
 	flagSet.StringVar(&f.workspaceFilesDir, "workspaceFiles", "", "Path of workspace files on disk.")
@@ -208,6 +210,7 @@ func executeBatchSpecInWorkspaces(ctx context.Context, flags *executorModeFlags)
 		GlobalEnv:        globalEnv,
 		RepoArchive:      &repozip.NoopArchive{},
 		UI:               taskExecUI.StepsExecutionUI(task),
+		ForceRoot:        !flags.runAsImageUser,
 	}
 	results, err := executor.RunSteps(ctx, opts)
 

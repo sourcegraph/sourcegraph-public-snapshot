@@ -13,7 +13,11 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- Batch specs being run locally with `src batch preview` or `src batch apply` can now be run with the `-run-as-root` flag, which will run all step containers as root instead of the default user for the image. This is off by default. [#886](https://github.com/sourcegraph/src-cli/pull/886)
+
 ### Changed
+
+- Batch specs being run from the server using this version of `src-cli` now run all step containers as root, rather than as the default user for the image. [#886](https://github.com/sourcegraph/src-cli/pull/886)
 
 ### Fixed
 

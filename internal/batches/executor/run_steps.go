@@ -51,6 +51,9 @@ type RunStepsOpts struct {
 	// GlobalEnv is the os.Environ() for the execution. We don't read from os.Environ()
 	// directly to allow injecting variables and hiding others.
 	GlobalEnv []string
+	// ForceRoot forces Docker containers to be run as root:root, rather than
+	// whatever the image's default user and group are.
+	ForceRoot bool
 }
 
 func RunSteps(ctx context.Context, opts *RunStepsOpts) (stepResults []execution.AfterStepResult, err error) {
@@ -316,6 +319,10 @@ func executeSingleStep(
 		"--workdir", scriptWorkDir,
 		"--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", runScriptFile, containerTemp),
 	}, workspaceOpts...)
+
+	if opts.ForceRoot {
+		args = append(args, "--user", "0:0")
+	}
 
 	for target, source := range filesToMount {
 		args = append(args, "--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", source.Name(), target))

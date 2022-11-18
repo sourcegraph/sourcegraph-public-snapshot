@@ -85,6 +85,7 @@ type batchExecuteFlags struct {
 	workspace     string
 	cleanArchives bool
 	skipErrors    bool
+	runAsRoot     bool
 
 	// EXPERIMENTAL
 	textOnly bool
@@ -151,6 +152,11 @@ func newBatchExecuteFlags(flagSet *flag.FlagSet, cacheDir, tempDir string) *batc
 	)
 
 	flagSet.BoolVar(verbose, "v", false, "print verbose output")
+
+	flagSet.BoolVar(
+		&caf.runAsRoot, "run-as-root", false,
+		"If true, forces all step containers to run as root.",
+	)
 
 	return caf
 }
@@ -382,6 +388,7 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 				Timeout:             opts.flags.timeout,
 				TempDir:             opts.flags.tempDir,
 				GlobalEnv:           os.Environ(),
+				ForceRoot:           opts.flags.runAsRoot,
 			},
 			Logger:    logManager,
 			Cache:     executor.NewDiskCache(opts.flags.cacheDir),

@@ -68,6 +68,7 @@ type NewExecutorOpts struct {
 	TempDir          string
 	IsRemote         bool
 	GlobalEnv        []string
+	ForceRoot        bool
 }
 
 type executor struct {
@@ -178,6 +179,7 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 		Timeout:          x.opts.Timeout,
 		RepoArchive:      repoArchive,
 		WorkingDirectory: x.opts.WorkingDirectory,
+		ForceRoot:        x.opts.ForceRoot,
 
 		UI: ui.StepsExecutionUI(task),
 	}
