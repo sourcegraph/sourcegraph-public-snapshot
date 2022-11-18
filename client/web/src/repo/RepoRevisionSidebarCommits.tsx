@@ -8,8 +8,8 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createInvalidGraphQLQueryResponseError, dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -79,6 +79,7 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
             CommitAncestorsConnectionFields
         >
             className="list-group list-group-flush"
+            ariaLive="polite"
             listClassName={styles.list}
             summaryClassName={styles.summary}
             loaderClassName={styles.loader}

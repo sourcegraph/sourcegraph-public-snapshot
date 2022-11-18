@@ -146,6 +146,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
         </small>
       </div>
       <button
+        aria-disabled="false"
         class="btn btnPrimary"
         type="submit"
       >

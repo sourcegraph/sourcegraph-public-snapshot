@@ -42,12 +42,12 @@ export interface ConnectionFormProps {
      */
     filters?: FilteredConnectionFilter[]
 
-    onValueSelect?: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
+    onFilterSelect?: (filter: FilteredConnectionFilter, value: FilteredConnectionFilterValue) => void
 
     /** An element rendered as a sibling of the filters. */
     additionalFilterElement?: React.ReactElement
 
-    values?: Map<string, FilteredConnectionFilterValue>
+    filterValues?: Map<string, FilteredConnectionFilterValue>
 
     compact?: boolean
 }
@@ -68,9 +68,9 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
             onInputChange,
             autoFocus,
             filters,
-            onValueSelect,
+            onFilterSelect,
+            filterValues,
             additionalFilterElement,
-            values,
             compact,
         },
         reference
@@ -89,8 +89,8 @@ export const ConnectionForm = React.forwardRef<HTMLInputElement, ConnectionFormP
                 className={classNames(styles.form, !compact && styles.noncompact, formClassName)}
                 onSubmit={handleSubmit}
             >
-                {filters && onValueSelect && values && (
-                    <FilterControl filters={filters} onValueSelect={onValueSelect} values={values}>
+                {filters && onFilterSelect && filterValues && (
+                    <FilterControl filters={filters} onValueSelect={onFilterSelect} values={filterValues}>
                         {additionalFilterElement}
                     </FilterControl>
                 )}
