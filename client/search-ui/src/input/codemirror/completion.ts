@@ -66,6 +66,7 @@ import { createSVGIcon } from '@sourcegraph/shared/src/util/dom'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { queryTokens } from './parsedQuery'
+import { formatRepositoryStarCount } from '../../util'
 
 type CompletionType = SymbolKind | 'queryfilter' | 'repository' | 'searchhistory'
 
@@ -570,6 +571,7 @@ function completionFromSearchMatch(
                     label: match.repository,
                     type: 'repository',
                     url: hasNonActivePatternTokens ? undefined : `/${match.repository}`,
+                    detail: formatRepositoryStars(match.repoStars),
                     apply:
                         (params?.isDefaultSource ? 'repo:' : '') +
                         repositoryInsertText(match, { ...options, filterValue: params?.filterValue }) +
@@ -593,6 +595,14 @@ function completionFromSearchMatch(
         default:
             return []
     }
+}
+
+function formatRepositoryStars(stars?: number): string {
+    const count = formatRepositoryStarCount(stars)
+    if (!count) {
+        return ''
+    }
+    return count + ' stars'
 }
 
 /**
