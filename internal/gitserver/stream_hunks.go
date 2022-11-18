@@ -12,19 +12,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const bufSize = 8
+
 // blameHunkReader enables to read hunks from an io.Reader.
 type blameHunkReader struct {
 	rc io.ReadCloser
 
-	hunks chan hunkResult
-	done  chan struct{}
+	hunksCh chan hunkResult
+	buf     []*Hunk
+	done    chan struct{}
 }
 
 func newBlameHunkReader(ctx context.Context, rc io.ReadCloser) HunkReader {
 	br := &blameHunkReader{
-		rc:    rc,
-		hunks: make(chan hunkResult),
-		done:  make(chan struct{}),
+		rc:      rc,
+		hunksCh: make(chan hunkResult, bufSize),
+		done:    make(chan struct{}),
+		buf:     make([]*Hunk, 0, bufSize),
 	}
 	go br.readHunks(ctx)
 	return br
@@ -36,20 +40,34 @@ type hunkResult struct {
 }
 
 func (br *blameHunkReader) readHunks(ctx context.Context) {
-	newHunkParser(br.rc, br.hunks, br.done).parse(ctx)
+	newHunkParser(br.rc, br.hunksCh, br.done).parse(ctx)
 }
 
 // Read returns a slice of hunks, along with a done boolean indicating if there is more to
 // read.
-func (br *blameHunkReader) Read() (hunk []*Hunk, done bool, err error) {
-	select {
-	case res := <-br.hunks:
-		if res.err != nil {
-			return nil, false, res.err
+func (br *blameHunkReader) Read() (hunks []*Hunk, done bool, err error) {
+	for {
+		select {
+		case res := <-br.hunksCh:
+			if res.err != nil {
+				return nil, false, res.err
+			}
+			if len(br.buf) < bufSize {
+				br.buf = append(br.buf, res.hunk)
+				continue
+			} else {
+				hunks := br.buf
+				br.buf = make([]*Hunk, 0, 8)
+				return hunks, false, nil
+			}
+		case <-br.done:
+			return nil, true, nil
+
+		default:
+			// if we're blocking on reads because git blame is slow, just send the first hunk we get ASAP.
+			res := <-br.hunksCh
+			return []*Hunk{res.hunk}, false, nil
 		}
-		return []*Hunk{res.hunk}, false, nil
-	case <-br.done:
-		return nil, true, nil
 	}
 }
 
