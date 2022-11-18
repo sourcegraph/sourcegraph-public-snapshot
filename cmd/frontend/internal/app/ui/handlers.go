@@ -311,6 +311,11 @@ func serveHome(db database.DB) handlerFunc {
 			return nil // request was handled
 		}
 
+		if r.Method == "HEAD" && envvar.SourcegraphDotComMode() {
+			w.WriteHeader(http.StatusOK)
+			return nil
+		}
+
 		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.
 		r.URL.Path = "/search"
 		http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
