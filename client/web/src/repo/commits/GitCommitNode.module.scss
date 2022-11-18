@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .git-commit-node {
     padding: 0.75rem 0.5rem 0.5rem;
 
@@ -5,8 +7,19 @@
         padding-top: 0.5rem;
     }
 
+    &--compact .inner-wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        @media (--xs-breakpoint-down) {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
     &--compact .byline {
-        width: 25%;
+        min-width: 25%;
         flex: none;
         padding-right: 1.5rem;
         overflow: hidden;
@@ -57,6 +70,13 @@
     display: flex;
     align-items: center;
     font-size: 1rem;
+
+    @media (--xs-breakpoint-down) {
+        .git-commit-node--compact & {
+            flex-wrap: wrap;
+            max-width: 100%;
+        }
+    }
 
     &-subject {
         font-weight: 600;

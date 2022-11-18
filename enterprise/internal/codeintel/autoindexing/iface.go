@@ -20,8 +20,6 @@ type GitserverRepoStore = background.GitserverRepoStore
 
 type ExternalServiceStore = background.ExternalServiceStore
 
-type AutoIndexingService = background.AutoIndexingService
-
 type AutoIndexingServiceForDepScheduling interface {
 	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error)

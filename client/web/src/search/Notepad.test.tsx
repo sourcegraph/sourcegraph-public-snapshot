@@ -121,7 +121,7 @@ describe('Notepad', () => {
 
             // Entries are in reverse order
             expect(entryLinks[0]).toHaveAttribute('href', '/test@master/-/blob/path/to/file')
-            expect(entryLinks[1]).toHaveAttribute('href', '/search?q=TODO&patternType=standard')
+            expect(entryLinks[1]).toHaveAttribute('href', '/search?q=TODO&patternType=standard&sm=0')
         })
 
         it('creates notebooks', () => {

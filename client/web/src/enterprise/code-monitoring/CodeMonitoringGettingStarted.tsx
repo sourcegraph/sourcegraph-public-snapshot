@@ -102,6 +102,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                             className={styles.createButton}
                             eventName="SignUpPLGMonitor_GettingStarted"
                             text="Get started with code monitors"
+                            cloudSignup={true}
                         />
                     )}
                 </div>
@@ -172,7 +173,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                                     className={styles.createButton}
                                     eventName="SignUpPLGMonitor_GettingStarted"
                                     text="Get started"
-                                    forDotcom={true}
+                                    cloudSignup={false}
                                 />
                             </Card>
                         </div>

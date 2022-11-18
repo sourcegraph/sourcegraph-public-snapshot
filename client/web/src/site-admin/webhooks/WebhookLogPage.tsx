@@ -16,12 +16,14 @@ import styles from './WebhookLogPage.module.scss'
 
 export interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
     queryWebhookLogs?: typeof _queryWebhookLogs
+    webhookID?: string
 }
 
 export const WebhookLogPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     history,
     location,
     queryWebhookLogs = _queryWebhookLogs,
+    webhookID,
 }) => {
     const [onlyErrors, setOnlyErrors] = useState(false)
     const [externalService, setExternalService] = useState<SelectedExternalService>('all')
@@ -34,9 +36,10 @@ export const WebhookLogPage: React.FunctionComponent<React.PropsWithChildren<Pro
                     after: after ?? null,
                 },
                 externalService,
-                onlyErrors
+                onlyErrors,
+                webhookID
             ),
-        [externalService, onlyErrors, queryWebhookLogs]
+        [externalService, onlyErrors, queryWebhookLogs, webhookID]
     )
 
     return (

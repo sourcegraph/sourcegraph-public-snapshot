@@ -236,18 +236,31 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 		if err != nil {
 			return nil, err
 		}
-		parts = append(parts, &zoektquery.Regexp{
-			Regexp:        re,
-			Content:       p.PatternMatchesContent,
-			FileName:      p.PatternMatchesPath,
-			CaseSensitive: !rg.ignoreCase,
-		})
+		re = zoektquery.OptimizeRegexp(re, syntax.Perl)
+		if p.PatternMatchesContent && p.PatternMatchesPath {
+			parts = append(parts, zoektquery.NewOr(
+				&zoektquery.Regexp{
+					Regexp:        re,
+					Content:       true,
+					CaseSensitive: !rg.ignoreCase,
+				},
+				&zoektquery.Regexp{
+					Regexp:        re,
+					FileName:      true,
+					CaseSensitive: !rg.ignoreCase,
+				},
+			))
+		} else {
+			parts = append(parts, &zoektquery.Regexp{
+				Regexp:        re,
+				Content:       p.PatternMatchesContent,
+				FileName:      p.PatternMatchesPath,
+				CaseSensitive: !rg.ignoreCase,
+			})
+		}
 	}
 
 	for _, pat := range p.IncludePatterns {
-		if !p.PathPatternsAreRegExps {
-			return nil, errors.New("hybrid search expects PathPatternsAreRegExps")
-		}
 		re, err := syntax.Parse(pat, syntax.Perl)
 		if err != nil {
 			return nil, err
@@ -260,9 +273,6 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	}
 
 	if p.ExcludePattern != "" {
-		if !p.PathPatternsAreRegExps {
-			return nil, errors.New("hybrid search expects PathPatternsAreRegExps")
-		}
 		re, err := syntax.Parse(p.ExcludePattern, syntax.Perl)
 		if err != nil {
 			return nil, err

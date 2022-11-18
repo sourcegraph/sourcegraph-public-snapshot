@@ -22,7 +22,7 @@ export const diffDomFunctions: DOMFunctions = {
         // Find all line number cells in this row
         const lineNumberCells = codeCell
             .closest('tr')
-            ?.querySelectorAll('[data-line]') as NodeListOf<HTMLTableCellElement>
+            ?.querySelectorAll('td[data-line]') as NodeListOf<HTMLTableCellElement>
         // If there are line numbers...
         if (lineNumberCells?.length) {
             // Pick the second (last, using `pop`) line number cell, since code-intel will
@@ -38,7 +38,7 @@ export const diffDomFunctions: DOMFunctions = {
     getDiffCodePart: (codeElement: HTMLElement): DiffPart => {
         const tableCell = codeElement.closest('td') as HTMLTableCellElement
         const tableRow = codeElement.parentElement as HTMLTableRowElement
-        const isSplitMode = tableRow.getAttribute('data-diff-mode') === 'split'
+        const isSplitMode = tableRow.getAttribute('data-split-mode') === 'split'
         const lineKind = tableRow.getAttribute('data-hunk-line-kind')
 
         if (lineKind === DiffHunkLineType.ADDED) {

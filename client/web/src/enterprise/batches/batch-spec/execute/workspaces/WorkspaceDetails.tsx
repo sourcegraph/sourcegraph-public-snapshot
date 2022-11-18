@@ -70,7 +70,7 @@ import {
     useRetryWorkspaceExecution,
     queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
 } from '../backend'
-import { TimelineModal } from '../TimelineModal'
+import { DiagnosticsModal } from '../DiagnosticsModal'
 
 import { StepStateIcon } from './StepStateIcon'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
@@ -116,13 +116,13 @@ export const WorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<W
 
 interface WorkspaceHeaderProps extends Pick<WorkspaceDetailsProps, 'deselectWorkspace'> {
     workspace: HiddenBatchSpecWorkspaceFields | VisibleBatchSpecWorkspaceFields
-    toggleShowTimeline?: () => void
+    toggleShowDiagnostics?: () => void
 }
 
 const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<WorkspaceHeaderProps>> = ({
     workspace,
     deselectWorkspace,
-    toggleShowTimeline,
+    toggleShowDiagnostics,
 }) => (
     <>
         <div className="d-flex align-items-center justify-content-between mb-2">
@@ -186,18 +186,20 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                     </strong>
                 </span>
             )}
-            {toggleShowTimeline && !workspace.cachedResultFound && workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
-                <Button
-                    className={styles.workspaceDetail}
-                    onClick={() => {
-                        toggleShowTimeline()
-                        eventLogger.log('batch_change_execution:workspace_timeline:clicked')
-                    }}
-                    variant="link"
-                >
-                    Timeline
-                </Button>
-            )}
+            {toggleShowDiagnostics &&
+                !workspace.cachedResultFound &&
+                workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
+                    <Button
+                        className={styles.workspaceDetail}
+                        onClick={() => {
+                            toggleShowDiagnostics()
+                            eventLogger.log('batch_change_execution:workspace_timeline:clicked')
+                        }}
+                        variant="link"
+                    >
+                        Diagnostics
+                    </Button>
+                )}
         </div>
         <hr className="mb-3" aria-hidden={true} />
     </>
@@ -237,12 +239,12 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
         workspace.id
     )
 
-    const [showTimeline, setShowTimeline] = useState<boolean>(false)
-    const toggleShowTimeline = useCallback(() => {
-        setShowTimeline(true)
+    const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false)
+    const toggleShowDiagnostics = useCallback(() => {
+        setShowDiagnostics(true)
     }, [])
-    const onDismissTimeline = useCallback(() => {
-        setShowTimeline(false)
+    const onDismissDiagnostics = useCallback(() => {
+        setShowDiagnostics(false)
     }, [])
 
     if (workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.ignored) {
@@ -255,10 +257,10 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
 
     return (
         <div role="region" aria-label="workspace details">
-            {showTimeline && <TimelineModal node={workspace} onCancel={onDismissTimeline} />}
+            {showDiagnostics && <DiagnosticsModal node={workspace} onCancel={onDismissDiagnostics} />}
             <WorkspaceHeader
                 deselectWorkspace={deselectWorkspace}
-                toggleShowTimeline={toggleShowTimeline}
+                toggleShowDiagnostics={toggleShowDiagnostics}
                 workspace={workspace}
             />
             {workspace.state === BatchSpecWorkspaceState.CANCELED && (

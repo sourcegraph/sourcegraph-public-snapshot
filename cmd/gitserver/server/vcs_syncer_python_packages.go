@@ -112,7 +112,7 @@ func unpackPythonPackage(pkg []byte, packageURL, workDir string) error {
 				log.Float64("limit", sizeLimit),
 			)
 			if size >= sizeLimit {
-				slogger.Warn("skipping large file in npm package")
+				slogger.Warn("skipping large file in python package")
 				return false
 			}
 

@@ -43,10 +43,10 @@ func scopedContext(component string) *observation.Context {
 	return observation.ScopedContext("codeintel", "policies", component)
 }
 
-func PolicyMatcherJobs(service background.PolicyService, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func PolicyMatcherJobs(service *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewRepositoryMatcher(
-			service, observationContext,
+			service.store, observationContext,
 			PolicyMatcherConfigInst.Interval,
 			PolicyMatcherConfigInst.ConfigurationPolicyMembershipBatchSize,
 		),

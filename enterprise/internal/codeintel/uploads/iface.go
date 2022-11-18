@@ -7,24 +7,22 @@ import (
 
 	"github.com/grafana/regexp"
 
-	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/enterprise"
-	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
-	codeinteltypes "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type UploadService = background.UploadService
-
-type Locker interface {
-	Lock(ctx context.Context, key int32, blocking bool) (bool, locker.UnlockFunc, error)
+type UploadService interface {
+	// Repositories
+	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
+	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
+	SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error)
 }
+
+type Locker = background.Locker
 
 type GitserverClient interface {
 	CommitGraph(ctx context.Context, repositoryID int, opts gitserver.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error)
@@ -47,15 +45,8 @@ type GitserverClient interface {
 	RequestRepoUpdate(context.Context, api.RepoName, time.Duration) (*protocol.RepoUpdateResponse, error)
 }
 
-type RepoStore interface {
-	Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error)
-	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
-}
+type RepoStore = background.RepoStore
 
-type PolicyService interface {
-	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]codeinteltypes.ConfigurationPolicy, int, error)
-}
+type PolicyService = background.PolicyService
 
-type PolicyMatcher interface {
-	CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []codeinteltypes.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]policies.PolicyMatch, error)
-}
+type PolicyMatcher = background.PolicyMatcher
