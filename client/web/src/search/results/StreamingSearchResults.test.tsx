@@ -117,9 +117,10 @@ describe('StreamingSearchResults', () => {
             version: 'V3',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
-            searchMode: SearchMode.Precise,
+            searchMode: SearchMode.SmartSearch,
             trace: undefined,
             chunkMatches: true,
+            featureOverrides: [],
         })
     })
 

@@ -17,6 +17,7 @@ type StreamDecoderEvents struct {
 	SkippedReasons []string
 	Errors         []string
 	Alerts         []string
+	DidTimeout     bool
 }
 
 type SearchMatch struct {
@@ -68,6 +69,7 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 				// be uniformised eventually.
 				if skipped.Reason == streamapi.ShardTimeout {
 					tr.Alerts = append(tr.Alerts, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+					tr.DidTimeout = true
 				} else {
 					tr.SkippedReasons = append(tr.SkippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
 				}
@@ -164,6 +166,7 @@ func MatchContextComputeDecoder() (client.ComputeMatchContextStreamDecoder, *Com
 				// be uniformised eventually.
 				if skipped.Reason == streamapi.ShardTimeout {
 					ctr.Alerts = append(ctr.Alerts, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+					ctr.DidTimeout = true
 				} else {
 					ctr.SkippedReasons = append(ctr.SkippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
 				}
@@ -227,6 +230,7 @@ func ComputeTextDecoder() (client.ComputeTextExtraStreamDecoder, *ComputeTabulat
 				// be uniformised eventually.
 				if skipped.Reason == streamapi.ShardTimeout {
 					ctr.Alerts = append(ctr.Alerts, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+					ctr.DidTimeout = true
 				} else {
 					ctr.SkippedReasons = append(ctr.SkippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
 				}
@@ -280,6 +284,7 @@ func SelectRepoDecoder() (streamhttp.FrontendStreamDecoder, *SelectRepoResult) {
 				// be uniformised eventually.
 				if skipped.Reason == streamapi.ShardTimeout {
 					repoResult.Alerts = append(repoResult.Alerts, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+					repoResult.DidTimeout = true
 				} else {
 					repoResult.SkippedReasons = append(repoResult.SkippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
 				}

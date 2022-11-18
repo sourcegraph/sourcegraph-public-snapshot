@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
-	zoektquery "github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -17,19 +17,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 // Inputs contains fields we set before kicking off search.
 type Inputs struct {
-	Plan                query.Plan // the comprehensive query plan
-	Query               query.Q    // the current basic query being evaluated, one part of query.Plan
-	OriginalQuery       string     // the raw string of the original search query
-	SearchMode          Mode
-	PatternType         query.SearchType
-	UserSettings        *schema.Settings
-	OnSourcegraphDotCom bool
-	Features            *Features
-	Protocol            Protocol
+	Plan                   query.Plan // the comprehensive query plan
+	Query                  query.Q    // the current basic query being evaluated, one part of query.Plan
+	OriginalQuery          string     // the raw string of the original search query
+	SearchMode             Mode
+	PatternType            query.SearchType
+	UserSettings           *schema.Settings
+	OnSourcegraphDotCom    bool
+	Features               *Features
+	Protocol               Protocol
+	SanitizeSearchPatterns []*regexp.Regexp
 }
 
 // MaxResults computes the limit for the query.
@@ -49,7 +51,7 @@ type Mode int
 
 const (
 	Precise     Mode = 0
-	SmartSearch      = 1 << iota
+	SmartSearch      = 1 << (iota - 1)
 )
 
 type Protocol int
@@ -165,6 +167,9 @@ type ZoektParameters struct {
 	Typ            IndexedRequestType
 	FileMatchLimit int32
 	Select         filter.SelectPath
+
+	// Features are feature flags that can affect behaviour of searcher.
+	Features Features
 }
 
 // SearcherParameters the inputs for a search fulfilled by the Searcher service
@@ -334,6 +339,18 @@ type Features struct {
 	// When true lucky search runs by default. Adding for A/B testing in
 	// 08/2022. To be removed at latest by 12/2022.
 	AbLuckySearch bool `json:"ab-lucky-search"`
+
+	// Ranking when true will use a our new #ranking signals and code paths
+	// for ranking results from Zoekt.
+	Ranking bool `json:"ranking"`
+
+	// Debug when true will set the Debug field on FileMatches. This may grow
+	// from here. For now we treat this like a feature flag for convenience.
+	Debug bool `json:"debug"`
+
+	// RankingDampDocRanks if true will damp the influence of document
+	// ranks on the final ranking.
+	RankingDampDocRanks bool `json:"search-ranking-damp-doc-ranks"`
 }
 
 func (f *Features) String() string {

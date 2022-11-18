@@ -13,6 +13,7 @@ import * as uuid from 'uuid'
 
 import { logger } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
+import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
 import {
     fetchAutoDefinedSearchContexts,
     getUserSearchContextNamespaces,
@@ -27,16 +28,12 @@ import {
     getAvailableSearchContextSpecOrDefault,
     SearchQueryStateStoreProvider,
 } from '@sourcegraph/search'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
-import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
-import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { createController as createExtensionsController } from '@sourcegraph/shared/src/extensions/createLazyLoadedController'
 import { createNoopController } from '@sourcegraph/shared/src/extensions/createNoopLoadedController'
-import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { BrandedNotificationItemStyleProps } from '@sourcegraph/shared/src/notifications/NotificationItem'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -54,6 +51,8 @@ import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
+import { CodeMonitoringProps } from './codeMonitoring'
+import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { HeroPage } from './components/HeroPage'
 import type { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
@@ -63,7 +62,7 @@ import type { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAr
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
 import type { CodeInsightsProps } from './insights/types'
 import { Layout, LayoutProps } from './Layout'
-import { BlockInput } from './notebooks'
+import { BlockInput, NotebookProps } from './notebooks'
 import { createNotebook } from './notebooks/backend'
 import { blockToGQLInput } from './notebooks/serialize'
 import type { OrgAreaRoute } from './org/area/OrgArea'
@@ -77,7 +76,7 @@ import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import type { LayoutRouteProps } from './routes'
-import { PageRoutes } from './routes.constants'
+import { EnterprisePageRoutes } from './routes.constants'
 import { parseSearchURL, getQueryStateFromLocation } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
@@ -93,7 +92,6 @@ import {
 } from './stores'
 import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
 import { eventLogger } from './tracking/eventLogger'
-import { withActivation } from './tracking/withActivation'
 import type { UserAreaRoute } from './user/area/UserArea'
 import type { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import type { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
@@ -108,7 +106,9 @@ export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
         CodeInsightsProps,
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
-        Pick<SearchContextProps, 'searchContextsEnabled'> {
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
+        NotebookProps,
+        CodeMonitoringProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes?: readonly ExtensionsAreaRoute[]
@@ -176,8 +176,6 @@ const WILDCARD_THEME: WildcardTheme = {
 
 setLinkComponent(RouterLink)
 
-const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : withActivation(Layout)
-
 const history = createBrowserHistory()
 
 /**
@@ -199,23 +197,6 @@ export class SourcegraphWebApp extends React.Component<
 
         if (this.extensionsController !== null) {
             this.subscriptions.add(this.extensionsController)
-
-            // Preload extensions whenever user enabled extensions or the viewed language changes.
-            this.subscriptions.add(
-                combineLatest([
-                    getEnabledExtensions(this.platformContext),
-                    observeLocation(history).pipe(
-                        startWith(location),
-                        map(location => getModeFromPath(location.pathname)),
-                        distinctUntilChanged()
-                    ),
-                ]).subscribe(([extensions, languageID]) => {
-                    preloadExtensions({
-                        extensions,
-                        languages: new Set([languageID]),
-                    })
-                })
-            )
         }
 
         this.state = {
@@ -376,97 +357,77 @@ export class SourcegraphWebApp extends React.Component<
         const { children, ...props } = this.props
 
         return (
-            <ApolloProvider client={graphqlClient}>
-                <WildcardThemeContext.Provider value={WILDCARD_THEME}>
-                    <ErrorBoundary location={null}>
-                        <FeatureFlagsProvider>
-                            <ShortcutProvider>
-                                <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage}>
-                                    <SearchResultsCacheProvider>
-                                        <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                                            <Router history={history} key={0}>
-                                                <CompatRouter>
-                                                    <Route
-                                                        path="/"
-                                                        render={routeComponentProps => (
-                                                            <CodeHostScopeProvider
-                                                                authenticatedUser={authenticatedUser}
-                                                            >
-                                                                <LayoutWithActivation
-                                                                    {...props}
-                                                                    {...routeComponentProps}
-                                                                    authenticatedUser={authenticatedUser}
-                                                                    viewerSubject={this.state.viewerSubject}
-                                                                    settingsCascade={this.state.settingsCascade}
-                                                                    batchChangesEnabled={this.props.batchChangesEnabled}
-                                                                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
-                                                                        this.state.settingsCascade
-                                                                    )}
-                                                                    batchChangesWebhookLogsEnabled={
-                                                                        window.context.batchChangesWebhookLogsEnabled
-                                                                    }
-                                                                    // Search query
-                                                                    fetchHighlightedFileLineRanges={
-                                                                        this.fetchHighlightedFileLineRanges
-                                                                    }
-                                                                    // Extensions
-                                                                    platformContext={this.platformContext}
-                                                                    extensionsController={this.extensionsController}
-                                                                    telemetryService={eventLogger}
-                                                                    isSourcegraphDotCom={
-                                                                        window.context.sourcegraphDotComMode
-                                                                    }
-                                                                    searchContextsEnabled={
-                                                                        this.props.searchContextsEnabled
-                                                                    }
-                                                                    selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                                                    setSelectedSearchContextSpec={
-                                                                        this.setSelectedSearchContextSpec
-                                                                    }
-                                                                    getUserSearchContextNamespaces={
-                                                                        getUserSearchContextNamespaces
-                                                                    }
-                                                                    fetchAutoDefinedSearchContexts={
-                                                                        fetchAutoDefinedSearchContexts
-                                                                    }
-                                                                    fetchSearchContexts={fetchSearchContexts}
-                                                                    fetchSearchContextBySpec={fetchSearchContextBySpec}
-                                                                    fetchSearchContext={fetchSearchContext}
-                                                                    createSearchContext={createSearchContext}
-                                                                    updateSearchContext={updateSearchContext}
-                                                                    deleteSearchContext={deleteSearchContext}
-                                                                    isSearchContextSpecAvailable={
-                                                                        isSearchContextSpecAvailable
-                                                                    }
-                                                                    defaultSearchContextSpec={
-                                                                        this.state.defaultSearchContextSpec
-                                                                    }
-                                                                    globbing={this.state.globbing}
-                                                                    streamSearch={aggregateStreamingSearch}
-                                                                    onCreateNotebookFromNotepad={this.onCreateNotebook}
-                                                                />
-                                                            </CodeHostScopeProvider>
-                                                        )}
-                                                    />
-                                                </CompatRouter>
-                                            </Router>
-                                            {this.extensionsController !== null &&
-                                            window.context.enableLegacyExtensions ? (
-                                                <Notifications
-                                                    key={2}
-                                                    extensionsController={this.extensionsController}
-                                                    notificationItemStyleProps={notificationStyles}
-                                                />
-                                            ) : null}
-                                            <UserSessionStores />
-                                        </SearchQueryStateStoreProvider>
-                                    </SearchResultsCacheProvider>
-                                </TemporarySettingsProvider>
-                            </ShortcutProvider>
-                        </FeatureFlagsProvider>
-                    </ErrorBoundary>
-                </WildcardThemeContext.Provider>
-            </ApolloProvider>
+            <ComponentsComposer
+                components={[
+                    // `ComponentsComposer` provides children via `React.cloneElement`.
+                    /* eslint-disable react/no-children-prop, react/jsx-key */
+                    <ApolloProvider client={graphqlClient} children={undefined} />,
+                    <WildcardThemeContext.Provider value={WILDCARD_THEME} />,
+                    <ErrorBoundary location={null} />,
+                    <TraceSpanProvider name={SharedSpanName.AppMount} />,
+                    <FeatureFlagsProvider />,
+                    <ShortcutProvider />,
+                    <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage} />,
+                    <SearchResultsCacheProvider />,
+                    <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState} />,
+                    /* eslint-enable react/no-children-prop, react/jsx-key */
+                ]}
+            >
+                <Router history={history} key={0}>
+                    <CompatRouter>
+                        <Route
+                            path="/"
+                            render={routeComponentProps => (
+                                <CodeHostScopeProvider authenticatedUser={authenticatedUser}>
+                                    <Layout
+                                        {...props}
+                                        {...routeComponentProps}
+                                        authenticatedUser={authenticatedUser}
+                                        viewerSubject={this.state.viewerSubject}
+                                        settingsCascade={this.state.settingsCascade}
+                                        batchChangesEnabled={this.props.batchChangesEnabled}
+                                        batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
+                                            this.state.settingsCascade
+                                        )}
+                                        batchChangesWebhookLogsEnabled={window.context.batchChangesWebhookLogsEnabled}
+                                        // Search query
+                                        fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
+                                        // Extensions
+                                        platformContext={this.platformContext}
+                                        extensionsController={this.extensionsController}
+                                        telemetryService={eventLogger}
+                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                        searchContextsEnabled={this.props.searchContextsEnabled}
+                                        selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                                        setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                        getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                                        fetchSearchContexts={fetchSearchContexts}
+                                        fetchSearchContextBySpec={fetchSearchContextBySpec}
+                                        fetchSearchContext={fetchSearchContext}
+                                        createSearchContext={createSearchContext}
+                                        updateSearchContext={updateSearchContext}
+                                        deleteSearchContext={deleteSearchContext}
+                                        isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                                        defaultSearchContextSpec={this.state.defaultSearchContextSpec}
+                                        globbing={this.state.globbing}
+                                        streamSearch={aggregateStreamingSearch}
+                                        onCreateNotebookFromNotepad={this.onCreateNotebook}
+                                    />
+                                </CodeHostScopeProvider>
+                            )}
+                        />
+                    </CompatRouter>
+                </Router>
+                {this.extensionsController !== null && window.context.enableLegacyExtensions ? (
+                    <Notifications
+                        key={2}
+                        extensionsController={this.extensionsController}
+                        notificationItemStyleProps={notificationStyles}
+                    />
+                ) : null}
+                <UserSessionStores />
+            </ComponentsComposer>
         )
     }
 
@@ -525,7 +486,7 @@ export class SourcegraphWebApp extends React.Component<
                     namespace: this.state.authenticatedUser.id,
                 },
             }).subscribe(createdNotebook => {
-                history.push(PageRoutes.Notebook.replace(':id', createdNotebook.id))
+                history.push(EnterprisePageRoutes.Notebook.replace(':id', createdNotebook.id))
             })
         )
     }

@@ -16,6 +16,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	gh "github.com/google/go-github/v43/github"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -185,9 +186,11 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
 						handler := webhooks.GitHubWebhook{
-							ExternalServices: esStore,
+							WebhookRouter: &webhooks.WebhookRouter{
+								DB: db,
+							},
 						}
-						hook.Register(&handler)
+						hook.Register(handler.WebhookRouter)
 
 						u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://example.com/")
 						if err != nil {
@@ -246,8 +249,9 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			// unexpected input.
 			n := 10156
 			action := "this is a bad action"
-
-			if err := hook.handleGitHubWebhook(ctx, extSvc, &gh.PullRequestEvent{
+			u, err := extsvc.NewCodeHostBaseURL("github.com")
+			require.NoError(t, err)
+			if err := hook.handleGitHubWebhook(ctx, db, u, &gh.PullRequestEvent{
 				Number: &n,
 				Repo: &gh.Repository{
 					NodeID: &githubRepo.ExternalRepo.ID,

@@ -1,21 +1,36 @@
+import { useState } from 'react'
+
 import { MockedResponse } from '@apollo/client/testing'
+import { EMPTY, NEVER, noop, of, Subscription } from 'rxjs'
 
-import { getDocumentNode } from '@sourcegraph/http-client'
+import { logger } from '@sourcegraph/common'
+import { getDocumentNode, dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
+import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
+import { Controller } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
+import { ConnectionQueryArguments } from '../components/FilteredConnection'
+import { asGraphQLResult } from '../components/FilteredConnection/utils'
 import {
+    UsePreciseCodeIntelForPositionResult,
+    UsePreciseCodeIntelForPositionVariables,
     HighlightResponseFormat,
     LocationFields,
     ReferencesPanelHighlightedBlobVariables,
     ResolveRepoAndRevisionVariables,
-    UsePreciseCodeIntelForPositionResult,
-    UsePreciseCodeIntelForPositionVariables,
 } from '../graphql-operations'
 
+import { buildPreciseLocation } from './location'
+import { ReferencesPanelProps } from './ReferencesPanel'
 import {
     USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY,
     RESOLVE_REPO_REVISION_BLOB_QUERY,
     FETCH_HIGHLIGHTED_BLOB,
 } from './ReferencesPanelQueries'
+import { UseCodeIntelParameters, UseCodeIntelResult } from './useCodeIntel'
 
 const goDiffFileContent =
     'package main\n\nimport (\n\t"flag"\n\t"fmt"\n\t"io"\n\t"log"\n\t"os"\n\n\t"github.com/sourcegraph/go-diff/diff"\n)\n\n// A diagnostic program to aid in debugging diff parsing or printing\n// errors.\n\nconst stdin = "\u003Cstdin\u003E"\n\nvar (\n\tdiffPath = flag.String("f", stdin, "filename of diff (default: stdin)")\n\tfileIdx  = flag.Int("i", -1, "if \u003E= 0, only print and report errors from the i\'th file (0-indexed)")\n)\n\nfunc main() {\n\tlog.SetFlags(0)\n\tflag.Parse()\n\n\tvar diffFile *os.File\n\tif *diffPath == stdin {\n\t\tdiffFile = os.Stdin\n\t} else {\n\t\tvar err error\n\t\tdiffFile, err = os.Open(*diffPath)\n\t\tif err != nil {\n\t\t\tlog.Fatal(err)\n\t\t}\n\t}\n\tdefer diffFile.Close()\n\n\tr := diff.NewMultiFileDiffReader(diffFile)\n\tfor i := 0; ; i++ {\n\t\treport := (*fileIdx == -1) || i == *fileIdx // true if -i==-1 or if this is the i\'th file\n\n\t\tlabel := fmt.Sprintf("file(%d)", i)\n\t\tfdiff, err := r.ReadFile()\n\t\tif fdiff != nil {\n\t\t\tlabel = fmt.Sprintf("orig(%s) new(%s)", fdiff.OrigName, fdiff.NewName)\n\t\t}\n\t\tif err == io.EOF {\n\t\t\tbreak\n\t\t}\n\t\tif err != nil {\n\t\t\tif report {\n\t\t\t\tlog.Fatalf("err read %s: %s", label, err)\n\t\t\t} else {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t}\n\n\t\tif report {\n\t\t\tlog.Printf("ok read: %s", label)\n\t\t}\n\n\t\tout, err := diff.PrintFileDiff(fdiff)\n\t\tif err != nil {\n\t\t\tif report {\n\t\t\t\tlog.Fatalf("err print %s: %s", label, err)\n\t\t\t} else {\n\t\t\t\tcontinue\n\t\t\t}\n\t\t}\n\t\tif report {\n\t\t\tif _, err := os.Stdout.Write(out); err != nil {\n\t\t\t\tlog.Fatal(err)\n\t\t\t}\n\t\t}\n\t}\n}\n'
@@ -303,5 +318,106 @@ const HIGHLIGHTED_FILE_MOCK = {
             },
             __typename: 'Repository',
         },
+    },
+}
+
+const NOOP_SETTINGS_CASCADE = {
+    subjects: null,
+    final: null,
+}
+
+const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL' | 'settings'> = {
+    requestGraphQL: () => EMPTY,
+    urlToFile: () => '',
+    settings: of(NOOP_SETTINGS_CASCADE),
+}
+
+const NOOP_EXTENSIONS_CONTROLLER: Controller = {
+    executeCommand: () => Promise.resolve(),
+    registerCommand: () => new Subscription(),
+    extHostAPI: Promise.resolve(
+        pretendRemote<FlatExtensionHostAPI>({
+            getContributions: () => pretendProxySubscribable(NEVER),
+            registerContributions: () => pretendProxySubscribable(EMPTY).subscribe(noop as never),
+            haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
+            addTextDocumentIfNotExists: () => {},
+            addViewerIfNotExists: (): ViewerId => ({ viewerId: 'MOCK_VIEWER_ID' }),
+            setEditorSelections: () => {},
+            removeViewer: () => {},
+        })
+    ),
+    commandErrors: EMPTY,
+    unsubscribe: noop,
+}
+
+export const defaultProps: Omit<ReferencesPanelProps, 'externalHistory' | 'externalLocation'> = {
+    extensionsController: NOOP_EXTENSIONS_CONTROLLER,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
+    settingsCascade: {
+        subjects: null,
+        final: null,
+    },
+    platformContext: NOOP_PLATFORM_CONTEXT,
+    isLightTheme: false,
+    fetchHighlightedFileLineRanges: args => {
+        if (args.filePath === 'cmd/go-diff/go-diff.go') {
+            return of(highlightedLinesGoDiffGo)
+        }
+        if (args.filePath === 'diff/diff.go') {
+            return of(highlightedLinesDiffGo)
+        }
+        logger.error('attempt to fetch highlighted lines for file without mocks', args.filePath)
+        return of([])
+    },
+    useCodeIntel: ({ variables }: UseCodeIntelParameters): UseCodeIntelResult => {
+        const [result, setResult] = useState<UseCodeIntelResult>({
+            data: {
+                implementations: { endCursor: '', nodes: [] },
+                references: { endCursor: '', nodes: [] },
+                definitions: { endCursor: '', nodes: [] },
+            },
+            loading: true,
+            referencesHasNextPage: false,
+            fetchMoreReferences: () => {},
+            fetchMoreReferencesLoading: false,
+            implementationsHasNextPage: false,
+            fetchMoreImplementationsLoading: false,
+            fetchMoreImplementations: () => {},
+        })
+        useQuery<
+            UsePreciseCodeIntelForPositionResult,
+            UsePreciseCodeIntelForPositionVariables & ConnectionQueryArguments
+        >(USE_PRECISE_CODE_INTEL_FOR_POSITION_QUERY, {
+            variables,
+            notifyOnNetworkStatusChange: false,
+            fetchPolicy: 'no-cache',
+            skip: !result.loading,
+            onCompleted: result => {
+                const data = dataOrThrowErrors(asGraphQLResult({ data: result, errors: [] }))
+                if (!data || !data.repository?.commit?.blob?.lsif) {
+                    return
+                }
+                const lsif = data.repository.commit.blob.lsif
+                setResult(prevResult => ({
+                    ...prevResult,
+                    loading: false,
+                    data: {
+                        implementations: {
+                            endCursor: lsif.implementations.pageInfo.endCursor,
+                            nodes: lsif.implementations.nodes.map(buildPreciseLocation),
+                        },
+                        references: {
+                            endCursor: lsif.references.pageInfo.endCursor,
+                            nodes: lsif.references.nodes.map(buildPreciseLocation),
+                        },
+                        definitions: {
+                            endCursor: lsif.definitions.pageInfo.endCursor,
+                            nodes: lsif.definitions.nodes.map(buildPreciseLocation),
+                        },
+                    },
+                }))
+            },
+        })
+        return result
     },
 }

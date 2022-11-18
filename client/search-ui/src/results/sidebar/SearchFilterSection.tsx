@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H2, H5, Input } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H5, Input, H3 } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
 
@@ -12,34 +12,46 @@ import styles from './SearchFilterSection.module.scss'
 
 export interface SearchFilterSectionProps {
     sectionId: string
-    header: ReactNode
+    header: string
+    postHeader?: ReactNode // Additional content to display after the header
     children?: React.ReactNode | React.ReactNode[] | ((filter: string) => React.ReactNode)
     className?: string
-    showSearch?: boolean // Search only works if children are FilterLink
+
     onToggle?: (id: string, open: boolean) => void
     startCollapsed?: boolean
 
     forcedRender?: boolean
 
     /**
-     * Shown when the built-in search doesn't find any results.
-     */
-    noResultText?: (links: ReactElement[]) => ReactNode
-
-    /**
-     * Clear the search input whenever this value changes. This is supposed to
-     * be used together with function children, which use the search input but
-     * handle search on their own.
-     * Defaults to the component's children.
-     */
-    clearSearchOnChange?: unknown
-
-    /**
-     * Minimal number of items to render the filter section.
-     * This prop is used for repositories filter section when we have only
-     * one repo the repo filter section shouldn't be rendered.
+     * Minimal number of items to render the filter section. Defaults to 1.
+     * This prop is set to 2 for repositories and languages filter sections:
+     * when we have only one repo or language, the section shouldn't be rendered.
      */
     minItems?: number
+
+    /**
+     * If present, search is shown.
+     * Search only works if children are FilterLink.
+     */
+    searchOptions?: {
+        /**
+         * Accessible label for the search box. These should all be unique.
+         */
+        ariaLabel: string
+
+        /**
+         * Shown when the built-in search doesn't find any results.
+         */
+        noResultText?: (links: ReactElement[]) => ReactNode
+
+        /**
+         * Clear the search input whenever this value changes. This is supposed to
+         * be used together with function children, which use the search input but
+         * handle search on their own.
+         * Defaults to the component's children.
+         */
+        clearSearchOnChange?: unknown
+    }
 }
 
 const defaultNoResult = (): string => 'No results'
@@ -56,16 +68,17 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
     const {
         sectionId,
         header,
+        postHeader,
         children = [],
         className,
-        showSearch = false,
+        searchOptions,
         forcedRender = true,
         onToggle,
         startCollapsed,
-        minItems = 0,
-        noResultText = defaultNoResult,
-        clearSearchOnChange = children,
+        minItems = 1,
     } = props
+
+    const { ariaLabel = '', noResultText = defaultNoResult, clearSearchOnChange = children } = searchOptions ?? {}
 
     const [filter, setFilter] = useState('')
 
@@ -74,7 +87,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
     useEffect(() => setFilter(''), [clearSearchOnChange])
 
     let body
-    let searchVisible = showSearch
+    let searchVisible = !!searchOptions
     let visible = false
 
     // Supports render props approach
@@ -86,7 +99,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
         // items (usually it's FilterLink components)
     } else if (Array.isArray(children)) {
         // Sometimes we don't need to render filter section with just one item (example - repositories filter section)
-        visible = children.length > minItems
+        visible = children.length >= minItems
 
         // We don't need to have a search UI if we're dealing with only one item
         searchVisible = searchVisible && children.length > 1
@@ -150,13 +163,12 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
                     outline={true}
                     variant="secondary"
                 >
-                    <H5
-                        as={H2}
-                        id={`search-sidebar-section-header-${sectionId}`}
-                        className={styles.sidebarSectionHeader}
-                    >
-                        {header}
-                    </H5>
+                    <header className={styles.sidebarSectionHeader}>
+                        <H5 as={H3} id={`search-sidebar-section-header-${sectionId}`}>
+                            {header}
+                        </H5>
+                        <H5 as="span">{postHeader}</H5>
+                    </header>
                     <Icon aria-hidden={true} as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
                 </CollapseHeader>
 
@@ -166,7 +178,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
                             <Input
                                 type="search"
                                 placeholder="Find..."
-                                aria-label="Find filters"
+                                aria-label={ariaLabel}
                                 value={filter}
                                 onChange={event => setFilter(event.currentTarget.value)}
                                 data-testid="sidebar-section-search-box"

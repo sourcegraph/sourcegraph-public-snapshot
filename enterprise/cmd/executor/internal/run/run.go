@@ -26,9 +26,11 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 		return err
 	}
 
+	logger = log.Scoped("service", "executor service")
+
 	// Initialize tracing/metrics
 	observationContext := &observation.Context{
-		Logger:     log.Scoped("service", "executor service"),
+		Logger:     logger,
 		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
@@ -86,7 +88,7 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 
 	nameSet := janitor.NewNameSet()
 	ctx, cancel := context.WithCancel(cliCtx.Context)
-	worker, err := worker.NewWorker(nameSet, opts, observationContext)
+	worker, err := worker.NewWorker(logger, nameSet, opts, observationContext)
 	if err != nil {
 		cancel()
 		return err

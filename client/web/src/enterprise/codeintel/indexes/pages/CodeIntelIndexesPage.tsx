@@ -26,6 +26,8 @@ import { queryLsifIndexList as defaultQueryLsifIndexList } from '../hooks/queryL
 import { queryLsifIndexListByRepository as defaultQueryLsifIndexListByRepository } from '../hooks/queryLsifIndexListByRepository'
 import { useDeleteLsifIndex } from '../hooks/useDeleteLsifIndex'
 import { useDeleteLsifIndexes } from '../hooks/useDeleteLsifIndexes'
+import { useReindexLsifIndex } from '../hooks/useReindexLsifIndex'
+import { useReindexLsifIndexes } from '../hooks/useReindexLsifIndexes'
 
 import styles from './CodeIntelIndexesPage.module.scss'
 
@@ -123,8 +125,26 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
 
     const { handleDeleteLsifIndex, deleteError } = useDeleteLsifIndex()
     const { handleDeleteLsifIndexes, deletesError } = useDeleteLsifIndexes()
+    const { handleReindexLsifIndex, reindexError } = useReindexLsifIndex()
+    const { handleReindexLsifIndexes, reindexesError } = useReindexLsifIndexes()
 
     const deletes = useMemo(() => new Subject<undefined>(), [])
+
+    const queryConnection = useCallback(
+        (args: FilteredConnectionQueryArguments) => {
+            setArgs({
+                query: args.query ?? null,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+                state: (args as any).state ?? null,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+                isLatestForRepo: (args as any).isLatestForRepo ?? null,
+                repository: repo?.id ?? null,
+            })
+            setSelection(new Set())
+            return queryIndexes(args)
+        },
+        [queryIndexes, repo?.id]
+    )
 
     return (
         <div className="code-intel-indexes">
@@ -190,6 +210,45 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                         Delete {selection === 'all' ? 'matching' : selection.size === 0 ? '' : selection.size}
                     </Button>
                     <Button
+                        className="mr-2"
+                        variant="primary"
+                        disabled={selection !== 'all' && selection.size === 0}
+                        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                        onClick={async () => {
+                            if (selection === 'all') {
+                                if (args === undefined) {
+                                    return
+                                }
+
+                                if (
+                                    !confirm(
+                                        `Reindex all uploads matching the filter criteria?\n\n${Object.entries(args)
+                                            .map(([key, value]) => `${key}: ${value}`)
+                                            .join('\n')}`
+                                    )
+                                ) {
+                                    return
+                                }
+
+                                await handleReindexLsifIndexes({
+                                    variables: args,
+                                    update: cache => cache.modify({ fields: { node: () => {} } }),
+                                })
+
+                                return
+                            }
+
+                            for (const id of selection) {
+                                await handleReindexLsifIndex({
+                                    variables: { id },
+                                    update: cache => cache.modify({ fields: { node: () => {} } }),
+                                })
+                            }
+                        }}
+                    >
+                        Reindex {selection === 'all' ? 'matching' : selection.size === 0 ? '' : selection.size}
+                    </Button>
+                    <Button
                         variant="secondary"
                         onClick={() => setSelection(selection => (selection === 'all' ? new Set() : 'all'))}
                     >
@@ -199,6 +258,10 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
 
                 {isErrorLike(deleteError) && <ErrorAlert prefix="Error deleting LSIF upload" error={deleteError} />}
                 {isErrorLike(deletesError) && <ErrorAlert prefix="Error deleting LSIF uploads" error={deletesError} />}
+                {isErrorLike(reindexError) && <ErrorAlert prefix="Error reindexing LSIF upload" error={reindexError} />}
+                {isErrorLike(reindexesError) && (
+                    <ErrorAlert prefix="Error reindexing LSIF uploads" error={reindexesError} />
+                )}
 
                 <div className="position-relative">
                     <FilteredConnection<LsifIndexFields, Omit<CodeIntelIndexNodeProps, 'node'>>
@@ -210,18 +273,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                         querySubject={querySubject}
                         nodeComponent={CodeIntelIndexNode}
                         nodeComponentProps={{ now, selection, onCheckboxToggle }}
-                        queryConnection={args => {
-                            setArgs({
-                                query: args.query ?? null,
-                                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-                                state: (args as any).state ?? null,
-                                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-                                isLatestForRepo: (args as any).isLatestForRepo ?? null,
-                                repository: repo?.id ?? null,
-                            })
-                            setSelection(new Set())
-                            return queryIndexes(args)
-                        }}
+                        queryConnection={queryConnection}
                         history={history}
                         location={location}
                         cursorPaging={true}

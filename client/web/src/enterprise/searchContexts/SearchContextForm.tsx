@@ -16,7 +16,6 @@ import {
     SearchPatternType,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
@@ -138,7 +137,7 @@ type RepositoriesParseResult =
       }
     | {
           type: 'repositories'
-          repositories: ISearchContextRepositoryRevisionsInput[]
+          repositories: SearchContextRepositoryRevisionsInput[]
       }
 
 export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<SearchContextFormProps>> = props => {
@@ -234,7 +233,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                         map(repositories => {
                             const repositoryNameToID = new Map(repositories.map(({ id, name }) => [name, id]))
                             const errors: Error[] = []
-                            const validRepositories: ISearchContextRepositoryRevisionsInput[] = []
+                            const validRepositories: SearchContextRepositoryRevisionsInput[] = []
                             for (const { repository, revisions } of config) {
                                 const repositoryID = repositoryNameToID.get(repository)
                                 if (repositoryID) {
@@ -368,33 +367,33 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                     {searchContextSpecPreview}
                 </div>
                 <hr aria-hidden={true} className={classNames('my-4', styles.searchContextFormDivider)} />
-                <div>
-                    <div className="mb-2">
-                        Description <span className="text-muted">(optional)</span>
-                    </div>
-                    <TextArea
-                        className="w-100"
-                        data-testid="search-context-description-input"
-                        maxLength={MAX_DESCRIPTION_LENGTH}
-                        value={description}
-                        rows={5}
-                        onChange={event => {
-                            const value = event.target.value
-                            if (value.length <= MAX_DESCRIPTION_LENGTH) {
-                                setDescription(event.target.value)
-                            }
-                        }}
-                    />
-                    <div className="mt-1 text-muted">
-                        <small>
+                <TextArea
+                    label={
+                        <>
+                            Description <span className="text-muted">(optional)</span>
+                        </>
+                    }
+                    message={
+                        <span className="font-weight-normal">
                             <span>Markdown formatting is supported</span>
                             <span aria-hidden={true} className="px-1">
                                 &middot;
                             </span>
                             <span>{MAX_DESCRIPTION_LENGTH - description.length} characters remaining</span>
-                        </small>
-                    </div>
-                </div>
+                        </span>
+                    }
+                    className="w-100 mb-2"
+                    data-testid="search-context-description-input"
+                    maxLength={MAX_DESCRIPTION_LENGTH}
+                    value={description}
+                    rows={5}
+                    onChange={event => {
+                        const value = event.target.value
+                        if (value.length <= MAX_DESCRIPTION_LENGTH) {
+                            setDescription(event.target.value)
+                        }
+                    }}
+                />
                 <div className={classNames('mt-3', styles.searchContextFormVisibility)}>
                     <div className="mb-3">Visibility</div>
                     {visibilityRadioButtons.map((radio, index) => (

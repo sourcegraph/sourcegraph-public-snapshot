@@ -31,12 +31,13 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
     <h2
       class="h2"
     >
-      Product subscription 
+      Product subscription sn1
     </h2>
     <div
       class="mb-3"
     >
       <button
+        aria-disabled="false"
         class="btn btnDanger"
         type="button"
       >
@@ -63,7 +64,9 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
             </th>
             <td
               class="w-100"
-            />
+            >
+              sn1
+            </td>
           </tr>
           <tr>
             <th
@@ -127,7 +130,6 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
             >
               <span
                 class="timestamp"
-                data-state="closed"
               >
                 in almost 14 years
               </span>
@@ -189,7 +191,6 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                 </span>
                 <div
                   class="d-inline-block mr-3"
-                  data-state="closed"
                 >
                   <strong
                     class="text-success"
@@ -204,7 +205,6 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                   Created 
                   <span
                     class="timestamp"
-                    data-state="closed"
                   >
                     in almost 14 years
                   </span>
@@ -215,7 +215,6 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
               Tags: 
               <div
                 class="badge secondary mr-1"
-                data-state="closed"
               >
                 a
               </div>
@@ -240,6 +239,7 @@ exports[`SiteAdminProductSubscriptionPage renders 1`] = `
                   class="input-group-append"
                 >
                   <button
+                    aria-disabled="false"
                     aria-label="Copy"
                     class="btn btnSecondary"
                     type="button"

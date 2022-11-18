@@ -24,7 +24,7 @@ import (
 
 type repositoryArgs struct {
 	graphqlutil.ConnectionArgs
-	Query *string
+	Query *string // Search query
 	Names *[]string
 
 	Cloned     bool
@@ -170,6 +170,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 		}
 
+		reposClient := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db))
 		for {
 			// Cursor-based pagination requires that we fetch limit+1 records, so
 			// that we know whether or not there's an additional page (or more)
@@ -178,7 +179,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if opt2.LimitOffset != nil {
 				opt2.LimitOffset.Limit++
 			}
-			repos, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).List(ctx, opt2)
+			repos, err := reposClient.List(ctx, opt2)
 			if err != nil {
 				r.err = err
 				return
@@ -222,12 +223,13 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 		return nil, err
 	}
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
+	client := gitserver.NewClient(r.db)
 	for i, repo := range repos {
 		if r.opt.LimitOffset != nil && i == r.opt.Limit {
 			break
 		}
 
-		resolvers = append(resolvers, NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repo))
+		resolvers = append(resolvers, NewRepositoryResolver(r.db, client, repo))
 	}
 	return resolvers, nil
 }
@@ -310,6 +312,8 @@ func ToDBRepoListColumn(ob string) database.RepoListColumn {
 		return database.RepoListName
 	case "REPO_CREATED_AT", "REPOSITORY_CREATED_AT":
 		return database.RepoListCreatedAt
+	case "SIZE":
+		return database.RepoListSize
 	default:
 		return ""
 	}

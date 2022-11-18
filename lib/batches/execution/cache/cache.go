@@ -135,13 +135,14 @@ func (key CacheKey) Slug() string {
 	return SlugForRepo(key.Repository.Name, key.Repository.BaseRev)
 }
 
-func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r batches.Repository, path string, onlyFetchWorkspace bool, steps []batches.Step, stepIndex int, retriever MetadataRetriever) Keyer {
+func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r batches.Repository, path string, globalEnv []string, onlyFetchWorkspace bool, steps []batches.Step, stepIndex int, retriever MetadataRetriever) Keyer {
 	sort.Strings(r.FileMatches)
 
 	return CacheKey{
 		Repository:            r,
 		Path:                  path,
 		OnlyFetchWorkspace:    onlyFetchWorkspace,
+		GlobalEnv:             globalEnv,
 		Steps:                 steps,
 		BatchChangeAttributes: batchChangeAttributes,
 		StepIndex:             stepIndex,

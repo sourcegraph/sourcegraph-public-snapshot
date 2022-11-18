@@ -499,6 +499,18 @@ func GitServer() *monitoring.Dashboard {
 					},
 				},
 			},
+			shared.NewDiskMetricsGroup(
+				shared.DiskMetricsGroupOptions{
+					DiskTitle: "repos",
+
+					MetricMountNameLabel: "reposDir",
+					MetricNamespace:      "gitserver",
+
+					ServiceName:         "gitserver",
+					InstanceFilterRegex: `${shard:regex}`,
+				},
+				monitoring.ObservableOwnerRepoManagement,
+			),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
 			shared.CodeIntelligence.NewNpmGroup(containerName),

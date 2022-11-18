@@ -299,12 +299,15 @@ func (rm ReposModified) ReposModified(modified types.RepoModified) types.Repos {
 // sync in the background vs block and call s.syncRepo synchronously.
 func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background bool) (repo *types.Repo, err error) {
 	logger := s.Logger.With(log.String("name", string(name)), log.Bool("background", background))
+
+	logger.Debug("SyncRepo started")
+
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
 	defer tr.Finish()
 
 	repo, err = s.Store.RepoStore().GetByName(ctx, name)
 	if err != nil && !errcode.IsNotFound(err) {
-		return nil, err
+		return nil, errors.Wrapf(err, "GetByName failed for %q", name)
 	}
 
 	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
@@ -312,30 +315,36 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 		if repo != nil {
 			return repo, nil
 		}
+
+		logger.Debug("no associated code host found, skipping")
 		return nil, &database.RepoNotFoundErr{Name: name}
 	}
 
 	if repo != nil {
 		// Only public repos can be individually synced on sourcegraph.com
 		if repo.Private {
+			logger.Debug("repo is private, skipping")
 			return nil, &database.RepoNotFoundErr{Name: name}
 		}
 		// Don't sync the repo if it's been updated in the past 1 minute.
 		if s.Now().Sub(repo.UpdatedAt) < time.Minute {
+			logger.Debug("repo updated recently, skipping")
 			return repo, nil
 		}
 	}
 
 	if background && repo != nil {
+		logger.Debug("starting background sync in goroutine")
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 			defer cancel()
 
 			// We don't care about the return value here, but we still want to ensure that
 			// only one is in flight at a time.
-			_, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
+			updatedRepo, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
 				return s.syncRepo(ctx, codehost, name, repo)
 			})
+			logger.Debug("syncGroup completed", log.String("updatedRepo", fmt.Sprintf("%v", updatedRepo.(*types.Repo))))
 			if err != nil {
 				logger.Error("SyncRepo", log.Error(err), log.Bool("shared", shared))
 			}
@@ -343,6 +352,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 		return repo, nil
 	}
 
+	logger.Debug("starting foreground sync")
 	updatedRepo, err, shared := s.syncGroup.Do(string(name), func() (any, error) {
 		return s.syncRepo(ctx, codehost, name, repo)
 	})
@@ -388,7 +398,7 @@ func (s *Syncer) syncRepo(
 
 	src, err := s.Sourcer(ctx, svc)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to retrieve Sourcer")
 	}
 
 	rg, ok := src.(RepoGetter)
@@ -403,6 +413,7 @@ func (s *Syncer) syncRepo(
 
 	if stored != nil {
 		defer func() {
+			s.Logger.Debug("deferred deletable repo check")
 			if isDeleteableRepoError(err) {
 				err2 := s.Store.DeleteExternalServiceRepo(ctx, svc, stored.ID)
 				if err2 != nil {
@@ -414,6 +425,7 @@ func (s *Syncer) syncRepo(
 						log.Error(err2),
 					)
 				}
+				s.Logger.Debug("external service repo deleted", log.Int32("deleted ID", int32(stored.ID)))
 				s.notifyDeleted(ctx, stored.ID)
 			}
 		}()
@@ -421,10 +433,11 @@ func (s *Syncer) syncRepo(
 
 	repo, err = rg.GetRepo(ctx, path)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to get repo with path: %q", path)
 	}
 
 	if repo.Private {
+		s.Logger.Debug("repo is private, skipping")
 		return nil, &database.RepoNotFoundErr{Name: name}
 	}
 
@@ -587,6 +600,7 @@ func (s *Syncer) SyncExternalService(
 
 	results := make(chan SourceResult)
 	go func() {
+		s.Logger.Debug("listing repos asynchronously")
 		src.ListRepos(ctx, results)
 		close(results)
 	}()
@@ -617,6 +631,8 @@ func (s *Syncer) SyncExternalService(
 	// Insert or update repos as they are sourced. Keep track of what was seen so we
 	// can remove anything else at the end.
 	for res := range results {
+		logger.Debug("received result", log.String("repo", fmt.Sprintf("%v", res)))
+
 		if err := progressRecorder(ctx, syncProgress, false); err != nil {
 			logger.Warn("recording sync progress", log.Error(err))
 		}
@@ -756,15 +772,20 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		observeDiff(d)
 		// We must commit the transaction before publishing to s.Synced
 		// so that gitserver finds the repo in the database.
+
+		s.Logger.Debug("committing transaction")
 		err = tx.Done(err)
 		if err != nil {
+			s.Logger.Warn("failed to commit transaction", log.Error(err))
 			return
 		}
 
 		if s.Synced != nil && d.Len() > 0 {
 			select {
 			case <-ctx.Done():
+				s.Logger.Debug("sync context done")
 			case s.Synced <- d:
+				s.Logger.Debug("diff synced")
 			}
 		}
 	}()
@@ -782,6 +803,8 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 	switch len(stored) {
 	case 2: // Existing repo with a naming conflict
+		s.Logger.Debug("naming conflict")
+
 		// Pick this sourced repo to own the name by deleting the other repo. If it still exists, it'll have a different
 		// name when we source it from the same code host, and it will be re-created.
 		var conflicting, existing *types.Repo
@@ -801,8 +824,10 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		// We fallthrough to the next case after removing the conflicting repo in order to update
 		// the winner (i.e. existing). This works because we mutate stored to contain it, which the case expects.
 		stored = types.Repos{existing}
+		s.Logger.Debug("retrieved stored repo, falling through", log.String("stored", fmt.Sprintf("%v", stored)))
 		fallthrough
 	case 1: // Existing repo, update.
+		s.Logger.Debug("existing repo")
 		modified := stored[0].Update(sourced)
 		if modified == types.RepoUnmodified {
 			d.Unmodified = append(d.Unmodified, stored[0])
@@ -815,16 +840,20 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 		*sourced = *stored[0]
 		d.Modified = append(d.Modified, RepoModified{Repo: stored[0], Modified: modified})
+		s.Logger.Debug("appended to modified repos")
 	case 0: // New repo, create.
+		s.Logger.Debug("new repo")
 		if err = tx.CreateExternalServiceRepo(ctx, svc, sourced); err != nil {
 			return Diff{}, errors.Wrap(err, "syncer: failed to create external service repo")
 		}
 
 		d.Added = append(d.Added, sourced)
+		s.Logger.Debug("appended to added repos")
 	default: // Impossible since we have two separate unique constraints on name and external repo spec
 		panic("unreachable")
 	}
 
+	s.Logger.Debug("completed")
 	return d, nil
 }
 
@@ -897,7 +926,7 @@ func (s *Syncer) observeSync(
 		syncStarted.WithLabelValues(family, owner).Inc()
 
 		now := s.Now()
-		took := s.Now().Sub(began).Seconds()
+		took := now.Sub(began).Seconds()
 
 		lastSync.WithLabelValues(family).Set(float64(now.Unix()))
 

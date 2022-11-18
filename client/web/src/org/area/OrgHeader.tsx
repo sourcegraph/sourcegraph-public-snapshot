@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo } from 'react'
+import React from 'react'
 
-import { gql, useQuery } from '@apollo/client'
 import { Location } from 'history'
 import { match } from 'react-router'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
@@ -8,12 +7,7 @@ import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { PageHeader, Button, Link, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesProps } from '../../batches'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import { GetStartedInfoResult, GetStartedInfoVariables } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
-import { useEventBus } from '../emitter'
-import { calculateLeftGetStartedSteps, showGetStartPage } from '../openBeta/GettingStarted'
 import { OrgAvatar } from '../OrgAvatar'
 
 import { OrgAreaRouteContext } from './OrgArea'
@@ -32,24 +26,11 @@ export interface OrgSummary {
 export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org'> {
     isSourcegraphDotCom: boolean
     newMembersInviteEnabled: boolean
-    getStartedInfo: OrgSummary | undefined
 }
 
 export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {
     isActive?: (match: match | null, location: Location, props: OrgAreaHeaderContext) => boolean
 }
-
-const GET_STARTED_INFO_QUERY = gql`
-    query GetStartedInfo($organization: ID!) {
-        membersSummary: orgMembersSummary(organization: $organization) {
-            membersCount
-            invitesCount
-        }
-        extServices: externalServices(namespace: $organization) {
-            totalCount
-        }
-    }
-`
 
 /**
  * Header for the organization area.
@@ -65,46 +46,13 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
     isSourcegraphDotCom,
     newMembersInviteEnabled,
 }) => {
-    const emitter = useEventBus()
-
-    useEffect(() => {
-        const unsubscribe = emitter.subscribe('refreshOrgHeader', () => {
-            refetch({ organization: org.id }).catch(() => eventLogger.log('OrgHeaderSummaryrefreshError'))
-        })
-
-        return () => {
-            emitter.unSubscribe('refreshOrgHeader', unsubscribe)
-        }
-    })
-    const { data, refetch } = useQuery<GetStartedInfoResult, GetStartedInfoVariables>(GET_STARTED_INFO_QUERY, {
-        variables: { organization: org.id },
-    })
-
-    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
-
-    const memoizedNavItems = useMemo(
-        (): readonly OrgAreaHeaderNavItem[] => [
-            {
-                to: '/getstarted',
-                label: 'Get started',
-                dynamicLabel: ({ getStartedInfo, org }) => calculateLeftGetStartedSteps(getStartedInfo, org.name),
-                isActive: (_match, location) => location.pathname.includes('getstarted'),
-                condition: ({ getStartedInfo, org, isSourcegraphDotCom }) =>
-                    showGetStartPage(getStartedInfo, org.name, isOpenBetaEnabled, isSourcegraphDotCom),
-            },
-            ...navItems,
-        ],
-        [navItems, isOpenBetaEnabled]
-    )
-
-    const context = {
+    const context: OrgAreaHeaderContext = {
         batchChangesEnabled,
         batchChangesExecutionEnabled,
         batchChangesWebhookLogsEnabled,
         org,
         isSourcegraphDotCom,
         newMembersInviteEnabled,
-        getStartedInfo: data ? (data as OrgSummary) : undefined,
     }
 
     return (
@@ -112,28 +60,26 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
             <div className="container">
                 {org && (
                     <>
-                        <PageHeader
-                            path={[
-                                {
-                                    icon: () => <OrgAvatar org={org.name} size="lg" className="mr-3" />,
-                                    text: (
-                                        <span className="align-middle">
-                                            {org.displayName ? (
-                                                <>
-                                                    {org.displayName} ({org.name})
-                                                </>
-                                            ) : (
-                                                org.name
-                                            )}
-                                        </span>
-                                    ),
-                                },
-                            ]}
-                            className="mb-3"
-                        />
-                        <div className="d-flex align-items-end justify-content-between">
+                        <PageHeader className="mb-3">
+                            <PageHeader.Heading as="h2" styleAs="h1">
+                                <PageHeader.Breadcrumb
+                                    icon={() => <OrgAvatar org={org.name} size="lg" className="mr-3" />}
+                                >
+                                    <span className="align-middle">
+                                        {org.displayName ? (
+                                            <>
+                                                {org.displayName} ({org.name})
+                                            </>
+                                        ) : (
+                                            org.name
+                                        )}
+                                    </span>
+                                </PageHeader.Breadcrumb>
+                            </PageHeader.Heading>
+                        </PageHeader>
+                        <nav className="d-flex align-items-end justify-content-between" aria-label="Org">
                             <ul className="nav nav-tabs w-100">
-                                {memoizedNavItems.map(
+                                {navItems.map(
                                     ({
                                         to,
                                         label,
@@ -181,7 +127,7 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
                                     </Button>
                                 </div>
                             )}
-                        </div>
+                        </nav>
                     </>
                 )}
             </div>

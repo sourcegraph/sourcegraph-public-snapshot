@@ -11,8 +11,6 @@ import { catchError, concatMap, map, tap } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, Code, Container, Icon, Label, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -20,6 +18,7 @@ import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { PageTitle } from '../../../components/PageTitle'
 import { RegistryPublisher, toExtensionID } from '../../../extensions/extension/extension'
+import { Scalars, CreateRegistryExtensionResult } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from '../extension/RegistryExtensionForm'
 
@@ -41,7 +40,7 @@ interface State {
     publisher?: Scalars['ID']
 
     /** The creation result, undefined while loading, or an error. */
-    creationOrError?: 'loading' | GQL.IExtensionRegistryCreateExtensionResult | ErrorLike
+    creationOrError?: 'loading' | CreateRegistryExtensionResult['extensionRegistry']['createExtension'] | ErrorLike
 }
 
 /** A page with a form to create a new extension in the extension registry. */

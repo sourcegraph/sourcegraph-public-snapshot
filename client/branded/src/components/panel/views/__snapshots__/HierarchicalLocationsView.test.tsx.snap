@@ -23,10 +23,14 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 class="header"
                 id="result-container-0"
               >
+                <span
+                  class="sr-only"
+                >
+                  file content result,
+                </span>
                 <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
-                  data-state="closed"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -69,7 +73,6 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     <button
                       aria-label="Copy path to clipboard"
                       class="btn btnIcon btnSm button copyButton"
-                      data-state="closed"
                       type="button"
                     >
                       <svg
@@ -270,10 +273,14 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 class="header"
                 id="result-container-0"
               >
+                <span
+                  class="sr-only"
+                >
+                  file content result,
+                </span>
                 <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
-                  data-state="closed"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -318,7 +325,6 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     <button
                       aria-label="Copy path to clipboard"
                       class="btn btnIcon btnSm button copyButton"
-                      data-state="closed"
                       type="button"
                     >
                       <svg
@@ -465,10 +471,14 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 class="header"
                 id="result-container-0"
               >
+                <span
+                  class="sr-only"
+                >
+                  file content result,
+                </span>
                 <svg
                   aria-label="github.com"
                   class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
-                  data-state="closed"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -511,7 +521,6 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     <button
                       aria-label="Copy path to clipboard"
                       class="btn btnIcon btnSm button copyButton"
-                      data-state="closed"
                       type="button"
                     >
                       <svg

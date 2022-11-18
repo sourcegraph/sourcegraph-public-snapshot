@@ -1,14 +1,13 @@
 import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
+import { matchPath, Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { isMacPlatform } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -18,16 +17,17 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Panel } from '@sourcegraph/wildcard'
+import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from './auth'
 import type { BatchChangesProps } from './batches'
 import type { CodeIntelligenceProps } from './codeintel'
+import { CodeMonitoringProps } from './codeMonitoring'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { FuzzyFinderContainer } from './components/fuzzyFinder/FuzzyFinder'
+import { LazyFuzzyFinder } from './components/fuzzyFinder/LazyFuzzyFinder'
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
@@ -38,9 +38,10 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
+import { useHandleSubmitFeedback } from './hooks'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import type { BlockInput } from './notebooks'
+import type { BlockInput, NotebookProps } from './notebooks'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import type { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
@@ -50,9 +51,9 @@ import { RepoHeaderActionButton } from './repo/RepoHeader'
 import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import type { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
-import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
-import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps } from './search'
+import type { LayoutRouteComponentProps, LayoutRouteProps } from './routes'
+import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
+import { HomePanelsProps, parseSearchURLQuery, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -72,12 +73,13 @@ export interface LayoutProps
         PlatformContextProps,
         ExtensionsControllerProps,
         TelemetryProps,
-        ActivationProps,
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
         CodeIntelligenceProps,
-        BatchChangesProps {
+        BatchChangesProps,
+        NotebookProps,
+        CodeMonitoringProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes?: readonly ExtensionsAreaRoute[]
@@ -116,7 +118,6 @@ export interface LayoutProps
     isSourcegraphDotCom: boolean
     children?: never
 }
-
 /**
  * Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
  * https://github.com/sourcegraph/sourcegraph/issues/36251
@@ -128,8 +129,8 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
-    const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
-    const isSearchNotebookListPage = props.location.pathname === PageRoutes.Notebooks
+    const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
+    const isSearchNotebookListPage = props.location.pathname === EnterprisePageRoutes.Notebooks
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
     let { fuzzyFinder } = getExperimentalFeatures(props.settingsCascade.final)
@@ -153,11 +154,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         props.location.pathname === PageRoutes.PasswordReset ||
         props.location.pathname === PageRoutes.Welcome
 
-    // TODO Change this behavior when we have global focus management system
-    // Need to know this for disable autofocus on nav search input
-    // and preserve autofocus for first textarea at survey page, creation UI etc.
-    const isSearchAutoFocusRequired = routeMatch === PageRoutes.Survey || routeMatch === EnterprisePageRoutes.Insights
-
     const themeProps = useThemeProps()
     const themeState = useTheme()
     const themeStateRef = useRef(themeState)
@@ -170,8 +166,14 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
 
     const showHelpShortcut = useKeyboardShortcut('keyboardShortcutsHelp')
     const [keyboardShortcutsHelpOpen, setKeyboardShortcutsHelpOpen] = useState(false)
+    const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
     const showKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(true), [])
     const hideKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(false), [])
+    const showFeedbackModal = useCallback(() => setFeedbackModalOpen(true), [])
+
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch,
+    })
 
     // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
     // const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
@@ -205,12 +207,25 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 <Shortcut key={index} {...keybinding} onMatch={showKeyboardShortcutsHelp} />
             ))}
             <KeyboardShortcutsHelp isOpen={keyboardShortcutsHelpOpen} onDismiss={hideKeyboardShortcutsHelp} />
+
+            {feedbackModalOpen && (
+                <FeedbackPrompt
+                    onSubmit={handleSubmitFeedback}
+                    modal={true}
+                    openByDefault={true}
+                    authenticatedUser={props.authenticatedUser}
+                    onClose={() => setFeedbackModalOpen(false)}
+                />
+            )}
+
             <GlobalAlerts
                 authenticatedUser={props.authenticatedUser}
                 settingsCascade={props.settingsCascade}
                 isSourcegraphDotCom={props.isSourcegraphDotCom}
             />
-            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && (
+                <SurveyToast authenticatedUser={props.authenticatedUser} />
+            )}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
@@ -223,9 +238,9 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         !isSearchNotebooksPage
                     }
                     setFuzzyFinderIsVisible={setFuzzyFinderVisible}
-                    isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
+                    showFeedbackModal={showFeedbackModal}
                     enableLegacyExtensions={window.context.enableLegacyExtensions}
                 />
             )}
@@ -265,6 +280,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         defaultSize={350}
                         storageKey="panel-size"
                         ariaLabel="References panel"
+                        id="references-panel"
                     >
                         <TabbedPanelContent
                             {...props}
@@ -287,7 +303,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
             )}
             {fuzzyFinder && (
-                <FuzzyFinderContainer
+                <LazyFuzzyFinder
                     isVisible={isFuzzyFinderVisible}
                     setIsVisible={setFuzzyFinderVisible}
                     themeState={themeStateRef}

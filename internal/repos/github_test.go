@@ -337,6 +337,12 @@ func TestGithubSource_makeRepo(t *testing.T) {
 				Url:                   "https://github.com",
 				RepositoryPathPattern: "gh/{nameWithOwner}",
 			},
+		}, {
+			name: "name-with-owner",
+			schema: &schema.GitHubConnection{
+				Url:                   "https://github.com",
+				RepositoryPathPattern: "{nameWithOwner}",
+			},
 		},
 	}
 	for _, test := range tests {

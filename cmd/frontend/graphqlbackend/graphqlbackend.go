@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -33,6 +32,7 @@ import (
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -44,11 +44,13 @@ var (
 	}, []string{"type", "field", "error", "source", "request_name"})
 )
 
-type prometheusTracer struct {
+type requestTracer struct {
+	DB     database.DB
 	tracer trace.OpenTracingTracer
+	logger sglog.Logger
 }
 
-func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
+func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
 	start := time.Now()
 	var finish trace.TraceQueryFinishFunc
 	if policy.ShouldTrace(ctx) {
@@ -56,11 +58,6 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 	}
 
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
-
-	// TODO(4.2)
-	// DEPRECATED - LOG_ALL_GRAPHQL_REQUESTS env variable, and the associated handler logic, will be removed in favor of log.auditLog.graphQL site config setting
-	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
-	_, logAllRequests := os.LookupEnv("LOG_ALL_GRAPHQL_REQUESTS")
 
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
@@ -70,37 +67,55 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 		currentUserID = a.UID
 	}
 
+	// 🚨 SECURITY: We want to log every single operation the Sourcegraph operator
+	// has done on the instance, so we need to do additional logging here. Sometimes
+	// we would end up having logging twice for the same operation (here and the web
+	// app), but we would not want to risk missing logging operations. Also in the
+	// future, we expect audit logging of Sourcegraph operators to live outside the
+	// instance, which makes this pattern less of a concern in terms of redundancy.
+	if a.SourcegraphOperator {
+		const eventName = "SourcegraphOperatorGraphQLRequest"
+		args, err := json.Marshal(map[string]any{
+			"queryString": queryString,
+			"variables":   variables,
+		})
+		if err != nil {
+			t.logger.Error(
+				"failed to marshal JSON for event log argument",
+				sglog.String("eventName", eventName),
+				sglog.Error(err),
+			)
+		}
+
+		// NOTE: It is important to propagate the correct context that carries the
+		// information of the actor, especially whether the actor is a Sourcegraph
+		// operator or not.
+		err = usagestats.LogEvent(
+			ctx,
+			t.DB,
+			usagestats.Event{
+				EventName: eventName,
+				UserID:    a.UID,
+				Argument:  args,
+				Source:    "BACKEND",
+			},
+		)
+		if err != nil {
+			t.logger.Error(
+				"failed to log event",
+				sglog.String("eventName", eventName),
+				sglog.Error(err),
+			)
+		}
+	}
+
 	// Requests made by our JS frontend and other internal things will have a concrete name attached to the
 	// request which allows us to (softly) differentiate it from end-user API requests. For example,
 	// /.api/graphql?Foobar where Foobar is the name of the request we make. If there is not a request name,
 	// then it is an interesting query to log in the event it is harmful and a site admin needs to identify
 	// it and the user issuing it.
 	requestName := sgtrace.GraphQLRequestName(ctx)
-	lvl := log15.Debug
-	if requestName == "unknown" {
-		lvl = log15.Info
-	}
 	requestSource := sgtrace.RequestSource(ctx)
-
-	if !disableLog {
-		lvl("serving GraphQL request", "name", requestName, "userID", currentUserID, "source", requestSource)
-		if requestName == "unknown" || logAllRequests {
-			reason := ""
-			if requestName == "unknown" {
-				reason = "for unnamed GraphQL request above "
-			}
-			log.Printf(`logging complete query %sname=%s userID=%d source=%s:
-QUERY
------
-%s
-
-VARIABLES
----------
-%v
-
-`, reason, requestName, currentUserID, requestSource, queryString, variables)
-		}
-	}
 
 	return ctx, func(err []*gqlerrors.QueryError) {
 		if finish != nil {
@@ -126,7 +141,7 @@ VARIABLES
 	}
 }
 
-func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
+func (requestTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
 	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
@@ -141,7 +156,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	}
 }
 
-func (t prometheusTracer) TraceValidation(ctx context.Context) trace.TraceValidationFinishFunc {
+func (t requestTracer) TraceValidation(ctx context.Context) trace.TraceValidationFinishFunc {
 	var finish trace.TraceValidationFinishFunc
 	if policy.ShouldTrace(ctx) {
 		finish = t.tracer.TraceValidation(ctx)
@@ -341,24 +356,32 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
+func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+}
+
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, nil, nil, nil, notebooks, nil, nil, nil)
 }
 
 func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, authz, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), batchChanges, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, codeMonitors, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil)
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, license, nil, nil, nil, nil, nil, nil)
+}
+
+func NewSchemaWithWebhooksResolver(db database.DB, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
+	return NewSchema(db, gitserver.NewClient(db), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, webhooksResolver)
 }
 
 func NewSchema(
@@ -375,6 +398,7 @@ func NewSchema(
 	notebooks NotebooksResolver,
 	compute ComputeResolver,
 	insightsAggregation InsightsAggregationResolver,
+	webhooksResolver WebhooksResolver,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db, gitserverClient)
 	schemas := []string{mainSchema}
@@ -409,6 +433,9 @@ func NewSchema(
 		EnterpriseResolvers.authzResolver = authz
 		resolver.AuthzResolver = authz
 		schemas = append(schemas, authzSchema)
+		for kind, res := range authz.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
 	}
 
 	if codeMonitors != nil {
@@ -470,10 +497,23 @@ func NewSchema(
 		schemas = append(schemas, insightsAggregationsSchema)
 	}
 
+	if webhooksResolver != nil {
+		EnterpriseResolvers.webhooksResolver = webhooksResolver
+		resolver.WebhooksResolver = webhooksResolver
+		// Register NodeByID handlers.
+		for kind, res := range webhooksResolver.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
+	}
+
+	logger := sglog.Scoped("GraphQL", "general GraphQL logging")
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
-		graphql.Tracer(&prometheusTracer{}),
+		graphql.Tracer(&requestTracer{
+			DB:     db,
+			logger: logger,
+		}),
 		graphql.UseStringDescriptions(),
 	)
 }
@@ -503,6 +543,7 @@ type schemaResolver struct {
 	SearchContextsResolver
 	NotebooksResolver
 	InsightsAggregationResolver
+	WebhooksResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -558,14 +599,17 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 		"WebhookLog": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return webhookLogByID(ctx, db, id)
 		},
-		"Webhook": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return webhookByID(ctx, db, id)
-		},
 		"Executor": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return executorByID(ctx, db, id)
 		},
 		"ExternalServiceSyncJob": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return externalServiceSyncJobByID(ctx, db, id)
+		},
+		"ExecutorSecret": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return executorSecretByID(ctx, db, id)
+		},
+		"ExecutorSecretAccessLog": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return executorSecretAccessLogByID(ctx, db, id)
 		},
 	}
 	return r
@@ -585,6 +629,7 @@ var EnterpriseResolvers = struct {
 	searchContextsResolver      SearchContextsResolver
 	notebooksResolver           NotebooksResolver
 	InsightsAggregationResolver InsightsAggregationResolver
+	webhooksResolver            WebhooksResolver
 }{}
 
 // DEPRECATED

@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
@@ -64,7 +63,7 @@ func newExternalHTTPHandler(
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication, except from trusted
 	// origins, to avoid CSRF attacks. See session.CookieMiddlewareWithCSRFSafety for details.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(logger, db, apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
-	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, apiHandler)                                        // API accepts access tokens
+	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, logger, apiHandler)                                // API accepts access tokens
 	apiHandler = requestclient.HTTPMiddleware(apiHandler)
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 	if envvar.SourcegraphDotComMode() {
@@ -86,8 +85,8 @@ func newExternalHTTPHandler(
 	appHandler = actor.AnonymousUIDMiddleware(appHandler)
 	appHandler = authMiddlewares.App(appHandler) // 🚨 SECURITY: auth middleware
 	appHandler = middleware.OpenGraphMetadataMiddleware(db.FeatureFlags(), appHandler)
-	appHandler = session.CookieMiddleware(logger, db, appHandler)          // app accepts cookies
-	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler) // app accepts access tokens
+	appHandler = session.CookieMiddleware(logger, db, appHandler)                  // app accepts cookies
+	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, logger, appHandler) // app accepts access tokens
 	appHandler = requestclient.HTTPMiddleware(appHandler)
 	if envvar.SourcegraphDotComMode() {
 		appHandler = deviceid.Middleware(appHandler)
@@ -108,16 +107,12 @@ func newExternalHTTPHandler(
 	// Wrap in middleware, first line is last to run.
 	//
 	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.
-	// OverrideAuthMiddleware allows us to inject an authentication token via an
-	// environment variable, for testing. This is true only when a site-config
-	// change is explicitly made, to enable this token.
 	h = middleware.Trace(h)
 	h = gcontext.ClearHandler(h)
 	h = healthCheckMiddleware(h)
 	h = middleware.BlackHole(h)
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
-	h = internalauth.OverrideAuthMiddleware(db, h)
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = instrumentation.HTTPMiddleware("external", h)
 
@@ -141,9 +136,9 @@ func newInternalHTTPHandler(
 	schema *graphql.Schema,
 	db database.DB,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	rankingService enterprise.RankingService,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
-	codeIntelServices codeintel.Services,
 ) http.Handler {
 	internalMux := http.NewServeMux()
 	logger := log.Scoped("internal", "internal http handlers")
@@ -156,9 +151,9 @@ func newInternalHTTPHandler(
 					db,
 					schema,
 					newCodeIntelUploadHandler,
+					rankingService,
 					newComputeStreamHandler,
 					rateLimitWatcher,
-					codeIntelServices,
 				),
 			),
 		),

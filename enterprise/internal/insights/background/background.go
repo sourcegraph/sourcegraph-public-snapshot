@@ -6,16 +6,22 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/pings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -62,16 +68,47 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	// work to fill them - if not disabled.
 	disableHistorical, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS_HISTORICAL"))
 	if !disableHistorical {
+
+		searchRateLimiter := limiter.SearchQueryRate()
+		historicRateLimiter := limiter.HistoricalWorkRate()
+		backfillConfig := pipeline.BackfillerConfig{
+			CompressionPlan:         compression.NewHistoricalFilter(true, time.Now().Add(-1*365*24*time.Hour), edb.NewInsightsDBWith(insightsStore)),
+			SearchHandlers:          queryrunner.GetSearchHandlers(),
+			InsightStore:            insightsStore,
+			CommitClient:            discovery.NewGitCommitClient(mainAppDB),
+			SearchPlanWorkerLimit:   1,
+			SearchRunnerWorkerLimit: 5, //TODO: move these to settings
+			SearchRateLimiter:       searchRateLimiter,
+			HistoricRateLimiter:     historicRateLimiter,
+		}
+		backfillRunner := pipeline.NewDefaultBackfiller(backfillConfig)
+		config := scheduler.JobMonitorConfig{
+			InsightsDB:     insightsDB,
+			InsightStore:   insightsStore,
+			RepoStore:      mainAppDB.Repos(),
+			BackfillRunner: backfillRunner,
+			ObsContext:     observationContext,
+			AllRepoIterator: discovery.NewAllReposIterator(
+				mainAppDB.Repos(),
+				time.Now,
+				envvar.SourcegraphDotComMode(),
+				15*time.Minute,
+				&prometheus.CounterOpts{
+					Namespace: "src",
+					Name:      "insight_backfill_new_index_repositories_analyzed",
+					Help:      "Counter of the number of repositories analyzed in the backfiller new state.",
+				}),
+			CostAnalyzer: priority.DefaultQueryAnalyzer(),
+		}
+
+		// Add the backfill v2 workers
+		monitor := scheduler.NewBackgroundJobMonitor(ctx, config)
+		routines = append(routines, monitor.Routines()...)
+
+		// Add the backfiller v1 workers
 		routines = append(routines, newInsightHistoricalEnqueuer(ctx, workerBaseStore, insightsMetadataStore, insightsStore, featureFlagStore, observationContext))
 	}
 
-	// this flag will allow users to ENABLE the settings sync job. This is a last resort option if for some reason the new GraphQL API does not work. This
-	// should not be published as an option externally, and will be deprecated as soon as possible.
-	enableSync, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
-	if enableSync {
-		observationContext.Logger.Info("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
-		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
-	}
 	routines = append(
 		routines,
 		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
@@ -103,11 +140,12 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "query_runner_worker")
 
 	workerStore := queryrunner.CreateDBWorkerStore(workerBaseStore, observationContext)
+	seachQueryLimiter := limiter.SearchQueryRate()
 
 	return []goroutine.BackgroundRoutine{
 		// Register the query-runner worker and resetter, which executes search queries and records
 		// results to the insights DB.
-		queryrunner.NewWorker(ctx, logger.Scoped("queryrunner.Worker", ""), workerStore, insightsStore, repoStore, queryRunnerWorkerMetrics),
+		queryrunner.NewWorker(ctx, logger.Scoped("queryrunner.Worker", ""), workerStore, insightsStore, repoStore, queryRunnerWorkerMetrics, seachQueryLimiter),
 		queryrunner.NewResetter(ctx, logger.Scoped("queryrunner.Resetter", ""), workerStore, queryRunnerResetterMetrics),
 		queryrunner.NewCleaner(ctx, workerBaseStore, observationContext),
 	}

@@ -411,6 +411,11 @@ type Client interface {
 	// LsFiles returns the output of `git ls-files`
 	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
 
+	// LFSSmudge returns a reader of the contents from LFS of the LFS pointer
+	// at path. If the path is not an LFS pointer, the file contents from git
+	// are returned instead.
+	LFSSmudge(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error)
+
 	// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
 	// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
 	// their associated repository or commit are unresolvable.
@@ -1138,12 +1143,7 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 }
 
 func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*protocol.ReposStats, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", "http://"+addr+"/repos-stats", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.do(ctx, "", "GET", fmt.Sprintf("http://%s/repos-stats", addr), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1222,9 +1222,11 @@ func (c *clientImplementor) httpPostWithURI(ctx context.Context, repo api.RepoNa
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
-// do performs a request to a gitserver instance based on the address in the uri argument.
+// do performs a request to a gitserver instance based on the address in the uri
+// argument.
 //
-//nolint:unparam // unparam complains that `method` always has same value across call-sites, but that's OK
+// Repo parameter is optional. If it is provided, then "repo" attribute is added
+// to trace span.
 func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
@@ -1233,6 +1235,11 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
 	defer func() {
+		if repo != "" {
+			span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
+		} else {
+			span.LogKV("method", method, "path", parsedURL.Path)
+		}
 		span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -1248,6 +1255,10 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", c.userAgent)
+
+	// Set header so that the server knows the request is from us.
+	req.Header.Set("X-Requested-With", "Sourcegraph")
+
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {

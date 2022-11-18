@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Redirect } from 'react-router'
 import { Observable, of } from 'rxjs'
@@ -18,27 +19,40 @@ import {
     reactManualTracer,
 } from '@sourcegraph/observability-client'
 import { SearchContextProps } from '@sourcegraph/search'
-import { FetchFileParameters, StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { HighlightResponseFormat, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { RepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { Alert, Button, LoadingSpinner, useEventObservable, useObservable } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    Button,
+    ButtonLink,
+    Icon,
+    LoadingSpinner,
+    Text,
+    useEventObservable,
+    useObservable,
+} from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CodeIntelligenceProps } from '../../codeintel'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
+import { Scalars } from '../../graphql-operations'
 import { render as renderLsifHtml } from '../../lsif/html'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { SearchStreamingProps } from '../../search'
 import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
+import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
 import { useBlameHunks } from '../blame/useBlameHunks'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -50,7 +64,7 @@ import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
-import { fetchBlob } from './backend'
+import { fetchBlob, fetchStencil } from './backend'
 import { Blob, BlobInfo } from './Blob'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
@@ -75,7 +89,8 @@ interface BlobPageProps
         BreadcrumbSetters,
         SearchStreamingProps,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
-        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        Pick<CodeIntelligenceProps, 'codeIntelligenceEnabled' | 'useCodeIntel'> {
     location: H.Location
     history: H.History
     authenticatedUser: AuthenticatedUser | null
@@ -100,7 +115,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const { span } = useCurrentSpan()
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
     let renderMode = getModeFromURL(props.location)
-    const { repoName, revision, repoID, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
+    const { repoID, repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
@@ -108,6 +123,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
     const enableTokenKeyboardNavigation =
+        props.codeIntelligenceEnabled &&
         isSettingsValid(props.settingsCascade) &&
         props.settingsCascade.final['codeIntel.blobKeyboardNavigation'] === 'token'
 
@@ -183,16 +199,14 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         repoName,
                         revision,
                         filePath,
-                        stencil: enableTokenKeyboardNavigation,
                         format: HighlightResponseFormat.HTML_PLAINTEXT,
                     }).pipe(
-                        map(({ blob, stencil }) => {
+                        map(blob => {
                             if (blob === null) {
                                 return blob
                             }
 
                             const blobInfo: BlobPageInfo = {
-                                stencil,
                                 content: blob.content,
                                 html: blob.highlight.html ?? '',
                                 repoName,
@@ -202,6 +216,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                                 // Properties used in `BlobPage` but not `Blob`
                                 richHTML: blob.richHTML,
                                 aborted: false,
+                                lfs: blob.__typename === 'GitBlob' ? blob.lfs : undefined,
+                                externalURLs: blob.__typename === 'GitBlob' ? blob.externalURLs : undefined,
                             }
 
                             fetchSpan.end()
@@ -210,16 +226,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         })
                     )
             )
-        }, [
-            enableCodeMirror,
-            enableTokenKeyboardNavigation,
-            enableLazyBlobSyntaxHighlighting,
-            filePath,
-            mode,
-            repoName,
-            revision,
-            span,
-        ])
+        }, [enableCodeMirror, enableLazyBlobSyntaxHighlighting, filePath, mode, repoName, revision, span])
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`
@@ -241,13 +248,12 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                             revision,
                             filePath,
                             disableTimeout,
-                            stencil: enableTokenKeyboardNavigation,
                             format: enableCodeMirror
                                 ? HighlightResponseFormat.JSON_SCIP
                                 : HighlightResponseFormat.HTML_HIGHLIGHT,
                         })
                     ),
-                    map(({ blob, stencil }) => {
+                    map(blob => {
                         if (blob === null) {
                             return blob
                         }
@@ -261,7 +267,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         }
 
                         const blobInfo: BlobPageInfo = {
-                            stencil,
                             content: blob.content,
                             html: blob.highlight.html ?? '',
                             lsif: blob.highlight.lsif ?? '',
@@ -272,13 +277,33 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                             // Properties used in `BlobPage` but not `Blob`
                             richHTML: blob.richHTML,
                             aborted: blob.highlight.aborted,
+                            lfs: blob.__typename === 'GitBlob' ? blob.lfs : undefined,
+                            externalURLs: blob.__typename === 'GitBlob' ? blob.externalURLs : undefined,
                         }
                         return blobInfo
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, filePath, enableTokenKeyboardNavigation, enableCodeMirror, mode]
+            [repoName, revision, filePath, enableCodeMirror, mode]
         )
+    )
+
+    /**
+     * Fetches stencil ranges for the current document.
+     * Used to provide keyboard navigation within the blob view.
+     */
+    const stencil = useObservable(
+        useMemo(() => {
+            if (!enableTokenKeyboardNavigation) {
+                return of(undefined)
+            }
+
+            return fetchStencil({
+                repoName,
+                revision,
+                filePath,
+            })
+        }, [enableTokenKeyboardNavigation, filePath, repoName, revision])
     )
 
     const blobInfoOrError = enableLazyBlobSyntaxHighlighting
@@ -425,6 +450,40 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         )
     }
 
+    // LFS file:
+    if (blobInfoOrError.lfs) {
+        const externalUrl = blobInfoOrError.externalURLs?.[0]
+        const externalService = externalUrl && serviceKindDisplayNameAndIcon(externalUrl.serviceKind)
+
+        return (
+            <div className={styles.placeholder}>
+                <HeroPage
+                    icon={FileAlertIcon}
+                    title="Stored with Git LFS"
+                    subtitle={
+                        <div>
+                            <Text className={styles.lfsText}>
+                                This file is stored in Git Large File Storage and cannot be viewed inside Sourcegraph.
+                            </Text>
+                            {externalUrl && externalService && (
+                                <ButtonLink
+                                    variant="secondary"
+                                    to={externalUrl.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="mt-3"
+                                >
+                                    <Icon as={externalService.icon} aria-hidden={true} className="mr-1" />
+                                    View file on {externalService.displayName}
+                                </ButtonLink>
+                            )}
+                        </div>
+                    }
+                />
+            </div>
+        )
+    }
+
     const BlobComponent = enableCodeMirror ? CodeMirrorBlob : Blob
 
     return (
@@ -490,7 +549,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                     <BlobComponent
                         data-testid="repo-blob"
                         className={classNames(styles.blob, styles.border)}
-                        blobInfo={{ ...blobInfoOrError, commitID }}
+                        blobInfo={{ ...blobInfoOrError, commitID, stencil }}
                         wrapCode={wrapCode}
                         platformContext={props.platformContext}
                         extensionsController={props.extensionsController}

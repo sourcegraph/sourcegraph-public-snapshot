@@ -11,7 +11,6 @@ import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger } from 
 import { gql } from '@sourcegraph/http-client'
 import { SearchContextProps } from '@sourcegraph/search'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
@@ -64,7 +63,6 @@ interface Props
         PlatformContextProps,
         ThemeProps,
         TelemetryProps,
-        ActivationProps,
         CodeIntelligenceProps,
         BatchChangesProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
@@ -94,6 +92,7 @@ export const treePageRepositoryFragment = gql`
 `
 
 export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    location,
     repo,
     repoName,
     commitID,
@@ -398,6 +397,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                                         match={match}
                                                         settingsCascade={settingsCascade}
                                                         useBreadcrumb={useBreadcrumb}
+                                                        location={location}
                                                         {...props}
                                                     />
                                                 </RepoRevisionWrapper>
@@ -413,6 +413,7 @@ export const TreePage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                                 repo={repo}
                                 revision={revision}
                                 commitID={commitID}
+                                location={location}
                                 {...props}
                             />
                         )}

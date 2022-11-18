@@ -4,6 +4,7 @@ import * as H from 'history'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
+import { assertAriaDisabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -106,6 +107,6 @@ describe('CreateCodeMonitorPage', () => {
             </MockedTestProvider>
         )
         const actionButton = screen.getByTestId('form-action-toggle-email')
-        expect(actionButton).toBeDisabled()
+        assertAriaDisabled(actionButton)
     })
 })

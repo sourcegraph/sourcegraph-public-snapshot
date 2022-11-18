@@ -2,6 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
+import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
 
 import { formatRepositoryStarCount } from '../util/stars'
@@ -17,10 +18,18 @@ export interface ResultContainerProps {
     titleClassName?: string
     resultClassName?: string
     repoStars?: number
-    resultType?: string
+    resultType?: SearchMatch['type']
     repoName: string
     className?: string
     onResultClicked?: () => void
+}
+
+const accessibleResultType: Record<SearchMatch['type'], string> = {
+    symbol: 'symbol',
+    content: 'file content',
+    repo: 'repository',
+    path: 'file path',
+    commit: 'commit',
 }
 
 /**
@@ -58,6 +67,9 @@ export const ResultContainer: ForwardReferenceExoticComponent<
         >
             <article aria-labelledby={`result-container-${index}`}>
                 <div className={styles.header} id={`result-container-${index}`}>
+                    {/* Add a result type to be read out to screen readers only, so that screen reader users can
+                    easily scan the search results list (for example, by navigating by landmarks). */}
+                    <span className="sr-only">{resultType ? accessibleResultType[resultType] : 'search'} result,</span>
                     <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0 mr-1" />
                     <div
                         className={classNames(styles.headerTitle, titleClassName)}

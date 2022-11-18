@@ -1,8 +1,6 @@
 import React from 'react'
 
-import classNames from 'classnames'
-
-import { Link, Code } from '@sourcegraph/wildcard'
+import { Code, Link } from '@sourcegraph/wildcard'
 
 import styles from './HighlightedLink.module.scss'
 
@@ -19,6 +17,7 @@ export interface HighlightedLinkProps {
     positions: RangePosition[]
     url?: string
     icon?: JSX.Element
+    textSuffix?: JSX.Element
     onClick?: () => void
 }
 
@@ -48,7 +47,7 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
         const key = `${startOffset}-${endOffset}`
         if (kind === 'mark') {
             spans.push(
-                <mark key={key} className={classNames(styles.mark, 'px-0')}>
+                <mark key={key} className="px-0">
                     {text}
                 </mark>
             )
@@ -77,15 +76,15 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
 
     return props.url ? (
         <Code>
-            <Link key="link" tabIndex={-1} className={styles.link} to={props.url} onClick={props.onClick}>
+            <Link key="link" className={styles.link} to={props.url} onClick={props.onClick}>
                 {props.icon && <span key="icon">{props.icon}</span>}
                 {spans}
+                {props.textSuffix}
             </Link>
         </Code>
     ) : (
         <Link
             key="link"
-            tabIndex={-1}
             className={styles.link}
             to={`/commands/${props.text}`}
             onClick={event => {

@@ -2,6 +2,8 @@ package scheduler
 
 import (
 	"context"
+	"database/sql"
+	"time"
 
 	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
@@ -19,7 +21,7 @@ type BackfillStore struct {
 	clock glock.Clock
 }
 
-func newBackfillStore(edb edb.InsightsDB) *BackfillStore {
+func NewBackfillStore(edb edb.InsightsDB) *BackfillStore {
 	return newBackfillStoreWithClock(edb, glock.NewRealClock())
 }
 func newBackfillStoreWithClock(edb edb.InsightsDB, clock glock.Clock) *BackfillStore {
@@ -62,6 +64,11 @@ func (s *BackfillStore) loadBackfill(ctx context.Context, id int) (*SeriesBackfi
 	q := "SELECT %s FROM insight_series_backfill WHERE id = %s"
 	row := s.QueryRow(ctx, sqlf.Sprintf(q, backfillColumnsJoin, id))
 	return scanBackfill(row)
+}
+
+func (s *BackfillStore) LoadSeriesBackfills(ctx context.Context, seriesID int) ([]SeriesBackfill, error) {
+	q := "SELECT %s FROM insight_series_backfill where series_id = %s"
+	return scanAllBackfills(s.Query(ctx, sqlf.Sprintf(q, backfillColumnsJoin, seriesID)))
 }
 
 func scanBackfill(scanner dbutil.Scanner) (*SeriesBackfill, error) {
@@ -120,6 +127,10 @@ func (b *SeriesBackfill) setState(ctx context.Context, store *BackfillStore, new
 	return nil
 }
 
+func (b *SeriesBackfill) IsTerminalState() bool {
+	return b.State == BackfillStateCompleted || b.State == BackfillStateFailed
+}
+
 func (sb *SeriesBackfill) repoIterator(ctx context.Context, store *BackfillStore) (*iterator.PersistentRepoIterator, error) {
 	if sb.repoIteratorId == 0 {
 		return nil, errors.Newf("invalid repo_iterator_id on backfill_id: %d", sb.Id)
@@ -136,3 +147,81 @@ var backfillColumns = []*sqlf.Query{
 }
 
 var backfillColumnsJoin = sqlf.Join(backfillColumns, ", ")
+
+func scanAllBackfills(rows *sql.Rows, queryErr error) (_ []SeriesBackfill, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var results []SeriesBackfill
+	for rows.Next() {
+		var cost *float64
+		var temp SeriesBackfill
+		if err := rows.Scan(
+			&temp.Id,
+			&temp.SeriesId,
+			&dbutil.NullInt{N: &temp.repoIteratorId},
+			&cost,
+			&temp.State,
+		); err != nil {
+			return []SeriesBackfill{}, err
+		}
+		if cost != nil {
+			temp.EstimatedCost = *cost
+		}
+		results = append(results, temp)
+	}
+	return results, nil
+}
+
+type SeriesBackfillDebug struct {
+	Info   BackfillDebugInfo
+	Errors []iterator.IterationError
+}
+
+type BackfillDebugInfo struct {
+	Id              int
+	RepoIteratorId  int
+	EstimatedCost   float64
+	State           BackfillState
+	StartedAt       *time.Time
+	CompletedAt     *time.Time
+	RuntimeDuration *int64
+	PercentComplete *float64
+	NumRepos        *int
+}
+
+func (s *BackfillStore) LoadSeriesBackfillsDebugInfo(ctx context.Context, seriesID int) ([]SeriesBackfillDebug, error) {
+	backfills, err := s.LoadSeriesBackfills(ctx, seriesID)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]SeriesBackfillDebug, 0, len(backfills))
+	for _, backfill := range backfills {
+		info := BackfillDebugInfo{
+			Id:            backfill.Id,
+			EstimatedCost: backfill.EstimatedCost,
+			State:         backfill.State,
+		}
+		backfillErrors := []iterator.IterationError{}
+		if backfill.repoIteratorId != 0 {
+			it, err := iterator.Load(ctx, s.Store, backfill.repoIteratorId)
+			if err != nil {
+				return nil, err
+			}
+			info.RepoIteratorId = backfill.repoIteratorId
+			info.StartedAt = &it.StartedAt
+			info.CompletedAt = &it.CompletedAt
+			info.PercentComplete = &it.PercentComplete
+			info.NumRepos = &it.TotalCount
+			backfillErrors = it.Errors()
+		}
+		results = append(results, SeriesBackfillDebug{
+			Info:   info,
+			Errors: backfillErrors,
+		})
+
+	}
+	return results, nil
+}

@@ -15,6 +15,7 @@ import {
 } from '@sourcegraph/common'
 import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/search'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -23,8 +24,9 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
+import { useFocusOnLoadedMore } from '@sourcegraph/wildcard'
 
-import { CodeExcerpt, FetchFileParameters } from './CodeExcerpt'
+import { CodeExcerpt } from './CodeExcerpt'
 import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from './codeLinkNavigation'
 import { LastSyncedIcon } from './LastSyncedIcon'
 
@@ -146,6 +148,8 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         telemetryService.log(...codeCopiedEvent('file-match'))
     }, [telemetryService])
 
+    const getItemRef = useFocusOnLoadedMore<HTMLDivElement>(grouped.length ?? 0)
+
     return (
         <div className={styles.fileMatchChildren} data-testid="file-match-children">
             {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
@@ -153,7 +157,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             {/* Line matches */}
             {grouped.length > 0 && (
                 <div>
-                    {grouped.map(group => (
+                    {grouped.map((group, index) => (
                         <div
                             key={`linematch:${getFileMatchUrl(result)}${group.position.line}:${
                                 group.position.character
@@ -173,6 +177,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                 data-testid="file-match-children-item"
                                 tabIndex={0}
                                 role="link"
+                                ref={getItemRef(index)}
                             >
                                 <CodeExcerpt
                                     repoName={result.repository}

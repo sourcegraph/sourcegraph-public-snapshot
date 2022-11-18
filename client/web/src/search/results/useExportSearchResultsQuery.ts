@@ -167,6 +167,7 @@ export const useExportSearchResultsQuery: UseExportSearchResultsQuery = ({
                 a.remove()
                 URL.revokeObjectURL(url)
             },
+            fetchPolicy: 'no-cache',
         }
     )
 

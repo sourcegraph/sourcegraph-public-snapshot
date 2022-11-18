@@ -12,11 +12,11 @@ import (
 	"go.opentelemetry.io/otel"
 
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
+	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/lsifuploadstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifuploadstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -117,12 +117,15 @@ func main() {
 	}
 
 	// Initialize worker
-	worker := uploads.GetBackgroundJob(services.UploadsService).NewWorker(
+	worker := uploads.NewUploadProcessorJob(
+		services.UploadsService,
+		db,
 		uploadStore,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
 		config.WorkerPollInterval,
 		config.MaximumRuntimePerJob,
+		observationContext,
 	)
 
 	// Initialize health server

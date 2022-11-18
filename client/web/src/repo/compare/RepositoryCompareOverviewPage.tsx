@@ -12,14 +12,13 @@ import { gql } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { Scalars } from '../../graphql-operations'
+import { RepositoryComparisonFields, Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
@@ -30,25 +29,27 @@ function queryRepositoryComparison(args: {
     repo: Scalars['ID']
     base: string | null
     head: string | null
-}): Observable<GQL.IGitRevisionRange> {
+}): Observable<RepositoryComparisonFields['comparison']['range']> {
     return queryGraphQL(
         gql`
             query RepositoryComparison($repo: ID!, $base: String, $head: String) {
                 node(id: $repo) {
-                    ... on Repository {
-                        comparison(base: $base, head: $head) {
-                            range {
-                                expr
-                                baseRevSpec {
-                                    object {
-                                        oid
-                                    }
-                                }
-                                headRevSpec {
-                                    object {
-                                        oid
-                                    }
-                                }
+                    ...RepositoryComparisonFields
+                }
+            }
+
+            fragment RepositoryComparisonFields on Repository {
+                comparison(base: $base, head: $head) {
+                    range {
+                        expr
+                        baseRevSpec {
+                            object {
+                                oid
+                            }
+                        }
+                        headRevSpec {
+                            object {
+                                oid
                             }
                         }
                     }
@@ -61,7 +62,7 @@ function queryRepositoryComparison(args: {
             if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as GQL.IRepository
+            const repo = data.node as RepositoryComparisonFields
             if (
                 !repo.comparison ||
                 !repo.comparison.range ||
@@ -99,7 +100,7 @@ interface Props
 
 interface State {
     /** The comparison's range, null when no comparison is requested, undefined while loading, or an error. */
-    rangeOrError?: null | GQL.IGitRevisionRange | ErrorLike
+    rangeOrError?: null | RepositoryComparisonFields['comparison']['range'] | ErrorLike
 }
 
 /** A page with an overview of the comparison. */

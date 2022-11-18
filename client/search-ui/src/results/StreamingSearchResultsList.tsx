@@ -6,6 +6,7 @@ import { Observable } from 'rxjs'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { SearchContextProps } from '@sourcegraph/search'
 import {
     CommitSearchResult,
@@ -13,9 +14,9 @@ import {
     FileContentSearchResult,
     FilePathSearchResult,
     SymbolSearchResult,
-    FetchFileParameters,
 } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
@@ -98,7 +99,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     openMatchesInNewTab,
     executedQuery,
     resultClassName,
-    smartSearchEnabled: smartSearchEnabled,
     prefetchFile,
     prefetchFileEnabled,
 }) => {
@@ -115,7 +115,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 
             // Lucky search A/B test events on Sourcegraph.com. To be removed at latest by 12/2022.
             if (
-                smartSearchEnabled &&
                 !(
                     results?.alert?.kind === 'smart-search-additional-results' ||
                     results?.alert?.kind === 'smart-search-pure-results'
@@ -125,7 +124,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             }
 
             if (
-                smartSearchEnabled &&
                 (results?.alert?.kind === 'smart-search-additional-results' ||
                     results?.alert?.kind === 'smart-search-pure-results') &&
                 results?.alert?.title &&
@@ -140,95 +138,109 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 telemetryService.log(event)
             }
         },
-        [telemetryService, results, smartSearchEnabled]
+        [telemetryService, results]
     )
 
     const renderResult = useCallback(
         (result: SearchMatch, index: number): JSX.Element => {
-            switch (result.type) {
-                case 'content':
-                case 'symbol':
-                case 'path':
-                    return (
-                        <PrefetchableFile
-                            isPrefetchEnabled={prefetchFileEnabled}
-                            prefetch={prefetchFile}
-                            filePath={result.path}
-                            revision={getRevision(result.branches, result.commit)}
-                            repoName={result.repository}
-                            // PrefetchableFile adds an extra wrapper, so we lift the <li> up and match the ResultContainer styles.
-                            // Better approach would be to use `as` to avoid wrapping, but that requires a larger refactor of the
-                            // child components than is worth doing right now for this experimental feature
-                            className={resultContainerStyles.resultContainer}
-                            as="li"
-                        >
-                            {result.type === 'content' && (
-                                <FileContentSearchResult
-                                    index={index}
-                                    location={location}
-                                    telemetryService={telemetryService}
-                                    result={result}
-                                    onSelect={() => logSearchResultClicked(index, 'fileMatch')}
-                                    defaultExpanded={false}
-                                    showAllMatches={false}
-                                    allExpanded={allExpanded}
-                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                    repoDisplayName={displayRepoName(result.repository)}
-                                    settingsCascade={settingsCascade}
-                                    extensionsController={extensionsController}
-                                    hoverifier={hoverifier}
-                                    openInNewTab={openMatchesInNewTab}
-                                    containerClassName={resultClassName}
-                                />
-                            )}
-                            {result.type === 'symbol' && (
-                                <SymbolSearchResult
-                                    index={index}
-                                    telemetryService={telemetryService}
-                                    result={result}
-                                    onSelect={() => logSearchResultClicked(index, 'symbolMatch')}
-                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                    repoDisplayName={displayRepoName(result.repository)}
-                                    settingsCascade={settingsCascade}
-                                    openInNewTab={openMatchesInNewTab}
-                                    containerClassName={resultClassName}
-                                />
-                            )}
-                            {result.type === 'path' && (
-                                <FilePathSearchResult
-                                    index={index}
-                                    result={result}
-                                    onSelect={() => logSearchResultClicked(index, 'filePathMatch')}
-                                    repoDisplayName={displayRepoName(result.repository)}
-                                    containerClassName={resultClassName}
-                                    telemetryService={telemetryService}
-                                />
-                            )}
-                        </PrefetchableFile>
-                    )
-                case 'commit':
-                    return (
-                        <CommitSearchResult
-                            index={index}
-                            result={result}
-                            platformContext={platformContext}
-                            onSelect={() => logSearchResultClicked(index, 'commit')}
-                            openInNewTab={openMatchesInNewTab}
-                            containerClassName={resultClassName}
-                            as="li"
-                        />
-                    )
-                case 'repo':
-                    return (
-                        <RepoSearchResult
-                            index={index}
-                            result={result}
-                            onSelect={() => logSearchResultClicked(index, 'repo')}
-                            containerClassName={resultClassName}
-                            as="li"
-                        />
-                    )
+            function renderResultContent(): JSX.Element {
+                switch (result.type) {
+                    case 'content':
+                    case 'symbol':
+                    case 'path':
+                        return (
+                            <PrefetchableFile
+                                isPrefetchEnabled={prefetchFileEnabled}
+                                prefetch={prefetchFile}
+                                filePath={result.path}
+                                revision={getRevision(result.branches, result.commit)}
+                                repoName={result.repository}
+                                // PrefetchableFile adds an extra wrapper, so we lift the <li> up and match the ResultContainer styles.
+                                // Better approach would be to use `as` to avoid wrapping, but that requires a larger refactor of the
+                                // child components than is worth doing right now for this experimental feature
+                                className={resultContainerStyles.resultContainer}
+                                as="li"
+                            >
+                                {result.type === 'content' && (
+                                    <FileContentSearchResult
+                                        index={index}
+                                        location={location}
+                                        telemetryService={telemetryService}
+                                        result={result}
+                                        onSelect={() => logSearchResultClicked(index, 'fileMatch')}
+                                        defaultExpanded={false}
+                                        showAllMatches={false}
+                                        allExpanded={allExpanded}
+                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                        repoDisplayName={displayRepoName(result.repository)}
+                                        settingsCascade={settingsCascade}
+                                        extensionsController={extensionsController}
+                                        hoverifier={hoverifier}
+                                        openInNewTab={openMatchesInNewTab}
+                                        containerClassName={resultClassName}
+                                    />
+                                )}
+                                {result.type === 'symbol' && (
+                                    <SymbolSearchResult
+                                        index={index}
+                                        telemetryService={telemetryService}
+                                        result={result}
+                                        onSelect={() => logSearchResultClicked(index, 'symbolMatch')}
+                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                        repoDisplayName={displayRepoName(result.repository)}
+                                        settingsCascade={settingsCascade}
+                                        openInNewTab={openMatchesInNewTab}
+                                        containerClassName={resultClassName}
+                                    />
+                                )}
+                                {result.type === 'path' && (
+                                    <FilePathSearchResult
+                                        index={index}
+                                        result={result}
+                                        onSelect={() => logSearchResultClicked(index, 'filePathMatch')}
+                                        repoDisplayName={displayRepoName(result.repository)}
+                                        containerClassName={resultClassName}
+                                        telemetryService={telemetryService}
+                                    />
+                                )}
+                            </PrefetchableFile>
+                        )
+                    case 'commit':
+                        return (
+                            <CommitSearchResult
+                                index={index}
+                                result={result}
+                                platformContext={platformContext}
+                                onSelect={() => logSearchResultClicked(index, 'commit')}
+                                openInNewTab={openMatchesInNewTab}
+                                containerClassName={resultClassName}
+                                as="li"
+                            />
+                        )
+                    case 'repo':
+                        return (
+                            <RepoSearchResult
+                                index={index}
+                                result={result}
+                                onSelect={() => logSearchResultClicked(index, 'repo')}
+                                containerClassName={resultClassName}
+                                as="li"
+                            />
+                        )
+                }
             }
+
+            return (
+                <TraceSpanProvider
+                    name="StreamingSearchResultsListItem"
+                    attributes={{
+                        type: result.type,
+                        index,
+                    }}
+                >
+                    {renderResultContent()}
+                </TraceSpanProvider>
+            )
         },
         [
             prefetchFileEnabled,

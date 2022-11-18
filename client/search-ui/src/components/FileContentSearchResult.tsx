@@ -10,6 +10,7 @@ import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { isErrorLike, pluralize } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
 import { MatchItem } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
@@ -20,7 +21,6 @@ import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/s
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon, Badge } from '@sourcegraph/wildcard'
 
-import { FetchFileParameters } from './CodeExcerpt'
 import { CopyPathAction } from './CopyPathAction'
 import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
@@ -117,7 +117,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             const contextLinesSetting =
                 isSettingsValid(settingsCascade) &&
                 settingsCascade.final &&
-                (settingsCascade.final['search.contextLines'] as number | undefined)
+                settingsCascade.final['search.contextLines']
 
             if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
                 return contextLinesSetting

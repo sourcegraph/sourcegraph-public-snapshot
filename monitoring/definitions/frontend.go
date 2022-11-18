@@ -687,6 +687,37 @@ func Frontend() *monitoring.Dashboard {
 					},
 				},
 			},
+			{
+				Title:  "Emails",
+				Hidden: true,
+				Rows: []monitoring.Row{{
+					{
+						Name:        "email_delivery_failures",
+						Description: "emails delivery failures every 30 minutes",
+						Query:       `sum(increase(src_email_send{success="false"}[30m]))`,
+						Panel:       monitoring.Panel().LegendFormat("failures"),
+						Warning:     monitoring.Alert().GreaterOrEqual(1),
+						Critical:    monitoring.Alert().GreaterOrEqual(2),
+
+						Owner: monitoring.ObservableOwnerDevOps,
+						NextSteps: `
+							- Check your SMTP configuration in site configuration.
+							- Check frontend logs for more detailed error messages.
+							- Check your SMTP provider for more detailed error messages.
+						`,
+					},
+					{
+						Name:        "email_deliveries",
+						Description: "emails delivered per minute",
+						Query:       `sum by (source) (increase(src_email_send{success="true"}[1m]))`,
+						Panel:       monitoring.Panel().LegendFormat("{{source}}"),
+						NoAlert:     true, // this is a purely informational panel
+
+						Owner:          monitoring.ObservableOwnerDevOps,
+						Interpretation: "Emails successfully delivered by source.",
+					},
+				}},
+			},
 
 			{
 				Title:  "Sentinel queries (only on sourcegraph.com)",

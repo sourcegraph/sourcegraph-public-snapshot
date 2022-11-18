@@ -158,6 +158,7 @@ Stores queries that were unsuccessful or otherwise flagged as incomplete or inco
  backfill_attempts             | integer                     |           | not null | 0
  needs_migration               | boolean                     |           |          | 
  backfill_completed_at         | timestamp without time zone |           |          | 
+ supports_augmentation         | boolean                     |           | not null | true
 Indexes:
     "insight_series_pkey" PRIMARY KEY, btree (id)
     "insight_series_series_id_unique_idx" UNIQUE, btree (series_id)
@@ -166,6 +167,8 @@ Indexes:
 Referenced by:
     TABLE "insight_dirty_queries" CONSTRAINT "insight_dirty_queries_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_series_backfill" CONSTRAINT "insight_series_backfill_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
+    TABLE "insight_series_recording_times" CONSTRAINT "insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
+    TABLE "insight_series_incomplete_points" CONSTRAINT "insight_series_incomplete_points_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
     TABLE "insight_view_series" CONSTRAINT "insight_view_series_insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id)
 
 ```
@@ -207,6 +210,37 @@ Foreign-key constraints:
     "insight_series_backfill_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
 Referenced by:
     TABLE "insights_background_jobs" CONSTRAINT "insights_background_jobs_backfill_id_fkey" FOREIGN KEY (backfill_id) REFERENCES insight_series_backfill(id) ON DELETE CASCADE
+
+```
+
+# Table "public.insight_series_incomplete_points"
+```
+  Column   |            Type             | Collation | Nullable |                           Default                            
+-----------+-----------------------------+-----------+----------+--------------------------------------------------------------
+ id        | integer                     |           | not null | nextval('insight_series_incomplete_points_id_seq'::regclass)
+ series_id | integer                     |           | not null | 
+ reason    | text                        |           | not null | 
+ time      | timestamp without time zone |           | not null | 
+ repo_id   | integer                     |           |          | 
+Indexes:
+    "insight_series_incomplete_points_pk" PRIMARY KEY, btree (id)
+    "insight_series_incomplete_points_unique_idx" UNIQUE, btree (series_id, reason, "time", repo_id)
+Foreign-key constraints:
+    "insight_series_incomplete_points_series_id_fk" FOREIGN KEY (series_id) REFERENCES insight_series(id) ON DELETE CASCADE
+
+```
+
+# Table "public.insight_series_recording_times"
+```
+      Column       |           Type           | Collation | Nullable | Default 
+-------------------+--------------------------+-----------+----------+---------
+ insight_series_id | integer                  |           |          | 
+ recording_time    | timestamp with time zone |           |          | 
+ snapshot          | boolean                  |           |          | 
+Indexes:
+    "insight_series_recording_time_insight_series_id_recording_t_key" UNIQUE CONSTRAINT, btree (insight_series_id, recording_time)
+Foreign-key constraints:
+    "insight_series_id_fkey" FOREIGN KEY (insight_series_id) REFERENCES insight_series(id) ON DELETE CASCADE
 
 ```
 
@@ -522,7 +556,8 @@ Stores ephemeral snapshot data of insight recordings.
     jobs.cancel,
     jobs.backfill_id,
     isb.state AS backfill_state,
-    isb.estimated_cost
+    isb.estimated_cost,
+    width_bucket(isb.estimated_cost, (0)::double precision, max((isb.estimated_cost + (1)::double precision)) OVER (), 4) AS cost_bucket
    FROM (insights_background_jobs jobs
      JOIN insight_series_backfill isb ON ((jobs.backfill_id = isb.id)))
   WHERE (isb.state = 'processing'::text);

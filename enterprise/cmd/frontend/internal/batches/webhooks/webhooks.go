@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 
 	"github.com/inconshreveable/log15"
@@ -22,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type Webhook struct {
+type webhook struct {
 	Store           *store.Store
 	gitserverClient gitserver.Client
 
@@ -36,18 +35,18 @@ type PR struct {
 	RepoExternalID string
 }
 
-func (h Webhook) getRepoForPR(
+func (h webhook) getRepoForPR(
 	ctx context.Context,
 	tx *store.Store,
 	pr PR,
-	externalServiceID string,
+	externalServiceID extsvc.CodeHostBaseURL,
 ) (*types.Repo, error) {
 	rs, err := tx.Repos().List(ctx, database.ReposListOptions{
 		ExternalRepos: []api.ExternalRepoSpec{
 			{
 				ID:          pr.RepoExternalID,
 				ServiceType: h.ServiceType,
-				ServiceID:   externalServiceID,
+				ServiceID:   externalServiceID.String(),
 			},
 		},
 	})
@@ -62,10 +61,10 @@ func (h Webhook) getRepoForPR(
 	return rs[0], nil
 }
 
-func extractExternalServiceID(ctx context.Context, extSvc *types.ExternalService) (string, error) {
+func extractExternalServiceID(ctx context.Context, extSvc *types.ExternalService) (extsvc.CodeHostBaseURL, error) {
 	c, err := extSvc.Configuration(ctx)
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to get external service config")
+		return extsvc.CodeHostBaseURL{}, errors.Wrap(err, "failed to get external service config")
 	}
 
 	var serviceID string
@@ -80,24 +79,19 @@ func extractExternalServiceID(ctx context.Context, extSvc *types.ExternalService
 		serviceID = c.Url
 	}
 	if serviceID == "" {
-		return "", errors.New("could not determine service id")
+		return extsvc.CodeHostBaseURL{}, errors.Errorf("could not determine service id for external service %d", extSvc.ID)
 	}
 
-	u, err := url.Parse(serviceID)
-	if err != nil {
-		return "", errors.Wrap(err, "Failed to parse service ID")
-	}
-
-	return extsvc.NormalizeBaseURL(u).String(), nil
+	return extsvc.NewCodeHostBaseURL(serviceID)
 }
 
 type keyer interface {
 	Key() string
 }
 
-func (h Webhook) upsertChangesetEvent(
+func (h webhook) upsertChangesetEvent(
 	ctx context.Context,
-	externalServiceID string,
+	externalServiceID extsvc.CodeHostBaseURL,
 	pr PR,
 	ev keyer,
 ) (err error) {

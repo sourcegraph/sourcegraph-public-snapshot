@@ -17,11 +17,10 @@ import (
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 )
 
-func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler, batchesWorkspaceFileGetHandler http.Handler, batchesWorkspaceFileExistsHandler http.Handler) (func() http.Handler, error) {
+func newExecutorQueueHandler(logger log.Logger, db database.DB, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler, batchesWorkspaceFileGetHandler http.Handler, batchesWorkspaceFileExistsHandler http.Handler) (func() http.Handler, error) {
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 	executorStore := db.Executors()
 	gitserverClient := gitserver.NewClient(db)
-	logger := log.Scoped("executorQueueHandler", "executor queue handler")
 
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
@@ -29,8 +28,8 @@ func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions
 		base.StrictSlash(true)
 
 		// Proxy /info/refs and /git-upload-pack to gitservice for git clone/fetch.
-		base.Path("/git/{RepoName:.*}/info/refs").Handler(gitserverProxy(gitserverClient, "/info/refs"))
-		base.Path("/git/{RepoName:.*}/git-upload-pack").Handler(gitserverProxy(gitserverClient, "/git-upload-pack"))
+		base.Path("/git/{RepoName:.*}/info/refs").Handler(gitserverProxy(logger, gitserverClient, "/info/refs"))
+		base.Path("/git/{RepoName:.*}/git-upload-pack").Handler(gitserverProxy(logger, gitserverClient, "/git-upload-pack"))
 
 		// Serve the executor queue API.
 		handler.SetupRoutes(executorStore, metricsStore, queueOptions, base.PathPrefix("/queue/").Subrouter())
@@ -41,7 +40,11 @@ func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions
 		base.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Handler(batchesWorkspaceFileGetHandler)
 		base.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Handler(batchesWorkspaceFileExistsHandler)
 
-		return actor.HTTPMiddleware(logger, authMiddleware(accessToken, base))
+		// Make sure requests to these endpoints are treated as an internal actor.
+		// We treat executors as internal and the executor secret is an internal actor
+		// access token.
+		// Also ensure that proper executor authentication is provided.
+		return authMiddleware(accessToken, withInternalActor(base))
 	}
 
 	return factory, nil
@@ -93,4 +96,13 @@ func validateExecutorToken(w http.ResponseWriter, r *http.Request, expectedAcces
 	}
 
 	return true
+}
+
+// withInternalActor ensures that the request handling is running as an internal actor.
+func withInternalActor(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+
+		next.ServeHTTP(rw, req.WithContext(actor.WithInternalActor(ctx)))
+	})
 }

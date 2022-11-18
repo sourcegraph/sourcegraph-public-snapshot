@@ -8,7 +8,7 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, CardBody, Card, Link, Container, H2, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import { PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -54,6 +54,7 @@ export interface BatchChangeListPageProps
     canCreate: boolean
     headingElement: 'h1' | 'h2'
     namespaceID?: Scalars['ID']
+    isSourcegraphDotCom: boolean
     /** For testing only. */
     openTab?: SelectedTab
 }
@@ -73,13 +74,16 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     openTab,
     settingsCascade,
     telemetryService,
+    isSourcegraphDotCom,
 }) => {
     useEffect(() => telemetryService.logViewEvent('BatchChangesListPage'), [telemetryService])
 
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
 
     const { selectedFilters, setSelectedFilters, selectedStates } = useBatchChangeListFilters()
-    const [selectedTab, setSelectedTab] = useState<SelectedTab>(openTab ?? 'batchChanges')
+    const [selectedTab, setSelectedTab] = useState<SelectedTab>(
+        openTab ?? (isSourcegraphDotCom ? 'gettingStarted' : 'batchChanges')
+    )
 
     // We keep state to track to the last total count of batch changes in the connection
     // to avoid the display flickering as the connection is loading more data or a
@@ -157,7 +161,9 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
             </PageHeader>
             <BatchChangesListIntro isLicensed={licenseAndUsageInfo?.batchChanges || licenseAndUsageInfo?.campaigns} />
             <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-            {selectedTab === 'gettingStarted' && <GettingStarted className="mb-4" footer={<GettingStartedFooter />} />}
+            {selectedTab === 'gettingStarted' && (
+                <GettingStarted isSourcegraphDotCom={isSourcegraphDotCom} className="mb-4" />
+            )}
             {selectedTab === 'batchChanges' && (
                 <>
                     <BatchChangeStatsBar className="mb-4" />
@@ -166,8 +172,10 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                             <div className={styles.filtersRow}>
                                 {typeof currentTotalCount === 'number' && typeof lastTotalCount === 'number' && (
                                     <H3 className="align-self-end flex-1">
-                                        {lastTotalCount} of {currentTotalCount}{' '}
-                                        {pluralize('batch change', currentTotalCount)}
+                                        {`${lastTotalCount} of ${currentTotalCount} ${pluralize(
+                                            'batch change',
+                                            currentTotalCount
+                                        )}`}
                                     </H3>
                                 )}
 
@@ -179,17 +187,9 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                 />
                             </div>
                             {error && <ConnectionError errors={[error.message]} />}
-                            {/*
-                            The connection list is a `div` instead of a `ul` because `ul` doesn't support css grid and we need to grid
-                            to live on the wrapper as opposed to each `BatchChangeNode`.
-
-                            This is because the current grid pattern gets broken when the individual child of the `ConnectionList` component
-                            has a grid.
-                            Discussion: https://github.com/sourcegraph/sourcegraph/pull/34716#pullrequestreview-959790114
-                        */}
                             <ConnectionList
-                                as="div"
                                 className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}
+                                aria-label="batch changes"
                             >
                                 {connection?.nodes?.map(node => (
                                     <BatchChangeNode
@@ -284,21 +284,22 @@ const BatchChangeListTabHeader: React.FunctionComponent<
         [setSelectedTab]
     )
     return (
-        <div className="overflow-auto mb-2">
-            <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
-                <li className="nav-item">
+        <nav className="overflow-auto mb-2" aria-label="Batch Changes">
+            <div className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap" role="tablist">
+                <div className="nav-item">
                     <Link
                         to=""
                         onClick={onSelectBatchChanges}
                         className={classNames('nav-link', selectedTab === 'batchChanges' && 'active')}
-                        role="button"
+                        aria-selected={selectedTab === 'batchChanges'}
+                        role="tab"
                     >
                         <span className="text-content" data-tab-content="All batch changes">
                             All batch changes
                         </span>
                     </Link>
-                </li>
-                <li className="nav-item">
+                </div>
+                <div className="nav-item">
                     <Link
                         to=""
                         onClick={event => {
@@ -306,32 +307,16 @@ const BatchChangeListTabHeader: React.FunctionComponent<
                             eventLogger.log('batch_change_homepage:getting_started:clicked')
                         }}
                         className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}
-                        role="button"
+                        aria-selected={selectedTab === 'gettingStarted'}
+                        role="tab"
                         data-testid="test-getting-started-btn"
                     >
                         <span className="text-content" data-tab-content="Getting started">
                             Getting started
                         </span>
                     </Link>
-                </li>
-            </ul>
-        </div>
+                </div>
+            </div>
+        </nav>
     )
 }
-
-const GettingStartedFooter: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
-    <div className="row">
-        <div className="col-12 col-sm-8 offset-sm-2 col-md-6 offset-md-3">
-            <Card>
-                <CardBody className="text-center">
-                    <Text>Create your first batch change</Text>
-                    <H2 className="mb-0">
-                        <Link to="/help/batch_changes/quickstart" target="_blank" rel="noopener">
-                            Batch Changes quickstart
-                        </Link>
-                    </H2>
-                </CardBody>
-            </Card>
-        </div>
-    </div>
-)

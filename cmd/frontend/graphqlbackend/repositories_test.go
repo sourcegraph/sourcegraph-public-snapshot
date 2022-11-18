@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
@@ -318,25 +319,25 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
+	buildQuery := func(first int, after string) string {
+		var args []string
+		if first != 0 {
+			args = append(args, fmt.Sprintf("first: %d", first))
+		}
+		if after != "" {
+			args = append(args, fmt.Sprintf("after: %q", after))
+		}
+
+		return fmt.Sprintf(`{ repositories(%s) { nodes { name } pageInfo { endCursor } } }`, strings.Join(args, ", "))
+	}
+
 	t.Run("Initial page without a cursor present", func(t *testing.T) {
 		repos.ListFunc.SetDefaultReturn(mockRepos[0:2], nil)
 
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
-				{
-					repositories(first: 1) {
-						nodes {
-							name
-						}
-						pageInfo {
-							endCursor
-						}
-					}
-				}
-			`,
-				ExpectedResult: `
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query:  buildQuery(1, ""),
+			ExpectedResult: `
 				{
 					"repositories": {
 						"nodes": [{
@@ -348,29 +349,16 @@ func TestRepositories_CursorPagination(t *testing.T) {
 					}
 				}
 			`,
-			},
 		})
 	})
 
 	t.Run("Second page in ascending order", func(t *testing.T) {
 		repos.ListFunc.SetDefaultReturn(mockRepos[1:], nil)
 
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
-				{
-					repositories(first: 1, after: "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8yIiwiRGlyZWN0aW9uIjoibmV4dCJ9") {
-						nodes {
-							name
-						}
-						pageInfo {
-							endCursor
-						}
-					}
-				}
-			`,
-				ExpectedResult: `
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query:  buildQuery(1, "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8yIiwiRGlyZWN0aW9uIjoibmV4dCJ9"),
+			ExpectedResult: `
 				{
 					"repositories": {
 						"nodes": [{
@@ -382,29 +370,16 @@ func TestRepositories_CursorPagination(t *testing.T) {
 					}
 				}
 			`,
-			},
 		})
 	})
 
 	t.Run("Second page in descending order", func(t *testing.T) {
 		repos.ListFunc.SetDefaultReturn(mockRepos[1:], nil)
 
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
-				{
-					repositories(first: 1, after: "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8yIiwiRGlyZWN0aW9uIjoicHJldiJ9", descending: true) {
-						nodes {
-							name
-						}
-						pageInfo {
-							endCursor
-						}
-					}
-				}
-			`,
-				ExpectedResult: `
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query:  buildQuery(1, "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8yIiwiRGlyZWN0aW9uIjoicHJldiJ9"),
+			ExpectedResult: `
 				{
 					"repositories": {
 						"nodes": [{
@@ -416,29 +391,16 @@ func TestRepositories_CursorPagination(t *testing.T) {
 					}
 				}
 			`,
-			},
 		})
 	})
 
 	t.Run("Initial page with no further rows to fetch", func(t *testing.T) {
 		repos.ListFunc.SetDefaultReturn(mockRepos, nil)
 
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
-				{
-					repositories(first: 3) {
-						nodes {
-							name
-						}
-						pageInfo {
-							endCursor
-						}
-					}
-				}
-			`,
-				ExpectedResult: `
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query:  buildQuery(3, ""),
+			ExpectedResult: `
 				{
 					"repositories": {
 						"nodes": [{
@@ -454,29 +416,16 @@ func TestRepositories_CursorPagination(t *testing.T) {
 					}
 				}
 			`,
-			},
 		})
 	})
 
 	t.Run("With no repositories present", func(t *testing.T) {
 		repos.ListFunc.SetDefaultReturn(nil, nil)
 
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
-				{
-					repositories(first: 1) {
-						nodes {
-							name
-						}
-						pageInfo {
-							endCursor
-						}
-					}
-				}
-			`,
-				ExpectedResult: `
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query:  buildQuery(1, ""),
+			ExpectedResult: `
 				{
 					"repositories": {
 						"nodes": [],
@@ -486,35 +435,21 @@ func TestRepositories_CursorPagination(t *testing.T) {
 					}
 				}
 			`,
-			},
 		})
 	})
 
 	t.Run("With an invalid cursor provided", func(t *testing.T) {
 		repos.ListFunc.SetDefaultReturn(nil, nil)
 
-		RunTests(t, []*Test{
-			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query: `
+		RunTest(t, &Test{
+			Schema:         mustParseGraphQLSchema(t, db),
+			Query:          buildQuery(1, "invalid-cursor-value"),
+			ExpectedResult: "null",
+			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					repositories(first: 1, after: "invalid-cursor-value") {
-						nodes {
-							name
-						}
-						pageInfo {
-							endCursor
-						}
-					}
-				}
-			`,
-				ExpectedResult: "null",
-				ExpectedErrors: []*gqlerrors.QueryError{
-					{
-						Path:          []any{"repositories"},
-						Message:       `cannot unmarshal repository cursor type: ""`,
-						ResolverError: errors.Errorf(`cannot unmarshal repository cursor type: ""`),
-					},
+					Path:          []any{"repositories"},
+					Message:       `cannot unmarshal repository cursor type: ""`,
+					ResolverError: errors.Errorf(`cannot unmarshal repository cursor type: ""`),
 				},
 			},
 		})
@@ -534,29 +469,33 @@ func TestRepositories_Integration(t *testing.T) {
 
 	repos := []struct {
 		repo        *types.Repo
+		size        int64
 		cloneStatus types.CloneStatus
 		lastError   string
 	}{
-		{repo: &types.Repo{Name: "repo1"}, cloneStatus: types.CloneStatusNotCloned},
-		{repo: &types.Repo{Name: "repo2"}, cloneStatus: types.CloneStatusNotCloned, lastError: "repo2 error"},
-		{repo: &types.Repo{Name: "repo3"}, cloneStatus: types.CloneStatusCloning},
-		{repo: &types.Repo{Name: "repo4"}, cloneStatus: types.CloneStatusCloning, lastError: "repo4 error"},
-		{repo: &types.Repo{Name: "repo5"}, cloneStatus: types.CloneStatusCloned},
-		{repo: &types.Repo{Name: "repo6"}, cloneStatus: types.CloneStatusCloned, lastError: "repo6 error"},
+		{repo: &types.Repo{Name: "repo1"}, size: 20, cloneStatus: types.CloneStatusNotCloned},
+		{repo: &types.Repo{Name: "repo2"}, size: 30, cloneStatus: types.CloneStatusNotCloned, lastError: "repo2 error"},
+		{repo: &types.Repo{Name: "repo3"}, size: 40, cloneStatus: types.CloneStatusCloning},
+		{repo: &types.Repo{Name: "repo4"}, size: 50, cloneStatus: types.CloneStatusCloning, lastError: "repo4 error"},
+		{repo: &types.Repo{Name: "repo5"}, size: 60, cloneStatus: types.CloneStatusCloned},
+		{repo: &types.Repo{Name: "repo6"}, size: 10, cloneStatus: types.CloneStatusCloned, lastError: "repo6 error"},
 	}
 
-	for _, rc := range repos {
-		if err := db.Repos().Create(ctx, rc.repo); err != nil {
+	for _, rsc := range repos {
+		if err := db.Repos().Create(ctx, rsc.repo); err != nil {
 			t.Fatal(err)
 		}
 
 		gitserverRepos := db.GitserverRepos()
-		if err := gitserverRepos.SetCloneStatus(ctx, rc.repo.Name, rc.cloneStatus, "shard-1"); err != nil {
+		if err := gitserverRepos.SetRepoSize(ctx, rsc.repo.Name, rsc.size, "shard-1"); err != nil {
+			t.Fatal(err)
+		}
+		if err := gitserverRepos.SetCloneStatus(ctx, rsc.repo.Name, rsc.cloneStatus, "shard-1"); err != nil {
 			t.Fatal(err)
 		}
 
-		if msg := rc.lastError; msg != "" {
-			if err := gitserverRepos.SetLastError(ctx, rc.repo.Name, msg, "shard-1"); err != nil {
+		if msg := rsc.lastError; msg != "" {
+			if err := gitserverRepos.SetLastError(ctx, rsc.repo.Name, msg, "shard-1"); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -644,6 +583,11 @@ func TestRepositories_Integration(t *testing.T) {
 			args:           "cloneStatus:NOT_CLONED, first: 1",
 			wantRepos:      []string{"repo1"},
 			wantTotalCount: 2,
+		},
+		{
+			args:           "orderBy:SIZE, descending:false, first: 5",
+			wantRepos:      []string{"repo6", "repo1", "repo2", "repo3", "repo4"},
+			wantTotalCount: 6,
 		},
 	}
 

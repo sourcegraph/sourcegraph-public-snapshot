@@ -1,34 +1,62 @@
-import React, { PropsWithChildren, useCallback, useMemo } from 'react'
+import React, {
+    createContext,
+    FC,
+    forwardRef,
+    PropsWithChildren,
+    ReactElement,
+    useCallback,
+    useContext,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import {
     Layout,
     Layout as ReactGridLayout,
-    Layouts,
     Layouts as ReactGridLayouts,
-    Responsive,
-    WidthProvider,
+    Responsive as ResponsiveGridLayout,
 } from 'react-grid-layout'
+import { Key } from 'ts-key-enum'
+import { useMergeRefs } from 'use-callback-ref'
 
 import { isFirefox } from '@sourcegraph/common'
+import { useMeasure } from '@sourcegraph/wildcard'
+
+import { Direction, findNextLayout } from './focus-management'
 
 import styles from './ViewGrid.module.scss'
 
-// TODO use a method to get width that also triggers when file explorer is closed
-// (WidthProvider only listens to window resize events)
-const ResponsiveGridLayout = WidthProvider(Responsive)
-
 export const BREAKPOINTS_NAMES = ['xs', 'sm', 'md', 'lg'] as const
-
 export type BreakpointName = typeof BREAKPOINTS_NAMES[number]
 
 /** Minimum size in px after which a breakpoint is active. */
-export const BREAKPOINTS: Record<BreakpointName, number> = { xs: 0, sm: 576, md: 768, lg: 992 } // no xl because TreePage's max-width is the xl breakpoint.
+export const BREAKPOINTS: Record<BreakpointName, number> = { xs: 0, sm: 576, md: 768, lg: 992 }
 export const COLUMNS: Record<BreakpointName, number> = { xs: 1, sm: 6, md: 8, lg: 12 }
 export const DEFAULT_ITEMS_PER_ROW: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 2, lg: 3 }
 export const MIN_WIDTHS: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 3, lg: 3 }
 export const DEFAULT_HEIGHT = 3.25
+export const ROW_HEIGHT = 6 * 16 // 6rem
+export const CONTAINER_PADDING: [number, number] = [0, 0]
+export const GRID_MARGIN: [number, number] = [12, 12]
+
+function findBreakpointByWidth(width: number): BreakpointName {
+    let currentBreakpoint: BreakpointName = 'xs'
+
+    for (let index = 0; index <= BREAKPOINTS_NAMES.length - 1; index++) {
+        const breakPointMinWidth = BREAKPOINTS[BREAKPOINTS_NAMES[index]]
+
+        if (width >= breakPointMinWidth) {
+            currentBreakpoint = BREAKPOINTS_NAMES[index]
+        }
+    }
+
+    return currentBreakpoint
+}
 
 const DEFAULT_VIEWS_LAYOUT_GENERATOR = (viewIds: string[]): ReactGridLayouts =>
     Object.fromEntries(
@@ -54,6 +82,16 @@ const DEFAULT_VIEWS_LAYOUT_GENERATOR = (viewIds: string[]): ReactGridLayouts =>
         )
     )
 
+interface GridViewContextInfo {
+    gridElements: Map<string, HTMLElement>
+    activeLayout: Layout[]
+}
+
+const GridViewContext = createContext<GridViewContextInfo>({
+    gridElements: new Map(),
+    activeLayout: [],
+})
+
 export type ViewGridProps =
     | {
           /**
@@ -64,9 +102,7 @@ export type ViewGridProps =
           layouts?: never
       }
     | {
-          /**
-           * Sets custom layout for react-grid-layout library.
-           */
+          /** Sets custom layout for react-grid-layout library. */
           layouts: ReactGridLayouts
           viewIds?: never
       }
@@ -75,21 +111,17 @@ interface ViewGridCommonProps {
     /** Custom classname for root element of the grid. */
     className?: string
 
-    onLayoutChange?: (currentLayout: Layout[], allLayouts: Layouts) => void
-    onResizeStart?: (newItem: Layout) => void
-    onResizeStop?: (newItem: Layout) => void
-    onDragStart?: (newItem: Layout) => void
+    onLayoutChange?: (currentLayout: ReactGridLayout[], allLayouts: ReactGridLayouts) => void
+    onResizeStart?: (newItem: ReactGridLayout) => void
+    onResizeStop?: (newItem: ReactGridLayout) => void
+    onDragStart?: (newItem: ReactGridLayout) => void
 }
 
-/**
- * Renders drag and drop and resizable views grid.
- */
-export const ViewGrid: React.FunctionComponent<
-    React.PropsWithChildren<PropsWithChildren<ViewGridProps & ViewGridCommonProps>>
-> = props => {
+/** Renders drag and drop and resizable views grid. */
+export const ViewGrid: FC<PropsWithChildren<ViewGridProps & ViewGridCommonProps>> = props => {
     const {
         layouts,
-        viewIds = [],
+        viewIds,
         children,
         className,
         onLayoutChange,
@@ -97,6 +129,19 @@ export const ViewGrid: React.FunctionComponent<
         onResizeStop = noop,
         onDragStart = noop,
     } = props
+
+    const gridRef = useRef<HTMLDivElement>(null)
+    const [gridElements] = useState(() => new Map<string, HTMLElement>())
+    const [, { width }] = useMeasure(gridRef.current)
+
+    const gridLayouts = useMemo(() => layouts ?? DEFAULT_VIEWS_LAYOUT_GENERATOR(viewIds), [layouts, viewIds])
+    const activeBreakpoint = useMemo(() => findBreakpointByWidth(width), [width])
+
+    const context = useMemo(() => ({ gridElements, activeLayout: gridLayouts[activeBreakpoint] }), [
+        gridElements,
+        gridLayouts,
+        activeBreakpoint,
+    ])
 
     const handleResizeStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item, newItem) => onResizeStart(newItem),
@@ -122,25 +167,94 @@ export const ViewGrid: React.FunctionComponent<
     // Back to css transforms when this bug will be resolved in Firefox.
     const useCSSTransforms = useMemo(() => !isFirefox(), [])
 
+    useLayoutEffect(() => {
+        // React grid layout doesn't expose API in order to override rendered elements
+        // (like as='ul' prop). Internally it always renders div element, we can't just
+        // render UL element, so we have to tune aria-role attribute manually here
+        gridRef.current?.setAttribute('role', 'list')
+    }, [])
+
     return (
-        <div className={classNames(className, styles.viewGrid)}>
+        <GridViewContext.Provider value={context}>
             <ResponsiveGridLayout
-                measureBeforeMount={true}
                 breakpoints={BREAKPOINTS}
-                layouts={layouts ?? DEFAULT_VIEWS_LAYOUT_GENERATOR(viewIds)}
                 cols={COLUMNS}
+                rowHeight={ROW_HEIGHT}
+                containerPadding={CONTAINER_PADDING}
+                margin={GRID_MARGIN}
+                innerRef={gridRef}
+                width={width}
                 autoSize={true}
-                rowHeight={6 * 16}
-                containerPadding={[0, 0]}
+                layouts={gridLayouts}
                 useCSSTransforms={useCSSTransforms}
-                margin={[12, 12]}
                 onResizeStart={handleResizeStart}
                 onResizeStop={handleResizeStop}
-                onLayoutChange={onLayoutChange}
                 onDragStart={handleDragStart}
+                onLayoutChange={onLayoutChange}
+                className={classNames(className, styles.viewGrid)}
             >
-                {children}
+                {width && children}
             </ResponsiveGridLayout>
-        </div>
+        </GridViewContext.Provider>
     )
 }
+
+const KEY_NAVIGATION_DIRECTIONS: Partial<Record<Key, Direction>> = {
+    [Key.ArrowUp]: 'top',
+    [Key.ArrowRight]: 'right',
+    [Key.ArrowDown]: 'bottom',
+    [Key.ArrowLeft]: 'left',
+}
+
+interface ViewGridItemProps {
+    id: string
+    children: React.ReactElement
+}
+
+export const ViewGridItem = forwardRef<HTMLElement, ViewGridItemProps>((props, ref) => {
+    const { children, id, ...attributes } = props
+
+    const { gridElements, activeLayout } = useContext(GridViewContext)
+    const mergedRef = useMergeRefs<HTMLElement>([ref, (children as any).ref])
+
+    useEffect(() => {
+        if (!mergedRef.current) {
+            return
+        }
+
+        gridElements.set(id, mergedRef.current)
+
+        return () => {
+            gridElements.delete(id)
+        }
+    }, [id, mergedRef, gridElements])
+
+    const handleKeydown = useCallback(
+        (event: KeyboardEvent): void => {
+            const direction = KEY_NAVIGATION_DIRECTIONS[event.key as Key]
+
+            // No support key, just skip the navigation action and do nothing
+            if (!direction) {
+                return
+            }
+
+            const nextLayout = findNextLayout(direction, id, activeLayout)
+            const nextLayoutElement = nextLayout ? gridElements.get(nextLayout.i) : null
+
+            if (nextLayoutElement) {
+                nextLayoutElement.focus()
+            }
+        },
+        [activeLayout, gridElements, id]
+    )
+
+    if (React.isValidElement(children)) {
+        return React.cloneElement(children as ReactElement, {
+            ...attributes,
+            ref: mergedRef,
+            onKeyDown: handleKeydown,
+        })
+    }
+
+    return children
+})

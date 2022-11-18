@@ -42,7 +42,6 @@ env:
   GRAFANA_SERVER_URL: http://localhost:3370
   PROMETHEUS_URL: http://localhost:9090
   JAEGER_SERVER_URL: http://localhost:16686
-  ZOEKT_HOST: localhost:3070
 
   SRC_DEVELOPMENT: 'true'
   SRC_PROF_HTTP: ''
@@ -59,6 +58,7 @@ env:
       { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
       { "Name": "codeintel-worker", "Host": "127.0.0.1:6088" },
       { "Name": "oss-worker", "Host": "127.0.0.1:6089" },
+      { "Name": "github-proxy", "Host": "127.0.0.1:6090" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
       { "Name": "worker-executors", "Host": "127.0.0.1:6996" },
       { "Name": "zoekt-index-0", "Host": "127.0.0.1:6072" },
@@ -66,7 +66,6 @@ env:
       { "Name": "zoekt-web-0", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/" },
       { "Name": "zoekt-web-1", "Host": "127.0.0.1:3071", "DefaultPath": "/debug/requests/" }
     ]
-  OVERRIDE_AUTH_SECRET: sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
   # Settings/config
   SITE_CONFIG_FILE: ./dev/site-config.json
   SITE_CONFIG_ALLOW_EDITS: true
@@ -205,6 +204,7 @@ commands:
       HOSTNAME: 127.0.0.1:3501
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
+      SRC_PROF_HTTP: 127.0.0.1:3551
 
   gitserver-1:
     <<: *gitserver_template
@@ -213,6 +213,7 @@ commands:
       HOSTNAME: 127.0.0.1:3502
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
+      SRC_PROF_HTTP: 127.0.0.1:3552
 
   github-proxy:
     cmd: .bin/github-proxy
@@ -222,8 +223,6 @@ commands:
       fi
       go build -gcflags="$GCFLAGS" -o .bin/github-proxy github.com/sourcegraph/sourcegraph/cmd/github-proxy
     checkBinary: .bin/github-proxy
-    env:
-      HOSTNAME: 127.0.0.1:3178
     watch:
       - lib
       - internal
@@ -525,6 +524,20 @@ commands:
       EXECUTOR_QUEUE_NAME: batches
       EXECUTOR_MAXIMUM_NUM_JOBS: 8
 
+  # This tool rebuilds the batcheshelper image every time the source of it is changed.
+  batcheshelper-builder:
+    # Nothing to run for this, we just want to re-run the install script every time.
+    cmd: exit 0
+    install: ./enterprise/cmd/batcheshelper/build.sh
+    env:
+      IMAGE: sourcegraph/batcheshelper:insiders
+      # TODO: This is required but should only be set on M1 Macs.
+      PLATFORM: linux/arm64
+    watch:
+      - enterprise/cmd/batcheshelper
+      - lib/batches
+    continueWatchOnExit: true
+
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
   # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
   batches-executor-firecracker:
@@ -774,7 +787,7 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - web
+      - oss-web
       - caddy
       - docsite
       - syntax-highlighter
@@ -930,6 +943,7 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - batches-executor
+      - batcheshelper-builder
 
   iam:
     requiresDevPrivate: true

@@ -37,8 +37,8 @@ export const createBlobContentResult = (
 ): BlobResult => ({
     repository: {
         commit: {
-            blob: null,
             file: {
+                __typename: 'VirtualFile',
                 content,
                 richHTML: '',
                 highlight: {
