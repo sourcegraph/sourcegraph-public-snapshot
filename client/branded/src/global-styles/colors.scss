@@ -30,6 +30,7 @@ $gray-800: #343a40;
 
 // Core semantic base colors.
 $primary: $blue;
+$primary-4: #03284f;
 $secondary: $gray-08;
 $success: $green;
 $info: $cyan;
@@ -42,6 +43,7 @@ $dark: $gray-800;
 // Added to bg- and text- utilities because it is commonly needed in our app.
 $theme-colors: (
     'primary': $primary,
+    'primary-4': $primary-4,
     'secondary': $secondary,
     'success': $success,
     'info': $info,
@@ -99,6 +101,7 @@ $theme-colors: (
     // Semantic colors.
     --primary: var(--blue);
     --primary-3: var(--indigo);
+    --primary-4: #e1f0ff;
     --brand-secondary: var(--purple);
     --brand-secondary-2: var(--pink);
     --brand-secondary-3: #8900bf;

@@ -1,13 +1,11 @@
 import React from 'react'
 
-import { mdiOpenInNew } from '@mdi/js'
+import { mdiOpenInNew, mdiArrowRight } from '@mdi/js'
 
-import { DownloadSourcegraphIcon } from '@sourcegraph/branded/src/components/DownloadSourcegraphIcon'
-import { Container, Card, Link, H2, H3, H4, Text, Icon } from '@sourcegraph/wildcard'
+import { Container, H2, H3, Link, Text, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CtaBanner } from '../../../components/CtaBanner'
-import { eventLogger } from '../../../tracking/eventLogger'
 
 export interface GettingStartedProps {
     isSourcegraphDotCom: boolean
@@ -72,41 +70,30 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                             </Link>
                         </li>
                     </ul>
-                    
-                    {isSourcegraphDotCom && (
-                        <Card className="shadow d-flex flex-row align-items-center p-3 mt-2">
-                            <Icon as={BatchChangesIcon} violetBg={true} role="img" size="md" aria-hidden={true} />
-                            <div className="pl-3">
-                                <H4 className="mb-1">Get Batch Changes on your code</H4>
-                                <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}>
-                                    Sign up for a 30-day trial on Sourcegraph Cloud.
-                                </Link>
-                            </div>
-                        </Card>
-                    )}
                 </div>
             </div>
         </Container>
-        <div className="d-flex justify-content-start">
-            {isSourcegraphDotCom ? (
-                <CtaBanner
-                    className="col-lg-7"
-                    bodyText="Batch Changes requires a Sourcegraph Cloud or self-hosted instance."
-                    title={<H3>Install locally</H3>}
-                    linkText="Install local instance"
-                    href="/help/admin/install?utm_medium=inproduct&utm_source=inproduct-batch-changes&utm_campaign=inproduct-batch-changes&term="
-                    icon={<DownloadSourcegraphIcon />}
-                    onClick={() => eventLogger.log('BatchChangesInstallFromCloudClicked')}
-                />
+        {isSourcegraphDotCom ? (
+            <section className="my-3 p-2 d-flex justify-content-center bg-primary-4">
+                <Icon className="mr-2 text-merged" size="md" aria-hidden={true} svgPath={mdiArrowRight} />
+                <p className="mb-0">
+                    To automate changes across your team's private repos,{' '}
+                    <Link to="https://signup.sourcegraph.com/" onClick={() => telemetryService.log('ClickedOnCloudCTA', { url: window.location.href })}>
+                        try Sourcegraph Cloud
+                    </Link>.
+                </p>
+            </section>
             ) : (
-                <CtaBanner
-                    bodyText="Try it yourself in less than 10 minutes (without actually pushing changes)."
-                    title={<H3>Start using Batch Changes</H3>}
-                    linkText="Read quickstart docs"
-                    href="/help/batch_changes/quickstart"
-                    icon={<BatchChangesIcon />}
-                />
-            )}
-        </div>
+                <div className="d-flex justify-content-start">
+                    <CtaBanner
+                        bodyText="Try it yourself in less than 10 minutes (without actually pushing changes)."
+                        title={<H3>Start using Batch Changes</H3>}
+                        linkText="Read quickstart docs"
+                        href="/help/batch_changes/quickstart"
+                        icon={<BatchChangesIcon />}
+                    />
+                </div>
+            )
+        }
     </div>
 )
