@@ -573,7 +573,7 @@ Modifies and runs database migrations.
 $ sg migration up
 
 # Migrate specific database down one migration
-$ sg migration down --db codeintel
+$ sg migration downto --db codeintel --target <version>
 
 # Add new migration for specific database
 $ sg migration add --db codeintel 'add missing index'
