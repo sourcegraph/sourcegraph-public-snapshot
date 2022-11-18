@@ -144,7 +144,6 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
                             // Rule: "color-contrast" (Elements must have sufficient color contrast)
                             // GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
                         }
-                        {/* Simplified global context UI to mitigate confusion */}
                         {selectedSearchContextSpec === 'global' ? 'All repos' : (
                             <>
                                 <span className="a11y-ignore search-filter-keyword">context</span>

@@ -76,15 +76,17 @@ export const SearchContextsListPage: React.FunctionComponent<
                                 <Icon aria-hidden={true} svgPath={mdiPlus} />
                                 Create search context
                             </Button>
-                            <Button
-                                to="https://signup.sourcegraph.com"
-                                className="d-block mt-2"
-                                as={Link}
-                                variant="secondary"
-                                onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}
-                            >
-                                Search private code
-                            </Button>
+                            {props.isSourcegraphDotCom && (
+                                <Button
+                                    to="https://signup.sourcegraph.com"
+                                    className="d-block mt-2"
+                                    as={Link}
+                                    variant="secondary"
+                                    onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}
+                                >
+                                    Search private code
+                                </Button>
+                            )}
                         </>
                     }
                     description={
