@@ -46,7 +46,7 @@ export const EXAMPLES: Example[] = [
     {
         type: InsightType.SearchBased,
         content: OPENSSL_PYTHON,
-        description: 'Find vulernable OpenSSL versions in the Python Ecosystem',
+        description: 'Find vulnerable OpenSSL versions in the Python Ecosystem',
     },
     {
         type: InsightType.SearchBased,
