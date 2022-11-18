@@ -48,8 +48,10 @@ type npmPackagesSyncer struct {
 	client npm.Client
 }
 
-var _ packagesSource = &npmPackagesSyncer{}
-var _ packagesDownloadSource = &npmPackagesSyncer{}
+var (
+	_ packagesSource         = &npmPackagesSyncer{}
+	_ packagesDownloadSource = &npmPackagesSyncer{}
+)
 
 func (npmPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
 	return reposource.ParseNpmVersionedPackage(string(name) + "@" + version)
@@ -62,6 +64,7 @@ func (npmPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (rep
 func (s *npmPackagesSyncer) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
 	return s.ParsePackageFromRepoName(api.RepoName("npm/" + strings.TrimPrefix(string(name), "@")))
 }
+
 func (npmPackagesSyncer) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	pkg, err := reposource.ParseNpmPackageFromRepoURL(repoName)
 	if err != nil {
@@ -103,6 +106,7 @@ func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 			return err
 		}
 	}
+
 	tgz, err := npm.FetchSources(ctx, s.client, npmDep)
 	if err != nil {
 		return errors.Wrap(err, "fetch tarball")
@@ -110,7 +114,7 @@ func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 	defer tgz.Close()
 
 	if err = decompressTgz(tgz, dir); err != nil {
-		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s", dep)
+		return errors.Wrapf(err, "failed to decompress gzipped tarball for %s", dep.VersionedPackageSyntax())
 	}
 
 	return nil
@@ -122,6 +126,7 @@ func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposo
 // dir/<blah> for the same directory 'dir', the 'dir' will be stripped.
 func decompressTgz(tgz io.Reader, destination string) error {
 	logger := log.Scoped("decompressTgz", "Decompress a tarball at tgzPath, putting the files under destination.")
+
 	err := unpack.Tgz(tgz, destination, unpack.Opts{
 		SkipInvalid: true,
 		Filter: func(path string, file fs.FileInfo) bool {
@@ -129,14 +134,12 @@ func decompressTgz(tgz io.Reader, destination string) error {
 
 			const sizeLimit = 15 * 1024 * 1024
 
-			slogger := logger.With(
-				log.String("path", file.Name()),
-				log.Int64("size", size),
-				log.Int("limit", sizeLimit),
-			)
-
 			if size >= sizeLimit {
-				slogger.Warn("skipping large file in npm package")
+				logger.With(
+					log.String("path", file.Name()),
+					log.Int64("size", size),
+					log.Int("limit", sizeLimit),
+				).Warn("skipping large file in npm package")
 				return false
 			}
 
@@ -144,7 +147,6 @@ func decompressTgz(tgz io.Reader, destination string) error {
 			return !malicious
 		},
 	})
-
 	if err != nil {
 		return err
 	}
