@@ -155,7 +155,7 @@ func (s *subRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[ap
 	 -- When user is a site admin and AuthzEnforceForSiteAdmins is FALSE
 	 -- we want to return zero results. This causes us to fall back to
 	 -- repo level checks and allows access to all paths in all repos.
-	 AND NOT (u.site_admin AND NOT %b)
+	 AND NOT (u.site_admin AND NOT %t)
 	`, userID, userID, SubRepoPermsVersion, enforceForSiteAdmins)
 
 	rows, err := s.Query(ctx, q)

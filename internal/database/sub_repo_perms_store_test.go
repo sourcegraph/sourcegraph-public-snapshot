@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -182,14 +183,42 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	}
 	assert.Equal(t, want, have)
 
-	// When AuthzEnforceForSiteAdmins is false we should get zero rows back
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthzEnforceForSiteAdmins: false}})
+	// Check all combinations of site admin / AuthzEnforceForSiteAdmins
+	for _, tc := range []struct {
+		siteAdmin           bool
+		enforceForSiteAdmin bool
+		wantRows            bool
+	}{
+		{siteAdmin: true, enforceForSiteAdmin: true, wantRows: true},
+		{siteAdmin: false, enforceForSiteAdmin: false, wantRows: true},
+		{siteAdmin: true, enforceForSiteAdmin: false, wantRows: false},
+		{siteAdmin: false, enforceForSiteAdmin: true, wantRows: true},
+	} {
+		t.Run(fmt.Sprintf("SiteAdmin:%t-Enforce:%t", tc.siteAdmin, tc.enforceForSiteAdmin), func(t *testing.T) {
+			conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthzEnforceForSiteAdmins: tc.enforceForSiteAdmin}})
+			result, err := db.ExecContext(ctx, "UPDATE users SET site_admin = $1 WHERE id = $2", tc.siteAdmin, userID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			affected, err := result.RowsAffected()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if affected != 1 {
+				t.Fatalf("Wanted 1 row affected, got %d", affected)
+			}
 
-	have, err = s.GetByUser(ctx, userID)
-	if err != nil {
-		t.Fatal(err)
+			have, err = s.GetByUser(ctx, userID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.wantRows {
+				assert.NotEmpty(t, have)
+			} else {
+				assert.Empty(t, have)
+			}
+		})
 	}
-	assert.Empty(t, have)
 }
 
 func TestSubRepoPermsGetByUserAndService(t *testing.T) {
