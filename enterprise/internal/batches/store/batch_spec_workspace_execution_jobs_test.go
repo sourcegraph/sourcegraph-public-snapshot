@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"strconv"
 	"testing"
 
@@ -526,7 +525,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			cachedResultWorkspace := &btypes.BatchSpecWorkspace{CachedResultFound: true}
 
 			batchSpec := &btypes.BatchSpec{}
-			batchSpec.RandID = uuid.NewString()
 
 			createBatchSpec(t, batchSpec)
 			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace, unsupportedWorkspace, cachedResultWorkspace)
@@ -538,7 +536,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			ignoredWorkspace := &btypes.BatchSpecWorkspace{Ignored: true}
 
 			batchSpec := &btypes.BatchSpec{AllowIgnored: true}
-			batchSpec.RandID = uuid.NewString()
 
 			createBatchSpec(t, batchSpec)
 			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace)
@@ -562,7 +559,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			unsupportedWorkspace := &btypes.BatchSpecWorkspace{Unsupported: true}
 
 			batchSpec := &btypes.BatchSpec{AllowUnsupported: true, AllowIgnored: true}
-			batchSpec.RandID = uuid.NewString()
 
 			createBatchSpec(t, batchSpec)
 			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace, unsupportedWorkspace)
