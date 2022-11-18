@@ -50,16 +50,16 @@ import styles from './GlobalNavbar.module.scss'
 
 export interface GlobalNavbarProps
     extends SettingsCascadeProps<Settings>,
-    PlatformContextProps,
-    ExtensionsControllerProps,
-    TelemetryProps,
-    ThemeProps,
-    ThemePreferenceProps,
-    SearchContextInputProps,
-    CodeInsightsProps,
-    BatchChangesProps,
-    NotebookProps,
-    CodeMonitoringProps {
+        PlatformContextProps,
+        ExtensionsControllerProps,
+        TelemetryProps,
+        ThemeProps,
+        ThemePreferenceProps,
+        SearchContextInputProps,
+        CodeInsightsProps,
+        BatchChangesProps,
+        NotebookProps,
+        CodeMonitoringProps {
     history: H.History
     location: H.Location
     authenticatedUser: AuthenticatedUser | null
@@ -292,7 +292,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavAction>
                         </>
                     )}
-                    {props.authenticatedUser && isSourcegraphDotCom &&
+                    {props.authenticatedUser && isSourcegraphDotCom && (
                         <ButtonLink
                             className={styles.signUp}
                             to="https://signup.sourcegraph.com"
@@ -301,7 +301,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         >
                             Try Sourcegraph Cloud
                         </ButtonLink>
-                    }
+                    )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser && extensionsController !== null && enableLegacyExtensions && (
                         <NavAction>
@@ -328,8 +328,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                             '/sign-in?returnTo=' +
                                             encodeURI(
                                                 history.location.pathname +
-                                                history.location.search +
-                                                history.location.hash
+                                                    history.location.search +
+                                                    history.location.hash
                                             )
                                         }
                                         variant="secondary"

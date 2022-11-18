@@ -172,7 +172,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const showFeedbackModal = useCallback(() => setFeedbackModalOpen(true), [])
 
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
-        routeMatch
+        routeMatch,
     })
 
     // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
@@ -208,7 +208,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
             ))}
             <KeyboardShortcutsHelp isOpen={keyboardShortcutsHelpOpen} onDismiss={hideKeyboardShortcutsHelp} />
 
-            {feedbackModalOpen &&
+            {feedbackModalOpen && (
                 <FeedbackPrompt
                     onSubmit={handleSubmitFeedback}
                     modal={true}
@@ -216,7 +216,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     authenticatedUser={props.authenticatedUser}
                     onClose={() => setFeedbackModalOpen(false)}
                 />
-            }
+            )}
 
             <GlobalAlerts
                 authenticatedUser={props.authenticatedUser}

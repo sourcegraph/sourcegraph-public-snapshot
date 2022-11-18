@@ -110,54 +110,54 @@ const fetchBlameViaStreaming = memoizeObservable(
         const repoAndRevisionPath = `/.api/blame/${repoName}${revision ? `@${revision}` : ''}`
 
         fetchEventSource(`${repoAndRevisionPath}/stream/${filePath}`, {
-          method: 'GET',
-          headers: {
-            'X-Requested-With': 'Sourcegraph',
-            'X-Sourcegraph-Should-Trace': 1,
-          },
-          onmessage(event) {
-            if (event.event === 'hunk') {
-              const rawHunks = JSON.parse(event.data)
-              for (const hunk of rawHunks) {
-                assembledHunks.push({
-                  startLine: hunk.StartLine,
-                  endLine: hunk.EndLine,
-                  message: hunk.Message,
-                  rev: hunk.CommitID,
-                  author: {
-                    date: hunk.Author.Date,
-                    person: {
-                      email: hunk.Author.Email,
-                      displayName: hunk.Author.Name,
-                      user: null,
-                    },
-                  },
-                  commit: {
-                    url: `${repoAndRevisionPath}/-/commit/${hunk.CommitID}`,
-                  },
-                })
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'Sourcegraph',
+                'X-Sourcegraph-Should-Trace': 1,
+            },
+            onmessage(event) {
+                if (event.event === 'hunk') {
+                    const rawHunks = JSON.parse(event.data)
+                    for (const hunk of rawHunks) {
+                        assembledHunks.push({
+                            startLine: hunk.StartLine,
+                            endLine: hunk.EndLine,
+                            message: hunk.Message,
+                            rev: hunk.CommitID,
+                            author: {
+                                date: hunk.Author.Date,
+                                person: {
+                                    email: hunk.Author.Email,
+                                    displayName: hunk.Author.Name,
+                                    user: null,
+                                },
+                            },
+                            commit: {
+                                url: `${repoAndRevisionPath}/-/commit/${hunk.CommitID}`,
+                            },
+                        })
 
-                // For large responses we want to do a first render pass when we have
-                // a sensible amount of chunks loaded the first time. We batch the rest
-                // for the second flush after everything is assembled.
-                if (!didEarlyFlush && assembledHunks.length > 50) {
-                  didEarlyFlush = true
-                  hunks.next(assembledHunks)
-                  // React will not re-render if the hunks array is the same reference.
-                  // Since we need to create a new array, now is the best time since
-                  // hunk count is still low.
-                  assembledHunks = [...assembledHunks]
+                        // For large responses we want to do a first render pass when we have
+                        // a sensible amount of chunks loaded the first time. We batch the rest
+                        // for the second flush after everything is assembled.
+                        if (!didEarlyFlush && assembledHunks.length > 50) {
+                            didEarlyFlush = true
+                            hunks.next(assembledHunks)
+                            // React will not re-render if the hunks array is the same reference.
+                            // Since we need to create a new array, now is the best time since
+                            // hunk count is still low.
+                            assembledHunks = [...assembledHunks]
+                        }
+                    }
+                    hunks.next(assembledHunks)
                 }
-              }
-              hunks.next(assembledHunks)
-            }
-          },
-          onerror(event) {
-            console.error(event)
-          },
+            },
+            onerror(event) {
+                console.error(event)
+            },
         }).then(
-        () => hunks.complete(),
-          error => hunks.error(error)
+            () => hunks.complete(),
+            error => hunks.error(error)
         )
         return hunks
     },
