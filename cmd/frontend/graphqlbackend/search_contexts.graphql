@@ -33,6 +33,19 @@ extend type Mutation {
         """
         repositories: [SearchContextRepositoryRevisionsInput!]!
     ): SearchContext!
+    """
+    Add a star on a search context for the current user.
+    Only one star can be created per context and user pair.
+    """
+    createSearchContextStar(searchContextID: ID!): EmptyResponse!
+    """
+    Delete a star on a search context for the current user, if it exists.
+    """
+    deleteSearchContextStar(searchContextID: ID!): EmptyResponse!
+    """
+    Set the default search context for the current user.
+    """
+    setDefaultSearchContext(searchContextID: ID!): EmptyResponse!
 }
 
 extend type Query {
@@ -65,7 +78,9 @@ extend type Query {
         """
         namespaces: [ID] = []
         """
-        Sort field.
+        Sort field. Despite the value, the results are always sorted with the user's default context first,
+        followed by the user's starred contexts, followed by the rest of the contexts. This controls the order
+        of these internal groups.
         """
         orderBy: SearchContextsOrderBy = SEARCH_CONTEXT_SPEC
         """
@@ -140,6 +155,14 @@ type SearchContext implements Node {
     If current viewer can manage (edit, delete) the search context.
     """
     viewerCanManage: Boolean!
+    """
+    If the viewer has set this context as default.
+    """
+    viewerHasAsDefault: Boolean!
+    """
+    If the viewer has starred this context.
+    """
+    viewerHasStarred: Boolean!
 }
 
 """
