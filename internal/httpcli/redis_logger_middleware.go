@@ -58,13 +58,11 @@ func redisLoggerMiddleware() Middleware {
 				log15.Error("RedisLoggerMiddleware failed to marshal JSON", "error", jsonErr)
 			}
 
-			// Current UTC date in YYYY-MM-DD format
-			today := time.Now().UTC().Format("2006-01-02")
-			// Current UTC time in HH:MM:SS.nS format
-			now := time.Now().UTC().Format("15-04-05.999999999")
+			// Current UTC date/time in a modified ISO 8601 format
+			now := time.Now().UTC().Format("2006-01-02T15_04_05.999999999")
 
 			// Redis key
-			key := fmt.Sprintf("outgoing_external_requests:%s:%s", today, now)
+			key := fmt.Sprintf("outbound:%s", now)
 
 			redisCache.Set(key, logItemJson)
 
