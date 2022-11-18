@@ -37,19 +37,6 @@ func (o *HeartbeatOptions) ToSQLConds(formatQuery func(query string, args ...any
 	return conds
 }
 
-type CanceledJobsOptions struct {
-	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
-	WorkerHostname string
-}
-
-func (o *CanceledJobsOptions) ToSQLConds(formatQuery func(query string, args ...any) *sqlf.Query) []*sqlf.Query {
-	conds := []*sqlf.Query{}
-	if o.WorkerHostname != "" {
-		conds = append(conds, formatQuery("{worker_hostname} = %s", o.WorkerHostname))
-	}
-	return conds
-}
-
 type ExecutionLogEntryOptions struct {
 	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
 	WorkerHostname string
@@ -145,10 +132,6 @@ type Store interface {
 	// identifiers the age of the record's last heartbeat timestamp for each record reset to queued and failed states,
 	// respectively.
 	ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error)
-
-	// CanceledJobs returns all the jobs that are to be canceled. To cancel a running job, the `cancel` field is set
-	// to true. These jobs will be found eventually and then canceled. They will end up in canceled state.
-	// CanceledJobs(ctx context.Context, knownIDs []int, options CanceledJobsOptions) (canceledIDs []int, err error)
 }
 
 type ExecutionLogEntry workerutil.ExecutionLogEntry
@@ -720,33 +703,6 @@ SET
 WHERE
 	{id} IN (SELECT {id} FROM alive_candidates)
 RETURNING {id}, {cancel}
-`
-
-func (s *store) CanceledJobs2(ctx context.Context, knownIDs []int, options CanceledJobsOptions) (canceledIDs []int, err error) {
-	ctx, _, endObservation := s.operations.canceledJobs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	quotedTableName := quote(s.options.TableName)
-
-	conds := []*sqlf.Query{
-		s.formatQuery("{cancel} IS TRUE"),
-		s.formatQuery("{state} = 'processing'"),
-		s.formatQuery("{id} = ANY(%s)", pq.Array(knownIDs)),
-	}
-	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
-
-	return basestore.ScanInts(s.Query(ctx, s.formatQuery(canceledJobsQuery, quotedTableName, sqlf.Join(conds, "AND"))))
-}
-
-const canceledJobsQuery = `
-SELECT
-	{id}
-FROM
-	%s
-WHERE
-	%s
-ORDER BY
-	{id} ASC
 `
 
 // Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
