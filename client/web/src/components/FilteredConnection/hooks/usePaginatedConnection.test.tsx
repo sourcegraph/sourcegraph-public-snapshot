@@ -1,5 +1,5 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { fireEvent } from '@testing-library/react'
+import { act, fireEvent } from '@testing-library/react'
 
 import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-client'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
@@ -30,7 +30,9 @@ const TEST_PAGINATED_CONNECTION_QUERY = gql`
             totalCount
             pageInfo {
                 endCursor
+                startCursor
                 hasNextPage
+                hasPreviousPage
             }
         }
     }
@@ -44,15 +46,7 @@ const TEST_PAGINATED_CONNECTION_QUERY = gql`
 const PAGE_SIZE = 3
 
 const TestComponent = () => {
-    const {
-        connection,
-        nextPage,
-        hasNextPage,
-        previousPage,
-        hasPreviousPage,
-        firstPage,
-        lastPage,
-    } = usePaginatedConnection<
+    const { connection, loading, nextPage, previousPage, firstPage, lastPage } = usePaginatedConnection<
         TestPaginatedConnectionQueryResult,
         TestPaginatedConnectionQueryVariables,
         TestPaginatedConnectionQueryFields
@@ -76,6 +70,7 @@ const TestComponent = () => {
                     <li key={index.toString()}>{node.description}</li>
                 ))}
             </ul>
+            {loading ? <Text>Loading...</Text> : null}
             {connection?.totalCount && <Text>Total count: {connection.totalCount}</Text>}
             <button type="button" onClick={firstPage}>
                 First page
@@ -146,10 +141,20 @@ const generateMockResult = ({
     },
 })
 
+const goToFirstPage = async (renderResult: RenderWithBrandedContextResult) => {
+    fireEvent.click(renderResult.getByText('First page'))
+    await waitForNextApolloResponse()
+}
 const goToNextPage = async (renderResult: RenderWithBrandedContextResult) => {
-    const fetchMoreButton = renderResult.getByText('Next page')
-    fireEvent.click(fetchMoreButton)
-    // Skip loading state
+    fireEvent.click(renderResult.getByText('Next page'))
+    await waitForNextApolloResponse()
+}
+const goToPreviousPage = async (renderResult: RenderWithBrandedContextResult) => {
+    fireEvent.click(renderResult.getByText('Previous page'))
+    await waitForNextApolloResponse()
+}
+const goToLastPage = async (renderResult: RenderWithBrandedContextResult) => {
+    fireEvent.click(renderResult.getByText('Last page'))
     await waitForNextApolloResponse()
 }
 
@@ -174,13 +179,11 @@ const generateMockCursorResponsesForEveryPage = (
     const responses: MockedResponse<TestPaginatedConnectionQueryResult>[] = []
 
     const totalPages = Math.ceil(nodes.length / PAGE_SIZE)
+
+    // Forward pagination
     for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
         const nodesOnPage = nodes.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE)
-
         const after = pageIndex === 0 ? null : getCursorForId(nodes[pageIndex * PAGE_SIZE - 1].id)
-        const before = pageIndex === totalPages - 1 ? null : getCursorForId(nodes[(pageIndex + 1) * PAGE_SIZE].id)
-
-        // Forward request
         responses.push({
             request: generateMockRequest({ after, first: PAGE_SIZE, last: null, before: null }),
             result: generateMockResult({
@@ -192,17 +195,22 @@ const generateMockCursorResponsesForEveryPage = (
                 hasPreviousPage: pageIndex > 0,
             }),
         })
+    }
 
-        // Backward request
+    // Backward pagination
+    const reverseNodes = [...nodes].reverse()
+    for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
+        const nodesOnPage = reverseNodes.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE)
+        const before = pageIndex === 0 ? null : getCursorForId(reverseNodes[pageIndex * PAGE_SIZE - 1].id)
         responses.push({
             request: generateMockRequest({ before, last: PAGE_SIZE, after: null, first: null }),
             result: generateMockResult({
                 nodes: nodesOnPage,
-                totalCount: nodes.length,
+                totalCount: reverseNodes.length,
                 startCursor: nodesOnPage.length > 0 ? getCursorForId(nodesOnPage[0].id) : null,
                 endCursor: nodesOnPage.length > 0 ? getCursorForId(nodesOnPage[nodesOnPage.length - 1].id) : null,
-                hasNextPage: pageIndex < totalPages - 1,
-                hasPreviousPage: pageIndex > 0,
+                hasNextPage: pageIndex > 0,
+                hasPreviousPage: pageIndex < totalPages - 1,
             }),
         })
     }
@@ -238,12 +246,12 @@ describe('usePaginatedConnection', () => {
             expect(queries.getByText('Total count: 10')).toBeVisible()
 
             expect(queries.getByText('First page')).toBeVisible()
-            expect(queries.getByText('Previous page')).not.toBeInTheDocument()
+            expect(() => queries.getByText('Previous page')).toThrowError(/Unable to find an element/)
             expect(queries.getByText('Next page')).toBeVisible()
             expect(queries.getByText('Last page')).toBeVisible()
         })
 
-        it('renders the next page', async () => {
+        it('supports forward pagination', async () => {
             const queries = await renderWithMocks(cursorMocks)
 
             await goToNextPage(queries)
@@ -254,84 +262,115 @@ describe('usePaginatedConnection', () => {
             expect(queries.getByText('result 6')).toBeVisible()
             expect(queries.getByText('Total count: 10')).toBeVisible()
 
-            console.log(queries.debug())
+            expect(queries.getByText('First page')).toBeVisible()
+            expect(queries.getByText('Previous page')).toBeVisible()
+            expect(queries.getByText('Next page')).toBeVisible()
+            expect(queries.getByText('Last page')).toBeVisible()
+
+            await goToNextPage(queries)
+
+            expect(queries.getAllByRole('listitem').length).toBe(3)
+            expect(queries.getByText('result 7')).toBeVisible()
+            expect(queries.getByText('result 8')).toBeVisible()
+            expect(queries.getByText('result 9')).toBeVisible()
+            expect(queries.getByText('Total count: 10')).toBeVisible()
 
             expect(queries.getByText('First page')).toBeVisible()
             expect(queries.getByText('Previous page')).toBeVisible()
             expect(queries.getByText('Next page')).toBeVisible()
             expect(queries.getByText('Last page')).toBeVisible()
+
+            await goToNextPage(queries)
+
+            expect(queries.getAllByRole('listitem').length).toBe(1)
+            expect(queries.getByText('result 10')).toBeVisible()
+            expect(queries.getByText('Total count: 10')).toBeVisible()
+
+            expect(queries.getByText('First page')).toBeVisible()
+            expect(queries.getByText('Previous page')).toBeVisible()
+            expect(() => queries.getByText('Next page')).toThrowError(/Unable to find an element/)
+            expect(queries.getByText('Last page')).toBeVisible()
         })
 
-        // it('fetches next page of results correctly', async () => {
-        //     const queries = await renderWithMocks(cursorMocks)
+        it('supports jumping to the first page', async () => {
+            const queries = await renderWithMocks(cursorMocks)
 
-        //     // Fetch first page
-        //     await fetchNextPage(queries)
+            await goToNextPage(queries)
+            await goToFirstPage(queries)
 
-        //     // Both pages are now displayed
-        //     expect(queries.getAllByRole('listitem').length).toBe(2)
-        //     expect(queries.getByText('repo-A')).toBeVisible()
-        //     expect(queries.getByText('repo-B')).toBeVisible()
-        //     expect(queries.getByText('Total count: 4')).toBeVisible()
-        //     expect(queries.getByText('Fetch more')).toBeVisible()
+            console.log(queries.debug())
 
-        //     // URL updates to match visible results
-        //     expect(queries.history.location.search).toBe('?visible=2')
-        // })
+            expect(queries.getAllByRole('listitem').length).toBe(3)
+            expect(queries.getByText('result 1')).toBeVisible()
+            expect(queries.getByText('result 2')).toBeVisible()
+            expect(queries.getByText('result 3')).toBeVisible()
+            expect(queries.getByText('Total count: 10')).toBeVisible()
 
-        // it('fetches final page of results correctly', async () => {
-        //     const queries = await renderWithMocks(cursorMocks)
+            expect(queries.getByText('First page')).toBeVisible()
+            expect(() => queries.getByText('Previous page')).toThrowError(/Unable to find an element/)
+            expect(queries.getByText('Next page')).toBeVisible()
+            expect(queries.getByText('Last page')).toBeVisible()
+        })
 
-        //     // Fetch all pages
-        //     await fetchNextPage(queries)
-        //     await fetchNextPage(queries)
-        //     await fetchNextPage(queries)
+        it('supports jumping to the last page', async () => {
+            const queries = await renderWithMocks(cursorMocks)
 
-        //     // All pages of results are displayed
-        //     expect(queries.getAllByRole('listitem').length).toBe(4)
-        //     expect(queries.getByText('repo-A')).toBeVisible()
-        //     expect(queries.getByText('repo-B')).toBeVisible()
-        //     expect(queries.getByText('repo-C')).toBeVisible()
-        //     expect(queries.getByText('repo-D')).toBeVisible()
-        //     expect(queries.getByText('Total count: 4')).toBeVisible()
+            await goToLastPage(queries)
 
-        //     // Fetch more button is now no longer visible
-        //     expect(queries.queryByText('Fetch more')).not.toBeInTheDocument()
+            expect(queries.getAllByRole('listitem').length).toBe(3)
+            expect(queries.getByText('result 8')).toBeVisible()
+            expect(queries.getByText('result 9')).toBeVisible()
+            expect(queries.getByText('result 10')).toBeVisible()
+            expect(queries.getByText('Total count: 10')).toBeVisible()
 
-        //     // URL updates to match visible results
-        //     expect(queries.history.location.search).toBe('?visible=4')
-        // })
+            console.log(queries.debug())
 
-        // it('fetches correct amount of results when navigating directly with a URL', async () => {
-        //     // We need to add an extra mock here, as we will derive a different `first` variable from `visible` in the URL.
-        //     const mockFromVisible: MockedResponse<TestPaginatedConnectionQueryResult> = {
-        //         request: generateMockRequest({ first: 3 }),
-        //         result: generateMockResult({
-        //             nodes: [mockResultNodes[0], mockResultNodes[1], mockResultNodes[2]],
-        //             hasNextPage: true,
-        //             endCursor: '3',
-        //             totalCount: 4,
-        //         }),
-        //     }
+            expect(queries.getByText('First page')).toBeVisible()
+            expect(queries.getByText('Previous page')).toBeVisible()
+            expect(() => queries.getByText('Next page')).toThrowError(/Unable to find an element/)
+            expect(queries.getByText('Last page')).toBeVisible()
+        })
 
-        //     const queries = await renderWithMocks([...cursorMocks, mockFromVisible], '/?visible=3')
+        it('supports backward pagination', async () => {
+            const queries = await renderWithMocks(cursorMocks)
 
-        //     // Renders 3 results without having to manually fetch
-        //     expect(queries.getAllByRole('listitem').length).toBe(3)
-        //     expect(queries.getByText('repo-A')).toBeVisible()
-        //     expect(queries.getByText('repo-B')).toBeVisible()
-        //     expect(queries.getByText('repo-C')).toBeVisible()
-        //     expect(queries.getByText('Total count: 4')).toBeVisible()
+            await goToLastPage(queries)
+            await goToPreviousPage(queries)
 
-        //     // Fetching next page should work as usual
-        //     await fetchNextPage(queries)
-        //     expect(queries.getAllByRole('listitem').length).toBe(4)
-        //     expect(queries.getByText('repo-C')).toBeVisible()
-        //     expect(queries.getByText('repo-D')).toBeVisible()
-        //     expect(queries.getByText('Total count: 4')).toBeVisible()
+            expect(queries.getAllByRole('listitem').length).toBe(3)
+            expect(queries.getByText('result 7')).toBeVisible()
+            expect(queries.getByText('result 6')).toBeVisible()
+            expect(queries.getByText('result 5')).toBeVisible()
+            expect(queries.getByText('Total count: 10')).toBeVisible()
 
-        //     // URL should be overidden
-        //     expect(queries.history.location.search).toBe('?visible=4')
-        // })
+            expect(queries.getByText('First page')).toBeVisible()
+            expect(queries.getByText('Previous page')).toBeVisible()
+            expect(queries.getByText('Next page')).toBeVisible()
+            expect(queries.getByText('Last page')).toBeVisible()
+
+            await goToPreviousPage(queries)
+
+            expect(queries.getAllByRole('listitem').length).toBe(3)
+            expect(queries.getByText('result 4')).toBeVisible()
+            expect(queries.getByText('result 3')).toBeVisible()
+            expect(queries.getByText('result 2')).toBeVisible()
+            expect(queries.getByText('Total count: 10')).toBeVisible()
+
+            expect(queries.getByText('First page')).toBeVisible()
+            expect(queries.getByText('Previous page')).toBeVisible()
+            expect(queries.getByText('Next page')).toBeVisible()
+            expect(queries.getByText('Last page')).toBeVisible()
+
+            await goToPreviousPage(queries)
+
+            expect(queries.getAllByRole('listitem').length).toBe(1)
+            expect(queries.getByText('result 1')).toBeVisible()
+            expect(queries.getByText('Total count: 10')).toBeVisible()
+
+            expect(queries.getByText('First page')).toBeVisible()
+            expect(() => queries.getByText('Previous page')).toThrowError(/Unable to find an element/)
+            expect(queries.getByText('Next page')).toBeVisible()
+            expect(queries.getByText('Last page')).toBeVisible()
+        })
     })
 })
