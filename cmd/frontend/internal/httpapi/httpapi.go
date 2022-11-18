@@ -125,7 +125,7 @@ func NewHandler(
 
 	// TODO JH
 	gsClient := gitserver.NewClient(db)
-	m.Get(apirouter.GitBlameStream).Handler(trace.Route(serveStreamBlame(logger, db, gsClient)))
+	m.Get(apirouter.GitBlameStream).Handler(trace.Route(handleStreamBlame(logger, db, gsClient)))
 
 	// Set up the src-cli version cache handler (this will effectively be a
 	// no-op anywhere other than dot-com).

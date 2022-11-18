@@ -13,19 +13,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// serveStreamBlame returns a HTTP handler that streams back the results of running
+// handleStreamBlame returns a HTTP handler that streams back the results of running
 // git blame with the --incremental flag. It will stream back to the client the most
 // recent hunks first and will gradually reach the oldests, or not if we timeout
 // before that.
-//
-//	http://localhost:3080/github.com/gorilla/mux/-/stream-blame/mux.go
-func serveStreamBlame(logger log.Logger, db database.DB, gitserverClient gitserver.Client) http.HandlerFunc {
+func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitserver.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		flags := featureflag.FromContext(r.Context())
 		if !flags.GetBoolOr("enable-streaming-git-blame", false) {
@@ -37,13 +38,36 @@ func serveStreamBlame(logger log.Logger, db database.DB, gitserverClient gitserv
 		r = r.WithContext(ctx)
 
 		if _, ok := mux.Vars(r)["Repo"]; !ok {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 		}
 
 		repo, commitID, err := handlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vars(r))
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if errors.HasType(err, &gitserver.RepoNotCloneableErr{}) {
+			if errcode.IsNotFound(err) {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if gitdomain.IsRepoNotExist(err) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if errcode.IsNotFound(err) || errcode.IsBlocked(err) {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if errcode.IsUnauthorized(err) {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
 
 		requestedPath := mux.Vars(r)["Path"]
-
 		streamWriter, err := streamhttp.NewWriter(w)
 		if err != nil {
 			tr.SetError(err)

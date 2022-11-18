@@ -26,9 +26,7 @@ func newBlameHunkReader(ctx context.Context, rc io.ReadCloser) HunkReader {
 		hunks: make(chan hunkResult),
 		done:  make(chan struct{}),
 	}
-
 	go br.readHunks(ctx)
-
 	return br
 }
 
@@ -206,4 +204,30 @@ func (p hunkParser) scanLine() (string, string) {
 		return annotation, content
 	}
 	return line, ""
+}
+
+type mockHunkReader struct {
+	hunks []*Hunk
+	err   error
+
+	idx int
+}
+
+func NewMockHunkReader(hunks []*Hunk, err error) HunkReader {
+	return &mockHunkReader{
+		hunks: hunks,
+		err:   err,
+	}
+}
+
+func (mh *mockHunkReader) Read() ([]*Hunk, bool, error) {
+	if mh.err != nil {
+		return nil, false, mh.err
+	}
+	if mh.idx < len(mh.hunks) {
+		idx := mh.idx
+		mh.idx++
+		return []*Hunk{mh.hunks[idx]}, false, nil
+	}
+	return nil, true, nil
 }
