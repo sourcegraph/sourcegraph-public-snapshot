@@ -21,7 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- Batch Change: When one or more changesets are selected, we now display all bulk operations but disable the ones that aren't applicable to the changesets.
+- Batch Change: When one or more changesets are selected, we now display all bulk operations but disable the ones that aren't applicable to the changesets. [#44617](https://github.com/sourcegraph/sourcegraph/pull/44617)
 
 ### Fixed
 
