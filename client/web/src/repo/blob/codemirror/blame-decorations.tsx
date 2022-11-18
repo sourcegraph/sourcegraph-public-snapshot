@@ -184,6 +184,7 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                 background: 'var(--body-bg)',
                 width: 'var(--blame-decoration-width)',
             },
+
             '.cm-content': {
                 marginLeft: 'calc(var(--blame-decoration-width) * -1)', // Make .cm-content overflow .blame-gutter
                 zIndex: 201, // override default .cm-gutters z-index 200
