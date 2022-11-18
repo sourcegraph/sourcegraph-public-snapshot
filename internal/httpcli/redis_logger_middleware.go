@@ -12,6 +12,7 @@ import (
 )
 
 type RedisLogItem struct {
+	DateTime        string      `json:"datetime"`
 	Method          string      `json:"method"` // The request method (GET, POST, etc.)
 	URL             string      `json:"url"`
 	RequestHeaders  http.Header `json:"request_headers"`
@@ -38,6 +39,7 @@ func redisLoggerMiddleware() Middleware {
 			}
 			callStack := stack.Trace().TrimRuntime().TrimBelow(stack.Caller(3))
 			logItem := RedisLogItem{
+				DateTime:        start.Format(time.RFC3339),
 				Method:          req.Method,
 				URL:             req.URL.String(),
 				RequestHeaders:  removeSensitiveHeaders(req.Header),
