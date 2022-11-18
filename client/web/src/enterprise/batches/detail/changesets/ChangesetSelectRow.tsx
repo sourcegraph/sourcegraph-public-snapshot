@@ -38,6 +38,10 @@ interface ChangesetListAction extends Omit<Action, 'onTrigger'> {
     ) => void | JSX.Element
 }
 
+/**
+ * These actions are arranged in alphabetical order.
+ * Ensure the order (alphabetical) is preserved when adding a new bulk action.
+ */
 const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
     [BulkOperationType.CLOSE]: {
         type: 'close',
