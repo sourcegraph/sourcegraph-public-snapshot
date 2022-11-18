@@ -5,13 +5,16 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSubRepoPermsInsert(t *testing.T) {
@@ -137,7 +140,9 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthzEnforceForSiteAdmins: true}})
+	defer conf.Mock(nil)
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -175,10 +180,16 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 			Paths: []string{"/src/foo2/*", "-/src/bar2/*"},
 		},
 	}
+	assert.Equal(t, want, have)
 
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatal(diff)
+	// When AuthzEnforceForSiteAdmins is false we should get zero rows back
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthzEnforceForSiteAdmins: false}})
+
+	have, err = s.GetByUser(ctx, userID)
+	if err != nil {
+		t.Fatal(err)
 	}
+	assert.Empty(t, have)
 }
 
 func TestSubRepoPermsGetByUserAndService(t *testing.T) {
@@ -321,7 +332,7 @@ func prepareSubRepoTestData(ctx context.Context, t *testing.T, db dbutil.DB) {
 
 	// Prepare data
 	qs := []string{
-		`INSERT INTO users(username) VALUES ('alice')`,
+		`INSERT INTO users(username, site_admin) VALUES ('alice', true)`,
 
 		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(1, 'GitHub #1', 'GITHUB', '{}', 1, NOW() + INTERVAL '10min')`,
 		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(2, 'Perforce #1', 'PERFORCE', '{}', 1, NOW() + INTERVAL '10min')`,
