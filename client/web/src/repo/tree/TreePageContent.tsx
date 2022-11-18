@@ -166,15 +166,6 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         </Button>
     )
 
-    const emptyElement = showOlderCommits ? (
-        <>No commits in this tree.</>
-    ) : (
-        <div className="test-tree-page-no-recent-commits">
-            <Text className="mb-2">No commits in this tree in the past year.</Text>
-            {showAllCommits}
-        </div>
-    )
-
     const { extensionsController } = props
 
     const showLinkToCommitsPage = connection && hasNextPage && connection.nodes.length > TREE_COMMITS_PER_PAGE
@@ -245,12 +236,10 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                             centered={true}
                             first={TREE_COMMITS_PER_PAGE}
                             connection={connection}
-                            noun={showOlderCommits ? 'commit in this tree' : 'commit in this tree in the past year'}
-                            pluralNoun={
-                                showOlderCommits ? 'commits in this tree' : 'commits in this tree in the past year'
-                            }
+                            noun={showOlderCommits ? 'commit' : 'commit in the past year'}
+                            pluralNoun={showOlderCommits ? 'commits' : 'commits in the past year'}
                             hasNextPage={hasNextPage}
-                            emptyElement={emptyElement}
+                            emptyElement={null}
                         />
                         {hasNextPage ? (
                             showLinkToCommitsPage ? (
