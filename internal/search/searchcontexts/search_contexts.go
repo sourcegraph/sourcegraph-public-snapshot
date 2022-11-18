@@ -618,10 +618,46 @@ func CurrentUserHasStarredSearchContext(ctx context.Context, db database.DB, sea
 		return false
 	}
 
-	userHasStarred, err := db.SearchContexts().GetUserStarForSearchContext(ctx, user.ID, searchContextID)
+	userHasStarred, err := db.SearchContexts().GetSearchContextStarForUser(ctx, user.ID, searchContextID)
 	if err != nil {
 		return false
 	}
 
 	return userHasStarred
+}
+
+func CreateSearchContextStarForCurrentUser(ctx context.Context, db database.DB, searchContext *types.SearchContext) error {
+	user, err := auth.CurrentUser(ctx, db)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+
+	return db.SearchContexts().CreateSearchContextStarForUser(ctx, user.ID, searchContext.ID)
+}
+
+func DeleteSearchContextStarForCurrentUser(ctx context.Context, db database.DB, searchContext *types.SearchContext) error {
+	user, err := auth.CurrentUser(ctx, db)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+
+	return db.SearchContexts().DeleteSearchContextStarForUser(ctx, user.ID, searchContext.ID)
+}
+
+func SetDefaultSearchContextForCurrentUser(ctx context.Context, db database.DB, searchContext *types.SearchContext) error {
+	user, err := auth.CurrentUser(ctx, db)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+
+	return db.SearchContexts().SetUserDefaultSearchContextID(ctx, user.ID, searchContext.ID)
 }

@@ -37,15 +37,15 @@ extend type Mutation {
     Add a star on a search context for the current user.
     Only one star can be created per context and user pair.
     """
-    createSearchContextStar(searchContextID: ID!): EmptyResponse!
+    createSearchContextStar(id: ID!): EmptyResponse!
     """
     Delete a star on a search context for the current user, if it exists.
     """
-    deleteSearchContextStar(searchContextID: ID!): EmptyResponse!
+    deleteSearchContextStar(id: ID!): EmptyResponse!
     """
     Set the default search context for the current user.
     """
-    setDefaultSearchContext(searchContextID: ID!): EmptyResponse!
+    setDefaultSearchContext(id: ID!): EmptyResponse!
 }
 
 extend type Query {

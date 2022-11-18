@@ -195,6 +195,63 @@ func (r *Resolver) DeleteSearchContext(ctx context.Context, args graphqlbackend.
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) CreateSearchContextStar(ctx context.Context, args graphqlbackend.CreateSearchContextStarArgs) (*graphqlbackend.EmptyResponse, error) {
+	searchContextSpec, err := unmarshalSearchContextID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	err = searchcontexts.CreateSearchContextStarForCurrentUser(ctx, r.db, searchContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) DeleteSearchContextStar(ctx context.Context, args graphqlbackend.DeleteSearchContextStarArgs) (*graphqlbackend.EmptyResponse, error) {
+	searchContextSpec, err := unmarshalSearchContextID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	err = searchcontexts.DeleteSearchContextStarForCurrentUser(ctx, r.db, searchContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) SetDefaultSearchContext(ctx context.Context, args graphqlbackend.SetDefaultSearchContextArgs) (*graphqlbackend.EmptyResponse, error) {
+	searchContextSpec, err := unmarshalSearchContextID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	err = searchcontexts.SetDefaultSearchContextForCurrentUser(ctx, r.db, searchContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
 func unmarshalSearchContextCursor(cursor *string) (int32, error) {
 	var after int32
 	if cursor == nil {

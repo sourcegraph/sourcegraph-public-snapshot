@@ -40,8 +40,11 @@ type SearchContextsStore interface {
 	SetSearchContextRepositoryRevisions(context.Context, int64, []*types.SearchContextRepositoryRevisions) error
 	Transact(context.Context) (SearchContextsStore, error)
 	UpdateSearchContextWithRepositoryRevisions(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error)
+	SetUserDefaultSearchContextID(ctx context.Context, userID int32, searchContextID int64) error
 	GetUserDefaultSearchContextID(ctx context.Context, userID int32) (int64, error)
-	GetUserStarForSearchContext(ctx context.Context, userID int32, searchContextID int64) (bool, error)
+	GetSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) (bool, error)
+	CreateSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error
+	DeleteSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error
 }
 
 type searchContextsStore struct {
@@ -607,10 +610,6 @@ func (s *searchContextsStore) GetAllQueries(ctx context.Context) (qs []string, _
 }
 
 func (s *searchContextsStore) GetUserDefaultSearchContextID(ctx context.Context, userID int32) (int64, error) {
-	if a := actor.FromContext(ctx); !a.IsInternal() {
-		return 0, errors.New("GetUserDefaultSearchContextID can only be accessed by an internal actor")
-	}
-
 	q := sqlf.Sprintf(`SELECT search_context_id FROM search_context_default WHERE user_id = %d`, userID)
 
 	var id int64
@@ -622,11 +621,17 @@ func (s *searchContextsStore) GetUserDefaultSearchContextID(ctx context.Context,
 	return id, nil
 }
 
-func (s *searchContextsStore) GetUserStarForSearchContext(ctx context.Context, userID int32, searchContextID int64) (bool, error) {
-	if a := actor.FromContext(ctx); !a.IsInternal() {
-		return false, errors.New("GetUserStarForSearchContext can only be accessed by an internal actor")
-	}
+// 🚨 SECURITY: The caller must ensure that the actor is the user setting the context as their default.
+func (s *searchContextsStore) SetUserDefaultSearchContextID(ctx context.Context, userID int32, searchContextID int64) error {
+	q := sqlf.Sprintf(
+		`INSERT INTO search_context_default (user_id, search_context_id)
+		VALUES (%d, %d)
+		ON CONFLICT (user_id) DO
+		UPDATE SET search_context_id=EXCLUDED.search_context_id`, userID, searchContextID)
+	return s.Exec(ctx, q)
+}
 
+func (s *searchContextsStore) GetSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) (bool, error) {
 	q := sqlf.Sprintf(`SELECT COUNT(*) FROM search_context_stars WHERE user_id = %d AND search_context_id = %d`, userID, searchContextID)
 
 	var count int
@@ -635,4 +640,14 @@ func (s *searchContextsStore) GetUserStarForSearchContext(ctx context.Context, u
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func (s *searchContextsStore) CreateSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error {
+	q := sqlf.Sprintf(`INSERT INTO search_context_stars (user_id, search_context_id) VALUES (%d, %d)`, userID, searchContextID)
+	return s.Exec(ctx, q)
+}
+
+func (s *searchContextsStore) DeleteSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error {
+	q := sqlf.Sprintf(`DELETE FROM search_context_stars WHERE user_id = %d AND search_context_id = %d`, userID, searchContextID)
+	return s.Exec(ctx, q)
 }

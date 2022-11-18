@@ -29,6 +29,10 @@ type SearchContextsResolver interface {
 	UpdateSearchContext(ctx context.Context, args UpdateSearchContextArgs) (SearchContextResolver, error)
 	DeleteSearchContext(ctx context.Context, args DeleteSearchContextArgs) (*EmptyResponse, error)
 
+	CreateSearchContextStar(ctx context.Context, args CreateSearchContextStarArgs) (*EmptyResponse, error)
+	DeleteSearchContextStar(ctx context.Context, args DeleteSearchContextStarArgs) (*EmptyResponse, error)
+	SetDefaultSearchContext(ctx context.Context, args SetDefaultSearchContextArgs) (*EmptyResponse, error)
+
 	NodeResolvers() map[string]NodeByIDFunc
 	SearchContextsToResolvers(searchContexts []*types.SearchContext) []SearchContextResolver
 }
@@ -92,6 +96,18 @@ type UpdateSearchContextArgs struct {
 }
 
 type DeleteSearchContextArgs struct {
+	ID graphql.ID
+}
+
+type CreateSearchContextStarArgs struct {
+	ID graphql.ID
+}
+
+type DeleteSearchContextStarArgs struct {
+	ID graphql.ID
+}
+
+type SetDefaultSearchContextArgs struct {
 	ID graphql.ID
 }
 
