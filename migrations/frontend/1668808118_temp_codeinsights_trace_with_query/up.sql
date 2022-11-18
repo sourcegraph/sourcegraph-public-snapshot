@@ -1,2 +1,2 @@
-ALTER TABLE insights_query_runner_jobs
-    ADD COLUMN trace_id TEXT;
+ALTER TABLE IF EXISTS insights_query_runner_jobs
+    ADD COLUMN IF NOT EXISTS trace_id TEXT;

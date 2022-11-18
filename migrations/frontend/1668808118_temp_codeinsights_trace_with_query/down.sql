@@ -1,2 +1,2 @@
-ALTER TABLE insights_query_runner_jobs
-    DROP COLUMN trace_id;
+ALTER TABLE IF EXISTS insights_query_runner_jobs
+    DROP COLUMN IF EXISTS trace_id;
