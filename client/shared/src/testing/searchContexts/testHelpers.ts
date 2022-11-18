@@ -49,6 +49,8 @@ export function mockFetchAutoDefinedSearchContexts(numberContexts = 0): () => Ob
                 repositories: [],
                 query: '',
                 updatedAt: subDays(new Date(), 1).toISOString(),
+                viewerHasAsDefault: false,
+                viewerHasStarred: false,
             })) as ISearchContext[]
         )
 }
