@@ -17,4 +17,5 @@ export * from './codeLinkNavigation'
 
 import FileMatchChildrenStyles from './FileMatchChildren.module.scss'
 import SearchResultStyles from './SearchResult.module.scss'
-export { SearchResultStyles, FileMatchChildrenStyles }
+import SymbolSearchResultStyles from './SymbolSearchResult.module.scss'
+export { SearchResultStyles, FileMatchChildrenStyles, SymbolSearchResultStyles }

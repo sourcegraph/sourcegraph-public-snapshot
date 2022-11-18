@@ -1,12 +1,20 @@
-import React, { useCallback, KeyboardEvent, MouseEvent } from 'react'
+import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
-import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/search'
+import {
+    LastSyncedIcon,
+    SymbolSearchResultStyles as styles,
+    SearchResultStyles as searchResultStyles,
+    CodeExcerpt,
+    navigateToFileOnMiddleMouseButtonClick,
+    ResultContainer,
+    CopyPathAction,
+} from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { getFileMatchUrl, getRepositoryUrl, getRevision, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -14,15 +22,9 @@ import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
-import { CodeExcerpt } from './CodeExcerpt'
-import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from './codeLinkNavigation'
-import { CopyPathAction } from './CopyPathAction'
-import { LastSyncedIcon } from './LastSyncedIcon'
-import { RepoFileLink } from './RepoFileLink'
-import { ResultContainer } from './ResultContainer'
+import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
-import searchResultStyles from './SearchResult.module.scss'
-import styles from './SymbolSearchResult.module.scss'
+import { RepoFileLink } from './RepoFileLink'
 
 export interface SymbolSearchResultProps extends TelemetryProps, SettingsCascadeProps {
     result: SymbolMatch
@@ -36,7 +38,6 @@ export interface SymbolSearchResultProps extends TelemetryProps, SettingsCascade
 
 export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps> = ({
     result,
-    openInNewTab,
     repoDisplayName,
     onSelect,
     containerClassName,
@@ -52,6 +53,8 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
 
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
+
+    const { openSymbol } = useOpenSearchResultsContext()
 
     const title = (
         <span className="d-flex align-items-center">
@@ -73,13 +76,6 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                 telemetryService={telemetryService}
             />
         </span>
-    )
-
-    const history = useHistory()
-    const navigateToFile = useCallback(
-        (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void =>
-            navigateToCodeExcerpt(event, openInNewTab ?? false, history),
-        [openInNewTab, history]
     )
 
     const logEventOnCopy = useCallback(() => {
@@ -151,9 +147,9 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         role="link"
                         data-testid="symbol-search-result"
                         tabIndex={0}
-                        onClick={navigateToFile}
+                        onClick={() => openSymbol(symbol.url)}
                         onMouseUp={navigateToFileOnMiddleMouseButtonClick}
-                        onKeyDown={navigateToFile}
+                        onKeyDown={() => openSymbol(symbol.url)}
                     >
                         <div className="mr-2 flex-shrink-0">
                             <SymbolTag kind={symbol.kind} />
