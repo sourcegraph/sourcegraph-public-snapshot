@@ -26,7 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - A structural search diagnostic to warn users when a language filter is not set. [#43835](https://github.com/sourcegraph/sourcegraph/pull/43835)
 - GitHub/GitLab OAuth success/fail attempts are now a part of the audit log. [#43886](https://github.com/sourcegraph/sourcegraph/pull/43886)
 - When rendering a file which is backed by Git LFS, we show a page informing the file is LFS and linking to the file on the codehost. Previously we rendered the LFS pointer. [#43686](https://github.com/sourcegraph/sourcegraph/pull/43686)
-- Added support for streaming git blame results instead of having to wait for the full response. Streaming git blame is currently feature-flagged and site-admins can turn them on by creating the `enable-streaming-git-blame` feature flag on the `/site-admin/feature-flags` page. The UI will gradually populate the annotations as it's receiving them back from the server. If the request timeouts, the UI will have the most recent commits it managed to fetch. 
+
 ### Changed
 
 - Updated minimum required version of `git` to 2.38.1 in `gitserver` and `server` Docker image. This addresses: https://github.blog/2022-04-12-git-security-vulnerability-announced/ and https://lore.kernel.org/git/d1d460f6-e70f-b17f-73a5-e56d604dd9d5@github.com/. [#43615](https://github.com/sourcegraph/sourcegraph/pull/43615)
