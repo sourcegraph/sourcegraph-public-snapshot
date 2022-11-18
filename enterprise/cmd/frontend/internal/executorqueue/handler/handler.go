@@ -187,7 +187,13 @@ func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []
 
 // canceled reaches to the queueOptions.FetchCanceled to determine jobs that need
 // to be canceled.
-// func (h *handler) canceled(ctx context.Context, executorName string, knownIDs []int) (canceledIDs []int, err error) {
-// 	canceledIDs, err = h.Store.CanceledJobs(ctx, knownIDs, store.CanceledJobsOptions{})
-// 	return canceledIDs, errors.Wrap(err, "dbworkerstore.CanceledJobs")
-// }
+// This endpoint is deprecated and should be removed in Sourcegraph 4.3.
+func (h *handler) canceled(ctx context.Context, executorName string, knownIDs []int) (canceledIDs []int, err error) {
+	_, canceledIDs, err = h.Store.Heartbeat(ctx, knownIDs, store.HeartbeatOptions{
+		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
+		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
+		// both executors that ever got the job would be writing to the same record. This prevents it.
+		WorkerHostname: executorName,
+	})
+	return canceledIDs, errors.Wrap(err, "dbworkerstore.CanceledJobs")
+}

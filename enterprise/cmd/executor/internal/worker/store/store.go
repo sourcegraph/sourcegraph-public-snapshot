@@ -23,7 +23,6 @@ type QueueStore interface {
 	MarkErrored(ctx context.Context, queueName string, jobID int, errorMessage string) error
 	MarkFailed(ctx context.Context, queueName string, jobID int, errorMessage string) error
 	Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs, cancelIDs []int, err error)
-	// CanceledJobs(ctx context.Context, queueName string, knownIDs []int) (canceledIDs []int, err error)
 }
 
 // Compile time validation.
@@ -66,10 +65,6 @@ func (s *QueueShim) MarkErrored(ctx context.Context, id int, errorMessage string
 func (s *QueueShim) MarkFailed(ctx context.Context, id int, errorMessage string) (bool, error) {
 	return true, s.Store.MarkFailed(ctx, s.Name, id, errorMessage)
 }
-
-// func (s *QueueShim) CanceledJobs(ctx context.Context, knownIDs []int) ([]int, error) {
-// 	return s.Store.CanceledJobs(ctx, s.Name, knownIDs)
-// }
 
 // FilesStore handles interactions with the file store.
 type FilesStore interface {

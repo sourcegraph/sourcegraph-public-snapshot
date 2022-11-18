@@ -76,7 +76,7 @@ type Options struct {
 }
 
 // NewWorker creates a worker that polls a remote job queue API for work.
-func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (goroutine.WaitableBackgroundRoutine, error) {
+func NewWorker(logger log.Logger, nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (goroutine.WaitableBackgroundRoutine, error) {
 	logger = logger.Scoped("worker", "background worker task periodically fetching jobs")
 	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
 	queueStore, err := queue.New(options.QueueOptions, gatherer, observationContext)

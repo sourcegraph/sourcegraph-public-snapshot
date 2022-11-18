@@ -39,7 +39,8 @@ func SetupRoutes(executorStore database.ExecutorStore, metricsStore metricsstore
 			"markErrored":             h.handleMarkErrored,
 			"markFailed":              h.handleMarkFailed,
 			"heartbeat":               h.handleHeartbeat,
-			// "canceledJobs":            h.handleCanceledJobs,
+			// TODO: This endpoint can be removed in Sourcegraph 4.3.
+			"canceledJobs": h.handleCanceledJobs,
 		}
 		for path, handler := range routes {
 			subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(handler)
@@ -164,19 +165,21 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 		}()
 
 		knownIDs, cancelIDs, err := h.heartbeat(r.Context(), executor, payload.JobIDs)
+		// TODO: Not backwards compatible.
 		return http.StatusOK, apiclient.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
 	})
 }
 
 // POST /{queueName}/canceledJobs
-// func (h *handler) handleCanceledJobs(w http.ResponseWriter, r *http.Request) {
-// 	var payload apiclient.CanceledJobsRequest
+// TODO: This handler can be removed in Sourcegraph 4.3.
+func (h *handler) handleCanceledJobs(w http.ResponseWriter, r *http.Request) {
+	var payload apiclient.CanceledJobsRequest
 
-// 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
-// 		canceledIDs, err := h.canceled(r.Context(), payload.ExecutorName, payload.KnownJobIDs)
-// 		return http.StatusOK, canceledIDs, err
-// 	})
-// }
+	h.wrapHandler(w, r, &payload, func() (int, any, error) {
+		canceledIDs, err := h.canceled(r.Context(), payload.ExecutorName, payload.KnownJobIDs)
+		return http.StatusOK, canceledIDs, err
+	})
+}
 
 type errorResponse struct {
 	Error string `json:"error"`
