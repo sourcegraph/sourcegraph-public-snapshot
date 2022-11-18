@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"strconv"
 	"testing"
 
@@ -475,11 +476,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 		createWorkspaces := func(t *testing.T, batchSpec *btypes.BatchSpec, workspaces ...*btypes.BatchSpecWorkspace) {
 			t.Helper()
 
-			batchSpec.NamespaceUserID = 1
-			if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
-				t.Fatal(err)
-			}
-
 			for i, workspace := range workspaces {
 				workspace.BatchSpecID = batchSpec.ID
 				workspace.RepoID = 1
@@ -530,6 +526,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			cachedResultWorkspace := &btypes.BatchSpecWorkspace{CachedResultFound: true}
 
 			batchSpec := &btypes.BatchSpec{}
+			batchSpec.RandID = uuid.NewString()
 
 			createBatchSpec(t, batchSpec)
 			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace, unsupportedWorkspace, cachedResultWorkspace)
@@ -541,6 +538,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			ignoredWorkspace := &btypes.BatchSpecWorkspace{Ignored: true}
 
 			batchSpec := &btypes.BatchSpec{AllowIgnored: true}
+			batchSpec.RandID = uuid.NewString()
 
 			createBatchSpec(t, batchSpec)
 			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace)
@@ -564,6 +562,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			unsupportedWorkspace := &btypes.BatchSpecWorkspace{Unsupported: true}
 
 			batchSpec := &btypes.BatchSpec{AllowUnsupported: true, AllowIgnored: true}
+			batchSpec.RandID = uuid.NewString()
 
 			createBatchSpec(t, batchSpec)
 			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace, unsupportedWorkspace)
