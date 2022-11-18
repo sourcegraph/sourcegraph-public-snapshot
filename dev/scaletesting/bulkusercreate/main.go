@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -245,12 +246,13 @@ func main() {
 		if cfg.generateTokens {
 			tg := group.NewWithResults[userToken]().WithMaxConcurrency(1000)
 			for _, u := range users {
+				currentU := u
 				tg.Go(func() userToken {
-					token := executeCreateUserImpersonationToken(ctx, u)
+					token := executeCreateUserImpersonationToken(ctx, currentU)
 					atomic.AddInt64(&tokensDone, 1)
 					progress.SetValue(3, float64(tokensDone))
 					return userToken{
-						login: u.Login,
+						login: currentU.Login,
 						token: token,
 					}
 				})
@@ -264,7 +266,12 @@ func main() {
 			csvwriter := csv.NewWriter(csvFile)
 			defer csvwriter.Flush()
 			_ = csvwriter.Write([]string{"login", "token"})
-			for _, pair := range tg.Wait() {
+			pairs := tg.Wait()
+			sort.Slice(pairs, func(i, j int) bool {
+				comp := strings.Compare(pairs[i].login, pairs[j].login)
+				return comp == -1
+			})
+			for _, pair := range pairs {
 				if err = csvwriter.Write([]string{pair.login, pair.token}); err != nil {
 					log.Fatalln("error writing pair to file", err)
 				}
