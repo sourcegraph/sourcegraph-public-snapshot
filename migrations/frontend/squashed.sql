@@ -2216,7 +2216,8 @@ CREATE TABLE insights_query_runner_jobs (
     cost integer DEFAULT 500 NOT NULL,
     persist_mode persistmode DEFAULT 'record'::persistmode NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    cancel boolean DEFAULT false NOT NULL
+    cancel boolean DEFAULT false NOT NULL,
+    trace_id text
 );
 
 COMMENT ON TABLE insights_query_runner_jobs IS 'See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
