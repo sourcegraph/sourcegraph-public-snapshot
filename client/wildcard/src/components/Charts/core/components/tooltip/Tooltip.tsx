@@ -1,10 +1,11 @@
 import React, { FunctionComponent, HTMLAttributes, LiHTMLAttributes, useEffect, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
+import { noop } from 'lodash'
 
 // In order to resolve cyclic deps in tests
 // see https://github.com/sourcegraph/sourcegraph/pull/40209#pullrequestreview-1069334480
-import { createRectangle, PopoverContent, Position } from '../../../../Popover'
+import { createRectangle, Popover, PopoverContent, PopoverTail, Position } from '../../../../Popover'
 
 import styles from './Tooltip.module.scss'
 
@@ -45,7 +46,9 @@ export const Tooltip: React.FunctionComponent<React.PropsWithChildren<TooltipPro
             setVirtualElement({
                 target: null,
                 x: event.clientX,
-                y: event.clientY,
+                // -10 because we want to visually compensate space for the
+                // popover tail
+                y: event.clientY - 10,
             })
         }
 
@@ -56,24 +59,32 @@ export const Tooltip: React.FunctionComponent<React.PropsWithChildren<TooltipPro
         }
     }, [containerElement])
 
+    const withRealTarget = !!target
+    const tooltipPinPoint = withRealTarget ? null : pinPoint
+    const tooltipTarget = withRealTarget ? target : null
+    const tooltipPosition = withRealTarget ? Position.right : Position.rightStart
+
     return (
-        <PopoverContent
-            isOpen={true}
-            pin={!target ? pinPoint : null}
-            target={target}
-            autoFocus={false}
-            focusLocked={false}
-            returnTargetFocus={false}
-            targetPadding={TOOLTIP_PADDING}
-            position={Position.rightStart}
-            className={styles.tooltip}
-            // Hide Tooltip UI from screen reader otherwise Voice over in Safari will
-            // catch this element and interrupt the original chart screen reader navigation flow
-            aria-hidden={true}
-            tabIndex={-1}
-        >
-            {children}
-        </PopoverContent>
+        <Popover isOpen={true} onOpenChange={noop}>
+            <PopoverContent
+                pin={tooltipPinPoint}
+                target={tooltipTarget}
+                position={tooltipPosition}
+                autoFocus={false}
+                focusLocked={false}
+                returnTargetFocus={false}
+                targetPadding={TOOLTIP_PADDING}
+                className={styles.tooltip}
+                // Hide Tooltip UI from screen reader otherwise Voice over in Safari will
+                // catch this element and interrupt the original chart screen reader navigation flow
+                aria-hidden={true}
+                tabIndex={-1}
+            >
+                {children}
+            </PopoverContent>
+
+            <PopoverTail size='sm' tabIndex={-1}/>
+        </Popover>
     )
 }
 
