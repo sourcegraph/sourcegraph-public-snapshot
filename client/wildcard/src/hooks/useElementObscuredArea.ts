@@ -31,10 +31,10 @@ export function useElementObscuredArea<T extends HTMLElement>(
                     const element = elementReference?.current
                     if (element) {
                         setObscured({
-                            top: element.scrollTop,
-                            right: element.scrollWidth - element.clientWidth - element.scrollLeft,
-                            bottom: element.scrollHeight - element.clientHeight - element.scrollTop,
-                            left: element.scrollLeft,
+                            top: Math.floor(element.scrollTop),
+                            right: Math.floor(element.scrollWidth - element.clientWidth - element.scrollLeft),
+                            bottom: Math.floor(element.scrollHeight - element.clientHeight - element.scrollTop),
+                            left: Math.floor(element.scrollLeft),
                         })
                     }
                 },
