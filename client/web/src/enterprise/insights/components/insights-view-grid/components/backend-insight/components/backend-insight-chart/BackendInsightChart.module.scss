@@ -17,7 +17,7 @@
 
         // Chart section can grow and take all space if we don't have any legends
         // Legends section can grow until the chart section is bigger than 12rem.
-        grid-template-rows: minmax(12rem, 2fr) minmax(auto, min-content);
+        grid-template-rows: minmax(8rem, 2fr) minmax(auto, min-content);
 
         &#{ $self }--horizontal {
             grid-template-areas: 'chart legend';
