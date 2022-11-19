@@ -5,7 +5,6 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { useCodeInsightsState } from '../../../../../../stores'
-import { CodeInsightsBackendContext, SeriesChartContent, CodeInsightsGqlBackend } from '../../../../core'
 
 import { CaptureGroupCreationPage as CaptureGroupCreationPageComponent } from './CaptureGroupCreationPage'
 
@@ -20,31 +19,15 @@ export default {
     },
 } as Meta
 
-class CodeInsightExampleBackend extends CodeInsightsGqlBackend {
-    public getRepositorySuggestions = () =>
-        Promise.resolve([
-            { id: '1', name: 'github.com/example/sub-repo-1' },
-            { id: '2', name: 'github.com/example/sub-repo-2' },
-            { id: '3', name: 'github.com/another-example/sub-repo-1' },
-            { id: '4', name: 'github.com/another-example/sub-repo-2' },
-        ])
-
-    public getInsightPreviewContent = (): Promise<SeriesChartContent<any>> => Promise.resolve({ series: [] })
-}
-
-const api = new CodeInsightExampleBackend({} as any)
-
 export const CaptureGroupCreationPage: Story = () => {
     useCodeInsightsState.setState({ licensed: true, insightsLimit: null })
 
     return (
-        <CodeInsightsBackendContext.Provider value={api}>
-            <CaptureGroupCreationPageComponent
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                onSuccessfulCreation={noop}
-                onInsightCreateRequest={() => Promise.resolve()}
-                onCancel={noop}
-            />
-        </CodeInsightsBackendContext.Provider>
+        <CaptureGroupCreationPageComponent
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            onSuccessfulCreation={noop}
+            onInsightCreateRequest={() => Promise.resolve()}
+            onCancel={noop}
+        />
     )
 }
