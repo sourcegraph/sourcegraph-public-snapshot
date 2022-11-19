@@ -13,9 +13,8 @@ import {
     LivePreviewBanner,
     getSanitizedRepositories,
     COMPUTE_MOCK_CHART,
-    EditableDataSeries,
 } from '../../../../../components'
-import { CategoricalChartContent } from '../../../../../core'
+import { CategoricalChartContent, SearchBasedInsightSeries } from '../../../../../core'
 import { LivePreviewStatus, useLivePreviewComputeInsight } from '../../../../../core/hooks/live-preview-insight'
 
 interface LanguageUsageDatum {
@@ -30,7 +29,7 @@ interface ComputeLivePreviewProps extends HTMLAttributes<HTMLElement> {
     repositories: string
     className?: string
     groupBy: GroupByField
-    series: EditableDataSeries[]
+    series: SearchBasedInsightSeries[]
 }
 
 export const ComputeLivePreview: FC<ComputeLivePreviewProps> = props => {

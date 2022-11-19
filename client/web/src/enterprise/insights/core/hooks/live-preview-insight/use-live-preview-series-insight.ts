@@ -16,7 +16,7 @@ import { generateLinkURL, InsightDataSeriesData } from '../../backend/utils/crea
 
 import { LivePreviewStatus, State } from './types'
 
-const GET_INSIGHT_PREVIEW_GQL = gql`
+export const GET_INSIGHT_PREVIEW_GQL = gql`
     query GetInsightPreview($input: SearchInsightPreviewInput!) {
         searchInsightPreview(input: $input) {
             points {
@@ -61,7 +61,12 @@ export function useLivePreviewSeriesInsight(props: Props): Result<Series<Datum>[
             skip,
             variables: {
                 input: {
-                    series,
+                    series: series.map(srs => ({
+                        query: srs.query,
+                        label: srs.label,
+                        generatedFromCaptureGroups: srs.generatedFromCaptureGroups,
+                        groupBy: srs.groupBy,
+                    })),
                     repositoryScope: { repositories },
                     timeScope: { stepInterval: { unit, value: +value } },
                 },
