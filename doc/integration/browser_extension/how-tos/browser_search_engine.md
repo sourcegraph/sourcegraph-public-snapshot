@@ -17,7 +17,9 @@ The easiest way is to install the [Sourcegraph browser extension](../quickstart.
 1. Visit https://sourcegraph.com/search (or your own Sourcegraph instance)
 2. Perform a code search you want to add as a search engine.
 3. Copy the URL of the search results page.
-4. Go to [`chrome://settings/searchEngines`](chrome://settings/searchEngines). Under **Search engine**, click **Manage search engines**. Next to **Other search engines**, click **ADD**.
+4. Go to [`chrome://settings/searchEngines`](chrome://settings/searchEngines). Under **Search engine**, click **Manage search engines**. 
+1. Check on the bottom of the page if a search is already setup by the SourceGraph extension. You see there the also the assigned keyword (default: `src`). If it is already installed you can follow the steps to add some more special searches. 
+1. Next to **Other search engines**, click **ADD**.
 ![](../../img/AddButton.png)
 1. In the **Add search engine** form, paste the URL you copied (in step 1) in the **URL with %s in place of query** field. Insert the string `%s` into the URL's `?q=` query parameter (and remove any parts of the query that you don't want to keep). Example: `https://sourcegraph.com/search?q=%s`
 1. Fill in the keyword field with the keyboard shortcut you want for searching on Sourcegraph. In this example, it's set to <kbd>s</kbd>.
