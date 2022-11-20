@@ -56,6 +56,7 @@ export function LineDataSeries<D>(props: LineDataSeriesProps<D>): ReactElement {
                 stroke={color}
                 strokeLinecap="round"
                 strokeWidth={2}
+                aria-hidden={true}
             />
 
             <Group role="list">
