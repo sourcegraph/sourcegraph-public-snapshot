@@ -83,7 +83,7 @@ export const Tooltip: React.FunctionComponent<React.PropsWithChildren<TooltipPro
                 {children}
             </PopoverContent>
 
-            <PopoverTail size='sm' tabIndex={-1}/>
+            <PopoverTail size="sm" tabIndex={-1} />
         </Popover>
     )
 }
