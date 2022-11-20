@@ -2,8 +2,6 @@ package types
 
 import (
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 // BitbucketProjectPermissionJob represents a task to apply a set of permissions
@@ -19,7 +17,6 @@ type BitbucketProjectPermissionJob struct {
 	NumResets       int
 	NumFailures     int
 	LastHeartbeatAt time.Time
-	ExecutionLogs   []workerutil.ExecutionLogEntry
 	WorkerHostname  string
 
 	// Name of the Bitbucket Project

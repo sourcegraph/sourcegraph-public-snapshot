@@ -1,4 +1,4 @@
-package store
+package batches
 
 import (
 	"context"
@@ -11,12 +11,14 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
@@ -39,8 +41,8 @@ const batchSpecWorkspaceExecutionJobMaximumNumResets = 3
 var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "batch_spec_workspace_execution_worker_store",
 	TableName:         "batch_spec_workspace_execution_jobs",
-	ColumnExpressions: batchSpecWorkspaceExecutionJobColumnsWithNullQueue.ToSqlf(),
-	Scan:              dbworkerstore.BuildWorkerScan(buildRecordScanner(ScanBatchSpecWorkspaceExecutionJob)),
+	ColumnExpressions: store.BatchSpecWorkspaceExecutionJobColumnsWithNullQueue.ToSqlf(),
+	Scan:              dbworkerstore.BuildWorkerScan(buildRecordScanner(store.ScanBatchSpecWorkspaceExecutionJob)),
 	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_execution_jobs.place_in_global_queue"),
 	StalledMaxAge:     batchSpecWorkspaceExecutionJobStalledJobMaximumAge,
 	MaxNumResets:      batchSpecWorkspaceExecutionJobMaximumNumResets,
@@ -54,32 +56,32 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 
 // NewBatchSpecWorkspaceExecutionWorkerStore creates a dbworker store that
 // wraps the batch_spec_workspace_execution_jobs table.
-func NewBatchSpecWorkspaceExecutionWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
+func NewBatchSpecWorkspaceExecutionWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) executor.ExecutorStore {
 	return &batchSpecWorkspaceExecutionWorkerStore{
-		Store:              dbworkerstore.NewWithMetrics(handle, batchSpecWorkspaceExecutionWorkerStoreOptions, observationContext),
+		ExecutorStore:      executor.NewExecutorStore(handle, batchSpecWorkspaceExecutionWorkerStoreOptions, observationContext),
 		observationContext: observationContext,
 		logger:             log.Scoped("batch-spec-workspace-execution-worker-store", "The worker store backing the executor queue for Batch Changes"),
 	}
 }
 
-var _ dbworkerstore.Store = &batchSpecWorkspaceExecutionWorkerStore{}
+var _ executor.ExecutorStore = &batchSpecWorkspaceExecutionWorkerStore{}
 
 // batchSpecWorkspaceExecutionWorkerStore is a thin wrapper around
 // dbworkerstore.Store that allows us to extract information out of the
 // ExecutionLogEntry field and persisting it to separate columns when marking a
 // job as complete.
 type batchSpecWorkspaceExecutionWorkerStore struct {
-	dbworkerstore.Store
+	executor.ExecutorStore
 
 	logger log.Logger
 
 	observationContext *observation.Context
 }
 
-type markFinal func(ctx context.Context, tx dbworkerstore.Store) (_ bool, err error)
+type markFinal func(ctx context.Context, tx executor.ExecutorStore) (_ bool, err error)
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, id int, fn markFinal) (ok bool, err error) {
-	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
+	batchesStore := store.New(database.NewDBWith(s.logger, s.ExecutorStore), s.observationContext, nil)
 	tx, err := batchesStore.Transact(ctx)
 	if err != nil {
 		return false, err
@@ -97,21 +99,21 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		if err != nil {
 			s.logger.Error("marking job as final failed, falling back to base method", log.Int("id", id), log.Error(err))
 			// Note: we don't use the transaction.
-			ok, err = fn(ctx, s.Store)
+			ok, err = fn(ctx, s.ExecutorStore)
 		}
 	}()
 
-	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id), ExcludeRank: true})
+	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id), ExcludeRank: true})
 	if err != nil {
 		return false, err
 	}
 
-	workspace, err := tx.GetBatchSpecWorkspace(ctx, GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
+	workspace, err := tx.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
 	if err != nil {
 		return false, err
 	}
 
-	spec, err := tx.GetBatchSpec(ctx, GetBatchSpecOpts{ID: workspace.BatchSpecID})
+	spec, err := tx.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: workspace.BatchSpecID})
 	if err != nil {
 		return false, err
 	}
@@ -125,23 +127,23 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		return false, err
 	}
 
-	return fn(ctx, s.Store.With(tx))
+	return fn(ctx, s.ExecutorStore.With(tx))
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkErrored(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
-	return s.markFinal(ctx, id, func(ctx context.Context, tx dbworkerstore.Store) (bool, error) {
+	return s.markFinal(ctx, id, func(ctx context.Context, tx executor.ExecutorStore) (bool, error) {
 		return tx.MarkErrored(ctx, id, failureMessage, options)
 	})
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkFailed(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
-	return s.markFinal(ctx, id, func(ctx context.Context, tx dbworkerstore.Store) (bool, error) {
+	return s.markFinal(ctx, id, func(ctx context.Context, tx executor.ExecutorStore) (bool, error) {
 		return tx.MarkFailed(ctx, id, failureMessage, options)
 	})
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Context, id int, options dbworkerstore.MarkFinalOptions) (ok bool, err error) {
-	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
+	batchesStore := store.New(database.NewDBWith(s.logger, s.ExecutorStore), s.observationContext, nil)
 
 	tx, err := batchesStore.Transact(ctx)
 	if err != nil {
@@ -161,21 +163,21 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		if err != nil {
 			s.logger.Error("Marking job complete failed, falling back to failure", log.Int("id", id), log.Error(err))
 			// Note: we don't use the transaction.
-			ok, err = s.Store.MarkFailed(ctx, id, err.Error(), options)
+			ok, err = s.ExecutorStore.MarkFailed(ctx, id, err.Error(), options)
 		}
 	}()
 
-	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id), ExcludeRank: true})
+	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id), ExcludeRank: true})
 	if err != nil {
 		return false, errors.Wrap(err, "loading batch spec workspace execution job")
 	}
 
-	workspace, err := tx.GetBatchSpecWorkspace(ctx, GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
+	workspace, err := tx.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
 	if err != nil {
 		return false, errors.Wrap(err, "loading batch spec workspace")
 	}
 
-	batchSpec, err := tx.GetBatchSpec(ctx, GetBatchSpecOpts{ID: workspace.BatchSpecID})
+	batchSpec, err := tx.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: workspace.BatchSpecID})
 	if err != nil {
 		return false, errors.Wrap(err, "loading batch spec")
 	}
@@ -254,10 +256,10 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return false, errors.Wrap(err, "setChangesetSpecIDs")
 	}
 
-	return s.Store.With(tx).MarkComplete(ctx, id, options)
+	return s.ExecutorStore.With(tx).MarkComplete(ctx, id, options)
 }
 
-func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context.Context, tx *Store, batchSpecWorkspaceID int64, changesetSpecIDs []int64) error {
+func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context.Context, tx *store.Store, batchSpecWorkspaceID int64, changesetSpecIDs []int64) error {
 	// Marshal changeset spec IDs for database JSON column.
 	m := make(map[int64]struct{}, len(changesetSpecIDs))
 	for _, id := range changesetSpecIDs {
@@ -295,7 +297,7 @@ WHERE id = %s
 `
 
 // storeCacheResults builds DB cache entries for all the results and store them using the given tx.
-func storeCacheResults(ctx context.Context, tx *Store, results []*batcheslib.CacheAfterStepResultMetadata, userID int32) error {
+func storeCacheResults(ctx context.Context, tx *store.Store, results []*batcheslib.CacheAfterStepResultMetadata, userID int32) error {
 	for _, result := range results {
 		value, err := json.Marshal(&result.Value)
 		if err != nil {
@@ -330,7 +332,7 @@ func extractCacheEntries(events []*batcheslib.LogEvent) (cacheEntries []*batches
 	return cacheEntries, nil
 }
 
-func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) []*batcheslib.LogEvent {
+func logEventsFromLogEntries(logs []executor.ExecutionLogEntry) []*batcheslib.LogEvent {
 	if len(logs) < 1 {
 		return nil
 	}
@@ -347,4 +349,15 @@ func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) []*batcheslib.
 	}
 
 	return entries
+}
+
+// buildRecordScanner converts a scan*() function as implemented in lots of
+// places in this package into something we can use in
+// `dbworker.BuildWorkerScan`.
+func buildRecordScanner[T any](scan func(*T, dbutil.Scanner) error) func(dbutil.Scanner) (*T, error) {
+	return func(s dbutil.Scanner) (*T, error) {
+		var t T
+		err := scan(&t, s)
+		return &t, err
+	}
 }

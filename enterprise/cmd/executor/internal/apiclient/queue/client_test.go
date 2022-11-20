@@ -16,9 +16,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 func TestDequeue(t *testing.T) {
@@ -88,7 +87,7 @@ func TestDequeueBadResponse(t *testing.T) {
 }
 
 func TestAddExecutionLogEntry(t *testing.T) {
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor.ExecutionLogEntry{
 		Key:        "foo",
 		Command:    []string{"ls", "-a"},
 		StartTime:  time.Unix(1587396557, 0).UTC(),
@@ -128,7 +127,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 }
 
 func TestAddExecutionLogEntryBadResponse(t *testing.T) {
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor.ExecutionLogEntry{
 		Key:        "foo",
 		Command:    []string{"ls", "-a"},
 		StartTime:  time.Unix(1587396557, 0).UTC(),
@@ -164,7 +163,7 @@ func TestAddExecutionLogEntryBadResponse(t *testing.T) {
 }
 
 func TestUpdateExecutionLogEntry(t *testing.T) {
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor.ExecutionLogEntry{
 		Key:        "foo",
 		Command:    []string{"ls", "-a"},
 		StartTime:  time.Unix(1587396557, 0).UTC(),
@@ -201,7 +200,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 }
 
 func TestUpdateExecutionLogEntryBadResponse(t *testing.T) {
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor.ExecutionLogEntry{
 		Key:        "foo",
 		Command:    []string{"ls", "-a"},
 		StartTime:  time.Unix(1587396557, 0).UTC(),

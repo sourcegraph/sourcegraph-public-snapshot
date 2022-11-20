@@ -259,8 +259,7 @@ SELECT
 	finished_at,
 	process_after,
 	num_resets,
-	num_failures,
-	execution_logs
+	num_failures
 FROM insights_query_runner_jobs
 WHERE id = %s;
 `
@@ -431,7 +430,6 @@ type Job struct {
 	ProcessAfter   *time.Time
 	NumResets      int32
 	NumFailures    int32
-	ExecutionLogs  []workerutil.ExecutionLogEntry
 }
 
 // Implements the internal/workerutil.Record interface, used by the work handler to locate the job
@@ -483,7 +481,6 @@ func scanJob(sc dbutil.Scanner) (*Job, error) {
 		&j.ProcessAfter,
 		&j.NumResets,
 		&j.NumFailures,
-		pq.Array(&j.ExecutionLogs),
 	); err != nil {
 		return nil, err
 	}
@@ -506,7 +503,6 @@ var jobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("process_after"),
 	sqlf.Sprintf("num_resets"),
 	sqlf.Sprintf("num_failures"),
-	sqlf.Sprintf("execution_logs"),
 }
 
 // ToQueueJob converts the query execution into a queueable job with it's relevant dependent times.

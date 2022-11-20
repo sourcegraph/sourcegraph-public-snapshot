@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -17,8 +17,8 @@ type QueueShim struct {
 
 type QueueStore interface {
 	Dequeue(ctx context.Context, queueName string, payload *executor.Job) (bool, error)
-	AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry workerutil.ExecutionLogEntry) (int, error)
-	UpdateExecutionLogEntry(ctx context.Context, queueName string, jobID, entryID int, entry workerutil.ExecutionLogEntry) error
+	AddExecutionLogEntry(ctx context.Context, queueName string, jobID int, entry executor.ExecutionLogEntry) (int, error)
+	UpdateExecutionLogEntry(ctx context.Context, queueName string, jobID, entryID int, entry executor.ExecutionLogEntry) error
 	MarkComplete(ctx context.Context, queueName string, jobID int) error
 	MarkErrored(ctx context.Context, queueName string, jobID int, errorMessage string) error
 	MarkFailed(ctx context.Context, queueName string, jobID int, errorMessage string) error
@@ -47,11 +47,11 @@ func (s *QueueShim) Heartbeat(ctx context.Context, ids []int) (knownIDs []int, e
 	return s.Store.Heartbeat(ctx, s.Name, ids)
 }
 
-func (s *QueueShim) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) (int, error) {
+func (s *QueueShim) AddExecutionLogEntry(ctx context.Context, id int, entry executor.ExecutionLogEntry) (int, error) {
 	return s.Store.AddExecutionLogEntry(ctx, s.Name, id, entry)
 }
 
-func (s *QueueShim) UpdateExecutionLogEntry(ctx context.Context, jobID, entryID int, entry workerutil.ExecutionLogEntry) error {
+func (s *QueueShim) UpdateExecutionLogEntry(ctx context.Context, jobID, entryID int, entry executor.ExecutionLogEntry) error {
 	return s.Store.UpdateExecutionLogEntry(ctx, s.Name, jobID, entryID, entry)
 }
 

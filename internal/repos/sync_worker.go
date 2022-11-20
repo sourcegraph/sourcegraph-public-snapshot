@@ -49,7 +49,6 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 		sqlf.Sprintf("process_after"),
 		sqlf.Sprintf("num_resets"),
 		sqlf.Sprintf("num_failures"),
-		sqlf.Sprintf("execution_logs"),
 		sqlf.Sprintf("external_service_id"),
 		sqlf.Sprintf("next_sync_at"),
 	}

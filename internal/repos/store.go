@@ -650,7 +650,6 @@ func (s *store) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
 			process_after,
 			num_resets,
 			num_failures,
-			execution_logs,
 			external_service_id,
 			next_sync_at
 		FROM external_service_sync_jobs_with_next_sync_at

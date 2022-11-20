@@ -103,8 +103,7 @@ SELECT
 	finished_at,
 	process_after,
 	num_resets,
-	num_failures,
-	execution_logs
+	num_failures
 FROM webhook_build_jobs
 WHERE id = %s
 `

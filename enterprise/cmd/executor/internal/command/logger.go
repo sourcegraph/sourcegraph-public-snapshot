@@ -11,8 +11,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -35,16 +34,16 @@ type Logger interface {
 type LogEntry interface {
 	io.WriteCloser
 	Finalize(exitCode int)
-	CurrentLogEntry() workerutil.ExecutionLogEntry
+	CurrentLogEntry() executor.ExecutionLogEntry
 }
 
 type ExecutionLogEntryStore interface {
-	AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) (int, error)
-	UpdateExecutionLogEntry(ctx context.Context, id, entryID int, entry workerutil.ExecutionLogEntry) error
+	AddExecutionLogEntry(ctx context.Context, id int, entry executor.ExecutionLogEntry) (int, error)
+	UpdateExecutionLogEntry(ctx context.Context, id, entryID int, entry executor.ExecutionLogEntry) error
 }
 
 type entryHandle struct {
-	logEntry workerutil.ExecutionLogEntry
+	logEntry executor.ExecutionLogEntry
 	replacer *strings.Replacer
 
 	done chan struct{}
@@ -75,13 +74,13 @@ func (h *entryHandle) Close() error {
 	return nil
 }
 
-func (h *entryHandle) CurrentLogEntry() workerutil.ExecutionLogEntry {
+func (h *entryHandle) CurrentLogEntry() executor.ExecutionLogEntry {
 	logEntry := h.currentLogEntry()
 	redact(&logEntry, h.replacer)
 	return logEntry
 }
 
-func (h *entryHandle) currentLogEntry() workerutil.ExecutionLogEntry {
+func (h *entryHandle) currentLogEntry() executor.ExecutionLogEntry {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -149,7 +148,7 @@ func (l *logger) Flush() error {
 
 func (l *logger) Log(key string, command []string) LogEntry {
 	handle := &entryHandle{
-		logEntry: workerutil.ExecutionLogEntry{
+		logEntry: executor.ExecutionLogEntry{
 			Key:       key,
 			Command:   command,
 			StartTime: time.Now(),
@@ -183,7 +182,7 @@ func (l *logger) writeEntries() {
 		log15.Debug("Writing log entry", "jobID", l.job.ID, "entryID", entryID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
 
 		wg.Add(1)
-		go func(handle *entryHandle, entryID int, initialLogEntry workerutil.ExecutionLogEntry) {
+		go func(handle *entryHandle, entryID int, initialLogEntry executor.ExecutionLogEntry) {
 			defer wg.Done()
 
 			l.syncLogEntry(handle, entryID, initialLogEntry)
@@ -195,7 +194,7 @@ func (l *logger) writeEntries() {
 
 const syncLogEntryInterval = 1 * time.Second
 
-func (l *logger) syncLogEntry(handle *entryHandle, entryID int, old workerutil.ExecutionLogEntry) {
+func (l *logger) syncLogEntry(handle *entryHandle, entryID int, old executor.ExecutionLogEntry) {
 	lastWrite := false
 
 	for !lastWrite {
@@ -261,11 +260,11 @@ func (l *logger) appendError(err error) {
 
 // If old didn't have exit code or duration and current does, update; we're finished.
 // Otherwise, update if the log text has changed since the last write to the API.
-func entryWasUpdated(old, current workerutil.ExecutionLogEntry) bool {
+func entryWasUpdated(old, current executor.ExecutionLogEntry) bool {
 	return (current.ExitCode != nil && old.ExitCode == nil) || (current.DurationMs != nil && old.DurationMs == nil) || current.Out != old.Out
 }
 
-func redact(entry *workerutil.ExecutionLogEntry, replacer *strings.Replacer) {
+func redact(entry *executor.ExecutionLogEntry, replacer *strings.Replacer) {
 	for i, arg := range entry.Command {
 		entry.Command[i] = replacer.Replace(arg)
 	}
@@ -295,6 +294,6 @@ func (l *writerLogEntry) Write(p []byte) (n int, err error) {
 }
 func (*writerLogEntry) Close() error          { return nil }
 func (*writerLogEntry) Finalize(exitCode int) {}
-func (*writerLogEntry) CurrentLogEntry() workerutil.ExecutionLogEntry {
-	return workerutil.ExecutionLogEntry{}
+func (*writerLogEntry) CurrentLogEntry() executor.ExecutionLogEntry {
+	return executor.ExecutionLogEntry{}
 }

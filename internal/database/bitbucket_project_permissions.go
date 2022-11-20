@@ -13,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -119,7 +117,6 @@ var BitbucketProjectPermissionsColumnExpressions = []*sqlf.Query{
 	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.num_resets"),
 	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.num_failures"),
 	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.last_heartbeat_at"),
-	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.execution_logs"),
 	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.worker_hostname"),
 	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.project_key"),
 	sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.external_service_id"),
@@ -162,7 +159,6 @@ func (s *bitbucketProjectPermissionsStore) ListJobs(
 
 func ScanBitbucketProjectPermissionJob(rows dbutil.Scanner) (*types.BitbucketProjectPermissionJob, error) {
 	var job types.BitbucketProjectPermissionJob
-	var executionLogs []dbworkerstore.ExecutionLogEntry
 	var permissions []userPermission
 
 	if err := rows.Scan(
@@ -176,7 +172,6 @@ func ScanBitbucketProjectPermissionJob(rows dbutil.Scanner) (*types.BitbucketPro
 		&job.NumResets,
 		&job.NumFailures,
 		&dbutil.NullTime{Time: &job.LastHeartbeatAt},
-		pq.Array(&executionLogs),
 		&job.WorkerHostname,
 		&job.ProjectKey,
 		&job.ExternalServiceID,
@@ -184,10 +179,6 @@ func ScanBitbucketProjectPermissionJob(rows dbutil.Scanner) (*types.BitbucketPro
 		&job.Unrestricted,
 	); err != nil {
 		return nil, err
-	}
-
-	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
 	}
 
 	for _, perm := range permissions {
@@ -202,7 +193,7 @@ func listWorkerJobsQuery(opt ListJobsOptions) *sqlf.Query {
 	var where []*sqlf.Query
 
 	q := `
-SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_service_id, permissions, unrestricted
+SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, worker_hostname, project_key, external_service_id, permissions, unrestricted
 FROM explicit_permissions_bitbucket_projects_jobs
 %%s
 ORDER BY queued_at DESC

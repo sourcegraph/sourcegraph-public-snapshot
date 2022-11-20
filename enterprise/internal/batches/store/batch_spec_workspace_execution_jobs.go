@@ -10,14 +10,13 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var batchSpecWorkspaceExecutionJobColumns = SQLColumns{
+var BatchSpecWorkspaceExecutionJobColumns = SQLColumns{
 	"batch_spec_workspace_execution_jobs.id",
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
@@ -43,7 +42,7 @@ var batchSpecWorkspaceExecutionJobColumns = SQLColumns{
 	"batch_spec_workspace_execution_jobs.version",
 }
 
-var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
+var BatchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 	"batch_spec_workspace_execution_jobs.id",
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
@@ -240,7 +239,7 @@ LIMIT 1
 `
 
 func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecutionJobOpts) *sqlf.Query {
-	columns := batchSpecWorkspaceExecutionJobColumns
+	columns := BatchSpecWorkspaceExecutionJobColumns
 	var (
 		preds []*sqlf.Query
 		joins []*sqlf.Query
@@ -260,7 +259,7 @@ func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecution
 	if !opts.ExcludeRank {
 		joins = append(joins, sqlf.Sprintf(`LEFT JOIN (`+executionPlaceInQueueFragment+`) AS exec ON batch_spec_workspace_execution_jobs.id = exec.id`))
 	} else {
-		columns = batchSpecWorkspaceExecutionJobColumnsWithNullQueue
+		columns = BatchSpecWorkspaceExecutionJobColumnsWithNullQueue
 	}
 
 	return sqlf.Sprintf(
@@ -318,7 +317,7 @@ ORDER BY batch_spec_workspace_execution_jobs.id ASC
 `
 
 func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecutionJobsOpts) *sqlf.Query {
-	columns := batchSpecWorkspaceExecutionJobColumns
+	columns := BatchSpecWorkspaceExecutionJobColumns
 	var (
 		preds []*sqlf.Query
 		joins []*sqlf.Query
@@ -361,7 +360,7 @@ func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecuti
 	if !opts.ExcludeRank {
 		joins = append(joins, sqlf.Sprintf(`LEFT JOIN (`+executionPlaceInQueueFragment+`) as exec ON batch_spec_workspace_execution_jobs.id = exec.id`))
 	} else {
-		columns = batchSpecWorkspaceExecutionJobColumnsWithNullQueue
+		columns = BatchSpecWorkspaceExecutionJobColumnsWithNullQueue
 	}
 
 	return sqlf.Sprintf(
@@ -469,12 +468,12 @@ func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(opts CancelBatchSpecWo
 		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
 		s.now(),
 		s.now(),
-		sqlf.Join(batchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
+		sqlf.Join(BatchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
 	)
 }
 
 func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJob, s dbutil.Scanner) error {
-	var executionLogs []dbworkerstore.ExecutionLogEntry
+	var executionLogs []executor.ExecutionLogEntry
 	var failureMessage string
 
 	if err := s.Scan(
@@ -505,7 +504,7 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 	}
 
 	for _, entry := range executionLogs {
-		wj.ExecutionLogs = append(wj.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
+		wj.ExecutionLogs = append(wj.ExecutionLogs, executor.ExecutionLogEntry(entry))
 	}
 
 	return nil

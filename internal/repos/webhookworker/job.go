@@ -4,8 +4,6 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type Job struct {
@@ -26,7 +24,6 @@ type Job struct {
 	ProcessAfter   *time.Time
 	NumResets      int32
 	NumFailures    int32
-	ExecutionLogs  []workerutil.ExecutionLogEntry
 }
 
 func (j *Job) RecordID() int {
@@ -48,5 +45,4 @@ var jobColumns = []*sqlf.Query{
 	sqlf.Sprintf("process_after"),
 	sqlf.Sprintf("num_resets"),
 	sqlf.Sprintf("num_failures"),
-	sqlf.Sprintf("execution_logs"),
 }

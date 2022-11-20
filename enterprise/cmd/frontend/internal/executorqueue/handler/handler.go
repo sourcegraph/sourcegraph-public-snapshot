@@ -6,8 +6,9 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
+	apiclient "github.com/sourcegraph/sourcegraph/internal/executor"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -26,8 +27,8 @@ type QueueOptions struct {
 	// Name signifies the type of work the queue serves to executors.
 	Name string
 
-	// Store is a required dbworker store store for each registered queue.
-	Store store.Store
+	// Store is a required store for each registered queue.
+	Store executor.ExecutorStore
 
 	// RecordTransformer is a required hook for each registered queue that transforms a generic
 	// record from that queue into the job to be given to an executor.
@@ -85,8 +86,8 @@ func (h *handler) dequeue(ctx context.Context, metadata executorMetadata) (_ api
 }
 
 // addExecutionLogEntry calls AddExecutionLogEntry for the given job.
-func (h *handler) addExecutionLogEntry(ctx context.Context, executorName string, jobID int, entry workerutil.ExecutionLogEntry) (entryID int, err error) {
-	entryID, err = h.Store.AddExecutionLogEntry(ctx, jobID, entry, store.ExecutionLogEntryOptions{
+func (h *handler) addExecutionLogEntry(ctx context.Context, executorName string, jobID int, entry executor.ExecutionLogEntry) (entryID int, err error) {
+	entryID, err = h.Store.AddExecutionLogEntry(ctx, jobID, entry, executor.ExecutionLogEntryOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting logs,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
@@ -94,15 +95,15 @@ func (h *handler) addExecutionLogEntry(ctx context.Context, executorName string,
 		// We pass state to enforce adding log entries is only possible while the record is still dequeued.
 		State: "processing",
 	})
-	if err == store.ErrExecutionLogEntryNotUpdated {
+	if err == executor.ErrExecutionLogEntryNotUpdated {
 		return 0, ErrUnknownJob
 	}
 	return entryID, errors.Wrap(err, "dbworkerstore.AddExecutionLogEntry")
 }
 
 // updateExecutionLogEntry calls UpdateExecutionLogEntry for the given job and entry.
-func (h *handler) updateExecutionLogEntry(ctx context.Context, executorName string, jobID int, entryID int, entry workerutil.ExecutionLogEntry) error {
-	err := h.Store.UpdateExecutionLogEntry(ctx, jobID, entryID, entry, store.ExecutionLogEntryOptions{
+func (h *handler) updateExecutionLogEntry(ctx context.Context, executorName string, jobID int, entryID int, entry executor.ExecutionLogEntry) error {
+	err := h.Store.UpdateExecutionLogEntry(ctx, jobID, entryID, entry, executor.ExecutionLogEntryOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting logs,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
@@ -110,7 +111,7 @@ func (h *handler) updateExecutionLogEntry(ctx context.Context, executorName stri
 		// We pass state to enforce adding log entries is only possible while the record is still dequeued.
 		State: "processing",
 	})
-	if err == store.ErrExecutionLogEntryNotUpdated {
+	if err == executor.ErrExecutionLogEntryNotUpdated {
 		return ErrUnknownJob
 	}
 	return errors.Wrap(err, "dbworkerstore.UpdateExecutionLogEntry")

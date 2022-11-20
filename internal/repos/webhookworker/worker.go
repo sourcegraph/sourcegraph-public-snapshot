@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -125,6 +124,5 @@ func scanWebhookBuildJob(sc dbutil.Scanner) (*Job, error) {
 		&job.ProcessAfter,
 		&job.NumResets,
 		&job.NumFailures,
-		pq.Array(&job.ExecutionLogs),
 	)
 }

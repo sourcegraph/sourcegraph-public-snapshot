@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
@@ -127,7 +126,6 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 			num_resets,
 			num_failures,
 			last_heartbeat_at,
-			execution_logs,
 			worker_hostname,
 			project_key,
 			external_service_id,
@@ -144,7 +142,6 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 			1,
 			2,
 			'2020-01-05',
-			E'{"{\\"key\\": \\"key\\", \\"command\\": [\\"command\\"], \\"startTime\\": \\"2020-01-06T00:00:00Z\\", \\"exitCode\\": 1, \\"out\\": \\"out\\", \\"durationMs\\": 1}"}'::json[],
 			'worker-hostname',
 			'project-key',
 			1,
@@ -173,7 +170,6 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 		NumResets:         1,
 		NumFailures:       2,
 		LastHeartbeatAt:   mustParseTime("2020-01-05"),
-		ExecutionLogs:     []workerutil.ExecutionLogEntry{{Key: "key", Command: []string{"command"}, StartTime: mustParseTime("2020-01-06"), ExitCode: intPtr(1), Out: "out", DurationMs: intPtr(1)}},
 		WorkerHostname:    "worker-hostname",
 		ProjectKey:        "project-key",
 		ExternalServiceID: 1,
@@ -188,7 +184,7 @@ func TestListJobsQuery(t *testing.T) {
 		gotString := got.Query(sqlf.PostgresBindVar)
 
 		want := `
-SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_service_id, permissions, unrestricted
+SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, worker_hostname, project_key, external_service_id, permissions, unrestricted
 FROM explicit_permissions_bitbucket_projects_jobs
 
 ORDER BY queued_at DESC
@@ -206,7 +202,7 @@ LIMIT 100
 
 		gotString := got.Query(sqlf.PostgresBindVar)
 		want := `
-SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, execution_logs, worker_hostname, project_key, external_service_id, permissions, unrestricted
+SELECT id, state, failure_message, queued_at, started_at, finished_at, process_after, num_resets, num_failures, last_heartbeat_at, worker_hostname, project_key, external_service_id, permissions, unrestricted
 FROM explicit_permissions_bitbucket_projects_jobs
 WHERE project_key IN ($1 , $2 , $3 , $4) AND state = $5
 ORDER BY queued_at DESC

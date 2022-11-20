@@ -3,16 +3,16 @@ package sharedresolvers
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
 type preIndexStepResolver struct {
 	svc   AutoIndexingService
 	step  types.DockerStep
-	entry *workerutil.ExecutionLogEntry
+	entry *executor.ExecutionLogEntry
 }
 
-func NewPreIndexStepResolver(svc AutoIndexingService, step types.DockerStep, entry *workerutil.ExecutionLogEntry) resolverstubs.PreIndexStepResolver {
+func NewPreIndexStepResolver(svc AutoIndexingService, step types.DockerStep, entry *executor.ExecutionLogEntry) resolverstubs.PreIndexStepResolver {
 	return &preIndexStepResolver{
 		svc:   svc,
 		step:  step,

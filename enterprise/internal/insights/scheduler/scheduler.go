@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/lib/pq"
-
 	"github.com/keegancsmith/sqlf"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -36,7 +34,6 @@ type BaseJob struct {
 	NumResets       int
 	NumFailures     int
 	LastHeartbeatAt time.Time
-	ExecutionLogs   []workerutil.ExecutionLogEntry
 	WorkerHostname  string
 	Cancel          bool
 	backfillId      int
@@ -57,7 +54,6 @@ var baseJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("num_resets"),
 	sqlf.Sprintf("num_failures"),
 	sqlf.Sprintf("last_heartbeat_at"),
-	sqlf.Sprintf("execution_logs"),
 	sqlf.Sprintf("worker_hostname"),
 	sqlf.Sprintf("cancel"),
 	sqlf.Sprintf("backfill_id"),
@@ -65,7 +61,6 @@ var baseJobColumns = []*sqlf.Query{
 
 func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 	var job BaseJob
-	var executionLogs []dbworkerstore.ExecutionLogEntry
 
 	if err := s.Scan(
 		&job.ID,
@@ -78,16 +73,11 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 		&job.NumResets,
 		&job.NumFailures,
 		&job.LastHeartbeatAt,
-		pq.Array(&executionLogs),
 		&job.WorkerHostname,
 		&job.Cancel,
 		&dbutil.NullInt{N: &job.backfillId},
 	); err != nil {
 		return nil, err
-	}
-
-	for _, entry := range executionLogs {
-		job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
 	}
 
 	return &job, nil

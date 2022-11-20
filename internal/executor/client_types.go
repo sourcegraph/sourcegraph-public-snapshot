@@ -3,8 +3,6 @@ package executor
 import (
 	"encoding/json"
 	"time"
-
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 // Job describes a series of steps to perform within an executor.
@@ -240,14 +238,14 @@ type DequeueRequest struct {
 type AddExecutionLogEntryRequest struct {
 	ExecutorName string `json:"executorName"`
 	JobID        int    `json:"jobId"`
-	workerutil.ExecutionLogEntry
+	ExecutionLogEntry
 }
 
 type UpdateExecutionLogEntryRequest struct {
 	ExecutorName string `json:"executorName"`
 	JobID        int    `json:"jobId"`
 	EntryID      int    `json:"entryId"`
-	workerutil.ExecutionLogEntry
+	ExecutionLogEntry
 }
 
 type MarkCompleteRequest struct {

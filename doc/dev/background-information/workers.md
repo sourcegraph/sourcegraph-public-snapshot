@@ -94,7 +94,6 @@ The store relies on a jobs table _specific to your worker_ to exist with the fol
 | `num_resets`        | integer                  | Updated when the job is moved back from `failed` to `queued` |
 | `num_failures`      | integer                  | Updated when the job enters the `errored` state |
 | `last_heartbeat_at` | timestamp with time zone | Updated periodically to ensure that the handler didn't die processing the job |
-| `execution_logs`    | json[]                   | A list of log entries from the most recent processing attempt |
 | `worker_hostname`   | text                     | Hostname of the worker that picked up the job |
 | `cancel`            | boolean                  | Set to true to cancel an in-flight job |
 
@@ -160,7 +159,6 @@ CREATE TABLE example_jobs (
   num_resets        integer not null default 0,
   num_failures      integer not null default 0,
   last_heartbeat_at timestamp with time zone,
-  execution_logs    json[],
   worker_hostname   text not null default '',
   cancel            boolean not null default false
 
@@ -201,7 +199,6 @@ type ExampleJob struct {
   NumResets       int
   NumFailures     int
   LastHeartbeatAt time.Time
-  ExecutionLogs   []workerutil.ExecutionLogEntry
   WorkerHostname  string
   Cancel          bool
 
@@ -220,7 +217,6 @@ var exampleJobColumns = []*sqlf.Query{
   sqlf.Sprintf("example_jobs.num_resets"),
   sqlf.Sprintf("example_jobs.num_failures"),
   sqlf.Sprintf("example_jobs.last_heartbeat_at"),
-  sqlf.Sprintf("example_jobs.execution_logs"),
   sqlf.Sprintf("example_jobs.worker_hostname"),
   sqlf.Sprintf("example_jobs.cancel"),
   sqlf.Sprintf("example_jobs.repository_id"),
@@ -249,7 +245,6 @@ import (
 
 func scanExampleJob(s dbutil.Scanner) (*ExampleJob, error) {
   var job ExampleJob
-  var executionLogs []dbworkerstore.ExecutionLogEntry
 
   if err := s.Scan(
     &job.ID,
@@ -262,17 +257,12 @@ func scanExampleJob(s dbutil.Scanner) (*ExampleJob, error) {
     &job.NumResets,
     &job.NumFailures,
     &job.LastHeartbeatAt,
-    pq.Array(&executionLogs),
     &job.WorkerHostname,
     &job.Cancel,
     &job.RepositoryID,
     &job.RepositoryName,
   ); err != nil {
     return nil, err
-  }
-
-  for _, entry := range executionLogs {
-    job.ExecutionLogs = append(job.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
   }
 
   return &job, nil

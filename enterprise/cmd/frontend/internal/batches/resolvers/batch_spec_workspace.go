@@ -14,10 +14,10 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -149,7 +149,7 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers() ([]graphqlbackend.Ba
 			}
 
 			var (
-				entry workerutil.ExecutionLogEntry
+				entry executor.ExecutionLogEntry
 				ok    bool
 			)
 			if r.execution != nil {
@@ -582,12 +582,12 @@ func (r *batchSpecWorkspaceStagesResolver) executionLogEntryResolversWithPrefix(
 	return resolvers
 }
 
-func findExecutionLogEntry(execution *btypes.BatchSpecWorkspaceExecutionJob, key string) (workerutil.ExecutionLogEntry, bool) {
+func findExecutionLogEntry(execution *btypes.BatchSpecWorkspaceExecutionJob, key string) (executor.ExecutionLogEntry, bool) {
 	for _, entry := range execution.ExecutionLogs {
 		if entry.Key == key {
 			return entry, true
 		}
 	}
 
-	return workerutil.ExecutionLogEntry{}, false
+	return executor.ExecutionLogEntry{}, false
 }

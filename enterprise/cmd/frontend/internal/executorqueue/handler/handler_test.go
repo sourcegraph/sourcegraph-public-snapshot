@@ -6,13 +6,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/executor"
+	apiclient "github.com/sourcegraph/sourcegraph/internal/executor"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	workerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -97,7 +97,7 @@ func TestAddExecutionLogEntry(t *testing.T) {
 		t.Fatalf("expected a job to be dequeued")
 	}
 
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
 		Out:     "<log payload>",
 	}
@@ -123,12 +123,12 @@ func TestAddExecutionLogEntry(t *testing.T) {
 
 func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
-	store.AddExecutionLogEntryFunc.SetDefaultReturn(0, workerstore.ErrExecutionLogEntryNotUpdated)
+	store.AddExecutionLogEntryFunc.SetDefaultReturn(0, executor.ErrExecutionLogEntryNotUpdated)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store})
 
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
 		Out:     "<log payload>",
 	}
@@ -157,7 +157,7 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 		t.Fatalf("expected a job to be dequeued")
 	}
 
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
 		Out:     "<log payload>",
 	}
@@ -183,12 +183,12 @@ func TestUpdateExecutionLogEntry(t *testing.T) {
 
 func TestUpdateExecutionLogEntryUnknownJob(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
-	store.UpdateExecutionLogEntryFunc.SetDefaultReturn(workerstore.ErrExecutionLogEntryNotUpdated)
+	store.UpdateExecutionLogEntryFunc.SetDefaultReturn(executor.ErrExecutionLogEntryNotUpdated)
 	executorStore := database.NewMockExecutorStore()
 	metricsStore := metricsstore.NewMockDistributedStore()
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: store})
 
-	entry := workerutil.ExecutionLogEntry{
+	entry := executor.ExecutionLogEntry{
 		Command: []string{"ls", "-a"},
 		Out:     "<log payload>",
 	}

@@ -2,11 +2,6 @@ package workerutil
 
 import (
 	"context"
-	"database/sql/driver"
-	"encoding/json"
-	"time"
-
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Record is a generic interface for record conforming to the requirements of the store.
@@ -33,15 +28,6 @@ type Store interface {
 	// They will end up in canceled state.
 	CanceledJobs(ctx context.Context, knownJobIDs []int) (canceledIDs []int, err error)
 
-	// AddExecutionLogEntry adds an executor log entry to the record and
-	// returns the ID of the new entry (which can be used with
-	// UpdateExecutionLogEntry) and a possible error.
-	AddExecutionLogEntry(ctx context.Context, id int, entry ExecutionLogEntry) (int, error)
-
-	// UpdateExecutionLogEntry updates the executor log entry with the given ID
-	// on the given record.
-	UpdateExecutionLogEntry(ctx context.Context, recordID, entryID int, entry ExecutionLogEntry) error
-
 	// MarkComplete attempts to update the state of the record to complete. This method returns a boolean flag indicating
 	// if the record was updated.
 	MarkComplete(ctx context.Context, id int) (bool, error)
@@ -53,27 +39,4 @@ type Store interface {
 	// MarkFailed attempts to update the state of the record to failed. This method returns a boolean flag indicating
 	// if the record was updated.
 	MarkFailed(ctx context.Context, id int, failureMessage string) (bool, error)
-}
-
-// ExecutionLogEntry represents a command run by the executor.
-type ExecutionLogEntry struct {
-	Key        string    `json:"key"`
-	Command    []string  `json:"command"`
-	StartTime  time.Time `json:"startTime"`
-	ExitCode   *int      `json:"exitCode,omitempty"`
-	Out        string    `json:"out,omitempty"`
-	DurationMs *int      `json:"durationMs,omitempty"`
-}
-
-func (e *ExecutionLogEntry) Scan(value any) error {
-	b, ok := value.([]byte)
-	if !ok {
-		return errors.Errorf("value is not []byte: %T", value)
-	}
-
-	return json.Unmarshal(b, &e)
-}
-
-func (e ExecutionLogEntry) Value() (driver.Value, error) {
-	return json.Marshal(e)
 }

@@ -5,14 +5,11 @@ import (
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // batchSpecResolutionJobInsertColumns is the list of changeset_jobs columns that are
@@ -44,7 +41,6 @@ var batchSpecResolutionJobColums = SQLColumns{
 	"batch_spec_resolution_jobs.process_after",
 	"batch_spec_resolution_jobs.num_resets",
 	"batch_spec_resolution_jobs.num_failures",
-	"batch_spec_resolution_jobs.execution_logs",
 	"batch_spec_resolution_jobs.worker_hostname",
 
 	"batch_spec_resolution_jobs.created_at",
@@ -220,7 +216,6 @@ func listBatchSpecResolutionJobsQuery(opts ListBatchSpecResolutionJobsOpts) *sql
 }
 
 func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scanner) error {
-	var executionLogs []dbworkerstore.ExecutionLogEntry
 	var failureMessage string
 
 	if err := s.Scan(
@@ -234,7 +229,6 @@ func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scan
 		&dbutil.NullTime{Time: &rj.ProcessAfter},
 		&rj.NumResets,
 		&rj.NumFailures,
-		pq.Array(&executionLogs),
 		&rj.WorkerHostname,
 		&rj.CreatedAt,
 		&rj.UpdatedAt,
@@ -244,10 +238,6 @@ func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scan
 
 	if failureMessage != "" {
 		rj.FailureMessage = &failureMessage
-	}
-
-	for _, entry := range executionLogs {
-		rj.ExecutionLogs = append(rj.ExecutionLogs, workerutil.ExecutionLogEntry(entry))
 	}
 
 	return nil
