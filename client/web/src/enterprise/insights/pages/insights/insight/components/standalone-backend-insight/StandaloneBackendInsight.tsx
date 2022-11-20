@@ -3,7 +3,6 @@ import React, { useContext, useState } from 'react'
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 
-import { asError } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Card, CardBody, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
@@ -15,14 +14,7 @@ import {
     SeriesDisplayOptionsInput,
 } from '../../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
-import {
-    InsightCard,
-    InsightCardHeader,
-    InsightCardLoading,
-    FORM_ERROR,
-    FormChangeEvent,
-    SubmissionErrors,
-} from '../../../../../components'
+import { InsightCard, InsightCardHeader, InsightCardLoading, FormChangeEvent } from '../../../../../components'
 import {
     DrillDownInsightFilters,
     FilterSectionVisualMode,
@@ -118,39 +110,25 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         }
     }
 
-    const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
-        try {
-            await updateInsight({ insightId: insight.id, nextInsightData: { ...insight, filters } }).toPromise()
-            setOriginalInsightFilters(filters)
-            telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+    const handleFilterSave = async (filters: InsightFilters): Promise<void> => {
+        await updateInsight({ insightId: insight.id, nextInsightData: { ...insight, filters } }).toPromise()
+        setOriginalInsightFilters(filters)
+        telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
     }
 
-    const handleInsightFilterCreation = async (
-        values: DrillDownInsightCreationFormValues
-    ): Promise<SubmissionErrors> => {
-        try {
-            await createInsight({
-                insight: {
-                    ...insight,
-                    title: values.insightName,
-                    filters,
-                },
-                dashboard: null,
-            }).toPromise()
+    const handleInsightFilterCreation = async (values: DrillDownInsightCreationFormValues): Promise<void> => {
+        await createInsight({
+            insight: {
+                ...insight,
+                title: values.insightName,
+                filters,
+            },
+            dashboard: null,
+        }).toPromise()
 
-            setOriginalInsightFilters(filters)
-            history.push(`/insights/dashboard/${ALL_INSIGHTS_DASHBOARD.id}`)
-            telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+        setOriginalInsightFilters(filters)
+        history.push(`/insights/dashboard/${ALL_INSIGHTS_DASHBOARD.id}`)
+        telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
     }
 
     return (

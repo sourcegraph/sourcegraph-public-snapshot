@@ -5,7 +5,7 @@ import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError, isDefined } from '@sourcegraph/common'
+import { isDefined } from '@sourcegraph/common'
 import { Button, Modal, H2, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import {
@@ -13,7 +13,7 @@ import {
     GetDashboardAccessibleInsightsResult,
     GetDashboardAccessibleInsightsVariables,
 } from '../../../../../../../graphql-operations'
-import { FORM_ERROR, SubmissionErrors } from '../../../../../components'
+import { SubmissionErrors } from '../../../../../components'
 import { CodeInsightsBackendContext, CustomInsightDashboard } from '../../../../../core'
 
 import {
@@ -53,19 +53,15 @@ export const AddInsightModal: FC<AddInsightModalProps> = props => {
     )
 
     const handleSubmit = async (values: AddInsightFormValues): Promise<void | SubmissionErrors> => {
-        try {
-            const { insightIds } = values
+        const { insightIds } = values
 
-            await assignInsightsToDashboard({
-                id: dashboard.id,
-                prevInsightIds: dashboardInsightIds,
-                nextInsightIds: insightIds,
-            }).toPromise()
+        await assignInsightsToDashboard({
+            id: dashboard.id,
+            prevInsightIds: dashboardInsightIds,
+            nextInsightIds: insightIds,
+        }).toPromise()
 
-            onClose()
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
+        onClose()
     }
 
     return (
