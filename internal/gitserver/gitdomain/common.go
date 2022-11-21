@@ -126,9 +126,9 @@ func (m Message) Body() string {
 
 // Signature represents a commit signature
 type Signature struct {
-	Name  string    `json:"Name,omitempty"`
-	Email string    `json:"Email,omitempty"`
-	Date  time.Time `json:"Date"`
+	Name  string    `json:"name,omitempty"`
+	Email string    `json:"email,omitempty"`
+	Date  time.Time `json:"date"`
 }
 
 type RefType int

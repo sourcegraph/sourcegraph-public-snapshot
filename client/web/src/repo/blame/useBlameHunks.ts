@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { fetchEventSource } from '@microsoft/fetch-event-source'
 
+import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { formatDistanceStrict } from 'date-fns'
 import { truncate } from 'lodash'
 import { Observable, of, BehaviorSubject } from 'rxjs'
@@ -79,18 +79,16 @@ const fetchBlameViaGraphQL = memoizeObservable(
 )
 
 interface RawStreamHunk {
-    Author: {
-        Name: string
-        Email: string
-        Date: string
+    author: {
+        name: string
+        email: string
+        date: string
     }
-    CommitID: string
-    EndByte: number
-    EndLine: number
-    Filename: string
-    Message: string
-    StartByte: number
-    StartLine: number
+    commitID: string
+    endLine: number
+    startLine: number
+    filename: string
+    message: string
 }
 
 const fetchBlameViaStreaming = memoizeObservable(
@@ -103,62 +101,51 @@ const fetchBlameViaStreaming = memoizeObservable(
         revision: string
         filePath: string
     }): Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined> => {
-        const hunks = new BehaviorSubject<Omit<BlameHunk, 'displayInfo'>[] | undefined>(undefined)
-        let assembledHunks: Omit<BlameHunk, 'displayInfo'>[] = []
-        let didEarlyFlush = false
-        const repoAndRevisionPath = `/.api/blame/${repoName}${revision ? `@${revision}` : ''}`
+        return new Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined>(subscriber => {
+            // const hunks = new BehaviorSubject<Omit<BlameHunk, 'displayInfo'>[] | undefined>(undefined)
+            let assembledHunks: Omit<BlameHunk, 'displayInfo'>[] = []
+            const repoAndRevisionPath = `/.api/blame/${repoName}${revision ? `@${revision}` : ''}`
 
-        fetchEventSource(`${repoAndRevisionPath}/stream/${filePath}`, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'Sourcegraph',
-                'X-Sourcegraph-Should-Trace': 1,
-            },
-            onmessage(event) {
-                if (event.event === 'hunk') {
-                    const rawHunks = JSON.parse(event.data)
-                    for (const hunk of rawHunks) {
-                        assembledHunks.push({
-                            startLine: hunk.StartLine,
-                            endLine: hunk.EndLine,
-                            message: hunk.Message,
-                            rev: hunk.CommitID,
-                            author: {
-                                date: hunk.Author.Date,
-                                person: {
-                                    email: hunk.Author.Email,
-                                    displayName: hunk.Author.Name,
-                                    user: null,
+            fetchEventSource(`${repoAndRevisionPath}/stream/${filePath}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'Sourcegraph',
+                },
+                onmessage(event) {
+                    if (event.event === 'hunk') {
+                        const rawHunks: RawStreamHunk[] = JSON.parse(event.data)
+                        for (const hunk of rawHunks) {
+                            assembledHunks.push({
+                                startLine: hunk.startLine,
+                                endLine: hunk.endLine,
+                                message: hunk.message,
+                                rev: hunk.commitID,
+                                author: {
+                                    date: hunk.author.date,
+                                    person: {
+                                        email: hunk.author.email,
+                                        displayName: hunk.author.name,
+                                        user: null,
+                                    },
                                 },
-                            },
-                            commit: {
-                                url: `${repoAndRevisionPath}/-/commit/${hunk.CommitID}`,
-                            },
-                        })
-
-                        // For large responses we want to do a first render pass when we have
-                        // a sensible amount of chunks loaded the first time. We batch the rest
-                        // for the second flush after everything is assembled.
-                        if (!didEarlyFlush && assembledHunks.length > 50) {
-                            didEarlyFlush = true
-                            hunks.next(assembledHunks)
-                            // React will not re-render if the hunks array is the same reference.
-                            // Since we need to create a new array, now is the best time since
-                            // hunk count is still low.
-                            assembledHunks = [...assembledHunks]
+                                commit: {
+                                    url: `${repoAndRevisionPath}/-/commit/${hunk.commitID}`,
+                                },
+                            })
                         }
+                        subscriber.next(assembledHunks)
+                        assembledHunks = [...assembledHunks]
                     }
-                    hunks.next(assembledHunks)
-                }
-            },
-            onerror(event) {
-                console.error(event)
-            },
-        }).then(
-            () => hunks.complete(),
-            error => hunks.error(error)
-        )
-        return hunks
+                },
+                onerror(event) {
+                    console.error(event)
+                },
+            }).then(
+                () => subscriber.complete(),
+                error => subscriber.error(error)
+            )
+            // return hunks
+        })
     },
     makeRepoURI
 )
@@ -193,17 +180,21 @@ export const useBlameHunks = (
         repoName,
         revision,
         filePath,
+        enableCodeMirror,
     }: {
         repoName: string
         revision: string
         filePath: string
+        enableCodeMirror: boolean
     },
     sourcegraphURL: string
 ): BlameHunk[] | undefined => {
     const [enableStreamingGitBlame, status] = useFeatureFlag('enable-streaming-git-blame')
 
+    console.log(enableStreamingGitBlame)
+
     const [isBlameVisible] = useBlameVisibility()
-    const shouldFetchBlame = isBlameVisible && status !== 'initial'
+    const shouldFetchBlame = enableCodeMirror && isBlameVisible && status !== 'initial'
 
     const hunks = useObservable(
         useMemo(
