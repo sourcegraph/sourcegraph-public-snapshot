@@ -26,12 +26,8 @@ type Store interface {
 	Dequeue(ctx context.Context, workerHostname string, extraArguments any) (Record, bool, error)
 
 	// Heartbeat updates last_heartbeat_at of all the given jobs, when they're processing. All IDs of records that were
-	// touched are returned.
-	Heartbeat(ctx context.Context, jobIDs []int) (knownIDs []int, err error)
-
-	// CanceledJobs returns all the jobs that are to be canceled. These jobs will be found eventually and then canceled.
-	// They will end up in canceled state.
-	CanceledJobs(ctx context.Context, knownJobIDs []int) (canceledIDs []int, err error)
+	// touched are returned. Additionally, jobs in the working set that are flagged as to be canceled are returned.
+	Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelIDs []int, err error)
 
 	// AddExecutionLogEntry adds an executor log entry to the record and
 	// returns the ID of the new entry (which can be used with

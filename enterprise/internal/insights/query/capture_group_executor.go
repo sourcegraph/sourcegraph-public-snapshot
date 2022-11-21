@@ -6,12 +6,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
-
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -24,6 +23,8 @@ import (
 type CaptureGroupExecutor struct {
 	justInTimeExecutor
 	computeSearch func(ctx context.Context, query string) ([]GroupedResults, error)
+
+	logger log.Logger
 }
 
 func NewCaptureGroupExecutor(postgres database.DB, clock func() time.Time) *CaptureGroupExecutor {
@@ -36,6 +37,7 @@ func NewCaptureGroupExecutor(postgres database.DB, clock func() time.Time) *Capt
 			clock:  clock,
 		},
 		computeSearch: streamCompute,
+		logger:        log.Scoped("CaptureGroupExecutor", ""),
 	}
 }
 
@@ -63,7 +65,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 		}
 		repoIds[repository] = repo.ID
 	}
-	log15.Debug("Generated repoIds", "repoids", repoIds)
+	c.logger.Debug("Generated repoIds", log.String("repoids", fmt.Sprintf("%v", repoIds)))
 
 	frames := timeseries.BuildFrames(7, interval, c.clock())
 	pivoted := make(map[string]timeCounts)
@@ -102,7 +104,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				return nil, errors.Wrap(err, "query validation")
 			}
 
-			log15.Debug("executing query", "query", modifiedQuery)
+			c.logger.Debug("executing query", log.String("query", modifiedQuery.String()))
 			grouped, err := c.computeSearch(ctx, modifiedQuery.String())
 			if err != nil {
 				errorMsg := "failed to execute capture group search for repository:" + repository
