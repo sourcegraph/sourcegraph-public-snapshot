@@ -147,10 +147,22 @@ type ConnectionPageInfo[N ConnectionNode] struct {
 }
 
 func (p *ConnectionPageInfo[N]) HasNextPage() bool {
+	if p.args.Before != nil {
+		return true
+	}
+
 	return len(p.nodes) > int(p.args.Limit())
 }
 
 func (p *ConnectionPageInfo[N]) HasPreviousPage() bool {
+	if p.args.After != nil {
+		return true
+	}
+
+	if p.args.Before != nil {
+		return len(p.nodes) > int(p.args.Limit())
+	}
+
 	return false
 }
 
@@ -159,7 +171,12 @@ func (p *ConnectionPageInfo[N]) EndCursor() (cursor *string, err error) {
 		return nil, nil
 	}
 
-	endNode := p.nodes[len(p.nodes)-2]
+	lastNodeIndex := len(p.nodes) - 1
+	if len(p.nodes) > int(p.args.Limit()) {
+		lastNodeIndex = lastNodeIndex - 1
+	}
+
+	endNode := p.nodes[lastNodeIndex]
 
 	cursor, err = p.store.MarshalCursor(endNode)
 
