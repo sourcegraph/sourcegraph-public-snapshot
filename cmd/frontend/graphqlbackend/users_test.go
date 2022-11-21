@@ -214,8 +214,8 @@ func TestUsers_IncludeNeverActive(t *testing.T) {
 	ctx = actor.WithInternalActor(ctx)
 
 	query := `
-		query InactiveUsers($since: DateTime, $includeNeverActive: Bool) {
-			users(inactiveSince: $since, neverActive: $includeNeverActive) {
+		query InactiveUsers($since: DateTime, $includeNeverActive: Boolean) {
+			users(inactiveSince: $since, includeNeverActive: $includeNeverActive) {
 				nodes { username }
 				totalCount
 			}

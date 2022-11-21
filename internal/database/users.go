@@ -916,9 +916,9 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 
 	if !opt.InactiveSince.IsZero() {
 		if opt.IncludeNeverActive {
-			conds = append(conds, sqlf.Sprintf(listUsersInactiveWithNeverActiveCond))
+			conds = append(conds, sqlf.Sprintf(listUsersInactiveWithNeverActiveCond, opt.InactiveSince))
 		} else {
-			conds = append(conds, sqlf.Sprintf(listUsersInactiveWithoutNeverActiveCond))
+			conds = append(conds, sqlf.Sprintf(listUsersInactiveWithoutNeverActiveCond, opt.InactiveSince))
 		}
 	}
 
