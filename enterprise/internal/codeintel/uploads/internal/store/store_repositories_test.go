@@ -46,11 +46,11 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 			index_commit_max_age_hours,
 			index_intermediate_commits
 		) VALUES
-			(101, 50, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true,  0, false),
-			(102, 51, 'policy 2', 'GIT_TREE', 'cd/', null, true, 0, false, true,  0, false),
-			(103, 52, 'policy 3', 'GIT_TREE', 'ef/', null, true, 0, false, true,  0, false),
-			(104, 53, 'policy 4', 'GIT_TREE', 'gh/', null, true, 0, false, true,  0, false),
-			(105, 54, 'policy 5', 'GIT_TREE', 'gh/', null, true, 0, false, false, 0, false)
+			(101, 50, 'policy 1', 'GIT_COMMIT', 'HEAD', null, true, 0, false, true,  0, false),
+			(102, 51, 'policy 2', 'GIT_COMMIT', 'HEAD', null, true, 0, false, true,  0, false),
+			(103, 52, 'policy 3', 'GIT_TREE',   'ef/',  null, true, 0, false, true,  0, false),
+			(104, 53, 'policy 4', 'GIT_TREE',   'gh/',  null, true, 0, false, true,  0, false),
+			(105, 54, 'policy 5', 'GIT_TREE',   'gh/',  null, true, 0, false, false, 0, false)
 	`
 	if _, err := db.ExecContext(context.Background(), query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -103,6 +103,26 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	if repositoryIDs, err := store.GetRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 100, now.Add(time.Minute*100)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{54}, repositoryIDs); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 110 minutes later, nothing is ready to go (too close to last index scan)
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 100, now.Add(time.Minute*110)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// Update repo 50 (GIT_COMMIT/HEAD policy), and 51 (GIT_TREE policy)
+	gitserverReposQuery := sqlf.Sprintf(`UPDATE gitserver_repos SET last_changed = %s WHERE repo_id IN (50, 52)`, now.Add(time.Minute*105))
+	if _, err := db.ExecContext(context.Background(), gitserverReposQuery.Query(sqlf.PostgresBindVar), gitserverReposQuery.Args()...); err != nil {
+		t.Fatalf("unexpected error while upodating gitserver_repos last updated time: %s", err)
+	}
+
+	// 110 minutes later, updated repositories are ready for re-indexing
+	if repositories, err := store.GetRepositoriesForIndexScan(context.Background(), "lsif_last_index_scan", "last_index_scan_at", time.Hour, true, nil, 100, now.Add(time.Minute*110)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int{50}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 }
