@@ -2,7 +2,7 @@
  * An experimental implementation of the Blob view using CodeMirror
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
@@ -249,7 +249,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     }, [blobProps])
 
     // Update blame information
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (editor) {
             editor.dispatch({ effects: blameDecorationsCompartment.reconfigure(blameDecorations) })
         }
