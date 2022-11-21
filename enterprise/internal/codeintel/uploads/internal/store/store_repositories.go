@@ -92,9 +92,11 @@ RETURNING repository_id
 const getRepositoriesForIndexScanGlobalRepositoriesQuery = `
 SELECT r.id
 FROM repo r
+JOIN gitserver_repos gr ON gr.repo_id = r.id
 WHERE
 	r.deleted_at IS NULL AND
 	r.blocked IS NULL AND
+	gr.clone_status = 'cloned' AND
 	EXISTS (
 		SELECT 1
 		FROM lsif_configuration_policies p
@@ -110,22 +112,26 @@ ORDER BY stars DESC NULLS LAST, id
 const getRepositoriesForIndexScanRepositoriesWithPolicyQuery = `
 SELECT r.id
 FROM repo r
+JOIN gitserver_repos gr ON gr.repo_id = r.id
 JOIN lsif_configuration_policies p ON p.repository_id = r.id
 WHERE
 	r.deleted_at IS NULL AND
 	r.blocked IS NULL AND
-	p.indexing_enabled
+	p.indexing_enabled AND
+	gr.clone_status = 'cloned'
 `
 
 const getRepositoriesForIndexScanRepositoriesWithPolicyViaPatternQuery = `
 SELECT r.id
 FROM repo r
+JOIN gitserver_repos gr ON gr.repo_id = r.id
 JOIN lsif_configuration_policies_repository_pattern_lookup rpl ON rpl.repo_id = r.id
 JOIN lsif_configuration_policies p ON p.id = rpl.policy_id
 WHERE
 	r.deleted_at IS NULL AND
 	r.blocked IS NULL AND
-	p.indexing_enabled
+	p.indexing_enabled AND
+	gr.clone_status = 'cloned'
 `
 
 // SetRepositoriesForRetentionScan returns a set of repository identifiers with live code intelligence
