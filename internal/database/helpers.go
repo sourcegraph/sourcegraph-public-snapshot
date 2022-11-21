@@ -74,8 +74,8 @@ func (a *QueryArgs) AppendAll(query *sqlf.Query) *sqlf.Query {
 type PaginationArgs struct {
 	First  *int32
 	Last   *int32
-	After  *string
-	Before *string
+	After  *int32
+	Before *int32
 }
 
 func (p *PaginationArgs) SQL() (queryArgs *QueryArgs, err error) {
@@ -87,10 +87,10 @@ func (p *PaginationArgs) SQL() (queryArgs *QueryArgs, err error) {
 
 	var conditions []*sqlf.Query
 	if p.After != nil {
-		conditions = append(conditions, sqlf.Sprintf("id > %v", p.After))
+		conditions = append(conditions, sqlf.Sprintf("id < %v", p.After))
 	}
 	if p.Before != nil {
-		conditions = append(conditions, sqlf.Sprintf("id < %v", p.Before))
+		conditions = append(conditions, sqlf.Sprintf("id > %v", p.Before))
 	}
 	if len(conditions) > 0 {
 		queryArgs.Where = sqlf.Sprintf("%v", sqlf.Join(conditions, "AND "))

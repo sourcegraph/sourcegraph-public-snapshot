@@ -15,24 +15,6 @@ type ConnectionResolverArgs struct {
 	Before *string
 }
 
-func (a *ConnectionResolverArgs) ToPaginationArgs() *database.PaginationArgs {
-	if a == nil {
-		return nil
-	}
-
-	paginationArgs := database.PaginationArgs(*a)
-
-	if paginationArgs.First != nil {
-		limit := *paginationArgs.First + 1
-		paginationArgs.First = &limit
-	} else if paginationArgs.Last != nil {
-		limit := *paginationArgs.Last + 1
-		paginationArgs.Last = &limit
-	}
-
-	return &paginationArgs
-}
-
 func (a *ConnectionResolverArgs) Limit() (limit int32) {
 	if a == nil {
 		return 0
@@ -61,6 +43,8 @@ type ConnectionNode interface {
 type ConnectionResolverStore[N ConnectionNode] interface {
 	ComputeTotal() (*int32, error)
 	ComputeNodes(*database.PaginationArgs) ([]*N, error)
+	MarshalCursor(*N) (*string, error)
+	UnMarshalCursor(string) (*int32, error)
 }
 
 type connectionData[N ConnectionNode] struct {
@@ -74,6 +58,42 @@ type connectionData[N ConnectionNode] struct {
 type resolveOnce struct {
 	total sync.Once
 	nodes sync.Once
+}
+
+func (r *ConnectionResolver[N]) paginationArgs() (*database.PaginationArgs, error) {
+	if r.args == nil {
+		return nil, nil
+	}
+
+	paginationArgs := database.PaginationArgs{}
+
+	if r.args.First != nil {
+		limit := *r.args.First + 1
+		paginationArgs.First = &limit
+	} else if r.args.Last != nil {
+		limit := *r.args.Last + 1
+		paginationArgs.Last = &limit
+	}
+
+	if r.args.After != nil {
+		after, err := r.store.UnMarshalCursor(*r.args.After)
+		if err != nil {
+			return nil, err
+		}
+
+		paginationArgs.After = after
+	}
+
+	if r.args.Before != nil {
+		before, err := r.store.UnMarshalCursor(*r.args.Before)
+		if err != nil {
+			return nil, err
+		}
+
+		paginationArgs.Before = before
+	}
+
+	return &paginationArgs, nil
 }
 
 func (r *ConnectionResolver[N]) TotalCount() (int32, error) {
@@ -90,11 +110,17 @@ func (r *ConnectionResolver[N]) TotalCount() (int32, error) {
 
 func (r *ConnectionResolver[N]) Nodes() ([]*N, error) {
 	r.once.nodes.Do(func() {
-		r.data.nodes, r.data.nodesError = r.store.ComputeNodes(r.args.ToPaginationArgs())
+		paginationArgs, err := r.paginationArgs()
+		if err != nil {
+			r.data.nodesError = err
+			return
+		}
+
+		r.data.nodes, r.data.nodesError = r.store.ComputeNodes(paginationArgs)
 	})
 
 	nodes := r.data.nodes
-	if len(nodes) > 0 {
+	if len(nodes) > int(r.args.Limit()) {
 		nodes = nodes[:len(nodes)-1]
 	}
 
@@ -109,12 +135,14 @@ func (r *ConnectionResolver[N]) PageInfo() (*ConnectionPageInfo[N], error) {
 
 	return &ConnectionPageInfo[N]{
 		r.data.nodes,
+		r.store,
 		r.args,
 	}, nil
 }
 
 type ConnectionPageInfo[N ConnectionNode] struct {
 	nodes []*N
+	store ConnectionResolverStore[N]
 	args  *ConnectionResolverArgs
 }
 
@@ -126,24 +154,28 @@ func (p *ConnectionPageInfo[N]) HasPreviousPage() bool {
 	return false
 }
 
-func (p *ConnectionPageInfo[N]) EndCursor() *string {
-	if len(p.nodes) == 0 {
-		return nil
+func (p *ConnectionPageInfo[N]) EndCursor() (cursor *string, err error) {
+	if len(p.nodes) < 2 {
+		return nil, nil
 	}
 
-	cursor := string((*p.nodes[len(p.nodes)-1]).ID())
+	endNode := p.nodes[len(p.nodes)-2]
 
-	return &cursor
+	cursor, err = p.store.MarshalCursor(endNode)
+
+	return
 }
 
-func (p *ConnectionPageInfo[N]) StartCursor() *string {
+func (p *ConnectionPageInfo[N]) StartCursor() (cursor *string, err error) {
 	if len(p.nodes) == 0 {
-		return nil
+		return nil, nil
 	}
 
-	cursor := string((*p.nodes[0]).ID())
+	startNode := p.nodes[0]
 
-	return &cursor
+	cursor, err = p.store.MarshalCursor(startNode)
+
+	return
 }
 
 func NewConnectionResolver[N ConnectionNode](store ConnectionResolverStore[N], connectionArgs *ConnectionResolverArgs) *ConnectionResolver[N] {

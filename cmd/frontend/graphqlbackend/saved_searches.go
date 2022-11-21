@@ -199,6 +199,25 @@ type savedSearchesConnectionStore struct {
 	orgID  *int32
 }
 
+func (s *savedSearchesConnectionStore) MarshalCursor(node *savedSearchResolver) (*string, error) {
+	if node == nil {
+		return nil, errors.New(`node is nil`)
+	}
+
+	cursor := string(node.ID())
+
+	return &cursor, nil
+}
+
+func (s *savedSearchesConnectionStore) UnMarshalCursor(cusror string) (*int32, error) {
+	nodeID, err := unmarshalSavedSearchID(graphql.ID(cusror))
+	if err != nil {
+		return nil, err
+	}
+
+	return &nodeID, nil
+}
+
 func (s *savedSearchesConnectionStore) ComputeTotal() (*int32, error) {
 	return s.db.SavedSearches().CountSavedSearchesByOrgOrUser(s.ctx, s.userID, s.orgID)
 }

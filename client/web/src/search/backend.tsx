@@ -71,6 +71,12 @@ export const SAVED_SEARCHES_PAGE_QUERY = gql`
             nodes {
                 ...SavedSearchFields
             }
+            pageInfo {
+                hasNextPage
+                hasPreviousPage
+                endCursor
+                startCursor
+            }
         }
     }
 

@@ -8,14 +8,19 @@ import { useSearchParameters } from '@sourcegraph/wildcard'
 import { Connection, PaginatedConnectionQueryArguments, PaginatedConnection } from '../ConnectionType'
 import { asGraphQLResult } from '../utils'
 
-export interface UsePaginatedConnectionResult<TData> {
-    connection?: Connection<TData>
-    error?: ApolloError
+export interface PaginationProps {
     nextPage: () => void
     previousPage: () => void
-    loading: boolean
     firstPage: () => void
     lastPage: () => void
+}
+
+export type { PaginatedConnection }
+
+export interface UsePaginatedConnectionResult<TData> extends PaginationProps {
+    connection?: Connection<TData>
+    loading: boolean
+    error?: ApolloError
 }
 
 interface UsePaginatedConnectionConfig<TResult> {
@@ -123,16 +128,7 @@ export const usePaginatedConnection = <TResult, TVariables extends PaginatedConn
         return getConnectionFromGraphQLResult(result)
     }
 
-    const connection =useMemo(() => {
-        const rawOrderedConnection = data ? getConnection({ data, error }) : undefined
-
-        if (rawOrderedConnection!== undefined) {
-            // Detect a backward pagination request and fix the order
-            if (rawOrderedConnection.)
-        }
-
-    })
-
+    const connection = data ? getConnection({ data, error }) : undefined
 
     // useConnectionUrl({
     //     enabled: options?.useURL,

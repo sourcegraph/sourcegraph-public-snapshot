@@ -1,4 +1,5 @@
 import * as React from 'react'
+
 import { mdiMessageTextOutline, mdiCog, mdiDelete, mdiPlus } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
@@ -9,11 +10,15 @@ import { useCallbackRef } from 'use-callback-ref'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { useQuery } from '@sourcegraph/http-client'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader, LoadingSpinner, Button, Link, Icon, Tooltip, PageSelector } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
+import {
+    usePaginatedConnection,
+    PaginationProps,
+    PaginatedConnection,
+} from '../components/FilteredConnection/hooks/usePaginatedConnection'
 import { PageTitle } from '../components/PageTitle'
 import { SavedSearchFields, SavedSearchesPageResult, SavedSearchesPageVariables } from '../graphql-operations'
 import { NamespaceProps } from '../namespaces'
@@ -132,17 +137,21 @@ export function SavedSearchListPage(props: Props) {
         eventLogger.logViewEvent('SavedSearchListPage')
     }, [])
 
-    const { data, error, refetch } = useQuery<SavedSearchesPageResult, SavedSearchesPageVariables>(
-        SAVED_SEARCHES_PAGE_QUERY,
-        {
-            variables: {
-                namespaceType: props.namespace.__typename,
-                namespaceId: props.namespace.id,
-                limit: PAGE_SIZE,
-                offset: 0,
-            },
-        }
-    )
+    const { connection, error, ...pagination } = usePaginatedConnection<
+        SavedSearchesPageResult,
+        SavedSearchesPageVariables,
+        SavedSearchFields
+    >({
+        query: SAVED_SEARCHES_PAGE_QUERY,
+        options: { pageSize: PAGE_SIZE },
+        variables: {
+            namespaceType: props.namespace.__typename,
+            namespaceId: props.namespace.id,
+        },
+        getConnection: ({ data }) => console.log(data) || data?.savedSearches,
+    })
+
+    console.log(pagination)
 
     return (
         <div className={styles.savedSearchListPage} data-testid="saved-searches-list-page">
@@ -167,14 +176,11 @@ export function SavedSearchListPage(props: Props) {
             </PageHeader>
             <SavedSearchListPageContent
                 onDelete={() => {
-                    refetch()
+                    //refetch()
                 }}
-                onPageChange={(page: number) => {
-                    refetch({ offset: (page - 1) * PAGE_SIZE })
-                    setCurrentPage(page)
-                }}
+                pagination={pagination}
                 currentPage={currentPage}
-                savedSearches={data?.savedSearches}
+                savedSearches={connection}
                 error={error}
                 {...props}
             />
@@ -184,17 +190,17 @@ export function SavedSearchListPage(props: Props) {
 
 interface SavedSearchListPageContentProps extends Props {
     error?: ErrorLike
-    savedSearches?: { totalCount: number; nodes: SavedSearchFields[] }
+    savedSearches?: PaginatedConnection<SavedSearchFields>
     onDelete: () => void
     currentPage: number
-    onPageChange: (page: number) => void
+    pagination: PaginationProps
 }
 
 const SavedSearchListPageContent: React.FunctionComponent<React.PropsWithChildren<SavedSearchListPageContentProps>> = ({
     error,
     savedSearches,
     currentPage,
-    onPageChange,
+    pagination,
     ...props
 }) => {
     const location = useLocation<{ description?: string }>()
@@ -226,11 +232,29 @@ const SavedSearchListPageContent: React.FunctionComponent<React.PropsWithChildre
                     />
                 ))}
             </div>
+            {/*
             <PageSelector
                 currentPage={currentPage}
                 totalPages={Math.ceil(savedSearches.totalCount / PAGE_SIZE)}
                 onPageChange={onPageChange}
             />
+          */}
+            <button type="button" onClick={pagination.firstPage}>
+                First page
+            </button>
+            {savedSearches?.pageInfo?.hasNextPage && (
+                <button type="button" onClick={pagination.nextPage}>
+                    Next page
+                </button>
+            )}
+            {savedSearches?.pageInfo?.hasPreviousPage && (
+                <button type="button" onClick={pagination.previousPage}>
+                    Previous page
+                </button>
+            )}
+            <button type="button" onClick={pagination.lastPage}>
+                Last page
+            </button>
         </Container>
     )
 }
