@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { formatDistanceStrict } from 'date-fns'
 import { truncate } from 'lodash'
-import { Observable, of, BehaviorSubject } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
@@ -83,9 +83,9 @@ const fetchBlameViaGraphQL = memoizeObservable(
 
 interface RawStreamHunk {
     author: {
-        name: string
-        email: string
-        date: string
+        Name: string
+        Email: string
+        Date: string
     }
     commitID: string
     endLine: number
@@ -103,9 +103,8 @@ const fetchBlameViaStreaming = memoizeObservable(
         repoName: string
         revision: string
         filePath: string
-    }): Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined> => {
-        return new Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined>(subscriber => {
-            // const hunks = new BehaviorSubject<Omit<BlameHunk, 'displayInfo'>[] | undefined>(undefined)
+    }): Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined> =>
+        new Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined>(subscriber => {
             let assembledHunks: Omit<BlameHunk, 'displayInfo'>[] = []
             const repoAndRevisionPath = `/.api/blame/${repoName}${revision ? `@${revision}` : ''}`
 
@@ -113,6 +112,7 @@ const fetchBlameViaStreaming = memoizeObservable(
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'Sourcegraph',
+                    'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
                 },
                 onmessage(event) {
                     if (event.event === 'hunk') {
@@ -124,15 +124,16 @@ const fetchBlameViaStreaming = memoizeObservable(
                                 message: hunk.message,
                                 rev: hunk.commitID,
                                 author: {
-                                    date: hunk.author.date,
+                                    date: hunk.author.Date,
                                     person: {
-                                        email: hunk.author.email,
-                                        displayName: hunk.author.name,
+                                        email: hunk.author.Email,
+                                        displayName: hunk.author.Name,
                                         user: null,
                                     },
                                 },
                                 commit: {
                                     url: `${repoAndRevisionPath}/-/commit/${hunk.commitID}`,
+                                    parents: [],
                                 },
                             })
                         }
@@ -141,15 +142,14 @@ const fetchBlameViaStreaming = memoizeObservable(
                     }
                 },
                 onerror(event) {
+                    // eslint-disable-next-line no-console
                     console.error(event)
                 },
             }).then(
                 () => subscriber.complete(),
                 error => subscriber.error(error)
             )
-            // return hunks
-        })
-    },
+        }),
     makeRepoURI
 )
 
@@ -194,20 +194,18 @@ export const useBlameHunks = (
 ): BlameHunk[] | undefined => {
     const [enableStreamingGitBlame, status] = useFeatureFlag('enable-streaming-git-blame')
 
-    console.log(enableStreamingGitBlame)
-
     const [isBlameVisible] = useBlameVisibility()
-    const shouldFetchBlame = enableCodeMirror && isBlameVisible && status !== 'initial'
+    const shouldFetchBlame = isBlameVisible && status !== 'initial'
 
     const hunks = useObservable(
         useMemo(
             () =>
                 shouldFetchBlame
-                    ? enableStreamingGitBlame
+                    ? enableCodeMirror && enableStreamingGitBlame
                         ? fetchBlameViaStreaming({ revision, repoName, filePath })
                         : fetchBlameViaGraphQL({ revision, repoName, filePath })
                     : of(undefined),
-            [shouldFetchBlame, enableStreamingGitBlame, revision, repoName, filePath]
+            [shouldFetchBlame, enableCodeMirror, enableStreamingGitBlame, revision, repoName, filePath]
         )
     )
 
