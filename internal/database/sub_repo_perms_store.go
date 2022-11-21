@@ -149,7 +149,7 @@ func (s *subRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[ap
 	SELECT r.name, paths
 	FROM sub_repo_permissions
 	JOIN repo r on r.id = repo_id
-	JOIN users u on user_id = u.id
+	JOIN users u on u.id = user_id
 	WHERE user_id = %s
 	AND version = %s
 	-- When user is a site admin and AuthzEnforceForSiteAdmins is FALSE
