@@ -14,19 +14,14 @@ import (
 
 // blameHunkReader enables to read hunks from an io.Reader.
 type blameHunkReader struct {
-	rc io.ReadCloser
-
 	hunks chan hunkResult
-	done  chan struct{}
 }
 
 func newBlameHunkReader(ctx context.Context, rc io.ReadCloser) HunkReader {
 	br := &blameHunkReader{
-		rc:    rc,
 		hunks: make(chan hunkResult),
-		done:  make(chan struct{}),
 	}
-	go br.readHunks(ctx)
+	go br.readHunks(ctx, rc)
 	return br
 }
 
@@ -35,21 +30,21 @@ type hunkResult struct {
 	err  error
 }
 
-func (br *blameHunkReader) readHunks(ctx context.Context) {
-	newHunkParser(br.rc, br.hunks, br.done).parse(ctx)
+func (br *blameHunkReader) readHunks(ctx context.Context, rc io.ReadCloser) {
+	newHunkParser(rc, br.hunks).parse(ctx)
 }
 
 // Read returns a slice of hunks, along with a done boolean indicating if there is more to
 // read.
-func (br *blameHunkReader) Read() (hunk []*Hunk, done bool, err error) {
-	select {
-	case res := <-br.hunks:
-		if res.err != nil {
-			return nil, false, res.err
-		}
-		return []*Hunk{res.hunk}, false, nil
-	case <-br.done:
+func (br *blameHunkReader) Read() ([]*Hunk, bool, error) {
+	res, ok := <-br.hunks
+	if !ok {
 		return nil, true, nil
+	}
+	if res.err != nil {
+		return nil, false, res.err
+	} else {
+		return []*Hunk{res.hunk}, false, nil
 	}
 }
 
@@ -57,7 +52,6 @@ type hunkParser struct {
 	rc      io.ReadCloser
 	sc      *bufio.Scanner
 	hunksCh chan hunkResult
-	done    chan struct{}
 
 	// commits stores previously seen commits, so new hunks
 	// whose annotations are abbreviated by git can still be
@@ -66,11 +60,10 @@ type hunkParser struct {
 	commits map[string]*Hunk
 }
 
-func newHunkParser(rc io.ReadCloser, hunksCh chan hunkResult, done chan struct{}) hunkParser {
+func newHunkParser(rc io.ReadCloser, hunksCh chan hunkResult) hunkParser {
 	return hunkParser{
 		rc:      rc,
 		hunksCh: hunksCh,
-		done:    done,
 
 		sc:      bufio.NewScanner(rc),
 		commits: make(map[string]*Hunk),
@@ -83,8 +76,8 @@ func (p hunkParser) parse(ctx context.Context) {
 	var cur *Hunk
 	for {
 		if err := ctx.Err(); err != nil {
-			close(p.done)
-			break
+			close(p.hunksCh)
+			return
 		}
 
 		// Do we have more to read?
@@ -101,13 +94,12 @@ func (p hunkParser) parse(ctx context.Context) {
 			break
 		}
 
-		var done bool
-		var err error
 		// Read line from git blame, in porcelain format
 		annotation, fields := p.scanLine()
 
 		// On the first read, we have no hunk and the first thing we read is an entry.
 		if cur == nil {
+			var err error
 			cur, err = parseEntry(annotation, fields)
 			if err != nil {
 				p.hunksCh <- hunkResult{err: err}
@@ -116,12 +108,12 @@ func (p hunkParser) parse(ctx context.Context) {
 		}
 
 		// After that, we're either reading extras, or a new entry.
-		done, err = parseExtra(cur, annotation, fields)
+		ok, err := parseExtra(cur, annotation, fields)
 		if err != nil {
 			p.hunksCh <- hunkResult{err: err}
 		}
 		// If we've finished reading extras, we're looking at a new entry.
-		if done {
+		if !ok {
 			if h, ok := p.commits[string(cur.CommitID)]; ok {
 				cur.CommitID = h.CommitID
 				cur.Author = h.Author
@@ -143,7 +135,7 @@ func (p hunkParser) parse(ctx context.Context) {
 	if err := p.sc.Err(); err != nil {
 		p.hunksCh <- hunkResult{err: err}
 	}
-	close(p.done)
+	close(p.hunksCh)
 }
 
 // parseEntry turns a `67b7b725a7ff913da520b997d71c840230351e30 10 20 1` line from
@@ -151,11 +143,17 @@ func (p hunkParser) parse(ctx context.Context) {
 func parseEntry(rev string, content string) (*Hunk, error) {
 	fields := strings.Split(content, " ")
 	if len(fields) != 3 {
-		return nil, errors.Errorf("HERE Expected at least 4 parts to hunkHeader, but got: '%s %s'", rev, content)
+		return nil, errors.Errorf("Expected at least 4 parts to hunkHeader, but got: '%s %s'", rev, content)
 	}
 
-	resultLine, _ := strconv.Atoi(fields[1])
+	resultLine, err := strconv.Atoi(fields[1])
+	if err != nil {
+		return nil, err
+	}
 	numLines, _ := strconv.Atoi(fields[2])
+	if err != nil {
+		return nil, err
+	}
 
 	return &Hunk{
 		CommitID:  api.CommitID(rev),
@@ -166,7 +164,8 @@ func parseEntry(rev string, content string) (*Hunk, error) {
 
 // parseExtra updates a hunk with data parsed from the other annotations such as `author ...`,
 // `summary ...`.
-func parseExtra(hunk *Hunk, annotation string, content string) (done bool, err error) {
+func parseExtra(hunk *Hunk, annotation string, content string) (ok bool, err error) {
+	ok = true
 	switch annotation {
 	case "author":
 		hunk.Author.Name = content
@@ -186,11 +185,14 @@ func parseExtra(hunk *Hunk, annotation string, content string) (done bool, err e
 	case "filename":
 		hunk.Filename = content
 	case "previous":
-		// TODO
 	case "boundary":
-		// do nothing
 	default:
-		done = true
+		// If it dosen't look like an entry, it's probably an unhandled git blame
+		// annotation.
+		if len(annotation) != 40 && len(strings.Split(content, " ")) != 3 {
+			err = errors.Newf("unhandled git blame annotation: %s")
+		}
+		ok = false
 	}
 	return
 }

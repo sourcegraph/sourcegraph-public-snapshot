@@ -58,6 +58,18 @@ func TestStreamBlame(t *testing.T) {
 			Message:  "one",
 			Filename: "foo.c",
 		},
+		{
+			StartLine: 2,
+			EndLine:   3,
+			CommitID:  api.CommitID("ijkl"),
+			Author: gitdomain.Signature{
+				Name:  "Bob",
+				Email: "bob@internet.com",
+				Date:  time.Now(),
+			},
+			Message:  "two",
+			Filename: "foo.c",
+		},
 	}
 
 	db := database.NewMockDB()
@@ -154,6 +166,10 @@ func TestStreamBlame(t *testing.T) {
 		gsClient := setupMockGSClient(t, "abcd", nil, hunks)
 		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusOK, rec.Code)
+		data := rec.Body.String()
+		assert.Contains(t, data, `"CommitID":"abcd"`)
+		assert.Contains(t, data, `"CommitID":"ijkl"`)
+		assert.Contains(t, data, `done`)
 	})
 
 	t.Run("OK rev", func(t *testing.T) {
@@ -184,6 +200,9 @@ func TestStreamBlame(t *testing.T) {
 
 		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusOK, rec.Code)
+		data := rec.Body.String()
+		assert.Contains(t, data, `"CommitID":"efgh"`)
+		assert.Contains(t, data, `done`)
 	})
 
 	t.Run("NOK err reading hunks", func(t *testing.T) {
