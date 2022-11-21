@@ -322,6 +322,8 @@ func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githu
 		return nil, errors.New("parsing repo name")
 	}
 
+	repo := owner + "-" + name
+
 	fork, err := client.Fork(ctx, owner, name, namespace)
 
 	if err != nil {
