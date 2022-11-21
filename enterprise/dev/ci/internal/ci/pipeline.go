@@ -220,6 +220,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Append(
 				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag(), false))
 		}
+		ops.Append(wait)
 		publishOps := operations.NewNamedSet("Publish images")
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
