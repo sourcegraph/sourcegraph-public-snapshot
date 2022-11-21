@@ -168,7 +168,7 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 }
 
 // heartbeat calls Heartbeat for the given jobs.
-func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []int) (knownIDs []int, err error) {
+func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []int) (knownIDs, cancelIDs []int, err error) {
 	logger := log.Scoped("heartbeat", "Write this heartbeat to the database")
 
 	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
@@ -176,18 +176,26 @@ func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []
 		logger.Error("Failed to upsert executor heartbeat", log.Error(err))
 	}
 
-	knownIDs, err = h.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{
+	knownIDs, cancelIDs, err = h.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
 		WorkerHostname: executor.Hostname,
 	})
-	return knownIDs, errors.Wrap(err, "dbworkerstore.UpsertHeartbeat")
+	return knownIDs, cancelIDs, errors.Wrap(err, "dbworkerstore.UpsertHeartbeat")
 }
 
 // canceled reaches to the queueOptions.FetchCanceled to determine jobs that need
 // to be canceled.
+// This endpoint is deprecated and should be removed in Sourcegraph 4.4.
 func (h *handler) canceled(ctx context.Context, executorName string, knownIDs []int) (canceledIDs []int, err error) {
-	canceledIDs, err = h.Store.CanceledJobs(ctx, knownIDs, store.CanceledJobsOptions{})
+	// The Heartbeat method now handles both heartbeats and cancellation. For backcompat,
+	// we fall back to this method.
+	_, canceledIDs, err = h.Store.Heartbeat(ctx, knownIDs, store.HeartbeatOptions{
+		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
+		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
+		// both executors that ever got the job would be writing to the same record. This prevents it.
+		WorkerHostname: executorName,
+	})
 	return canceledIDs, errors.Wrap(err, "dbworkerstore.CanceledJobs")
 }

@@ -188,6 +188,7 @@ func (c *Client) MarkFailed(ctx context.Context, queueName string, jobID int, er
 	return c.client.DoAndDrop(ctx, req)
 }
 
+// TODO: Remove this in Sourcegraph 4.4.
 func (c *Client) CanceledJobs(ctx context.Context, queueName string, knownIDs []int) (canceledIDs []int, err error) {
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/canceledJobs", queueName), executor.CanceledJobsRequest{
 		KnownJobIDs:  knownIDs,
@@ -215,7 +216,7 @@ func (c *Client) Ping(ctx context.Context, queueName string, jobIDs []int) (err 
 	return c.client.DoAndDrop(ctx, req)
 }
 
-func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs []int, err error) {
+func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs, cancelIDs []int, err error) {
 	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("queueName", queueName),
 		otlog.String("jobIDs", intsToString(jobIDs)),
@@ -229,6 +230,9 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	}
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", queueName), executor.HeartbeatRequest{
+		// Request the new-fashioned payload.
+		Version: executor.ExecutorAPIVersion2,
+
 		ExecutorName: c.options.ExecutorName,
 		JobIDs:       jobIDs,
 
@@ -243,14 +247,28 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 		PrometheusMetrics: metrics,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	if _, err := c.client.DoAndDecode(ctx, req, &knownIDs); err != nil {
-		return nil, err
+	var respV2 executor.HeartbeatResponse
+	if _, err := c.client.DoAndDecode(ctx, req, &respV2); err == nil {
+		return respV2.KnownIDs, respV2.CancelIDs, nil
+	}
+	// If unmarshalling fails, try to parse it as a V1 payload.
+	var respV1 []int
+	if _, err := c.client.DoAndDecode(ctx, req, &respV1); err != nil {
+		return nil, nil, err
 	}
 
-	return knownIDs, nil
+	// If that works, we also have to fetch canceled jobs separately, as we
+	// are talking to a pre-4.3 Sourcegraph API.
+
+	cancelIDs, err = c.CanceledJobs(ctx, queueName, jobIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return respV1, cancelIDs, nil
 }
 
 func intsToString(ints []int) string {

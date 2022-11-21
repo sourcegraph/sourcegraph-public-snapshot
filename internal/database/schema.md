@@ -3195,6 +3195,7 @@ Triggers:
  worker_hostname   | text                     |           | not null | ''::text
  org               | text                     |           |          | 
  extsvc_id         | integer                  |           |          | 
+ cancel            | boolean                  |           | not null | false
 Indexes:
     "webhook_build_jobs_queued_at_idx" btree (queued_at)
     "webhook_build_jobs_state" btree (state)
