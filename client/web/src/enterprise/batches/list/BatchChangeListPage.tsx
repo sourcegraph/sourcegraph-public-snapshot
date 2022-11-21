@@ -151,18 +151,22 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
         <Page>
             <PageHeader
                 className="test-batches-list-page mb-3"
-                actions={canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : (
-                    <Button
-                        as={Link}
-                        to="https://signup.sourcegraph.com/?p=batch"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        variant="primary"
-                        onClick={() => eventLogger.log('ClickedOnCloudCTA')}
-                    >
-                        Try Batch Changes
-                    </Button>
-                )}
+                actions={
+                    canCreate ? (
+                        <NewBatchChangeButton to={`${location.pathname}/create`} />
+                    ) : (
+                        <Button
+                            as={Link}
+                            to="https://signup.sourcegraph.com/?p=batch"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="primary"
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                        >
+                            Try Batch Changes
+                        </Button>
+                    )
+                }
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
             >
