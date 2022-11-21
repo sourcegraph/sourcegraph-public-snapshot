@@ -309,6 +309,8 @@ function defaultPageSizeFromSettings(settingsCascade: SettingsCascadeOrError<Set
     if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
         return settingsCascade.final['history.defaultPageSize'] as number
     }
+
+    return undefined
 }
 
 /**
