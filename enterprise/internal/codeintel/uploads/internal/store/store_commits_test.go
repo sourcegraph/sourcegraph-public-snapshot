@@ -450,6 +450,13 @@ func insertRepo(t testing.TB, db database.DB, id int, name string) {
 	}
 }
 
+func updateGitserverUpdatedAt(t *testing.T, db database.DB, now time.Time) {
+	gitserverReposQuery := sqlf.Sprintf(`UPDATE gitserver_repos SET last_changed = %s`, now.Add(-time.Hour*24))
+	if _, err := db.ExecContext(context.Background(), gitserverReposQuery.Query(sqlf.PostgresBindVar), gitserverReposQuery.Args()...); err != nil {
+		t.Fatalf("unexpected error while upodating gitserver_repos last updated time: %s", err)
+	}
+}
+
 // makeCommit formats an integer as a 40-character git commit hash.
 func makeCommit(i int) string {
 	return fmt.Sprintf("%040d", i)

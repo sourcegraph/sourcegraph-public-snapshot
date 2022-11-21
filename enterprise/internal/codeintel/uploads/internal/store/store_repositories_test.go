@@ -29,6 +29,7 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	insertRepo(t, db, 51, "r1")
 	insertRepo(t, db, 52, "r2")
 	insertRepo(t, db, 53, "r3")
+	updateGitserverUpdatedAt(t, db, now)
 
 	query := `
 		INSERT INTO lsif_configuration_policies (
@@ -116,6 +117,7 @@ func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 	insertRepo(t, db, 51, "r1")
 	insertRepo(t, db, 52, "r2")
 	insertRepo(t, db, 53, "r3")
+	updateGitserverUpdatedAt(t, db, now)
 
 	query := `
 		INSERT INTO lsif_configuration_policies (
@@ -187,6 +189,7 @@ func TestSelectRepositoriesForIndexScanInDifferentTable(t *testing.T) {
 	insertRepo(t, db, 51, "r1")
 	insertRepo(t, db, 52, "r2")
 	insertRepo(t, db, 53, "r3")
+	updateGitserverUpdatedAt(t, db, now)
 
 	query := `
 		INSERT INTO lsif_configuration_policies (

@@ -73,10 +73,13 @@ repositories AS (
 	SELECT rmp.id
 	FROM repositories_matching_policy rmp
 	LEFT JOIN %s lrs ON lrs.repository_id = rmp.id
+	WHERE
+		-- Records that have not been checked within the global reindex threshold are also eligible for
+		-- indexing. Note that condition here is true for a record that has never been indexed.
+		(%s - lrs.{column_name} > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE OR
 
-	-- Ignore records that have been checked recently. Note this condition is
-	-- true for a null {column_name} (which has never been checked).
-	WHERE (%s - lrs.{column_name} > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
+		-- Records that have received an update since their last scan are also eligible for re-indexing.
+		(rmp.last_changed > lrs.{column_name})
 	ORDER BY
 		lrs.{column_name} NULLS FIRST,
 		rmp.id -- tie breaker
@@ -90,7 +93,9 @@ RETURNING repository_id
 `
 
 const getRepositoriesForIndexScanGlobalRepositoriesQuery = `
-SELECT r.id
+SELECT
+	r.id,
+	gr.last_changed
 FROM repo r
 JOIN gitserver_repos gr ON gr.repo_id = r.id
 WHERE
@@ -110,7 +115,9 @@ ORDER BY stars DESC NULLS LAST, id
 `
 
 const getRepositoriesForIndexScanRepositoriesWithPolicyQuery = `
-SELECT r.id
+SELECT
+	r.id,
+	gr.last_changed
 FROM repo r
 JOIN gitserver_repos gr ON gr.repo_id = r.id
 JOIN lsif_configuration_policies p ON p.repository_id = r.id
@@ -122,7 +129,9 @@ WHERE
 `
 
 const getRepositoriesForIndexScanRepositoriesWithPolicyViaPatternQuery = `
-SELECT r.id
+SELECT
+	r.id,
+	gr.last_changed
 FROM repo r
 JOIN gitserver_repos gr ON gr.repo_id = r.id
 JOIN lsif_configuration_policies_repository_pattern_lookup rpl ON rpl.repo_id = r.id
