@@ -66,6 +66,16 @@ func quote(s string) *sqlf.Query { return sqlf.Sprintf(s) }
 
 const getRepositoriesForIndexScanQuery = `
 WITH
+global_policy_descriptor AS MATERIALIZED (
+	SELECT (p.type = 'GIT_COMMIT' AND p.pattern = 'HEAD') AS is_head_policy
+	FROM lsif_configuration_policies p
+	WHERE
+		p.indexing_enabled AND
+		p.repository_id IS NULL AND
+		p.repository_patterns IS NULL
+	ORDER BY is_head_policy DESC
+	LIMIT 1
+),
 repositories_matching_policy AS (
 	%s
 ),
@@ -95,21 +105,20 @@ RETURNING repository_id
 const getRepositoriesForIndexScanGlobalRepositoriesQuery = `
 SELECT
 	r.id,
-	gr.last_changed
+	CASE
+		-- Return non-NULL last_changed only for policies that are attached to a HEAD commit.
+		-- We don't want to superfluously return the same repos becasue they had an update, but
+		-- we only (for example) index a branch that doesn't have many active commits.
+		WHEN gpd.is_head_policy THEN gr.last_changed
+		ELSE NULL
+	END AS last_changed
 FROM repo r
 JOIN gitserver_repos gr ON gr.repo_id = r.id
+JOIN global_policy_descriptor gpd ON TRUE
 WHERE
 	r.deleted_at IS NULL AND
 	r.blocked IS NULL AND
-	gr.clone_status = 'cloned' AND
-	EXISTS (
-		SELECT 1
-		FROM lsif_configuration_policies p
-		WHERE
-			p.indexing_enabled AND
-			p.repository_id IS NULL AND
-			p.repository_patterns IS NULL
-	)
+	gr.clone_status = 'cloned'
 ORDER BY stars DESC NULLS LAST, id
 %s
 `
@@ -117,7 +126,13 @@ ORDER BY stars DESC NULLS LAST, id
 const getRepositoriesForIndexScanRepositoriesWithPolicyQuery = `
 SELECT
 	r.id,
-	gr.last_changed
+	CASE
+		-- Return non-NULL last_changed only for policies that are attached to a HEAD commit.
+		-- We don't want to superfluously return the same repos becasue they had an update, but
+		-- we only (for example) index a branch that doesn't have many active commits.
+		WHEN p.type = 'GIT_COMMIT' AND p.pattern = 'HEAD' THEN gr.last_changed
+		ELSE NULL
+	END AS last_changed
 FROM repo r
 JOIN gitserver_repos gr ON gr.repo_id = r.id
 JOIN lsif_configuration_policies p ON p.repository_id = r.id
@@ -131,7 +146,13 @@ WHERE
 const getRepositoriesForIndexScanRepositoriesWithPolicyViaPatternQuery = `
 SELECT
 	r.id,
-	gr.last_changed
+	CASE
+		-- Return non-NULL last_changed only for policies that are attached to a HEAD commit.
+		-- We don't want to superfluously return the same repos becasue they had an update, but
+		-- we only (for example) index a branch that doesn't have many active commits.
+		WHEN p.type = 'GIT_COMMIT' AND p.pattern = 'HEAD' THEN gr.last_changed
+		ELSE NULL
+	END AS last_changed
 FROM repo r
 JOIN gitserver_repos gr ON gr.repo_id = r.id
 JOIN lsif_configuration_policies_repository_pattern_lookup rpl ON rpl.repo_id = r.id
