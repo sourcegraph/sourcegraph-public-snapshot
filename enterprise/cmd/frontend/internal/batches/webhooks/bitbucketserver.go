@@ -53,8 +53,8 @@ func (h *BitbucketServerWebhook) Register(router *fewebhooks.WebhookRouter) {
 }
 
 func (h *BitbucketServerWebhook) handleEvent(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error {
-	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
-	// internal actor on the context.
+	// 🚨 SECURITY: If we've made it here, then the secret for the Bitbucket Server webhook has been validated, so we can use
+	// an internal actor on the context.
 	ctx = actor.WithInternalActor(ctx)
 
 	prs, ev := h.convertEvent(event)
