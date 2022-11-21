@@ -154,7 +154,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 actions={canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : (
                     <Button
                         as={Link}
-                        to="https://signup.sourcegraph.com/"
+                        to="https://signup.sourcegraph.com/?p=batch"
                         variant="primary"
                         onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}
                     >
