@@ -32,11 +32,11 @@ export const Label = React.forwardRef((props, reference) => {
 
     const mergedRef = useMergeRefs([reference])
 
-    // Listen clicks on label elements in order to improve click-to-focus logic
-    // over contenteditable="true". Be default label element native behavior (click to focus first input element)
+    // Listen all clicks on the label element in order to improve click-to-focus logic
+    // for contenteditable="true". By default, label element's native behavior (click to focus a first input element)
     // doesn't work with content editable element.
     // Since we use content editable inputs (codemirror search box input) and labels together in some
-    // consumers we support this behavior manually for content editable elements
+    // consumers we need to support this behavior manually for content editable elements.
     const handleClick = (event: MouseEvent<HTMLLabelElement>): void => {
         const htmlForAttribute = mergedRef.current?.getAttribute('htmlFor')
 
@@ -45,6 +45,7 @@ export const Label = React.forwardRef((props, reference) => {
             return
         }
 
+        // Extend labelable elements set with contenteditable elements
         const labelableElement = mergedRef.current?.querySelector<HTMLElement>(
             'input, keygen, meter, output, progress, select, textarea, [contenteditable="true"]'
         )
