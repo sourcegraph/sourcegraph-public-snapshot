@@ -11,7 +11,6 @@ import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVari
 
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
-import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
 interface CodeMonitorListProps
     extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>> {
@@ -23,14 +22,6 @@ const CodeMonitorEmptyList: React.FunctionComponent<
 > = ({ authenticatedUser }) => (
     <div className="text-center">
         <H2 className="text-muted mb-2">No code monitors have been created.</H2>
-        {!authenticatedUser && (
-            <CodeMonitorSignUpLink
-                className="my-3"
-                eventName="SignUpPLGMonitor_EmptyList"
-                text="Get started with code monitors"
-                forDotcom={false}
-            />
-        )}
     </div>
 )
 

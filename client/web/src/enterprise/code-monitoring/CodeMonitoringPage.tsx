@@ -111,11 +111,14 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
             <PageTitle title="Code Monitoring" />
             <PageHeader
                 actions={
-                    authenticatedUser && (
-                        <Button to="/code-monitoring/new" variant="primary" as={Link}>
-                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create code monitor
-                        </Button>
-                    )
+                    <Button
+                        to={authenticatedUser ? '/code-monitoring/new' : 'https://signup.sourcegraph.com/?p=monitoring'}
+                        onClick={!authenticatedUser ? () => eventLogger.log('ClickedOnCloudCTA') : undefined}
+                        variant="primary"
+                        as={Link}
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create a code monitor
+                    </Button>
                 }
                 description={
                     <>Watch your code for changes and trigger actions to get notifications, send webhooks, and more.</>

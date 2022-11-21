@@ -7,6 +7,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
+import { CloudCTABanner } from '../../marketing/components/CloudCTABanner'
 
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
@@ -74,7 +75,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
 
     return (
         <div>
-            <Card className={classNames('mb-5 flex-column flex-lg-row', styles.hero)}>
+            <Card className={classNames('mb-4 flex-column flex-lg-row', styles.hero)}>
                 <img
                     src={`${assetsRoot}/img/codemonitoring-illustration-${isLightTheme ? 'light' : 'dark'}.svg`}
                     alt="A code monitor observes a depcreated library being used in code and sends an email alert."
@@ -92,20 +93,24 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                         <li>Identify when bad patterns are committed </li>
                         <li>Identify use of deprecated libraries</li>
                     </ul>
-                    {isSignedIn ? (
+                    {isSignedIn && (
                         <Button to="/code-monitoring/new" className={styles.createButton} variant="primary" as={Link}>
                             <Icon aria-hidden={true} className="mr-2" svgPath={mdiPlus} />
                             Create a code monitor
                         </Button>
-                    ) : (
-                        <CodeMonitorSignUpLink
-                            className={styles.createButton}
-                            eventName="SignUpPLGMonitor_GettingStarted"
-                            text="Get started with code monitors"
-                        />
                     )}
                 </div>
             </Card>
+            
+            {window.context.sourcegraphDotComMode && (
+                <CloudCTABanner>
+                    To monitor changes across your team's private repositories,{' '}
+                    <Link to="https://signup.sourcegraph.com/?p=monitoring" target="_blank" rel="noopener noreferrer" onClick={() => telemetryService.log('ClickedOnCloudCTA')}>
+                        try Sourcegraph Cloud
+                    </Link>.
+                </CloudCTABanner>
+            )}
+
             <div>
                 <H3 className="mb-3">Example code monitors</H3>
 

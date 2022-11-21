@@ -44,7 +44,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                             variant="primary"
                             onClick={() => telemetryService.log('ClickedOnCloudCTA')}
                         >
-                            Try Insights
+                            Try insights
                         </Button>
                     }
                     className="mb-4"

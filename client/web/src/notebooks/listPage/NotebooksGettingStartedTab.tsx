@@ -9,6 +9,7 @@ import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { useTheme, ThemePreference } from '../../theme'
+import { CloudCTABanner } from '../../marketing/components/CloudCTABanner'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
 
@@ -117,6 +118,16 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </div>
                 </div>
             </Container>
+            
+            {window.context.sourcegraphDotComMode && (
+                <CloudCTABanner>
+                    To create Notebooks across your team's private repositories,{' '}
+                    <Link to="https://signup.sourcegraph.com/?p=notebooks" target="_blank" rel="noopener noreferrer" onClick={() => telemetryService.log('ClickedOnCloudCTA')}>
+                        try Sourcegraph Cloud
+                    </Link>.
+                </CloudCTABanner>
+            )}
+
             <H3>Example notebooks</H3>
             <div className={classNames(styles.row, 'row', 'mb-4')}>
                 <div className="col-12 col-md-6">

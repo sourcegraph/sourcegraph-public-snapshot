@@ -160,7 +160,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                         variant="primary"
                         onClick={() => eventLogger.log('ClickedOnCloudCTA')}
                     >
-                        Try Batch Changes
+                        Try batch changes
                     </Button>
                 )}
                 headingElement={headingElement}
