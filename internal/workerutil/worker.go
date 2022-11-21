@@ -148,6 +148,7 @@ func (w *Worker) Start() {
 				w.options.Metrics.logger.Error("Failed to refresh heartbeats",
 					log.Ints("ids", ids),
 					log.Error(err))
+				break
 			}
 			knownIDsMap := map[int]struct{}{}
 			for _, id := range knownIDs {
