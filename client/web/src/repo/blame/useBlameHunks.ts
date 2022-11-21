@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { formatDistanceStrict } from 'date-fns'
 import { truncate } from 'lodash'
-import { asyncScheduler, Observable, of } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { map, throttleTime } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
@@ -176,7 +176,7 @@ const fetchBlameViaStreaming = memoizeObservable(
                 error => subscriber.error(error)
             )
             // Throttle the results to avoid re-rendering the blame sidebar for every hunk
-        }).pipe(throttleTime(1000, asyncScheduler, { leading: true, trailing: true })),
+        }).pipe(throttleTime(1000, undefined, { leading: true, trailing: true })),
     makeRepoURI
 )
 
