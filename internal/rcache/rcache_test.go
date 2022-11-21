@@ -201,8 +201,8 @@ func TestCache_GetAll(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Len(t, got, 2)
-	assert.Equal(t, got[0], c.rkeyPrefix()+key2a)
-	assert.Equal(t, got[1], c.rkeyPrefix()+key2b)
+	assert.Equal(t, key2a, got[0])
+	assert.Equal(t, key2b, got[1])
 }
 
 func TestCache_Increase(t *testing.T) {
