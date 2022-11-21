@@ -35,8 +35,7 @@ let
     '';
   }));
   libiconv-static = (libiconv.override { enableStatic = true; enableShared = false; });
-  openssl-static = (openssl_1_1.override { static = true; });
-  libssh2-static = ((makeStatic libssh2).override { openssl = openssl-static; });
+  openssl-static = (openssl_1_1.override { static = true; }).dev;
   pcre-static = (makeStatic pcre).dev;
 in
 stdenv.mkDerivation rec {
@@ -86,14 +85,11 @@ stdenv.mkDerivation rec {
   ];
 
   buildInputs = [
-    libcxx
-    libcxxabi
     zlib.static
     zlib.dev
     http-parser-static
     pcre-static
     openssl-static
-    libssh2-static
   ] ++ lib.optional hostPlatform.isMacOS [
     # iconv is bundled with glibc and apparently only needed for osx
     # https://sourcegraph.com/github.com/salesforce/p4-fusion@3ee482466464c18e6a635ff4f09cd75a2e1bfe0f/-/blob/vendor/libgit2/README.md?L178:3
@@ -112,10 +108,11 @@ stdenv.mkDerivation rec {
   cmakeFlags = [
     # we want to statically link
     "-DBUILD_SHARED_LIBS=OFF"
-    # no harm to enable probably
-    "-DUSE_SSH=ON"
-    # enable for libgit2
-    "-DTHREADSAFE=ON"
+    # Copied from upstream, where relevant
+    # https://sourcegraph.com/github.com/salesforce/p4-fusion@3ee482466464c18e6a635ff4f09cd75a2e1bfe0f/-/blob/generate_cache.sh?L7-21
+    "-DUSE_SSH=OFF"
+    "-DUSE_HTTPS=OFF"
+    "-DBUILD_CLAR=OFF"
     # salesforce don't link against GSSAPI in CI, so I won't either
     "-DUSE_GSSAPI=OFF"
     # prefer nix-provided http-parser instead of bundled
