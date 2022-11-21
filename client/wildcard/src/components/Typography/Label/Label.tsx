@@ -45,9 +45,10 @@ export const Label = React.forwardRef((props, reference) => {
             return
         }
 
-        const inputElements = mergedRef.current?.querySelectorAll('input') ?? []
+        const labelableElements =
+            mergedRef.current?.querySelectorAll('input, keygen, meter, output, progress, select, textarea') ?? []
 
-        if (inputElements.length === 0) {
+        if (labelableElements.length === 0) {
             const contendEditableElement = mergedRef.current?.querySelector<HTMLElement>('[contenteditable="true"]')
 
             if (contendEditableElement) {
