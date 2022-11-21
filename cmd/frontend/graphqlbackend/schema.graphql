@@ -1575,7 +1575,7 @@ type Query {
         webhookID: ID
     ): WebhookLogConnection!
 
-    outboundRequests(lastKey: String): [OutboundRequest!]!
+    outboundRequests: [OutboundRequest!]!
 
     """
     (experimental)
@@ -8071,11 +8071,6 @@ type WebhookLogHeader {
 A single logged webhook delivery.
 """
 type OutboundRequest {
-    """
-    The webhook log ID.
-    """
-    key: String!
-
     """
     The time the request was sent at.
     """

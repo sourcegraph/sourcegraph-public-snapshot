@@ -33,9 +33,7 @@ func redisLoggerMiddleware() Middleware {
 			if err != nil {
 				errorMessage = err.Error()
 			}
-			key := generateKey(time.Now())
 			logItem := types.OutboundRequestLogItem{
-				Key:                key,
 				StartedAt:          start,
 				Method:             req.Method,
 				URL:                req.URL.String(),
@@ -56,7 +54,7 @@ func redisLoggerMiddleware() Middleware {
 			}
 
 			// Save new item
-			redisCache.Set(key, logItemJson)
+			redisCache.Set(generateKey(time.Now()), logItemJson)
 
 			// Delete excess items
 			deletionErr := deleteOldKeys()
@@ -89,8 +87,8 @@ func deleteOldKeys() error {
 	return nil
 }
 
-func GetAllAfter(lastKey *string) ([]*types.OutboundRequestLogItem, error) {
-	rawItems, err := getAllAfter(lastKey)
+func GetAllOutboundRequestLogItems() ([]*types.OutboundRequestLogItem, error) {
+	rawItems, err := getAllOutboundRequestRawValues()
 	if err != nil {
 		return nil, err
 	}
@@ -106,21 +104,10 @@ func GetAllAfter(lastKey *string) ([]*types.OutboundRequestLogItem, error) {
 	return items, nil
 }
 
-func getAllAfter(lastKey *string) ([][]byte, error) {
-	all, err := redisCache.GetAll(keyPrefix)
+func getAllOutboundRequestRawValues() ([][]byte, error) {
+	keys, err := redisCache.GetAll(keyPrefix)
 	if err != nil {
 		return nil, err
-	}
-
-	var keys []string
-	if lastKey != nil {
-		for _, key := range all {
-			if key > *lastKey {
-				keys = append(keys, key)
-			}
-		}
-	} else {
-		keys = all
 	}
 
 	// Limit to N
