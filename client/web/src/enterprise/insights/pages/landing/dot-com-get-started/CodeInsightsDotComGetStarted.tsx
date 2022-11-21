@@ -1,10 +1,9 @@
 import React, { useEffect } from 'react'
 
-import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, CardBody, Icon, Link, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
@@ -13,6 +12,7 @@ import { CodeInsightsLandingPageContext, CodeInsightsLandingPageType } from '../
 import { CodeInsightsDescription } from '../getting-started/components/code-insights-description/CodeInsightsDescription'
 
 import { CodeInsightsExamplesPicker } from './components/code-insights-examples-picker/CodeInsightsExamplesPicker'
+import { CloudCTABanner } from '../../../../../marketing/components/CloudCTABanner'
 
 import styles from './CodeInsightsDotComGetStarted.module.scss'
 
@@ -76,15 +76,12 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         <CodeInsightsDescription className={styles.heroDescriptionBlock} />
                     </Card>
                     
-                    <section className="my-3 p-2 d-flex justify-content-center bg-primary-4">
-                        <Icon className="mr-2 text-merged" size="md" aria-hidden={true} svgPath={mdiArrowRight} />
-                        <p className="mb-0">
-                            To track Insights across your team's private repos,{' '}
-                            <Link to="https://signup.sourcegraph.com/?p=insights" target="_blank" rel="noopener noreferrer" onClick={() => telemetryService.log('ClickedOnCloudCTA')}>
-                                try Sourcegraph Cloud
-                            </Link>.
-                        </p>
-                    </section>
+                    <CloudCTABanner>
+                        To track Insights across your team's private repos,{' '}
+                        <Link to="https://signup.sourcegraph.com/?p=insights" target="_blank" rel="noopener noreferrer" onClick={() => telemetryService.log('ClickedOnCloudCTA')}>
+                            try Sourcegraph Cloud
+                        </Link>.
+                    </CloudCTABanner>
 
                     <CodeInsightsExamplesPicker telemetryService={telemetryService} />
                 </main>
