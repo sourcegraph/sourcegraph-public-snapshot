@@ -1,6 +1,6 @@
 import { useCallback, useRef, useEffect, FormEvent, useMemo, useState, FC } from 'react'
 
-import { mdiClose } from '@mdi/js'
+import { mdiClose, mdiArrowRight } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
@@ -17,6 +17,7 @@ import {
     useObservable,
     Icon,
     ButtonLink,
+    Link,
     Tooltip,
     Combobox,
     ComboboxInput,
@@ -252,29 +253,42 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                 <div ref={infiniteScrollTrigger} className={styles.infiniteScrollTrigger} />
             </ComboboxList>
             <div className={styles.footer}>
-                <Button size="sm" variant="link" className={styles.footerButton} onClick={reset}>
-                    Reset
-                </Button>
-                <span className="flex-grow-1" />
-                {showSearchContextManagement && (
-                    <ButtonLink variant="link" to="/contexts" size="sm" className={styles.footerButton}>
-                        Manage contexts
-                    </ButtonLink>
+                {isSourcegraphDotCom ? (
+                    <>
+                        <div className="d-flex col-7 px-0 mr-auto">
+                            <Icon className={classNames('text-merged mr-1', styles.footerIcon)} size="md" aria-hidden={true} svgPath={mdiArrowRight} />
+                            <p className="mb-0">
+                                To search across your team's private repositories,{' '}
+                                <Link to="https://signup.sourcegraph.com/?p=context" onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}>
+                                    try Sourcegraph Cloud
+                                </Link>.
+                            </p>
+                        </div>
+                        <div className="d-flex flex-column align-items-end">
+                            {showSearchContextManagement && (
+                                <ButtonLink variant="link" to="/contexts" className={styles.footerButton}>
+                                    Manage contexts
+                                </ButtonLink>
+                            )}
+                            <Button variant="link" className={styles.footerButton} onClick={reset}>
+                                Reset
+                            </Button>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <Button size="sm" variant="link" className={styles.footerButton} onClick={reset}>
+                            Reset
+                        </Button>
+                        <span className="flex-grow-1" />
+                        {showSearchContextManagement && (
+                            <ButtonLink variant="link" to="/contexts" size="sm" className={styles.footerButton}>
+                                Manage contexts
+                            </ButtonLink>
+                        )}
+                    </>
                 )}
             </div>
-            {isSourcegraphDotCom &&
-                <div className={styles.footer}>
-                    <ButtonLink
-                        className={styles.footerButton}
-                        variant="link"
-                        to="https://signup.sourcegraph.com"
-                        onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}
-                        size="sm"
-                    >
-                        Search private code
-                    </ButtonLink>
-                </div>
-            }
         </Combobox>
     )
 }
