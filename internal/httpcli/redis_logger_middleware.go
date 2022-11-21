@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"io"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -17,8 +18,7 @@ const keyPrefix = "outbound:"
 const N = 50
 
 func redisLoggerMiddleware() Middleware {
-	f := stack.Caller(2).Frame()
-	creatorStack := fmt.Sprintf("%s:%d, %s", f.File, f.Line, f.Function)
+	creatorStackFrame := stack.Caller(2).Frame()
 	return func(cli Doer) Doer {
 		return DoerFunc(func(req *http.Request) (*http.Response, error) {
 			start := time.Now()
@@ -43,7 +43,7 @@ func redisLoggerMiddleware() Middleware {
 				ResponseHeaders:    removeSensitiveHeaders(resp.Header),
 				Duration:           duration.Seconds(),
 				ErrorMessage:       errorMessage,
-				CreationStackFrame: creatorStack,
+				CreationStackFrame: formatCreatorStack(creatorStackFrame),
 				CallStackFrame:     callStack.String(),
 			}
 
@@ -65,6 +65,11 @@ func redisLoggerMiddleware() Middleware {
 			return resp, err
 		})
 	}
+}
+
+func formatCreatorStack(frame runtime.Frame) string {
+	functionWithoutRepoName := strings.Split(frame.Function, "/")[3:]
+	return fmt.Sprintf("%s:%d, %s", frame.File, frame.Line, functionWithoutRepoName)
 }
 
 func generateKey(now time.Time) string {
