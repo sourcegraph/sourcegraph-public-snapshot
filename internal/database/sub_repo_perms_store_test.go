@@ -361,7 +361,7 @@ func prepareSubRepoTestData(ctx context.Context, t *testing.T, db dbutil.DB) {
 
 	// Prepare data
 	qs := []string{
-		`INSERT INTO users(username, site_admin) VALUES ('alice', true)`,
+		`INSERT INTO users(username ) VALUES ('alice')`,
 
 		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(1, 'GitHub #1', 'GITHUB', '{}', 1, NOW() + INTERVAL '10min')`,
 		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(2, 'Perforce #1', 'PERFORCE', '{}', 1, NOW() + INTERVAL '10min')`,
