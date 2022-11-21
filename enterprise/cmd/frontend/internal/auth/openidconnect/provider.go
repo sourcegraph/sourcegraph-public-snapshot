@@ -113,8 +113,8 @@ func (p *Provider) CachedInfo() *providers.Info {
 	return info
 }
 
-// Oauth2Config constructs and returns an *oauth2.Config from the provider.
-func (p *Provider) Oauth2Config() *oauth2.Config {
+// oauth2Config constructs and returns an *oauth2.Config from the provider.
+func (p *Provider) oauth2Config() *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     p.config.ClientID,
 		ClientSecret: p.config.ClientSecret,

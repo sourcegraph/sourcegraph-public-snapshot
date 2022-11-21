@@ -3,13 +3,9 @@ package sourcegraphoperator
 import (
 	"encoding/json"
 	"net/http"
-	"net/url"
-	"path"
 	"strings"
 	"time"
 
-	"github.com/coreos/go-oidc"
-	"github.com/gorilla/csrf"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -72,7 +68,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
 			}
-			RedirectToAuthRequest(w, r, p, stateCookieName, r.URL.Query().Get("redirect"))
+			openidconnect.RedirectToAuthRequest(w, r, p, stateCookieName, r.URL.Query().Get("redirect"))
 			return
 
 		case "/callback": // Endpoint for the OIDC Authorization Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
@@ -211,45 +207,4 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 		}
 	}
-}
-
-// stateCookieTimeout defines how long the state cookie should be valid for a
-// single authentication flow.
-const stateCookieTimeout = time.Minute * 15
-
-// RedirectToAuthRequest redirects the user to the authentication endpoint on the
-// external authentication provider.
-func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *openidconnect.Provider, cookieName, returnToURL string) {
-	// The state parameter is an opaque value used to maintain state between the
-	// original Authentication Request and the callback. We do not record any state
-	// beyond a CSRF token used to defend against CSRF attacks against the callback.
-	// We use the CSRF token created by gorilla/csrf that is used for other app
-	// endpoints as the OIDC state parameter.
-	//
-	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
-	// OIDC spec.
-	state := (&openidconnect.AuthnState{
-		CSRFToken:  csrf.Token(r),
-		Redirect:   returnToURL,
-		ProviderID: p.ConfigID().ID,
-	}).Encode()
-	http.SetCookie(w,
-		&http.Cookie{
-			Name:    cookieName,
-			Value:   state,
-			Path:    authPrefix + "/", // Include the OIDC redirect URI (/.auth/callback not /.auth/openidconnect/callback for backwards compatibility)
-			Expires: time.Now().Add(stateCookieTimeout),
-		},
-	)
-
-	// Redirect to the OP's Authorization Endpoint for authentication. The nonce is
-	// an optional string value used to associate a Client session with an ID Token
-	// and to mitigate replay attacks. Whereas the state parameter is used in
-	// validating the Authentication Request callback, the nonce is used in
-	// validating the response to the ID Token request. We re-use the Authn request
-	// state as the nonce.
-	//
-	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
-	// OIDC spec.
-	http.Redirect(w, r, p.Oauth2Config().AuthCodeURL(state, oidc.Nonce(state)), http.StatusFound)
 }
