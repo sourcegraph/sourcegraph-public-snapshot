@@ -117,8 +117,8 @@ func (r *Cache) SetMulti(keyvals ...[2]string) {
 	}
 }
 
-// GetAll returns all keys and values in the cache that have the given prefix, in an order ascending by key.
-func (r *Cache) GetAll(prefix string) (results map[string]string, err error) {
+// GetAll returns all keys in the cache that have the given prefix, in ascending order, without the internal key ID.
+func (r *Cache) GetAll(prefix string) (results []string, err error) {
 	c := pool.Get()
 	defer func(c redis.Conn) {
 		if tempErr := c.Close(); err == nil {
@@ -133,20 +133,9 @@ func (r *Cache) GetAll(prefix string) (results map[string]string, err error) {
 	}
 	sort.Strings(keys)
 
-	// Get values for all keys
-	var values []string
-	ikeys := make([]interface{}, len(keys))
-	for i, v := range keys {
-		ikeys[i] = v
-	}
-	values, err = redis.Strings(c.Do("MGET", ikeys...))
-	if err != nil {
-		return nil, err
-	}
-
-	results = make(map[string]string, len(keys))
-	for i, key := range keys {
-		results[key] = values[i]
+	// Remove r.rkeyPrefix() from the keys
+	for _, key := range keys {
+		results = append(results, key[len(r.rkeyPrefix()):])
 	}
 
 	return

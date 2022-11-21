@@ -5,25 +5,16 @@ import (
 	"fmt"
 	"github.com/go-stack/stack"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"io"
 	"net/http"
 	"strings"
 	"time"
 )
 
-type RedisLogItem struct {
-	DateTime        string      `json:"datetime"`
-	Method          string      `json:"method"` // The request method (GET, POST, etc.)
-	URL             string      `json:"url"`
-	RequestHeaders  http.Header `json:"request_headers"`
-	RequestBody     string      `json:"body"`
-	StatusCode      int         `json:"status_code"` // The response status code
-	ResponseHeaders http.Header `json:"response_headers"`
-	Duration        string      `json:"duration"`
-	Error           error       `json:"error"`
-	CreatedAtFrame  string      `json:"created_at_frame"`
-	CalledAtFrame   string      `json:"called_at_frame"`
-}
+const keyPrefix = "outbound:"
+
+const N = 50
 
 func redisLoggerMiddleware() Middleware {
 	f := stack.Caller(2).Frame()
@@ -38,18 +29,24 @@ func redisLoggerMiddleware() Middleware {
 				requestBody, _ = io.ReadAll(req.Body)
 			}
 			callStack := stack.Trace().TrimRuntime().TrimBelow(stack.Caller(3))
-			logItem := RedisLogItem{
-				DateTime:        start.Format(time.RFC3339),
-				Method:          req.Method,
-				URL:             req.URL.String(),
-				RequestHeaders:  removeSensitiveHeaders(req.Header),
-				RequestBody:     string(requestBody),
-				StatusCode:      resp.StatusCode,
-				ResponseHeaders: removeSensitiveHeaders(resp.Header),
-				Duration:        duration.String(),
-				Error:           err,
-				CreatedAtFrame:  creatorStack,
-				CalledAtFrame:   callStack.String(),
+			errorMessage := ""
+			if err != nil {
+				errorMessage = err.Error()
+			}
+			key := generateKey(time.Now())
+			logItem := types.OutboundRequestLogItem{
+				Key:                key,
+				StartedAt:          start,
+				Method:             req.Method,
+				URL:                req.URL.String(),
+				RequestHeaders:     removeSensitiveHeaders(req.Header),
+				RequestBody:        string(requestBody),
+				StatusCode:         int32(resp.StatusCode),
+				ResponseHeaders:    removeSensitiveHeaders(resp.Header),
+				Duration:           duration.Seconds(),
+				ErrorMessage:       errorMessage,
+				CreationStackFrame: creatorStack,
+				CallStackFrame:     callStack.String(),
 			}
 
 			logItemJson, jsonErr := json.Marshal(logItem)
@@ -58,17 +55,80 @@ func redisLoggerMiddleware() Middleware {
 				log15.Error("RedisLoggerMiddleware failed to marshal JSON", "error", jsonErr)
 			}
 
-			// Current UTC date/time in a modified ISO 8601 format
-			now := time.Now().UTC().Format("2006-01-02T15_04_05.999999999")
-
-			// Redis key
-			key := fmt.Sprintf("outbound:%s", now)
-
+			// Save new item
 			redisCache.Set(key, logItemJson)
+
+			// Delete excess items
+			deletionErr := deleteOldKeys()
+			if deletionErr != nil {
+				log15.Error("RedisLoggerMiddleware failed to delete old keys", "error", deletionErr)
+			}
 
 			return resp, err
 		})
 	}
+}
+
+func generateKey(now time.Time) string {
+	return fmt.Sprintf("%s%s", keyPrefix, now.UTC().Format("2006-01-02T15_04_05.999999999"))
+}
+
+func deleteOldKeys() error {
+	keys, err := redisCache.GetAll(keyPrefix)
+	if err != nil {
+		return err
+	}
+
+	if len(keys) > N {
+		// Delete all but the last N keys
+		excessKeys := keys[:len(keys)-N]
+		for _, key := range excessKeys {
+			redisCache.Delete(key)
+		}
+	}
+	return nil
+}
+
+func GetAllAfter(lastKey *string) ([]*types.OutboundRequestLogItem, error) {
+	rawItems, err := getAllAfter(lastKey)
+	if err != nil {
+		return nil, err
+	}
+	var items []*types.OutboundRequestLogItem
+	for _, rawItem := range rawItems {
+		var item types.OutboundRequestLogItem
+		err = json.Unmarshal(rawItem, &item)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, &item)
+	}
+	return items, nil
+}
+
+func getAllAfter(lastKey *string) ([][]byte, error) {
+	all, err := redisCache.GetAll(keyPrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	var keys []string
+	if lastKey != nil {
+		for _, key := range all {
+			if key > *lastKey {
+				keys = append(keys, key)
+			}
+		}
+	} else {
+		keys = all
+	}
+
+	// Limit to N
+	if len(keys) > N {
+		keys = keys[len(keys)-N:]
+	}
+
+	return redisCache.GetMulti(keys...), nil
 }
 
 func removeSensitiveHeaders(headers http.Header) http.Header {

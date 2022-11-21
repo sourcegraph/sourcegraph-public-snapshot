@@ -1575,6 +1575,8 @@ type Query {
         webhookID: ID
     ): WebhookLogConnection!
 
+    outboundRequests(lastKey: String): [OutboundRequest!]!
+
     """
     (experimental)
     Get invitation based on the JWT in the invitation URL
@@ -8061,6 +8063,86 @@ type WebhookLogHeader {
 
     """
     The header values.
+    """
+    values: [String!]!
+}
+
+"""
+A single logged webhook delivery.
+"""
+type OutboundRequest {
+    """
+    The webhook log ID.
+    """
+    key: String!
+
+    """
+    The time the request was sent at.
+    """
+    startedAt: DateTime!
+
+    """
+    The method used in the HTTP request. E.g. GET, POST, etc.
+    """
+    method: String!
+
+    """
+    The full URL the request was sent to.
+    """
+    url: String!
+
+    """
+    The headers sent with the HTTP request.
+    """
+    requestHeaders: [HTTPHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    requestBody: String!
+
+    """
+    The HTTP status code received.
+    """
+    statusCode: Int!
+
+    """
+    The headers received with the HTTP response.
+    """
+    responseHeaders: [HTTPHeader!]!
+
+    """
+    The total time the request took to complete.
+    """
+    duration: Float!
+
+    """
+    Any error message got from the request Doer in case of an error, otherwise an empty string.
+    """
+    errorMessage: String!
+
+    """
+    Stack information to figure out where the ExternalClientFactory was created.
+    """
+    creationStackFrame: String!
+
+    """
+    Stack information to figure out where in the code base the request was initiated.
+    """
+    callStackFrame: String!
+}
+
+"""
+A key-value pair
+"""
+type HTTPHeader {
+    """
+    The header name
+    """
+    name: String!
+
+    """
+    Can be multiple values
     """
     values: [String!]!
 }

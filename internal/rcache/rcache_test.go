@@ -187,33 +187,22 @@ func TestCache_deleteKeysWithPrefix(t *testing.T) {
 func TestCache_GetAll(t *testing.T) {
 	SetupForTest(t)
 
-	key2a := "key2test:test:a"
-	value2a := "value2a"
-	key2b := "key2test:test:b"
-	value2b := "value2b"
+	key2a := "key2:test-a"
+	key2b := "key2:test-b"
 
+	value := []byte("x")
 	c := New("some_prefix")
-	c.Set("key1:test", []byte("value1"))
-	c.Set(key2b, []byte(value2b))
-	c.Set(key2a, []byte(value2a))
-	c.Set("key3:test", []byte("value3"))
+	c.Set("key1:test", value)
+	c.Set(key2b, value)
+	c.Set(key2a, value)
+	c.Set("key3:test", value)
 
-	got, err := c.GetAll("key2test:te")
+	got, err := c.GetAll("key2")
+
 	assert.Nil(t, err)
 	assert.Len(t, got, 2)
-
-	// The weird loop is here to also verify the order of the keys
-	index := 0
-	for key, value := range got {
-		if index == 0 {
-			assert.Equal(t, key, c.rkeyPrefix()+key2a)
-			assert.Equal(t, value, value2a)
-			index++
-			continue
-		}
-		assert.Equal(t, key, c.rkeyPrefix()+key2b)
-		assert.Equal(t, value, value2b)
-	}
+	assert.Equal(t, got[0], c.rkeyPrefix()+key2a)
+	assert.Equal(t, got[1], c.rkeyPrefix()+key2b)
 }
 
 func TestCache_Increase(t *testing.T) {
