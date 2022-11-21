@@ -8,8 +8,8 @@
 , libcxx
 , libcxxabi
 , libiconv
-, libressl
 , libssh2
+, openssl_1_1
 , patchelf
 , pcre
 , pkg-config
@@ -35,8 +35,8 @@ let
     '';
   }));
   libiconv-static = (libiconv.override { enableStatic = true; enableShared = false; });
-  libressl-static = (libressl.override { buildShared = false; });
-  libssh2-libressl = ((makeStatic libssh2).override { openssl = libressl-static; });
+  openssl-static = (openssl_1_1.override { static = true; });
+  libssh2-static = ((makeStatic libssh2).override { openssl = openssl-static; });
   pcre-static = (makeStatic pcre).dev;
 in
 clang13Stdenv.mkDerivation rec {
@@ -53,18 +53,25 @@ clang13Stdenv.mkDerivation rec {
     })
     (
       if hostPlatform.isMacOS then
-        fetchzip
-          {
+        if hostPlatform.isAarch64 then
+          fetchzip
+            {
+              name = "helix-core-api";
+              url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12arm64/p4api-openssl1.1.1.tgz";
+              hash = "sha256:19p7addx904hxk661jip697d5bnmzq0fmb8kbs6sbqaxhpxd8g22";
+            }
+        else
+          fetchzip {
             name = "helix-core-api";
-            url = "https://cdist2.perforce.com/perforce/r21.1/bin.macosx1015x86_64/p4api.tgz";
-            hash = "sha256-KctrQcglwEHav+9m7ipw0fX4dds079/TVFlKONYlQeQ=";
+            url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12x86_64/p4api-openssl1.1.1.tgz";
+            hash = "sha256:175i4x7ljfkf2hsjs78pjmv293z4ydsrh56dkrybyzrm66rgs9gk";
           }
       else if hostPlatform.isLinux then
         fetchzip
           {
             name = "helix-core-api";
-            url = "https://cdist2.perforce.com/perforce/r21.1/bin.linux26x86_64/p4api-glibc2.3-openssl1.0.2.tgz";
-            hash = "sha256-gzmL0EMAC3vhSZXJjqRDadJqtLiMGX6lCK2DCFNAnus=";
+            url = "https://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl1.1.1.tgz";
+            hash = "sha256:09v0ga98pabjy4k6h04hw7li8zgzgi5w76l3lg4fd1p10py0hyv2";
           }
       else throw "unsupported platform ${clang13Stdenv.targetPlatform.parsed.kernel.name}"
     )
@@ -85,10 +92,8 @@ clang13Stdenv.mkDerivation rec {
     zlib.dev
     http-parser-static
     pcre-static
-    # openssl 1.0.2 is considered insecure, and p4-fusion won't compile against openssl >1.1 or higher
-    # so we're using libressl instead
-    libressl-static
-    libssh2-libressl
+    openssl-static
+    libssh2-static
   ] ++ lib.optional hostPlatform.isMacOS [
     # iconv is bundled with glibc and apparently only needed for osx
     # https://sourcegraph.com/github.com/salesforce/p4-fusion@3ee482466464c18e6a635ff4f09cd75a2e1bfe0f/-/blob/vendor/libgit2/README.md?L178:3
@@ -96,24 +101,6 @@ clang13Stdenv.mkDerivation rec {
     darwin.apple_sdk.frameworks.CFNetwork
     darwin.apple_sdk.frameworks.Cocoa
   ];
-
-  # because the world of openssl is an API versioning nightmare, we have to do some patching/stubbing here
-  postUnpack =
-    # helix-core-api references this from openssl, but its not defined in libressl (and deprecated in openssl anyways)
-    ''
-      echo 'extern "C" void SSL_COMP_free_compression_methods(void) { }' > $sourceRoot/p4-fusion/libressl.cc
-    '' + lib.optionalString
-      hostPlatform.isLinux
-      # HMAC_CTX_cleanup was removed in libressl 3.5, so we update the #if guard in the code here to
-      # include the stub for libressl versions >=3.5, but only on Linux apparently?
-      # https://sourcegraph.com/github.com/salesforce/p4-fusion@3ee482466464c18e6a635ff4f09cd75a2e1bfe0f/-/blob/vendor/libgit2/deps/ntlmclient/crypt_openssl.c?L47
-      # https://github.com/libgit2/libgit2/pull/6157#issuecomment-1039111648
-      ''
-        substituteInPlace $sourceRoot/vendor/libgit2/deps/ntlmclient/crypt_openssl.c \
-          --replace \
-            "#if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !LIBRESSL_VERSION_NUMBER) || defined(CRYPT_OPENSSL_DYNAMIC)" \
-            "#if ((OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)) || LIBRESSL_VERSION_NUMBER >= 0x3050000f) || defined(CRYPT_OPENSSL_DYNAMIC)"
-      '';
 
   # copy helix-core-api stuff into the expected directories
   preBuild = let dir = if hostPlatform.isMacOS then "mac" else "linux"; in

@@ -39,7 +39,6 @@
       # recursiveUpdate is just for recursively merging sets
       packages = nixpkgs.lib.recursiveUpdate
         {
-          aarch64-darwin.p4-fusion = self.packages.x86_64-darwin.p4-fusion;
           x86_64-linux.p4-fusion-portable = self.packages.x86_64-linux.p4-fusion.overrideAttrs (oldAttrs: {
             # patch the ELF interpreter for non-nix(os) distros.
             postFixup = ''
@@ -50,7 +49,7 @@
           });
         }
         (
-          nixpkgs.lib.genAttrs [ "x86_64-linux" "x86_64-darwin" ] (system:
+          nixpkgs.lib.genAttrs [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" ] (system:
             let pkgs = import nixpkgs { inherit system; };
             in
             {
