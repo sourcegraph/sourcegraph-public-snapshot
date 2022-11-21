@@ -305,12 +305,10 @@ function preferAbsoluteTimestampsFromSettings(settingsCascade: SettingsCascadeOr
     return false
 }
 
-function defaultPageSizeFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): number {
+function defaultPageSizeFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): number | undefined {
     if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
-        return settingsCascade.final['history.defautlPageSize'] as number
+        return settingsCascade.final['history.defaultPageSize'] as number
     }
-
-    return 100
 }
 
 /**

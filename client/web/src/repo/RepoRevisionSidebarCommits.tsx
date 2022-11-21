@@ -63,7 +63,7 @@ interface Props extends Partial<RevisionSpec>, FileSpec {
     history: H.History
     location: H.Location
     preferAbsoluteTimestamps: boolean
-    defaultPageSize: number
+    defaultPageSize?: number
 }
 
 export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
@@ -89,7 +89,7 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
             queryConnection={queryCommits}
             nodeComponent={CommitNode}
             nodeComponentProps={{ location: props.location, preferAbsoluteTimestamps: props.preferAbsoluteTimestamps }}
-            defaultFirst={props.defaultPageSize}
+            defaultFirst={props.defaultPageSize || 100}
             hideSearch={true}
             useURLQuery={false}
             history={props.history}
