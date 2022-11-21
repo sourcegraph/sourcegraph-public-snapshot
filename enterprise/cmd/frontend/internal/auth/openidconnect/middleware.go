@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"path"
 	"strings"
 	"time"
 
@@ -260,7 +258,7 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 	}
 
 	// Exchange the code for an access token, see http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
-	oauth2Token, err := p.Oauth2Config(&url.URL{Path: p.callbackUrl}).Exchange(r.Context(), r.URL.Query().Get("code"))
+	oauth2Token, err := p.Oauth2Config().Exchange(r.Context(), r.URL.Query().Get("code"))
 	if err != nil {
 		return nil,
 			"Authentication failed. Try signing in again. The error was: unable to obtain access token from issuer.",
@@ -410,5 +408,5 @@ func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, 
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	http.Redirect(w, r, p.Oauth2Config(&url.URL{Path: path.Join(auth.AuthURLPrefix, "callback")}).AuthCodeURL(state, oidc.Nonce(state)), http.StatusFound)
+	http.Redirect(w, r, p.Oauth2Config().AuthCodeURL(state, oidc.Nonce(state)), http.StatusFound)
 }

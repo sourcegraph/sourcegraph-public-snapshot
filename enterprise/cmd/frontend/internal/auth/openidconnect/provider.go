@@ -114,7 +114,7 @@ func (p *Provider) CachedInfo() *providers.Info {
 }
 
 // Oauth2Config constructs and returns an *oauth2.Config from the provider.
-func (p *Provider) Oauth2Config(redirectUrl *url.URL) *oauth2.Config {
+func (p *Provider) Oauth2Config() *oauth2.Config {
 	return &oauth2.Config{
 		ClientID:     p.config.ClientID,
 		ClientSecret: p.config.ClientSecret,
@@ -123,7 +123,7 @@ func (p *Provider) Oauth2Config(redirectUrl *url.URL) *oauth2.Config {
 		// many instances have the "/.auth/callback" value hardcoded in their external auth
 		// provider, so we can't change it easily
 		RedirectURL: globals.ExternalURL().
-			ResolveReference(redirectUrl).
+			ResolveReference(&url.URL{Path: p.callbackUrl}).
 			String(),
 
 		Endpoint: p.oidc.Endpoint(),

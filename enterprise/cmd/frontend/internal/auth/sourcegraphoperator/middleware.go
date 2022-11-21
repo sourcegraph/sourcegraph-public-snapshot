@@ -251,5 +251,5 @@ func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *openidconn
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	http.Redirect(w, r, p.Oauth2Config(&url.URL{Path: path.Join(auth.AuthURLPrefix, internalauth.SourcegraphOperatorProviderType, "callback")}).AuthCodeURL(state, oidc.Nonce(state)), http.StatusFound)
+	http.Redirect(w, r, p.Oauth2Config().AuthCodeURL(state, oidc.Nonce(state)), http.StatusFound)
 }
