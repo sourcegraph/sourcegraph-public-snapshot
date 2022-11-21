@@ -26,9 +26,32 @@ interface BlameHunkDisplayInfo {
     message: string
 }
 
-export type BlameHunk = NonNullable<
-    NonNullable<NonNullable<GitBlameResult['repository']>['commit']>['blob']
->['blame'][number] & { displayInfo: BlameHunkDisplayInfo }
+export interface BlameHunk {
+    startLine: number
+    endLine: number
+    message: string
+    rev: string
+    author: {
+        date: string
+        person: {
+            email: string
+            displayName: string
+            user:
+                | undefined
+                | null
+                | {
+                      username: string
+                  }
+        }
+    }
+    commit: {
+        url: string
+        parents: {
+            oid: string
+        }[]
+    }
+    displayInfo: BlameHunkDisplayInfo
+}
 
 const fetchBlameViaGraphQL = memoizeObservable(
     ({
@@ -106,9 +129,9 @@ const fetchBlameViaStreaming = memoizeObservable(
     }): Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined> =>
         new Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined>(subscriber => {
             let assembledHunks: Omit<BlameHunk, 'displayInfo'>[] = []
-            const repoAndRevisionPath = `/.api/blame/${repoName}${revision ? `@${revision}` : ''}`
+            const repoAndRevisionPath = `/${repoName}${revision ? `@${revision}` : ''}`
 
-            fetchEventSource(`${repoAndRevisionPath}/stream/${filePath}`, {
+            fetchEventSource(`/.api/blame${repoAndRevisionPath}/stream/${filePath}`, {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'Sourcegraph',
