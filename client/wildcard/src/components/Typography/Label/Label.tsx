@@ -38,9 +38,9 @@ export const Label = React.forwardRef((props, reference) => {
     // Since we use contenteditable inputs (the CodeMirror search box) and labels together in some
     // consumers, we need to support this behavior manually for contenteditable elements.
     const handleClick = (event: MouseEvent<HTMLLabelElement>): void => {
-        const htmlForAttribute = mergedRef.current?.getAttribute('htmlFor')
+        const forAttribute = mergedRef.current?.getAttribute('for')
 
-        if (htmlForAttribute) {
+        if (forAttribute) {
             onClick?.(event)
             return
         }
