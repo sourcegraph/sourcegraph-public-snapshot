@@ -17,7 +17,7 @@ import (
 // NewLicenseCheckJob will periodically check for the existence of a Code Insights license and ensure the correct set of insights is frozen.
 func NewLicenseCheckJob(ctx context.Context, postgres database.DB, insightsdb edb.InsightsDB) goroutine.BackgroundRoutine {
 	interval := time.Minute * 15
-	logger := log.Scoped("LicenseCheckJob", "Check for the existence of a Code Insights license regularly")
+	logger := log.Scoped("CodeInsightsLicenseCheckJob", "")
 
 	return goroutine.NewPeriodicGoroutine(ctx, interval,
 		goroutine.NewHandlerWithErrorMessage("insights_license_check", func(ctx context.Context) (err error) {
