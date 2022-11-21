@@ -121,7 +121,7 @@ export const SiteAdminWebhookPageStory: Story = args => {
     )
 }
 
-SiteAdminWebhookPageStory.storyName = 'Webhook receiver'
+SiteAdminWebhookPageStory.storyName = 'Incoming webhook'
 SiteAdminWebhookPageStory.args = {
     match: {
         params: {
