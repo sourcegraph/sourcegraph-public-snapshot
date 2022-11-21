@@ -180,6 +180,7 @@ func TestUsers_IncludeNeverActive(t *testing.T) {
 		return now.Add(-time.Duration(days) * 24 * time.Hour)
 	}
 
+	// user-5 should have no event in the event_logs table
 	var users = []struct {
 		user        database.NewUser
 		lastEventAt time.Time
@@ -187,7 +188,8 @@ func TestUsers_IncludeNeverActive(t *testing.T) {
 		{user: database.NewUser{Username: "user-1", Password: "user-1"}, lastEventAt: daysAgo(5)},
 		{user: database.NewUser{Username: "user-2", Password: "user-2"}, lastEventAt: daysAgo(3)},
 		{user: database.NewUser{Username: "user-3", Password: "user-3"}, lastEventAt: daysAgo(1)},
-		{user: database.NewUser{Username: "user-4", Password: "user-4"}},
+		{user: database.NewUser{Username: "user-4", Password: "user-4"}, lastEventAt: daysAgo(0)},
+		{user: database.NewUser{Username: "user-5", Password: "user-5"}},
 	}
 
 	for _, newUser := range users {
@@ -227,9 +229,14 @@ func TestUsers_IncludeNeverActive(t *testing.T) {
 			Query:   query,
 			// This returns all users because includeNeverActive only has an effect if inactiveSince is set.
 			Variables: map[string]any{"includeNeverActive": true},
-			// TODO: Should return all users, because `inactiveSince` is not set
 			ExpectedResult: `
-			{"users": { "nodes": [{ "username": "user-2" }], "totalCount": 1 }}
+			{"users": { "nodes": [
+				{ "username": "user-1" },
+				{ "username": "user-2" },
+				{ "username": "user-3" },
+				{ "username": "user-4" },
+				{ "username": "user-5" }
+				], "totalCount": 5 }}
 			`,
 		},
 		{
@@ -238,9 +245,15 @@ func TestUsers_IncludeNeverActive(t *testing.T) {
 			Query:   query,
 			// This returns all users because includeNeverActive only has an effect if inactiveSince is set.
 			Variables: map[string]any{"includeNeverActive": false},
-			// TODO: Should return all users, because `inactiveSince` is not set
+			// Should return all users, because `inactiveSince` is not set
 			ExpectedResult: `
-			{"users": { "nodes": [{ "username": "user-2" }], "totalCount": 1 }}
+			{"users": { "nodes": [
+				{ "username": "user-1" },
+				{ "username": "user-2" },
+				{ "username": "user-3" },
+				{ "username": "user-4" },
+				{ "username": "user-5" }
+				], "totalCount": 5 }}
 			`,
 		},
 		{
@@ -248,9 +261,15 @@ func TestUsers_IncludeNeverActive(t *testing.T) {
 			Schema:    schema,
 			Query:     query,
 			Variables: map[string]any{},
-			// TODO: Should return all users
+			// Should return all users
 			ExpectedResult: `
-			{"users": { "nodes": [{ "username": "user-2" }], "totalCount": 1 }}
+			{"users": { "nodes": [
+				{ "username": "user-1" },
+				{ "username": "user-2" },
+				{ "username": "user-3" },
+				{ "username": "user-4" },
+				{ "username": "user-5" }
+				], "totalCount": 5 }}
 			`,
 		},
 		{
@@ -258,9 +277,13 @@ func TestUsers_IncludeNeverActive(t *testing.T) {
 			Schema:    schema,
 			Query:     query,
 			Variables: map[string]any{"since": daysAgo(3).Format(time.RFC3339Nano), "includeNeverActive": true},
-			// TODO: fix expectations
 			ExpectedResult: `
-			{"users": { "nodes": [{ "username": "user-2" }], "totalCount": 1 }}
+			{"users": { "nodes": [
+				{ "username": "user-2" },
+				{ "username": "user-3" },
+				{ "username": "user-4" },
+				{ "username": "user-5" }
+				], "totalCount": 4 }}
 			`,
 		},
 		{
@@ -268,9 +291,12 @@ func TestUsers_IncludeNeverActive(t *testing.T) {
 			Schema:    schema,
 			Query:     query,
 			Variables: map[string]any{"since": daysAgo(3).Format(time.RFC3339Nano), "includeNeverActive": false},
-			// TODO: fix expectations - should not include never active users
 			ExpectedResult: `
-			{"users": { "nodes": [{ "username": "user-2" }], "totalCount": 1 }}
+			{"users": { "nodes": [
+				{ "username": "user-2" },
+				{ "username": "user-3" },
+				{ "username": "user-4" }
+				], "totalCount": 3 }}
 			`,
 		},
 	})
