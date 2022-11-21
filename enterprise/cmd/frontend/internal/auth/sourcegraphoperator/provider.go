@@ -35,6 +35,7 @@ func NewProvider(config cloud.SchemaAuthProviderSourcegraphOperator) providers.P
 				Type:               auth.SourcegraphOperatorProviderType,
 			},
 			authPrefix,
+			".auth/sourcegraph-operator/callback",
 		).(*openidconnect.Provider),
 	}
 }

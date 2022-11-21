@@ -32,6 +32,7 @@ func GetProvider(id string) *Provider {
 		},
 	).(*Provider)
 	if ok {
+		p.callbackUrl = ".auth/callback"
 		return p
 	}
 	return nil
@@ -66,7 +67,6 @@ func Init() {
 	logger := log.Scoped(pkgName, "OpenID Connect config watch")
 	go func() {
 		conf.Watch(func() {
-
 			ps := getProviders()
 			if len(ps) == 0 {
 				providers.Update(pkgName, nil)
@@ -101,7 +101,7 @@ func getProviders() []providers.Provider {
 	}
 	ps := make([]providers.Provider, 0, len(cfgs))
 	for _, cfg := range cfgs {
-		ps = append(ps, NewProvider(*cfg, authPrefix))
+		ps = append(ps, NewProvider(*cfg, authPrefix, ".auth/callback"))
 	}
 	return ps
 }
