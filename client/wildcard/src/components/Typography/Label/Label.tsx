@@ -47,7 +47,7 @@ export const Label = React.forwardRef((props, reference) => {
 
         // Extend labelable elements set with contenteditable elements
         const labelableElement = mergedRef.current?.querySelector<HTMLElement>(
-            'input, keygen, meter, output, progress, select, textarea, [contenteditable="true"]'
+            'input, keygen, meter, output, progress, select, textarea, [contenteditable=""], [contenteditable="true"]'
         )
 
         if (labelableElement) {
