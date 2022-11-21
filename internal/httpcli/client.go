@@ -721,7 +721,6 @@ func RequestClientTransportOpt(cli *http.Client) error {
 	return nil
 }
 
-
 func IsRiskyKey(key string) bool {
 	riskyHeaderKeys := []string{"auth", "cookie", "token"}
 	for _, riskyKey := range riskyHeaderKeys {
