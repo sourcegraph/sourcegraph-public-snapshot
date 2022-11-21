@@ -66,6 +66,9 @@ func quote(s string) *sqlf.Query { return sqlf.Sprintf(s) }
 
 const getRepositoriesForIndexScanQuery = `
 WITH
+-- This CTE will contain a single row if there is at least one global policy, and will return an empty
+-- result set otherwise. If any global policy is for HEAD, the value for the column is_head_policy will
+-- be true.
 global_policy_descriptor AS MATERIALIZED (
 	SELECT (p.type = 'GIT_COMMIT' AND p.pattern = 'HEAD') AS is_head_policy
 	FROM lsif_configuration_policies p
@@ -89,6 +92,7 @@ repositories AS (
 		(%s - lrs.{column_name} > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE OR
 
 		-- Records that have received an update since their last scan are also eligible for re-indexing.
+		-- Note that last_changed is NULL unless the repository is attached to a policy for HEAD.
 		(rmp.last_changed > lrs.{column_name})
 	ORDER BY
 		lrs.{column_name} NULLS FIRST,
