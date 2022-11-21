@@ -284,6 +284,32 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
     )
 }
 
+export const OUTBOUND_REQUESTS = gql`
+    query OutboundRequests {
+        outboundRequests {
+            startedAt
+            method
+            url
+            requestHeaders {
+                name
+                values
+            }
+            requestBody
+            statusCode
+            responseHeaders {
+                name
+                values
+            }
+            duration
+            errorMessage
+            creationStackFrame
+            callStackFrame
+        }
+    }
+`
+
+export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL = 5000
+
 export const UPDATE_MIRROR_REPOSITORY = gql`
     mutation UpdateMirrorRepository($repository: ID!) {
         updateMirrorRepository(repository: $repository) {

@@ -133,6 +133,11 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             to: '/-/debug/jaeger',
             source: 'server',
         },
+        {
+            label: 'Outbound requests',
+            to: '/site-admin/outbound-requests',
+            source: 'server',
+        },
     ],
 }
 
