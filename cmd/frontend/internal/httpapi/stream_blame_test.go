@@ -25,6 +25,17 @@ import (
 func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunks []*gitserver.Hunk) gitserver.Client {
 	hunkReader := gitserver.NewMockHunkReader(hunks, returnErr)
 	gsClient := gitserver.NewMockClient()
+	gsClient.GetCommitFunc.SetDefaultHook(
+		func(_ context.Context,
+			repoName api.RepoName,
+			commit api.CommitID,
+			opts gitserver.ResolveRevisionOptions,
+			checker authz.SubRepoPermissionChecker,
+		) (*gitdomain.Commit, error) {
+			return &gitdomain.Commit{
+				Parents: []api.CommitID{"xxx", "yyy"},
+			}, nil
+		})
 	gsClient.StreamBlameFileFunc.SetDefaultHook(
 		func(
 			ctx context.Context,
@@ -167,8 +178,8 @@ func TestStreamBlame(t *testing.T) {
 		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusOK, rec.Code)
 		data := rec.Body.String()
-		assert.Contains(t, data, `"CommitID":"abcd"`)
-		assert.Contains(t, data, `"CommitID":"ijkl"`)
+		assert.Contains(t, data, `"commitID":"abcd"`)
+		assert.Contains(t, data, `"commitID":"ijkl"`)
 		assert.Contains(t, data, `done`)
 	})
 
@@ -201,7 +212,7 @@ func TestStreamBlame(t *testing.T) {
 		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusOK, rec.Code)
 		data := rec.Body.String()
-		assert.Contains(t, data, `"CommitID":"efgh"`)
+		assert.Contains(t, data, `"commitID":"efgh"`)
 		assert.Contains(t, data, `done`)
 	})
 
