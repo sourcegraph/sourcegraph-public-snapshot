@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"fmt"
 	"html"
 	"net/http"
 	"strings"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -140,7 +142,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 					Filename:  h.Filename,
 					Commit: BlameHunkCommitResponse{
 						Parents: parents,
-						URL:     "TODO",
+						URL:     parentURL(repo, parents),
 					},
 				}
 				blameResponses = append(blameResponses, blameResponse)
@@ -153,6 +155,13 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			}
 		}
 	}
+}
+
+func parentURL(repo *types.Repo, parents []api.CommitID) string {
+	if len(parents) > 0 {
+		return fmt.Sprintf("%s/-/commit/%s", repo.URI, parents[0])
+	}
+	return ""
 }
 
 type BlameHunkResponse struct {
