@@ -7,8 +7,8 @@ import { Container, H2, H3, Link, Text, Icon } from '@sourcegraph/wildcard'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CtaBanner } from '../../../components/CtaBanner'
 
+import { CloudCtaBanner } from '../../../marketing/components/CloudCtaBanner'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { CloudCTABanner } from '../../../marketing/components/CloudCTABanner'
 
 export interface GettingStartedProps {
     isSourcegraphDotCom: boolean
@@ -77,12 +77,12 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
             </div>
         </Container>
         {isSourcegraphDotCom ? (
-            <CloudCTABanner>
+            <CloudCtaBanner>
                 To automate changes across your team's private repos,{' '}
                 <Link to="https://signup.sourcegraph.com/?p=batch" target="_blank" rel="noopener noreferrer" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
                     try Sourcegraph Cloud
                 </Link>.
-            </CloudCTABanner>
+            </CloudCtaBanner>
             ) : (
                 <div className="d-flex justify-content-start">
                     <CtaBanner
