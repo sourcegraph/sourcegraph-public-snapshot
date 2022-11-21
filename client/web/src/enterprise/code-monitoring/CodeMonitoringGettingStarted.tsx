@@ -105,7 +105,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
             {window.context.sourcegraphDotComMode && (
                 <CloudCTABanner>
                     To monitor changes across your team's private repositories,{' '}
-                    <Link to="https://signup.sourcegraph.com/?p=monitoring" target="_blank" rel="noopener noreferrer" onClick={() => telemetryService.log('ClickedOnCloudCTA')}>
+                    <Link to="https://signup.sourcegraph.com/?p=monitoring" target="_blank" rel="noopener noreferrer" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
                         try Sourcegraph Cloud
                     </Link>.
                 </CloudCTABanner>
