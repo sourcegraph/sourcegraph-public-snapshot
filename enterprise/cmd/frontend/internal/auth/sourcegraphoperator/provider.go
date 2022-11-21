@@ -1,8 +1,10 @@
 package sourcegraphoperator
 
 import (
+	"path"
 	"time"
 
+	feAuth "github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
@@ -35,6 +37,7 @@ func NewProvider(config cloud.SchemaAuthProviderSourcegraphOperator) providers.P
 				Type:               auth.SourcegraphOperatorProviderType,
 			},
 			authPrefix,
+			path.Join(feAuth.AuthURLPrefix, "sourcegraph-operator", "callback"),
 		).(*openidconnect.Provider),
 	}
 }
