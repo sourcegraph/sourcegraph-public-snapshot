@@ -156,7 +156,7 @@ const fetchBlameViaStreaming = memoizeObservable(
                                 },
                                 commit: {
                                     url: `${repoAndRevisionPath}/-/commit/${hunk.commitID}`,
-                                    parents: [],
+                                    parents: hunk.commit.parents,
                                 },
                             })
                         }

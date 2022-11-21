@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -100,8 +101,10 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			return
 		}
 
+		parentsCache := map[api.CommitID][]api.CommitID{}
+
 		for {
-			hunk, done, err := hunkReader.Read()
+			hunks, done, err := hunkReader.Read()
 			if err != nil {
 				tr.SetError(err)
 				http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
@@ -111,11 +114,58 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 				streamWriter.Event("done", map[string]any{})
 				return
 			}
-			if err := streamWriter.Event("hunk", hunk); err != nil {
+
+			blameResponses := make([]BlameHunkResponse, 0, len(hunks))
+			for _, h := range hunks {
+				var parents []api.CommitID
+				if p, ok := parentsCache[h.CommitID]; ok {
+					parents = p
+				} else {
+					c, err := gitserverClient.GetCommit(ctx, repo.Name, h.CommitID, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+					if err != nil {
+						tr.SetError(err)
+						http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
+						return
+					}
+					parents = c.Parents
+					parentsCache[h.CommitID] = c.Parents
+				}
+
+				blameResponse := BlameHunkResponse{
+					StartLine: h.StartLine,
+					EndLine:   h.EndLine,
+					CommitID:  h.CommitID,
+					Author:    h.Author,
+					Message:   h.Message,
+					Filename:  h.Filename,
+					Commit: BlameHunkCommitResponse{
+						Parents: parents,
+						URL:     "TODO",
+					},
+				}
+				blameResponses = append(blameResponses, blameResponse)
+			}
+
+			if err := streamWriter.Event("hunk", blameResponses); err != nil {
 				tr.SetError(err)
 				http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
 				return
 			}
 		}
 	}
+}
+
+type BlameHunkResponse struct {
+	StartLine    int `json:"startLine"` // 1-indexed start line number
+	EndLine      int `json:"endLine"`   // 1-indexed end line number
+	api.CommitID `json:"commitID"`
+	Author       gitdomain.Signature     `json:"author"`
+	Message      string                  `json:"message"`
+	Filename     string                  `json:"filename"`
+	Commit       BlameHunkCommitResponse `json:"commit"`
+}
+
+type BlameHunkCommitResponse struct {
+	Parents []api.CommitID `json:"parents"`
+	URL     string         `json:"url"`
 }
