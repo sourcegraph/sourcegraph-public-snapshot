@@ -1,6 +1,6 @@
 { pkgs
 , lib
-, clang13Stdenv
+, stdenv
 , fetchzip
 , fetchFromGitHub
 , cmake
@@ -39,7 +39,7 @@ let
   libssh2-static = ((makeStatic libssh2).override { openssl = openssl-static; });
   pcre-static = (makeStatic pcre).dev;
 in
-clang13Stdenv.mkDerivation rec {
+stdenv.mkDerivation rec {
   name = "p4-fusion";
   version = "v1.12";
 
@@ -73,7 +73,7 @@ clang13Stdenv.mkDerivation rec {
             url = "https://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl1.1.1.tgz";
             hash = "sha256:09v0ga98pabjy4k6h04hw7li8zgzgi5w76l3lg4fd1p10py0hyv2";
           }
-      else throw "unsupported platform ${clang13Stdenv.targetPlatform.parsed.kernel.name}"
+      else throw "unsupported platform ${stdenv.targetPlatform.parsed.kernel.name}"
     )
   ];
 
