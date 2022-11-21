@@ -45,8 +45,8 @@ const TEST_PAGINATED_CONNECTION_QUERY = gql`
 
 const PAGE_SIZE = 3
 
-const TestComponent = () => {
-    const { connection, loading, nextPage, previousPage, firstPage, lastPage } = usePaginatedConnection<
+const TestComponent = ({ useURL }: { useURL: boolean }) => {
+    const { connection, loading, goToNextPage, goToPreviousPage, goToFirstPage, goToLastPage } = usePaginatedConnection<
         TestPaginatedConnectionQueryResult,
         TestPaginatedConnectionQueryVariables,
         TestPaginatedConnectionQueryFields
@@ -58,7 +58,7 @@ const TestComponent = () => {
             return data.savedSearchesByNamespace
         },
         options: {
-            useURL: true,
+            useURL,
             pageSize: PAGE_SIZE,
         },
     })
@@ -72,20 +72,20 @@ const TestComponent = () => {
             </ul>
             {loading ? <Text>Loading...</Text> : null}
             {connection?.totalCount && <Text>Total count: {connection.totalCount}</Text>}
-            <button type="button" onClick={firstPage}>
+            <button type="button" onClick={goToFirstPage}>
                 First page
             </button>
             {connection?.pageInfo?.hasNextPage && (
-                <button type="button" onClick={nextPage}>
+                <button type="button" onClick={goToNextPage}>
                     Next page
                 </button>
             )}
             {connection?.pageInfo?.hasPreviousPage && (
-                <button type="button" onClick={previousPage}>
+                <button type="button" onClick={goToPreviousPage}>
                     Previous page
                 </button>
             )}
-            <button type="button" onClick={lastPage}>
+            <button type="button" onClick={goToLastPage}>
                 Last page
             </button>
         </>
@@ -171,7 +171,7 @@ const mockResultNodes: TestPaginatedConnectionQueryFields[] = [
     { __typename: 'SavedSearch', id: '10', description: 'result 10' },
 ]
 
-const getCursorForId = (id: string): string => `cursor:${id}`
+const getCursorForId = (id: string): string => `cursor_${id}`
 
 const generateMockCursorResponsesForEveryPage = (
     nodes: TestPaginatedConnectionQueryFields[]
@@ -200,7 +200,7 @@ const generateMockCursorResponsesForEveryPage = (
     // Backward pagination
     const reverseNodes = [...nodes].reverse()
     for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
-        const nodesOnPage = reverseNodes.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE)
+        const nodesOnPage = reverseNodes.slice(pageIndex * PAGE_SIZE, (pageIndex + 1) * PAGE_SIZE).reverse()
         const before = pageIndex === 0 ? null : getCursorForId(reverseNodes[pageIndex * PAGE_SIZE - 1].id)
         responses.push({
             request: generateMockRequest({ before, last: PAGE_SIZE, after: null, first: null }),
@@ -219,12 +219,16 @@ const generateMockCursorResponsesForEveryPage = (
 }
 
 describe('usePaginatedConnection', () => {
-    const renderWithMocks = async (mocks: MockedResponse<TestPaginatedConnectionQueryResult>[], route = '/') => {
+    const renderWithMocks = async (
+        mocks: MockedResponse<TestPaginatedConnectionQueryResult>[],
+        useURL: boolean = true,
+        initialRoute = '/'
+    ) => {
         const renderResult = renderWithBrandedContext(
             <MockedTestProvider mocks={mocks}>
-                <TestComponent />
+                <TestComponent useURL={useURL} />
             </MockedTestProvider>,
-            { route }
+            { route: initialRoute }
         )
 
         // Skip loading state
@@ -233,144 +237,219 @@ describe('usePaginatedConnection', () => {
         return renderResult
     }
 
-    describe('Cursor based pagination', () => {
-        const cursorMocks = generateMockCursorResponsesForEveryPage(mockResultNodes)
+    const cursorMocks = generateMockCursorResponsesForEveryPage(mockResultNodes)
 
-        it('renders the first page', async () => {
-            const queries = await renderWithMocks(cursorMocks)
+    it('renders the first page', async () => {
+        const page = await renderWithMocks(cursorMocks)
 
-            expect(queries.getAllByRole('listitem').length).toBe(3)
-            expect(queries.getByText('result 1')).toBeVisible()
-            expect(queries.getByText('result 2')).toBeVisible()
-            expect(queries.getByText('result 3')).toBeVisible()
-            expect(queries.getByText('Total count: 10')).toBeVisible()
+        expect(page.getAllByRole('listitem').length).toBe(3)
+        expect(page.getAllByRole('listitem')[0]).toHaveTextContent('result 1')
+        expect(page.getAllByRole('listitem')[1]).toHaveTextContent('result 2')
+        expect(page.getAllByRole('listitem')[2]).toHaveTextContent('result 3')
+        expect(page.getByText('Total count: 10')).toBeVisible()
 
-            expect(queries.getByText('First page')).toBeVisible()
-            expect(() => queries.getByText('Previous page')).toThrowError(/Unable to find an element/)
-            expect(queries.getByText('Next page')).toBeVisible()
-            expect(queries.getByText('Last page')).toBeVisible()
-        })
+        expect(page.getByText('First page')).toBeVisible()
+        expect(() => page.getByText('Previous page')).toThrowError(/Unable to find an element/)
+        expect(page.getByText('Next page')).toBeVisible()
+        expect(page.getByText('Last page')).toBeVisible()
 
-        it('supports forward pagination', async () => {
-            const queries = await renderWithMocks(cursorMocks)
+        expect(page.history.location.search).toBe('')
+    })
 
-            await goToNextPage(queries)
+    it('supports forward pagination', async () => {
+        const page = await renderWithMocks(cursorMocks)
 
-            expect(queries.getAllByRole('listitem').length).toBe(3)
-            expect(queries.getByText('result 4')).toBeVisible()
-            expect(queries.getByText('result 5')).toBeVisible()
-            expect(queries.getByText('result 6')).toBeVisible()
-            expect(queries.getByText('Total count: 10')).toBeVisible()
+        await goToNextPage(page)
 
-            expect(queries.getByText('First page')).toBeVisible()
-            expect(queries.getByText('Previous page')).toBeVisible()
-            expect(queries.getByText('Next page')).toBeVisible()
-            expect(queries.getByText('Last page')).toBeVisible()
+        expect(page.getAllByRole('listitem').length).toBe(3)
+        expect(page.getAllByRole('listitem')[0]).toHaveTextContent('result 4')
+        expect(page.getAllByRole('listitem')[1]).toHaveTextContent('result 5')
+        expect(page.getAllByRole('listitem')[2]).toHaveTextContent('result 6')
+        expect(page.getByText('Total count: 10')).toBeVisible()
 
-            await goToNextPage(queries)
+        expect(page.getByText('First page')).toBeVisible()
+        expect(page.getByText('Previous page')).toBeVisible()
+        expect(page.getByText('Next page')).toBeVisible()
+        expect(page.getByText('Last page')).toBeVisible()
 
-            expect(queries.getAllByRole('listitem').length).toBe(3)
-            expect(queries.getByText('result 7')).toBeVisible()
-            expect(queries.getByText('result 8')).toBeVisible()
-            expect(queries.getByText('result 9')).toBeVisible()
-            expect(queries.getByText('Total count: 10')).toBeVisible()
+        expect(page.history.location.search).toBe(`?after=${getCursorForId('3')}`)
 
-            expect(queries.getByText('First page')).toBeVisible()
-            expect(queries.getByText('Previous page')).toBeVisible()
-            expect(queries.getByText('Next page')).toBeVisible()
-            expect(queries.getByText('Last page')).toBeVisible()
+        await goToNextPage(page)
 
-            await goToNextPage(queries)
+        expect(page.getAllByRole('listitem').length).toBe(3)
+        expect(page.getAllByRole('listitem')[0]).toHaveTextContent('result 7')
+        expect(page.getAllByRole('listitem')[1]).toHaveTextContent('result 8')
+        expect(page.getAllByRole('listitem')[2]).toHaveTextContent('result 9')
+        expect(page.getByText('Total count: 10')).toBeVisible()
 
-            expect(queries.getAllByRole('listitem').length).toBe(1)
-            expect(queries.getByText('result 10')).toBeVisible()
-            expect(queries.getByText('Total count: 10')).toBeVisible()
+        expect(page.getByText('First page')).toBeVisible()
+        expect(page.getByText('Previous page')).toBeVisible()
+        expect(page.getByText('Next page')).toBeVisible()
+        expect(page.getByText('Last page')).toBeVisible()
 
-            expect(queries.getByText('First page')).toBeVisible()
-            expect(queries.getByText('Previous page')).toBeVisible()
-            expect(() => queries.getByText('Next page')).toThrowError(/Unable to find an element/)
-            expect(queries.getByText('Last page')).toBeVisible()
-        })
+        expect(page.history.location.search).toBe(`?after=${getCursorForId('6')}`)
 
-        it('supports jumping to the first page', async () => {
-            const queries = await renderWithMocks(cursorMocks)
+        await goToNextPage(page)
 
-            await goToNextPage(queries)
-            await goToFirstPage(queries)
+        expect(page.getAllByRole('listitem').length).toBe(1)
+        expect(page.getAllByRole('listitem')[0]).toHaveTextContent('result 10')
+        expect(page.getByText('Total count: 10')).toBeVisible()
 
-            console.log(queries.debug())
+        expect(page.getByText('First page')).toBeVisible()
+        expect(page.getByText('Previous page')).toBeVisible()
+        expect(() => page.getByText('Next page')).toThrowError(/Unable to find an element/)
+        expect(page.getByText('Last page')).toBeVisible()
 
-            expect(queries.getAllByRole('listitem').length).toBe(3)
-            expect(queries.getByText('result 1')).toBeVisible()
-            expect(queries.getByText('result 2')).toBeVisible()
-            expect(queries.getByText('result 3')).toBeVisible()
-            expect(queries.getByText('Total count: 10')).toBeVisible()
+        expect(page.history.location.search).toBe(`?after=${getCursorForId('9')}`)
+    })
 
-            expect(queries.getByText('First page')).toBeVisible()
-            expect(() => queries.getByText('Previous page')).toThrowError(/Unable to find an element/)
-            expect(queries.getByText('Next page')).toBeVisible()
-            expect(queries.getByText('Last page')).toBeVisible()
-        })
+    it('supports restoration from forward pagination URL', async () => {
+        const page = await renderWithMocks(cursorMocks, true, `/?after=${getCursorForId('6')}`)
 
-        it('supports jumping to the last page', async () => {
-            const queries = await renderWithMocks(cursorMocks)
+        expect(page.getAllByRole('listitem').length).toBe(3)
+        expect(page.getAllByRole('listitem')[0]).toHaveTextContent('result 7')
+        expect(page.getAllByRole('listitem')[1]).toHaveTextContent('result 8')
+        expect(page.getAllByRole('listitem')[2]).toHaveTextContent('result 9')
+        expect(page.getByText('Total count: 10')).toBeVisible()
 
-            await goToLastPage(queries)
+        expect(page.getByText('First page')).toBeVisible()
+        expect(page.getByText('Previous page')).toBeVisible()
+        expect(page.getByText('Next page')).toBeVisible()
+        expect(page.getByText('Last page')).toBeVisible()
+    })
 
-            expect(queries.getAllByRole('listitem').length).toBe(3)
-            expect(queries.getByText('result 8')).toBeVisible()
-            expect(queries.getByText('result 9')).toBeVisible()
-            expect(queries.getByText('result 10')).toBeVisible()
-            expect(queries.getByText('Total count: 10')).toBeVisible()
+    it('supports jumping to the first page', async () => {
+        const page = await renderWithMocks(cursorMocks, true, '/?last=3')
 
-            console.log(queries.debug())
+        await goToFirstPage(page)
 
-            expect(queries.getByText('First page')).toBeVisible()
-            expect(queries.getByText('Previous page')).toBeVisible()
-            expect(() => queries.getByText('Next page')).toThrowError(/Unable to find an element/)
-            expect(queries.getByText('Last page')).toBeVisible()
-        })
+        expect(page.getAllByRole('listitem').length).toBe(3)
+        expect(page.getAllByRole('listitem')[0]).toHaveTextContent('result 1')
+        expect(page.getAllByRole('listitem')[1]).toHaveTextContent('result 2')
+        expect(page.getAllByRole('listitem')[2]).toHaveTextContent('result 3')
+        expect(page.getByText('Total count: 10')).toBeVisible()
 
-        it('supports backward pagination', async () => {
-            const queries = await renderWithMocks(cursorMocks)
+        expect(page.getByText('First page')).toBeVisible()
+        expect(() => page.getByText('Previous page')).toThrowError(/Unable to find an element/)
+        expect(page.getByText('Next page')).toBeVisible()
+        expect(page.getByText('Last page')).toBeVisible()
 
-            await goToLastPage(queries)
-            await goToPreviousPage(queries)
+        expect(page.history.location.search).toBe('')
+    })
 
-            expect(queries.getAllByRole('listitem').length).toBe(3)
-            expect(queries.getByText('result 7')).toBeVisible()
-            expect(queries.getByText('result 6')).toBeVisible()
-            expect(queries.getByText('result 5')).toBeVisible()
-            expect(queries.getByText('Total count: 10')).toBeVisible()
+    it('supports jumping to the last page', async () => {
+        const page = await renderWithMocks(cursorMocks)
 
-            expect(queries.getByText('First page')).toBeVisible()
-            expect(queries.getByText('Previous page')).toBeVisible()
-            expect(queries.getByText('Next page')).toBeVisible()
-            expect(queries.getByText('Last page')).toBeVisible()
+        await goToLastPage(page)
 
-            await goToPreviousPage(queries)
+        expect(page.getAllByRole('listitem').length).toBe(3)
+        expect(page.getAllByRole('listitem')[0]).toHaveTextContent('result 8')
+        expect(page.getAllByRole('listitem')[1]).toHaveTextContent('result 9')
+        expect(page.getAllByRole('listitem')[2]).toHaveTextContent('result 10')
+        expect(page.getByText('Total count: 10')).toBeVisible()
 
-            expect(queries.getAllByRole('listitem').length).toBe(3)
-            expect(queries.getByText('result 4')).toBeVisible()
-            expect(queries.getByText('result 3')).toBeVisible()
-            expect(queries.getByText('result 2')).toBeVisible()
-            expect(queries.getByText('Total count: 10')).toBeVisible()
+        expect(page.getByText('First page')).toBeVisible()
+        expect(page.getByText('Previous page')).toBeVisible()
+        expect(() => page.getByText('Next page')).toThrowError(/Unable to find an element/)
+        expect(page.getByText('Last page')).toBeVisible()
 
-            expect(queries.getByText('First page')).toBeVisible()
-            expect(queries.getByText('Previous page')).toBeVisible()
-            expect(queries.getByText('Next page')).toBeVisible()
-            expect(queries.getByText('Last page')).toBeVisible()
+        expect(page.history.location.search).toBe('?last=3')
+    })
 
-            await goToPreviousPage(queries)
+    it('supports restoration from last page URL', async () => {
+        const page = await renderWithMocks(cursorMocks, true, '/?last=3')
 
-            expect(queries.getAllByRole('listitem').length).toBe(1)
-            expect(queries.getByText('result 1')).toBeVisible()
-            expect(queries.getByText('Total count: 10')).toBeVisible()
+        expect(page.getAllByRole('listitem').length).toBe(3)
+        expect(page.getAllByRole('listitem')[0]).toHaveTextContent('result 8')
+        expect(page.getAllByRole('listitem')[1]).toHaveTextContent('result 9')
+        expect(page.getAllByRole('listitem')[2]).toHaveTextContent('result 10')
+        expect(page.getByText('Total count: 10')).toBeVisible()
 
-            expect(queries.getByText('First page')).toBeVisible()
-            expect(() => queries.getByText('Previous page')).toThrowError(/Unable to find an element/)
-            expect(queries.getByText('Next page')).toBeVisible()
-            expect(queries.getByText('Last page')).toBeVisible()
-        })
+        expect(page.getByText('First page')).toBeVisible()
+        expect(page.getByText('Previous page')).toBeVisible()
+        expect(() => page.getByText('Next page')).toThrowError(/Unable to find an element/)
+        expect(page.getByText('Last page')).toBeVisible()
+    })
+
+    it('supports backward pagination', async () => {
+        const page = await renderWithMocks(cursorMocks)
+
+        await goToLastPage(page)
+        await goToPreviousPage(page)
+
+        expect(page.getAllByRole('listitem').length).toBe(3)
+        expect(page.getAllByRole('listitem')[0]).toHaveTextContent('result 5')
+        expect(page.getAllByRole('listitem')[1]).toHaveTextContent('result 6')
+        expect(page.getAllByRole('listitem')[2]).toHaveTextContent('result 7')
+        expect(page.getByText('Total count: 10')).toBeVisible()
+
+        expect(page.getByText('First page')).toBeVisible()
+        expect(page.getByText('Previous page')).toBeVisible()
+        expect(page.getByText('Next page')).toBeVisible()
+        expect(page.getByText('Last page')).toBeVisible()
+
+        expect(page.history.location.search).toBe(`?before=${getCursorForId('8')}`)
+
+        await goToPreviousPage(page)
+
+        expect(page.getAllByRole('listitem').length).toBe(3)
+        expect(page.getAllByRole('listitem')[0]).toHaveTextContent('result 2')
+        expect(page.getAllByRole('listitem')[1]).toHaveTextContent('result 3')
+        expect(page.getAllByRole('listitem')[2]).toHaveTextContent('result 4')
+        expect(page.getByText('Total count: 10')).toBeVisible()
+
+        expect(page.getByText('First page')).toBeVisible()
+        expect(page.getByText('Previous page')).toBeVisible()
+        expect(page.getByText('Next page')).toBeVisible()
+        expect(page.getByText('Last page')).toBeVisible()
+
+        expect(page.history.location.search).toBe(`?before=${getCursorForId('5')}`)
+
+        await goToPreviousPage(page)
+
+        expect(page.getAllByRole('listitem').length).toBe(1)
+        expect(page.getAllByRole('listitem')[0]).toHaveTextContent('result 1')
+        expect(page.getByText('Total count: 10')).toBeVisible()
+
+        expect(page.getByText('First page')).toBeVisible()
+        expect(() => page.getByText('Previous page')).toThrowError(/Unable to find an element/)
+        expect(page.getByText('Next page')).toBeVisible()
+        expect(page.getByText('Last page')).toBeVisible()
+
+        expect(page.history.location.search).toBe(`?before=${getCursorForId('2')}`)
+    })
+
+    it('supports restoration from backward pagination URL', async () => {
+        const page = await renderWithMocks(cursorMocks, true, `?before=${getCursorForId('5')}`)
+
+        expect(page.getAllByRole('listitem').length).toBe(3)
+        expect(page.getAllByRole('listitem')[0]).toHaveTextContent('result 2')
+        expect(page.getAllByRole('listitem')[1]).toHaveTextContent('result 3')
+        expect(page.getAllByRole('listitem')[2]).toHaveTextContent('result 4')
+        expect(page.getByText('Total count: 10')).toBeVisible()
+
+        expect(page.getByText('First page')).toBeVisible()
+        expect(page.getByText('Previous page')).toBeVisible()
+        expect(page.getByText('Next page')).toBeVisible()
+        expect(page.getByText('Last page')).toBeVisible()
+    })
+
+    it('does not change the URL when useURL is disabled', async () => {
+        const page = await renderWithMocks(cursorMocks, false, `/?after=${getCursorForId('6')}`)
+
+        expect(page.getAllByRole('listitem').length).toBe(3)
+        expect(page.getAllByRole('listitem')[0]).toHaveTextContent('result 1')
+        expect(page.getAllByRole('listitem')[1]).toHaveTextContent('result 2')
+        expect(page.getAllByRole('listitem')[2]).toHaveTextContent('result 3')
+        expect(page.getByText('Total count: 10')).toBeVisible()
+
+        expect(page.getByText('First page')).toBeVisible()
+        expect(() => page.getByText('Previous page')).toThrowError(/Unable to find an element/)
+        expect(page.getByText('Next page')).toBeVisible()
+        expect(page.getByText('Last page')).toBeVisible()
+
+        await goToLastPage(page)
+
+        expect(page.history.location.search).toBe(`?after=${getCursorForId('6')}`)
     })
 })
