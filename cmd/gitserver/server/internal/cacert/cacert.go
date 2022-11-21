@@ -2,28 +2,20 @@
 // to expose the raw system certificates on linux.
 package cacert
 
-import "sync"
-
-var (
-	systemOnce  sync.Once
-	systemCerts [][]byte
-	systemErr   error
+import (
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 )
 
 // System returns PEM encoded system certificates. Note: This function only
 // works on Linux. Other operating systems do not rely on PEM files at known
 // locations, instead they rely on system calls.
-func System() ([][]byte, error) {
-	systemOnce.Do(func() {
-		c, err := loadSystemRoots()
-		if err != nil {
-			systemErr = err
-			return
-		}
-		systemCerts = c.certs
-	})
-	return systemCerts, systemErr
-}
+var System = syncx.OnceValues(func() ([][]byte, error) {
+	c, err := loadSystemRoots()
+	if err != nil {
+		return nil, err
+	}
+	return c.certs, nil
+})
 
 // CertPool exists for interaction with x509. Do not use.
 type CertPool struct {
