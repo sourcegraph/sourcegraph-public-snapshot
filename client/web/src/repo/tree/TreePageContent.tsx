@@ -16,7 +16,7 @@ import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Heading, Link, Text, useObservable } from '@sourcegraph/wildcard'
+import { Button, Heading, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
 import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
