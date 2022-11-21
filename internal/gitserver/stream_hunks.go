@@ -72,11 +72,11 @@ func newHunkParser(rc io.ReadCloser, hunksCh chan hunkResult) hunkParser {
 
 func (p hunkParser) parse(ctx context.Context) {
 	defer p.rc.Close()
+	defer close(p.hunksCh)
 
 	var cur *Hunk
 	for {
 		if err := ctx.Err(); err != nil {
-			close(p.hunksCh)
 			return
 		}
 
@@ -135,7 +135,6 @@ func (p hunkParser) parse(ctx context.Context) {
 	if err := p.sc.Err(); err != nil {
 		p.hunksCh <- hunkResult{err: err}
 	}
-	close(p.hunksCh)
 }
 
 // parseEntry turns a `67b7b725a7ff913da520b997d71c840230351e30 10 20 1` line from
@@ -187,7 +186,7 @@ func parseExtra(hunk *Hunk, annotation string, content string) (ok bool, err err
 	case "previous":
 	case "boundary":
 	default:
-		// If it dosen't look like an entry, it's probably an unhandled git blame
+		// If it doesn't look like an entry, it's probably an unhandled git blame
 		// annotation.
 		if len(annotation) != 40 && len(strings.Split(content, " ")) != 3 {
 			err = errors.Newf("unhandled git blame annotation: %s")
