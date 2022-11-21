@@ -15,6 +15,13 @@ interface LabelProps extends React.HTMLAttributes<HTMLLabelElement>, TypographyP
     isUppercase?: boolean
 }
 
+/**
+ * Wildcard implementation of the label element.
+ *
+ * Use this Label component for non-standard form controls such as contenteditable inputs.
+ * Make sure you connect the input element and label with an aria-labelledby attribute.
+ * Otherwise, label native behaviour click-to-focus won't work.
+ */
 export const Label = React.forwardRef((props, reference) => {
     const {
         children,
@@ -45,15 +52,9 @@ export const Label = React.forwardRef((props, reference) => {
             return
         }
 
-        // Extend labelable elements set with contenteditable elements
-        const labelableElement = mergedRef.current?.querySelector<HTMLElement>(
-            'input, keygen, meter, output, progress, select, textarea, [contenteditable=""], [contenteditable="true"]'
-        )
-
-        if (labelableElement) {
-            labelableElement.focus()
-        }
-
+        // Resolve label's labellable control with aria-labelledby
+        // See https://github.com/sourcegraph/sourcegraph/pull/44676#pullrequestreview-1188749383
+        document.querySelector<HTMLElement>(`[aria-labelledby="${event.currentTarget.id}"]`)?.focus()
         onClick?.(event)
     }
 
