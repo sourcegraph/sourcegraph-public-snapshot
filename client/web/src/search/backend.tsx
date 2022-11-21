@@ -65,12 +65,6 @@ export function fetchSavedSearches(): Observable<SavedSearchFields[]> {
             savedSearches {
                 ...SavedSearchFields
             }
-            pageInfo {
-                hasNextPage
-                hasPreviousPage
-                endCursor
-                startCursor
-            }
         }
         ${savedSearchFragment}
     `).pipe(
