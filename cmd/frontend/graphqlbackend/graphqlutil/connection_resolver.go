@@ -117,33 +117,48 @@ func (r *ConnectionResolver[N]) Nodes() ([]*N, error) {
 		}
 
 		r.data.nodes, r.data.nodesError = r.store.ComputeNodes(paginationArgs)
+
+		// TODO(naman): add explaonondsfksjdh
+		if r.args.Last != nil {
+			// two-way swap list reversal
+			for i, j := 0, len(r.data.nodes)-1; i < j; i, j = i+1, j-1 {
+				r.data.nodes[i], r.data.nodes[j] = r.data.nodes[j], r.data.nodes[i]
+			}
+		}
 	})
 
 	nodes := r.data.nodes
 	if len(nodes) > int(r.args.Limit()) {
-		nodes = nodes[:len(nodes)-1]
+		if r.args.Last != nil {
+			nodes = nodes[1:]
+		} else {
+			nodes = nodes[:len(nodes)-1]
+		}
 	}
 
-	return nodes, r.data.totalError
+	return nodes, r.data.nodesError
 }
 
 func (r *ConnectionResolver[N]) PageInfo() (*ConnectionPageInfo[N], error) {
-	_, err := r.Nodes()
+	nodes, err := r.Nodes()
 	if err != nil {
 		return nil, err
 	}
 
 	return &ConnectionPageInfo[N]{
-		r.data.nodes,
+		len(r.data.nodes),
+		nodes,
 		r.store,
 		r.args,
 	}, nil
 }
 
 type ConnectionPageInfo[N ConnectionNode] struct {
-	nodes []*N
-	store ConnectionResolverStore[N]
-	args  *ConnectionResolverArgs
+	// TODO(naman): rename this
+	rawNodesCount int
+	nodes         []*N
+	store         ConnectionResolverStore[N]
+	args          *ConnectionResolverArgs
 }
 
 func (p *ConnectionPageInfo[N]) HasNextPage() bool {
@@ -151,7 +166,7 @@ func (p *ConnectionPageInfo[N]) HasNextPage() bool {
 		return true
 	}
 
-	return len(p.nodes) > int(p.args.Limit())
+	return p.rawNodesCount > int(p.args.Limit())
 }
 
 func (p *ConnectionPageInfo[N]) HasPreviousPage() bool {
@@ -160,23 +175,18 @@ func (p *ConnectionPageInfo[N]) HasPreviousPage() bool {
 	}
 
 	if p.args.Before != nil {
-		return len(p.nodes) > int(p.args.Limit())
+		return p.rawNodesCount > int(p.args.Limit())
 	}
 
 	return false
 }
 
 func (p *ConnectionPageInfo[N]) EndCursor() (cursor *string, err error) {
-	if len(p.nodes) < 2 {
+	if len(p.nodes) == 0 {
 		return nil, nil
 	}
 
-	lastNodeIndex := len(p.nodes) - 1
-	if len(p.nodes) > int(p.args.Limit()) {
-		lastNodeIndex = lastNodeIndex - 1
-	}
-
-	endNode := p.nodes[lastNodeIndex]
+	endNode := p.nodes[len(p.nodes)-1]
 
 	cursor, err = p.store.MarshalCursor(endNode)
 
