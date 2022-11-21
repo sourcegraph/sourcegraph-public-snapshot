@@ -3,8 +3,8 @@ import { useMemo } from 'react'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { formatDistanceStrict } from 'date-fns'
 import { truncate } from 'lodash'
-import { Observable, of } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { interval, Observable, of } from 'rxjs'
+import { map, throttle } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
@@ -110,6 +110,10 @@ interface RawStreamHunk {
         Email: string
         Date: string
     }
+    commit: {
+        parents: string[]
+        url: string
+    }
     commitID: string
     endLine: number
     startLine: number
@@ -130,7 +134,6 @@ const fetchBlameViaStreaming = memoizeObservable(
         new Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined>(subscriber => {
             let assembledHunks: Omit<BlameHunk, 'displayInfo'>[] = []
             const repoAndRevisionPath = `/${repoName}${revision ? `@${revision}` : ''}`
-
             fetchEventSource(`/.api/blame${repoAndRevisionPath}/stream/${filePath}`, {
                 method: 'GET',
                 headers: {
@@ -155,8 +158,8 @@ const fetchBlameViaStreaming = memoizeObservable(
                                     },
                                 },
                                 commit: {
-                                    url: `${repoAndRevisionPath}/-/commit/${hunk.commitID}`,
-                                    parents: hunk.commit.parents,
+                                    url: hunk.commit.url,
+                                    parents: hunk.commit.parents ? hunk.commit.parents.map(oid => ({ oid })) : [],
                                 },
                             })
                         }
@@ -172,7 +175,8 @@ const fetchBlameViaStreaming = memoizeObservable(
                 () => subscriber.complete(),
                 error => subscriber.error(error)
             )
-        }),
+            // Throttle the results to avoid re-rendering the blame sidebar for every hunk
+        }).pipe(throttle(() => interval(1000), { leading: true, trailing: true })),
     makeRepoURI
 )
 

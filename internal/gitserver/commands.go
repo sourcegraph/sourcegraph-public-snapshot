@@ -677,14 +677,14 @@ type BlameOptions struct {
 
 // A Hunk is a contiguous portion of a file associated with a commit.
 type Hunk struct {
-	StartLine    int `json:"startLine"` // 1-indexed start line number
-	EndLine      int `json:"endLine"`   // 1-indexed end line number
-	StartByte    int `json:"-"`         // 0-indexed start byte position (inclusive)
-	EndByte      int `json:"-"`         // 0-indexed end byte position (exclusive)
-	api.CommitID `json:"commitID"`
-	Author       gitdomain.Signature `json:"author"`
-	Message      string              `json:"message"`
-	Filename     string              `json:"filename"`
+	StartLine    int  // 1-indexed start line number
+	EndLine      int    // 1-indexed end line number
+	StartByte    int          // 0-indexed start byte position (inclusive)
+	EndByte      int         // 0-indexed end byte position (exclusive)
+	api.CommitID
+	Author       gitdomain.Signature
+	Message      string
+	Filename     string
 }
 
 // StreamBlameFile returns Git blame information about a file.
