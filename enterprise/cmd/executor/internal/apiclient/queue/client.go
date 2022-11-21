@@ -3,7 +3,9 @@ package queue
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -250,18 +252,36 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 		return nil, nil, err
 	}
 
+	// Do the request and get the reader for the response body.
+	_, body, err := c.client.Do(ctx, req)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Now read the response body into a buffer, so that we can decode it twice.
+	// This will always be small, so no problem that we don't stream this.
+	defer body.Close()
+	bodyBytes, err := io.ReadAll(body)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// First, try to unmarshal the response into a V2 response object.
 	var respV2 executor.HeartbeatResponse
-	if _, err := c.client.DoAndDecode(ctx, req, &respV2); err == nil {
+	if err := json.Unmarshal(bodyBytes, &respV2); err == nil {
+		// If that works, we can return the data.
 		return respV2.KnownIDs, respV2.CancelIDs, nil
 	}
+
 	// If unmarshalling fails, try to parse it as a V1 payload.
 	var respV1 []int
-	if _, err := c.client.DoAndDecode(ctx, req, &respV1); err != nil {
+	if err := json.Unmarshal(bodyBytes, &respV1); err != nil {
 		return nil, nil, err
 	}
 
 	// If that works, we also have to fetch canceled jobs separately, as we
-	// are talking to a pre-4.3 Sourcegraph API.
+	// are talking to a pre-4.3 Sourcegraph API and that doesn't return canceled
+	// jobs as part of heartbeats.
 
 	cancelIDs, err = c.CanceledJobs(ctx, queueName, jobIDs)
 	if err != nil {

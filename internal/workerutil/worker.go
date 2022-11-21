@@ -158,9 +158,10 @@ func (w *Worker) Start() {
 
 			for _, id := range ids {
 				if _, ok := knownIDsMap[id]; !ok {
-					w.options.Metrics.logger.Error("Removed unknown job from running set",
-						log.Int("id", id))
-					w.runningIDSet.Remove(id)
+					if w.runningIDSet.Remove(id) {
+						w.options.Metrics.logger.Error("Removed unknown job from running set",
+							log.Int("id", id))
+					}
 				}
 			}
 
