@@ -106,8 +106,24 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 
 		ok, err = zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
 		if err != nil {
-			recordHybridFinalState("zoekt-search-error")
-			return nil, false, err
+			// Check for error conditions related to the request rather than
+			// zoekt misbehaving.
+			switch ctx.Err() {
+			case context.Canceled:
+				// We swallow the error since we only cancel requests once we
+				// have hit limits or the RPC request has gone away.
+				recordHybridFinalState("search-canceled")
+				return nil, true, nil
+			case context.DeadlineExceeded:
+				// We return the error because hitting a deadline should be
+				// unexpected. We also don't need to run the normal searcher
+				// path in this case.
+				recordHybridFinalState("search-timeout")
+				return nil, true, err
+			default:
+				recordHybridFinalState("zoekt-search-error")
+				return nil, false, err
+			}
 		} else if !ok {
 			metricHybridIndexChanged.Inc()
 			logger.Debug("retrying search since index changed while searching")

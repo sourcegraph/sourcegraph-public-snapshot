@@ -14249,9 +14249,10 @@ Query: `sum by(instance) (rate(searcher_service_request_total[10m]))`
 This graph should be empty unless you enable the feature flag "search-hybrid".
 
 This graph should mostly be "success". The next most common state should be
-"diff-too-large", which happens if the commit is too far from the indexed
-commit. Otherwise other state should be rare and likely are a sign for further
-investigation.
+"search-canceled" which happens when result limits are hit or the user starts
+a new search. Finally the next most common should be "diff-too-large", which
+happens if the commit is too far from the indexed commit. Otherwise other
+state should be rare and likely are a sign for further investigation.
 
 Note: On sourcegraph.com "zoekt-list-missing" is also common due to it
 indexing a subset of repositories. Otherwise every other state should occur
