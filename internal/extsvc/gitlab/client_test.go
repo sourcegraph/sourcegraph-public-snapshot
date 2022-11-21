@@ -68,6 +68,14 @@ func update(name string) bool {
 	return regexp.MustCompile(*updateRegex).MatchString(name)
 }
 
+func TestClient_ValidateToken(t *testing.T) {
+	client := createTestClient(t)
+	ctx := context.Background()
+
+	err := client.ValidateToken(ctx)
+	assert.NoError(t, err)
+}
+
 type mockDoer struct {
 	do func(*http.Request) (*http.Response, error)
 }

@@ -13,6 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/Khan/genqlient/graphql"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 
@@ -75,8 +76,9 @@ type ClientProvider struct {
 
 	// baseURL is the base URL of GitLab; e.g., https://gitlab.com or https://gitlab.example.com
 	baseURL *url.URL
+	gqlURL  *url.URL
 
-	// httpClient is the underlying the HTTP client to use.
+	// httpClient is the underlying HTTP client to use.
 	httpClient httpcli.Doer
 
 	gitlabClients   map[string]*Client
@@ -105,6 +107,7 @@ func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer) *ClientPr
 	return &ClientProvider{
 		urn:           urn,
 		baseURL:       baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
+		gqlURL:        baseURL.ResolveReference(&url.URL{Path: "api/graphql"}),
 		httpClient:    cli,
 		gitlabClients: make(map[string]*Client),
 	}
@@ -173,6 +176,7 @@ type Client struct {
 
 	baseURL          *url.URL
 	httpClient       httpcli.Doer
+	gqlClient        graphql.Client
 	projCache        *rcache.Cache
 	Auth             auth.Authenticator
 	rateLimitMonitor *ratelimit.Monitor
@@ -210,7 +214,7 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	rl := ratelimit.DefaultRegistry.Get(p.urn)
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 
-	return &Client{
+	c := &Client{
 		urn:              p.urn,
 		baseURL:          p.baseURL,
 		httpClient:       p.httpClient,
@@ -219,6 +223,47 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 		rateLimiter:      rl,
 		rateLimitMonitor: rlm,
 	}
+	c.gqlClient = graphql.NewClient(p.gqlURL.String(), gqlClient{c})
+	return c
+}
+
+type gqlClient struct {
+	*Client
+}
+
+var _ httpcli.Doer = gqlClient{}
+
+func (c gqlClient) Do(req *http.Request) (resp *http.Response, err error) {
+	// Used by the GraphQL client; we need to inject the authentication here.
+	ctx := req.Context()
+	oauthAuther, ok := c.Auth.(auth.AuthenticatorWithRefresh)
+	if ok {
+		// Pre-emptively check for refresh
+		if oauthAuther.NeedsRefresh() {
+			// NOTE: This is a best-effort attempt, so we do not care about the returned error.
+			_ = oauthAuther.Refresh(ctx, c.httpClient)
+		}
+		resp, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther)
+		if err != nil {
+			trace("GitLab GraphQL API error", "method", req.Method, "url", req.URL.String(), "err", err)
+			return
+		}
+	} else {
+		if c.Auth != nil {
+			if err := c.Auth.Authenticate(req); err != nil {
+				return nil, errors.Wrap(err, "authenticating request")
+			}
+		}
+
+		resp, err = c.httpClient.Do(req.WithContext(ctx))
+		if err != nil {
+			trace("GitLab GraphQL API error", "method", req.Method, "url", req.URL.String(), "err", err)
+			return
+		}
+	}
+
+	trace("GitLab GraphQL API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
+	return
 }
 
 func isGitLabDotComURL(baseURL *url.URL) bool {
@@ -337,12 +382,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 }
 
 func (c *Client) ValidateToken(ctx context.Context) error {
-	req, err := http.NewRequest(http.MethodGet, "user", nil)
-	if err != nil {
-		return err
-	}
-	v := struct{}{}
-	_, _, err = c.do(ctx, req, &v)
+	_, err := validateToken(ctx, c.gqlClient)
 	return err
 }
 

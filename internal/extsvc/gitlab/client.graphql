@@ -1,0 +1,5 @@
+query validateToken {
+    currentUser {
+        username
+    }
+}
