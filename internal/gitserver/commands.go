@@ -677,14 +677,14 @@ type BlameOptions struct {
 
 // A Hunk is a contiguous portion of a file associated with a commit.
 type Hunk struct {
-	StartLine    int  // 1-indexed start line number
-	EndLine      int    // 1-indexed end line number
-	StartByte    int          // 0-indexed start byte position (inclusive)
-	EndByte      int         // 0-indexed end byte position (exclusive)
+	StartLine int // 1-indexed start line number
+	EndLine   int // 1-indexed end line number
+	StartByte int // 0-indexed start byte position (inclusive)
+	EndByte   int // 0-indexed end byte position (exclusive)
 	api.CommitID
-	Author       gitdomain.Signature
-	Message      string
-	Filename     string
+	Author   gitdomain.Signature
+	Message  string
+	Filename string
 }
 
 // StreamBlameFile returns Git blame information about a file.
@@ -695,10 +695,10 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, checker authz.S
 	span.SetTag("opt", opt)
 	defer span.Finish()
 
-	return streamBlameFileCmd(ctx, c.gitserverGitCommandFunc(repo), path, opt, repo, checker)
+	return streamBlameFileCmd(ctx, checker, repo, path, opt, c.gitserverGitCommandFunc(repo))
 }
 
-func streamBlameFileCmd(ctx context.Context, command gitCommandFunc, path string, opt *BlameOptions, repo api.RepoName, checker authz.SubRepoPermissionChecker) (HunkReader, error) {
+func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions, command gitCommandFunc) (HunkReader, error) {
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil || !hasAccess {
 		return nil, err
@@ -710,7 +710,6 @@ func streamBlameFileCmd(ctx context.Context, command gitCommandFunc, path string
 		return nil, err
 	}
 
-	// TODO: Duplicated
 	args := []string{"blame", "-w", "--porcelain", "--incremental"}
 	if opt.StartLine != 0 || opt.EndLine != 0 {
 		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
