@@ -216,17 +216,14 @@ func Main(enterpriseInit EnterpriseInit) {
 	addr := net.JoinHostPort(host, port)
 	logger.Info("listening", log.String("addr", addr))
 
-	var handler http.Handler
-	{
-		m := repoupdater.NewHandlerMetrics()
-		m.MustRegister(prometheus.DefaultRegisterer)
+	m := repoupdater.NewHandlerMetrics()
+	m.MustRegister(prometheus.DefaultRegisterer)
 
-		handler = repoupdater.ObservedHandler(
-			logger,
-			m,
-			otel.GetTracerProvider(),
-		)(server.Handler())
-	}
+	handler := repoupdater.ObservedHandler(
+		logger,
+		m,
+		otel.GetTracerProvider(),
+	)(server.Handler())
 
 	globals.WatchExternalURL(nil)
 
