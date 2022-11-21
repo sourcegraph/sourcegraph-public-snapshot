@@ -1,0 +1,4 @@
+schema: schema/gitlab.graphql
+operations:
+- '*.graphql'
+generated: graphql.go
