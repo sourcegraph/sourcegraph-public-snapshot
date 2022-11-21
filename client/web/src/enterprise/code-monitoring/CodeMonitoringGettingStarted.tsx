@@ -172,7 +172,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                         <div className="col-4">
                             <Card className={styles.signUpCard}>
                                 <H4>Free for registered users</H4>
-                                <Text className="text-muted">Sign up and build your first code monitor today.</Text>
+                                <Text className="text-muted">Build a code monitor today on open source code.</Text>
                                 <CodeMonitorSignUpLink
                                     className={styles.createButton}
                                     eventName="SignUpPLGMonitor_GettingStarted"
