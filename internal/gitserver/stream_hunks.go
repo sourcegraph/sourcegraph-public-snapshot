@@ -89,7 +89,11 @@ func (p hunkParser) parse(ctx context.Context) {
 					cur.Message = h.Message
 				}
 				// If we have an ongoing entry, send it.
-				p.hunksCh <- hunkResult{hunk: cur}
+				select {
+				case p.hunksCh <- hunkResult{hunk: cur}:
+				case <-ctx.Done():
+					return
+				}
 			}
 			break
 		}
