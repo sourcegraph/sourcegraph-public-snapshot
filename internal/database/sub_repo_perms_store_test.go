@@ -143,7 +143,7 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	}
 
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthzEnforceForSiteAdmins: true}})
-	defer conf.Mock(nil)
+	t.Cleanup(func() { conf.Mock(nil) })
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
