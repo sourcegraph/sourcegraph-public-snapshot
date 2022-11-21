@@ -1,36 +1,54 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 
 import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
+import { useHistory, useLocation } from 'react-router'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
-import { useSearchParameters } from '@sourcegraph/wildcard'
 
-import { Connection, PaginatedConnectionQueryArguments, PaginatedConnection } from '../ConnectionType'
 import { asGraphQLResult } from '../utils'
 
-export interface PaginationProps {
-    nextPage: () => void
-    previousPage: () => void
-    firstPage: () => void
-    lastPage: () => void
+export interface PaginatedConnectionQueryArguments {
+    first?: number | null
+    last?: number | null
+    after?: string | null
+    before?: string | null
 }
 
-export type { PaginatedConnection }
+export interface PaginatedConnection<N> {
+    nodes: N[]
+    totalCount?: number
+    pageInfo?: {
+        hasNextPage: boolean
+        hasPreviousPage: boolean
+        startCursor?: string
+        endCursor?: string
+    }
+    error?: string | null
+}
+
+export interface PaginationProps {
+    hasNextPage: null | boolean
+    hasPreviousPage: null | boolean
+    goToNextPage: () => Promise<void>
+    goToPreviousPage: () => Promise<void>
+    goToFirstPage: () => Promise<void>
+    goToLastPage: () => Promise<void>
+}
 
 export interface UsePaginatedConnectionResult<TData> extends PaginationProps {
-    connection?: Connection<TData>
+    connection?: PaginatedConnection<TData>
     loading: boolean
     error?: ApolloError
 }
 
 interface UsePaginatedConnectionConfig<TResult> {
-    /** The number of items per page, defaults to 20 */
+    // The number of items per page, defaults to 20
     pageSize?: number
-    /** Set if query variables should be updated in and derived from the URL */
+    // Set if query variables should be updated in and derived from the URL
     useURL?: boolean
-    /** Allows modifying how the query interacts with the Apollo cache */
+    // Allows modifying how the query interacts with the Apollo cache
     fetchPolicy?: WatchQueryFetchPolicy
-    /** Allows running an optional callback on any successful request */
+    // Allows running an optional callback on any successful request
     onCompleted?: (data: TResult) => void
 }
 
@@ -40,6 +58,8 @@ interface UsePaginatedConnectionParameters<TResult, TVariables extends Paginated
     getConnection: (result: GraphQLResult<TResult>) => PaginatedConnection<TData>
     options?: UsePaginatedConnectionConfig<TResult>
 }
+
+const DEFAULT_PAGE_SIZE = 20
 
 /**
  * Request a GraphQL connection query and handle pagination options.
@@ -56,62 +76,22 @@ export const usePaginatedConnection = <TResult, TVariables extends PaginatedConn
     getConnection: getConnectionFromGraphQLResult,
     options,
 }: UsePaginatedConnectionParameters<TResult, TVariables, TData>): UsePaginatedConnectionResult<TData> => {
-    const pageSize = options?.pageSize ?? 20
+    const pageSize = options?.pageSize ?? DEFAULT_PAGE_SIZE
+    const [initialPaginationArgs, setPaginationArgs] = useSyncUrl(!!options?.useURL, pageSize)
 
-    const searchParameters = useSearchParameters()
+    // TODO(philipp-spiess): Find out why Omit<TVariables, "first" | ...> & { first: number, ... } does not work
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const initialQueryVariables: TVariables = useMemo(
+        () => ({ ...variables, ...initialPaginationArgs } as any),
+        // The variables object can be different every time the hook is called but we only need to react
+        // to a change in the individual variable values.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [pageSize, initialPaginationArgs, ...Object.values(variables)]
+    )
 
-    // const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables
-    // const paginationRef = useRef({
-    //     /**
-    //      * The number of results that we will typically want to load in the next request (unless `visible` is used).
-    //      * This value will typically be static for cursor-based pagination, but will be dynamic for batch-based pagination.
-    //      */
-    //     actual: (options?.useURL && parseQueryInt(searchParameters, 'first')) || first,
-    //     /**
-    //      * Primarily used to determine original request state for URL search parameter logic.
-    //      */
-    //     default: first,
-    // })
-
-    // const initialControls: PaginatedConnectionQueryArguments = useMemo(
-    //     () => ({
-    //         /**
-    //          * The `first` variable for our **initial** query.
-    //          * If this is our first query and we were supplied a value for `visible` load that many results.
-    //          * If we weren't given such a value or this is a subsequent request, only ask for one page of results.
-    //          *
-    //          * 'visible' is the number of results that were visible from previous requests. The initial request of
-    //          * a result set will load `visible` items, then will request `first` items on each subsequent
-    //          * request. This has the effect of loading the correct number of visible results when a URL
-    //          * is copied during pagination. This value is only useful with cursor-based paging for the initial request.
-    //          */
-    //         first: (options?.useURL && parseQueryInt(searchParameters, 'visible')) || paginationRef.current.actual,
-    //         /**
-    //          * The `after` variable for our **initial** query.
-    //          * Subsequent requests through `fetchMore` will use a valid `cursor` value here, where possible.
-    //          */
-    //         after: (options?.useURL && searchParameters.get('after')) || after,
-    //     }),
-    //     // We only need these controls for the inital request. We do not care about dependency updates.
-    //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    //     []
-    // )
-
-    /**
-     * Initial query of the hook.
-     * Subsequent requests (such as further pagination) will be handled through `fetchMore`
-     */
     const { data, error, loading, refetch } = useQuery<TResult, TVariables>(query, {
-        variables: {
-            ...variables,
-            ...{
-                first: pageSize,
-                after: null,
-                last: null,
-                before: null,
-            },
-        },
-        notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
+        variables: initialQueryVariables,
+        notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `refetch`
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
     })
@@ -130,52 +110,144 @@ export const usePaginatedConnection = <TResult, TVariables extends PaginatedConn
 
     const connection = data ? getConnection({ data, error }) : undefined
 
-    // useConnectionUrl({
-    //     enabled: options?.useURL,
-    //     first: paginationRef.current,
-    //     visibleResultCount: connection?.nodes.length,
-    // })
+    const goToNextPage = useCallback(async (): Promise<void> => {
+        const cursor = connection?.pageInfo?.endCursor
+        if (!cursor) {
+            throw new Error('No cursor available for next page')
+        }
+        const nextPageArgs = { after: cursor, first: pageSize, last: null, before: null }
+        setPaginationArgs(nextPageArgs)
+        await refetch({
+            ...initialQueryVariables,
+            ...nextPageArgs,
+        })
+    }, [connection?.pageInfo?.endCursor, pageSize, setPaginationArgs, refetch, initialQueryVariables])
 
-    const nextPage = useCallback(async (): Promise<void> => {
-        const cursor = connection?.pageInfo?.endCursor
+    const goToPreviousPage = useCallback(async (): Promise<void> => {
+        const cursor = connection?.pageInfo?.startCursor
         if (!cursor) {
             throw new Error('No cursor available for next page')
         }
-        await refetch({
-            ...variables,
-            ...{ after: cursor, first: pageSize, last: null, before: null },
-        })
-    }, [connection?.pageInfo?.endCursor, pageSize, refetch, variables])
-    const previousPage = useCallback(async (): Promise<void> => {
-        const cursor = connection?.pageInfo?.endCursor
-        if (!cursor) {
-            throw new Error('No cursor available for next page')
+        const previousPageArgs = {
+            after: null,
+            first: null,
+            last: pageSize,
+            before: cursor,
         }
+        setPaginationArgs(previousPageArgs)
         await refetch({
-            ...variables,
-            ...{ after: null, first: null, last: pageSize, before: cursor },
+            ...initialQueryVariables,
+            ...previousPageArgs,
         })
-    }, [connection?.pageInfo?.startCursor, pageSize, refetch, variables])
-    const firstPage = useCallback(async (): Promise<void> => {
+    }, [connection?.pageInfo?.startCursor, pageSize, setPaginationArgs, refetch, initialQueryVariables])
+
+    const goToFirstPage = useCallback(async (): Promise<void> => {
+        const firstPageArgs = {
+            after: null,
+            first: pageSize,
+            last: null,
+            before: null,
+        }
+        setPaginationArgs(firstPageArgs)
         await refetch({
-            ...variables,
-            ...{ after: null, first: pageSize, last: null, before: null },
+            ...initialQueryVariables,
+            ...firstPageArgs,
         })
-    }, [pageSize, refetch, variables])
-    const lastPage = useCallback(async (): Promise<void> => {
+    }, [pageSize, setPaginationArgs, refetch, initialQueryVariables])
+
+    const goToLastPage = useCallback(async (): Promise<void> => {
+        const lastPageArgs = {
+            after: null,
+            first: null,
+            last: pageSize,
+            before: null,
+        }
+        setPaginationArgs(lastPageArgs)
         await refetch({
-            ...variables,
-            ...{ after: null, first: null, last: pageSize, before: null },
+            ...initialQueryVariables,
+            ...lastPageArgs,
         })
-    }, [pageSize, refetch, variables])
+    }, [pageSize, setPaginationArgs, refetch, initialQueryVariables])
 
     return {
         connection,
         loading,
         error,
-        nextPage,
-        previousPage,
-        firstPage,
-        lastPage,
+        hasNextPage: connection?.pageInfo?.hasNextPage ?? null,
+        hasPreviousPage: connection?.pageInfo?.hasPreviousPage ?? null,
+        goToNextPage,
+        goToPreviousPage,
+        goToFirstPage,
+        goToLastPage,
     }
+}
+
+// TODO(philipp-spiess): We should make these callbacks overridable by the
+// consumer of this API to allow for serialization of other query parameters in
+// the URL (e.g. filters).
+//
+// We also need to change this if we ever want to allow users to change the page
+// size and want to make it persist in the URL.
+const getPaginationArgsFromSearch = (search: string, pageSize: number): PaginatedConnectionQueryArguments => {
+    const searchParameters = new URLSearchParams(search)
+
+    if (searchParameters.has('after')) {
+        return { first: pageSize, last: null, after: searchParameters.get('after'), before: null }
+    }
+    if (searchParameters.has('before')) {
+        return { first: null, last: pageSize, after: null, before: searchParameters.get('before') }
+    }
+    // Special case for handling the last page.
+    if (searchParameters.has('last')) {
+        return { first: null, last: pageSize, after: null, before: null }
+    }
+    return { first: pageSize, last: null, after: null, before: null }
+}
+const getSearchFromPaginationArgs = (paginationArgs: PaginatedConnectionQueryArguments): string => {
+    const searchParameters = new URLSearchParams()
+    if (paginationArgs.after) {
+        searchParameters.set('after', paginationArgs.after)
+        return searchParameters.toString()
+    }
+    if (paginationArgs.before) {
+        searchParameters.set('before', paginationArgs.before)
+        return searchParameters.toString()
+    }
+    if (paginationArgs.last) {
+        searchParameters.set('last', paginationArgs.last.toString())
+        return searchParameters.toString()
+    }
+    return ''
+}
+
+export const useSyncUrl = (
+    enabled: boolean,
+    pageSize: number
+): [
+    initialPaginationArgs: PaginatedConnectionQueryArguments,
+    setPaginationArgs: (args: PaginatedConnectionQueryArguments) => void
+] => {
+    const location = useLocation()
+    const history = useHistory()
+
+    const initialPaginationArgs = useMemo(() => {
+        if (enabled) {
+            return getPaginationArgsFromSearch(location.search, pageSize)
+        }
+        return { first: pageSize, last: null, after: null, before: null }
+        // We deliberately ignore changes to the URL after the first render
+        // since we assume that these are caused by this hook.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [enabled])
+
+    const setPaginationArgs = useCallback(
+        (paginationArgs: PaginatedConnectionQueryArguments): void => {
+            if (enabled) {
+                const search = getSearchFromPaginationArgs(paginationArgs)
+                history.replace({ search })
+            }
+        },
+        [enabled, history]
+    )
+    return [initialPaginationArgs, setPaginationArgs]
 }
