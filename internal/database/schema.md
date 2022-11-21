@@ -1548,6 +1548,7 @@ Indexes:
  persist_mode      | persistmode              |           | not null | 'record'::persistmode
  queued_at         | timestamp with time zone |           |          | now()
  cancel            | boolean                  |           | not null | false
+ trace_id          | text                     |           |          | 
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "finished_at_insights_query_runner_jobs_idx" btree (finished_at)

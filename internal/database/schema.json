@@ -11190,6 +11190,19 @@
           "Comment": ""
         },
         {
+          "Name": "trace_id",
+          "Index": 20,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "worker_hostname",
           "Index": 13,
           "TypeName": "text",
