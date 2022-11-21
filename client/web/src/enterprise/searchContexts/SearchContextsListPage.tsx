@@ -78,7 +78,7 @@ export const SearchContextsListPage: React.FunctionComponent<
                             </Button>
                             {props.isSourcegraphDotCom && (
                                 <Button
-                                    to="https://signup.sourcegraph.com"
+                                    to="https://signup.sourcegraph.com/?p=context"
                                     className="d-block mt-2"
                                     as={Link}
                                     variant="secondary"
