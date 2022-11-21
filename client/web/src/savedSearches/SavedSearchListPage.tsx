@@ -239,20 +239,20 @@ const SavedSearchListPageContent: React.FunctionComponent<React.PropsWithChildre
                 onPageChange={onPageChange}
             />
           */}
-            <button type="button" onClick={pagination.firstPage}>
+            <button type="button" onClick={pagination.goToFirstPage}>
                 First page
             </button>
             {savedSearches?.pageInfo?.hasNextPage && (
-                <button type="button" onClick={pagination.nextPage}>
+                <button type="button" onClick={pagination.goToNextPage}>
                     Next page
                 </button>
             )}
             {savedSearches?.pageInfo?.hasPreviousPage && (
-                <button type="button" onClick={pagination.previousPage}>
+                <button type="button" onClick={pagination.goToPreviousPage}>
                     Previous page
                 </button>
             )}
-            <button type="button" onClick={pagination.lastPage}>
+            <button type="button" onClick={pagination.goToLastPage}>
                 Last page
             </button>
         </Container>
