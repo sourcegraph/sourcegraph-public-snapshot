@@ -126,33 +126,11 @@ func getAllOutboundRequestRawValues() ([][]byte, error) {
 func removeSensitiveHeaders(headers http.Header) http.Header {
 	var cleanHeaders = make(http.Header)
 	for key, value := range headers {
-		if isRiskyKey(key) || hasRiskyValue(value) {
+		if IsRiskyKey(key) || HasRiskyValue(value) {
 			cleanHeaders[key] = []string{"REDACTED"}
 		} else {
 			cleanHeaders[key] = value
 		}
 	}
 	return cleanHeaders
-}
-
-func isRiskyKey(key string) bool {
-	riskyHeaderKeys := []string{"auth", "cookie", "token"}
-	for _, riskyKey := range riskyHeaderKeys {
-		if strings.Contains(strings.ToLower(key), riskyKey) {
-			return true
-		}
-	}
-	return false
-}
-
-func hasRiskyValue(values []string) bool {
-	riskyHeaderValues := []string{"bearer", "ghp_", "glpat-"}
-	for _, value := range values {
-		for _, riskyValue := range riskyHeaderValues {
-			if strings.Contains(strings.ToLower(value), riskyValue) {
-				return true
-			}
-		}
-	}
-	return false
 }

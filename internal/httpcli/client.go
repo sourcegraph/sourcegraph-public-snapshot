@@ -720,3 +720,26 @@ func RequestClientTransportOpt(cli *http.Client) error {
 
 	return nil
 }
+
+
+func IsRiskyKey(key string) bool {
+	riskyHeaderKeys := []string{"auth", "cookie", "token"}
+	for _, riskyKey := range riskyHeaderKeys {
+		if strings.Contains(strings.ToLower(key), riskyKey) {
+			return true
+		}
+	}
+	return false
+}
+
+func HasRiskyValue(values []string) bool {
+	riskyHeaderValues := []string{"bearer", "ghp_", "glpat-"}
+	for _, value := range values {
+		for _, riskyValue := range riskyHeaderValues {
+			if strings.Contains(strings.ToLower(value), riskyValue) {
+				return true
+			}
+		}
+	}
+	return false
+}
