@@ -45,19 +45,12 @@ export const Label = React.forwardRef((props, reference) => {
             return
         }
 
-        const labelableElements =
-            mergedRef.current?.querySelectorAll('input, keygen, meter, output, progress, select, textarea') ?? []
+        const labelableElement = mergedRef.current?.querySelector<HTMLElement>(
+            'input, keygen, meter, output, progress, select, textarea, [contenteditable="true"]'
+        )
 
-        if (labelableElements.length === 0) {
-            const contendEditableElement = mergedRef.current?.querySelector<HTMLElement>('[contenteditable="true"]')
-
-            if (contendEditableElement) {
-                // If there is content editable element focus it instead and prevent default behavior
-                // We need to prevent default behavior because by default labels focuses any interactive elements
-                // such buttons, in order to preserve focus on the content editable element we stop this behavior
-                event.preventDefault()
-                contendEditableElement.focus()
-            }
+        if (labelableElement) {
+            labelableElement.focus()
         }
 
         onClick?.(event)
