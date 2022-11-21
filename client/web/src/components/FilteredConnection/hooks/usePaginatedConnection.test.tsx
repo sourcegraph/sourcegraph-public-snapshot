@@ -1,5 +1,5 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { act, fireEvent } from '@testing-library/react'
+import { fireEvent } from '@testing-library/react'
 
 import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-client'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
