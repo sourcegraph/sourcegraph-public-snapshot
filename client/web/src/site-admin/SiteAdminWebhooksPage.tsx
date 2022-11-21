@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { mdiMapSearch, mdiPlus } from '@mdi/js'
+import { mdiCog, mdiMapSearch, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
@@ -39,7 +39,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
         <div className="site-admin-webhooks-page">
             <PageTitle title="Webhook receivers" />
             <PageHeader
-                path={[{ text: 'Webhook receivers' }]}
+                path={[{ icon: mdiCog }, { to: '/site-admin/webhooks', text: 'Webhook receivers' }]}
                 headingElement="h2"
                 description="All configured webhooks receivers"
                 className="mb-3"
@@ -63,6 +63,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
                         {connection?.nodes?.map(node => (
                             <WebhookNode
                                 key={node.id}
+                                id={node.id}
                                 codeHostKind={node.codeHostKind}
                                 codeHostURN={node.codeHostURN}
                             />

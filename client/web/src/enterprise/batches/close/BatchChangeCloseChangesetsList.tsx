@@ -134,7 +134,7 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<React.Props
 
     return (
         <div className="list-group position-relative" ref={nextContainerElement}>
-            <Container>
+            <Container role="region" aria-label="affected changesets">
                 <FilteredConnection<
                     ChangesetFields,
                     Omit<ChangesetCloseNodeProps, 'node'>,
@@ -159,7 +159,6 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<React.Props
                     history={history}
                     location={location}
                     useURLQuery={true}
-                    listComponent="div"
                     listClassName={styles.batchChangeCloseChangesetsListGrid}
                     headComponent={
                         willClose ? BatchChangeCloseHeaderWillCloseChangesets : BatchChangeCloseHeaderWillKeepChangesets

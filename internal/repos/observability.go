@@ -139,22 +139,20 @@ func (o *observedSource) GetRepo(ctx context.Context, path string) (sourced *typ
 
 // StoreMetrics encapsulates the Prometheus metrics of a Store.
 type StoreMetrics struct {
-	Transact                           *metrics.REDMetrics
-	Done                               *metrics.REDMetrics
-	CreateExternalServiceRepo          *metrics.REDMetrics
-	UpdateExternalServiceRepo          *metrics.REDMetrics
-	DeleteExternalServiceRepo          *metrics.REDMetrics
-	DeleteExternalServiceReposNotIn    *metrics.REDMetrics
-	UpdateRepo                         *metrics.REDMetrics
-	UpsertRepos                        *metrics.REDMetrics
-	UpsertSources                      *metrics.REDMetrics
-	ListExternalRepoSpecs              *metrics.REDMetrics
-	ListExternalServiceUserIDsByRepoID *metrics.REDMetrics
-	ListExternalServiceRepoIDsByUserID *metrics.REDMetrics
-	GetExternalService                 *metrics.REDMetrics
-	SetClonedRepos                     *metrics.REDMetrics
-	CountNotClonedRepos                *metrics.REDMetrics
-	EnqueueSyncJobs                    *metrics.REDMetrics
+	Transact                        *metrics.REDMetrics
+	Done                            *metrics.REDMetrics
+	CreateExternalServiceRepo       *metrics.REDMetrics
+	UpdateExternalServiceRepo       *metrics.REDMetrics
+	DeleteExternalServiceRepo       *metrics.REDMetrics
+	DeleteExternalServiceReposNotIn *metrics.REDMetrics
+	UpdateRepo                      *metrics.REDMetrics
+	UpsertRepos                     *metrics.REDMetrics
+	UpsertSources                   *metrics.REDMetrics
+	ListExternalRepoSpecs           *metrics.REDMetrics
+	GetExternalService              *metrics.REDMetrics
+	SetClonedRepos                  *metrics.REDMetrics
+	CountNotClonedRepos             *metrics.REDMetrics
+	EnqueueSyncJobs                 *metrics.REDMetrics
 }
 
 // MustRegister registers all metrics in StoreMetrics in the given
@@ -164,8 +162,6 @@ func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
 		sm.Transact,
 		sm.Done,
 		sm.ListExternalRepoSpecs,
-		sm.ListExternalServiceUserIDsByRepoID,
-		sm.ListExternalServiceRepoIDsByUserID,
 		sm.CreateExternalServiceRepo,
 		sm.UpdateExternalServiceRepo,
 		sm.DeleteExternalServiceRepo,
@@ -309,34 +305,6 @@ func NewStoreMetrics() StoreMetrics {
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_store_list_external_repo_specs_errors_total",
 				Help: "Total number of errors when listing external repo specs",
-			}, []string{}),
-		},
-		ListExternalServiceUserIDsByRepoID: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_list_external_service_user_ids_by_repo_id",
-				Help: "Time spent listing external service users",
-			}, []string{}),
-			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_list_external_service_user_ids_by_repo_id_total",
-				Help: "Total number of listed external service users",
-			}, []string{}),
-			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_list_external_service_user_ids_by_repo_id_errors_total",
-				Help: "Total number of errors when listing external service users",
-			}, []string{}),
-		},
-		ListExternalServiceRepoIDsByUserID: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_list_external_service_repo_ids_by_user_id",
-				Help: "Time spent listing external service repos",
-			}, []string{}),
-			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_list_external_service_repo_ids_by_user_id_total",
-				Help: "Total number of listed external service repos",
-			}, []string{}),
-			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_list_external_service_repo_ids_by_user_id_errors_total",
-				Help: "Total number of errors when listing external service repos",
 			}, []string{}),
 		},
 		GetExternalService: &metrics.REDMetrics{

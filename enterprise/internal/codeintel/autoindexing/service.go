@@ -3,21 +3,19 @@ package autoindexing
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/grafana/regexp"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/enqueuer"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
@@ -27,16 +25,16 @@ import (
 )
 
 type Service struct {
-	store store.Store
-
+	store           store.Store
 	uploadSvc       UploadService
 	inferenceSvc    InferenceService
 	repoUpdater     RepoUpdaterClient
 	gitserverClient GitserverClient
 	symbolsClient   *symbols.Client
-
-	logger     log.Logger
-	operations *operations
+	indexEnqueuer   *enqueuer.IndexEnqueuer
+	jobSelector     *jobselector.JobSelector
+	logger          log.Logger
+	operations      *operations
 }
 
 func newService(
@@ -48,17 +46,40 @@ func newService(
 	symbolsClient *symbols.Client,
 	observationContext *observation.Context,
 ) *Service {
-	return &Service{
-		store: store,
+	// NOTE - this should go up a level in init.go.
+	// Not going to do this now so that we don't blow up all of the
+	// tests (which have pretty good coverage of the whole service).
+	// We should rewrite/transplant tests to the closest package that
+	// provides that behavior and then mock the dependencies in the
+	// glue packages.
 
+	jobSelector := jobselector.NewJobSelector(
+		store,
+		uploadSvc,
+		inferenceSvc,
+		gitserver,
+		log.Scoped("autoindexing job selector", ""),
+	)
+
+	indexEnqueuer := enqueuer.NewIndexEnqueuer(
+		store,
+		repoUpdater,
+		gitserver,
+		jobSelector,
+		&observation.TestContext,
+	)
+
+	return &Service{
+		store:           store,
 		uploadSvc:       uploadSvc,
 		inferenceSvc:    inferenceSvc,
 		repoUpdater:     repoUpdater,
 		gitserverClient: gitserver,
 		symbolsClient:   symbolsClient,
-
-		logger:     observationContext.Logger,
-		operations: newOperations(observationContext),
+		indexEnqueuer:   indexEnqueuer,
+		jobSelector:     jobSelector,
+		logger:          observationContext.Logger,
+		operations:      newOperations(observationContext),
 	}
 }
 
@@ -123,30 +144,6 @@ func (s *Service) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexes
 	defer endObservation(1, observation.Args{})
 
 	return s.store.ReindexIndexes(ctx, opts)
-}
-
-func (s *Service) ProcessStaleSourcedCommits(
-	ctx context.Context,
-	minimumTimeSinceLastCheck time.Duration,
-	commitResolverBatchSize int,
-	commitResolverMaximumCommitLag time.Duration,
-	shouldDelete func(ctx context.Context, repositoryID int, commit string) (bool, error),
-) (_ int, err error) {
-	return s.store.ProcessStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, commitResolverBatchSize, commitResolverMaximumCommitLag, shouldDelete)
-}
-
-func (s *Service) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error) {
-	ctx, _, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.DeleteIndexesWithoutRepository(ctx, now)
-}
-
-func (s *Service) ExpireFailedRecords(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (err error) {
-	ctx, _, endObservation := s.operations.expireFailedRecords.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.ExpireFailedRecords(ctx, batchSize, maxAge, now)
 }
 
 func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error) {
@@ -274,30 +271,6 @@ func (s *Service) QueueRepoRev(ctx context.Context, repositoryID int, rev string
 	return s.store.QueueRepoRev(ctx, repositoryID, rev)
 }
 
-func (s *Service) ProcessRepoRevs(ctx context.Context, batchSize int) (err error) {
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	repoRevs, err := tx.GetQueuedRepoRev(ctx, batchSize)
-	if err != nil {
-		return err
-	}
-
-	ids := make([]int, 0, len(repoRevs))
-	for _, repoRev := range repoRevs {
-		if _, err := s.QueueIndexes(ctx, repoRev.RepositoryID, repoRev.Rev, "", false, false); err != nil {
-			return err
-		}
-
-		ids = append(ids, repoRev.ID)
-	}
-
-	return tx.MarkRepoRevsAsProcessed(ctx, ids)
-}
-
 func (s *Service) SetInferenceScript(ctx context.Context, script string) (err error) {
 	ctx, _, endObservation := s.operations.setInferenceScript.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -312,345 +285,18 @@ func (s *Service) GetInferenceScript(ctx context.Context) (script string, err er
 	return s.store.GetInferenceScript(ctx)
 }
 
-func (s *Service) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
-	return s.store.InsertDependencyIndexingJob(ctx, uploadID, externalServiceKind, syncTime)
+func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]types.Index, error) {
+	return s.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, force, bypassLimit)
 }
 
-// QueueIndexes enqueues a set of index jobs for the following repository and commit. If a non-empty
-// configuration is given, it will be used to determine the set of jobs to enqueue. Otherwise, it will
-// the configuration will be determined based on the regular index scheduling rules: first read any
-// in-repo configuration (e.g., sourcegraph.yaml), then look for any existing in-database configuration,
-// finally falling back to the automatically inferred configuration based on the repo contents at the
-// target commit.
-//
-// If the force flag is false, then the presence of an upload or index record for this given repository and commit
-// will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
-// when the flag is false.
-func (s *Service) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []types.Index, err error) {
-	ctx, trace, endObservation := s.operations.queueIndex.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.Int("repositoryID", repositoryID),
-			otlog.String("rev", rev),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	commitID, err := s.gitserverClient.ResolveRevision(ctx, repositoryID, rev)
-	if err != nil {
-		return nil, errors.Wrap(err, "gitserver.ResolveRevision")
-	}
-	commit := string(commitID)
-	trace.Log(otlog.String("commit", commit))
-
-	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, bypassLimit, nil) // trace)
-}
-
-// QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
-// intelligence index.
 func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg precise.Package) (err error) {
-	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.String("scheme", pkg.Scheme),
-			otlog.String("name", pkg.Name),
-			otlog.String("version", pkg.Version),
-		},
-	})
-	defer endObservation(1, observation.Args{})
-
-	repoName, revision, ok := inference.InferRepositoryAndRevision(pkg)
-	if !ok {
-		return nil
-	}
-	trace.Log(otlog.String("repoName", string(repoName)))
-	trace.Log(otlog.String("revision", revision))
-
-	resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return nil
-		}
-
-		return errors.Wrap(err, "repoUpdater.EnqueueRepoUpdate")
-	}
-
-	commit, err := s.gitserverClient.ResolveRevision(ctx, int(resp.ID), revision)
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return nil
-		}
-
-		return errors.Wrap(err, "gitserverClient.ResolveRevision")
-	}
-
-	_, err = s.queueIndexForRepositoryAndCommit(ctx, int(resp.ID), string(commit), "", false, false, nil) // trace)
-	return err
+	return s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg)
 }
 
-var (
-	overrideScript                           = os.Getenv("SRC_CODEINTEL_INFERENCE_OVERRIDE_SCRIPT")
-	maximumIndexJobsPerInferredConfiguration = env.MustGetInt("PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_INDEX_JOBS_PER_INFERRED_CONFIGURATION", 25, "Repositories with a number of inferred auto-index jobs exceeding this threshold will not be auto-indexed.")
-)
-
-// InferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobs over all registered recognizers.
-func (s Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
-	repoName, err := s.uploadSvc.GetRepoName(ctx, repositoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	script, err := s.store.GetInferenceScript(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch inference script from database")
-	}
-	if script == "" {
-		script = overrideScript
-	}
-
-	indexes, err := s.inferenceSvc.InferIndexJobs(ctx, api.RepoName(repoName), commit, script)
-	if err != nil {
-		return nil, err
-	}
-
-	if !bypassLimit && len(indexes) > maximumIndexJobsPerInferredConfiguration {
-		s.logger.Info("Too many inferred roots. Scheduling no index jobs for repository.", log.Int("repository_id", repositoryID))
-		return nil, nil
-	}
-
-	return indexes, nil
+func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]config.IndexJob, error) {
+	return s.jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
 }
 
-// inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobHints over all registered recognizers.
-func (s Service) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
-	repoName, err := s.uploadSvc.GetRepoName(ctx, repositoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	indexes, err := s.inferenceSvc.InferIndexJobHints(ctx, api.RepoName(repoName), commit, overrideScript)
-	if err != nil {
-		return nil, err
-	}
-
-	return indexes, nil
-}
-
-// queueIndexForRepositoryAndCommit determines a set of index jobs to enqueue for the given repository and commit.
-//
-// If the force flag is false, then the presence of an upload or index record for this given repository and commit
-// will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
-// when the flag is false.
-func (s Service) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force, bypassLimit bool, trace observation.TraceLogger) ([]types.Index, error) {
-	if !force {
-		isQueued, err := s.store.IsQueued(ctx, repositoryID, commit)
-		if err != nil {
-			return nil, errors.Wrap(err, "dbstore.IsQueued")
-		}
-		if isQueued {
-			return nil, nil
-		}
-	}
-
-	indexes, err := s.getIndexRecords(ctx, repositoryID, commit, configuration, bypassLimit)
-	if err != nil {
-		return nil, err
-	}
-	if len(indexes) == 0 {
-		return nil, nil
-	}
-
-	indexesToInsert := indexes
-	if !force {
-		indexesToInsert = []types.Index{}
-		for _, index := range indexes {
-			isQueued, err := s.store.IsQueuedRootIndexer(ctx, repositoryID, commit, index.Root, index.Indexer)
-			if err != nil {
-				return nil, errors.Wrap(err, "dbstore.IsQueuedRootIndexer")
-			}
-			if !isQueued {
-				indexesToInsert = append(indexesToInsert, index)
-			}
-		}
-	}
-
-	return s.store.InsertIndexes(ctx, indexesToInsert)
-}
-
-type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error)
-
-// getIndexRecords determines the set of index records that should be enqueued for the given commit.
-// For each repository, we look for index configuration in the following order:
-//
-//   - supplied explicitly via parameter
-//   - in the database
-//   - committed to `sourcegraph.yaml` in the repository
-//   - inferred from the repository structure
-func (s Service) getIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]types.Index, error) {
-	fns := []configurationFactoryFunc{
-		makeExplicitConfigurationFactory(configuration),
-		s.getIndexRecordsFromConfigurationInDatabase,
-		s.getIndexRecordsFromConfigurationInRepository,
-		s.inferIndexRecordsFromRepositoryStructure,
-	}
-
-	for _, fn := range fns {
-		if indexRecords, ok, err := fn(ctx, repositoryID, commit, bypassLimit); err != nil {
-			return nil, err
-		} else if ok {
-			return indexRecords, nil
-		}
-	}
-
-	return nil, nil
-}
-
-// makeExplicitConfigurationFactory returns a factory that returns a set of index jobs configured
-// explicitly via a GraphQL query parameter. If no configuration was supplield then a false valued
-// flag is returned.
-func makeExplicitConfigurationFactory(configuration string) configurationFactoryFunc {
-	logger := log.Scoped("explicitConfigurationFactory", "")
-	return func(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
-		if configuration == "" {
-			return nil, false, nil
-		}
-
-		indexConfiguration, err := config.UnmarshalJSON([]byte(configuration))
-		if err != nil {
-			// We failed here, but do not try to fall back on another method as having
-			// an explicit config supplied via parameter should always take precedence,
-			// even if it's broken.
-			logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
-			return nil, true, nil
-		}
-
-		return convertIndexConfiguration(repositoryID, commit, indexConfiguration), true, nil
-	}
-}
-
-// getIndexRecordsFromConfigurationInDatabase returns a set of index jobs configured via the UI for
-// the given repository. If no jobs are configured via the UI then a false valued flag is returned.
-func (s Service) getIndexRecordsFromConfigurationInDatabase(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
-	indexConfigurationRecord, ok, err := s.store.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
-	if err != nil {
-		return nil, false, errors.Wrap(err, "dbstore.GetIndexConfigurationByRepositoryID")
-	}
-	if !ok {
-		return nil, false, nil
-	}
-
-	indexConfiguration, err := config.UnmarshalJSON(indexConfigurationRecord.Data)
-	if err != nil {
-		// We failed here, but do not try to fall back on another method as having
-		// an explicit config in the database should always take precedence, even
-		// if it's broken.
-		s.logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
-		return nil, true, nil
-	}
-
-	return convertIndexConfiguration(repositoryID, commit, indexConfiguration), true, nil
-}
-
-// getIndexRecordsFromConfigurationInRepository returns a set of index jobs configured via a committed
-// configuration file at the given commit. If no jobs are configured within the repository then a false
-// valued flag is returned.
-func (s Service) getIndexRecordsFromConfigurationInRepository(ctx context.Context, repositoryID int, commit string, _ bool) ([]types.Index, bool, error) {
-	isConfigured, err := s.gitserverClient.FileExists(ctx, repositoryID, commit, "sourcegraph.yaml")
-	if err != nil {
-		return nil, false, errors.Wrap(err, "gitserver.FileExists")
-	}
-	if !isConfigured {
-		return nil, false, nil
-	}
-
-	content, err := s.gitserverClient.RawContents(ctx, repositoryID, commit, "sourcegraph.yaml")
-	if err != nil {
-		return nil, false, errors.Wrap(err, "gitserver.RawContents")
-	}
-
-	indexConfiguration, err := config.UnmarshalYAML(content)
-	if err != nil {
-		// We failed here, but do not try to fall back on another method as having
-		// an explicit config in the repository should always take precedence over
-		// an auto-inferred configuration, even if it's broken.
-		s.logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
-		return nil, true, nil
-	}
-
-	return convertIndexConfiguration(repositoryID, commit, indexConfiguration), true, nil
-}
-
-// inferIndexRecordsFromRepositoryStructure looks at the repository contents at the given commit and
-// determines a set of index jobs that are likely to succeed. If no jobs could be inferred then a
-// false valued flag is returned.
-func (s Service) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]types.Index, bool, error) {
-	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, bypassLimit)
-	if err != nil || len(indexJobs) == 0 {
-		return nil, false, err
-	}
-
-	return convertInferredConfiguration(repositoryID, commit, indexJobs), true, nil
-}
-
-// convertIndexConfiguration converts an index configuration object into a set of index records to be
-// inserted into the database.
-func convertIndexConfiguration(repositoryID int, commit string, indexConfiguration config.IndexConfiguration) (indexes []types.Index) {
-	for _, indexJob := range indexConfiguration.IndexJobs {
-		var dockerSteps []types.DockerStep
-		for _, dockerStep := range indexConfiguration.SharedSteps {
-			dockerSteps = append(dockerSteps, types.DockerStep{
-				Root:     dockerStep.Root,
-				Image:    dockerStep.Image,
-				Commands: dockerStep.Commands,
-			})
-		}
-		for _, dockerStep := range indexJob.Steps {
-			dockerSteps = append(dockerSteps, types.DockerStep{
-				Root:     dockerStep.Root,
-				Image:    dockerStep.Image,
-				Commands: dockerStep.Commands,
-			})
-		}
-
-		indexes = append(indexes, types.Index{
-			Commit:       commit,
-			RepositoryID: repositoryID,
-			State:        "queued",
-			DockerSteps:  dockerSteps,
-			LocalSteps:   indexJob.LocalSteps,
-			Root:         indexJob.Root,
-			Indexer:      indexJob.Indexer,
-			IndexerArgs:  indexJob.IndexerArgs,
-			Outfile:      indexJob.Outfile,
-		})
-	}
-
-	return indexes
-}
-
-// convertInferredConfiguration converts a set of index jobs into a set of index records to be inserted
-// into the database.
-func convertInferredConfiguration(repositoryID int, commit string, indexJobs []config.IndexJob) (indexes []types.Index) {
-	for _, indexJob := range indexJobs {
-		var dockerSteps []types.DockerStep
-		for _, dockerStep := range indexJob.Steps {
-			dockerSteps = append(dockerSteps, types.DockerStep{
-				Root:     dockerStep.Root,
-				Image:    dockerStep.Image,
-				Commands: dockerStep.Commands,
-			})
-		}
-
-		indexes = append(indexes, types.Index{
-			RepositoryID: repositoryID,
-			Commit:       commit,
-			State:        "queued",
-			DockerSteps:  dockerSteps,
-			LocalSteps:   indexJob.LocalSteps,
-			Root:         indexJob.Root,
-			Indexer:      indexJob.Indexer,
-			IndexerArgs:  indexJob.IndexerArgs,
-			Outfile:      indexJob.Outfile,
-		})
-	}
-
-	return indexes
+func (s *Service) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
+	return s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, commit)
 }

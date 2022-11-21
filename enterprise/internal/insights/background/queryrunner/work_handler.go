@@ -5,14 +5,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -73,12 +75,21 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record work
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
 	// repository on Sourcegraph - results will be filtered when users query for insight data based on the
 	// repositories they can see.
+
 	ctx = actor.WithInternalActor(ctx)
 	defer func() {
 		if err != nil {
 			r.logger.Error("insights.queryrunner.workHandler", log.Error(err))
 		}
 	}()
+
+	// storing trace with query for debugging
+	traceID := trace.ID(ctx)
+	if traceID != "" {
+		// intentionally ignoring error
+		r.baseWorkerStore.Exec(ctx, sqlf.Sprintf("update insights_query_runner_jobs set trace_id = %s where id = %s", traceID, record.RecordID()))
+	}
+
 	err = r.limiter.Wait(ctx)
 	if err != nil {
 		return errors.Wrap(err, "limiter.Wait")

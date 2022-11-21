@@ -76,7 +76,7 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
 
     return props.url ? (
         <Code>
-            <Link key="link" tabIndex={-1} className={styles.link} to={props.url} onClick={props.onClick}>
+            <Link key="link" className={styles.link} to={props.url} onClick={props.onClick}>
                 {props.icon && <span key="icon">{props.icon}</span>}
                 {spans}
                 {props.textSuffix}
@@ -85,7 +85,6 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
     ) : (
         <Link
             key="link"
-            tabIndex={-1}
             className={styles.link}
             to={`/commands/${props.text}`}
             onClick={event => {

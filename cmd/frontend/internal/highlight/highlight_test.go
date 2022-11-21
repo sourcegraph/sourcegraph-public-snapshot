@@ -52,8 +52,8 @@ func TestGeneratePlainTable(t *testing.T) {
 line 2
 
 `
-	want := template.HTML(`<table><tr><th class="line" data-line="1"></th><td class="code"><span>line 1</span></td></tr><tr><th class="line" data-line="2"></th><td class="code"><span>line 2</span></td></tr><tr><th class="line" data-line="3"></th><td class="code"><span>
-</span></td></tr><tr><th class="line" data-line="4"></th><td class="code"><span>
+	want := template.HTML(`<table><tr><td class="line" data-line="1"></td><td class="code"><span>line 1</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span>line 2</span></td></tr><tr><td class="line" data-line="3"></td><td class="code"><span>
+</span></td></tr><tr><td class="line" data-line="4"></td><td class="code"><span>
 </span></td></tr></table>`)
 	response, err := generatePlainTable(input)
 	if err != nil {
@@ -71,8 +71,8 @@ func TestGeneratePlainTableSecurity(t *testing.T) {
 <script>alert("line 2")</script>
 
 `
-	want := template.HTML(`<table><tr><th class="line" data-line="1"></th><td class="code"><span>&lt;strong&gt;line 1&lt;/strong&gt;</span></td></tr><tr><th class="line" data-line="2"></th><td class="code"><span>&lt;script&gt;alert(&#34;line 2&#34;)&lt;/script&gt;</span></td></tr><tr><th class="line" data-line="3"></th><td class="code"><span>
-</span></td></tr><tr><th class="line" data-line="4"></th><td class="code"><span>
+	want := template.HTML(`<table><tr><td class="line" data-line="1"></td><td class="code"><span>&lt;strong&gt;line 1&lt;/strong&gt;</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span>&lt;script&gt;alert(&#34;line 2&#34;)&lt;/script&gt;</span></td></tr><tr><td class="line" data-line="3"></td><td class="code"><span>
+</span></td></tr><tr><td class="line" data-line="4"></td><td class="code"><span>
 </span></td></tr></table>`)
 	response, err := generatePlainTable(input)
 	if err != nil {

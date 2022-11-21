@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -28,18 +29,18 @@ func NewDependencySyncScheduler(
 	dependencySyncStore dbworkerstore.Store,
 	uploadSvc UploadService,
 	depsSvc DependenciesService,
-	autoindexingSvc AutoIndexingService,
+	store store.Store,
 	externalServiceStore ExternalServiceStore,
 	metrics workerutil.WorkerObservability,
 	pollInterval time.Duration,
 ) *workerutil.Worker {
 	rootContext := actor.WithInternalActor(context.Background())
 	handler := &dependencySyncSchedulerHandler{
-		uploadsSvc:      uploadSvc,
-		depsSvc:         depsSvc,
-		autoindexingSvc: autoindexingSvc,
-		workerStore:     dependencySyncStore,
-		extsvcStore:     externalServiceStore,
+		uploadsSvc:  uploadSvc,
+		depsSvc:     depsSvc,
+		store:       store,
+		workerStore: dependencySyncStore,
+		extsvcStore: externalServiceStore,
 	}
 
 	return dbworker.NewWorker(rootContext, dependencySyncStore, handler, workerutil.WorkerOptions{
@@ -52,11 +53,11 @@ func NewDependencySyncScheduler(
 }
 
 type dependencySyncSchedulerHandler struct {
-	uploadsSvc      UploadService
-	depsSvc         DependenciesService
-	autoindexingSvc AutoIndexingService
-	workerStore     dbworkerstore.Store
-	extsvcStore     ExternalServiceStore
+	uploadsSvc  UploadService
+	depsSvc     DependenciesService
+	store       store.Store
+	workerStore dbworkerstore.Store
+	extsvcStore ExternalServiceStore
 }
 
 // For mocking in tests
@@ -177,7 +178,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 	if shouldIndex {
 		// If we saw a kind that's not in schemeToExternalService, then kinds contains an empty string key
 		for kind := range kinds {
-			if _, err := h.autoindexingSvc.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
+			if _, err := h.store.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
 				errs = append(errs, errors.Wrap(err, "dbstore.InsertDependencyIndexingJob"))
 			}
 		}

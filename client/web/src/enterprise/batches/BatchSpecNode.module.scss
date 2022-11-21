@@ -1,4 +1,6 @@
 .node {
+    display: contents;
+
     &__expanded-section {
         background-color: var(--body-bg);
         grid-column: 1 / -1;

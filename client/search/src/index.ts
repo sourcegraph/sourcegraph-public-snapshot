@@ -15,6 +15,7 @@ import {
     isSearchContextAvailable,
 } from './backend'
 import { SearchPatternType } from './graphql-operations'
+import { SearchMode } from './searchQueryState'
 
 export * from './backend'
 export * from './searchQueryState'
@@ -34,6 +35,11 @@ export interface SearchPatternTypeMutationProps {
 export interface CaseSensitivityProps {
     caseSensitive: boolean
     setCaseSensitivity: (caseSensitive: boolean) => void
+}
+
+export interface SearchModeProps {
+    searchMode: SearchMode
+    setSearchMode: (searchMode: SearchMode) => void
 }
 
 export interface SearchContextProps {

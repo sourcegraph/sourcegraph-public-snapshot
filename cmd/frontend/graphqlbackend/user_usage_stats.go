@@ -78,20 +78,21 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 }
 
 type Event struct {
-	Event          string
-	UserCookieID   string
-	FirstSourceURL *string
-	LastSourceURL  *string
-	URL            string
-	Source         string
-	Argument       *string
-	CohortID       *string
-	Referrer       *string
-	PublicArgument *string
-	UserProperties *string
-	DeviceID       *string
-	InsertID       *string
-	EventID        *int32
+	Event           string
+	UserCookieID    string
+	FirstSourceURL  *string
+	LastSourceURL   *string
+	URL             string
+	Source          string
+	Argument        *string
+	CohortID        *string
+	Referrer        *string
+	DeviceSessionID *string
+	PublicArgument  *string
+	UserProperties  *string
+	DeviceID        *string
+	InsertID        *string
+	EventID         *int32
 }
 
 type EventBatch struct {
@@ -180,6 +181,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			DeviceID:         args.DeviceID,
 			EventID:          args.EventID,
 			InsertID:         args.InsertID,
+			DeviceSessionID:  args.DeviceSessionID,
 		})
 	}
 

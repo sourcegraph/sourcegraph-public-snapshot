@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
 	"net/url"
 	"path"
@@ -75,12 +76,13 @@ func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep rep
 		return err
 	}
 	packageURL := pypiFile.URL
-	pkg, err := s.client.Download(ctx, packageURL)
+	pkgData, err := s.client.Download(ctx, packageURL)
 	if err != nil {
 		return errors.Wrap(err, "download")
 	}
+	defer pkgData.Close()
 
-	if err = unpackPythonPackage(pkg, packageURL, dir); err != nil {
+	if err = unpackPythonPackage(pkgData, packageURL, dir); err != nil {
 		return errors.Wrap(err, "failed to unzip python module")
 	}
 
@@ -90,7 +92,7 @@ func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep rep
 // unpackPythonPackages unpacks the given python package archive into workDir, skipping any
 // files that aren't valid or that are potentially malicious. It detects the kind of archive
 // and compression used with the given packageURL.
-func unpackPythonPackage(pkg []byte, packageURL, workDir string) error {
+func unpackPythonPackage(pkg io.Reader, packageURL, workDir string) error {
 	logger := log.Scoped("unpackPythonPackages", "unpackPythonPackages unpacks the given python package archive into workDir")
 	u, err := url.Parse(packageURL)
 	if err != nil {
@@ -99,20 +101,18 @@ func unpackPythonPackage(pkg []byte, packageURL, workDir string) error {
 
 	filename := path.Base(u.Path)
 
-	r := bytes.NewReader(pkg)
 	opts := unpack.Opts{
 		SkipInvalid: true,
 		Filter: func(path string, file fs.FileInfo) bool {
 			size := file.Size()
 
 			const sizeLimit = 15 * 1024 * 1024
-			slogger := logger.With(
-				log.String("path", file.Name()),
-				log.Int64("size", size),
-				log.Float64("limit", sizeLimit),
-			)
 			if size >= sizeLimit {
-				slogger.Warn("skipping large file in npm package")
+				logger.With(
+					log.String("path", file.Name()),
+					log.Int64("size", size),
+					log.Float64("limit", sizeLimit),
+				).Warn("skipping large file in python package")
 				return false
 			}
 
@@ -123,11 +123,16 @@ func unpackPythonPackage(pkg []byte, packageURL, workDir string) error {
 
 	switch {
 	case strings.HasSuffix(filename, ".tar.gz"), strings.HasSuffix(filename, ".tgz"):
-		err = unpack.Tgz(r, workDir, opts)
+		err = unpack.Tgz(pkg, workDir, opts)
 	case strings.HasSuffix(filename, ".whl"), strings.HasSuffix(filename, ".zip"):
-		err = unpack.Zip(r, int64(len(pkg)), workDir, opts)
+		var pkgBytes []byte
+		pkgBytes, err = io.ReadAll(pkg)
+		if err != nil {
+			break
+		}
+		err = unpack.Zip(bytes.NewReader(pkgBytes), int64(len(pkgBytes)), workDir, opts)
 	case strings.HasSuffix(filename, ".tar"):
-		err = unpack.Tar(r, workDir, opts)
+		err = unpack.Tar(pkg, workDir, opts)
 	default:
 		return errors.Errorf("unsupported python package type %q", filename)
 	}

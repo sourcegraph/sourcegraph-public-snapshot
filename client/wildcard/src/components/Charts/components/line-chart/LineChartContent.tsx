@@ -81,7 +81,7 @@ export function LineChartContent<Datum>(props: LineChartContentProps<Datum>): Re
         })(Object.values(points).flat())
     }, [activeSeries, height, width, xScale, yScale])
 
-    const handlers = useChartEventHandlers({
+    const { onPointerLeave, onPointerMove, onClick, onBlurCapture } = useChartEventHandlers({
         onPointerMove: point => {
             const closestPoint = voronoiLayout.find(point.x - left, point.y - top)
 
@@ -105,12 +105,9 @@ export function LineChartContent<Datum>(props: LineChartContentProps<Datum>): Re
             role="list"
             aria-label="Chart series"
             className={classNames(styles.root, className, { [styles.rootWithHoveredLinkPoint]: activePoint?.linkUrl })}
+            onBlurCapture={onBlurCapture}
             {...attributes}
-            {...handlers}
         >
-            {/* Spread the group element in order to track user input events from all visible chart content surface*/}
-            <rect x={0} y={0} opacity={0} width={width} height={height} aria-hidden={true} pointerEvents="none" />
-
             {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
             {activeSeries.map(line => (
@@ -152,6 +149,19 @@ export function LineChartContent<Datum>(props: LineChartContentProps<Datum>): Re
                     aria-hidden={true}
                 />
             )}
+
+            {/* Spread the group element in order to track user input events from all visible chart content surface*/}
+            <rect
+                x={0}
+                y={0}
+                opacity={0}
+                width={width}
+                height={height}
+                aria-hidden={true}
+                onPointerLeave={onPointerLeave}
+                onPointerMove={onPointerMove}
+                onClick={onClick}
+            />
 
             {activePoint && rootRef.current && (
                 <Tooltip containerElement={rootRef.current} activeElement={activePoint.node as HTMLElement}>

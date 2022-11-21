@@ -10,10 +10,8 @@ import { catchError, filter } from 'rxjs/operators'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { DOMFunctions, findPositionsFromEvents, Hoverifier } from '@sourcegraph/codeintellify'
 import { asError, ErrorLike, isDefined, isErrorLike, highlightNodeMultiline } from '@sourcegraph/common'
-import { HighlightLineRange } from '@sourcegraph/search'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
-import { HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { Repo } from '@sourcegraph/shared/src/util/url'
 import { Icon, Code } from '@sourcegraph/wildcard'
@@ -25,15 +23,6 @@ export interface Shape {
     left?: number
     bottom?: number
     right?: number
-}
-
-export interface FetchFileParameters {
-    repoName: string
-    commitID: string
-    filePath: string
-    disableTimeout?: boolean
-    ranges: HighlightLineRange[]
-    format?: HighlightResponseFormat
 }
 
 interface Props extends Repo {
@@ -87,7 +76,7 @@ const domFunctions: DOMFunctions = {
         return row.cells[1]
     },
     getCodeElementFromLineNumber: (codeView: HTMLElement, line: number): HTMLTableCellElement | null => {
-        const lineElement = codeView.querySelector(`th[data-line="${line}"]`)
+        const lineElement = codeView.querySelector(`td[data-line="${line}"]`)
         if (!lineElement) {
             return null
         }
@@ -341,7 +330,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                         <tbody>
                             {range(startLine, endLine).map(index => (
                                 <tr key={index}>
-                                    <th className="line" data-line={index + 1} />
+                                    <td className="line" data-line={index + 1} />
                                     {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
                                     <td className="code"> </td>
                                 </tr>

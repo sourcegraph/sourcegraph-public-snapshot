@@ -3,7 +3,6 @@
 package npm
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -42,7 +41,7 @@ func init() {
 	// so we don't need to set up any on-disk caching here.
 }
 
-func FetchSources(ctx context.Context, client Client, dependency *reposource.NpmVersionedPackage) (tarball io.ReadCloser, err error) {
+func FetchSources(ctx context.Context, client Client, dependency *reposource.NpmVersionedPackage) (_ io.ReadCloser, err error) {
 	operations := getOperations()
 
 	ctx, _, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
@@ -59,6 +58,8 @@ type HTTPClient struct {
 	limiter     *ratelimit.InstrumentedLimiter
 	credentials string
 }
+
+var _ Client = &HTTPClient{}
 
 func NewHTTPClient(urn string, registryURL string, credentials string, doer httpcli.Doer) *HTTPClient {
 	return &HTTPClient{
@@ -80,14 +81,17 @@ func (client *HTTPClient) GetPackageInfo(ctx context.Context, pkg *reposource.Np
 	if err != nil {
 		return nil, err
 	}
-	var pkgInfo PackageInfo
+	defer body.Close()
+
+	var pkgInfo *PackageInfo
 	if err := json.NewDecoder(body).Decode(&pkgInfo); err != nil {
 		return nil, err
 	}
+
 	if len(pkgInfo.Versions) == 0 {
 		return nil, errors.Newf("npm returned empty list of versions")
 	}
-	return &pkgInfo, nil
+	return pkgInfo, nil
 }
 
 type DependencyInfo struct {
@@ -113,6 +117,7 @@ func (client *HTTPClient) do(ctx context.Context, req *http.Request) (*http.Resp
 		nethttp.OperationName("npm"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
+
 	if err := client.limiter.Wait(ctx); err != nil {
 		return nil, err
 	}
@@ -149,17 +154,18 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, url string) (io.Re
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	var bodyBuffer bytes.Buffer
-	if _, err := io.Copy(&bodyBuffer, resp.Body); err != nil {
-		return nil, err
-	}
 	if resp.StatusCode >= 400 {
-		return nil, npmError{resp.StatusCode, errors.New(bodyBuffer.String())}
+		defer resp.Body.Close()
+
+		bs, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, npmError{resp.StatusCode, errors.Newf("failed to read non-200 body: %s", bs)}
+		}
+		return nil, npmError{resp.StatusCode, errors.New(string(bs))}
 	}
 
-	return io.NopCloser(&bodyBuffer), nil
+	return resp.Body, nil
 }
 
 func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmVersionedPackage) (*DependencyInfo, error) {
@@ -169,10 +175,13 @@ func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource
 	if err != nil {
 		return nil, err
 	}
+	defer body.Close()
+
 	var info DependencyInfo
 	if json.NewDecoder(body).Decode(&info) != nil {
 		return nil, illFormedJSONError{url: url}
 	}
+
 	return &info, nil
 }
 
@@ -182,5 +191,3 @@ func (client *HTTPClient) FetchTarball(ctx context.Context, dep *reposource.NpmV
 	}
 	return client.makeGetRequest(ctx, dep.TarballURL)
 }
-
-var _ Client = &HTTPClient{}

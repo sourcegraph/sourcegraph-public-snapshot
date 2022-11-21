@@ -9,7 +9,6 @@ import (
 
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -98,23 +97,25 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 		return api.CommitID(spec), resolveRevisionFunc(spec)
 	})
 
-	mockUploadSvc := NewMockUploadService()
+	mockUploadSvc := NewMockStore()
 	mockUploadSvc.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
-	janitor := &backgroundJob{
-		uploadSvc:       mockUploadSvc,
-		gitserverClient: gitserverClient,
-		clock:           glock.NewRealClock(),
+
+	janitor := janitorJob{
+		store:           mockUploadSvc,
+		lsifStore:       NewMockLsifStore(),
 		logger:          logtest.Scoped(t),
-		janitorMetrics:  newJanitorMetrics(&observation.TestContext),
+		metrics:         NewJanitorMetrics(&observation.TestContext),
+		clock:           glock.NewRealClock(),
+		gitserverClient: gitserverClient,
 	}
 
 	if err := janitor.handleCleanup(
-		context.Background(), janitorConfig{
-			minimumTimeSinceLastCheck:      1 * time.Hour,
-			commitResolverBatchSize:        10,
-			auditLogMaxAge:                 1 * time.Hour,
-			commitResolverMaximumCommitLag: 1 * time.Hour,
-			uploadTimeout:                  1 * time.Hour,
+		context.Background(), JanitorConfig{
+			MinimumTimeSinceLastCheck:      1 * time.Hour,
+			CommitResolverBatchSize:        10,
+			AuditLogMaxAge:                 1 * time.Hour,
+			CommitResolverMaximumCommitLag: 1 * time.Hour,
+			UploadTimeout:                  1 * time.Hour,
 		}); err != nil {
 		t.Fatalf("unexpected error running janitor: %s", err)
 	}

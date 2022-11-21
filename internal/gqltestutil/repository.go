@@ -2,6 +2,7 @@ package gqltestutil
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -53,6 +54,29 @@ query Repositories {
 		time.Sleep(100 * time.Millisecond)
 	}
 	return nil
+}
+
+// DeleteRepoFromDiskByName will remove the repo form disk on GitServer.
+func (c *Client) DeleteRepoFromDiskByName(name string) error {
+	repo, err := c.Repository(name)
+	if err != nil {
+		return errors.Wrap(err, "getting repo")
+	}
+	if repo == nil {
+		// Repo doesn't exist, no point trying to delete it
+		return nil
+	}
+
+	q := fmt.Sprintf(`
+mutation {
+  deleteRepositoryFromDisk(repo:"%s") {
+    alwaysNil
+  }
+}
+`, repo.ID)
+
+	err = c.GraphQL("", q, nil, nil)
+	return errors.Wrap(err, "deleting repo from disk")
 }
 
 // WaitForReposToBeIndexed waits (up to 30 seconds) for all repositories

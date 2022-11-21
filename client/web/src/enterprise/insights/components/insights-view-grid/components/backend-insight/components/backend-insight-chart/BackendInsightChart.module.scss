@@ -77,11 +77,11 @@
 }
 
 .legend-list-item {
-    word-break: break-all;
-
-    &.clickable {
-        cursor: pointer;
-    }
+    // Reset wildcard button styles
+    padding: 0;
+    margin: 0;
+    font-weight: normal;
+    font-size: inherit;
 }
 
 .alert-overlay {
