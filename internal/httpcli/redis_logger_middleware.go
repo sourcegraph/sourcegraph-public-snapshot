@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-stack/stack"
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"io"
 	"net/http"
@@ -50,7 +50,7 @@ func redisLoggerMiddleware() Middleware {
 			logItemJson, jsonErr := json.Marshal(logItem)
 
 			if jsonErr != nil {
-				log15.Error("RedisLoggerMiddleware failed to marshal JSON", "error", jsonErr)
+				log.Error(jsonErr)
 			}
 
 			// Save new item
@@ -59,7 +59,7 @@ func redisLoggerMiddleware() Middleware {
 			// Delete excess items
 			deletionErr := deleteOldKeys()
 			if deletionErr != nil {
-				log15.Error("RedisLoggerMiddleware failed to delete old keys", "error", deletionErr)
+				log.Error(deletionErr)
 			}
 
 			return resp, err
