@@ -94,13 +94,13 @@ var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
 
 // SubRepoPermissionsGetter allows getting sub repository permissions.
 type SubRepoPermissionsGetter interface {
-	// GetByUser returns the known sub repository permissions rules known for a user.
+	// GetByUser returns the sub repository permissions rules known for a user.
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]SubRepoPermissions, error)
 
-	// RepoIDSupported returns true if repo with the given ID has sub-repo permissions
+	// RepoIDSupported returns true if repo with the given ID has sub-repo permissions.
 	RepoIDSupported(ctx context.Context, repoID api.RepoID) (bool, error)
 
-	// RepoSupported returns true if repo with the given name has sub-repo permissions
+	// RepoSupported returns true if repo with the given name has sub-repo permissions.
 	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
 }
 
@@ -270,7 +270,7 @@ func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int
 	}
 
 	if s.permissionsGetter == nil {
-		return nil, errors.New("PermissionsGetter is nil")
+		return nil, errors.New("permissionsGetter is nil")
 	}
 
 	if userID == 0 {
@@ -335,8 +335,7 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 			return nil, errors.Wrap(err, "fetching rules")
 		}
 		toCache := cachedRules{
-			rules:     make(map[api.RepoName]compiledRules, len(repoPerms)),
-			timestamp: time.Time{},
+			rules: make(map[api.RepoName]compiledRules, len(repoPerms)),
 		}
 		for repo, perms := range repoPerms {
 			paths := make([]path, 0, len(perms.Paths))

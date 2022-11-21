@@ -93,6 +93,15 @@ type Store interface {
 	WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store
 
 	ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error)
+
+	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]ExportedUpload, error)
+
+	ProcessStaleExportedUploads(
+		ctx context.Context,
+		graphKey string,
+		batchSize int,
+		deleter func(ctx context.Context, objectPrefix string) error,
+	) (totalDeleted int, err error)
 }
 
 // store manages the database operations for uploads.

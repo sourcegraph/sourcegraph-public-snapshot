@@ -6,8 +6,9 @@ import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
-import { QueryUpdate, SearchContextProps, SearchMode } from '@sourcegraph/search'
-import { FetchFileParameters, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { QueryUpdate, SearchContextProps } from '@sourcegraph/search'
+import { StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -19,6 +20,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { useDeepMemo } from '@sourcegraph/wildcard'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -96,7 +98,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const extensionHostAPI =
         extensionsController !== null && window.context.enableLegacyExtensions ? extensionsController.extHostAPI : null
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
-    const featureOverrides = useMemo(() => new URLSearchParams(location.search).getAll('feat') ?? [], [location.search])
+    const featureOverrides = useDeepMemo(
+        // Nested use memo here is used for avoiding extra object calculation step on each render
+        useMemo(() => new URLSearchParams(location.search).getAll('feat') ?? [], [location.search])
+    )
 
     const options: StreamSearchOptions = useMemo(
         () => ({
@@ -105,7 +110,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             caseSensitive,
             trace,
             featureOverrides,
-            searchMode: patternType === SearchPatternType.lucky ? SearchMode.SmartSearch : searchMode,
+            searchMode,
             chunkMatches: true,
         }),
         [caseSensitive, patternType, searchMode, trace, featureOverrides]

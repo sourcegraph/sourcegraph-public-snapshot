@@ -20,6 +20,7 @@ export interface PanelProps extends Omit<UseResizablePanelParameters, 'panelRef'
      */
     handleClassName?: string
     className?: string
+    id?: string
     ariaLabel: string
 }
 

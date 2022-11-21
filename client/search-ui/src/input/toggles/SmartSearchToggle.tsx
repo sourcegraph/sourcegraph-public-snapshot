@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiClose, mdiRadioboxBlank, mdiRadioboxMarked } from '@mdi/js'
 import classNames from 'classnames'
@@ -55,6 +55,7 @@ export const SmartSearchToggle: React.FunctionComponent<SmartSearchToggleProps> 
                 <PopoverTrigger
                     as={Button}
                     className={classNames(
+                        'a11y-ignore',
                         styles.toggle,
                         smartStyles.button,
                         className,
@@ -79,6 +80,9 @@ const SmartSearchToggleMenu: React.FunctionComponent<
     Pick<SmartSearchToggleProps, 'onSelect' | 'isActive'> & { closeMenu: () => void }
 > = ({ onSelect, isActive, closeMenu }) => {
     const [visibleIsEnabled, setVisibleIsEnabled] = useState(isActive)
+    useEffect(() => {
+        setVisibleIsEnabled(isActive)
+    }, [isActive])
 
     const onChange = useCallback(
         (value: boolean) => {

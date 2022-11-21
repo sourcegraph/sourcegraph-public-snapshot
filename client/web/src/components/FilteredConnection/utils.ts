@@ -70,7 +70,7 @@ export interface GetUrlQueryParameters {
         default: number
     }
     query?: string
-    values?: Map<string, FilteredConnectionFilterValue>
+    filterValues?: Map<string, FilteredConnectionFilterValue>
     filters?: FilteredConnectionFilter[]
     visibleResultCount?: number
     search: Location['search']
@@ -82,7 +82,7 @@ export interface GetUrlQueryParameters {
 export const getUrlQuery = ({
     first,
     query,
-    values,
+    filterValues,
     visibleResultCount,
     filters,
     search,
@@ -97,9 +97,9 @@ export const getUrlQuery = ({
         searchParameters.set('first', String(first.actual))
     }
 
-    if (values && filters) {
+    if (filterValues && filters) {
         for (const filter of filters) {
-            const value = values.get(filter.id)
+            const value = filterValues.get(filter.id)
             if (value === undefined) {
                 continue
             }

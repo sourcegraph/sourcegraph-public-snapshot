@@ -1735,6 +1735,26 @@ func mustEncodeJSONResponse(value any) string {
 	return strings.TrimSpace(string(encoded))
 }
 
+func TestIgnorePath(t *testing.T) {
+	reposDir := "/data/repos"
+	s := Server{ReposDir: reposDir}
+
+	for _, tc := range []struct {
+		path         string
+		shouldIgnore bool
+	}{
+		{path: filepath.Join(reposDir, tempDirName), shouldIgnore: true},
+		{path: filepath.Join(reposDir, P4HomeName), shouldIgnore: true},
+		// Double check handling of trailing space
+		{path: filepath.Join(reposDir, P4HomeName+"   "), shouldIgnore: true},
+		{path: filepath.Join(reposDir, "sourcegraph/sourcegraph"), shouldIgnore: false},
+	} {
+		t.Run("", func(t *testing.T) {
+			assert.Equal(t, tc.shouldIgnore, s.ignorePath(tc.path))
+		})
+	}
+}
+
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {

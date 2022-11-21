@@ -34,7 +34,7 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 export const RepositoryFileTreePage: React.FunctionComponent<
     React.PropsWithChildren<RepositoryFileTreePageProps>
 > = props => {
-    const { repo, resolvedRevision, repoName, match, globbing, ...context } = props
+    const { location, repo, resolvedRevision, repoName, match, globbing, ...context } = props
 
     // The decoding depends on the pinned `history` version.
     // See https://github.com/sourcegraph/sourcegraph/issues/4408
@@ -49,12 +49,12 @@ export const RepositoryFileTreePage: React.FunctionComponent<
     const mode = getModeFromPath(filePath)
 
     // Redirect OpenGrok-style line number hashes (#123, #123-321) to query parameter (?L123, ?L123-321)
-    const hashLineNumberMatch = window.location.hash.match(/^#?(\d+)(-\d+)?$/)
+    const hashLineNumberMatch = location.hash.match(/^#?(\d+)(-\d+)?$/)
     if (objectType === 'blob' && hashLineNumberMatch) {
         const startLineNumber = parseInt(hashLineNumberMatch[1], 10)
         const endLineNumber = hashLineNumberMatch[2] ? parseInt(hashLineNumberMatch[2].slice(1), 10) : undefined
         const url = appendLineRangeQueryParameter(
-            window.location.pathname + window.location.search,
+            location.pathname + location.search,
             `L${startLineNumber}` + (endLineNumber ? `-${endLineNumber}` : '')
         )
         return <Redirect to={url} />
@@ -62,17 +62,14 @@ export const RepositoryFileTreePage: React.FunctionComponent<
 
     // For blob pages with legacy URL fragment hashes like "#L17:19-21:23$foo:bar"
     // redirect to the modern URL fragment hashes like "#L17:19-21:23&tab=foo:bar"
-    if (!hideRepoRevisionContent && objectType === 'blob' && isLegacyFragment(window.location.hash)) {
-        const parsedQuery = parseQueryAndHash(window.location.search, window.location.hash)
+    if (!hideRepoRevisionContent && objectType === 'blob' && isLegacyFragment(location.hash)) {
+        const parsedQuery = parseQueryAndHash(location.search, location.hash)
         const hashParameters = new URLSearchParams()
         if (parsedQuery.viewState) {
             hashParameters.set('tab', parsedQuery.viewState)
         }
         const range = formatLineOrPositionOrRange(parsedQuery)
-        const url = appendLineRangeQueryParameter(
-            window.location.pathname + window.location.search,
-            range ? `L${range}` : undefined
-        )
+        const url = appendLineRangeQueryParameter(location.pathname + location.search, range ? `L${range}` : undefined)
         return <Redirect to={url + formatHash(hashParameters)} />
     }
 
@@ -100,7 +97,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                 // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
                 <BlobStatusBarContainer>
                     <GettingStartedTour.Info isSourcegraphDotCom={context.isSourcegraphDotCom} className="mr-3 mb-3" />
-                    <ErrorBoundary location={context.location}>
+                    <ErrorBoundary location={location}>
                         {objectType === 'blob' ? (
                             <TraceSpanProvider name="BlobPage">
                                 <BlobPage
@@ -112,6 +109,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                                     repoName={repoName}
                                     repoUrl={repo?.url}
                                     mode={mode}
+                                    location={location}
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
                                     }

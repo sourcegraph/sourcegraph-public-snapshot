@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -108,7 +109,7 @@ fi
 	return coursierPath.Name()
 }
 
-var maliciousPaths []string = []string{
+var maliciousPaths = []string{
 	// Absolute paths
 	"/sh", "/usr/bin/sh",
 	// Paths into .git which may trigger when git runs a hook
@@ -143,8 +144,12 @@ func TestNoMaliciousFiles(t *testing.T) {
 	assert.NotNil(t, err)
 
 	dirEntries, err := os.ReadDir(extractPath)
-	baseline := map[string]int{"lsif-java.json": 0, strings.Split(harmlessPath, string(os.PathSeparator))[0]: 0}
 	assert.Nil(t, err)
+
+	_, err = filepath.EvalSymlinks(filepath.Join(extractPath, "symlink"))
+	assert.Error(t, err)
+
+	baseline := map[string]int{"lsif-java.json": 0, strings.Split(harmlessPath, string(os.PathSeparator))[0]: 0}
 	paths := map[string]int{}
 	for _, dirEntry := range dirEntries {
 		paths[dirEntry.Name()] = 0
@@ -165,6 +170,16 @@ func createMaliciousJar(t *testing.T, name string) {
 		_, err = writer.Create(filepath)
 		assert.Nil(t, err)
 	}
+
+	os.Symlink("/etc/passwd", "symlink")
+	defer os.Remove("symlink")
+
+	fi, _ := os.Lstat("symlink")
+	header, _ := zip.FileInfoHeader(fi)
+	_, err = writer.CreateRaw(header)
+
+	assert.Nil(t, err)
+
 	_, err = writer.Create(harmlessPath)
 	assert.Nil(t, err)
 }

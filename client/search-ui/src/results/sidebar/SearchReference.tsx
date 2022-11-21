@@ -78,7 +78,7 @@ const filterInfos: FilterInfo[] = [
         ...createQueryExampleFromString('"{last week}"'),
         field: FilterType.after,
         description:
-            'Only include results from diffs or commits which have a commit date after the specified time frame. To use this filter, the search query must contain `type:diff` or `type:commit`.',
+            'Only include results from diffs or commits which have a commit date after the specified time frame. Times are interpreted as UTC by default. To use this filter, the search query must contain `type:diff` or `type:commit`.',
         commonRank: 100,
         examples: ['after:"6 weeks ago"', 'after:"november 1 2019"'],
     },
@@ -103,7 +103,7 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         ...createQueryExampleFromString('"{last thursday}"'),
         field: FilterType.before,
         description:
-            'Only include results from diffs or commits which have a commit date before the specified time frame. To use this filter, the search query must contain `type:diff` or `type:commit`.',
+            'Only include results from diffs or commits which have a commit date before the specified time frame. Times are interpreted as UTC by default. To use this filter, the search query must contain `type:diff` or `type:commit`.',
         commonRank: 100,
         examples: ['before:"last thursday"', 'before:"november 1 2019"'],
     },

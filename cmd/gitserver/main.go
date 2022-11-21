@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -141,7 +142,7 @@ func main() {
 			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, reposDir)
 		},
 		Hostname:                hostname.Get(),
 		DB:                      db,
@@ -440,6 +441,7 @@ func getVCSSyncer(
 	repoStore database.RepoStore,
 	depsSvc *dependencies.Service,
 	repo api.RepoName,
+	reposDir string,
 ) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
@@ -477,10 +479,18 @@ func getVCSSyncer(
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
+
+		p4Home := filepath.Join(reposDir, server.P4HomeName)
+		// Ensure the directory exists
+		if err := os.MkdirAll(p4Home, os.ModePerm); err != nil {
+			return nil, errors.Wrapf(err, "ensuring p4Home exists: %q", p4Home)
+		}
+
 		return &server.PerforceDepotSyncer{
 			MaxChanges:   int(c.MaxChanges),
 			Client:       c.P4Client,
 			FusionConfig: configureFusionClient(c),
+			P4Home:       p4Home,
 		}, nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection

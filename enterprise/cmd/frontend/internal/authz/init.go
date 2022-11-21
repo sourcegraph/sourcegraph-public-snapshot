@@ -54,6 +54,10 @@ func Init(
 			eiauthz.ProvidersFromConfig(ctx, cfg, extsvcStore, db)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 
+		// Validating the connection may make a cross service call, so we should use an
+		// internal actor.
+		ctx := actor.WithInternalActor(ctx)
+
 		// Add connection validation issue
 		for _, p := range providers {
 			for _, problem := range p.ValidateConnection(ctx) {

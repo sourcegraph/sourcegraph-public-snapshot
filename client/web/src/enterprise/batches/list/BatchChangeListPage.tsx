@@ -183,8 +183,10 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                             <div className={styles.filtersRow}>
                                 {typeof currentTotalCount === 'number' && typeof lastTotalCount === 'number' && (
                                     <H3 className="align-self-end flex-1">
-                                        {lastTotalCount} of {currentTotalCount}{' '}
-                                        {pluralize('batch change', currentTotalCount)}
+                                        {`${lastTotalCount} of ${currentTotalCount} ${pluralize(
+                                            'batch change',
+                                            currentTotalCount
+                                        )}`}
                                     </H3>
                                 )}
 
@@ -196,17 +198,9 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                 />
                             </div>
                             {error && <ConnectionError errors={[error.message]} />}
-                            {/*
-                            The connection list is a `div` instead of a `ul` because `ul` doesn't support css grid and we need to grid
-                            to live on the wrapper as opposed to each `BatchChangeNode`.
-
-                            This is because the current grid pattern gets broken when the individual child of the `ConnectionList` component
-                            has a grid.
-                            Discussion: https://github.com/sourcegraph/sourcegraph/pull/34716#pullrequestreview-959790114
-                        */}
                             <ConnectionList
-                                as="div"
                                 className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}
+                                aria-label="batch changes"
                             >
                                 {connection?.nodes?.map(node => (
                                     <BatchChangeNode
@@ -301,21 +295,22 @@ const BatchChangeListTabHeader: React.FunctionComponent<
         [setSelectedTab]
     )
     return (
-        <div className="overflow-auto mb-2">
-            <ul className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
-                <li className="nav-item">
+        <nav className="overflow-auto mb-2" aria-label="Batch Changes">
+            <div className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap" role="tablist">
+                <div className="nav-item">
                     <Link
                         to=""
                         onClick={onSelectBatchChanges}
                         className={classNames('nav-link', selectedTab === 'batchChanges' && 'active')}
-                        role="button"
+                        aria-selected={selectedTab === 'batchChanges'}
+                        role="tab"
                     >
                         <span className="text-content" data-tab-content="All batch changes">
                             All batch changes
                         </span>
                     </Link>
-                </li>
-                <li className="nav-item">
+                </div>
+                <div className="nav-item">
                     <Link
                         to=""
                         onClick={event => {
@@ -323,15 +318,16 @@ const BatchChangeListTabHeader: React.FunctionComponent<
                             eventLogger.log('batch_change_homepage:getting_started:clicked')
                         }}
                         className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}
-                        role="button"
+                        aria-selected={selectedTab === 'gettingStarted'}
+                        role="tab"
                         data-testid="test-getting-started-btn"
                     >
                         <span className="text-content" data-tab-content="Getting started">
                             Getting started
                         </span>
                     </Link>
-                </li>
-            </ul>
-        </div>
+                </div>
+            </div>
+        </nav>
     )
 }

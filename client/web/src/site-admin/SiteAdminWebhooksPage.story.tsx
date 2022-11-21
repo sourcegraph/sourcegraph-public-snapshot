@@ -123,5 +123,13 @@ function createWebhookMock(kind: ExternalServiceKind, urn: string): WebhookField
         uuid: '',
         codeHostKind: kind,
         codeHostURN: urn,
+        createdBy: {
+            username: 'alice',
+            url: 'users/alice',
+        },
+        updatedBy: {
+            username: 'alice',
+            url: 'users/alice',
+        },
     }
 }

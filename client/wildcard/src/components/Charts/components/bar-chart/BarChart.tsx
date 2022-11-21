@@ -31,6 +31,7 @@ export interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGPr
     getDatumFadeColor?: (datum: Datum) => string
 
     onDatumHover?: (datum: Datum) => void
+    getDatumHoverValueLabel?: (datum: Datum) => string
 }
 
 export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
@@ -53,6 +54,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         getDatumValue,
         getDatumColor,
         getDatumFadeColor,
+        getDatumHoverValueLabel,
         getDatumLink = DEFAULT_LINK_GETTER,
         getCategory = getDatumName,
         onDatumLinkClick,
@@ -133,6 +135,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
                         getDatumLink={getDatumLink}
                         onBarClick={handleBarClick}
                         onBarHover={onDatumHover}
+                        getDatumHoverValueLabel={getDatumHoverValueLabel}
                     />
                 )}
             </SvgContent>

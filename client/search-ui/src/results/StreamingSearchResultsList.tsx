@@ -9,9 +9,11 @@ import { Observable } from 'rxjs'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { SearchContextProps } from '@sourcegraph/search'
-import { CommitSearchResult, RepoSearchResult, FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
+import { CommitSearchResult, RepoSearchResult, FileSearchResult } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
@@ -141,66 +143,80 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 
     const renderResult = useCallback(
         (result: SearchMatch, index: number): JSX.Element => {
-            switch (result.type) {
-                case 'content':
-                case 'path':
-                case 'symbol':
-                    return (
-                        <PrefetchableFile
-                            isPrefetchEnabled={prefetchFileEnabled}
-                            prefetch={prefetchFile}
-                            filePath={result.path}
-                            revision={getRevision(result.branches, result.commit)}
-                            repoName={result.repository}
-                            // PrefetchableFile adds an extra wrapper, so we lift the <li> up and match the ResultContainer styles.
-                            // Better approach would be to use `as` to avoid wrapping, but that requires a larger refactor of the
-                            // child components than is worth doing right now for this experimental feature
-                            className={resultContainerStyles.resultContainer}
-                            as="li"
-                        >
-                            <FileSearchResult
+            function renderResultContent(): JSX.Element {
+                switch (result.type) {
+                    case 'content':
+                    case 'path':
+                    case 'symbol':
+                        return (
+                            <PrefetchableFile
+                                isPrefetchEnabled={prefetchFileEnabled}
+                                prefetch={prefetchFile}
+                                filePath={result.path}
+                                revision={getRevision(result.branches, result.commit)}
+                                repoName={result.repository}
+                                // PrefetchableFile adds an extra wrapper, so we lift the <li> up and match the ResultContainer styles.
+                                // Better approach would be to use `as` to avoid wrapping, but that requires a larger refactor of the
+                                // child components than is worth doing right now for this experimental feature
+                                className={resultContainerStyles.resultContainer}
+                                as="li"
+                            >
+                                <FileSearchResult
+                                    index={index}
+                                    location={location}
+                                    telemetryService={telemetryService}
+                                    icon={getFileMatchIcon(result)}
+                                    result={result}
+                                    onSelect={() => logSearchResultClicked(index, 'fileMatch')}
+                                    expanded={false}
+                                    showAllMatches={false}
+                                    allExpanded={allExpanded}
+                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                    repoDisplayName={displayRepoName(result.repository)}
+                                    settingsCascade={settingsCascade}
+                                    extensionsController={extensionsController}
+                                    hoverifier={hoverifier}
+                                    openInNewTab={openMatchesInNewTab}
+                                    containerClassName={resultClassName}
+                                />
+                            </PrefetchableFile>
+                        )
+                    case 'commit':
+                        return (
+                            <CommitSearchResult
                                 index={index}
-                                location={location}
-                                telemetryService={telemetryService}
-                                icon={getFileMatchIcon(result)}
                                 result={result}
-                                onSelect={() => logSearchResultClicked(index, 'fileMatch')}
-                                expanded={false}
-                                showAllMatches={false}
-                                allExpanded={allExpanded}
-                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                repoDisplayName={displayRepoName(result.repository)}
-                                settingsCascade={settingsCascade}
-                                extensionsController={extensionsController}
-                                hoverifier={hoverifier}
+                                platformContext={platformContext}
+                                onSelect={() => logSearchResultClicked(index, 'commit')}
                                 openInNewTab={openMatchesInNewTab}
                                 containerClassName={resultClassName}
+                                as="li"
                             />
-                        </PrefetchableFile>
-                    )
-                case 'commit':
-                    return (
-                        <CommitSearchResult
-                            index={index}
-                            result={result}
-                            platformContext={platformContext}
-                            onSelect={() => logSearchResultClicked(index, 'commit')}
-                            openInNewTab={openMatchesInNewTab}
-                            containerClassName={resultClassName}
-                            as="li"
-                        />
-                    )
-                case 'repo':
-                    return (
-                        <RepoSearchResult
-                            index={index}
-                            result={result}
-                            onSelect={() => logSearchResultClicked(index, 'repo')}
-                            containerClassName={resultClassName}
-                            as="li"
-                        />
-                    )
+                        )
+                    case 'repo':
+                        return (
+                            <RepoSearchResult
+                                index={index}
+                                result={result}
+                                onSelect={() => logSearchResultClicked(index, 'repo')}
+                                containerClassName={resultClassName}
+                                as="li"
+                            />
+                        )
+                }
             }
+
+            return (
+                <TraceSpanProvider
+                    name="StreamingSearchResultsListItem"
+                    attributes={{
+                        type: result.type,
+                        index,
+                    }}
+                >
+                    {renderResultContent()}
+                </TraceSpanProvider>
+            )
         },
         [
             prefetchFileEnabled,
