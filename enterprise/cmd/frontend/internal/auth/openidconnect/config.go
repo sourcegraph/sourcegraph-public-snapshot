@@ -6,9 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"path"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -32,7 +34,7 @@ func GetProvider(id string) *Provider {
 		},
 	).(*Provider)
 	if ok {
-		p.callbackUrl = ".auth/callback"
+		p.callbackUrl = path.Join(auth.AuthURLPrefix, "callback")
 		return p
 	}
 	return nil
