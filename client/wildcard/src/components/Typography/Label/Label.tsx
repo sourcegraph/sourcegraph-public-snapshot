@@ -38,6 +38,13 @@ export const Label = React.forwardRef((props, reference) => {
     // Since we use content editable inputs (codemirror search box input) and labels together in some
     // consumers we support this behavior manually for content editable elements
     const handleClick = (event: MouseEvent<HTMLLabelElement>): void => {
+        const htmlForAttribute = mergedRef.current?.getAttribute('htmlFor')
+
+        if (htmlForAttribute) {
+            onClick?.(event)
+            return
+        }
+
         const inputElements = mergedRef.current?.querySelectorAll('input') ?? []
 
         if (inputElements.length === 0) {
