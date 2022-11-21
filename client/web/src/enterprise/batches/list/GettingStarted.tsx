@@ -80,7 +80,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                 <Icon className="mr-2 text-merged" size="md" aria-hidden={true} svgPath={mdiArrowRight} />
                 <p className="mb-0">
                     To automate changes across your team's private repos,{' '}
-                    <Link to="https://signup.sourcegraph.com/?p=batch" onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}>
+                    <Link to="https://signup.sourcegraph.com/?p=batch" target="_blank" rel="noopener noreferrer" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
                         try Sourcegraph Cloud
                     </Link>.
                 </p>

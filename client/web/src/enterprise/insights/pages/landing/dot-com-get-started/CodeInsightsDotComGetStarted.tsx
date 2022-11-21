@@ -39,8 +39,10 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         <Button
                             as={Link}
                             to="https://signup.sourcegraph.com/?p=insights"
+                            target="_blank"
+                            rel="noopener noreferrer"
                             variant="primary"
-                            onClick={() => telemetryService.log('ClickedOnCloudCTA', { url: window.location.href })}
+                            onClick={() => telemetryService.log('ClickedOnCloudCTA')}
                         >
                             Try Insights
                         </Button>
@@ -78,7 +80,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         <Icon className="mr-2 text-merged" size="md" aria-hidden={true} svgPath={mdiArrowRight} />
                         <p className="mb-0">
                             To track Insights across your team's private repos,{' '}
-                            <Link to="https://signup.sourcegraph.com/?p=insights" onClick={() => telemetryService.log('ClickedOnCloudCTA', { url: window.location.href })}>
+                            <Link to="https://signup.sourcegraph.com/?p=insights" target="_blank" rel="noopener noreferrer" onClick={() => telemetryService.log('ClickedOnCloudCTA')}>
                                 try Sourcegraph Cloud
                             </Link>.
                         </p>

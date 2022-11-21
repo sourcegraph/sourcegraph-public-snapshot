@@ -155,8 +155,10 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     <Button
                         as={Link}
                         to="https://signup.sourcegraph.com/?p=batch"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         variant="primary"
-                        onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}
+                        onClick={() => eventLogger.log('ClickedOnCloudCTA')}
                     >
                         Try Batch Changes
                     </Button>
