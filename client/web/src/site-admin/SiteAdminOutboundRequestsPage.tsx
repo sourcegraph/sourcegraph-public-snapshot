@@ -13,7 +13,7 @@ import { Container, H3, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wi
 import {
     FilteredConnection,
     FilteredConnectionFilter,
-    FilteredConnectionQueryArguments
+    FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { OutboundRequestsResult, OutboundRequestsVariables } from '../graphql-operations'
@@ -38,10 +38,10 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     })
 
     const queryOutboundRequests = useCallback(
-        (args: FilteredConnectionQueryArguments & {failed?: boolean}) =>
+        (args: FilteredConnectionQueryArguments & { failed?: boolean }) =>
             of(data).pipe(
                 map(data => {
-                    const all = data?.outboundRequests;
+                    const all = data?.outboundRequests
                     const filtered = all?.filter(
                         request =>
                             (!args.query || request.url.includes(args.query)) &&
