@@ -259,7 +259,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                             <Icon className={classNames('text-merged mr-1', styles.footerIcon)} size="md" aria-hidden={true} svgPath={mdiArrowRight} />
                             <p className="mb-0">
                                 To search across your team's private repositories,{' '}
-                                <Link to="https://signup.sourcegraph.com/?p=context" onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}>
+                                <Link to="https://signup.sourcegraph.com/?p=context" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
                                     try Sourcegraph Cloud
                                 </Link>.
                             </p>

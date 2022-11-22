@@ -144,16 +144,14 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
                             // Rule: "color-contrast" (Elements must have sufficient color contrast)
                             // GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
                         }
-                        <>
-                            <span className="a11y-ignore search-filter-keyword">context</span>
-                            <span className="search-filter-separator">:</span>
-                            {selectedSearchContextSpec?.startsWith('@') ? (
-                                <>
-                                    <span className="search-keyword">@</span>
-                                    {selectedSearchContextSpec?.slice(1)}
-                                </>
-                            ) : selectedSearchContextSpec}
-                        </>
+                        <span className="a11y-ignore search-filter-keyword">context</span>
+                        <span className="search-filter-separator">:</span>
+                        {selectedSearchContextSpec?.startsWith('@') ? (
+                            <>
+                                <span className="search-keyword">@</span>
+                                {selectedSearchContextSpec?.slice(1)}
+                            </>
+                        ) : selectedSearchContextSpec}
                     </Code>
                 </PopoverTrigger>
             </Tooltip>

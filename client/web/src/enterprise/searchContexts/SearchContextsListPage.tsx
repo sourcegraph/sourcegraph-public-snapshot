@@ -82,7 +82,7 @@ export const SearchContextsListPage: React.FunctionComponent<
                                     className="d-block mt-2"
                                     as={Link}
                                     variant="secondary"
-                                    onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}
+                                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
                                 >
                                     Search private code
                                 </Button>

@@ -71,7 +71,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                         Search millions of open source repositories
                     </div>
                     <div className="mt-3">
-                        <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}>
+                        <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
                             Search private code
                         </Link>
                     </div>

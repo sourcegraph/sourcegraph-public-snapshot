@@ -92,7 +92,7 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                             Search your private code with{' '}
                             <Link
                                 to="https://signup.sourcegraph.com/"
-                                onClick={() => eventLogger.log('ClickedOnCloudCTA', { url: window.location.href })}
+                                onClick={() => eventLogger.log('ClickedOnCloudCTA')}
                             >
                                 Sourcegraph Cloud
                             </Link>{' '}
