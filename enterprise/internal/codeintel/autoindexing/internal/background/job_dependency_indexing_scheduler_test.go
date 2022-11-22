@@ -24,7 +24,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockWorkerStore := NewMockWorkerStore()
+	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencyIndexingJob]()
 
 	mockRepoStore.ListMinimalReposFunc.PushReturn([]types.MinimalRepo{
 		{
@@ -132,7 +132,7 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockWorkerStore := NewMockWorkerStore()
+	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencyIndexingJob]()
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
@@ -236,7 +236,7 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockWorkerStore := NewMockWorkerStore()
+	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencyIndexingJob]()
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
@@ -296,7 +296,7 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockWorkerStore := NewMockWorkerStore()
+	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencyIndexingJob]()
 	mockRepoStore := NewMockReposStore()
 
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)

@@ -8,7 +8,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,8 +21,8 @@ import (
 // An unlocked record signifies that it is not actively being processed and records in this
 // state for more than a few seconds are very likely to be stuck after the worker processing
 // them has crashed.
-type Resetter struct {
-	store    store.Store
+type Resetter[T workerutil.Record] struct {
+	store    store.Store[T]
 	options  ResetterOptions
 	clock    glock.Clock
 	ctx      context.Context // root context passed to the database
@@ -70,18 +72,18 @@ func NewMetrics(observationContext *observation.Context, metricNameRoot string) 
 	}
 }
 
-func NewResetter(logger log.Logger, store store.Store, options ResetterOptions) *Resetter {
+func NewResetter[T workerutil.Record](logger log.Logger, store store.Store[T], options ResetterOptions) *Resetter[T] {
 	return newResetter(logger, store, options, glock.NewRealClock())
 }
 
-func newResetter(logger log.Logger, store store.Store, options ResetterOptions, clock glock.Clock) *Resetter {
+func newResetter[T workerutil.Record](logger log.Logger, store store.Store[T], options ResetterOptions, clock glock.Clock) *Resetter[T] {
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/dbworker/newResetter")
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	return &Resetter{
+	return &Resetter[T]{
 		store:    store,
 		options:  options,
 		clock:    clock,
@@ -93,7 +95,7 @@ func newResetter(logger log.Logger, store store.Store, options ResetterOptions, 
 }
 
 // Start begins periodically calling reset stalled on the underlying store.
-func (r *Resetter) Start() {
+func (r *Resetter[T]) Start() {
 	defer close(r.finished)
 
 loop:
@@ -128,7 +130,7 @@ loop:
 }
 
 // Stop will cause the resetter loop to exit after the current iteration.
-func (r *Resetter) Stop() {
+func (r *Resetter[T]) Stop() {
 	r.cancel()
 	<-r.finished
 }

@@ -948,6 +948,12 @@ func isGlobal(op search.RepoOptions) bool {
 		return false
 	}
 
+	// Zoekt does not know about repo key-value pairs or tags, so we depend on the
+	// database to handle this filter.
+	if len(op.HasKVPs) > 0 {
+		return false
+	}
+
 	// If a search context is specified, we do not know ahead of time whether
 	// the repos in the context are indexed and we need to go through the repo
 	// resolution process.

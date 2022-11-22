@@ -98,7 +98,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
             )}
 
             <H2>Logs</H2>
-            <WebhookInfoLogPageHeader onlyErrors={onlyErrors} onSetOnlyErrors={setOnlyErrors} />
+            <WebhookInfoLogPageHeader webhookID={id} onlyErrors={onlyErrors} onSetOnlyErrors={setOnlyErrors} />
 
             <ConnectionContainer className="mt-5">
                 {error && <ConnectionError errors={[error.message]} />}

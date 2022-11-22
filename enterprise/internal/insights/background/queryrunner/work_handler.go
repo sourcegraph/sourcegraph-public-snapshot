@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var _ workerutil.Handler = &workHandler{}
+var _ workerutil.Handler[*Job] = &workHandler{}
 
 // workHandler implements the dbworker.Handler interface by executing search queries and
 // inserting insights about them to the insights database.
@@ -71,7 +71,7 @@ func (r *workHandler) fetchSeries(ctx context.Context, seriesID string) (*types.
 	return &result[0], nil
 }
 
-func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record *Job) (err error) {
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
 	// repository on Sourcegraph - results will be filtered when users query for insight data based on the
 	// repositories they can see.

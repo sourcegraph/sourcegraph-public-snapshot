@@ -16,22 +16,18 @@ type Record interface {
 }
 
 // Store is the persistence layer for the workerutil package that handles worker-side operations.
-type Store interface {
+type Store[T Record] interface {
 	// QueuedCount returns the number of records in the queued state.
 	QueuedCount(ctx context.Context) (int, error)
 
 	// Dequeue selects a record for processing. Any extra arguments supplied will be used in accordance with the
 	// concrete persistence layer (e.g. additional SQL conditions for a database layer). This method returns a boolean
 	// flag indicating the existence of a processable record.
-	Dequeue(ctx context.Context, workerHostname string, extraArguments any) (Record, bool, error)
+	Dequeue(ctx context.Context, workerHostname string, extraArguments any) (T, bool, error)
 
 	// Heartbeat updates last_heartbeat_at of all the given jobs, when they're processing. All IDs of records that were
-	// touched are returned.
-	Heartbeat(ctx context.Context, jobIDs []int) (knownIDs []int, err error)
-
-	// CanceledJobs returns all the jobs that are to be canceled. These jobs will be found eventually and then canceled.
-	// They will end up in canceled state.
-	CanceledJobs(ctx context.Context, knownJobIDs []int) (canceledIDs []int, err error)
+	// touched are returned. Additionally, jobs in the working set that are flagged as to be canceled are returned.
+	Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelIDs []int, err error)
 
 	// AddExecutionLogEntry adds an executor log entry to the record and
 	// returns the ID of the new entry (which can be used with

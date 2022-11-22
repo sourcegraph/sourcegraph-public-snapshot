@@ -13,7 +13,7 @@ import { WebhookFields, WebhookLogFields } from '../graphql-operations'
 
 import { WEBHOOK_BY_ID } from './backend'
 import { SiteAdminWebhookPage } from './SiteAdminWebhookPage'
-import { WEBHOOK_LOG_PAGE_HEADER, WEBHOOK_LOGS_BY_ID } from './webhooks/backend'
+import { WEBHOOK_BY_ID_LOG_PAGE_HEADER, WEBHOOK_LOGS_BY_ID } from './webhooks/backend'
 import { BODY_JSON, BODY_PLAIN, HEADERS_JSON, HEADERS_PLAIN } from './webhooks/story/fixtures'
 
 const decorator: DecoratorFn = Story => <Story />
@@ -60,8 +60,8 @@ export const SiteAdminWebhookPageStory: Story = args => {
                 data: {
                     webhookLogs: {
                         nodes: WEBHOOK_MOCK_DATA,
-                        pageInfo: { hasNextPage: true },
-                        totalCount: 40,
+                        pageInfo: { hasNextPage: false },
+                        totalCount: 20,
                     },
                 },
             },
@@ -82,20 +82,22 @@ export const SiteAdminWebhookPageStory: Story = args => {
                 data: {
                     webhookLogs: {
                         nodes: ERRORED_WEBHOOK_MOCK_DATA,
-                        pageInfo: { hasNextPage: true },
-                        totalCount: 40,
+                        pageInfo: { hasNextPage: false },
+                        totalCount: 20,
                     },
                 },
             },
             nMatches: Number.POSITIVE_INFINITY,
         },
         {
-            request: { query: getDocumentNode(WEBHOOK_LOG_PAGE_HEADER) },
+            request: {
+                query: getDocumentNode(WEBHOOK_BY_ID_LOG_PAGE_HEADER),
+                variables: {
+                    webhookID: '1',
+                },
+            },
             result: {
                 data: {
-                    externalServices: {
-                        totalCount: 5,
-                    },
                     webhookLogs: {
                         totalCount: 13,
                     },

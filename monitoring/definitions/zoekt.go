@@ -42,67 +42,49 @@ func Zoekt() *monitoring.Dashboard {
 						{
 							Name:        "total_repos_aggregate",
 							Description: "total number of repos (aggregate)",
-							Query:       `sum(index_num_assigned)`,
+							Query:       `sum by (__name__) ({__name__=~"index_num_assigned|index_num_indexed|index_queue_cap"})`,
 							NoAlert:     true,
-							Panel: monitoring.Panel().With(
-								monitoring.PanelOptions.LegendOnRight(),
-								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.Current = true
-									p.GraphPanel.Targets = []sdk.Target{{
-										Expr:         o.Query,
-										LegendFormat: "assigned",
-									}, {
-										Expr:         "sum(index_num_indexed)",
-										LegendFormat: "indexed",
-									}, {
-										Expr:         "sum(index_queue_cap)",
-										LegendFormat: "tracked",
-									}}
-									p.GraphPanel.Tooltip.Shared = true
-								}).MinAuto(),
+							Panel: monitoring.Panel().
+								With(
+									monitoring.PanelOptions.LegendOnRight(),
+									monitoring.PanelOptions.HoverShowAll(),
+								).
+								MinAuto().
+								LegendFormat("{{__name__}}"),
 							Owner: monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
 								Sudden changes can be caused by indexing configuration changes.
 
-								Additionally, a discrepancy between "assigned" and "tracked" could indicate a bug.
+								Additionally, a discrepancy between "index_num_assigned" and "index_queue_cap" could indicate a bug.
 
 								Legend:
-								- assigned: # of repos assigned to Zoekt
-								- indexed: # of repos Zoekt has indexed
-								- tracked: # of repos Zoekt is aware of, including those that it has finished indexing
+								- index_num_assigned: # of repos assigned to Zoekt
+								- index_num_indexed: # of repos Zoekt has indexed
+								- index_queue_cap: # of repos Zoekt is aware of, including those that it has finished indexing
 							`,
 						},
 						{
 							Name:        "total_repos_per_instance",
 							Description: "total number of repos (per instance)",
-							Query:       "sum by (instance) (index_num_assigned{instance=~`${instance:regex}`})",
+							Query:       `sum by (__name__, instance) ({__name__=~"index_num_assigned|index_num_indexed|index_queue_cap",instance=~"${instance:regex}"})`,
 							NoAlert:     true,
-							Panel: monitoring.Panel().With(
-								monitoring.PanelOptions.LegendOnRight(),
-								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.Current = true
-									p.GraphPanel.Targets = []sdk.Target{{
-										Expr:         o.Query,
-										LegendFormat: "{{instance}} assigned",
-									}, {
-										Expr:         "sum by (instance) (index_num_indexed{instance=~`${instance:regex}`})",
-										LegendFormat: "{{instance}} indexed",
-									}, {
-										Expr:         "sum by (instance) (index_queue_cap{instance=~`${instance:regex}`})",
-										LegendFormat: "{{instance}} tracked",
-									}}
-									p.GraphPanel.Tooltip.Shared = true
-								}).MinAuto(),
+							Panel: monitoring.Panel().
+								With(
+									monitoring.PanelOptions.LegendOnRight(),
+									monitoring.PanelOptions.HoverShowAll(),
+								).
+								MinAuto().
+								LegendFormat("{{instance}} {{__name__}}"),
 							Owner: monitoring.ObservableOwnerSearchCore,
 							Interpretation: `
 								Sudden changes can be caused by indexing configuration changes.
 
-								Additionally, a discrepancy between "assigned" and "tracked" could indicate a bug.
+								Additionally, a discrepancy between "index_num_assigned" and "index_queue_cap" could indicate a bug.
 
 								Legend:
-								- assigned: # of repos assigned to Zoekt
-								- indexed: # of repos Zoekt has indexed
-								- tracked: # of repos Zoekt is aware of, including those that it has finished processing
+								- index_num_assigned: # of repos assigned to Zoekt
+								- index_num_indexed: # of repos Zoekt has indexed
+								- index_queue_cap: # of repos Zoekt is aware of, including those that it has finished processing
 							`,
 						},
 					},
@@ -285,9 +267,9 @@ func Zoekt() *monitoring.Dashboard {
 							Owner:       monitoring.ObservableOwnerSearchCore,
 							Panel: monitoring.Panel().LegendFormat("{{state}}").With(
 								monitoring.PanelOptions.LegendOnRight(),
+								monitoring.PanelOptions.HoverShowAll(),
 								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Yaxes[0].LogBase = 2  // log to show the huge number of "noop" or "empty"
-									p.GraphPanel.Tooltip.Shared = true // show multiple lines simultaneously
+									p.GraphPanel.Yaxes[0].LogBase = 2 // log to show the huge number of "noop" or "empty"
 								},
 							),
 							Interpretation: `
