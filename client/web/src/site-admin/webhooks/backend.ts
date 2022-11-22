@@ -182,3 +182,11 @@ export const WEBHOOK_LOGS_BY_ID = gql`
         }
     }
 `
+
+export const WEBHOOK_BY_ID_LOG_PAGE_HEADER = gql`
+    query WebhookByIDLogPageHeader($webhookID: ID!) {
+        webhookLogs(webhookID: $webhookID, onlyErrors: true) {
+            totalCount
+        }
+    }
+`
