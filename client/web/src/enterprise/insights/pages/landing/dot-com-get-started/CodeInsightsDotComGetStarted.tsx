@@ -13,7 +13,6 @@ import { CodeInsightsLandingPageContext, CodeInsightsLandingPageType } from '../
 import { CodeInsightsDescription } from '../getting-started/components/code-insights-description/CodeInsightsDescription'
 
 import { CodeInsightsExamplesPicker } from './components/code-insights-examples-picker/CodeInsightsExamplesPicker'
-import { CloudCtaBanner } from '../../../../../components/CloudCtaBanner'
 
 import styles from './CodeInsightsDotComGetStarted.module.scss'
 
