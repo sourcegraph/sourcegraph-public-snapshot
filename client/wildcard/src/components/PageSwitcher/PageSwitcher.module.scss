@@ -1,0 +1,23 @@
+.list, .label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0;
+    margin-right: 0;
+    padding: 0;
+    margin-bottom: 0.625rem;
+}
+
+.list {
+    list-style: none;
+}
+
+.button {
+    min-width: 2rem;
+    padding: 0.25rem 0.5rem;
+
+    &:focus,
+    &:hover {
+        text-decoration: none;
+    }
+}
