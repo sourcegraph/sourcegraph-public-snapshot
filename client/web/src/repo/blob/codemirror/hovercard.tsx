@@ -176,6 +176,7 @@ export const isMetaKeyActive = StateField.define<boolean>({
 export const metaKeyPointerCursor = ViewPlugin.fromClass(
     class implements PluginValue {
         constructor(public view: EditorView) {
+            console.log('LISTEN')
             document.body.addEventListener('keydown', this.onKeyDown)
             document.body.addEventListener('keyup', this.onKeyUp)
         }
@@ -218,7 +219,7 @@ const showHovercard = Facet.define<Hovercard>({
                 Array.from(state.facet(facet), range => {
                     const metaKey = state.field(isMetaKeyActive)
                     const { from, to } = range.providerOffset ?? range
-                    console.log({ metaKey, range })
+                    console.log({ metaKey, definitionURL: range.definitionURL, onClick: range.onClick })
                     return range.definitionURL && metaKey
                         ? selectionGoToDefinitionDecoration.range(from, to)
                         : selectionHighlightDecoration.range(from, to)
@@ -315,7 +316,7 @@ const hovercardState = StateField.define<{ pinned: Hovercard | null; hover: Hove
         return state
     },
     provide(field) {
-        return showHovercard.computeN([field], state => {
+        return showHovercard.computeN([isMetaKeyActive, field], state => {
             const hovercards: Hovercard[] = []
             const hovercardState = state.field(field)
             if (hovercardState.hover) {
@@ -529,6 +530,7 @@ const hoverManager = ViewPlugin.fromClass(
                     })
                 )
                 .subscribe(next => {
+                    console.log({ NEWHOVER: next })
                     if (next === 'HIDE') {
                         this.view.dispatch({
                             effects: setHoverHovercard.of(null),
@@ -825,9 +827,18 @@ function tokenRangeToHovercard(
                         // and reposition the hovercard if necessary
 
                         let providerOffset = hovercard?.providerOffset
-                        let onClick = hovercard?.onClick
-                        let definitionURL: string | undefined
+                        let definitionURL = hovercard?.definitionURL
+                        const props = view.state.facet(blobPropsFacet)
+                        const urlAndType = getGoToURL(actionsOrError, props.location)
+                        console.log({ UPDATE: urlAndType?.url })
+                        if (urlAndType) {
+                            const { url, actionType } = urlAndType
+                            if (actionType === 'definition' && url) {
+                                definitionURL = url
+                            }
+                        }
 
+                        let onClick = hovercard?.onClick
                         if (!onClick) {
                             const props = view.state.facet(blobPropsFacet)
                             // Adaption of the "click to go to definition" code inside
@@ -836,9 +847,6 @@ function tokenRangeToHovercard(
                                 const urlAndType = getGoToURL(actionsOrError, props.location)
                                 if (urlAndType) {
                                     const { url, actionType } = urlAndType
-                                    if (actionType === 'definition' && url) {
-                                        definitionURL = url
-                                    }
                                     onClick = event => {
                                         if (!event.metaKey) {
                                             return
