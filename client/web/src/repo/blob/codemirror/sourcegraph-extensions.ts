@@ -34,7 +34,7 @@ import { BlobInfo, BlobProps } from '../Blob'
 
 import { documentHighlightsSource } from './document-highlights'
 import { showTextDocumentDecorations } from './extensions-decorations'
-import { hovercardSource } from './hovercard'
+import { hovercardSource, isMetaKeyActive, metaKeyPointerCursor } from './hovercard'
 import { SelectedLineRange, selectedLines } from './linenumbers'
 import { Container } from './react-interop'
 
@@ -133,6 +133,8 @@ export function sourcegraphExtensions({
                 subscriptions.unsubscribe()
             },
         })),
+        metaKeyPointerCursor,
+        isMetaKeyActive,
         // This needs to come before document highlights so that the hovered
         // token is highlighted differently
         hovercardDataSource(contextObservable),

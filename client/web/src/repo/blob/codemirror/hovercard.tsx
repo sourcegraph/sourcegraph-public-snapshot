@@ -119,7 +119,8 @@ interface Hovercard {
 
     // Used to provide "click to go to definition". The presence of this value
     // also indicates that the range should be decorated with a pointer cursor.
-    onClick?: () => void
+    onClick?: (event: MouseEvent) => void
+    definitionURL?: string
 
     // Whether or not this hovercard is considered "pinned". We only show a
     // close button for pinned hovercards
@@ -148,6 +149,9 @@ const hovercardTheme = EditorView.theme({
         zIndex: 1024,
     },
     '.hover-gtd': {
+        textDecoration: 'underline',
+    },
+    '.cm-clickable': {
         cursor: 'pointer',
     },
 })
@@ -157,6 +161,41 @@ const hovercardTheme = EditorView.theme({
  */
 const selectionHighlightDecoration = Decoration.mark({ class: 'selection-highlight' })
 const selectionGoToDefinitionDecoration = Decoration.mark({ class: 'selection-highlight hover-gtd' })
+const setMetaKey = StateEffect.define<boolean>()
+export const isMetaKeyActive = StateField.define<boolean>({
+    create: () => false,
+    update: (value, transactions) => {
+        for (const effect of transactions.effects) {
+            if (effect.is(setMetaKey)) {
+                value = effect.value
+            }
+        }
+        return value
+    },
+})
+export const metaKeyPointerCursor = ViewPlugin.fromClass(
+    class implements PluginValue {
+        constructor(public view: EditorView) {
+            document.body.addEventListener('keydown', this.onKeyDown)
+            document.body.addEventListener('keyup', this.onKeyUp)
+        }
+        public destroy(): void {
+            document.body.removeEventListener('keydown', this.onKeyDown)
+            document.body.removeEventListener('keyup', this.onKeyUp)
+        }
+
+        public onKeyUp = (): void => {
+            this.view.contentDOM.classList.remove('cm-clickable')
+            this.view.dispatch({ effects: setMetaKey.of(false) })
+        }
+        public onKeyDown = (event: KeyboardEvent): void => {
+            if (event.metaKey) {
+                this.view.contentDOM.classList.add('cm-clickable')
+                this.view.dispatch({ effects: setMetaKey.of(true) })
+            }
+        }
+    }
+)
 
 /**
  * Facet to which an extension can add a value to show a {@link Hovercard}. This
@@ -174,11 +213,13 @@ const showHovercard = Facet.define<Hovercard>({
         showTooltip.computeN([facet], state => state.facet(facet).map(range => range.tooltip)),
 
         // Highlight token under cursor
-        EditorView.decorations.compute([facet], state =>
+        EditorView.decorations.compute([facet, isMetaKeyActive], state =>
             RangeSet.of(
                 Array.from(state.facet(facet), range => {
+                    const metaKey = state.field(isMetaKeyActive)
                     const { from, to } = range.providerOffset ?? range
-                    return range.onClick
+                    console.log({ metaKey, range })
+                    return range.definitionURL && metaKey
                         ? selectionGoToDefinitionDecoration.range(from, to)
                         : selectionHighlightDecoration.range(from, to)
                 }),
@@ -207,7 +248,7 @@ const showHovercard = Facet.define<Hovercard>({
 
                 for (const range of ranges.values()) {
                     if (isOffsetInHoverRange(offset, range)) {
-                        range.onClick?.()
+                        range.onClick?.(event)
                         return true
                     }
                 }
@@ -785,6 +826,7 @@ function tokenRangeToHovercard(
 
                         let providerOffset = hovercard?.providerOffset
                         let onClick = hovercard?.onClick
+                        let definitionURL: string | undefined
 
                         if (!onClick) {
                             const props = view.state.facet(blobPropsFacet)
@@ -794,7 +836,13 @@ function tokenRangeToHovercard(
                                 const urlAndType = getGoToURL(actionsOrError, props.location)
                                 if (urlAndType) {
                                     const { url, actionType } = urlAndType
-                                    onClick = () => {
+                                    if (actionType === 'definition' && url) {
+                                        definitionURL = url
+                                    }
+                                    onClick = event => {
+                                        if (!event.metaKey) {
+                                            return
+                                        }
                                         props.telemetryService.log(`${actionType}HoverOverlay.click`)
                                         if (props.nav) {
                                             props.nav(url)
@@ -832,6 +880,7 @@ function tokenRangeToHovercard(
                                     create: view => new HovercardView(view, lineCharacterRange, pinned, hoverData),
                                 },
                                 onClick,
+                                definitionURL,
                                 providerOffset,
                                 pinned,
                             }
