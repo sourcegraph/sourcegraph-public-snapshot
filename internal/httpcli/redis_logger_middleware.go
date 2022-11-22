@@ -3,14 +3,15 @@ package httpcli
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-stack/stack"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"io"
 	"net/http"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/go-stack/stack"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 const keyPrefix = "outbound:"
