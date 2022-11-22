@@ -236,7 +236,17 @@ func TestUserEmailsAddRemove(t *testing.T) {
 	ctx = actor.WithInternalActor(ctx)
 	// Add secondary e-mail
 	assert.NoError(t, UserEmails.Add(ctx, logger, db, createdUser.ID, email2))
+
+	// Add reset code
+	code, err := db.Users().RenewPasswordResetCode(ctx, createdUser.ID)
+	assert.NoError(t, err)
+
 	assert.NoError(t, UserEmails.Remove(ctx, logger, db, createdUser.ID, email2))
+
+	// Trying to change the password with the old code should fail
+	changed, err := db.Users().SetPassword(ctx, createdUser.ID, code, "some-amazing-new-password")
+	assert.NoError(t, err)
+	assert.False(t, changed)
 
 	// Can't remove primary e-mail
 	assert.Error(t, UserEmails.Remove(ctx, logger, db, createdUser.ID, email))
