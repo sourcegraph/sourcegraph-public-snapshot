@@ -9,8 +9,8 @@ import { AuthenticatedUser } from '../../auth'
 import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
-
 import { eventLogger } from '../../tracking/eventLogger'
+
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 
