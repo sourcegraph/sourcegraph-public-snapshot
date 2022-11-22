@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -174,53 +173,36 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		return nil, err
 	}
 
+	// 🚨 SECURITY: check external service access
+	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	id, err := UnmarshalExternalServiceID(args.ExternalService)
 	if err != nil {
 		return nil, err
 	}
 
-	es, err := r.db.ExternalServices().GetByID(ctx, id)
+	// Load external service to make sure it exists
+	_, err = r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: check external service access
-	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 
 	if args.Async {
 		// run deletion in the background and return right away
 		go func() {
-			if err := r.deleteExternalService(context.Background(), id, es); err != nil {
-				log15.Error("Background external service deletion failed", "err", err)
+			if err := r.db.ExternalServices().Delete(ctx, id); err != nil {
+				r.logger.Error("Background external service deletion failed", log.Error(err))
 			}
 		}()
 	} else {
-		if err = r.deleteExternalService(ctx, id, es); err != nil {
+		if err := r.db.ExternalServices().Delete(ctx, id); err != nil {
 			return nil, err
 		}
 	}
 
 	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) deleteExternalService(ctx context.Context, id int64, es *types.ExternalService) error {
-	if err := r.db.ExternalServices().Delete(ctx, id); err != nil {
-		return err
-	}
-	now := time.Now()
-	es.DeletedAt = now
-
-	// The user doesn't care if triggering syncing failed when deleting a
-	// service, so kick off in the background.
-	go func() {
-		if err := backend.SyncExternalService(context.Background(), r.logger, es, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
-			log15.Warn("Performing final sync after external service deletion", "err", err)
-		}
-	}()
-
-	return nil
 }
 
 type ExternalServicesArgs struct {
