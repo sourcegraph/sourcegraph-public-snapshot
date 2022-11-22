@@ -244,7 +244,7 @@ func dbUpdateUserExternalAccount(cmd *cli.Context) error {
 	}
 
 	// Find the user
-	user, err := db.Users().GetByUsername(ctx, "sourcegraph")
+	user, err := db.Users().GetByUsername(ctx, username)
 	if err != nil {
 		return errors.Wrap(err, "failed to get user")
 	}
