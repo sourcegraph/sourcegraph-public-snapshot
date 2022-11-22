@@ -13,6 +13,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { PageHeader, Button, useEventObservable, Alert, ButtonLink, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { Page } from '../../components/Page'
 import { CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
@@ -22,7 +23,6 @@ import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } 
 import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
 import { NotebooksList, NotebooksListProps } from './NotebooksList'
 import { NotebooksListPageHeader } from './NotebooksListPageHeader'
-import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 
 export interface NotebooksListPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null

@@ -6,13 +6,13 @@ import { of } from 'rxjs'
 import { Container, Link, H2, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 
+import { eventLogger } from '../../tracking/eventLogger'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
-import { CloudCtaBanner } from '../../components/CloudCtaBanner'
-import { eventLogger } from '../../tracking/eventLogger'
 
 interface CodeMonitorListProps
     extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>> {

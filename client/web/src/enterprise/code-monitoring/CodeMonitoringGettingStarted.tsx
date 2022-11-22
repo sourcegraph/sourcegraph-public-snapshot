@@ -6,8 +6,8 @@ import classNames from 'classnames'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../tracking/eventLogger'
 import { CloudCtaBanner } from '../../components/CloudCtaBanner'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 

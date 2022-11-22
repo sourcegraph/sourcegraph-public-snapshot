@@ -7,9 +7,9 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { useTheme, ThemePreference } from '../../theme'
-import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
 
