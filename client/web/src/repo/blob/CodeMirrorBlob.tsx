@@ -122,7 +122,10 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         [wrapCode, isLightTheme]
     )
 
-    const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
+    const blameDecorations = useMemo(
+        () => (blameHunks.current ? [showGitBlameDecorations.of(blameHunks.current)] : []),
+        [blameHunks]
+    )
 
     const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
 

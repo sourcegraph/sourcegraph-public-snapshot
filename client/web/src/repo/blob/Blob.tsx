@@ -16,6 +16,7 @@ import {
     ReplaySubject,
     Subscription,
     Subject,
+    Observable,
 } from 'rxjs'
 import {
     catchError,
@@ -140,7 +141,7 @@ export interface BlobProps
     ariaLabel?: string
 
     isBlameVisible?: boolean
-    blameHunks?: BlameHunk[]
+    blameHunks: { current: BlameHunk[] | undefined }
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {

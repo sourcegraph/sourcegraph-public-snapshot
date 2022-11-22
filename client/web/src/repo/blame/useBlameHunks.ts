@@ -58,11 +58,13 @@ const fetchBlameViaGraphQL = memoizeObservable(
         repoName,
         revision,
         filePath,
+        sourcegraphURL,
     }: {
         repoName: string
         revision: string
         filePath: string
-    }): Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined> =>
+        sourcegraphURL: string
+    }): Observable<{ current: BlameHunk[] | undefined }> =>
         requestGraphQL<GitBlameResult, GitBlameVariables>(
             gql`
                 query GitBlame($repo: String!, $rev: String!, $path: String!) {
@@ -99,7 +101,9 @@ const fetchBlameViaGraphQL = memoizeObservable(
             { repo: repoName, rev: revision, path: filePath }
         ).pipe(
             map(dataOrThrowErrors),
-            map(({ repository }) => repository?.commit?.blob?.blame)
+            map(({ repository }) => repository?.commit?.blob?.blame),
+            map(blames => (blames ? blames.map(blame => addDisplayInfoForHunk(blame, sourcegraphURL)) : undefined)),
+            map(blames => ({ current: blames }))
         ),
     makeRepoURI
 )
@@ -126,13 +130,15 @@ const fetchBlameViaStreaming = memoizeObservable(
         repoName,
         revision,
         filePath,
+        sourcegraphURL,
     }: {
         repoName: string
         revision: string
         filePath: string
-    }): Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined> =>
-        new Observable<Omit<BlameHunk, 'displayInfo'>[] | undefined>(subscriber => {
-            let assembledHunks: Omit<BlameHunk, 'displayInfo'>[] = []
+        sourcegraphURL: string
+    }): Observable<{ current: BlameHunk[] | undefined }> =>
+        new Observable<{ current: BlameHunk[] | undefined }>(subscriber => {
+            const assembledHunks: BlameHunk[] = []
             const repoAndRevisionPath = `/${repoName}${revision ? `@${revision}` : ''}`
             fetchEventSource(`/.api/blame${repoAndRevisionPath}/stream/${filePath}`, {
                 method: 'GET',
@@ -143,28 +149,28 @@ const fetchBlameViaStreaming = memoizeObservable(
                 onmessage(event) {
                     if (event.event === 'hunk') {
                         const rawHunks: RawStreamHunk[] = JSON.parse(event.data)
-                        for (const hunk of rawHunks) {
-                            assembledHunks.push({
-                                startLine: hunk.startLine,
-                                endLine: hunk.endLine,
-                                message: hunk.message,
-                                rev: hunk.commitID,
+                        for (const rawHunk of rawHunks) {
+                            const hunk: Omit<BlameHunk, 'displayInfo'> = {
+                                startLine: rawHunk.startLine,
+                                endLine: rawHunk.endLine,
+                                message: rawHunk.message,
+                                rev: rawHunk.commitID,
                                 author: {
-                                    date: hunk.author.Date,
+                                    date: rawHunk.author.Date,
                                     person: {
-                                        email: hunk.author.Email,
-                                        displayName: hunk.author.Name,
+                                        email: rawHunk.author.Email,
+                                        displayName: rawHunk.author.Name,
                                         user: null,
                                     },
                                 },
                                 commit: {
-                                    url: hunk.commit.url,
-                                    parents: hunk.commit.parents ? hunk.commit.parents.map(oid => ({ oid })) : [],
+                                    url: rawHunk.commit.url,
+                                    parents: rawHunk.commit.parents ? rawHunk.commit.parents.map(oid => ({ oid })) : [],
                                 },
-                            })
+                            }
+                            assembledHunks.push(addDisplayInfoForHunk(hunk, sourcegraphURL))
                         }
-                        subscriber.next(assembledHunks)
-                        assembledHunks = [...assembledHunks]
+                        subscriber.next({ current: assembledHunks })
                     }
                 },
                 onerror(event) {
@@ -183,11 +189,10 @@ const fetchBlameViaStreaming = memoizeObservable(
 /**
  * Get display info shared between status bar items and text document decorations.
  */
-const getDisplayInfoFromHunk = (
-    { author, commit, message }: Omit<BlameHunk, 'displayInfo'>,
-    sourcegraphURL: string,
-    now: number
-): BlameHunkDisplayInfo => {
+const addDisplayInfoForHunk = (hunk: Omit<BlameHunk, 'displayInfo'>, sourcegraphURL: string): BlameHunk => {
+    const now = Date.now()
+    const { author, commit, message } = hunk
+
     const displayName = truncate(author.person.displayName, { length: 25 })
     const username = author.person.user ? `(${author.person.user.username}) ` : ''
     const dateString = formatDistanceStrict(new Date(author.date), now, { addSuffix: true })
@@ -195,7 +200,7 @@ const getDisplayInfoFromHunk = (
     const linkURL = new URL(commit.url, sourcegraphURL).href
     const content = `${dateString} • ${username}${displayName} [${truncate(message, { length: 45 })}]`
 
-    return {
+    ;(hunk as BlameHunk).displayInfo = {
         displayName,
         username,
         dateString,
@@ -203,8 +208,14 @@ const getDisplayInfoFromHunk = (
         linkURL,
         message: content,
     }
+    return hunk as BlameHunk
 }
 
+/**
+ * For performance reasons, the hunks array can be mutated in place. To still be
+ * able to propagate updates accordingly, this is wrapped in a ref object that
+ * can be recreated whenever we emit new values.
+ */
 export const useBlameHunks = (
     {
         repoName,
@@ -218,7 +229,7 @@ export const useBlameHunks = (
         enableCodeMirror: boolean
     },
     sourcegraphURL: string
-): BlameHunk[] | undefined => {
+): { current: BlameHunk[] | undefined } => {
     const [enableStreamingGitBlame, status] = useFeatureFlag('enable-streaming-git-blame')
 
     const [isBlameVisible] = useBlameVisibility()
@@ -229,20 +240,12 @@ export const useBlameHunks = (
             () =>
                 shouldFetchBlame
                     ? enableCodeMirror && enableStreamingGitBlame
-                        ? fetchBlameViaStreaming({ revision, repoName, filePath })
-                        : fetchBlameViaGraphQL({ revision, repoName, filePath })
-                    : of(undefined),
-            [shouldFetchBlame, enableCodeMirror, enableStreamingGitBlame, revision, repoName, filePath]
+                        ? fetchBlameViaStreaming({ revision, repoName, filePath, sourcegraphURL })
+                        : fetchBlameViaGraphQL({ revision, repoName, filePath, sourcegraphURL })
+                    : of({ current: undefined }),
+            [shouldFetchBlame, enableCodeMirror, enableStreamingGitBlame, revision, repoName, filePath, sourcegraphURL]
         )
     )
 
-    const hunksWithDisplayInfo = useMemo(() => {
-        const now = Date.now()
-        return hunks?.map(hunk => ({
-            ...hunk,
-            displayInfo: getDisplayInfoFromHunk(hunk, sourcegraphURL, now),
-        }))
-    }, [hunks, sourcegraphURL])
-
-    return hunksWithDisplayInfo
+    return hunks || { current: undefined }
 }
