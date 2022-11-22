@@ -15,7 +15,6 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -87,21 +86,6 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 	// next.
 	if actor.FromContext(r.Context()).IsAuthenticated() {
 		next.ServeHTTP(w, r)
-		return
-	}
-
-	// If there is only one auth provider configured, the single auth provider is OpenID Connect,
-	// and it's an app request, redirect to signin immediately. The user wouldn't be able to do
-	// anything else anyway; there's no point in showing them a signin screen with just a single
-	// signin option.
-	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && !isAPIRequest {
-		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
-		if err != nil {
-			log15.Error("Failed to get provider", "error", err)
-			http.Error(w, safeErrMsg, http.StatusInternalServerError)
-			return
-		}
-		RedirectToAuthRequest(w, r, p, stateCookieName, auth.SafeRedirectURL(r.URL.String()))
 		return
 	}
 

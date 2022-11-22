@@ -18,7 +18,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
@@ -60,20 +59,6 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 			span.AddEvent("authenticated, proceeding to next")
 			span.Finish()
 			next.ServeHTTP(w, r)
-			return
-		}
-
-		// If there is only one auth provider configured, the single auth provider is a OAuth
-		// instance, and it's an app request, redirect to signin immediately. The user wouldn't be
-		// able to do anything else anyway; there's no point in showing them a signin screen with
-		// just a single signin option.
-		if pc := getExactlyOneOAuthProvider(); pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && isHuman(r) {
-			span.AddEvent("redirect to singin")
-			v := make(url.Values)
-			v.Set("redirect", auth.SafeRedirectURL(r.URL.String()))
-			v.Set("pc", pc.ConfigID().ID)
-			span.Finish()
-			http.Redirect(w, r, authPrefix+"/login?"+v.Encode(), http.StatusFound)
 			return
 		}
 
