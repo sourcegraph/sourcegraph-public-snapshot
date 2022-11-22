@@ -64,7 +64,7 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
                 </li>
                 <li>
                     <Button
-                        className={classNames(styles.button, 'mx-1')}
+                        className={classNames(styles.button, styles.previousButton, 'mx-1')}
                         aria-label="Go to previous page"
                         variant="secondary"
                         outline={true}
@@ -77,7 +77,7 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
                 </li>
                 <li>
                     <Button
-                        className={classNames(styles.button, 'mx-1')}
+                        className={classNames(styles.button, styles.nextButton, 'mx-1')}
                         aria-label="Go to next page"
                         variant="secondary"
                         outline={true}

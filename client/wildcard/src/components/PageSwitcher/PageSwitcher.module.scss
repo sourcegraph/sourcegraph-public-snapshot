@@ -21,3 +21,11 @@
         text-decoration: none;
     }
 }
+
+.nextButton, .previousButton {
+    min-width: 5.125rem;
+}
+
+.nextButton {
+    text-align: right;
+}
