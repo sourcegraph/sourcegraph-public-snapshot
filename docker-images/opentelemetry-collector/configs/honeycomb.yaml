@@ -24,13 +24,13 @@ exporters:
       "x-honeycomb-team": "$HONEYCOMB_API_KEY_WEBAPP"
 
 processors:
-  filter/webapp:
+  filter/webapp: # You can include certain traces
     spans:
       include:
         match_type: strict
         services:
           - web-app
-  filter/exc-webapp:
+  filter/exc-webapp: # You can exclude certain traces
       spans:
         exclude:
           match_type: strict
@@ -45,11 +45,11 @@ extensions:
 service:
   extensions: [health_check,zpages]
   pipelines:
-    traces/webapp:
+    traces/webapp: # Only traces for the service web-app will be allowed through this pipeline
       receivers: [otlp]
       processors: [filter/webapp]
       exporters: [otlp/webapp]
-    traces/all:
+    traces/all: # All traces except web-app is allowed through the pipeline
       receivers: [otlp]
       processors: [filter/exc-webapp]
       exporters: [otlp]
