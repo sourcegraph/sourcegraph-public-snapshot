@@ -67,7 +67,7 @@ If enabled, this sampling mechanism will be applied to all traces, regardless if
 
 #### Probabilistic sampler
 
-The probabilistic sampler hashes a Trace IDs and determines whether a trace should be sampled based on this hash. Note that semantic convention of tags on a trace take precedence over Trace ID hashing when deciding whether a trace should be sampled or not.
+The probabilistic sampler hashes Trace IDs and determines whether a trace should be sampled based on this hash. Note that semantic convention of tags on a trace take precedence over Trace ID hashing when deciding whether a trace should be sampled or not.
 
 Refer to the next snippet for an example on how to update the configuration to enable sampling using the probabilistic sampler.
 
