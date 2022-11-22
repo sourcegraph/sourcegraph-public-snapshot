@@ -6,6 +6,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+type outboundRequestsArgs struct {
+	LastKey *string
+}
+
 type OutboundRequestResolver struct {
 	req *types.OutboundRequestLogItem
 }
@@ -15,8 +19,8 @@ type HttpHeaders struct {
 	values []string
 }
 
-func (r *schemaResolver) OutboundRequests() ([]*OutboundRequestResolver, error) {
-	result, err := httpcli.GetAllOutboundRequestLogItems()
+func (r *schemaResolver) OutboundRequests(args *outboundRequestsArgs) ([]*OutboundRequestResolver, error) {
+	result, err := httpcli.GetAllOutboundRequestLogItemsAfter(args.LastKey)
 	if err != nil {
 		return nil, err
 	}
@@ -27,6 +31,10 @@ func (r *schemaResolver) OutboundRequests() ([]*OutboundRequestResolver, error) 
 	}
 
 	return resolvers, nil
+}
+
+func (r *OutboundRequestResolver) Key() string {
+	return r.req.Key
 }
 
 func (r *OutboundRequestResolver) StartedAt() gqlutil.DateTime {

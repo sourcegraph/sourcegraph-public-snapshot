@@ -1578,7 +1578,7 @@ type Query {
     """
     Get a log of the latest outbound external requests
     """
-    outboundRequests: [OutboundRequest!]!
+    outboundRequests(lastKey: String): [OutboundRequest!]!
 
     """
     (experimental)
@@ -8074,6 +8074,11 @@ type WebhookLogHeader {
 A single logged webhook delivery.
 """
 type OutboundRequest {
+    """
+    The webhook log ID.
+    """
+    key: String!
+
     """
     The time the request was sent at.
     """

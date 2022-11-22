@@ -1711,6 +1711,7 @@ type Webhook struct {
 }
 
 type OutboundRequestLogItem struct {
+	Key                string              `json:"key"`
 	StartedAt          time.Time           `json:"startedAt"`
 	Method             string              `json:"method"` // The request method (GET, POST, etc.)
 	URL                string              `json:"url"`
