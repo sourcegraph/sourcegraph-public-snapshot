@@ -44,17 +44,17 @@ type RegistererHandler interface {
 // Register associates a given event type(s) with the specified handler.
 // Handlers are organized into a stack and executed sequentially, so the order in
 // which they are provided is significant.
-func (h *WebhookRouter) Register(handler WebhookHandler, codeHostKind string, eventTypes ...string) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if h.handlers == nil {
-		h.handlers = make(map[string]webhookEventHandlers)
+func (wr *WebhookRouter) Register(handler WebhookHandler, codeHostKind string, eventTypes ...string) {
+	wr.mu.Lock()
+	defer wr.mu.Unlock()
+	if wr.handlers == nil {
+		wr.handlers = make(map[string]webhookEventHandlers)
 	}
-	if _, ok := h.handlers[codeHostKind]; !ok {
-		h.handlers[codeHostKind] = make(map[string][]WebhookHandler)
+	if _, ok := wr.handlers[codeHostKind]; !ok {
+		wr.handlers[codeHostKind] = make(map[string][]WebhookHandler)
 	}
 	for _, eventType := range eventTypes {
-		h.handlers[codeHostKind][eventType] = append(h.handlers[codeHostKind][eventType], handler)
+		wr.handlers[codeHostKind][eventType] = append(wr.handlers[codeHostKind][eventType], handler)
 	}
 }
 
@@ -116,7 +116,8 @@ func webhookHandler(logger log.Logger, db database.DB, wh *WebhookRouter) http.H
 			wh.handleGitLabWebHook(logger, w, r, webhook.CodeHostURN, secret)
 			return
 		case extsvc.KindBitbucketServer:
-			// TODO: handle Bitbucket Server secret verification
+			wh.handleBitbucketServerWebhook(logger, w, r, webhook.CodeHostURN, secret)
+			return
 		case extsvc.KindBitbucketCloud:
 			// TODO: handle Bitbucket Cloud secret verification
 		}
@@ -127,18 +128,18 @@ func webhookHandler(logger log.Logger, db database.DB, wh *WebhookRouter) http.H
 
 // Dispatch accepts an event for a particular event type and dispatches it
 // to the appropriate stack of handlers, if any are configured.
-func (h *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHostKind string, codeHostURN extsvc.CodeHostBaseURL, e any) error {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
+func (wr *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHostKind string, codeHostURN extsvc.CodeHostBaseURL, e any) error {
+	wr.mu.RLock()
+	defer wr.mu.RUnlock()
 	g := errgroup.Group{}
-	if _, ok := h.handlers[codeHostKind][eventType]; !ok {
+	if _, ok := wr.handlers[codeHostKind][eventType]; !ok {
 		return eventTypeNotFoundError{eventType: eventType, codeHostKind: codeHostKind}
 	}
-	for _, handler := range h.handlers[codeHostKind][eventType] {
+	for _, handler := range wr.handlers[codeHostKind][eventType] {
 		// capture the handler variable within this loop
 		handler := handler
 		g.Go(func() error {
-			return handler(ctx, h.DB, codeHostURN, e)
+			return handler(ctx, wr.DB, codeHostURN, e)
 		})
 	}
 	return g.Wait()
@@ -147,6 +148,10 @@ func (h *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHost
 type eventTypeNotFoundError struct {
 	eventType    string
 	codeHostKind string
+}
+
+func (e eventTypeNotFoundError) NotFound() bool {
+	return true
 }
 
 func (e eventTypeNotFoundError) Error() string {
