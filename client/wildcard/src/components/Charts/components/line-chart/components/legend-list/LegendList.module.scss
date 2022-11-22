@@ -12,19 +12,15 @@
 
 .legend-item {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     word-break: break-all;
 }
 
 .legend-mark {
-    align-self: baseline;
+    display: inline-block;
     width: 0.5rem;
     height: 0.5rem;
     flex-shrink: 0;
     margin-right: 0.25rem;
     border-radius: 50%;
-}
-
-.unselected {
-    background-color: var(--icon-muted);
 }

@@ -13,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestSyncWorkerPlumbing(t *testing.T) {
@@ -85,11 +83,7 @@ type fakeRepoSyncHandler struct {
 	jobChan chan *repos.SyncJob
 }
 
-func (h *fakeRepoSyncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	sj, ok := record.(*repos.SyncJob)
-	if !ok {
-		return errors.Errorf("expected repos.SyncJob, got %T", record)
-	}
+func (h *fakeRepoSyncHandler) Handle(ctx context.Context, logger log.Logger, sj *repos.SyncJob) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

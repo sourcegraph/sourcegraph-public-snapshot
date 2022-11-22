@@ -3,6 +3,7 @@ import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 
 import { SendTestSlackWebhookResult, SendTestSlackWebhookVariables } from '../../../../graphql-operations'
@@ -32,10 +33,10 @@ describe('SlackWebhookAction', () => {
 
         userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
 
-        expect(getByTestId('submit-action-slack-webhook')).toBeDisabled()
+        assertAriaDisabled(getByTestId('submit-action-slack-webhook'))
 
         userEvent.type(getByTestId('slack-webhook-url'), SLACK_URL)
-        expect(getByTestId('submit-action-slack-webhook')).toBeEnabled()
+        assertAriaEnabled(getByTestId('submit-action-slack-webhook'))
 
         userEvent.click(getByTestId('include-results-toggle-slack-webhook'))
 
@@ -69,13 +70,13 @@ describe('SlackWebhookAction', () => {
         )
 
         userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
-        expect(getByTestId('submit-action-slack-webhook')).toBeEnabled()
+        assertAriaEnabled(getByTestId('submit-action-slack-webhook'))
 
         userEvent.clear(getByTestId('slack-webhook-url'))
-        expect(getByTestId('submit-action-slack-webhook')).toBeDisabled()
+        assertAriaDisabled(getByTestId('submit-action-slack-webhook'))
 
         userEvent.type(getByTestId('slack-webhook-url'), SLACK_URL)
-        expect(getByTestId('submit-action-slack-webhook')).toBeEnabled()
+        assertAriaEnabled(getByTestId('submit-action-slack-webhook'))
 
         userEvent.click(getByTestId('submit-action-slack-webhook'))
 
@@ -217,7 +218,7 @@ describe('SlackWebhookAction', () => {
             )
 
             userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
-            expect(getByTestId('send-test-slack-webhook')).toBeDisabled()
+            assertAriaDisabled(getByTestId('send-test-slack-webhook'))
         })
 
         test('disabled if no monitor name set', () => {
@@ -228,7 +229,7 @@ describe('SlackWebhookAction', () => {
             )
 
             userEvent.click(getByTestId('form-action-toggle-slack-webhook'))
-            expect(getByTestId('send-test-slack-webhook')).toBeDisabled()
+            assertAriaDisabled(getByTestId('send-test-slack-webhook'))
         })
 
         test('send test message, success', async () => {
@@ -255,7 +256,7 @@ describe('SlackWebhookAction', () => {
             await waitForNextApolloResponse()
 
             expect(getByTestId('send-test-slack-webhook')).toHaveTextContent('Test message sent!')
-            expect(getByTestId('send-test-slack-webhook')).toBeDisabled()
+            assertAriaDisabled(getByTestId('send-test-slack-webhook'))
 
             expect(queryByTestId('send-test-slack-webhook')).toBeInTheDocument()
             expect(queryByTestId('test-email-slack-webhook')).not.toBeInTheDocument()
@@ -285,7 +286,7 @@ describe('SlackWebhookAction', () => {
 
             expect(getByTestId('send-test-slack-webhook')).toHaveTextContent('Send test message')
 
-            expect(getByTestId('send-test-slack-webhook')).toBeEnabled()
+            assertAriaEnabled(getByTestId('send-test-slack-webhook'))
 
             expect(queryByTestId('send-test-slack-webhook-again')).not.toBeInTheDocument()
             expect(queryByTestId('test-slack-webhook-error')).toBeInTheDocument()

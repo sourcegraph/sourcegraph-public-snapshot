@@ -62,7 +62,12 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 
-	userCount, err := r.db.Users().Count(ctx, nil)
+	userCount, err := r.db.Users().Count(
+		ctx,
+		&database.UsersListOptions{
+			ExcludeSourcegraphOperators: true,
+		},
+	)
 	if err != nil {
 		return false, err
 	}

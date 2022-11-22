@@ -70,7 +70,7 @@ import {
     useRetryWorkspaceExecution,
     queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs,
 } from '../backend'
-import { TimelineModal } from '../TimelineModal'
+import { DiagnosticsModal } from '../DiagnosticsModal'
 
 import { StepStateIcon } from './StepStateIcon'
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
@@ -116,13 +116,13 @@ export const WorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<W
 
 interface WorkspaceHeaderProps extends Pick<WorkspaceDetailsProps, 'deselectWorkspace'> {
     workspace: HiddenBatchSpecWorkspaceFields | VisibleBatchSpecWorkspaceFields
-    toggleShowTimeline?: () => void
+    toggleShowDiagnostics?: () => void
 }
 
 const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<WorkspaceHeaderProps>> = ({
     workspace,
     deselectWorkspace,
-    toggleShowTimeline,
+    toggleShowDiagnostics,
 }) => (
     <>
         <div className="d-flex align-items-center justify-content-between mb-2">
@@ -160,10 +160,15 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                 </Tooltip>
             )}
             {workspace.__typename === 'VisibleBatchSpecWorkspace' && workspace.path && (
-                <span className={styles.workspaceDetail}>{workspace.path}</span>
+                <span aria-label="Batch spec executed at path:" className={styles.workspaceDetail}>
+                    {workspace.path}
+                </span>
             )}
             {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
-                <span className={classNames(styles.workspaceDetail, 'text-monospace')}>
+                <span
+                    aria-label="Batch spec executed on branch:"
+                    className={classNames(styles.workspaceDetail, 'text-monospace')}
+                >
                     <Icon aria-hidden={true} svgPath={mdiSourceBranch} /> {workspace.branch.displayName}
                 </span>
             )}
@@ -171,24 +176,32 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                 <span className={classNames(styles.workspaceDetail, 'd-flex align-items-center')}>
                     Total time:
                     <strong className="pl-1">
-                        <Duration start={workspace.startedAt} end={workspace.finishedAt ?? undefined} />
+                        <Duration
+                            start={workspace.startedAt}
+                            end={workspace.finishedAt ?? undefined}
+                            labelPrefix={`Workspace ${
+                                workspace.finishedAt ? 'finished executing in' : 'has been executing for'
+                            }`}
+                        />
                     </strong>
                 </span>
             )}
-            {toggleShowTimeline && !workspace.cachedResultFound && workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
-                <Button
-                    className={styles.workspaceDetail}
-                    onClick={() => {
-                        toggleShowTimeline()
-                        eventLogger.log('batch_change_execution:workspace_timeline:clicked')
-                    }}
-                    variant="link"
-                >
-                    Timeline
-                </Button>
-            )}
+            {toggleShowDiagnostics &&
+                !workspace.cachedResultFound &&
+                workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
+                    <Button
+                        className={styles.workspaceDetail}
+                        onClick={() => {
+                            toggleShowDiagnostics()
+                            eventLogger.log('batch_change_execution:workspace_timeline:clicked')
+                        }}
+                        variant="link"
+                    >
+                        Diagnostics
+                    </Button>
+                )}
         </div>
-        <hr className="mb-3" />
+        <hr className="mb-3" aria-hidden={true} />
     </>
 )
 
@@ -200,7 +213,7 @@ const HiddenWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<Hi
     workspace,
     deselectWorkspace,
 }) => (
-    <>
+    <div role="region" aria-label="workspace details">
         <WorkspaceHeader deselectWorkspace={deselectWorkspace} workspace={workspace} />
         <H1 className="text-center text-muted mt-5">
             <Icon aria-hidden={true} svgPath={mdiEyeOffOutline} />
@@ -208,7 +221,7 @@ const HiddenWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<Hi
         </H1>
         <Text alignment="center">This workspace is hidden due to permissions.</Text>
         <Text alignment="center">Contact the owner of this batch change for more information.</Text>
-    </>
+    </div>
 )
 
 interface VisibleWorkspaceDetailsProps extends Omit<WorkspaceDetailsProps, 'id'> {
@@ -226,12 +239,12 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
         workspace.id
     )
 
-    const [showTimeline, setShowTimeline] = useState<boolean>(false)
-    const toggleShowTimeline = useCallback(() => {
-        setShowTimeline(true)
+    const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false)
+    const toggleShowDiagnostics = useCallback(() => {
+        setShowDiagnostics(true)
     }, [])
-    const onDismissTimeline = useCallback(() => {
-        setShowTimeline(false)
+    const onDismissDiagnostics = useCallback(() => {
+        setShowDiagnostics(false)
     }, [])
 
     if (workspace.state === BatchSpecWorkspaceState.SKIPPED && workspace.ignored) {
@@ -243,11 +256,11 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
     }
 
     return (
-        <>
-            {showTimeline && <TimelineModal node={workspace} onCancel={onDismissTimeline} />}
+        <div role="region" aria-label="workspace details">
+            {showDiagnostics && <DiagnosticsModal node={workspace} onCancel={onDismissDiagnostics} />}
             <WorkspaceHeader
                 deselectWorkspace={deselectWorkspace}
-                toggleShowTimeline={toggleShowTimeline}
+                toggleShowDiagnostics={toggleShowDiagnostics}
                 workspace={workspace}
             />
             {workspace.state === BatchSpecWorkspaceState.CANCELED && (
@@ -301,7 +314,7 @@ const VisibleWorkspaceDetails: React.FunctionComponent<React.PropsWithChildren<V
                     {index !== workspace.steps.length - 1 && <hr className="my-2" />}
                 </React.Fragment>
             ))}
-        </>
+        </div>
     )
 }
 
@@ -393,18 +406,21 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                 <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} className="mr-1" />
                 <div className={styles.collapseHeader}>
                     <Heading as="h4" styleAs="h3" className="mb-0 d-inline-block mr-2">
+                        <VisuallyHidden>Execution</VisuallyHidden>
                         <span className={styles.result}>Result</span>
                         {node.description.published !== null && (
                             <Badge className="text-uppercase ml-2">
                                 {publishBadgeLabel(node.description.published)}
                             </Badge>
-                        )}{' '}
+                        )}
                     </Heading>
                     <Icon aria-hidden={true} className="text-muted mr-1 flex-shrink-0" svgPath={mdiSourceBranch} />
+                    <VisuallyHidden>on branch</VisuallyHidden>
                     <span className={classNames('text-monospace text-muted', styles.changesetSpecBranch)}>
                         {node.description.headRef}
                     </span>
                 </div>
+                <VisuallyHidden>, generated changeset with</VisuallyHidden>
                 <DiffStat
                     {...node.description.diffStat}
                     expandedCounts={true}

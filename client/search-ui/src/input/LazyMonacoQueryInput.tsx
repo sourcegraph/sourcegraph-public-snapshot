@@ -6,6 +6,7 @@ import { SettingsExperimentalFeatures } from '@sourcegraph/shared/src/schema/set
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Input } from '@sourcegraph/wildcard'
 
+import { CodeMirrorQueryInputFacadeProps } from './CodeMirrorQueryInput'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './LazyMonacoQueryInput.module.scss'
@@ -48,7 +49,9 @@ export const PlainQueryInput: React.FunctionComponent<
     )
 }
 
-export interface LazyMonacoQueryInputProps extends MonacoQueryInputProps {
+type QueryInputProps = CodeMirrorQueryInputFacadeProps & MonacoQueryInputProps
+
+export interface LazyMonacoQueryInputProps extends QueryInputProps {
     /**
      * Determines which editor implementation to use.
      */

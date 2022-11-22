@@ -10,6 +10,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler/iterator"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -28,16 +30,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const defaultInterruptSeconds = 60
-const inProgressPollingInterval = time.Second * 5
+const (
+	defaultInterruptSeconds   = 60
+	inProgressPollingInterval = time.Second * 5
+)
 
-func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker, *dbworker.Resetter, dbworkerstore.Store) {
+func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker[*BaseJob], *dbworker.Resetter[*BaseJob], dbworkerstore.Store[*BaseJob]) {
 	db := config.InsightsDB
 	backfillStore := NewBackfillStore(db)
 
 	name := "backfill_in_progress_worker"
 
-	workerStore := dbworkerstore.NewWithMetrics(db.Handle(), dbworkerstore.Options{
+	workerStore := dbworkerstore.NewWithMetrics(db.Handle(), dbworkerstore.Options[*BaseJob]{
 		Name:              fmt.Sprintf("%s_store", name),
 		TableName:         "insights_background_jobs",
 		ViewName:          "insights_jobs_backfill_in_progress",
@@ -63,7 +67,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		config:         handlerConfig,
 	}
 
-	worker := dbworker.NewWorker(ctx, workerStore, task, workerutil.WorkerOptions{
+	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*BaseJob](task), workerutil.WorkerOptions{
 		Name:              name,
 		NumHandlers:       1,
 		Interval:          inProgressPollingInterval,
@@ -92,7 +96,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 }
 
 type inProgressHandler struct {
-	workerStore    dbworkerstore.Store
+	workerStore    dbworkerstore.Store[*BaseJob]
 	backfillStore  *BackfillStore
 	seriesReader   SeriesReader
 	repoStore      database.RepoStore
@@ -111,14 +115,11 @@ func newHandlerConfig() handlerConfig {
 	return handlerConfig{interruptAfter: getInterruptAfter()}
 }
 
-var _ workerutil.Handler = &inProgressHandler{}
+var _ workerutil.Handler[*BaseJob] = &inProgressHandler{}
 
-func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, job *BaseJob) error {
 	ctx = actor.WithInternalActor(ctx)
-	job, ok := record.(*BaseJob)
-	if !ok {
-		return errors.New("unable to convert to backfill inprogress job")
-	}
+
 	backfillJob, err := h.backfillStore.loadBackfill(ctx, job.backfillId)
 	if err != nil {
 		return errors.Wrap(err, "loadBackfill")
@@ -139,7 +140,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 	}, series.CreatedAt.Truncate(time.Hour*24))
 
 	logger.Info("insights backfill progress handler loaded",
-		log.Int("recordId", record.RecordID()),
+		log.Int("recordId", job.RecordID()),
 		log.Int("jobNumFailures", job.NumFailures),
 		log.Int("seriesId", series.ID),
 		log.String("seriesUniqueId", series.SeriesID),
@@ -154,21 +155,29 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, recor
 	itrConfig := iterator.IterationConfig{
 		MaxFailures: 3,
 		OnTerminal: func(ctx context.Context, tx *basestore.Store, repoId int32, terminalErr error) error {
-			logger.Debug("insights backfill incomplete repo writing all datapoints", log.Int32("repoId", repoId), log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID), log.Int("backfillId", backfillJob.Id))
+			reason := translateIncompleteReasons(terminalErr)
+			logger.Debug("insights backfill incomplete repo writing all datapoints",
+				log.Int32("repoId", repoId),
+				log.Int("seriesId", series.ID), log.String("seriesUniqueId", series.SeriesID),
+				log.Int("backfillId", backfillJob.Id),
+				log.Error(terminalErr),
+				log.String("reason", string(reason)))
+
 			id := int(repoId)
 			for _, frame := range frames {
 				tss := h.insightsStore.WithOther(tx)
 				if err := tss.AddIncompleteDatapoint(ctx, store.AddIncompleteDatapointInput{
 					SeriesID: series.ID,
 					RepoID:   &id,
-					Reason:   store.ReasonGeneric,
+					Reason:   reason,
 					Time:     frame.From,
 				}); err != nil {
 					return errors.Wrap(err, "AddIncompleteDatapoint")
 				}
 			}
 			return nil
-		}}
+		},
+	}
 
 	type nextFunc func(config iterator.IterationConfig) (api.RepoID, bool, iterator.FinishFunc)
 	itrLoop := func(nextFunc nextFunc) (interrupted bool, _ error) {
@@ -248,4 +257,11 @@ func getInterruptAfter() time.Duration {
 		return time.Duration(val) * time.Second
 	}
 	return time.Duration(defaultInterruptSeconds) * time.Second
+}
+
+func translateIncompleteReasons(err error) store.IncompleteReason {
+	if errors.Is(err, queryrunner.SearchTimeoutError) {
+		return store.ReasonTimeout
+	}
+	return store.ReasonGeneric
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/jobselector"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,7 +20,7 @@ import (
 )
 
 func init() {
-	maximumIndexJobsPerInferredConfiguration = 50
+	jobselector.MaximumIndexJobsPerInferredConfiguration = 50
 }
 
 func TestQueueIndexesExplicit(t *testing.T) {
@@ -458,7 +459,7 @@ func TestQueueIndexesInferred(t *testing.T) {
 }
 
 func TestQueueIndexesInferredTooLarge(t *testing.T) {
-	maximumIndexJobsPerInferredConfiguration = 20
+	jobselector.MaximumIndexJobsPerInferredConfiguration = 20
 
 	mockDBStore := NewMockStore()
 	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []types.Index) ([]types.Index, error) { return indexes, nil })

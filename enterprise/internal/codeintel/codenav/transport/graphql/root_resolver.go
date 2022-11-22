@@ -18,13 +18,18 @@ type rootResolver struct {
 	policiesSvc                    PolicyService
 	gitserver                      GitserverClient
 	maximumIndexesPerMonikerSearch int
-	hunkCacheSize                  int
+	hunkCache                      codenav.HunkCache
 
 	// Metrics
 	operations *operations
 }
 
-func NewRootResolver(svc CodeNavService, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserver GitserverClient, maxIndexSearch, hunkCacheSize int, observationContext *observation.Context) resolverstubs.CodeNavServiceResolver {
+func NewRootResolver(svc CodeNavService, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserver GitserverClient, maxIndexSearch, hunkCacheSize int, observationContext *observation.Context) (resolverstubs.CodeNavServiceResolver, error) {
+	hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
+	if err != nil {
+		return nil, err
+	}
+
 	return &rootResolver{
 		svc:                            svc,
 		autoindexingSvc:                autoindexingSvc,
@@ -32,9 +37,9 @@ func NewRootResolver(svc CodeNavService, autoindexingSvc AutoIndexingService, up
 		policiesSvc:                    policiesSvc,
 		gitserver:                      gitserver,
 		operations:                     newOperations(observationContext),
-		hunkCacheSize:                  hunkCacheSize,
+		hunkCache:                      hunkCache,
 		maximumIndexesPerMonikerSearch: maxIndexSearch,
-	}
+	}, nil
 }
 
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
@@ -56,7 +61,7 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 		return nil, err
 	}
 
-	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, r.gitserver, args.Repo, string(args.Commit), args.Path, r.maximumIndexesPerMonikerSearch, r.hunkCacheSize)
+	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, r.gitserver, args.Repo, string(args.Commit), args.Path, r.maximumIndexesPerMonikerSearch, r.hunkCache)
 
 	return NewGitBlobLSIFDataResolver(r.svc, r.autoindexingSvc, r.uploadSvc, r.policiesSvc, reqState, errTracer, r.operations), nil
 }

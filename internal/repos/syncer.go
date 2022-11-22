@@ -33,7 +33,7 @@ import (
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
 	Sourcer Sourcer
-	Worker  *workerutil.Worker
+	Worker  *workerutil.Worker[*SyncJob]
 	Store   Store
 
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
@@ -112,12 +112,7 @@ type syncHandler struct {
 	minSyncInterval func() time.Duration
 }
 
-func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
-	sj, ok := record.(*SyncJob)
-	if !ok {
-		return errors.Errorf("expected repos.SyncJob, got %T", record)
-	}
-
+func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, sj *SyncJob) (err error) {
 	// Limit calls to progressRecorder as it will most likely hit the database
 	progressLimiter := rate.NewLimiter(rate.Limit(1.0), 1)
 

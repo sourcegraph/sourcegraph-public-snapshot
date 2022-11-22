@@ -43,9 +43,10 @@ export function initOpenTelemetry(): void {
 
         const collectorExporter = new OTLPTraceExporter({ url: getTracingURL(openTelemetry.endpoint, externalURL) })
 
+        // Span processors are executed in the order they were added to the provider.
         provider.addSpanProcessor(new BatchSpanProcessor(collectorExporter))
-        provider.addSpanProcessor(new SharedSpanStoreProcessor())
         provider.addSpanProcessor(new ClientAttributesSpanProcessor(window.context.version))
+        provider.addSpanProcessor(new SharedSpanStoreProcessor())
 
         // Enable the console exporter only in the development environment.
         if (process.env.NODE_ENV === 'development') {

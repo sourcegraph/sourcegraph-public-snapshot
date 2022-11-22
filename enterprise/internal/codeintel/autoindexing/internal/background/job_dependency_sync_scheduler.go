@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -25,24 +26,24 @@ import (
 // NewDependencySyncScheduler returns a new worker instance that processes
 // records from lsif_dependency_syncing_jobs.
 func NewDependencySyncScheduler(
-	dependencySyncStore dbworkerstore.Store,
+	dependencySyncStore dbworkerstore.Store[shared.DependencySyncingJob],
 	uploadSvc UploadService,
 	depsSvc DependenciesService,
-	autoindexingSvc AutoIndexingService,
+	store store.Store,
 	externalServiceStore ExternalServiceStore,
 	metrics workerutil.WorkerObservability,
 	pollInterval time.Duration,
-) *workerutil.Worker {
+) *workerutil.Worker[shared.DependencySyncingJob] {
 	rootContext := actor.WithInternalActor(context.Background())
 	handler := &dependencySyncSchedulerHandler{
-		uploadsSvc:      uploadSvc,
-		depsSvc:         depsSvc,
-		autoindexingSvc: autoindexingSvc,
-		workerStore:     dependencySyncStore,
-		extsvcStore:     externalServiceStore,
+		uploadsSvc:  uploadSvc,
+		depsSvc:     depsSvc,
+		store:       store,
+		workerStore: dependencySyncStore,
+		extsvcStore: externalServiceStore,
 	}
 
-	return dbworker.NewWorker(rootContext, dependencySyncStore, handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker[shared.DependencySyncingJob](rootContext, dependencySyncStore, handler, workerutil.WorkerOptions{
 		Name:              "precise_code_intel_dependency_sync_scheduler_worker",
 		NumHandlers:       1,
 		Interval:          pollInterval,
@@ -52,11 +53,11 @@ func NewDependencySyncScheduler(
 }
 
 type dependencySyncSchedulerHandler struct {
-	uploadsSvc      UploadService
-	depsSvc         DependenciesService
-	autoindexingSvc AutoIndexingService
-	workerStore     dbworkerstore.Store
-	extsvcStore     ExternalServiceStore
+	uploadsSvc  UploadService
+	depsSvc     DependenciesService
+	store       store.Store
+	workerStore dbworkerstore.Store[shared.DependencySyncingJob]
+	extsvcStore ExternalServiceStore
 }
 
 // For mocking in tests
@@ -70,12 +71,10 @@ var schemeToExternalService = map[string]string{
 	dependencies.RubyPackagesScheme:   extsvc.KindRubyPackages,
 }
 
-func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.Logger, job shared.DependencySyncingJob) error {
 	if !autoIndexingEnabled() {
 		return nil
 	}
-
-	job := record.(shared.DependencySyncingJob)
 
 	scanner, err := h.uploadsSvc.ReferencesForUpload(ctx, job.UploadID)
 	if err != nil {
@@ -177,7 +176,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 	if shouldIndex {
 		// If we saw a kind that's not in schemeToExternalService, then kinds contains an empty string key
 		for kind := range kinds {
-			if _, err := h.autoindexingSvc.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
+			if _, err := h.store.InsertDependencyIndexingJob(ctx, job.UploadID, kind, nextSync); err != nil {
 				errs = append(errs, errors.Wrap(err, "dbstore.InsertDependencyIndexingJob"))
 			}
 		}

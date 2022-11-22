@@ -3,6 +3,7 @@ import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 
 import { SendTestWebhookResult, SendTestWebhookVariables } from '../../../../graphql-operations'
@@ -30,10 +31,10 @@ describe('WebhookAction', () => {
 
         userEvent.click(getByTestId('form-action-toggle-webhook'))
 
-        expect(getByTestId('submit-action-webhook')).toBeDisabled()
+        assertAriaDisabled(getByTestId('submit-action-webhook'))
 
         userEvent.type(getByTestId('webhook-url'), 'https://example.com')
-        expect(getByTestId('submit-action-webhook')).toBeEnabled()
+        assertAriaEnabled(getByTestId('submit-action-webhook'))
 
         userEvent.click(getByTestId('include-results-toggle-webhook'))
 
@@ -67,13 +68,13 @@ describe('WebhookAction', () => {
         )
 
         userEvent.click(getByTestId('form-action-toggle-webhook'))
-        expect(getByTestId('submit-action-webhook')).toBeEnabled()
+        assertAriaEnabled(getByTestId('submit-action-webhook'))
 
         userEvent.clear(getByTestId('webhook-url'))
-        expect(getByTestId('submit-action-webhook')).toBeDisabled()
+        assertAriaDisabled(getByTestId('submit-action-webhook'))
 
         userEvent.type(getByTestId('webhook-url'), 'https://example2.com')
-        expect(getByTestId('submit-action-webhook')).toBeEnabled()
+        assertAriaEnabled(getByTestId('submit-action-webhook'))
 
         userEvent.click(getByTestId('submit-action-webhook'))
 
@@ -215,7 +216,7 @@ describe('WebhookAction', () => {
             )
 
             userEvent.click(getByTestId('form-action-toggle-webhook'))
-            expect(getByTestId('send-test-webhook')).toBeDisabled()
+            assertAriaDisabled(getByTestId('send-test-webhook'))
         })
 
         test('disabled if no monitor name set', () => {
@@ -226,7 +227,7 @@ describe('WebhookAction', () => {
             )
 
             userEvent.click(getByTestId('form-action-toggle-webhook'))
-            expect(getByTestId('send-test-webhook')).toBeDisabled()
+            assertAriaDisabled(getByTestId('send-test-webhook'))
         })
 
         test('send test message, success', async () => {
@@ -253,7 +254,7 @@ describe('WebhookAction', () => {
             await waitForNextApolloResponse()
 
             expect(getByTestId('send-test-webhook')).toHaveTextContent('Test call completed!')
-            expect(getByTestId('send-test-webhook')).toBeDisabled()
+            assertAriaDisabled(getByTestId('send-test-webhook'))
 
             expect(queryByTestId('send-test-webhook')).toBeInTheDocument()
             expect(queryByTestId('test-email-webhook')).not.toBeInTheDocument()
@@ -283,7 +284,7 @@ describe('WebhookAction', () => {
 
             expect(getByTestId('send-test-webhook')).toHaveTextContent('Call webhook with test payload')
 
-            expect(getByTestId('send-test-webhook')).toBeEnabled()
+            assertAriaEnabled(getByTestId('send-test-webhook'))
 
             expect(queryByTestId('send-test-webhook-again')).not.toBeInTheDocument()
             expect(queryByTestId('test-webhook-error')).toBeInTheDocument()

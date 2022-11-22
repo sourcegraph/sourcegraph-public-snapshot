@@ -3,86 +3,106 @@ package enforcement
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestEnforcement_PreCreateUser(t *testing.T) {
 	expiresAt := time.Now().Add(time.Hour)
 	tests := []struct {
+		name            string
 		license         *license.Info
 		activeUserCount int
+		mockSetup       func(*testing.T)
+		spec            *extsvc.AccountSpec
 		wantErr         bool
 	}{
 		// See the impl for why we treat UserCount == 0 as unlimited.
 		{
+			name:            "unlimited",
 			license:         &license.Info{UserCount: 0, ExpiresAt: expiresAt},
 			activeUserCount: 5,
 			wantErr:         false,
 		},
 
-		// Non-true-up licenses.
 		{
+			name:            "no true-up",
 			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
 			activeUserCount: 0,
 			wantErr:         false,
 		},
 		{
+			name:            "no true-up and not exceeded user count",
 			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
 			activeUserCount: 5,
 			wantErr:         false,
 		},
 		{
-			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
-			activeUserCount: 9,
-			wantErr:         false,
-		},
-		{
+			name:            "no true-up and exceeding user count",
 			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
 			activeUserCount: 10,
 			wantErr:         true,
 		},
 		{
+			name:            "no true-up and exceeded user count",
 			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
 			activeUserCount: 11,
 			wantErr:         true,
 		},
-		{
-			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
-			activeUserCount: 12,
-			wantErr:         true,
-		},
 
-		// True-up licenses.
 		{
+			name:            "true-up and not exceeded user count",
 			license:         &license.Info{Tags: []string{licensing.TrueUpUserCountTag}, UserCount: 10, ExpiresAt: expiresAt},
 			activeUserCount: 5,
 			wantErr:         false,
 		},
 		{
+			name:            "true-up and exceeded user count",
 			license:         &license.Info{Tags: []string{licensing.TrueUpUserCountTag}, UserCount: 10, ExpiresAt: expiresAt},
 			activeUserCount: 15,
 			wantErr:         false,
 		},
 
-		// License expired
 		{
+			name:    "license expired",
 			license: &license.Info{ExpiresAt: time.Now().Add(-1 * time.Minute)},
 			wantErr: true,
 		},
+
+		{
+			name:            "exempt SOAP users",
+			license:         &license.Info{UserCount: 10, ExpiresAt: time.Now().Add(-1 * time.Minute)}, // An expired license
+			activeUserCount: 15,                                                                        // Exceeded free plan user count
+			mockSetup: func(t *testing.T) {
+				cloud.MockSiteConfig(
+					t,
+					&cloud.SchemaSiteConfig{
+						AuthProviders: &cloud.SchemaAuthProviders{
+							SourcegraphOperator: &cloud.SchemaAuthProviderSourcegraphOperator{},
+						},
+					},
+				)
+			},
+			spec: &extsvc.AccountSpec{
+				ServiceType: auth.SourcegraphOperatorProviderType,
+			},
+		},
 	}
 	for _, test := range tests {
-		t.Run(fmt.Sprintf("license %s with %d active users", test.license, test.activeUserCount), func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
 				return test.license, "test-signature", nil
 			}
@@ -94,9 +114,15 @@ func TestEnforcement_PreCreateUser(t *testing.T) {
 			db := database.NewStrictMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			err := NewBeforeCreateUserHook()(context.Background(), db)
-			if gotErr := err != nil; gotErr != test.wantErr {
-				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
+			if test.mockSetup != nil {
+				test.mockSetup(t)
+			}
+
+			err := NewBeforeCreateUserHook()(context.Background(), db, test.spec)
+			if test.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}

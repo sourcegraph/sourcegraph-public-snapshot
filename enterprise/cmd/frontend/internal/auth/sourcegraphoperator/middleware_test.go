@@ -22,12 +22,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const (
@@ -38,7 +39,7 @@ const (
 
 // new OIDCIDServer returns a new running mock OIDC ID provider service. It is
 // the caller's responsibility to call Close().
-func newOIDCIDServer(t *testing.T, code string, providerConfig *schema.SourcegraphOperatorAuthProvider) (server *httptest.Server, emailPtr *string) {
+func newOIDCIDServer(t *testing.T, code string, providerConfig *cloud.SchemaAuthProviderSourcegraphOperator) (server *httptest.Server, emailPtr *string) {
 	s := http.NewServeMux()
 
 	s.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +66,7 @@ func newOIDCIDServer(t *testing.T, code string, providerConfig *schema.Sourcegra
 
 		redirectURI, err := url.QueryUnescape(values.Get("redirect_uri"))
 		require.NoError(t, err)
-		require.Equal(t, "http://example.com/.auth/callback", redirectURI)
+		require.Equal(t, "http://example.com/.auth/sourcegraph-operator/callback", redirectURI)
 
 		w.Header().Set("Content-Type", "application/json")
 		err = json.NewEncoder(w).Encode(
@@ -100,7 +101,7 @@ func newOIDCIDServer(t *testing.T, code string, providerConfig *schema.Sourcegra
 	})
 
 	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-		if op.ExternalAccount.ServiceType == ProviderType &&
+		if op.ExternalAccount.ServiceType == internalauth.SourcegraphOperatorProviderType &&
 			op.ExternalAccount.ServiceID == providerConfig.Issuer &&
 			op.ExternalAccount.ClientID == testClientID &&
 			op.ExternalAccount.AccountID == testOIDCUser {
@@ -119,11 +120,10 @@ func TestMiddleware(t *testing.T) {
 	defer cleanup()
 
 	const testCode = "testCode"
-	providerConfig := schema.SourcegraphOperatorAuthProvider{
+	providerConfig := cloud.SchemaAuthProviderSourcegraphOperator{
 		ClientID:          testClientID,
 		ClientSecret:      "testClientSecret",
 		LifecycleDuration: 60,
-		Type:              ProviderType,
 	}
 	oidcIDServer, emailPtr := newOIDCIDServer(t, testCode, &providerConfig)
 	defer oidcIDServer.Close()
@@ -144,7 +144,7 @@ func TestMiddleware(t *testing.T) {
 		[]*extsvc.Account{
 			{
 				AccountSpec: extsvc.AccountSpec{
-					ServiceType: ProviderType,
+					ServiceType: internalauth.SourcegraphOperatorProviderType,
 				},
 			},
 		},
@@ -153,6 +153,7 @@ func TestMiddleware(t *testing.T) {
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(usersStore)
 	db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
+	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	authedHandler := http.NewServeMux()
@@ -189,7 +190,7 @@ func TestMiddleware(t *testing.T) {
 		loginURL, err := url.Parse(location)
 		require.NoError(t, err)
 		assert.Equal(t, mockProvider.config.ClientID, loginURL.Query().Get("client_id"))
-		assert.Equal(t, "http://example.com/.auth/callback", loginURL.Query().Get("redirect_uri"))
+		assert.Equal(t, "http://example.com/.auth/sourcegraph-operator/callback", loginURL.Query().Get("redirect_uri"))
 		assert.Equal(t, "code", loginURL.Query().Get("response_type"))
 		assert.Equal(t, "openid profile email", loginURL.Query().Get("scope"))
 	})
@@ -200,7 +201,7 @@ func TestMiddleware(t *testing.T) {
 			Redirect:   "/redirect",
 			ProviderID: mockProvider.ConfigID().ID,
 		}
-		urlStr := fmt.Sprintf("http://example.com/.auth/callback?code=%s&state=%s", testCode, badState.Encode())
+		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, badState.Encode())
 		resp := doRequest(http.MethodGet, urlStr, "", nil, false)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
@@ -232,7 +233,7 @@ func TestMiddleware(t *testing.T) {
 			return 1, nil
 		})
 
-		urlStr := fmt.Sprintf("http://example.com/.auth/callback?code=%s&state=%s", testCode, state.Encode())
+		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
 		cookies := []*http.Cookie{
 			{
 				Name:  stateCookieName,
@@ -266,7 +267,7 @@ func TestMiddleware(t *testing.T) {
 		}
 		defer func() { openidconnect.MockVerifyIDToken = nil }()
 
-		urlStr := fmt.Sprintf("http://example.com/.auth/callback?code=%s&state=%s", testCode, state.Encode())
+		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
 		cookies := []*http.Cookie{
 			{
 				Name:  stateCookieName,
@@ -301,7 +302,7 @@ func TestMiddleware(t *testing.T) {
 			}, nil
 		})
 
-		urlStr := fmt.Sprintf("http://example.com/.auth/callback?code=%s&state=%s", testCode, state.Encode())
+		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
 		cookies := []*http.Cookie{
 			{
 				Name:  stateCookieName,
@@ -321,6 +322,10 @@ func TestMiddleware(t *testing.T) {
 				CreatedAt: time.Now().Add(-61 * time.Minute),
 			}, nil
 		})
+		usersStore.HardDeleteFunc.SetDefaultHook(func(ctx context.Context, _ int32) error {
+			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
+			return nil
+		})
 
 		state := &openidconnect.AuthnState{
 			CSRFToken:  "good",
@@ -338,7 +343,7 @@ func TestMiddleware(t *testing.T) {
 		}
 		defer func() { openidconnect.MockVerifyIDToken = nil }()
 
-		urlStr := fmt.Sprintf("http://example.com/.auth/callback?code=%s&state=%s", testCode, state.Encode())
+		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
 		cookies := []*http.Cookie{
 			{
 				Name:  stateCookieName,
@@ -351,5 +356,6 @@ func TestMiddleware(t *testing.T) {
 		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		assert.Contains(t, string(body), "The retrieved user account lifecycle has already expired")
+		mockrequire.Called(t, usersStore.HardDeleteFunc)
 	})
 }

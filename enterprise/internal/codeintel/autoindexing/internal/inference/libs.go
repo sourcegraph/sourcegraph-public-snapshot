@@ -10,9 +10,9 @@ import (
 )
 
 var defaultAPIs = map[string]luasandbox.LuaLib{
-	"sg.patterns":    libs.Patterns,
-	"sg.recognizers": libs.Recognizers,
-	"sg.indexes":     libs.Indexes,
+	"internal_patterns":    libs.Patterns,
+	"internal_recognizers": libs.Recognizers,
+	"internal_indexes":     libs.Indexes,
 }
 
 var defaultModules = memo.NewMemoizedConstructor(func() (map[string]lua.LGFunction, error) {

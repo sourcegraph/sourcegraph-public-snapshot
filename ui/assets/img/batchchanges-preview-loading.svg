@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision"
+    viewBox="0 0 51 51">
+    <style>
+        .spin {
+            animation: spin 2s linear infinite;
+            transform-origin: 25.5px 25.5px;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <circle cx="25.5" cy="25.5" r="24.5" fill="#EFF2F5" stroke="#E6EBF2" />
+    <g>
+        <path fill="#FFF" d="M21.3 18.9h1.9v1.9h-2v-1.9Zm1.9 0H25v1.9h-1.8v-1.9Zm3.7 1.9H25v1.9h1.9v-2Z" />
+        <path fill="#798BAF"
+            d="M19.4 15.2v1.9h3.8v-1.9h-3.8Zm-1.8 1.9h1.8v1.8h-1.7v-1.7Zm0 1.8h-1.9v1.9h1.9v-1.9Zm0 1.9h-1.9v5.6h1.9v-5.6Zm7.4-5.6h-1.8v1.9H25v-1.9Zm0 0h1.9v1.9H25v-1.9Zm-5.6 11.2h-1.7v1.8h1.8v-1.8Zm0 1.8h3.8v2h-3.8v-2Zm5.6 0h1.9v2H25v-2Zm0 0h-1.8v2H25v-2Zm3.7 0h2V32h-2v-3.8Zm0-1.8h-1.8v1.8h1.8v-1.8Z" />
+        <path fill="#798BAF" d="M32.5 30.2v-2h-1.9V32h3.7v-1.9h-1.8Zm1.8 1.8h-3.6v1.8h1.9v1.9h1.8V32Z" />
+        <path fill="#798BAF"
+            d="M34.3 32h1.9v3.7h-1.9V32Zm-5.6-5.6h2v-5.6h-2v5.6Zm2-7.5h-2v1.9h2v-1.9Zm-2-1.8h-1.8v1.8h1.8v-1.7Z" />
+    </g>
+    <path fill="none" stroke="#8F9DBB" stroke-width="1.8" d="M25.8 3.5a22 22 0 0 1 12.8 4.1" class="spin"
+        paint-order="stroke fill markers" />
+</svg>

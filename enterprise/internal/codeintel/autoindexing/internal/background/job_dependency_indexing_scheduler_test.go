@@ -24,7 +24,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockWorkerStore := NewMockWorkerStore()
+	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencyIndexingJob]()
 
 	mockRepoStore.ListMinimalReposFunc.PushReturn([]types.MinimalRepo{
 		{
@@ -59,7 +59,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 		},
 	}, nil)
 
-	indexEnqueuer := NewMockAutoIndexingService()
+	indexEnqueuer := NewMockIndexEnqueuer()
 
 	envvar.MockSourcegraphDotComMode(true)
 
@@ -132,7 +132,7 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockWorkerStore := NewMockWorkerStore()
+	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencyIndexingJob]()
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
@@ -160,7 +160,7 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 		},
 	}, nil)
 
-	indexEnqueuer := NewMockAutoIndexingService()
+	indexEnqueuer := NewMockIndexEnqueuer()
 
 	envvar.MockSourcegraphDotComMode(false)
 
@@ -236,7 +236,7 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockWorkerStore := NewMockWorkerStore()
+	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencyIndexingJob]()
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
@@ -254,7 +254,7 @@ func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
 		},
 	}, nil)
 
-	indexEnqueuer := NewMockAutoIndexingService()
+	indexEnqueuer := NewMockIndexEnqueuer()
 
 	envvar.MockSourcegraphDotComMode(true)
 
@@ -296,7 +296,7 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 	mockExtSvcStore := NewMockExternalServiceStore()
 	mockRepoUpdater := NewMockRepoUpdaterClient()
 	mockScanner := NewMockPackageReferenceScanner()
-	mockWorkerStore := NewMockWorkerStore()
+	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencyIndexingJob]()
 	mockRepoStore := NewMockReposStore()
 
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
@@ -316,7 +316,7 @@ func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
 		},
 	}, nil)
 
-	indexEnqueuer := NewMockAutoIndexingService()
+	indexEnqueuer := NewMockIndexEnqueuer()
 
 	envvar.MockSourcegraphDotComMode(true)
 
@@ -363,7 +363,7 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(codeinteltypes.Upload{ID: 42, RepositoryID: 51, Indexer: "scip-typescript"}, true, nil)
 	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
 
-	indexEnqueuer := NewMockAutoIndexingService()
+	indexEnqueuer := NewMockIndexEnqueuer()
 
 	envvar.MockSourcegraphDotComMode(true)
 

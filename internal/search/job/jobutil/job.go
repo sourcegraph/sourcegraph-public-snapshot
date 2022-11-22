@@ -195,19 +195,9 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		}
 	}
 
-	{
-		// Apply search result sanitize rules post-filter
-		var sanitizePatterns []*regexp.Regexp
-		c := conf.Get()
-		if c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SearchSanitizePatterns != nil {
-			for _, val := range c.ExperimentalFeatures.SearchSanitizePatterns {
-				if re, err := regexp.Compile(val); err == nil {
-					sanitizePatterns = append(sanitizePatterns, re)
-				}
-			}
-		}
-		if len(sanitizePatterns) > 0 {
-			basicJob = NewSanitizeJob(sanitizePatterns, basicJob)
+	{ // Apply search result sanitization post-filter if enabled
+		if len(inputs.SanitizeSearchPatterns) > 0 {
+			basicJob = NewSanitizeJob(inputs.SanitizeSearchPatterns, basicJob)
 		}
 	}
 
@@ -955,6 +945,12 @@ func isGlobal(op search.RepoOptions) bool {
 	// Zoekt does not know about repo descriptions, so we depend on the
 	// database to handle this filter.
 	if len(op.DescriptionPatterns) > 0 {
+		return false
+	}
+
+	// Zoekt does not know about repo key-value pairs or tags, so we depend on the
+	// database to handle this filter.
+	if len(op.HasKVPs) > 0 {
 		return false
 	}
 

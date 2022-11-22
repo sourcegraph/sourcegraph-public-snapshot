@@ -2,7 +2,6 @@ package monitoring
 
 import (
 	"fmt"
-	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
@@ -105,7 +104,6 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 	}
 
 	board := sdk.NewBoard(c.Title)
-	board.Version = uint(rand.Uint32())
 	board.UID = uid
 	board.ID = 0
 	board.Timezone = "utc"

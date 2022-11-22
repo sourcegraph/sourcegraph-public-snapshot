@@ -1,22 +1,22 @@
 import {
     Annotation,
+    EditorState,
     Extension,
-    RangeSet,
     Range,
+    RangeSet,
     RangeSetBuilder,
     StateEffect,
     StateField,
-    EditorState,
 } from '@codemirror/state'
 import {
-    EditorView,
     Decoration,
-    lineNumbers,
-    ViewPlugin,
-    PluginValue,
-    ViewUpdate,
-    GutterMarker,
+    EditorView,
     gutterLineClass,
+    GutterMarker,
+    lineNumbers,
+    PluginValue,
+    ViewPlugin,
+    ViewUpdate,
 } from '@codemirror/view'
 
 import { isValidLineRange, preciseOffsetAtCoords } from './utils'
@@ -32,7 +32,7 @@ const MOUSE_MAIN_BUTTON = 0
  * selected. Line numbers are 1-based.
  * endLine may be smaller than line
  */
-export type SelectedLineRange = { line: number; endLine?: number } | null
+export type SelectedLineRange = { line: number; character?: number; endLine?: number } | null
 
 const selectedLineDecoration = Decoration.line({
     class: 'selected-line',

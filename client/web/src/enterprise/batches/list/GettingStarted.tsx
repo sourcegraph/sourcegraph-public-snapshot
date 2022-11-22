@@ -5,6 +5,7 @@ import { mdiOpenInNew } from '@mdi/js'
 import { Container, H2, H3, Link, Text, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
+import { CloudCtaBanner } from '../../../components/CloudCtaBanner'
 import { CtaBanner } from '../../../components/CtaBanner'
 
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -62,14 +63,12 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
                     <ul>
                         <li>
                             <Link to="/help/batch_changes" target="_blank" rel="noopener">
-                                Documentation{' '}
-                                <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                                Documentation <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                             </Link>
                         </li>
                         <li>
                             <Link to="https://about.sourcegraph.com/batch-changes" target="_blank" rel="noopener">
-                                Product page{' '}
-                                <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                                Product page <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                             </Link>
                         </li>
                     </ul>
@@ -77,23 +76,28 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
             </div>
         </Container>
         {isSourcegraphDotCom ? (
-            <CloudCTABanner>
+            <CloudCtaBanner>
                 To automate changes across your team's private repos,{' '}
-                <Link to="https://signup.sourcegraph.com/?p=batch" target="_blank" rel="noopener noreferrer" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
+                <Link
+                    to="https://signup.sourcegraph.com/?p=batch"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                >
                     try Sourcegraph Cloud
-                </Link>.
-            </CloudCTABanner>
-            ) : (
-                <div className="d-flex justify-content-start">
-                    <CtaBanner
-                        bodyText="Try it yourself in less than 10 minutes (without actually pushing changes)."
-                        title={<H3>Start using Batch Changes</H3>}
-                        linkText="Read quickstart docs"
-                        href="/help/batch_changes/quickstart"
-                        icon={<BatchChangesIcon />}
-                    />
-                </div>
-            )
-        }
+                </Link>
+                .
+            </CloudCtaBanner>
+        ) : (
+            <div className="d-flex justify-content-start">
+                <CtaBanner
+                    bodyText="Try it yourself in less than 10 minutes (without actually pushing changes)."
+                    title={<H3>Start using Batch Changes</H3>}
+                    linkText="Read quickstart docs"
+                    href="/help/batch_changes/quickstart"
+                    icon={<BatchChangesIcon />}
+                />
+            </div>
+        )}
     </div>
 )

@@ -16,10 +16,13 @@ export const CodeInsightsDescription: React.FunctionComponent<Props> = ({ classN
         <H2>Track what matters in your code</H2>
 
         <Text>
-            Code Insights provides precise answers about the trends and composition of your codebase. It transforms
-            code into a queryable database and lets you create customizable visual dashboards in seconds.
+            Code Insights provides precise answers about the trends and composition of your codebase. It transforms code
+            into a queryable database and lets you create customizable visual dashboards in seconds.
         </Text>
         
+        <div>
+            <H3>Use Code Insights to...</H3>
+
         <div>
             <H3>Use Code Insights to...</H3>
 
@@ -40,14 +43,12 @@ export const CodeInsightsDescription: React.FunctionComponent<Props> = ({ classN
         <ul>
             <li>
                 <Link to="/help/code_insights" target="_blank" rel="noopener">
-                    Documentation{' '}
-                    <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                    Documentation <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                 </Link>
             </li>
             <li>
                 <Link to="https://about.sourcegraph.com/code-insights" target="_blank" rel="noopener">
-                    Product page{' '}
-                    <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
+                    Product page <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                 </Link>
             </li>
         </ul>

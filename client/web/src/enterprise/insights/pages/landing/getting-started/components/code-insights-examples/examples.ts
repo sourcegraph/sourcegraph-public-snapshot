@@ -224,11 +224,11 @@ export const OPENSSL_PYTHON: SearchInsightExampleContent<Datum> = {
                 { x: new Date('November 02, 2022'), y: 378 },
                 { x: new Date('November 05, 2022'), y: 378 },
                 { x: new Date('November 07, 2022'), y: 367 },
-        
             ],
             name: 'pip/pipenv',
             color: DATA_SERIES_COLORS.BLUE,
-            query: 'file:requirements.*txt cryptography(\s*[=~]=\s*(36\.|37\.|38\.0\.[0-2])) patternType:regexp archived:no fork:no',
+            query:
+                'file:requirements.*txt cryptography(s*[=~]=s*(36.|37.|38.0.[0-2])) patternType:regexp archived:no fork:no',
             getXValue: datum => datum.x,
             getYValue: datum => datum.y,
         },

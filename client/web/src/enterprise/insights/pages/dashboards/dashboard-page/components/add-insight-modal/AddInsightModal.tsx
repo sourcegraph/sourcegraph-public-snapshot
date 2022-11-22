@@ -5,7 +5,7 @@ import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { asError } from '@sourcegraph/common'
+import { asError, isDefined } from '@sourcegraph/common'
 import { Button, Modal, H2, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import {
@@ -38,6 +38,7 @@ export const AddInsightModal: FC<AddInsightModalProps> = props => {
         GetDashboardAccessibleInsightsVariables
     >(GET_ACCESSIBLE_INSIGHTS_LIST, {
         variables: { id: dashboard.id },
+        errorPolicy: 'all',
     })
 
     const insights = getAvailableInsights(data)
@@ -100,13 +101,13 @@ export const AddInsightModal: FC<AddInsightModalProps> = props => {
 }
 
 function getDashboardInsightIds(data?: GetDashboardAccessibleInsightsResult): string[] {
-    if (!data || !data.dashboardInsightsIds.nodes[0].views) {
+    if (!data || !data.dashboardInsightsIds.nodes[0]?.views) {
         return []
     }
 
-    return data.dashboardInsightsIds.nodes[0].views.nodes.map(view => view.id)
+    return data.dashboardInsightsIds.nodes[0].views.nodes.filter(isDefined).map(view => view.id)
 }
 
 function getAvailableInsights(data?: GetDashboardAccessibleInsightsResult): AccessibleInsight[] {
-    return data?.accessibleInsights?.nodes ?? []
+    return data?.accessibleInsights?.nodes.filter(isDefined) ?? []
 }

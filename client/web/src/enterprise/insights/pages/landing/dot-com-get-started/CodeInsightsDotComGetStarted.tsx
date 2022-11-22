@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
 
+import { CloudCtaBanner } from '../../../../../components/CloudCtaBanner'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
@@ -82,6 +83,19 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                             try Sourcegraph Cloud
                         </Link>.
                     </CloudCTABanner>
+
+                    <CloudCtaBanner>
+                        To track Insights across your team's private repos,{' '}
+                        <Link
+                            to="https://signup.sourcegraph.com/?p=insights"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                        >
+                            try Sourcegraph Cloud
+                        </Link>
+                        .
+                    </CloudCtaBanner>
 
                     <CodeInsightsExamplesPicker telemetryService={telemetryService} />
                 </main>
