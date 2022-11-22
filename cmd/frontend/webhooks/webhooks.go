@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
+const pingEventType = "ping"
+
 type webhookEventHandlers map[string][]WebhookHandler
 
 // WebhookRouter is responsible for handling incoming http requests for all webhooks
@@ -131,6 +133,10 @@ func (h *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHost
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}
+	if isPingEvent(eventType, codeHostKind) {
+		// no action required, return a 200
+		return nil
+	}
 	if _, ok := h.handlers[codeHostKind][eventType]; !ok {
 		return eventTypeNotFoundError{eventType: eventType, codeHostKind: codeHostKind}
 	}
@@ -142,6 +148,15 @@ func (h *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHost
 		})
 	}
 	return g.Wait()
+}
+
+func isPingEvent(eventType, codeHostKind string) bool {
+	if codeHostKind == extsvc.KindGitHub {
+		if eventType == pingEventType {
+			return true
+		}
+	}
+	return false
 }
 
 type eventTypeNotFoundError struct {

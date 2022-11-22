@@ -30,7 +30,6 @@ var (
 		"status",
 		"check_suite",
 		"check_run",
-		"ping",
 	}
 )
 
