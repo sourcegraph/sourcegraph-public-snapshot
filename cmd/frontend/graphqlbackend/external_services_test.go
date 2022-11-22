@@ -92,25 +92,16 @@ func TestUpdateExternalService(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
 		t.Run("cannot update external services", func(t *testing.T) {
-			externalServices := database.NewMockExternalServiceStore()
-			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-				return &types.ExternalService{
-					ID:     id,
-					Config: extsvc.NewEmptyConfig(),
-				}, nil
-			})
-
 			db := database.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			result, err := newSchemaResolver(db, nil).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
 			})
-			if want := backend.ErrNoAccessExternalService; err != want {
+			if want := auth.ErrMustBeSiteAdmin; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
 			if result != nil {
@@ -220,23 +211,14 @@ func TestDeleteExternalService(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
 		t.Run("cannot delete external services", func(t *testing.T) {
-			externalServices := database.NewMockExternalServiceStore()
-			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-				return &types.ExternalService{
-					ID:     id,
-					Config: extsvc.NewEmptyConfig(),
-				}, nil
-			})
-
 			db := database.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			result, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
-			if want := backend.ErrNoAccessExternalService; err != want {
+			if want := auth.ErrMustBeSiteAdmin; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
 			if result != nil {
@@ -288,14 +270,12 @@ func TestExternalServices(t *testing.T) {
 		t.Run("cannot read users external services", func(t *testing.T) {
 			users := database.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-			users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
-				return &types.User{ID: id}, nil
-			})
+
 			db := database.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
 			result, err := newSchemaResolver(db, gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{})
-			if want := backend.ErrNoAccessExternalService; err != want {
+			if want := auth.ErrMustBeSiteAdmin; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
 			if result != nil {
@@ -314,7 +294,7 @@ func TestExternalServices(t *testing.T) {
 			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 
 			result, err := newSchemaResolver(db, gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{})
-			if want := backend.ErrNoAccessExternalService; err != want {
+			if want := auth.ErrMustBeSiteAdmin; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
 			if result != nil {
@@ -333,7 +313,7 @@ func TestExternalServices(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			result, err := newSchemaResolver(db, gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{})
-			if want := backend.ErrNoAccessExternalService; err != want {
+			if want := auth.ErrMustBeSiteAdmin; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
 			if result != nil {
@@ -664,10 +644,8 @@ func TestCancelExternalServiceSync(t *testing.T) {
 		users := database.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
 
-		externalServices := newExternalServices()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
-		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 		syncJobIDGraphQL := marshalExternalServiceSyncJobID(syncJobID)
@@ -679,15 +657,11 @@ func TestCancelExternalServiceSync(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Path:          []any{"cancelExternalServiceSync"},
-					Message:       backend.ErrNoAccessExternalService.Error(),
-					ResolverError: backend.ErrNoAccessExternalService,
+					Message:       auth.ErrMustBeSiteAdmin.Error(),
+					ResolverError: auth.ErrMustBeSiteAdmin,
 				},
 			},
 			Context: ctx,
 		})
-
-		if callCount := len(externalServices.CancelSyncJobFunc.History()); callCount != 0 {
-			t.Errorf("unexpected handle call count. want=%d have=%d", 0, callCount)
-		}
 	})
 }
