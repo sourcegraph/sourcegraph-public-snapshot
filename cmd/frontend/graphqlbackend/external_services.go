@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -193,7 +192,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		// run deletion in the background and return right away
 		go func() {
 			if err := r.deleteExternalService(context.Background(), id, es); err != nil {
-				log15.Error("Background external service deletion failed", "err", err)
+				r.logger.Error("Background external service deletion failed", log.Error(err))
 			}
 		}()
 	} else {
