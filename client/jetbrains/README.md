@@ -103,6 +103,8 @@ Here is each level in detail.
 These settings have the highest priority. You can set them in a less than intuitive way:
 
 1. Create a new file at `{project root}/.idea/sourcegraph.xml` if it doesn't exist, with this content:
+
+##### Replace `DOTCOM` with `ENTERPRISE` for private instanceType
    ```xml
    <?xml version="1.0" encoding="UTF-8"?>
    <project version="4">
