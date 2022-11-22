@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math"
 	"net/http"
 	"os"
 	"sort"
@@ -172,8 +171,10 @@ func main() {
 			{Label: "Creating orgs", Max: float64(cfg.orgCount)},
 			{Label: "Creating teams", Max: float64(cfg.teamCount)},
 			{Label: "Creating users", Max: float64(cfg.userCount)},
-			{Label: "Generating OAuth tokens", Max: float64(cfg.userCount)},
-			//{Label: "Adding users to teams", Max: float64(cfg.teamCount * 50)},
+			{Label: "Adding users to teams", Max: float64(cfg.userCount)},
+		}
+		if cfg.generateTokens {
+			bars = append(bars, output.ProgressBar{Label: "Generating OAuth tokens", Max: float64(cfg.userCount)})
 		}
 		progress = out.Progress(bars, nil)
 		var usersDone int64
@@ -206,27 +207,44 @@ func main() {
 		}
 		g.Wait()
 
-		totalMemberships := len(teams) * 8
-		membershipsPerUser := int(math.Ceil(float64(totalMemberships) / float64(cfg.userCount)))
-		teamsToSkip := int(math.Ceil(float64(cfg.teamCount) / (float64(totalMemberships) / float64(cfg.userCount))))
+		//totalMemberships := len(teams) * 8
+		//membershipsPerUser := int(math.Ceil(float64(totalMemberships) / float64(cfg.userCount)))
+		membershipsPerTeam := 8
+		//teamsToSkip := int(math.Ceil(float64(cfg.teamCount) / float64(membershipsPerUser)))
 
-		for i, u := range users {
-			currentUser := u
+		//for i, u := range users {
+		//	currentUser := u
+		//	currentIter := i
+		//
+		//	g.Go(func() {
+		//		executeCreateTeamMembershipsForUser(
+		//			ctx,
+		//			&teamMembershipOpts{
+		//				currentUser:        currentUser,
+		//				teams:              teams,
+		//				membershipsPerUser: membershipsPerUser,
+		//				userIndex:          currentIter,
+		//				//teamIncrement:      teamsToSkip,
+		//			},
+		//			&membershipsDone)
+		//	})
+		//}
+
+		g2 := group.New().WithMaxConcurrency(100)
+		for i, t := range teams {
+			currentTeam := t
 			currentIter := i
+			var usersToAssign []*user
 
-			g.Go(func() {
-				executeCreateTeamMembershipsForUser(
-					ctx,
-					&teamMembershipOpts{
-						currentUser:        currentUser,
-						teams:              teams,
-						membershipsPerUser: membershipsPerUser,
-						teamIndex:          currentIter,
-						teamIncrement:      teamsToSkip,
-					},
-					&membershipsDone)
+			for j := currentIter * membershipsPerTeam; j < ((currentIter + 1) * membershipsPerTeam); j++ {
+				usersToAssign = append(usersToAssign, users[j])
+			}
+
+			g2.Go(func() {
+				executeCreateTeamMembershipsForTeam(ctx, currentTeam, usersToAssign, &membershipsDone)
 			})
 		}
+		g2.Wait()
 
 		var repos []*repo
 		if repos, err = store.loadRepos(); err != nil {
@@ -251,7 +269,7 @@ func main() {
 				tg.Go(func() userToken {
 					token := executeCreateUserImpersonationToken(ctx, currentU)
 					atomic.AddInt64(&tokensDone, 1)
-					progress.SetValue(3, float64(tokensDone))
+					progress.SetValue(4, float64(tokensDone))
 					return userToken{
 						login: currentU.Login,
 						token: token,
@@ -518,8 +536,8 @@ type teamMembershipOpts struct {
 	teams       []*team
 
 	membershipsPerUser int
-	teamIndex          int
-	teamIncrement      int
+	userIndex          int
+	//teamIncrement      int
 }
 
 func executeCreateTeamMembershipsForUser(ctx context.Context, opts *teamMembershipOpts, membershipsDone *int64) {
@@ -527,9 +545,9 @@ func executeCreateTeamMembershipsForUser(ctx context.Context, opts *teamMembersh
 	userState := "active"
 	userRole := "member"
 
+	index := opts.userIndex % len(opts.teams)
 	for j := 0; j < opts.membershipsPerUser; j++ {
-		index := (opts.teamIndex + (j * opts.teamIncrement)) % len(opts.teams)
-		candidateTeam := opts.teams[index]
+		candidateTeam := opts.teams[index+j]
 
 		if candidateTeam.TotalMembers >= 8 {
 			continue
@@ -573,6 +591,51 @@ func executeCreateTeamMembershipsForUser(ctx context.Context, opts *teamMembersh
 		}
 
 		//writeSuccess(out, "Added member %s to team %s", currentUser.Login, candidateTeam.Name)
+	}
+}
+
+func executeCreateTeamMembershipsForTeam(ctx context.Context, t *team, users []*user, membershipsDone *int64) {
+	// users need to be member of the team's parent org to join the team
+	userState := "active"
+	userRole := "member"
+
+	for _, u := range users {
+		// add user to team's parent org first
+		_, _, mErr := gh.Organizations.EditOrgMembership(ctx, u.Login, t.Org, &github.Membership{
+			State:        &userState,
+			Role:         &userRole,
+			Organization: &github.Organization{Login: &t.Org},
+			User:         &github.User{Login: &u.Login},
+		})
+
+		if mErr != nil {
+			writeFailure(out, "Failed to add user %s to organization %s, reason: %s", u.Login, t.Org, mErr)
+			t.Failed = mErr.Error()
+			if mErr = store.saveTeam(t); mErr != nil {
+				log.Fatal(mErr)
+			}
+			continue
+		}
+
+		// this is an idempotent operation so no need to check existing membership
+		_, _, mErr = gh.Teams.AddTeamMembershipBySlug(ctx, t.Org, t.Name, u.Login, nil)
+
+		if mErr != nil {
+			writeFailure(out, "Failed to add user %s to team %s, reason: %s", u, t.Name, mErr)
+			t.Failed = mErr.Error()
+			if mErr = store.saveTeam(t); mErr != nil {
+				log.Fatal(mErr)
+			}
+			continue
+		}
+
+		t.TotalMembers += 1
+		atomic.AddInt64(membershipsDone, 1)
+		progress.SetValue(3, float64(*membershipsDone))
+
+		if mErr = store.saveTeam(t); mErr != nil {
+			log.Fatal(mErr)
+		}
 	}
 }
 
