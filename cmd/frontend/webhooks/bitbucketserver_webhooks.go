@@ -21,7 +21,7 @@ func (wr *WebhookRouter) HandleBitBucketServerWebhook(logger log.Logger, w http.
 	ctx := actor.WithInternalActor(r.Context())
 	e, eventType, err := parseBitbucketServerEvent(r, payload)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -53,15 +53,12 @@ func (wr *WebhookRouter) handleBitbucketServerWebhook(logger log.Logger, w http.
 		return
 	}
 	defer r.Body.Close()
-	if secret == "" {
-		wr.HandleBitBucketServerWebhook(logger, w, r, urn, payload)
-		return
-	}
-
-	sig := r.Header.Get("X-Hub-Signature")
-	if err := gh.ValidateSignature(sig, payload, []byte(secret)); err != nil {
-		http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
-		return
+	if secret != "" {
+		sig := r.Header.Get("X-Hub-Signature")
+		if err := gh.ValidateSignature(sig, payload, []byte(secret)); err != nil {
+			http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
+			return
+		}
 	}
 
 	wr.HandleBitBucketServerWebhook(logger, w, r, urn, payload)
