@@ -160,8 +160,7 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 		NumRepos:       1,
 		FileMatchLimit: int32(p.Limit),
 		Features: search.Features{
-			Ranking:             true,
-			RankingDampDocRanks: true,
+			Ranking: true,
 		},
 	}).ToSearch(ctx)
 	if deadline, ok := ctx.Deadline(); ok {
