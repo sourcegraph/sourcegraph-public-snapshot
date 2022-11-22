@@ -168,6 +168,7 @@ function createEvent(event: string, eventProperties?: unknown, publicArgument?: 
         firstSourceURL: eventLogger.getFirstSourceURL(),
         lastSourceURL: eventLogger.getLastSourceURL(),
         referrer: eventLogger.getReferrer(),
+        firstReferrer: eventLogger.getOriginalReferrer(),
         deviceSessionID: eventLogger.getDeviceSessionID(),
         url: window.location.href,
         source: EventSource.WEB,

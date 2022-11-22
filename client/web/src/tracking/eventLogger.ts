@@ -19,6 +19,7 @@ export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
 export const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
 export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
 export const DEVICE_SESSION_ID_KEY = 'sourcegraphSessionId'
+export const ORIGINAL_REFERRER_KEY = '_mkto_referrer'
 
 const EXTENSION_MARKER_ID = '#sourcegraph-app-background'
 
@@ -77,6 +78,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private deviceID = ''
     private eventID = 0
     private listeners: Set<(eventName: string) => void> = new Set()
+    private originalReferrer?: string
 
     private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
@@ -231,6 +233,17 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
         this.lastSourceURL = lastSourceURL
         return lastSourceURL
+    }
+
+    public getOriginalReferrer(): string {
+        // Gets the referrer URL from the cookie
+        const originalReferrer = this.originalReferrer || cookies.get(ORIGINAL_REFERRER_KEY) || location.href
+        if (!originalReferrer) {
+            // If originalReferrer does not exist, send blank string
+            this.originalReferrer = ''
+        }
+        this.originalReferrer = originalReferrer
+        return originalReferrer
     }
 
     public getDeviceSessionID(): string {
