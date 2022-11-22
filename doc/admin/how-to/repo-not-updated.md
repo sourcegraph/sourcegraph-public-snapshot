@@ -19,7 +19,7 @@ This document assumes that you are a [site administrator](https://docs.sourcegra
 5. Look for errors related to this repository in gitserver logs, which should help you to determine the next best course of action.
 6. Check the size of the repository. If it's a large repository, it may take a long time to sync and update. To find the size of your .git directory where the repository resides, you may use our [`git-stats` script](https://docs.sourcegraph.com/admin/monorepo#statistics). 
 7. Check the allocated resources to see the instance has enough resources to process the repositories sych using our [Resource Estimator](https://docs.sourcegraph.com/admin/deploy/resource_estimator)
-8. Check the codehost connection from sourcegraph instance, if there is any issue it needs to be resolved for the repository to sync and update.
+8. Check the code host connection from your Sourcegraph instance. If there is any issue, it needs to be resolved for the repository to sync and update.
 
 ## FAQs:
 
