@@ -123,7 +123,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     )
 
     const blameDecorations = useMemo(
-        () => (blameHunks.current ? [showGitBlameDecorations.of(blameHunks.current)] : []),
+        () => (blameHunks?.current ? [showGitBlameDecorations.of(blameHunks.current)] : []),
         [blameHunks]
     )
 
