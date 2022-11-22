@@ -31,10 +31,7 @@ import {
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
     CategoricalChartContent,
-    SeriesChartContent,
     DashboardCreateResult,
-    InsightPreviewSettings,
-    BackendInsightDatum,
 } from '../code-insights-backend-types'
 
 import { createInsightView } from './deserialization/create-insight-view'
@@ -47,7 +44,6 @@ import { createInsight } from './methods/create-insight/create-insight'
 import { getBuiltInInsight } from './methods/get-built-in-insight-data'
 import { getLangStatsInsightContent } from './methods/get-built-in-insight-data/get-lang-stats-insight-content'
 import { getDashboardOwners } from './methods/get-dashboard-owners'
-import { getInsightsPreview } from './methods/get-insight-preview'
 import { updateDashboard } from './methods/update-dashboard'
 import { updateInsight } from './methods/update-insight/update-insight'
 
@@ -229,10 +225,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public getLangStatsInsightContent = (
         input: GetLangStatsInsightContentInput
     ): Promise<CategoricalChartContent<any>> => getLangStatsInsightContent(input).then(data => data.content)
-
-    public getInsightPreviewContent = (
-        input: InsightPreviewSettings
-    ): Promise<SeriesChartContent<BackendInsightDatum>> => getInsightsPreview(this.apolloClient, input)
 
     public assignInsightsToDashboard = ({
         id,

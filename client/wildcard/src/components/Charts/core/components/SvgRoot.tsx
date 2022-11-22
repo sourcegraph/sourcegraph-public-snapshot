@@ -61,6 +61,7 @@ interface SvgRootProps extends SVGProps<SVGSVGElement> {
     height: number
     yScale: AxisScale
     xScale: AxisScale
+    padding?: Padding
 }
 
 /**
