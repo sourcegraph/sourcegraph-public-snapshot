@@ -151,7 +151,7 @@ func (userEmails) Add(ctx context.Context, logger log.Logger, db database.DB, us
 }
 
 // Remove removes the e-mail from the specified user.
-func (userEmails) Remove(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string) error {
+func (userEmails) Remove(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string) (err error) {
 	logger = logger.Scoped("UserEmails.Remove", "handles removal of user emails")
 
 	// 🚨 SECURITY: Only the authenticated user can remove email from their accounts
@@ -168,18 +168,24 @@ func (userEmails) Remove(ctx context.Context, logger log.Logger, db database.DB,
 		}
 	}
 
-	if err := db.UserEmails().Remove(ctx, userID, email); err != nil {
+	tx, err := db.Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "starting transaction")
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
 		return errors.Wrap(err, "removing user e-email")
 	}
 
 	// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
 	// tokens that may have been sent to that email.
-	if err := db.Users().DeletePasswordResetCode(ctx, userID); err != nil {
+	if err := tx.Users().DeletePasswordResetCode(ctx, userID); err != nil {
 		return errors.Wrap(err, "deleting reset codes")
 	}
 
 	if conf.CanSendEmail() {
-		if err := UserEmails.SendUserEmailOnFieldUpdate(ctx, logger, db, userID, "removed an email"); err != nil {
+		if err := UserEmails.SendUserEmailOnFieldUpdate(ctx, logger, tx, userID, "removed an email"); err != nil {
 			logger.Warn("Failed to send email to inform user of email removal", log.Error(err))
 		}
 	}
