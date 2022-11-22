@@ -256,7 +256,7 @@ func orderRacingJobs(j job.Job) job.Job {
 		return j
 	}
 
-	// Map the tree to execute jobs in collecton after any Zoekt jobs. We
+	// Map the tree to execute jobs in "collection" after any Zoekt jobs. We
 	// assume at most one of either two Zoekt search jobs may exist.
 	seenZoektRepoSearch := false
 	newJob = job.MapType(newJob, func(pager *repoPagerJob) job.Job {
