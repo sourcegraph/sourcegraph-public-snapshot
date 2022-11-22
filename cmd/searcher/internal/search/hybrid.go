@@ -7,7 +7,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/grafana/regexp"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
@@ -153,7 +152,7 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 	q := zoektquery.Simplify(zoektquery.NewAnd(
 		zoektquery.NewSingleBranchesRepos("HEAD", uint32(p.RepoID)),
 		qText,
-		zoektIgnorePaths(ignoredPaths),
+		&zoektquery.Not{Child: zoektquery.NewFileNameSet(ignoredPaths...)},
 	))
 
 	opts := (&zoektutil.Options{
@@ -297,20 +296,7 @@ func zoektIgnorePaths(paths []string) zoektquery.Q {
 		return &zoektquery.Const{Value: true}
 	}
 
-	parts := make([]zoektquery.Q, 0, len(paths))
-	for _, p := range paths {
-		re, err := syntax.Parse("^"+regexp.QuoteMeta(p)+"$", syntax.Perl)
-		if err != nil {
-			panic("failed to regex compile escaped literal: " + err.Error())
-		}
-		parts = append(parts, &zoektquery.Regexp{
-			Regexp:        re,
-			FileName:      true,
-			CaseSensitive: true,
-		})
-	}
-
-	return &zoektquery.Not{Child: zoektquery.NewOr(parts...)}
+	return &zoektquery.Not{Child: zoektquery.NewFileNameSet(paths...)}
 }
 
 // zoektIndexedCommit returns the default indexed commit for a repository.
