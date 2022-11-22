@@ -93,8 +93,8 @@ mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
 // This method requires the authenticated user to be a site admin.
 func (c *Client) CheckExternalService(id string) error {
 	const query = `
-mutation CheckExternalService($id: ID!) {
-	node(id: $input) {
+query CheckExternalService($id: ID!) {
+	node(id: $id) {
 		... on ExternalService {
 			id
 		}
