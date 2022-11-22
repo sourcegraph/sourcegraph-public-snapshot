@@ -41,6 +41,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 
 		if _, ok := mux.Vars(r)["Repo"]; !ok {
 			w.WriteHeader(http.StatusUnprocessableEntity)
+			return
 		}
 
 		repo, commitID, err := handlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vars(r))

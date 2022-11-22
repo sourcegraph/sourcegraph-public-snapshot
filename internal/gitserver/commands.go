@@ -814,13 +814,11 @@ func parseGitBlameOutput(out string) ([]*Hunk, error) {
 
 			for i := 10; i < 13 && i < len(remainingLines); i++ {
 				if strings.HasPrefix(remainingLines[i], "filename ") {
-					fmt.Printf("filename line: %d\n", i)
 					filenames[commitID] = strings.SplitN(remainingLines[i], " ", 2)[1]
 					break
 				}
 			}
 
-			fmt.Printf("len(remainingLines): %d\n", len(remainingLines))
 			if len(remainingLines) >= 13 && strings.HasPrefix(remainingLines[10], "previous ") {
 				byteOffset += len(remainingLines[12])
 				remainingLines = remainingLines[13:]
