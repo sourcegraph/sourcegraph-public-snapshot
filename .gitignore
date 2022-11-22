@@ -1,6 +1,9 @@
 # Temporary directory for whatever you want
 .tmp/
 
+# Bazel
+bazel-*
+
 # Vim
 *.swp
 
