@@ -2,7 +2,7 @@
 
 .requests-grid {
     display: grid;
-    grid-template-columns: [info] minmax(auto, 1fr) [progress] min-content [end];
+    grid-template-columns: 0.5fr 2fr;
     row-gap: 1rem;
     column-gap: 1rem;
     align-items: center;
