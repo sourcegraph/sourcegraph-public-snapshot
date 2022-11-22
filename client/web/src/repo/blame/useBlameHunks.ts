@@ -102,8 +102,8 @@ const fetchBlameViaGraphQL = memoizeObservable(
         ).pipe(
             map(dataOrThrowErrors),
             map(({ repository }) => repository?.commit?.blob?.blame),
-            map(blames => (blames ? blames.map(blame => addDisplayInfoForHunk(blame, sourcegraphURL)) : undefined)),
-            map(blames => ({ current: blames }))
+            map(hunks => (hunks ? hunks.map(blame => addDisplayInfoForHunk(hunk, sourcegraphURL)) : undefined)),
+            map(hunks => ({ current: hunks }))
         ),
     makeRepoURI
 )
