@@ -2,10 +2,12 @@ package queryrunner
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -17,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/zoekt"
+	zoektquery "github.com/sourcegraph/zoekt/query"
 )
 
 var _ workerutil.Handler = &workHandler{}
@@ -122,4 +126,82 @@ func (r *workHandler) Handle(ctx context.Context, logger log.Logger, record work
 		return err
 	}
 	return r.persistRecordings(ctx, &job.SearchJob, series, recordings, recordTime)
+}
+
+type zoektHealthChecker struct {
+	samples []int
+	index   int
+	healthy bool
+
+	client zoekt.Streamer
+	mu     sync.RWMutex
+	logger log.Logger
+
+	gauge prometheus.Gauge
+}
+
+func newZoektHealthChecker(client zoekt.Streamer, logger log.Logger, bufferSize int) *zoektHealthChecker {
+	buf := make([]int, bufferSize)
+
+	for i := range buf {
+		buf[i] = -1
+	}
+	return &zoektHealthChecker{client: client, logger: logger, samples: buf}
+}
+
+func (z *zoektHealthChecker) isHealthy() bool {
+	z.mu.RLock()
+	defer z.mu.RUnlock()
+	return z.healthy
+}
+
+func (z *zoektHealthChecker) updateHealthy() {
+	current := z.samples[0]
+	for i := 1; i < len(z.samples); i++ {
+		if z.samples[i] != current {
+			z.healthy = false
+			return
+		}
+		current = z.samples[i]
+	}
+	z.healthy = true
+	z.setGauge()
+}
+
+func (z *zoektHealthChecker) setGauge() {
+	if z.gauge == nil {
+		return
+	}
+	var val float64
+	if z.healthy {
+		val = 1.0
+	}
+	z.gauge.Set(val)
+}
+
+func (z *zoektHealthChecker) next() int {
+	z.index = (z.index + 1) % len(z.samples)
+	return z.index
+}
+
+func (z *zoektHealthChecker) sample(ctx context.Context) {
+	idx := z.next()
+	z.mu.Lock()
+	defer z.mu.Unlock()
+
+	results, err := z.client.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
+	if err != nil {
+		z.samples[idx] = -1
+		z.updateHealthy()
+		return
+	}
+	statz, _ := json.Marshal(results.Stats)
+	z.samples[idx] = results.Stats.Shards
+	z.updateHealthy()
+	z.logger.Info("code insights zoekt health check", log.Bool("healthy", z.healthy), log.String("stats", string(statz)))
+}
+
+func (z *zoektHealthChecker) Handle(ctx context.Context) error {
+	z.sample(ctx)
+	return nil
 }

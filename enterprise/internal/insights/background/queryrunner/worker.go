@@ -8,7 +8,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -64,6 +67,15 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 
 		return float64(count)
 	}))
+
+	hcGauge := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "src_query_runner_zoekt_health_check",
+		Help: "Current state of the zoekt health check from the Code Insights query runner",
+	})
+	prometheus.DefaultRegisterer.MustRegister(hcGauge)
+	healthChecker := newZoektHealthChecker(search.Indexed(), logger, 10)
+	healthChecker.gauge = hcGauge
+	goroutine.NewPeriodicGoroutine(context.Background(), time.Second*1, healthChecker).Start()
 
 	return dbworker.NewWorker(ctx, workerStore, &workHandler{
 		baseWorkerStore: basestore.NewWithHandle(workerStore.Handle()),
