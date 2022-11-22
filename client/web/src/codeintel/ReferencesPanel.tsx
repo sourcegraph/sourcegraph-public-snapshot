@@ -948,7 +948,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
         if (range !== undefined) {
             const lineNumber = range.start.line + 1
             const lineContent = location.lines[range.start.line]
-            const tableLine = `<tr><th class="line" data-line="${lineNumber}"></th><td class="code">${lineContent}</td></tr>`
+            const tableLine = `<tr><td class="line" data-line="${lineNumber}"></td><td class="code">${lineContent}</td></tr>`
             return of([tableLine])
         }
         return of([])

@@ -7,6 +7,7 @@ import styles from './ConnectionContainer.module.scss'
 interface ConnectionContainerProps {
     className?: string
     compact?: boolean
+    ariaLive?: 'polite' | 'off'
 }
 
 /**
@@ -18,10 +19,12 @@ export const ConnectionContainer: React.FunctionComponent<React.PropsWithChildre
     children,
     className,
     compact,
+    ariaLive,
 }) => (
     <div
         data-testid="filtered-connection"
         className={classNames(styles.normal, !compact && styles.noncompact, className)}
+        aria-live={ariaLive}
     >
         {children}
     </div>

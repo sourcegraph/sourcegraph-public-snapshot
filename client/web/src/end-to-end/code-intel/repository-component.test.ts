@@ -71,7 +71,7 @@ describe('Repository component', () => {
     }
 
     const hoverOver = async (lineBase1: number, characterBase1: number): Promise<void> => {
-        const codeSelector = `th[data-line="${lineBase1}"] + .code`
+        const codeSelector = `td[data-line="${lineBase1}"] + .code`
         await driver.page.waitForSelector(codeSelector, { visible: true })
 
         const findToken = (characterBase1Copy: number, codeSelectorCopy: string): string | undefined => {
@@ -510,9 +510,9 @@ describe('Repository component', () => {
                 )
                 await driver.page.waitForSelector(blobTableSelector)
 
-                await driver.page.waitForSelector('th[data-line="24"]', { visible: true })
+                await driver.page.waitForSelector('td[data-line="24"]', { visible: true })
                 await driver.page.evaluate(() => {
-                    document.querySelector('th[data-line="24"]')?.parentElement?.click()
+                    document.querySelector('td[data-line="24"]')?.parentElement?.click()
                 })
 
                 await driver.assertWindowLocation(

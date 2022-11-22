@@ -1,5 +1,6 @@
 import React, { useLayoutEffect } from 'react'
 
+import { History } from 'history'
 import ReactDOM from 'react-dom'
 import { ReplaySubject } from 'rxjs'
 
@@ -13,6 +14,7 @@ interface BlameColumnProps {
     isBlameVisible?: boolean
     blameHunks?: BlameHunk[]
     codeViewElements: ReplaySubject<HTMLElement | null>
+    history: History
 }
 
 const getRowByLine = (line: number): HTMLTableRowElement | null | undefined =>
@@ -23,7 +25,7 @@ const getRowByLine = (line: number): HTMLTableRowElement | null | undefined =>
 const selectRow = (line: number): void => getRowByLine(line)?.classList.add('highlighted')
 const deselectRow = (line: number): void => getRowByLine(line)?.classList.remove('highlighted')
 
-export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeViewElements, blameHunks }) => {
+export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeViewElements, blameHunks, history }) => {
     /**
      * Array to store the DOM element and the blame hunk to render in it.
      * As blame decorations are displayed in the column view, we need to add a corresponding
@@ -51,7 +53,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
                 // if no other columns with decorations
                 if (!row?.querySelector(`.${styles.decoration}`)) {
                     // remove line number cell extra horizontal padding
-                    row?.querySelector('th.line')?.classList.remove('px-2')
+                    row?.querySelector('td.line')?.classList.remove('px-2')
                 }
             }
 
@@ -71,7 +73,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
                         cell.classList.add(styles.decoration)
 
                         // add line number cell extra horizontal padding
-                        row.querySelector('th.line')?.classList.add('px-2')
+                        row.querySelector('td.line')?.classList.add('px-2')
 
                         // add decorations wrapper
                         const wrapper = document.createElement('div')
@@ -122,6 +124,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
                     <BlameDecoration
                         line={index + 1}
                         blameHunk={blameHunk}
+                        history={history}
                         onSelect={selectRow}
                         onDeselect={deselectRow}
                     />,

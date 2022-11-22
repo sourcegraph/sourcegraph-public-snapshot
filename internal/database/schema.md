@@ -1470,6 +1470,7 @@ Indexes:
  repo_size_bytes | bigint                   |           |          | 
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
+    "gitserver_repo_size_bytes" btree (repo_size_bytes)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
     "gitserver_repos_cloning_status_idx" btree (repo_id) WHERE clone_status = 'cloning'::text
     "gitserver_repos_last_changed_idx" btree (last_changed, repo_id)
@@ -1547,6 +1548,7 @@ Indexes:
  persist_mode      | persistmode              |           | not null | 'record'::persistmode
  queued_at         | timestamp with time zone |           |          | now()
  cancel            | boolean                  |           | not null | false
+ trace_id          | text                     |           |          | 
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "finished_at_insights_query_runner_jobs_idx" btree (finished_at)
@@ -3193,6 +3195,7 @@ Triggers:
  worker_hostname   | text                     |           | not null | ''::text
  org               | text                     |           |          | 
  extsvc_id         | integer                  |           |          | 
+ cancel            | boolean                  |           | not null | false
 Indexes:
     "webhook_build_jobs_queued_at_idx" btree (queued_at)
     "webhook_build_jobs_state" btree (state)

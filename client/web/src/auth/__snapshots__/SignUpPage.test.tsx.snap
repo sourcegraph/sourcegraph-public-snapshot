@@ -272,8 +272,8 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             class="form-group mb-0"
           >
             <button
+              aria-disabled="true"
               class="btn btnPrimary btnBlock d-flex justify-content-center align-items-center"
-              disabled=""
               type="submit"
             >
               Register

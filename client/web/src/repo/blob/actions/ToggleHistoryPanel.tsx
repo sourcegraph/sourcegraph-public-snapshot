@@ -85,18 +85,25 @@ export class ToggleHistoryPanel extends React.PureComponent<
 
     public render(): JSX.Element | null {
         const visible = ToggleHistoryPanel.isVisible(this.props.location)
+        const message = `${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`
 
         if (this.props.actionType === 'dropdown') {
             return (
                 <RepoHeaderActionMenuItem file={true} onSelect={this.onClick}>
                     <Icon aria-hidden={true} svgPath={mdiHistory} />
-                    <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
+                    <span>{message}</span>
                 </RepoHeaderActionMenuItem>
             )
         }
         return (
-            <Tooltip content={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}>
-                <RepoHeaderActionButtonLink aria-label={visible ? 'Hide' : 'Show'} file={false} onSelect={this.onClick}>
+            <Tooltip content={message}>
+                <RepoHeaderActionButtonLink
+                    aria-label={message}
+                    aria-controls="references-panel"
+                    aria-expanded={visible}
+                    file={false}
+                    onSelect={this.onClick}
+                >
                     <Icon aria-hidden={true} svgPath={mdiHistory} />
                 </RepoHeaderActionButtonLink>
             </Tooltip>

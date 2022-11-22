@@ -56,7 +56,7 @@ func Init(
 		scopedContext("autoindexing"),
 	)
 
-	codenavRootResolver := codenavgraphql.NewRootResolver(
+	codenavRootResolver, err := codenavgraphql.NewRootResolver(
 		codeIntelServices.CodenavService,
 		codeIntelServices.AutoIndexingService,
 		codeIntelServices.UploadsService,
@@ -66,6 +66,9 @@ func Init(
 		ConfigInst.HunkCacheSize,
 		scopedContext("codenav"),
 	)
+	if err != nil {
+		return err
+	}
 
 	policyRootResolver := policiesgraphql.NewRootResolver(
 		codeIntelServices.PoliciesService,

@@ -8,5 +8,10 @@
     "path": "internal/gitserver",
     "prefix": "TestLFSSmudge",
     "reason": "Git config seems to be borked after introduction of https://github.com/sourcegraph/sourcegraph/pull/43227"
+  },
+  {
+    "path": "github.com/sourcegraph/sourcegraph/internal/repos",
+    "prefix": "EnqueueWebhookBuildJob",
+    "reason": "Flakes repeatedly in CI"
   }
 ]

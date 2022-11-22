@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
-import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H2, H5, Input } from '@sourcegraph/wildcard'
+import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H5, Input, H3 } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
 
@@ -12,7 +12,8 @@ import styles from './SearchFilterSection.module.scss'
 
 export interface SearchFilterSectionProps {
     sectionId: string
-    header: ReactNode
+    header: string
+    postHeader?: ReactNode // Additional content to display after the header
     children?: React.ReactNode | React.ReactNode[] | ((filter: string) => React.ReactNode)
     className?: string
 
@@ -67,6 +68,7 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
     const {
         sectionId,
         header,
+        postHeader,
         children = [],
         className,
         searchOptions,
@@ -161,13 +163,12 @@ export const SearchFilterSection: FC<SearchFilterSectionProps> = memo(props => {
                     outline={true}
                     variant="secondary"
                 >
-                    <H5
-                        as={H2}
-                        id={`search-sidebar-section-header-${sectionId}`}
-                        className={styles.sidebarSectionHeader}
-                    >
-                        {header}
-                    </H5>
+                    <header className={styles.sidebarSectionHeader}>
+                        <H5 as={H3} id={`search-sidebar-section-header-${sectionId}`}>
+                            {header}
+                        </H5>
+                        <H5 as="span">{postHeader}</H5>
+                    </header>
                     <Icon aria-hidden={true} as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
                 </CollapseHeader>
 

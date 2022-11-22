@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/saml"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -112,7 +113,7 @@ func ssoSignOutHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if p := sourcegraphoperator.GetOIDCProvider(sourcegraphoperator.ProviderType); p != nil {
+	if p := sourcegraphoperator.GetOIDCProvider(internalauth.SourcegraphOperatorProviderType); p != nil {
 		_, err := openidconnect.SignOut(
 			w,
 			r,

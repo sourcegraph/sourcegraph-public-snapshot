@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -106,8 +107,24 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 
 		ok, err = zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
 		if err != nil {
-			recordHybridFinalState("zoekt-search-error")
-			return nil, false, err
+			// Check for error conditions related to the request rather than
+			// zoekt misbehaving.
+			switch ctx.Err() {
+			case context.Canceled:
+				// We swallow the error since we only cancel requests once we
+				// have hit limits or the RPC request has gone away.
+				recordHybridFinalState("search-canceled")
+				return nil, true, nil
+			case context.DeadlineExceeded:
+				// We return the error because hitting a deadline should be
+				// unexpected. We also don't need to run the normal searcher
+				// path in this case.
+				recordHybridFinalState("search-timeout")
+				return nil, true, err
+			default:
+				recordHybridFinalState("zoekt-search-error")
+				return nil, false, err
+			}
 		} else if !ok {
 			metricHybridIndexChanged.Inc()
 			logger.Debug("retrying search since index changed while searching")
@@ -142,6 +159,10 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 	opts := (&zoektutil.Options{
 		NumRepos:       1,
 		FileMatchLimit: int32(p.Limit),
+		Features: search.Features{
+			Ranking:             true,
+			RankingDampDocRanks: true,
+		},
 	}).ToSearch(ctx)
 	if deadline, ok := ctx.Deadline(); ok {
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond
@@ -236,18 +257,31 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 		if err != nil {
 			return nil, err
 		}
-		parts = append(parts, &zoektquery.Regexp{
-			Regexp:        re,
-			Content:       p.PatternMatchesContent,
-			FileName:      p.PatternMatchesPath,
-			CaseSensitive: !rg.ignoreCase,
-		})
+		re = zoektquery.OptimizeRegexp(re, syntax.Perl)
+		if p.PatternMatchesContent && p.PatternMatchesPath {
+			parts = append(parts, zoektquery.NewOr(
+				&zoektquery.Regexp{
+					Regexp:        re,
+					Content:       true,
+					CaseSensitive: !rg.ignoreCase,
+				},
+				&zoektquery.Regexp{
+					Regexp:        re,
+					FileName:      true,
+					CaseSensitive: !rg.ignoreCase,
+				},
+			))
+		} else {
+			parts = append(parts, &zoektquery.Regexp{
+				Regexp:        re,
+				Content:       p.PatternMatchesContent,
+				FileName:      p.PatternMatchesPath,
+				CaseSensitive: !rg.ignoreCase,
+			})
+		}
 	}
 
 	for _, pat := range p.IncludePatterns {
-		if !p.PathPatternsAreRegExps {
-			return nil, errors.New("hybrid search expects PathPatternsAreRegExps")
-		}
 		re, err := syntax.Parse(pat, syntax.Perl)
 		if err != nil {
 			return nil, err
@@ -260,9 +294,6 @@ func zoektCompile(p *protocol.PatternInfo) (zoektquery.Q, error) {
 	}
 
 	if p.ExcludePattern != "" {
-		if !p.PathPatternsAreRegExps {
-			return nil, errors.New("hybrid search expects PathPatternsAreRegExps")
-		}
 		re, err := syntax.Parse(p.ExcludePattern, syntax.Perl)
 		if err != nil {
 			return nil, err

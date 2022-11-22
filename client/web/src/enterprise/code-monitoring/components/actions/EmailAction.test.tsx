@@ -3,6 +3,7 @@ import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
 
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 
 import { MonitorEmailPriority, SendTestEmailResult, SendTestEmailVariables } from '../../../../graphql-operations'
@@ -190,7 +191,7 @@ describe('EmailAction', () => {
             )
 
             userEvent.click(getByTestId('form-action-toggle-email'))
-            expect(getByTestId('send-test-email')).toBeDisabled()
+            assertAriaDisabled(getByTestId('send-test-email'))
         })
 
         test('send test email, success', async () => {
@@ -217,7 +218,7 @@ describe('EmailAction', () => {
             await waitForNextApolloResponse()
 
             expect(getByTestId('send-test-email')).toHaveTextContent('Test email sent!')
-            expect(getByTestId('send-test-email')).toBeDisabled()
+            assertAriaDisabled(getByTestId('send-test-email'))
 
             expect(queryByTestId('send-test-email-again')).toBeInTheDocument()
             expect(queryByTestId('test-email-error')).not.toBeInTheDocument()
@@ -247,7 +248,7 @@ describe('EmailAction', () => {
 
             expect(getByTestId('send-test-email')).toHaveTextContent('Send test email')
 
-            expect(getByTestId('send-test-email')).toBeEnabled()
+            assertAriaEnabled(getByTestId('send-test-email'))
 
             expect(queryByTestId('send-test-email-again')).not.toBeInTheDocument()
             expect(queryByTestId('test-email-error')).toBeInTheDocument()

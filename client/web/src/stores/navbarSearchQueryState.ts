@@ -19,7 +19,11 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { ParsedSearchURL } from '../search'
 import { submitSearch } from '../search/helpers'
-import { defaultCaseSensitiveFromSettings, defaultPatternTypeFromSettings } from '../util/settings'
+import {
+    defaultCaseSensitiveFromSettings,
+    defaultPatternTypeFromSettings,
+    defaultSearchModeFromSettings,
+} from '../util/settings'
 
 export interface NavbarQueryState extends SearchQueryState {}
 
@@ -28,7 +32,7 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     queryState: { query: '' },
     searchCaseSensitivity: false,
     searchPatternType: SearchPatternType.standard,
-    searchMode: SearchMode.Precise,
+    searchMode: SearchMode.SmartSearch,
     searchQueryFromURL: '',
 
     setQueryState: queryStateUpdate => {
@@ -44,10 +48,11 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
             queryState: { query },
             searchCaseSensitivity: caseSensitive,
             searchPatternType: patternType,
+            searchMode: searchMode,
         } = get()
         const updatedQuery = updateQuery(query, updates)
         if (canSubmitSearch(query, parameters.selectedSearchContextSpec)) {
-            submitSearch({ ...parameters, query: updatedQuery, caseSensitive, patternType })
+            submitSearch({ ...parameters, query: updatedQuery, caseSensitive, patternType, searchMode })
         }
     },
 }))
@@ -58,6 +63,10 @@ export function setSearchPatternType(searchPatternType: SearchPatternType): void
 
 export function setSearchCaseSensitivity(searchCaseSensitivity: boolean): void {
     useNavbarQueryState.setState({ searchCaseSensitivity })
+}
+
+export function setSearchMode(searchMode: SearchMode): void {
+    useNavbarQueryState.setState({ searchMode })
 }
 
 /**
@@ -111,7 +120,7 @@ export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Setti
     }
 
     const newState: Partial<
-        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'parametersSource'>
+        Pick<NavbarQueryState, 'searchPatternType' | 'searchCaseSensitivity' | 'parametersSource' | 'searchMode'>
     > = {
         parametersSource: InitialParametersSource.USER_SETTINGS,
     }
@@ -119,6 +128,11 @@ export function setQueryStateFromSettings(settings: SettingsCascadeOrError<Setti
     const caseSensitive = defaultCaseSensitiveFromSettings(settings)
     if (caseSensitive !== undefined) {
         newState.searchCaseSensitivity = caseSensitive
+    }
+
+    const searchMode = defaultSearchModeFromSettings(settings)
+    if (searchMode !== undefined) {
+        newState.searchMode = searchMode
     }
 
     const searchPatternType = defaultPatternTypeFromSettings(settings)
@@ -144,6 +158,7 @@ export function buildSearchURLQueryFromQueryState(parameters: BuildSearchQueryUR
         parameters.query,
         parameters.patternType ?? currentState.searchPatternType,
         parameters.caseSensitive ?? currentState.searchCaseSensitivity,
-        parameters.searchContextSpec
+        parameters.searchContextSpec,
+        parameters.searchMode ?? currentState.searchMode
     )
 }

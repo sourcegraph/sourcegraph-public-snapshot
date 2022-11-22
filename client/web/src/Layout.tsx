@@ -1,7 +1,7 @@
 import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
+import { matchPath, Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
@@ -51,9 +51,9 @@ import { RepoHeaderActionButton } from './repo/RepoHeader'
 import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import type { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
-import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
-import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps } from './search'
+import type { LayoutRouteComponentProps, LayoutRouteProps } from './routes'
+import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
+import { HomePanelsProps, parseSearchURLQuery, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -280,6 +280,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         defaultSize={350}
                         storageKey="panel-size"
                         ariaLabel="References panel"
+                        id="references-panel"
                     >
                         <TabbedPanelContent
                             {...props}

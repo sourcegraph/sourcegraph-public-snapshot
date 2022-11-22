@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { act } from 'react-dom/test-utils'
 import sinon from 'sinon'
 
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import {
@@ -68,19 +69,19 @@ describe('SearchContextDropdown', () => {
 
     it('should be enabled if query is empty', () => {
         render(<SearchContextDropdown {...defaultProps} />)
-        expect(screen.getByTestId('dropdown-toggle')).toBeEnabled()
+        assertAriaEnabled(screen.getByTestId('dropdown-toggle'))
         expect(screen.getByTestId('dropdown-toggle')).toHaveAttribute('data-test-tooltip-content', '')
     })
 
     it('should be enabled if query does not contain context filter', () => {
         render(<SearchContextDropdown {...defaultProps} query="test (repo:foo or repo:python)" />)
-        expect(screen.getByTestId('dropdown-toggle')).toBeEnabled()
+        assertAriaEnabled(screen.getByTestId('dropdown-toggle'))
         expect(screen.getByTestId('dropdown-toggle')).toHaveAttribute('data-test-tooltip-content', '')
     })
 
     it('should be disabled if query contains context filter', () => {
         render(<SearchContextDropdown {...defaultProps} query="test (context:foo or repo:python)" />)
-        expect(screen.getByTestId('dropdown-toggle')).toBeDisabled()
+        assertAriaDisabled(screen.getByTestId('dropdown-toggle'))
         expect(screen.getByTestId('dropdown-toggle')).toHaveAttribute(
             'data-test-tooltip-content',
             'Overridden by query'

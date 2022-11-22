@@ -4,23 +4,28 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type reconcilerJob struct {
-	uploadSvc  UploadService
+	store      store.Store
+	lsifstore  lsifstore.LsifStore
 	operations *operations
 }
 
 func NewReconciler(
-	uploadSvc UploadService,
+	store store.Store,
+	lsifstore lsifstore.LsifStore,
 	interval time.Duration,
 	batchSize int,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	job := reconcilerJob{
-		uploadSvc:  uploadSvc,
+		store:      store,
+		lsifstore:  lsifstore,
 		operations: newOperations(observationContext),
 	}
 
@@ -43,14 +48,14 @@ func (j reconcilerJob) handleReconcile(ctx context.Context, batchSize int) (err 
 
 // handleReconcileFromFrontend marks upload records that has no resolvable data in the codeintel-db.
 func (j reconcilerJob) handleReconcileFromFrontend(ctx context.Context, batchSize int) (err error) {
-	ids, err := j.uploadSvc.FrontendReconcileCandidates(ctx, batchSize)
+	ids, err := j.store.ReconcileCandidates(ctx, batchSize)
 	if err != nil {
 		return err
 	}
 
 	j.operations.numReconcileScansFromFrontend.Add(float64(len(ids)))
 
-	idsWithMeta, err := j.uploadSvc.IDsWithMeta(ctx, ids)
+	idsWithMeta, err := j.lsifstore.IDsWithMeta(ctx, ids)
 	if err != nil {
 		return err
 	}
@@ -79,14 +84,14 @@ func (j reconcilerJob) handleReconcileFromFrontend(ctx context.Context, batchSiz
 // handleReconcileFromCodeintelDB removes data from the codeintel-db that has no correlated upload
 // in the frontend database.
 func (j reconcilerJob) handleReconcileFromCodeintelDB(ctx context.Context, batchSize int) (err error) {
-	ids, err := j.uploadSvc.CodeIntelDBReconcileCandidates(ctx, batchSize)
+	ids, err := j.lsifstore.ReconcileCandidates(ctx, batchSize)
 	if err != nil {
 		return err
 	}
 
 	j.operations.numReconcileScansFromCodeIntelDB.Add(float64(len(ids)))
 
-	dumps, err := j.uploadSvc.GetDumpsByIDs(ctx, ids)
+	dumps, err := j.store.GetDumpsByIDs(ctx, ids)
 	if err != nil {
 		return err
 	}
@@ -105,7 +110,7 @@ func (j reconcilerJob) handleReconcileFromCodeintelDB(ctx context.Context, batch
 		abandoned = append(abandoned, id)
 	}
 
-	if err := j.uploadSvc.DeleteLsifDataByUploadIds(ctx, abandoned...); err != nil {
+	if err := j.lsifstore.DeleteLsifDataByUploadIds(ctx, abandoned...); err != nil {
 		return err
 	}
 

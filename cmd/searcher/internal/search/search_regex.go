@@ -16,7 +16,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -54,7 +53,7 @@ type readerGrep struct {
 
 	// matchPath is compiled from the include/exclude path patterns and reports
 	// whether a file path matches (and should be searched).
-	matchPath pathmatch.PathMatcher
+	matchPath *pathMatcher
 
 	// literalSubstring is used to test if a file is worth considering for
 	// matches. literalSubstring is guaranteed to appear in any match found by
@@ -122,11 +121,7 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 		}
 	}
 
-	pathOptions := pathmatch.CompileOptions{
-		RegExp:        p.PathPatternsAreRegExps,
-		CaseSensitive: p.PathPatternsAreCaseSensitive,
-	}
-	matchPath, err := pathmatch.CompilePathPatterns(p.IncludePatterns, p.ExcludePattern, pathOptions)
+	matchPath, err := compilePathPatterns(p.IncludePatterns, p.ExcludePattern, p.PathPatternsAreCaseSensitive)
 	if err != nil {
 		return nil, err
 	}
