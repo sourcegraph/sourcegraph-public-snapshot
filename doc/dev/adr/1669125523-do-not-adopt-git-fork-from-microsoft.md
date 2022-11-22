@@ -11,6 +11,8 @@ The tests were performed in two separate contexts. First inside of a locally bui
 
 While the first test led to interesting observations with varying speed improvements, the second test didn't exhibit any improvement when used in real production like environment. 
 
+For the full details, read the [full report](https://docs.google.com/document/d/1DGxGk3il3KhxvH_BjvSC6QoMtG-1iR8GaP8w1f4-BjU/edit#).
+
 ## Decision
 
 Do not adopt. 
