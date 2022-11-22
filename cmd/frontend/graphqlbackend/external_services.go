@@ -216,7 +216,7 @@ func (r *schemaResolver) deleteExternalService(ctx context.Context, id int64, es
 	// service, so kick off in the background.
 	go func() {
 		if err := backend.SyncExternalService(context.Background(), r.logger, es, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
-			log15.Warn("Performing final sync after external service deletion", "err", err)
+			r.logger.Warn("Performing final sync after external service deletion", log.Error(err))
 		}
 	}()
 
