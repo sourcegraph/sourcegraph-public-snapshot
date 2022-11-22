@@ -357,11 +357,17 @@ const stratoSpec: LanguageSpec = {
     commentStyles: [cStyleComment],
 }
 
+const zigSpec: LanguageSpec = {
+    languageID: 'zig',
+    stylized: 'Zig',
+    fileExts: ['zig'],
+    commentStyles: [{ lineRegex: slashPattern }, { lineRegex: tripleSlashPattern }],
+}
+
 /**
- * The specification of languages for which search-based code intelligence
- * is supported.
+ * The specification of languages for which we register a code intelligence provider.
  *
- * The set of languages come from https://madnight.github.io/githut/#/pull_requests/2018/4.
+ * The set of languages come from https://madnight.github.io/githut/#/pull_requests/2018/4 (with additions)
  * The language names come from https://code.visualstudio.com/docs/languages/identifiers#_known-language-identifiers.
  */
 export const languageSpecs: LanguageSpec[] = [
@@ -404,6 +410,7 @@ export const languageSpecs: LanguageSpec[] = [
     typescriptSpec,
     verilogSpec,
     vhdlSpec,
+    zigSpec,
 ]
 
 /**

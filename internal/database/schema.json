@@ -20017,6 +20017,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "cancel",
+          "Index": 18,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "execution_logs",
           "Index": 13,
           "TypeName": "json[]",

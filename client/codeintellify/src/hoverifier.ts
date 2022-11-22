@@ -329,7 +329,7 @@ interface InternalHoverifierState<C extends object, D, A> {
  * The primary purpose of this is to reduce UI jitter by not showing the overlay when there is nothing to show
  * (because there is no content, or because it is still loading).
  */
-const shouldRenderOverlay = (state: InternalHoverifierState<{}, {}, {}>): boolean =>
+const shouldRenderOverlay = <C extends object, D, A>(state: InternalHoverifierState<C, D, A>): boolean =>
     !(!state.pinned && state.mouseIsMoving) &&
     ((!!state.hoverOrError && state.hoverOrError !== LOADING) ||
         (!!state.actionsOrError &&

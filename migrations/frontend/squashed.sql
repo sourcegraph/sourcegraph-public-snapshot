@@ -3659,7 +3659,8 @@ CREATE TABLE webhook_build_jobs (
     last_heartbeat_at timestamp with time zone,
     worker_hostname text DEFAULT ''::text NOT NULL,
     org text,
-    extsvc_id integer
+    extsvc_id integer,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE webhook_logs (
