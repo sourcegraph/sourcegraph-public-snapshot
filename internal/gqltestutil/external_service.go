@@ -91,15 +91,15 @@ mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
 // DeleteExternalService deletes the external service by given GraphQL node ID.
 //
 // This method requires the authenticated user to be a site admin.
-func (c *Client) DeleteExternalService(id string) error {
+func (c *Client) DeleteExternalService(id string, async bool) error {
 	const query = `
-mutation DeleteExternalService($externalService: ID!) {
-	 deleteExternalService(externalService: $externalService) {
+mutation DeleteExternalService($externalService: ID!, $async: Boolean!) {
+	deleteExternalService(externalService: $externalService, async: $async) {
 		alwaysNil
 	}
 }
 `
-	variables := map[string]any{"externalService": id}
+	variables := map[string]any{"externalService": id, "async": async}
 
 	err := c.GraphQL("", query, variables, nil)
 	if err != nil {
