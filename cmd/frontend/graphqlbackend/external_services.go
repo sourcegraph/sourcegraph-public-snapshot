@@ -103,6 +103,11 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	id, err := UnmarshalExternalServiceID(args.Input.ID)
 	if err != nil {
 		return nil, err
@@ -115,11 +120,6 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 
 	oldConfig, err := es.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: check access to external service
-	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -173,8 +173,8 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		return nil, err
 	}
 
-	// 🚨 SECURITY: check external service access
-	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -212,12 +212,14 @@ type ExternalServicesArgs struct {
 }
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	var namespaceUserID int32
 	var namespaceOrgID int32
 
-	if err := backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
-		return nil, err
-	}
 	var afterID int64
 	if args.After != nil {
 		var err error
@@ -374,6 +376,11 @@ func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExte
 	var err error
 	defer reportExternalServiceDuration(start, Update, &err)
 
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	id, err := UnmarshalExternalServiceID(args.ID)
 	if err != nil {
 		return nil, err
@@ -381,11 +388,6 @@ func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExte
 
 	es, err := r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: check access to external service.
-	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -407,6 +409,11 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 	var err error
 	defer reportExternalServiceDuration(start, Update, &err)
 
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	id, err := unmarshalExternalServiceSyncJobID(args.ID)
 	if err != nil {
 		return nil, err
@@ -418,11 +425,6 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 	}
 	_, err = r.db.ExternalServices().GetByID(ctx, esj.ExternalServiceID)
 	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: check access to external service.
-	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 
