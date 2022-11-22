@@ -79,9 +79,9 @@ const staticExtensions: Extension = [
 
 // Compartment to update various smaller settings
 const settingsCompartment = new Compartment()
-// Compartment to update blame information
+// Compartment to update blame visibility
 const blameVisibilityCompartment = new Compartment()
-// Compartment to update blame information
+// Compartment to update blame decorations
 const blameDecorationsCompartment = new Compartment()
 // Compartment for propagating component props
 const blobPropsCompartment = new Compartment()
