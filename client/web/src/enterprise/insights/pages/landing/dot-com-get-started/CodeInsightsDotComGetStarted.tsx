@@ -10,7 +10,7 @@ import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
 import { CodeInsightsLandingPageContext, CodeInsightsLandingPageType } from '../CodeInsightsLandingPageContext'
 import { CodeInsightsDescription } from '../getting-started/components/code-insights-description/CodeInsightsDescription'
-import { CloudCtaBanner } from '../../../../../marketing/components/CloudCtaBanner'
+import { CloudCtaBanner } from '../../../../../components/CloudCtaBanner'
 
 import { CodeInsightsExamplesPicker } from './components/code-insights-examples-picker/CodeInsightsExamplesPicker'
 
