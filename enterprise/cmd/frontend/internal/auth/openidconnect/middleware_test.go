@@ -197,47 +197,31 @@ func TestMiddleware(t *testing.T) {
 		return respRecorder.Result()
 	}
 
-	state := func(t *testing.T, urlStr string) (state AuthnState) {
-		u, _ := url.Parse(urlStr)
-		if err := state.Decode(u.Query().Get("nonce")); err != nil {
-			t.Fatal(err)
-		}
-		return state
-	}
 	t.Run("unauthenticated homepage visit -> oidc auth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, false)
-		if want := http.StatusFound; resp.StatusCode != want {
+		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; !strings.Contains(got, want) {
+		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; strings.Contains(got, want) {
 			t.Errorf("got redirect URL %v, want contains %v", got, want)
-		}
-		if state, want := state(t, resp.Header.Get("Location")), "/"; state.Redirect != want {
-			t.Errorf("got redirect destination %q, want %q", state.Redirect, want)
 		}
 	})
 	t.Run("unauthenticated subpage visit -> oidc auth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/page", "", nil, false)
-		if want := http.StatusFound; resp.StatusCode != want {
+		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; !strings.Contains(got, want) {
+		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; strings.Contains(got, want) {
 			t.Errorf("got redirect URL %v, want contains %v", got, want)
-		}
-		if state, want := state(t, resp.Header.Get("Location")), "/page"; state.Redirect != want {
-			t.Errorf("got redirect destination %q, want %q", state.Redirect, want)
 		}
 	})
 	t.Run("unauthenticated non-existent page visit -> oidc auth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/nonexistent", "", nil, false)
-		if want := http.StatusFound; resp.StatusCode != want {
+		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; !strings.Contains(got, want) {
+		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; strings.Contains(got, want) {
 			t.Errorf("got redirect URL %v, want contains %v", got, want)
-		}
-		if state, want := state(t, resp.Header.Get("Location")), "/nonexistent"; state.Redirect != want {
-			t.Errorf("got redirect destination %q, want %q", state.Redirect, want)
 		}
 	})
 	t.Run("unauthenticated API request -> pass through", func(t *testing.T) {

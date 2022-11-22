@@ -67,38 +67,24 @@ func TestMiddleware(t *testing.T) {
 	}
 	t.Run("unauthenticated homepage visit -> gitlab oauth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, false)
-		if want := http.StatusFound; resp.StatusCode != want {
+		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "/.auth/gitlab/login?"; !strings.Contains(got, want) {
+		if got, want := resp.Header.Get("Location"), "/.auth/gitlab/login?"; strings.Contains(got, want) {
 			t.Errorf("got redirect URL %v, want contains %v", got, want)
-		}
-		redirectURL, err := url.Parse(resp.Header.Get("Location"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got, want := redirectURL.Query().Get("redirect"), "/"; got != want {
-			t.Errorf("got return-to URL %v, want %v", got, want)
 		}
 	})
 	t.Run("unauthenticated subpage visit -> gitlab oauth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/page", "", nil, false)
-		if want := http.StatusFound; resp.StatusCode != want {
+		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "/.auth/gitlab/login?"; !strings.Contains(got, want) {
+		if got, want := resp.Header.Get("Location"), "/.auth/gitlab/login?"; strings.Contains(got, want) {
 			t.Errorf("got redirect URL %v, want contains %v", got, want)
 		}
-		redirectURL, err := url.Parse(resp.Header.Get("Location"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got, want := redirectURL.Query().Get("redirect"), "/page"; got != want {
-			t.Errorf("got return-to URL %v, want %v", got, want)
-		}
 	})
-
-	// Add 2 GitLab auth providers
+	//
+	//// Add 2 GitLab auth providers
 	providers.MockProviders = []providers.Provider{mockPrivateGitLab.Provider, mockGitLabCom.Provider}
 
 	t.Run("unauthenticated API request -> pass through", func(t *testing.T) {
