@@ -70,6 +70,12 @@ func newHunkParser(rc io.ReadCloser, hunksCh chan hunkResult) hunkParser {
 	}
 }
 
+// parse processes the output from git blame and sends hunks over p.hunksCh
+// for p.Read() to consume. If an error is encountered, it will be sent to
+// p.hunksCh and will stop reading.
+//
+// Because we do not control when p.Read is called, we have to account for
+// the context being cancelled, to avoid leaking the goroutine running p.parse.
 func (p hunkParser) parse(ctx context.Context) {
 	defer p.rc.Close()
 	defer close(p.hunksCh)
@@ -106,7 +112,12 @@ func (p hunkParser) parse(ctx context.Context) {
 			var err error
 			cur, err = parseEntry(annotation, fields)
 			if err != nil {
-				p.hunksCh <- hunkResult{err: err}
+				select {
+				case p.hunksCh <- hunkResult{err: err}:
+					return
+				case <-ctx.Done():
+					return
+				}
 			}
 			continue
 		}
@@ -114,7 +125,12 @@ func (p hunkParser) parse(ctx context.Context) {
 		// After that, we're either reading extras, or a new entry.
 		ok, err := parseExtra(cur, annotation, fields)
 		if err != nil {
-			p.hunksCh <- hunkResult{err: err}
+			select {
+			case p.hunksCh <- hunkResult{err: err}:
+				return
+			case <-ctx.Done():
+				return
+			}
 		}
 		// If we've finished reading extras, we're looking at a new entry.
 		if !ok {
@@ -126,18 +142,32 @@ func (p hunkParser) parse(ctx context.Context) {
 				p.commits[string(cur.CommitID)] = cur
 			}
 
-			p.hunksCh <- hunkResult{hunk: cur}
+			select {
+			case p.hunksCh <- hunkResult{hunk: cur}:
+			case <-ctx.Done():
+				return
+			}
 
 			cur, err = parseEntry(annotation, fields)
 			if err != nil {
-				p.hunksCh <- hunkResult{err: err}
+				select {
+				case p.hunksCh <- hunkResult{err: err}:
+					return
+				case <-ctx.Done():
+					return
+				}
 			}
 		}
 	}
 
 	// If there is an error from the scanner, send it back.
 	if err := p.sc.Err(); err != nil {
-		p.hunksCh <- hunkResult{err: err}
+		select {
+		case p.hunksCh <- hunkResult{err: err}:
+			return
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
