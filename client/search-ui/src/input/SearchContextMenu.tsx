@@ -74,7 +74,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
     const [searchFilter, setSearchFilter] = useState('')
     const [searchContexts, setSearchContexts] = useState<SearchContextMinimalFields[]>([])
     const [lastPageInfo, setLastPageInfo] = useState<PageInfo | null>(null)
-    const isSourcegraphDotCom = window.context.sourcegraphDotComMode
+    const isSourcegraphDotCom = window.context?.sourcegraphDotComMode || ''
 
     const infiniteScrollTrigger = useRef<HTMLDivElement | null>(null)
     const infiniteScrollList = useRef<HTMLUListElement | null>(null)
@@ -256,12 +256,21 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                 {isSourcegraphDotCom ? (
                     <>
                         <div className="d-flex col-7 px-0 mr-auto">
-                            <Icon className={classNames('text-merged mr-1', styles.footerIcon)} size="md" aria-hidden={true} svgPath={mdiArrowRight} />
+                            <Icon
+                                className={classNames('text-merged mr-1', styles.footerIcon)}
+                                size="md"
+                                aria-hidden={true}
+                                svgPath={mdiArrowRight}
+                            />
                             <p className="mb-0">
                                 To search across your team's private repositories,{' '}
-                                <Link to="https://signup.sourcegraph.com/?p=context" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
+                                <Link
+                                    to="https://signup.sourcegraph.com/?p=context"
+                                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                                >
                                     try Sourcegraph Cloud
-                                </Link>.
+                                </Link>
+                                .
                             </p>
                         </div>
                         <div className="d-flex flex-column align-items-end">

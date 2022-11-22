@@ -151,7 +151,9 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
                                 <span className="search-keyword">@</span>
                                 {selectedSearchContextSpec?.slice(1)}
                             </>
-                        ) : selectedSearchContextSpec}
+                        ) : (
+                            selectedSearchContextSpec
+                        )}
                     </Code>
                 </PopoverTrigger>
             </Tooltip>
