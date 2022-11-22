@@ -5989,6 +5989,7 @@ enum RepositoryOrderBy {
     deprecated (use the equivalent REPOSITORY_CREATED_AT)
     """
     REPOSITORY_CREATED_AT
+    SIZE
 }
 
 """

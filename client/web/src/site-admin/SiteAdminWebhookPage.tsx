@@ -46,13 +46,13 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
 
     return (
         <Container>
-            <PageTitle title="Webhook receiver" />
+            <PageTitle title="Incoming webhook" />
             {webhookLoading && !webhookData && <ConnectionLoading />}
             {webhookData?.node && webhookData.node.__typename === 'Webhook' && (
                 <PageHeader
                     path={[
                         { icon: mdiCog },
-                        { to: '/site-admin/webhooks', text: 'Webhook receivers' },
+                        { to: '/site-admin/webhooks', text: 'Incoming webhooks' },
                         { text: webhookData.node.codeHostURN },
                     ]}
                     byline={

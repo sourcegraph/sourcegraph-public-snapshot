@@ -11,14 +11,14 @@ import { Timeline, TimelineStage } from '../../../../components/Timeline'
 import { BatchSpecWorkspaceState, VisibleBatchSpecWorkspaceFields } from '../../../../graphql-operations'
 import { ExecutorNode } from '../../../executors/instances/ExecutorNode'
 
-import styles from './TimelineModal.module.scss'
+import styles from './DiagnosticsModal.module.scss'
 
-export interface TimelineModalProps {
+interface DiagnosticsModalProps {
     node: VisibleBatchSpecWorkspaceFields
     onCancel: () => void
 }
 
-export const TimelineModal: React.FunctionComponent<React.PropsWithChildren<TimelineModalProps>> = ({
+export const DiagnosticsModal: React.FunctionComponent<React.PropsWithChildren<DiagnosticsModalProps>> = ({
     node,
     onCancel,
 }) => (

@@ -17,6 +17,24 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Fixed
+
+- The Code Insights commit indexer no longer errors when fetching commits from empty repositories when sub-repo permissions are enabled. [#44558](https://github.com/sourcegraph/sourcegraph/pull/44558)
+
+### Removed
+
+-
+
+## 4.2.0
+
+### Added
+
 - Creating access tokens is now tracked in the security events. [#43226](https://github.com/sourcegraph/sourcegraph/pull/43226)
 - Added `codeIntelAutoIndexing.indexerMap` to site-config that allows users to update the indexers used when inferring precise code intelligence auto-indexing jobs (without having to overwrite the entire inference scripts). For example, `"codeIntelAutoIndexing.indexerMap": {"go": "my.registry/sourcegraph/lsif-go"}` will casue Go projects to use the specified container (in a alternative Docker registry). [#43199](https://github.com/sourcegraph/sourcegraph/pull/43199)
 - Code Insights data points that do not contain any results will display zero instead of being omitted from the visualization. Only applies to insight data created after 4.2. [#43166](https://github.com/sourcegraph/sourcegraph/pull/43166)
@@ -30,6 +48,8 @@ All notable changes to Sourcegraph are documented in this file.
 - OIDC success/fail login attempts are now a part of the audit log. [#44467](https://github.com/sourcegraph/sourcegraph/pull/44467)
 - A new experimental GraphQL query, `permissionsSyncJobs`, that lists the states of recently completed permissions sync jobs and the state of each provider. The TTL of entries retrained can be configured with `authz.syncJobsRecordsTTL`. [#44387](https://github.com/sourcegraph/sourcegraph/pull/44387), [#44258](https://github.com/sourcegraph/sourcegraph/pull/44258)
 - The search input has a new search history button and allows cycling through recent searches via up/down arrow keys. [#44544](https://github.com/sourcegraph/sourcegraph/pull/44544)
+- Repositories can now be ordered by size on the repo admin page. [#44360](https://github.com/sourcegraph/sourcegraph/pull/44360)
+- The search bar contains a new Smart Search toggle. If a search returns no results, Smart Search attempts alternative queries based on a fixed set of rules, and shows their results (if there are any). Smart Search is enabled by default. It can be disabled by default with `"search.defaultMode": "precise"` in settings. [#44385](https://github.com/sourcegraph/sourcegraph/pull/44395)
 
 ### Changed
 

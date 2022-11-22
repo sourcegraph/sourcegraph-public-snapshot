@@ -70,16 +70,12 @@ type Options struct {
 	// the /metrics path.
 	NodeExporterEndpoint string
 
-	// DockerRegsitryEndpoint is the URL of the intermediary caching docker registry,
+	// DockerRegistryNodeExporterEndpoint is the URL of the intermediary caching docker registry,
 	// for scraping and forwarding metrics.
 	DockerRegistryNodeExporterEndpoint string
 }
 
-// NewWorker creates a worker that polls a remote job queue API for work. The returned
-// routine contains both a worker that periodically polls for new work to perform, as well
-// as a heartbeat routine that will periodically hit the remote API with the work that is
-// currently being performed, which is necessary so the job queue API doesn't hand out jobs
-// it thinks may have been dropped.
+// NewWorker creates a worker that polls a remote job queue API for work.
 func NewWorker(logger log.Logger, nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (goroutine.WaitableBackgroundRoutine, error) {
 	logger = logger.Scoped("worker", "background worker task periodically fetching jobs")
 	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)

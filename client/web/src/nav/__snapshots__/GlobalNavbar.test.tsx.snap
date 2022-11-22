@@ -219,7 +219,7 @@ exports[`GlobalNavbar default 1`] = `
           </a>
           <a
             class="anchorLink btn btnSm signUp"
-            href="https://signup.sourcegraph.com/?utm_medium=inproduct&utm_source=nav&utm_campaign=inproduct-cta"
+            href="/sign-up"
             tabindex="0"
           >
             Sign up

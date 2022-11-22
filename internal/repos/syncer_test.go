@@ -2018,6 +2018,7 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 }
 
 func TestEnqueueWebhookBuildJob(t *testing.T) {
+	t.Skip("Skipping flakey test")
 	store := getTestRepoStore(t)
 
 	ctx := context.Background()

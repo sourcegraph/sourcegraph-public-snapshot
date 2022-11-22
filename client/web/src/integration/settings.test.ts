@@ -8,7 +8,7 @@ import { retry } from '@sourcegraph/shared/src/testing/utils'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { createEditorAPI, percySnapshotWithVariants } from './utils'
+import { createEditorAPI, isElementDisabled, percySnapshotWithVariants } from './utils'
 
 describe('Settings', () => {
     let driver: Driver
@@ -95,9 +95,7 @@ describe('Settings', () => {
             await driver.page.waitForSelector('.test-save-toolbar-save')
 
             assert.strictEqual(
-                await driver.page.evaluate(
-                    () => document.querySelector<HTMLButtonElement>('.test-save-toolbar-save')?.disabled
-                ),
+                await isElementDisabled(driver, '.test-save-toolbar-save'),
                 true,
                 'Expected save button to be disabled'
             )

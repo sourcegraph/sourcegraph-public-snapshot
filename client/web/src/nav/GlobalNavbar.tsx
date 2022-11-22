@@ -341,7 +341,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     </Button>
                                     <ButtonLink
                                         className={styles.signUp}
-                                        to={buildGetStartedURL('nav')}
+                                        to={buildGetStartedURL(isSourcegraphDotCom)}
                                         size="sm"
                                         onClick={() => eventLogger.log('ClickedOnTopNavTrialButton')}
                                     >

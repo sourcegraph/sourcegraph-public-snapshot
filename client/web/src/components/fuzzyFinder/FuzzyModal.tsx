@@ -10,6 +10,7 @@ import React, {
 } from 'react'
 
 import { mdiClose } from '@mdi/js'
+import { TabsProps } from '@reach/tabs'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -28,6 +29,9 @@ import {
     Tab,
     Select,
     H3,
+    TabPanels,
+    TabPanel,
+    TabList,
 } from '@sourcegraph/wildcard'
 
 import { AggregateFuzzySearch } from '../../fuzzyFinder/AggregateFuzzySearch'
@@ -142,7 +146,7 @@ function renderFuzzyResults(
                 // should work OK.
                 <Text
                     data-fsm-generation={props.fsmGeneration}
-                    className={classNames(styles.results, styles.emptyResults, 'text-muted')}
+                    className={classNames(styles.emptyResults, 'text-muted')}
                 >
                     No matches
                 </Text>
@@ -152,7 +156,7 @@ function renderFuzzyResults(
 
     const linksToRender = props.result.links.slice(0, props.resultCount)
     const element = (
-        <ul id={FUZZY_MODAL_RESULTS} className={styles.results} role="listbox" aria-label="Fuzzy finder results">
+        <ul id={FUZZY_MODAL_RESULTS} role="listbox" aria-label="Fuzzy finder results">
             {linksToRender.map((file, fileIndex) => (
                 <li
                     id={fuzzyResultId(fileIndex)}
@@ -314,17 +318,21 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                         fileAnchor?.click()
                     }
                     break
-                case event.key === 'Tab':
-                    if (tabs.isOnlyFilesEnabled()) {
-                        break
-                    }
-                    event.preventDefault()
-                    setActiveTab(tabs.focusTabWithIncrement(activeTab, event.shiftKey ? -1 : 1))
                 default:
             }
         },
-        [activeTab, setActiveTab, onClose, queryResult, focusIndex, setRoundedFocusIndex, tabs]
+        [onClose, queryResult, focusIndex, setRoundedFocusIndex]
     )
+
+    const showTabs = !tabs.isOnlyFilesEnabled()
+    const WrapperComponent = showTabs ? Tabs : 'div'
+    const wrapperComponentProps: TabsProps | {} = showTabs
+        ? {
+              size: 'large',
+              index: tabs.activeIndex(activeTab),
+              onChange: (index: number) => setActiveTab(tabs.focusTab(index)),
+          }
+        : {}
 
     return (
         <Modal
@@ -333,18 +341,13 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             onDismiss={() => onClose()}
             aria-label={tabs.underlying[activeTab].title}
         >
-            <div className={styles.content}>
+            <WrapperComponent className={styles.content} {...wrapperComponentProps}>
                 <div className={styles.header} data-testid="fuzzy-modal-header">
-                    {tabs.isOnlyFilesEnabled() ? (
-                        <H3>Find files</H3>
-                    ) : (
-                        <Tabs
-                            size="large"
-                            index={tabs.activeIndex(activeTab)}
-                            onFocus={() => focusFuzzyInput()}
-                            onChange={index => setActiveTab(tabs.focusTab(index))}
-                            className={styles.tabList}
-                        >
+                    <Button variant="icon" onClick={() => onClose()} aria-label="Close" className={styles.closeButton}>
+                        <Icon aria-hidden={true} svgPath={mdiClose} />
+                    </Button>
+                    {showTabs ? (
+                        <TabList className={styles.tabList}>
                             {tabs.entries().map(([key, tab]) => (
                                 <Tab key={key} className={styles.tab}>
                                     {tab.title}
@@ -353,11 +356,10 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                                     </span>
                                 </Tab>
                             ))}
-                        </Tabs>
+                        </TabList>
+                    ) : (
+                        <H3>Find files</H3>
                     )}
-                    <Button variant="icon" onClick={() => onClose()} aria-label="Close" className={styles.closeButton}>
-                        <Icon aria-hidden={true} svgPath={mdiClose} />
-                    </Button>
                 </div>
                 <div className={styles.divider} />
                 <Input
@@ -395,7 +397,17 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                     )}
                 </div>
                 <div className={classNames(styles.divider, 'mb-0')} />
-                {queryResult.jsxElement}
+                {showTabs ? (
+                    <TabPanels className="flex-1 overflow-auto">
+                        {tabs.entries().map(([key]) => (
+                            <TabPanel key={key} className={styles.results}>
+                                {activeTab === key && queryResult.jsxElement}
+                            </TabPanel>
+                        ))}
+                    </TabPanels>
+                ) : (
+                    <div className={classNames(styles.results, 'overflow-auto')}>{queryResult.jsxElement}</div>
+                )}
                 <div className={styles.divider} />
                 <div className={styles.footer}>
                     <SearchQueryLink {...props} />
@@ -403,7 +415,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                         <ArrowKeyExplanation />
                     </span>
                 </div>
-            </div>
+            </WrapperComponent>
         </Modal>
     )
 }
