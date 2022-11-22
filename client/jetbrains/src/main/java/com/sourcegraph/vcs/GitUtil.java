@@ -34,7 +34,13 @@ public class GitUtil {
     public static boolean doesRemoteBranchExist(@NotNull GitRepository repository, @NotNull String branchName) {
         List<String> remoteBranchNames = repository.getInfo().getRemoteBranchesWithHashes()
             .keySet().stream().map(GitRemoteBranch::getNameForLocalOperations).collect(Collectors.toList());
-        return remoteBranchNames.stream().anyMatch(name -> name.equals(branchName));
+        return remoteBranchNames.stream().anyMatch(name -> {
+            int firstSlashPosition = name.indexOf('/');
+            if (firstSlashPosition != -1) {
+                name = name.substring(firstSlashPosition + 1);
+            }
+            return name.equals(branchName);
+        });
     }
 
     @Nullable
