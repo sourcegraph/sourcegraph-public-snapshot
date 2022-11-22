@@ -121,18 +121,14 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 		}
 		d := time.Since(start)
 		if v := conf.Get().ObservabilityLogSlowGraphQLRequests; v != 0 && d.Milliseconds() > int64(v) {
-			variablesFields := make([]log.Field, 0, len(variables))
-			for k, v := range variables {
-				enc, _ := json.Marshal(v)
-				variablesFields = append(variablesFields, log.String(k, string(enc)))
-			}
+			enc, _ := json.Marshal(variables)
 			t.logger.Warn(
 				"slow GraphQL request",
 				log.Duration("duration", d),
 				log.Int32("user_id", currentUserID),
 				log.String("request_name", requestName),
 				log.String("source", string(requestSource)),
-				log.Object("variables", variablesFields...),
+				log.String("variables", string(enc)),
 			)
 			if requestName == "unknown" {
 				errFields := make([]string, 0, len(err))
@@ -146,7 +142,7 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 					log.Strings("errors", errFields),
 					log.String("query", queryString),
 					log.String("source", string(requestSource)),
-					log.Object("variables", variablesFields...),
+					log.String("variables", string(enc)),
 				)
 			}
 		}
