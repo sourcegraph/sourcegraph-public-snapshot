@@ -140,7 +140,7 @@ service:
 
 As part of the default container image Sourcegraph bundles the [filter processor](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/filterprocessor/README.md). By configuring a pipeline to have a filter processor one is able to include or exclude (depending on configuration!) on whether a trace should be allowed through the pipeline and be exported.
 
-Refer to the following snippet where a filter processor is configured to only allow traces wit the service name "foobar" to continue through the pipeline. All other traces that do not have this service name will be dropped.
+Refer to the following snippet where a filter processor is configured to only allow traces with the service name "foobar" to continue through the pipeline. All other traces that do not have this service name will be dropped.
 
 ```yaml
 exporters:
