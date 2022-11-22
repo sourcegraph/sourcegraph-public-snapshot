@@ -171,58 +171,43 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 	// We only support chunk matches below.
 	opts.ChunkMatches = true
 
-	res, err := client.Search(ctx, q, opts)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// We need to keep track of extra state to ensure we searched the correct
+	// commit (there is a race between List and Search). We can only tell if
+	// we searched the correct commit if we had a result since that contains
+	// the commit searched.
+	var wrongCommit, foundResults bool
+
+	err = client.StreamSearch(ctx, q, opts, senderFunc(func(res *zoekt.SearchResult) {
+		for _, fm := range res.Files {
+			// Unexpected commit searched, signal to retry.
+			if fm.Version != string(indexed) {
+				wrongCommit = true
+				cancel()
+				return
+			}
+
+			foundResults = true
+
+			sender.Send(protocol.FileMatch{
+				Path:         fm.FileName,
+				ChunkMatches: zoektChunkMatches(fm.ChunkMatches),
+			})
+		}
+	}))
+	// we check wrongCommit first since that overrides err (especially since
+	// err is likely context.Cancel when we want to retry)
+	if wrongCommit {
+		return false, nil
+	}
 	if err != nil {
 		return false, err
 	}
 
-	for _, fm := range res.Files {
-		// Unexpected commit searched, signal to retry.
-		if fm.Version != string(indexed) {
-			return false, nil
-		}
-
-		cms := make([]protocol.ChunkMatch, 0, len(fm.ChunkMatches))
-		for _, cm := range fm.ChunkMatches {
-			if cm.FileName {
-				continue
-			}
-
-			ranges := make([]protocol.Range, 0, len(cm.Ranges))
-			for _, r := range cm.Ranges {
-				ranges = append(ranges, protocol.Range{
-					Start: protocol.Location{
-						Offset: int32(r.Start.ByteOffset),
-						Line:   int32(r.Start.LineNumber - 1),
-						Column: int32(r.Start.Column - 1),
-					},
-					End: protocol.Location{
-						Offset: int32(r.End.ByteOffset),
-						Line:   int32(r.End.LineNumber - 1),
-						Column: int32(r.End.Column - 1),
-					},
-				})
-			}
-
-			cms = append(cms, protocol.ChunkMatch{
-				Content: string(cm.Content),
-				ContentStart: protocol.Location{
-					Offset: int32(cm.ContentStart.ByteOffset),
-					Line:   int32(cm.ContentStart.LineNumber) - 1,
-					Column: int32(cm.ContentStart.Column) - 1,
-				},
-				Ranges: ranges,
-			})
-		}
-
-		sender.Send(protocol.FileMatch{
-			Path:         fm.FileName,
-			ChunkMatches: cms,
-		})
-	}
-
 	// we have no matches, so we don't know if we searched the correct commit.
-	if len(res.Files) == 0 {
+	if !foundResults {
 		newIndexed, ok, err := zoektIndexedCommit(ctx, client, p.Repo)
 		if err != nil {
 			return false, errors.Wrap(err, "failed to double check indexed commit")
@@ -347,6 +332,42 @@ func zoektIndexedCommit(ctx context.Context, client zoekt.Streamer, repo api.Rep
 	return "", false, nil
 }
 
+func zoektChunkMatches(chunkMatches []zoekt.ChunkMatch) []protocol.ChunkMatch {
+	cms := make([]protocol.ChunkMatch, 0, len(chunkMatches))
+	for _, cm := range chunkMatches {
+		if cm.FileName {
+			continue
+		}
+
+		ranges := make([]protocol.Range, 0, len(cm.Ranges))
+		for _, r := range cm.Ranges {
+			ranges = append(ranges, protocol.Range{
+				Start: protocol.Location{
+					Offset: int32(r.Start.ByteOffset),
+					Line:   int32(r.Start.LineNumber - 1),
+					Column: int32(r.Start.Column - 1),
+				},
+				End: protocol.Location{
+					Offset: int32(r.End.ByteOffset),
+					Line:   int32(r.End.LineNumber - 1),
+					Column: int32(r.End.Column - 1),
+				},
+			})
+		}
+
+		cms = append(cms, protocol.ChunkMatch{
+			Content: string(cm.Content),
+			ContentStart: protocol.Location{
+				Offset: int32(cm.ContentStart.ByteOffset),
+				Line:   int32(cm.ContentStart.LineNumber) - 1,
+				Column: int32(cm.ContentStart.Column) - 1,
+			},
+			Ranges: ranges,
+		})
+	}
+	return cms
+}
+
 // parseGitDiffNameStatus returns the paths changedA and changedB for commits
 // A and B respectively. It expects to be parsing the output of the command
 // git diff -z --name-status --no-renames A B.
@@ -376,6 +397,12 @@ func parseGitDiffNameStatus(out []byte) (changedA, changedB []string, err error)
 	sort.Strings(changedB)
 
 	return changedA, changedB, nil
+}
+
+type senderFunc func(result *zoekt.SearchResult)
+
+func (f senderFunc) Send(result *zoekt.SearchResult) {
+	f(result)
 }
 
 func totalStringsLen(ss []string) int {
