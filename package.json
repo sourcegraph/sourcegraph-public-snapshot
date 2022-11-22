@@ -126,7 +126,6 @@
     "@slack/web-api": "^5.15.0",
     "@sourcegraph/eslint-config": "0.32.0",
     "@sourcegraph/eslint-plugin-sourcegraph": "^1.0.5",
-    "@sourcegraph/eslint-plugin-wildcard": "1.0.0",
     "@sourcegraph/extension-api-stubs": "^1.6.1",
     "@sourcegraph/prettierrc": "^3.0.3",
     "@sourcegraph/stylelint-config": "^1.4.0",

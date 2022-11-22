@@ -1,5 +1,6 @@
 .bin/
 *.bundle.*
+bazel-*
 client/phabricator/scripts/loader.js
 client/browser/build
 **/package.json
