@@ -35,6 +35,7 @@ export interface SearchContextMenuProps
         TelemetryProps {
     showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean | null
     selectSearchContextSpec: (spec: string) => void
     className?: string
     onMenuClose: (isEscapeKey?: boolean) => void
@@ -67,6 +68,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
         showSearchContextManagement,
         platformContext,
         telemetryService,
+        isSourcegraphDotCom,
         className,
     } = props
 
@@ -74,7 +76,6 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
     const [searchFilter, setSearchFilter] = useState('')
     const [searchContexts, setSearchContexts] = useState<SearchContextMinimalFields[]>([])
     const [lastPageInfo, setLastPageInfo] = useState<PageInfo | null>(null)
-    const isSourcegraphDotCom = window.context?.sourcegraphDotComMode || ''
 
     const infiniteScrollTrigger = useRef<HTMLDivElement | null>(null)
     const infiniteScrollList = useRef<HTMLUListElement | null>(null)
