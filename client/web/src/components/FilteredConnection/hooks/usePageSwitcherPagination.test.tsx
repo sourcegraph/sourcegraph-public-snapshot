@@ -7,15 +7,15 @@ import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shar
 import { Text } from '@sourcegraph/wildcard'
 
 import {
-    TestPaginatedConnectionQueryFields,
-    TestPaginatedConnectionQueryResult,
-    TestPaginatedConnectionQueryVariables,
+    TestPageSwitcherPaginationQueryFields,
+    TestPageSwitcherPaginationQueryResult,
+    TestPageSwitcherPaginationQueryVariables,
 } from '../../../graphql-operations'
 
-import { usePaginatedConnection } from './usePaginatedConnection'
+import { usePageSwitcherPagination } from './usePageSwitcherPagination'
 
 const TEST_PAGINATED_CONNECTION_QUERY = gql`
-    query TestPaginatedConnectionQuery($first: Int, $last: Int, $after: String, $before: String) {
+    query TestPageSwitcherPaginationQuery($first: Int, $last: Int, $after: String, $before: String) {
         savedSearchesByNamespace(
             namespaceType: "Org"
             namespaceId: "1"
@@ -25,7 +25,7 @@ const TEST_PAGINATED_CONNECTION_QUERY = gql`
             before: $before
         ) {
             nodes {
-                ...TestPaginatedConnectionQueryFields
+                ...TestPageSwitcherPaginationQueryFields
             }
             totalCount
             pageInfo {
@@ -37,7 +37,7 @@ const TEST_PAGINATED_CONNECTION_QUERY = gql`
         }
     }
 
-    fragment TestPaginatedConnectionQueryFields on SavedSearch {
+    fragment TestPageSwitcherPaginationQueryFields on SavedSearch {
         id
         description
     }
@@ -46,10 +46,17 @@ const TEST_PAGINATED_CONNECTION_QUERY = gql`
 const PAGE_SIZE = 3
 
 const TestComponent = ({ useURL }: { useURL: boolean }) => {
-    const { connection, loading, goToNextPage, goToPreviousPage, goToFirstPage, goToLastPage } = usePaginatedConnection<
-        TestPaginatedConnectionQueryResult,
-        TestPaginatedConnectionQueryVariables,
-        TestPaginatedConnectionQueryFields
+    const {
+        connection,
+        loading,
+        goToNextPage,
+        goToPreviousPage,
+        goToFirstPage,
+        goToLastPage,
+    } = usePageSwitcherPagination<
+        TestPageSwitcherPaginationQueryResult,
+        TestPageSwitcherPaginationQueryVariables,
+        TestPageSwitcherPaginationQueryFields
     >({
         query: TEST_PAGINATED_CONNECTION_QUERY,
         variables: {},
@@ -102,7 +109,7 @@ const generateMockRequest = ({
     first: number | null
     before: string | null
     last: number | null
-}): MockedResponse<TestPaginatedConnectionQueryResult>['request'] => ({
+}): MockedResponse<TestPageSwitcherPaginationQueryResult>['request'] => ({
     query: getDocumentNode(TEST_PAGINATED_CONNECTION_QUERY),
     variables: {
         after,
@@ -124,9 +131,9 @@ const generateMockResult = ({
     hasPreviousPage: boolean
     endCursor: string | null
     hasNextPage: boolean
-    nodes: TestPaginatedConnectionQueryFields[]
+    nodes: TestPageSwitcherPaginationQueryFields[]
     totalCount: number
-}): MockedResponse<TestPaginatedConnectionQueryResult>['result'] => ({
+}): MockedResponse<TestPageSwitcherPaginationQueryResult>['result'] => ({
     data: {
         savedSearchesByNamespace: {
             nodes,
@@ -158,7 +165,7 @@ const goToLastPage = async (renderResult: RenderWithBrandedContextResult) => {
     await waitForNextApolloResponse()
 }
 
-const mockResultNodes: TestPaginatedConnectionQueryFields[] = [
+const mockResultNodes: TestPageSwitcherPaginationQueryFields[] = [
     { __typename: 'SavedSearch', id: '1', description: 'result 1' },
     { __typename: 'SavedSearch', id: '2', description: 'result 2' },
     { __typename: 'SavedSearch', id: '3', description: 'result 3' },
@@ -174,9 +181,9 @@ const mockResultNodes: TestPaginatedConnectionQueryFields[] = [
 const getCursorForId = (id: string): string => `cursor_${id}`
 
 const generateMockCursorResponsesForEveryPage = (
-    nodes: TestPaginatedConnectionQueryFields[]
-): MockedResponse<TestPaginatedConnectionQueryResult>[] => {
-    const responses: MockedResponse<TestPaginatedConnectionQueryResult>[] = []
+    nodes: TestPageSwitcherPaginationQueryFields[]
+): MockedResponse<TestPageSwitcherPaginationQueryResult>[] => {
+    const responses: MockedResponse<TestPageSwitcherPaginationQueryResult>[] = []
 
     const totalPages = Math.ceil(nodes.length / PAGE_SIZE)
 
@@ -218,9 +225,9 @@ const generateMockCursorResponsesForEveryPage = (
     return responses
 }
 
-describe('usePaginatedConnection', () => {
+describe('usePageSwitcherPagination', () => {
     const renderWithMocks = async (
-        mocks: MockedResponse<TestPaginatedConnectionQueryResult>[],
+        mocks: MockedResponse<TestPageSwitcherPaginationQueryResult>[],
         useURL: boolean = true,
         initialRoute = '/'
     ) => {

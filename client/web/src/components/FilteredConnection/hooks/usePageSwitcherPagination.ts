@@ -70,7 +70,7 @@ const DEFAULT_PAGE_SIZE = 20
  * @param getConnection A function that filters and returns the relevant data from the connection response.
  * @param options Additional configuration options
  */
-export const usePaginatedConnection = <TResult, TVariables extends PaginatedConnectionQueryArguments, TData>({
+export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedConnectionQueryArguments, TData>({
     query,
     variables,
     getConnection: getConnectionFromGraphQLResult,
