@@ -143,14 +143,14 @@ export const BlameDecoration: React.FunctionComponent<{
                 to={blameHunk.displayInfo.linkURL}
                 target="_blank"
                 rel="noreferrer noopener"
-                className={styles.link}
+                className={classNames(styles.popoverTrigger, 'px-2')}
                 onFocus={open}
                 onBlur={close}
                 onMouseEnter={openWithTimeout}
                 onMouseLeave={closeWithTimeout}
             >
                 <span
-                    className={styles.linkContent}
+                    className={styles.content}
                     data-line-decoration-attachment-content={true}
                     data-contents={blameHunk.displayInfo.message}
                 />

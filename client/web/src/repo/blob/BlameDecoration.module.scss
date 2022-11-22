@@ -2,69 +2,70 @@
     --blame-decoration-width: 240px;
 }
 
-.link {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-    height: 1rem;
-    padding: 0 0.5rem;
+.popover {
+    &-trigger {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+        height: 1rem;
 
-    color: var(--body-color);
-    &:hover {
         color: var(--body-color);
+        &:hover {
+            color: var(--body-color);
+        }
+
+        .content {
+            white-space: pre;
+            color: var(--text-muted);
+            font-family: var(--font-family-base);
+
+            &::before {
+                content: attr(data-contents);
+            }
+        }
     }
 
     &-content {
-        white-space: pre;
-        color: var(--text-muted);
-        font-family: var(--font-family-base);
+        max-width: 348px;
 
-        &::before {
-            content: attr(data-contents);
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+
+        .head {
+            line-height: 1rem;
         }
-    }
-}
 
-.popover-content {
-    max-width: 348px;
+        .author {
+            font-weight: 500;
+        }
 
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
+        .separator {
+            color: var(--color-bg-2);
+        }
 
-    .head {
-        line-height: 1rem;
-    }
+        .block {
+            margin-top: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+        }
 
-    .author {
-        font-weight: 500;
-    }
+        .body {
+            padding-left: 0.625rem;
+            padding-right: 1rem;
+            line-height: 1.3333333333;
+            color: var(--body-color);
+        }
 
-    .separator {
-        color: var(--color-bg-2);
-    }
+        .icon {
+            font-size: 1rem;
+        }
 
-    .block {
-        margin-top: 0.75rem;
-        margin-bottom: 0.5rem;
-        font-size: 0.75rem;
-    }
+        .link {
+            color: var(--body-color);
+        }
 
-    .body {
-        padding-left: 0.625rem;
-        padding-right: 1rem;
-        line-height: 1.3333333333;
-        color: var(--body-color);
-    }
-
-    .icon {
-        font-size: 1rem;
-    }
-
-    .link {
-        color: var(--body-color);
-    }
-
-    .footer-link {
-        font-weight: 500;
+        .footer-link {
+            font-weight: 500;
+        }
     }
 }

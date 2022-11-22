@@ -265,7 +265,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [blameVisibility])
 
-    // Update blame information
+    // Update blame decorations
     useLayoutEffect(() => {
         if (editor) {
             editor.dispatch({ effects: blameDecorationsCompartment.reconfigure(blameDecorations) })
