@@ -14240,13 +14240,15 @@ Query: `sum by(instance) (rate(searcher_service_request_total[10m]))`
 
 <br />
 
-### Searcher: Hybrid (experimental)
+### Searcher: Index use
 
 #### searcher: searcher_hybrid_final_state_total
 
 <p class="subtitle">Hybrid search final state over 10m</p>
 
-This graph should be empty unless you enable the feature flag "search-hybrid".
+This graph is about our interactions with the search index (zoekt) to help
+complete unindexed search requests. Searcher will use indexed search for the
+files that have not changed between the unindexed commit and the index.
 
 This graph should mostly be "success". The next most common state should be
 "search-canceled" which happens when result limits are hit or the user starts

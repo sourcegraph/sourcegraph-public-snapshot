@@ -32,17 +32,16 @@ var (
 	}, []string{"state"})
 )
 
-// hybrid search is an experimental feature which will search zoekt only for
-// the paths that are the same for p.Commit. unsearched is the paths that
-// searcher needs to search on p.Commit. If ok is false, then the zoekt search
-// failed in a way where we should fallback to a normal unindexed search on
-// the whole commit.
+// hybrid search is a feature which will search zoekt only for the paths that
+// are the same for p.Commit. unsearched is the paths that searcher needs to
+// search on p.Commit. If ok is false, then the zoekt search failed in a way
+// where we should fallback to a normal unindexed search on the whole commit.
 //
 // This only interacts with zoekt so that we can leverage the normal searcher
 // code paths for the unindexed parts. IE unsearched is expected to be used to
 // fetch a zip via the store and then do a normal unindexed search.
 func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchSender) (unsearched []string, ok bool, err error) {
-	rootLogger := logWithTrace(ctx, s.Log).Scoped("hybrid", "experimental hybrid search").With(
+	rootLogger := logWithTrace(ctx, s.Log).Scoped("hybrid", "hybrid indexed and unindexed search").With(
 		log.String("repo", string(p.Repo)),
 		log.String("commit", string(p.Commit)),
 	)
