@@ -112,11 +112,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
             <PageHeader
                 actions={
                     authenticatedUser && (
-                        <Button
-                            to="/code-monitoring/new"
-                            variant="primary"
-                            as={Link}
-                        >
+                        <Button to="/code-monitoring/new" variant="primary" as={Link}>
                             <Icon aria-hidden={true} svgPath={mdiPlus} /> Create a code monitor
                         </Button>
                     )

@@ -303,7 +303,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                 .
                             </CloudCtaBanner>
                         )}
-                    </div>                    
+                    </div>
                 </div>
 
                 {selectedTab === 'notebooks' && (

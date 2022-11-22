@@ -119,13 +119,19 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </div>
                 </div>
             </Container>
-            
+
             {isSourcegraphDotCom && (
                 <CloudCtaBanner>
                     To create Notebooks across your team's private repositories,{' '}
-                    <Link to="https://signup.sourcegraph.com/?p=notebooks" target="_blank" rel="noopener noreferrer" onClick={() => telemetryService.log('ClickedOnCloudCTA')}>
+                    <Link
+                        to="https://signup.sourcegraph.com/?p=notebooks"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                    >
                         try Sourcegraph Cloud
-                    </Link>.
+                    </Link>
+                    .
                 </CloudCtaBanner>
             )}
 
