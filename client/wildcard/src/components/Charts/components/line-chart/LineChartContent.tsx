@@ -86,7 +86,9 @@ export function LineChartContent<Datum>(props: LineChartContentProps<Datum>): Re
             const closestPoint = voronoiLayout.find(point.x - left, point.y - top)
 
             if (closestPoint && closestPoint.data.id !== activePoint?.id) {
-                setActivePoint(closestPoint.data)
+                const element = rootRef.current?.querySelector<Element>(`[data-id="${closestPoint.data.id}"]`)
+
+                setActivePoint({ ...closestPoint.data, node: element ?? undefined })
             }
         },
         onClick: () => {
@@ -164,7 +166,7 @@ export function LineChartContent<Datum>(props: LineChartContentProps<Datum>): Re
             />
 
             {activePoint && rootRef.current && (
-                <Tooltip containerElement={rootRef.current} activeElement={activePoint.node as HTMLElement}>
+                <Tooltip activeElement={activePoint.node as HTMLElement}>
                     <TooltipContent series={activeSeries} activePoint={activePoint} stacked={stacked} />
                 </Tooltip>
             )}

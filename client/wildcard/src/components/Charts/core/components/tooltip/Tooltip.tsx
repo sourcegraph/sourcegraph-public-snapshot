@@ -1,4 +1,4 @@
-import React, { FunctionComponent, HTMLAttributes, LiHTMLAttributes, useEffect, useLayoutEffect, useState } from 'react'
+import React, { FunctionComponent, HTMLAttributes, LiHTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'
@@ -9,67 +9,20 @@ import { createRectangle, Popover, PopoverContent, PopoverTail, Position } from 
 
 import styles from './Tooltip.module.scss'
 
-const TOOLTIP_PADDING = createRectangle(0, 0, 10, 10)
+const TOOLTIP_PADDING = createRectangle(0, 0, 5, 5)
 
 interface TooltipProps {
-    containerElement: Element
-    activeElement?: HTMLElement
-}
-
-interface TooltipPosition {
-    target: HTMLElement | null
-    x: number
-    y: number
+    activeElement: HTMLElement
 }
 
 export const Tooltip: React.FunctionComponent<React.PropsWithChildren<TooltipProps>> = props => {
-    const { containerElement, activeElement = null, children } = props
-
-    const [{ target, ...pinPoint }, setVirtualElement] = useState<TooltipPosition>({
-        target: activeElement,
-        x: 0,
-        y: 0,
-    })
-
-    useLayoutEffect(() => {
-        if (activeElement) {
-            setVirtualElement(state => ({ ...state, target: activeElement }))
-        }
-    }, [activeElement])
-
-    useEffect(() => {
-        // We need this casting because Element type doesn't support
-        // pointer or mouse events in pointermove handlers
-        const element = containerElement as HTMLElement
-
-        function handleMove(event: PointerEvent): void {
-            setVirtualElement({
-                target: null,
-                x: event.clientX,
-                // -10 because we want to visually compensate space for the
-                // popover tail
-                y: event.clientY - 10,
-            })
-        }
-
-        element.addEventListener('pointermove', handleMove)
-
-        return () => {
-            element.removeEventListener('pointermove', handleMove)
-        }
-    }, [containerElement])
-
-    const withRealTarget = !!target
-    const tooltipPinPoint = withRealTarget ? null : pinPoint
-    const tooltipTarget = withRealTarget ? target : null
-    const tooltipPosition = withRealTarget ? Position.right : Position.rightStart
+    const { activeElement, children } = props
 
     return (
         <Popover isOpen={true} onOpenChange={noop}>
             <PopoverContent
-                pin={tooltipPinPoint}
-                target={tooltipTarget}
-                position={tooltipPosition}
+                target={activeElement}
+                position={Position.right}
                 autoFocus={false}
                 focusLocked={false}
                 returnTargetFocus={false}
@@ -83,7 +36,7 @@ export const Tooltip: React.FunctionComponent<React.PropsWithChildren<TooltipPro
                 {children}
             </PopoverContent>
 
-            <PopoverTail size="sm" tabIndex={-1} />
+            <PopoverTail size="sm" tabIndex={-1} className={styles.tail} />
         </Popover>
     )
 }

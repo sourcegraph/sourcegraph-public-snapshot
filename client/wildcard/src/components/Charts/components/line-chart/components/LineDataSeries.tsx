@@ -7,6 +7,7 @@ import { timeFormat } from 'd3-time-format'
 
 import { Point } from '../types'
 import { getDatumValue, isDatumWithValidNumber, SeriesDatum } from '../utils'
+import { getPointId } from '../utils/generate-points-field'
 
 import { PointGlyph } from './PointGlyph'
 
@@ -63,7 +64,7 @@ export function LineDataSeries<D>(props: LineDataSeriesProps<D>): ReactElement {
                 {dataset.map((datum, index) => {
                     const datumValue = getDatumValue(datum)
                     const link = getLinkURL(datum.datum, index)
-                    const pointId = `${id}-${index}`
+                    const pointId = getPointId(id, index)
                     const formattedDate = formatXLabel(datum.x)
                     const ariaLabel = link
                         ? `Link point, Y value: ${datumValue}, X value: ${formattedDate}, click to view data point detail`
@@ -72,6 +73,7 @@ export function LineDataSeries<D>(props: LineDataSeriesProps<D>): ReactElement {
                     return (
                         <PointGlyph
                             key={pointId}
+                            id={pointId}
                             tabIndex={tabIndex}
                             top={yScale(datumValue)}
                             left={xScale(datum.x)}

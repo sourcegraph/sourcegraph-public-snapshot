@@ -5,6 +5,7 @@ import { GlyphDot } from '@visx/glyph'
 import { MaybeLink } from '../../../core'
 
 interface PointGlyphProps {
+    id: string
     top: number
     left: number
     color: string
@@ -20,6 +21,7 @@ interface PointGlyphProps {
 
 export const PointGlyph: FC<PointGlyphProps> = props => {
     const {
+        id,
         top,
         left,
         color,
@@ -35,6 +37,7 @@ export const PointGlyph: FC<PointGlyphProps> = props => {
 
     return (
         <MaybeLink
+            data-id={id}
             to={linkURL}
             target="_blank"
             rel="noopener"
