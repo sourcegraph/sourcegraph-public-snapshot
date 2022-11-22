@@ -24,13 +24,14 @@ import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
 import { showGitBlameDecorations } from './codemirror/blame-decorations'
-import { contextMenu, selectRange } from './codemirror/context-menu'
+import { tokenSelectionExtension } from './codemirror/token-selection'
 import { syntaxHighlight } from './codemirror/highlight'
 import { pin, updatePin } from './codemirror/hovercard'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { isValidLineRange } from './codemirror/utils'
+import { selectRange } from './codemirror/textdocument-selections'
 
 const selections: Map<string, Range> = new Map()
 
@@ -173,13 +174,16 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const extensions = useMemo(
         () => [
+            EditorView.exceptionSink.of(exception => console.log(exception)),
             staticExtensions,
             selectableLineNumbers({
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
-            tokenKeyboardNavigation ? contextMenu(codeintel, blobInfo, history, selections) : [],
+            tokenKeyboardNavigation && codeintel
+                ? tokenSelectionExtension(codeintel, blobInfo, history, selections)
+                : [],
             syntaxHighlight.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             !tokenKeyboardNavigation && extensionsController !== null && !navigateToLineOnAnyClick
@@ -232,9 +236,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 })
             )
             if (range) {
-                editor.contentDOM.focus()
-                console.log(editor.contentDOM)
                 selectRange(editor, range)
+                // NOTE(olafurpg): this focus statment does not have an effect when using macOS VoiceOver.
+                editor.contentDOM.focus({ preventScroll: true })
             }
         }
         // editor is not provided because this should only be triggered after the
@@ -292,20 +296,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // editor was created (i.e. not on first render)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [position, hasPin])
-
-    // useLayoutEffect(() => {
-    //     if (editor) {
-    //         const uri = toURIWithPath(blobInfo)
-    //         const range = selections.get(uri)
-    //         console.log({ selections, uri, range })
-    //         if (range) {
-    //             requestAnimationFrame(() => {
-    //                 editor.contentDOM.focus()
-    //                 selectRange(editor, range)
-    //             })
-    //         }
-    //     }
-    // }, [blobInfo, editor])
 
     const openSearch = useCallback(() => {
         if (editorRef.current) {

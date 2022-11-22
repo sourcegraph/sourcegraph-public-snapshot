@@ -543,7 +543,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         location={props.location}
                         disableStatusBar={!window.context.enableLegacyExtensions}
                         disableDecorations={false}
-                        role="region"
+                        role="main"
                         ariaLabel="File blob"
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameDecorations}
