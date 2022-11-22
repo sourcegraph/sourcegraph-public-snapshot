@@ -117,6 +117,8 @@ These settings have the highest priority. You can set them in a less than intuit
    </project>
    ```
    If the file already exists, then just add the option lines next to the original ones.
+   
+   **Replace `DOTCOM` with `ENTERPRISE` for private instanceType.**
 2. Reopen your project to let the IDE catch up with the changes. Now you have custom settings enabled for this project. In the future, when you have this project open, and you edit your settings in the Settings UI, they will be saved to the **project-level** file.
 3. To remove the project-level settings, open the XML again and remove the lines you want to set on the app level.
 
