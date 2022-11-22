@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
@@ -27,23 +27,43 @@ export interface SiteAdminOutboundRequestsPageProps extends RouteComponentProps,
     now?: () => Date
 }
 
+export type OutboundRequest = OutboundRequestsResult['outboundRequests'][0]
+
 export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminOutboundRequestsPageProps>
 > = ({ history, location, telemetryService }) => {
+    const [items, setItems] = useState<OutboundRequest[]>([])
+    // const [previousData, setPreviousData] = useState<OutboundRequestsResult | null>(null)
     useEffect(() => {
         telemetryService.logPageView('SiteAdminOutboundRequests')
     }, [telemetryService])
 
-    const { data, loading, error } = useQuery<OutboundRequestsResult, OutboundRequestsVariables>(OUTBOUND_REQUESTS, {
+    const lastKey = items[items.length - 1]?.key ?? null
+    const { data, loading, error, stopPolling, refetch, startPolling } = useQuery<
+        OutboundRequestsResult,
+        OutboundRequestsVariables
+    >(OUTBOUND_REQUESTS, {
+        variables: { lastKey },
         pollInterval: OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL,
     })
 
+    if (data?.outboundRequests?.length && (!lastKey || data?.outboundRequests[0].key > lastKey)) {
+        const newItems = items
+            .concat(...data.outboundRequests)
+            .slice(Math.max(items.length + data.outboundRequests.length - 50, 0))
+        stopPolling()
+        setItems(newItems)
+        refetch({ lastKey: newItems[newItems.length - 1]?.key ?? null })
+            .then(() => {})
+            .catch(() => {})
+        startPolling(OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL)
+    }
+
     const queryOutboundRequests = useCallback(
         (args: FilteredConnectionQueryArguments & { failed?: boolean }) =>
-            of(data).pipe(
-                map(data => {
-                    const all = data?.outboundRequests
-                    const filtered = all?.filter(
+            of(items.reverse()).pipe(
+                map(items => {
+                    const filtered = items?.filter(
                         request =>
                             (!args.query || request.url.includes(args.query)) &&
                             (args.failed !== false || request.statusCode < 400) &&
@@ -55,7 +75,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
                     }
                 })
             ),
-        [data]
+        [items]
     )
 
     const filters: FilteredConnectionFilter[] = [
@@ -106,7 +126,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
             <Container className="mb-3">
                 {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
-                <FilteredConnection<OutboundRequestsResult['outboundRequests'][number]>
+                <FilteredConnection<OutboundRequest>
                     className="mb-0"
                     listComponent="div"
                     listClassName={classNames('list-group mb-3', styles.requestsGrid)}
@@ -123,9 +143,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     )
 }
 
-const MigrationNode: React.FunctionComponent<{
-    node: React.PropsWithChildren<OutboundRequestsResult['outboundRequests'][number]>
-}> = ({ node }) => {
+const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<OutboundRequest> }> = ({ node }) => {
     const roundedSecond = Math.round((node.duration + Number.EPSILON) * 100) / 100
     return (
         <React.Fragment key={node.key}>

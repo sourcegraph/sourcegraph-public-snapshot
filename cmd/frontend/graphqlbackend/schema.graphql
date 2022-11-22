@@ -1578,7 +1578,12 @@ type Query {
     """
     Get a log of the latest outbound external requests
     """
-    outboundRequests(lastKey: String): [OutboundRequest!]!
+    outboundRequests(
+        """
+        Filters the requests by key, only returning keys greater than the given one.
+        """
+        lastKey: String
+    ): [OutboundRequest!]!
 
     """
     (experimental)
