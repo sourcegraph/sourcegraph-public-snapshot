@@ -306,7 +306,7 @@ func TestExternalService_AsyncDeletion(t *testing.T) {
 	}
 
 	// This call should return not found error. Retrying for 5 seconds to wait for async deletion to finish
-	err = gqltestutil.Retry(5*time.Second, func() error {
+	err = gqltestutil.Retry(60*time.Second, func() error {
 		_, err = client.UpdateExternalService(gqltestutil.UpdateExternalServiceInput{ID: esID})
 		if err == nil {
 			return gqltestutil.ErrContinueRetry

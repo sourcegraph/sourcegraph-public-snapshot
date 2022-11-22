@@ -88,6 +88,34 @@ mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
 	return resp.Data.UpdateExternalService.ID, nil
 }
 
+// CheckExternalService checks whether the external service exists.
+//
+// This method requires the authenticated user to be a site admin.
+func (c *Client) CheckExternalService(id string) error {
+	const query = `
+mutation CheckExternalService($id: ID!) {
+	node(id: $input) {
+		... on ExternalService {
+			id
+		}
+	}
+}
+`
+	variables := map[string]any{"id": id}
+	var resp struct {
+		Data struct {
+			Node struct {
+				ID string `json:"id"`
+			} `json:"node"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return errors.Wrap(err, "request GraphQL")
+	}
+	return nil
+}
+
 // DeleteExternalService deletes the external service by given GraphQL node ID.
 //
 // This method requires the authenticated user to be a site admin.
