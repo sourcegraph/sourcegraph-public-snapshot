@@ -3,7 +3,7 @@ import { forwardRef, HTMLAttributes, useContext, useRef, useState } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { asError, isDefined } from '@sourcegraph/common'
+import { isDefined } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
@@ -19,7 +19,6 @@ import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
-import { FORM_ERROR, SubmissionErrors } from '../../../form'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
 import { useVisibility } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
@@ -109,56 +108,39 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
         startPolling(insightPollingInterval(insight))
     }
 
-    async function handleFilterSave(filters: InsightFilters): Promise<SubmissionErrors> {
-        try {
-            const seriesDisplayOptions: SeriesDisplayOptionsInput = {
-                limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),
-                sortOptions: filters.seriesDisplayOptions.sortOptions,
-            }
-            const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions }
-
-            await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
-
-            telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
-
-            setOriginalInsightFilters(filters)
-            setIsFiltersOpen(false)
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
+    async function handleFilterSave(filters: InsightFilters): Promise<void> {
+        const seriesDisplayOptions: SeriesDisplayOptionsInput = {
+            limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),
+            sortOptions: filters.seriesDisplayOptions.sortOptions,
         }
+        const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions }
 
-        return
+        await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
+
+        telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
+        setOriginalInsightFilters(filters)
+        setIsFiltersOpen(false)
     }
 
-    const handleInsightFilterCreation = async (
-        values: DrillDownInsightCreationFormValues
-    ): Promise<SubmissionErrors> => {
+    const handleInsightFilterCreation = async (values: DrillDownInsightCreationFormValues): Promise<void> => {
         const { insightName } = values
 
         if (!currentDashboard) {
             return
         }
 
-        try {
-            const newInsight = {
+        await createInsight({
+            insight: {
                 ...insight,
                 title: insightName,
                 filters,
-            }
+            },
+            dashboard: currentDashboard,
+        }).toPromise()
 
-            await createInsight({
-                insight: newInsight,
-                dashboard: currentDashboard,
-            }).toPromise()
-
-            telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
-            setOriginalInsightFilters(filters)
-            setIsFiltersOpen(false)
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+        telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
+        setOriginalInsightFilters(filters)
+        setIsFiltersOpen(false)
     }
 
     const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
