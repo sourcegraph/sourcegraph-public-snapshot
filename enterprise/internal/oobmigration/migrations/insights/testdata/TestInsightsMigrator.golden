@@ -114,7 +114,7 @@
 				"Bootstrap spacing utility classes",
 				"Component imports",
 				"Data fetching from GraphQL",
-				"Migration from FilteredConnection to useShowMorePagination",
+				"Migration from FilteredConnection to useConnection",
 				"Migration to CSS Modules",
 				"Raw HTML elements vs Wildcard atoms",
 				"Usage of JavaScript and TypeScript",
@@ -317,7 +317,7 @@
 				"LOC test 2: .\\n ",
 				"Language usage in Sourcegraph",
 				"Migrate away from global database connections",
-				"Migration from FilteredConnection to useShowMorePagination",
+				"Migration from FilteredConnection to useConnection",
 				"Migration from dbtesting to dbtest",
 				"Migration from global db mocks",
 				"Migration to CSS Modules",
@@ -444,16 +444,16 @@
 				"github.com/sourcegraph/sourcegraph"
 			],
 			"Views": [
-				"Migration from FilteredConnection to useShowMorePagination"
+				"Migration from FilteredConnection to useConnection"
 			]
 		},
 		{
-			"Query": "= useShowMorePagination",
+			"Query": "= useConnection",
 			"Repositories": [
 				"github.com/sourcegraph/sourcegraph"
 			],
 			"Views": [
-				"Migration from FilteredConnection to useShowMorePagination"
+				"Migration from FilteredConnection to useConnection"
 			]
 		},
 		{
@@ -2132,7 +2132,7 @@
 			]
 		},
 		{
-			"Title": "Migration from FilteredConnection to useShowMorePagination",
+			"Title": "Migration from FilteredConnection to useConnection",
 			"Grants": [
 				"org 1"
 			],
