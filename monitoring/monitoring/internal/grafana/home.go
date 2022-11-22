@@ -31,7 +31,7 @@ func Home(injectLabelMatchers []*labels.Matcher) ([]byte, error) {
 	}
 	for k, v := range vars {
 		var err error
-		vars[k], err = promql.Inject(v, injectLabelMatchers, nil)
+		vars[k], err = promql.InjectMatchers(v, injectLabelMatchers, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, k)
 		}
