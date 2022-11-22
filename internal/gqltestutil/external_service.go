@@ -93,29 +93,15 @@ mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
 // This method requires the authenticated user to be a site admin.
 func (c *Client) DeleteExternalService(id string, async bool) error {
 	const query = `
-mutation DeleteExternalService($externalService: ID!) {
-	 deleteExternalService(externalService: $externalService) {
-		alwaysNil
-	}
-}
-`
-	const asyncQuery = `
 mutation DeleteExternalService($externalService: ID!, $async: Boolean!) {
-	 deleteExternalService(externalService: $externalService, async: $async) {
+	deleteExternalService(externalService: $externalService, async: $async) {
 		alwaysNil
 	}
 }
 `
-	variables := map[string]any{
-		"externalService": id,
-	}
-	q := query
-	if async {
-		q = asyncQuery
-		variables["async"] = true
-	}
+	variables := map[string]any{"externalService": id, "async": async}
 
-	err := c.GraphQL("", q, variables, nil)
+	err := c.GraphQL("", query, variables, nil)
 	if err != nil {
 		return errors.Wrap(err, "request GraphQL")
 	}
