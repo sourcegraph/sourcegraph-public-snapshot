@@ -54,7 +54,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
     useEffect(() => telemetryService.log('NotebooksGettingStartedTabViewed'), [telemetryService])
 
     const [, setHasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
-    const isSourcegraphDotCom = window.context.sourcegraphDotComMode
+    const isSourcegraphDotCom = window.context?.sourcegraphDotComMode || ''
 
     useEffect(() => {
         setHasSeenGettingStartedTab(true)

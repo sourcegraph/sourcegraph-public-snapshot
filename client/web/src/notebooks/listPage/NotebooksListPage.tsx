@@ -75,7 +75,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
         telemetryService.logPageView('SearchNotebooksListPage')
     }, [telemetryService])
 
-    const isSourcegraphDotCom = window.context.sourcegraphDotComMode
+    const isSourcegraphDotCom = window.context?.sourcegraphDotComMode || ''
     const [importState, setImportState] = useState<typeof LOADING | ErrorLike | undefined>()
     const history = useHistory()
     const location = useLocation()
@@ -290,7 +290,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                         ))}
 
                         {selectedTab === 'notebooks' && isSourcegraphDotCom && (
-                            <CloudCtaBanner outlined={true} className="ml-auto">
+                            <CloudCtaBanner outlined={true} className="ml-sm-auto mt-md-0 mt-3">
                                 To create Notebooks across your private repositories,{' '}
                                 <Link
                                     to="https://signup.sourcegraph.com/?p=notebooks"

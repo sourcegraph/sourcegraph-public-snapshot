@@ -75,13 +75,6 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         </aside>
                         <CodeInsightsDescription className={styles.heroDescriptionBlock} />
                     </Card>
-                    
-                    <CloudCtaBanner>
-                        To track Insights across your team's private repos,{' '}
-                        <Link to="https://signup.sourcegraph.com/?p=insights" target="_blank" rel="noopener noreferrer" onClick={() => telemetryService.log('ClickedOnCloudCTA')}>
-                            try Sourcegraph Cloud
-                        </Link>.
-                    </CloudCtaBanner>
 
                     <CloudCtaBanner>
                         To track Insights across your team's private repos,{' '}
