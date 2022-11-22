@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -104,7 +105,7 @@ func NewWorker(logger log.Logger, nameSet *janitor.NameSet, options Options, obs
 
 	ctx := context.Background()
 
-	return workerutil.NewWorker(ctx, shim, h, options.WorkerOptions), nil
+	return workerutil.NewWorker[executor.Job](ctx, shim, h, options.WorkerOptions), nil
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.

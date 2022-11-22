@@ -90,7 +90,7 @@ type Store interface {
 	InsertDependencySyncingJob(ctx context.Context, uploadID int) (jobID int, err error)
 
 	// Workerutil
-	WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store
+	WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store[types.Upload]
 
 	ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error)
 

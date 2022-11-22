@@ -29,7 +29,7 @@ type SyncWorkerOptions struct {
 }
 
 // NewSyncWorker creates a new external service sync worker.
-func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.TransactableHandle, handler workerutil.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
+func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.TransactableHandle, handler workerutil.Handler[*SyncJob], opts SyncWorkerOptions) (*workerutil.Worker[*SyncJob], *dbworker.Resetter[*SyncJob]) {
 	if opts.NumHandlers == 0 {
 		opts.NumHandlers = 3
 	}
@@ -54,7 +54,7 @@ func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.Tr
 		sqlf.Sprintf("next_sync_at"),
 	}
 
-	store := workerstore.New(logger.Scoped("repo.sync.workerstore.Store", ""), dbHandle, workerstore.Options{
+	store := workerstore.New(logger.Scoped("repo.sync.workerstore.Store", ""), dbHandle, workerstore.Options[*SyncJob]{
 		Name:              "repo_sync_worker_store",
 		TableName:         "external_service_sync_jobs",
 		ViewName:          "external_service_sync_jobs_with_next_sync_at",

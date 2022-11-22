@@ -24,9 +24,9 @@ import (
 var ErrJobAlreadyExists = errors.New("job already exists")
 
 // Worker is a generic consumer of records from the workerutil store.
-type Worker struct {
-	store            Store
-	handler          Handler
+type Worker[T Record] struct {
+	store            Store[T]
+	handler          Handler[T]
 	options          WorkerOptions
 	dequeueClock     glock.Clock
 	heartbeatClock   glock.Clock
@@ -84,12 +84,12 @@ type WorkerOptions struct {
 	Metrics WorkerObservability
 }
 
-func NewWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions) *Worker {
+func NewWorker[T Record](ctx context.Context, store Store[T], handler Handler[T], options WorkerOptions) *Worker[T] {
 	clock := glock.NewRealClock()
 	return newWorker(ctx, store, handler, options, clock, clock, clock)
 }
 
-func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, mainClock, heartbeatClock, shutdownClock glock.Clock) *Worker {
+func newWorker[T Record](ctx context.Context, store Store[T], handler Handler[T], options WorkerOptions, mainClock, heartbeatClock, shutdownClock glock.Clock) *Worker[T] {
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/workerutil:newWorker")
 	}
@@ -110,7 +110,7 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 		handlerSemaphore <- struct{}{}
 	}
 
-	return &Worker{
+	return &Worker[T]{
 		store:            store,
 		handler:          handler,
 		options:          options,
@@ -127,7 +127,7 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 }
 
 // Start begins polling for work from the underlying store and processing records.
-func (w *Worker) Start() {
+func (w *Worker[T]) Start() {
 	defer close(w.finished)
 
 	// Create a background routine that periodically writes the current time to the running records.
@@ -237,20 +237,20 @@ loop:
 // Stop will cause the worker loop to exit after the current iteration. This is done by canceling the
 // context passed to the dequeue operations (but not the handler perations). This method blocks until
 // all handler goroutines have exited.
-func (w *Worker) Stop() {
+func (w *Worker[T]) Stop() {
 	w.dequeueCancel()
 	w.Wait()
 }
 
 // Wait blocks until all handler goroutines have exited.
-func (w *Worker) Wait() {
+func (w *Worker[T]) Wait() {
 	<-w.finished
 }
 
 // dequeueAndHandle selects a queued record to process. This method returns false if no such record
 // can be dequeued and returns an error only on failure to dequeue a new record - no handler errors
 // will bubble up.
-func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
+func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 	select {
 	// If we block here we are waiting for a handler to exit so that we do not
 	// exceed our configured concurrency limit.
@@ -310,7 +310,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		LogFields: []otlog.Field{otlog.Int("record.id", record.RecordID())},
 	}
 
-	if hook, ok := w.handler.(WithHooks); ok {
+	if hook, ok := w.handler.(WithHooks[T]); ok {
 		preCtx, prehandleLogger, endObservation := w.options.Metrics.operations.preHandle.With(handleCtx, nil, processArgs)
 		// Open namespace for logger to avoid key collisions on fields
 		hook.PreHandle(preCtx, prehandleLogger.With(log.Namespace("prehandle")), record)
@@ -321,7 +321,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 	go func() {
 		defer func() {
-			if hook, ok := w.handler.(WithHooks); ok {
+			if hook, ok := w.handler.(WithHooks[T]); ok {
 				// Don't use handleCtx here, the record is already not owned by
 				// this worker anymore at this point. Tracing hierarchy is still correct,
 				// as handleCtx used in preHandle/handle is at the same level as
@@ -351,7 +351,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 // handle processes the given record. This method returns an error only if there is an issue updating
 // the record to a terminal state - no handler errors will bubble up.
-func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err error) {
+func (w *Worker[T]) handle(ctx, workerContext context.Context, record T) (err error) {
 	var handleErr error
 	ctx, handleLog, endOperation := w.options.Metrics.operations.handle.With(ctx, &handleErr, observation.Args{})
 	defer func() {
@@ -403,12 +403,12 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 // isJobCanceled returns true if the job has been canceled through the Cancel interface.
 // If the context is canceled, and the job is still part of the running ID set,
 // we know that it has been canceled for that reason.
-func (w *Worker) isJobCanceled(id int, handleErr, ctxErr error) bool {
+func (w *Worker[T]) isJobCanceled(id int, handleErr, ctxErr error) bool {
 	return errors.Is(handleErr, ctxErr) && w.runningIDSet.Has(id) && !errors.Is(handleErr, context.DeadlineExceeded)
 }
 
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.
-func (w *Worker) preDequeueHook(ctx context.Context) (dequeueable bool, extraDequeueArguments any, err error) {
+func (w *Worker[T]) preDequeueHook(ctx context.Context) (dequeueable bool, extraDequeueArguments any, err error) {
 	if o, ok := w.handler.(WithPreDequeue); ok {
 		return o.PreDequeue(ctx, w.options.Metrics.logger)
 	}

@@ -26,11 +26,9 @@ import (
 
 // SetupRoutes registers all route handlers required for all configured executor
 // queues with the given router.
-func SetupRoutes(executorStore database.ExecutorStore, metricsStore metricsstore.DistributedStore, queueOptionsMap []QueueOptions, router *mux.Router) {
-	for _, queueOptions := range queueOptionsMap {
-		h := newHandler(executorStore, metricsStore, queueOptions)
-
-		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(queueOptions.Name))).Subrouter()
+func SetupRoutes(executorStore database.ExecutorStore, metricsStore metricsstore.DistributedStore, handlers []ExecutorHandler, router *mux.Router) {
+	for _, h := range handlers {
+		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(h.Name()))).Subrouter()
 		routes := map[string]func(w http.ResponseWriter, r *http.Request){
 			"dequeue":                 h.handleDequeue,
 			"addExecutionLogEntry":    h.handleAddExecutionLogEntry,
@@ -49,7 +47,7 @@ func SetupRoutes(executorStore database.ExecutorStore, metricsStore metricsstore
 }
 
 // POST /{queueName}/dequeue
-func (h *handler) handleDequeue(w http.ResponseWriter, r *http.Request) {
+func (h *handler[T]) handleDequeue(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.DequeueRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
@@ -70,7 +68,7 @@ func (h *handler) handleDequeue(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /{queueName}/addExecutionLogEntry
-func (h *handler) handleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
+func (h *handler[T]) handleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.AddExecutionLogEntryRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
@@ -80,7 +78,7 @@ func (h *handler) handleAddExecutionLogEntry(w http.ResponseWriter, r *http.Requ
 }
 
 // POST /{queueName}/updateExecutionLogEntry
-func (h *handler) handleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
+func (h *handler[T]) handleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.UpdateExecutionLogEntryRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
@@ -90,7 +88,7 @@ func (h *handler) handleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.R
 }
 
 // POST /{queueName}/markComplete
-func (h *handler) handleMarkComplete(w http.ResponseWriter, r *http.Request) {
+func (h *handler[T]) handleMarkComplete(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.MarkCompleteRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
@@ -104,7 +102,7 @@ func (h *handler) handleMarkComplete(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /{queueName}/markErrored
-func (h *handler) handleMarkErrored(w http.ResponseWriter, r *http.Request) {
+func (h *handler[T]) handleMarkErrored(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.MarkErroredRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
@@ -118,7 +116,7 @@ func (h *handler) handleMarkErrored(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /{queueName}/markFailed
-func (h *handler) handleMarkFailed(w http.ResponseWriter, r *http.Request) {
+func (h *handler[T]) handleMarkFailed(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.MarkErroredRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
@@ -132,7 +130,7 @@ func (h *handler) handleMarkFailed(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /{queueName}/heartbeat
-func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
+func (h *handler[T]) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.HeartbeatRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
@@ -177,7 +175,7 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 
 // POST /{queueName}/canceledJobs
 // TODO: This handler can be removed in Sourcegraph 4.4.
-func (h *handler) handleCanceledJobs(w http.ResponseWriter, r *http.Request) {
+func (h *handler[T]) handleCanceledJobs(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.CanceledJobsRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
@@ -196,7 +194,7 @@ type errorResponse struct {
 // is returned. Otherwise, the response status will match the status code value returned from the
 // handler, and the payload value returned from the handler is encoded and written to the
 // response body.
-func (h *handler) wrapHandler(w http.ResponseWriter, r *http.Request, payload any, handler func() (int, any, error)) {
+func (h *handler[T]) wrapHandler(w http.ResponseWriter, r *http.Request, payload any, handler func() (int, any, error)) {
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to unmarshal payload: %s", err.Error()), http.StatusBadRequest)
 		return

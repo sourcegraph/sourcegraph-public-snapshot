@@ -61,7 +61,7 @@ func TestQueueShim_Dequeue_Error(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, "failed", err.Error())
 	assert.False(t, dequeued)
-	assert.Nil(t, record)
+	assert.Equal(t, executor.Job{}, record)
 
 	mock.AssertExpectationsForObjects(t, queueStore)
 }

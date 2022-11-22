@@ -26,17 +26,17 @@ type QueueStore interface {
 }
 
 // Compile time validation.
-var _ workerutil.Store = &QueueShim{}
+var _ workerutil.Store[executor.Job] = &QueueShim{}
 
 func (s *QueueShim) QueuedCount(ctx context.Context) (int, error) {
 	return 0, errors.New("unimplemented")
 }
 
-func (s *QueueShim) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (workerutil.Record, bool, error) {
+func (s *QueueShim) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (executor.Job, bool, error) {
 	var job executor.Job
 	dequeued, err := s.Store.Dequeue(ctx, s.Name, &job)
 	if err != nil {
-		return nil, false, err
+		return executor.Job{}, false, err
 	}
 
 	return job, dequeued, nil
