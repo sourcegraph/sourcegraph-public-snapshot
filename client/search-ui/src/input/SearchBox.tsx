@@ -205,6 +205,8 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                         setPatternType={props.setPatternType}
                         caseSensitive={props.caseSensitive}
                         setCaseSensitivity={props.setCaseSensitivity}
+                        searchMode={props.searchMode}
+                        setSearchMode={props.setSearchMode}
                         settingsCascade={props.settingsCascade}
                         submitSearch={props.submitSearchOnToggle}
                         navbarSearchQuery={queryState.query}

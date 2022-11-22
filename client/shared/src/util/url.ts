@@ -9,6 +9,7 @@ import {
     toViewStateHash,
 } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-types'
+import { SearchMode } from '@sourcegraph/search'
 
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { SearchPatternType } from '../graphql-operations'
@@ -527,7 +528,9 @@ export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
     caseSensitive: boolean,
-    searchContextSpec?: string
+
+    searchContextSpec?: string,
+    searchMode?: SearchMode
 ): string {
     const searchParameters = new URLSearchParams()
     let queryParameter = query
@@ -559,19 +562,28 @@ export function buildSearchURLQuery(
         searchParameters.set('case', caseParameter)
     }
 
+    searchParameters.set('sm', (searchMode || SearchMode.Precise).toString())
+
     return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
-export function buildGetStartedURL(source: string, returnTo?: string, forDotcom?: boolean): string {
-    // Still support directing to dotcom signup links when needed
-    const path = forDotcom ? 'https://sourcegraph.com/sign-up' : 'https://signup.sourcegraph.com'
+export function buildGetStartedURL(cloudSignup?: boolean, returnTo?: string): string {
+    /**
+     * Account sign-ups should be available for customer instances whereas
+     * non customer instances like .com should direct users through our cloud
+     * sign-up flow to prioritize trial-starts.
+     */
+    const path = cloudSignup ? 'https://signup.sourcegraph.com' : 'https://sourcegraph.com/sign-up'
+
     const url = new URL(path)
-    url.searchParams.set('utm_medium', 'inproduct')
-    url.searchParams.set('utm_source', source)
-    url.searchParams.set('utm_campaign', 'inproduct-cta')
 
     if (returnTo !== undefined) {
         url.searchParams.set('returnTo', returnTo)
+    }
+
+    // Local sign-ups use relative URLs
+    if (!cloudSignup) {
+        return `${url.pathname}${url.search}`
     }
 
     return url.toString()

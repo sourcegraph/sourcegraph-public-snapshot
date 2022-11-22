@@ -53,7 +53,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
                 // if no other columns with decorations
                 if (!row?.querySelector(`.${styles.decoration}`)) {
                     // remove line number cell extra horizontal padding
-                    row?.querySelector('th.line')?.classList.remove('px-2')
+                    row?.querySelector('td.line')?.classList.remove('px-2')
                 }
             }
 
@@ -73,7 +73,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
                         cell.classList.add(styles.decoration)
 
                         // add line number cell extra horizontal padding
-                        row.querySelector('th.line')?.classList.add('px-2')
+                        row.querySelector('td.line')?.classList.add('px-2')
 
                         // add decorations wrapper
                         const wrapper = document.createElement('div')

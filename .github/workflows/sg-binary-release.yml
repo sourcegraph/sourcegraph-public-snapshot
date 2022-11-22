@@ -23,6 +23,7 @@ env:
 
 jobs:
   touch_sg:
+    if: github.repository == 'sourcegraph/sourcegraph'
     name: Touch sourcegraph/sg
     runs-on: ubuntu-latest
     steps:

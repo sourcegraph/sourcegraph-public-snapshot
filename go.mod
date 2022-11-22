@@ -117,7 +117,7 @@ require (
 	github.com/qustavo/sqlhooks/v2 v2.1.0
 	github.com/rafaeljusto/redigomock v2.4.0+incompatible
 	github.com/rjeczalik/notify v0.9.2
-	github.com/russellhaering/gosaml2 v0.6.0
+	github.com/russellhaering/gosaml2 v0.7.0
 	github.com/russellhaering/goxmldsig v1.1.1
 	github.com/schollz/progressbar/v3 v3.8.5
 	github.com/segmentio/fasthash v1.0.3
@@ -229,7 +229,7 @@ require (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20221115035648-7c7157a8dee4
+	github.com/sourcegraph/zoekt v0.0.0-20221121125711-20baf3ac44b3
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 

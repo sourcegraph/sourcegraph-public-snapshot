@@ -32,19 +32,13 @@ export interface ChangesetCloseNodeProps extends ThemeProps {
 export const ChangesetCloseNode: React.FunctionComponent<React.PropsWithChildren<ChangesetCloseNodeProps>> = ({
     node,
     ...props
-}) => {
-    if (node.__typename === 'ExternalChangeset') {
-        return (
-            <>
-                <span className={styles.changesetCloseNodeSeparator} />
-                <ExternalChangesetCloseNode node={node} {...props} />
-            </>
-        )
-    }
-    return (
-        <>
-            <span className={styles.changesetCloseNodeSeparator} />
+}) => (
+    <li className={styles.changesetCloseNode}>
+        <span className={styles.changesetCloseNodeSeparator} />
+        {node.__typename === 'ExternalChangeset' ? (
+            <ExternalChangesetCloseNode node={node} {...props} />
+        ) : (
             <HiddenExternalChangesetCloseNode node={node} {...props} />
-        </>
-    )
-}
+        )}
+    </li>
+)

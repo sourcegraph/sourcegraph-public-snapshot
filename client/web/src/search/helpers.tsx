@@ -37,10 +37,17 @@ export function submitSearch({
     patternType,
     caseSensitive,
     selectedSearchContextSpec,
+    searchMode,
     source,
     addRecentSearch,
 }: SubmitSearchParameters): void {
-    let searchQueryParameter = buildSearchURLQuery(query, patternType, caseSensitive, selectedSearchContextSpec)
+    let searchQueryParameter = buildSearchURLQuery(
+        query,
+        patternType,
+        caseSensitive,
+        selectedSearchContextSpec,
+        searchMode
+    )
 
     const preserved = preservedQuery(history.location.search)
     if (preserved !== '') {

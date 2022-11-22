@@ -2216,7 +2216,8 @@ CREATE TABLE insights_query_runner_jobs (
     cost integer DEFAULT 500 NOT NULL,
     persist_mode persistmode DEFAULT 'record'::persistmode NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    cancel boolean DEFAULT false NOT NULL
+    cancel boolean DEFAULT false NOT NULL,
+    trace_id text
 );
 
 COMMENT ON TABLE insights_query_runner_jobs IS 'See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
@@ -3658,7 +3659,8 @@ CREATE TABLE webhook_build_jobs (
     last_heartbeat_at timestamp with time zone,
     worker_hostname text DEFAULT ''::text NOT NULL,
     org text,
-    extsvc_id integer
+    extsvc_id integer,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE webhook_logs (
@@ -4424,6 +4426,8 @@ CREATE INDEX feature_flag_overrides_user_id ON feature_flag_overrides USING btre
 CREATE INDEX finished_at_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (finished_at);
 
 CREATE INDEX gitserver_relocator_jobs_state ON gitserver_relocator_jobs USING btree (state);
+
+CREATE INDEX gitserver_repo_size_bytes ON gitserver_repos USING btree (repo_size_bytes);
 
 CREATE INDEX gitserver_repos_cloned_status_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status = 'cloned'::text);
 

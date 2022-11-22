@@ -142,7 +142,7 @@ func main() {
 			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, reposDir)
 		},
 		Hostname:                hostname.Get(),
 		DB:                      db,
@@ -441,6 +441,7 @@ func getVCSSyncer(
 	repoStore database.RepoStore,
 	depsSvc *dependencies.Service,
 	repo api.RepoName,
+	reposDir string,
 ) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so

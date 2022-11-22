@@ -1,6 +1,7 @@
 package sourcegraphoperator
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -12,12 +13,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // All Sourcegraph Operator endpoints are under this path prefix.
-const authPrefix = auth.AuthURLPrefix + "/" + ProviderType
+const authPrefix = auth.AuthURLPrefix + "/" + internalauth.SourcegraphOperatorProviderType
 
 // Middleware is middleware for Sourcegraph Operator authentication, adding
 // endpoints under the auth path prefix ("/.auth") to enable the login flow and
@@ -34,16 +36,6 @@ func Middleware(db database.DB) *auth.Middleware {
 		},
 		App: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// Fix up the URL path because we use "/.auth/callback" as the redirect URI for
-				// Sourcegraph Operator, but the rest of handlers in this middleware expect paths
-				// of "/.auth/sourcegraph-operator/...", so adding the "sourcegraph-operator"
-				// path component as we can't change the redirect URI that it is hardcoded in
-				// instances' external authentication providers.
-				if r.URL.Path == auth.AuthURLPrefix+"/callback" {
-					// Rewrite "/.auth/callback" -> "/.auth/sourcegraph-operator/callback".
-					r.URL.Path = authPrefix + "/callback"
-				}
-
 				// Delegate to the Sourcegraph Operator authentication handler.
 				if strings.HasPrefix(r.URL.Path, authPrefix+"/") {
 					authHandler(db)(w, r)
@@ -66,7 +58,7 @@ const (
 )
 
 func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
-	logger := log.Scoped(ProviderType+".authHandler", "Sourcegraph Operator authentication handler")
+	logger := log.Scoped(internalauth.SourcegraphOperatorProviderType+".authHandler", "Sourcegraph Operator authentication handler")
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
 		case "/login": // Endpoint that starts the Authentication Request Code Flow.
@@ -89,12 +81,15 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 
 			p, ok := providers.GetProviderByConfigID(
 				providers.ConfigID{
-					Type: ProviderType,
-					ID:   ProviderType,
+					Type: internalauth.SourcegraphOperatorProviderType,
+					ID:   internalauth.SourcegraphOperatorProviderType,
 				},
 			).(*provider)
 			if !ok {
-				logger.Error("failed to get Sourcegraph Operator authentication provider", log.Error(errors.Errorf("no authentication provider found with ID %q", ProviderType)))
+				logger.Error(
+					"failed to get Sourcegraph Operator authentication provider",
+					log.Error(errors.Errorf("no authentication provider found with ID %q", internalauth.SourcegraphOperatorProviderType)),
+				)
 				http.Error(w, "Misconfigured authentication provider.", http.StatusInternalServerError)
 				return
 			}
@@ -118,7 +113,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// If the "sourcegraph-operator" is the only external account associated with the
 			// user, that means the user is a pure Sourcegraph Operator which should have
 			// designated and aggressive session expiry.
-			if len(extAccts) == 1 && extAccts[0].ServiceType == ProviderType {
+			if len(extAccts) == 1 && extAccts[0].ServiceType == internalauth.SourcegraphOperatorProviderType {
 				// The user session will only live at most for the remaining duration from the
 				// "users.created_at" compared to the current time.
 				//
@@ -130,15 +125,40 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				//       the second session only lives for 50 minutes.
 				expiry = time.Until(result.User.CreatedAt.Add(p.lifecycleDuration()))
 				if expiry <= 0 {
+					// Let's do a proactive hard delete since the background worker hasn't caught up
+
+					// Help exclude Sourcegraph operator related events from analytics
+					ctx := actor.WithActor(
+						r.Context(),
+						&actor.Actor{
+							SourcegraphOperator: true,
+						},
+					)
+					err = db.Users().HardDelete(ctx, result.User.ID)
+					if err != nil {
+						logger.Error("failed to proactively clean up the expire user account", log.Error(err))
+					}
+
 					http.Error(w, "The retrieved user account lifecycle has already expired, please re-authenticate.", http.StatusUnauthorized)
 					return
 				}
 			}
-			if err = session.SetActor(w, r, actor.FromUser(result.User.ID), expiry, result.User.CreatedAt); err != nil {
+
+			act := &actor.Actor{
+				UID:                 result.User.ID,
+				SourcegraphOperator: true,
+			}
+			err = session.SetActor(w, r, act, expiry, result.User.CreatedAt)
+			if err != nil {
 				logger.Error("failed to authenticate with Sourcegraph Operator", log.Error(errors.Wrap(err, "initiate session")))
 				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
 				return
 			}
+
+			// NOTE: It is important to wrap the request context with the correct actor and
+			// use it onwards to be able to mark all generated event logs with
+			// `"sourcegraph_operator": true`.
+			ctx := actor.WithActor(r.Context(), act)
 
 			if err = session.SetData(w, r, SessionKey, result.SessionData); err != nil {
 				// It's not fatal if this fails. It just means we won't be able to sign the user
@@ -148,10 +168,31 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 					log.String("message", "The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph."),
 					log.Error(err),
 				)
+			} else {
+				args, err := json.Marshal(map[string]any{
+					"session_expiry_seconds": int64(expiry.Seconds()),
+				})
+				if err != nil {
+					logger.Error(
+						"failed to marshal JSON for security event log argument",
+						log.String("eventName", string(database.SecurityEventNameSignInSucceeded)),
+						log.Error(err),
+					)
+				}
+				db.SecurityEventLogs().LogEvent(
+					ctx,
+					&database.SecurityEvent{
+						Name:      database.SecurityEventNameSignInSucceeded,
+						UserID:    uint32(act.UID),
+						Argument:  args,
+						Source:    "BACKEND",
+						Timestamp: time.Now(),
+					},
+				)
 			}
 
 			if !result.User.SiteAdmin {
-				err = db.Users().SetIsSiteAdmin(r.Context(), result.User.ID, true)
+				err = db.Users().SetIsSiteAdmin(ctx, result.User.ID, true)
 				if err != nil {
 					logger.Error("failed to update Sourcegraph Operator as site admin", log.Error(err))
 					http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not set as site admin.", http.StatusInternalServerError)

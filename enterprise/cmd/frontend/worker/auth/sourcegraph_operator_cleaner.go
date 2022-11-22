@@ -11,6 +11,8 @@ import (
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -82,7 +84,7 @@ WHERE
 AND users.created_at <= %s
 GROUP BY user_id HAVING COUNT(*) = 1
 `,
-		sourcegraphoperator.ProviderType,
+		auth.SourcegraphOperatorProviderType,
 		time.Now().Add(-1*h.lifecycleDuration),
 	)
 	userIDs, err := basestore.ScanInt32s(h.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
@@ -90,6 +92,13 @@ GROUP BY user_id HAVING COUNT(*) = 1
 		return errors.Wrap(err, "query user IDs")
 	}
 
+	// Help exclude Sourcegraph operator related events from analytics
+	ctx = actor.WithActor(
+		ctx,
+		&actor.Actor{
+			SourcegraphOperator: true,
+		},
+	)
 	err = h.db.Users().HardDeleteList(ctx, userIDs)
 	if err != nil && !errcode.IsNotFound(err) {
 		return errors.Wrap(err, "hard delete users")

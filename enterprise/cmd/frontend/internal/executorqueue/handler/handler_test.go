@@ -386,8 +386,8 @@ func TestHeartbeat(t *testing.T) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 	testKnownID := 10
-	s.HeartbeatFunc.SetDefaultHook(func(ctx context.Context, ids []int, options store.HeartbeatOptions) ([]int, error) {
-		return []int{testKnownID}, nil
+	s.HeartbeatFunc.SetDefaultHook(func(ctx context.Context, ids []int, options store.HeartbeatOptions) ([]int, []int, error) {
+		return []int{testKnownID}, []int{testKnownID}, nil
 	})
 
 	executorStore := database.NewMockExecutorStore()
@@ -407,10 +407,12 @@ func TestHeartbeat(t *testing.T) {
 
 	handler := newHandler(executorStore, metricsStore, QueueOptions{Store: s, RecordTransformer: recordTransformer})
 
-	if knownIDs, err := handler.heartbeat(context.Background(), executor, []int{testKnownID, 10}); err != nil {
+	if knownIDs, canceled, err := handler.heartbeat(context.Background(), executor, []int{testKnownID, 10}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	} else if diff := cmp.Diff([]int{testKnownID}, knownIDs); diff != "" {
 		t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
+	} else if diff := cmp.Diff([]int{testKnownID}, canceled); diff != "" {
+		t.Errorf("unexpected unknown canceled ids (-want +got):\n%s", diff)
 	}
 
 	if callCount := len(executorStore.UpsertHeartbeatFunc.History()); callCount != 1 {

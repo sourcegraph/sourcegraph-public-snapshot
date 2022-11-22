@@ -37,11 +37,11 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
     const { loading, hasNextPage, fetchMore, connection, error } = useWebhooksConnection()
     return (
         <div className="site-admin-webhooks-page">
-            <PageTitle title="Webhook receivers" />
+            <PageTitle title="Incoming webhooks" />
             <PageHeader
-                path={[{ icon: mdiCog }, { to: '/site-admin/webhooks', text: 'Webhook receivers' }]}
+                path={[{ icon: mdiCog }, { to: '/site-admin/webhooks', text: 'Incoming webhooks' }]}
                 headingElement="h2"
-                description="All configured webhooks receivers"
+                description="All configured incoming webhooks"
                 className="mb-3"
                 actions={
                     <ButtonLink className="test-create-webhook" variant="primary">
@@ -92,7 +92,7 @@ export const SiteAdminWebhooksPage: React.FunctionComponent<React.PropsWithChild
 
 const Header: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className={styles.webhooksGrid}>
-        <H5 className="p-2 d-none d-md-block text-uppercase text-left text-nowrap">Receiver</H5>
+        <H5 className="p-2 d-none d-md-block text-uppercase text-left text-nowrap">Webhook</H5>
         <H5 className="d-none d-md-block text-uppercase text-center text-nowrap">Actions</H5>
     </div>
 )

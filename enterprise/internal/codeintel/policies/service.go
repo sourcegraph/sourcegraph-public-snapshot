@@ -86,18 +86,11 @@ func (s *Service) updateReposMatchingPolicyPatterns(ctx context.Context, policy 
 		repositoryMatchLimit = &val
 	}
 
-	if err := s.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
+	if err := s.store.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (s *Service) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error) {
-	ctx, _, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.store.UpdateReposMatchingPatterns(ctx, patterns, policyID, repositoryMatchLimit)
 }
 
 func (s *Service) UpdateConfigurationPolicy(ctx context.Context, policy types.ConfigurationPolicy) (err error) {

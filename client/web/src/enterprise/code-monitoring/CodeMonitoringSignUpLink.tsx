@@ -10,16 +10,16 @@ export const CodeMonitorSignUpLink: React.FunctionComponent<
         className?: string
         text: string
         eventName: string
-        forDotcom?: boolean
+        cloudSignup?: boolean
     }>
-> = ({ className, text, eventName, forDotcom }) => {
+> = ({ className, text, eventName, cloudSignup }) => {
     const onClick = (): void => {
         eventLogger.log(eventName)
     }
     return (
         <ButtonLink
             onClick={onClick}
-            to={buildGetStartedURL('code-monitoring', '/code-monitoring/new', forDotcom)}
+            to={buildGetStartedURL(cloudSignup, '/code-monitoring/new')}
             className={className}
             variant="primary"
         >

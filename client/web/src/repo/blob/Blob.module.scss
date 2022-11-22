@@ -13,7 +13,7 @@
         border-collapse: collapse;
     }
 
-    th:global(.line) {
+    td:global(.line) {
         &::before {
             // draw line number with css so it cannot be copied to clipboard
             content: attr(data-line);
@@ -43,13 +43,13 @@
             }
         }
 
-        &:first-child th:global(.line) {
+        &:first-child td:global(.line) {
             // place bottom spacer below the line number set with ::before pseudo-element
             display: flex;
             flex-direction: column-reverse;
         }
 
-        &:first-child:last-child th:global(.line) {
+        &:first-child:last-child td:global(.line) {
             // place the line number set with ::before pseudo-element between top and bottom spacers
             &::before {
                 order: 1;
@@ -61,7 +61,7 @@
         }
     }
 
-    th:global(.line),
+    td:global(.line),
     td:global(.code) {
         padding: 0;
     }

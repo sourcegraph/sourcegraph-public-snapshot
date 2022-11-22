@@ -155,7 +155,6 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
                 history={history}
                 location={location}
                 useURLQuery={true}
-                listComponent="ul"
                 listClassName={styles.previewListGrid}
                 headComponent={PreviewListHeader}
                 headComponentProps={{

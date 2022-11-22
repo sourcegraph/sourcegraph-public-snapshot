@@ -164,7 +164,8 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountElement.className = className
 
     // new GitHub UI
-    const container = codeViewElement.querySelector('#repos-sticky-header a[href="https://github.dev/"]')?.parentElement
+    const container = codeViewElement.querySelector('#repos-sticky-header')?.childNodes[0]?.childNodes[0]?.childNodes[1]
+        ?.childNodes[1] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
     if (container instanceof HTMLElement) {
         container.prepend(mountElement)
         return mountElement

@@ -13,6 +13,7 @@ import {
     SubmitSearchParameters,
     canSubmitSearch,
     QueryState,
+    SearchModeProps,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -22,13 +23,13 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../../auth'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { Notices } from '../../global/Notices'
 import {
     useExperimentalFeatures,
     useNavbarQueryState,
     setSearchCaseSensitivity,
     setSearchPatternType,
+    setSearchMode,
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
@@ -57,13 +58,14 @@ interface Props
 
 const queryStateSelector = (
     state: NavbarQueryState
-): Pick<CaseSensitivityProps, 'caseSensitive'> & SearchPatternTypeProps => ({
+): Pick<CaseSensitivityProps, 'caseSensitive'> & SearchPatternTypeProps & Pick<SearchModeProps, 'searchMode'> => ({
     caseSensitive: state.searchCaseSensitivity,
     patternType: state.searchPatternType,
+    searchMode: state.searchMode,
 })
 
 export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
-    const { caseSensitive, patternType } = useNavbarQueryState(queryStateSelector, shallow)
+    const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
@@ -72,7 +74,6 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
-    const [showSearchHistory] = useFeatureFlag('search-input-show-history')
     const { recentSearches, addRecentSearch } = useRecentSearches()
 
     const submitSearchOnChange = useCallback(
@@ -86,6 +87,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                     history: props.history,
                     patternType,
                     caseSensitive,
+                    searchMode,
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
                     addRecentSearch,
                     ...parameters,
@@ -99,6 +101,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             addRecentSearch,
             patternType,
             caseSensitive,
+            searchMode,
         ]
     )
 
@@ -131,17 +134,18 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                             patternType={patternType}
                             setPatternType={setSearchPatternType}
                             setCaseSensitivity={setSearchCaseSensitivity}
+                            searchMode={searchMode}
+                            setSearchMode={setSearchMode}
                             queryState={props.queryState}
                             onChange={props.setQueryState}
                             onSubmit={onSubmit}
-                            autoFocus={!showSearchHistory && !isTouchOnlyDevice && props.autoFocus !== false}
+                            autoFocus={!isTouchOnlyDevice && props.autoFocus !== false}
                             isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                             structuralSearchDisabled={
                                 window.context?.experimentalFeatures?.structuralSearch === 'disabled'
                             }
                             applySuggestionsOnEnter={applySuggestionsOnEnter}
-                            showCopyQueryButton={!showSearchHistory}
-                            showSearchHistory={showSearchHistory}
+                            showSearchHistory={true}
                             recentSearches={recentSearches}
                         />
                     </TraceSpanProvider>
