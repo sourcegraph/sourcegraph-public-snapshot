@@ -9,7 +9,7 @@ import { Container, Icon, Link, H2, H3, Text } from '@sourcegraph/wildcard'
 
 import { EnterprisePageRoutes } from '../../routes.constants'
 import { useTheme, ThemePreference } from '../../theme'
-import { CloudCTABanner } from '../../marketing/components/CloudCTABanner'
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
 
@@ -54,6 +54,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
     useEffect(() => telemetryService.log('NotebooksGettingStartedTabViewed'), [telemetryService])
 
     const [, setHasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
+    const isSourcegraphDotCom = window.context.sourcegraphDotComMode
 
     useEffect(() => {
         setHasSeenGettingStartedTab(true)
@@ -119,13 +120,13 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                 </div>
             </Container>
             
-            {window.context.sourcegraphDotComMode && (
-                <CloudCTABanner>
+            {isSourcegraphDotCom && (
+                <CloudCtaBanner>
                     To create Notebooks across your team's private repositories,{' '}
                     <Link to="https://signup.sourcegraph.com/?p=notebooks" target="_blank" rel="noopener noreferrer" onClick={() => telemetryService.log('ClickedOnCloudCTA')}>
                         try Sourcegraph Cloud
                     </Link>.
-                </CloudCTABanner>
+                </CloudCtaBanner>
             )}
 
             <H3>Example notebooks</H3>

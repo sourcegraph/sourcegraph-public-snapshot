@@ -19,9 +19,6 @@ export const CodeInsightsDescription: React.FunctionComponent<Props> = ({ classN
             Code Insights provides precise answers about the trends and composition of your codebase. It transforms code
             into a queryable database and lets you create customizable visual dashboards in seconds.
         </Text>
-        
-        <div>
-            <H3>Use Code Insights to...</H3>
 
         <div>
             <H3>Use Code Insights to...</H3>

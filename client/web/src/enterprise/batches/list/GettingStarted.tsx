@@ -9,7 +9,7 @@ import { CloudCtaBanner } from '../../../components/CloudCtaBanner'
 import { CtaBanner } from '../../../components/CtaBanner'
 
 import { eventLogger } from '../../../tracking/eventLogger'
-import { CloudCTABanner } from '../../../marketing/components/CloudCTABanner'
+import { CloudCtaBanner } from '../../../components/CloudCtaBanner'
 
 export interface GettingStartedProps {
     isSourcegraphDotCom: boolean

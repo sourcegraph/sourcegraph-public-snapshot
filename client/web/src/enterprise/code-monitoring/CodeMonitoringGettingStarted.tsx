@@ -7,9 +7,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
-import { CloudCTABanner } from '../../marketing/components/CloudCTABanner'
-
-import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 
@@ -67,6 +65,7 @@ const createCodeMonitorUrl = (example: ExampleCodeMonitor): string => {
 export const CodeMonitoringGettingStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeMonitoringGettingStartedProps>
 > = ({ isLightTheme, isSignedIn }) => {
+    const isSourcegraphDotCom = window.context.sourcegraphDotComMode
     const assetsRoot = window.context?.assetsRoot || ''
 
     const logExampleMonitorClicked = useCallback(() => {
@@ -102,13 +101,13 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                 </div>
             </Card>
             
-            {window.context.sourcegraphDotComMode && (
-                <CloudCTABanner>
+            {isSourcegraphDotCom && (
+                <CloudCtaBanner>
                     To monitor changes across your team's private repositories,{' '}
                     <Link to="https://signup.sourcegraph.com/?p=monitoring" target="_blank" rel="noopener noreferrer" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
                         try Sourcegraph Cloud
                     </Link>.
-                </CloudCTABanner>
+                </CloudCtaBanner>
             )}
 
             <div>
@@ -156,32 +155,17 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                             </Link>
                         </div>
                     </div>
-                    {isSignedIn ? (
-                        <div className="col-4">
-                            <div>
-                                <H4>Questions and feedback</H4>
-                                <Text className="text-muted">
-                                    Have a question or idea about code monitoring? We want to hear your feedback!
-                                </Text>
-                                <Link to="mailto:feedback@sourcegraph.com" className="link">
-                                    Share your thoughts
-                                </Link>
-                            </div>
+                    <div className="col-4">
+                        <div>
+                            <H4>Questions and feedback</H4>
+                            <Text className="text-muted">
+                                Have a question or idea about code monitoring? We want to hear your feedback!
+                            </Text>
+                            <Link to="mailto:feedback@sourcegraph.com" className="link">
+                                Share your thoughts
+                            </Link>
                         </div>
-                    ) : (
-                        <div className="col-4">
-                            <Card className={styles.signUpCard}>
-                                <H4>Free for registered users</H4>
-                                <Text className="text-muted">Build a code monitor today on open source code.</Text>
-                                <CodeMonitorSignUpLink
-                                    className={styles.createButton}
-                                    eventName="SignUpPLGMonitor_GettingStarted"
-                                    text="Get started"
-                                    cloudSignup={false}
-                                />
-                            </Card>
-                        </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>

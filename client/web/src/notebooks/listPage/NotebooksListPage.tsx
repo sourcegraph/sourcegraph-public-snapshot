@@ -10,7 +10,7 @@ import { catchError, startWith, switchMap } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Button, useEventObservable, Alert, ButtonLink } from '@sourcegraph/wildcard'
+import { PageHeader, Button, useEventObservable, Alert, ButtonLink, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnectionFilter } from '../../components/FilteredConnection'
@@ -22,6 +22,7 @@ import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } 
 import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
 import { NotebooksList, NotebooksListProps } from './NotebooksList'
 import { NotebooksListPageHeader } from './NotebooksListPageHeader'
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 
 export interface NotebooksListPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -74,6 +75,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
         telemetryService.logPageView('SearchNotebooksListPage')
     }, [telemetryService])
 
+    const isSourcegraphDotCom = window.context.sourcegraphDotComMode
     const [importState, setImportState] = useState<typeof LOADING | ErrorLike | undefined>()
     const history = useHistory()
     const location = useLocation()
@@ -286,7 +288,22 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                 </ButtonLink>
                             </div>
                         ))}
-                    </div>
+
+                        {selectedTab === 'notebooks' && isSourcegraphDotCom && (
+                            <CloudCtaBanner outlined={true} className="ml-auto">
+                                To create Notebooks across your private repositories,{' '}
+                                <Link
+                                    to="https://signup.sourcegraph.com/?p=notebooks"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                                >
+                                    try Sourcegraph Cloud
+                                </Link>
+                                .
+                            </CloudCtaBanner>
+                        )}
+                    </div>                    
                 </div>
 
                 {selectedTab === 'notebooks' && (

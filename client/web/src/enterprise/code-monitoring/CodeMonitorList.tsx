@@ -11,6 +11,8 @@ import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVari
 
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
+import { eventLogger } from '../../tracking/eventLogger'
 
 interface CodeMonitorListProps
     extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>> {
@@ -32,6 +34,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
 }) => {
     const location = useLocation()
     const history = useHistory()
+    const isSourcegraphDotCom = window.context.sourcegraphDotComMode
 
     const queryConnection = useCallback(
         (args: Partial<ListUserCodeMonitorsVariables>) => {
@@ -56,7 +59,23 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
         <>
             <div className="row mb-5">
                 <div className="d-flex flex-column w-100 col">
-                    <H3 className="mb-2">Your code monitors</H3>
+                    <div className="d-flex align-items-center justify-content-between">
+                        <H3 className="mb-2">Your code monitors</H3>
+                        {isSourcegraphDotCom && (
+                            <CloudCtaBanner outlined={true}>
+                                To monitor changes across your private repos,{' '}
+                                <Link
+                                    to="https://signup.sourcegraph.com/?p=monitoring"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                                >
+                                    try Sourcegraph Cloud
+                                </Link>
+                                .
+                            </CloudCtaBanner>
+                        )}
+                    </div>
                     <Container className="py-3">
                         <FilteredConnection<
                             CodeMonitorFields,

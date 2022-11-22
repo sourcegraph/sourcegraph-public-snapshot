@@ -13,7 +13,7 @@ import { CodeInsightsLandingPageContext, CodeInsightsLandingPageType } from '../
 import { CodeInsightsDescription } from '../getting-started/components/code-insights-description/CodeInsightsDescription'
 
 import { CodeInsightsExamplesPicker } from './components/code-insights-examples-picker/CodeInsightsExamplesPicker'
-import { CloudCTABanner } from '../../../../../marketing/components/CloudCTABanner'
+import { CloudCtaBanner } from '../../../../../components/CloudCtaBanner'
 
 import styles from './CodeInsightsDotComGetStarted.module.scss'
 
@@ -77,12 +77,12 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         <CodeInsightsDescription className={styles.heroDescriptionBlock} />
                     </Card>
                     
-                    <CloudCTABanner>
+                    <CloudCtaBanner>
                         To track Insights across your team's private repos,{' '}
                         <Link to="https://signup.sourcegraph.com/?p=insights" target="_blank" rel="noopener noreferrer" onClick={() => telemetryService.log('ClickedOnCloudCTA')}>
                             try Sourcegraph Cloud
                         </Link>.
-                    </CloudCTABanner>
+                    </CloudCtaBanner>
 
                     <CloudCtaBanner>
                         To track Insights across your team's private repos,{' '}
