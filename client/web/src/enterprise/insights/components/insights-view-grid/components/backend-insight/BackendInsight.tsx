@@ -3,7 +3,7 @@ import { forwardRef, HTMLAttributes, useContext, useRef, useState } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { asError } from '@sourcegraph/common'
+import { asError, isDefined } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
@@ -82,8 +82,14 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                 },
             },
             onCompleted: data => {
-                const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
+                // This query requests a list of 1 insightview if there is an error and the insightView will be null and error is populated
+                const node = data.insightViews.nodes[0]
                 seriesToggleState.setSelectedSeriesIds([])
+                if (!isDefined(node)) {
+                    setInsightData(undefined)
+                    return
+                }
+                const parsedData = createBackendInsightData({ ...insight, filters }, node)
                 setInsightData(parsedData)
             },
         }

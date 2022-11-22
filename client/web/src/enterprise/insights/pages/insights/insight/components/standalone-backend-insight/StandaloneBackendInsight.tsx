@@ -90,7 +90,12 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
             pollInterval: insightPollingInterval(insight),
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
             onCompleted: data => {
-                const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
+                const node = data.insightViews.nodes[0]
+                if (node === null) {
+                    stopPolling()
+                    return
+                }
+                const parsedData = createBackendInsightData({ ...insight, filters }, node)
                 if (!parsedData.isFetchingHistoricalData) {
                     stopPolling()
                 }
