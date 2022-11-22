@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { Connection } from '../../../../../components/FilteredConnection'
-import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
+import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,

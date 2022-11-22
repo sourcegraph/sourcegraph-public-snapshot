@@ -1,6 +1,9 @@
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 
-import { useConnection, UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
+import {
+    useShowMorePagination,
+    UseConnectionResult,
+} from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     Scalars,
     BatchSpecWorkspacesPreviewResult,
@@ -18,7 +21,7 @@ export interface WorkspacePreviewFilters {
 }
 
 /**
- * Custom hook that wraps `useConnection` to resolve the workspaces for the batch spec
+ * Custom hook that wraps `useShowMorePagination` to resolve the workspaces for the batch spec
  * with the ID and filters provided.
  *
  * @param batchSpecID The id of the batch spec to query.
@@ -28,7 +31,7 @@ export const useWorkspaces = (
     batchSpecID: Scalars['ID'],
     filters?: WorkspacePreviewFilters
 ): UseConnectionResult<PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields> =>
-    useConnection<
+    useShowMorePagination<
         BatchSpecWorkspacesPreviewResult,
         BatchSpecWorkspacesPreviewVariables,
         PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields

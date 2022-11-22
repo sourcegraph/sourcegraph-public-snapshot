@@ -2,7 +2,10 @@ import { MutationTuple } from '@apollo/client'
 
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 
-import { useConnection, UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
+import {
+    useShowMorePagination,
+    UseConnectionResult,
+} from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ExecutorSecretFields,
     Scalars,
@@ -119,7 +122,7 @@ export const userExecutorSecretsConnectionFactory = (
 ): UseConnectionResult<ExecutorSecretFields> =>
     // Scope has to be injected dynamically.
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useConnection<UserExecutorSecretsResult, UserExecutorSecretsVariables, ExecutorSecretFields>({
+    useShowMorePagination<UserExecutorSecretsResult, UserExecutorSecretsVariables, ExecutorSecretFields>({
         query: USER_EXECUTOR_SECRETS,
         variables: {
             user,
@@ -165,7 +168,7 @@ export const orgExecutorSecretsConnectionFactory = (
 ): UseConnectionResult<ExecutorSecretFields> =>
     // Scope has to be injected dynamically.
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useConnection<OrgExecutorSecretsResult, OrgExecutorSecretsVariables, ExecutorSecretFields>({
+    useShowMorePagination<OrgExecutorSecretsResult, OrgExecutorSecretsVariables, ExecutorSecretFields>({
         query: ORG_EXECUTOR_SECRETS,
         variables: {
             org,
@@ -205,7 +208,7 @@ export const globalExecutorSecretsConnectionFactory = (
 ): UseConnectionResult<ExecutorSecretFields> =>
     // Scope has to be injected dynamically.
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useConnection<GlobalExecutorSecretsResult, GlobalExecutorSecretsVariables, ExecutorSecretFields>({
+    useShowMorePagination<GlobalExecutorSecretsResult, GlobalExecutorSecretsVariables, ExecutorSecretFields>({
         query: GLOBAL_EXECUTOR_SECRETS,
         variables: {
             after: null,
@@ -262,7 +265,11 @@ export const EXECUTOR_SECRET_ACCESS_LOGS = gql`
 export const useExecutorSecretAccessLogsConnection = (
     secret: Scalars['ID']
 ): UseConnectionResult<ExecutorSecretAccessLogFields> =>
-    useConnection<ExecutorSecretAccessLogsResult, ExecutorSecretAccessLogsVariables, ExecutorSecretAccessLogFields>({
+    useShowMorePagination<
+        ExecutorSecretAccessLogsResult,
+        ExecutorSecretAccessLogsVariables,
+        ExecutorSecretAccessLogFields
+    >({
         query: EXECUTOR_SECRET_ACCESS_LOGS,
         variables: {
             secret,

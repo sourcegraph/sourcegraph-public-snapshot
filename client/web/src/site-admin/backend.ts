@@ -14,7 +14,10 @@ import {
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
-import { useConnection, UseConnectionResult } from '../components/FilteredConnection/hooks/useConnection'
+import {
+    useShowMorePagination,
+    UseConnectionResult,
+} from '../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     AllConfigResult,
     CheckMirrorRepositoryConnectionResult,
@@ -964,7 +967,7 @@ export const WEBHOOK_BY_ID = gql`
 `
 
 export const useWebhooksConnection = (): UseConnectionResult<WebhookFields> =>
-    useConnection<WebhooksListResult, WebhooksListVariables, WebhookFields>({
+    useShowMorePagination<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
         variables: {},
         getConnection: result => {
@@ -983,7 +986,7 @@ export const useWebhookLogsConnection = (
     first: number,
     onlyErrors: boolean
 ): UseConnectionResult<WebhookLogFields> =>
-    useConnection<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables, WebhookLogFields>({
+    useShowMorePagination<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables, WebhookLogFields>({
         query: WEBHOOK_LOGS_BY_ID,
         variables: {
             first: first ?? 20,

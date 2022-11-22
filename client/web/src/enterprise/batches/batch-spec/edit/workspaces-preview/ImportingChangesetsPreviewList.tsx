@@ -5,7 +5,7 @@ import { mdiImport } from '@mdi/js'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { Icon, H3, H4 } from '@sourcegraph/wildcard'
 
-import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
+import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionList,

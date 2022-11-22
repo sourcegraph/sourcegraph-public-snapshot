@@ -7,15 +7,15 @@ import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shar
 import { Text } from '@sourcegraph/wildcard'
 
 import {
-    TestConnectionQueryFields,
-    TestConnectionQueryResult,
-    TestConnectionQueryVariables,
+    TestShowMorePaginationQueryFields,
+    TestShowMorePaginationQueryResult,
+    TestShowMorePaginationQueryVariables,
 } from '../../../graphql-operations'
 
-import { useConnection } from './useConnection'
+import { useShowMorePagination } from './useShowMorePagination'
 
-const TEST_CONNECTION_QUERY = gql`
-    query TestConnectionQuery($first: Int) {
+const TEST_SHOW_MORE_PAGINATION_QUERY = gql`
+    query TestShowMorePaginationQuery($first: Int) {
         repositories(first: $first) {
             nodes {
                 id
@@ -29,19 +29,19 @@ const TEST_CONNECTION_QUERY = gql`
         }
     }
 
-    fragment TestConnectionQueryFields on Repository {
+    fragment TestShowMorePaginationQueryFields on Repository {
         name
         id
     }
 `
 
 const TestComponent = () => {
-    const { connection, fetchMore, hasNextPage } = useConnection<
-        TestConnectionQueryResult,
-        TestConnectionQueryVariables,
-        TestConnectionQueryFields
+    const { connection, fetchMore, hasNextPage } = useShowMorePagination<
+        TestShowMorePaginationQueryResult,
+        TestShowMorePaginationQueryVariables,
+        TestShowMorePaginationQueryFields
     >({
-        query: TEST_CONNECTION_QUERY,
+        query: TEST_SHOW_MORE_PAGINATION_QUERY,
         variables: {
             first: 1,
         },
@@ -78,8 +78,8 @@ const generateMockRequest = ({
 }: {
     after?: string
     first: number
-}): MockedResponse<TestConnectionQueryResult>['request'] => ({
-    query: getDocumentNode(TEST_CONNECTION_QUERY),
+}): MockedResponse<TestShowMorePaginationQueryResult>['request'] => ({
+    query: getDocumentNode(TEST_SHOW_MORE_PAGINATION_QUERY),
     variables: {
         after,
         first,
@@ -94,9 +94,9 @@ const generateMockResult = ({
 }: {
     endCursor: string | null
     hasNextPage: boolean
-    nodes: TestConnectionQueryFields[]
+    nodes: TestShowMorePaginationQueryFields[]
     totalCount: number
-}): MockedResponse<TestConnectionQueryResult>['result'] => ({
+}): MockedResponse<TestShowMorePaginationQueryResult>['result'] => ({
     data: {
         repositories: {
             nodes,
@@ -109,7 +109,7 @@ const generateMockResult = ({
     },
 })
 
-describe('useConnection', () => {
+describe('useShowMorePagination', () => {
     const fetchNextPage = async (renderResult: RenderWithBrandedContextResult) => {
         const fetchMoreButton = renderResult.getByText('Fetch more')
         fireEvent.click(fetchMoreButton)
@@ -118,7 +118,7 @@ describe('useConnection', () => {
         await waitForNextApolloResponse()
     }
 
-    const mockResultNodes: TestConnectionQueryFields[] = [
+    const mockResultNodes: TestShowMorePaginationQueryFields[] = [
         {
             id: 'A',
             name: 'repo-A',
@@ -137,7 +137,7 @@ describe('useConnection', () => {
         },
     ]
 
-    const renderWithMocks = async (mocks: MockedResponse<TestConnectionQueryResult>[], route = '/') => {
+    const renderWithMocks = async (mocks: MockedResponse<TestShowMorePaginationQueryResult>[], route = '/') => {
         const renderResult = renderWithBrandedContext(
             <MockedTestProvider mocks={mocks}>
                 <TestComponent />
@@ -153,8 +153,8 @@ describe('useConnection', () => {
 
     describe('Cursor based pagination', () => {
         const generateMockCursorResponses = (
-            nodes: TestConnectionQueryFields[]
-        ): MockedResponse<TestConnectionQueryResult>[] =>
+            nodes: TestShowMorePaginationQueryFields[]
+        ): MockedResponse<TestShowMorePaginationQueryResult>[] =>
             nodes.map((node, index) => {
                 const isFirstPage = index === 0
                 const cursor = !isFirstPage ? String(index) : undefined
@@ -222,7 +222,7 @@ describe('useConnection', () => {
 
         it('fetches correct amount of results when navigating directly with a URL', async () => {
             // We need to add an extra mock here, as we will derive a different `first` variable from `visible` in the URL.
-            const mockFromVisible: MockedResponse<TestConnectionQueryResult> = {
+            const mockFromVisible: MockedResponse<TestShowMorePaginationQueryResult> = {
                 request: generateMockRequest({ first: 3 }),
                 result: generateMockResult({
                     nodes: [mockResultNodes[0], mockResultNodes[1], mockResultNodes[2]],
@@ -254,7 +254,7 @@ describe('useConnection', () => {
     })
 
     describe('Batch based pagination', () => {
-        const batchedMocks: MockedResponse<TestConnectionQueryResult>[] = [
+        const batchedMocks: MockedResponse<TestShowMorePaginationQueryResult>[] = [
             {
                 request: generateMockRequest({ first: 1 }),
                 result: generateMockResult({

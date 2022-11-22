@@ -8,7 +8,7 @@ import { useSearchParameters, useInterval } from '@sourcegraph/wildcard'
 import { Connection, ConnectionQueryArguments } from '../ConnectionType'
 import { asGraphQLResult, hasNextPage, parseQueryInt } from '../utils'
 
-import { useConnectionUrl } from './useConnectionUrl'
+import { useShowMorePaginationUrl } from './useShowMorePaginationUrl'
 
 export interface UseConnectionResult<TData> {
     connection?: Connection<TData>
@@ -62,7 +62,7 @@ const DEFAULT_FIRST: ConnectionQueryArguments['first'] = 20
  * @param getConnection A function that filters and returns the relevant data from the connection response.
  * @param options Additional configuration options
  */
-export const useConnection = <TResult, TVariables, TData>({
+export const useShowMorePagination = <TResult, TVariables, TData>({
     query,
     variables,
     getConnection: getConnectionFromGraphQLResult,
@@ -123,7 +123,7 @@ export const useConnection = <TResult, TVariables, TData>({
 
     /**
      * Map over Apollo results to provide type-compatible `GraphQLResult`s for consumers.
-     * This ensures good interoperability between `FilteredConnection` and `useConnection`.
+     * This ensures good interoperability between `FilteredConnection` and `useShowMorePagination`.
      */
     const getConnection = ({ data, error }: Pick<QueryResult<TResult>, 'data' | 'error'>): Connection<TData> => {
         const result = asGraphQLResult({ data, errors: error?.graphQLErrors || [] })
@@ -132,7 +132,7 @@ export const useConnection = <TResult, TVariables, TData>({
 
     const connection = data ? getConnection({ data, error }) : undefined
 
-    useConnectionUrl({
+    useShowMorePaginationUrl({
         enabled: options?.useURL,
         first: firstReference.current,
         visibleResultCount: connection?.nodes.length,

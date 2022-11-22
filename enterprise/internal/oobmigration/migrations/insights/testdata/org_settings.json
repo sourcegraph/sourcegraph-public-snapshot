@@ -887,15 +887,15 @@
     "otherThreshold": 0.03
   },
   "searchInsights.insight.migrationFromFilteredConnectionToUseConnection": {
-    "title": "Migration from FilteredConnection to useConnection",
+    "title": "Migration from FilteredConnection to useShowMorePagination",
     "repositories": [
       "github.com/sourcegraph/sourcegraph"
     ],
     "series": [
       {
-        "name": "Usage of useConnection",
+        "name": "Usage of useShowMorePagination",
         "stroke": "var(--oc-teal-7)",
-        "query": "= useConnection"
+        "query": "= useShowMorePagination"
       },
       {
         "name": "Usage of FilteredConnection",
@@ -956,7 +956,7 @@
         "query": "patternType:regexp (query|mutate)GraphQL(\\(|<[^>]*>\\()"
       },
       {
-        "name": "useMutation | useQuery | useConnection hooks",
+        "name": "useMutation | useQuery | useShowMorePagination hooks",
         "stroke": "var(--oc-green-7)",
         "query": "patternType:regexp use(Query|Mutation|Connection|LazyQuery)(\\(|<[^>]*>\\()"
       }

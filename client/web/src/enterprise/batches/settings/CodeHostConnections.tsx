@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Container, Link, H3, Text } from '@sourcegraph/wildcard'
 
-import { UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
+import { UseConnectionResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,

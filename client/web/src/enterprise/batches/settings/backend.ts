@@ -2,7 +2,10 @@ import { MutationTuple } from '@apollo/client'
 
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 
-import { useConnection, UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
+import {
+    useShowMorePagination,
+    UseConnectionResult,
+} from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     BatchChangesCodeHostFields,
     CreateBatchChangesCredentialResult,
@@ -107,7 +110,11 @@ export const USER_CODE_HOSTS = gql`
 export const useUserBatchChangesCodeHostConnection = (
     user: Scalars['ID']
 ): UseConnectionResult<BatchChangesCodeHostFields> =>
-    useConnection<UserBatchChangesCodeHostsResult, UserBatchChangesCodeHostsVariables, BatchChangesCodeHostFields>({
+    useShowMorePagination<
+        UserBatchChangesCodeHostsResult,
+        UserBatchChangesCodeHostsVariables,
+        BatchChangesCodeHostFields
+    >({
         query: USER_CODE_HOSTS,
         variables: {
             user,
@@ -142,7 +149,11 @@ export const GLOBAL_CODE_HOSTS = gql`
 `
 
 export const useGlobalBatchChangesCodeHostConnection = (): UseConnectionResult<BatchChangesCodeHostFields> =>
-    useConnection<GlobalBatchChangesCodeHostsResult, GlobalBatchChangesCodeHostsVariables, BatchChangesCodeHostFields>({
+    useShowMorePagination<
+        GlobalBatchChangesCodeHostsResult,
+        GlobalBatchChangesCodeHostsVariables,
+        BatchChangesCodeHostFields
+    >({
         query: GLOBAL_CODE_HOSTS,
         variables: {
             after: null,

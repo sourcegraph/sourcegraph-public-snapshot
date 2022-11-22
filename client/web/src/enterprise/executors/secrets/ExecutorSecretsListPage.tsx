@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { Button, Container, Link, PageHeader } from '@sourcegraph/wildcard'
 
-import { UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
+import { UseConnectionResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
