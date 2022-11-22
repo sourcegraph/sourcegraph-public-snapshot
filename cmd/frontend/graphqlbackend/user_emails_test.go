@@ -182,7 +182,7 @@ func TestRemoveUserEmail(t *testing.T) {
 					},
 				)
 				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
+				want := "can only remove your own e-mail address: must be authenticated as user with id 1"
 				assert.Equal(t, want, got)
 			})
 		}
