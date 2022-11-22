@@ -49,7 +49,7 @@ import { Scalars } from '../../graphql-operations'
 import { render as renderLsifHtml } from '../../lsif/html'
 import { copyNotebook, CopyNotebookProps } from '../../notebooks/notebook'
 import { SearchStreamingProps } from '../../search'
-import { useNotepad, useExperimentalFeatures } from '../../stores'
+import { useNotepad, useExperimentalFeatures, getExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { serviceKindDisplayNameAndIcon } from '../actions/GoToCodeHostAction'
@@ -72,6 +72,7 @@ import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
 import styles from './BlobPage.module.scss'
+import { enableTokenSelection as enableTokenSelectionFlag } from './codemirror/token-selection'
 
 const SEARCH_NOTEBOOK_FILE_EXTENSION = '.snb.md'
 const RenderedNotebookMarkdown = lazyComponent(() => import('./RenderedNotebookMarkdown'), 'RenderedNotebookMarkdown')
@@ -122,10 +123,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
-    const enableTokenKeyboardNavigation =
-        props.codeIntelligenceEnabled &&
-        isSettingsValid(props.settingsCascade) &&
-        props.settingsCascade.final['codeIntel.blobKeyboardNavigation'] === 'token'
+    const enableTokenSelection = enableTokenSelectionFlag(props.settingsCascade)
+    const enableTokenKeyboardNavigation = false
 
     const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
         props.location.search,
@@ -567,6 +566,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         blameHunks={blameDecorations}
                         overrideBrowserSearchKeybinding={true}
                         tokenKeyboardNavigation={enableTokenKeyboardNavigation}
+                        enableTokenSelection={enableTokenSelection}
                     />
                 </TraceSpanProvider>
             )}

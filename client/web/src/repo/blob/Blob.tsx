@@ -133,6 +133,9 @@ export interface BlobProps
     // Enables keyboard navigation across precise code intelligence
     tokenKeyboardNavigation?: boolean
 
+    // Enables selecting tokens with the mouse or keyboard
+    enableTokenSelection?: boolean
+
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
     nav?: (url: string) => void

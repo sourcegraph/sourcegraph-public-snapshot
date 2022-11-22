@@ -68,12 +68,14 @@ export function sourcegraphExtensions({
     extensionsController,
     disableStatusBar,
     disableDecorations,
+    enableTokenSelection,
 }: {
     blobInfo: BlobInfo
     initialSelection: LineOrPositionOrRange
     extensionsController: RequiredExtensionsControllerProps['extensionsController']
     disableStatusBar?: boolean
     disableDecorations?: boolean
+    enableTokenSelection?: boolean
 }): Extension {
     const subscriptions = new Subscription()
 

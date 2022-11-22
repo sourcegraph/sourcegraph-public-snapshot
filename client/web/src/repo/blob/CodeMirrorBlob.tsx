@@ -29,7 +29,7 @@ import { pin, updatePin } from './codemirror/hovercard'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
-import { tokensAsLinks } from './codemirror/tokens-as-links'
+import { tokenSelection } from './codemirror/token-selection'
 import { isValidLineRange } from './codemirror/utils'
 
 const staticExtensions: Extension = [
@@ -96,6 +96,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         history,
         blameHunks,
         tokenKeyboardNavigation,
+        enableTokenSelection,
 
         // Reference panel specific props
         disableStatusBar,
@@ -176,13 +177,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
             }),
-            tokenKeyboardNavigation
-                ? tokensAsLinks({
-                      history,
-                      blobInfo,
-                      preloadGoToDefinition,
-                  })
-                : [],
+            enableTokenSelection || tokenKeyboardNavigation ? tokenSelection() : [],
             syntaxHighlight.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
@@ -192,6 +187,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                       extensionsController,
                       disableStatusBar,
                       disableDecorations,
+                      enableTokenSelection,
                   })
                 : [],
             blobPropsCompartment.of(blobProps),

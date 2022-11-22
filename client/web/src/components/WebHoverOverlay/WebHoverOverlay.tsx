@@ -13,6 +13,8 @@ import { AlertProps, useLocalStorage } from '@sourcegraph/wildcard'
 import { HoverThresholdProps } from '../../repo/RepoContainer'
 
 import styles from './WebHoverOverlay.module.scss'
+import { getExperimentalFeatures } from '../../stores'
+import { enableTokenSelection } from '../../repo/blob/codemirror/token-selection'
 
 const iconKindToAlertVariant: Record<number, AlertProps['variant']> = {
     [NotificationType.Info]: 'secondary',
@@ -176,6 +178,9 @@ export const getGoToURL = (
 }
 
 export const getClickToGoToDefinition = (settingsCascade: SettingsCascadeOrError<Settings>): boolean => {
+    if (enableTokenSelection(settingsCascade)) {
+        return false
+    }
     if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
         const value = settingsCascade.final['codeIntelligence.clickToGoToDefinition'] as boolean
         return value ?? true

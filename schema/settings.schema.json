@@ -205,6 +205,13 @@
             "pointer": true
           }
         },
+        "tokenSelection": {
+          "description": "Adds the ability to select tokens in the code view using the mouse or the keyboard.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          }
+        },
         "fuzzyFinder": {
           "description": "Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.",
           "type": "boolean",
