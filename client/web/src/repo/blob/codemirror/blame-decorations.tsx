@@ -47,18 +47,18 @@ const [hoveredLine, setHoveredLine] = createUpdateableField<number | null>(null,
     }),
 ])
 
-class DecorationWidget extends WidgetType {
+class BlameDecorationWidget extends WidgetType {
     private container: HTMLElement | null = null
     private reactRoot: Root | null = null
     private state: { history: History }
 
-    constructor(public view: EditorView, public readonly hunk: BlameHunk | undefined) {
+    constructor(public view: EditorView, public readonly hunk: BlameHunk | undefined, public readonly line: number) {
         super()
         this.state = { history: this.view.state.facet(blobPropsFacet).history }
     }
 
     /* eslint-disable-next-line id-length*/
-    public eq(other: DecorationWidget): boolean {
+    public eq(other: BlameDecorationWidget): boolean {
         return isEqual(this.hunk, other.hunk)
     }
 
@@ -73,7 +73,6 @@ class DecorationWidget extends WidgetType {
                     line={this.hunk?.startLine ?? 0}
                     blameHunk={this.hunk}
                     history={this.state.history}
-                    shouldRenderEmptyDecoration={true}
                     onSelect={this.selectRow}
                     onDeselect={this.deselectRow}
                 />
@@ -100,12 +99,6 @@ class DecorationWidget extends WidgetType {
     }
 }
 
-const blameGutterElement = new (class extends GutterMarker {
-    public toDOM(): HTMLElement {
-        return document.createElement('div')
-    }
-})()
-
 /**
  * Facet to show git blame decorations.
  */
@@ -113,19 +106,6 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
     combine: decorations => decorations.flat(),
     enables: facet => [
         hoveredLine,
-
-        // Render gutter with no content only to create a column with specified background.
-        // This column is used by .cm-content shifted to the left by var(--blame-decoration-width)
-        // to achieve column-like view of inline blame decorations.
-        gutter({
-            class: 'blame-gutter',
-            lineMarker: () => blameGutterElement,
-            initialSpacer: () => blameGutterElement,
-        }),
-
-        // By default, gutters are fixed, meaning they don't scroll along with the content horizontally (position: sticky).
-        // We override this behavior when blame decorations are shown to make inline decorations column-like view work.
-        gutters({ fixed: false }),
 
         // Render blame hunks as line decorations.
         ViewPlugin.fromClass(
@@ -150,7 +130,7 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                             const line = view.state.doc.lineAt(position)
                             const matchingHunk = hunks.find(hunk => hunk.startLine === line.number)
                             const decoration = Decoration.widget({
-                                widget: new DecorationWidget(view, matchingHunk),
+                                widget: new BlameDecorationWidget(view, matchingHunk, line.number),
                             })
                             widgets.push(decoration.range(line.from))
                             position = line.to + 1
@@ -172,7 +152,7 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                 display: 'inline-block',
                 background: 'var(--body-bg)',
                 verticalAlign: 'bottom',
-
+                width: 'var(--blame-decoration-width)',
                 marginRight: '1rem',
             },
 
@@ -180,14 +160,40 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
                 background: 'inherit',
             },
 
-            '.blame-gutter': {
-                background: 'var(--body-bg)',
-                width: 'var(--blame-decoration-width)',
-            },
-
             '.cm-content': {
                 marginLeft: 'calc(var(--blame-decoration-width) * -1)', // Make .cm-content overflow .blame-gutter
                 zIndex: 201, // override default .cm-gutters z-index 200
+            },
+        }),
+    ],
+})
+
+const blameGutterElement = new (class extends GutterMarker {
+    public toDOM(): HTMLElement {
+        return document.createElement('div')
+    }
+})()
+
+export const showBlameGutter = Facet.define<boolean>({
+    combine: value => value.flat(),
+    enables: [
+        // Render gutter with no content only to create a column with specified background.
+        // This column is used by .cm-content shifted to the left by var(--blame-decoration-width)
+        // to achieve column-like view of inline blame decorations.
+        gutter({
+            class: 'blame-gutter',
+            lineMarker: () => blameGutterElement,
+            initialSpacer: () => blameGutterElement,
+        }),
+
+        // By default, gutters are fixed, meaning they don't scroll along with the content horizontally (position: sticky).
+        // We override this behavior when blame decorations are shown to make inline decorations column-like view work.
+        gutters({ fixed: false }),
+
+        EditorView.theme({
+            '.blame-gutter': {
+                background: 'var(--body-bg)',
+                width: 'var(--blame-decoration-width)',
             },
         }),
     ],
