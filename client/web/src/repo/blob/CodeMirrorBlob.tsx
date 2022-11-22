@@ -128,7 +128,10 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
     const blameVisibility = useMemo(() => (isBlameVisible ? [showBlameGutter.of(isBlameVisible)] : []), [
         isBlameVisible,
     ])
-    const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
+    const blameDecorations = useMemo(
+        () => (isBlameVisible && blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []),
+        [isBlameVisible, blameHunks]
+    )
 
     const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
 
