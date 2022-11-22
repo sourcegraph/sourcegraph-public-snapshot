@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"sort"
@@ -179,7 +180,7 @@ func main() {
 		var orgsDone int64
 		var teamsDone int64
 		var tokensDone int64
-		//var membershipsDone int64
+		var membershipsDone int64
 
 		for _, o := range orgs {
 			currentOrg := o
@@ -205,28 +206,28 @@ func main() {
 		}
 		g.Wait()
 
-		//totalMemberships := len(teams) * 8
-		//membershipsPerUser := int(math.Ceil(float64(totalMemberships) / float64(cfg.userCount)))
-		//teamsToSkip := int(math.Ceil(float64(cfg.teamCount) / (float64(totalMemberships) / float64(cfg.userCount))))
-		//
-		//for i, u := range users {
-		//	currentUser := u
-		//	currentIter := i
-		//
-		//	g.Go(func() {
-		//		executeCreateTeamMembershipsForUser(
-		//			ctx,
-		//			&teamMembershipOpts{
-		//				currentUser:        currentUser,
-		//				teams:              teams,
-		//				membershipsPerUser: membershipsPerUser,
-		//				teamIndex:          currentIter,
-		//				teamIncrement:      teamsToSkip,
-		//			},
-		//			&membershipsDone)
-		//	})
-		//}
-		//
+		totalMemberships := len(teams) * 8
+		membershipsPerUser := int(math.Ceil(float64(totalMemberships) / float64(cfg.userCount)))
+		teamsToSkip := int(math.Ceil(float64(cfg.teamCount) / (float64(totalMemberships) / float64(cfg.userCount))))
+
+		for i, u := range users {
+			currentUser := u
+			currentIter := i
+
+			g.Go(func() {
+				executeCreateTeamMembershipsForUser(
+					ctx,
+					&teamMembershipOpts{
+						currentUser:        currentUser,
+						teams:              teams,
+						membershipsPerUser: membershipsPerUser,
+						teamIndex:          currentIter,
+						teamIncrement:      teamsToSkip,
+					},
+					&membershipsDone)
+			})
+		}
+
 		var repos []*repo
 		if repos, err = store.loadRepos(); err != nil {
 			log.Fatal(err)
@@ -413,6 +414,13 @@ func main() {
 			})
 		}
 
+		for _, t := range localTeams {
+			currentTeam := t
+			g.Go(func() {
+				executeDeleteTeamMembershipsForTeam(ctx, currentTeam.Org, currentTeam.Name)
+			})
+		}
+
 		g.Wait()
 
 		remoteOrgs := getGitHubOrgs(ctx)
@@ -486,6 +494,25 @@ func executeDeleteUser(ctx context.Context, currentUser *user) {
 	writeSuccess(out, "Deleted user %s", currentUser.Login)
 }
 
+func executeDeleteTeamMembershipsForTeam(ctx context.Context, org string, team string) {
+	teamMembers, _, err := gh.Teams.ListTeamMembersBySlug(ctx, org, team, &github.TeamListTeamMembersOptions{
+		Role:        "member",
+		ListOptions: github.ListOptions{PerPage: 100},
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	writeInfo(out, "Deleting %d memberships for team %s", len(teamMembers), team)
+	for _, member := range teamMembers {
+		_, err = gh.Teams.RemoveTeamMembershipBySlug(ctx, org, team, *member.Login)
+		if err != nil {
+			log.Printf("Failed to remove membership from team %s for user %s: %s", team, *member.Login, err)
+		}
+	}
+}
+
 type teamMembershipOpts struct {
 	currentUser *user
 	teams       []*team
@@ -504,7 +531,7 @@ func executeCreateTeamMembershipsForUser(ctx context.Context, opts *teamMembersh
 		index := (opts.teamIndex + (j * opts.teamIncrement)) % len(opts.teams)
 		candidateTeam := opts.teams[index]
 
-		if candidateTeam.TotalMembers >= 50 {
+		if candidateTeam.TotalMembers >= 8 {
 			continue
 		}
 
