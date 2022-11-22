@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Added
-- 
+
 - Now the name of the remote can contain slashes
 
 ### Changed
