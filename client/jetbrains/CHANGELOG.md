@@ -11,6 +11,7 @@
 ### Removed
 
 ### Fixed
+- “Open in Browser” and “Copy Link” features now open the correct branch when it exists on the remote. [pull/44735](https://github.com/sourcegraph/sourcegraph/pull/44735)
 
 ### Security
 
