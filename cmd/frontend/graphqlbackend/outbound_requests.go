@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -20,7 +21,7 @@ type HttpHeaders struct {
 }
 
 func (r *schemaResolver) OutboundRequests(args *outboundRequestsArgs) ([]*OutboundRequestResolver, error) {
-	result, err := httpcli.GetAllOutboundRequestLogItemsAfter(args.LastKey)
+	result, err := httpcli.GetAllOutboundRequestLogItemsAfter(args.LastKey, conf.Get().OutboundRequestsLogLimit)
 	if err != nil {
 		return nil, err
 	}

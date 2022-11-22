@@ -16,8 +16,6 @@ import (
 
 const keyPrefix = "outbound:"
 
-const N = 50
-
 func redisLoggerMiddleware() Middleware {
 	creatorStackFrame := stack.Caller(2).Frame()
 	return func(cli Doer) Doer {
@@ -36,7 +34,7 @@ func redisLoggerMiddleware() Middleware {
 			}
 			key := generateKey(time.Now())
 			logItem := types.OutboundRequestLogItem{
-				Key:             	key,
+				Key:                key,
 				StartedAt:          start,
 				Method:             req.Method,
 				URL:                req.URL.String(),
@@ -60,7 +58,7 @@ func redisLoggerMiddleware() Middleware {
 			redisCache.Set(key, logItemJson)
 
 			// Delete excess items
-			deletionErr := deleteOldKeys()
+			deletionErr := deleteOldKeys(OutboundRequestsLogLimit())
 			if deletionErr != nil {
 				log.Error(deletionErr)
 			}
@@ -79,15 +77,15 @@ func generateKey(now time.Time) string {
 	return fmt.Sprintf("%s%s", keyPrefix, now.UTC().Format("2006-01-02T15_04_05.999999999"))
 }
 
-func deleteOldKeys() error {
+func deleteOldKeys(limit int) error {
 	keys, err := redisCache.GetAll(keyPrefix)
 	if err != nil {
 		return err
 	}
 
-	if len(keys) > N {
+	if len(keys) > limit {
 		// Delete all but the last N keys
-		excessKeys := keys[:len(keys)-N]
+		excessKeys := keys[:len(keys)-limit]
 		for _, key := range excessKeys {
 			redisCache.Delete(key)
 		}
@@ -95,11 +93,16 @@ func deleteOldKeys() error {
 	return nil
 }
 
-func GetAllOutboundRequestLogItemsAfter(lastKey *string) ([]*types.OutboundRequestLogItem, error) {
-	rawItems, err := getAllAfter(lastKey)
+func GetAllOutboundRequestLogItemsAfter(lastKey *string, limit int) ([]*types.OutboundRequestLogItem, error) {
+	if limit == 0 {
+		return []*types.OutboundRequestLogItem{}, nil
+	}
+
+	rawItems, err := getAllAfter(lastKey, limit)
 	if err != nil {
 		return nil, err
 	}
+
 	var items []*types.OutboundRequestLogItem
 	for _, rawItem := range rawItems {
 		var item types.OutboundRequestLogItem
@@ -112,7 +115,7 @@ func GetAllOutboundRequestLogItemsAfter(lastKey *string) ([]*types.OutboundReque
 	return items, nil
 }
 
-func getAllAfter(lastKey *string) ([][]byte, error) {
+func getAllAfter(lastKey *string, limit int) ([][]byte, error) {
 	all, err := redisCache.GetAll(keyPrefix)
 	if err != nil {
 		return nil, err
@@ -130,8 +133,8 @@ func getAllAfter(lastKey *string) ([][]byte, error) {
 	}
 
 	// Limit to N
-	if len(keys) > N {
-		keys = keys[len(keys)-N:]
+	if len(keys) > limit {
+		keys = keys[len(keys)-limit:]
 	}
 
 	return redisCache.GetMulti(keys...), nil
