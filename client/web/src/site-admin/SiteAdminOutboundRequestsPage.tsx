@@ -16,6 +16,7 @@ import {
     FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
+import { Timestamp } from '../components/time/Timestamp'
 import { OutboundRequestsResult, OutboundRequestsVariables } from '../graphql-operations'
 
 import { OUTBOUND_REQUESTS, OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL } from './backend'
@@ -124,25 +125,42 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
 
 const MigrationNode: React.FunctionComponent<{
     node: React.PropsWithChildren<OutboundRequestsResult['outboundRequests'][number]>
-}> = ({ node: outboundRequest }) => (
-    <React.Fragment key={`${outboundRequest.startedAt} ${outboundRequest.duration}`}>
-        <span className={styles.separator} />
-
-        <div className={classNames('d-flex flex-column', styles.information)}>
-            <div>
-                <H3>{outboundRequest.url}</H3>
-
-                <Text className="m-0">
-                    <span className="text-muted">Method: </span> <strong>{outboundRequest.method}</strong>{' '}
-                    <span className="text-muted">in </span> <strong>{outboundRequest.duration}</strong>
-                    <span className="text-muted">.</span>
+}> = ({ node }) => {
+    const roundedSecond = Math.round((node.duration + Number.EPSILON) * 100) / 100
+    return (
+        <React.Fragment key={node.key}>
+            <span className={styles.separator} />
+            <div className={classNames('d-flex flex-column', styles.progress)}>
+                <Text className="">
+                    <Timestamp date={node.startedAt} noAbout={true} />
                 </Text>
-
-                <Text className="m-0">
-                    <span className="text-muted">Began running at</span>
-                    {outboundRequest.startedAt}
-                </Text>
+                <Text>{node.statusCode}</Text>
             </div>
-        </div>
-    </React.Fragment>
-)
+            <div className={classNames('d-flex flex-column', styles.information)}>
+                <div>
+                    <H3>
+                        {node.url} <span className="text-muted">Req headers</span>{' '}
+                        <span className="text-muted">Req body</span> <span className="text-muted">Resp headers</span>{' '}
+                        <span className="text-muted">Error message</span>{' '}
+                        <span className="text-muted">Creation stack trace</span>{' '}
+                        <span className="text-muted">Call stack trace</span>
+                    </H3>
+
+                    <Text className="m-0">
+                        <span className="text-muted">Method: </span> <strong>{node.method}</strong>.{' '}
+                        <span className="text-muted">Took </span>{' '}
+                        <strong>
+                            {roundedSecond} second{roundedSecond === 1 ? '' : 's'} to complete.
+                        </strong>
+                        <span className="text-muted">.</span>
+                    </Text>
+
+                    <Text className="m-0">
+                        <span className="text-muted">Began running at</span>
+                        {node.startedAt}
+                    </Text>
+                </div>
+            </div>
+        </React.Fragment>
+    )
+}
