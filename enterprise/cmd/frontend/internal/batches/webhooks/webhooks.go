@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
@@ -24,6 +26,7 @@ import (
 type webhook struct {
 	Store           *store.Store
 	gitserverClient gitserver.Client
+	logger          sglog.Logger
 
 	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
 	// Example values: extsvc.TypeBitbucketServer, extsvc.TypeGitHub

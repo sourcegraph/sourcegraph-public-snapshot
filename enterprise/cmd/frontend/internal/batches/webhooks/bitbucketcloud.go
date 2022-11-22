@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/inconshreveable/log15"
+	sglog "github.com/sourcegraph/log"
 
 	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
@@ -42,9 +42,9 @@ type BitbucketCloudWebhook struct {
 	*webhook
 }
 
-func NewBitbucketCloudWebhook(store *store.Store, gitserverClient gitserver.Client) *BitbucketCloudWebhook {
+func NewBitbucketCloudWebhook(store *store.Store, gitserverClient gitserver.Client, logger sglog.Logger) *BitbucketCloudWebhook {
 	return &BitbucketCloudWebhook{
-		webhook: &webhook{store, gitserverClient, extsvc.TypeBitbucketCloud},
+		webhook: &webhook{store, gitserverClient, logger, extsvc.TypeBitbucketCloud},
 	}
 }
 
@@ -66,7 +66,7 @@ func (h *BitbucketCloudWebhook) handleEvent(ctx context.Context, db database.DB,
 
 	for _, pr := range prs {
 		if pr == (PR{}) {
-			log15.Warn("Dropping Bitbucket Cloud webhook event", "type", fmt.Sprintf("%T", event))
+			h.logger.Warn("Dropping Bitbucket Cloud webhook event", sglog.String("type", fmt.Sprintf("%T", event)))
 			continue
 		}
 
@@ -93,14 +93,14 @@ func (h *BitbucketCloudWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request
 
 	c, err := extSvc.Configuration(ctx)
 	if err != nil {
-		log15.Error("Could not decode external service config", "error", err)
+		h.logger.Error("Could not decode external service config", sglog.Error(err))
 		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}
 
 	config, ok := c.(*schema.BitbucketCloudConnection)
 	if !ok {
-		log15.Error("Could not decode external service config", "error", err)
+		h.logger.Error("Could not decode external service config", sglog.Error(err))
 		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}

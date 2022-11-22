@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	gh "github.com/google/go-github/v43/github"
-	"github.com/inconshreveable/log15"
+	sglog "github.com/sourcegraph/log"
 
 	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -38,9 +38,9 @@ type BitbucketServerWebhook struct {
 	*webhook
 }
 
-func NewBitbucketServerWebhook(store *store.Store, gitserverClient gitserver.Client) *BitbucketServerWebhook {
+func NewBitbucketServerWebhook(store *store.Store, gitserverClient gitserver.Client, logger sglog.Logger) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		webhook: &webhook{store, gitserverClient, extsvc.TypeBitbucketServer},
+		webhook: &webhook{store, gitserverClient, logger, extsvc.TypeBitbucketServer},
 	}
 }
 
@@ -62,7 +62,7 @@ func (h *BitbucketServerWebhook) handleEvent(ctx context.Context, db database.DB
 	var err error
 	for _, pr := range prs {
 		if pr == (PR{}) {
-			log15.Warn("Dropping Bitbucket Server webhook event", "type", fmt.Sprintf("%T", event))
+			h.logger.Warn("Dropping Bitbucket Server webhook event", sglog.String("type", fmt.Sprintf("%T", event)))
 			continue
 		}
 
@@ -89,14 +89,14 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	c, err := extSvc.Configuration(r.Context())
 	if err != nil {
-		log15.Error("Could not decode external service config", "error", err)
+		h.logger.Error("Could not decode external service config", sglog.Error(err))
 		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}
 
 	config, ok := c.(*schema.BitbucketServerConnection)
 	if !ok {
-		log15.Error("Could not decode external service config")
+		h.logger.Error("Could not decode external service config")
 		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}
@@ -170,7 +170,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (any, *types.Extern
 }
 
 func (h *BitbucketServerWebhook) convertEvent(theirs any) (prs []PR, ours keyer) {
-	log15.Debug("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
+	h.logger.Debug("Bitbucket Server webhook received", sglog.String("type", fmt.Sprintf("%T", theirs)))
 
 	switch e := theirs.(type) {
 	case *bitbucketserver.PullRequestActivityEvent:
