@@ -14,7 +14,7 @@
 
 ### Fixed
 
-- “Open in Browser” and “Copy Link” features now open the correct branch when it exists on the remote. [pull/44735](https://github.com/sourcegraph/sourcegraph/pull/44735)
+- “Open in Browser” and “Copy Link” features now open the correct branch when it exists on the remote. [pull/44739](https://github.com/sourcegraph/sourcegraph/pull/44739)
 - Fixed a bug where if the tracked branch had a different name from the local branch, the local branch name was used in the URL, incorrectly
 
 ### Security
