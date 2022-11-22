@@ -18,17 +18,38 @@ exporters:
     endpoint: "api.honeycomb.io:443"
     headers:
       "x-honeycomb-team": "$HONEYCOMB_API_KEY"
-      "x-honeycomb-dataset": "$HONEYCOMB_DATASET"
+  otlp/webapp:
+    endpoint: "api.honeycomb.io:443"
+    headers:
+      "x-honeycomb-team": "$HONEYCOMB_API_KEY_WEBAPP"
+
+processors:
+  filter/webapp:
+    spans:
+      include:
+        match_type: strict
+        services:
+          - web-app
+  filter/exc-webapp:
+      spans:
+        exclude:
+          match_type: strict
+          services:
+            - web-app
 
 extensions:
   health_check:
-    endpoint: ":13133"
   zpages:
-   endpoint: ":55679"
+    endpoint: ":55679"
 
 service:
   extensions: [health_check,zpages]
   pipelines:
-    traces:
+    traces/webapp:
       receivers: [otlp]
+      processors: [filter/webapp]
+      exporters: [otlp/webapp]
+    traces/all:
+      receivers: [otlp]
+      processors: [filter/exc-webapp]
       exporters: [otlp]
