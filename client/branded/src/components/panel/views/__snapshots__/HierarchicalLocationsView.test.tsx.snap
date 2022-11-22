@@ -45,7 +45,9 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   class="headerTitle"
                   data-testid="result-container-header"
                 >
-                  <span>
+                  <span
+                    class="d-flex align-items-center"
+                  >
                     <span
                       class="titleInner mutedRepoFileLink"
                     >
@@ -295,7 +297,9 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   class="headerTitle"
                   data-testid="result-container-header"
                 >
-                  <span>
+                  <span
+                    class="d-flex align-items-center"
+                  >
                     <span
                       class="titleInner mutedRepoFileLink"
                     >
@@ -493,7 +497,9 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   class="headerTitle"
                   data-testid="result-container-header"
                 >
-                  <span>
+                  <span
+                    class="d-flex align-items-center"
+                  >
                     <span
                       class="titleInner mutedRepoFileLink"
                     >

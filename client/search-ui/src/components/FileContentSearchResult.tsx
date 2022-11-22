@@ -208,7 +208,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
 
     const title = (
         <>
-            <span>
+            <span className="d-flex align-items-center">
                 <RepoFileLink
                     repoName={result.repository}
                     repoURL={repoAtRevisionURL}
