@@ -5,9 +5,8 @@ import { mdiOpenInNew } from '@mdi/js'
 import { Container, H2, H3, Link, Text, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
-import { CtaBanner } from '../../../components/CtaBanner'
 import { CloudCtaBanner } from '../../../components/CloudCtaBanner'
-
+import { CtaBanner } from '../../../components/CtaBanner'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 export interface GettingStartedProps {
