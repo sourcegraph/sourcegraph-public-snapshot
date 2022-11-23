@@ -1,0 +1,14 @@
+.container-outline {
+    background-color: var(--color-bg-1);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.primary-bg {
+    background-color: var(--primary-4);
+    border-radius: var(--border-radius);
+    margin: 1rem 0;
+    padding: 0.5rem;
+}
