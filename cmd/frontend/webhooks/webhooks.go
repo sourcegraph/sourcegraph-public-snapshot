@@ -43,6 +43,20 @@ type RegistererHandler interface {
 	http.Handler
 }
 
+func defaultHandlers() map[string]webhookEventHandlers {
+	handlePing := func(_ context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, event any) error {
+		return nil
+	}
+	return map[string]webhookEventHandlers{
+		extsvc.KindGitHub: map[string][]WebhookHandler{
+			pingEventType: {handlePing},
+		},
+		extsvc.KindBitbucketServer: map[string][]WebhookHandler{
+			pingEventType: {handlePing},
+		},
+	}
+}
+
 // Register associates a given event type(s) with the specified handler.
 // Handlers are organized into a stack and executed sequentially, so the order in
 // which they are provided is significant.
@@ -50,7 +64,7 @@ func (h *WebhookRouter) Register(handler WebhookHandler, codeHostKind string, ev
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.handlers == nil {
-		h.handlers = make(map[string]webhookEventHandlers)
+		h.handlers = defaultHandlers()
 	}
 	if _, ok := h.handlers[codeHostKind]; !ok {
 		h.handlers[codeHostKind] = make(map[string][]WebhookHandler)
@@ -133,10 +147,6 @@ func (h *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHost
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	g := errgroup.Group{}
-	if isPingEvent(eventType, codeHostKind) {
-		// no action required, return a 200
-		return nil
-	}
 	if _, ok := h.handlers[codeHostKind][eventType]; !ok {
 		return eventTypeNotFoundError{eventType: eventType, codeHostKind: codeHostKind}
 	}
@@ -148,15 +158,6 @@ func (h *WebhookRouter) Dispatch(ctx context.Context, eventType string, codeHost
 		})
 	}
 	return g.Wait()
-}
-
-func isPingEvent(eventType, codeHostKind string) bool {
-	if codeHostKind == extsvc.KindGitHub {
-		if eventType == pingEventType {
-			return true
-		}
-	}
-	return false
 }
 
 type eventTypeNotFoundError struct {
