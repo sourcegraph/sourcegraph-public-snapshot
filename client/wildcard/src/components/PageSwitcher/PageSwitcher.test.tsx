@@ -1,4 +1,4 @@
-import { render, RenderResult, cleanup, fireEvent } from '@testing-library/react'
+import { render, RenderResult, cleanup } from '@testing-library/react'
 import sinon from 'sinon'
 
 import { PageSwitcher, PageSwitcherProps } from './PageSwitcher'
