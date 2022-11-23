@@ -41,7 +41,7 @@ func (r *webhooksResolver) CreateWebhook(ctx context.Context, args *graphqlbacke
 		return nil, auth.ErrMustBeSiteAdmin
 	}
 	ws := backend.NewWebhookService(r.db, keyring.Default())
-	webhook, err := ws.CreateWebhook(ctx, args.CodeHostKind, args.CodeHostURN, args.Secret)
+	webhook, err := ws.CreateWebhook(ctx, args.CodeHostKind, args.CodeHostKind, args.CodeHostURN, args.Secret)
 	if err != nil {
 		return nil, err
 	}
