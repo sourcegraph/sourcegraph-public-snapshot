@@ -16,6 +16,17 @@ const config: Meta = {
     title: 'wildcard/PageSwitcher',
     component: PageSwitcher,
     decorators: [decorator],
+    parameters: {
+        component: PageSwitcher,
+        design: [
+            {
+                type: 'figma',
+                name: 'Figma',
+                url:
+                    'https://www.figma.com/file/LZoW17Fy6eqOfnxjxIRB7d/%F0%9F%93%91-Pagination-Experiments?t=0QPBSel9sN03v8us-1',
+            },
+        ],
+    },
 }
 
 export default config
