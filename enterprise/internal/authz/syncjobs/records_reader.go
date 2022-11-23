@@ -14,7 +14,7 @@ import (
 type recordsReader struct {
 	// readOnlyCache is a replaceable abstraction over rcache.Cache.
 	readOnlyCache interface {
-		ListKeys(ctx context.Context) ([]string, error)
+		ListKeys(ctx *context.Context, prefix string) ([]string, error)
 		GetMulti(keys ...string) [][]byte
 	}
 }
@@ -40,7 +40,7 @@ func (r *recordsReader) Get(timestamp time.Time) (*Status, error) {
 
 // GetAll retrieves the first n records, with the most recent records first.
 func (r *recordsReader) GetAll(ctx context.Context, first int) ([]Status, error) {
-	keys, err := r.readOnlyCache.ListKeys(ctx)
+	keys, err := r.readOnlyCache.ListKeys(&ctx, "")
 	if err != nil {
 		return nil, errors.Wrap(err, "list jobs")
 	}
