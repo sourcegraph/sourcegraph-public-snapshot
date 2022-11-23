@@ -53,7 +53,7 @@
             let pkgs = import nixpkgs { inherit system; };
             in
             {
-              p4-fusion = pkgs.callPackage ./p4-fusion.nix { };
+              p4-fusion = pkgs.callPackage ./dev/nix/p4-fusion.nix { };
             }
           )
         );
