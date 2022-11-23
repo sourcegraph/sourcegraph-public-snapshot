@@ -1406,7 +1406,7 @@ Generated query for critical alert: `max((histogram_quantile(0.9, sum by(le) (la
 **Descriptions**
 
 - <span class="badge badge-warning">warning</span> gitserver: less than 15% disk space remaining by instance
-- <span class="badge badge-critical">critical</span> gitserver: less than 10% disk space remaining by instance for 5m0s
+- <span class="badge badge-critical">critical</span> gitserver: less than 10% disk space remaining by instance for 10m0s
 
 **Next steps**
 
@@ -1426,9 +1426,9 @@ Generated query for critical alert: `max((histogram_quantile(0.9, sum by(le) (la
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `min(((src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100) <= 15)`
+Generated query for warning alert: `min(((src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100) < 15)`
 
-Generated query for critical alert: `min(((src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100) <= 10)`
+Generated query for critical alert: `min(((src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100) < 10)`
 
 </details>
 

@@ -97,13 +97,13 @@ func GitServer() *monitoring.Dashboard {
 							// Warning alert when we have disk space remaining that is
 							// approaching the default SRC_REPOS_DESIRED_PERCENT_FREE,
 							// which may cause repos to be evicted.
-							Warning: monitoring.Alert().LessOrEqual(15),
+							Warning: monitoring.Alert().Less(15),
 							// Critical alert when we have less space remaining than the
 							// default SRC_REPOS_DESIRED_PERCENT_FREE some amount of time.
 							// This means that repos are being evicted, recloned, and
 							// continuously consuming all disk space - we definitely need
 							// more space - or something is wrong with the janitor job.
-							Critical: monitoring.Alert().LessOrEqual(10).For(5 * time.Minute),
+							Critical: monitoring.Alert().Less(10).For(10 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.Percentage).
 								With(monitoring.PanelOptions.LegendOnRight()),
