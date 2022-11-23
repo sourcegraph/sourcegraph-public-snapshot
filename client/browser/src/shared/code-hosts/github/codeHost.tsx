@@ -206,7 +206,7 @@ const fileLineContainerResolver: ViewResolver<CodeView> = {
             // this is not a single-file code view
             return null
         }
-        const repositoryContent = fileLineContainer.closest('.repository-content')
+        const repositoryContent = fileLineContainer.closest('.repository-content, #repo-content-turbo-frame')
         if (!repositoryContent) {
             throw new Error('Could not find repository content element')
         }
@@ -694,9 +694,10 @@ export const githubCodeHost: GithubCodeHost = {
                 }
 
                 // search results page filters being applied
-                if (isSearchResultsPage()) {
-                    return document.querySelector('.codesearch-results h3')?.textContent?.trim()
-                }
+                // TODO(#44327): Uncomment or remove this depending on the outcome of the issue.
+                // if (isSearchResultsPage()) {
+                //     return document.querySelector('.codesearch-results h3')?.textContent?.trim()
+                // }
 
                 // other pages
                 return pathname

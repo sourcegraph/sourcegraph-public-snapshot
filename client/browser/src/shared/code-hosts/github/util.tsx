@@ -271,21 +271,18 @@ interface UISelectors {
     codeCell: string
     blobContainer: string
     permalink: string
-    // fileToolbarMountContainer: string
 }
 
 const oldUISelectors: UISelectors = {
     codeCell: 'td.blob-code',
     blobContainer: '.js-file-line-container',
     permalink: 'a.js-permalink-shortcut',
-    // fileToolbarMountContainer: '.file',
 }
 
 const newUISelectors: UISelectors = {
     codeCell: 'td.react-code-cell',
     blobContainer: 'react-app table',
-    permalink: '.ActionList-item--navActive a',
-    // fileToolbarMountContainer: '.file',
+    permalink: 'a.ActionList-item--navActive, .ActionList-item--navActive a',
 }
 
 /**
