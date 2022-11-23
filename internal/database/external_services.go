@@ -1012,12 +1012,12 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 			return err
 		}
 
-		jobsRunning, err := e.CheckRunningSyncJobs(runningJobsCtx, id)
+		ok, err := e.hasRunningSyncJobs(runningJobsCtx, id)
 		if err != nil {
 			return err
 		}
 
-		if !jobsRunning {
+		if !ok {
 			break
 		}
 		time.Sleep(500 * time.Millisecond)
@@ -1365,7 +1365,7 @@ func (e *externalServiceStore) CancelSyncJob(ctx context.Context, opts ExternalS
 	return nil
 }
 
-func (e *externalServiceStore) CheckRunningSyncJobs(ctx context.Context, id int64) (bool, error) {
+func (e *externalServiceStore) hasRunningSyncJobs(ctx context.Context, id int64) (bool, error) {
 	q := sqlf.Sprintf(`
 SELECT 1
 FROM external_service_sync_jobs

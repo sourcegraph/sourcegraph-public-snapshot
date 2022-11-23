@@ -1393,6 +1393,54 @@ VALUES ($1,$2,'errored', now())
 	}
 }
 
+func TestExternalServiceStore_HasRunningSyncJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := &externalServiceStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+	}
+	if err := store.Create(ctx, confGet, es); err != nil {
+		t.Fatal(err)
+	}
+
+	ok, err := store.hasRunningSyncJobs(ctx, es.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if ok {
+		t.Fatal("unexpected running sync jobs")
+	}
+
+	_, err = db.Handle().ExecContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, 'processing', now())
+RETURNING id
+`, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ok, err = store.hasRunningSyncJobs(ctx, es.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if !ok {
+		t.Fatal("unexpected running sync jobs")
+	}
+}
+
 func TestExternalServiceStore_CancelSyncJob(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
