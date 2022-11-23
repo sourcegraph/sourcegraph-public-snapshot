@@ -590,12 +590,15 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.Wrap(err, "UpdateView")
 	}
 
+	var existingSeriesMap = make(map[string]types.InsightViewSeries)
 	for _, existingSeries := range views[0].Series {
 		if !seriesFound(existingSeries, args.Input.DataSeries) {
 			err = tx.RemoveSeriesFromView(ctx, existingSeries.SeriesID, view.ID)
 			if err != nil {
 				return nil, errors.Wrap(err, "RemoveSeriesFromView")
 			}
+		} else {
+			existingSeriesMap[existingSeries.SeriesID] = existingSeries
 		}
 	}
 	backfiller := background.NewScopedBackfiller(r.workerBaseStore, r.baseInsightResolver.timeSeriesStore.With(tx))
@@ -603,22 +606,58 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 
 	for _, series := range args.Input.DataSeries {
 		if series.SeriesId == nil {
+			// If this is a newly added series, create and attach it.
+			// Note: the frontend always generates a series ID so this path is never hit at the moment.
 			_, err = createAndAttachSeries(ctx, tx, seriesFillStrategy, view, series)
 			if err != nil {
 				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
 		} else {
-			err = tx.RemoveSeriesFromView(ctx, *series.SeriesId, view.ID)
-			if err != nil {
-				return nil, errors.Wrap(err, "RemoveViewSeries")
-			}
-			_, err = createAndAttachSeries(ctx, tx, seriesFillStrategy, view, series)
-			if err != nil {
-				return nil, errors.Wrap(err, "createAndAttachSeries")
+			if existing, ok := existingSeriesMap[*series.SeriesId]; ok {
+				// We check whether the series has changed such that it needs to be recalculated.
+				if existingSeriesHasChanged(series, existing) {
+					err = tx.RemoveSeriesFromView(ctx, *series.SeriesId, view.ID)
+					if err != nil {
+						return nil, errors.Wrap(err, "RemoveViewSeries")
+					}
+					_, err = createAndAttachSeries(ctx, tx, seriesFillStrategy, view, series)
+					if err != nil {
+						return nil, errors.Wrap(err, "createAndAttachSeries")
+					}
+				} else {
+					// Otherwise we simply update the series' presentation metadata.
+					err = tx.UpdateViewSeries(ctx, *series.SeriesId, view.ID, types.InsightViewSeriesMetadata{
+						Label:  emptyIfNil(series.Options.Label),
+						Stroke: emptyIfNil(series.Options.LineColor),
+					})
+					if err != nil {
+						return nil, errors.Wrap(err, "UpdateViewSeries")
+					}
+				}
+			} else {
+				// This is a new series, so it needs to be calculated and attached.
+				_, err = createAndAttachSeries(ctx, tx, seriesFillStrategy, view, series)
+				if err != nil {
+					return nil, errors.Wrap(err, "createAndAttachSeries")
+				}
 			}
 		}
+
 	}
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: insightViewId}, nil
+}
+
+func existingSeriesHasChanged(new graphqlbackend.LineChartSearchInsightDataSeriesInput, existing types.InsightViewSeries) bool {
+	if new.Query != existing.Query {
+		return true
+	}
+	if new.TimeScope.StepInterval.Unit != existing.SampleIntervalUnit {
+		return true
+	}
+	if new.TimeScope.StepInterval.Value != int32(existing.SampleIntervalValue) {
+		return true
+	}
+	return emptyIfNil(new.GroupBy) != emptyIfNil(existing.GroupBy)
 }
 
 func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
