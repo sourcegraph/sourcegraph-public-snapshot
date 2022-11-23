@@ -357,6 +357,23 @@ func TestWebhooksHandler(t *testing.T) {
 		assert.Equal(t, bbCloudWH.CodeHostURN, wh.codeHostURNReceived)
 		assert.Equal(t, &event, wh.eventReceived)
 	})
+
+	t.Run("Bitbucket Cloud returns 404 not found if webhook event type unknown", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, bbCloudWH.UUID)
+
+		payload := []byte(`{"body": "text"}`)
+		require.NoError(t, err)
+
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		require.NoError(t, err)
+		req.Header.Set("X-Event-Key", "unknown_event")
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+	})
 }
 
 type fakeWebhookHandler struct {

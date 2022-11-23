@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (wr *WebhookRouter) HandleBitbucketCloudWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL) {
@@ -24,7 +25,11 @@ func (wr *WebhookRouter) HandleBitbucketCloudWebhook(logger log.Logger, w http.R
 	eventType := r.Header.Get("X-Event-Key")
 	e, err := bitbucketcloud.ParseWebhookEvent(eventType, payload)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if errors.HasType(err, bitbucketcloud.UnknownWebhookEventKey("")) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
