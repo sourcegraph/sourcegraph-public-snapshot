@@ -140,9 +140,14 @@ func TestCache_multi(t *testing.T) {
 	if got, exp := c.GetMulti("k0", "k1", "k2"), [][]byte{nil, []byte("y"), []byte("z")}; !reflect.DeepEqual(exp, got) {
 		t.Errorf("Expected %v, but got %v", exp, got)
 	}
+
+	c.DeleteMulti([]string{"k1", "k2"})
+	if got, exp := c.GetMulti("k0", "k1", "k2"), [][]byte{nil, nil, nil}; !reflect.DeepEqual(exp, got) {
+		t.Errorf("Expected %v, but got %v", exp, got)
+	}
 }
 
-func TestCache_deleteKeysWithPrefix(t *testing.T) {
+func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 	SetupForTest(t)
 
 	// decrease the deleteBatchSize
@@ -168,7 +173,7 @@ func TestCache_deleteKeysWithPrefix(t *testing.T) {
 	conn := pool.Get()
 	defer conn.Close()
 
-	err := deleteKeysWithPrefix(conn, c.rkeyPrefix()+"a")
+	err := deleteAllKeysWithPrefix(conn, c.rkeyPrefix()+"a")
 	if err != nil {
 		t.Error(err)
 	}
@@ -242,6 +247,42 @@ func TestCache_ListKeys_prefix(t *testing.T) {
 	assert.Len(t, got, 2)
 	assert.Contains(t, got, key2a)
 	assert.Contains(t, got, key2b)
+}
+
+func TestCache_DeleteFirstN(t *testing.T) {
+	SetupForTest(t)
+	c := NewWithTTL("some_prefix", 1)
+
+	// Add 10 key-value pairs
+	var pairs = make([][2]string, 20)
+	for i := 0; i < 20; i++ {
+		var prefix string
+		if i < 10 {
+			prefix = "<10:"
+		} else {
+			prefix = ">=10:"
+		}
+		pairs[i] = [2]string{prefix + "key" + strconv.Itoa(i), "value" + strconv.Itoa(i)}
+	}
+	c.SetMulti(pairs...)
+
+	// Delete the first 4 key-value pairs
+	delErr := c.DeleteAllButLastN(nil, ">=10", 4)
+
+	got, listErr := c.ListKeys(nil, "")
+
+	assert.Nil(t, delErr)
+	assert.Nil(t, listErr)
+
+	assert.Len(t, got, 14)
+	assert.Contains(t, got, "<10:key0") // First 10 items should be preserved
+	assert.Contains(t, got, "<10:key9")
+
+	assert.NotContains(t, got, ">=10:key10") // 10 through 15 should be deleted
+	assert.NotContains(t, got, ">=10:key15")
+
+	assert.Contains(t, got, ">=10:key16") // 16 through 19 (4 items) should be kept
+	assert.Contains(t, got, ">=10:key19")
 }
 
 func bytes(s ...string) [][]byte {

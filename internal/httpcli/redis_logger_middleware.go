@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-stack/stack"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -58,14 +59,17 @@ func redisLoggerMiddleware() Middleware {
 			// Save new item
 			redisCache.Set(key, logItemJson)
 
-			// Delete excess items
-			deletionErr := deleteOldKeys(OutboundRequestLogLimit())
-			if deletionErr != nil {
-				log.Error(deletionErr)
-			}
+			deleteExcessItems()
 
 			return resp, err
 		})
+	}
+}
+
+func deleteExcessItems() {
+	deletionErr := redisCache.DeleteAllButLastN(nil, keyPrefix, OutboundRequestLogLimit())
+	if deletionErr != nil {
+		log.Error(deletionErr)
 	}
 }
 
@@ -78,29 +82,15 @@ func generateKey(now time.Time) string {
 	return fmt.Sprintf("%s%s", keyPrefix, now.UTC().Format("2006-01-02T15_04_05.999999999"))
 }
 
-func deleteOldKeys(limit int) error {
-	keys, err := redisCache.ListKeys(nil, keyPrefix)
-	if err != nil {
-		return err
-	}
-
-	if len(keys) > limit {
-		// Delete all but the last N keys
-		sort.Strings(keys)
-		excessKeys := keys[:len(keys)-limit]
-		for _, key := range excessKeys {
-			redisCache.Delete(key)
-		}
-	}
-	return nil
-}
-
+// GetAllOutboundRequestLogItemsAfter returns all outbound request log items after the given key,
+// in ascending order, trimmed to maximum {limit} items.
+// The given "lastKey" must contain `keyPrefix` as a prefix. Example: "outbound:2021-01-01T00_00_00.000000000".
 func GetAllOutboundRequestLogItemsAfter(lastKey *string, limit int) ([]*types.OutboundRequestLogItem, error) {
 	if limit == 0 {
 		return []*types.OutboundRequestLogItem{}, nil
 	}
 
-	rawItems, err := getAllAfter(lastKey, limit)
+	rawItems, err := getAllValuesAfter(redisCache, keyPrefix, lastKey, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +107,9 @@ func GetAllOutboundRequestLogItemsAfter(lastKey *string, limit int) ([]*types.Ou
 	return items, nil
 }
 
-func getAllAfter(lastKey *string, limit int) ([][]byte, error) {
+// getAllValuesAfter returns all items after the given key, in ascending order, trimmed to maximum {limit} items.
+// The given "lastKey" must contain `keyPrefix` as a prefix. Example: "outbound:2021-01-01T00_00_00.000000000".
+func getAllValuesAfter(redisCache *rcache.Cache, keyPrefix string, lastKey *string, limit int) ([][]byte, error) {
 	all, err := redisCache.ListKeys(nil, keyPrefix)
 	if err != nil {
 		return nil, err
