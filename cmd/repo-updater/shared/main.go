@@ -197,19 +197,9 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker", ""), store)
 
-	// git-server repos purging thread. A migration or admin could accidentally remove all
-	// or a significant number of repositories - recloning all of them is slow, so we set
-	// a long-ish TTL as a grace period so that admins can recover from accidental deletions
-	// quickly, and scale the purge job interval accordingly.
-	purgeTTL := 30 * time.Minute
-	purgeInterval := 15 * time.Minute
-	if envvar.SourcegraphDotComMode() {
-		// Extra-lenient timespans on dotcom to align with legacy behaviour.
-		purgeTTL = 7 * 24 * time.Hour
-		purgeInterval = 24 * time.Hour
-	}
-	go repos.RunRepositoryPurgeWorker(ctx, log.Scoped("RepositoryPurgeWorker", "remove deleted repositories"),
-		db, purgeTTL, purgeInterval)
+	// git-server repos purging thread
+	go repos.RunRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker", "remove deleted repositories"),
+		db, conf.DefaultClient())
 
 	// Git fetches scheduler
 	go repos.RunScheduler(ctx, logger, updateScheduler)

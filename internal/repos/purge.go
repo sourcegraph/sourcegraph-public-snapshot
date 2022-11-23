@@ -12,18 +12,18 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // RunRepositoryPurgeWorker is a worker which deletes repos which are present on
 // gitserver, but not enabled/present in our repos table. ttl, should be >= 0 and
 // specifies how long ago a repo must be deleted before it is purged.
-func RunRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db database.DB, ttl time.Duration, baseInterval time.Duration) {
-	sglogError := log.Error
-
+func RunRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db database.DB, conf conftypes.SiteConfigQuerier) {
 	limiter := ratelimit.NewInstrumentedLimiter("PurgeRepoWorker", rate.NewLimiter(10, 1))
 
 	// Temporary escape hatch if this feature proves to be dangerous
@@ -33,19 +33,35 @@ func RunRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db databas
 	}
 
 	for {
-		deletedBefore := time.Now().Add(-ttl)
+		purgeConfig := conf.SiteConfig().RepoPurgeWorker
+		if purgeConfig == nil {
+			purgeConfig = &schema.RepoPurgeWorker{
+				// Defaults in minutes - align with documentation
+				Interval:   15,
+				DeletedTTL: 60,
+			}
+		} else if purgeConfig.Interval <= 0 {
+			logger.Debug("purge worker disabled via site config",
+				log.Int("repoPurgeWorker.interval", purgeConfig.Interval))
+			randSleep(15*time.Minute, 1*time.Minute)
+			continue
+		}
+
+		deletedBefore := time.Now().Add(-time.Duration(purgeConfig.DeletedTTL) * time.Minute)
 		purgeLogger := logger.With(log.Time("deletedBefore", deletedBefore))
 
-		purgeLogger.Debug("running repository purge")
+		timeToNextPurge := time.Duration(purgeConfig.Interval) * time.Minute
+		purgeLogger.Debug("running repository purge",
+			log.Duration("timeToNextPurge", timeToNextPurge))
 		if err := purge(ctx, purgeLogger, db, database.IteratePurgableReposOptions{
 			Limit:         5000,
 			Limiter:       limiter,
 			DeletedBefore: deletedBefore,
 		}); err != nil {
-			purgeLogger.Error("failed to run repository clone purge", sglogError(err))
+			purgeLogger.Error("failed to run repository clone purge", log.Error(err))
 		}
 
-		randSleep(baseInterval, 1*time.Minute)
+		randSleep(timeToNextPurge, 1*time.Minute)
 	}
 }
 
