@@ -1,4 +1,5 @@
-.list, .label {
+.list,
+.label {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -22,7 +23,8 @@
     }
 }
 
-.next-button, .previous-button {
+.next-button,
+.previous-button {
     min-width: 5.125rem;
 }
 
