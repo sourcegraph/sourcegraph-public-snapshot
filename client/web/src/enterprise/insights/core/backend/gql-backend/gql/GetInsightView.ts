@@ -33,9 +33,6 @@ export const GET_INSIGHT_VIEW_GQL = gql`
             pendingJobs
             failedJobs
             isLoadingData
-#            incompleteDatapoints {
-#                time
-#            }
         }
     }
 `

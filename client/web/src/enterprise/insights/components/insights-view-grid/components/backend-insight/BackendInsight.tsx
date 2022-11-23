@@ -31,7 +31,7 @@ import {
     BackendInsightChart,
     parseSeriesLimit,
 } from './components'
-import { BackendInsightTimoutIcon } from './components/backend-insight-chart/BackendInsightChart';
+import { BackendInsightTimoutIcon } from './components/backend-insight-chart/BackendInsightChart'
 
 import styles from './BackendInsight.module.scss'
 

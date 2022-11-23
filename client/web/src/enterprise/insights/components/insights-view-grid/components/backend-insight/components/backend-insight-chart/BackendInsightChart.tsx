@@ -5,19 +5,19 @@ import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
-import { BarChart, ScrollBox, LegendList, LegendItem, Button, Series, LegendItemPoint } from '@sourcegraph/wildcard'
 import {
-    BarChart,
+    Link,
     Button,
     Icon,
+    BarChart,
     LegendItem,
     LegendList,
-    Link,
+    LegendItemPoint,
     ScrollBox,
     Series,
     Tooltip,
     TooltipOpenEvent,
-    TooltipOpenEventReason
+    TooltipOpenChangeReason,
 } from '@sourcegraph/wildcard'
 
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
@@ -163,7 +163,11 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
         return (
             <LegendList className={styles.legendList}>
                 {series.map(item => (
-                    <LegendItem key={item.id as string} name={item.name} color={item.color} />
+                    <LegendItem key={item.id as string} color={item.color}>
+                        <LegendItemPoint color={item.color} />
+                        {item.name}
+                        <BackendInsightTimoutIcon />
+                    </LegendItem>
                 ))}
             </LegendList>
         )
@@ -201,7 +205,7 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                         <LegendItemPoint color={item.color} />
                         {item.name}
                     </Button>
-                    <BackendInsightTimoutIcon/>
+                    <BackendInsightTimoutIcon />
                 </LegendItem>
             ))}
         </LegendList>
@@ -224,8 +228,8 @@ export const BackendInsightTimoutIcon: FC = () => {
 
     const handleOpenChange = useCallback((event: TooltipOpenEvent): void => {
         switch (event.reason) {
-            case TooltipOpenEventReason.Esc:
-            case TooltipOpenEventReason.ClickOutside: {
+            case TooltipOpenChangeReason.Esc:
+            case TooltipOpenChangeReason.ClickOutside: {
                 setOpen(event.isOpen)
             }
         }
@@ -244,12 +248,8 @@ export const BackendInsightTimoutIcon: FC = () => {
             }
             onOpenChange={handleOpenChange}
         >
-            <Button variant='icon' className={styles.timeoutIcon} onClick={handleIconClick}>
-                <Icon
-                    aria-label="Insight is timeout"
-                    svgPath={mdiAlertCircle}
-                    color='var(--icon-color)'
-                />
+            <Button variant="icon" className={styles.timeoutIcon} onClick={handleIconClick}>
+                <Icon aria-label="Insight is timeout" svgPath={mdiAlertCircle} color="var(--icon-color)" />
             </Button>
         </Tooltip>
     )
