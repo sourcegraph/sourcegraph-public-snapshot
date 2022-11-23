@@ -943,7 +943,7 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			if r.err != nil {
 				return
 			}
-			log15.Info("unique_id", "id", unique)
+			log15.Debug("unique_id", "id", unique)
 			args.UniqueID = unique
 		}
 
