@@ -240,7 +240,7 @@ export const BackendInsightTimoutIcon: FC = () => {
             content={
                 <>
                     Calculating some points on this insight exceeded the timeout limit. Results may be incomplete.{' '}
-                    <Link to="/" target="_blank" rel="noopener">
+                    <Link to="/help/code_insights/how-tos/Troubleshooting" target="_blank" rel="noopener">
                         Troubleshoot
                     </Link>
                 </>
