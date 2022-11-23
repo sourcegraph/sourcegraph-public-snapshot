@@ -919,6 +919,7 @@ const WEBHOOK_FIELDS_FRAGMENT = gql`
         id
         uuid
         url
+        name
         codeHostKind
         codeHostURN
         secret
