@@ -7,11 +7,14 @@ import (
 	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -205,4 +208,46 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 
 	mockrequire.Called(t, userEmails.GetPrimaryEmailFunc)
 	mockrequire.Called(t, users.GetByIDFunc)
+}
+
+func TestUserEmailsAddRemove(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	txemail.DisableSilently()
+
+	const email = "user@example.com"
+	const email2 = "user.secondary@example.com"
+	const username = "test-user"
+	const verificationCode = "code"
+
+	newUser := database.NewUser{
+		Email:                 email,
+		Username:              username,
+		EmailVerificationCode: verificationCode,
+	}
+
+	createdUser, err := db.Users().Create(ctx, newUser)
+	assert.NoError(t, err)
+
+	// Adding as non site admin or owner should fail
+	assert.Error(t, UserEmails.Add(ctx, logger, db, createdUser.ID, email2))
+
+	ctx = actor.WithInternalActor(ctx)
+	// Add secondary e-mail
+	assert.NoError(t, UserEmails.Add(ctx, logger, db, createdUser.ID, email2))
+
+	// Add reset code
+	code, err := db.Users().RenewPasswordResetCode(ctx, createdUser.ID)
+	assert.NoError(t, err)
+
+	assert.NoError(t, UserEmails.Remove(ctx, logger, db, createdUser.ID, email2))
+
+	// Trying to change the password with the old code should fail
+	changed, err := db.Users().SetPassword(ctx, createdUser.ID, code, "some-amazing-new-password")
+	assert.NoError(t, err)
+	assert.False(t, changed)
+
+	// Can't remove primary e-mail
+	assert.Error(t, UserEmails.Remove(ctx, logger, db, createdUser.ID, email))
 }

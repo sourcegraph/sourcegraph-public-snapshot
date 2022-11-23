@@ -122,33 +122,8 @@ func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *removeUserEm
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the authenticated user can remove email from their accounts
-	// on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckSameUser(ctx, userID); err != nil {
-			return nil, err
-		}
-	} else {
-		// 🚨 SECURITY: Only the authenticated user and site admins can remove email
-		// from users' accounts.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-			return nil, err
-		}
-	}
-
-	if err := r.db.UserEmails().Remove(ctx, userID, args.Email); err != nil {
+	if err := backend.UserEmails.Remove(ctx, r.logger, r.db, userID, args.Email); err != nil {
 		return nil, err
-	}
-
-	// 🚨 SECURITY: If an email is removed, invalidate any existing password reset tokens that may have been sent to that email.
-	if err := r.db.Users().DeletePasswordResetCode(ctx, userID); err != nil {
-		return nil, err
-	}
-
-	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, userID, "removed an email"); err != nil {
-			log15.Warn("Failed to send email to inform user of email removal", "error", err)
-		}
 	}
 
 	return &EmptyResponse{}, nil
