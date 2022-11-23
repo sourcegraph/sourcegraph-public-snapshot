@@ -21,7 +21,7 @@ import (
 // RunRepositoryPurgeWorker is a worker which deletes repos which are present on
 // gitserver, but not enabled/present in our repos table. ttl, should be >= 0 and
 // specifies how long ago a repo must be deleted before it is purged.
-func RunRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db database.DB, ttl time.Duration) {
+func RunRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db database.DB, ttl time.Duration, baseInterval time.Duration) {
 	sglogError := log.Error
 
 	limiter := ratelimit.NewInstrumentedLimiter("PurgeRepoWorker", rate.NewLimiter(10, 1))
@@ -33,23 +33,19 @@ func RunRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db databas
 	}
 
 	for {
-		// We only run in a 1-hour period on the weekend. During normal working hours a
-		// migration or admin could accidentally remove all repositories. Recloning all
-		// of them is slow, so we drastically reduce the chance of this happening by only
-		// purging at a weird time to be configuring Sourcegraph.
-		now := time.Now()
-		if !isSaturdayNight(now) {
-			randSleep(10*time.Minute, 1*time.Minute)
-			continue
-		}
-		if err := purge(ctx, logger, db, database.IteratePurgableReposOptions{
+		deletedBefore := time.Now().Add(-ttl)
+		purgeLogger := logger.With(log.Time("deletedBefore", deletedBefore))
+
+		purgeLogger.Debug("running repository purge")
+		if err := purge(ctx, purgeLogger, db, database.IteratePurgableReposOptions{
 			Limit:         5000,
 			Limiter:       limiter,
-			DeletedBefore: now.Add(-ttl),
+			DeletedBefore: deletedBefore,
 		}); err != nil {
-			logger.Error("failed to run repository clone purge", sglogError(err))
+			purgeLogger.Error("failed to run repository clone purge", sglogError(err))
 		}
-		randSleep(1*time.Minute, 10*time.Second)
+
+		randSleep(baseInterval, 1*time.Minute)
 	}
 }
 
@@ -111,12 +107,6 @@ func purge(ctx context.Context, logger log.Logger, db database.DB, options datab
 	}
 	statusLogger("repository purge finished", log.Int("total", total), log.Int("removed", success), log.Int("failed", failed), log.Duration("duration", time.Since(start)))
 	return errors.Wrap(err, "iterating purgeable repos")
-}
-
-func isSaturdayNight(t time.Time) bool {
-	// According to The Cure, 10:15 Saturday Night you should be sitting in your
-	// kitchen sink, not adjusting your external service configuration.
-	return t.Format("Mon 15") == "Sat 22"
 }
 
 // randSleep will sleep for an expected d duration with a jitter in [-jitter /
