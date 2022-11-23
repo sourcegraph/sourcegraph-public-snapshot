@@ -15,7 +15,9 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/common"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -89,6 +91,22 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// If there is only one auth provider configured, the single auth provider is OpenID Connect,
+	// it's an app request, and the session cookie is present, redirect to signin immediately.
+	//
+	// For sign-out requests, the session cookie won't be present and this "if" condition won't apply.
+	// In this case, instead of a redirect to the sso sign-in, the user will be redirected to the SG login page.
+	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && common.HasCookie(r) && !isAPIRequest {
+		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
+		if err != nil {
+			log15.Error("Failed to get provider", "error", err)
+			http.Error(w, safeErrMsg, http.StatusInternalServerError)
+			return
+		}
+		RedirectToAuthRequest(w, r, p, stateCookieName, auth.SafeRedirectURL(r.URL.String()))
+		return
+	}
+
 	next.ServeHTTP(w, r)
 }
 
@@ -152,6 +170,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// if !idToken.Expiry.IsZero() {
 			// 	exp = time.Until(idToken.Expiry)
 			// }
+
 			if err = session.SetActor(w, r, actor.FromUser(result.User.ID), exp, result.User.CreatedAt); err != nil {
 				log15.Error("Failed to authenticate with OpenID connect: could not initiate session.", "error", err)
 				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)

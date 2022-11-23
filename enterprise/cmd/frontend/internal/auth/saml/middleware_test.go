@@ -2,7 +2,6 @@ package saml
 
 import (
 	"bytes"
-	"compress/flate"
 	"context"
 	"crypto"
 	"crypto/x509"
@@ -13,7 +12,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 	"time"
 
@@ -263,32 +261,12 @@ func TestMiddleware(t *testing.T) {
 	}
 
 	var (
-		authnRequest    saml.AuthnRequest
-		authnCookies    []*http.Cookie
-		authnRequestURL string
+		authnCookies []*http.Cookie
 	)
-	t.Run("unauthenticated homepage visit -> IDP SSO URL", func(t *testing.T) {
+	t.Run("unauthenticated homepage visit -> login required", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, false, nil)
-		if want := http.StatusFound; resp.StatusCode != want {
+		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
-		}
-		locURL, err := url.Parse(resp.Header.Get("Location"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !strings.HasPrefix(locURL.String(), idpServer.IDP.SSOURL.String()) {
-			t.Error("wrong redirect URL")
-		}
-
-		// save cookies and Authn request
-		authnCookies = unexpiredCookies(resp)
-		authnRequestURL = locURL.String()
-		deflatedSAMLRequest, err := base64.StdEncoding.DecodeString(locURL.Query().Get("SAMLRequest"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := xml.NewDecoder(flate.NewReader(bytes.NewBuffer(deflatedSAMLRequest))).Decode(&authnRequest); err != nil {
-			t.Fatal(err)
 		}
 	})
 	t.Run("unauthenticated API visit -> pass through", func(t *testing.T) {
@@ -323,8 +301,15 @@ func TestMiddleware(t *testing.T) {
 			t.Errorf("got HTTP %d, want %d", resp.StatusCode, want)
 		}
 	})
+
 	t.Run("get SAML assertion from IDP and post the assertion to the SP ACS URL", func(t *testing.T) {
-		authnReq, err := http.NewRequest("GET", authnRequestURL, nil)
+		respLogin := doRequest("GET", "http://example.com/.auth/saml/login", "", nil, false, nil)
+		locURL, err := url.Parse(respLogin.Header.Get("Location"))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		authnReq, err := http.NewRequest("GET", locURL.String(), nil)
 		if err != nil {
 			t.Fatal(err)
 		}

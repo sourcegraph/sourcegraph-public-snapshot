@@ -12,7 +12,9 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/common"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -53,6 +55,20 @@ func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next ht
 	// If the actor is authenticated and not performing a SAML operation, then proceed to next.
 	if actor.FromContext(r.Context()).IsAuthenticated() {
 		next.ServeHTTP(w, r)
+		return
+	}
+
+	// If there is only one auth provider configured, the single auth provider is SAML, it's an
+	// app request, and the session cookie is present, redirect to signin immediately.
+	//
+	// For sign-out requests, the session cookie won't be present and this "if" condition won't apply.
+	// In that case, instead of a redirect to the sso sign-in, the user will be redirected to the SG login page.
+	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Saml != nil && common.HasCookie(r) && !isAPIRequest {
+		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
+		if handled {
+			return
+		}
+		redirectToAuthURL(w, r, p, auth.SafeRedirectURL(r.URL.String()))
 		return
 	}
 

@@ -17,10 +17,11 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
-
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/common"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -56,9 +57,27 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		// If the actor is authenticated and not performing an OAuth flow, then proceed to
 		// next.
 		if actor.FromContext(ctx).IsAuthenticated() {
+			fmt.Println(" A --- authenticated")
+
 			span.AddEvent("authenticated, proceeding to next")
 			span.Finish()
 			next.ServeHTTP(w, r)
+			return
+		}
+
+		// If there is only one auth provider configured, the single auth provider is a OAuth
+		// instance, it's an app request, and the session cookie is present, redirect to sign-in immediately.
+		//
+		// For sign-out requests, the session cookie won't be present and this "if" condition won't apply.
+		// In that case, instead of a redirect to the sso sign-in, the user will be redirected to the SG login page.
+		if pc := getExactlyOneOAuthProvider(); pc != nil && common.HasCookie(r) && !isAPIHandler && pc.AuthPrefix == authPrefix && isHuman(r) {
+			fmt.Println(" B --- not authenticated")
+			span.AddEvent("redirect to signin")
+			v := make(url.Values)
+			v.Set("redirect", auth.SafeRedirectURL(r.URL.String()))
+			v.Set("pc", pc.ConfigID().ID)
+			span.Finish()
+			http.Redirect(w, r, authPrefix+"/login?"+v.Encode(), http.StatusFound)
 			return
 		}
 
