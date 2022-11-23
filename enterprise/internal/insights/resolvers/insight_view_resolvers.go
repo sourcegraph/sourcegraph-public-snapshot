@@ -657,6 +657,20 @@ func existingSeriesHasChanged(new graphqlbackend.LineChartSearchInsightDataSerie
 	if new.TimeScope.StepInterval.Value != int32(existing.SampleIntervalValue) {
 		return true
 	}
+	if len(new.RepositoryScope.Repositories) != len(existing.Repositories) {
+		return true
+	}
+	sort.Slice(new.RepositoryScope.Repositories, func(i, j int) bool {
+		return new.RepositoryScope.Repositories[i] < new.RepositoryScope.Repositories[j]
+	})
+	sort.Slice(existing.Repositories, func(i, j int) bool {
+		return existing.Repositories[i] < existing.Repositories[j]
+	})
+	for i := 0; i < len(existing.Repositories); i++ {
+		if new.RepositoryScope.Repositories[i] != existing.Repositories[i] {
+			return true
+		}
+	}
 	return emptyIfNil(new.GroupBy) != emptyIfNil(existing.GroupBy)
 }
 
