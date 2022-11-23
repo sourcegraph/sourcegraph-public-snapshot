@@ -347,3 +347,13 @@ export const withSearchQueryInput = (callback: (editorName: Editor) => void): vo
         callback(editor)
     }
 }
+
+export const isElementDisabled = (driver: Driver, query: string): Promise<boolean> =>
+    driver.page.evaluate((query: string) => {
+        const element = document.querySelector<HTMLButtonElement>(query)
+
+        const disabledAttribute = element!.disabled
+        const ariaDisabled = element!.getAttribute('aria-disabled')
+
+        return disabledAttribute || ariaDisabled === 'true'
+    }, query)

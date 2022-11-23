@@ -1,10 +1,13 @@
+:root {
+    --blame-decoration-width: 240px;
+}
+
 .popover {
     &-trigger {
         overflow: hidden;
         text-overflow: ellipsis;
-        display: inline-block;
-        width: 100%;
-        max-width: 240px;
+        display: block;
+        height: 1rem;
 
         color: var(--body-color);
         &:hover {

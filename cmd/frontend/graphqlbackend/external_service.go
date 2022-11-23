@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -40,8 +39,12 @@ type externalServiceResolver struct {
 const externalServiceIDKind = "ExternalService"
 
 func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
-	id, err := UnmarshalExternalServiceID(gqlID)
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+		return nil, err
+	}
 
+	id, err := UnmarshalExternalServiceID(gqlID)
 	if err != nil {
 		return nil, err
 	}
@@ -51,9 +54,6 @@ func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) 
 		return nil, err
 	}
 
-	if err := backend.CheckExternalServiceAccess(ctx, db); err != nil {
-		return nil, err
-	}
 	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: db, externalService: es}, nil
 }
 

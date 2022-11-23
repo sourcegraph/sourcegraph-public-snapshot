@@ -10,8 +10,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -56,13 +56,13 @@ func (a *affiliatedRepositoriesConnection) getNodesAndErrors(ctx context.Context
 			}
 
 		} else {
-			svc, err := a.db.ExternalServices().GetByID(ctx, a.codeHost)
-			if err != nil {
+			// 🚨 SECURITY: check whether user is site-admin
+			if err := auth.CheckCurrentUserIsSiteAdmin(ctx, a.db); err != nil {
 				a.err = err
 				return
 			}
-			// 🚨 SECURITY: check if user can access external service
-			err = backend.CheckExternalServiceAccess(ctx, a.db)
+
+			svc, err := a.db.ExternalServices().GetByID(ctx, a.codeHost)
 			if err != nil {
 				a.err = err
 				return

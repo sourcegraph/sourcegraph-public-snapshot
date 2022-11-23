@@ -1,10 +1,14 @@
+import { MockedResponse } from '@apollo/client/testing'
 import { Meta, Story } from '@storybook/react'
 
-import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
+import { getDocumentNode } from '@sourcegraph/http-client'
+import { GroupByField, TimeIntervalStepUnit } from '@sourcegraph/shared/src/graphql-operations'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../../../components/WebStory'
-import { CodeInsightsBackendStoryMock } from '../../../../../CodeInsightsBackendStoryMock'
-import { BackendInsightDatum, SeriesChartContent } from '../../../../../core'
+import { GetInsightPreviewResult } from '../../../../../../../graphql-operations'
+import { SearchBasedInsightSeries } from '../../../../../core'
+import { GET_INSIGHT_PREVIEW_GQL } from '../../../../../core/hooks/live-preview-insight'
 
 import { ComputeLivePreview as ComputeLivePreviewComponent } from './ComputeLivePreview'
 
@@ -15,72 +19,73 @@ const defaultStory: Meta = {
 
 export default defaultStory
 
-const link = 'https://sourcegraph.com'
-
-const mockSeriesData = [
-    {
-        id: 'Foo',
-        color: 'yellow',
-        value: 241,
-    },
-    {
-        id: 'Boo',
-        color: 'grape',
-        value: 148,
-    },
-    {
-        id: 'Baz',
-        color: 'cyan',
-        value: 87,
-    },
-    {
-        id: 'Qux',
-        color: 'yellow',
-        value: 168,
-    },
-    {
-        id: 'Quux',
-        color: 'grape',
-        value: 130,
-    },
-    {
-        id: 'Corge',
-        color: 'cyan',
-        value: 118,
-    },
-].map(series => ({
-    id: series.id,
-    name: series.id,
-    color: `var(--oc-${series.color}-9)`,
-    data: [
-        {
-            value: series.value,
-            dateTime: new Date('2020-01-01'),
-            link,
+const mock: MockedResponse<GetInsightPreviewResult> = {
+    request: {
+        query: getDocumentNode(GET_INSIGHT_PREVIEW_GQL),
+        variables: {
+            input: {
+                series: [
+                    {
+                        query: 'test query',
+                        label: 'test series',
+                        generatedFromCaptureGroups: true,
+                        groupBy: GroupByField.AUTHOR,
+                    },
+                ],
+                repositoryScope: { repositories: ['sourcegraph/sourcegraph'] },
+                timeScope: { stepInterval: { unit: TimeIntervalStepUnit.DAY, value: 1 } },
+            },
         },
-    ],
-    getLinkURL: (datum: any) => datum.link,
-    getYValue: (datum: any) => datum.value,
-    getXValue: (datum: any) => datum.dateTime,
-    getCategory: (datum: any) => datum.category,
-}))
-
-const codeInsightsBackend = {
-    getInsightPreviewContent: (): Promise<SeriesChartContent<BackendInsightDatum>> =>
-        Promise.resolve({
-            series: mockSeriesData,
-        }),
+    },
+    result: {
+        data: {
+            searchInsightPreview: [
+                {
+                    __typename: 'SearchInsightLivePreviewSeries',
+                    label: 'Foo',
+                    points: [
+                        { __typename: 'InsightDataPoint', dateTime: '0', value: 100 },
+                        { __typename: 'InsightDataPoint', dateTime: '0', value: 200 },
+                    ],
+                },
+                {
+                    __typename: 'SearchInsightLivePreviewSeries',
+                    label: 'Boo',
+                    points: [{ __typename: 'InsightDataPoint', dateTime: '0', value: 200 }],
+                },
+                {
+                    __typename: 'SearchInsightLivePreviewSeries',
+                    label: 'Baz',
+                    points: [{ __typename: 'InsightDataPoint', dateTime: '0', value: 500 }],
+                },
+                {
+                    __typename: 'SearchInsightLivePreviewSeries',
+                    label: 'Qux',
+                    points: [{ __typename: 'InsightDataPoint', dateTime: '0', value: 300 }],
+                },
+                {
+                    __typename: 'SearchInsightLivePreviewSeries',
+                    label: 'Corge',
+                    points: [{ __typename: 'InsightDataPoint', dateTime: '0', value: 150 }],
+                },
+            ],
+        },
+    },
 }
 
+const MOCK_SERIES: SearchBasedInsightSeries[] = [
+    { id: 'series_001', name: 'test series', query: 'test query', stroke: 'var(--blue)' },
+]
+
 export const ComputeLivePreview: Story = () => (
-    <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
+    <MockedTestProvider mocks={[mock]}>
         <div className="m-3 px-4 py-5 bg-white">
             <ComputeLivePreviewComponent
                 disabled={false}
                 repositories="sourcegraph/sourcegraph"
-                series={[]}
+                series={MOCK_SERIES}
                 groupBy={GroupByField.AUTHOR}
             />
         </div>
-    </CodeInsightsBackendStoryMock>
+    </MockedTestProvider>
 )

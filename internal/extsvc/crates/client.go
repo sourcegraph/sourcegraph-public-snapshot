@@ -24,7 +24,7 @@ func NewClient(urn string, cli httpcli.Doer) *Client {
 	}
 }
 
-func (c *Client) Get(ctx context.Context, url string) ([]byte, error) {
+func (c *Client) Get(ctx context.Context, url string) (io.ReadCloser, error) {
 	if err := c.limiter.Wait(ctx); err != nil {
 		return nil, err
 	}
@@ -56,22 +56,21 @@ func (e *Error) NotFound() bool {
 	return e.code == http.StatusNotFound
 }
 
-func (c *Client) do(req *http.Request) ([]byte, error) {
+func (c *Client) do(req *http.Request) (io.ReadCloser, error) {
 	resp, err := c.cli.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	defer resp.Body.Close()
-
-	bs, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
 	if resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close()
+
+		bs, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, &Error{path: req.URL.Path, code: resp.StatusCode, message: fmt.Sprintf("failed to read non-200 body: %v", err)}
+		}
 		return nil, &Error{path: req.URL.Path, code: resp.StatusCode, message: string(bs)}
 	}
 
-	return bs, nil
+	return resp.Body, nil
 }

@@ -172,29 +172,23 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 
 	externalServiceID := req.ExternalServiceID
 
-	// We want to get soft-deleted external services as well, since we do a final
-	// sync when an external service gets deleted.
-	es, err := s.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
-		IDs:            []int64{externalServiceID},
-		IncludeDeleted: true,
-	})
+	es, err := s.ExternalServiceStore().GetByID(ctx, externalServiceID)
 	if err != nil {
-		s.respond(w, http.StatusInternalServerError, err)
+		if errcode.IsNotFound(err) {
+			s.respond(w, http.StatusNotFound, err)
+		} else {
+			s.respond(w, http.StatusInternalServerError, err)
+		}
 		return
 	}
 
-	if len(es) != 1 {
-		s.respond(w, http.StatusNotFound, errors.Newf("external service %d not found", externalServiceID))
-		return
-	}
-
-	genericSrc, err := genericSourcer(ctx, es[0])
+	genericSrc, err := genericSourcer(ctx, es)
 	if err != nil {
 		logger.Error("server.external-service-sync", log.Error(err))
 		return
 	}
 
-	statusCode, resp := handleExternalServiceValidate(ctx, logger, es[0], genericSrc)
+	statusCode, resp := handleExternalServiceValidate(ctx, logger, es, genericSrc)
 	if statusCode > 0 {
 		s.respond(w, statusCode, resp)
 		return

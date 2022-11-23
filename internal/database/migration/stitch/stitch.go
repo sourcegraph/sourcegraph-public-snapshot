@@ -152,7 +152,7 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 		}
 
 		return shared.MigrationBounds{}, errors.Newf(
-			"migration %d unexpectedly edited in release %s:\nup.sql:\n%s\n\ndown.sql:\n%s\n",
+			"a migration (%d) from a previous version was unexpectedly edited in this release - if this change was intentional add this migration to the allowedOverrideMap  %s:\nup.sql:\n%s\n\ndown.sql:\n%s\n",
 			newDefinition.ID,
 			rev,
 			cmp.Diff(

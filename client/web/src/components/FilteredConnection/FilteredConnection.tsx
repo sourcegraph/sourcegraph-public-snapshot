@@ -76,8 +76,14 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, Co
      */
     querySubject?: Subject<string>
 
-    /** A function that generates an aria label given a node display name */
+    /** A function that generates an aria label given a node display name. */
     ariaLabelFunction?: (displayName: string) => string
+
+    /**
+     * Sets the aria-live attribute for the container around the nodes. This will announce updates to
+     * the list to screen reader users (e.g. reading out nodes after they have finished loading).
+     */
+    ariaLive?: 'polite' | 'off'
 }
 
 /**
@@ -519,7 +525,11 @@ export class FilteredConnection<
         const inputPlaceholder = this.props.inputPlaceholder || `Search ${this.props.pluralNoun}...`
 
         return (
-            <ConnectionContainer compact={this.props.compact} className={this.props.className}>
+            <ConnectionContainer
+                compact={this.props.compact}
+                className={this.props.className}
+                ariaLive={this.props.ariaLive}
+            >
                 {(!this.props.hideSearch || this.props.filters) && (
                     <ConnectionForm
                         ref={this.setFilterRef}

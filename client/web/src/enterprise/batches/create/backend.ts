@@ -88,6 +88,13 @@ export const CREATE_BATCH_SPEC_FROM_RAW = gql`
         createBatchSpecFromRaw(batchSpec: $spec, noCache: $noCache, namespace: $namespace, batchChange: $batchChange) {
             id
             createdAt
+            workspaceResolution {
+                # We fetch started at to make sure we distinguish a new workspace
+                # resolution from a previous one.
+                startedAt
+                state
+                failureMessage
+            }
         }
     }
 `
@@ -99,6 +106,13 @@ export const REPLACE_BATCH_SPEC_INPUT = gql`
         replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec, noCache: $noCache) {
             id
             createdAt
+            workspaceResolution {
+                # We fetch started at to make sure we distinguish a new workspace
+                # resolution from a previous one.
+                startedAt
+                state
+                failureMessage
+            }
         }
     }
 `
@@ -109,6 +123,9 @@ export const WORKSPACE_RESOLUTION_STATUS = gql`
             __typename
             ... on BatchSpec {
                 workspaceResolution {
+                    # We fetch started at to make sure we distinguish a new workspace
+                    # resolution from a previous one.
+                    startedAt
                     state
                     failureMessage
                 }

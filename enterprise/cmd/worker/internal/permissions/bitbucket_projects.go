@@ -86,15 +86,13 @@ type bitbucketProjectPermissionsHandler struct {
 }
 
 // Handle implements the workerutil.Handler interface.
-func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
+func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger log.Logger, workerJob *types.BitbucketProjectPermissionJob) (err error) {
 	logger = logger.Scoped("BitbucketProjectPermissionsHandler", "handles jobs to apply explicit permissions to all repositories of a Bitbucket Project")
 	defer func() {
 		if err != nil {
 			logger.Error("Handle", log.Error(err))
 		}
 	}()
-
-	workerJob := record.(*types.BitbucketProjectPermissionJob)
 
 	// get the external service
 	svc, err := h.db.ExternalServices().GetByID(ctx, workerJob.ExternalServiceID)
@@ -356,7 +354,7 @@ func (h *bitbucketProjectPermissionsHandler) repoExists(ctx context.Context, rep
 
 // newBitbucketProjectPermissionsWorker creates a worker that reads the explicit_permissions_bitbucket_projects_jobs table and
 // executes the jobs.
-func newBitbucketProjectPermissionsWorker(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker {
+func newBitbucketProjectPermissionsWorker(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker[*types.BitbucketProjectPermissionJob] {
 	options := workerutil.WorkerOptions{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_worker",
 		NumHandlers:       cfg.WorkerConcurrency,
@@ -365,12 +363,12 @@ func newBitbucketProjectPermissionsWorker(ctx context.Context, logger log.Logger
 		Metrics:           metrics.workerMetrics,
 	}
 
-	return dbworker.NewWorker(ctx, createBitbucketProjectPermissionsStore(logger, db, cfg), &bitbucketProjectPermissionsHandler{db: db}, options)
+	return dbworker.NewWorker[*types.BitbucketProjectPermissionJob](ctx, createBitbucketProjectPermissionsStore(logger, db, cfg), &bitbucketProjectPermissionsHandler{db: db}, options)
 }
 
 // newBitbucketProjectPermissionsResetter implements resetter for the explicit_permissions_bitbucket_projects_jobs table.
 // See resetter documentation for more details. https://docs.sourcegraph.com/dev/background-information/workers#dequeueing-and-resetting-jobs
-func newBitbucketProjectPermissionsResetter(logger log.Logger, db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *dbworker.Resetter {
+func newBitbucketProjectPermissionsResetter(logger log.Logger, db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *dbworker.Resetter[*types.BitbucketProjectPermissionJob] {
 	workerStore := createBitbucketProjectPermissionsStore(logger, db, cfg)
 
 	options := dbworker.ResetterOptions{
@@ -387,8 +385,8 @@ func newBitbucketProjectPermissionsResetter(logger log.Logger, db edb.Enterprise
 
 // createBitbucketProjectPermissionsStore creates a store that reads and writes to the explicit_permissions_bitbucket_projects_jobs table.
 // It is used by the worker and resetter.
-func createBitbucketProjectPermissionsStore(logger log.Logger, s basestore.ShareableStore, cfg *config) dbworkerstore.Store {
-	return dbworkerstore.New(logger.Scoped("BitbucketProjectPermission.Store", ""), s.Handle(), dbworkerstore.Options{
+func createBitbucketProjectPermissionsStore(logger log.Logger, s basestore.ShareableStore, cfg *config) dbworkerstore.Store[*types.BitbucketProjectPermissionJob] {
+	return dbworkerstore.New(logger.Scoped("BitbucketProjectPermission.Store", ""), s.Handle(), dbworkerstore.Options[*types.BitbucketProjectPermissionJob]{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_store",
 		TableName:         "explicit_permissions_bitbucket_projects_jobs",
 		ColumnExpressions: database.BitbucketProjectPermissionsColumnExpressions,

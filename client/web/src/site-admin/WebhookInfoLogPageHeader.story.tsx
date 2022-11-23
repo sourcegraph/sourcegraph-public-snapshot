@@ -1,15 +1,17 @@
 import React, { useState } from 'react'
 
+import { MockedResponse } from '@apollo/client/testing'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { Container } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../components/WebStory'
+import { WebhookByIDLogPageHeaderResult } from '../graphql-operations'
 
 import { WebhookInfoLogPageHeader } from './WebhookInfoLogPageHeader'
-import { SelectedExternalService } from './webhooks/backend'
-import { buildHeaderMock } from './webhooks/story/fixtures'
+import { SelectedExternalService, WEBHOOK_BY_ID_LOG_PAGE_HEADER } from './webhooks/backend'
 
 const decorator: DecoratorFn = story => (
     <Container>
@@ -21,10 +23,6 @@ const config: Meta = {
     title: 'web/src/site-admin/WebhookInfoLogPageHeader',
     decorators: [decorator],
     argTypes: {
-        externalServiceCount: {
-            name: 'external service count',
-            control: { type: 'number' },
-        },
         erroredWebhookCount: {
             name: 'errored webhook count',
             control: { type: 'number' },
@@ -44,26 +42,41 @@ const WebhookInfoLogPageHeaderContainer: React.FunctionComponent<
 > = ({ initialOnlyErrors }) => {
     const [onlyErrors, setOnlyErrors] = useState(initialOnlyErrors === true)
 
-    return <WebhookInfoLogPageHeader onlyErrors={onlyErrors} onSetOnlyErrors={setOnlyErrors} />
+    return <WebhookInfoLogPageHeader webhookID="1" onlyErrors={onlyErrors} onSetOnlyErrors={setOnlyErrors} />
 }
 
 export const ExternalServicesAndErrors: Story = args => (
     <WebStory>
         {() => (
-            <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
+            <MockedTestProvider mocks={buildHeaderMock(args.erroredWebhookCount)}>
                 <WebhookInfoLogPageHeaderContainer />
             </MockedTestProvider>
         )}
     </WebStory>
 )
 
-ExternalServicesAndErrors.storyName = 'external services and errors'
+ExternalServicesAndErrors.storyName = 'has errors'
 
 ExternalServicesAndErrors.argTypes = {
-    externalServiceCount: {
-        defaultValue: 20,
-    },
     erroredWebhookCount: {
         defaultValue: 500,
     },
 }
+
+const buildHeaderMock = (webhookLogCount: number): MockedResponse<WebhookByIDLogPageHeaderResult>[] => [
+    {
+        request: {
+            query: getDocumentNode(WEBHOOK_BY_ID_LOG_PAGE_HEADER),
+            variables: {
+                webhookID: '1',
+            },
+        },
+        result: {
+            data: {
+                webhookLogs: {
+                    totalCount: webhookLogCount,
+                },
+            },
+        },
+    },
+]
