@@ -62,7 +62,7 @@ export const PageHeader: React.FunctionComponent<React.PropsWithChildren<PageHea
     const heading = (
         <Heading as={headingElement}>
             {path.map(({ to, text, icon, ariaLabel }, index) => (
-                <Breadcrumb key={index} to={to} icon={icon} aria-label={ariaLabel}>
+                <Breadcrumb key={index} to={to} icon={icon} aria-label={ariaLabel} className={styles.breadcrumb}>
                     {text}
                 </Breadcrumb>
             ))}
