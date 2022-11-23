@@ -9,7 +9,7 @@ import { Container, Icon } from '@sourcegraph/wildcard'
 import { dismissAlert } from '../../../components/DismissibleAlert'
 import {
     useShowMorePagination,
-    UseConnectionResult,
+    UseShowMorePaginationResult,
 } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
@@ -78,7 +78,9 @@ const EmptyBulkOperationsListElement: React.FunctionComponent<React.PropsWithChi
 
 const BATCH_COUNT = 15
 
-const useBulkOperationsListConnection = (batchChangeID: Scalars['ID']): UseConnectionResult<BulkOperationFields> => {
+const useBulkOperationsListConnection = (
+    batchChangeID: Scalars['ID']
+): UseShowMorePaginationResult<BulkOperationFields> => {
     const { connection, startPolling, stopPolling, ...rest } = useShowMorePagination<
         BatchChangeBulkOperationsResult,
         BatchChangeBulkOperationsVariables,

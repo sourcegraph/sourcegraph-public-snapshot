@@ -4,7 +4,7 @@ import { useHistory, useLocation } from 'react-router'
 
 import { getUrlQuery, GetUrlQueryParameters } from '../utils'
 
-interface UseConnectionURLParameters extends Pick<GetUrlQueryParameters, 'first' | 'visibleResultCount'> {
+interface UseShowMorePaginationURLParameters extends Pick<GetUrlQueryParameters, 'first' | 'visibleResultCount'> {
     enabled?: boolean
 }
 
@@ -14,7 +14,11 @@ interface UseConnectionURLParameters extends Pick<GetUrlQueryParameters, 'first'
  * This is to allow users to build complex requests that can still be shared with others.
  * It is closely coupled to useShowMorePagination, which also derives initial state from the URL.
  */
-export const useShowMorePaginationUrl = ({ enabled, first, visibleResultCount }: UseConnectionURLParameters): void => {
+export const useShowMorePaginationUrl = ({
+    enabled,
+    first,
+    visibleResultCount,
+}: UseShowMorePaginationURLParameters): void => {
     const location = useLocation()
     const history = useHistory()
     const searchFragment = getUrlQuery({

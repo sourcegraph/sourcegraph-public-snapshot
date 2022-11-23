@@ -2,7 +2,7 @@ import { dataOrThrowErrors } from '@sourcegraph/http-client'
 
 import {
     useShowMorePagination,
-    UseConnectionResult,
+    UseShowMorePaginationResult,
 } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     Scalars,
@@ -30,7 +30,7 @@ export interface WorkspacePreviewFilters {
 export const useWorkspaces = (
     batchSpecID: Scalars['ID'],
     filters?: WorkspacePreviewFilters
-): UseConnectionResult<PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields> =>
+): UseShowMorePaginationResult<PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields> =>
     useShowMorePagination<
         BatchSpecWorkspacesPreviewResult,
         BatchSpecWorkspacesPreviewVariables,

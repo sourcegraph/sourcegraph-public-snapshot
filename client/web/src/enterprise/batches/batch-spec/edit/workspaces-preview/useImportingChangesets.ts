@@ -2,7 +2,7 @@ import { dataOrThrowErrors } from '@sourcegraph/http-client'
 
 import {
     useShowMorePagination,
-    UseConnectionResult,
+    UseShowMorePaginationResult,
 } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     Scalars,
@@ -23,7 +23,9 @@ export type ImportingChangesetFields =
  *
  * @param batchSpecID The id of the batch spec to query
  */
-export const useImportingChangesets = (batchSpecID: Scalars['ID']): UseConnectionResult<ImportingChangesetFields> =>
+export const useImportingChangesets = (
+    batchSpecID: Scalars['ID']
+): UseShowMorePaginationResult<ImportingChangesetFields> =>
     useShowMorePagination<
         BatchSpecImportingChangesetsResult,
         BatchSpecImportingChangesetsVariables,

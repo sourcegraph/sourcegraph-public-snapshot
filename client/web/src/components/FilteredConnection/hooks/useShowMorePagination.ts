@@ -10,7 +10,7 @@ import { asGraphQLResult, hasNextPage, parseQueryInt } from '../utils'
 
 import { useShowMorePaginationUrl } from './useShowMorePaginationUrl'
 
-export interface UseConnectionResult<TData> {
+export interface UseShowMorePaginationResult<TData> {
     connection?: Connection<TData>
     error?: ApolloError
     fetchMore: () => void
@@ -26,7 +26,7 @@ export interface UseConnectionResult<TData> {
     stopPolling: () => void
 }
 
-interface UseConnectionConfig<TResult> {
+interface UseShowMorePaginationConfig<TResult> {
     /** Set if query variables should be updated in and derived from the URL */
     useURL?: boolean
     /** Allows modifying how the query interacts with the Apollo cache */
@@ -43,11 +43,11 @@ interface UseConnectionConfig<TResult> {
     onCompleted?: (data: TResult) => void
 }
 
-interface UseConnectionParameters<TResult, TVariables, TData> {
+interface UseShowMorePaginationParameters<TResult, TVariables, TData> {
     query: string
     variables: TVariables & ConnectionQueryArguments
     getConnection: (result: GraphQLResult<TResult>) => Connection<TData>
-    options?: UseConnectionConfig<TResult>
+    options?: UseShowMorePaginationConfig<TResult>
 }
 
 const DEFAULT_AFTER: ConnectionQueryArguments['after'] = undefined
@@ -67,7 +67,7 @@ export const useShowMorePagination = <TResult, TVariables, TData>({
     variables,
     getConnection: getConnectionFromGraphQLResult,
     options,
-}: UseConnectionParameters<TResult, TVariables, TData>): UseConnectionResult<TData> => {
+}: UseShowMorePaginationParameters<TResult, TVariables, TData>): UseShowMorePaginationResult<TData> => {
     const searchParameters = useSearchParameters()
 
     const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables

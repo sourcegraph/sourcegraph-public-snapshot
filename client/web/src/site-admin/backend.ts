@@ -16,7 +16,7 @@ import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
     useShowMorePagination,
-    UseConnectionResult,
+    UseShowMorePaginationResult,
 } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     AllConfigResult,
@@ -966,7 +966,7 @@ export const WEBHOOK_BY_ID = gql`
     }
 `
 
-export const useWebhooksConnection = (): UseConnectionResult<WebhookFields> =>
+export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhookFields> =>
     useShowMorePagination<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
         variables: {},
@@ -985,7 +985,7 @@ export const useWebhookLogsConnection = (
     webhookID: string,
     first: number,
     onlyErrors: boolean
-): UseConnectionResult<WebhookLogFields> =>
+): UseShowMorePaginationResult<WebhookLogFields> =>
     useShowMorePagination<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables, WebhookLogFields>({
         query: WEBHOOK_LOGS_BY_ID,
         variables: {

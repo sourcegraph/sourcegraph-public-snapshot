@@ -4,7 +4,7 @@ import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 
 import {
     useShowMorePagination,
-    UseConnectionResult,
+    UseShowMorePaginationResult,
 } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     BatchChangesCodeHostFields,
@@ -109,7 +109,7 @@ export const USER_CODE_HOSTS = gql`
 
 export const useUserBatchChangesCodeHostConnection = (
     user: Scalars['ID']
-): UseConnectionResult<BatchChangesCodeHostFields> =>
+): UseShowMorePaginationResult<BatchChangesCodeHostFields> =>
     useShowMorePagination<
         UserBatchChangesCodeHostsResult,
         UserBatchChangesCodeHostsVariables,
@@ -148,7 +148,7 @@ export const GLOBAL_CODE_HOSTS = gql`
     ${CODE_HOST_FIELDS_FRAGMENT}
 `
 
-export const useGlobalBatchChangesCodeHostConnection = (): UseConnectionResult<BatchChangesCodeHostFields> =>
+export const useGlobalBatchChangesCodeHostConnection = (): UseShowMorePaginationResult<BatchChangesCodeHostFields> =>
     useShowMorePagination<
         GlobalBatchChangesCodeHostsResult,
         GlobalBatchChangesCodeHostsVariables,
