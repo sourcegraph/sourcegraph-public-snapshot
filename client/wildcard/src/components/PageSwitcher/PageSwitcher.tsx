@@ -76,7 +76,7 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
                             as={ChevronLeftIcon}
                             className={classNames('mr-1', styles.previousButtonIcon)}
                         />
-                        <span className={styles.previousButtonLabel}>Previous</span>
+                        <span className={styles.previousButtonLabel}>Prev</span>
                     </Button>
                 </li>
                 <li>
