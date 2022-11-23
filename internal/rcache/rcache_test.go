@@ -184,27 +184,6 @@ func TestCache_deleteKeysWithPrefix(t *testing.T) {
 	}
 }
 
-func TestCache_GetAll(t *testing.T) {
-	SetupForTest(t)
-
-	key2a := "key2:test-a"
-	key2b := "key2:test-b"
-
-	value := []byte("x")
-	c := New("some_prefix")
-	c.Set("key1:test", value)
-	c.Set(key2b, value)
-	c.Set(key2a, value)
-	c.Set("key3:test", value)
-
-	got, err := c.GetAll("key2")
-
-	assert.Nil(t, err)
-	assert.Len(t, got, 2)
-	assert.Equal(t, key2a, got[0])
-	assert.Equal(t, key2b, got[1])
-}
-
 func TestCache_Increase(t *testing.T) {
 	SetupForTest(t)
 
@@ -227,18 +206,42 @@ func TestCache_Increase(t *testing.T) {
 func TestCache_ListKeys(t *testing.T) {
 	SetupForTest(t)
 
-	c := NewWithTTL("some_prefix:", 1)
+	c := NewWithTTL("some_prefix", 1)
 	c.SetMulti(
 		[2]string{"foobar", "123"},
 		[2]string{"bazbar", "456"},
 		[2]string{"barfoo", "234"},
 	)
 
-	keys, err := c.ListKeys(context.Background())
+	background := context.Background()
+	keys, err := c.ListKeys(&background, "")
 	assert.NoError(t, err)
 	for _, k := range []string{"foobar", "bazbar", "barfoo"} {
 		assert.Contains(t, keys, k)
 	}
+}
+
+func TestCache_ListKeys_prefix(t *testing.T) {
+	SetupForTest(t)
+
+	key2a := "key2:test-a"
+	key2b := "key2:test-b"
+
+	value := "x"
+	c := NewWithTTL("some_cache_prefix", 1)
+	c.SetMulti(
+		[2]string{"key1:test", value},
+		[2]string{key2a, value},
+		[2]string{key2b, value},
+		[2]string{"key3:test", value},
+	)
+
+	got, err := c.ListKeys(nil, "key2")
+
+	assert.Nil(t, err)
+	assert.Len(t, got, 2)
+	assert.Contains(t, got, key2a)
+	assert.Contains(t, got, key2b)
 }
 
 func bytes(s ...string) [][]byte {

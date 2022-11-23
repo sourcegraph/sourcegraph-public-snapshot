@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
@@ -78,13 +79,14 @@ func generateKey(now time.Time) string {
 }
 
 func deleteOldKeys(limit int) error {
-	keys, err := redisCache.GetAll(keyPrefix)
+	keys, err := redisCache.ListKeys(nil, keyPrefix)
 	if err != nil {
 		return err
 	}
 
 	if len(keys) > limit {
 		// Delete all but the last N keys
+		sort.Strings(keys)
 		excessKeys := keys[:len(keys)-limit]
 		for _, key := range excessKeys {
 			redisCache.Delete(key)
@@ -116,7 +118,7 @@ func GetAllOutboundRequestLogItemsAfter(lastKey *string, limit int) ([]*types.Ou
 }
 
 func getAllAfter(lastKey *string, limit int) ([][]byte, error) {
-	all, err := redisCache.GetAll(keyPrefix)
+	all, err := redisCache.ListKeys(nil, keyPrefix)
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +133,9 @@ func getAllAfter(lastKey *string, limit int) ([][]byte, error) {
 	} else {
 		keys = all
 	}
+
+	// Sort ascending
+	sort.Strings(keys)
 
 	// Limit to N
 	if len(keys) > limit {

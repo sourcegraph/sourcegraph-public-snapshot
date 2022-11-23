@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sort"
-	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -117,30 +115,6 @@ func (r *Cache) SetMulti(keyvals ...[2]string) {
 	}
 }
 
-// GetAll returns all keys in the cache that have the given prefix, in ascending order, without the internal key ID.
-func (r *Cache) GetAll(prefix string) (results []string, err error) {
-	c := pool.Get()
-	defer func(c redis.Conn) {
-		if tempErr := c.Close(); err == nil {
-			err = tempErr
-		}
-	}(c)
-
-	var keys []string
-	keys, err = redis.Strings(c.Do("KEYS", r.rkeyPrefix()+prefix+"*"))
-	if err != nil {
-		return nil, err
-	}
-	sort.Strings(keys)
-
-	// Remove r.rkeyPrefix() from the keys
-	for _, key := range keys {
-		results = append(results, key[len(r.rkeyPrefix()):])
-	}
-
-	return
-}
-
 // Get implements httpcache.Cache.Get
 func (r *Cache) Get(key string) ([]byte, bool) {
 	c := pool.Get()
@@ -208,27 +182,38 @@ func (r *Cache) Delete(key string) {
 	}
 }
 
-// ListKeys lists all keys associated with this cache. Use with care if you have long
-// TTLs or no TTL configured.
-func (r *Cache) ListKeys(ctx context.Context) ([]string, error) {
-	c, err := pool.GetContext(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "get redis conn")
+// ListKeys lists all keys associated with this cache, optionally filtered by a prefix.
+// Use with care if you have long TTLs or no TTL configured.
+func (r *Cache) ListKeys(ctx *context.Context, prefix string) (results []string, err error) {
+	var c redis.Conn
+	if ctx != nil {
+		c, err = pool.GetContext(*ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "get redis conn")
+		}
+	} else {
+		c = pool.Get()
 	}
-	defer c.Close()
+	defer func(c redis.Conn) {
+		if tempErr := c.Close(); err == nil {
+			err = tempErr
+		}
+	}(c)
 
 	var allKeys []string
 	cursor := 0
 	for {
-		select {
-		case <-ctx.Done():
-			return allKeys, ctx.Err()
-		default:
+		if ctx != nil {
+			select {
+			case <-(*ctx).Done():
+				return allKeys, (*ctx).Err()
+			default:
+			}
 		}
 
 		res, err := redis.Values(
 			c.Do("SCAN", cursor,
-				"MATCH", r.rkeyPrefix()+"*",
+				"MATCH", r.rkeyPrefix()+prefix+"*",
 				"COUNT", 100),
 		)
 		if err != nil {
@@ -238,7 +223,7 @@ func (r *Cache) ListKeys(ctx context.Context) ([]string, error) {
 		cursor, _ = redis.Int(res[0], nil)
 		keys, _ := redis.Strings(res[1], nil)
 		for i, k := range keys {
-			keys[i] = strings.TrimPrefix(k, r.rkeyPrefix())
+			keys[i] = k[len(r.rkeyPrefix()):]
 		}
 
 		allKeys = append(allKeys, keys...)
