@@ -109,12 +109,9 @@ func (h *BitbucketCloudWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		respond(w, http.StatusInternalServerError, errors.Wrap(err, "parsing code host base url"))
 	}
-	m := h.handleEvent(ctx, h.Store.DatabaseDB(), codeHostURN, e)
-	if m != nil {
-		if errors.Is(err, bitbucketcloud.UnknownWebhookEventKey("")) {
-			return
-		}
-		respond(w, http.StatusInternalServerError, m)
+	err = h.handleEvent(ctx, h.Store.DatabaseDB(), codeHostURN, e)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
 	} else {
 		respond(w, http.StatusNoContent, nil)
 	}
