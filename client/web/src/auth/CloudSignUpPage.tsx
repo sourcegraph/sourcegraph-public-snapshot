@@ -72,7 +72,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
 
     const invitedBy = queryWithUseEmailToggled.get('invitedBy')
     const { data } = useQuery<UserAreaUserProfileResult, UserAreaUserProfileVariables>(USER_AREA_USER_PROFILE, {
-        variables: { username: invitedBy || '', siteAdmin: false },
+        variables: { username: invitedBy || '' },
         skip: !invitedBy,
     })
     const invitedByUser = data?.user
