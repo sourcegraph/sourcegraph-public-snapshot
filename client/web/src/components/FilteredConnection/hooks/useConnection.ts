@@ -102,7 +102,7 @@ export const useConnection = <TResult, TVariables, TData>({
              */
             after: (options?.useURL && searchParameters.get('after')) || after,
         }),
-        // We only need these controls for the inital request. We do not care about dependency updates.
+        // We only need these controls for the initial request. We do not care about dependency updates.
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )

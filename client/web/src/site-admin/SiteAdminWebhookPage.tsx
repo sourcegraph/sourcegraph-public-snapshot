@@ -28,6 +28,8 @@ import styles from './SiteAdminWebhookPage.module.scss'
 
 export interface WebhookPageProps extends TelemetryProps, RouteComponentProps<{ id: string }> {}
 
+export const LOGS_PER_PAGE = 10
+
 export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
     const {
         match: {
@@ -37,7 +39,11 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
     } = props
 
     const [onlyErrors, setOnlyErrors] = useState(false)
-    const { loading, hasNextPage, fetchMore, connection, error } = useWebhookLogsConnection(id, 20, onlyErrors)
+    const { loading, hasNextPage, fetchMore, connection, error } = useWebhookLogsConnection(
+        id,
+        LOGS_PER_PAGE,
+        onlyErrors
+    )
     const { loading: webhookLoading, data: webhookData } = useWebhookQuery(id)
 
     useEffect(() => {
@@ -102,7 +108,6 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
 
             <ConnectionContainer className="mt-5">
                 {error && <ConnectionError errors={[error.message]} />}
-                {loading && !connection && <ConnectionLoading />}
 
                 <ConnectionList aria-label="WebhookLogs" className={styles.logs}>
                     <Header />
@@ -110,12 +115,12 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                         <WebhookLogNode key={node.id} node={node} />
                     ))}
                 </ConnectionList>
-
+                {loading && <ConnectionLoading />}
                 {connection && (
                     <SummaryContainer className="mt-2">
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={false}
-                            first={connection.totalCount ?? 0}
+                            first={LOGS_PER_PAGE}
                             centered={true}
                             connection={connection}
                             noun="webhook log"

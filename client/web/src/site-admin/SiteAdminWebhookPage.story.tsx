@@ -12,7 +12,7 @@ import { WebStory } from '../components/WebStory'
 import { WebhookFields, WebhookLogFields } from '../graphql-operations'
 
 import { WEBHOOK_BY_ID } from './backend'
-import { SiteAdminWebhookPage } from './SiteAdminWebhookPage'
+import { LOGS_PER_PAGE, SiteAdminWebhookPage } from './SiteAdminWebhookPage'
 import { WEBHOOK_BY_ID_LOG_PAGE_HEADER, WEBHOOK_LOGS_BY_ID } from './webhooks/backend'
 import { BODY_JSON, BODY_PLAIN, HEADERS_JSON, HEADERS_PLAIN } from './webhooks/story/fixtures'
 
@@ -49,7 +49,7 @@ export const SiteAdminWebhookPageStory: Story = args => {
             request: {
                 query: getDocumentNode(WEBHOOK_LOGS_BY_ID),
                 variables: {
-                    first: 20,
+                    first: LOGS_PER_PAGE,
                     after: null,
                     onlyErrors: false,
                     onlyUnmatched: false,
@@ -60,7 +60,7 @@ export const SiteAdminWebhookPageStory: Story = args => {
                 data: {
                     webhookLogs: {
                         nodes: WEBHOOK_MOCK_DATA,
-                        pageInfo: { hasNextPage: false },
+                        pageInfo: { hasNextPage: true },
                         totalCount: 20,
                     },
                 },
@@ -71,7 +71,7 @@ export const SiteAdminWebhookPageStory: Story = args => {
             request: {
                 query: getDocumentNode(WEBHOOK_LOGS_BY_ID),
                 variables: {
-                    first: 20,
+                    first: LOGS_PER_PAGE,
                     after: null,
                     onlyErrors: true,
                     onlyUnmatched: false,
@@ -82,7 +82,7 @@ export const SiteAdminWebhookPageStory: Story = args => {
                 data: {
                     webhookLogs: {
                         nodes: ERRORED_WEBHOOK_MOCK_DATA,
-                        pageInfo: { hasNextPage: false },
+                        pageInfo: { hasNextPage: true },
                         totalCount: 20,
                     },
                 },
