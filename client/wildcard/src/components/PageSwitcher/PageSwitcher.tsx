@@ -58,7 +58,7 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
                             disabled={hasPreviousPage !== null ? !hasPreviousPage : true}
                             onClick={goToFirstPage}
                         >
-                            <Icon aria-hidden={true} as={PageFirstIcon} />
+                            <Icon aria-hidden={true} as={PageFirstIcon} className={styles.firstPageButton} />
                         </Button>
                     </Tooltip>
                 </li>
@@ -71,8 +71,12 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
                         disabled={hasPreviousPage !== null ? !hasPreviousPage : true}
                         onClick={goToPreviousPage}
                     >
-                        <Icon aria-hidden={true} as={ChevronLeftIcon} className="mr-1" />
-                        Previous
+                        <Icon
+                            aria-hidden={true}
+                            as={ChevronLeftIcon}
+                            className={classNames('mr-1', styles.previousButtonIcon)}
+                        />
+                        <span className={styles.previousButtonLabel}>Previous</span>
                     </Button>
                 </li>
                 <li>
@@ -84,8 +88,12 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
                         disabled={hasNextPage !== null ? !hasNextPage : true}
                         onClick={goToNextPage}
                     >
-                        Next
-                        <Icon aria-hidden={true} as={ChevronRightIcon} className="ml-1" />
+                        <span className={styles.nextButtonLabel}>Next</span>
+                        <Icon
+                            aria-hidden={true}
+                            as={ChevronRightIcon}
+                            className={classNames('ml-1', styles.nextButtonIcon)}
+                        />
                     </Button>
                 </li>
                 <li>
@@ -98,14 +106,14 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
                             disabled={hasNextPage !== null ? !hasNextPage : true}
                             onClick={goToLastPage}
                         >
-                            <Icon aria-hidden={true} as={PageLastIcon} />
+                            <Icon aria-hidden={true} as={PageLastIcon} className={styles.lastPageButton} />
                         </Button>
                     </Tooltip>
                 </li>
             </ul>
             {totalCount !== null && totalLabel !== undefined ? (
                 <div className={styles.label}>
-                    <Text className="text-muted">
+                    <Text className="text-muted" size="small">
                         Total{' '}
                         <Text weight="bold" as="strong">
                             {totalLabel}

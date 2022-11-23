@@ -25,9 +25,23 @@
 
 .next-button,
 .previous-button {
-    min-width: 5.125rem;
+    min-width: 6.25rem;
+    display: flex;
+    align-items: center;
 }
 
-.next-button {
-    text-align: right;
+.next-button-icon,
+.previous-button-icon {
+    flex-grow: 0;
+}
+
+.next-button-label,
+.previous-button-label {
+    flex-grow: 1;
+    text-align: center;
+}
+
+.first-page-button,
+.last-page-button {
+    fill: currentColor !important;
 }
