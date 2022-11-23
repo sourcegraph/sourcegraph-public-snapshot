@@ -103,6 +103,7 @@ const mockFetchSearchContexts = ({ query }: { first: number; query?: string; aft
 describe('SearchContextMenu', () => {
     const defaultProps: SearchContextMenuProps = {
         authenticatedUser: null,
+        isSourcegraphDotCom: false,
         showSearchContextManagement: false,
         defaultSearchContextSpec: 'global',
         selectedSearchContextSpec: 'global',
