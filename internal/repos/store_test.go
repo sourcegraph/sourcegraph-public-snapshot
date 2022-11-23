@@ -268,44 +268,6 @@ func TestStoreEnqueueSingleSyncJob(t *testing.T) {
 	}
 	assertSyncJobCount(t, store, 2)
 
-	// If the external service is selected with FOR UPDATE in another
-	// transaction it shouldn't enqueue a job
-	//
-	// 1. Set all to completed
-	q = sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")
-	if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-		t.Fatal(err)
-	}
-	// 2. Open a transaction and lock external service in there
-	tx, err := store.Transact(ctx)
-	if err != nil {
-		t.Fatalf("Transact error: %s", err)
-	}
-	q = sqlf.Sprintf("SELECT id FROM external_services WHERE id = %d FOR UPDATE", service.ID)
-	if _, err = tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-		t.Fatal(err)
-	}
-	done := make(chan struct{})
-	go func() {
-		time.Sleep(500 * time.Millisecond)
-		if err = tx.Done(err); err != nil {
-			logger.Error("commit transaction failed", log.Error(err))
-		}
-		done <- struct{}{}
-	}()
-	// 3. Ensure that enqueuing a job won't work
-	err = store.EnqueueSingleSyncJob(ctx, service.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertSyncJobCount(t, store, 2)
-	<-done
-	err = store.EnqueueSingleSyncJob(ctx, service.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertSyncJobCount(t, store, 3)
-
 	// Test that cloud default external services don't get jobs enqueued (no-ops instead of errors)
 	q = sqlf.Sprintf("UPDATE external_service_sync_jobs SET state='completed'")
 	if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
