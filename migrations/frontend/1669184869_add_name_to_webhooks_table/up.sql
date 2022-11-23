@@ -1,6 +1,5 @@
 ALTER TABLE webhooks
-    DROP COLUMN IF EXISTS name,
-    ADD COLUMN name TEXT;
+    ADD COLUMN IF NOT EXISTS name TEXT;
 
 COMMENT ON COLUMN webhooks.name IS 'Descriptive name of a webhook.';
 
