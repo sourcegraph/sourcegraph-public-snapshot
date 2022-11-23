@@ -208,3 +208,98 @@ func buildGrants(userGrant string, orgGrant string, globalGrant bool) map[string
 		"global":        globalGrant,
 	}
 }
+
+func (c *Client) CreateSearchInsight(title string, series map[string]any) (SearchInsight, error) {
+	const query = `
+		mutation CreateSearchBasedInsight($input: LineChartSearchInsightInput!) {
+			createLineChartSearchInsight(input: $input) {
+				view {
+				  presentation {
+					... on LineChartInsightViewPresentation {
+					  seriesPresentation {
+						seriesId
+						label
+						color 
+					  }
+					}
+				  }
+				}
+			}
+		}
+	`
+
+	variables := map[string]any{
+		"input": map[string]any{
+			"options": map[string]any{
+				"title": title,
+			},
+			"dataSeries": []any{
+				series,
+			},
+		},
+	}
+	var resp struct {
+		Data struct {
+			CreateLineChartSearchInsight struct {
+				View struct {
+					Presentation struct {
+						SeriesPresentation []struct {
+							SeriesId string `json:"SeriesId"`
+							Label    string `json:"Label"`
+							Color    string `json:"Color"`
+						} `json:"SeriesPresentation"`
+					} `json:"Presentation"`
+				} `json:"View"`
+			} `json:"createLineChartSearchInsight"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return SearchInsight{}, errors.Wrap(err, "request GraphQL")
+	}
+	singleSeries := resp.Data.CreateLineChartSearchInsight.View.Presentation.SeriesPresentation
+	if len(singleSeries) != 1 {
+		return SearchInsight{}, errors.Newf("Received %d insight series when expecting 1", len(singleSeries))
+	}
+	return SearchInsight{
+		SeriesId: singleSeries[0].SeriesId,
+		Label:    singleSeries[0].Label,
+		Color:    singleSeries[0].Color,
+	}, nil
+}
+
+type SearchInsight struct {
+	SeriesId string
+	Label    string
+	Color    string
+}
+
+func (c *Client) DisableInsightSeries(seriesId string) error {
+	const query = `
+		mutation DisableSeries ($seriesId: String!) {
+		  updateInsightSeries(input:{
+			enabled:false
+			seriesId:$seriesId
+		  }){
+			series {
+			  enabled
+			}
+		  }
+		}
+	`
+	variables := map[string]any{
+		"seriesId": seriesId,
+	}
+	var resp struct {
+		Data struct {
+			Series struct {
+				Enabled bool `json:"enabled"`
+			} `json:"series"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return errors.Wrap(err, "request GraphQL")
+	}
+	return nil
+}

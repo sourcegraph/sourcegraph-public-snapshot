@@ -241,5 +241,16 @@ func TestUpdateInsight(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Error(insight)
+	defer func() {
+		if err := client.DisableInsightSeries(insight.SeriesId); err != nil {
+			t.Fatalf("couldn't disable insight series: %v", err)
+		}
+	}()
+
+	if insight.Label != "insights" {
+		t.Errorf("wrong label: %v", insight.Label)
+	}
+	if insight.Color != "#6495ED" {
+		t.Errorf("wrong color: %v", insight.Color)
+	}
 }
