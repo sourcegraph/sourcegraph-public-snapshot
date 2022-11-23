@@ -173,6 +173,7 @@ const webviewConfig = {
       path: require.resolve('path-browserify'),
       './RepoSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'RepoSearchResult'),
       './CommitSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'CommitSearchResult'),
+      './SymbolSearchResult': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'SymbolSearchResult'),
       './FileMatchChildren': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'FileMatchChildren'),
       './RepoFileLink': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'RepoFileLink'),
       '../documentation/ModalVideo': path.resolve(__dirname, 'src', 'webview', 'search-panel', 'alias', 'ModalVideo'),

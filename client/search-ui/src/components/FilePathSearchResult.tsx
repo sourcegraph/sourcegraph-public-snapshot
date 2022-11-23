@@ -32,7 +32,7 @@ export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult 
     const revisionDisplayName = getRevision(result.branches, result.commit)
 
     const title = (
-        <span>
+        <span className="d-flex align-items-center">
             <RepoFileLink
                 repoName={result.repository}
                 repoURL={repoAtRevisionURL}
