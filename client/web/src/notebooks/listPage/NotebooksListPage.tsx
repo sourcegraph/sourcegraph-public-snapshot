@@ -290,7 +290,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                         ))}
 
                         {selectedTab === 'notebooks' && isSourcegraphDotCom && (
-                            <CloudCtaBanner outlined={true} className="ml-sm-auto mt-md-0 mt-3">
+                            <CloudCtaBanner variant="outlined" small={true} className="ml-sm-auto mt-md-0 mt-3">
                                 To create Notebooks across your private repositories,{' '}
                                 <Link
                                     to="https://signup.sourcegraph.com/?p=notebooks"

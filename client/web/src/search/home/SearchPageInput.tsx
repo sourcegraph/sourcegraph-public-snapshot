@@ -150,7 +150,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                         />
                     </TraceSpanProvider>
                 </div>
-                <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
+                <Notices className="my-3 text-center" location="home" settingsCascade={props.settingsCascade} />
             </Form>
         </div>
     )
