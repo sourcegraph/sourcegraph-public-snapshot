@@ -63,3 +63,10 @@ Simple.argTypes = {
         defaultValue: 'pages',
     },
 }
+
+Simple.parameters = {
+    chromatic: {
+        enableDarkMode: true,
+        disableSnapshot: false,
+    },
+}
