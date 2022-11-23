@@ -32,7 +32,7 @@ Searching for symbols makes it easier to find specific functions, variables, and
 
 ## Smart Search
 
-Smart Search helps find search results that are likely to be more useful than showing "no results" by trying slight variations of a user's original query. Smart Search automatically tries alternative queries based on a handful of rules (we know how easy it is to get tripped up by query syntax). When a query alternative finds results, those results are shown immediately. Smart Search is activated by toggling the lightning bolt <span style="display:inline-flex; vertical-align:middle; margin:2px"><img style="width:20px; height:20px" src="https://storage.googleapis.com/sourcegraph-assets/about.sourcegraph.com/blog/2022/smart-search-bar-lightning.png"/></span> in the search bar, and is on by default.
+Smart Search helps find search results that are likely to be more useful than showing "no results" by trying slight variations of a user's original query. Smart Search automatically tries alternative queries based on a handful of rules (we know how easy it is to get tripped up by query syntax). When a query alternative finds results, those results are shown immediately. Smart Search is activated by toggling the lightning bolt <span style="display:inline-flex; vertical-align:middle; margin:2px"><img style="width:20px; height:20px" src="https://storage.googleapis.com/sourcegraph-assets/about.sourcegraph.com/blog/2022/smart-search-bar-lightning.png"/></span> in the search bar, and is on by default. Smart Search is only enabled in the web application and its results view (Search APIs remain the same and are unaffected).
 
 ### Example
 
