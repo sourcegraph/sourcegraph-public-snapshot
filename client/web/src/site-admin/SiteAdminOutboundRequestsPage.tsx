@@ -204,7 +204,6 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
                             <StringPopover value={node.callStackFrame} label="Call stack trace" />
                         </span>
                     </Text>
-                    <Text className="m-0 text-muted"></Text>
                 </div>
             </div>
         </React.Fragment>
