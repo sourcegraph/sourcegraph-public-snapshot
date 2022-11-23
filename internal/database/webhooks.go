@@ -407,7 +407,7 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 		&dbutil.NullString{S: &keyID},
 		&dbutil.NullInt32{N: &hook.CreatedByUserID},
 		&dbutil.NullInt32{N: &hook.UpdatedByUserID},
-		&dbutil.NullString{S: &hook.Name},
+		&hook.Name,
 	); err != nil {
 		return nil, err
 	}
