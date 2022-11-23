@@ -154,18 +154,10 @@ func (userEmails) Add(ctx context.Context, logger log.Logger, db database.DB, us
 func (userEmails) Remove(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string) (err error) {
 	logger = logger.Scoped("UserEmails.Remove", "handles removal of user emails")
 
-	// 🚨 SECURITY: Only the authenticated user can remove email from their accounts
-	// on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckSameUser(ctx, userID); err != nil {
-			return errors.Wrap(err, "can only remove your own e-mail address")
-		}
-	} else {
-		// 🚨 SECURITY: Only the authenticated user and site admins can remove email
-		// from users' accounts.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
-			return errors.Wrap(err, "only site admin can remove e-mail")
-		}
+	// 🚨 SECURITY: Only the authenticated user and site admins can remove email
+	// from users' accounts.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
+		return err
 	}
 
 	tx, err := db.Transact(ctx)
