@@ -1,6 +1,6 @@
 module github.com/sourcegraph/sourcegraph
 
-go 1.18
+go 1.19
 
 require (
 	cloud.google.com/go/kms v1.6.0
