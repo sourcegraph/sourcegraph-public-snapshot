@@ -8,9 +8,9 @@ import { SearchContextProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { PageHeader, Link, Button, Icon } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '../../tracking/eventLogger'
 import { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { SearchContextsListTab } from './SearchContextsListTab'
 

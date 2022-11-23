@@ -18,6 +18,7 @@ import {
     Icon,
     ButtonLink,
     Link,
+    Text,
     Tooltip,
     Combobox,
     ComboboxInput,
@@ -26,7 +27,6 @@ import {
     ComboboxOptionText,
 } from '@sourcegraph/wildcard'
 
-import { eventLogger } from '@sourcegraph/web/src/tracking/eventLogger'
 import styles from './SearchContextMenu.module.scss'
 
 export interface SearchContextMenuProps
@@ -263,16 +263,16 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                                 aria-hidden={true}
                                 svgPath={mdiArrowRight}
                             />
-                            <p className="mb-0">
+                            <Text className="mb-0">
                                 To search across your team's private repositories,{' '}
                                 <Link
                                     to="https://signup.sourcegraph.com/?p=context"
-                                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                                    onClick={() => telemetryService.log('ClickedOnCloudCTA')}
                                 >
                                     try Sourcegraph Cloud
                                 </Link>
                                 .
-                            </p>
+                            </Text>
                         </div>
                         <div className="d-flex flex-column align-items-end">
                             {showSearchContextManagement && (
