@@ -57,6 +57,7 @@ export const MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE: InsightDataNode = {
                 pendingJobs: 0,
                 failedJobs: 0,
                 isLoadingData: false,
+                incompleteDatapoints: [],
             },
         },
         {
@@ -112,6 +113,7 @@ export const MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE: InsightDataNode = {
                 pendingJobs: 0,
                 failedJobs: 0,
                 isLoadingData: false,
+                incompleteDatapoints: [],
             },
         },
     ],
