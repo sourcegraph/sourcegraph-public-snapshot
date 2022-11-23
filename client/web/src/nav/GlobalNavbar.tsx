@@ -272,7 +272,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 </NavAction>
                             )}
 
-                            <NavAction>
+                            <NavAction className="d-sm-flex d-none">
                                 <FeedbackPrompt
                                     onSubmit={handleSubmitFeedback}
                                     productResearchEnabled={true}
