@@ -197,31 +197,22 @@ func TestMiddleware(t *testing.T) {
 		return respRecorder.Result()
 	}
 
-	t.Run("unauthenticated homepage visit -> oidc auth flow", func(t *testing.T) {
+	t.Run("unauthenticated homepage visit -> login required", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, false)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; strings.Contains(got, want) {
-			t.Errorf("got redirect URL %v, want contains %v", got, want)
-		}
 	})
-	t.Run("unauthenticated subpage visit -> oidc auth flow", func(t *testing.T) {
+	t.Run("unauthenticated subpage visit -> login required", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/page", "", nil, false)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; strings.Contains(got, want) {
-			t.Errorf("got redirect URL %v, want contains %v", got, want)
-		}
 	})
-	t.Run("unauthenticated non-existent page visit -> oidc auth flow", func(t *testing.T) {
+	t.Run("unauthenticated non-existent page visit -> login required", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/nonexistent", "", nil, false)
 		if want := http.StatusOK; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
-		}
-		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; strings.Contains(got, want) {
-			t.Errorf("got redirect URL %v, want contains %v", got, want)
 		}
 	})
 	t.Run("unauthenticated API request -> pass through", func(t *testing.T) {
