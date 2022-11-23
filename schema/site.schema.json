@@ -912,6 +912,30 @@
       "default": 3,
       "group": "External services"
     },
+    "repoPurgeWorker": {
+      "description": "Configuration for repository purge worker.",
+      "type": "object",
+      "group": "External services",
+      "additionalProperties": false,
+      "default": {
+        "interval": 15,
+        "deletedTTL": 60
+      },
+      "properties": {
+        "intervalMintues": {
+          "type": "integer",
+          "description": "Interval in minutes at which to run purge jobs. Set to 0 to disable.",
+          "default": "15",
+          "minimum": 0
+        },
+        "deletedTTLMintues": {
+          "type": "integer",
+          "description": "Repository TTL in minutes after deletion before it becomes eligible to be purged. A migration or admin could accidentally remove all or a significant number of repositories - recloning all of them is slow, so a TTL acts as a grace period so that admins can recover from accidental deletions",
+          "default": "60",
+          "minimum": 0
+        }
+      }
+    },
     "maxReposToSearch": {
       "description": "DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
       "type": "integer",
