@@ -1359,9 +1359,6 @@ func (e *externalServiceStore) CancelSyncJob(ctx context.Context, opts ExternalS
 	if opts.ID != 0 && af != 1 {
 		return &errSyncJobNotFound{id: opts.ID, externalServiceID: opts.ExternalServiceID}
 	}
-	if opts.ID == 0 && opts.ExternalServiceID != 0 && af == 0 {
-		return &errSyncJobNotFound{id: opts.ID, externalServiceID: opts.ExternalServiceID}
-	}
 	return nil
 }
 
