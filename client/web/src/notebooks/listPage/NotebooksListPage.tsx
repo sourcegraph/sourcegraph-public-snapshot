@@ -75,7 +75,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
         telemetryService.logPageView('SearchNotebooksListPage')
     }, [telemetryService])
 
-    const isSourcegraphDotCom = window.context?.sourcegraphDotComMode || ''
+    const isSourcegraphDotCom:boolean = window.context?.sourcegraphDotComMode || false
     const [importState, setImportState] = useState<typeof LOADING | ErrorLike | undefined>()
     const history = useHistory()
     const location = useLocation()

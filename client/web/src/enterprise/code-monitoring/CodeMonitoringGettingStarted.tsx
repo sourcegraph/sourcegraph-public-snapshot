@@ -65,7 +65,7 @@ const createCodeMonitorUrl = (example: ExampleCodeMonitor): string => {
 export const CodeMonitoringGettingStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeMonitoringGettingStartedProps>
 > = ({ isLightTheme, isSignedIn }) => {
-    const isSourcegraphDotCom = window.context?.sourcegraphDotComMode || ''
+    const isSourcegraphDotCom:boolean = window.context?.sourcegraphDotComMode || false
     const assetsRoot = window.context?.assetsRoot || ''
 
     const logExampleMonitorClicked = useCallback(() => {
