@@ -67,6 +67,9 @@ export const Tooltip: React.FunctionComponent<React.PropsWithChildren<TooltipPro
             targetPadding={TOOLTIP_PADDING}
             position={Position.rightStart}
             className={styles.tooltip}
+            // Hide Tooltip UI from screen reader otherwise Voice over in Safari will
+            // catch this element and interrupt the original chart screen reader navigation flow
+            aria-hidden={true}
             tabIndex={-1}
         >
             {children}

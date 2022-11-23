@@ -52,6 +52,7 @@ export const PointGlyph: FC<PointGlyphProps> = props => {
                 fill="var(--body-bg)"
                 stroke={color}
                 strokeWidth={active ? 3 : 2}
+                aria-hidden={true}
                 onFocus={onFocus}
                 onBlur={onBlur}
             />
