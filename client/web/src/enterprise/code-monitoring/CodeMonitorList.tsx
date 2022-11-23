@@ -34,7 +34,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
 }) => {
     const location = useLocation()
     const history = useHistory()
-    const isSourcegraphDotCom:boolean = window.context?.sourcegraphDotComMode || false
+    const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
 
     const queryConnection = useCallback(
         (args: Partial<ListUserCodeMonitorsVariables>) => {
