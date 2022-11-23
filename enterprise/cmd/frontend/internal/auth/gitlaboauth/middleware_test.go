@@ -77,8 +77,8 @@ func TestMiddleware(t *testing.T) {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
-	//
-	//// Add 2 GitLab auth providers
+
+	// Add 2 GitLab auth providers
 	providers.MockProviders = []providers.Provider{mockPrivateGitLab.Provider, mockGitLabCom.Provider}
 
 	t.Run("unauthenticated API request -> pass through", func(t *testing.T) {
