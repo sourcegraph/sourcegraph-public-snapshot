@@ -764,7 +764,6 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 }
 
 func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, svcs []*types.ExternalService) (*sqlf.Query, error) {
-	ids := make([]int64, 0, len(svcs))
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
 		encryptedConfig, keyID, err := s.Config.Encrypt(ctx, e.getEncryptionKey())
@@ -789,12 +788,10 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			s.CloudDefault,
 			s.HasWebhooks,
 		))
-		ids = append(ids, s.ID)
 	}
 
 	return sqlf.Sprintf(
 		upsertExternalServicesQueryFmtstr,
-		pq.Array(ids),
 		sqlf.Join(vals, ",\n"),
 	), nil
 }
@@ -804,9 +801,6 @@ const upsertExternalServicesQueryValueFmtstr = `
 `
 
 const upsertExternalServicesQueryFmtstr = `
-WITH can_lock AS (
-	SELECT id FROM external_services WHERE id = ANY (%s) AND deleted_at IS NULL FOR UPDATE SKIP LOCKED
-)
 INSERT INTO external_services (
   id,
   kind,
@@ -841,7 +835,6 @@ SET
   unrestricted       = excluded.unrestricted,
   cloud_default      = excluded.cloud_default,
   has_webhooks       = excluded.has_webhooks
-WHERE EXISTS (SELECT 1 FROM can_lock WHERE can_lock.id = id)
 RETURNING
 	id,
 	kind,
@@ -999,16 +992,8 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	defer func() { err = tx.Done(err) }()
 
 	// Load the external service *for update* so that no sync job can be created
-	_, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
-	SELECT id
-	FROM external_services
-	WHERE id = %s AND deleted_at IS NULL
-	FOR UPDATE`, id)))
-	if err != nil {
+	if err := tx.selectForUpdate(ctx, id); err != nil {
 		return err
-	}
-	if !ok {
-		return &externalServiceNotFoundError{id: id}
 	}
 
 	// Cancel all currently running sync jobs, *outside* the transaction.
@@ -1101,6 +1086,23 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 	}
 	if nrows == 0 {
 		return externalServiceNotFoundError{id: id}
+	}
+	return nil
+}
+
+// selectForUpdate loads an external service with FOR UPDATE with the given ID
+// and that is not deleted. It's used by Delete.
+func (e *externalServiceStore) selectForUpdate(ctx context.Context, id int64) error {
+	q := sqlf.Sprintf(
+		`SELECT id FROM external_services WHERE id = %s AND deleted_at IS NULL FOR UPDATE`,
+		id,
+	)
+	_, ok, err := basestore.ScanFirstInt(e.Query(ctx, q))
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return &externalServiceNotFoundError{id: id}
 	}
 	return nil
 }
