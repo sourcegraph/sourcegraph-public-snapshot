@@ -321,6 +321,10 @@ WHERE id = $1
 }
 
 func (s *userExternalAccountsStore) Delete(ctx context.Context, ids ...int32) error {
+	if len(ids) == 0 {
+		return nil
+	}
+
 	idStrings := make([]string, len(ids))
 	for i, id := range ids {
 		idStrings[i] = strconv.Itoa(int(id))
@@ -344,10 +348,12 @@ WHERE id IN (%s) AND deleted_at IS NULL`, strings.Join(idStrings, ", ")))
 
 // ExternalAccountsListOptions specifies the options for listing user external accounts.
 type ExternalAccountsListOptions struct {
-	UserID                           int32
-	ServiceType, ServiceID, ClientID string
-	AccountID                        int64
-	AccountIDLike                    string
+	UserID        int32
+	ServiceType   string
+	ServiceID     string
+	ClientID      string
+	AccountID     string
+	AccountIDLike string
 
 	// Only one of these should be set
 	ExcludeExpired bool
@@ -492,8 +498,8 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	if opt.ClientID != "" {
 		conds = append(conds, sqlf.Sprintf("client_id=%s", opt.ClientID))
 	}
-	if opt.AccountID != 0 {
-		conds = append(conds, sqlf.Sprintf("account_id=%d", strconv.Itoa(int(opt.AccountID))))
+	if opt.AccountID != "" {
+		conds = append(conds, sqlf.Sprintf("account_id=%s", opt.AccountID))
 	}
 	if opt.ExcludeExpired {
 		conds = append(conds, sqlf.Sprintf("expired_at IS NULL"))
