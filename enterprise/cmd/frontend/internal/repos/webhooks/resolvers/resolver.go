@@ -230,6 +230,10 @@ func (r *webhookResolver) URL() (string, error) {
 	return externalURL.String(), nil
 }
 
+func (r *webhookResolver) Name() string {
+	return r.hook.Name
+}
+
 func (r *webhookResolver) CodeHostURN() string {
 	return r.hook.CodeHostURN.String()
 }
