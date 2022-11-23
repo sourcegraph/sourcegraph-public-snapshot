@@ -76,6 +76,7 @@ func TestWebhooksHandler(t *testing.T) {
 	srv := httptest.NewServer(base)
 
 	t.Run("ping event from Github returns 200", func(t *testing.T) {
+		wr.Register(fakeWebhookHandler, extsvc.KindBitbucketCloud, "push")
 		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWHNoSecret.UUID)
 		payload := []byte(`{"body": "text"}`)
 
