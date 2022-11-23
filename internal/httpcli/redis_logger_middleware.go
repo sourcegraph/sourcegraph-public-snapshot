@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/go-stack/stack"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -19,7 +19,7 @@ import (
 const keyPrefix = "outbound:"
 
 func redisLoggerMiddleware() Middleware {
-	creatorStackFrame := stack.Caller(2).Frame()
+	creatorStackFrame, _ := getFrames(4).Next()
 	return func(cli Doer) Doer {
 		return DoerFunc(func(req *http.Request) (*http.Response, error) {
 			start := time.Now()
@@ -29,12 +29,13 @@ func redisLoggerMiddleware() Middleware {
 			if req != nil && req.Body != nil {
 				requestBody, _ = io.ReadAll(req.Body)
 			}
-			callStack := stack.Trace().TrimRuntime().TrimBelow(stack.Caller(3))
+
 			errorMessage := ""
 			if err != nil {
 				errorMessage = err.Error()
 			}
 			key := generateKey(time.Now())
+			callerStackFrame, _ := getFrames(4).Next() // Caller of the caller of redisLoggerMiddleware
 			logItem := types.OutboundRequestLogItem{
 				Key:                key,
 				StartedAt:          start,
@@ -46,8 +47,8 @@ func redisLoggerMiddleware() Middleware {
 				ResponseHeaders:    removeSensitiveHeaders(resp.Header),
 				Duration:           duration.Seconds(),
 				ErrorMessage:       errorMessage,
-				CreationStackFrame: formatCreatorStack(creatorStackFrame),
-				CallStackFrame:     callStack.String(),
+				CreationStackFrame: formatStackFrame(creatorStackFrame),
+				CallStackFrame:     formatStackFrame(callerStackFrame),
 			}
 
 			logItemJson, jsonErr := json.Marshal(logItem)
@@ -71,11 +72,6 @@ func deleteExcessItems() {
 	if deletionErr != nil {
 		log.Error(deletionErr)
 	}
-}
-
-func formatCreatorStack(frame runtime.Frame) string {
-	functionWithoutRepoName := strings.Split(frame.Function, "/")[3:]
-	return fmt.Sprintf("%s:%d, %s", frame.File, frame.Line, functionWithoutRepoName)
 }
 
 func generateKey(now time.Time) string {
@@ -147,4 +143,24 @@ func removeSensitiveHeaders(headers http.Header) http.Header {
 		}
 	}
 	return cleanHeaders
+}
+
+func formatStackFrame(frame runtime.Frame) string {
+	packageTreeAndFunctionName := strings.Join(strings.Split(frame.Function, "/")[3:], "/")
+	dotPieces := strings.Split(packageTreeAndFunctionName, ".")
+	packageTree := dotPieces[0]
+	functionName := dotPieces[len(dotPieces)-1]
+
+	// Reconstruct the frame file path so that we don't include the local path on the machine that built this instance
+	fileName := filepath.Join(packageTree, filepath.Base(frame.File))
+
+	return fmt.Sprintf("%s:%d (Function: %s)", fileName, frame.Line, functionName)
+}
+
+const pcLen = 1024
+
+func getFrames(skip int) *runtime.Frames {
+	pc := make([]uintptr, pcLen)
+	n := runtime.Callers(skip, pc)
+	return runtime.CallersFrames(pc[:n])
 }
