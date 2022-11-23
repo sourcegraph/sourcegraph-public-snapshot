@@ -568,7 +568,7 @@ const LINE_CHART_TESTS_CASES_EXAMPLE: SeriesChartContent<SeriesDatum> = {
             ],
             name: 'React Test renderer',
             color: 'var(--blue)',
-            errored: false,
+            errored: true,
             getXValue,
             getYValue,
         },
