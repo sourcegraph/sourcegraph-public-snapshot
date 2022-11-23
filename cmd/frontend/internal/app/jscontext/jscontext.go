@@ -252,7 +252,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		EnableLegacyExtensions: conf.ExperimentalFeatures().EnableLegacyExtensions,
 
 		LicenseInfo: licenseInfo,
-		
+
 		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
 	}
 }

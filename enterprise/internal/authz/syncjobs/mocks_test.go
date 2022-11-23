@@ -18,7 +18,7 @@ type memCache map[string]string
 
 func (m memCache) Set(k string, v []byte) { m[k] = string(v) }
 
-func (m memCache) ListKeys(context.Context) (keys []string, err error) {
+func (m memCache) ListKeys(*context.Context, string) (keys []string, err error) {
 	for k := range m {
 		keys = append(keys, k)
 	}
