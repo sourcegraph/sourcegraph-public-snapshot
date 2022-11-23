@@ -96,14 +96,19 @@ sg db add-user -name=foo
 				Action:      dbUpdateUserExternalAccount,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name:  "username",
+						Name:  "sg.username",
 						Value: "sourcegraph",
-						Usage: "Username for user",
+						Usage: "Username of the user account on Sourcegraph",
 					},
 					&cli.StringFlag{
 						Name:  "extsvc.display-name",
 						Value: "",
 						Usage: "",
+					},
+					&cli.StringFlag{
+						Name:  "github.username",
+						Value: "sourcegraph",
+						Usage: "Username for external account on Github",
 					},
 					&cli.StringFlag{
 						Name:  "github.token",
@@ -208,8 +213,9 @@ func dbAddUserAction(cmd *cli.Context) error {
 func dbUpdateUserExternalAccount(cmd *cli.Context) error {
 	logger := log.Scoped("dbUpdateUserExternalAccount", "")
 	ctx := cmd.Context
-	username := cmd.String("username")
+	username := cmd.String("sg.username")
 	serviceName := cmd.String("extsvc.display-name")
+	ghUsername := cmd.String("github.username")
 	token := cmd.String("github.token")
 	baseurl := cmd.String("github.baseurl")
 	clientID := cmd.String("github.client-id")
@@ -243,6 +249,22 @@ func dbUpdateUserExternalAccount(cmd *cli.Context) error {
 		return errors.Newf("cannot find service whose display name is %q", serviceName)
 	}
 
+	// Get URL from the external service config
+	serviceConfigString, err := service.Config.Decrypt(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to decrypt external service config")
+	}
+	serviceConfigMap := make(map[string]any)
+	json.Unmarshal([]byte(serviceConfigString), &serviceConfigMap)
+	if serviceConfigMap["url"] == nil {
+		return errors.New("failed to find url in external service config")
+	}
+	// Add trailing slash to the URL if not there already
+	serviceID, err := url.JoinPath(serviceConfigMap["url"].(string), "/")
+	if err != nil {
+		return errors.Wrap(err, "failed to create external service ID url")
+	}
+
 	// Find the user
 	user, err := db.Users().GetByUsername(ctx, username)
 	if err != nil {
@@ -254,7 +276,7 @@ func dbUpdateUserExternalAccount(cmd *cli.Context) error {
 		return errors.Wrap(err, "failed to authenticate on the github instance")
 	}
 
-	ghUser, _, err := ghc.Users.Get(ctx, username)
+	ghUser, _, err := ghc.Users.Get(ctx, ghUsername)
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch github user")
 	}
@@ -264,12 +286,14 @@ func dbUpdateUserExternalAccount(cmd *cli.Context) error {
 		return errors.Wrap(err, "failed to generate oauth data")
 	}
 
+	logger.Info("Writing external account to the DB")
+
 	err = db.UserExternalAccounts().AssociateUserAndSave(
 		ctx,
 		user.ID,
 		extsvc.AccountSpec{
-			ServiceType: service.Kind,
-			ServiceID:   fmt.Sprintf("%d", service.ID),
+			ServiceType: strings.ToLower(service.Kind),
+			ServiceID:   serviceID,
 			ClientID:    clientID,
 			AccountID:   fmt.Sprintf("%d", ghUser.GetID()),
 		},
