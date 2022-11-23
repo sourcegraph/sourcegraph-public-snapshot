@@ -4,7 +4,7 @@ import { mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { delay, map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client/src'
@@ -43,11 +43,39 @@ export interface SiteAdminOutboundRequestsPageProps extends RouteComponentProps,
 
 export type OutboundRequest = OutboundRequestsResult['outboundRequests'][0]
 
+const filters: FilteredConnectionFilter[] = [
+    {
+        id: 'filters',
+        label: 'Filter',
+        type: 'select',
+        values: [
+            {
+                label: 'All',
+                value: 'all',
+                tooltip: 'Show all requests',
+                args: {},
+            },
+            {
+                label: 'Failed',
+                value: 'failed',
+                tooltip: 'Show only failed requests',
+                args: { failed: true },
+            },
+            {
+                label: 'Successful',
+                value: 'successful',
+                tooltip: 'Show only successful requests',
+                args: { failed: false },
+            },
+        ],
+    },
+]
+
 export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminOutboundRequestsPageProps>
-> = ({ history, location, telemetryService }) => {
+> = ({ history, telemetryService }) => {
     const [items, setItems] = useState<OutboundRequest[]>([])
-    // const [previousData, setPreviousData] = useState<OutboundRequestsResult | null>(null)
+
     useEffect(() => {
         telemetryService.logPageView('SiteAdminOutboundRequests')
     }, [telemetryService])
@@ -76,10 +104,11 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     const queryOutboundRequests = useCallback(
         (args: FilteredConnectionQueryArguments & { failed?: boolean }) =>
             of([...items].reverse()).pipe(
+                delay(200), // Without this, FilteredConnection will get into an infinite loop. :facepalm:
                 map(items => {
                     const filtered = items?.filter(
                         request =>
-                            (!args.query || request.url.includes(args.query)) &&
+                            (!args.query || matchesString(request, args.query)) &&
                             (args.failed !== false || request.statusCode < 400) &&
                             (args.failed !== true || request.statusCode >= 400)
                     )
@@ -91,34 +120,6 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
             ),
         [items]
     )
-
-    const filters: FilteredConnectionFilter[] = [
-        {
-            id: 'filters',
-            label: 'Filter by success',
-            type: 'select',
-            values: [
-                {
-                    label: 'All',
-                    value: 'all',
-                    tooltip: 'Show all requests',
-                    args: {},
-                },
-                {
-                    label: 'Failed',
-                    value: 'failed',
-                    tooltip: 'Show only failed requests',
-                    args: { failed: true },
-                },
-                {
-                    label: 'Successful',
-                    value: 'successful',
-                    tooltip: 'Show only successful requests',
-                    args: { failed: false },
-                },
-            ],
-        },
-    ]
 
     return (
         <div className="site-admin-migrations-page">
@@ -150,7 +151,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
                         nodeComponent={MigrationNode}
                         filters={filters}
                         history={history}
-                        location={location}
+                        location={history.location}
                     />
                 ) : (
                     <>
@@ -184,6 +185,16 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
                         {roundedSecond} second{roundedSecond === 1 ? '' : 's'}
                     </strong>
                     .
+                    <br />
+                    <HeaderPopover
+                        headers={node.requestHeaders}
+                        label={`Req headers (${node.requestHeaders?.length})`}
+                    />
+                    <br />
+                    <HeaderPopover
+                        headers={node.responseHeaders}
+                        label={`Resp headers (${node.responseHeaders?.length})`}
+                    />
                 </Text>
             </div>
             <div className={classNames('d-flex flex-column', styles.information)}>
@@ -192,29 +203,17 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
 
                     <Text className="m-0 text-muted">
                         <span>
-                            <HeaderPopover
-                                headers={node.requestHeaders}
-                                label={`Req headers (${node.requestHeaders?.length})`}
-                            />
-                        </span>{' '}
-                        <span>
                             <StringPopover value={node.requestBody} label="Request body" />
                         </span>{' '}
+                        <br />
                         <span>
-                            <HeaderPopover
-                                headers={node.responseHeaders}
-                                label={`Resp headers (${node.responseHeaders?.length})`}
-                            />
-                        </span>{' '}
-                        <span>
-                            <StringPopover value={node.requestBody} label="Error message" />
-                        </span>{' '}
-                        <span>
-                            <StringPopover value={node.creationStackFrame} label="Creation stack trace" />
-                        </span>{' '}
-                        <span>
-                            <StringPopover value={node.callStackFrame} label="Call stack trace" />
+                            <StringPopover value={node.errorMessage} label="Error message" />
                         </span>
+                        <br />
+                        <br />
+                        <span>Client created at: {node.creationStackFrame}</span>
+                        <br />
+                        <span>Request made at: {node.callStackFrame}</span>
                     </Text>
                 </div>
             </div>
@@ -267,5 +266,28 @@ const StringPopover: React.FunctionComponent<{ value: string; label: string }> =
         </Popover>
     ) : (
         <>{label}: (empty)</>
+    )
+}
+
+function matchesString(request: OutboundRequest, query: string): boolean {
+    const lQuery = query.toLowerCase()
+    return (
+        request.url.toLowerCase().includes(lQuery) ||
+        request.method.toLowerCase().includes(lQuery) ||
+        request.requestBody.toLowerCase().includes(lQuery) ||
+        request.statusCode.toString().includes(lQuery) ||
+        request.errorMessage.toLowerCase().includes(lQuery) ||
+        request.creationStackFrame.toLowerCase().includes(lQuery) ||
+        request.callStackFrame.toLowerCase().includes(lQuery) ||
+        request.requestHeaders?.some(
+            header =>
+                header.name.toLowerCase().includes(lQuery) ||
+                header.values.some(value => value.toLowerCase().includes(lQuery))
+        ) ||
+        request.responseHeaders?.some(
+            header =>
+                header.name.toLowerCase().includes(lQuery) ||
+                header.values.some(value => value.toLowerCase().includes(lQuery))
+        )
     )
 }
