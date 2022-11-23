@@ -220,3 +220,26 @@ func getTitles(t *testing.T, args gqltestutil.GetDashboardArgs) []string {
 	}
 	return resultTitles
 }
+
+func TestUpdateInsight(t *testing.T) {
+	insight, err := client.CreateSearchInsight("my insight", map[string]any{
+		"query": "lang:css",
+		"options": map[string]string{
+			"label":     "insights",
+			"lineColor": "#6495ED",
+		},
+		"repositoryScope": map[string]any{
+			"repositories": []string{"github.com/sourcegraph/sourcegraph"},
+		},
+		"timeScope": map[string]any{
+			"stepInterval": map[string]any{
+				"unit":  "MONTH",
+				"value": 3,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Error(insight)
+}
