@@ -193,7 +193,7 @@ func (userEmails) Remove(ctx context.Context, logger log.Logger, db database.DB,
 // deleteStalePerforceExternalAccounts will remove any Perforce external accounts associated with the given user
 // and e-mail combination.
 func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, userID int32, email string) error {
-	// We use the e-mail address as the AccountIF for Perforce
+	// We use the e-mail address as the AccountID for Perforce
 	accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		// We don't expect many of these per user, so we're not limiting the number that
 		// come back.
