@@ -616,13 +616,6 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 			if err != nil {
 				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
-			err = tx.UpdateViewSeries(ctx, *series.SeriesId, view.ID, types.InsightViewSeriesMetadata{
-				Label:  emptyIfNil(series.Options.Label),
-				Stroke: emptyIfNil(series.Options.LineColor),
-			})
-			if err != nil {
-				return nil, errors.Wrap(err, "UpdateViewSeries")
-			}
 		}
 	}
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: insightViewId}, nil
