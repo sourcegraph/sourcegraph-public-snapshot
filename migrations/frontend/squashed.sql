@@ -3694,7 +3694,7 @@ CREATE TABLE webhooks (
     uuid uuid DEFAULT gen_random_uuid() NOT NULL,
     created_by_user_id integer,
     updated_by_user_id integer,
-    name text
+    name text NOT NULL
 );
 
 COMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';

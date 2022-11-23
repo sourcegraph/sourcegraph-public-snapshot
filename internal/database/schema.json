@@ -20531,7 +20531,7 @@
           "Name": "name",
           "Index": 12,
           "TypeName": "text",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,

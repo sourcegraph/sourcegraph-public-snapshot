@@ -3239,7 +3239,7 @@ Foreign-key constraints:
  uuid               | uuid                     |           | not null | gen_random_uuid()
  created_by_user_id | integer                  |           |          | 
  updated_by_user_id | integer                  |           |          | 
- name               | text                     |           |          | 
+ name               | text                     |           | not null | 
 Indexes:
     "webhooks_pkey" PRIMARY KEY, btree (id)
     "webhooks_uuid_key" UNIQUE CONSTRAINT, btree (uuid)
