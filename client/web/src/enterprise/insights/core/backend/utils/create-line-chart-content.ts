@@ -18,7 +18,8 @@ type SeriesDefinition = Record<string, SearchBasedInsightSeries>
  */
 export function createLineChartContent(
     insight: BackendInsight,
-    seriesData: InsightDataSeries[]
+    seriesData: InsightDataSeries[],
+    showError: boolean
 ): SeriesChartContent<BackendInsightDatum> {
     const seriesDefinition = getParsedSeriesMetadata(insight, seriesData)
     const seriesDefinitionMap: SeriesDefinition = Object.fromEntries<SearchBasedInsightSeries>(
@@ -28,7 +29,7 @@ export function createLineChartContent(
     return {
         series: seriesData.map<BackendInsightSeries<BackendInsightDatum>>(line => ({
             id: line.seriesId,
-            errored: true, // line.status.incompleteDatapoints.length > 0,
+            errored: showError && line.status.incompleteDatapoints.length > 0,
             data: line.points.map((point, index) => ({
                 dateTime: new Date(point.dateTime),
                 value: point.value,

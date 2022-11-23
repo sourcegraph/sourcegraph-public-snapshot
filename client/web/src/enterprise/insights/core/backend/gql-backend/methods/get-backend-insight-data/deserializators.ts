@@ -8,7 +8,7 @@ import { createLineChartContent } from '../../../utils/create-line-chart-content
 export const createBackendInsightData = (insight: BackendInsight, response: InsightDataNode): BackendInsightData => {
     const seriesData = response.dataSeries
     const isFetchingHistoricalData = seriesData.some(({ status: { isLoadingData } }) => isLoadingData)
-    const isAllSeriesErrored = true // seriesData.every(series => series.status.incompleteDatapoints.length > 0)
+    const isAllSeriesErrored = seriesData.every(series => series.status.incompleteDatapoints.length > 0)
 
     if (isComputeInsight(insight)) {
         return {
@@ -26,7 +26,7 @@ export const createBackendInsightData = (insight: BackendInsight, response: Insi
         isAllSeriesErrored,
         data: {
             type: InsightContentType.Series,
-            content: createLineChartContent(insight, seriesData),
+            content: createLineChartContent(insight, seriesData, !isAllSeriesErrored),
         },
     }
 }

@@ -14,14 +14,13 @@ import {
     LegendList,
     LegendItemPoint,
     ScrollBox,
-    Series,
     Tooltip,
     TooltipOpenEvent,
     TooltipOpenChangeReason,
 } from '@sourcegraph/wildcard'
 
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
-import { BackendInsightData, InsightContent } from '../../../../../../core'
+import { BackendInsightData, BackendInsightSeries, InsightContent } from '../../../../../../core'
 import { InsightContentType } from '../../../../../../core/types/insight/common'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
@@ -151,7 +150,7 @@ const hasNoData = (data: InsightContent<any>): boolean => {
 }
 
 interface SeriesLegendsProps {
-    series: Series<any>[]
+    series: BackendInsightSeries<any>[]
     seriesToggleState: UseSeriesToggleReturn
 }
 
@@ -166,7 +165,7 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                     <LegendItem key={item.id as string} color={item.color}>
                         <LegendItemPoint color={item.color} />
                         {item.name}
-                        <BackendInsightTimoutIcon />
+                        {item.errored && <BackendInsightTimoutIcon />}
                     </LegendItem>
                 ))}
             </LegendList>
@@ -205,7 +204,7 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                         <LegendItemPoint color={item.color} />
                         {item.name}
                     </Button>
-                    <BackendInsightTimoutIcon />
+                    {item.errored && <BackendInsightTimoutIcon />}
                 </LegendItem>
             ))}
         </LegendList>

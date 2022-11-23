@@ -82,15 +82,12 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                 },
             },
             onCompleted: data => {
-                // This query requests a list of 1 insightview if there is an error and the insightView will be null and error is populated
+                // This query requests a list of 1 insight view if there is an error and the insightView
+                // will be null and error is populated
                 const node = data.insightViews.nodes[0]
+
                 seriesToggleState.setSelectedSeriesIds([])
-                if (!isDefined(node)) {
-                    setInsightData(undefined)
-                    return
-                }
-                const parsedData = createBackendInsightData({ ...insight, filters }, node)
-                setInsightData(parsedData)
+                setInsightData(isDefined(node) ? createBackendInsightData({ ...insight, filters }, node) : undefined)
             },
         }
     )
@@ -173,7 +170,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
             >
                 {isVisible && (
                     <>
-                        <BackendInsightTimoutIcon />
+                        {insightData?.isAllSeriesErrored && <BackendInsightTimoutIcon />}
                         <DrillDownFiltersPopover
                             isOpen={isFiltersOpen}
                             anchor={cardElementRef}
