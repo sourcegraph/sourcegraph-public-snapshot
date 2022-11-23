@@ -11,7 +11,7 @@ import styles from './Breadcrumb.module.scss'
 export type BreadcrumbIcon = IconType
 export type BreadcrumbText = React.ReactNode
 
-type BreadcrumbProps = React.HTMLAttributes<HTMLSpanElement> & {
+export type BreadcrumbProps = React.HTMLAttributes<HTMLSpanElement> & {
     /** Use a valid path to render this Breadcrumb as a Link */
     to?: string
     icon?: BreadcrumbIcon

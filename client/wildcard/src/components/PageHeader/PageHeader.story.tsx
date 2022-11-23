@@ -8,9 +8,9 @@ import { Button } from '../Button'
 import { FeedbackBadge } from '../Feedback'
 import { Icon } from '../Icon'
 import { Link } from '../Link'
+import { H1, H2 } from '../Typography'
 
 import { PageHeader } from './PageHeader'
-import { H1, H2 } from '../Typography'
 
 const decorator: DecoratorFn = story => (
     <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
