@@ -14,6 +14,7 @@ import {
     Container,
     H3,
     Icon,
+    Link,
     LoadingSpinner,
     PageHeader,
     Popover,
@@ -128,8 +129,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
                 description={
                     <>
                         This is the log of recent external requests sent by the Sourcegraph instance. Handy for seeing
-                        what's happening between Sourcegraph and other services.
-                        <br />
+                        what's happening between Sourcegraph and other services.{' '}
                         <strong>The list updates every five seconds.</strong>
                     </>
                 }
@@ -139,18 +139,28 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
             <Container className="mb-3">
                 {error && !loading && <ErrorAlert error={error} />}
                 {loading && !error && <LoadingSpinner />}
-                <FilteredConnection<OutboundRequest>
-                    className="mb-0"
-                    listComponent="div"
-                    listClassName={classNames('list-group mb-3', styles.requestsGrid)}
-                    noun="request"
-                    pluralNoun="requests"
-                    queryConnection={queryOutboundRequests}
-                    nodeComponent={MigrationNode}
-                    filters={filters}
-                    history={history}
-                    location={location}
-                />
+                {window.context.outboundRequestLogLimit ? (
+                    <FilteredConnection<OutboundRequest>
+                        className="mb-0"
+                        listComponent="div"
+                        listClassName={classNames('list-group mb-3', styles.requestsGrid)}
+                        noun="request"
+                        pluralNoun="requests"
+                        queryConnection={queryOutboundRequests}
+                        nodeComponent={MigrationNode}
+                        filters={filters}
+                        history={history}
+                        location={location}
+                    />
+                ) : (
+                    <>
+                        <Text>Outbound request logging is currently disabled.</Text>
+                        <Text>
+                            Set `outboundRequestLogLimit` to a non-zero value in your{' '}
+                            <Link to="/site-admin/configuration">site config</Link> to enable it.
+                        </Text>
+                    </>
+                )}
             </Container>
         </div>
     )
@@ -165,13 +175,15 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
                 <Text>
                     <Timestamp date={node.startedAt} noAbout={true} />
                     <br />
-                    Method: <strong>{node.method}</strong>.<br />
+                    Method: <strong>{node.method}</strong>
+                    <br />
                     Status: <strong>{node.statusCode}</strong>
                     <br />
                     Took{' '}
                     <strong>
                         {roundedSecond} second{roundedSecond === 1 ? '' : 's'}
-                    </strong>.
+                    </strong>
+                    .
                 </Text>
             </div>
             <div className={classNames('d-flex flex-column', styles.information)}>
