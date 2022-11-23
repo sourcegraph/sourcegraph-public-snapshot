@@ -1,6 +1,9 @@
 package graphqlbackend
 
 import (
+	"context"
+
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -20,7 +23,12 @@ type HttpHeaders struct {
 	values []string
 }
 
-func (r *schemaResolver) OutboundRequests(args *outboundRequestsArgs) ([]*OutboundRequestResolver, error) {
+func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundRequestsArgs) ([]*OutboundRequestResolver, error) {
+	// 🚨 SECURITY: Only site admins may list outbound requests.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	result, err := httpcli.GetAllOutboundRequestLogItemsAfter(args.LastKey, conf.Get().OutboundRequestLogLimit)
 	if err != nil {
 		return nil, err
