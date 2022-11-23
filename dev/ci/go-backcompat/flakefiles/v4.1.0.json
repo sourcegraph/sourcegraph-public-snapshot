@@ -15,7 +15,7 @@
     "reason": "Flakes repeatedly in CI"
   },
   {
-    "path": "github.com/sourcegraph/sourcegraph/internal/database",
+    "path": "internal/database",
     "prefix": "TestWebhookList",
     "reason": "New NOT NULL `name` column is added. The test is trying to add an entry without populating this column."
   }
