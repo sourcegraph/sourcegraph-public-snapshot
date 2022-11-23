@@ -96,7 +96,7 @@ type ExternalServiceStore interface {
 
 	// CancelSyncJob cancels a given sync job. It returns an error when the job was not
 	// found or not in processing or queued state.
-	CancelSyncJob(ctx context.Context, id int64) error
+	CancelSyncJob(ctx context.Context, opts ExternalServicesCancelSyncJobOptions) error
 
 	// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
 	UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error
@@ -1012,7 +1012,7 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	}
 
 	// Cancel all currently running sync jobs, *outside* the transaction.
-	err = e.CancelSyncJobByExternalServiceID(ctx, id)
+	err = e.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ExternalServiceID: id})
 	if err != nil {
 		return err
 	}
@@ -1205,10 +1205,17 @@ func (e *externalServiceStore) CountSyncJobs(ctx context.Context, opt ExternalSe
 	return count, err
 }
 
-type errSyncJobNotFound struct{ id int64 }
+type errSyncJobNotFound struct {
+	id, externalServiceID int64
+}
 
 func (e errSyncJobNotFound) Error() string {
-	return fmt.Sprintf("sync job with id %d not found", e.id)
+	if e.id != 0 {
+		return fmt.Sprintf("sync job with id %d not found", e.id)
+	} else if e.externalServiceID != 0 {
+		return fmt.Sprintf("sync job with external service id %d not found", e.externalServiceID)
+	}
+	return "sync job not found"
 }
 
 func (errSyncJobNotFound) NotFound() bool {
@@ -1294,40 +1301,25 @@ LIMIT 1
 	return lastError, err
 }
 
-func (e *externalServiceStore) CancelSyncJob(ctx context.Context, id int64) error {
-	now := timeutil.Now()
-	q := sqlf.Sprintf(`
-UPDATE
-	external_service_sync_jobs
-SET
-	cancel = TRUE,
-	-- If the sync job is still queued, we directly abort, otherwise we keep the
-	-- state, so the worker can do teardown and, at some point, mark it failed itself.
-	state = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.state ELSE 'canceled' END,
-	finished_at = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.finished_at ELSE %s END
-WHERE
-	id = %s
-	AND
-	state IN ('queued', 'processing')
-`, now, id)
-
-	res, err := e.ExecResult(ctx, q)
-	if err != nil {
-		return err
-	}
-	af, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if af != 1 {
-		return &errSyncJobNotFound{id: id}
-	}
-	return nil
+type ExternalServicesCancelSyncJobOptions struct {
+	ID                int64
+	ExternalServiceID int64
 }
 
-func (e *externalServiceStore) CancelSyncJobByExternalServiceID(ctx context.Context, id int64) error {
+func buildCancelSyncJobQuery(opts ExternalServicesCancelSyncJobOptions) (*sqlf.Query, error) {
+	var conds []*sqlf.Query
+	if opts.ID != 0 {
+		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+	if opts.ExternalServiceID != 0 {
+		conds = append(conds, sqlf.Sprintf("external_service_id = %s", opts.ExternalServiceID))
+	}
+
+	if len(conds) == 0 {
+		return nil, errors.New("not enough conditions given to build query to cancel external service sync job")
+	}
+
 	now := timeutil.Now()
-	// TODO: use a query builder
 	q := sqlf.Sprintf(`
 UPDATE
 	external_service_sync_jobs
@@ -1338,10 +1330,21 @@ SET
 	state = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.state ELSE 'canceled' END,
 	finished_at = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.finished_at ELSE %s END
 WHERE
-	external_service_id = %s
+	%s
 	AND
 	state IN ('queued', 'processing')
-`, now, id)
+	AND
+	cancel IS FALSE
+`, now, sqlf.Join(conds, " AND "))
+
+	return q, nil
+}
+
+func (e *externalServiceStore) CancelSyncJob(ctx context.Context, opts ExternalServicesCancelSyncJobOptions) error {
+	q, err := buildCancelSyncJobQuery(opts)
+	if err != nil {
+		return err
+	}
 
 	res, err := e.ExecResult(ctx, q)
 	if err != nil {
@@ -1351,8 +1354,11 @@ WHERE
 	if err != nil {
 		return err
 	}
-	if af != 1 {
-		return &errSyncJobNotFound{id: id}
+	if opts.ID != 0 && af != 1 {
+		return &errSyncJobNotFound{id: opts.ID, externalServiceID: opts.ExternalServiceID}
+	}
+	if opts.ID == 0 && opts.ExternalServiceID != 0 && af == 0 {
+		return &errSyncJobNotFound{id: opts.ID, externalServiceID: opts.ExternalServiceID}
 	}
 	return nil
 }

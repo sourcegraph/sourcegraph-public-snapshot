@@ -419,16 +419,7 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 		return nil, err
 	}
 
-	esj, err := r.db.ExternalServices().GetSyncJobByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	_, err = r.db.ExternalServices().GetByID(ctx, esj.ExternalServiceID)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := r.db.ExternalServices().CancelSyncJob(ctx, esj.ID); err != nil {
+	if err := r.db.ExternalServices().CancelSyncJob(ctx, database.ExternalServicesCancelSyncJobOptions{ID: id}); err != nil {
 		return nil, err
 	}
 
