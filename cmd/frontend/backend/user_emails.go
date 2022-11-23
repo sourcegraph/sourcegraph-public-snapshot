@@ -157,7 +157,6 @@ func (userEmails) Remove(ctx context.Context, logger log.Logger, db database.DB,
 	// 🚨 SECURITY: Only the authenticated user and site admins can remove email
 	// from users' accounts.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
-		// No need to wrap error here, existing error has all context we need
 		return err
 	}
 
