@@ -214,6 +214,7 @@ func (c *Client) CreateSearchInsight(title string, series map[string]any) (Searc
 		mutation CreateSearchBasedInsight($input: LineChartSearchInsightInput!) {
 			createLineChartSearchInsight(input: $input) {
 				view {
+				  id
 				  presentation {
 					... on LineChartInsightViewPresentation {
 					  seriesPresentation {
@@ -242,6 +243,7 @@ func (c *Client) CreateSearchInsight(title string, series map[string]any) (Searc
 		Data struct {
 			CreateLineChartSearchInsight struct {
 				View struct {
+					Id           string `json:"id"`
 					Presentation struct {
 						SeriesPresentation []struct {
 							SeriesId string `json:"SeriesId"`
@@ -259,19 +261,77 @@ func (c *Client) CreateSearchInsight(title string, series map[string]any) (Searc
 	}
 	singleSeries := resp.Data.CreateLineChartSearchInsight.View.Presentation.SeriesPresentation
 	if len(singleSeries) != 1 {
-		return SearchInsight{}, errors.Newf("Received %d insight series when expecting 1", len(singleSeries))
+		return SearchInsight{}, errors.Newf("Received %d insight series when expecting 1: resp [%v]", len(singleSeries), resp)
 	}
 	return SearchInsight{
-		SeriesId: singleSeries[0].SeriesId,
-		Label:    singleSeries[0].Label,
-		Color:    singleSeries[0].Color,
+		InsightViewId: resp.Data.CreateLineChartSearchInsight.View.Id,
+		SeriesId:      singleSeries[0].SeriesId,
+		Label:         singleSeries[0].Label,
+		Color:         singleSeries[0].Color,
 	}, nil
 }
 
 type SearchInsight struct {
-	SeriesId string
-	Label    string
-	Color    string
+	InsightViewId string
+	SeriesId      string
+	Label         string
+	Color         string
+}
+
+func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any) (SearchInsight, error) {
+	const query = `
+		mutation UpdateLineChartSearchInsight($input: UpdateLineChartSearchInsightInput!, $id: ID!) {
+			updateLineChartSearchInsight(input: $input, id: $id) {
+				view {
+                  id
+				  presentation {
+					... on LineChartInsightViewPresentation {
+					  seriesPresentation {
+						seriesId
+						label
+						color 
+					  }
+					}
+				  }
+				}
+			}
+		}
+	`
+
+	variables := map[string]any{
+		"id":    insightViewID,
+		"input": input,
+	}
+	var resp struct {
+		Data struct {
+			UpdateLineChartSearchInsight struct {
+				View struct {
+					Id           string `json:"id"`
+					Presentation struct {
+						SeriesPresentation []struct {
+							SeriesId string `json:"SeriesId"`
+							Label    string `json:"Label"`
+							Color    string `json:"Color"`
+						} `json:"SeriesPresentation"`
+					} `json:"Presentation"`
+				} `json:"View"`
+			} `json:"updateLineChartSearchInsight"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, variables, &resp)
+	if err != nil {
+		return SearchInsight{}, errors.Wrap(err, "request GraphQL")
+	}
+	singleSeries := resp.Data.UpdateLineChartSearchInsight.View.Presentation.SeriesPresentation
+	if len(singleSeries) != 1 {
+		return SearchInsight{}, errors.Newf("Received %d insight series when expecting 1: resp [%v]", len(singleSeries), resp)
+	}
+	return SearchInsight{
+		InsightViewId: resp.Data.UpdateLineChartSearchInsight.View.Id,
+		SeriesId:      singleSeries[0].SeriesId,
+		Label:         singleSeries[0].Label,
+		Color:         singleSeries[0].Color,
+	}, nil
 }
 
 func (c *Client) DisableInsightSeries(seriesId string) error {

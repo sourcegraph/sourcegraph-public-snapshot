@@ -222,7 +222,7 @@ func getTitles(t *testing.T, args gqltestutil.GetDashboardArgs) []string {
 }
 
 func TestUpdateInsight(t *testing.T) {
-	insight, err := client.CreateSearchInsight("my insight", map[string]any{
+	dataSeries := map[string]any{
 		"query": "lang:css",
 		"options": map[string]string{
 			"label":     "insights",
@@ -237,7 +237,8 @@ func TestUpdateInsight(t *testing.T) {
 				"value": 3,
 			},
 		},
-	})
+	}
+	insight, err := client.CreateSearchInsight("my insight", dataSeries)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -247,10 +248,49 @@ func TestUpdateInsight(t *testing.T) {
 		}
 	}()
 
+	if insight.InsightViewId == "" {
+		t.Error("Did not get an insight view ID")
+	}
 	if insight.Label != "insights" {
 		t.Errorf("wrong label: %v", insight.Label)
 	}
 	if insight.Color != "#6495ED" {
 		t.Errorf("wrong color: %v", insight.Color)
+	}
+
+	dataSeries["seriesId"] = insight.SeriesId
+	dataSeries["options"] = map[string]any{
+		"label":     "insights 2",
+		"lineColor": "green",
+	}
+	updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
+		"dataSeries": []any{
+			dataSeries,
+		},
+		"presentationOptions": map[string]string{
+			"title": "my insight",
+		},
+		"viewControls": map[string]any{
+			"filters":              struct{}{},
+			"seriesDisplayOptions": struct{}{},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// At the moment updating an insight will re-create a series.
+	// This should be fixed by https://github.com/sourcegraph/sourcegraph/issues/42116.
+	if updatedInsight.SeriesId == insight.SeriesId {
+		t.Error("expected new series to get created")
+	}
+	if updatedInsight.InsightViewId != insight.InsightViewId {
+		t.Error("expected updated series to be attached to same view")
+	}
+	if updatedInsight.Label != "insights 2" {
+		t.Error("expected series label to be updated")
+	}
+	if updatedInsight.Color != "green" {
+		t.Error("expected series color to be updated")
 	}
 }
