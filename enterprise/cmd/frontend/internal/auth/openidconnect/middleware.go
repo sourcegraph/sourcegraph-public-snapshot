@@ -96,7 +96,7 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 	//
 	// For sign-out requests, the session cookie won't be present and this "if" condition won't apply.
 	// In this case, instead of a redirect to the sso sign-in, the user will be redirected to the SG login page.
-	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && common.HasCookie(r) && !isAPIRequest {
+	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && common.HasSessionCookie(r) && !isAPIRequest {
 		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
 		if err != nil {
 			log15.Error("Failed to get provider", "error", err)

@@ -70,7 +70,7 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		//
 		// For sign-out requests, the session cookie won't be present and this "if" condition won't apply.
 		// In that case, instead of a redirect to the sso sign-in, the user will be redirected to the SG login page.
-		if pc := getExactlyOneOAuthProvider(); pc != nil && common.HasCookie(r) && !isAPIHandler && pc.AuthPrefix == authPrefix && isHuman(r) {
+		if pc := getExactlyOneOAuthProvider(); pc != nil && common.HasSessionCookie(r) && !isAPIHandler && pc.AuthPrefix == authPrefix && isHuman(r) {
 			fmt.Println(" B --- not authenticated")
 			span.AddEvent("redirect to signin")
 			v := make(url.Values)

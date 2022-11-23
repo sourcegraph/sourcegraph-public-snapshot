@@ -63,7 +63,7 @@ func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next ht
 	//
 	// For sign-out requests, the session cookie won't be present and this "if" condition won't apply.
 	// In that case, instead of a redirect to the sso sign-in, the user will be redirected to the SG login page.
-	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Saml != nil && common.HasCookie(r) && !isAPIRequest {
+	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Saml != nil && common.HasSessionCookie(r) && !isAPIRequest {
 		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
 		if handled {
 			return
