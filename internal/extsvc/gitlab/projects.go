@@ -259,6 +259,10 @@ func (c *Client) ForkProject(ctx context.Context, project *Project, namespace *s
 	}
 
 	orignalRepoName, err := project.Name()
+	if err != nil {
+		return nil, errors.Wrap(err, "resolving name")
+	}
+
 	var path *string
 
 	if name == nil {
@@ -317,6 +321,7 @@ func (c *Client) ForkProject(ctx context.Context, project *Project, namespace *s
 }
 
 func (c *Client) getForkedProject(ctx context.Context, project *Project, namespace string, name string) (*Project, error) {
+
 	// Note that we disable the cache when retrieving forked projects as it
 	// interferes with the not found error detection in ForkProject.
 	return c.GetProject(ctx, GetProjectOp{
