@@ -141,9 +141,10 @@ func TestRemoveUserEmail(t *testing.T) {
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
 
 		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
+			name    string
+			ctx     context.Context
+			setup   func()
+			wantErr string
 		}{
 			{
 				name: "unauthenticated",
@@ -151,24 +152,40 @@ func TestRemoveUserEmail(t *testing.T) {
 				setup: func() {
 					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 				},
+				wantErr: "must be authenticated as the authorized user or as an admin (not authenticated)",
 			},
 			{
 				name: "another user",
 				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 				setup: func() {
+					user := &types.User{ID: 2}
 					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
+						return user, nil
+					})
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return user, nil
 					})
 				},
+				wantErr: "must be authenticated as the authorized user or as an admin (must be site admin)",
 			},
 			{
 				name: "site admin",
 				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 				setup: func() {
+					user := &types.User{ID: 2, SiteAdmin: true}
 					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
+						return user, nil
+					})
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return user, nil
+					})
+					db.TransactFunc.SetDefaultHook(func(ctx context.Context) (database.DB, error) {
+						// We just want to check that we make past the auth check as that is all this
+						// test is checking
+						return nil, errors.Errorf("short circuit")
 					})
 				},
+				wantErr: "starting transaction: short circuit",
 			},
 		}
 		for _, test := range tests {
@@ -181,9 +198,7 @@ func TestRemoveUserEmail(t *testing.T) {
 						User: MarshalUserID(1),
 					},
 				)
-				got := fmt.Sprintf("%v", err)
-				want := "can only remove your own e-mail address: must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
+				assert.Equal(t, test.wantErr, err.Error())
 			})
 		}
 	})
