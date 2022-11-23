@@ -76,11 +76,31 @@ export const FiveWebhooksFound: Story = () => (
                                 data: {
                                     webhooks: {
                                         nodes: [
-                                            createWebhookMock('Bitbucket Cloud commit webhook', ExternalServiceKind.BITBUCKETCLOUD, 'https://bitbucket.com/'),
-                                            createWebhookMock('Github.com commit webhook', ExternalServiceKind.GITHUB, 'https://github.com/'),
-                                            createWebhookMock('Github.com PR push webhook', ExternalServiceKind.GITHUB, 'https://github.com/'),
-                                            createWebhookMock('Github.com PR creation webhook', ExternalServiceKind.GITHUB, 'https://github.com/'),
-                                            createWebhookMock('Bitbucket Cloud PR webhook', ExternalServiceKind.BITBUCKETCLOUD, 'https://bitbucket.com/'),
+                                            createWebhookMock(
+                                                'Bitbucket Cloud commit webhook',
+                                                ExternalServiceKind.BITBUCKETCLOUD,
+                                                'https://bitbucket.com/'
+                                            ),
+                                            createWebhookMock(
+                                                'Github.com commit webhook',
+                                                ExternalServiceKind.GITHUB,
+                                                'https://github.com/'
+                                            ),
+                                            createWebhookMock(
+                                                'Github.com PR push webhook',
+                                                ExternalServiceKind.GITHUB,
+                                                'https://github.com/'
+                                            ),
+                                            createWebhookMock(
+                                                'Github.com PR creation webhook',
+                                                ExternalServiceKind.GITHUB,
+                                                'https://github.com/'
+                                            ),
+                                            createWebhookMock(
+                                                'Bitbucket Cloud PR webhook',
+                                                ExternalServiceKind.BITBUCKETCLOUD,
+                                                'https://bitbucket.com/'
+                                            ),
                                         ],
                                         totalCount: 5,
                                         pageInfo: {
@@ -111,7 +131,7 @@ function createWebhookMock(name: string, kind: ExternalServiceKind, urn: string)
         __typename: 'Webhook',
         createdAt: '',
         id: `webhook-${urn}`,
-        name: name,
+        name,
         secret: null,
         updatedAt: '',
         url: '',
