@@ -636,7 +636,7 @@ WITH due AS (
     AND deleted_at IS NULL
     AND LOWER(kind) != 'phabricator'
     AND %s
-	FOR UPDATE OF external_services -- We query 'FOR UPDATE' so we don't enqueue
+    FOR UPDATE OF external_services -- We query 'FOR UPDATE' so we don't enqueue
                                     -- sync jobs while an external service is being deleted.
 ),
 busy AS (
