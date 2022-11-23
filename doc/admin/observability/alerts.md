@@ -1410,8 +1410,9 @@ Generated query for critical alert: `max((histogram_quantile(0.9, sum by(le) (la
 
 **Next steps**
 
-- **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% (also configurable by `SRC_REPOS_DESIRED_PERCENT_FREE`) disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-disk-space-remaining).
+- On a warning alert, you may want to provision more disk space: Sourcegraph may be about to start evicting repositories due to disk pressure, which may result in decreased performance, users having to wait for repositories to clone, etc.
+- On a critical alert, you need to provision more disk space: Sourcegraph should be evicting repositories from disk, but is either filling up faster than it can evict, or there is an issue with the janitor job.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#gitserver-disk-space-remaining).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
