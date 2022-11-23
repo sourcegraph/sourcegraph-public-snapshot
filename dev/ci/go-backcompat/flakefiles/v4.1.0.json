@@ -13,5 +13,41 @@
     "path": "github.com/sourcegraph/sourcegraph/internal/repos",
     "prefix": "EnqueueWebhookBuildJob",
     "reason": "Flakes repeatedly in CI"
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestWebhookCreate",
+    "reason": "New NOT NULL `name` column is added. The test is trying to add an entry without populating this column."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestWebhookDelete",
+    "reason": "New NOT NULL `name` column is added. The test is trying to add an entry without populating this column."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestWebhookUpdate",
+    "reason": "New NOT NULL `name` column is added. The test is trying to add an entry without populating this column."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestWebhookCount",
+    "reason": "New NOT NULL `name` column is added. The test is trying to add an entry without populating this column."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestWebhookList",
+    "reason": "New NOT NULL `name` column is added. The test is trying to add an entry without populating this column."
+  },
+
+  {
+    "path": "internal/database",
+    "prefix": "TestGetByID",
+    "reason": "New NOT NULL `name` column is added. The test is trying to add an entry without populating this column."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestGetByUUID",
+    "reason": "New NOT NULL `name` column is added. The test is trying to add an entry without populating this column."
   }
 ]

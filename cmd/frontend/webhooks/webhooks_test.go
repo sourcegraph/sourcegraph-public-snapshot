@@ -40,6 +40,7 @@ func TestWebhooksHandler(t *testing.T) {
 	dbWebhooks := db.Webhooks(keyring.Default().WebhookKey)
 	gitLabWH, err := dbWebhooks.Create(
 		context.Background(),
+		"gitLabWH",
 		extsvc.KindGitLab,
 		"http://gitlab.com",
 		u.ID,
@@ -48,6 +49,7 @@ func TestWebhooksHandler(t *testing.T) {
 
 	gitHubWH, err := dbWebhooks.Create(
 		context.Background(),
+		"gitHubWH",
 		extsvc.KindGitHub,
 		"http://github.com",
 		u.ID,
@@ -57,6 +59,7 @@ func TestWebhooksHandler(t *testing.T) {
 
 	gitHubWHNoSecret, err := dbWebhooks.Create(
 		context.Background(),
+		"gitHubWHNoSecret",
 		extsvc.KindGitHub,
 		"http://github.com",
 		u.ID,
@@ -66,6 +69,7 @@ func TestWebhooksHandler(t *testing.T) {
 
 	bbServerWH, err := dbWebhooks.Create(
 		context.Background(),
+		"bbServerWH",
 		extsvc.KindBitbucketServer,
 		"http://bitbucket.com",
 		u.ID,
