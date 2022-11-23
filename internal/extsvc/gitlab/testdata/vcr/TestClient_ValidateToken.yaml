@@ -17,7 +17,7 @@ interactions:
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 76dd5eac7fb3840b-YVR
+      - 76e5885ad8a5841d-YVR
       Content-Security-Policy:
       - 'base-uri ''self''; child-src https://www.google.com/recaptcha/ https://www.recaptcha.net/
         https://content.googleapis.com https://content-compute.googleapis.com https://content-cloudbilling.googleapis.com
@@ -35,16 +35,16 @@ interactions:
         report-uri https://sentry.gitlab.net/api/105/security/?sentry_key=a42ea3adc19140d9a6424906e12fba86;
         script-src ''strict-dynamic'' ''self'' ''unsafe-inline'' ''unsafe-eval'' https://www.google.com/recaptcha/
         https://www.gstatic.com/recaptcha/ https://www.recaptcha.net/ https://apis.google.com
-        ''nonce-X5EskPSdzEJHLLvXY335dg==''; style-src ''self'' ''unsafe-inline'';
+        ''nonce-wvyxYW4/mRgcpe0hJJL7pw==''; style-src ''self'' ''unsafe-inline'';
         worker-src https://gitlab.com blob: data:'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 21 Nov 2022 23:57:49 GMT
+      - Tue, 22 Nov 2022 23:44:22 GMT
       Etag:
       - W/"510062628e07744ce5658488d31e4c06"
       Gitlab-Lb:
-      - fe-20-lb-gprd
+      - fe-38-lb-gprd
       Gitlab-Sv:
       - api-gke-us-east1-d
       Nel:
@@ -56,7 +56,7 @@ interactions:
       Referrer-Policy:
       - strict-origin-when-cross-origin
       Report-To:
-      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=rKurBW7KllGH2A%2FflXqkiQUO%2FGbksGtFsTyIvKjZdDr7vwGHJ%2BbaYrtMEJR9BfHflh8JvcRTedRWHN9fl6EN2xll7FiaPkYlvBHrwQ4ySfNWCgybovISVHZjAb8E7pU1KzTqZgpzpSg%3D"}],"group":"cf-nel","max_age":604800}'
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=xFPbr03LgJeUAgurxwLxN66fNr1%2BRjIHVT1eZRSoA87tJTfJe977NwTDWkaa3FO0X%2FyM2GxcivfHrXyi7SjIY7TUqhGztk%2BtyyZqlITnNkMWAHnNsT4O2zJEljxNbVo45QxUHfNXwQU%3D"}],"group":"cf-nel","max_age":604800}'
       Server:
       - cloudflare
       Strict-Transport-Security:
@@ -72,9 +72,9 @@ interactions:
       X-Permitted-Cross-Domain-Policies:
       - none
       X-Request-Id:
-      - 95a30bcf47528e7c1343f3bc6fdad892
+      - a4a5c9db492cbb5111830c75b353550f
       X-Runtime:
-      - "0.061627"
+      - "0.223725"
       X-Ua-Compatible:
       - IE=edge
       X-Xss-Protection:

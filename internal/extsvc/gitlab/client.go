@@ -223,17 +223,17 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 		rateLimiter:      rl,
 		rateLimitMonitor: rlm,
 	}
-	c.gqlClient = graphql.NewClient(p.gqlURL.String(), gqlClient{c})
+	c.gqlClient = graphql.NewClient(p.gqlURL.String(), gqlDoer{c})
 	return c
 }
 
-type gqlClient struct {
+type gqlDoer struct {
 	*Client
 }
 
-var _ httpcli.Doer = gqlClient{}
+var _ httpcli.Doer = gqlDoer{}
 
-func (c gqlClient) Do(req *http.Request) (resp *http.Response, err error) {
+func (c gqlDoer) Do(req *http.Request) (resp *http.Response, err error) {
 	// Used by the GraphQL client; we need to inject the authentication here.
 	ctx := req.Context()
 	oauthAuther, ok := c.Auth.(auth.AuthenticatorWithRefresh)
