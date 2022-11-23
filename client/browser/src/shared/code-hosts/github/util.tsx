@@ -282,6 +282,8 @@ const oldUISelectors: UISelectors = {
 const newUISelectors: UISelectors = {
     codeCell: 'td.react-code-cell',
     blobContainer: 'react-app table',
+
+    // the former selector is for the tree view and the latter is for the blob view
     permalink: 'a.ActionList-item--navActive, .ActionList-item--navActive a',
 }
 

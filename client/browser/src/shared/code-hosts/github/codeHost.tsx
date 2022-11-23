@@ -206,6 +206,8 @@ const fileLineContainerResolver: ViewResolver<CodeView> = {
             // this is not a single-file code view
             return null
         }
+
+        // selector depends on whether the page was rendered using the client-side navigation or not
         const repositoryContent = fileLineContainer.closest('.repository-content, #repo-content-turbo-frame')
         if (!repositoryContent) {
             throw new Error('Could not find repository content element')
