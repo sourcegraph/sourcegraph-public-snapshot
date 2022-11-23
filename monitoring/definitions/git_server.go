@@ -94,14 +94,22 @@ func GitServer() *monitoring.Dashboard {
 							Name:        "disk_space_remaining",
 							Description: "disk space remaining by instance",
 							Query:       `(src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100`,
-							Warning:     monitoring.Alert().LessOrEqual(25),
-							Critical:    monitoring.Alert().LessOrEqual(15),
+							// Warning alert when we have disk space remaining that is
+							// approaching the default SRC_REPOS_DESIRED_PERCENT_FREE,
+							// which may cause repos to be evicted.
+							Warning: monitoring.Alert().LessOrEqual(15),
+							// Critical alert when we have less space remaining than the
+							// default SRC_REPOS_DESIRED_PERCENT_FREE some amount of time.
+							// This means that repos are being evicted, recloned, and
+							// continuously consuming all disk space - we definitely need
+							// more space - or something is wrong with the janitor job.
+							Critical: monitoring.Alert().LessOrEqual(10).For(5 * time.Minute),
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.Percentage).
 								With(monitoring.PanelOptions.LegendOnRight()),
 							Owner: monitoring.ObservableOwnerRepoManagement,
 							NextSteps: `
-								- **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
+								- **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% (also configurable by 'SRC_REPOS_DESIRED_PERCENT_FREE') disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
 							`,
 						},
 					},
