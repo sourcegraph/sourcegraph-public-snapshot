@@ -21,7 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Gitserver's repository purge worker now runs on a regular interval instead of just on weekends, configurable by the `repoPurgeWorker` site configuration. [#44753](https://github.com/sourcegraph/sourcegraph/pull/44753)
 
 ### Fixed
 
