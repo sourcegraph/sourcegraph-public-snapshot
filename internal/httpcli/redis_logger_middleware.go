@@ -58,7 +58,7 @@ func redisLoggerMiddleware() Middleware {
 			redisCache.Set(key, logItemJson)
 
 			// Delete excess items
-			deletionErr := deleteOldKeys(OutboundRequestsLogLimit())
+			deletionErr := deleteOldKeys(OutboundRequestLogLimit())
 			if deletionErr != nil {
 				log.Error(deletionErr)
 			}

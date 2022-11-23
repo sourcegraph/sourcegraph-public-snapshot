@@ -28,10 +28,10 @@ func Init() {
 			httpcli.SetTLSExternalConfig(tlsAfter)
 		}
 
-		outboundRequestsLogLimitBefore := httpcli.OutboundRequestsLogLimit()
-		outboundRequestsLogLimitAfter := Get().OutboundRequestsLogLimit
-		if outboundRequestsLogLimitBefore != outboundRequestsLogLimitAfter {
-			httpcli.SetOutboundRequestsLogLimit(outboundRequestsLogLimitAfter)
+		outboundRequestLogLimitBefore := httpcli.OutboundRequestLogLimit()
+		outboundRequestLogLimitAfter := Get().OutboundRequestLogLimit
+		if outboundRequestLogLimitBefore != outboundRequestLogLimitAfter {
+			httpcli.SetOutboundRequestLogLimit(outboundRequestLogLimitAfter)
 		}
 	})
 }

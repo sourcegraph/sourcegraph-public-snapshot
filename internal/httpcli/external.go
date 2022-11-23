@@ -26,7 +26,7 @@ var tlsExternalConfig struct {
 	*schema.TlsExternal
 }
 
-var outboundRequestsLogLimitConfig struct {
+var outboundRequestLogLimitConfig struct {
 	sync.RWMutex
 	int
 }
@@ -46,19 +46,19 @@ func TLSExternalConfig() *schema.TlsExternal {
 	return tlsExternalConfig.TlsExternal
 }
 
-// SetOutboundRequestsLogLimit is called by the conf package whenever OutboundRequestsLogLimit changes.
+// SetOutboundRequestLogLimit is called by the conf package whenever OutboundRequestLogLimit changes.
 // This is needed to avoid circular imports.
-func SetOutboundRequestsLogLimit(i int) {
-	outboundRequestsLogLimitConfig.Lock()
-	outboundRequestsLogLimitConfig.int = i
-	outboundRequestsLogLimitConfig.Unlock()
+func SetOutboundRequestLogLimit(i int) {
+	outboundRequestLogLimitConfig.Lock()
+	outboundRequestLogLimitConfig.int = i
+	outboundRequestLogLimitConfig.Unlock()
 }
 
-// OutboundRequestsLogLimit returns the current value of the global OutboundRequestsLogLimit value.
-func OutboundRequestsLogLimit() int {
-	outboundRequestsLogLimitConfig.RLock()
-	defer outboundRequestsLogLimitConfig.RUnlock()
-	return outboundRequestsLogLimitConfig.int
+// OutboundRequestLogLimit returns the current value of the global OutboundRequestLogLimit value.
+func OutboundRequestLogLimit() int {
+	outboundRequestLogLimitConfig.RLock()
+	defer outboundRequestLogLimitConfig.RUnlock()
+	return outboundRequestLogLimitConfig.int
 }
 
 func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {
