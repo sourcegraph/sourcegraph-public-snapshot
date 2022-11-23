@@ -46,13 +46,13 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
 
     return (
         <Container>
-            <PageTitle title="Webhook receiver" />
+            <PageTitle title="Incoming webhook" />
             {webhookLoading && !webhookData && <ConnectionLoading />}
             {webhookData?.node && webhookData.node.__typename === 'Webhook' && (
                 <PageHeader
                     path={[
                         { icon: mdiCog },
-                        { to: '/site-admin/webhooks', text: 'Webhook receivers' },
+                        { to: '/site-admin/webhooks', text: 'Incoming webhooks' },
                         { text: webhookData.node.codeHostURN },
                     ]}
                     byline={
@@ -98,7 +98,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
             )}
 
             <H2>Logs</H2>
-            <WebhookInfoLogPageHeader onlyErrors={onlyErrors} onSetOnlyErrors={setOnlyErrors} />
+            <WebhookInfoLogPageHeader webhookID={id} onlyErrors={onlyErrors} onSetOnlyErrors={setOnlyErrors} />
 
             <ConnectionContainer className="mt-5">
                 {error && <ConnectionError errors={[error.message]} />}

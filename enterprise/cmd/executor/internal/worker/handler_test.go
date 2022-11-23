@@ -72,7 +72,7 @@ func TestHandle(t *testing.T) {
 	filesStore := NewMockFilesStore()
 
 	h := &handler{
-		store:      NewMockStore(),
+		store:      NewMockStore[executor.Job](),
 		filesStore: filesStore,
 		nameSet:    janitor.NewNameSet(),
 		options:    Options{},
@@ -185,7 +185,7 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 	filesStore.GetFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("echo foo"))), nil)
 
 	h := &handler{
-		store:      NewMockStore(),
+		store:      NewMockStore[executor.Job](),
 		filesStore: filesStore,
 		nameSet:    janitor.NewNameSet(),
 		options: Options{

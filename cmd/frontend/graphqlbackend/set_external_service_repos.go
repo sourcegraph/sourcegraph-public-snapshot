@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -21,6 +22,11 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 	var err error
 	defer reportExternalServiceDuration(start, SetRepos, &err)
 
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	id, err := UnmarshalExternalServiceID(args.ID)
 	if err != nil {
 		return nil, err
@@ -29,11 +35,6 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 	extsvcStore := r.db.ExternalServices()
 	es, err := extsvcStore.GetByID(ctx, id)
 	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: make sure the user has access to external service
-	if err = backend.CheckExternalServiceAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 

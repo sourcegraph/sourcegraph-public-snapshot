@@ -19,7 +19,7 @@ Secret values are currently only available in server-side batch changes. Use [`s
 
 ## How secrets work
 
-Executor secrets are defined per-feature. If you want to define a secret for server-side batch changes, create a secret for that namespace. Batch Changes is currently the only namespace. Secrets are always redacted in log outputs.
+Executor secrets are defined per-feature. If you want to define a secret for server-side batch changes, create a secret for that namespace. Batch Changes is currently the only namespace. Secrets are [encrypted](config/encryption.md) if encryption is on, and always redacted in log outputs.
 
 There are two types of secrets: 
 

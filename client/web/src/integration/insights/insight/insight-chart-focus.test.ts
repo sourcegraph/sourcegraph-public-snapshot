@@ -64,7 +64,10 @@ describe('Code insights [Insight Card] should has a proper focus management ', (
             'Insight context menu should be focused'
         )
 
-        const dataSeries = GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT.insightViews.nodes[0].dataSeries
+        const dataSeries = GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT.insightViews.nodes[0]?.dataSeries
+        if (!dataSeries) {
+            assert.fail('Insight errored')
+        }
 
         for (let lineIndex = 0; lineIndex < dataSeries.length; lineIndex++) {
             const series = dataSeries[lineIndex]

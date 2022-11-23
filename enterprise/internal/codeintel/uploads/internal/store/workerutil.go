@@ -5,6 +5,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -45,7 +46,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.uncompressed_size"),
 }
 
-var UploadWorkerStoreOptions = dbworkerstore.Options{
+var UploadWorkerStoreOptions = dbworkerstore.Options[types.Upload]{
 	Name:              "codeintel_upload",
 	TableName:         "lsif_uploads",
 	ViewName:          "lsif_uploads_with_repository_name u",
@@ -60,6 +61,6 @@ var UploadWorkerStoreOptions = dbworkerstore.Options{
 	MaxNumResets:  UploadMaxNumResets,
 }
 
-func (s *store) WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store {
+func (s *store) WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store[types.Upload] {
 	return dbworkerstore.NewWithMetrics(s.db.Handle(), UploadWorkerStoreOptions, observationContext)
 }

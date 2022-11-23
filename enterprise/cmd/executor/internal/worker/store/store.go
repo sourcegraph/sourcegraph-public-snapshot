@@ -22,28 +22,27 @@ type QueueStore interface {
 	MarkComplete(ctx context.Context, queueName string, jobID int) error
 	MarkErrored(ctx context.Context, queueName string, jobID int, errorMessage string) error
 	MarkFailed(ctx context.Context, queueName string, jobID int, errorMessage string) error
-	Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs []int, err error)
-	CanceledJobs(ctx context.Context, queueName string, knownIDs []int) (canceledIDs []int, err error)
+	Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs, cancelIDs []int, err error)
 }
 
 // Compile time validation.
-var _ workerutil.Store = &QueueShim{}
+var _ workerutil.Store[executor.Job] = &QueueShim{}
 
 func (s *QueueShim) QueuedCount(ctx context.Context) (int, error) {
 	return 0, errors.New("unimplemented")
 }
 
-func (s *QueueShim) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (workerutil.Record, bool, error) {
+func (s *QueueShim) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (executor.Job, bool, error) {
 	var job executor.Job
 	dequeued, err := s.Store.Dequeue(ctx, s.Name, &job)
 	if err != nil {
-		return nil, false, err
+		return executor.Job{}, false, err
 	}
 
 	return job, dequeued, nil
 }
 
-func (s *QueueShim) Heartbeat(ctx context.Context, ids []int) (knownIDs []int, err error) {
+func (s *QueueShim) Heartbeat(ctx context.Context, ids []int) (knownIDs, cancelIDs []int, err error) {
 	return s.Store.Heartbeat(ctx, s.Name, ids)
 }
 
@@ -65,10 +64,6 @@ func (s *QueueShim) MarkErrored(ctx context.Context, id int, errorMessage string
 
 func (s *QueueShim) MarkFailed(ctx context.Context, id int, errorMessage string) (bool, error) {
 	return true, s.Store.MarkFailed(ctx, s.Name, id, errorMessage)
-}
-
-func (s *QueueShim) CanceledJobs(ctx context.Context, knownIDs []int) ([]int, error) {
-	return s.Store.CanceledJobs(ctx, s.Name, knownIDs)
 }
 
 // FilesStore handles interactions with the file store.

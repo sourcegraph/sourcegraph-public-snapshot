@@ -14240,18 +14240,21 @@ Query: `sum by(instance) (rate(searcher_service_request_total[10m]))`
 
 <br />
 
-### Searcher: Hybrid (experimental)
+### Searcher: Index use
 
 #### searcher: searcher_hybrid_final_state_total
 
 <p class="subtitle">Hybrid search final state over 10m</p>
 
-This graph should be empty unless you enable the feature flag "search-hybrid".
+This graph is about our interactions with the search index (zoekt) to help
+complete unindexed search requests. Searcher will use indexed search for the
+files that have not changed between the unindexed commit and the index.
 
 This graph should mostly be "success". The next most common state should be
-"diff-too-large", which happens if the commit is too far from the indexed
-commit. Otherwise other state should be rare and likely are a sign for further
-investigation.
+"search-canceled" which happens when result limits are hit or the user starts
+a new search. Finally the next most common should be "diff-too-large", which
+happens if the commit is too far from the indexed commit. Otherwise other
+state should be rare and likely are a sign for further investigation.
 
 Note: On sourcegraph.com "zoekt-list-missing" is also common due to it
 indexing a subset of repositories. Otherwise every other state should occur
@@ -16519,12 +16522,12 @@ To see this dashboard, visit `/-/debug/grafana/d/zoekt/zoekt` on your Sourcegrap
 
 Sudden changes can be caused by indexing configuration changes.
 
-Additionally, a discrepancy between "assigned" and "tracked" could indicate a bug.
+Additionally, a discrepancy between "index_num_assigned" and "index_queue_cap" could indicate a bug.
 
 Legend:
-- assigned: # of repos assigned to Zoekt
-- indexed: # of repos Zoekt has indexed
-- tracked: # of repos Zoekt is aware of, including those that it has finished indexing
+- index_num_assigned: # of repos assigned to Zoekt
+- index_num_indexed: # of repos Zoekt has indexed
+- index_queue_cap: # of repos Zoekt is aware of, including those that it has finished indexing
 
 This panel has no related alerts.
 
@@ -16535,7 +16538,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100000` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(index_num_assigned)`
+Query: `sum by (__name__) ({__name__=~"index_num_assigned|index_num_indexed|index_queue_cap"})`
 
 </details>
 
@@ -16547,12 +16550,12 @@ Query: `sum(index_num_assigned)`
 
 Sudden changes can be caused by indexing configuration changes.
 
-Additionally, a discrepancy between "assigned" and "tracked" could indicate a bug.
+Additionally, a discrepancy between "index_num_assigned" and "index_queue_cap" could indicate a bug.
 
 Legend:
-- assigned: # of repos assigned to Zoekt
-- indexed: # of repos Zoekt has indexed
-- tracked: # of repos Zoekt is aware of, including those that it has finished processing
+- index_num_assigned: # of repos assigned to Zoekt
+- index_num_indexed: # of repos Zoekt has indexed
+- index_queue_cap: # of repos Zoekt is aware of, including those that it has finished processing
 
 This panel has no related alerts.
 
@@ -16563,7 +16566,7 @@ To see this panel, visit `/-/debug/grafana/d/zoekt/zoekt?viewPanel=100001` on yo
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (instance) (index_num_assigned{instance=~`${instance:regex}`})`
+Query: `sum by (__name__, instance) ({__name__=~"index_num_assigned|index_num_indexed|index_queue_cap",instance=~"${instance:regex}"})`
 
 </details>
 

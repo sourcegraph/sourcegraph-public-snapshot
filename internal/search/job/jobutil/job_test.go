@@ -642,6 +642,40 @@ func TestNewPlanJob(t *testing.T) {
           (repoOpts.hasKVPs[0].key . tag)
           (repoNamePatterns . []))))))`),
 		}, {
+			query:      `repo:has.tag(tag) foo`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Want("repo has tag and foo", `
+(ALERT
+  (query . )
+  (originalQuery . )
+  (patternType . regex)
+  (TIMEOUT
+    (timeout . 20s)
+    (LIMIT
+      (limit . 500)
+      (PARALLEL
+        (SEQUENTIAL
+          (ensureUnique . false)
+          (REPOPAGER
+            (repoOpts.hasKVPs[0].key . tag)
+            (PARTIALREPOS
+              (ZOEKTREPOSUBSETTEXTSEARCH
+                (query . substr:"foo")
+                (type . text))))
+          (REPOPAGER
+            (repoOpts.hasKVPs[0].key . tag)
+            (PARTIALREPOS
+              (SEARCHERTEXTSEARCH
+                (indexed . false)))))
+        (REPOSCOMPUTEEXCLUDED
+          (repoOpts.hasKVPs[0].key . tag))
+        (PARALLEL
+          NoopJob
+          (REPOSEARCH
+            (repoOpts.repoFilters.0 . foo)(repoOpts.hasKVPs[0].key . tag)
+            (repoNamePatterns . [(?i)foo])))))))`),
+		}, {
 			query:      `(...)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeStructural,
