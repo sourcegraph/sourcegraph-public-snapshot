@@ -1,7 +1,6 @@
 import { Series } from '@sourcegraph/wildcard'
 
 import {
-    RuntimeInsight,
     InsightDashboard,
     CaptureGroupInsight,
     LangStatsInsight,
@@ -64,10 +63,6 @@ export interface DashboardDeleteInput {
     id: string
 }
 
-export interface FindInsightByNameInput {
-    name: string
-}
-
 export type MinimalSearchBasedInsightData = Omit<SearchBasedInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
@@ -103,13 +98,4 @@ export interface BackendInsightDatum {
 export interface BackendInsightData {
     data: InsightContent<any>
     isFetchingHistoricalData: boolean
-}
-
-export interface GetBuiltInsightInput {
-    insight: RuntimeInsight
-}
-
-export interface GetLangStatsInsightContentInput {
-    repository: string
-    otherThreshold: number
 }
