@@ -45,10 +45,12 @@ func int64Pointer(v int64) *int64 {
 }
 
 func TestGitHubWebhooks(t *testing.T) {
-	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, sqlDB)
 	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	whStore := db.Webhooks(keyring.Default().WebhookKey)
+	esStore := db.ExternalServices()
+
 	u, err := db.Users().Create(context.Background(), database.NewUser{
 		Email:           "test@user.com",
 		Username:        "testuser",
@@ -56,12 +58,13 @@ func TestGitHubWebhooks(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	require.NoError(t, db.UserExternalAccounts().Insert(ctx, u.ID, extsvc.AccountSpec{
+	err = db.UserExternalAccounts().Insert(ctx, u.ID, extsvc.AccountSpec{
 		ServiceType: extsvc.TypeGitHub,
 		ServiceID:   "https://github.com/",
 		ClientID:    "",
 		AccountID:   "123",
-	}, extsvc.AccountData{}))
+	}, extsvc.AccountData{})
+	require.NoError(t, err)
 
 	err = db.Repos().Create(ctx, &types.Repo{
 		ID:   1,
@@ -70,15 +73,12 @@ func TestGitHubWebhooks(t *testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "1234",
 			ServiceType: "github",
-			ServiceID:   "https://github.com",
+			ServiceID:   "https://github.com/",
 		},
 	})
-
 	require.NoError(t, err)
 
-	webhooksStore := db.Webhooks(keyring.Default().WebhookKey)
-	esStore := db.ExternalServices()
-	extSvc := &types.ExternalService{
+	err = esStore.Upsert(ctx, &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GitHub",
 		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
@@ -87,28 +87,32 @@ func TestGitHubWebhooks(t *testing.T) {
 			Token:         "fake",
 			Repos:         []string{"sourcegraph/sourcegraph"},
 		})),
-	}
-
-	err = esStore.Upsert(ctx, extSvc)
+	})
 	require.NoError(t, err)
 
-	_, err = db.ExecContext(ctx, "INSERT INTO external_service_repos(external_service_id, repo_id, clone_url) VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph');")
-	require.NoError(t, err)
-
-	externalServiceConfig := fmt.Sprintf(`
+	// We use a string so that we can add a comment, which we can't do
+	// if we use json.Marshal. This is just to make sure we are robust
+	// against jsonc comments, which is allowed in external service configs.
+	externalServiceConfig := `
 {
     // Some comment to mess with json decoding
     "url": "https://github.com",
     "token": "fake",
     "repos": ["sourcegraph/sourcegraph"]
 }
+`
+	err = esStore.Update(ctx, []schema.AuthProviders{}, 1, &database.ExternalServiceUpdate{Config: &externalServiceConfig})
+	require.NoError(t, err)
+
+	_, err = db.ExecContext(ctx, `
+INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 `)
+	require.NoError(t, err)
 
-	require.NoError(t, esStore.Update(ctx, []schema.AuthProviders{}, 1, &database.ExternalServiceUpdate{Config: &externalServiceConfig}))
+	ghWebhook := NewGitHubWebhook(logger)
 
-	ghWebhook := NewGitHubWebhook()
-
-	wh, err := webhooksStore.Create(ctx, extsvc.KindGitHub, "https://github.com", u.ID, nil)
+	wh, err := whStore.Create(ctx, extsvc.KindGitHub, "https://github.com", u.ID, nil)
 	require.NoError(t, err)
 
 	hook := fewebhooks.GitHubWebhook{

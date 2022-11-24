@@ -8,12 +8,14 @@ import (
 	gh "github.com/google/go-github/v43/github"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var githubEvents = []string{
@@ -25,10 +27,12 @@ var githubEvents = []string{
 	"team_add",
 }
 
-type GitHubWebhook struct{}
+type GitHubWebhook struct {
+	logger log.Logger
+}
 
-func NewGitHubWebhook() *GitHubWebhook {
-	return &GitHubWebhook{}
+func NewGitHubWebhook(logger log.Logger) *GitHubWebhook {
+	return &GitHubWebhook{logger}
 }
 
 func (h *GitHubWebhook) Register(router *webhooks.WebhookRouter) {
@@ -40,176 +44,163 @@ func (h *GitHubWebhook) Register(router *webhooks.WebhookRouter) {
 }
 
 func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, payload any) error {
-	h.convertEvent(ctx, db, codeHostURN, payload)
+	switch e := payload.(type) {
+	case *gh.RepositoryEvent:
+		return h.handleRepositoryEvent(ctx, db, e)
+	case *gh.MemberEvent:
+		return h.handleMemberEvent(ctx, db, e, codeHostURN)
+	case *gh.OrganizationEvent:
+		return h.handleOrganizationEvent(ctx, db, e, codeHostURN)
+	case *gh.MembershipEvent:
+		return h.handleMembershipEvent(ctx, db, e, codeHostURN)
+	case *gh.TeamEvent:
+		return h.handleTeamEvent(ctx, e, db)
+	}
 	return nil
 }
 
-func (h *GitHubWebhook) convertEvent(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, theirs any) {
-	repoupdaterClient := repoupdater.DefaultClient
-	switch e := theirs.(type) {
-	case *gh.RepositoryEvent:
-		repo := e.GetRepo()
-		if repo == nil {
-			return
-		}
-
-		if e.Action == nil {
-			return
-		}
-
-		switch e.GetAction() {
-		case "privatized":
-			// Get a list of collaborators for the repository
-			// For each collaborator:
-			//    Use the collaborator's access token to confirm that they can access the repository
-			repoName, err := db.Repos().GetFirstRepoNameByCloneURL(ctx, strings.TrimSuffix(repo.GetCloneURL(), ".git"))
-			if err != nil {
-				return
-			}
-
-			repo, err := db.Repos().GetByName(ctx, repoName)
-			if err != nil {
-				return
-			}
-
-			repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-				RepoIDs: []api.RepoID{repo.ID},
-			})
-		}
-
-	case *gh.MemberEvent:
-		user := e.GetMember()
-		if user == nil {
-			return
-		}
-
-		externalAccounts, err := db.UserExternalAccounts().ListBySQL(ctx, sqlf.Sprintf("WHERE service_type=%s AND account_id=%s", extsvc.TypeGitHub, strconv.FormatInt(user.GetID(), 10)))
-		if err != nil {
-			return
-		}
-
-		if len(externalAccounts) <= 0 {
-			return
-		}
-
-		switch e.GetAction() {
-		case "added":
-			repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-				UserIDs: []int32{externalAccounts[0].UserID},
-			})
-		case "removed":
-			// User's token is used to confirm access to the repository.
-			// User loses access if not confirmed.
-			repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-				UserIDs: []int32{externalAccounts[0].UserID},
-			})
-		}
-
-	case *gh.OrganizationEvent:
-		user := e.GetMembership().GetUser()
-		if user == nil {
-			return
-		}
-
-		if e.Action == nil {
-			return
-		}
-
-		externalAccounts, err := db.UserExternalAccounts().ListBySQL(ctx, sqlf.Sprintf("WHERE service_type=%s AND account_id=%s", extsvc.TypeGitHub, strconv.FormatInt(user.GetID(), 10)))
-		if err != nil {
-			return
-		}
-
-		if len(externalAccounts) <= 0 {
-			return
-		}
-
-		switch e.GetAction() {
-		case "member_added":
-			// Use the user's token to fetch a list of repositories that belong to the organization, grant access to each
-			err := repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-				UserIDs: []int32{externalAccounts[0].UserID},
-			})
-			if err != nil {
-				return
-			}
-		case "member_removed":
-			// Use the user's token to fetch the list of repositories that belong to the organization.
-			// Access to organization repositories not on the list is removed
-			err := repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-				UserIDs: []int32{externalAccounts[0].UserID},
-			})
-			if err != nil {
-				return
-			}
-		}
-
-	case *gh.MembershipEvent:
-		user := e.GetMember()
-		if user == nil {
-			return
-		}
-
-		if e.Action == nil {
-			return
-		}
-		externalAccounts, err := db.UserExternalAccounts().ListBySQL(ctx, sqlf.Sprintf("WHERE service_type=%s AND account_id=%s", extsvc.TypeGitHub, strconv.FormatInt(user.GetID(), 10)))
-		if err != nil {
-			return
-		}
-
-		if len(externalAccounts) <= 0 {
-			return
-		}
-
-		switch e.GetAction() {
-		case "added":
-			// Fetch team repositories using user token
-			repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-				UserIDs: []int32{externalAccounts[0].UserID},
-			})
-		case "removed":
-			// Use code host connection token to list the team's repositories
-			// Use user's access token to check access to each of the repositories
-			// User may still have access to the repos by other means (explicit collaborator)
-			repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-				UserIDs: []int32{externalAccounts[0].UserID},
-			})
-		}
-
-	case *gh.TeamEvent:
-		repo := e.GetRepo()
-		if repo == nil {
-			return
-		}
-
-		if e.Action == nil {
-			return
-		}
-		repoName, err := db.Repos().GetFirstRepoNameByCloneURL(ctx, strings.TrimSuffix(repo.GetCloneURL(), ".git"))
-		if err != nil {
-			return
-		}
-
-		ghRepo, err := db.Repos().GetByName(ctx, repoName)
-		if err != nil {
-			return
-		}
-
-		switch e.GetAction() {
-		case "added_to_repository":
-			// Fetch list of members on the team
-			// Use each member's user token to determine access to the repository
-			repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-				RepoIDs: []api.RepoID{ghRepo.ID},
-			})
-		case "removed_from_repository":
-			// Fetch list of members on the team
-			// Use each member's user token to determine access to the repository
-			// Team members can still have access to a repo by other means
-			repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-				RepoIDs: []api.RepoID{ghRepo.ID},
-			})
-		}
+func (h *GitHubWebhook) handleRepositoryEvent(ctx context.Context, db database.DB, e *gh.RepositoryEvent) error {
+	if e.GetAction() != "privatized" {
+		return nil
 	}
+
+	ghRepo := e.GetRepo()
+	if ghRepo == nil {
+		return errors.New("no repo found in webhook event")
+	}
+
+	repoName, err := db.Repos().GetFirstRepoNameByCloneURL(ctx, strings.TrimSuffix(ghRepo.GetCloneURL(), ".git"))
+	if err != nil {
+		return err
+	}
+
+	repo, err := db.Repos().GetByName(ctx, repoName)
+	if err != nil {
+		return err
+	}
+
+	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		RepoIDs: []api.RepoID{repo.ID},
+	})
+	if err != nil {
+		h.logger.Error("could not schedule permissions sync for repo", log.Error(err), log.Int("repo ID", int(repo.ID)))
+	}
+
+	return err
+}
+
+func (h *GitHubWebhook) handleMemberEvent(ctx context.Context, db database.DB, e *gh.MemberEvent, codeHostURN extsvc.CodeHostBaseURL) error {
+	if e.GetAction() != "added" && e.GetAction() != "removed" {
+		return nil
+	}
+
+	user := e.GetMember()
+	if user == nil {
+		return errors.New("no user found in webhook event")
+	}
+
+	externalAccounts, err := db.UserExternalAccounts().ListBySQL(ctx, sqlf.Sprintf("WHERE service_id=%s AND account_id=%s AND deleted_at IS NULL", codeHostURN.String(), strconv.FormatInt(user.GetID(), 10)))
+	if err != nil {
+		return err
+	}
+
+	if len(externalAccounts) <= 0 {
+		return errors.Newf("no external accounts found for user with external account id %d", user.GetID())
+	}
+
+	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		UserIDs: []int32{externalAccounts[0].UserID},
+	})
+	if err != nil {
+		h.logger.Error("could not schedule permissions sync for user", log.Error(err), log.Int("user ID", int(externalAccounts[0].UserID)))
+	}
+
+	return err
+}
+
+func (h *GitHubWebhook) handleOrganizationEvent(ctx context.Context, db database.DB, e *gh.OrganizationEvent, codeHostURN extsvc.CodeHostBaseURL) error {
+	if e.GetAction() != "member_added" && e.GetAction() != "member_removed" {
+		return nil
+	}
+
+	user := e.GetMembership().GetUser()
+	if user == nil {
+		return errors.New("could not get user from webhook event")
+	}
+
+	externalAccounts, err := db.UserExternalAccounts().ListBySQL(ctx, sqlf.Sprintf("WHERE service_id=%s AND account_id=%s AND deleted_at IS NULL", codeHostURN.String(), strconv.FormatInt(user.GetID(), 10)))
+	if err != nil {
+		return err
+	}
+
+	if len(externalAccounts) <= 0 {
+		return errors.Newf("no external accounts found for user with external account id %d", user.GetID())
+	}
+
+	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		UserIDs: []int32{externalAccounts[0].UserID},
+	})
+	if err != nil {
+		h.logger.Error("could not schedule permissions sync for user", log.Error(err), log.Int("user ID", int(externalAccounts[0].UserID)))
+	}
+
+	return err
+}
+
+func (h *GitHubWebhook) handleMembershipEvent(ctx context.Context, db database.DB, e *gh.MembershipEvent, codeHostURN extsvc.CodeHostBaseURL) error {
+	if e.GetAction() != "added" && e.GetAction() != "removed" {
+		return nil
+	}
+
+	user := e.GetMember()
+	if user == nil {
+		return errors.New("no user found in webhook event")
+	}
+	externalAccounts, err := db.UserExternalAccounts().ListBySQL(ctx, sqlf.Sprintf("WHERE service_id=%s AND account_id=%s AND deleted_at IS NULL", codeHostURN.String(), strconv.FormatInt(user.GetID(), 10)))
+	if err != nil {
+		return err
+	}
+
+	if len(externalAccounts) <= 0 {
+		return errors.Newf("no github external accounts found with account id %d", user.GetID())
+	}
+
+	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		UserIDs: []int32{externalAccounts[0].UserID},
+	})
+	if err != nil {
+		h.logger.Error("could not schedule permissions sync for user", log.Error(err), log.Int("user ID", int(externalAccounts[0].UserID)))
+	}
+
+	return err
+}
+
+func (h *GitHubWebhook) handleTeamEvent(ctx context.Context, e *gh.TeamEvent, db database.DB) error {
+	if e.GetAction() != "added_to_repository" && e.GetAction() != "removed_from_repository" {
+		return nil
+	}
+
+	ghRepo := e.GetRepo()
+	if ghRepo == nil {
+		return errors.New("no repo found in webhook event")
+	}
+
+	repoName, err := db.Repos().GetFirstRepoNameByCloneURL(ctx, strings.TrimSuffix(ghRepo.GetCloneURL(), ".git"))
+	if err != nil {
+		return err
+	}
+
+	repo, err := db.Repos().GetByName(ctx, repoName)
+	if err != nil {
+		return err
+	}
+
+	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
+		RepoIDs: []api.RepoID{repo.ID},
+	})
+	if err != nil {
+		h.logger.Error("could not schedule permissions sync for repo", log.Error(err), log.Int("repo ID", int(repo.ID)))
+	}
+
+	return err
 }
