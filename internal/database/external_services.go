@@ -1012,12 +1012,12 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 			return err
 		}
 
-		ok, err := e.hasRunningSyncJobs(runningJobsCtx, id)
+		runningJobsExist, err := e.hasRunningSyncJobs(runningJobsCtx, id)
 		if err != nil {
 			return err
 		}
 
-		if !ok {
+		if !runningJobsExist {
 			break
 		}
 		time.Sleep(500 * time.Millisecond)
