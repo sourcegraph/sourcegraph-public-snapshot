@@ -6,7 +6,7 @@ import (
 
 func (c *Client) CreateEmptyBatchChange(namespace, name string) (string, error) {
 	const query = `
-	mutation CreateEmptyBatchChange($namespace: ID!, $name: ID!) {
+	mutation CreateEmptyBatchChange($namespace: ID!, $name: String!) {
 		createEmptyBatchChange(namespace: $namespace, name: $name) {
 			id
 		}
@@ -113,13 +113,14 @@ func (c *Client) ExecuteBatchSpec(batchSpec string, noCache bool) error {
 	return nil
 }
 
-func (c *Client) GetBatchSpecState(batchSpec string) (string, error) {
+func (c *Client) GetBatchSpecState(batchSpec string) (string, string, error) {
 	const query = `
 	query GetBatchSpecState($batchSpec: ID!) {
 		node(id: $batchSpec) {
 			__typename
 			... on BatchSpec {
 				state
+				failureMessage
 			}
 		}
 	}
@@ -130,17 +131,18 @@ func (c *Client) GetBatchSpecState(batchSpec string) (string, error) {
 	var resp struct {
 		Data struct {
 			Node struct {
-				Typename string `json:"__typename"`
-				State    string `json:"state"`
+				Typename       string `json:"__typename"`
+				State          string `json:"state"`
+				FailureMessage string `json:"failureMessage"`
 			} `json:"node"`
 		} `json:"data"`
 	}
 	err := c.GraphQL("", query, variables, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", "", errors.Wrap(err, "request GraphQL")
 	}
 
-	return resp.Data.Node.State, nil
+	return resp.Data.Node.State, resp.Data.Node.FailureMessage, nil
 }
 
 const getBatchSpecDeep = `
@@ -284,11 +286,7 @@ query GetBatchSpecDeep($id: ID!) {
 				  }
 				}
 				searchResultPaths
-				queuedAt
-				startedAt
-				finishedAt
 				failureMessage
-				state
 				changesetSpecs {
 				  id
 				}
@@ -317,14 +315,191 @@ query GetBatchSpecDeep($id: ID!) {
 `
 
 type BatchSpecDeep struct {
-	ID               string `json:"id"`
-	AutoApplyEnabled bool   `json:"autoApplyEnabled"`
-	State            string `json:"state"`
+	ID                  string `json:"id"`
+	AutoApplyEnabled    bool   `json:"autoApplyEnabled"`
+	State               string `json:"state"`
+	ChangesetSpecs      BatchSpecChangesetSpecs
+	CreatedAt           string
+	StartedAt           string
+	FinishedAt          string
+	Namespace           Namespace
+	WorkspaceResolution WorkspaceResolution
+	ExpiresAt           string
+	FailureMessage      string
+	Source              string
+	Files               BatchSpecFiles
+}
+
+type BatchSpecFiles struct {
+	TotalCount int
+	Nodes      []BatchSpecFile
+}
+
+type BatchSpecFile struct {
+	Path string
+	Name string
+}
+
+type WorkspaceResolution struct {
+	Workspaces WorkspaceResolutionWorkspaces
+}
+
+type WorkspaceResolutionWorkspaces struct {
+	TotalCount int
+	Stats      WorkspaceResolutionWorkspacesStats
+	Nodes      []BatchSpecWorkspace
+}
+
+type BatchSpecWorkspace struct {
+	OnlyFetchWorkspace   bool
+	Ignored              bool
+	Unsupported          bool
+	CachedResultFound    bool
+	StepCacheResultCount int
+	QueuedAt             string
+	StartedAt            string
+	FinishedAt           string
+	State                string
+	PlaceInQueue         int
+	PlaceInGlobalQueue   int
+	DiffStat             DiffStat
+	Repository           ChangesetRepository
+	Branch               WorkspaceBranch
+	Path                 string
+	SearchResultPaths    []string
+	FailureMessage       string
+	ChangesetSpecs       []WorkspaceChangesetSpec
+	Stages               BatchSpecWorkspaceStages
+	Steps                []BatchSpecWorkspaceStep
+	Executor             Executor
+}
+
+type BatchSpecWorkspaceStep struct {
+	Number            int
+	Run               string
+	Container         string
+	IfCondition       string
+	CachedResultFound bool
+	Skipped           bool
+	OutputLines       []string
+	StartedAt         string
+	FinishedAt        string
+	ExitCode          int
+	Environment       []WorkspaceEnvironmentVariable
+	OutputVariables   []WorkspaceOutputVariable
+	DiffStat          DiffStat
+	Diff              ChangesetSpecDiffs
+}
+
+type WorkspaceEnvironmentVariable struct {
+	Name  string
+	Value string
+}
+type WorkspaceOutputVariable struct {
+	Name  string
+	Value string
+}
+
+type BatchSpecWorkspaceStages struct {
+	Setup    []ExecutionLogEntry
+	SrcExec  []ExecutionLogEntry
+	Teardown []ExecutionLogEntry
+}
+
+type ExecutionLogEntry struct {
+	Key                  string
+	Command              []string
+	StartTime            string
+	ExitCode             int
+	Out                  string
+	DurationMilliseconds int
+}
+
+type Executor struct {
+	Hostname  string
+	QueueName string
+	Active    bool
+}
+
+type WorkspaceChangesetSpec struct {
+	ID string
+}
+
+type WorkspaceBranch struct {
+	Name string
+}
+
+type DiffStat struct {
+	Added   int
+	Deleted int
+}
+
+type WorkspaceResolutionWorkspacesStats struct {
+	Errored    int
+	Completed  int
+	Processing int
+	Queued     int
+	Ignored    int
+}
+
+type Namespace struct {
+	ID string
+}
+
+type BatchSpecChangesetSpecs struct {
+	TotalCount int
+	Nodes      []ChangesetSpec
+}
+
+type ChangesetSpec struct {
+	ID          string
+	Type        string
+	Description ChangesetSpecDescription
+	ForkTarget  ChangesetForkTarget
+}
+
+type ChangesetForkTarget struct {
+	Namespace string
+}
+
+type ChangesetSpecDescription struct {
+	BaseRepository ChangesetRepository
+	BaseRef        string
+	BaseRev        string
+	HeadRef        string
+	Title          string
+	Body           string
+	Commits        []ChangesetSpecCommit
+	Diffs          ChangesetSpecDiffs
+}
+
+type ChangesetSpecDiffs struct {
+	FileDiffs ChangesetSpecFileDiffs
+}
+
+type ChangesetSpecFileDiffs struct {
+	RawDiff string
+}
+
+type ChangesetSpecCommit struct {
+	Message string
+	Subject string
+	Body    string
+	Author  ChangesetSpecCommitAuthor
+}
+
+type ChangesetSpecCommitAuthor struct {
+	Name  string
+	Email string
+}
+
+type ChangesetRepository struct {
+	Name string
 }
 
 func (c *Client) GetBatchSpecDeep(batchSpec string) (*BatchSpecDeep, error) {
 	variables := map[string]any{
-		"batchSpec": batchSpec,
+		"id": batchSpec,
 	}
 	var resp struct {
 		Data struct {
