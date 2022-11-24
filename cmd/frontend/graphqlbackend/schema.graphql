@@ -618,11 +618,6 @@ type Mutation {
     ): EmptyResponse!
 
     """
-    Set the repos synced by an external service
-    """
-    setExternalServiceRepos(id: ID!, repos: [String!], allRepos: Boolean!): EmptyResponse!
-
-    """
     Updates an out-of-band migration to run in a particular direction.
 
     Applied in the forward direction, an out-of-band migration migrates data into a format that
@@ -1495,12 +1490,6 @@ type Query {
         """
         name: String!
     ): Namespace
-
-    """
-    Repos affiliated with the namespace (a user or an organization) & code hosts, these repos are not necessarily synced,
-    but ones that the configured code hosts are able to see.
-    """
-    affiliatedRepositories(namespace: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
 
     """
     Returns true if any of the code hosts supplied are syncing now or within "seconds" from now.
@@ -5831,10 +5820,6 @@ type Org implements Node & SettingsSubject & Namespace {
     """
     viewerIsMember: Boolean!
     """
-    Whether the viewer needs to update their code host connection.
-    """
-    viewerNeedsCodeHostUpdate: Boolean!
-    """
     The URL to the organization.
     """
     url: String!
@@ -7842,39 +7827,6 @@ type EventLogsConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
-}
-
-"""
-A list of code host repositories
-"""
-type CodeHostRepositoryConnection {
-    """
-    Errors returned from the code host.
-    """
-    codeHostErrors: [String!]!
-
-    """
-    A list of repositories affiliated with a code host.
-    """
-    nodes: [CodeHostRepository!]!
-}
-
-"""
-A repository returned directly from a code host
-"""
-type CodeHostRepository {
-    """
-    The Name "owner/reponame" of the repo
-    """
-    name: String!
-    """
-    The code host the repo came from
-    """
-    codeHost: ExternalService
-    """
-    Is the repo private
-    """
-    private: Boolean!
 }
 
 """

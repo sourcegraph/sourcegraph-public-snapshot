@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
@@ -35,7 +36,6 @@ import (
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -1981,37 +1981,48 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 
-	svcs := typestest.MakeExternalServices()
-
 	t.Run("no external services", func(t *testing.T) {
+		db := NewDB(logger, dbtest.NewDB(logger, t))
 		if err := db.ExternalServices().Upsert(ctx); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
 	})
 
-	t.Run("one external service", func(t *testing.T) {
-		tx, err := db.ExternalServices().Transact(ctx)
-		if err != nil {
-			t.Fatalf("Transact error: %s", err)
-		}
-		defer func() {
-			err = tx.Done(err)
-			if err != nil {
-				t.Fatalf("Done error: %s", err)
+	t.Run("validation", func(t *testing.T) {
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+		store := db.ExternalServices()
+
+		t.Run("config can't be empty", func(t *testing.T) {
+			want := typestest.MakeGitLabExternalService()
+
+			want.Config.Set("")
+
+			if err := store.Upsert(ctx, want); err == nil {
+				t.Fatalf("Wanted an error")
 			}
-		}()
+		})
 
-		svc := svcs[1]
-		if svc.Kind != extsvc.KindGitLab {
-			t.Fatalf("expected external service at [1] to be GitLab; got %s", svc.Kind)
-		}
+		t.Run("config can't be only comments", func(t *testing.T) {
+			want := typestest.MakeGitLabExternalService()
+			want.Config.Set(`// {}`)
 
-		if err := tx.Upsert(ctx, svc); err != nil {
+			if err := store.Upsert(ctx, want); err == nil {
+				t.Fatalf("Wanted an error")
+			}
+		})
+
+	})
+
+	t.Run("one external service", func(t *testing.T) {
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+		store := db.ExternalServices()
+
+		svc := typestest.MakeGitLabExternalService()
+		if err := store.Upsert(ctx, svc); err != nil {
 			t.Fatalf("upsert error: %v", err)
 		}
 		if *svc.HasWebhooks != false {
@@ -2025,7 +2036,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		// Add webhooks to the config and upsert.
 		svc.Config.Set(`{"webhooks":[{"secret": "secret"}],` + cfg[1:])
-		if err := tx.Upsert(ctx, svc); err != nil {
+		if err := store.Upsert(ctx, svc); err != nil {
 			t.Fatalf("upsert error: %v", err)
 		}
 		if *svc.HasWebhooks != true {
@@ -2034,32 +2045,13 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("many external services", func(t *testing.T) {
-		user, err := db.Users().Create(ctx, NewUser{Username: "alice"})
-		if err != nil {
-			t.Fatalf("Test setup error %s", err)
-		}
-		org, err := db.Orgs().Create(ctx, "acme", nil)
-		if err != nil {
-			t.Fatalf("Test setup error %s", err)
-		}
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+		store := db.ExternalServices()
 
-		namespacedSvcs := typestest.MakeNamespacedExternalServices(user.ID, org.ID)
+		svcs := typestest.MakeExternalServices()
+		want := typestest.GenerateExternalServices(11, svcs...)
 
-		tx, err := db.ExternalServices().Transact(ctx)
-		if err != nil {
-			t.Fatalf("Transact error: %s", err)
-		}
-		defer func() {
-			err = tx.Done(err)
-			if err != nil {
-				t.Fatalf("Done error: %s", err)
-			}
-		}()
-
-		services := append(svcs, namespacedSvcs...)
-		want := typestest.GenerateExternalServices(11, services...)
-
-		if err := tx.Upsert(ctx, want...); err != nil {
+		if err := store.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
 
@@ -2072,15 +2064,12 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		sort.Sort(want)
 
-		have, err := tx.List(ctx, ExternalServicesListOptions{
-			Kinds: services.Kinds(),
-		})
+		have, err := store.List(ctx, ExternalServicesListOptions{Kinds: svcs.Kinds()})
 		if err != nil {
 			t.Fatalf("List error: %s", err)
 		}
 
 		sort.Sort(types.ExternalServices(have))
-
 		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
 			t.Fatalf("List:\n%s", diff)
 		}
@@ -2094,10 +2083,10 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			r.CreatedAt = now
 		}
 
-		if err = tx.Upsert(ctx, want...); err != nil {
+		if err = store.Upsert(ctx, want...); err != nil {
 			t.Errorf("Upsert error: %s", err)
 		}
-		have, err = tx.List(ctx, ExternalServicesListOptions{})
+		have, err = store.List(ctx, ExternalServicesListOptions{})
 		if err != nil {
 			t.Fatalf("List error: %s", err)
 		}
@@ -2110,12 +2099,12 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		// Delete external services
 		for _, es := range want {
-			if err := tx.Delete(ctx, es.ID); err != nil {
+			if err := store.Delete(ctx, es.ID); err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		have, err = tx.List(ctx, ExternalServicesListOptions{})
+		have, err = store.List(ctx, ExternalServicesListOptions{})
 		if err != nil {
 			t.Errorf("List error: %s", err)
 		}
@@ -2127,75 +2116,14 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		}
 	})
 
-	t.Run("config can't be empty", func(t *testing.T) {
-		tx, err := db.ExternalServices().WithEncryptionKey(et.TestKey{}).Transact(ctx)
-		if err != nil {
-			t.Fatalf("Transact error: %s", err)
-		}
-		defer func() {
-			err = tx.Done(err)
-			if err != nil {
-				t.Fatalf("Done error: %s", err)
-			}
-		}()
-
-		want := typestest.GenerateExternalServices(1, svcs...)
-		oldValue, err := want[0].Config.Decrypt(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Cleanup(func() {
-			want[0].Config.Set(oldValue)
-		})
-		want[0].Config.Set("")
-
-		if err := tx.Upsert(ctx, want...); err == nil {
-			t.Fatalf("Wanted an error")
-		}
-	})
-
-	t.Run("config can't be only comments", func(t *testing.T) {
-		tx, err := db.ExternalServices().WithEncryptionKey(et.TestKey{}).Transact(ctx)
-		if err != nil {
-			t.Fatalf("Transact error: %s", err)
-		}
-		defer func() {
-			err = tx.Done(err)
-			if err != nil {
-				t.Fatalf("Done error: %s", err)
-			}
-		}()
-
-		want := typestest.GenerateExternalServices(1, svcs...)
-		oldValue, err := want[0].Config.Decrypt(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Cleanup(func() {
-			want[0].Config.Set(oldValue)
-		})
-		want[0].Config.Set(`// {}`)
-
-		if err := tx.Upsert(ctx, want...); err == nil {
-			t.Fatalf("Wanted an error")
-		}
-	})
-
 	t.Run("with encryption key", func(t *testing.T) {
-		tx, err := db.ExternalServices().WithEncryptionKey(et.TestKey{}).Transact(ctx)
-		if err != nil {
-			t.Fatalf("Transact error: %s", err)
-		}
-		defer func() {
-			err = tx.Done(err)
-			if err != nil {
-				t.Fatalf("Done error: %s", err)
-			}
-		}()
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+		store := db.ExternalServices().WithEncryptionKey(et.TestKey{})
 
+		svcs := typestest.MakeExternalServices()
 		want := typestest.GenerateExternalServices(7, svcs...)
 
-		if err := tx.Upsert(ctx, want...); err != nil {
+		if err := store.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
 		for _, e := range want {
@@ -2206,7 +2134,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		}
 
 		// values encrypted should not be readable without the encrypting key
-		noopStore := ExternalServicesWith(logger, tx).WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
+		noopStore := ExternalServicesWith(logger, store).WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
 
 		for _, e := range want {
 			svc, err := noopStore.GetByID(ctx, e.ID)
@@ -2218,9 +2146,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			}
 		}
 
-		have, err := tx.List(ctx, ExternalServicesListOptions{
-			Kinds: svcs.Kinds(),
-		})
+		have, err := store.List(ctx, ExternalServicesListOptions{Kinds: svcs.Kinds()})
 		if err != nil {
 			t.Fatalf("List error: %s", err)
 		}
@@ -2241,10 +2167,10 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			r.CreatedAt = now
 		}
 
-		if err = tx.Upsert(ctx, want...); err != nil {
+		if err = store.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
-		have, err = tx.List(ctx, ExternalServicesListOptions{})
+		have, err = store.List(ctx, ExternalServicesListOptions{})
 		if err != nil {
 			t.Fatalf("List error: %s", err)
 		}
@@ -2257,18 +2183,17 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		// Delete external services
 		for _, es := range want {
-			if err := tx.Delete(ctx, es.ID); err != nil {
+			if err := store.Delete(ctx, es.ID); err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		have, err = tx.List(ctx, ExternalServicesListOptions{})
+		have, err = store.List(ctx, ExternalServicesListOptions{})
 		if err != nil {
 			t.Errorf("List error: %s", err)
 		}
 
 		sort.Sort(types.ExternalServices(have))
-
 		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
 			t.Errorf("List:\n%s", diff)
 		}
