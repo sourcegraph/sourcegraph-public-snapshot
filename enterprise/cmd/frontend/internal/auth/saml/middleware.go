@@ -53,17 +53,23 @@ func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next ht
 	}
 
 	// If the actor is authenticated and not performing a SAML operation, then proceed to next.
+	//
+	// If a sign-out cookie has been set during a previous sign-out request,
+	// here's where we remove it by setting MaxAge < 0.
 	if actor.FromContext(r.Context()).IsAuthenticated() {
+		if common.HasSignOutCookie(r) {
+			http.SetCookie(w, &http.Cookie{Name: common.SignoutCookie, Value: "", MaxAge: -1})
+		}
+
 		next.ServeHTTP(w, r)
 		return
 	}
 
 	// If there is only one auth provider configured, the single auth provider is SAML, it's an
-	// app request, and the session cookie is present, redirect to signin immediately.
+	// app request, and the sign-out cookie is not present, redirect to the sso sign-in immediately.
 	//
-	// For sign-out requests, the session cookie won't be present and this "if" condition won't apply.
-	// In that case, instead of a redirect to the sso sign-in, the user will be redirected to the SG login page.
-	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Saml != nil && common.HasSessionCookie(r) && !isAPIRequest {
+	// For sign-out requests (sign-out cookie is  present), the user will be redirected to the Sourcegraph login page.
+	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Saml != nil && !common.HasSignOutCookie(r) && !isAPIRequest {
 		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
 		if handled {
 			return

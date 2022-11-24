@@ -1,8 +1,15 @@
 package common
 
-import "net/http"
+import (
+	"net/http"
+)
 
-func HasSessionCookie(r *http.Request) bool {
-	_, err := r.Cookie("sgs")
-	return err == nil
+const SignoutCookie = "sg-signout"
+
+func HasSignOutCookie(r *http.Request) bool {
+	ck, err := r.Cookie(SignoutCookie)
+	if err != nil {
+		return false
+	}
+	return ck != nil
 }

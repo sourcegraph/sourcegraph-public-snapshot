@@ -86,17 +86,23 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 
 	// If the actor is authenticated and not performing an OpenID Connect flow, then proceed to
 	// next.
+	//
+	// If a sign-out cookie has been set during a previous sign-out request,
+	// here's where we remove it by setting MaxAge < 0.
 	if actor.FromContext(r.Context()).IsAuthenticated() {
+		if common.HasSignOutCookie(r) {
+			http.SetCookie(w, &http.Cookie{Name: common.SignoutCookie, Value: "", MaxAge: -1})
+		}
+
 		next.ServeHTTP(w, r)
 		return
 	}
 
 	// If there is only one auth provider configured, the single auth provider is OpenID Connect,
-	// it's an app request, and the session cookie is present, redirect to signin immediately.
+	// it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
 	//
-	// For sign-out requests, the session cookie won't be present and this "if" condition won't apply.
-	// In this case, instead of a redirect to the sso sign-in, the user will be redirected to the SG login page.
-	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && common.HasSessionCookie(r) && !isAPIRequest {
+	// For sign-out requests (sign-out cookie is  present), the user is redirected to the Sourcegraph login page.
+	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && !common.HasSignOutCookie(r) && !isAPIRequest {
 		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
 		if err != nil {
 			log15.Error("Failed to get provider", "error", err)
