@@ -922,61 +922,6 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, syncGroups map[requestType]
 	// desired to abort and give up any running jobs ASAP upon quitting the program.
 }
 
-func (s *PermsSyncer) runSync(ctx context.Context) {
-	logger := s.logger.Scoped("runSync", "routine to start processing the sync request queue")
-	defer logger.Info("stopped")
-
-	userMaxConcurrency := syncUsersMaxConcurrency()
-	logger.Debug("started", log.Int("syncUsersMaxConcurrency", userMaxConcurrency))
-
-	syncGroups := map[requestType]group.ContextGroup{
-		requestTypeUser: group.New().WithContext(ctx).WithMaxConcurrency(userMaxConcurrency),
-
-		// NOTE: This is not strictly needed as part of effort for
-		// https://github.com/sourcegraph/sourcegraph/issues/37918, but doing it this way
-		// has much simpler code logic and is much easier to reason about the behavior.
-		//
-		// It is also worth noting that naively increasing the max concurrency of
-		// repo-centric syncing for GitHub may not work as intended because all sync jobs
-		// derived from the same code host connection is sharing the same personal access
-		// token and its concurrency throttled to 1 by the github-proxy in the current
-		// architecture.
-		requestTypeRepo: group.New().WithContext(ctx).WithMaxConcurrency(1),
-	}
-
-	// To unblock the "select" on the next loop iteration if no enqueue happened in between.
-	notifyDequeued := make(chan struct{}, 1)
-	for {
-		select {
-		case <-notifyDequeued:
-		case <-s.queue.notifyEnqueue:
-		case <-ctx.Done():
-			return
-		}
-
-		request := s.queue.acquireNext()
-		if request == nil {
-			// No waiting request is in the queue
-			continue
-		}
-
-		// Check if it's the time to sync the request
-		if wait := request.NextSyncAt.Sub(s.clock()); wait > 0 {
-			s.queue.release(request.Type, request.ID)
-			time.AfterFunc(wait, func() {
-				notify(s.queue.notifyEnqueue)
-			})
-
-			logger.Debug("waitForNextSync", log.Duration("duration", wait))
-			continue
-		}
-
-		notify(notifyDequeued)
-
-		s.syncPerms(ctx, syncGroups, request)
-	}
-}
-
 // scheduleUsersWithNoPerms returns computed schedules for users who have no
 // permissions found in database.
 func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduledUser, error) {
@@ -1310,7 +1255,7 @@ func (s *PermsSyncer) collectMetrics(ctx context.Context) {
 // Run kicks off the permissions syncing process, this method is blocking and
 // should be called as a goroutine.
 func (s *PermsSyncer) Run(ctx context.Context) {
-	go s.runSync(ctx)
+	// go s.runSync(ctx)
 	go s.runSchedule(ctx)
 	go s.recordsStore.Watch(conf.DefaultClient())
 
