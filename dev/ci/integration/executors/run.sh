@@ -24,8 +24,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-export SERVER_IMAGE="us.gcr.io/sourcegraph-dev/server:${CANDIDATE_VERSION}"
-export EXECUTOR_IMAGE="us.gcr.io/sourcegraph-dev/executor:${CANDIDATE_VERSION}"
+export SERVER_IMAGE="us.gcr.io/sourcegraph-dev/server:${SERVER_CANDIDATE_VERSION}"
+export EXECUTOR_IMAGE="us.gcr.io/sourcegraph-dev/executor:${EXECUTOR_CANDIDATE_VERSION}"
 export EXECUTOR_FRONTEND_PASSWORD="hunter2hunter2hunter2"
 export SOURCEGRAPH_LICENSE_GENERATION_KEY="${SOURCEGRAPH_LICENSE_GENERATION_KEY:-""}"
 export TMP_DIR
