@@ -251,7 +251,7 @@ import (
 
 func scanExampleJob(s dbutil.Scanner) (*ExampleJob, error) {
   var job ExampleJob
-  var executionLogs []workerutil.ExecutionLogEntry
+  var executionLogs []dbworkerstore.ExecutionLogEntry
 
   if err := s.Scan(
     &job.ID,
@@ -291,8 +291,8 @@ import (
   dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func makeStore(db dbutil.DB) dbworkerstore.Store[*ExampleJob] {
-  return store.New(db, store.Options{
+func makeStore(logger log.Logger, dbHandle basestore.TransactableHandle) dbworkerstore.Store[*ExampleJob] {
+  return dbworkerstore.New(logger, dbHandle, store.Options[*ExampleJob]{
     Name:              "example_job_worker_store",
     TableName:         "example_jobs",
     ViewName:          "example_jobs_with_repository_name example_jobs",
@@ -300,9 +300,7 @@ func makeStore(db dbutil.DB) dbworkerstore.Store[*ExampleJob] {
     Scan:              dbworkerstore.BuildWorkerScan(scanExampleJob),
     OrderByExpression: sqlf.Sprintf("example_jobs.repository_id, example_jobs.id"),
     MaxNumResets:      5,
-    HeartbeatInterval: time.Second,
     StalledMaxAge:     time.Second * 5,
-    CancelInterval:    time.Second,
   })
 }
 ```
