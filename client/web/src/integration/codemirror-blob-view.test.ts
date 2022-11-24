@@ -11,6 +11,7 @@ import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { WebGraphQlOperations } from '../graphql-operations'
+import { toCSSClassName } from '../lsif/utils'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
@@ -40,6 +41,7 @@ describe('CodeMirror blob view', () => {
     afterEach(() => testContext?.dispose())
 
     const repoName = 'github.com/sourcegraph/jsonrpc2'
+    const lsifSyntaxKind = SyntaxKind.Identifier
     const { graphqlResults: blobGraphqlResults, filePaths } = createBlobPageData({
         repoName,
         blobInfo: {
@@ -48,10 +50,9 @@ describe('CodeMirror blob view', () => {
                 // This is used to create a span element around the text `line1`
                 // which can later be target by tests (e.g. for hover). We
                 // cannot specify a custom CSS class to add. Using
-                // `SyntaxKind.Tag` will add the class `hl-typed-Tag`. This will
-                // break when we decide to change the class name format.
+                // `SyntaxKind.Identifier` will add the class `hl-typed-Identifier`.
                 lsif: {
-                    occurrences: [{ range: [0, 0, 5], syntaxKind: SyntaxKind.Tag }],
+                    occurrences: [{ range: [0, 0, 5], syntaxKind: lsifSyntaxKind }],
                 },
             },
             'README.md': {
@@ -80,7 +81,7 @@ describe('CodeMirror blob view', () => {
     })
 
     const blobSelector = '[data-testid="repo-blob"] .cm-editor'
-    const wordSelector = blobSelector + ' .hl-typed-Tag'
+    const wordSelector = `${blobSelector} ${toCSSClassName(lsifSyntaxKind)}`
 
     function waitForView(): Promise<EditorAPI> {
         return createEditorAPI(driver, '[data-testid="repo-blob"]')
@@ -289,9 +290,13 @@ describe('CodeMirror blob view', () => {
             return `${lineAt(line)} [data-testid=line-decoration]`
         }
 
-        describe('hovercards', () => {
+        describe.only('hovercards', () => {
             beforeEach(() => {
-                const { graphqlResults: extensionGraphQlResult, intercept, userSettings } = createExtensionData([
+                const {
+                    graphqlResults: extensionGraphQlResult,
+                    intercept,
+                    userSettings,
+                } = createExtensionData([
                     {
                         id: 'test',
                         extensionID: 'test/test',
@@ -412,7 +417,11 @@ describe('CodeMirror blob view', () => {
          * This test is meant to prevent regression: https://github.com/sourcegraph/sourcegraph/pull/15099
          */
         it('adds and clears line decoration attachments properly', async () => {
-            const { graphqlResults: extensionsGraphqlResult, intercept, userSettings } = createExtensionData([
+            const {
+                graphqlResults: extensionsGraphqlResult,
+                intercept,
+                userSettings,
+            } = createExtensionData([
                 {
                     id: 'test',
                     extensionID: 'test/fixed-line',
@@ -631,7 +640,11 @@ describe('CodeMirror blob view', () => {
              * add attachment to lines that contain a certain word.
              */
 
-            const { graphqlResults: extensionsGraphqlResult, intercept, userSettings } = createExtensionData([
+            const {
+                graphqlResults: extensionsGraphqlResult,
+                intercept,
+                userSettings,
+            } = createExtensionData([
                 {
                     id: 'word-finder',
                     extensionID: 'test/word-finder',
@@ -988,9 +1001,7 @@ interface MockExtension {
     bundle: () => void
 }
 
-function createExtensionData(
-    extensions: MockExtension[]
-): {
+function createExtensionData(extensions: MockExtension[]): {
     intercept: (testContext: WebIntegrationTestContext, driver: Driver) => void
     graphqlResults: Pick<SharedGraphQlOperations, 'Extensions'>
     userSettings: Required<Pick<Settings, 'extensions'>>

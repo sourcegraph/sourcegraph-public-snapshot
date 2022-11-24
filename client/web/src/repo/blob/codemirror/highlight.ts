@@ -4,6 +4,7 @@ import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpd
 import { logger } from '@sourcegraph/common'
 import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
+import { toCSSClassName } from '../../../lsif/utils'
 import { BlobInfo } from '../Blob'
 
 import { positionToOffset, OccurrenceIndex } from './utils'
@@ -121,7 +122,7 @@ class SyntaxHighlightManager implements PluginValue {
                     const decoration =
                         this.decorationCache[occurrence.kind] ||
                         (this.decorationCache[occurrence.kind] = Decoration.mark({
-                            class: `hl-typed-${SyntaxKind[occurrence.kind]}`,
+                            class: toCSSClassName(occurrence.kind),
                         }))
                     builder.add(from, to, decoration)
                 }

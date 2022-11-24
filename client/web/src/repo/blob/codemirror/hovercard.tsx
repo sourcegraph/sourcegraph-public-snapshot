@@ -311,7 +311,7 @@ const pinManager = ViewPlugin.fromClass(
             this.subscription = this.nextPin
                 .pipe(
                     map(pin => {
-                        if (!pin || !pin.line || !pin.character) {
+                        if (pin?.line === undefined || pin?.character === undefined) {
                             return null
                         }
 

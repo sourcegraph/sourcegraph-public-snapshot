@@ -2,6 +2,8 @@ import escape from 'escape-html'
 
 import { DocumentInfo, Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
+import { toCSSClassName } from './utils'
+
 class HtmlBuilder {
     public readonly buffer: string[] = []
     public plaintext(value: string): void {
@@ -59,9 +61,9 @@ function closeLine(html: HtmlBuilder): void {
 
 function highlightSlice(html: HtmlBuilder, kind: SyntaxKind | undefined, slice: string): void {
     if (kind) {
-        const kindName = SyntaxKind[kind]
-        if (kindName) {
-            html.span(`class="hl-typed-${kindName}"`, slice)
+        const className = toCSSClassName(kind)
+        if (className) {
+            html.span(`class="${className}"`, slice)
             return
         }
     }
