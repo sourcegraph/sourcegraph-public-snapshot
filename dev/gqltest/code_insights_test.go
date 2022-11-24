@@ -222,7 +222,7 @@ func getTitles(t *testing.T, args gqltestutil.GetDashboardArgs) []string {
 }
 
 func TestUpdateInsight(t *testing.T) {
-	t.Run("presentation metadata update only", func(t *testing.T) {
+	t.Run("metadata update only", func(t *testing.T) {
 		dataSeries := map[string]any{
 			"query": "lang:css",
 			"options": map[string]string{
@@ -230,7 +230,7 @@ func TestUpdateInsight(t *testing.T) {
 				"lineColor": "#6495ED",
 			},
 			"repositoryScope": map[string]any{
-				"repositories": []string{"github.com/sourcegraph/sourcegraph"},
+				"repositories": []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
 			},
 			"timeScope": map[string]any{
 				"stepInterval": map[string]any{
@@ -239,19 +239,19 @@ func TestUpdateInsight(t *testing.T) {
 				},
 			},
 		}
-		insight, err := client.CreateSearchInsight("my insight", dataSeries)
+		insight, err := client.CreateSearchInsight("my gqltest insight", dataSeries)
 		if err != nil {
 			t.Fatal(err)
 		}
+		if insight.InsightViewId == "" {
+			t.Fatal("Did not get an insight view ID")
+		}
 		defer func() {
-			if err := client.DisableInsightSeries(insight.SeriesId); err != nil {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
 				t.Fatalf("couldn't disable insight series: %v", err)
 			}
 		}()
 
-		if insight.InsightViewId == "" {
-			t.Error("Did not get an insight view ID")
-		}
 		if insight.Label != "insights" {
 			t.Errorf("wrong label: %v", insight.Label)
 		}
@@ -264,12 +264,16 @@ func TestUpdateInsight(t *testing.T) {
 			"label":     "insights 2",
 			"lineColor": "green",
 		}
+		// Ensure order of repositories does not affect.
+		dataSeries["repositoryScope"] = map[string]any{
+			"repositories": []string{"github.com/sourcegraph/about", "github.com/sourcegraph/sourcegraph"},
+		}
 		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
 			"dataSeries": []any{
 				dataSeries,
 			},
 			"presentationOptions": map[string]string{
-				"title": "my insight",
+				"title": "my gql test insight (modified)",
 			},
 			"viewControls": map[string]any{
 				"filters":              struct{}{},
@@ -291,6 +295,65 @@ func TestUpdateInsight(t *testing.T) {
 		}
 		if updatedInsight.Color != "green" {
 			t.Error("expected series color to be updated")
+		}
+	})
+
+	t.Run("repository change triggers insight recalculation", func(t *testing.T) {
+		dataSeries := map[string]any{
+			"query": "lang:go select:file",
+			"options": map[string]string{
+				"label":     "go files",
+				"lineColor": "#6495ED",
+			},
+			"repositoryScope": map[string]any{
+				"repositories": []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
+			},
+			"timeScope": map[string]any{
+				"stepInterval": map[string]any{
+					"unit":  "WEEK",
+					"value": 3,
+				},
+			},
+		}
+		insight, err := client.CreateSearchInsight("my gqltest insight 2", dataSeries)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if insight.InsightViewId == "" {
+			t.Fatal("Did not get an insight view ID")
+		}
+		defer func() {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+				t.Fatalf("couldn't disable insight series: %v", err)
+			}
+		}()
+
+		dataSeries["seriesId"] = insight.SeriesId
+		// Change repositories.
+		dataSeries["repositoryScope"] = map[string]any{
+			"repositories": []string{"github.com/sourcegraph/handbook", "github.com/sourcegraph/sourcegraph"},
+		}
+		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
+			"dataSeries": []any{
+				dataSeries,
+			},
+			"presentationOptions": map[string]string{
+				"title": "my gql test insight (needs recalculation)",
+			},
+			"viewControls": map[string]any{
+				"filters":              struct{}{},
+				"seriesDisplayOptions": struct{}{},
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if updatedInsight.SeriesId == insight.SeriesId {
+			t.Error("expected new series to get reused")
+		}
+		if updatedInsight.InsightViewId != insight.InsightViewId {
+			t.Error("expected updated series to be attached to same view")
 		}
 	})
 }

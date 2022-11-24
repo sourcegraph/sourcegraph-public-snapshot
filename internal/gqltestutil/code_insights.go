@@ -187,7 +187,6 @@ func (c *Client) DeleteDashboard(id string) error {
 	if err != nil {
 		return errors.Wrap(err, "request GraphQL")
 	}
-
 	return nil
 }
 
@@ -334,27 +333,22 @@ func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any)
 	}, nil
 }
 
-func (c *Client) DisableInsightSeries(seriesId string) error {
+func (c *Client) DeleteInsightView(insightViewId string) error {
 	const query = `
-		mutation DisableSeries ($seriesId: String!) {
-		  updateInsightSeries(input:{
-			enabled:false
-			seriesId:$seriesId
-		  }){
-			series {
-			  enabled
-			}
+		mutation DeleteInsightView ($id: ID!) {
+		  deleteInsightView(id: $id){
+			alwaysNil
 		  }
 		}
 	`
 	variables := map[string]any{
-		"seriesId": seriesId,
+		"id": insightViewId,
 	}
 	var resp struct {
 		Data struct {
-			Series struct {
-				Enabled bool `json:"enabled"`
-			} `json:"series"`
+			DeleteInsightView struct {
+				AlwaysNil string `json:"alwaysNil"`
+			} `json:"deleteInsightView"`
 		} `json:"data"`
 	}
 	err := c.GraphQL("", query, variables, &resp)
