@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/dghubble/gologin/github"
 	"github.com/inconshreveable/log15"
@@ -24,8 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -177,92 +174,6 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	// On failure, return the first error
 	return nil, fmt.Sprintf("No user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
-}
-
-func (s *sessionIssuerHelper) CreateCodeHostConnection(ctx context.Context, token *oauth2.Token, providerID string) (svc *types.ExternalService, safeErrMsg string, err error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, "Must be authenticated to create code host connection from OAuth flow.", errors.New("unauthenticated request")
-	}
-
-	p := oauth.GetProvider(extsvc.TypeGitHub, providerID)
-	if p == nil {
-		return nil, "Could not find OAuth provider for the state.", errors.Errorf("provider not found for %q", providerID)
-	}
-
-	ghUser, err := github.UserFromContext(ctx)
-	if ghUser == nil {
-		if err != nil {
-			err = errors.Wrap(err, "could not read user from context")
-		} else {
-			err = errors.New("could not read user from context")
-		}
-		return nil, "Could not read GitHub user from callback request.", err
-	}
-
-	// We have a special flow enabled when a user added code host has been created
-	// without `repo` scope and we then enable private code on the instance. In this
-	// case we allow the user to request the additional scope. This means that at
-	// this point we may already have a code host and we just need to update the
-	// token with the new one.
-
-	tx, err := s.db.ExternalServices().Transact(ctx)
-	if err != nil {
-		return
-	}
-	defer func() {
-		err = tx.Done(err)
-		safeErrMsg = "Error committing transaction"
-	}()
-
-	services, err := tx.List(ctx, database.ExternalServicesListOptions{
-		NamespaceUserID: actor.UID,
-		Kinds:           []string{extsvc.KindGitHub},
-	})
-	if err != nil {
-		return nil, "Error checking for existing external service", err
-	}
-	now := time.Now()
-	if len(services) == 0 {
-		// Nothing found, create new one
-		svc = &types.ExternalService{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: fmt.Sprintf("GitHub (%s)", deref(ghUser.Login)),
-			Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
-{
-  "url": "%s",
-  "token": "%s",
-  "orgs": []
-}
-`, p.ServiceID, token.AccessToken)),
-			NamespaceUserID: actor.UID,
-			CreatedAt:       now,
-			UpdatedAt:       now,
-		}
-	} else if len(services) > 1 {
-		return nil, "Multiple services of same kind found for user", errors.New("multiple services of same kind found for user")
-	} else {
-		// We have an existing service, update it
-		svc = services[0]
-
-		rawConfig, err := svc.Config.Decrypt(ctx)
-		if err != nil {
-			return nil, "", err
-		}
-
-		rawConfig, err = jsonc.Edit(rawConfig, token.AccessToken, "token")
-		if err != nil {
-			return nil, "Error updating OAuth token", err
-		}
-		svc.Config.Set(rawConfig)
-		svc.UpdatedAt = now
-	}
-
-	err = tx.Upsert(ctx, svc)
-	if err != nil {
-		return nil, "Could not create code host connection.", err
-	}
-	return svc, "", nil // success
 }
 
 func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {

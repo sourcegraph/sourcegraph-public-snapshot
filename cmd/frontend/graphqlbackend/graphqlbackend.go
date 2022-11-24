@@ -822,49 +822,6 @@ func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error)
 	return CurrentUser(ctx, r.db)
 }
 
-func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struct {
-	Namespace graphql.ID
-	CodeHost  *graphql.ID
-	Query     *string
-}) (*affiliatedRepositoriesConnection, error) {
-	var userID, orgID int32
-	err := UnmarshalNamespaceID(args.Namespace, &userID, &orgID)
-	if err != nil {
-		return nil, err
-	}
-	if userID > 0 {
-		// 🚨 SECURITY: Make sure the user is the same user being requested
-		if err := auth.CheckSameUser(ctx, userID); err != nil {
-			return nil, err
-		}
-	}
-	if orgID > 0 {
-		// 🚨 SECURITY: Make sure the user can access the organization
-		if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
-			return nil, err
-		}
-	}
-	var codeHost int64
-	if args.CodeHost != nil {
-		codeHost, err = UnmarshalExternalServiceID(*args.CodeHost)
-		if err != nil {
-			return nil, err
-		}
-	}
-	var query string
-	if args.Query != nil {
-		query = *args.Query
-	}
-
-	return &affiliatedRepositoriesConnection{
-		db:       r.db,
-		userID:   userID,
-		orgID:    orgID,
-		codeHost: codeHost,
-		query:    query,
-	}, nil
-}
-
 // CodeHostSyncDue returns true if any of the supplied code hosts are due to sync
 // now or within "seconds" from now.
 func (r *schemaResolver) CodeHostSyncDue(ctx context.Context, args *struct {
