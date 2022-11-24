@@ -196,7 +196,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
         <nav data-testid="repo-header" className={classNames('navbar navbar-expand', styles.repoHeader)}>
             <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
-                <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} />
+                <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} className="flex-nowrap" />
             </div>
             <ul className="navbar-nav">
                 {leftActions.map((a, index) => (
