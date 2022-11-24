@@ -73,14 +73,15 @@ func TestNewPlanJob(t *testing.T) {
             (repoOpts.searchContextSpec . @userA)
             (PARTIALREPOS
               (SEARCHERTEXTSEARCH
-                (indexed . false)))))
+                (indexed . false))))
+          (REPOSEARCH
+            (repoOpts.repoFilters.0 . foo)(repoOpts.searchContextSpec . @userA)
+            (repoNamePatterns . [(?i)foo])))
         (REPOSCOMPUTEEXCLUDED
           (repoOpts.searchContextSpec . @userA))
         (PARALLEL
           NoopJob
-          (REPOSEARCH
-            (repoOpts.repoFilters.0 . foo)(repoOpts.searchContextSpec . @userA)
-            (repoNamePatterns . [(?i)foo])))))))`),
+          NoopJob)))))`),
 	}, {
 		query:      `foo context:global`,
 		protocol:   search.Streaming,
@@ -95,15 +96,18 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       (limit . 500)
       (PARALLEL
-        (ZOEKTGLOBALTEXTSEARCH
-          (query . substr:"foo")
-          (type . text)
-          (repoOpts.searchContextSpec . global))
+        (SEQUENTIAL
+          (ensureUnique . false)
+          (ZOEKTGLOBALTEXTSEARCH
+            (query . substr:"foo")
+            (type . text)
+            (repoOpts.searchContextSpec . global))
+          (REPOSEARCH
+            (repoOpts.repoFilters.0 . foo)(repoOpts.searchContextSpec . global)
+            (repoNamePatterns . [(?i)foo])))
         (REPOSCOMPUTEEXCLUDED
           (repoOpts.searchContextSpec . global))
-        (REPOSEARCH
-          (repoOpts.repoFilters.0 . foo)(repoOpts.searchContextSpec . global)
-          (repoNamePatterns . [(?i)foo]))))))`),
+        NoopJob))))`),
 	}, {
 		query:      `foo`,
 		protocol:   search.Streaming,
@@ -118,15 +122,18 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       (limit . 500)
       (PARALLEL
-        (ZOEKTGLOBALTEXTSEARCH
-          (query . substr:"foo")
-          (type . text)
-          )
+        (SEQUENTIAL
+          (ensureUnique . false)
+          (ZOEKTGLOBALTEXTSEARCH
+            (query . substr:"foo")
+            (type . text)
+            )
+          (REPOSEARCH
+            (repoOpts.repoFilters.0 . foo)
+            (repoNamePatterns . [(?i)foo])))
         (REPOSCOMPUTEEXCLUDED
           )
-        (REPOSEARCH
-          (repoOpts.repoFilters.0 . foo)
-          (repoNamePatterns . [(?i)foo]))))))`),
+        NoopJob))))`),
 	}, {
 		query:      `foo repo:sourcegraph/sourcegraph`,
 		protocol:   search.Streaming,
@@ -153,14 +160,15 @@ func TestNewPlanJob(t *testing.T) {
             (repoOpts.repoFilters.0 . sourcegraph/sourcegraph)
             (PARTIALREPOS
               (SEARCHERTEXTSEARCH
-                (indexed . false)))))
+                (indexed . false))))
+          (REPOSEARCH
+            (repoOpts.repoFilters.0 . sourcegraph/sourcegraph)(repoOpts.repoFilters.1 . foo)
+            (repoNamePatterns . [(?i)sourcegraph/sourcegraph (?i)foo])))
         (REPOSCOMPUTEEXCLUDED
           (repoOpts.repoFilters.0 . sourcegraph/sourcegraph))
         (PARALLEL
           NoopJob
-          (REPOSEARCH
-            (repoOpts.repoFilters.0 . sourcegraph/sourcegraph)(repoOpts.repoFilters.1 . foo)
-            (repoNamePatterns . [(?i)sourcegraph/sourcegraph (?i)foo])))))))`),
+          NoopJob)))))`),
 	}, {
 		query:      `ok ok`,
 		protocol:   search.Streaming,
@@ -175,15 +183,18 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       (limit . 500)
       (PARALLEL
-        (ZOEKTGLOBALTEXTSEARCH
-          (query . regex:"ok(?-s:.)*?ok")
-          (type . text)
-          )
+        (SEQUENTIAL
+          (ensureUnique . false)
+          (ZOEKTGLOBALTEXTSEARCH
+            (query . regex:"ok(?-s:.)*?ok")
+            (type . text)
+            )
+          (REPOSEARCH
+            (repoOpts.repoFilters.0 . (?:ok).*?(?:ok))
+            (repoNamePatterns . [(?i)(?:ok).*?(?:ok)])))
         (REPOSCOMPUTEEXCLUDED
           )
-        (REPOSEARCH
-          (repoOpts.repoFilters.0 . (?:ok).*?(?:ok))
-          (repoNamePatterns . [(?i)(?:ok).*?(?:ok)]))))))`),
+        NoopJob))))`),
 	}, {
 		query:      `ok @thing`,
 		protocol:   search.Streaming,
@@ -198,15 +209,18 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       (limit . 500)
       (PARALLEL
-        (ZOEKTGLOBALTEXTSEARCH
-          (query . substr:"ok @thing")
-          (type . text)
-          )
+        (SEQUENTIAL
+          (ensureUnique . false)
+          (ZOEKTGLOBALTEXTSEARCH
+            (query . substr:"ok @thing")
+            (type . text)
+            )
+          (REPOSEARCH
+            (repoOpts.repoFilters.0 . ok )
+            (repoNamePatterns . [(?i)ok ])))
         (REPOSCOMPUTEEXCLUDED
           )
-        (REPOSEARCH
-          (repoOpts.repoFilters.0 . ok )
-          (repoNamePatterns . [(?i)ok ]))))))`),
+        NoopJob))))`),
 	}, {
 		query:      `@nope`,
 		protocol:   search.Streaming,
@@ -366,7 +380,10 @@ func TestNewPlanJob(t *testing.T) {
             (repoOpts.repoFilters.0 . test)
             (PARTIALREPOS
               (SEARCHERTEXTSEARCH
-                (indexed . false)))))
+                (indexed . false))))
+          (REPOSEARCH
+            (repoOpts.repoFilters.0 . test)(repoOpts.repoFilters.1 . test)
+            (repoNamePatterns . [(?i)test (?i)test])))
         (REPOPAGER
           (repoOpts.repoFilters.0 . test)
           (PARTIALREPOS
@@ -388,9 +405,7 @@ func TestNewPlanJob(t *testing.T) {
                 (patternInfo.pattern . test)(patternInfo.isRegexp . true)(patternInfo.fileMatchLimit . 500)(patternInfo.patternMatchesPath . true)
                 (numRepos . 0)
                 (limit . 500))))
-          (REPOSEARCH
-            (repoOpts.repoFilters.0 . test)(repoOpts.repoFilters.1 . test)
-            (repoNamePatterns . [(?i)test (?i)test])))))))`),
+          NoopJob)))))`),
 	}, {
 		query:      `type:file type:commit test`,
 		protocol:   search.Streaming,
@@ -443,7 +458,10 @@ func TestNewPlanJob(t *testing.T) {
             (repoOpts.repoFilters.0 . test)
             (PARTIALREPOS
               (SEARCHERTEXTSEARCH
-                (indexed . false)))))
+                (indexed . false))))
+          (REPOSEARCH
+            (repoOpts.repoFilters.0 . test)(repoOpts.repoFilters.1 . test)
+            (repoNamePatterns . [(?i)test (?i)test])))
         (REPOPAGER
           (repoOpts.repoFilters.0 . test)
           (PARTIALREPOS
@@ -465,9 +483,7 @@ func TestNewPlanJob(t *testing.T) {
                 (patternInfo.pattern . test)(patternInfo.isRegexp . true)(patternInfo.fileMatchLimit . 500)(patternInfo.patternMatchesPath . true)
                 (numRepos . 0)
                 (limit . 500))))
-          (REPOSEARCH
-            (repoOpts.repoFilters.0 . test)(repoOpts.repoFilters.1 . test)
-            (repoNamePatterns . [(?i)test (?i)test])))))))`),
+          NoopJob)))))`),
 	}, {
 		query:      `(type:commit or type:diff) (a or b)`,
 		protocol:   search.Streaming,
