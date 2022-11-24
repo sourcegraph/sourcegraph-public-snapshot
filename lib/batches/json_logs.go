@@ -226,7 +226,7 @@ type TaskStepMetadata struct {
 	Error    string
 }
 
-func (m *TaskStepMetadata) MarshalJSON() ([]byte, error) {
+func (m TaskStepMetadata) MarshalJSON() ([]byte, error) {
 	if m.Version == 2 {
 		return json.Marshal(v2TaskStepMetadata{
 			Version:   2,

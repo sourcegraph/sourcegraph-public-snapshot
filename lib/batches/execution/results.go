@@ -24,7 +24,7 @@ type AfterStepResult struct {
 	Outputs map[string]any `json:"outputs"`
 }
 
-func (a *AfterStepResult) MarshalJSON() ([]byte, error) {
+func (a AfterStepResult) MarshalJSON() ([]byte, error) {
 	if a.Version == 2 {
 		return json.Marshal(v2AfterStepResult{
 			Version:      a.Version,

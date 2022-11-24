@@ -127,7 +127,7 @@ type GitCommitDescription struct {
 	AuthorEmail string `json:"authorEmail,omitempty"`
 }
 
-func (a *GitCommitDescription) MarshalJSON() ([]byte, error) {
+func (a GitCommitDescription) MarshalJSON() ([]byte, error) {
 	if a.Version == 2 {
 		return json.Marshal(v2GitCommitDescription{
 			Version:     a.Version,
