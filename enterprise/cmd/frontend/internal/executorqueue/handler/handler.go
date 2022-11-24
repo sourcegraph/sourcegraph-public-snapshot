@@ -86,7 +86,7 @@ func (h *handler[T]) dequeue(ctx context.Context, metadata executorMetadata) (_ 
 	version2Supported := false
 	if metadata.Version != "" {
 		var err error
-		version2Supported, err = api.CheckSourcegraphVersion(metadata.Version, "4.4.0-0", "2022-11-24")
+		version2Supported, err = api.CheckSourcegraphVersion(metadata.Version, "4.3.0-0", "2022-11-24")
 		if err != nil {
 			return apiclient.Job{}, false, err
 		}
