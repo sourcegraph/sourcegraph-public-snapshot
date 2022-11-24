@@ -21,7 +21,7 @@ The **handler** is responsible for handling a single job once dequeued from the 
 Before the worker dequeues the next job, the _pre dequeue_ hook (if defined) is invoked. The hook has the following signature:
 
 ```go
-func (h *myHandler) PreDequeue(context.Context, logger log.Logger) (dequeueable bool, extraDequeueArguments interface{}, err error) {
+func (h *myHandler) PreDequeue(ctx context.Context, logger log.Logger) (dequeueable bool, extraDequeueArguments interface{}, err error) {
   // configure conditional job selection
   return true, nil, nil
 }
@@ -188,6 +188,8 @@ import (
   "time"
 
   "github.com/keegancsmith/sqlf"
+  
+  "github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type ExampleJob struct {
@@ -249,7 +251,7 @@ import (
 
 func scanExampleJob(s dbutil.Scanner) (*ExampleJob, error) {
   var job ExampleJob
-  var executionLogs []dbworkerstore.ExecutionLogEntry
+  var executionLogs []workerutil.ExecutionLogEntry
 
   if err := s.Scan(
     &job.ID,
