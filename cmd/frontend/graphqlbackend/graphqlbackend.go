@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -14,10 +13,9 @@ import (
 	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -47,7 +45,7 @@ var (
 type requestTracer struct {
 	DB     database.DB
 	tracer trace.OpenTracingTracer
-	logger sglog.Logger
+	logger log.Logger
 }
 
 func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
@@ -82,8 +80,8 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 		if err != nil {
 			t.logger.Error(
 				"failed to marshal JSON for event log argument",
-				sglog.String("eventName", eventName),
-				sglog.Error(err),
+				log.String("eventName", eventName),
+				log.Error(err),
 			)
 		}
 
@@ -103,8 +101,8 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 		if err != nil {
 			t.logger.Error(
 				"failed to log event",
-				sglog.String("eventName", eventName),
-				sglog.Error(err),
+				log.String("eventName", eventName),
+				log.Error(err),
 			)
 		}
 	}
@@ -123,19 +121,29 @@ func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, oper
 		}
 		d := time.Since(start)
 		if v := conf.Get().ObservabilityLogSlowGraphQLRequests; v != 0 && d.Milliseconds() > int64(v) {
-			encodedVariables, _ := json.Marshal(variables)
-			log15.Warn("slow GraphQL request", "time", d, "name", requestName, "userID", currentUserID, "source", requestSource, "error", err, "variables", string(encodedVariables))
+			enc, _ := json.Marshal(variables)
+			t.logger.Warn(
+				"slow GraphQL request",
+				log.Duration("duration", d),
+				log.Int32("user_id", currentUserID),
+				log.String("request_name", requestName),
+				log.String("source", string(requestSource)),
+				log.String("variables", string(enc)),
+			)
 			if requestName == "unknown" {
-				log.Printf(`logging complete query for slow GraphQL request above time=%v name=%s userID=%d source=%s error=%v:
-QUERY
------
-%s
-
-VARIABLES
----------
-%s
-
-`, d, requestName, currentUserID, requestSource, err, queryString, encodedVariables)
+				errFields := make([]string, 0, len(err))
+				for _, e := range err {
+					errFields = append(errFields, e.Error())
+				}
+				t.logger.Info(
+					"slow unknown GraphQL request",
+					log.Duration("duration", d),
+					log.Int32("user_id", currentUserID),
+					log.Strings("errors", errFields),
+					log.String("query", queryString),
+					log.String("source", string(requestSource)),
+					log.String("variables", string(enc)),
+				)
 			}
 		}
 	}
@@ -506,7 +514,7 @@ func NewSchema(
 		}
 	}
 
-	logger := sglog.Scoped("GraphQL", "general GraphQL logging")
+	logger := log.Scoped("GraphQL", "general GraphQL logging")
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
@@ -524,7 +532,7 @@ func NewSchema(
 //
 // schemaResolver must be instantiated using newSchemaResolver.
 type schemaResolver struct {
-	logger            sglog.Logger
+	logger            log.Logger
 	db                database.DB
 	gitserverClient   gitserver.Client
 	repoupdaterClient *repoupdater.Client
@@ -550,7 +558,7 @@ type schemaResolver struct {
 // defaults. It does not implement any sub-resolvers.
 func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schemaResolver {
 	r := &schemaResolver{
-		logger:            sglog.Scoped("schemaResolver", "GraphQL schema resolver"),
+		logger:            log.Scoped("schemaResolver", "GraphQL schema resolver"),
 		db:                db,
 		gitserverClient:   gitserverClient,
 		repoupdaterClient: repoupdater.DefaultClient,

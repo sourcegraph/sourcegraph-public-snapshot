@@ -18,6 +18,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -991,6 +993,87 @@ VALUES (%d, 1, ''), (%d, 2, '')
 	}
 }
 
+func TestExternalServiceStore_Delete_WithSyncJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := &externalServiceStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+	}
+	if err := store.Create(ctx, confGet, es); err != nil {
+		t.Fatal(err)
+	}
+
+	// Insert a sync job
+	syncJobID, _, err := basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, $2, now())
+RETURNING id
+`, es.ID, "processing"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// When we now delete the external service it'll mark the sync job as
+	// 'cancel = true', so in a separate goroutine we need to wait until the
+	// job is marked as cancel true and then set it to canceled
+	go func() {
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+
+		for {
+			jobCancel, _, err := basestore.ScanFirstBool(db.Handle().QueryContext(ctx, `SELECT cancel FROM external_service_sync_jobs WHERE id = $1`, syncJobID))
+			if err != nil {
+				logger.Error("querying 'cancel' failed", log.Error(err))
+				return
+			}
+			if jobCancel {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+
+		// Job has been marked as to-be-canceled, let's cancel it
+		_, err := db.Handle().ExecContext(ctx, `UPDATE external_service_sync_jobs SET state = 'canceled', finished_at = now() WHERE id = $1`, syncJobID)
+		if err != nil {
+			logger.Error("marking job as cancelled failed", log.Error(err))
+			return
+		}
+	}()
+
+	deleted := make(chan error)
+	go func() {
+		// This will block until the goroutine above has finished
+		err = db.ExternalServices().Delete(ctx, es.ID)
+		deleted <- err
+	}()
+
+	select {
+	case <-time.After(10 * time.Second):
+		t.Fatal("timeout waiting for external service deletion")
+	case err := <-deleted:
+		if err != nil {
+			t.Fatalf("deleting external service failed: %s", err)
+		}
+	}
+
+	_, err = db.ExternalServices().GetByID(ctx, es.ID)
+	if !errcode.IsNotFound(err) {
+		t.Fatal("expected an error")
+	}
+}
+
 // reposNumber is a number of repos created in one batch.
 // TestExternalServicesStore_DeleteExtServiceWithManyRepos does 5 such batches
 const reposNumber = 1000
@@ -1393,6 +1476,54 @@ VALUES ($1,$2,'errored', now())
 	}
 }
 
+func TestExternalServiceStore_HasRunningSyncJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := &externalServiceStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+	}
+	if err := store.Create(ctx, confGet, es); err != nil {
+		t.Fatal(err)
+	}
+
+	ok, err := store.hasRunningSyncJobs(ctx, es.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if ok {
+		t.Fatal("unexpected running sync jobs")
+	}
+
+	_, err = db.Handle().ExecContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, 'processing', now())
+RETURNING id
+`, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ok, err = store.hasRunningSyncJobs(ctx, es.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if !ok {
+		t.Fatal("unexpected running sync jobs")
+	}
+}
+
 func TestExternalServiceStore_CancelSyncJob(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1400,99 +1531,94 @@ func TestExternalServiceStore_CancelSyncJob(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.ExternalServices()
 	ctx := context.Background()
 
 	// Create a new external service
-	confGet := func() *conf.Unified {
-		return &conf.Unified{}
-	}
+	confGet := func() *conf.Unified { return &conf.Unified{} }
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err := store.Create(ctx, confGet, es)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Make sure "not found" is handled
-	err = db.ExternalServices().CancelSyncJob(ctx, 99999)
+	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ID: 9999})
 	if !errors.HasType(err, &errSyncJobNotFound{}) {
 		t.Fatalf("Expected not-found error, have %q", err)
 	}
-
-	// Insert 'processing' sync job that can be canceled
-	syncJobID, _, err := basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
-VALUES ($1, 'processing', now())
-RETURNING id
-`, es.ID))
+	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ExternalServiceID: 9999})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("Expected no error, but have %q", err)
 	}
 
-	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	assertCanceled := func(t *testing.T, syncJobID int64, wantState string, wantFinished bool) {
+		t.Helper()
+
+		// Make sure it was canceled
+		syncJob, err := store.GetSyncJobByID(ctx, syncJobID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !syncJob.Cancel {
+			t.Fatalf("syncjob not canceled")
+		}
+		if syncJob.State != wantState {
+			t.Fatalf("syncjob state unexpectedly changed")
+		}
+		if !wantFinished && !syncJob.FinishedAt.IsZero() {
+			t.Fatalf("syncjob finishedAt is set but should not be")
+		}
+		if wantFinished && syncJob.FinishedAt.IsZero() {
+			t.Fatalf("syncjob finishedAt is not set but should be")
+		}
+	}
+
+	insertSyncJob := func(t *testing.T, state string) int64 {
+		t.Helper()
+
+		syncJobID, _, err := basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, $2, now())
+RETURNING id
+`, es.ID, state))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return syncJobID
+	}
+
+	// Insert 'processing' sync job that can be canceled and cancel by ID
+	syncJobID := insertSyncJob(t, "processing")
+	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ID: syncJobID})
 	if err != nil {
 		t.Fatalf("Cancel failed: %s", err)
 	}
+	assertCanceled(t, syncJobID, "processing", false)
 
-	// Make sure it was canceled
-	syncJob, err := db.ExternalServices().GetSyncJobByID(ctx, syncJobID)
+	// Insert another 'processing' sync job that can be canceled, but cancel by external_service_id
+	syncJobID2 := insertSyncJob(t, "processing")
+	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ExternalServiceID: es.ID})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("Cancel failed: %s", err)
 	}
-	if !syncJob.Cancel {
-		t.Fatalf("syncjob not canceled")
-	}
-	if syncJob.State != "processing" {
-		t.Fatalf("syncjob state unexpectedly changed")
-	}
-	if !syncJob.FinishedAt.IsZero() {
-		t.Fatalf("syncjob finishedAt is set but should not be")
-	}
+	assertCanceled(t, syncJobID2, "processing", false)
 
 	// Insert 'queued' sync job that can be canceled
-	syncJobID, _, err = basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
-VALUES ($1, 'queued', now())
-RETURNING id
-`, es.ID))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	syncJobID3 := insertSyncJob(t, "queued")
+	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ID: syncJobID3})
 	if err != nil {
 		t.Fatalf("Cancel failed: %s", err)
 	}
-
-	// Make sure it was canceled
-	syncJob, err = db.ExternalServices().GetSyncJobByID(ctx, syncJobID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !syncJob.Cancel {
-		t.Fatalf("syncjob not canceled")
-	}
-	if syncJob.State != "canceled" {
-		t.Fatalf("syncjob state not changed to 'canceled'")
-	}
-	if syncJob.FinishedAt.IsZero() {
-		t.Fatalf("syncjob finishedAt is not set")
-	}
+	assertCanceled(t, syncJobID3, "canceled", true)
 
 	// Insert sync job in state that is not cancelable
-	syncJobID, _, err = basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
-VALUES ($1, 'completed', now())
-RETURNING id
-`, es.ID))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	syncJobID4 := insertSyncJob(t, "completed")
+	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ID: syncJobID4})
 	if !errors.HasType(err, &errSyncJobNotFound{}) {
 		t.Fatalf("Expected not-found error, have %q", err)
 	}

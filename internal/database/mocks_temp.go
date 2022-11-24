@@ -16877,7 +16877,7 @@ type MockExternalServiceStore struct {
 func NewMockExternalServiceStore() *MockExternalServiceStore {
 	return &MockExternalServiceStore{
 		CancelSyncJobFunc: &ExternalServiceStoreCancelSyncJobFunc{
-			defaultHook: func(context.Context, int64) (r0 error) {
+			defaultHook: func(context.Context, ExternalServicesCancelSyncJobOptions) (r0 error) {
 				return
 			},
 		},
@@ -17000,7 +17000,7 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
 	return &MockExternalServiceStore{
 		CancelSyncJobFunc: &ExternalServiceStoreCancelSyncJobFunc{
-			defaultHook: func(context.Context, int64) error {
+			defaultHook: func(context.Context, ExternalServicesCancelSyncJobOptions) error {
 				panic("unexpected invocation of MockExternalServiceStore.CancelSyncJob")
 			},
 		},
@@ -17198,15 +17198,15 @@ func NewMockExternalServiceStoreFrom(i ExternalServiceStore) *MockExternalServic
 // CancelSyncJob method of the parent MockExternalServiceStore instance is
 // invoked.
 type ExternalServiceStoreCancelSyncJobFunc struct {
-	defaultHook func(context.Context, int64) error
-	hooks       []func(context.Context, int64) error
+	defaultHook func(context.Context, ExternalServicesCancelSyncJobOptions) error
+	hooks       []func(context.Context, ExternalServicesCancelSyncJobOptions) error
 	history     []ExternalServiceStoreCancelSyncJobFuncCall
 	mutex       sync.Mutex
 }
 
 // CancelSyncJob delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockExternalServiceStore) CancelSyncJob(v0 context.Context, v1 int64) error {
+func (m *MockExternalServiceStore) CancelSyncJob(v0 context.Context, v1 ExternalServicesCancelSyncJobOptions) error {
 	r0 := m.CancelSyncJobFunc.nextHook()(v0, v1)
 	m.CancelSyncJobFunc.appendCall(ExternalServiceStoreCancelSyncJobFuncCall{v0, v1, r0})
 	return r0
@@ -17215,7 +17215,7 @@ func (m *MockExternalServiceStore) CancelSyncJob(v0 context.Context, v1 int64) e
 // SetDefaultHook sets function that is called when the CancelSyncJob method
 // of the parent MockExternalServiceStore instance is invoked and the hook
 // queue is empty.
-func (f *ExternalServiceStoreCancelSyncJobFunc) SetDefaultHook(hook func(context.Context, int64) error) {
+func (f *ExternalServiceStoreCancelSyncJobFunc) SetDefaultHook(hook func(context.Context, ExternalServicesCancelSyncJobOptions) error) {
 	f.defaultHook = hook
 }
 
@@ -17224,7 +17224,7 @@ func (f *ExternalServiceStoreCancelSyncJobFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ExternalServiceStoreCancelSyncJobFunc) PushHook(hook func(context.Context, int64) error) {
+func (f *ExternalServiceStoreCancelSyncJobFunc) PushHook(hook func(context.Context, ExternalServicesCancelSyncJobOptions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -17233,19 +17233,19 @@ func (f *ExternalServiceStoreCancelSyncJobFunc) PushHook(hook func(context.Conte
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ExternalServiceStoreCancelSyncJobFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int64) error {
+	f.SetDefaultHook(func(context.Context, ExternalServicesCancelSyncJobOptions) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ExternalServiceStoreCancelSyncJobFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int64) error {
+	f.PushHook(func(context.Context, ExternalServicesCancelSyncJobOptions) error {
 		return r0
 	})
 }
 
-func (f *ExternalServiceStoreCancelSyncJobFunc) nextHook() func(context.Context, int64) error {
+func (f *ExternalServiceStoreCancelSyncJobFunc) nextHook() func(context.Context, ExternalServicesCancelSyncJobOptions) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -17284,7 +17284,7 @@ type ExternalServiceStoreCancelSyncJobFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int64
+	Arg1 ExternalServicesCancelSyncJobOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
