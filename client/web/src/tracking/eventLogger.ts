@@ -238,7 +238,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getOriginalReferrer(): string {
         // Gets the referrer URL from the cookie
         const referrer = this.originalReferrer || cookies.get(ORIGINAL_REFERRER_KEY)
-        this.originalReferrer = referrer ? referrer : ''
+        this.originalReferrer = referrer || ''
         return this.originalReferrer
     }
 
