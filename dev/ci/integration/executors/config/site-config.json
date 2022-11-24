@@ -1,0 +1,11 @@
+{
+  "executors.accessToken": "hunter2hunter2hunter2",
+  "auth.providers": [
+    {
+      "type": "builtin",
+      "allowSignup": false
+    }
+  ],
+  "externalURL": "http://localhost:7080/",
+  "experimentalFeatures": {},
+}
