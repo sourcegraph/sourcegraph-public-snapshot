@@ -1576,10 +1576,10 @@ type Ranking struct {
 
 // RepoPurgeWorker description: Configuration for repository purge worker.
 type RepoPurgeWorker struct {
-	// DeletedTTLMintues description: Repository TTL in minutes after deletion before it becomes eligible to be purged. A migration or admin could accidentally remove all or a significant number of repositories - recloning all of them is slow, so a TTL acts as a grace period so that admins can recover from accidental deletions
-	DeletedTTLMintues int `json:"deletedTTLMintues,omitempty"`
-	// IntervalMintues description: Interval in minutes at which to run purge jobs. Set to 0 to disable.
-	IntervalMintues int `json:"intervalMintues,omitempty"`
+	// DeletedTTLMinutes description: Repository TTL in minutes after deletion before it becomes eligible to be purged. A migration or admin could accidentally remove all or a significant number of repositories - recloning all of them is slow, so a TTL acts as a grace period so that admins can recover from accidental deletions
+	DeletedTTLMinutes int `json:"deletedTTLMinutes,omitempty"`
+	// IntervalMinutes description: Interval in minutes at which to run purge jobs. Set to 0 to disable.
+	IntervalMinutes int `json:"intervalMinutes,omitempty"`
 }
 type Repos struct {
 	// Callsign description: The unique Phabricator identifier for the repository, like 'MUX'.
