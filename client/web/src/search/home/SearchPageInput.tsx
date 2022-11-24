@@ -15,7 +15,7 @@ import {
     QueryState,
     SearchModeProps,
 } from '@sourcegraph/search'
-import { SearchBox } from '@sourcegraph/search-ui'
+import { CodeMirrorQueryInputNG, SearchBox } from '@sourcegraph/search-ui'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -108,11 +108,17 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const isTouchOnlyDevice =
         !window.matchMedia('(any-pointer:fine)').matches && window.matchMedia('(any-hover:none)').matches
 
-    return (
-        <div className="d-flex flex-row flex-shrink-past-contents">
-            <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
-                <div data-search-page-input-container={true} className={styles.inputContainer}>
-                    <TraceSpanProvider name="SearchBox">
+    const input = (
+        <CodeMirrorQueryInputNG
+            patternType={patternType}
+            interpretComments={false}
+            queryState={props.queryState}
+            onChange={props.setQueryState}
+            isLightTheme={props.isLightTheme}
+            placeholder="Search for code or files"
+        />
+    )
+    /*
                         <SearchBox
                             {...props}
                             editorComponent={editorComponent}
@@ -136,6 +142,14 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
                             showSearchHistory={true}
                             recentSearches={recentSearches}
                         />
+         */
+
+    return (
+        <div className="d-flex flex-row flex-shrink-past-contents">
+            <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
+                <div data-search-page-input-container={true} className={styles.inputContainer}>
+                    <TraceSpanProvider name="SearchBox">
+                        <div className="d-flex flex-grow-1">{input}</div>
                     </TraceSpanProvider>
                 </div>
                 <Notices className="my-3 text-center" location="home" settingsCascade={props.settingsCascade} />

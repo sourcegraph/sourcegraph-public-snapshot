@@ -17,7 +17,12 @@
     "resolveJsonModule": true,
     "composite": true,
     "outDir": "out",
-    "rootDir": "."
+    "rootDir": ".",
+    "plugins": [
+      {
+        "name": "typescript-svelte-plugin"
+      }
+    ]
   },
   "watchOptions": {
     "watchFile": "useFsEvents",
