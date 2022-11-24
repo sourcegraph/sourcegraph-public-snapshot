@@ -11,7 +11,7 @@ import (
 )
 
 type outboundRequestsArgs struct {
-	After string
+	After *string
 }
 
 type OutboundRequestResolver struct {
@@ -29,7 +29,13 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 		return nil, err
 	}
 
-	result, err := httpcli.GetAllOutboundRequestLogItemsAfter(args.After, conf.Get().OutboundRequestLogLimit)
+	var after string
+	if args.After != nil {
+		after = *args.After
+	} else {
+		after = ""
+	}
+	result, err := httpcli.GetAllOutboundRequestLogItemsAfter(after, conf.Get().OutboundRequestLogLimit)
 	if err != nil {
 		return nil, err
 	}
