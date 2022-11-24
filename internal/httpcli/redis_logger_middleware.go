@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const keyPrefix = "outbound:"
@@ -115,7 +116,7 @@ func GetAllOutboundRequestLogItemsAfter(after string, limit int) ([]*types.Outbo
 func GetOutboundRequestLogItem(key string) (*types.OutboundRequestLogItem, error) {
 	rawItem, ok := redisCache.Get(key)
 	if !ok {
-		return nil, fmt.Errorf("item not found")
+		return nil, errors.New("item not found")
 	}
 
 	var item types.OutboundRequestLogItem
