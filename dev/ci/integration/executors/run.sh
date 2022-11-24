@@ -6,14 +6,15 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 root_dir=$(pwd)
 set -ex
 
-cleanup() {
-  cd "$root_dir"/dev/ci/integration/executors/
-  docker-compose down --timeout 30 # seconds
-  cd "$root_dir"
-}
-trap cleanup EXIT
-
+# cleanup() {
+#   cd "$root_dir"/dev/ci/integration/executors/
+#   docker-compose down --timeout 30 # seconds
+#   cd "$root_dir"
+# }
+# trap cleanup EXIT
+#
 cd "dev/ci/integration/executors"
+export DATA=/tmp/e2e-executors
 docker-compose up -d
 
 URL="http://localhost:7080"
