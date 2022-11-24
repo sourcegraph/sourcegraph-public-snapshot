@@ -52,7 +52,6 @@ func redisLoggerMiddleware() Middleware {
 			}
 
 			logItemJson, jsonErr := json.Marshal(logItem)
-
 			if jsonErr != nil {
 				log.Error(jsonErr)
 			}
