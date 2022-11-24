@@ -57,9 +57,9 @@ type UserExternalAccountsStore interface {
 	// Delete deletes a user external account.
 	Delete(ctx context.Context, ids ...int32) error
 
-	// DeleteWithOpts will soft delete all accounts matching the options combined
+	// DeleteWithOptions will soft delete all accounts matching the options combined
 	// using AND. If options are all zero values then it does nothing.
-	DeleteWithOpts(ctx context.Context, opt ExternalAccountsDeleteOptions) error
+	DeleteWithOptions(ctx context.Context, opt ExternalAccountsDeleteOptions) error
 
 	UpdateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, installations []gh.Installation) error
 
@@ -358,9 +358,9 @@ type ExternalAccountsDeleteOptions struct {
 	ServiceType string
 }
 
-// DeleteWithOpts will soft delete all accounts matching the options combined
+// DeleteWithOptions will soft delete all accounts matching the options combined
 // using AND. If options are all zero values then it does nothing.
-func (s *userExternalAccountsStore) DeleteWithOpts(ctx context.Context, opt ExternalAccountsDeleteOptions) error {
+func (s *userExternalAccountsStore) DeleteWithOptions(ctx context.Context, opt ExternalAccountsDeleteOptions) error {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 
 	if opt.UserID != 0 {
