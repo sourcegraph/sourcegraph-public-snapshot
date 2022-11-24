@@ -73,7 +73,6 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 			}
 		}
 
-		req.Header.Set("Cache-Control", "s-maxage=0")
 		resp, err = doer.Do(req.WithContext(ctx))
 		if err != nil {
 			return resp, errors.Wrap(err, "do request")
