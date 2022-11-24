@@ -1512,7 +1512,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	// Prevent the CachedTransportOpt from caching client side, but still use ETags
 	// to cache server-side
-	req.Header.Set("Cache-Control", "s-maxage=0")
+	req.Header.Set("Cache-Control", "max-age=0")
 
 	var autherWithRefresh auth.AuthenticatorWithRefresh
 	if auther != nil {
