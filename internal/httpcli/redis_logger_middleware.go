@@ -26,6 +26,12 @@ func redisLoggerMiddleware() Middleware {
 			start := time.Now()
 			resp, err := cli.Do(req)
 			duration := time.Since(start)
+
+			limit := OutboundRequestLogLimit()
+			if limit == 0 {
+				return resp, err
+			}
+
 			var requestBody []byte
 			if req != nil {
 				body, _ := req.GetBody()
@@ -63,15 +69,15 @@ func redisLoggerMiddleware() Middleware {
 			// Save new item
 			redisCache.Set(key, logItemJson)
 
-			deleteExcessItems()
+			deleteExcessItems(limit)
 
 			return resp, err
 		})
 	}
 }
 
-func deleteExcessItems() {
-	deletionErr := redisCache.DeleteAllButLastN(keyPrefix, OutboundRequestLogLimit())
+func deleteExcessItems(limit int) {
+	deletionErr := redisCache.DeleteAllButLastN(keyPrefix, limit)
 	if deletionErr != nil {
 		log.Error(deletionErr)
 	}
