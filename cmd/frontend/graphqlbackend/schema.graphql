@@ -8080,9 +8080,9 @@ A single logged webhook delivery.
 """
 type OutboundRequest {
     """
-    The request log item key. Looks like ""outbound:2021-01-01T00_00_00.000000"
+    The request log item ID. Looks like "outbound:2021-01-01T00_00_00.000000". Same as the Redis keys (without prefix).
     """
-    key: String!
+    id: ID!
 
     """
     The time the request was sent at.

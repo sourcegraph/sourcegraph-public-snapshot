@@ -47,7 +47,7 @@ func redisLoggerMiddleware() Middleware {
 			key := generateKey(time.Now())
 			callerStackFrame, _ := getFrames(4).Next() // Caller of the caller of redisLoggerMiddleware
 			logItem := types.OutboundRequestLogItem{
-				Key:                key,
+				ID:                 key,
 				StartedAt:          start,
 				Method:             req.Method,
 				URL:                req.URL.String(),
@@ -110,6 +110,20 @@ func GetAllOutboundRequestLogItemsAfter(after string, limit int) ([]*types.Outbo
 		items = append(items, &item)
 	}
 	return items, nil
+}
+
+func GetOutboundRequestLogItem(key string) (*types.OutboundRequestLogItem, error) {
+	rawItem, ok := redisCache.Get(key)
+	if !ok {
+		return nil, fmt.Errorf("item not found")
+	}
+
+	var item types.OutboundRequestLogItem
+	err := json.Unmarshal(rawItem, &item)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 // getAllValuesAfter returns all items after the given key, in ascending order, trimmed to maximum {limit} items.

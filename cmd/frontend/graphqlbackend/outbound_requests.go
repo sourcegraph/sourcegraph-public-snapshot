@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -48,8 +50,18 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 	return resolvers, nil
 }
 
-func (r *OutboundRequestResolver) Key() string {
-	return r.req.Key
+func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID) (*OutboundRequestResolver, error) {
+	// 🚨 SECURITY: Only site admins may view outbound requests.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	item, _ := httpcli.GetOutboundRequestLogItem(string(id))
+	return &OutboundRequestResolver{req: item}, nil
+}
+
+func (r *OutboundRequestResolver) ID() graphql.ID {
+	return relay.MarshalID("OutboundRequest", r.req.ID)
 }
 
 func (r *OutboundRequestResolver) StartedAt() gqlutil.DateTime {

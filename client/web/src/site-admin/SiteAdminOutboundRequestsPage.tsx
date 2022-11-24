@@ -80,22 +80,22 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
         telemetryService.logPageView('SiteAdminOutboundRequests')
     }, [telemetryService])
 
-    const lastKey = items[items.length - 1]?.key ?? null
+    const lastId = items[items.length - 1]?.id ?? null
     const { data, loading, error, stopPolling, refetch, startPolling } = useQuery<
         OutboundRequestsResult,
         OutboundRequestsVariables
     >(OUTBOUND_REQUESTS, {
-        variables: { after: lastKey },
+        variables: { after: lastId },
         pollInterval: OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL,
     })
 
-    if (data?.outboundRequests?.length && (!lastKey || data?.outboundRequests[0].key > lastKey)) {
+    if (data?.outboundRequests?.length && (!lastId || data?.outboundRequests[0].id > lastId)) {
         const newItems = items
             .concat(...data.outboundRequests)
             .slice(Math.max(items.length + data.outboundRequests.length - 50, 0))
         stopPolling()
         setItems(newItems)
-        refetch({ after: newItems[newItems.length - 1]?.key ?? null })
+        refetch({ after: newItems[newItems.length - 1]?.id ?? null })
             .then(() => {})
             .catch(() => {})
         startPolling(OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL)
@@ -170,7 +170,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
 const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<OutboundRequest> }> = ({ node }) => {
     const roundedSecond = Math.round((node.duration + Number.EPSILON) * 100) / 100
     return (
-        <React.Fragment key={node.key}>
+        <React.Fragment key={node.id}>
             <span className={styles.separator} />
             <div className={classNames('d-flex flex-column', styles.progress)}>
                 <Text>
