@@ -226,6 +226,9 @@ func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 		otelsql.WithSQLCommenter(true),
 		otelsql.WithSpanOptions(otelsql.SpanOptions{
 			OmitConnResetSession: true,
+			OmitConnPrepare:      true,
+			OmitRows:             true,
+			OmitConnectorConnect: true,
 			ArgumentOptions: otelsql.ArgumentOptions{
 				EnableAttributes: true,
 				Skip: func(ctx context.Context, query string, args []any) bool {
