@@ -187,7 +187,7 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 
 				err = createCodeHostConnectionForInstallation(r.Context(), db, installationID, displayName, apiURL.String())
 				if err != nil {
-					responseServerError(http.StatusInternalServerError, "Failed to create code host connection"", err)
+					responseServerError(http.StatusInternalServerError, "Failed to create code host connection", err)
 					return
 				}
 
