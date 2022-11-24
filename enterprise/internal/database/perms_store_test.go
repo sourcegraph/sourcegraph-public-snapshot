@@ -2916,6 +2916,7 @@ func testPermsStore_MapUsers(db database.DB) func(*testing.T) {
 
 		// Set up 3 users
 		users := db.Users()
+
 		igor, err := users.Create(ctx,
 			database.NewUser{
 				Email:           "igor@example.com",
@@ -2971,7 +2972,7 @@ func testPermsStore_Metrics(db database.DB) func(*testing.T) {
 		ctx := context.Background()
 		t.Cleanup(func() {
 			cleanupPermsTables(t, s)
-
+			cleanupUsersTable(t, s)
 			if t.Failed() {
 				return
 			}
