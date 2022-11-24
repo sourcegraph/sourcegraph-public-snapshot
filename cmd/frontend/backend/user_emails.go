@@ -205,7 +205,7 @@ func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, us
 		return errors.Wrap(err, "listing external accounts")
 	}
 
-	var toDelete []int32
+	toDelete := make([]int32, 0, len(accounts))
 	for _, account := range accounts {
 		toDelete = append(toDelete, account.ID)
 	}

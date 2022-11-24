@@ -274,6 +274,7 @@ func TestDeleteStaleExternalAccount(t *testing.T) {
 
 	createdUser, err := db.Users().Create(ctx, newUser)
 	assert.NoError(t, err)
+
 	ctx = actor.WithInternalActor(ctx)
 	assert.NoError(t, UserEmails.Add(ctx, logger, db, createdUser.ID, email2))
 
