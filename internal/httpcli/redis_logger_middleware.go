@@ -93,7 +93,7 @@ func GetAllOutboundRequestLogItemsAfter(after *string, limit int) ([]*types.Outb
 		return nil, err
 	}
 
-	var items []*types.OutboundRequestLogItem
+	items := make([]*types.OutboundRequestLogItem, 0, len(rawItems))
 	for _, rawItem := range rawItems {
 		var item types.OutboundRequestLogItem
 		err = json.Unmarshal(rawItem, &item)
