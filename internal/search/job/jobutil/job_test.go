@@ -683,14 +683,15 @@ func TestNewPlanJob(t *testing.T) {
             (repoOpts.hasKVPs[0].key . tag)
             (PARTIALREPOS
               (SEARCHERTEXTSEARCH
-                (indexed . false)))))
+                (indexed . false))))
+          (REPOSEARCH
+            (repoOpts.repoFilters.0 . foo)(repoOpts.hasKVPs[0].key . tag)
+            (repoNamePatterns . [(?i)foo])))
         (REPOSCOMPUTEEXCLUDED
           (repoOpts.hasKVPs[0].key . tag))
         (PARALLEL
           NoopJob
-          (REPOSEARCH
-            (repoOpts.repoFilters.0 . foo)(repoOpts.hasKVPs[0].key . tag)
-            (repoNamePatterns . [(?i)foo])))))))`),
+          NoopJob)))))`),
 		}, {
 			query:      `(...)`,
 			protocol:   search.Streaming,
