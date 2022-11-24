@@ -18,8 +18,6 @@ import {
     DeleteExternalServiceResult,
     ExternalServicesVariables,
     ExternalServicesResult,
-    AffiliatedRepositoriesVariables,
-    AffiliatedRepositoriesResult,
     SyncExternalServiceResult,
     SyncExternalServiceVariables,
     ExternalServiceSyncJobsVariables,
