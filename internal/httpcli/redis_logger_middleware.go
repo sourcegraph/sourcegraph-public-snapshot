@@ -84,7 +84,7 @@ func generateKey(now time.Time) string {
 // GetAllOutboundRequestLogItemsAfter returns all outbound request log items after the given key,
 // in ascending order, trimmed to maximum {limit} items.
 // The given "after" must contain `keyPrefix` as a prefix. Example: "outbound:2021-01-01T00_00_00.000000000".
-func GetAllOutboundRequestLogItemsAfter(after *string, limit int) ([]*types.OutboundRequestLogItem, error) {
+func GetAllOutboundRequestLogItemsAfter(after string, limit int) ([]*types.OutboundRequestLogItem, error) {
 	if limit == 0 {
 		return []*types.OutboundRequestLogItem{}, nil
 	}
@@ -108,16 +108,16 @@ func GetAllOutboundRequestLogItemsAfter(after *string, limit int) ([]*types.Outb
 
 // getAllValuesAfter returns all items after the given key, in ascending order, trimmed to maximum {limit} items.
 // The given "after" must contain `keyPrefix` as a prefix. Example: "outbound:2021-01-01T00_00_00.000000000".
-func getAllValuesAfter(redisCache *rcache.Cache, keyPrefix string, after *string, limit int) ([][]byte, error) {
+func getAllValuesAfter(redisCache *rcache.Cache, keyPrefix string, after string, limit int) ([][]byte, error) {
 	all, err := redisCache.ListKeysWithPrefix(context.Background(), keyPrefix)
 	if err != nil {
 		return nil, err
 	}
 
 	var keys []string
-	if after != nil {
+	if after != "" {
 		for _, key := range all {
-			if key > *after {
+			if key > after {
 				keys = append(keys, key)
 			}
 		}

@@ -11,7 +11,7 @@ import (
 )
 
 type outboundRequestsArgs struct {
-	After *string
+	After string
 }
 
 type OutboundRequestResolver struct {

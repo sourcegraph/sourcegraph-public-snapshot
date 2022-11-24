@@ -22,12 +22,12 @@ func TestRedisLoggerMiddleware_getAllValuesAfter(t *testing.T) {
 	c.SetMulti(pairs...)
 
 	key := "keys:key5"
-	got, err := getAllValuesAfter(c, "keys", &key, 10)
+	got, err := getAllValuesAfter(c, "keys", key, 10)
 
 	assert.Nil(t, err)
 	assert.Len(t, got, 4)
 
-	got, err = getAllValuesAfter(c, "keys", &key, 2)
+	got, err = getAllValuesAfter(c, "keys", key, 2)
 	assert.Nil(t, err)
 	assert.Len(t, got, 2)
 }
