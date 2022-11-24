@@ -11,7 +11,7 @@ exports[`PageHeader renders correctly 1`] = `
           class="h1 heading"
         >
           <span
-            class="wrapper"
+            class="wrapper breadcrumb"
           >
             <a
               class="anchorLink path"
@@ -33,7 +33,7 @@ exports[`PageHeader renders correctly 1`] = `
             </a>
           </span>
           <span
-            class="wrapper"
+            class="wrapper breadcrumb"
           >
             <a
               class="anchorLink path"
@@ -47,7 +47,7 @@ exports[`PageHeader renders correctly 1`] = `
             </a>
           </span>
           <span
-            class="wrapper"
+            class="wrapper breadcrumb"
           >
             <a
               class="anchorLink path"
@@ -61,7 +61,7 @@ exports[`PageHeader renders correctly 1`] = `
             </a>
           </span>
           <span
-            class="wrapper"
+            class="wrapper breadcrumb"
           >
             <span
               class="path"
