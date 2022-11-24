@@ -419,7 +419,21 @@ func (s *userExternalAccountsStore) getBySQL(ctx context.Context, querySuffix *s
 }
 
 func (s *userExternalAccountsStore) ListBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.Account, error) {
-	q := sqlf.Sprintf(`SELECT t.id, t.user_id, t.service_type, t.service_id, t.client_id, t.account_id, t.auth_data, t.account_data, t.created_at, t.updated_at, t.encryption_key_id FROM user_external_accounts t %s`, querySuffix)
+	q := sqlf.Sprintf(`
+SELECT
+    t.id,
+    t.user_id,
+    t.service_type,
+    t.service_id,
+    t.client_id,
+    t.account_id,
+    t.auth_data,
+    t.account_data,
+    t.created_at,
+    t.updated_at,
+    t.encryption_key_id
+FROM user_external_accounts t
+%s`, querySuffix)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err

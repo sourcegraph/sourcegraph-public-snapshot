@@ -40,6 +40,7 @@ import (
 
 type Handlers struct {
 	GitHubSyncWebhook               webhooks.Registerer
+	PermissionsGitHubWebhook        webhooks.Registerer
 	BatchesGitHubWebhook            webhooks.Registerer
 	BatchesGitLabWebhook            webhooks.RegistererHandler
 	BatchesBitbucketServerWebhook   webhooks.RegistererHandler
@@ -96,6 +97,7 @@ func NewHandler(
 	handlers.BatchesBitbucketServerWebhook.Register(&wh)
 	handlers.BatchesBitbucketCloudWebhook.Register(&wh)
 	handlers.GitHubSyncWebhook.Register(&wh)
+	handlers.PermissionsGitHubWebhook.Register(&wh)
 
 	// 🚨 SECURITY: This handler implements its own secret-based auth
 	webhookHandler := webhooks.NewHandler(logger, db, &wh)

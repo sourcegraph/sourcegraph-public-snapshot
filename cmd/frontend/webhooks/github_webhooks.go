@@ -89,6 +89,12 @@ func (h *GitHubWebhook) HandleWebhook(logger log.Logger, w http.ResponseWriter, 
 		return
 	}
 
+	// handle ping event, no dispatch handler necessary
+	if eventType == "ping" {
+		w.WriteHeader(200)
+		return
+	}
+
 	// match event handlers
 	err = h.Dispatch(ctx, eventType, extsvc.KindGitHub, codeHostURN, e)
 	if err != nil {
