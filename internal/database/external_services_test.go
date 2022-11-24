@@ -1052,10 +1052,20 @@ RETURNING id
 		}
 	}()
 
-	// This will block until the goroutine above has finished
-	err = db.ExternalServices().Delete(ctx, es.ID)
-	if err != nil {
-		t.Fatal(err)
+	deleted := make(chan error)
+	go func() {
+		// This will block until the goroutine above has finished
+		err = db.ExternalServices().Delete(ctx, es.ID)
+		deleted <- err
+	}()
+
+	select {
+	case <-time.After(10 * time.Second):
+		t.Fatal("timeout waiting for external service deletion")
+	case err := <-deleted:
+		if err != nil {
+			t.Fatalf("deleting external service failed: %s", err)
+		}
 	}
 
 	_, err = db.ExternalServices().GetByID(ctx, es.ID)
