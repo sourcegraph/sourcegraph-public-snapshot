@@ -161,11 +161,10 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 		a := actor.FromContext(r.Context())
 		if !a.IsAuthenticated() || !envvar.SourcegraphDotComMode() {
 			if setupAction == "install" {
-				fmt.Println("woooooooooooo")
 				gitHubAppConfig := conf.SiteConfig().GitHubApp
 				privateKey, err := base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
 				if err != nil {
-					responseServerError(http.StatusBadRequest, `Error while decoding encryption key`, err)
+					responseServerError(http.StatusBadRequest, "Error while decoding encryption key", err)
 					return
 				}
 
@@ -181,7 +180,6 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 					return
 				}
 
-				fmt.Printf("ins: %v\n", ins)
 				var displayName string
 				if ins.Account.Login != nil {
 					displayName = fmt.Sprintf("GitHub (%s)", *ins.Account.Login)
@@ -189,13 +187,13 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 
 				err = createCodeHostConnectionForInstallation(r.Context(), db, installationID, displayName, apiURL.String())
 				if err != nil {
-					responseServerError(http.StatusInternalServerError, `Failed to create code host connection"`, err)
+					responseServerError(http.StatusInternalServerError, "Failed to create code host connection"", err)
 					return
 				}
 
 				encryptedInstallationID, err := EncryptWithPrivateKey(r.URL.Query().Get("installation_id"), privateKey)
 				if err != nil {
-					responseServerError(http.StatusBadRequest, `Error while encrypting installation ID`, err)
+					responseServerError(http.StatusBadRequest, "Error while encrypting installation ID", err)
 					return
 				}
 
@@ -219,24 +217,17 @@ func newGitHubAppSetupHandler(db database.DB, apiURL *url.URL, client githubClie
 }
 
 func createCodeHostConnectionForInstallation(ctx context.Context, db database.DB, installationID int64, displayName, apiURL string) error {
-	var svc *types.ExternalService
-
 	if displayName == "" {
 		displayName = "GitHub App"
 	}
 
-	svc = &types.ExternalService{
+	config := extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": "%s", "repos": []} `, apiURL))
+	svc := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: displayName,
-		Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`
-{
-  "url": "%s",
-  "repos": []
-}
-`, apiURL)),
+		Config:      config,
 	}
 
-	svc.DisplayName = displayName
 	currentConfig, err := svc.Config.Decrypt(context.Background())
 	if err != nil {
 		return err
