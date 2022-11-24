@@ -58,7 +58,6 @@ func TestIntegration_PermsStore(t *testing.T) {
 
 		{"GetUserIDsByExternalAccounts", testPermsStore_GetUserIDsByExternalAccounts(db)},
 
-		{"UserIDsWithOutdatedPerms", testPermsStore_UserIDsWithOutdatedPerms(db)},
 		{"UserIDsWithNoPerms", testPermsStore_UserIDsWithNoPerms(db)},
 		{"RepoIDsWithNoPerms", testPermsStore_RepoIDsWithNoPerms(db)},
 		{"UserIDsWithOldestPerms", testPermsStore_UserIDsWithOldestPerms(db)},
