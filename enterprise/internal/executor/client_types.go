@@ -12,7 +12,7 @@ type Job struct {
 	// Version is used to version the shape of the Job payload, so that older
 	// executors can still talk to Sourcegraph. The dequeue endpoint takes an
 	// executor version to determine which maximum version said executor supports.
-	Version int `json:"version"`
+	Version int `json:"version,omitempty"`
 
 	// ID is the unique identifier of a job within the source queue. Note
 	// that different queues can share identifiers.
@@ -62,7 +62,7 @@ type Job struct {
 	RedactedValues map[string]string `json:"redactedValues"`
 }
 
-func (j *Job) MarshalJSON() ([]byte, error) {
+func (j Job) MarshalJSON() ([]byte, error) {
 	if j.Version == 2 {
 		v2 := v2Job{
 			Version:             j.Version,
@@ -161,11 +161,11 @@ func (j *Job) UnmarshalJSON(data []byte) error {
 }
 
 type versionJob struct {
-	Version int `json:"version"`
+	Version int `json:"version,omitempty"`
 }
 
 type v2Job struct {
-	Version             int                             `json:"version"`
+	Version             int                             `json:"version,omitempty"`
 	ID                  int                             `json:"id"`
 	RepositoryName      string                          `json:"repositoryName"`
 	RepositoryDirectory string                          `json:"repositoryDirectory"`
@@ -232,7 +232,7 @@ func (j Job) RecordID() int {
 type DockerStep struct {
 	// Key is a unique identifier of the step. It can be used to retrieve the
 	// associated log entry.
-	Key string `json:"key"`
+	Key string `json:"key,omitempty"`
 
 	// Image specifies the docker image.
 	Image string `json:"image"`
@@ -250,7 +250,7 @@ type DockerStep struct {
 type CliStep struct {
 	// Key is a unique identifier of the step. It can be used to retrieve the
 	// associated log entry.
-	Key string `json:"key"`
+	Key string `json:"key,omitempty"`
 
 	// Commands specifies the arguments supplied to the src command.
 	Commands []string `json:"command"`
