@@ -2,9 +2,9 @@
 
 .requests-grid {
     display: grid;
-    grid-template-columns: 0.5fr 2fr;
-    row-gap: 1rem;
-    column-gap: 1rem;
+    grid-template-columns: 1fr 0.5fr 0.5fr auto 3fr;
+    row-gap: 0.5rem;
+    column-gap: 0.5rem;
     align-items: center;
     @media (--sm-breakpoint-down) {
         row-gap: 0.5rem;

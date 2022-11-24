@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { ReactNode, useCallback, useEffect, useState } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
@@ -12,7 +12,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import {
     Button,
     Container,
-    H3,
     Icon,
     Link,
     LoadingSpinner,
@@ -22,6 +21,7 @@ import {
     PopoverTrigger,
     Position,
     Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -111,8 +111,8 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
                     const filtered = items?.filter(
                         request =>
                             (!args.query || matchesString(request, args.query)) &&
-                            (args.failed !== false || request.statusCode < 400) &&
-                            (args.failed !== true || request.statusCode >= 400)
+                            (args.failed !== false || isSuccessful(request)) &&
+                            (args.failed !== true || !isSuccessful(request))
                     )
                     return {
                         nodes: filtered ?? [],
@@ -174,50 +174,38 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
     return (
         <React.Fragment key={node.id}>
             <span className={styles.separator} />
-            <div className={classNames('d-flex flex-column', styles.progress)}>
-                <Text>
-                    <Timestamp date={node.startedAt} noAbout={true} />
-                    <br />
-                    Method: <strong>{node.method}</strong>
-                    <br />
-                    Status: <strong>{node.statusCode}</strong>
-                    <br />
-                    Took{' '}
-                    <strong>
-                        {roundedSecond} second{roundedSecond === 1 ? '' : 's'}
-                    </strong>
-                    .
-                    <br />
-                    <HeaderPopover
-                        headers={node.requestHeaders}
-                        label={`Req headers (${node.requestHeaders?.length})`}
-                    />
-                    <br />
-                    <HeaderPopover
-                        headers={node.responseHeaders}
-                        label={`Resp headers (${node.responseHeaders?.length})`}
-                    />
-                </Text>
+            <div>
+                <Timestamp date={node.startedAt} noAbout={true} />,{' '}
+                <Tooltip content={`Duration: ${roundedSecond} second${roundedSecond === 1 ? '' : 's'}`}>
+                    <>{roundedSecond}s</>
+                </Tooltip>
             </div>
-            <div className={classNames('d-flex flex-column', styles.information)}>
-                <div>
-                    <H3>{node.url}</H3>
-
-                    <Text className="m-0 text-muted">
-                        <span>
-                            <StringPopover value={node.requestBody} label="Request body" />
-                        </span>{' '}
-                        <br />
-                        <span>
-                            <StringPopover value={node.errorMessage} label="Error message" />
-                        </span>
-                        <br />
-                        <br />
-                        <span>Client created at: {node.creationStackFrame}</span>
-                        <br />
-                        <span>Request made at: {node.callStackFrame}</span>
+            <div>
+                <Tooltip content="HTTP request method">
+                    <>{node.method}</>
+                </Tooltip>
+            </div>
+            <div>
+                <span className={isSuccessful(node) ? 'successful' : 'failed'}>{node.statusCode}</span>
+            </div>
+            <div>{node.url}</div>
+            <div className={classNames('d-flex flex-row')}>
+                <HeaderPopover headers={node.requestHeaders} label={`${node.requestHeaders?.length} req headers`} />
+                <HeaderPopover headers={node.responseHeaders} label={`${node.responseHeaders?.length} resp headers`} />
+                <SimplePopover label="More info">
+                    <Text>
+                        <strong>Client created at:</strong> {node.creationStackFrame}
                     </Text>
-                </div>
+                    <Text>
+                        <strong>Request made at:</strong> {node.callStackFrame}
+                    </Text>
+                    <Text>
+                        <strong>Error:</strong> {node.errorMessage ? node.errorMessage : 'No error'}
+                    </Text>
+                    <Text>
+                        <strong>Request body:</strong> {node.requestBody ? node.requestBody : 'Empty body'}
+                    </Text>
+                </SimplePopover>
             </div>
         </React.Fragment>
     )
@@ -231,17 +219,18 @@ const HeaderPopover: React.FunctionComponent<
     return headers ? (
         <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
             <PopoverTrigger as={Button} variant="secondary" outline={true}>
-                {label} <Icon aria-label="Show details" svgPath={mdiChevronDown} />
+                <small>{label}</small>
+                <Icon aria-label="Show details" svgPath={mdiChevronDown} />
             </PopoverTrigger>
             <PopoverContent position={Position.bottom} focusLocked={false}>
                 <div className="p-2">
-                    <div className="d-flex flex-column">
+                    <ul className="m-0 p-0">
                         {headers.map(header => (
-                            <div key={header.name}>
+                            <li key={header.name}>
                                 <strong>{header.name}</strong>: {header.values.join(', ')}
-                            </div>
+                            </li>
                         ))}
-                    </div>
+                    </ul>
                 </div>
             </PopoverContent>
         </Popover>
@@ -250,25 +239,24 @@ const HeaderPopover: React.FunctionComponent<
     )
 }
 
-const StringPopover: React.FunctionComponent<{ value: string; label: string }> = ({ value, label }) => {
+const SimplePopover: React.FunctionComponent<{ label: string; children: ReactNode }> = ({ label, children }) => {
     const [isOpen, setIsOpen] = useState(false)
     const handleOpenChange = useCallback(({ isOpen }: { isOpen: boolean }) => setIsOpen(isOpen), [setIsOpen])
-    return value ? (
+    return (
         <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
             <PopoverTrigger as={Button} variant="secondary" outline={true}>
-                {`${label} (length: ${value.length} chars)`} <Icon aria-label="Show details" svgPath={mdiChevronDown} />
+                <small>{label}</small>
+                <Icon aria-label="Show details" svgPath={mdiChevronDown} />
             </PopoverTrigger>
             <PopoverContent position={Position.bottom} focusLocked={false}>
-                <div className="p-2">
-                    <div className="d-flex flex-column">
-                        <div>{value}</div>
-                    </div>
-                </div>
+                <div className="p-2">{children}</div>
             </PopoverContent>
         </Popover>
-    ) : (
-        <>{label}: (empty)</>
     )
+}
+
+function isSuccessful(request: OutboundRequest): boolean {
+    return request.statusCode < 400
 }
 
 function matchesString(request: OutboundRequest, query: string): boolean {
