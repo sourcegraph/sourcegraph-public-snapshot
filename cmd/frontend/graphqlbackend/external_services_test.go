@@ -635,7 +635,7 @@ func TestCancelExternalServiceSync(t *testing.T) {
 
 		if callCount := len(externalServices.CancelSyncJobFunc.History()); callCount != 1 {
 			t.Errorf("unexpected handle call count. want=%d have=%d", 1, callCount)
-		} else if arg := externalServices.CancelSyncJobFunc.History()[0].Arg1; arg != syncJobID {
+		} else if arg := externalServices.CancelSyncJobFunc.History()[0].Arg1; arg.ID != syncJobID {
 			t.Errorf("unexpected sync job ID. want=%d have=%d", syncJobID, arg)
 		}
 	})
