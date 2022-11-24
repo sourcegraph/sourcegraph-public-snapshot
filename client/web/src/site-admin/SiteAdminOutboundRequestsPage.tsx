@@ -92,7 +92,9 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     if (data?.outboundRequests?.length && (!lastId || data?.outboundRequests[0].id > lastId)) {
         const newItems = items
             .concat(...data.outboundRequests)
-            .slice(Math.max(items.length + data.outboundRequests.length - 50, 0))
+            .slice(
+                Math.max(items.length + data.outboundRequests.length - (window.context.outboundRequestLogLimit ?? 0), 0)
+            )
         stopPolling()
         setItems(newItems)
         refetch({ after: newItems[newItems.length - 1]?.id ?? null })
