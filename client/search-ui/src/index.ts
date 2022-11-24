@@ -1,5 +1,6 @@
 export * from './components'
 export * from './documentation/ModalVideo'
+export * from './input/CodeMirrorQueryInputNG'
 export * from './input/CodeMirrorQueryInput'
 export * from './input/codemirror'
 export * from './input/LazyMonacoQueryInput'
