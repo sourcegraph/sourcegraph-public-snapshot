@@ -6931,9 +6931,6 @@ type MockEnterpriseDB struct {
 	// UserExternalAccountsFunc is an instance of a mock function object
 	// controlling the behavior of the method UserExternalAccounts.
 	UserExternalAccountsFunc *EnterpriseDBUserExternalAccountsFunc
-	// UserPublicReposFunc is an instance of a mock function object
-	// controlling the behavior of the method UserPublicRepos.
-	UserPublicReposFunc *EnterpriseDBUserPublicReposFunc
 	// UsersFunc is an instance of a mock function object controlling the
 	// behavior of the method Users.
 	UsersFunc *EnterpriseDBUsersFunc
@@ -7144,11 +7141,6 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		UserExternalAccountsFunc: &EnterpriseDBUserExternalAccountsFunc{
 			defaultHook: func() (r0 database.UserExternalAccountsStore) {
-				return
-			},
-		},
-		UserPublicReposFunc: &EnterpriseDBUserPublicReposFunc{
-			defaultHook: func() (r0 database.UserPublicRepoStore) {
 				return
 			},
 		},
@@ -7374,11 +7366,6 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.UserExternalAccounts")
 			},
 		},
-		UserPublicReposFunc: &EnterpriseDBUserPublicReposFunc{
-			defaultHook: func() database.UserPublicRepoStore {
-				panic("unexpected invocation of MockEnterpriseDB.UserPublicRepos")
-			},
-		},
 		UsersFunc: &EnterpriseDBUsersFunc{
 			defaultHook: func() database.UserStore {
 				panic("unexpected invocation of MockEnterpriseDB.Users")
@@ -7523,9 +7510,6 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		UserExternalAccountsFunc: &EnterpriseDBUserExternalAccountsFunc{
 			defaultHook: i.UserExternalAccounts,
-		},
-		UserPublicReposFunc: &EnterpriseDBUserPublicReposFunc{
-			defaultHook: i.UserPublicRepos,
 		},
 		UsersFunc: &EnterpriseDBUsersFunc{
 			defaultHook: i.Users,
@@ -11484,106 +11468,6 @@ func (c EnterpriseDBUserExternalAccountsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBUserExternalAccountsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// EnterpriseDBUserPublicReposFunc describes the behavior when the
-// UserPublicRepos method of the parent MockEnterpriseDB instance is
-// invoked.
-type EnterpriseDBUserPublicReposFunc struct {
-	defaultHook func() database.UserPublicRepoStore
-	hooks       []func() database.UserPublicRepoStore
-	history     []EnterpriseDBUserPublicReposFuncCall
-	mutex       sync.Mutex
-}
-
-// UserPublicRepos delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockEnterpriseDB) UserPublicRepos() database.UserPublicRepoStore {
-	r0 := m.UserPublicReposFunc.nextHook()()
-	m.UserPublicReposFunc.appendCall(EnterpriseDBUserPublicReposFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the UserPublicRepos
-// method of the parent MockEnterpriseDB instance is invoked and the hook
-// queue is empty.
-func (f *EnterpriseDBUserPublicReposFunc) SetDefaultHook(hook func() database.UserPublicRepoStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UserPublicRepos method of the parent MockEnterpriseDB instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *EnterpriseDBUserPublicReposFunc) PushHook(hook func() database.UserPublicRepoStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *EnterpriseDBUserPublicReposFunc) SetDefaultReturn(r0 database.UserPublicRepoStore) {
-	f.SetDefaultHook(func() database.UserPublicRepoStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *EnterpriseDBUserPublicReposFunc) PushReturn(r0 database.UserPublicRepoStore) {
-	f.PushHook(func() database.UserPublicRepoStore {
-		return r0
-	})
-}
-
-func (f *EnterpriseDBUserPublicReposFunc) nextHook() func() database.UserPublicRepoStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnterpriseDBUserPublicReposFunc) appendCall(r0 EnterpriseDBUserPublicReposFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of EnterpriseDBUserPublicReposFuncCall objects
-// describing the invocations of this function.
-func (f *EnterpriseDBUserPublicReposFunc) History() []EnterpriseDBUserPublicReposFuncCall {
-	f.mutex.Lock()
-	history := make([]EnterpriseDBUserPublicReposFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnterpriseDBUserPublicReposFuncCall is an object that describes an
-// invocation of method UserPublicRepos on an instance of MockEnterpriseDB.
-type EnterpriseDBUserPublicReposFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 database.UserPublicRepoStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnterpriseDBUserPublicReposFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnterpriseDBUserPublicReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

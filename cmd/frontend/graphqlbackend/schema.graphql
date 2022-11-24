@@ -631,8 +631,7 @@ type Mutation {
     SetMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
 
     """
-    SetUserPublicRepos sets the list of public repos for a user's search context, ensuring those repos
-    exist and are cloned
+    DEPRECATED
     """
     SetUserPublicRepos(userID: ID!, repoURIs: [String!]!): EmptyResponse!
 
@@ -5471,7 +5470,7 @@ type User implements Node & SettingsSubject & Namespace {
     namespaceName: String!
 
     """
-    publicRepositories returns the repos listed in user_public_repos for this user
+    DEPRECATED
     """
     publicRepositories: [Repository!]!
 
