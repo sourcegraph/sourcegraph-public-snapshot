@@ -27,7 +27,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		Commits: []GitCommitDescription{
 			{
 				Message:     "git commit message",
-				Diff:        "cool diff",
+				Diff:        []byte("cool diff"),
 				AuthorName:  "Sourcegraph",
 				AuthorEmail: "batch-changes@sourcegraph.com",
 			},
@@ -71,7 +71,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		},
 
 		Result: execution.AfterStepResult{
-			Diff: "cool diff",
+			Diff: []byte("cool diff"),
 			ChangedFiles: git.Changes{
 				Modified: []string{"README.md"},
 			},
@@ -148,7 +148,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			have, err := BuildChangesetSpecs(tt.input)
+			have, err := BuildChangesetSpecs(tt.input, true)
 			if err != nil {
 				if tt.wantErr != "" {
 					if err.Error() != tt.wantErr {
@@ -272,7 +272,7 @@ index 0000000..1bd79fb
 	}
 
 	for _, tc := range tests {
-		have, err := groupFileDiffs(tc.diff, defaultBranch, tc.groups)
+		have, err := groupFileDiffs([]byte(tc.diff), defaultBranch, tc.groups)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}

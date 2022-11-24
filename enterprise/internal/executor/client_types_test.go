@@ -65,7 +65,7 @@ func TestJob_UnmarshalJSON(t *testing.T) {
 				SparseCheckout:      []string{"a", "b", "c"},
 				VirtualMachineFiles: map[string]executor.VirtualMachineFile{
 					"script1.sh": {
-						Content: "hello",
+						Content: []byte("hello"),
 					},
 					"script2.py": {
 						Bucket:     "my-bucket",
@@ -131,7 +131,7 @@ func TestJob_UnmarshalJSON(t *testing.T) {
 				SparseCheckout:      []string{"a", "b", "c"},
 				VirtualMachineFiles: map[string]executor.VirtualMachineFile{
 					"script1.sh": {
-						Content: "hello",
+						Content: []byte("hello"),
 					},
 				},
 				DockerSteps: []executor.DockerStep{
