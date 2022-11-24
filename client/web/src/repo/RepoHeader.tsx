@@ -160,7 +160,6 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
         [setRepoHeaderContributions]
     )
     useEffect(() => {
-        console.log(repoHeaderContributionStore.props)
         onLifecyclePropsChange(repoHeaderContributionStore.props)
     }, [onLifecyclePropsChange, repoHeaderContributionStore.props])
 
