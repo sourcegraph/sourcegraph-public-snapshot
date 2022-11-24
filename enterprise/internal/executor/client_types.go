@@ -1,6 +1,7 @@
 package executor
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -8,6 +9,11 @@ import (
 
 // Job describes a series of steps to perform within an executor.
 type Job struct {
+	// Version is used to version the shape of the Job payload, so that older
+	// executors can still talk to Sourcegraph. The dequeue endpoint takes an
+	// executor version to determine which maximum version said executor supports.
+	Version int `json:"version"`
+
 	// ID is the unique identifier of a job within the source queue. Note
 	// that different queues can share identifiers.
 	ID int `json:"id"`
@@ -56,6 +62,137 @@ type Job struct {
 	RedactedValues map[string]string `json:"redactedValues"`
 }
 
+func (j *Job) MarshalJSON() ([]byte, error) {
+	if j.Version == 2 {
+		v2 := v2Job{
+			Version:             j.Version,
+			ID:                  j.ID,
+			RepositoryName:      j.RepositoryName,
+			RepositoryDirectory: j.RepositoryDirectory,
+			Commit:              j.Commit,
+			FetchTags:           j.FetchTags,
+			ShallowClone:        j.ShallowClone,
+			SparseCheckout:      j.SparseCheckout,
+			DockerSteps:         j.DockerSteps,
+			CliSteps:            j.CliSteps,
+			RedactedValues:      j.RedactedValues,
+		}
+		v2.VirtualMachineFiles = make(map[string]v2VirtualMachineFile, len(j.VirtualMachineFiles))
+		for k, v := range j.VirtualMachineFiles {
+			v2.VirtualMachineFiles[k] = v2VirtualMachineFile(v)
+		}
+		return json.Marshal(v2)
+	}
+	v1 := v1Job{
+		ID:                  j.ID,
+		RepositoryName:      j.RepositoryName,
+		RepositoryDirectory: j.RepositoryDirectory,
+		Commit:              j.Commit,
+		FetchTags:           j.FetchTags,
+		ShallowClone:        j.ShallowClone,
+		SparseCheckout:      j.SparseCheckout,
+		DockerSteps:         j.DockerSteps,
+		CliSteps:            j.CliSteps,
+		RedactedValues:      j.RedactedValues,
+	}
+	v1.VirtualMachineFiles = make(map[string]v1VirtualMachineFile, len(j.VirtualMachineFiles))
+	for k, v := range j.VirtualMachineFiles {
+		v1.VirtualMachineFiles[k] = v1VirtualMachineFile{
+			Content:    string(v.Content),
+			Bucket:     v.Bucket,
+			Key:        v.Key,
+			ModifiedAt: v.ModifiedAt,
+		}
+	}
+	return json.Marshal(v1)
+}
+
+func (j *Job) UnmarshalJSON(data []byte) error {
+	var version versionJob
+	if err := json.Unmarshal(data, &version); err != nil {
+		return err
+	}
+	if version.Version == 2 {
+		var v2 v2Job
+		if err := json.Unmarshal(data, &v2); err != nil {
+			return err
+		}
+		j.Version = v2.Version
+		j.ID = v2.ID
+		j.RepositoryName = v2.RepositoryName
+		j.RepositoryDirectory = v2.RepositoryDirectory
+		j.Commit = v2.Commit
+		j.FetchTags = v2.FetchTags
+		j.ShallowClone = v2.ShallowClone
+		j.SparseCheckout = v2.SparseCheckout
+		j.VirtualMachineFiles = make(map[string]VirtualMachineFile, len(v2.VirtualMachineFiles))
+		for k, v := range v2.VirtualMachineFiles {
+			j.VirtualMachineFiles[k] = VirtualMachineFile(v)
+		}
+		j.DockerSteps = v2.DockerSteps
+		j.CliSteps = v2.CliSteps
+		j.RedactedValues = v2.RedactedValues
+		return nil
+	}
+	var v1 v1Job
+	if err := json.Unmarshal(data, &v1); err != nil {
+		return err
+	}
+	j.ID = v1.ID
+	j.RepositoryName = v1.RepositoryName
+	j.RepositoryDirectory = v1.RepositoryDirectory
+	j.Commit = v1.Commit
+	j.FetchTags = v1.FetchTags
+	j.ShallowClone = v1.ShallowClone
+	j.SparseCheckout = v1.SparseCheckout
+	j.VirtualMachineFiles = make(map[string]VirtualMachineFile, len(v1.VirtualMachineFiles))
+	for k, v := range v1.VirtualMachineFiles {
+		j.VirtualMachineFiles[k] = VirtualMachineFile{
+			Content:    []byte(v.Content),
+			Bucket:     v.Bucket,
+			Key:        v.Key,
+			ModifiedAt: v.ModifiedAt,
+		}
+	}
+	j.DockerSteps = v1.DockerSteps
+	j.CliSteps = v1.CliSteps
+	j.RedactedValues = v1.RedactedValues
+	return nil
+}
+
+type versionJob struct {
+	Version int `json:"version"`
+}
+
+type v2Job struct {
+	Version             int                             `json:"version"`
+	ID                  int                             `json:"id"`
+	RepositoryName      string                          `json:"repositoryName"`
+	RepositoryDirectory string                          `json:"repositoryDirectory"`
+	Commit              string                          `json:"commit"`
+	FetchTags           bool                            `json:"fetchTags"`
+	ShallowClone        bool                            `json:"shallowClone"`
+	SparseCheckout      []string                        `json:"sparseCheckout"`
+	VirtualMachineFiles map[string]v2VirtualMachineFile `json:"files"`
+	DockerSteps         []DockerStep                    `json:"dockerSteps"`
+	CliSteps            []CliStep                       `json:"cliSteps"`
+	RedactedValues      map[string]string               `json:"redactedValues"`
+}
+
+type v1Job struct {
+	ID                  int                             `json:"id"`
+	RepositoryName      string                          `json:"repositoryName"`
+	RepositoryDirectory string                          `json:"repositoryDirectory"`
+	Commit              string                          `json:"commit"`
+	FetchTags           bool                            `json:"fetchTags"`
+	ShallowClone        bool                            `json:"shallowClone"`
+	SparseCheckout      []string                        `json:"sparseCheckout"`
+	VirtualMachineFiles map[string]v1VirtualMachineFile `json:"files"`
+	DockerSteps         []DockerStep                    `json:"dockerSteps"`
+	CliSteps            []CliStep                       `json:"cliSteps"`
+	RedactedValues      map[string]string               `json:"redactedValues"`
+}
+
 // VirtualMachineFile is a file that will be written to the VM. A file can contain the raw content of the file or
 // specify the coordinates of the file in the file store.
 // A file must either contain Content or a Bucket/Key. If neither are provided, an empty file is written.
@@ -71,6 +208,20 @@ type VirtualMachineFile struct {
 	Key string `json:"key,omitempty"`
 
 	// ModifiedAt an optional field that specifies when the file was last modified.
+	ModifiedAt time.Time `json:"modifiedAt,omitempty"`
+}
+
+type v2VirtualMachineFile struct {
+	Content    []byte    `json:"content,omitempty"`
+	Bucket     string    `json:"bucket,omitempty"`
+	Key        string    `json:"key,omitempty"`
+	ModifiedAt time.Time `json:"modifiedAt,omitempty"`
+}
+
+type v1VirtualMachineFile struct {
+	Content    string    `json:"content,omitempty"`
+	Bucket     string    `json:"bucket,omitempty"`
+	Key        string    `json:"key,omitempty"`
 	ModifiedAt time.Time `json:"modifiedAt,omitempty"`
 }
 

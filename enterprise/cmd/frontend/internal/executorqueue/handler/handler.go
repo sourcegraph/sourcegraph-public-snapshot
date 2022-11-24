@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -82,6 +83,15 @@ func (h *handler[T]) dequeue(ctx context.Context, metadata executorMetadata) (_ 
 		return apiclient.Job{}, false, err
 	}
 
+	version2Supported := false
+	if metadata.Version != "" {
+		var err error
+		version2Supported, err = api.CheckSourcegraphVersion(metadata.Version, "4.4.0-0", "2022-11-24")
+		if err != nil {
+			return apiclient.Job{}, false, err
+		}
+	}
+
 	// executorName is supposed to be unique.
 	record, dequeued, err := h.Store.Dequeue(ctx, metadata.Name, nil)
 	if err != nil {
@@ -101,6 +111,12 @@ func (h *handler[T]) dequeue(ctx context.Context, metadata executorMetadata) (_ 
 		}
 
 		return apiclient.Job{}, false, errors.Wrap(err, "RecordTransformer")
+	}
+
+	// If this executor supports v2, return a v2 payload. Based on this field,
+	// marshalling will be switched between old and new payload.
+	if version2Supported {
+		job.Version = 2
 	}
 
 	return job, true, nil
