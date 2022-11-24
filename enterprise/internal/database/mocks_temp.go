@@ -12071,9 +12071,6 @@ type MockPermsStore struct {
 	// UserIDsWithOldestPermsFunc is an instance of a mock function object
 	// controlling the behavior of the method UserIDsWithOldestPerms.
 	UserIDsWithOldestPermsFunc *PermsStoreUserIDsWithOldestPermsFunc
-	// UserIDsWithOutdatedPermsFunc is an instance of a mock function object
-	// controlling the behavior of the method UserIDsWithOutdatedPerms.
-	UserIDsWithOutdatedPermsFunc *PermsStoreUserIDsWithOutdatedPermsFunc
 	// UserIsMemberOfOrgHasCodeHostConnectionFunc is an instance of a mock
 	// function object controlling the behavior of the method
 	// UserIsMemberOfOrgHasCodeHostConnection.
@@ -12204,11 +12201,6 @@ func NewMockPermsStore() *MockPermsStore {
 		},
 		UserIDsWithOldestPermsFunc: &PermsStoreUserIDsWithOldestPermsFunc{
 			defaultHook: func(context.Context, int, time.Duration) (r0 map[int32]time.Time, r1 error) {
-				return
-			},
-		},
-		UserIDsWithOutdatedPermsFunc: &PermsStoreUserIDsWithOutdatedPermsFunc{
-			defaultHook: func(context.Context) (r0 map[int32]time.Time, r1 error) {
 				return
 			},
 		},
@@ -12349,11 +12341,6 @@ func NewStrictMockPermsStore() *MockPermsStore {
 				panic("unexpected invocation of MockPermsStore.UserIDsWithOldestPerms")
 			},
 		},
-		UserIDsWithOutdatedPermsFunc: &PermsStoreUserIDsWithOutdatedPermsFunc{
-			defaultHook: func(context.Context) (map[int32]time.Time, error) {
-				panic("unexpected invocation of MockPermsStore.UserIDsWithOutdatedPerms")
-			},
-		},
 		UserIsMemberOfOrgHasCodeHostConnectionFunc: &PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc{
 			defaultHook: func(context.Context, int32) (bool, error) {
 				panic("unexpected invocation of MockPermsStore.UserIsMemberOfOrgHasCodeHostConnection")
@@ -12442,9 +12429,6 @@ func NewMockPermsStoreFrom(i PermsStore) *MockPermsStore {
 		},
 		UserIDsWithOldestPermsFunc: &PermsStoreUserIDsWithOldestPermsFunc{
 			defaultHook: i.UserIDsWithOldestPerms,
-		},
-		UserIDsWithOutdatedPermsFunc: &PermsStoreUserIDsWithOutdatedPermsFunc{
-			defaultHook: i.UserIDsWithOutdatedPerms,
 		},
 		UserIsMemberOfOrgHasCodeHostConnectionFunc: &PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc{
 			defaultHook: i.UserIsMemberOfOrgHasCodeHostConnection,
@@ -15056,114 +15040,6 @@ func (c PermsStoreUserIDsWithOldestPermsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PermsStoreUserIDsWithOldestPermsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// PermsStoreUserIDsWithOutdatedPermsFunc describes the behavior when the
-// UserIDsWithOutdatedPerms method of the parent MockPermsStore instance is
-// invoked.
-type PermsStoreUserIDsWithOutdatedPermsFunc struct {
-	defaultHook func(context.Context) (map[int32]time.Time, error)
-	hooks       []func(context.Context) (map[int32]time.Time, error)
-	history     []PermsStoreUserIDsWithOutdatedPermsFuncCall
-	mutex       sync.Mutex
-}
-
-// UserIDsWithOutdatedPerms delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockPermsStore) UserIDsWithOutdatedPerms(v0 context.Context) (map[int32]time.Time, error) {
-	r0, r1 := m.UserIDsWithOutdatedPermsFunc.nextHook()(v0)
-	m.UserIDsWithOutdatedPermsFunc.appendCall(PermsStoreUserIDsWithOutdatedPermsFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// UserIDsWithOutdatedPerms method of the parent MockPermsStore instance is
-// invoked and the hook queue is empty.
-func (f *PermsStoreUserIDsWithOutdatedPermsFunc) SetDefaultHook(hook func(context.Context) (map[int32]time.Time, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UserIDsWithOutdatedPerms method of the parent MockPermsStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *PermsStoreUserIDsWithOutdatedPermsFunc) PushHook(hook func(context.Context) (map[int32]time.Time, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *PermsStoreUserIDsWithOutdatedPermsFunc) SetDefaultReturn(r0 map[int32]time.Time, r1 error) {
-	f.SetDefaultHook(func(context.Context) (map[int32]time.Time, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *PermsStoreUserIDsWithOutdatedPermsFunc) PushReturn(r0 map[int32]time.Time, r1 error) {
-	f.PushHook(func(context.Context) (map[int32]time.Time, error) {
-		return r0, r1
-	})
-}
-
-func (f *PermsStoreUserIDsWithOutdatedPermsFunc) nextHook() func(context.Context) (map[int32]time.Time, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *PermsStoreUserIDsWithOutdatedPermsFunc) appendCall(r0 PermsStoreUserIDsWithOutdatedPermsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of PermsStoreUserIDsWithOutdatedPermsFuncCall
-// objects describing the invocations of this function.
-func (f *PermsStoreUserIDsWithOutdatedPermsFunc) History() []PermsStoreUserIDsWithOutdatedPermsFuncCall {
-	f.mutex.Lock()
-	history := make([]PermsStoreUserIDsWithOutdatedPermsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// PermsStoreUserIDsWithOutdatedPermsFuncCall is an object that describes an
-// invocation of method UserIDsWithOutdatedPerms on an instance of
-// MockPermsStore.
-type PermsStoreUserIDsWithOutdatedPermsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[int32]time.Time
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c PermsStoreUserIDsWithOutdatedPermsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c PermsStoreUserIDsWithOutdatedPermsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

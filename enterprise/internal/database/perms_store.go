@@ -197,10 +197,6 @@ type PermsStore interface {
 	// UserIDsWithNoPerms returns a list of user IDs with no permissions found in the
 	// database.
 	UserIDsWithNoPerms(ctx context.Context) ([]int32, error)
-	// UserIDsWithOutdatedPerms returns a list of user IDs who have had repository
-	// syncing from either user or organization code host connection (that the user
-	// is a member of) after last permissions sync.
-	UserIDsWithOutdatedPerms(ctx context.Context) (map[int32]time.Time, error)
 	// RepoIDsWithNoPerms returns a list of private repository IDs with no
 	// permissions found in the database.
 	RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error)
@@ -1549,38 +1545,6 @@ AND NOT EXISTS (
 		ids = append(ids, id)
 	}
 	return ids, nil
-}
-
-func (s *permsStore) UserIDsWithOutdatedPerms(ctx context.Context) (map[int32]time.Time, error) {
-	q := sqlf.Sprintf(`
-SELECT
-	user_permissions.user_id,
-	user_permissions.synced_at
-FROM external_services
-JOIN user_permissions ON user_permissions.user_id = external_services.namespace_user_id
-WHERE
-	external_services.deleted_at IS NULL
-AND (
-		user_permissions.synced_at IS NULL
-	OR  external_services.last_sync_at >= user_permissions.synced_at
-)
-
-UNION
-
-SELECT
-	user_permissions.user_id,
-	user_permissions.synced_at
-FROM external_services
-JOIN org_members ON org_members.org_id = external_services.namespace_org_id
-JOIN user_permissions ON user_permissions.user_id = org_members.user_id
-WHERE
-	external_services.deleted_at IS NULL
-AND (
-		user_permissions.synced_at IS NULL
-	OR  external_services.last_sync_at >= user_permissions.synced_at
-)
-`)
-	return s.loadIDsWithTime(ctx, q)
 }
 
 func (s *permsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error) {

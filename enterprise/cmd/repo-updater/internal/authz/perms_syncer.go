@@ -1064,28 +1064,6 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 	}
 }
 
-// scheduleUsersWithOutdatedPerms returns computed schedules for users who have
-// outdated permissions in database.
-func (s *PermsSyncer) scheduleUsersWithOutdatedPerms(ctx context.Context) ([]scheduledUser, error) {
-	results, err := s.permsStore.UserIDsWithOutdatedPerms(ctx)
-	if err != nil {
-		return nil, err
-	}
-	metricsOutdatedPerms.WithLabelValues("user").Set(float64(len(results)))
-
-	users := make([]scheduledUser, 0, len(results))
-	for id, t := range results {
-		users = append(users,
-			scheduledUser{
-				priority:   priorityLow,
-				userID:     id,
-				nextSyncAt: t,
-			},
-		)
-	}
-	return users, nil
-}
-
 // scheduleUsersWithNoPerms returns computed schedules for users who have no
 // permissions found in database.
 func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduledUser, error) {
@@ -1202,12 +1180,6 @@ type scheduledRepo struct {
 //  4. Rolling updating repository permissions over time from oldest ones.
 func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	schedule := new(schedule)
-
-	usersWithOutdatedPerms, err := s.scheduleUsersWithOutdatedPerms(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "schedule users with outdated permissions")
-	}
-	schedule.Users = append(schedule.Users, usersWithOutdatedPerms...)
 
 	usersWithNoPerms, err := s.scheduleUsersWithNoPerms(ctx)
 	if err != nil {
