@@ -8,14 +8,14 @@ import (
 	gh "github.com/google/go-github/v43/github"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -74,16 +74,14 @@ func scheduleUserUpdate(ctx context.Context, db database.DB, githubUser *gh.User
 		return nil
 	}
 
-	ids := []int32{}
+	logger := log.Scoped("TODO", "horsegraph")
+	store := database.PermissionSyncJobsWith(logger, db)
+
 	for _, acc := range accs {
-		ids = append(ids, acc.UserID)
+		if err := store.CreateUserSyncJob(ctx, int32(acc.UserID), true); err != nil {
+			return err
+		}
 	}
 
-	log15.Debug("scheduleUserUpdate: Dispatching permissions update", "users", ids)
-
-	c := repoupdater.DefaultClient
-	return c.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-		UserIDs: ids,
-		Options: opts,
-	})
+	return nil
 }

@@ -7,8 +7,8 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -27,15 +27,14 @@ func MakePermsSyncerWorker(ctx context.Context, syncer *PermsSyncer) *permsSynce
 }
 
 type permsSyncerWorker struct {
-	syncer *PermsSyncer
-
+	syncer     *PermsSyncer
 	syncGroups map[requestType]group.ContextGroup
 }
 
 func (h *permsSyncerWorker) Handle(ctx context.Context, logger log.Logger, record *database.PermissionSyncJob) error {
-	var prio priority
-	if record.Priority == "high" {
-		prio = 1
+	prio := priorityLow
+	if record.HighPriority {
+		prio = priorityHigh
 	}
 
 	reqType := requestTypeRepo

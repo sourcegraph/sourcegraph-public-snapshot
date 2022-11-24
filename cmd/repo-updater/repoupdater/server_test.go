@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -19,7 +18,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -705,87 +703,6 @@ type fakeScheduler struct{}
 func (s *fakeScheduler) UpdateOnce(_ api.RepoID, _ api.RepoName) {}
 func (s *fakeScheduler) ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult {
 	return &protocol.RepoUpdateSchedulerInfoResult{}
-}
-
-type fakePermsSyncer struct{}
-
-func (*fakePermsSyncer) ScheduleUsers(ctx context.Context, opts authz.FetchPermsOptions, userIDs ...int32) {
-}
-
-func (*fakePermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
-}
-
-func TestServer_handleSchedulePermsSync(t *testing.T) {
-	tests := []struct {
-		name           string
-		permsSyncer    *fakePermsSyncer
-		body           string
-		wantStatusCode int
-		wantBody       string
-	}{
-		{
-			name:           "PermsSyncer not available",
-			wantStatusCode: http.StatusForbidden,
-			wantBody:       "null",
-		},
-		{
-			name:           "bad JSON",
-			permsSyncer:    &fakePermsSyncer{},
-			body:           "{",
-			wantStatusCode: http.StatusBadRequest,
-			wantBody:       "unexpected EOF",
-		},
-		{
-			name:           "missing ids",
-			permsSyncer:    &fakePermsSyncer{},
-			body:           "{}",
-			wantStatusCode: http.StatusBadRequest,
-			wantBody:       "neither user IDs nor repo IDs was provided in request (must provide at least one)",
-		},
-
-		{
-			name:           "successful call with user IDs",
-			permsSyncer:    &fakePermsSyncer{},
-			body:           `{"user_ids": [1]}`,
-			wantStatusCode: http.StatusOK,
-			wantBody:       "null",
-		},
-		{
-			name:           "successful call with repo IDs",
-			permsSyncer:    &fakePermsSyncer{},
-			body:           `{"repo_ids":[1]}`,
-			wantStatusCode: http.StatusOK,
-			wantBody:       "null",
-		},
-		{
-			name:           "successful call with both IDs",
-			permsSyncer:    &fakePermsSyncer{},
-			body:           `{"user_ids": [1], "repo_ids":[1]}`,
-			wantStatusCode: http.StatusOK,
-			wantBody:       "null",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			r := httptest.NewRequest("POST", "/schedule-perms-sync", strings.NewReader(test.body))
-			w := httptest.NewRecorder()
-
-			s := &Server{Logger: logtest.Scoped(t)}
-			// NOTE: An interface has nil value is not a nil interface,
-			// so should only assign to the interface when the value is not nil.
-			if test.permsSyncer != nil {
-				s.PermsSyncer = test.permsSyncer
-			}
-			s.handleSchedulePermsSync(w, r)
-
-			if w.Code != test.wantStatusCode {
-				t.Fatalf("Code: want %v but got %v", test.wantStatusCode, w.Code)
-			} else if diff := cmp.Diff(test.wantBody, w.Body.String()); diff != "" {
-				t.Fatalf("Body mismatch (-want +got):\n%s", diff)
-			}
-		})
-	}
 }
 
 func TestServer_handleExternalServiceValidate(t *testing.T) {

@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -350,12 +349,9 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 		return nil, err
 	}
 
-	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{userID}})
+	err = database.PermissionSyncJobsWith(r.logger, r.db).CreateUserSyncJob(ctx, userID, true)
 	if err != nil {
-		log15.Warn("schemaResolver.RemoveUserFromOrganization.SchedulePermsSync",
-			"userID", userID,
-			"error", err,
-		)
+		return nil, err
 	}
 	return nil, nil
 }
@@ -401,12 +397,9 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 	}
 
 	// Schedule permission sync for newly added user
-	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}})
+	err = database.PermissionSyncJobsWith(r.logger, r.db).CreateUserSyncJob(ctx, userToInvite.ID, true)
 	if err != nil {
-		log15.Warn("schemaResolver.AddUserToOrganization.SchedulePermsSync",
-			"userID", userToInvite.ID,
-			"error", err,
-		)
+		return nil, err
 	}
 	return &EmptyResponse{}, nil
 }

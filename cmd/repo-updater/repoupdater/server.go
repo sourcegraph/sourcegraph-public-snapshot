@@ -63,7 +63,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/enqueue-repo-update", trace.WithRouteName("enqueue-repo-update", s.handleEnqueueRepoUpdate))
 	mux.HandleFunc("/sync-external-service", trace.WithRouteName("sync-external-service", s.handleExternalServiceSync))
 	mux.HandleFunc("/enqueue-changeset-sync", trace.WithRouteName("enqueue-changeset-sync", s.handleEnqueueChangesetSync))
-	mux.HandleFunc("/schedule-perms-sync", trace.WithRouteName("schedule-perms-sync", s.handleSchedulePermsSync))
 	return mux
 }
 
@@ -374,27 +373,5 @@ func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Reque
 		s.respond(w, http.StatusInternalServerError, resp)
 		return
 	}
-	s.respond(w, http.StatusOK, nil)
-}
-
-func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request) {
-	if s.PermsSyncer == nil {
-		s.respond(w, http.StatusForbidden, nil)
-		return
-	}
-
-	var req protocol.PermsSyncRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		s.respond(w, http.StatusBadRequest, err)
-		return
-	}
-	if len(req.UserIDs) == 0 && len(req.RepoIDs) == 0 {
-		s.respond(w, http.StatusBadRequest, errors.New("neither user IDs nor repo IDs was provided in request (must provide at least one)"))
-		return
-	}
-
-	s.PermsSyncer.ScheduleUsers(r.Context(), req.Options, req.UserIDs...)
-	s.PermsSyncer.ScheduleRepos(r.Context(), req.RepoIDs...)
-
 	s.respond(w, http.StatusOK, nil)
 }

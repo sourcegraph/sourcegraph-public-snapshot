@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS permission_sync_jobs (
   repository_id integer,
   user_id       integer,
 
-  priority          text not null default 'low',
+  high_priority     boolean not null default false,
   invalidate_caches boolean not null default false
 );
 

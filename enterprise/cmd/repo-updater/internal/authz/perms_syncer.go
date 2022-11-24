@@ -1104,6 +1104,8 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 	logger.Debug("started")
 	defer logger.Info("stopped")
 
+	store := database.PermissionSyncJobsWith(logger, s.db)
+
 	ticker := time.NewTicker(s.scheduleInterval)
 	defer ticker.Stop()
 
@@ -1124,8 +1126,20 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			logger.Error("failed to compute schedule", log.Error(err))
 			continue
 		}
-		s.scheduleUsers(ctx, schedule.Users...)
-		s.scheduleRepos(ctx, schedule.Repos...)
+		for _, u := range schedule.Users {
+			if err := store.CreateUserSyncJob(ctx, u.userID, false); err != nil {
+				logger.Error("failed to create user job", log.Error(err))
+				continue
+			}
+		}
+
+		for _, u := range schedule.Repos {
+			if err := store.CreateRepoSyncJob(ctx, int32(u.repoID), false); err != nil {
+				logger.Error("failed to create user job", log.Error(err))
+				continue
+			}
+		}
+
 		s.collectMetrics(ctx)
 	}
 }
