@@ -2,7 +2,6 @@ import { FunctionComponent, useCallback, useMemo } from 'react'
 
 import BarChartIcon from 'mdi-react/BarChartIcon'
 
-import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, PageHeader, Text, useLocalStorage, useObservable } from '@sourcegraph/wildcard'
 
@@ -54,26 +53,20 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
 
     const handleSubmit = useCallback(
         async (values: CreateComputeInsightFormFields): Promise<SubmissionErrors> => {
-            try {
-                const insight = getSanitizedComputeInsight(values)
+            const insight = getSanitizedComputeInsight(values)
 
-                await onInsightCreateRequest({ insight })
+            await onInsightCreateRequest({ insight })
 
-                // Clear initial values if user successfully created search insight
-                setInitialFormValues(undefined)
-                telemetryService.log('CodeInsightsComputeCreationPageSubmitClick')
-                telemetryService.log(
-                    'InsightAddition',
-                    { insightType: CodeInsightTrackType.ComputeInsight },
-                    { insightType: CodeInsightTrackType.ComputeInsight }
-                )
+            // Clear initial values if user successfully created search insight
+            setInitialFormValues(undefined)
+            telemetryService.log('CodeInsightsComputeCreationPageSubmitClick')
+            telemetryService.log(
+                'InsightAddition',
+                { insightType: CodeInsightTrackType.ComputeInsight },
+                { insightType: CodeInsightTrackType.ComputeInsight }
+            )
 
-                onSuccessfulCreation()
-            } catch (error) {
-                return { [FORM_ERROR]: asError(error) }
-            }
-
-            return
+            onSuccessfulCreation()
         },
         [onInsightCreateRequest, onSuccessfulCreation, setInitialFormValues, telemetryService]
     )

@@ -33,16 +33,6 @@ func (f ZoektStreamFunc) Send(event *zoekt.SearchResult) {
 	f(event)
 }
 
-// StreamSearchEvent has fields optionally set representing events that happen
-// during a search.
-//
-// This is a Sourcegraph extension.
-type StreamSearchEvent struct {
-	// SearchResult is non-nil if this event is a search result. These should be
-	// combined with previous and later SearchResults.
-	SearchResult *zoekt.SearchResult
-}
-
 // ZoektDialer is a function that returns a zoekt.Streamer for the given endpoint.
 type ZoektDialer func(endpoint string) zoekt.Streamer
 

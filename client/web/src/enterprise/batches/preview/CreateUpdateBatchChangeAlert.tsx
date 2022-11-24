@@ -80,7 +80,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
 
     return (
         <>
-            <Alert className="mb-3 d-block d-md-flex align-items-center body-lead" variant="info">
+            <Alert className="mb-3 d-block d-md-flex align-items-center body-lead" variant="info" aria-live="off">
                 <div className={classNames(styles.createUpdateBatchChangeAlertCopy, 'flex-grow-1 mr-3')}>
                     {batchChange ? (
                         <>

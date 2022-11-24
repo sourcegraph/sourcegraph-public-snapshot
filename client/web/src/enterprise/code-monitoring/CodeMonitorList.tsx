@@ -1,19 +1,18 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 
 import { useHistory, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
-import { Button, Container, Link, H2, H3 } from '@sourcegraph/wildcard'
+import { Container, Link, H2, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
-import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
-
-type CodeMonitorFilter = 'all' | 'user'
 
 interface CodeMonitorListProps
     extends Required<Pick<CodeMonitoringPageProps, 'fetchUserCodeMonitors' | 'toggleCodeMonitorEnabled'>> {
@@ -25,14 +24,6 @@ const CodeMonitorEmptyList: React.FunctionComponent<
 > = ({ authenticatedUser }) => (
     <div className="text-center">
         <H2 className="text-muted mb-2">No code monitors have been created.</H2>
-        {!authenticatedUser && (
-            <CodeMonitorSignUpLink
-                className="my-3"
-                eventName="SignUpPLGMonitor_EmptyList"
-                text="Get started with code monitors"
-                forDotcom={false}
-            />
-        )}
     </div>
 )
 
@@ -43,7 +34,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
 }) => {
     const location = useLocation()
     const history = useHistory()
-    const [monitorListFilter, setMonitorListFilter] = useState<CodeMonitorFilter>('all')
+    const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
 
     const queryConnection = useCallback(
         (args: Partial<ListUserCodeMonitorsVariables>) => {
@@ -67,27 +58,24 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
     return (
         <>
             <div className="row mb-5">
-                <div className="d-flex flex-column col-2 mr-2">
-                    <H3 as={H2}>Filters</H3>
-                    <Button
-                        className="text-left"
-                        onClick={() => setMonitorListFilter('all')}
-                        variant={monitorListFilter === 'all' ? 'primary' : undefined}
-                    >
-                        All
-                    </Button>
-                    <Button
-                        className="text-left"
-                        onClick={() => setMonitorListFilter('user')}
-                        variant={monitorListFilter === 'user' ? 'primary' : undefined}
-                    >
-                        Your code monitors
-                    </Button>
-                </div>
                 <div className="d-flex flex-column w-100 col">
-                    <H3 className="mb-2">
-                        {`${monitorListFilter === 'all' ? 'All code monitors' : 'Your code monitors'}`}
-                    </H3>
+                    <div className="d-flex align-items-center justify-content-between">
+                        <H3 className="mb-2">Your code monitors</H3>
+                        {isSourcegraphDotCom && (
+                            <CloudCtaBanner outlined={true}>
+                                To monitor changes across your private repos,{' '}
+                                <Link
+                                    to="https://signup.sourcegraph.com/?p=monitoring"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                                >
+                                    try Sourcegraph Cloud
+                                </Link>
+                                .
+                            </CloudCtaBanner>
+                        )}
+                    </div>
                     <Container className="py-3">
                         <FilteredConnection<
                             CodeMonitorFields,

@@ -1,12 +1,9 @@
-import { useContext, useMemo } from 'react'
+import { useContext } from 'react'
 
 import { useHistory } from 'react-router-dom'
 
-import { asError } from '@sourcegraph/common'
-import { useObservable } from '@sourcegraph/wildcard'
-
 import { eventLogger } from '../../../../../../tracking/eventLogger'
-import { FORM_ERROR, SubmissionErrors } from '../../../../components'
+import { SubmissionErrors } from '../../../../components'
 import { ALL_INSIGHTS_DASHBOARD } from '../../../../constants'
 import { CodeInsightsBackendContext, CreationInsightInput } from '../../../../core'
 import { useQueryParameters } from '../../../../hooks'
@@ -22,38 +19,25 @@ export interface useHandleSubmitOutput {
  */
 export function useEditPageHandlers(props: { id: string | undefined }): useHandleSubmitOutput {
     const { id } = props
-    const { updateInsight, getDashboardById } = useContext(CodeInsightsBackendContext)
+    const { updateInsight } = useContext(CodeInsightsBackendContext)
     const history = useHistory()
 
-    const { dashboardId, insight } = useQueryParameters(['dashboardId', 'insight'])
-    const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
-    const redirectUrl = insight
-        ? `/insights/insight/${insight}`
-        : dashboard
-        ? `/insights/dashboards/${dashboard.id}`
-        : `/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`
+    const { dashboardId = ALL_INSIGHTS_DASHBOARD.id, insight } = useQueryParameters(['dashboardId', 'insight'])
+    const redirectUrl = insight ? `/insights/insight/${insight}` : `/insights/dashboards/${dashboardId}`
 
     const handleSubmit = async (newInsight: CreationInsightInput): Promise<SubmissionErrors> => {
         if (!id) {
             return
         }
 
-        try {
-            await updateInsight({
-                insightId: id,
-                nextInsightData: newInsight,
-            }).toPromise()
+        await updateInsight({
+            insightId: id,
+            nextInsightData: newInsight,
+        }).toPromise()
 
-            const insightType = getTrackingTypeByInsightType(newInsight.type)
-
-            eventLogger.log('InsightEdit', { insightType }, { insightType })
-
-            history.push(redirectUrl)
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+        const insightType = getTrackingTypeByInsightType(newInsight.type)
+        eventLogger.log('InsightEdit', { insightType }, { insightType })
+        history.push(redirectUrl)
     }
 
     const handleCancel = (): void => {

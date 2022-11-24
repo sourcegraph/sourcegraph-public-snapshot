@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -179,6 +180,28 @@ func ExecutorsSrcCLIImageTag() string {
 	}
 
 	return srccli.MinimumVersion
+}
+
+func ExecutorsBatcheshelperImage() string {
+	current := Get()
+	if current.ExecutorsBatcheshelperImage != "" {
+		return current.ExecutorsBatcheshelperImage
+	}
+
+	return "sourcegraph/batcheshelper"
+}
+
+func ExecutorsBatcheshelperImageTag() string {
+	current := Get()
+	if current.ExecutorsBatcheshelperImageTag != "" {
+		return current.ExecutorsBatcheshelperImageTag
+	}
+
+	if version.IsDev(version.Version()) {
+		return "insiders"
+	}
+
+	return version.Version()
 }
 
 func CodeIntelAutoIndexingEnabled() bool {

@@ -1405,13 +1405,14 @@ Generated query for critical alert: `max((histogram_quantile(0.9, sum by(le) (la
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> gitserver: less than 25% disk space remaining by instance
-- <span class="badge badge-critical">critical</span> gitserver: less than 15% disk space remaining by instance
+- <span class="badge badge-warning">warning</span> gitserver: less than 15% disk space remaining by instance
+- <span class="badge badge-critical">critical</span> gitserver: less than 10% disk space remaining by instance for 10m0s
 
 **Next steps**
 
-- **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-disk-space-remaining).
+- On a warning alert, you may want to provision more disk space: Sourcegraph may be about to start evicting repositories due to disk pressure, which may result in decreased performance, users having to wait for repositories to clone, etc.
+- On a critical alert, you need to provision more disk space: Sourcegraph should be evicting repositories from disk, but is either filling up faster than it can evict, or there is an issue with the janitor job.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#gitserver-disk-space-remaining).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -1426,9 +1427,9 @@ Generated query for critical alert: `max((histogram_quantile(0.9, sum by(le) (la
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `min(((src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100) <= 25)`
+Generated query for warning alert: `min(((src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100) < 15)`
 
-Generated query for critical alert: `min(((src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100) <= 15)`
+Generated query for critical alert: `min(((src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100) < 10)`
 
 </details>
 
@@ -4534,7 +4535,7 @@ Generated query for critical alert: `max((max(rate(src_repoupdater_sched_error[1
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4565,7 +4566,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4597,7 +4598,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4629,7 +4630,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4660,7 +4661,7 @@ Generated query for warning alert: `max((max by(type) (src_repoupdater_perms_syn
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4692,7 +4693,7 @@ Generated query for warning alert: `max((histogram_quantile(0.95, max by(le, typ
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4724,7 +4725,7 @@ Generated query for warning alert: `max((max(src_repoupdater_perms_syncer_queue_
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -7782,7 +7783,7 @@ an underprovisioned main postgres instance.
 <details>
 <summary>Technical details</summary>
 
-Generated query for critical alert: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^.*"})) >= 3600)`
+Generated query for critical alert: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`
 
 </details>
 

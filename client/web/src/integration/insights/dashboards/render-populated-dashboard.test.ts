@@ -90,6 +90,12 @@ describe('Code insights populated dashboard', () => {
             SEARCH_BASED_INSIGHT.presentation.title,
             COMPUTE_INSIGHT.presentation.title,
         ]
+
+        await driver.page.waitForSelector(`[aria-label="${CAPTURE_GROUP_INSIGHT.presentation.title} insight`)
+        await driver.page.waitForSelector(`[aria-label="${LANG_STATS_INSIGHT.presentation.title} insight`)
+        await driver.page.waitForSelector(`[aria-label="${SEARCH_BASED_INSIGHT.presentation.title} insight`)
+        await driver.page.waitForSelector(`[aria-label="${COMPUTE_INSIGHT.presentation.title} insight`)
+
         const foundLinks = await getLinks(driver.page, expectedLinks)
 
         assert.deepStrictEqual(expectedLinks, foundLinks)
@@ -129,7 +135,7 @@ function getInsightViewById(id: string | null): GetInsightViewResult {
         GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
         GET_INSIGHT_VIEW_COMPUTE_INSIGHT,
         GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT,
-    ].find(insight => insight.insightViews.nodes[0].id === id)
+    ].find(insight => insight.insightViews.nodes[0]?.id === id)
 
     if (!insightView) {
         throw new Error(`Insight view with id ${id} not found`)

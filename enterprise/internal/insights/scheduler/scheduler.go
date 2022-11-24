@@ -11,6 +11,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -93,13 +94,13 @@ func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
 }
 
 type BackgroundJobMonitor struct {
-	inProgressWorker   *workerutil.Worker
-	inProgressResetter *dbworker.Resetter
-	inProgressStore    dbworkerstore.Store
+	inProgressWorker   *workerutil.Worker[*BaseJob]
+	inProgressResetter *dbworker.Resetter[*BaseJob]
+	inProgressStore    dbworkerstore.Store[*BaseJob]
 
-	newBackfillWorker   *workerutil.Worker
-	newBackfillResetter *dbworker.Resetter
-	newBackfillStore    dbworkerstore.Store
+	newBackfillWorker   *workerutil.Worker[*BaseJob]
+	newBackfillResetter *dbworker.Resetter[*BaseJob]
+	newBackfillStore    dbworkerstore.Store[*BaseJob]
 }
 
 type JobMonitorConfig struct {
@@ -109,6 +110,7 @@ type JobMonitorConfig struct {
 	BackfillRunner  pipeline.Backfiller
 	ObsContext      *observation.Context
 	AllRepoIterator *discovery.AllReposIterator
+	CostAnalyzer    *priority.QueryAnalyzer
 }
 
 func NewBackgroundJobMonitor(ctx context.Context, config JobMonitorConfig) *BackgroundJobMonitor {

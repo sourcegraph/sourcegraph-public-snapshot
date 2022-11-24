@@ -451,6 +451,7 @@ sg ci build docker-images-patch-notest prometheus
 				if response != "yes" {
 					return errors.New("Cancelling request.")
 				}
+				branch = fmt.Sprintf("_manually_triggered_external/%s", commit)
 			}
 
 			var rt runtype.RunType

@@ -268,6 +268,8 @@ var graphqlQueryNameRe = lazyregexp.New(`(query|mutation) +(\w)+`)
 // GraphQL makes a GraphQL request to the server on behalf of the user authenticated by the client.
 // An optional token can be passed to impersonate other users. A nil target will skip unmarshalling
 // the returned JSON response.
+//
+// TODO: This should take a context so that we handle timeouts
 func (c *Client) GraphQL(token, query string, variables map[string]any, target any) error {
 	body, err := jsoniter.Marshal(map[string]any{
 		"query":     query,

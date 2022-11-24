@@ -4,6 +4,7 @@ import * as H from 'history'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
+import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/shared/dev/aria-asserts'
 import {
     MonitorEditInput,
     MonitorEditTriggerInput,
@@ -157,11 +158,11 @@ describe('ManageCodeMonitorPage', () => {
             </MockedTestProvider>
         )
         const submitButton = screen.getByTestId('submit-monitor')
-        expect(submitButton).toBeDisabled()
+        assertAriaDisabled(submitButton)
 
         userEvent.type(screen.getByTestId('name-input'), 'Test code monitor updated')
 
-        expect(submitButton).toBeEnabled()
+        assertAriaEnabled(submitButton)
     })
 
     test('Cancelling after changes have been made shows confirmation prompt', () => {

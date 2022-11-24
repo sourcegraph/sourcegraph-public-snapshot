@@ -519,6 +519,24 @@
             }
           }
         },
+        "search.sanitization": {
+          "description": "Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.",
+          "type": "object",
+          "properties": {
+            "sanitizePatterns": {
+              "description": "An array of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. Values added to this array must be valid Go regular expressions. Site admins will not have their search results sanitized.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "regex"
+              }
+            },
+            "orgName": {
+              "description": "Optionally specify the name of an organization within this Sourcegraph instance containing users whose searches should not be sanitized. Admins: ensure that ALL members of this org are trusted users. If no org exists with the given name then there will be no effect. If no org name is specified then all non-admin users will have their searches sanitized if this feature is enabled.",
+              "type": "string"
+            }
+          }
+        },
         "enableGithubInternalRepoVisibility": {
           "description": "Enable support for visilibity of internal Github repositories",
           "type": "boolean",
@@ -554,6 +572,11 @@
         },
         "hideSourcegraphOperatorLogin": {
           "description": "Enables hiding Sourcegraph operator auth provider on login page.",
+          "type": "boolean",
+          "default": false
+        },
+        "insightsBackfillerV2": {
+          "description": "Use v2 of the insights backfiller which backfills a series at a time.",
           "type": "boolean",
           "default": false
         }
@@ -889,6 +912,30 @@
       "default": 3,
       "group": "External services"
     },
+    "repoPurgeWorker": {
+      "description": "Configuration for repository purge worker.",
+      "type": "object",
+      "group": "External services",
+      "additionalProperties": false,
+      "default": {
+        "interval": 15,
+        "deletedTTL": 60
+      },
+      "properties": {
+        "intervalMintues": {
+          "type": "integer",
+          "description": "Interval in minutes at which to run purge jobs. Set to 0 to disable.",
+          "default": "15",
+          "minimum": 0
+        },
+        "deletedTTLMintues": {
+          "type": "integer",
+          "description": "Repository TTL in minutes after deletion before it becomes eligible to be purged. A migration or admin could accidentally remove all or a significant number of repositories - recloning all of them is slow, so a TTL acts as a grace period so that admins can recover from accidental deletions",
+          "default": "60",
+          "minimum": 0
+        }
+      }
+    },
     "maxReposToSearch": {
       "description": "DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
       "type": "integer",
@@ -968,6 +1015,11 @@
     },
     "authz.refreshInterval": {
       "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
+      "type": "integer",
+      "default": 5
+    },
+    "authz.syncJobsRecordsTTL": {
+      "description": "EXPERIMENTAL: Time interval (in minutes) of how long to keep sync job records for. Set to a negative value to disable.",
       "type": "integer",
       "default": 5
     },
@@ -1141,6 +1193,16 @@
     },
     "executors.srcCLIImageTag": {
       "description": "The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
+      "type": "string",
+      "examples": ["4.1.0"]
+    },
+    "executors.batcheshelperImage": {
+      "description": "The image to use for batch changes in executors. Use this value to pull from a custom image registry.",
+      "type": "string",
+      "default": "sourcegraph/batcheshelper"
+    },
+    "executors.batcheshelperImageTag": {
+      "description": "The tag to use for the batcheshelper image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.",
       "type": "string",
       "examples": ["4.1.0"]
     },
@@ -1388,28 +1450,34 @@
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["10000"]]
+      "examples": [10000]
     },
     "observability.logSlowGraphQLRequests": {
       "description": "(debug) logs all GraphQL requests slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["10000"]]
+      "examples": [10000]
+    },
+    "insights.backfill.interruptAfter": {
+      "description": "Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 60
     },
     "insights.historical.frames": {
-      "description": "(debug) number of historical insights timeframes to populate",
+      "description": "DEPRECATED: (debug) number of historical insights timeframes to populate",
       "type": "integer",
       "group": "Debug",
-      "examples": [["6"]]
+      "examples": [6]
     },
     "insights.historical.frameLength": {
-      "description": "(debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.",
+      "description": "DEPRECATED: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.",
       "type": "string",
       "group": "Debug",
       "examples": ["30d"]
     },
     "insights.historical.speedFactor": {
-      "description": "(debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.",
+      "description": "DEPRECATED: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.",
       "!go": { "pointer": true },
       "type": "number",
       "group": "Debug",
@@ -1426,9 +1494,16 @@
       "description": "Maximum number of Code Insights queries initiated per second on a worker node.",
       "type": "number",
       "group": "CodeInsights",
-      "default": 2,
+      "default": 20,
       "examples": [10.0, 0.5],
       "!go": { "pointer": true }
+    },
+    "insights.query.worker.rateLimitBurst": {
+      "description": "The allowed burst rate for the Code Insights queries per second rate limiter.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 20,
+      "examples": [10, 20]
     },
     "insights.compute.graphql": {
       "description": "DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",

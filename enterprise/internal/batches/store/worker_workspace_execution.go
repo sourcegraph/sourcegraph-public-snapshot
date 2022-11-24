@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
@@ -35,7 +36,7 @@ const batchSpecWorkspaceExecutionJobStalledJobMaximumAge = time.Second * 25
 // reset.
 const batchSpecWorkspaceExecutionJobMaximumNumResets = 3
 
-var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
+var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options[*btypes.BatchSpecWorkspaceExecutionJob]{
 	Name:              "batch_spec_workspace_execution_worker_store",
 	TableName:         "batch_spec_workspace_execution_jobs",
 	ColumnExpressions: batchSpecWorkspaceExecutionJobColumnsWithNullQueue.ToSqlf(),
@@ -53,7 +54,7 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 
 // NewBatchSpecWorkspaceExecutionWorkerStore creates a dbworker store that
 // wraps the batch_spec_workspace_execution_jobs table.
-func NewBatchSpecWorkspaceExecutionWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store {
+func NewBatchSpecWorkspaceExecutionWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob] {
 	return &batchSpecWorkspaceExecutionWorkerStore{
 		Store:              dbworkerstore.NewWithMetrics(handle, batchSpecWorkspaceExecutionWorkerStoreOptions, observationContext),
 		observationContext: observationContext,
@@ -61,21 +62,21 @@ func NewBatchSpecWorkspaceExecutionWorkerStore(handle basestore.TransactableHand
 	}
 }
 
-var _ dbworkerstore.Store = &batchSpecWorkspaceExecutionWorkerStore{}
+var _ dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob] = &batchSpecWorkspaceExecutionWorkerStore{}
 
 // batchSpecWorkspaceExecutionWorkerStore is a thin wrapper around
 // dbworkerstore.Store that allows us to extract information out of the
 // ExecutionLogEntry field and persisting it to separate columns when marking a
 // job as complete.
 type batchSpecWorkspaceExecutionWorkerStore struct {
-	dbworkerstore.Store
+	dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob]
 
 	logger log.Logger
 
 	observationContext *observation.Context
 }
 
-type markFinal func(ctx context.Context, tx dbworkerstore.Store) (_ bool, err error)
+type markFinal func(ctx context.Context, tx dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob]) (_ bool, err error)
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, id int, fn markFinal) (ok bool, err error) {
 	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
@@ -128,13 +129,13 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkErrored(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
-	return s.markFinal(ctx, id, func(ctx context.Context, tx dbworkerstore.Store) (bool, error) {
+	return s.markFinal(ctx, id, func(ctx context.Context, tx dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob]) (bool, error) {
 		return tx.MarkErrored(ctx, id, failureMessage, options)
 	})
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkFailed(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
-	return s.markFinal(ctx, id, func(ctx context.Context, tx dbworkerstore.Store) (bool, error) {
+	return s.markFinal(ctx, id, func(ctx context.Context, tx dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob]) (bool, error) {
 		return tx.MarkFailed(ctx, id, failureMessage, options)
 	})
 }
@@ -334,21 +335,16 @@ func logEventsFromLogEntries(logs []workerutil.ExecutionLogEntry) []*batcheslib.
 		return nil
 	}
 
-	var (
-		entry workerutil.ExecutionLogEntry
-		found bool
-	)
+	entries := []*batcheslib.LogEvent{}
 
 	for _, e := range logs {
-		if e.Key == "step.src.0" || e.Key == "step.src.batch-exec" {
-			entry = e
-			found = true
-			break
+		// V1 executions used either `step.src.0` or `step.src.batch-exec` (after named keys were introduced).
+		// From V2 on, every step has a step in the scheme of `step.docker.step.%d.post` that emits the
+		// AfterStepResult. This will be revised when we are able to upload artifacts from executions.
+		if strings.HasSuffix(e.Key, ".post") || e.Key == "step.src.0" || e.Key == "step.src.batch-exec" {
+			entries = append(entries, btypes.ParseJSONLogsFromOutput(e.Out)...)
 		}
 	}
-	if !found {
-		return nil
-	}
 
-	return btypes.ParseJSONLogsFromOutput(entry.Out)
+	return entries
 }

@@ -28,21 +28,27 @@ export const SidebarNavItem: React.FunctionComponent<
         className?: string
         exact?: boolean
         source?: string
+        onClick?: () => void
     }>
-> = ({ children, className, to, exact, source }) => {
+> = ({ children, className, to, exact, source, onClick }) => {
     const buttonClassNames = classNames('text-left d-flex', styles.linkInactive, className)
     const routeMatch = useRouteMatch({ path: to, exact })
 
     if (source === 'server') {
         return (
-            <ButtonLink as={AnchorLink} to={to} className={classNames(buttonClassNames, className)}>
+            <ButtonLink as={AnchorLink} to={to} className={classNames(buttonClassNames, className)} onClick={onClick}>
                 {children}
             </ButtonLink>
         )
     }
 
     return (
-        <ButtonLink to={to} className={buttonClassNames} variant={routeMatch?.isExact ? 'primary' : undefined}>
+        <ButtonLink
+            to={to}
+            className={buttonClassNames}
+            variant={routeMatch?.isExact ? 'primary' : undefined}
+            onClick={onClick}
+        >
             {children}
         </ButtonLink>
     )

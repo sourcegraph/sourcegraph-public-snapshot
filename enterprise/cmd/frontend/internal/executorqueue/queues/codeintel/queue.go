@@ -4,21 +4,24 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func QueueOptions(autoIndexingSvc *autoindexing.Service, accessToken func() string, observationContext *observation.Context) handler.QueueOptions {
-	recordTransformer := func(ctx context.Context, record workerutil.Record, resourceMetadata handler.ResourceMetadata) (apiclient.Job, error) {
-		return transformRecord(record.(types.Index), resourceMetadata, accessToken())
+func QueueOptions(db database.DB, accessToken func() string, observationContext *observation.Context) handler.QueueOptions[types.Index] {
+	recordTransformer := func(ctx context.Context, record types.Index, resourceMetadata handler.ResourceMetadata) (apiclient.Job, error) {
+		return transformRecord(record, resourceMetadata, accessToken())
 	}
 
-	return handler.QueueOptions{
+	store := store.NewWithMetrics(db.Handle(), autoindexing.IndexWorkerStoreOptions, observationContext)
+
+	return handler.QueueOptions[types.Index]{
 		Name:              "codeintel",
-		Store:             autoindexing.GetWorkerutilStore(autoIndexingSvc),
+		Store:             store,
 		RecordTransformer: recordTransformer,
 	}
 }

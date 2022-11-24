@@ -1,9 +1,9 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback } from 'react'
 
 import { mdiCodeBrackets, mdiFormatLetterCase, mdiRegex } from '@mdi/js'
 import classNames from 'classnames'
 
-import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
+import { isMacPlatform } from '@sourcegraph/common'
 import {
     SearchPatternTypeProps,
     CaseSensitivityProps,
@@ -11,6 +11,8 @@ import {
     SearchPatternTypeMutationProps,
     SubmitSearchProps,
     SearchPatternType,
+    SearchMode,
+    SearchModeProps,
 } from '@sourcegraph/search'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -26,6 +28,7 @@ export interface TogglesProps
     extends SearchPatternTypeProps,
         SearchPatternTypeMutationProps,
         CaseSensitivityProps,
+        SearchModeProps,
         SettingsCascadeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
@@ -64,7 +67,8 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         setPatternType,
         caseSensitive,
         setCaseSensitivity,
-        settingsCascade,
+        searchMode,
+        setSearchMode,
         className,
         selectedSearchContextSpec,
         submitSearch,
@@ -72,30 +76,22 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         structuralSearchDisabled,
     } = props
 
-    const defaultPatternTypeValue = useMemo(
-        () =>
-            (settingsCascade.final &&
-                !isErrorLike(settingsCascade.final) &&
-                (settingsCascade.final['search.defaultPatternType'] as SearchPatternType)) ||
-            SearchPatternType.standard,
-        [settingsCascade.final]
-    )
-
-    const showSmartSearch = useMemo(() => defaultPatternTypeValue === SearchPatternType.lucky, [
-        defaultPatternTypeValue,
-    ])
-
     const submitOnToggle = useCallback(
         (
-            args: { newPatternType: SearchPatternType } | { newCaseSensitivity: boolean } | { newPowerUser: boolean }
+            args:
+                | { newPatternType: SearchPatternType }
+                | { newCaseSensitivity: boolean }
+                | { newPowerUser: boolean }
+                | { newSearchMode: SearchMode }
         ): void => {
             submitSearch?.({
                 source: 'filter',
                 patternType: 'newPatternType' in args ? args.newPatternType : patternType,
                 caseSensitive: 'newCaseSensitivity' in args ? args.newCaseSensitivity : caseSensitive,
+                searchMode: 'newSearchMode' in args ? args.newSearchMode : searchMode,
             })
         },
-        [caseSensitive, patternType, submitSearch]
+        [caseSensitive, patternType, searchMode, submitSearch]
     )
 
     const toggleCaseSensitivity = useCallback((): void => {
@@ -122,12 +118,12 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
 
     const onSelectSmartSearch = useCallback(
         (enabled: boolean): void => {
-            const newPatternType: SearchPatternType = enabled ? SearchPatternType.lucky : SearchPatternType.standard
+            const newSearchMode: SearchMode = enabled ? SearchMode.SmartSearch : SearchMode.Precise
 
-            setPatternType(newPatternType)
-            submitOnToggle({ newPatternType })
+            setSearchMode(newSearchMode)
+            submitOnToggle({ newSearchMode })
         },
-        [setPatternType, submitOnToggle]
+        [setSearchMode, submitOnToggle]
     )
 
     const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
@@ -141,7 +137,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                     onToggle={toggleCaseSensitivity}
                     iconSvgPath={mdiFormatLetterCase}
                     interactive={props.interactive}
-                    className="test-case-sensitivity-toggle"
+                    className={`test-case-sensitivity-toggle ${styles.caseSensitivityToggle}`}
                     disableOn={[
                         {
                             condition: findFilter(navbarSearchQuery, 'case', FilterKind.Subexpression) !== undefined,
@@ -165,7 +161,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                     onToggle={toggleRegexp}
                     iconSvgPath={mdiRegex}
                     interactive={props.interactive}
-                    className="test-regexp-toggle"
+                    className={`test-regexp-toggle ${styles.regularExpressionToggle}`}
                     disableOn={[
                         {
                             condition:
@@ -178,7 +174,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                     {!structuralSearchDisabled && (
                         <QueryInputToggle
                             title="Structural search"
-                            className="test-structural-search-toggle"
+                            className={`test-structural-search-toggle ${styles.structuralSearchToggle}`}
                             isActive={patternType === SearchPatternType.structural}
                             onToggle={toggleStructuralSearch}
                             iconSvgPath={mdiCodeBrackets}
@@ -194,23 +190,13 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                         />
                     )}
                 </>
-                {(showSmartSearch || showCopyQueryButton) && <div className={styles.separator} />}
-                {showSmartSearch && (
-                    <SmartSearchToggle
-                        className="test-smart-search-toggle"
-                        isActive={patternType === SearchPatternType.lucky}
-                        onSelect={onSelectSmartSearch}
-                        interactive={props.interactive}
-                        disableOn={[
-                            {
-                                condition:
-                                    findFilter(navbarSearchQuery, 'patterntype', FilterKind.Subexpression) !==
-                                    undefined,
-                                reason: 'Query already contains one or more patterntype subexpressions',
-                            },
-                        ]}
-                    />
-                )}
+                <div className={styles.separator} />
+                <SmartSearchToggle
+                    className="test-smart-search-toggle"
+                    isActive={searchMode === SearchMode.SmartSearch}
+                    onSelect={onSelectSmartSearch}
+                    interactive={props.interactive}
+                />
                 {showCopyQueryButton && (
                     <CopyQueryButton
                         fullQuery={fullQuery}

@@ -639,6 +639,8 @@ type ExperimentalFeatures struct {
 	HideSourcegraphOperatorLogin bool `json:"hideSourcegraphOperatorLogin,omitempty"`
 	// InsightsAlternateLoadingStrategy description: Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.
 	InsightsAlternateLoadingStrategy bool `json:"insightsAlternateLoadingStrategy,omitempty"`
+	// InsightsBackfillerV2 description: Use v2 of the insights backfiller which backfills a series at a time.
+	InsightsBackfillerV2 bool `json:"insightsBackfillerV2,omitempty"`
 	// JvmPackages description: Allow adding JVM package host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
 	// NpmPackages description: Allow adding npm package code host connections
@@ -665,6 +667,8 @@ type ExperimentalFeatures struct {
 	SearchIndexQueryContexts bool `json:"search.index.query.contexts,omitempty"`
 	// SearchIndexRevisions description: An array of objects describing rules for extra revisions (branch, ref, tag, commit sha, etc) to be indexed for all repositories that match them. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
 	SearchIndexRevisions []*SearchIndexRevisionsRule `json:"search.index.revisions,omitempty"`
+	// SearchSanitization description: Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.
+	SearchSanitization *SearchSanitization `json:"search.sanitization,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: DEPRECATED. Always on. Will be removed in 3.19.
 	SearchMultipleRevisionsPerRepository *bool `json:"searchMultipleRevisionsPerRepository,omitempty"`
 	// StructuralSearch description: Enables structural search.
@@ -1480,7 +1484,7 @@ type PerforceConnection struct {
 	MaxChanges float64 `json:"maxChanges,omitempty"`
 	// P4Client description: Client specified as an option for p4 CLI (P4CLIENT, also enables '--use-client-spec')
 	P4Client string `json:"p4.client,omitempty"`
-	// P4Passwd description: The ticket value for the user (P4PASSWD).
+	// P4Passwd description: The ticket value for the user (P4PASSWD). You can get this by running `p4 login -p` or `p4 login -pa`. It should look like `6211C5E719EDE6925855039E8F5CC3D2`.
 	P4Passwd string `json:"p4.passwd"`
 	// P4Port description: The Perforce Server address to be used for p4 CLI (P4PORT).
 	P4Port string `json:"p4.port"`
@@ -1568,6 +1572,14 @@ type Ranking struct {
 	MaxReorderQueueSize *int `json:"maxReorderQueueSize,omitempty"`
 	// RepoScores description: a map of URI directories to numeric scores for specifying search result importance, like {"github.com": 500, "github.com/sourcegraph": 300, "github.com/sourcegraph/sourcegraph": 100}. Would rank "github.com/sourcegraph/sourcegraph" as 500+300+100=900, and "github.com/other/foo" as 500.
 	RepoScores map[string]float64 `json:"repoScores,omitempty"`
+}
+
+// RepoPurgeWorker description: Configuration for repository purge worker.
+type RepoPurgeWorker struct {
+	// DeletedTTLMintues description: Repository TTL in minutes after deletion before it becomes eligible to be purged. A migration or admin could accidentally remove all or a significant number of repositories - recloning all of them is slow, so a TTL acts as a grace period so that admins can recover from accidental deletions
+	DeletedTTLMintues int `json:"deletedTTLMintues,omitempty"`
+	// IntervalMintues description: Interval in minutes at which to run purge jobs. Set to 0 to disable.
+	IntervalMintues int `json:"intervalMintues,omitempty"`
 }
 type Repos struct {
 	// Callsign description: The unique Phabricator identifier for the repository, like 'MUX'.
@@ -1696,6 +1708,14 @@ type SearchLimits struct {
 	// MaxTimeoutSeconds description: The maximum value for "timeout:" that search will respect. "timeout:" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Defaults to 1 minute.
 	MaxTimeoutSeconds int `json:"maxTimeoutSeconds,omitempty"`
 }
+
+// SearchSanitization description: Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.
+type SearchSanitization struct {
+	// OrgName description: Optionally specify the name of an organization within this Sourcegraph instance containing users whose searches should not be sanitized. Admins: ensure that ALL members of this org are trusted users. If no org exists with the given name then there will be no effect. If no org name is specified then all non-admin users will have their searches sanitized if this feature is enabled.
+	OrgName string `json:"orgName,omitempty"`
+	// SanitizePatterns description: An array of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. Values added to this array must be valid Go regular expressions. Site admins will not have their search results sanitized.
+	SanitizePatterns []string `json:"sanitizePatterns,omitempty"`
+}
 type SearchSavedQueries struct {
 	// Description description: Description of this saved query
 	Description string `json:"description"`
@@ -1812,6 +1832,8 @@ type Settings struct {
 	SearchContextLines int `json:"search.contextLines,omitempty"`
 	// SearchDefaultCaseSensitive description: Whether query patterns are treated case sensitively. Patterns are case insensitive by default.
 	SearchDefaultCaseSensitive bool `json:"search.defaultCaseSensitive,omitempty"`
+	// SearchDefaultMode description: Defines default properties for search behavior. The default is `smart`, which provides query assistance that automatically runs alternative queries when appropriate. When `precise`, search behavior strictly searches for the precise meaning of the query.
+	SearchDefaultMode string `json:"search.defaultMode,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
 	// SearchGlobbing description: REMOVED. Previously an experimental setting to interpret file and repo patterns as glob syntax.
@@ -2023,6 +2045,8 @@ type SiteConfiguration struct {
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
 	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
+	// AuthzSyncJobsRecordsTTL description: EXPERIMENTAL: Time interval (in minutes) of how long to keep sync job records for. Set to a negative value to disable.
+	AuthzSyncJobsRecordsTTL int `json:"authz.syncJobsRecordsTTL,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
 	BatchChangesChangesetsRetention string `json:"batchChanges.changesetsRetention,omitempty"`
 	// BatchChangesDisableWebhooksWarning description: Hides Batch Changes warnings about webhooks not being configured.
@@ -2085,6 +2109,10 @@ type SiteConfiguration struct {
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
 	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors.
 	ExecutorsAccessToken string `json:"executors.accessToken,omitempty"`
+	// ExecutorsBatcheshelperImage description: The image to use for batch changes in executors. Use this value to pull from a custom image registry.
+	ExecutorsBatcheshelperImage string `json:"executors.batcheshelperImage,omitempty"`
+	// ExecutorsBatcheshelperImageTag description: The tag to use for the batcheshelper image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
+	ExecutorsBatcheshelperImageTag string `json:"executors.batcheshelperImageTag,omitempty"`
 	// ExecutorsFrontendURL description: The frontend URL for Sourcegraph. Only root URLs are allowed. If not set, falls back to externalURL
 	ExecutorsFrontendURL string `json:"executors.frontendURL,omitempty"`
 	// ExecutorsSrcCLIImage description: The image to use for src-cli in executors. Use this value to pull from a custom image registry.
@@ -2128,17 +2156,19 @@ type SiteConfiguration struct {
 	InsightsAggregationsBufferSize int `json:"insights.aggregations.bufferSize,omitempty"`
 	// InsightsAggregationsProactiveResultLimit description: The maximum number of results a proactive search aggregation can accept before stopping
 	InsightsAggregationsProactiveResultLimit int `json:"insights.aggregations.proactiveResultLimit,omitempty"`
+	// InsightsBackfillInterruptAfter description: Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.
+	InsightsBackfillInterruptAfter int `json:"insights.backfill.interruptAfter,omitempty"`
 	// InsightsCommitIndexerInterval description: The interval (in minutes) at which the insights commit indexer will check for new commits.
 	InsightsCommitIndexerInterval int `json:"insights.commit.indexer.interval,omitempty"`
 	// InsightsCommitIndexerWindowDuration description: The number of days of commits the insights commit indexer will pull during each request (0 is no limit).
 	InsightsCommitIndexerWindowDuration int `json:"insights.commit.indexer.windowDuration,omitempty"`
 	// InsightsComputeGraphql description: DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API
 	InsightsComputeGraphql *bool `json:"insights.compute.graphql,omitempty"`
-	// InsightsHistoricalFrameLength description: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.
+	// InsightsHistoricalFrameLength description: DEPRECATED: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.
 	InsightsHistoricalFrameLength string `json:"insights.historical.frameLength,omitempty"`
-	// InsightsHistoricalFrames description: (debug) number of historical insights timeframes to populate
+	// InsightsHistoricalFrames description: DEPRECATED: (debug) number of historical insights timeframes to populate
 	InsightsHistoricalFrames int `json:"insights.historical.frames,omitempty"`
-	// InsightsHistoricalSpeedFactor description: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.
+	// InsightsHistoricalSpeedFactor description: DEPRECATED: (debug) Speed factor for building historical insights data. A value like 1.5 indicates approximately to use 1.5x as much repo-updater and gitserver resources.
 	InsightsHistoricalSpeedFactor *float64 `json:"insights.historical.speedFactor,omitempty"`
 	// InsightsHistoricalWorkerRateLimit description: Maximum number of historical Code Insights data frames that may be analyzed per second.
 	InsightsHistoricalWorkerRateLimit *float64 `json:"insights.historical.worker.rateLimit,omitempty"`
@@ -2146,6 +2176,8 @@ type SiteConfiguration struct {
 	InsightsQueryWorkerConcurrency int `json:"insights.query.worker.concurrency,omitempty"`
 	// InsightsQueryWorkerRateLimit description: Maximum number of Code Insights queries initiated per second on a worker node.
 	InsightsQueryWorkerRateLimit *float64 `json:"insights.query.worker.rateLimit,omitempty"`
+	// InsightsQueryWorkerRateLimitBurst description: The allowed burst rate for the Code Insights queries per second rate limiter.
+	InsightsQueryWorkerRateLimitBurst int `json:"insights.query.worker.rateLimitBurst,omitempty"`
 	// InsightsSearchGraphql description: DEPRECATED: Force GraphQL mode for insights searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API
 	InsightsSearchGraphql *bool `json:"insights.search.graphql,omitempty"`
 	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
@@ -2192,6 +2224,8 @@ type SiteConfiguration struct {
 	RepoConcurrentExternalServiceSyncers int `json:"repoConcurrentExternalServiceSyncers,omitempty"`
 	// RepoListUpdateInterval description: Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
+	// RepoPurgeWorker description: Configuration for repository purge worker.
+	RepoPurgeWorker *RepoPurgeWorker `json:"repoPurgeWorker,omitempty"`
 	// SearchIndexEnabled description: Whether indexed search is enabled. If : unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.
 	SearchIndexEnabled *bool `json:"search.index.enabled,omitempty"`
 	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.

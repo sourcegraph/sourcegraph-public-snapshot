@@ -1,12 +1,8 @@
-import { Duration } from 'date-fns'
-
 import { Series } from '@sourcegraph/wildcard'
 
-import { GroupByField } from '../../../../graphql-operations'
 import {
     RuntimeInsight,
     InsightDashboard,
-    SearchBasedInsightSeries,
     CaptureGroupInsight,
     LangStatsInsight,
     InsightsDashboardOwner,
@@ -98,26 +94,6 @@ export interface RemoveInsightFromDashboardInput {
     dashboardId: string
 }
 
-export interface CaptureInsightSettings {
-    repositories: string[]
-    query: string
-    step: Duration
-}
-
-export interface InsightPreviewSettings {
-    repositories: string[]
-    step: Duration
-    series: SeriesPreviewSettings[]
-}
-
-export interface SeriesPreviewSettings {
-    query: string
-    generatedFromCaptureGroup?: boolean
-    label: string
-    stroke: string
-    groupBy?: GroupByField
-}
-
 export interface BackendInsightDatum {
     dateTime: Date
     value: number
@@ -133,28 +109,7 @@ export interface GetBuiltInsightInput {
     insight: RuntimeInsight
 }
 
-export interface GetSearchInsightContentInput {
-    series: SearchBasedInsightSeries[]
-    step: Duration
-    repositories: string[]
-}
-
 export interface GetLangStatsInsightContentInput {
     repository: string
     otherThreshold: number
-}
-
-export interface RepositorySuggestionData {
-    id: string
-    name: string
-}
-
-export interface UiFeaturesConfig {
-    licensed: boolean
-    insightsLimit: number | null
-}
-
-export interface HasInsightsInput {
-    first: number
-    isFrozen?: boolean
 }

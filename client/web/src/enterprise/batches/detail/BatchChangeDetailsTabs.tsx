@@ -157,17 +157,20 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
         [history, location, shouldDisplayExecutionsTab, customShortPath]
     )
 
+    const changesetCount = batchChange.changesetsStats.total - batchChange.changesetsStats.archived
+    const executionsCount = `${pendingExecutionsCount}${batchChange.batchSpecs.pageInfo.hasNextPage && '+'}`
+
     return (
         <BatchChangeTabs defaultIndex={defaultTabIndex} onChange={onTabChange}>
             <BatchChangeTabList>
-                <Tab>
+                <Tab aria-label={`Changesets (${changesetCount} total)`}>
                     <span>
                         <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiSourceBranch} />
                         <span className="text-content" data-tab-content="Changesets">
                             Changesets
                         </span>
                         <Badge variant="secondary" pill={true} className="ml-2">
-                            {batchChange.changesetsStats.total - batchChange.changesetsStats.archived}
+                            {changesetCount}
                         </Badge>
                     </span>
                 </Tab>
@@ -180,7 +183,11 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                     </span>
                 </Tab>
                 {shouldDisplayExecutionsTab ? (
-                    <Tab>
+                    <Tab
+                        aria-label={`Executions${
+                            pendingExecutionsCount > 0 ? ' (' + executionsCount + 'total active)' : ''
+                        }`}
+                    >
                         <span>
                             <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiFileDocument} />
                             <span className="text-content" data-tab-content="Executions">
@@ -188,7 +195,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                             </span>
                             {pendingExecutionsCount > 0 && (
                                 <Badge variant="warning" pill={true} className="ml-2">
-                                    {pendingExecutionsCount} {batchChange.batchSpecs.pageInfo.hasNextPage && <>+</>}
+                                    {executionsCount}
                                 </Badge>
                             )}
                         </span>
@@ -203,7 +210,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         </span>
                     </Tab>
                 )}
-                <Tab>
+                <Tab aria-label={`Archived (${batchChange.changesetsStats.archived} total)`}>
                     <span>
                         <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiArchive} />
                         <span className="text-content" data-tab-content="Archived">
@@ -214,7 +221,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                         </Badge>
                     </span>
                 </Tab>
-                <Tab>
+                <Tab aria-label={`Bulk operations (${batchChange.bulkOperations.totalCount} total)`}>
                     <span>
                         <Icon aria-hidden={true} className="text-muted mr-2" svgPath={mdiMonitorStar} />
                         <span className="text-content" data-tab-content="Bulk operations">

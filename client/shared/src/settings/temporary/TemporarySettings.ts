@@ -6,6 +6,7 @@ import { MultiSelectState } from '@sourcegraph/wildcard'
 
 import { BatchChangeState } from '../../graphql-operations'
 
+import { DiffMode } from './diffMode'
 import { RecentSearch } from './recentSearches'
 import { SectionID, NoResultsSectionID } from './searchSidebar'
 
@@ -44,12 +45,13 @@ export interface TemporarySettingsSchema {
     }
     'search.results.collapseSmartSearch': boolean
     'search.input.recentSearches': RecentSearch[]
+    'search.input.usedInlineHistory': boolean
     // TODO #41002: Remove this temporary setting.
     // This temporary setting is now turned on by default with no UI to toggle it off.
     'coreWorkflowImprovements.enabled_deprecated': boolean
     'batches.minSavedPerChangeset': number
     'search.notebooks.minSavedPerView': number
-    'repo.commitPage.diffMode': 'split' | 'unified'
+    'repo.commitPage.diffMode': DiffMode
 }
 
 /**

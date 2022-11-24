@@ -2,10 +2,9 @@ import { noop } from 'lodash'
 import { EMPTY, NEVER, of, Subscription } from 'rxjs'
 import sinon from 'sinon'
 
-import { FetchFileParameters } from '@sourcegraph/search-ui'
-
 import { FlatExtensionHostAPI } from '../api/contract'
 import { pretendProxySubscribable, pretendRemote } from '../api/util'
+import { FetchFileParameters } from '../backend/file'
 import { Controller } from '../extensions/controller'
 import { PlatformContext } from '../platform/context'
 import { AggregateStreamingSearchResults, ContentMatch, RepositoryMatch } from '../search/stream'

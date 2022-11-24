@@ -14,6 +14,7 @@ import {
     RemoveInsightViewFromDashboardVariables,
 } from 'src/graphql-operations'
 
+import { isDefined } from '@sourcegraph/common'
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
 import { ALL_INSIGHTS_DASHBOARD } from '../../../constants'
@@ -26,19 +27,12 @@ import {
     DashboardUpdateInput,
     DashboardUpdateResult,
     GetLangStatsInsightContentInput,
-    GetSearchInsightContentInput,
     InsightCreateInput,
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
     CategoricalChartContent,
-    SeriesChartContent,
-    UiFeaturesConfig,
     DashboardCreateResult,
-    InsightPreviewSettings,
-    BackendInsightDatum,
 } from '../code-insights-backend-types'
-import { getRepositorySuggestions } from '../core/api/get-repository-suggestions'
-import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
 
 import { createInsightView } from './deserialization/create-insight-view'
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
@@ -49,11 +43,7 @@ import { createDashboard } from './methods/create-dashboard/create-dashboard'
 import { createInsight } from './methods/create-insight/create-insight'
 import { getBuiltInInsight } from './methods/get-built-in-insight-data'
 import { getLangStatsInsightContent } from './methods/get-built-in-insight-data/get-lang-stats-insight-content'
-import { getSearchInsightContent } from './methods/get-built-in-insight-data/get-search-insight-content'
 import { getDashboardOwners } from './methods/get-dashboard-owners'
-import { getDashboardById } from './methods/get-dashboards/get-dashboard-by-id'
-import { getDashboards } from './methods/get-dashboards/get-dashboards'
-import { getInsightsPreview } from './methods/get-insight-preview'
 import { updateDashboard } from './methods/update-dashboard'
 import { updateInsight } from './methods/update-insight/update-insight'
 
@@ -76,7 +66,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     errorPolicy: 'all',
                 })
             ).pipe(
-                map(({ data }) => data.insightViews.nodes.map(createInsightView)),
+                map(({ data }) => data.insightViews.nodes.filter(isDefined).map(createInsightView)),
                 map(insights => (withCompute ? insights : insights.filter(insight => !isComputeInsight(insight))))
             )
         }
@@ -93,7 +83,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         ).pipe(
             map(({ data }) => data.insightsDashboards.nodes[0]),
-            map(dashboard => dashboard.views?.nodes.map(createInsightView) ?? []),
+            map(dashboard => dashboard.views?.nodes.filter(isDefined).map(createInsightView) ?? []),
             map(insights => (withCompute ? insights : insights.filter(insight => !isComputeInsight(insight))))
         )
     }
@@ -199,12 +189,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         )
     }
 
-    // Dashboards
-    public getDashboards = (id?: string): Observable<InsightDashboard[]> => getDashboards(this.apolloClient, id)
-
-    public getDashboardById = (input: { dashboardId: string | undefined }): Observable<InsightDashboard | null> =>
-        getDashboardById(this.apolloClient, input)
-
     // This is only used to check for duplicate dashboards. Thi is not required for the new GQL API.
     // So we just return null to get the form to always accept.
     public findDashboardByName = (name: string): Observable<InsightDashboard | null> => of(null)
@@ -237,20 +221,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         updateDashboard(this.apolloClient, input)
 
     // Live preview fetchers
-    public getSearchInsightContent = (input: GetSearchInsightContentInput): Promise<SeriesChartContent<any>> =>
-        getSearchInsightContent(input).then(data => data.content)
 
     public getLangStatsInsightContent = (
         input: GetLangStatsInsightContentInput
     ): Promise<CategoricalChartContent<any>> => getLangStatsInsightContent(input).then(data => data.content)
-
-    public getInsightPreviewContent = (
-        input: InsightPreviewSettings
-    ): Promise<SeriesChartContent<BackendInsightDatum>> => getInsightsPreview(this.apolloClient, input)
-
-    // Repositories API
-    public getRepositorySuggestions = getRepositorySuggestions
-    public getResolvedSearchRepositories = getResolvedSearchRepositories
 
     public assignInsightsToDashboard = ({
         id,
@@ -319,11 +293,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         return todoRepository().pipe(
             switchMap(todoRepository => (todoRepository ? of(todoRepository) : firstRepository()))
         )
-    }
-
-    public readonly UIFeatures: UiFeaturesConfig = {
-        licensed: true,
-        insightsLimit: null,
     }
 }
 

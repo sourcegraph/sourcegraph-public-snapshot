@@ -167,6 +167,7 @@ Foreign-key constraints:
  cancel                  | boolean                  |           | not null | false
  queued_at               | timestamp with time zone |           |          | now()
  user_id                 | integer                  |           | not null | 
+ version                 | integer                  |           | not null | 1
 Indexes:
     "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_workspace_execution_jobs_batch_spec_workspace_id" btree (batch_spec_workspace_id)
@@ -895,7 +896,7 @@ Associates a repository-commit pair with the set of repository-level dependencie
 Indexes:
     "codeintel_path_rank_inputs_pkey" PRIMARY KEY, btree (id)
     "codeintel_path_rank_inputs_graph_key_input_filename_reposit_key" UNIQUE CONSTRAINT, btree (graph_key, input_filename, repository_name)
-    "codeintel_path_rank_graph_key_id_repository_name_processed" btree (graph_key, id, repository_name) WHERE NOT processed
+    "codeintel_path_rank_inputs_graph_key_repository_name_id_process" btree (graph_key, repository_name, id) WHERE NOT processed
 
 ```
 
@@ -914,21 +915,24 @@ Indexes:
     "codeintel_path_ranks_repository_id_precision" UNIQUE, btree (repository_id, "precision")
     "codeintel_path_ranks_updated_at" btree (updated_at) INCLUDE (repository_id)
 Triggers:
-    update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column()
+    update_codeintel_path_ranks_updated_at BEFORE UPDATE ON codeintel_path_ranks FOR EACH ROW WHEN (new.* IS DISTINCT FROM old.*) EXECUTE FUNCTION update_codeintel_path_ranks_updated_at_column()
 
 ```
 
 # Table "public.codeintel_ranking_exports"
 ```
-  Column   |           Type           | Collation | Nullable | Default 
------------+--------------------------+-----------+----------+---------
- upload_id | integer                  |           | not null | 
- graph_key | text                     |           | not null | 
- locked_at | timestamp with time zone |           | not null | now()
+    Column     |           Type           | Collation | Nullable |                        Default                        
+---------------+--------------------------+-----------+----------+-------------------------------------------------------
+ upload_id     | integer                  |           |          | 
+ graph_key     | text                     |           | not null | 
+ locked_at     | timestamp with time zone |           | not null | now()
+ id            | integer                  |           | not null | nextval('codeintel_ranking_exports_id_seq'::regclass)
+ object_prefix | text                     |           |          | 
 Indexes:
-    "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (upload_id, graph_key)
+    "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_exports_graph_key_upload_id" UNIQUE, btree (graph_key, upload_id)
 Foreign-key constraints:
-    "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
 
 ```
 
@@ -1086,7 +1090,7 @@ Referenced by:
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
-    "event_logs_name" btree (name)
+    "event_logs_name_timestamp" btree (name, "timestamp" DESC)
     "event_logs_source" btree (source)
     "event_logs_timestamp" btree ("timestamp")
     "event_logs_timestamp_at_utc" btree (date(timezone('UTC'::text, "timestamp")))
@@ -1464,13 +1468,15 @@ Indexes:
  last_fetched    | timestamp with time zone |           | not null | now()
  last_changed    | timestamp with time zone |           | not null | now()
  repo_size_bytes | bigint                   |           |          | 
- repo_status     | text                     |           |          | 
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
+    "gitserver_repo_size_bytes" btree (repo_size_bytes)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
     "gitserver_repos_cloning_status_idx" btree (repo_id) WHERE clone_status = 'cloning'::text
+    "gitserver_repos_last_changed_idx" btree (last_changed, repo_id)
     "gitserver_repos_last_error_idx" btree (repo_id) WHERE last_error IS NOT NULL
     "gitserver_repos_not_cloned_status_idx" btree (repo_id) WHERE clone_status = 'not_cloned'::text
+    "gitserver_repos_not_explicitly_cloned_idx" btree (repo_id) WHERE clone_status <> 'cloned'::text
     "gitserver_repos_shard_id" btree (shard_id, repo_id)
 Foreign-key constraints:
     "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -1542,6 +1548,7 @@ Indexes:
  persist_mode      | persistmode              |           | not null | 'record'::persistmode
  queued_at         | timestamp with time zone |           |          | now()
  cancel            | boolean                  |           | not null | false
+ trace_id          | text                     |           |          | 
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "finished_at_insights_query_runner_jobs_idx" btree (finished_at)
@@ -1974,7 +1981,6 @@ Associates an upload with the set of packages they provide within a given packag
  scheme  | text    |           | not null | 
  name    | text    |           | not null | 
  version | text    |           |          | 
- filter  | bytea   |           |          | 
  dump_id | integer |           | not null | 
 Indexes:
     "lsif_references_pkey" PRIMARY KEY, btree (id)
@@ -1988,8 +1994,6 @@ Foreign-key constraints:
 Associates an upload with the set of packages they require within a given packages management scheme.
 
 **dump_id**: The identifier of the upload that references the package.
-
-**filter**: A [bloom filter](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.23/-/blob/enterprise/internal/codeintel/bloomfilter/bloom_filter.go#L27:6) encoded as gzipped JSON. This bloom filter stores the set of identifiers imported from the package.
 
 **name**: The package name.
 
@@ -2055,19 +2059,21 @@ Stores the retention policy of code intellience data for a repository.
  uncompressed_size       | bigint                   |           |          | 
  last_referenced_scan_at | timestamp with time zone |           |          | 
  last_traversal_scan_at  | timestamp with time zone |           |          | 
+ last_reconcile_at       | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
     "lsif_uploads_associated_index_id" btree (associated_index_id)
     "lsif_uploads_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
     "lsif_uploads_committed_at" btree (committed_at) WHERE state = 'completed'::text
+    "lsif_uploads_last_reconcile_at" btree (last_reconcile_at, id) WHERE state = 'completed'::text
     "lsif_uploads_repository_id_commit" btree (repository_id, commit)
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at" btree (uploaded_at)
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
 Referenced by:
-    TABLE "codeintel_ranking_exports" CONSTRAINT "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    TABLE "codeintel_ranking_exports" CONSTRAINT "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
     TABLE "lsif_dependency_syncing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_dependency_indexing_jobs" CONSTRAINT "lsif_dependency_indexing_jobs_upload_id_fkey1" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
     TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
@@ -2171,6 +2177,7 @@ A less hot-path reference count for upload records.
  branch_or_tag_name | text    |           | not null | ''::text
  is_default_branch  | boolean |           | not null | false
 Indexes:
+    "lsif_uploads_visible_at_tip_is_default_branch" btree (upload_id) WHERE is_default_branch
     "lsif_uploads_visible_at_tip_repository_id_upload_id" btree (repository_id, upload_id)
 
 ```
@@ -2627,6 +2634,7 @@ Indexes:
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_created_at" btree (created_at)
     "repo_description_trgm_idx" gin (lower(description) gin_trgm_ops)
+    "repo_dotcom_indexable_repos_idx" btree (stars DESC NULLS LAST) INCLUDE (id, name) WHERE deleted_at IS NULL AND blocked IS NULL AND (stars >= 5 AND NOT COALESCE(fork, false) AND NOT archived OR lower(name::text) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'::text)
     "repo_fork" btree (fork)
     "repo_hashed_name_idx" btree (sha256(lower(name::text)::bytea)) WHERE deleted_at IS NULL
     "repo_is_not_blocked_idx" btree ((blocked IS NULL))
@@ -3187,6 +3195,7 @@ Triggers:
  worker_hostname   | text                     |           | not null | ''::text
  org               | text                     |           |          | 
  extsvc_id         | integer                  |           |          | 
+ cancel            | boolean                  |           | not null | false
 Indexes:
     "webhook_build_jobs_queued_at_idx" btree (queued_at)
     "webhook_build_jobs_state" btree (state)
@@ -3230,6 +3239,7 @@ Foreign-key constraints:
  uuid               | uuid                     |           | not null | gen_random_uuid()
  created_by_user_id | integer                  |           |          | 
  updated_by_user_id | integer                  |           |          | 
+ name               | text                     |           | not null | 
 Indexes:
     "webhooks_pkey" PRIMARY KEY, btree (id)
     "webhooks_uuid_key" UNIQUE CONSTRAINT, btree (uuid)
@@ -3248,6 +3258,8 @@ Webhooks registered in Sourcegraph instance.
 **code_host_urn**: URN of a code host. This column maps to external_service_id column of repo table.
 
 **created_by_user_id**: ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted).
+
+**name**: Descriptive name of a webhook.
 
 **secret**: Secret used to decrypt webhook payload (if supported by the code host).
 
@@ -3292,6 +3304,7 @@ Foreign-key constraints:
     j.cancel,
     j.queued_at,
     j.user_id,
+    j.version,
     q.place_in_global_queue,
     q.place_in_user_queue
    FROM (batch_spec_workspace_execution_jobs j

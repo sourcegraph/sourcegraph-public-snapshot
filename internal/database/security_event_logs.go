@@ -3,15 +3,16 @@ package database
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -43,7 +44,19 @@ const (
 
 	SecurityEventNameAccessGranted SecurityEventName = "AccessGranted"
 
-	SecurityEventAccessTokenCreated SecurityEventName = "AccessTokenCreated"
+	SecurityEventAccessTokenCreated      SecurityEventName = "AccessTokenCreated"
+	SecurityEventAccessTokenDeleted      SecurityEventName = "AccessTokenDeleted"
+	SecurityEventAccessTokenHardDeleted  SecurityEventName = "AccessTokenHardDeleted"
+	SecurityEventAccessTokenImpersonated SecurityEventName = "AccessTokenImpersonated"
+
+	SecurityEventGitHubAuthSucceeded SecurityEventName = "GitHubAuthSucceeded"
+	SecurityEventGitHubAuthFailed    SecurityEventName = "GitHubAuthFailed"
+
+	SecurityEventGitLabAuthSucceeded SecurityEventName = "GitLabAuthSucceeded"
+	SecurityEventGitLabAuthFailed    SecurityEventName = "GitLabAuthFailed"
+
+	SecurityEventOIDCLoginSucceeded SecurityEventName = "SecurityEventOIDCLoginSucceeded"
+	SecurityEventOIDCLoginFailed    SecurityEventName = "SecurityEventOIDCLoginFailed"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.
@@ -61,7 +74,7 @@ func (e *SecurityEvent) marshalArgumentAsJSON() string {
 	if e.Argument == nil {
 		return "{}"
 	}
-	return fmt.Sprintf("%s", e.Argument)
+	return string(e.Argument)
 }
 
 // SecurityEventLogsStore provides persistence for security events.
@@ -97,8 +110,22 @@ func (s *securityEventLogsStore) Insert(ctx context.Context, event *SecurityEven
 }
 
 func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*SecurityEvent) error {
+	actor := actor.FromContext(ctx)
 	vals := make([]*sqlf.Query, len(events))
 	for index, event := range events {
+		// Add an attribution for Sourcegraph operator to be distinguished in our analytics pipelines
+		if actor.SourcegraphOperator {
+			result, err := jsonc.Edit(
+				event.marshalArgumentAsJSON(),
+				true,
+				"sourcegraph_operator",
+			)
+			event.Argument = json.RawMessage(result)
+			if err != nil {
+				return errors.Wrap(err, `edit "argument" for Sourcegraph operator`)
+			}
+		}
+
 		vals[index] = sqlf.Sprintf(`(%s, %s, %s, %s, %s, %s, %s, %s)`,
 			event.Name,
 			event.URL,
@@ -123,6 +150,8 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 			Fields: []log.Field{
 				log.Object("event",
 					log.String("URL", event.URL),
+					log.Uint32("UserID", event.UserID),
+					log.String("AnonymousUserID", event.AnonymousUserID),
 					log.String("source", event.Source),
 					log.String("argument", event.marshalArgumentAsJSON()),
 					log.String("version", version.Version()),

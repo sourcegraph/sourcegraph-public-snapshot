@@ -35,6 +35,7 @@ export default config
 
 const defaultProps: SearchContextMenuProps = {
     authenticatedUser: null,
+    isSourcegraphDotCom: false,
     showSearchContextManagement: false,
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(2),
     fetchSearchContexts: ({

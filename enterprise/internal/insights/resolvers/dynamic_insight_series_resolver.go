@@ -76,3 +76,7 @@ func (e emptyInsightStatusResolver) BackfillQueuedAt(ctx context.Context) *gqlut
 	current := time.Now().AddDate(-1, 0, 0)
 	return gqlutil.DateTimeOrNil(&current)
 }
+
+func (e emptyInsightStatusResolver) IncompleteDatapoints(ctx context.Context) (resolvers []graphqlbackend.IncompleteDatapointAlert, err error) {
+	return nil, nil
+}

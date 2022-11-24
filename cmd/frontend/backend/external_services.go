@@ -6,24 +6,10 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var ErrNoAccessExternalService = errors.New("the authenticated user does not have access to this external service")
-
-// CheckExternalServiceAccess checks whether the current user is a siteAdmin as only siteAdmins can
-// access the supplied external service.
-func CheckExternalServiceAccess(ctx context.Context, db database.DB) error {
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, db) == nil {
-		return nil
-	}
-
-	return ErrNoAccessExternalService
-}
 
 // repoupdaterClient is an interface with only the methods required in SyncExternalService. As a
 // result instead of using the entire repoupdater client implementation, we use a thinner API which

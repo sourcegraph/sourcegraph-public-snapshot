@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
+
 import { Badge, BadgeVariantType } from '@sourcegraph/wildcard'
 
 import { BatchSpecState } from '../../../../graphql-operations'
@@ -38,8 +40,11 @@ export const BatchSpecStateBadge: React.FunctionComponent<React.PropsWithChildre
     const [variant, tooltip] = getProps(state)
 
     return (
-        <Badge className={className} variant={variant} tooltip={tooltip}>
-            {state}
-        </Badge>
+        <>
+            <VisuallyHidden role="status">{tooltip}</VisuallyHidden>
+            <Badge className={className} variant={variant} tooltip={tooltip} aria-hidden={true}>
+                {state}
+            </Badge>
+        </>
     )
 }

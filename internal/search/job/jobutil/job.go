@@ -195,6 +195,12 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		}
 	}
 
+	{ // Apply search result sanitization post-filter if enabled
+		if len(inputs.SanitizeSearchPatterns) > 0 {
+			basicJob = NewSanitizeJob(inputs.SanitizeSearchPatterns, basicJob)
+		}
+	}
+
 	{ // Apply limit
 		maxResults := b.ToParseTree().MaxResults(inputs.DefaultLimit())
 		basicJob = NewLimitJob(maxResults, basicJob)
@@ -939,6 +945,12 @@ func isGlobal(op search.RepoOptions) bool {
 	// Zoekt does not know about repo descriptions, so we depend on the
 	// database to handle this filter.
 	if len(op.DescriptionPatterns) > 0 {
+		return false
+	}
+
+	// Zoekt does not know about repo key-value pairs or tags, so we depend on the
+	// database to handle this filter.
+	if len(op.HasKVPs) > 0 {
 		return false
 	}
 

@@ -1,8 +1,10 @@
 package rcache
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -10,6 +12,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // dataVersion is used for releases that change type structure for
@@ -47,6 +50,8 @@ func NewWithTTL(keyPrefix string, ttlSeconds int) *Cache {
 		ttlSeconds: ttlSeconds,
 	}
 }
+
+func (r *Cache) TTL() time.Duration { return time.Duration(r.ttlSeconds) * time.Second }
 
 func (r *Cache) GetMulti(keys ...string) [][]byte {
 	c := pool.Get()
@@ -176,6 +181,48 @@ func (r *Cache) Delete(key string) {
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "DEL", "error", err)
 	}
+}
+
+// ListKeys lists all keys associated with this cache. Use with care if you have long
+// TTLs or no TTL configured.
+func (r *Cache) ListKeys(ctx context.Context) ([]string, error) {
+	c, err := pool.GetContext(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "get redis conn")
+	}
+	defer c.Close()
+
+	var allKeys []string
+	cursor := 0
+	for {
+		select {
+		case <-ctx.Done():
+			return allKeys, ctx.Err()
+		default:
+		}
+
+		res, err := redis.Values(
+			c.Do("SCAN", cursor,
+				"MATCH", r.rkeyPrefix()+"*",
+				"COUNT", 100),
+		)
+		if err != nil {
+			return allKeys, errors.Wrap(err, "redis scan")
+		}
+
+		cursor, _ = redis.Int(res[0], nil)
+		keys, _ := redis.Strings(res[1], nil)
+		for i, k := range keys {
+			keys[i] = strings.TrimPrefix(k, r.rkeyPrefix())
+		}
+
+		allKeys = append(allKeys, keys...)
+
+		if cursor == 0 {
+			break
+		}
+	}
+	return allKeys, nil
 }
 
 // rkeyPrefix generates the actual key prefix we use on redis.

@@ -11,7 +11,21 @@ import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './results
  * This breaks all functionality that is built on top of URL query params and history
  * state. This list of query keys will be preserved between searches.
  */
-const PRESERVED_QUERY_PARAMETERS = ['trace', AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY]
+const PRESERVED_QUERY_PARAMETERS = ['feat', 'trace', AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY]
+
+/**
+ * Returns a URL query string with only the parameters in PRESERVED_QUERY_PARAMETERS.
+ */
+function preservedQuery(query: string): string {
+    const old = new URLSearchParams(query)
+    const filtered = new URLSearchParams()
+    for (const key of PRESERVED_QUERY_PARAMETERS) {
+        for (const value of old.getAll(key)) {
+            filtered.append(key, value)
+        }
+    }
+    return filtered.toString()
+}
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -23,8 +37,8 @@ export function submitSearch({
     patternType,
     caseSensitive,
     selectedSearchContextSpec,
+    searchMode,
     source,
-    searchParameters,
     addRecentSearch,
 }: SubmitSearchParameters): void {
     let searchQueryParameter = buildSearchURLQuery(
@@ -32,19 +46,12 @@ export function submitSearch({
         patternType,
         caseSensitive,
         selectedSearchContextSpec,
-        searchParameters
+        searchMode
     )
 
-    const existingParameters = new URLSearchParams(history.location.search)
-
-    for (const key of PRESERVED_QUERY_PARAMETERS) {
-        const queryParameter = existingParameters.get(key)
-
-        if (queryParameter !== null) {
-            const parameters = new URLSearchParams(searchQueryParameter)
-            parameters.set(key, queryParameter)
-            searchQueryParameter = parameters.toString()
-        }
+    const preserved = preservedQuery(history.location.search)
+    if (preserved !== '') {
+        searchQueryParameter = searchQueryParameter + '&' + preserved
     }
 
     // Go to search results page

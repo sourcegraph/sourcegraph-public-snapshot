@@ -1458,6 +1458,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyGroupResultsChartBarClick                []GroupResultPing
 	WeeklyGroupResultsAggregationModeClicked       []GroupResultPing
 	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
+	WeeklyGroupResultsSearches                     []GroupResultSearchPing
 	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
 }
 
@@ -1469,6 +1470,12 @@ type GroupResultPing struct {
 }
 
 type GroupResultExpandedViewPing struct {
+	AggregationMode *string
+	Count           *int32
+}
+
+type GroupResultSearchPing struct {
+	Name            PingName
 	AggregationMode *string
 	Count           *int32
 }
@@ -1677,12 +1684,14 @@ func NewEncryptedSecret(cipher, keyID string, key encryption.Key) *EncryptableSe
 }
 
 // Webhook defines the information we need to handle incoming webhooks from a
-// code host
+// code host.
 type Webhook struct {
-	// The primary key, used for sorting and pagination
+	// The primary key, used for sorting and pagination.
 	ID int32
-	// UUID is the ID we display externally and will appear in the webhook URL
-	UUID         uuid.UUID
+	// UUID is the ID we display externally and will appear in the webhook URL.
+	UUID uuid.UUID
+	// Name is a descriptive webhook name which is shown on the UI for convenience.
+	Name         string
 	CodeHostKind string
 	CodeHostURN  extsvc.CodeHostBaseURL
 	// Secret can be in one of three states:

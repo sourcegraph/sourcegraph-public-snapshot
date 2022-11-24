@@ -10,6 +10,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Link, useWindowSize, VIEWPORT_SM } from '@sourcegraph/wildcard'
 
 import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -17,14 +18,12 @@ import { BrandLogo } from '../../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../../insights/types'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
+import { eventLogger } from '../../tracking/eventLogger'
 import { HomePanels } from '../panels/HomePanels'
 
-import { LoggedOutHomepage } from './LoggedOutHomepage'
-import { exampleTripsAndTricks } from './LoggedOutHomepage.constants'
 import { QueryExamplesHomepage } from './QueryExamplesHomepage'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
-import { TipsAndTricks } from './TipsAndTricks'
 
 import styles from './SearchPage.module.scss'
 
@@ -55,6 +54,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
     const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
     const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
+    const { width } = useWindowSize()
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -67,7 +67,16 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
             <BrandLogo className={styles.logo} isLightTheme={props.isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && (
-                <div className="text-muted text-center mt-3">Search millions of open source repositories</div>
+                <div className="d-sm-flex flex-row text-center">
+                    <div className={classNames(width >= VIEWPORT_SM && 'border-right', 'text-muted mt-3 mr-sm-2 pr-2')}>
+                        Search millions of open source repositories
+                    </div>
+                    <div className="mt-3">
+                        <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
+                            Search private code
+                        </Link>
+                    </div>
+                </div>
             )}
             <div className={styles.searchContainer}>
                 <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} source="home" />
@@ -77,31 +86,21 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     [styles.panelsContainerWithCollaborators]: showCollaborators,
                 })}
             >
-                {props.isSourcegraphDotCom && !props.authenticatedUser && <LoggedOutHomepage {...props} />}
-                {props.isSourcegraphDotCom && props.authenticatedUser && !showEnterpriseHomePanels && (
-                    <TipsAndTricks
-                        examples={exampleTripsAndTricks}
-                        moreLink={{
-                            label: 'More search features',
-                            href: 'https://docs.sourcegraph.com/code_search/explanations/features',
-                            trackEventName: 'HomepageExampleMoreSearchFeaturesClicked',
-                        }}
-                        {...props}
-                    />
-                )}
+                <>
+                    {showEnterpriseHomePanels && !!props.authenticatedUser && !props.isSourcegraphDotCom && (
+                        <HomePanels showCollaborators={showCollaborators} {...props} />
+                    )}
 
-                {showEnterpriseHomePanels && props.authenticatedUser && (
-                    <HomePanels showCollaborators={showCollaborators} {...props} />
-                )}
-
-                {!showEnterpriseHomePanels && !props.isSourcegraphDotCom && (
-                    <QueryExamplesHomepage
-                        selectedSearchContextSpec={props.selectedSearchContextSpec}
-                        telemetryService={props.telemetryService}
-                        queryState={queryState}
-                        setQueryState={setQueryState}
-                    />
-                )}
+                    {((!showEnterpriseHomePanels && !!props.authenticatedUser) || props.isSourcegraphDotCom) && (
+                        <QueryExamplesHomepage
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            telemetryService={props.telemetryService}
+                            queryState={queryState}
+                            setQueryState={setQueryState}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        />
+                    )}
+                </>
             </div>
 
             <SearchPageFooter {...props} />
