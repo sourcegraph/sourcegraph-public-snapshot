@@ -22,7 +22,6 @@ Flags:
 - Resuming work:
   - `resume`: sqlite database name to create or resume from (default `state.db`)
 
-
 ## FAQ
 
 > Why require the organization to exist in the first place?
