@@ -91,8 +91,8 @@ sg db add-user -name=foo
 			},
 			{
 				Name:        "update-user-external-services",
-				Usage:       "Manually update a user external services",
-				Description: `TTODO`,
+				Usage:       "Manually update a user's external services",
+				Description: `Patches user_external_services with a custom OAuth token for the provided user. Used in dev/test environments.`,
 				Action:      dbUpdateUserExternalAccount,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
