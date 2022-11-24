@@ -121,7 +121,6 @@ func workerOptions(c *config.Config) workerutil.WorkerOptions {
 		NumHandlers:          c.MaximumNumJobs,
 		Interval:             c.QueuePollInterval,
 		HeartbeatInterval:    5 * time.Second,
-		CancelInterval:       c.QueuePollInterval,
 		Metrics:              makeWorkerMetrics(c.QueueName),
 		NumTotalJobs:         c.NumTotalJobs,
 		MaxActiveTime:        c.MaxActiveTime,

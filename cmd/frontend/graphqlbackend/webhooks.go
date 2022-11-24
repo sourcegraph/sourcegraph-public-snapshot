@@ -29,6 +29,7 @@ type WebhookResolver interface {
 	ID() graphql.ID
 	UUID() string
 	URL() (string, error)
+	Name() string
 	CodeHostURN() string
 	CodeHostKind() string
 	Secret(ctx context.Context) (*string, error)
@@ -39,6 +40,7 @@ type WebhookResolver interface {
 }
 
 type CreateWebhookArgs struct {
+	Name         string
 	CodeHostKind string
 	CodeHostURN  string
 	Secret       *string

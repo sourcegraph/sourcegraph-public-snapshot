@@ -1,6 +1,7 @@
 package webhooks
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -21,6 +22,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+var bitbucketServerEvents = []string{
+	"ping",
+	"repo:build_status",
+	"pr:activity:status",
+	"pr:activity:event",
+	"pr:activity:rescope",
+	"pr:activity:merge",
+	"pr:activity:comment",
+	"pr:activity:reviewers",
+	"pr:participant:status",
+}
+
 type BitbucketServerWebhook struct {
 	*webhook
 }
@@ -29,6 +42,36 @@ func NewBitbucketServerWebhook(store *store.Store, gitserverClient gitserver.Cli
 	return &BitbucketServerWebhook{
 		webhook: &webhook{store, gitserverClient, extsvc.TypeBitbucketServer},
 	}
+}
+
+func (h *BitbucketServerWebhook) Register(router *fewebhooks.WebhookRouter) {
+	router.Register(
+		h.handleEvent,
+		extsvc.KindBitbucketServer,
+		bitbucketServerEvents...,
+	)
+}
+
+func (h *BitbucketServerWebhook) handleEvent(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error {
+	// 🚨 SECURITY: If we've made it here, then the secret for the Bitbucket Server webhook has been validated, so we can use
+	// an internal actor on the context.
+	ctx = actor.WithInternalActor(ctx)
+
+	prs, ev := h.convertEvent(event)
+
+	var err error
+	for _, pr := range prs {
+		if pr == (PR{}) {
+			log15.Warn("Dropping Bitbucket Server webhook event", "type", fmt.Sprintf("%T", event))
+			continue
+		}
+
+		eventError := h.upsertChangesetEvent(ctx, codeHostURN, pr, ev)
+		if eventError != nil {
+			err = errors.Append(err, eventError)
+		}
+	}
+	return err
 }
 
 func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -44,26 +87,25 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	// internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
 
-	externalServiceID, err := extractExternalServiceID(ctx, extSvc)
+	c, err := extSvc.Configuration(r.Context())
 	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
+		log15.Error("Could not decode external service config", "error", err)
+		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}
 
-	prs, ev := h.convertEvent(e)
-
-	var m error
-	for _, pr := range prs {
-		if pr == (PR{}) {
-			log15.Warn("Dropping Bitbucket Server webhook event", "type", fmt.Sprintf("%T", e))
-			continue
-		}
-
-		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
-		if err != nil {
-			m = errors.Append(m, err)
-		}
+	config, ok := c.(*schema.BitbucketServerConnection)
+	if !ok {
+		log15.Error("Could not decode external service config")
+		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
+		return
 	}
+
+	codeHostURN, err := extsvc.NewCodeHostBaseURL(config.Url)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, errors.Wrap(err, "parsing code host base url"))
+	}
+	m := h.handleEvent(ctx, h.Store.DatabaseDB(), codeHostURN, e)
 	if m != nil {
 		respond(w, http.StatusInternalServerError, m)
 	}

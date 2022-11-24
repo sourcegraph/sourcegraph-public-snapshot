@@ -122,7 +122,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
     placeholder,
     editorOptions,
     ariaLabel = 'Search query',
-
+    ariaLabelledby,
     // CodeMirror implementation specific options
     applySuggestionsOnEnter = false,
     searchHistory,
@@ -178,6 +178,10 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
             autocompletion,
         ]
 
+        if (ariaLabelledby) {
+            extensions.push(EditorView.contentAttributes.of({ 'aria-labelledby': ariaLabelledby }))
+        }
+
         if (preventNewLine) {
             // NOTE: If a submit handler is assigned to the query input then the pressing
             // enter won't insert a line break anyway. In that case, this extensions ensures
@@ -218,6 +222,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<
         return extensions
     }, [
         ariaLabel,
+        ariaLabelledby,
         autocompletion,
         placeholder,
         preventNewLine,

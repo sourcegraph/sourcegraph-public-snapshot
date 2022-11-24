@@ -16,10 +16,7 @@ import {
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
     CategoricalChartContent,
-    SeriesChartContent,
     InsightContent,
-    InsightPreviewSettings,
-    BackendInsightDatum,
 } from './code-insights-backend-types'
 
 /**
@@ -82,8 +79,6 @@ export interface CodeInsightsBackend {
      * Returns content for the code stats insight live preview chart.
      */
     getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<CategoricalChartContent<unknown>>
-
-    getInsightPreviewContent: (input: InsightPreviewSettings) => Promise<SeriesChartContent<BackendInsightDatum>>
 
     /**
      * Used for the dynamic insight example on the insights landing page.

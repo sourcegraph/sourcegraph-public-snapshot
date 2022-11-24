@@ -366,7 +366,7 @@ type InsightViewConnection {
     """
     A list of insights.
     """
-    nodes: [InsightView!]!
+    nodes: [InsightView]!
 
     """
     Pagination information.

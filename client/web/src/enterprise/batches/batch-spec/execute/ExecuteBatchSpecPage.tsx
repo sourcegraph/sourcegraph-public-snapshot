@@ -288,7 +288,10 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                         )}
                         exact={true}
                     />
-                ) : null}
+                ) : (
+                    // If the batch spec is not ready to be previewed, redirect to the spec instead.
+                    <Redirect to={`${match.url}/spec`} />
+                )}
                 <Route component={() => <HeroPage icon={MapSearchIcon} title="404: Not Found" />} key="hardcoded-key" />
             </Switch>
         </div>

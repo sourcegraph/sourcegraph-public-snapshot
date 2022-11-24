@@ -1,6 +1,6 @@
 module github.com/sourcegraph/sourcegraph
 
-go 1.18
+go 1.19
 
 require (
 	cloud.google.com/go/kms v1.6.0
@@ -229,7 +229,7 @@ require (
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20221117134003-f876be0ded78
+	github.com/sourcegraph/zoekt v0.0.0-20221121125711-20baf3ac44b3
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 

@@ -106,7 +106,7 @@ type Mutation {
     """
     Creates a webhook for the specified code host. Only site admins may perform this mutation.
     """
-    createWebhook(codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
+    createWebhook(name: String!, codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
 
     """
     Deletes a webhook by given ID. Only site admins may perform this mutation.
@@ -7938,6 +7938,10 @@ type Webhook implements Node {
     The URL of the webhook in the instance. This is the location where we expect to receive payloads.
     """
     url: String!
+    """
+    Descriptive webhook name.
+    """
+    name: String!
     """
     The kind of code host sending payloads. (eg. GitHub, GitLab)
     """

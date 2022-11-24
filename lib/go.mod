@@ -1,6 +1,6 @@
 module github.com/sourcegraph/sourcegraph/lib
 
-go 1.18
+go 1.19
 
 require (
 	github.com/charmbracelet/glamour v0.5.0
