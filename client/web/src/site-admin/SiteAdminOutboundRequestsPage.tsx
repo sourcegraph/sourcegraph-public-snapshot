@@ -85,7 +85,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
         OutboundRequestsResult,
         OutboundRequestsVariables
     >(OUTBOUND_REQUESTS, {
-        variables: { lastKey },
+        variables: { after: lastKey },
         pollInterval: OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL,
     })
 
@@ -95,7 +95,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
             .slice(Math.max(items.length + data.outboundRequests.length - 50, 0))
         stopPolling()
         setItems(newItems)
-        refetch({ lastKey: newItems[newItems.length - 1]?.key ?? null })
+        refetch({ after: newItems[newItems.length - 1]?.key ?? null })
             .then(() => {})
             .catch(() => {})
         startPolling(OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL)

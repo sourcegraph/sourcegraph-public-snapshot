@@ -285,8 +285,8 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
 }
 
 export const OUTBOUND_REQUESTS = gql`
-    query OutboundRequests($lastKey: String) {
-        outboundRequests(lastKey: $lastKey) {
+    query OutboundRequests($after: String) {
+        outboundRequests(after: $after) {
             key
             startedAt
             method

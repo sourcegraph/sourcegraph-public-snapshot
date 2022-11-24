@@ -1582,7 +1582,7 @@ type Query {
         """
         Filters the requests by key, only returning keys greater than the given one.
         """
-        lastKey: String
+        after: String
     ): [OutboundRequest!]!
 
     """
