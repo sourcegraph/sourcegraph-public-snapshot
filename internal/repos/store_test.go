@@ -412,7 +412,7 @@ func TestStoreEnqueuingSyncJobsWhileExtSvcBeingDeleted(t *testing.T) {
 			// Sanity check: wait for transaction to commit
 			select {
 			case <-time.After(5 * time.Second):
-				t.Fatalf("timeout!")
+				t.Fatalf("background goroutine deleting external service timed out!")
 			case <-done:
 			}
 			assertSyncJobCount(t, store, 1)

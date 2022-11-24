@@ -1541,6 +1541,10 @@ func TestExternalServiceStore_CancelSyncJob(t *testing.T) {
 	if !errors.HasType(err, &errSyncJobNotFound{}) {
 		t.Fatalf("Expected not-found error, have %q", err)
 	}
+	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ExternalServiceID: 9999})
+	if err != nil {
+		t.Fatalf("Expected no error, but have %q", err)
+	}
 
 	assertCanceled := func(t *testing.T, syncJobID int64, wantState string, wantFinished bool) {
 		t.Helper()
