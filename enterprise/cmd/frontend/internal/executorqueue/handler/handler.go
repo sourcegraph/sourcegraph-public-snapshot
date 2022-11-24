@@ -46,7 +46,7 @@ type QueueOptions[T workerutil.Record] struct {
 
 	// RecordTransformer is a required hook for each registered queue that transforms a generic
 	// record from that queue into the job to be given to an executor.
-	RecordTransformer func(ctx context.Context, record T, resourceMetadata ResourceMetadata) (apiclient.Job, error)
+	RecordTransformer func(ctx context.Context, version string, record T, resourceMetadata ResourceMetadata) (apiclient.Job, error)
 }
 
 func NewHandler[T workerutil.Record](executorStore database.ExecutorStore, metricsStore metricsstore.DistributedStore, queueOptions QueueOptions[T]) *handler[T] {
@@ -68,6 +68,7 @@ type ResourceMetadata struct {
 
 type executorMetadata struct {
 	Name      string
+	Version   string
 	Resources ResourceMetadata
 }
 
@@ -91,7 +92,7 @@ func (h *handler[T]) dequeue(ctx context.Context, metadata executorMetadata) (_ 
 	}
 
 	logger := log.Scoped("dequeue", "Select a job record from the database.")
-	job, err := h.RecordTransformer(ctx, record, metadata.Resources)
+	job, err := h.RecordTransformer(ctx, metadata.Version, record, metadata.Resources)
 	if err != nil {
 		if _, err := h.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), store.MarkFinalOptions{}); err != nil {
 			logger.Error("Failed to mark record as failed",

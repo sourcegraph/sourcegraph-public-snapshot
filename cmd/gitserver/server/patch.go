@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -188,7 +189,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd = exec.CommandContext(ctx, "git", applyArgs...)
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
-	cmd.Stdin = strings.NewReader(req.Patch)
+	cmd.Stdin = bytes.NewReader(req.Patch)
 
 	if out, err := run(cmd, "applying patch"); err != nil {
 		logger.Error("Failed to apply patch", log.String("output", string(out)))

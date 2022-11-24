@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -57,131 +56,13 @@ type Job struct {
 	RedactedValues map[string]string `json:"redactedValues"`
 }
 
-// UnmarshalJSON unmarshal the JSON into Job. This custom unmarshaler is needed to support the different Job structures
-// between 4.0 and 4.1 of Sourcegraph (the change to "files").
-func (j *Job) UnmarshalJSON(bytes []byte) error {
-	var v map[string]interface{}
-	if err := json.Unmarshal(bytes, &v); err != nil {
-		return err
-	}
-	j.ID = int(v["id"].(float64))
-	j.RepositoryName = toString(v["repositoryName"])
-	j.RepositoryDirectory = toString(v["repositoryDirectory"])
-	j.Commit = toString(v["commit"])
-	j.FetchTags = toBool(v["fetchTags"])
-	j.ShallowClone = toBool(v["shallowClone"])
-	j.SparseCheckout = toStringSlice(v["sparseCheckout"])
-
-	if v["files"] != nil {
-		files := v["files"].(map[string]interface{})
-		jobFiles := make(map[string]VirtualMachineFile)
-		for key, file := range files {
-			// If type string, then the structure is a 4.0 structure.
-			if value, ok := file.(string); ok {
-				jobFiles[key] = VirtualMachineFile{
-					Content: toString(value),
-				}
-			} else {
-				f := file.(map[string]interface{})
-				modAt, err := toTime(f["modifiedAt"])
-				if err != nil {
-					return err
-				}
-				jobFiles[key] = VirtualMachineFile{
-					Content:    toString(f["content"]),
-					Bucket:     toString(f["bucket"]),
-					Key:        toString(f["key"]),
-					ModifiedAt: modAt,
-				}
-			}
-		}
-		j.VirtualMachineFiles = jobFiles
-	}
-
-	if v["dockerSteps"] != nil {
-		dockerSteps := v["dockerSteps"].([]interface{})
-		jobDockerSteps := make([]DockerStep, len(dockerSteps))
-		for i, s := range dockerSteps {
-			step := s.(map[string]interface{})
-			jobDockerSteps[i] = DockerStep{
-				Key:      toString(step["key"]),
-				Image:    toString(step["image"]),
-				Commands: toStringSlice(step["commands"]),
-				Dir:      toString(step["dir"]),
-				Env:      toStringSlice(step["env"]),
-			}
-		}
-		j.DockerSteps = jobDockerSteps
-	}
-
-	if v["cliSteps"] != nil {
-		cliSteps := v["cliSteps"].([]interface{})
-		jobCliSteps := make([]CliStep, len(cliSteps))
-		for i, s := range cliSteps {
-			step := s.(map[string]interface{})
-			jobCliSteps[i] = CliStep{
-				Key:      toString(step["key"]),
-				Commands: toStringSlice(step["command"]),
-				Dir:      toString(step["dir"]),
-				Env:      toStringSlice(step["env"]),
-			}
-		}
-		j.CliSteps = jobCliSteps
-	}
-
-	if v["redactedValues"] != nil {
-		values := v["redactedValues"].(map[string]interface{})
-		jobRedactedValues := make(map[string]string)
-		for key, value := range values {
-			jobRedactedValues[key] = toString(value)
-		}
-		j.RedactedValues = jobRedactedValues
-	}
-
-	return nil
-}
-
-func toStringSlice(input interface{}) []string {
-	if input == nil {
-		return nil
-	}
-
-	slice := input.([]interface{})
-	strings := make([]string, len(slice))
-	for i, v := range slice {
-		strings[i] = toString(v)
-	}
-	return strings
-}
-
-func toString(v interface{}) string {
-	if v == nil {
-		return ""
-	}
-	return v.(string)
-}
-
-func toBool(v interface{}) bool {
-	if v == nil {
-		return false
-	}
-	return v.(bool)
-}
-
-func toTime(v interface{}) (time.Time, error) {
-	if v == nil {
-		return time.Time{}, nil
-	}
-	return time.Parse(time.RFC3339, v.(string))
-}
-
 // VirtualMachineFile is a file that will be written to the VM. A file can contain the raw content of the file or
 // specify the coordinates of the file in the file store.
 // A file must either contain Content or a Bucket/Key. If neither are provided, an empty file is written.
 type VirtualMachineFile struct {
 	// Content is the raw content of the file. If not provided, the file is retrieved from the file store based on the
 	// configured Bucket and Key. If Content, Bucket, and Key are not provided, an empty file will be written.
-	Content string `json:"content,omitempty"`
+	Content []byte `json:"content,omitempty"`
 
 	// Bucket is the bucket in the files store the file belongs to. A Key must also be configured.
 	Bucket string `json:"bucket,omitempty"`
@@ -232,6 +113,7 @@ type CliStep struct {
 
 type DequeueRequest struct {
 	ExecutorName string `json:"executorName"`
+	Version      string `json:"version"`
 	NumCPUs      int    `json:"numCPUs,omitempty"`
 	Memory       string `json:"memory,omitempty"`
 	DiskSpace    string `json:"diskSpace,omitempty"`

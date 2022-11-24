@@ -254,7 +254,7 @@ type CreateCommitFromPatchRequest struct {
 	// BaseCommit is the revision that the staging area object is based on
 	BaseCommit api.CommitID
 	// Patch is the diff contents to be used to create the staging area revision
-	Patch string
+	Patch []byte
 	// TargetRef is the ref that will be created for this patch
 	TargetRef string
 	// If set to true and the TargetRef already exists, an unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.

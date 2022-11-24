@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/lib/api"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -43,7 +44,7 @@ type BatchesStore interface {
 const fileStoreBucket = "batch-changes"
 
 // transformRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
-func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob) (apiclient.Job, error) {
+func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, version string) (apiclient.Job, error) {
 	workspace, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
 	if err != nil {
 		return apiclient.Job{}, errors.Wrapf(err, "fetching workspace %d", job.BatchSpecWorkspaceID)
@@ -293,8 +294,17 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			// Tell src to store tmp files inside the workspace. Src currently
 			// runs on the host and we don't want pollution outside of the workspace.
 			"-tmp", srcTempDir,
-			"-binaryDiffs", "true",
 		}
+
+		ok, err := api.CheckSourcegraphVersion(version, ">= 4.3.0-0", "2022-11-24")
+		if err != nil {
+			return apiclient.Job{}, err
+		}
+		if ok {
+			// Enable binary diffs.
+			commands = append(commands, "-binaryDiffs")
+		}
+
 		// Only add the workspaceFiles flag if there are files to mount. This helps with backwards compatibility.
 		if len(workspaceFiles) > 0 {
 			commands = append(commands, "-workspaceFiles", srcWorkspaceFilesDir)
