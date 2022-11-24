@@ -359,15 +359,16 @@ func makeWorker(ctx context.Context, workerStore store.Store[*ExampleJob], myOwn
     myOwnStore: myOwnStore,
   }
 
-  return dbworker.NewWorker[*ExampleJob](ctx, store, handler, workerutil.WorkerOptions{
-    Name:        "example_job_worker",
-    Interval:    time.Second, // Poll for a job once per second
-    NumHandlers: 1,           // Process only one job at a time (per instance)
+  return dbworker.NewWorker[*ExampleJob](ctx, workerStore, handler, workerutil.WorkerOptions{
+    Name:              "example_job_worker",
+		Interval:          time.Second, // Poll for a job once per second
+		NumHandlers:       1,           // Process only one job at a time (per instance)
+		HeartbeatInterval: 10 * time.Second,
   })
 }
 
-func makeResetter(workerStore store.Store[*ExampleJob]) *dbworker.Resetter[*ExampleJob] {
-  return dbworker.NewResetter[*ExampleJob](workerStore, dbworker.ResetterOptions{
+func makeResetter(logger log.Logger, workerStore store.Store[*ExampleJob]) *dbworker.Resetter[*ExampleJob] {
+  return dbworker.NewResetter[*ExampleJob](logger, workerStore, dbworker.ResetterOptions{
     Name:     "example_job_worker_resetter",
     Interval: time.Second * 30, // Check for orphaned jobs every 30 seconds
   })
