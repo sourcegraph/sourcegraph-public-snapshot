@@ -112,7 +112,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 	ghWebhook := NewGitHubWebhook(logger)
 
-	wh, err := whStore.Create(ctx, extsvc.KindGitHub, "https://github.com", u.ID, nil)
+	wh, err := whStore.Create(ctx, "test-webhook", extsvc.KindGitHub, "https://github.com", u.ID, nil)
 	require.NoError(t, err)
 
 	hook := fewebhooks.GitHubWebhook{
