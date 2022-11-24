@@ -26,6 +26,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		Body:  "The body",
 		Commits: []GitCommitDescription{
 			{
+				Version:     2,
 				Message:     "git commit message",
 				Diff:        []byte("cool diff"),
 				AuthorName:  "Sourcegraph",
@@ -200,16 +201,16 @@ index 0000000..1bd79fb
 		diff          string
 		defaultBranch string
 		groups        []Group
-		want          map[string]string
+		want          map[string][]byte
 	}{
 		{
 			diff: allDiffs,
 			groups: []Group{
 				{Directory: "1/2/3", Branch: "everything-in-3"},
 			},
-			want: map[string]string{
-				"my-default-branch": diff1 + diff2,
-				"everything-in-3":   diff3,
+			want: map[string][]byte{
+				"my-default-branch": []byte(diff1 + diff2),
+				"everything-in-3":   []byte(diff3),
 			},
 		},
 		{
@@ -217,9 +218,9 @@ index 0000000..1bd79fb
 			groups: []Group{
 				{Directory: "1/2", Branch: "everything-in-2-and-3"},
 			},
-			want: map[string]string{
-				"my-default-branch":     diff1,
-				"everything-in-2-and-3": diff2 + diff3,
+			want: map[string][]byte{
+				"my-default-branch":     []byte(diff1),
+				"everything-in-2-and-3": []byte(diff2 + diff3),
 			},
 		},
 		{
@@ -227,9 +228,9 @@ index 0000000..1bd79fb
 			groups: []Group{
 				{Directory: "1", Branch: "everything-in-1-and-2-and-3"},
 			},
-			want: map[string]string{
-				"my-default-branch":           "",
-				"everything-in-1-and-2-and-3": diff1 + diff2 + diff3,
+			want: map[string][]byte{
+				"my-default-branch":           nil,
+				"everything-in-1-and-2-and-3": []byte(diff1 + diff2 + diff3),
 			},
 		},
 		{
@@ -240,11 +241,11 @@ index 0000000..1bd79fb
 				{Directory: "1/2", Branch: "only-in-2"},
 				{Directory: "1/2/3", Branch: "only-in-3"},
 			},
-			want: map[string]string{
-				"my-default-branch": "",
-				"only-in-3":         diff3,
-				"only-in-2":         diff2,
-				"only-in-1":         diff1,
+			want: map[string][]byte{
+				"my-default-branch": nil,
+				"only-in-3":         []byte(diff3),
+				"only-in-2":         []byte(diff2),
+				"only-in-1":         []byte(diff1),
 			},
 		},
 		{
@@ -255,9 +256,9 @@ index 0000000..1bd79fb
 				{Directory: "1/2", Branch: "only-in-2"},
 				{Directory: "1", Branch: "only-in-1"},
 			},
-			want: map[string]string{
-				"my-default-branch": "",
-				"only-in-1":         diff1 + diff2 + diff3,
+			want: map[string][]byte{
+				"my-default-branch": nil,
+				"only-in-1":         []byte(diff1 + diff2 + diff3),
 			},
 		},
 		{
@@ -265,8 +266,8 @@ index 0000000..1bd79fb
 			groups: []Group{
 				{Directory: "", Branch: "everything"},
 			},
-			want: map[string]string{
-				"my-default-branch": diff1 + diff2 + diff3,
+			want: map[string][]byte{
+				"my-default-branch": []byte(diff1 + diff2 + diff3),
 			},
 		},
 	}
