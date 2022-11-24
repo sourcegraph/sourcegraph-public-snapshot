@@ -105,6 +105,18 @@ func GenerateRepos(n int, base ...*types.Repo) types.Repos {
 	return rs
 }
 
+func MakeGitLabExternalService() *types.ExternalService {
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+	return &types.ExternalService{
+		Kind:        extsvc.KindGitLab,
+		DisplayName: "GitLab - Test",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+}
+
 // MakeExternalServices creates one configured external service per kind and returns the list.
 func MakeExternalServices() types.ExternalServices {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -118,13 +130,9 @@ func MakeExternalServices() types.ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	gitlabSvc := types.ExternalService{
-		Kind:        extsvc.KindGitLab,
-		DisplayName: "GitLab - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`),
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
+	gitlabSvc := MakeGitLabExternalService()
+	gitlabSvc.CreatedAt = now
+	gitlabSvc.UpdatedAt = now
 
 	bitbucketServerSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
@@ -168,7 +176,7 @@ func MakeExternalServices() types.ExternalServices {
 
 	return []*types.ExternalService{
 		&githubSvc,
-		&gitlabSvc,
+		gitlabSvc,
 		&bitbucketServerSvc,
 		&bitbucketCloudSvc,
 		&awsSvc,
