@@ -4,7 +4,7 @@
     "DisplayName": "Github repos",
     "Config": {
       "url": "https://github.com",
-      "repos": ["sourcegraph/sourcegraph", "sourcegraph/deploy-sourcegraph"]
+      "repos": ["sourcegraph/automation-testing"]
     }
   }
 ]

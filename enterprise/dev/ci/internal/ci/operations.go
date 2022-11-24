@@ -622,6 +622,23 @@ func codeIntelQA(candidateTag string) operations.Operation {
 	}
 }
 
+func executorsE2E(candidateTag string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":docker::brain: Executors E2E",
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.DependsOn(candidateImageStepKey("executor")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Cmd("dev/ci/integration/executors/run.sh"),
+			bk.ArtifactPaths("./*.log"),
+		)
+	}
+}
+
 func serverE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":chromium: Sourcegraph E2E",
