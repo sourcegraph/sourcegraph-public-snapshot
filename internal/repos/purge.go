@@ -37,20 +37,20 @@ func RunRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db databas
 		if purgeConfig == nil {
 			purgeConfig = &schema.RepoPurgeWorker{
 				// Defaults - align with documentation
-				IntervalMintues:   15,
-				DeletedTTLMintues: 60,
+				IntervalMinutes:   15,
+				DeletedTTLMinutes: 60,
 			}
-		} else if purgeConfig.IntervalMintues <= 0 {
+		} else if purgeConfig.IntervalMinutes <= 0 {
 			logger.Debug("purge worker disabled via site config",
-				log.Int("repoPurgeWorker.interval", purgeConfig.IntervalMintues))
+				log.Int("repoPurgeWorker.interval", purgeConfig.IntervalMinutes))
 			randSleep(15*time.Minute, 1*time.Minute)
 			continue
 		}
 
-		deletedBefore := time.Now().Add(-time.Duration(purgeConfig.DeletedTTLMintues) * time.Minute)
+		deletedBefore := time.Now().Add(-time.Duration(purgeConfig.DeletedTTLMinutes) * time.Minute)
 		purgeLogger := logger.With(log.Time("deletedBefore", deletedBefore))
 
-		timeToNextPurge := time.Duration(purgeConfig.IntervalMintues) * time.Minute
+		timeToNextPurge := time.Duration(purgeConfig.IntervalMinutes) * time.Minute
 		purgeLogger.Debug("running repository purge",
 			log.Duration("timeToNextPurge", timeToNextPurge))
 		if err := purge(ctx, purgeLogger, db, database.IteratePurgableReposOptions{

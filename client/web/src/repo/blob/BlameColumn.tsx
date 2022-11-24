@@ -12,7 +12,7 @@ import styles from './BlameColumn.module.scss'
 
 interface BlameColumnProps {
     isBlameVisible?: boolean
-    blameHunks?: BlameHunk[]
+    blameHunks?: { current: BlameHunk[] | undefined }
     codeViewElements: ReplaySubject<HTMLElement | null>
     history: History
 }
@@ -98,7 +98,7 @@ export const BlameColumn = React.memo<BlameColumnProps>(({ isBlameVisible, codeV
                         }
                     }
 
-                    const currentLineDecorations = blameHunks?.find(hunk => hunk.startLine - 1 === index)
+                    const currentLineDecorations = blameHunks?.current?.find(hunk => hunk.startLine - 1 === index)
 
                     // store created cell and corresponding blame hunk (or undefined if no blame hunk)
                     addedCells.push([cell, currentLineDecorations])

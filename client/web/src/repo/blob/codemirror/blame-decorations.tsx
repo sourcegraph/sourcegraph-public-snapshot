@@ -111,14 +111,18 @@ export const showGitBlameDecorations = Facet.define<BlameHunk[], BlameHunk[]>({
         ViewPlugin.fromClass(
             class {
                 public decorations: DecorationSet
+                private previousHunkLength = -1
 
                 constructor(view: EditorView) {
                     this.decorations = this.computeDecorations(view, facet)
                 }
 
                 public update(update: ViewUpdate): void {
-                    if (update.docChanged || update.viewportChanged) {
+                    const hunks = update.view.state.facet(facet)
+
+                    if (update.docChanged || update.viewportChanged || this.previousHunkLength !== hunks.length) {
                         this.decorations = this.computeDecorations(update.view, facet)
+                        this.previousHunkLength = update.state.facet(facet).length
                     }
                 }
 
