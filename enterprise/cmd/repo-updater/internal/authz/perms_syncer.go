@@ -1219,7 +1219,6 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	}
 	schedule.Repos = append(schedule.Repos, reposWithOldestPerms...)
 
-	metricsItemsSyncScheduled.WithLabelValues("usersWithOutdatedPerms", "low").Set(float64(len(usersWithOutdatedPerms)))
 	metricsItemsSyncScheduled.WithLabelValues("usersWithNoPerms", "low").Set(float64(len(usersWithNoPerms)))
 	metricsItemsSyncScheduled.WithLabelValues("usersWithOldestPerms", "low").Set(float64(len(usersWithOldestPerms)))
 	metricsItemsSyncScheduled.WithLabelValues("reposWithNoPerms", "low").Set(float64(len(reposWithNoPerms)))
