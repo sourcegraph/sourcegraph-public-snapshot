@@ -181,7 +181,7 @@ func main() {
 		var orgsDone int64
 		var teamsDone int64
 		var tokensDone int64
-		var membershipsDone int64
+		//var membershipsDone int64
 
 		for _, o := range orgs {
 			currentOrg := o
@@ -209,7 +209,7 @@ func main() {
 
 		//totalMemberships := len(teams) * 8
 		//membershipsPerUser := int(math.Ceil(float64(totalMemberships) / float64(cfg.userCount)))
-		membershipsPerTeam := 8
+		//membershipsPerTeam := 8
 		//teamsToSkip := int(math.Ceil(float64(cfg.teamCount) / float64(membershipsPerUser)))
 
 		//for i, u := range users {
@@ -230,21 +230,21 @@ func main() {
 		//	})
 		//}
 
-		g2 := group.New().WithMaxConcurrency(100)
-		for i, t := range teams {
-			currentTeam := t
-			currentIter := i
-			var usersToAssign []*user
-
-			for j := currentIter * membershipsPerTeam; j < ((currentIter + 1) * membershipsPerTeam); j++ {
-				usersToAssign = append(usersToAssign, users[j])
-			}
-
-			g2.Go(func() {
-				executeCreateTeamMembershipsForTeam(ctx, currentTeam, usersToAssign, &membershipsDone)
-			})
-		}
-		g2.Wait()
+		//g2 := group.New().WithMaxConcurrency(100)
+		//for i, t := range teams {
+		//	currentTeam := t
+		//	currentIter := i
+		//	var usersToAssign []*user
+		//
+		//	for j := currentIter * membershipsPerTeam; j < ((currentIter + 1) * membershipsPerTeam); j++ {
+		//		usersToAssign = append(usersToAssign, users[j])
+		//	}
+		//
+		//	g2.Go(func() {
+		//		executeCreateTeamMembershipsForTeam(ctx, currentTeam, usersToAssign, &membershipsDone)
+		//	})
+		//}
+		//g2.Wait()
 
 		var repos []*repo
 		if repos, err = store.loadRepos(); err != nil {
@@ -799,7 +799,7 @@ func executeCreateUser(ctx context.Context, u *user, usersDone *int64) {
 }
 
 func executeCreateUserImpersonationToken(ctx context.Context, u *user) string {
-	auth, _, err := gh.Admin.CreateUserImpersonation(ctx, u.Login, &github.ImpersonateUserOptions{Scopes: []string{"repo"}})
+	auth, _, err := gh.Admin.CreateUserImpersonation(ctx, u.Login, &github.ImpersonateUserOptions{Scopes: []string{"repo", "read:org", "read:user_email"}})
 	if err != nil {
 		log.Fatal(err)
 	}
