@@ -149,7 +149,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	}
 	files := map[string]apiclient.VirtualMachineFile{
 		srcInputPath: {
-			Content: string(marshaledInput),
+			Content: marshaledInput,
 		},
 	}
 
@@ -197,7 +197,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		if executionInput.CachedStepResultFound {
 			cacheEntry := executionInput.CachedStepResult
 			// Apply the diff if necessary.
-			if cacheEntry.Diff != "" {
+			if len(cacheEntry.Diff) > 0 {
 				dockerSteps = append(dockerSteps, apiclient.DockerStep{
 					Key: "apply-diff",
 					Dir: srcRepoDir,
@@ -219,7 +219,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			}
 			// Write the step result for the last cached step.
 			files[fmt.Sprintf("step%d.json", cacheEntry.StepIndex)] = apiclient.VirtualMachineFile{
-				Content: string(val),
+				Content: val,
 			}
 		}
 
@@ -293,6 +293,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			// Tell src to store tmp files inside the workspace. Src currently
 			// runs on the host and we don't want pollution outside of the workspace.
 			"-tmp", srcTempDir,
+			"-binaryDiffs", "true",
 		}
 		// Only add the workspaceFiles flag if there are files to mount. This helps with backwards compatibility.
 		if len(workspaceFiles) > 0 {

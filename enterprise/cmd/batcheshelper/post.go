@@ -41,10 +41,11 @@ func execPost(ctx context.Context, stepIdx int, executionInput batcheslib.Worksp
 
 	// Build the step result.
 	stepResult := execution.AfterStepResult{
+		Version:   2,
 		Stdout:    string(stdout),
 		Stderr:    string(stderr),
 		StepIndex: stepIdx,
-		Diff:      string(diff),
+		Diff:      diff,
 		// Those will be set below.
 		Outputs: make(map[string]interface{}),
 	}
