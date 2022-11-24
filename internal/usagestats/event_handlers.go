@@ -112,7 +112,7 @@ type bigQueryEvent struct {
 	FeatureFlags     string  `json:"feature_flags"`
 	CohortID         *string `json:"cohort_id,omitempty"`
 	Referrer         string  `json:"referrer,omitempty"`
-	OriginalReferrer string  `json:"original_referrer,omitempty"`
+	OriginalReferrer string  `json:"original_referrer"`
 	PublicArgument   string  `json:"public_argument"`
 	DeviceID         *string `json:"device_id,omitempty"`
 	InsertID         *string `json:"insert_id,omitempty"`
@@ -237,7 +237,6 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 			FirstSourceURL:   event.FirstSourceURL,
 			LastSourceURL:    event.LastSourceURL,
 			Referrer:         event.Referrer,
-			OriginalReferrer: event.OriginalReferrer,
 			DeviceID:         event.DeviceID,
 			InsertID:         event.InsertID,
 		})
