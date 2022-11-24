@@ -57,10 +57,6 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		if gitdomain.IsRepoNotExist(err) {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
 		if errcode.IsNotFound(err) || errcode.IsBlocked(err) {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -90,9 +86,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			tr.LogFields(fields...)
 		}
 
-		if strings.HasPrefix(requestedPath, "/") {
-			requestedPath = strings.TrimLeft(requestedPath, "/")
-		}
+		requestedPath = strings.TrimPrefix(requestedPath, "/")
 
 		hunkReader, err := gitserverClient.StreamBlameFile(r.Context(), authz.DefaultSubRepoPermsChecker, repo.Name, requestedPath, &gitserver.BlameOptions{
 			NewestCommit: commitID,
@@ -158,13 +152,14 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 }
 
 type BlameHunkResponse struct {
-	StartLine    int `json:"startLine"` // 1-indexed start line number
-	EndLine      int `json:"endLine"`   // 1-indexed end line number
 	api.CommitID `json:"commitID"`
-	Author       gitdomain.Signature     `json:"author"`
-	Message      string                  `json:"message"`
-	Filename     string                  `json:"filename"`
-	Commit       BlameHunkCommitResponse `json:"commit"`
+
+	StartLine int                     `json:"startLine"` // 1-indexed start line number
+	EndLine   int                     `json:"endLine"`   // 1-indexed end line number
+	Author    gitdomain.Signature     `json:"author"`
+	Message   string                  `json:"message"`
+	Filename  string                  `json:"filename"`
+	Commit    BlameHunkCommitResponse `json:"commit"`
 }
 
 type BlameHunkCommitResponse struct {
