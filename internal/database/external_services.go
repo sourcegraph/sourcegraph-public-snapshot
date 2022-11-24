@@ -1359,6 +1359,14 @@ func (e *externalServiceStore) CancelSyncJob(ctx context.Context, opts ExternalS
 	if opts.ID != 0 && af != 1 {
 		return &errSyncJobNotFound{id: opts.ID, externalServiceID: opts.ExternalServiceID}
 	}
+
+	// If opts.ExternalServiceID is set and affected rows are 0 we don't treat
+	// it as an error, because we want to be able to use this method to cancel
+	// jobs *if there are any*.
+	// Just like a `DeleteUserByID(1234)` function should fail if there is no
+	// user with that ID, but a `DeleteUsersWithUsernameStartingWith("foo")`
+	// shouldn't fail if there are no users with that prefix in the name.
+
 	return nil
 }
 

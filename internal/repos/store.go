@@ -68,17 +68,22 @@ type Store interface {
 	// external service. This must only be used when updating metadata on a repo
 	// that cannot affect its associations.
 	UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Repo, err error)
-	// EnqueueSingleSyncJob enqueues a single sync job for the given external service
-	// if it is not already queued or processing. Additionally, it also skips
-	// queueing up a sync job for cloud_default external services. This is done to
-	// avoid the sync job for the cloud_default triggering a deletion of repos
-	// because:
+	// EnqueueSingleSyncJob enqueues a single sync job for the given external
+	// service if the external service is not deleted and no other job is
+	// already queued or processing.
+	//
+	// Additionally, it also skips queueing up a sync job for cloud_default
+	// external services. This is done to avoid the sync job for the
+	// cloud_default triggering a deletion of repos because:
 	//  1. cloud_default does not define any repos in its config
 	//  2. repos under the cloud_default are lazily synced the first time a user accesses them
 	//
 	// This is a limitation of our current repo syncing architecture. The
 	// cloud_default flag is only set on sourcegraph.com and manages public GitHub
 	// and GitLab repositories that have been lazily synced.
+	//
+	// It can block if a row-level lock is held on the given external service,
+	// for example if it's being deleted.
 	EnqueueSingleSyncJob(ctx context.Context, extSvcID int64) (err error)
 	// EnqueueSyncJobs enqueues sync jobs for all external services that are due.
 	EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error)
