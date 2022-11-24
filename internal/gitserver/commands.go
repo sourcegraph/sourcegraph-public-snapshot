@@ -698,10 +698,26 @@ func (c *clientImplementor) StreamBlameFile(ctx context.Context, checker authz.S
 	return streamBlameFileCmd(ctx, checker, repo, path, opt, c.gitserverGitCommandFunc(repo))
 }
 
+type errUnauthorizedStreamBlame struct {
+	Repo api.RepoName
+}
+
+func (e errUnauthorizedStreamBlame) Unauthorized() bool {
+	return true
+}
+
+func (e errUnauthorizedStreamBlame) Error() string {
+	return fmt.Sprintf("not authorized (name=%s)", e.Repo)
+}
+
 func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions, command gitCommandFunc) (HunkReader, error) {
 	a := actor.FromContext(ctx)
-	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil || !hasAccess {
+	hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path)
+	if err != nil {
 		return nil, err
+	}
+	if !hasAccess {
+		return nil, errUnauthorizedStreamBlame{Repo: repo}
 	}
 	if opt == nil {
 		opt = &BlameOptions{}

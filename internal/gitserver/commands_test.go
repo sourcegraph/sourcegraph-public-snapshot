@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -3227,6 +3228,32 @@ func TestParseGitBlameOutput(t *testing.T) {
 	if d := cmp.Diff(testGitBlameOutputHunks, hunks); d != "" {
 		t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
 	}
+}
+
+func TestStreamBlameFile(t *testing.T) {
+	t.Run("NOK unauthorized", func(t *testing.T) {
+		ctx := actor.WithActor(context.Background(), &actor.Actor{
+			UID: 1,
+		})
+		checker := authz.NewMockSubRepoPermissionChecker()
+		checker.EnabledFunc.SetDefaultHook(func() bool {
+			return true
+		})
+		// User doesn't have access to this file
+		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+			return authz.None, nil
+		})
+		hr, err := streamBlameFileCmd(ctx, checker, api.RepoName("foobar"), "README.md", nil, func(_ []string) GitCommand { return nil })
+		if hr != nil {
+			t.Fatalf("expected nil HunkReader")
+		}
+		if err == nil {
+			t.Fatalf("expected an error to be returned")
+		}
+		if !errcode.IsUnauthorized(err) {
+			t.Fatalf("expected err to be an authorization error, got %v", err)
+		}
+	})
 }
 
 func TestBlameHunkReader(t *testing.T) {
