@@ -58,7 +58,7 @@ export function StandaloneLangStatsInsight(props: StandaloneLangStatsInsightProp
                 <ErrorAlert error={state.error} />
             ) : (
                 <ParentSize className={styles.chartParentSize}>
-                    {parent =>
+                    {parent => (
                         <CategoricalChart
                             type={CategoricalBasedChartTypes.Pie}
                             width={parent.width}
@@ -67,7 +67,7 @@ export function StandaloneLangStatsInsight(props: StandaloneLangStatsInsightProp
                             onDatumLinkClick={trackDatumClicks}
                             {...state.data}
                         />
-                    }
+                    )}
                 </ParentSize>
             )}
         </InsightCard>

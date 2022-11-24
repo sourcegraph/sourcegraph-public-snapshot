@@ -39,7 +39,7 @@ export const LangStatsInsightCard = forwardRef<HTMLElement, BuiltInInsightProps>
         repository: insight.repository,
         otherThreshold: insight.otherThreshold,
         // Skip mount-based fetch logic since we run lazyQuery
-        skip: true
+        skip: true,
     })
 
     const { state, isVisible } = useInsightData(lazyQuery, cardRef)

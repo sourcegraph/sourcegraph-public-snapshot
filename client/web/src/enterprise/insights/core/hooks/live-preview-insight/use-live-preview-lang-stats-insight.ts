@@ -129,25 +129,26 @@ async function getLangStats(inputs: GetInsightContentInputs): Promise<Categorica
     }
 }
 
-function fetchLangStatsInsight(query: string): Observable<LangStatsInsightContentResult> {
-    return requestGraphQL<LangStatsInsightContentResult, LangStatsInsightContentVariables>(
-        gql`
-            query LangStatsInsightContent($query: String!) {
-                search(query: $query) {
-                    results {
-                        limitHit
-                    }
-                    stats {
-                        languages {
-                            name
-                            totalLines
-                        }
-                    }
+export const GET_LANG_STATS_GQL = gql`
+    query LangStatsInsightContent($query: String!) {
+        search(query: $query) {
+            results {
+                limitHit
+            }
+            stats {
+                languages {
+                    name
+                    totalLines
                 }
             }
-        `,
-        { query }
-    ).pipe(map(dataOrThrowErrors))
+        }
+    }
+`
+
+function fetchLangStatsInsight(query: string): Observable<LangStatsInsightContentResult> {
+    return requestGraphQL<LangStatsInsightContentResult, LangStatsInsightContentVariables>(GET_LANG_STATS_GQL, {
+        query,
+    }).pipe(map(dataOrThrowErrors))
 }
 
 async function getLangColor(language: string): Promise<string> {
