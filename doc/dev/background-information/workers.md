@@ -162,7 +162,7 @@ CREATE TABLE example_jobs (
   last_heartbeat_at timestamp with time zone,
   execution_logs    json[],
   worker_hostname   text not null default '',
-  cancel            boolean not null default false
+  cancel            boolean not null default false,
 
   repository_id integer not null
 );
