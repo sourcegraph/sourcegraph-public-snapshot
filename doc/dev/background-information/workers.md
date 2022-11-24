@@ -21,7 +21,7 @@ The **handler** is responsible for handling a single job once dequeued from the 
 Before the worker dequeues the next job, the _pre dequeue_ hook (if defined) is invoked. The hook has the following signature:
 
 ```go
-func (h *myHandler) PreDequeue(context.Context, logger log.Logger) (dequeueable bool, extraDequeueArguments interface{}, err error) {
+func (h *myHandler) PreDequeue(ctx context.Context, logger log.Logger) (dequeueable bool, extraDequeueArguments interface{}, err error) {
   // configure conditional job selection
   return true, nil, nil
 }
@@ -188,6 +188,8 @@ import (
   "time"
 
   "github.com/keegancsmith/sqlf"
+  
+  "github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type ExampleJob struct {
@@ -289,8 +291,8 @@ import (
   dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func makeStore(db dbutil.DB) dbworkerstore.Store[*ExampleJob] {
-  return store.New(db, store.Options{
+func makeStore(logger log.Logger, dbHandle basestore.TransactableHandle) dbworkerstore.Store[*ExampleJob] {
+  return dbworkerstore.New(logger, dbHandle, store.Options[*ExampleJob]{
     Name:              "example_job_worker_store",
     TableName:         "example_jobs",
     ViewName:          "example_jobs_with_repository_name example_jobs",
@@ -298,9 +300,7 @@ func makeStore(db dbutil.DB) dbworkerstore.Store[*ExampleJob] {
     Scan:              dbworkerstore.BuildWorkerScan(scanExampleJob),
     OrderByExpression: sqlf.Sprintf("example_jobs.repository_id, example_jobs.id"),
     MaxNumResets:      5,
-    HeartbeatInterval: time.Second,
     StalledMaxAge:     time.Second * 5,
-    CancelInterval:    time.Second,
   })
 }
 ```
@@ -359,15 +359,16 @@ func makeWorker(ctx context.Context, workerStore store.Store[*ExampleJob], myOwn
     myOwnStore: myOwnStore,
   }
 
-  return dbworker.NewWorker[*ExampleJob](ctx, store, handler, workerutil.WorkerOptions{
-    Name:        "example_job_worker",
-    Interval:    time.Second, // Poll for a job once per second
-    NumHandlers: 1,           // Process only one job at a time (per instance)
+  return dbworker.NewWorker[*ExampleJob](ctx, workerStore, handler, workerutil.WorkerOptions{
+    Name:              "example_job_worker",
+		Interval:          time.Second, // Poll for a job once per second
+		NumHandlers:       1,           // Process only one job at a time (per instance)
+		HeartbeatInterval: 10 * time.Second,
   })
 }
 
-func makeResetter(workerStore store.Store[*ExampleJob]) *dbworker.Resetter[*ExampleJob] {
-  return dbworker.NewResetter[*ExampleJob](workerStore, dbworker.ResetterOptions{
+func makeResetter(logger log.Logger, workerStore store.Store[*ExampleJob]) *dbworker.Resetter[*ExampleJob] {
+  return dbworker.NewResetter[*ExampleJob](logger, workerStore, dbworker.ResetterOptions{
     Name:     "example_job_worker_resetter",
     Interval: time.Second * 30, // Check for orphaned jobs every 30 seconds
   })
