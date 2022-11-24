@@ -1,10 +1,7 @@
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
-import {
-    BulkSearchRepositories,
-    WebGraphQlOperations,
-} from '../../../graphql-operations'
+import { BulkSearchRepositories, WebGraphQlOperations } from '../../../graphql-operations'
 import { WebIntegrationTestContext } from '../../context'
 import { commonWebGraphQlResults } from '../../graphQlResults'
 
