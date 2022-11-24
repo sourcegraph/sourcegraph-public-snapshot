@@ -192,7 +192,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	if out, err := run(cmd, "applying patch"); err != nil {
 		logger.Error("Failed to apply patch", log.String("output", string(out)))
-		return http.StatusInternalServerError, resp
+		return http.StatusBadRequest, resp
 	}
 
 	message := req.CommitInfo.Message

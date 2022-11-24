@@ -25,9 +25,10 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	sglog "github.com/sourcegraph/log"
 
@@ -1282,22 +1283,13 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		c.logger.Warn("reading gitserver create-commit-from-patch response", sglog.Error(err))
-		return "", &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "CreateCommitFromPatch",
-			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.Status, readResponseBody(resp.Body)),
-		}
-	}
-
 	var res protocol.CreateCommitFromPatchResponse
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
 		return "", &url.Error{
 			URL: resp.Request.URL.String(),
 			Op:  "CreateCommitFromPatch",
-			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %v", resp.StatusCode, err),
+			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, readResponseBody(resp.Body)),
 		}
 	}
 
