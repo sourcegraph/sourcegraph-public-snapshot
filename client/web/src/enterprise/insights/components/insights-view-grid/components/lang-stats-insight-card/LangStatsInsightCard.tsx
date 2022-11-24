@@ -7,7 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Link, ParentSize } from '@sourcegraph/wildcard'
 
 import { LangStatsInsight } from '../../../../core'
-import { useLivePreviewLangStatsInsight } from '../../../../core/hooks/live-preview-insight'
+import { useLazyLivePreviewLangStatsInsight } from '../../../../core/hooks/live-preview-insight'
 import { LazyQueryStatus } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import {
@@ -35,11 +35,9 @@ export const LangStatsInsightCard = forwardRef<HTMLElement, BuiltInInsightProps>
     const { currentDashboard, dashboards } = useContext(InsightContext)
     const cardRef = useMergeRefs([ref])
 
-    const { lazyQuery } = useLivePreviewLangStatsInsight({
+    const { lazyQuery } = useLazyLivePreviewLangStatsInsight({
         repository: insight.repository,
         otherThreshold: insight.otherThreshold,
-        // Skip mount-based fetch logic since we run lazyQuery
-        skip: true,
     })
 
     const { state, isVisible } = useInsightData(lazyQuery, cardRef)

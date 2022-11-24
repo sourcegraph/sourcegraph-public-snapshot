@@ -30,7 +30,6 @@ interface Props {
 interface Result<R> {
     state: State<R>
     refetch: () => void
-    lazyQuery: () => Promise<R>
 }
 
 /**
@@ -67,17 +66,35 @@ export function useLivePreviewLangStatsInsight(props: Props): Result<Categorical
     }, [skip, path, repository, otherThreshold, updateTrigger])
 
     const refetch = useCallback(() => setResetTrigger(count => count + 1), [])
+
+    return { state, refetch }
+}
+
+interface LazyQueryProps {
+    repository: string
+    otherThreshold: number
+    path?: string
+}
+
+interface LazyPreviewResult {
+    lazyQuery: () => Promise<CategoricalChartContent<LangStatsDatum>>
+}
+
+/**
+ * Lazy live preview lang stats insight, it's primarily used on the code insights
+ * dashboard page where we have to load insight on demand if they overlap with
+ * visible viewport.
+ */
+export function useLazyLivePreviewLangStatsInsight(props: LazyQueryProps): LazyPreviewResult {
+    const { repository, otherThreshold, path } = props
+
     const lazyQuery = useCallback(() => getLangStats({ repository, otherThreshold, path }), [
         repository,
         otherThreshold,
         path,
     ])
 
-    return {
-        state,
-        refetch,
-        lazyQuery,
-    }
+    return { lazyQuery }
 }
 
 interface GetInsightContentInputs {
