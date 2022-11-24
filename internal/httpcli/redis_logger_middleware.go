@@ -68,7 +68,7 @@ func redisLoggerMiddleware() Middleware {
 }
 
 func deleteExcessItems() {
-	deletionErr := redisCache.DeleteAllButLastN(nil, keyPrefix, OutboundRequestLogLimit())
+	deletionErr := redisCache.DeleteAllButLastN(keyPrefix, OutboundRequestLogLimit())
 	if deletionErr != nil {
 		log.Error(deletionErr)
 	}
@@ -106,7 +106,7 @@ func GetAllOutboundRequestLogItemsAfter(after *string, limit int) ([]*types.Outb
 // getAllValuesAfter returns all items after the given key, in ascending order, trimmed to maximum {limit} items.
 // The given "after" must contain `keyPrefix` as a prefix. Example: "outbound:2021-01-01T00_00_00.000000000".
 func getAllValuesAfter(redisCache *rcache.Cache, keyPrefix string, after *string, limit int) ([][]byte, error) {
-	all, err := redisCache.ListKeys(nil, keyPrefix)
+	all, err := redisCache.ListKeysWithPrefix(keyPrefix)
 	if err != nil {
 		return nil, err
 	}

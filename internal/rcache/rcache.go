@@ -173,8 +173,8 @@ func (r *Cache) Increase(key string) {
 }
 
 // DeleteAllButLastN orders the matching keys ascending, and deletes the first len()-N keys.
-func (r *Cache) DeleteAllButLastN(ctx *context.Context, prefix string, n int) error {
-	keys, err := r.ListKeys(ctx, prefix)
+func (r *Cache) DeleteAllButLastN(prefix string, n int) error {
+	keys, err := r.ListKeysWithPrefix(prefix)
 	if err != nil {
 		return err
 	}
@@ -207,9 +207,21 @@ func (r *Cache) Delete(key string) {
 	}
 }
 
-// ListKeys lists all keys associated with this cache, optionally filtered by a prefix.
+// ListKeys lists all keys associated with this cache.
 // Use with care if you have long TTLs or no TTL configured.
-func (r *Cache) ListKeys(ctx *context.Context, prefix string) (results []string, err error) {
+func (r *Cache) ListKeys(ctx context.Context) (results []string, err error) {
+	return r.listKeys(&ctx, "")
+}
+
+// ListKeysWithPrefix lists all keys associated with this cache, filtered by a prefix.
+// Use with care if you have long TTLs or no TTL configured.
+func (r *Cache) ListKeysWithPrefix(prefix string) (results []string, err error) {
+	return r.listKeys(nil, prefix)
+}
+
+// listKeys lists all keys associated with this cache, optionally filtered by a prefix.
+// Use with care if you have long TTLs or no TTL configured.
+func (r *Cache) listKeys(ctx *context.Context, prefix string) (results []string, err error) {
 	var c redis.Conn
 	if ctx != nil {
 		c, err = pool.GetContext(*ctx)

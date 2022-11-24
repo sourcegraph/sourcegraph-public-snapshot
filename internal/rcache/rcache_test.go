@@ -218,15 +218,14 @@ func TestCache_ListKeys(t *testing.T) {
 		[2]string{"barfoo", "234"},
 	)
 
-	background := context.Background()
-	keys, err := c.ListKeys(&background, "")
+	keys, err := c.ListKeys(context.Background())
 	assert.NoError(t, err)
 	for _, k := range []string{"foobar", "bazbar", "barfoo"} {
 		assert.Contains(t, keys, k)
 	}
 }
 
-func TestCache_ListKeys_prefix(t *testing.T) {
+func TestCache_ListKeysWithPrefix(t *testing.T) {
 	SetupForTest(t)
 
 	key2a := "key2:test-a"
@@ -241,7 +240,7 @@ func TestCache_ListKeys_prefix(t *testing.T) {
 		[2]string{"key3:test", value},
 	)
 
-	got, err := c.ListKeys(nil, "key2")
+	got, err := c.ListKeysWithPrefix("key2")
 
 	assert.Nil(t, err)
 	assert.Len(t, got, 2)
@@ -267,9 +266,9 @@ func TestCache_DeleteFirstN(t *testing.T) {
 	c.SetMulti(pairs...)
 
 	// Delete the first 4 key-value pairs
-	delErr := c.DeleteAllButLastN(nil, ">=10", 4)
+	delErr := c.DeleteAllButLastN(">=10", 4)
 
-	got, listErr := c.ListKeys(nil, "")
+	got, listErr := c.ListKeysWithPrefix("")
 
 	assert.Nil(t, delErr)
 	assert.Nil(t, listErr)
