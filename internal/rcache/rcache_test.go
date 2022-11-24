@@ -240,7 +240,7 @@ func TestCache_ListKeysWithPrefix(t *testing.T) {
 		[2]string{"key3:test", value},
 	)
 
-	got, err := c.ListKeysWithPrefix("key2")
+	got, err := c.ListKeysWithPrefix(context.Background(), "key2")
 
 	assert.Nil(t, err)
 	assert.Len(t, got, 2)
@@ -268,7 +268,7 @@ func TestCache_DeleteFirstN(t *testing.T) {
 	// Delete the first 4 key-value pairs
 	delErr := c.DeleteAllButLastN(">=10", 4)
 
-	got, listErr := c.ListKeysWithPrefix("")
+	got, listErr := c.ListKeysWithPrefix(context.Background(), "")
 
 	assert.Nil(t, delErr)
 	assert.Nil(t, listErr)
