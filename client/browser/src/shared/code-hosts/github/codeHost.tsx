@@ -437,6 +437,7 @@ const isSimpleSearchPage = (): boolean => window.location.pathname === '/search'
 const isAdvancedSearchPage = (): boolean => window.location.pathname === '/search/advanced'
 const isRepoSearchPage = (): boolean => !isSimpleSearchPage() && window.location.pathname.endsWith('/search')
 const isSearchResultsPage = (): boolean =>
+    // TODO(#44327): Do not rely on window.location.search - it may be present not only on search pages (e.g., issues, pulls, etc.).
     Boolean(new URLSearchParams(window.location.search).get('q')) && !isAdvancedSearchPage()
 const isSearchPage = (): boolean =>
     isSimpleSearchPage() || isAdvancedSearchPage() || isRepoSearchPage() || isSearchResultsPage()
@@ -696,9 +697,10 @@ export const githubCodeHost: GithubCodeHost = {
                 }
 
                 // search results page filters being applied
-                if (isSearchResultsPage()) {
-                    return document.querySelector('.codesearch-results h3')?.textContent?.trim()
-                }
+                // TODO(#44327): Uncomment or remove this depending on the outcome of the issue.
+                // if (isSearchResultsPage()) {
+                //     return document.querySelector('.codesearch-results h3')?.textContent?.trim()
+                // }
 
                 // other pages
                 return pathname
