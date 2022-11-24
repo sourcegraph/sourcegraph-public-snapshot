@@ -12071,10 +12071,6 @@ type MockPermsStore struct {
 	// UserIDsWithOldestPermsFunc is an instance of a mock function object
 	// controlling the behavior of the method UserIDsWithOldestPerms.
 	UserIDsWithOldestPermsFunc *PermsStoreUserIDsWithOldestPermsFunc
-	// UserIsMemberOfOrgHasCodeHostConnectionFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// UserIsMemberOfOrgHasCodeHostConnection.
-	UserIsMemberOfOrgHasCodeHostConnectionFunc *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *PermsStoreWithFunc
@@ -12201,11 +12197,6 @@ func NewMockPermsStore() *MockPermsStore {
 		},
 		UserIDsWithOldestPermsFunc: &PermsStoreUserIDsWithOldestPermsFunc{
 			defaultHook: func(context.Context, int, time.Duration) (r0 map[int32]time.Time, r1 error) {
-				return
-			},
-		},
-		UserIsMemberOfOrgHasCodeHostConnectionFunc: &PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc{
-			defaultHook: func(context.Context, int32) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -12341,11 +12332,6 @@ func NewStrictMockPermsStore() *MockPermsStore {
 				panic("unexpected invocation of MockPermsStore.UserIDsWithOldestPerms")
 			},
 		},
-		UserIsMemberOfOrgHasCodeHostConnectionFunc: &PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc{
-			defaultHook: func(context.Context, int32) (bool, error) {
-				panic("unexpected invocation of MockPermsStore.UserIsMemberOfOrgHasCodeHostConnection")
-			},
-		},
 		WithFunc: &PermsStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) PermsStore {
 				panic("unexpected invocation of MockPermsStore.With")
@@ -12429,9 +12415,6 @@ func NewMockPermsStoreFrom(i PermsStore) *MockPermsStore {
 		},
 		UserIDsWithOldestPermsFunc: &PermsStoreUserIDsWithOldestPermsFunc{
 			defaultHook: i.UserIDsWithOldestPerms,
-		},
-		UserIsMemberOfOrgHasCodeHostConnectionFunc: &PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc{
-			defaultHook: i.UserIsMemberOfOrgHasCodeHostConnection,
 		},
 		WithFunc: &PermsStoreWithFunc{
 			defaultHook: i.With,
@@ -15040,119 +15023,6 @@ func (c PermsStoreUserIDsWithOldestPermsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PermsStoreUserIDsWithOldestPermsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc describes the
-// behavior when the UserIsMemberOfOrgHasCodeHostConnection method of the
-// parent MockPermsStore instance is invoked.
-type PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc struct {
-	defaultHook func(context.Context, int32) (bool, error)
-	hooks       []func(context.Context, int32) (bool, error)
-	history     []PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall
-	mutex       sync.Mutex
-}
-
-// UserIsMemberOfOrgHasCodeHostConnection delegates to the next hook
-// function in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockPermsStore) UserIsMemberOfOrgHasCodeHostConnection(v0 context.Context, v1 int32) (bool, error) {
-	r0, r1 := m.UserIsMemberOfOrgHasCodeHostConnectionFunc.nextHook()(v0, v1)
-	m.UserIsMemberOfOrgHasCodeHostConnectionFunc.appendCall(PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// UserIsMemberOfOrgHasCodeHostConnection method of the parent
-// MockPermsStore instance is invoked and the hook queue is empty.
-func (f *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc) SetDefaultHook(hook func(context.Context, int32) (bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UserIsMemberOfOrgHasCodeHostConnection method of the parent
-// MockPermsStore instance invokes the hook at the front of the queue and
-// discards it. After the queue is empty, the default hook function is
-// invoked for any future action.
-func (f *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc) PushHook(hook func(context.Context, int32) (bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32) (bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, int32) (bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc) nextHook() func(context.Context, int32) (bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc) appendCall(r0 PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall objects
-// describing the invocations of this function.
-func (f *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc) History() []PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall {
-	f.mutex.Lock()
-	history := make([]PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall is an object
-// that describes an invocation of method
-// UserIsMemberOfOrgHasCodeHostConnection on an instance of MockPermsStore.
-type PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
