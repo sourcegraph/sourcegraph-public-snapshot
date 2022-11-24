@@ -44247,6 +44247,9 @@ type MockUserExternalAccountsStore struct {
 	// DeleteFunc is an instance of a mock function object controlling the
 	// behavior of the method Delete.
 	DeleteFunc *UserExternalAccountsStoreDeleteFunc
+	// DeleteWithOptsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteWithOpts.
+	DeleteWithOptsFunc *UserExternalAccountsStoreDeleteWithOptsFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *UserExternalAccountsStoreDoneFunc
@@ -44317,6 +44320,11 @@ func NewMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 		},
 		DeleteFunc: &UserExternalAccountsStoreDeleteFunc{
 			defaultHook: func(context.Context, ...int32) (r0 error) {
+				return
+			},
+		},
+		DeleteWithOptsFunc: &UserExternalAccountsStoreDeleteWithOptsFunc{
+			defaultHook: func(context.Context, ExternalAccountsDeleteOptions) (r0 error) {
 				return
 			},
 		},
@@ -44423,6 +44431,11 @@ func NewStrictMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 				panic("unexpected invocation of MockUserExternalAccountsStore.Delete")
 			},
 		},
+		DeleteWithOptsFunc: &UserExternalAccountsStoreDeleteWithOptsFunc{
+			defaultHook: func(context.Context, ExternalAccountsDeleteOptions) error {
+				panic("unexpected invocation of MockUserExternalAccountsStore.DeleteWithOpts")
+			},
+		},
 		DoneFunc: &UserExternalAccountsStoreDoneFunc{
 			defaultHook: func(error) error {
 				panic("unexpected invocation of MockUserExternalAccountsStore.Done")
@@ -44517,6 +44530,9 @@ func NewMockUserExternalAccountsStoreFrom(i UserExternalAccountsStore) *MockUser
 		},
 		DeleteFunc: &UserExternalAccountsStoreDeleteFunc{
 			defaultHook: i.Delete,
+		},
+		DeleteWithOptsFunc: &UserExternalAccountsStoreDeleteWithOptsFunc{
+			defaultHook: i.DeleteWithOpts,
 		},
 		DoneFunc: &UserExternalAccountsStoreDoneFunc{
 			defaultHook: i.Done,
@@ -45020,6 +45036,115 @@ func (c UserExternalAccountsStoreDeleteFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserExternalAccountsStoreDeleteFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UserExternalAccountsStoreDeleteWithOptsFunc describes the behavior when
+// the DeleteWithOpts method of the parent MockUserExternalAccountsStore
+// instance is invoked.
+type UserExternalAccountsStoreDeleteWithOptsFunc struct {
+	defaultHook func(context.Context, ExternalAccountsDeleteOptions) error
+	hooks       []func(context.Context, ExternalAccountsDeleteOptions) error
+	history     []UserExternalAccountsStoreDeleteWithOptsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteWithOpts delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUserExternalAccountsStore) DeleteWithOpts(v0 context.Context, v1 ExternalAccountsDeleteOptions) error {
+	r0 := m.DeleteWithOptsFunc.nextHook()(v0, v1)
+	m.DeleteWithOptsFunc.appendCall(UserExternalAccountsStoreDeleteWithOptsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteWithOpts
+// method of the parent MockUserExternalAccountsStore instance is invoked
+// and the hook queue is empty.
+func (f *UserExternalAccountsStoreDeleteWithOptsFunc) SetDefaultHook(hook func(context.Context, ExternalAccountsDeleteOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteWithOpts method of the parent MockUserExternalAccountsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *UserExternalAccountsStoreDeleteWithOptsFunc) PushHook(hook func(context.Context, ExternalAccountsDeleteOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserExternalAccountsStoreDeleteWithOptsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, ExternalAccountsDeleteOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserExternalAccountsStoreDeleteWithOptsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, ExternalAccountsDeleteOptions) error {
+		return r0
+	})
+}
+
+func (f *UserExternalAccountsStoreDeleteWithOptsFunc) nextHook() func(context.Context, ExternalAccountsDeleteOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserExternalAccountsStoreDeleteWithOptsFunc) appendCall(r0 UserExternalAccountsStoreDeleteWithOptsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UserExternalAccountsStoreDeleteWithOptsFuncCall objects describing the
+// invocations of this function.
+func (f *UserExternalAccountsStoreDeleteWithOptsFunc) History() []UserExternalAccountsStoreDeleteWithOptsFuncCall {
+	f.mutex.Lock()
+	history := make([]UserExternalAccountsStoreDeleteWithOptsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserExternalAccountsStoreDeleteWithOptsFuncCall is an object that
+// describes an invocation of method DeleteWithOpts on an instance of
+// MockUserExternalAccountsStore.
+type UserExternalAccountsStoreDeleteWithOptsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ExternalAccountsDeleteOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserExternalAccountsStoreDeleteWithOptsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserExternalAccountsStoreDeleteWithOptsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

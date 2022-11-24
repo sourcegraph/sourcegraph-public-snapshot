@@ -57,6 +57,10 @@ type UserExternalAccountsStore interface {
 	// Delete deletes a user external account.
 	Delete(ctx context.Context, ids ...int32) error
 
+	// DeleteWithOpts will soft delete all accounts matching the options combined
+	// using AND. If options are all zero values then it does nothing.
+	DeleteWithOpts(ctx context.Context, opt ExternalAccountsDeleteOptions) error
+
 	UpdateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, installations []gh.Installation) error
 
 	// ExecResult performs a query without returning any rows, but includes the
@@ -344,6 +348,42 @@ WHERE id IN (%s) AND deleted_at IS NULL`, strings.Join(idStrings, ", ")))
 		return userExternalAccountNotFoundError{[]any{ids}}
 	}
 	return nil
+}
+
+// ExternalAccountsDeleteOptions defines criteria that will be used to select
+// which accounts to soft delete.
+type ExternalAccountsDeleteOptions struct {
+	UserID      int32
+	AccountID   string
+	ServiceType string
+}
+
+// DeleteWithOpts will soft delete all accounts matching the options combined
+// using AND. If options are all zero values then it does nothing.
+func (s *userExternalAccountsStore) DeleteWithOpts(ctx context.Context, opt ExternalAccountsDeleteOptions) error {
+	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+
+	if opt.UserID != 0 {
+		conds = append(conds, sqlf.Sprintf("user_id=%d", opt.UserID))
+	}
+	if opt.AccountID != "" {
+		conds = append(conds, sqlf.Sprintf("account_id=%s", opt.AccountID))
+	}
+	if opt.ServiceType != "" {
+		conds = append(conds, sqlf.Sprintf("service_type=%s", opt.ServiceType))
+	}
+
+	// We only have the default deleted_at clause, do nothing
+	if len(conds) == 1 {
+		return nil
+	}
+
+	err := s.Exec(ctx, sqlf.Sprintf(`
+UPDATE user_external_accounts
+SET deleted_at=now()
+WHERE %s`, sqlf.Join(conds, "AND")))
+
+	return errors.Wrap(err, "executing delete")
 }
 
 // ExternalAccountsListOptions specifies the options for listing user external accounts.
