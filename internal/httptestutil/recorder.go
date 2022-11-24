@@ -111,9 +111,9 @@ func NewRecorderFactory(t testing.TB, update bool, name string) (*httpcli.Factor
 // headers.
 func riskyHeaderFilter(i *cassette.Interaction) error {
 	for _, headers := range []http.Header{i.Request.Headers, i.Response.Headers} {
-		for k, values := range headers {
-			if httpcli.IsRiskyKey(k) || httpcli.HasRiskyValue(values) {
-				delete(headers, k)
+		for name, values := range headers {
+			if httpcli.IsRiskyHeader(name, values) {
+				delete(headers, name)
 			}
 		}
 	}

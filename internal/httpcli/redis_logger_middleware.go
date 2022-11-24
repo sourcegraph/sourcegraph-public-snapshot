@@ -135,11 +135,11 @@ func getAllValuesAfter(redisCache *rcache.Cache, keyPrefix string, after *string
 
 func removeSensitiveHeaders(headers http.Header) http.Header {
 	var cleanHeaders = make(http.Header)
-	for key, value := range headers {
-		if IsRiskyKey(key) || HasRiskyValue(value) {
-			cleanHeaders[key] = []string{"REDACTED"}
+	for name, values := range headers {
+		if IsRiskyHeader(name, values) {
+			cleanHeaders[name] = []string{"REDACTED"}
 		} else {
-			cleanHeaders[key] = value
+			cleanHeaders[name] = values
 		}
 	}
 	return cleanHeaders

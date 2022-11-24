@@ -721,17 +721,26 @@ func RequestClientTransportOpt(cli *http.Client) error {
 	return nil
 }
 
-func IsRiskyKey(key string) bool {
+// IsRiskyHeader returns true if the request or response header is likely to contain private data.
+func IsRiskyHeader(name string, values []string) bool {
+	return isRiskyHeaderName(name) || containsRiskyHeaderValue(values)
+}
+
+// isRiskyHeaderName returns true if the request or response header is likely to contain private data
+// based on its name.
+func isRiskyHeaderName(name string) bool {
 	riskyHeaderKeys := []string{"auth", "cookie", "token"}
 	for _, riskyKey := range riskyHeaderKeys {
-		if strings.Contains(strings.ToLower(key), riskyKey) {
+		if strings.Contains(strings.ToLower(name), riskyKey) {
 			return true
 		}
 	}
 	return false
 }
 
-func HasRiskyValue(values []string) bool {
+// ContainsRiskyHeaderValue returns true if the values array of a request or response header
+// looks like it's likely to contain private data.
+func containsRiskyHeaderValue(values []string) bool {
 	riskyHeaderValues := []string{"bearer", "ghp_", "glpat-"}
 	for _, value := range values {
 		for _, riskyValue := range riskyHeaderValues {
