@@ -26,8 +26,11 @@ func redisLoggerMiddleware() Middleware {
 			resp, err := cli.Do(req)
 			duration := time.Since(start)
 			var requestBody []byte
-			if req != nil && req.Body != nil {
-				requestBody, _ = io.ReadAll(req.Body)
+			if req != nil {
+				body, _ := req.GetBody()
+				if body != nil {
+					requestBody, _ = io.ReadAll(body)
+				}
 			}
 
 			errorMessage := ""
