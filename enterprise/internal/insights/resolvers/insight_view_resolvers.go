@@ -674,6 +674,10 @@ func existingSeriesHasChanged(new graphqlbackend.LineChartSearchInsightDataSerie
 	return emptyIfNil(new.GroupBy) != emptyIfNil(existing.GroupBy)
 }
 
+func (r *Resolver) SaveInsightAsNewView(ctx context.Context) (graphqlbackend.InsightViewPayloadResolver, error) {
+	return nil, nil
+}
+
 func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
 	insightTx, err := r.insightStore.Transact(ctx)
 	if err != nil {

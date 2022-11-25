@@ -903,6 +903,11 @@ extend type Mutation {
     Delete an insight view given the graphql ID.
     """
     deleteInsightView(id: ID!): EmptyResponse!
+
+    """
+    Create a new insight view from an existing view.
+    """
+    saveInsightAsNewView(id: ID!): InsightView!
 }
 
 """
