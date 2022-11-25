@@ -1576,7 +1576,7 @@ type Query {
     ): WebhookLogConnection!
 
     """
-    Get a log of the latest outbound external requests
+    Get a log of the latest outbound external requests. Only available to site admins.
     """
     outboundRequests(
         """
