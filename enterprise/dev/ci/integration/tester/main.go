@@ -53,7 +53,7 @@ func main() {
 		logger.Fatal("failed to connect to DB", log.Error(err))
 	}
 
-	bstore := batchesstore.New(db)
+	bstore := batchesstore.New(db, &observation.TestContext, nil)
 
 	var client *gqltestutil.Client
 	client, SourcegraphAccessToken = createSudoToken()

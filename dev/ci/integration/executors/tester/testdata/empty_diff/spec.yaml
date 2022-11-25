@@ -1,0 +1,17 @@
+name: empty-diff
+description: Add Hello World to READMEs
+
+on:
+  - repository: github.com/sourcegraph/automation-testing
+    branch: executors-e2e
+
+steps:
+  - run: echo Hello World
+    container: ubuntu:18.04
+
+changesetTemplate:
+  title: Hello World
+  body: My first batch change!
+  branch: hello-world
+  commit:
+    message: Append Hello World to all README.md files

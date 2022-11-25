@@ -17,10 +17,9 @@ services:
       - '${DATA}/config:/etc/sourcegraph'
       - '${DATA}/data:/var/opt/sourcegraph'
       - executors-e2e:/e2e
-    expose:
-      - '7080'
     ports:
       - '7080:7080'
+      - '5433:5432'
     networks:
       - sourcegraph
   executor:
