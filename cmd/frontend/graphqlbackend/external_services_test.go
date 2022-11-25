@@ -173,10 +173,9 @@ func TestUpdateExternalService(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
-	RunTests(t, []*Test{
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchema(t, db),
+		Query: `
 			mutation {
 				updateExternalService(input: {
 					id: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
@@ -188,7 +187,7 @@ func TestUpdateExternalService(t *testing.T) {
 				}
 			}
 		`,
-			ExpectedResult: `
+		ExpectedResult: `
 			{
 				"updateExternalService": {
 				  "displayName": "GITHUB #2",
@@ -197,8 +196,7 @@ func TestUpdateExternalService(t *testing.T) {
 				}
 			}
 		`,
-			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-		},
+		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 	})
 }
 

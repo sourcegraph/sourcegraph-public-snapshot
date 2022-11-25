@@ -136,9 +136,6 @@ func TestLoadExternalService(t *testing.T) {
 		if _, ok := repo.Sources[newerExternalService.URN()]; ok {
 			sources = append(sources, &newerExternalService)
 		}
-		if _, ok := repo.Sources[externalService.URN()]; ok {
-			sources = append(sources, &externalService)
-		}
 		return sources, nil
 	})
 
