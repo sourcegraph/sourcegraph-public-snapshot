@@ -619,6 +619,7 @@ const changesetDiffFragment = gql`
     fragment ChangesetDiffFields on ExternalChangeset {
         currentSpec {
             description {
+                __typename
                 ... on GitBranchChangesetDescription {
                     commits {
                         diff
