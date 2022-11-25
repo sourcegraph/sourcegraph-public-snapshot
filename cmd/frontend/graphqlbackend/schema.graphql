@@ -631,12 +631,6 @@ type Mutation {
     SetMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
 
     """
-    SetUserPublicRepos sets the list of public repos for a user's search context, ensuring those repos
-    exist and are cloned
-    """
-    SetUserPublicRepos(userID: ID!, repoURIs: [String!]!): EmptyResponse!
-
-    """
     (experimental) Create a new feature flag
     """
     createFeatureFlag(
@@ -5469,11 +5463,6 @@ type User implements Node & SettingsSubject & Namespace {
     The name of this user namespace's component. For users, this is the username.
     """
     namespaceName: String!
-
-    """
-    publicRepositories returns the repos listed in user_public_repos for this user
-    """
-    publicRepositories: [Repository!]!
 
     """
     EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few

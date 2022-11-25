@@ -2283,54 +2283,6 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 	}
 }
 
-func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := actor.WithInternalActor(context.Background())
-
-	user, repo := initUserAndRepo(t, ctx, db)
-	// create a repo we don't own
-	_, otherRepo := initUserAndRepo(t, ctx, db)
-
-	// register our interest in the other user's repo
-	err := db.UserPublicRepos().SetUserRepo(ctx, UserPublicRepo{UserID: user.ID, RepoURI: otherRepo.URI, RepoID: otherRepo.ID})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := []types.MinimalRepo{
-		{ID: repo.ID, Name: repo.Name},
-	}
-
-	have, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{UserID: user.ID})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Fatalf(diff)
-	}
-
-	want = []types.MinimalRepo{
-		{ID: repo.ID, Name: repo.Name},
-		{ID: otherRepo.ID, Name: otherRepo.Name},
-	}
-
-	have, err = db.Repos().ListMinimalRepos(ctx, ReposListOptions{UserID: user.ID, IncludeUserPublicRepos: true})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Fatalf(diff)
-	}
-}
-
 func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
