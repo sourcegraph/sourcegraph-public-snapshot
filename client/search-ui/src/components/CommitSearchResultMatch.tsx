@@ -86,6 +86,7 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
                     key={item.url}
                     to={item.url}
                     className={searchResultStyles.searchResultMatch}
+                    data-selectable-search-result="true"
                     {...openInNewTabProps}
                 >
                     <Code>

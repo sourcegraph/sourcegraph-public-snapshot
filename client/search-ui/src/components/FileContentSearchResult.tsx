@@ -232,6 +232,25 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         </>
     )
 
+    useEffect(() => {
+        const ref = rootRef.current
+        if (!ref) {
+            return
+        }
+
+        const expand = (): void => setExpanded(true)
+        const collapse = (): void => setExpanded(false)
+
+        // Custom events triggered by search results keyboard navigation (from the useSearchResultsKeyboardNavigation hook).
+        ref.addEventListener('expandSearchResultsGroup', expand)
+        ref.addEventListener('collapseSearchResultsGroup', collapse)
+
+        return () => {
+            ref.removeEventListener('expandSearchResultsGroup', expand)
+            ref.removeEventListener('collapseSearchResultsGroup', collapse)
+        }
+    }, [rootRef, setExpanded])
+
     return (
         <ResultContainer
             index={index}

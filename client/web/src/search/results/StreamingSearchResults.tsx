@@ -421,6 +421,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             executedQuery={location.search}
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={prefetchFile}
+                            enableKeyboardNavigation={true}
                         />
                     </div>
                 </>
