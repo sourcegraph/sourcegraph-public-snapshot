@@ -70,7 +70,7 @@ sg lint --help
 		// If more than 1 target is requested, hijack subcommands by setting it to nil
 		// so that the main lint command can handle it the run.
 		if cmd.Args().Len() > 1 {
-			cmd.App.Commands = nil
+			cmd.Command.Subcommands = nil
 		}
 		return nil
 	},
@@ -114,7 +114,6 @@ sg lint --help
 			if !lintSkipFormatCheck.Get(cmd) && !hasFormatTarget {
 				lintTargets = append(lintTargets, linters.Formatting)
 				targets = append(targets, linters.Formatting.Name)
-
 			}
 		}
 

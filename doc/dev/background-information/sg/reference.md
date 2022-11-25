@@ -631,7 +631,7 @@ $ sg migration up [-db=<schema>]
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
+* `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: "all")
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
@@ -723,7 +723,7 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: [all])
+* `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: "all")
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--skip-out-of-band-migrations`: Do not attempt to validate out-of-band migration status.
 
