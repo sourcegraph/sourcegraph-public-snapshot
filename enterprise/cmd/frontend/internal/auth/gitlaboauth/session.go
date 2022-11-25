@@ -232,21 +232,19 @@ func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gi
 		allowed[group] = true
 	}
 
-	var err error
-	var gitlabGroups []*gitlab.Group
-	hasNextPage := true
+	gitlabGroups, err := glClient.ListGroups(ctx)
+	if err != nil {
+		return false, err
+	}
 
-	for page := 1; hasNextPage; page++ {
-		gitlabGroups, hasNextPage, err = glClient.ListGroups(ctx, page)
+	for glGroup, ok, err := gitlabGroups.Next(); ok; glGroup, ok, err = gitlabGroups.Next() {
 		if err != nil {
 			return false, err
 		}
 
 		// Check the full path instead of name so we can better handle subgroups.
-		for _, glGroup := range gitlabGroups {
-			if allowed[glGroup.FullPath] {
-				return true, nil
-			}
+		if allowed[glGroup.FullPath] {
+			return true, nil
 		}
 	}
 

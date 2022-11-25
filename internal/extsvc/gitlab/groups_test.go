@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestListGroups(t *testing.T) {
@@ -18,22 +18,16 @@ func TestListGroups(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		client := newTestClient(t)
-		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `[{"id": 1,"full_path": "group1"}]`,
+		client.httpClient = &mockHTTPPaginatedResponse{
+			pages: []*mockHTTPResponseBody{
+				{responseBody: `[{"id": 1,"full_path": "group1"}]`},
+				{responseBody: `[]`},
+			},
 		}
 
-		groupsResponse, _, err := client.ListGroups(ctx, 1)
-		if groupsResponse == nil {
-			t.Error("unexpected nil response")
-		}
-
-		if diff := cmp.Diff(groupsResponse, mockedGroups); diff != "" {
-			t.Errorf("unexpected response: %s", diff)
-		}
-
-		if err != nil {
-			t.Errorf("unexpected non-nil error: %+v", err)
-		}
+		groups, err := client.ListGroups(ctx)
+		assert.NoError(t, err)
+		assert.Equal(t, mockedGroups, groups.mustAll())
 	})
 
 	t.Run("malformed response", func(t *testing.T) {
@@ -42,13 +36,8 @@ func TestListGroups(t *testing.T) {
 			responseBody: `this is not valid JSON`,
 		}
 
-		groupsResponse, _, err := client.ListGroups(ctx, 1)
-		if groupsResponse != nil {
-			t.Error("unexpected non-nil response")
-		}
-
-		if err == nil {
-			t.Error("unexpected nil error")
-		}
+		groups, err := client.ListGroups(ctx)
+		assert.Error(t, err)
+		assert.Nil(t, groups)
 	})
 }

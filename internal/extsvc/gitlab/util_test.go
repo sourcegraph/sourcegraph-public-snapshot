@@ -45,6 +45,25 @@ func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 	}, nil
 }
 
+type mockHTTPPaginatedResponse struct {
+	pages []*mockHTTPResponseBody
+	empty mockHTTPEmptyResponse
+}
+
+func (s *mockHTTPPaginatedResponse) Do(req *http.Request) (*http.Response, error) {
+	if len(s.pages) == 0 {
+		// If s.empty is the zero value, then we should really return 200.
+		if s.empty.statusCode == 0 {
+			s.empty.statusCode = http.StatusOK
+		}
+		return s.empty.Do(req)
+	}
+
+	page := s.pages[0]
+	s.pages = s.pages[1:]
+	return page.Do(req)
+}
+
 func newTestClient(t *testing.T) *Client {
 	rcache.SetupForTest(t)
 	return &Client{
