@@ -257,139 +257,141 @@ func TestApplyPatch(t *testing.T) {
 		patch    string
 		wantFile string
 	}{
-		// 		{
-		// 			name: "replace in middle",
-		// 			file: `1 some
-		// 2
-		// 3
-		// 4
-		// 5
-		// 6
-		// 7 super awesome
-		// 8
-		// 9
-		// 10
-		// 11
-		// 12
-		// 13
-		// 14 file
-		// 15
-		// 16
-		// 17
-		// 18 oh yes
-		// `,
-		// 			patch: `diff --git a/test b/test
-		// index 38dea4a..d81676e 100644
-		// --- a/test
-		// +++ b/test
-		// @@ -4,7 +4,7 @@
-		//  4
-		//  5
-		//  6
-		// -7 super awesome
-		// +7 super mega awesome
-		//  8
-		//  9
-		//  10
-		// `,
-		// 			wantFile: `1 some
-		// 2
-		// 3
-		// 4
-		// 5
-		// 6
-		// 7 super mega awesome
-		// 8
-		// 9
-		// 10
-		// 11
-		// 12
-		// 13
-		// 14 file
-		// 15
-		// 16
-		// 17
-		// 18 oh yes
-		// `,
-		// 		},
-		// 		{
-		// 			name: "delete file",
-		// 			file: `1 some
-		// 2
-		// 3
-		// `,
-		// 			patch: `diff --git a/test b/test
-		// deleted file mode 100644
-		// index 2e0cf96..0000000
-		// --- a/test
-		// +++ /dev/null
-		// @@ -1,3 +0,0 @@
-		// -1 some
-		// -2
-		// -3
-		// `,
-		// 			wantFile: "",
-		// 		},
-		// 		{
-		// 			name: "New file, additional newline at end",
-		// 			file: "",
-		// 			patch: `diff --git a/file2.txt b/file2.txt
-		// new file mode 100644
-		// index 0000000..122f5d9
-		// --- /dev/null
-		// +++ b/file2.txt
-		// @@ -0,0 +1 @@
-		// +filecontent
-		// +
-		// `,
-		// 			wantFile: `filecontent
+		{
+			name: "replace in middle",
+			file: `1 some
+2
+3
+4
+5
+6
+7 super awesome
+8
+9
+10
+11
+12
+13
+14 file
+15
+16
+17
+18 oh yes
+`,
+			patch: `diff --git a/test b/test
+index 38dea4a..d81676e 100644
+--- a/test
++++ b/test
+@@ -4,7 +4,7 @@
+ 4
+ 5
+ 6
+-7 super awesome
++7 super mega awesome
+ 8
+ 9
+ 10
+`,
+			wantFile: `1 some
+2
+3
+4
+5
+6
+7 super mega awesome
+8
+9
+10
+11
+12
+13
+14 file
+15
+16
+17
+18 oh yes
+`,
+		},
+		{
+			name: "delete file",
+			file: `1 some
+2
+3
+`,
+			patch: `diff --git a/test b/test
+deleted file mode 100644
+index 2e0cf96..0000000
+--- a/test
++++ /dev/null
+@@ -1,3 +0,0 @@
+-1 some
+-2
+-3
+`,
+			wantFile: "",
+		},
+		{
+			name: "New file, additional newline at end",
+			file: "",
+			patch: `diff --git a/file2.txt b/file2.txt
+new file mode 100644
+index 0000000..122f5d9
+--- /dev/null
++++ b/file2.txt
+@@ -0,0 +1 @@
++filecontent
++
+`,
+			wantFile: `filecontent
 
-		// `,
-		// 		},
-		// 		{
-		// 			name: "New file",
-		// 			file: "",
-		// 			patch: `diff --git a/file2.txt b/file2.txt
-		// new file mode 100644
-		// index 0000000..122f5d9
-		// --- /dev/null
-		// +++ b/file2.txt
-		// @@ -0,0 +1 @@
-		// +filecontent
-		// `,
-		// 			wantFile: `filecontent
-		// `,
-		// 		},
-		// 		{
-		// 			name: "New file without newline",
-		// 			file: "",
-		// 			patch: `diff --git a/README.md b/README.md
-		// new file mode 100644
-		// index 0000000..373ae20
-		// --- /dev/null
-		// +++ b/README.md
-		// @@ -0,0 +1 @@
-		// +No newline after this
-		// \ No newline at end of file`,
-		// 			// Note: No newline.
-		// 			wantFile: `No newline after this`,
-		// 		},
-		// 		{
-		// 			name: "Add newline to file without newline",
-		// 			// Note: No newline.
-		// 			file: `No newline after this`,
-		// 			patch: `diff --git a/README.md b/README.md
-		// index 373ae20..7e17295 100644
-		// --- a/README.md
-		// +++ b/README.md
-		// @@ -1 +1 @@
-		// -No newline after this
-		// \ No newline at end of file
-		// +No newline after this`,
-		// 			// Note: Has a newline now.
-		// 			wantFile: `No newline after this
-		// `,
-		// 		},
+`,
+		},
+		{
+			name: "New file",
+			file: "",
+			patch: `diff --git a/file2.txt b/file2.txt
+new file mode 100644
+index 0000000..122f5d9
+--- /dev/null
++++ b/file2.txt
+@@ -0,0 +1 @@
++filecontent
+`,
+			wantFile: `filecontent
+`,
+		},
+		{
+			name: "New file without newline",
+			file: "",
+			patch: `diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..373ae20
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1 @@
++No newline after this
+\ No newline at end of file
+`,
+			// Note: No newline.
+			wantFile: `No newline after this`,
+		},
+		{
+			name: "Add newline to file without newline",
+			// Note: No newline.
+			file: `No newline after this`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..7e17295 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1 @@
+-No newline after this
+\ No newline at end of file
++No newline after this
+`,
+			// Note: Has a newline now.
+			wantFile: `No newline after this
+`,
+		},
 		{
 			name: "Remove newline at end of file",
 			file: `No newline after this
@@ -405,6 +407,24 @@ index 7e17295..373ae20 100644
 `,
 			// Note: Has no newline anymore.
 			wantFile: `No newline after this`,
+		},
+		{
+			name: "Add line without newline to file that ended with no newline",
+			file: `No newline after this`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..89ad131 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1,2 @@
+-No newline after this
+\ No newline at end of file
++No newline after this
++Also no newline after this
+\ No newline at end of file
+`,
+			// Note: Has no newline at the end.
+			wantFile: `No newline after this
+Also no newline after this`,
 		},
 	}
 
