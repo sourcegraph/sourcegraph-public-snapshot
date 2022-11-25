@@ -547,12 +547,9 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 		return nil, err
 	}
 
-	hunkLines := strings.Split(string(r.hunk.Body), "\n")
 	// If the diff ends with a newline, we have to strip it, otherwise we iterate
 	// over a ghost line.
-	if strings.HasSuffix(string(r.hunk.Body), "\n") {
-		hunkLines = hunkLines[:len(hunkLines)-1]
-	}
+	hunkLines := strings.Split(strings.TrimSuffix(string(r.hunk.Body), "\n"), "\n")
 
 	// Lines in highlightedBase and highlightedHead are 0-indexed.
 	baseLine := r.hunk.OrigStartLine - 1
