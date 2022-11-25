@@ -54,12 +54,9 @@ type UserExternalAccountsStore interface {
 	// create already exists, it returns an error.
 	CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error)
 
-	// Delete deletes a user external account.
-	Delete(ctx context.Context, ids ...int32) error
-
-	// DeleteWithOptions will soft delete all accounts matching the options combined
-	// using AND. If options are all zero values then it does nothing.
-	DeleteWithOptions(ctx context.Context, opt ExternalAccountsDeleteOptions) error
+	// Delete will soft delete all accounts matching the options combined using AND.
+	// If options are all zero values then it does nothing.
+	Delete(ctx context.Context, opt ExternalAccountsDeleteOptions) error
 
 	UpdateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, installations []gh.Installation) error
 
@@ -324,45 +321,28 @@ WHERE id = $1
 	return err
 }
 
-func (s *userExternalAccountsStore) Delete(ctx context.Context, ids ...int32) error {
-	if len(ids) == 0 {
-		return nil
-	}
-
-	idStrings := make([]string, len(ids))
-	for i, id := range ids {
-		idStrings[i] = strconv.Itoa(int(id))
-	}
-	res, err := s.Handle().ExecContext(ctx, fmt.Sprintf(`
-UPDATE user_external_accounts
-SET deleted_at=now()
-WHERE id IN (%s) AND deleted_at IS NULL`, strings.Join(idStrings, ", ")))
-	if err != nil {
-		return err
-	}
-	nrows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if nrows == 0 {
-		return userExternalAccountNotFoundError{[]any{ids}}
-	}
-	return nil
-}
-
 // ExternalAccountsDeleteOptions defines criteria that will be used to select
 // which accounts to soft delete.
 type ExternalAccountsDeleteOptions struct {
+	// A slice of ExternalAccountIDs
+	IDs         []int32
 	UserID      int32
 	AccountID   string
 	ServiceType string
 }
 
-// DeleteWithOptions will soft delete all accounts matching the options combined
-// using AND. If options are all zero values then it does nothing.
-func (s *userExternalAccountsStore) DeleteWithOptions(ctx context.Context, opt ExternalAccountsDeleteOptions) error {
+// Delete will soft delete all accounts matching the options combined using AND.
+// If options are all zero values then it does nothing.
+func (s *userExternalAccountsStore) Delete(ctx context.Context, opt ExternalAccountsDeleteOptions) error {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 
+	if len(opt.IDs) > 0 {
+		ids := make([]*sqlf.Query, len(opt.IDs))
+		for i, id := range opt.IDs {
+			ids[i] = sqlf.Sprintf("%s", id)
+		}
+		conds = append(conds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
+	}
 	if opt.UserID != 0 {
 		conds = append(conds, sqlf.Sprintf("user_id=%d", opt.UserID))
 	}
@@ -378,10 +358,12 @@ func (s *userExternalAccountsStore) DeleteWithOptions(ctx context.Context, opt E
 		return nil
 	}
 
-	err := s.Exec(ctx, sqlf.Sprintf(`
+	q := sqlf.Sprintf(`
 UPDATE user_external_accounts
 SET deleted_at=now()
-WHERE %s`, sqlf.Join(conds, "AND")))
+WHERE %s`, sqlf.Join(conds, "AND"))
+
+	err := s.Exec(ctx, q)
 
 	return errors.Wrap(err, "executing delete")
 }
@@ -422,7 +404,7 @@ ACCTINSTALLATIONS:
 				continue ACCTINSTALLATIONS
 			}
 		}
-		if err = s.Delete(ctx, acctInstallation.ID); err != nil {
+		if err = s.Delete(ctx, ExternalAccountsDeleteOptions{IDs: []int32{acctInstallation.ID}}); err != nil {
 			return err
 		}
 	}
