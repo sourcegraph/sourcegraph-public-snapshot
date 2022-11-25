@@ -194,7 +194,6 @@ require github.com/XSAM/otelsql v0.15.0
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.1 // indirect
-	github.com/bluekeyes/go-gitdiff v0.7.0 // indirect
 	github.com/cloudflare/circl v1.3.0 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
 	github.com/dennwc/varint v1.0.0 // indirect

@@ -48,7 +48,6 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { queryRepositoryComparisonFileDiffs, RepositoryComparisonDiff } from '../compare/RepositoryCompareDiffPage'
 
 import styles from './RepositoryCommitPage.module.scss'
-import { HighlightResponseFormat } from '@sourcegraph/search'
 
 const COMMIT_QUERY = gql`
     query RepositoryCommit($repo: ID!, $revspec: String!) {
@@ -174,26 +173,14 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
     const queryDiffs = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
             // Non-null assertions here are safe because the query is only executed if the commit is defined.
-            concat(
-                queryRepositoryComparisonFileDiffs({
-                    first: args.first ?? null,
-                    after: args.after ?? null,
-                    paths: [],
-                    repo: props.repo.id,
-                    base: commitParentOrEmpty(commit!),
-                    head: commit!.oid,
-                    format: HighlightResponseFormat.HTML_PLAINTEXT,
-                }),
-                queryRepositoryComparisonFileDiffs({
-                    first: args.first ?? null,
-                    after: args.after ?? null,
-                    paths: [],
-                    repo: props.repo.id,
-                    base: commitParentOrEmpty(commit!),
-                    head: commit!.oid,
-                    format: HighlightResponseFormat.HTML_HIGHLIGHT,
-                })
-            ),
+            queryRepositoryComparisonFileDiffs({
+                first: args.first ?? null,
+                after: args.after ?? null,
+                paths: [],
+                repo: props.repo.id,
+                base: commitParentOrEmpty(commit!),
+                head: commit!.oid,
+            }),
         [commit, props.repo.id]
     )
 

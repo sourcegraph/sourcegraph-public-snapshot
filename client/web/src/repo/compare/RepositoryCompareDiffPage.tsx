@@ -43,7 +43,6 @@ export function queryRepositoryComparisonFileDiffs(args: {
                 $first: Int
                 $after: String
                 $paths: [String!]
-                $format: HighlightResponseFormat
             ) {
                 node(id: $repo) {
                     __typename
@@ -146,28 +145,14 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
     private queryDiffs = (
         args: ConnectionQueryArguments
     ): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
-        concat(
-            queryRepositoryComparisonFileDiffs({
-                first: args.first ?? null,
-                after: args.after ?? null,
-                repo: this.props.repo.id,
-                base: this.props.base.commitID,
-                head: this.props.head.commitID,
-                // All of our user journeys are designed for just a single file path, so the component APIs are set up to
-                // enforce that, even though the GraphQL query is able to support any number of paths
-                paths: this.props.path ? [this.props.path] : [],
-                format: HighlightResponseFormat.HTML_PLAINTEXT,
-            }),
-            queryRepositoryComparisonFileDiffs({
-                first: args.first ?? null,
-                after: args.after ?? null,
-                repo: this.props.repo.id,
-                base: this.props.base.commitID,
-                head: this.props.head.commitID,
-                // All of our user journeys are designed for just a single file path, so the component APIs are set up to
-                // enforce that, even though the GraphQL query is able to support any number of paths
-                paths: this.props.path ? [this.props.path] : [],
-                format: HighlightResponseFormat.HTML_HIGHLIGHT,
-            })
-        )
+        queryRepositoryComparisonFileDiffs({
+            first: args.first ?? null,
+            after: args.after ?? null,
+            repo: this.props.repo.id,
+            base: this.props.base.commitID,
+            head: this.props.head.commitID,
+            // All of our user journeys are designed for just a single file path, so the component APIs are set up to
+            // enforce that, even though the GraphQL query is able to support any number of paths
+            paths: this.props.path ? [this.props.path] : [],
+        })
 }

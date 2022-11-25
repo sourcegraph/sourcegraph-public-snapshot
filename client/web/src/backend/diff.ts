@@ -27,7 +27,7 @@ export const fileDiffHunkFields = gql`
             lines
         }
         section
-        highlight(disableTimeout: false, format: $format) {
+        highlight(disableTimeout: false) {
             aborted
             lines {
                 kind
