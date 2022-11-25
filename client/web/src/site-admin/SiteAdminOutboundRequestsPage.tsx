@@ -95,6 +95,9 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
             .slice(
                 Math.max(items.length + data.outboundRequests.length - (window.context.outboundRequestLogLimit ?? 0), 0)
             )
+        // Workaround for https://github.com/apollographql/apollo-client/issues/3053 to update the variables.
+        // Weirdly enough, we don't need to wait for refetch() to complete before restarting polling.
+        // See http://www.petecorey.com/blog/2019/09/23/apollo-quirks-polling-after-refetching-with-new-variables/
         stopPolling()
         setItems(newItems)
         refetch({ after: newItems[newItems.length - 1]?.id ?? null })
