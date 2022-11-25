@@ -55,7 +55,7 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 		return nil, err
 	}
 
-	item, _ := httpcli.GetOutboundRequestLogItem(string(id))
+	item, _ := httpcli.GetOutboundRequestLogItem(relay.UnmarshalKind(id))
 	return &OutboundRequestResolver{req: item}, nil
 }
 
