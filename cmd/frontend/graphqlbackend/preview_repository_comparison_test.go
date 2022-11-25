@@ -432,14 +432,14 @@ Also no newline after this`,
 		t.Run(tc.name, func(t *testing.T) {
 			fileDiff, err := diff.ParseFileDiff([]byte(tc.patch))
 			if err != nil {
-				t.Error(err)
+				t.Fatal(err)
 			}
 			have, err := applyPatch(tc.file, fileDiff)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if have != tc.wantFile {
-				t.Errorf("wrong patched file content %q, want=%q", have, tc.wantFile)
+				t.Fatalf("wrong patched file content %q, want=%q", have, tc.wantFile)
 			}
 		})
 	}
