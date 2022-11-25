@@ -17,25 +17,35 @@ mkdir "${DATA}/config"
 cleanup() {
   pushd "$root_dir"/enterprise/dev/ci/integration/executors/ 1>/dev/null
   docker-compose logs >"${root_dir}/docker-compose.log"
-  docker-compose down --timeout 30 # seconds
+  docker-compose down --volumes --timeout 30 # seconds
   docker volume rm executors-e2e
   popd 1>/dev/null
   rm -rf "${TMP_WORK_DIR}"
 }
 trap cleanup EXIT
 
+export POSTGRES_IMAGE="us.gcr.io/sourcegraph-dev/postgres-12-alpine:${CANDIDATE_VERSION}"
 export SERVER_IMAGE="us.gcr.io/sourcegraph-dev/server:${CANDIDATE_VERSION}"
 export EXECUTOR_IMAGE="us.gcr.io/sourcegraph-dev/executor:${CANDIDATE_VERSION}"
 export EXECUTOR_FRONTEND_PASSWORD="hunter2hunter2hunter2"
 export SOURCEGRAPH_LICENSE_GENERATION_KEY="${SOURCEGRAPH_LICENSE_GENERATION_KEY:-""}"
 export TMP_DIR
 export DATA
+if [ -n "${DOCKER_GATEWAY_HOST}" ]; then
+  DOCKER_HOST="tcp://${DOCKER_GATEWAY_HOST:-host.docker.internal}:2375"
+  export DOCKER_HOST
+fi
+
+# Need to pull this image pre-execution as the docker executor doesn't have a
+# credential to pull this image.
+BATCHESHELPER_IMAGE="us.gcr.io/sourcegraph-dev/batcheshelper:${CANDIDATE_VERSION}"
+docker pull "${BATCHESHELPER_IMAGE}"
 
 echo "--- :terminal: Start server with executor"
 pushd "enterprise/dev/ci/integration/executors" 1>/dev/null
 
 # Temporary workaround, see https://github.com/sourcegraph/sourcegraph/issues/44816
-cat ./config/site-config.json | envsubst >"${TMP_WORK_DIR}/site-config.json"
+envsubst >"${TMP_WORK_DIR}/site-config.json" <./config/site-config.json
 docker volume create executors-e2e
 docker container create --name temp -v executors-e2e:/data busybox
 docker cp "${TMP_WORK_DIR}/site-config.json" temp:/data

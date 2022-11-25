@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	batchesstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -66,6 +67,8 @@ func main() {
 	if count != 0 {
 		logger.Fatal("instance has preexisting batch changes")
 	}
+
+	logger.Info("Instance is clean")
 
 	var client *gqltestutil.Client
 	client, SourcegraphAccessToken = createSudoToken()
@@ -570,12 +573,17 @@ func assertBatchSpecExecution(logger log.Logger, client *gqltestutil.Client, bat
 }
 
 func InitDB(logger log.Logger) (database.DB, error) {
+	// This call to SetProviders is here so that calls to GetProviders don't block.
+	authz.SetProviders(true, []authz.Provider{})
+
 	obsCtx := observation.TestContext
 	obsCtx.Logger = logger
-	sqlDB, err := connections.EnsureNewFrontendDB("postgres://postgres@127.0.0.1:5433/sourcegraph", "frontend", &obsCtx)
+	sqlDB, err := connections.RawNewFrontendDB("postgres://sg@127.0.0.1:5433/sg", "", &obsCtx)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to database: %s", err)
 	}
+
+	logger.Info("Connected to database!")
 
 	return database.NewDB(logger, sqlDB), nil
 }
