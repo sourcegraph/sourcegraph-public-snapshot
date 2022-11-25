@@ -23,6 +23,7 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
                 size={small ? 'sm' : undefined}
                 variant="secondary"
                 outline={diffMode !== 'unified'}
+                className="mb-0"
                 as="label"
                 htmlFor="diff-mode-selector-unified"
             >
@@ -41,6 +42,7 @@ export const DiffModeSelector: React.FunctionComponent<DiffModeSelectorProps> = 
                 size={small ? 'sm' : undefined}
                 variant="secondary"
                 outline={diffMode !== 'split'}
+                className="mb-0"
                 as="label"
                 htmlFor="diff-mode-selector-split"
             >
