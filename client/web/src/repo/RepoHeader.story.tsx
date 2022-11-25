@@ -170,7 +170,7 @@ const createProps = (path: string, forceWrap: boolean = false): React.ComponentP
 
 Default.parameters = {
     chromatic: {
-        enableDarkMode: true,
+        enableDarkMode: false,
         disableSnapshot: false,
     },
 }
