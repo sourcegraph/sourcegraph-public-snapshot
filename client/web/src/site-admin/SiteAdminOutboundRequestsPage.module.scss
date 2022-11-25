@@ -41,3 +41,41 @@
         grid-column: 1 / -1;
     }
 }
+
+.method {
+    &.get {
+        color: var(--blue);
+    }
+
+    &.post {
+        color: var(--indigo);
+    }
+
+    &.put {
+        color: var(--purple);
+    }
+
+    &.patch {
+        color: var(--pink);
+    }
+
+    &.delete {
+        color: var(--red);
+    }
+
+    &.head {
+        color: var(--orange);
+    }
+
+    &.options {
+        color: var(--yellow);
+    }
+
+    &.connect {
+        color: var(--green);
+    }
+
+    &.trace {
+        color: var(--teal);
+    }
+}

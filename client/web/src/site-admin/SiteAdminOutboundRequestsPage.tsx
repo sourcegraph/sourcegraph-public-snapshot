@@ -197,66 +197,83 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
             </div>
             <div>
                 <Tooltip content="HTTP request method">
-                    <>{node.method}</>
+                    <span>
+                        <span
+                            className={classNames(
+                                styles.method,
+                                styles[node.method.toLowerCase() as keyof typeof styles]
+                            )}
+                        >
+                            ●
+                        </span>{' '}
+                        {node.method}
+                    </span>
                 </Tooltip>
             </div>
             <div>
-                <span className={isSuccessful(node) ? styles.successful : styles.failed}>{node.statusCode}</span>
+                <Tooltip content="HTTP response status code">
+                    <span className={isSuccessful(node) ? styles.successful : styles.failed}>{node.statusCode}</span>
+                </Tooltip>
             </div>
             <div className={styles.urlColumn}>{node.url}</div>
             <div className={classNames('d-flex flex-row')}>
                 <SimplePopover label="More info">
-                    <Text>
-                        <strong>Duration:</strong> {roundedSecond.toFixed(2)} second{roundedSecond === 1 ? '' : 's'}
-                    </Text>
-                    <Text>
-                        <strong>Client created at:</strong> <Code>{node.creationStackFrame}</Code>
-                    </Text>
-                    <Text>
-                        <strong>Request made at:</strong> <Code>{node.callStackFrame}</Code>
-                    </Text>
-                    <Text>
-                        <strong>Error:</strong> {node.errorMessage ? node.errorMessage : 'No error'}
-                    </Text>
-                    {node.requestHeaders.length ? (
-                        <>
-                            <Text>
-                                <strong>Request headers:</strong>{' '}
-                            </Text>
-                            <ul>
-                                {node.requestHeaders.map(header => (
-                                    <li key={header.name}>
-                                        <strong>{header.name}</strong>: {header.values.join(', ')}
-                                    </li>
-                                ))}
-                            </ul>
-                        </>
-                    ) : (
-                        'No request headers'
-                    )}
-                    {node.responseHeaders.length ? (
-                        <>
-                            <Text>
-                                <strong>Response headers:</strong>{' '}
-                            </Text>
-                            <ul>
-                                {node.responseHeaders.map(header => (
-                                    <li key={header.name}>
-                                        <strong>{header.name}</strong>: {header.values.join(', ')}
-                                    </li>
-                                ))}
-                            </ul>
-                        </>
-                    ) : (
-                        'No request headers'
-                    )}
-                    <Text>
-                        <strong>Request body:</strong> {node.requestBody ? node.requestBody : 'Empty body'}
-                    </Text>
+                    <small>
+                        <Text>
+                            <strong>URL:</strong> {node.url}
+                        </Text>
+                        <Text>
+                            <strong>Duration:</strong> {roundedSecond.toFixed(2)} second{roundedSecond === 1 ? '' : 's'}
+                        </Text>
+                        <Text>
+                            <strong>Client created at:</strong> <Code>{node.creationStackFrame}</Code>
+                        </Text>
+                        <Text>
+                            <strong>Request made at:</strong> <Code>{node.callStackFrame}</Code>
+                        </Text>
+                        <Text>
+                            <strong>Error:</strong> {node.errorMessage ? node.errorMessage : 'No error'}
+                        </Text>
+                        {node.requestHeaders.length ? (
+                            <>
+                                <Text>
+                                    <strong>Request headers:</strong>{' '}
+                                </Text>
+                                <ul>
+                                    {node.requestHeaders.map(header => (
+                                        <li key={header.name}>
+                                            <strong>{header.name}</strong>: {header.values.join(', ')}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        ) : (
+                            'No request headers'
+                        )}
+                        {node.responseHeaders.length ? (
+                            <>
+                                <Text>
+                                    <strong>Response headers:</strong>{' '}
+                                </Text>
+                                <ul>
+                                    {node.responseHeaders.map(header => (
+                                        <li key={header.name}>
+                                            <strong>{header.name}</strong>: {header.values.join(', ')}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        ) : (
+                            'No request headers'
+                        )}
+                        <Text>
+                            <strong>Request body:</strong> {node.requestBody ? node.requestBody : 'Empty body'}
+                        </Text>
+                    </small>
                 </SimplePopover>
             </div>
             <div>
-                <Tooltip content={copied ? 'Copied' : `Copy ${buildCurlCommand(node)}`}>
+                <Tooltip content={copied ? 'Curl command copied' : `Copy ${buildCurlCommand(node)}`}>
                     <Button className="ml-2" onClick={() => copyToClipboard(buildCurlCommand(node))}>
                         Copy curl
                     </Button>
