@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/common"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -89,9 +88,7 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 	//
 	// If a sign-out cookie has been set during a previous sign-out request, remove it by setting MaxAge < 0.
 	if actor.FromContext(r.Context()).IsAuthenticated() {
-		if common.HasSignOutCookie(r) {
-			http.SetCookie(w, &http.Cookie{Name: common.SignoutCookie, Value: "", MaxAge: -1})
-		}
+		auth.RemoveSignOutCookieIfSet(r, w)
 
 		next.ServeHTTP(w, r)
 		return
@@ -101,7 +98,9 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 	// it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
 	//
 	// For sign-out requests (sign-out cookie is  present), the user is redirected to the Sourcegraph login page.
-	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && !common.HasSignOutCookie(r) && !isAPIRequest {
+	ps := providers.Providers()
+	openIDConnectEnabled := len(ps) == 1 && ps[0].Config().Openidconnect != nil
+	if openIDConnectEnabled && !auth.HasSignOutCookie(r) && !isAPIRequest {
 		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
 		if err != nil {
 			log15.Error("Failed to get provider", "error", err)

@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/common"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -59,9 +58,7 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		//
 		// If a sign-out cookie has been set during a previous sign-out request, remove it by setting MaxAge < 0.
 		if actor.FromContext(ctx).IsAuthenticated() {
-			if common.HasSignOutCookie(r) {
-				http.SetCookie(w, &http.Cookie{Name: common.SignoutCookie, Value: "", MaxAge: -1})
-			}
+			auth.RemoveSignOutCookieIfSet(r, w)
 
 			span.AddEvent("authenticated, proceeding to next")
 			span.Finish()
@@ -73,7 +70,7 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		// instance, it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
 		//
 		// For sign-out requests (signout cookie is  present), the user will be redirected to the SG login page.
-		if pc := getExactlyOneOAuthProvider(); pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && !common.HasSignOutCookie(r) && isHuman(r) {
+		if pc := getExactlyOneOAuthProvider(); pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && !auth.HasSignOutCookie(r) && isHuman(r) {
 			span.AddEvent("redirect to signin")
 			v := make(url.Values)
 			v.Set("redirect", auth.SafeRedirectURL(r.URL.String()))

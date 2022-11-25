@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"net/http"
 	"time"
 
@@ -12,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
-
-const signoutCookie = "sg-signout"
 
 type SignOutURL struct {
 	ProviderDisplayName string
@@ -51,14 +50,12 @@ func serveSignOutHandler(db database.DB) http.HandlerFunc {
 		}
 
 		if ssoSignOutHandler != nil {
-			http.SetCookie(w,
-				&http.Cookie{
-					Name:     signoutCookie,
-					Value:    "true",
-					HttpOnly: false,
-					Secure:   true,
-					Path:     "/",
-				})
+			http.SetCookie(w, &http.Cookie{
+				Name:   auth.SignoutCookie,
+				Value:  "true",
+				Secure: true,
+				Path:   "/",
+			})
 			ssoSignOutHandler(w, r)
 		}
 
