@@ -25,7 +25,7 @@ func newJob(name string, exit int) *Job {
 
 }
 
-func TestBuildGoldenBuild(t *testing.T) {
+func TestLargeAmountOfFailures(t *testing.T) {
 	f, err := os.Open("testdata/build_golden.json")
 	if err != nil {
 		t.Fatalf("failed to read build.json: %s", err)
