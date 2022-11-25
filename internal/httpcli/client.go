@@ -552,7 +552,7 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 			return true
 		}
 
-		if status == 0 || status == 429 || (status >= 500 && status != 501) {
+		if status == 0 || status == http.StatusTooManyRequests || (status >= 500 && status != http.StatusNotImplemented) {
 			return true
 		}
 
