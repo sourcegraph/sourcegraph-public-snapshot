@@ -8007,7 +8007,7 @@ interface WebhookLogMessage {
     """
     The headers in the HTTP message.
     """
-    headers: [WebhookLogHeader!]!
+    headers: [HTTPHeader!]!
 
     """
     The body content of the HTTP message.
@@ -8022,7 +8022,7 @@ type WebhookLogRequest implements WebhookLogMessage {
     """
     The headers in the HTTP message.
     """
-    headers: [WebhookLogHeader!]!
+    headers: [HTTPHeader!]!
 
     """
     The body content of the HTTP message.
@@ -8052,27 +8052,12 @@ type WebhookLogResponse implements WebhookLogMessage {
     """
     The headers in the HTTP message.
     """
-    headers: [WebhookLogHeader!]!
+    headers: [HTTPHeader!]!
 
     """
     The body content of the HTTP message.
     """
     body: String!
-}
-
-"""
-A single HTTP header within a webhook log.
-"""
-type WebhookLogHeader {
-    """
-    The header name.
-    """
-    name: String!
-
-    """
-    The header values.
-    """
-    values: [String!]!
 }
 
 """
