@@ -5,7 +5,6 @@ package security
 import (
 	"fmt"
 	"net"
-	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
@@ -13,8 +12,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var userRegex = lazyregexp.New("^[a-zA-Z0-9]+$")
 
 // ValidateRemoteAddr validates if the input is a valid IP or a valid hostname.
 // It validates the hostname by attempting to resolve it.
@@ -40,7 +42,8 @@ func ValidateRemoteAddr(raddr string) bool {
 	// raddr contains exactly one `@`
 	if len(fragments) == 2 {
 		user := fragments[0]
-		if match, err := regexp.MatchString("^[a-zA-Z0-9]+$", user); !match || err != nil {
+
+		if match := userRegex.MatchString(user); !match {
 			return false
 		}
 
