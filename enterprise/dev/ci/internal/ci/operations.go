@@ -633,6 +633,10 @@ func executorsE2E(candidateTag string) operations.Operation {
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			// See dev/ci/integration/executors/docker-compose.yaml
+			// This enable the executor to reach the dind container
+			// for docker commands.
+			bk.Env("DOCKER_GATEWAY_HOST", "172.17.0.1"),
 			bk.Cmd("dev/ci/integration/executors/run.sh"),
 			bk.ArtifactPaths("./*.log"),
 		)

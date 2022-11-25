@@ -16,8 +16,9 @@ mkdir "${DATA}/config"
 
 cleanup() {
   pushd "$root_dir"/dev/ci/integration/executors/ 1>/dev/null
-  docker-compose logs >"${root_dir}/logs.txt"
+  docker-compose logs >"${root_dir}/docker-compose.log"
   docker-compose down --timeout 30 # seconds
+  docker volume rm executors-e2e
   popd 1>/dev/null
   rm -rf "${TMP_WORK_DIR}"
 }
@@ -32,6 +33,13 @@ export DATA
 
 echo "--- :terminal: Start server with executor"
 pushd "dev/ci/integration/executors" 1>/dev/null
+
+# Temporary workaround, see https://github.com/sourcegraph/sourcegraph/issues/44816
+docker volume create executors-e2e
+docker container create --name temp -v executors-e2e:/data busybox
+docker cp ./config/site-config.json temp:/data
+docker rm temp
+
 docker-compose up -d
 
 echo "--- :terminal: Wait for server to be up"

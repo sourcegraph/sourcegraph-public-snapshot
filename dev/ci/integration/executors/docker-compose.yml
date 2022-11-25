@@ -1,6 +1,9 @@
 version: '2.4'
 networks:
   sourcegraph:
+volumes:
+  executors-e2e:
+    external: true
 services:
   server:
     container_name: server
@@ -13,7 +16,7 @@ services:
     volumes:
       - '${DATA}/config:/etc/sourcegraph'
       - '${DATA}/data:/var/opt/sourcegraph'
-      - './config:/e2e'
+      - executors-e2e:/e2e
     expose:
       - '7080'
     ports:
@@ -42,6 +45,8 @@ services:
       # Run as root (required for docker daemon control)
       - UID=1000
       - GID=1000
+      # Use the dind container to run docker commands within the executor
+      - DOCKER_HOST=tcp://${DOCKER_GATEWAY_HOST:-host.docker.internal}:2375
     volumes:
       # Mount docker socket
       - '/var/run/docker.sock:/var/run/docker.sock'
