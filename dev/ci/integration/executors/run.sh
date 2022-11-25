@@ -35,9 +35,11 @@ echo "--- :terminal: Start server with executor"
 pushd "dev/ci/integration/executors" 1>/dev/null
 
 # Temporary workaround, see https://github.com/sourcegraph/sourcegraph/issues/44816
+cat ./config/site-config.json | envsubst > "${TMP_WORK_DIR}/site-config.json"
 docker volume create executors-e2e
 docker container create --name temp -v executors-e2e:/data busybox
-docker cp ./config/site-config.json temp:/data
+docker cp "${TMP_WORK_DIR}/site-config.json" temp:/data
+rm "${TMP_WORK_DIR}/site-config.json"
 docker rm temp
 
 docker-compose up -d

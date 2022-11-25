@@ -1,5 +1,7 @@
 {
   "executors.accessToken": "hunter2hunter2hunter2",
+  "executors.batcheshelperImage": "us.gcr.io/sourcegraph-dev/batcheshelper",
+  "executors.batcheshelperImageTag":"$CANDIDATE_VERSION",
   "auth.providers": [
     {
       "type": "builtin",
