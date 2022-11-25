@@ -24,21 +24,9 @@
     flex-direction: row-reverse;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 1rem 0; // stylelint-disable-next-line declaration-property-unit-allowed-list
+    padding: 0.5rem 1rem 0;
     margin-bottom: -1px;
     z-index: 1;
-}
-
-.divider {
-    width: 100%; // stylelint-disable-next-line declaration-property-unit-allowed-list
-    height: 1px;
-    background-color: var(--border-color);
-    margin-bottom: 0.5rem;
-    z-index: 0;
-
-    &.mb-0 {
-        margin-bottom: 0;
-    }
 }
 
 .shortcut {
@@ -59,7 +47,6 @@
 .results {
     flex: 1;
 
-    // stylelint-disable-next-line scss/selector-no-redundant-nesting-selector
     & p {
         padding: 1rem;
     }
@@ -105,8 +92,7 @@
     display: flex;
     align-items: center;
     width: 100%;
-    justify-content: space-between;
-    padding: 0 1rem 0.75rem;
+    padding: 0.75rem 1rem;
 }
 
 .keyboard-explanation {
@@ -168,9 +154,6 @@
     gap: 0.5rem;
 }
 
-.right-aligned {
-    text-align: right;
-}
 .tab-centered-text {
     text-align: center;
 }
