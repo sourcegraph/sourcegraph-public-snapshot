@@ -178,7 +178,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                 data-testid="file-match-children-item"
                                 tabIndex={0}
                                 role="link"
-                                data-index={index}
                                 data-selectable-search-result="true"
                             >
                                 <CodeExcerpt
