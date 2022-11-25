@@ -68,4 +68,6 @@ func RunTest(ctx context.Context, store *store.Store, test Test) error {
 	}
 
 	// Now run the actual test.
+
+	return nil
 }

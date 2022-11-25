@@ -2,7 +2,7 @@
 
 # This script runs the executors-e2e test suite against a candidate server image.
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.."
 root_dir=$(pwd)
 set -ex
 
@@ -15,7 +15,7 @@ mkdir "${DATA}/data"
 mkdir "${DATA}/config"
 
 cleanup() {
-  pushd "$root_dir"/dev/ci/integration/executors/ 1>/dev/null
+  pushd "$root_dir"/enterprise/dev/ci/integration/executors/ 1>/dev/null
   docker-compose logs >"${root_dir}/docker-compose.log"
   docker-compose down --timeout 30 # seconds
   docker volume rm executors-e2e
@@ -32,10 +32,10 @@ export TMP_DIR
 export DATA
 
 echo "--- :terminal: Start server with executor"
-pushd "dev/ci/integration/executors" 1>/dev/null
+pushd "enterprise/dev/ci/integration/executors" 1>/dev/null
 
 # Temporary workaround, see https://github.com/sourcegraph/sourcegraph/issues/44816
-cat ./config/site-config.json | envsubst > "${TMP_WORK_DIR}/site-config.json"
+cat ./config/site-config.json | envsubst >"${TMP_WORK_DIR}/site-config.json"
 docker volume create executors-e2e
 docker container create --name temp -v executors-e2e:/data busybox
 docker cp "${TMP_WORK_DIR}/site-config.json" temp:/data
