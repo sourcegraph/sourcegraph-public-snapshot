@@ -152,7 +152,7 @@ func TestRemoveUserEmail(t *testing.T) {
 				setup: func() {
 					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 				},
-				wantErr: "must be authenticated as the authorized user or as an admin (not authenticated)",
+				wantErr: "must be authenticated as the authorized user or site admin",
 			},
 			{
 				name: "another user",
@@ -166,7 +166,7 @@ func TestRemoveUserEmail(t *testing.T) {
 						return user, nil
 					})
 				},
-				wantErr: "must be authenticated as the authorized user or as an admin (must be site admin)",
+				wantErr: "must be authenticated as the authorized user or site admin",
 			},
 			{
 				name: "site admin",
