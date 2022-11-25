@@ -8,9 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -22,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -75,17 +71,6 @@ func NewGithubSource(ctx context.Context, logger log.Logger, externalServicesSto
 	}
 	return newGithubSource(logger, externalServicesStore, svc, &c, cf)
 }
-
-var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
-	// _v2 since we have an older metric defined in github-proxy
-	Name: "src_github_rate_limit_remaining_v2",
-	Help: "Number of calls to GitHub's API remaining before hitting the rate limit.",
-}, []string{"resource", "name"})
-
-var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_github_rate_limit_wait_duration_seconds",
-	Help: "The amount of time spent waiting on the rate limit",
-}, []string{"resource", "name"})
 
 // IsGitHubAppEnabled returns true if all required configuration options for
 // Sourcegraph GitHub App are filled by checking the given config.
@@ -196,28 +181,6 @@ func newGithubSource(
 		v4Client = github.NewV4Client(urn, apiURL, installationAuther, cli)
 
 		useGitHubApp = true
-	}
-
-	if svc.IsSiteOwned() {
-		for resource, monitor := range map[string]*ratelimit.Monitor{
-			"rest":    v3Client.RateLimitMonitor(),
-			"graphql": v4Client.RateLimitMonitor(),
-			"search":  searchClient.RateLimitMonitor(),
-		} {
-			// Copy the resource or funcs below will use the last one seen while iterating
-			// the map
-			resource := resource
-			// Copy displayName so that the funcs below don't capture the svc pointer
-			displayName := svc.DisplayName
-			monitor.SetCollector(&ratelimit.MetricsCollector{
-				Remaining: func(n float64) {
-					githubRemainingGauge.WithLabelValues(resource, displayName).Set(n)
-				},
-				WaitDuration: func(n time.Duration) {
-					githubRatelimitWaitCounter.WithLabelValues(resource, displayName).Add(n.Seconds())
-				},
-			})
-		}
 	}
 
 	return &GitHubSource{

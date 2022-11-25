@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v41/github"
 
@@ -108,6 +109,15 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 
 	rl := ratelimit.DefaultRegistry.Get(urn)
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, resource, &ratelimit.Monitor{HeaderPrefix: "X-"})
+
+	rlm.SetCollector(&ratelimit.MetricsCollector{
+		Remaining: func(n float64) {
+			githubRemainingGauge.WithLabelValues(resource).Set(n)
+		},
+		WaitDuration: func(n time.Duration) {
+			githubRatelimitWaitCounter.WithLabelValues(resource).Add(n.Seconds())
+		},
+	})
 
 	return &V3Client{
 		log: logger.Scoped("github.v3", "github v3 client").
