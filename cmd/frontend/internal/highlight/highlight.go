@@ -81,8 +81,6 @@ func IsBinary(content []byte) bool {
 // Params defines mandatory and optional parameters to use when highlighting
 // code.
 type Params struct {
-	KeepFinalNewline bool
-
 	// Content is the file content.
 	Content []byte
 
@@ -110,6 +108,11 @@ type Params struct {
 
 	// Format defines the response format of the syntax highlighting request.
 	Format gosyntect.HighlightResponseType
+
+	// KeepFinalNewline keeps the final newline of the file content when highlighting.
+	// By default we drop the last newline to match behavior of common code hosts
+	// that don't render another line at the end of the file.
+	KeepFinalNewline bool
 }
 
 // Metadata contains metadata about a request to highlight code. It is used to
