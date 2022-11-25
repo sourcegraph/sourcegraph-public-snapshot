@@ -631,11 +631,6 @@ type Mutation {
     SetMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
 
     """
-    DEPRECATED
-    """
-    SetUserPublicRepos(userID: ID!, repoURIs: [String!]!): EmptyResponse!
-
-    """
     (experimental) Create a new feature flag
     """
     createFeatureFlag(
@@ -5468,11 +5463,6 @@ type User implements Node & SettingsSubject & Namespace {
     The name of this user namespace's component. For users, this is the username.
     """
     namespaceName: String!
-
-    """
-    DEPRECATED
-    """
-    publicRepositories: [Repository!]!
 
     """
     EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
