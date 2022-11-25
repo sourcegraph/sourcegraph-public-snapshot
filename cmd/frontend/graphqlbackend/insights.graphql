@@ -907,7 +907,7 @@ extend type Mutation {
     """
     Create a new insight view from an existing view.
     """
-    saveInsightAsNewView(input: InsightNewViewInput!): InsightView!
+    saveInsightAsNewView(input: InsightNewViewInput!): InsightViewPayload!
 }
 
 """
