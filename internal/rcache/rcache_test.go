@@ -225,65 +225,6 @@ func TestCache_ListKeys(t *testing.T) {
 	}
 }
 
-func TestCache_ListKeysWithPrefix(t *testing.T) {
-	SetupForTest(t)
-
-	key2a := "key2:test-a"
-	key2b := "key2:test-b"
-
-	value := "x"
-	c := NewWithTTL("some_cache_prefix", 1)
-	c.SetMulti(
-		[2]string{"key1:test", value},
-		[2]string{key2a, value},
-		[2]string{key2b, value},
-		[2]string{"key3:test", value},
-	)
-
-	got, err := c.ListKeysWithPrefix(context.Background(), "key2")
-
-	assert.Nil(t, err)
-	assert.Len(t, got, 2)
-	assert.Contains(t, got, key2a)
-	assert.Contains(t, got, key2b)
-}
-
-func TestCache_DeleteFirstN(t *testing.T) {
-	SetupForTest(t)
-	c := NewWithTTL("some_prefix", 1)
-
-	// Add 10 key-value pairs
-	var pairs = make([][2]string, 20)
-	for i := 0; i < 20; i++ {
-		var prefix string
-		if i < 10 {
-			prefix = "<10:"
-		} else {
-			prefix = ">=10:"
-		}
-		pairs[i] = [2]string{prefix + "key" + strconv.Itoa(i), "value" + strconv.Itoa(i)}
-	}
-	c.SetMulti(pairs...)
-
-	// Delete the first 4 key-value pairs
-	delErr := c.DeleteAllButLastN(">=10", 4)
-
-	got, listErr := c.ListKeysWithPrefix(context.Background(), "")
-
-	assert.Nil(t, delErr)
-	assert.Nil(t, listErr)
-
-	assert.Len(t, got, 14)
-	assert.Contains(t, got, "<10:key0") // First 10 items should be preserved
-	assert.Contains(t, got, "<10:key9")
-
-	assert.NotContains(t, got, ">=10:key10") // 10 through 15 should be deleted
-	assert.NotContains(t, got, ">=10:key15")
-
-	assert.Contains(t, got, ">=10:key16") // 16 through 19 (4 items) should be kept
-	assert.Contains(t, got, ">=10:key19")
-}
-
 func bytes(s ...string) [][]byte {
 	if s == nil {
 		return nil

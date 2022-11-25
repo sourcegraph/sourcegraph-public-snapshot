@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sort"
 	"time"
 	"unicode/utf8"
 
@@ -172,21 +171,6 @@ func (r *Cache) Increase(key string) {
 	}
 }
 
-// DeleteAllButLastN orders the matching keys ascending, and deletes the first len()-N keys.
-func (r *Cache) DeleteAllButLastN(prefix string, n int) error {
-	keys, err := r.ListKeysWithPrefix(context.Background(), prefix)
-	if err != nil {
-		return err
-	}
-
-	// Delete all but the last N keys
-	if len(keys) > n {
-		sort.Strings(keys)
-		r.DeleteMulti(keys[:len(keys)-n])
-	}
-	return nil
-}
-
 // DeleteMulti deletes the given keys.
 func (r *Cache) DeleteMulti(keys []string) {
 	for _, key := range keys {
@@ -210,18 +194,6 @@ func (r *Cache) Delete(key string) {
 // ListKeys lists all keys associated with this cache.
 // Use with care if you have long TTLs or no TTL configured.
 func (r *Cache) ListKeys(ctx context.Context) (results []string, err error) {
-	return r.listKeys(ctx, "")
-}
-
-// ListKeysWithPrefix lists all keys associated with this cache, filtered by a prefix.
-// Use with care if you have long TTLs or no TTL configured.
-func (r *Cache) ListKeysWithPrefix(ctx context.Context, prefix string) (results []string, err error) {
-	return r.listKeys(ctx, prefix)
-}
-
-// listKeys lists all keys associated with this cache, optionally filtered by a prefix.
-// Use with care if you have long TTLs or no TTL configured.
-func (r *Cache) listKeys(ctx context.Context, prefix string) (results []string, err error) {
 	var c redis.Conn
 	c, err = pool.GetContext(ctx)
 	if err != nil {
@@ -235,17 +207,15 @@ func (r *Cache) listKeys(ctx context.Context, prefix string) (results []string, 
 
 	cursor := 0
 	for {
-		if ctx != nil {
-			select {
-			case <-ctx.Done():
-				return results, ctx.Err()
-			default:
-			}
+		select {
+		case <-ctx.Done():
+			return results, ctx.Err()
+		default:
 		}
 
 		res, err := redis.Values(
 			c.Do("SCAN", cursor,
-				"MATCH", r.rkeyPrefix()+prefix+"*",
+				"MATCH", r.rkeyPrefix()+"*",
 				"COUNT", 100),
 		)
 		if err != nil {

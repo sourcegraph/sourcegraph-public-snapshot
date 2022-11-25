@@ -37,7 +37,7 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 	} else {
 		after = ""
 	}
-	result, err := httpcli.GetAllOutboundRequestLogItemsAfter(after, conf.Get().OutboundRequestLogLimit)
+	result, err := httpcli.GetAllOutboundRequestLogItemsAfter(ctx, after, conf.Get().OutboundRequestLogLimit)
 	if err != nil {
 		return nil, err
 	}

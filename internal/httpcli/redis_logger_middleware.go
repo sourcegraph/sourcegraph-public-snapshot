@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const keyPrefix = "outbound:"
+var outboundRequestsRedisCache = rcache.NewWithTTL("outbound-requests", 604800)
 
 func redisLoggerMiddleware() Middleware {
 	creatorStackFrame, _ := getFrames(4).Next()
@@ -68,35 +68,40 @@ func redisLoggerMiddleware() Middleware {
 			}
 
 			// Save new item
-			redisCache.Set(key, logItemJson)
+			outboundRequestsRedisCache.Set(key, logItemJson)
 
-			deleteExcessItems(limit)
+			deleteExcessItems(outboundRequestsRedisCache, limit)
 
 			return resp, err
 		})
 	}
 }
 
-func deleteExcessItems(limit int) {
-	deletionErr := redisCache.DeleteAllButLastN(keyPrefix, limit)
-	if deletionErr != nil {
-		log.Error(deletionErr)
+func deleteExcessItems(c *rcache.Cache, limit int) {
+	keys, err := c.ListKeys(context.Background())
+	if err != nil {
+		log.Error(err)
+	}
+
+	// Delete all but the last N keys
+	if len(keys) > limit {
+		sort.Strings(keys)
+		c.DeleteMulti(keys[:len(keys)-limit])
 	}
 }
 
 func generateKey(now time.Time) string {
-	return fmt.Sprintf("%s%s", keyPrefix, now.UTC().Format("2006-01-02T15_04_05.999999999"))
+	return fmt.Sprintf("%s", now.UTC().Format("2006-01-02T15_04_05.999999999"))
 }
 
 // GetAllOutboundRequestLogItemsAfter returns all outbound request log items after the given key,
-// in ascending order, trimmed to maximum {limit} items.
-// The given "after" must contain `keyPrefix` as a prefix. Example: "outbound:2021-01-01T00_00_00.000000".
-func GetAllOutboundRequestLogItemsAfter(after string, limit int) ([]*types.OutboundRequestLogItem, error) {
+// in ascending order, trimmed to maximum {limit} items. Example for `after`: "2021-01-01T00_00_00.000000".
+func GetAllOutboundRequestLogItemsAfter(ctx context.Context, after string, limit int) ([]*types.OutboundRequestLogItem, error) {
 	if limit == 0 {
 		return []*types.OutboundRequestLogItem{}, nil
 	}
 
-	rawItems, err := getAllValuesAfter(redisCache, keyPrefix, after, limit)
+	rawItems, err := getAllValuesAfter(ctx, outboundRequestsRedisCache, after, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +119,7 @@ func GetAllOutboundRequestLogItemsAfter(after string, limit int) ([]*types.Outbo
 }
 
 func GetOutboundRequestLogItem(key string) (*types.OutboundRequestLogItem, error) {
-	rawItem, ok := redisCache.Get(key)
+	rawItem, ok := outboundRequestsRedisCache.Get(key)
 	if !ok {
 		return nil, errors.New("item not found")
 	}
@@ -128,9 +133,8 @@ func GetOutboundRequestLogItem(key string) (*types.OutboundRequestLogItem, error
 }
 
 // getAllValuesAfter returns all items after the given key, in ascending order, trimmed to maximum {limit} items.
-// The given "after" must contain `keyPrefix` as a prefix. Example: "outbound:2021-01-01T00_00_00.000000".
-func getAllValuesAfter(redisCache *rcache.Cache, keyPrefix string, after string, limit int) ([][]byte, error) {
-	all, err := redisCache.ListKeysWithPrefix(context.Background(), keyPrefix)
+func getAllValuesAfter(ctx context.Context, c *rcache.Cache, after string, limit int) ([][]byte, error) {
+	all, err := c.ListKeys(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +158,7 @@ func getAllValuesAfter(redisCache *rcache.Cache, keyPrefix string, after string,
 		keys = keys[len(keys)-limit:]
 	}
 
-	return redisCache.GetMulti(keys...), nil
+	return c.GetMulti(keys...), nil
 }
 
 func removeSensitiveHeaders(headers http.Header) http.Header {

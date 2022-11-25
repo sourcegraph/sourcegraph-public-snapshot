@@ -1,6 +1,7 @@
 package httpcli
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"testing"
@@ -14,20 +15,21 @@ import (
 func TestRedisLoggerMiddleware_getAllValuesAfter(t *testing.T) {
 	rcache.SetupForTest(t)
 	c := rcache.NewWithTTL("some_prefix", 1)
+	ctx := context.Background()
 
 	var pairs = make([][2]string, 10)
 	for i := 0; i < 10; i++ {
-		pairs[i] = [2]string{"keys:key" + strconv.Itoa(i), "value" + strconv.Itoa(i)}
+		pairs[i] = [2]string{"key" + strconv.Itoa(i), "value" + strconv.Itoa(i)}
 	}
 	c.SetMulti(pairs...)
 
-	key := "keys:key5"
-	got, err := getAllValuesAfter(c, "keys", key, 10)
+	key := "key5"
+	got, err := getAllValuesAfter(ctx, c, key, 10)
 
 	assert.Nil(t, err)
 	assert.Len(t, got, 4)
 
-	got, err = getAllValuesAfter(c, "keys", key, 2)
+	got, err = getAllValuesAfter(ctx, c, key, 2)
 	assert.Nil(t, err)
 	assert.Len(t, got, 2)
 }
@@ -63,4 +65,31 @@ func TestRedisLoggerMiddleware_removeSensitiveHeaders(t *testing.T) {
 	if diff := cmp.Diff(cleanHeaders, want); diff != "" {
 		t.Errorf("unexpected request headers (-have +want):\n%s", diff)
 	}
+}
+
+func TestCache_DeleteFirstN(t *testing.T) {
+	rcache.SetupForTest(t)
+	c := rcache.NewWithTTL("some_prefix", 1)
+
+	// Add 10 key-value pairs
+	var pairs = make([][2]string, 10)
+	for i := 0; i < 10; i++ {
+		pairs[i] = [2]string{"key" + strconv.Itoa(i), "value" + strconv.Itoa(i)}
+	}
+	c.SetMulti(pairs...)
+
+	// Delete the first 4 key-value pairs
+	deleteExcessItems(c, 4)
+
+	got, listErr := c.ListKeys(context.Background())
+
+	assert.Nil(t, listErr)
+
+	assert.Len(t, got, 4)
+
+	assert.NotContains(t, got, "key0") // 0 through 5 should be deleted
+	assert.NotContains(t, got, "key5")
+
+	assert.Contains(t, got, "key6") // 6 through 9 (4 items) should be kept
+	assert.Contains(t, got, "key9")
 }
