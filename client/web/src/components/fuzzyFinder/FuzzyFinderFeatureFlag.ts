@@ -18,7 +18,6 @@ export function getFuzzyFinderFeatureFlags(
     } = getExperimentalFeatures(finalSettings)
     // Intentionally skip "Actions" when `fuzzyFinderAll` is true
     fuzzyFinderRepositories = fuzzyFinderAll || fuzzyFinderRepositories
-    fuzzyFinderNavbar = fuzzyFinderAll || fuzzyFinderNavbar
     fuzzyFinderSymbols = fuzzyFinderAll || fuzzyFinderSymbols
     return { fuzzyFinderAll, fuzzyFinderActions, fuzzyFinderRepositories, fuzzyFinderSymbols, fuzzyFinderNavbar }
 }
