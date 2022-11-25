@@ -408,10 +408,10 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                 ) : (
                     <div className={classNames(styles.results, 'overflow-auto')}>{queryResult.jsxElement}</div>
                 )}
-                <hr className="m-0" />
+                <div className={styles.divider} />
                 <div className={styles.footer}>
                     <SearchQueryLink {...props} />
-                    <span className="ml-auto">
+                    <span className={styles.rightAligned}>
                         <ArrowKeyExplanation />
                     </span>
                 </div>
