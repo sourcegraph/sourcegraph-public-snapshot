@@ -16,7 +16,7 @@ mkdir "${DATA}/config"
 
 cleanup() {
   pushd "$root_dir"/dev/ci/integration/executors/ 1>/dev/null
-  docker-compose logs >logs.txt
+  docker-compose logs >"${root_dir}/logs.txt"
   docker-compose down --timeout 30 # seconds
   popd 1>/dev/null
   rm -rf "${TMP_WORK_DIR}"
