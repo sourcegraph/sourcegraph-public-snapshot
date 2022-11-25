@@ -46,7 +46,7 @@ export const Default: Story = () => (
         </div>
         <H2>Constrained width</H2>
         <div className="mb-3 b-1" style={{ maxWidth: 480 }}>
-            <Simple forceWrap />
+            <Simple forceWrap={true} />
         </div>
         <H2>Long path</H2>
         <LongPath />
