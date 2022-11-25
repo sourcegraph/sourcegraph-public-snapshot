@@ -18,6 +18,8 @@ interface Props extends RepoRevision, TelemetryProps {
     isDir: boolean
 }
 
+const MAX_ITEMS = 20
+
 /**
  * Displays a file path in a repository in breadcrumb style, with ancestor path
  * links.
@@ -42,8 +44,8 @@ export const FilePathBreadcrumbs: React.FunctionComponent<React.PropsWithChildre
             ? 'test-breadcrumb-part-last'
             : classNames('test-breadcrumb-part-directory', styles.partDirectory)
 
-    const [truncatedElements, setTruncatedElements] = React.useState<number>(0)
-
+    const minimumTruncatedElements = parts.length > MAX_ITEMS ? parts.length - MAX_ITEMS : 0
+    const [truncatedElements, setTruncatedElements] = React.useState<number>(minimumTruncatedElements)
     // Increase the number of truncatedElements and verify if the container is
     // still overflowing, up to the point where only the the current element is
     // visible.
@@ -54,7 +56,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<React.PropsWithChildre
     const ref = React.useRef<HTMLDivElement>(null)
     const { width } = useResizeObserver({ ref })
     // Reset the truncation logic when the element is resized
-    useLayoutEffect(() => setTruncatedElements(0), [width])
+    useLayoutEffect(() => setTruncatedElements(minimumTruncatedElements), [width, minimumTruncatedElements])
     useLayoutEffect(() => {
         const element = ref.current
         if (!element || truncatedElements >= parts.length - 1) {
