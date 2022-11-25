@@ -674,8 +674,97 @@ func existingSeriesHasChanged(new graphqlbackend.LineChartSearchInsightDataSerie
 	return emptyIfNil(new.GroupBy) != emptyIfNil(existing.GroupBy)
 }
 
-func (r *Resolver) SaveInsightAsNewView(ctx context.Context, args graphqlbackend.SaveInsightAsNewViewArgs) (graphqlbackend.InsightViewPayloadResolver, error) {
-	return nil, nil
+func (r *Resolver) SaveInsightAsNewView(ctx context.Context, args graphqlbackend.SaveInsightAsNewViewArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+	uid := actor.FromContext(ctx).UID
+	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
+
+	insightTx, err := r.insightStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = insightTx.Done(err) }()
+	dashboardTx := r.dashboardStore.With(insightTx)
+
+	var dashboardIds []int
+	if args.Input.Dashboards != nil {
+		for _, id := range *args.Input.Dashboards {
+			dashboardID, err := unmarshalDashboardID(id)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+			}
+			dashboardIds = append(dashboardIds, int(dashboardID.Arg))
+		}
+	}
+
+	lamDashboardId, err := createInsightLicenseCheck(ctx, insightTx, dashboardTx, dashboardIds)
+	if err != nil {
+		return nil, errors.Wrapf(err, "createInsightLicenseCheck")
+	}
+	if lamDashboardId != 0 {
+		dashboardIds = append(dashboardIds, lamDashboardId)
+	}
+
+	var insightViewId string
+	if err := relay.UnmarshalSpec(args.Input.InsightViewID, &insightViewId); err != nil {
+		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
+	}
+	if err := permissionsValidator.validateUserAccessForView(ctx, insightViewId); err != nil {
+		return nil, err
+	}
+
+	views, err := insightTx.GetAllMapped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorization: true})
+	if err != nil {
+		return nil, errors.Wrap(err, "GetMapped")
+	}
+	if len(views) == 0 {
+		return nil, errors.New("No insight view found with this id")
+	}
+	viewSeries := views[0].Series
+
+	var filters types.InsightViewFilters
+	if args.Input.ViewControls != nil {
+		filters = filtersFromInput(&args.Input.ViewControls.Filters)
+	}
+	view, err := insightTx.CreateView(ctx, types.InsightView{
+		Title:            emptyIfNil(args.Input.Options.Title),
+		UniqueID:         ksuid.New().String(),
+		Filters:          filters,
+		PresentationType: types.Line,
+	}, []store.InsightViewGrant{store.UserGrant(int(uid))})
+	if err != nil {
+		return nil, errors.Wrap(err, "CreateView")
+	}
+
+	for _, series := range viewSeries {
+		seriesObject := types.InsightSeries{
+			SeriesID: series.SeriesID,
+			ID:       series.InsightSeriesID,
+		}
+		if err := insightTx.AttachSeriesToView(ctx, seriesObject, view, types.InsightViewSeriesMetadata{
+			Label:  series.Label,
+			Stroke: series.LineColor,
+		}); err != nil {
+			return nil, errors.Wrap(err, "AttachSeriesToView")
+		}
+	}
+
+	if len(dashboardIds) > 0 {
+		if args.Input.Dashboards != nil {
+			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, r.postgresDB.Orgs())
+			if err != nil {
+				return nil, err
+			}
+		}
+		for _, dashboardId := range dashboardIds {
+			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardId)
+			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
+			if err != nil {
+				return nil, errors.Wrap(err, "AddViewsToDashboard")
+			}
+		}
+	}
+
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: view.UniqueID}, nil
 }
 
 func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
@@ -1004,13 +1093,12 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 			args.UniqueID = unique
 		}
 
-		viewSeries, err := r.insightStore.GetAll(ctx, args)
+		insights, err := r.insightStore.GetAllMapped(ctx, args)
 		if err != nil {
 			r.err = err
 			return
 		}
-
-		r.views = r.insightStore.GroupByView(ctx, viewSeries)
+		r.views = insights
 
 		if r.args.First != nil && len(r.views) == args.Limit {
 			r.next = r.views[len(r.views)-2].UniqueID
