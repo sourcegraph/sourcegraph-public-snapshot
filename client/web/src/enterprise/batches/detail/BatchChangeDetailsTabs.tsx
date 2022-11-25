@@ -21,7 +21,6 @@ import { BatchChangeBatchSpecList } from '../BatchSpecsPage'
 
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
-    queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     queryAllChangesetIDs as _queryAllChangesetIDs,
 } from './backend'
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
@@ -73,8 +72,6 @@ export interface BatchChangeDetailsProps
     /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing only. */
-    queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
-    /** For testing only. */
     queryAllChangesetIDs?: typeof _queryAllChangesetIDs
 }
 
@@ -90,7 +87,6 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
     platformContext,
     settingsCascade,
     initialTab = TabName.Changesets,
-    queryChangesetCountsOverTime,
     queryExternalChangesetWithFileDiffs,
     queryAllChangesetIDs,
     refetchBatchChange,
@@ -255,11 +251,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                     />
                 </TabPanel>
                 <TabPanel>
-                    <BatchChangeBurndownChart
-                        batchChangeID={batchChange.id}
-                        queryChangesetCountsOverTime={queryChangesetCountsOverTime}
-                        history={history}
-                    />
+                    <BatchChangeBurndownChart batchChangeID={batchChange.id} history={history} />
                 </TabPanel>
                 <TabPanel>
                     {shouldDisplayExecutionsTab ? (
