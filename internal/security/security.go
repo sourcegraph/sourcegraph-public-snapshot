@@ -5,7 +5,9 @@ package security
 import (
 	"fmt"
 	"net"
+	"regexp"
 	"strconv"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 
@@ -27,6 +29,23 @@ func ValidateRemoteAddr(raddr string) bool {
 		if err != nil {
 			return false
 		}
+	}
+
+	// Check if the string contains a username (e.g. git@example.com); if so validate username
+	fragments := strings.Split(raddr, "@")
+	// raddr contains more than one `@`
+	if len(fragments) > 2 {
+		return false
+	}
+	// raddr contains exactly one `@`
+	if len(fragments) == 2 {
+		user := fragments[0]
+		if match, err := regexp.MatchString("^[a-zA-Z0-9]+$", user); !match || err != nil {
+			return false
+		}
+
+		// Set raddr to host minus the user
+		raddr = fragments[1]
 	}
 
 	validIP := net.ParseIP(raddr) != nil
