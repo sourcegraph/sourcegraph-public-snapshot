@@ -30,11 +30,15 @@ func (g gitoliteFetcher) listRepos(ctx context.Context, gitoliteHost string, w h
 		err   error
 	)
 
-	if gitoliteHost != "" || !security.ValidateRemoteAddr(gitoliteHost) {
-		if repos, err = g.client.ListRepos(ctx, gitoliteHost); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	// 🚨 SECURITY: If gitoliteHost fails hostname validation and is a non-empty string, return an error
+	if !security.ValidateRemoteAddr(gitoliteHost) && gitoliteHost != "" {
+		http.Error(w, "invalid hostname", http.StatusInternalServerError)
+		return
+	}
+
+	if repos, err = g.client.ListRepos(ctx, gitoliteHost); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	if err = json.NewEncoder(w).Encode(repos); err != nil {

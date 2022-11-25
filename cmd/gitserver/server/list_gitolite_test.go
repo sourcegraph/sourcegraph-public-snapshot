@@ -41,6 +41,40 @@ func Test_Gitolite_listRepos(t *testing.T) {
 			expResponseCode: 200,
 			expResponseBody: `[{"Name":"myrepo","URL":"git@gitolite.example.com:myrepo"}]` + "\n",
 		},
+		// Invalid gitoliteHost (fails ValidateRemoteAddr)
+		{
+			listRepos: map[string][]*gitolite.Repo{
+				"git@gitolite.example.com": {
+					{Name: "myrepo", URL: "git@gitolite.example.com:myrepo"},
+				},
+			},
+			configs: []*schema.GitoliteConnection{
+				{
+					Host:   "git@gitolite.example.com",
+					Prefix: "gitolite.example.com/",
+				},
+			},
+			gitoliteHost:    "--invalidhostnample.com",
+			expResponseCode: 500,
+			expResponseBody: `invalid hostname` + "\n",
+		},
+		// Empty gitoliteHost (valid)
+		{
+			listRepos: map[string][]*gitolite.Repo{
+				"git@gitolite.example.com": {
+					{Name: "myrepo", URL: "git@gitolite.example.com:myrepo"},
+				},
+			},
+			configs: []*schema.GitoliteConnection{
+				{
+					Host:   "git@gitolite.example.com",
+					Prefix: "gitolite.example.com/",
+				},
+			},
+			gitoliteHost:    "",
+			expResponseCode: 200,
+			expResponseBody: `null` + "\n",
+		},
 	}
 
 	for _, test := range tests {
