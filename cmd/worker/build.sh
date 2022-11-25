@@ -17,6 +17,10 @@ export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
 
+# Added
+export VERSION=1.23
+export IMAGE='sg-worker'
+
 echo "--- go build"
 pkg="github.com/sourcegraph/sourcegraph/cmd/worker"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
