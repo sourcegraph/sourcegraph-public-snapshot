@@ -92,6 +92,7 @@ describe('RepositoryCommitPage', () => {
         }),
         RepositoryComparisonDiff: () => ({
             node: {
+                __typename: 'Repository',
                 comparison: {
                     fileDiffs: {
                         nodes: [
