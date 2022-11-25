@@ -295,6 +295,7 @@ var sg = &cli.App{
 		funkyLogoCommand,
 		analyticsCommand,
 		releaseCommand,
+		miscCommand,
 	},
 	ExitErrHandler: func(cmd *cli.Context, err error) {
 		if err == nil {

@@ -1527,3 +1527,21 @@ Flags:
 * `--buildNumber, -b="<value>"`: The buildkite build number to check for CVEs
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--uri, -u="<value>"`: A reference url that contains approved CVEs. Often a link to a handbook page eg: https://handbook.sourcegraph.com/departments/security/tooling/trivy/4-2-0/.
+
+## sg misc
+
+Misc utilities.
+
+
+### sg misc str2regex
+
+Turn a string into a regexp that Thorsten can paste in Sourcegraph search
+strings.Split(regexp.QuoteMeta(str), " ") 👉 foo\s+:=\s+internal\.Get\(something\).
+
+```sh
+$ sg misc str2regex 'Horsegraph is (very) cool'
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
