@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -41,6 +42,7 @@ var SourcegraphEndpoint = env.Get("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080
 var SourcegraphAccessToken string
 
 func main() {
+	ctx := context.Background()
 	logfuncs := log.Init(log.Resource{
 		Name: "executors test runner",
 	})
@@ -54,6 +56,16 @@ func main() {
 	}
 
 	bstore := batchesstore.New(db, &observation.TestContext, nil)
+
+	// Verify the database connection works.
+	count, err := bstore.CountBatchChanges(ctx, batchesstore.CountBatchChangesOpts{})
+	if err != nil {
+		logger.Fatal("failed to count batch changes", log.Error(err))
+	}
+
+	if count != 0 {
+		logger.Fatal("instance has preexisting batch changes")
+	}
 
 	var client *gqltestutil.Client
 	client, SourcegraphAccessToken = createSudoToken()
