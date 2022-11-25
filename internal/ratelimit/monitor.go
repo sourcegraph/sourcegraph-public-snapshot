@@ -201,8 +201,13 @@ func (c *Monitor) Update(h http.Header) {
 }
 
 // Collector returns current metric collector.
-func (c *Monitor) Collector() *MetricsCollector {
-	return c.collector
+func (c *Monitor) SetCollectorIfNotSet(collector *MetricsCollector) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.collector == nil {
+		c.collector = collector
+	}
 }
 
 // SetCollector sets the metric collector.

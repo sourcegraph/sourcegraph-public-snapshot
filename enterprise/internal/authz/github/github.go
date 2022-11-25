@@ -178,7 +178,6 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		return nil, errors.Wrap(err, "get client")
 	}
 	client = client.WithAuthenticator(token)
-
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
 	const repoSetSize = 100

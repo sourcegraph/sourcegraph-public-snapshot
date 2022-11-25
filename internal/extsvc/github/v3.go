@@ -108,10 +108,7 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 
 	rl := ratelimit.DefaultRegistry.Get(urn)
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, resource, &ratelimit.Monitor{HeaderPrefix: "X-"})
-	if rlm.Collector() == nil {
-		logger.Warn("no metrics collector for github client", log.String("urn", urn), log.String("resource", resource), log.String("hash", a.Hash()))
-		addMetricsCollector(rlm, resource, a.Hash())
-	}
+	addMetricsCollectorIfNotSet(rlm, resource, apiURL.String()+":"+tokenHash)
 
 	return &V3Client{
 		log: logger.Scoped("github.v3", "github v3 client").

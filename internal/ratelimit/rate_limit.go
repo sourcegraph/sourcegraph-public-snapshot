@@ -2,6 +2,7 @@ package ratelimit
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -57,11 +58,15 @@ func (r *Registry) getOrSet(urn string, fallback *InstrumentedLimiter) *Instrume
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	l := r.rateLimiters[urn]
+	fmt.Printf("getOrSet called %s:%t\n", urn, l != nil)
 	if l != nil {
+		fmt.Printf("limit %v\n", l.Limit())
 		return l
 	}
+	fmt.Printf("fallback is nil %t\n", fallback == nil)
 	if fallback == nil {
 		defaultRateLimit := conf.Get().DefaultRateLimit
+		fmt.Printf("defaultRateLimit %f\n", defaultRateLimit)
 		// the rate limit in the config is in requests per hour, whereas rate.Limit is in
 		// requests per second.
 		fallbackRateLimit := rate.Limit(defaultRateLimit / 3600.0)
@@ -71,6 +76,7 @@ func (r *Registry) getOrSet(urn string, fallback *InstrumentedLimiter) *Instrume
 		fallback = NewInstrumentedLimiter(urn, rate.NewLimiter(fallbackRateLimit, defaultBurst))
 	}
 	r.rateLimiters[urn] = fallback
+	fmt.Printf("fallback %#v %#v\n", fallback, fallback.Limit())
 	return fallback
 }
 

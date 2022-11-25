@@ -90,9 +90,7 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 
 	rl := ratelimit.DefaultRegistry.Get(urn)
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
-	if rlm.Collector() == nil {
-		addMetricsCollector(rlm, "graphql", a.Hash())
-	}
+	addMetricsCollectorIfNotSet(rlm, "graphql", apiURL.String()+":"+tokenHash)
 
 	return &V4Client{
 		log:              log.Scoped("github.v4", "github v4 client"),
