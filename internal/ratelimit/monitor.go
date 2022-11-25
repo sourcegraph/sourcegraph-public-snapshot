@@ -207,6 +207,14 @@ func (c *Monitor) SetCollector(collector *MetricsCollector) {
 	c.collector = collector
 }
 
+func (c *Monitor) SetCollectorIfNotSet(collector *MetricsCollector) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.collector == nil {
+		c.collector = collector
+	}
+}
+
 func (c *Monitor) now() time.Time {
 	if c.clock != nil {
 		return c.clock()

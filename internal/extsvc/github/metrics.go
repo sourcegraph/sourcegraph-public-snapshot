@@ -22,7 +22,7 @@ var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 }, []string{"resource", "name"})
 
 func collectRateLimitMonitorMetrics(monitor *ratelimit.Monitor, resource string) {
-	monitor.SetCollector(&ratelimit.MetricsCollector{
+	monitor.SetCollectorIfNotSet(&ratelimit.MetricsCollector{
 		Remaining: func(n float64) {
 			githubRemainingGauge.WithLabelValues(resource).Set(n)
 		},
