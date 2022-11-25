@@ -66,7 +66,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<React.PropsWithChildre
         if (isOverflowing) {
             setTruncatedElements(truncatedElements + 1)
         }
-    }, [parts.length, truncatedElements])
+    }, [parts.length, width, truncatedElements])
 
     const spans: JSX.Element[] = [
         <LinkOrSpan
