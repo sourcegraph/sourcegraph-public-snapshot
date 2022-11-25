@@ -64,6 +64,7 @@ func (pr *PaginatedResult[T]) Next() (t T, ok bool, err error) {
 	return
 }
 
+// TODO: keep?
 func (pr *PaginatedResult[T]) Reset() {
 	pr.mu.Lock()
 	defer pr.mu.Unlock()
