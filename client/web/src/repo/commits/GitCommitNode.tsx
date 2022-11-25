@@ -215,19 +215,21 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
 
     const viewFilesCommitElement = node.tree && (
         <div className="d-flex justify-content-between">
-            <Tooltip content="Browse files in the repository at this point in history">
-                <Button
-                    className="align-center d-inline-flex"
-                    to={node.tree.canonicalURL}
-                    variant="secondary"
-                    outline={true}
-                    size="sm"
-                    as={Link}
-                >
-                    <Icon className="mr-1" aria-hidden={true} svgPath={mdiFileDocument} />
-                    Browse files at @{node.abbreviatedOID}
-                </Button>
-            </Tooltip>
+            <span>
+                <Tooltip content="Browse files in the repository at this point in history">
+                    <Button
+                        className="align-center d-inline-flex"
+                        to={node.tree.canonicalURL}
+                        variant="secondary"
+                        outline={true}
+                        size="sm"
+                        as={Link}
+                    >
+                        <Icon className="mr-1" aria-hidden={true} svgPath={mdiFileDocument} />
+                        Browse files at @{node.abbreviatedOID}
+                    </Button>
+                </Tooltip>
+            </span>
             {diffModeSelector()}
         </div>
     )

@@ -1,27 +1,27 @@
 import * as React from 'react'
 
 import { RouteComponentProps } from 'react-router'
-import { Observable } from 'rxjs'
+import { concat, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
-import { createAggregateError } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { HighlightResponseFormat, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { fileDiffFields, diffStatFields } from '../../backend/diff'
-import { queryGraphQL } from '../../backend/graphql'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
-import { RepositoryComparisonDiffResult } from '../../graphql-operations'
+import { RepositoryComparisonDiffResult, RepositoryComparisonDiffVariables } from '../../graphql-operations'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+import { requestGraphQL } from '../../backend/graphql'
+import { ConnectionQueryArguments } from '../../components/FilteredConnection'
 
 export type RepositoryComparisonDiff = Extract<RepositoryComparisonDiffResult['node'], { __typename?: 'Repository' }>
 
@@ -29,11 +29,12 @@ export function queryRepositoryComparisonFileDiffs(args: {
     repo: Scalars['ID']
     base: string | null
     head: string | null
-    first?: number
-    after?: string | null
-    paths?: string[]
+    first: number | null
+    after: string | null
+    paths: string[] | null
+    format: HighlightResponseFormat
 }): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> {
-    return queryGraphQL(
+    return requestGraphQL<RepositoryComparisonDiffResult, RepositoryComparisonDiffVariables>(
         gql`
             query RepositoryComparisonDiff(
                 $repo: ID!
@@ -42,8 +43,10 @@ export function queryRepositoryComparisonFileDiffs(args: {
                 $first: Int
                 $after: String
                 $paths: [String!]
+                $format: HighlightResponseFormat
             ) {
                 node(id: $repo) {
+                    __typename
                     ... on Repository {
                         comparison(base: $base, head: $head) {
                             fileDiffs(first: $first, after: $after, paths: $paths) {
@@ -70,13 +73,15 @@ export function queryRepositoryComparisonFileDiffs(args: {
         `,
         args
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.node) {
-                throw createAggregateError(errors)
+        map(result => {
+            const data = dataOrThrowErrors(result)
+
+            const repo = data.node
+            if (repo === null) {
+                throw new Error('Repository not found')
             }
-            const repo = data.node as RepositoryComparisonDiff
-            if (!repo.comparison || !repo.comparison.fileDiffs || errors) {
-                throw createAggregateError(errors)
+            if (repo.__typename !== 'Repository') {
+                throw new Error('Not a repository')
             }
             return repo.comparison.fileDiffs
         })
@@ -138,14 +143,31 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
         )
     }
 
-    private queryDiffs = (args: { first?: number }): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
-        queryRepositoryComparisonFileDiffs({
-            ...args,
-            repo: this.props.repo.id,
-            base: this.props.base.commitID,
-            head: this.props.head.commitID,
-            // All of our user journeys are designed for just a single file path, so the component APIs are set up to
-            // enforce that, even though the GraphQL query is able to support any number of paths
-            paths: this.props.path ? [this.props.path] : [],
-        })
+    private queryDiffs = (
+        args: ConnectionQueryArguments
+    ): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
+        concat(
+            queryRepositoryComparisonFileDiffs({
+                first: args.first ?? null,
+                after: args.after ?? null,
+                repo: this.props.repo.id,
+                base: this.props.base.commitID,
+                head: this.props.head.commitID,
+                // All of our user journeys are designed for just a single file path, so the component APIs are set up to
+                // enforce that, even though the GraphQL query is able to support any number of paths
+                paths: this.props.path ? [this.props.path] : [],
+                format: HighlightResponseFormat.HTML_PLAINTEXT,
+            }),
+            queryRepositoryComparisonFileDiffs({
+                first: args.first ?? null,
+                after: args.after ?? null,
+                repo: this.props.repo.id,
+                base: this.props.base.commitID,
+                head: this.props.head.commitID,
+                // All of our user journeys are designed for just a single file path, so the component APIs are set up to
+                // enforce that, even though the GraphQL query is able to support any number of paths
+                paths: this.props.path ? [this.props.path] : [],
+                format: HighlightResponseFormat.HTML_HIGHLIGHT,
+            })
+        )
 }

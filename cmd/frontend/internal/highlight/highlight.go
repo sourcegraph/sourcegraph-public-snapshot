@@ -81,6 +81,8 @@ func IsBinary(content []byte) bool {
 // Params defines mandatory and optional parameters to use when highlighting
 // code.
 type Params struct {
+	KeepFinalNewline bool
+
 	// Content is the file content.
 	Content []byte
 
@@ -392,7 +394,9 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	// This matches other online code reading tools such as e.g. GitHub; see
 	// https://github.com/sourcegraph/sourcegraph/issues/8024 for more
 	// background.
-	code = strings.TrimSuffix(code, "\n")
+	if !p.KeepFinalNewline {
+		code = strings.TrimSuffix(code, "\n")
+	}
 
 	unhighlightedCode := func(err error, code string) (*HighlightedCode, bool, error) {
 		errCollector.Collect(&err)

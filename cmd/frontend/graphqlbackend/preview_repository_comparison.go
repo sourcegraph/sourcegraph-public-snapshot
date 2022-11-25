@@ -1,12 +1,14 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/bluekeyes/go-gitdiff/gitdiff"
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -137,57 +139,77 @@ func fileDiffVirtualFileContent(r *FileDiffResolver) FileContentFunc {
 					return
 				}
 			}
-			newContent = applyPatch(oldContent, r.FileDiff)
+			newContent, err = applyPatch(oldContent, r.FileDiff)
 		})
 		return newContent, err
 	}
 }
 
-func applyPatch(fileContent string, fileDiff *diff.FileDiff) string {
+func applyPatch(fileContent string, fileDiff *diff.FileDiff) (string, error) {
 	if diffPathOrNull(fileDiff.NewName) == nil {
 		// the file was deleted, no need to do costly computation.
-		return ""
+		return "", nil
 	}
-	addNewline := true
-	contentLines := strings.Split(fileContent, "\n")
-	newContentLines := make([]string, 0)
-	var lastLine int32 = 1
-	// Assumes the hunks are sorted by ascending lines.
-	for _, hunk := range fileDiff.Hunks {
-		if hunk.OrigNoNewlineAt > 0 {
-			addNewline = true
-		}
-		// Detect holes.
-		if hunk.OrigStartLine != 0 && hunk.OrigStartLine != lastLine {
-			originalLines := contentLines[lastLine-1 : hunk.OrigStartLine-1]
-			newContentLines = append(newContentLines, originalLines...)
-			lastLine += int32(len(originalLines))
-		}
-		hunkLines := strings.Split(string(hunk.Body), "\n")
-		for _, line := range hunkLines {
-			switch {
-			case line == "":
-				// Ignore empty lines, they just indicate the last line of a hunk.
-			case strings.HasPrefix(line, "-"):
-				lastLine++
-			case strings.HasPrefix(line, "+"):
-				newContentLines = append(newContentLines, line[1:])
-			default:
-				newContentLines = append(newContentLines, contentLines[lastLine-1])
-				lastLine++
-			}
-		}
+	diff, err := diff.PrintFileDiff(fileDiff)
+	if err != nil {
+		return "", err
 	}
-	// Append remaining lines from original file.
-	if origLines := int32(len(contentLines)); origLines > 0 && origLines != lastLine {
-		newContentLines = append(newContentLines, contentLines[lastLine-1:]...)
-	} else {
-		content := strings.Join(newContentLines, "\n")
-		if addNewline {
-			// If the file has a final newline character, we need to append it again.
-			content += "\n"
-		}
-		return content
+
+	files, _, err := gitdiff.Parse(bytes.NewReader(diff))
+	if err != nil {
+		return "", err
 	}
-	return strings.Join(newContentLines, "\n")
+
+	// apply the changes in the patch to a source file
+	var output bytes.Buffer
+	// TODO: This errors out on binary patches. sigh.
+	if err := gitdiff.Apply(&output, strings.NewReader(fileContent), files[0]); err != nil {
+		return "", err
+	}
+
+	return output.String(), nil
+
+	// Whether we add an extra newline to the end of the file.
+	// addNewline := true
+	// contentLines := strings.Split(fileContent, "\n")
+	// newContentLines := make([]string, 0)
+	// var lastLine int32 = 1
+	// // Assumes the hunks are sorted by ascending lines.
+	// for _, hunk := range fileDiff.Hunks {
+	// 	if hunk.OrigNoNewlineAt > 0 {
+	// 		addNewline = false
+	// 	}
+	// 	// Detect holes.
+	// 	if hunk.OrigStartLine != 0 && hunk.OrigStartLine != lastLine {
+	// 		originalLines := contentLines[lastLine-1 : hunk.OrigStartLine-1]
+	// 		newContentLines = append(newContentLines, originalLines...)
+	// 		lastLine += int32(len(originalLines))
+	// 	}
+	// 	hunkLines := strings.Split(string(hunk.Body), "\n")
+	// 	for _, line := range hunkLines {
+	// 		switch {
+	// 		case line == "":
+	// 			// Ignore empty lines, they just indicate the last line of a hunk.
+	// 		case strings.HasPrefix(line, "-"):
+	// 			lastLine++
+	// 		case strings.HasPrefix(line, "+"):
+	// 			newContentLines = append(newContentLines, line[1:])
+	// 		default:
+	// 			newContentLines = append(newContentLines, contentLines[lastLine-1])
+	// 			lastLine++
+	// 		}
+	// 	}
+	// }
+	// // Append remaining lines from original file.
+	// if origLines := int32(len(contentLines)); origLines > 0 && origLines != lastLine {
+	// 	newContentLines = append(newContentLines, contentLines[lastLine-1:]...)
+	// 	return strings.Join(newContentLines, "\n")
+	// }
+
+	// content := strings.Join(newContentLines, "\n")
+	// if addNewline {
+	// 	// If the file has a final newline character, we need to append it again.
+	// 	content += "\n"
+	// }
+	// return content
 }
