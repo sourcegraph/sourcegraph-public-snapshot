@@ -387,7 +387,7 @@ Flags:
 * `--fail-fast, --ff`: Exit immediately if an issue is encountered (not available with '-fix')
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--fix, -f`: Try to fix any lint issues
-* `--no-format-check, --nfc`: Don't check file formatting
+* `--skip-format-check, --sfc`: Skip file formatting check
 
 ### sg lint urls
 
@@ -446,6 +446,15 @@ Flags:
 ### sg lint shell
 
 Check shell code for linting errors, formatting, etc.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg lint format
+
+Check client code and docs for formatting errors.
 
 
 Flags:
@@ -564,7 +573,7 @@ Modifies and runs database migrations.
 $ sg migration up
 
 # Migrate specific database down one migration
-$ sg migration down --db codeintel
+$ sg migration downto --db codeintel --target <version>
 
 # Add new migration for specific database
 $ sg migration add --db codeintel 'add missing index'
@@ -1499,3 +1508,22 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--raw`: view raw data
+
+## sg release
+
+Sourcegraph release utilities.
+
+
+### sg release cve-check
+
+Check all CVEs found in a buildkite build against a set of preapproved CVEs for a release.
+
+```sh
+$ sg release cve-check -u https://handbook.sourcegraph.com/departments/security/tooling/trivy/4-2-0/ -b 184191
+```
+
+Flags:
+
+* `--buildNumber, -b="<value>"`: The buildkite build number to check for CVEs
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--uri, -u="<value>"`: A reference url that contains approved CVEs. Often a link to a handbook page eg: https://handbook.sourcegraph.com/departments/security/tooling/trivy/4-2-0/.

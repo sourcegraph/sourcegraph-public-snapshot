@@ -355,7 +355,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                                 <b>{repos.preciseCodeIntelCount}</b> of your <b>{repos.count}</b> repositories have
                                 precise code navigation.{' '}
                                 <AnchorLink
-                                    to="/help/code_navigation/explanations/precise_code_intelligence"
+                                    to="/help/code_navigation/explanations/precise_code_navigation"
                                     target="_blank"
                                 >
                                     Learn how to improve precise code navigation coverage.

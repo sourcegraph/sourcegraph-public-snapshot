@@ -104,7 +104,7 @@ export interface PlatformContext {
      * could leak private information such as repository names.
      * @returns Observable that emits the result or an error if the HTTP request failed
      */
-    requestGraphQL: <R, V = object>(options: {
+    requestGraphQL: <R, V extends { [key: string]: any } = object>(options: {
         /**
          * The GraphQL request (query or mutation)
          */

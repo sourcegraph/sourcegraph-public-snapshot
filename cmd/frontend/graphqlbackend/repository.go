@@ -159,7 +159,11 @@ func (r *RepositoryResolver) DiskSizeBytes(ctx context.Context) (*BigInt, error)
 		return nil, err
 	}
 	repo, err := r.db.GitserverRepos().GetByID(ctx, r.IDInt32())
-	return &BigInt{Int: repo.RepoSizeBytes}, err
+	if err != nil {
+		return nil, err
+	}
+	size := BigInt(repo.RepoSizeBytes)
+	return &size, nil
 }
 
 func (r *RepositoryResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {

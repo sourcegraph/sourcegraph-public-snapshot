@@ -306,6 +306,11 @@ describe('Search aggregation', () => {
             await editor.waitForIt()
 
             await driver.page.waitForSelector('[aria-label="Bar chart content"] a')
+
+            // waitForSelector checks for dom element, but it doesn't track visual representation of the element
+            // Wait until chart is visually rendered and only then click the element, otherwise it may be possible
+            // to encounter a puppeter bug https://github.com/puppeteer/puppeteer/issues/8627
+            await delay(200)
             await driver.page.click('[aria-label="Sidebar search aggregation chart"] a')
 
             expect(await editor.getValue()).toStrictEqual('insights repo:sourcegraph/sourcegraph')
@@ -315,6 +320,12 @@ describe('Search aggregation', () => {
             await driver.page.waitForSelector(
                 '[aria-label="Expanded search aggregation chart"] [aria-label="Bar chart content"] g:nth-child(2) a'
             )
+
+            // waitForSelector checks for dom element, but it doesn't track visual representation of the element
+            // Wait until chart is visually rendered and only then click the element, otherwise it may be possible
+            // to encounter a puppeter bug https://github.com/puppeteer/puppeteer/issues/8627
+            await delay(200)
+
             await driver.page.click(
                 '[aria-label="Expanded search aggregation chart"] [aria-label="Bar chart content"] g:nth-child(2) a'
             )

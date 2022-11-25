@@ -44,10 +44,10 @@ func Init(
 	// Register enterprise services.
 	gitserverClient := gitserver.NewClient(db)
 	enterpriseServices.BatchChangesResolver = resolvers.New(bstore, gitserverClient)
-	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient)
-	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient)
-	enterpriseServices.BitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient)
-	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(bstore, gitserverClient)
+	enterpriseServices.BatchesGitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient)
+	enterpriseServices.BatchesBitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient)
+	enterpriseServices.BatchesBitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient)
+	enterpriseServices.BatchesGitLabWebhook = webhooks.NewGitLabWebhook(bstore, gitserverClient)
 
 	operations := httpapi.NewOperations(observationContext)
 	fileHandler := httpapi.NewFileHandler(db, bstore, operations)

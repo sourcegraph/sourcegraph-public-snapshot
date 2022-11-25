@@ -519,12 +519,22 @@
             }
           }
         },
-        "search.sanitize.patterns": {
-          "description": "A list of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. A pattern that is not a valid Go regular expression will have no effect.",
-          "type": "array",
-          "items": {
-            "type": "string",
-            "format": "regex"
+        "search.sanitization": {
+          "description": "Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.",
+          "type": "object",
+          "properties": {
+            "sanitizePatterns": {
+              "description": "An array of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. Values added to this array must be valid Go regular expressions. Site admins will not have their search results sanitized.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "regex"
+              }
+            },
+            "orgName": {
+              "description": "Optionally specify the name of an organization within this Sourcegraph instance containing users whose searches should not be sanitized. Admins: ensure that ALL members of this org are trusted users. If no org exists with the given name then there will be no effect. If no org name is specified then all non-admin users will have their searches sanitized if this feature is enabled.",
+              "type": "string"
+            }
           }
         },
         "enableGithubInternalRepoVisibility": {
@@ -902,6 +912,30 @@
       "default": 3,
       "group": "External services"
     },
+    "repoPurgeWorker": {
+      "description": "Configuration for repository purge worker.",
+      "type": "object",
+      "group": "External services",
+      "additionalProperties": false,
+      "default": {
+        "interval": 15,
+        "deletedTTL": 60
+      },
+      "properties": {
+        "intervalMinutes": {
+          "type": "integer",
+          "description": "Interval in minutes at which to run purge jobs. Set to 0 to disable.",
+          "default": "15",
+          "minimum": 0
+        },
+        "deletedTTLMinutes": {
+          "type": "integer",
+          "description": "Repository TTL in minutes after deletion before it becomes eligible to be purged. A migration or admin could accidentally remove all or a significant number of repositories - recloning all of them is slow, so a TTL acts as a grace period so that admins can recover from accidental deletions",
+          "default": "60",
+          "minimum": 0
+        }
+      }
+    },
     "maxReposToSearch": {
       "description": "DEPRECATED: Configure maxRepos in search.limits. The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.",
       "type": "integer",
@@ -981,6 +1015,11 @@
     },
     "authz.refreshInterval": {
       "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
+      "type": "integer",
+      "default": 5
+    },
+    "authz.syncJobsRecordsTTL": {
+      "description": "EXPERIMENTAL: Time interval (in minutes) of how long to keep sync job records for. Set to a negative value to disable.",
       "type": "integer",
       "default": 5
     },
@@ -1411,13 +1450,13 @@
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["10000"]]
+      "examples": [10000]
     },
     "observability.logSlowGraphQLRequests": {
       "description": "(debug) logs all GraphQL requests slower than the specified number of milliseconds.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["10000"]]
+      "examples": [10000]
     },
     "insights.backfill.interruptAfter": {
       "description": "Set the number of seconds an insight series will spend backfilling before being interrupted. Series are interrupted to prevent long running insights from exhausting all of the available workers. Interrupted series will be placed back in the queue and retried based on their priority.",
@@ -1429,7 +1468,7 @@
       "description": "DEPRECATED: (debug) number of historical insights timeframes to populate",
       "type": "integer",
       "group": "Debug",
-      "examples": [["6"]]
+      "examples": [6]
     },
     "insights.historical.frameLength": {
       "description": "DEPRECATED: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.",
@@ -1639,14 +1678,13 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab", "sourcegraph-operator"]
+            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab"]
           }
         },
         "oneOf": [
           { "$ref": "#/definitions/BuiltinAuthProvider" },
           { "$ref": "#/definitions/SAMLAuthProvider" },
           { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
-          { "$ref": "#/definitions/SourcegraphOperatorAuthProvider" },
           { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
           { "$ref": "#/definitions/GitHubAuthProvider" },
           { "$ref": "#/definitions/GitLabAuthProvider" }
@@ -1937,39 +1975,6 @@
           "description": "Allows new visitors to sign up for accounts via OpenID Connect authentication. If false, users signing in via OpenID Connect must have an existing Sourcegraph account, which will be linked to their OpenID Connect identity after sign-in.",
           "type": "boolean",
           "!go": { "pointer": true }
-        }
-      }
-    },
-    "SourcegraphOperatorAuthProvider": {
-      "description": "Configures the Sourcegraph Operator authentication provider for SSO. This is only available in managed instances on Sourcegraph Cloud.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "issuer", "clientID", "clientSecret"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "sourcegraph-operator"
-        },
-        "issuer": {
-          "description": "The URL of the Sourcegraph Operator issuer.",
-          "type": "string",
-          "format": "uri",
-          "pattern": "^https?://"
-        },
-        "clientID": {
-          "description": "The client ID of the Sourcegraph Operator client for this site.",
-          "type": "string",
-          "pattern": "^[^<]"
-        },
-        "clientSecret": {
-          "description": "The client secret of the Sourcegraph Operator client for this site.",
-          "type": "string",
-          "pattern": "^[^<]"
-        },
-        "lifecycleDuration": {
-          "description": "The duration before the user accounts created by this authentication provider to be automatically deleted in minutes.",
-          "type": "integer",
-          "default": 60
         }
       }
     },

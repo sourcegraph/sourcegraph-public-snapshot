@@ -48,7 +48,7 @@ export const RepositoryBranchesArea: React.FunctionComponent<React.PropsWithChil
     useBreadcrumb(useMemo(() => ({ key: 'branches', element: 'Branches' }), []))
 
     return (
-        <div className="repository-branches-area container">
+        <div className="repository-branches-area container px-3">
             <RepositoryBranchesNavbar className="my-3" repo={repo.name} />
             <Switch>
                 <Route

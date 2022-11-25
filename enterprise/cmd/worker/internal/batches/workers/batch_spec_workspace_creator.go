@@ -36,10 +36,8 @@ type batchSpecWorkspaceCreator struct {
 
 // HandlerFunc returns a workerutil.HandlerFunc that can be passed to a
 // workerutil.Worker to process queued changesets.
-func (r *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
-	return func(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
-		job := record.(*btypes.BatchSpecResolutionJob)
-
+func (r *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc[*btypes.BatchSpecResolutionJob] {
+	return func(ctx context.Context, logger log.Logger, job *btypes.BatchSpecResolutionJob) (err error) {
 		// Run the resolution job as the user, so that only secrets and workspaces
 		// that are visible to the user are returned.
 		ctx = actor.WithActor(ctx, actor.FromUser(job.InitiatorID))

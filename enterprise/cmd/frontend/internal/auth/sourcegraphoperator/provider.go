@@ -1,27 +1,27 @@
 package sourcegraphoperator
 
 import (
+	"path"
 	"time"
 
+	feAuth "github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-// ProviderType is the unique identifier of the Sourcegraph Operator
-// authentication provider.
-const ProviderType = "sourcegraph-operator"
 
 // provider is an implementation of providers.Provider for the Sourcegraph
 // Operator authentication.
 type provider struct {
-	config schema.SourcegraphOperatorAuthProvider
+	config cloud.SchemaAuthProviderSourcegraphOperator
 	*openidconnect.Provider
 }
 
 // NewProvider creates and returns a new Sourcegraph Operator authentication
 // provider using the given config.
-func NewProvider(config schema.SourcegraphOperatorAuthProvider) providers.Provider {
+func NewProvider(config cloud.SchemaAuthProviderSourcegraphOperator) providers.Provider {
 	allowSignUp := true
 	return &provider{
 		config: config,
@@ -30,21 +30,28 @@ func NewProvider(config schema.SourcegraphOperatorAuthProvider) providers.Provid
 				AllowSignup:        &allowSignUp,
 				ClientID:           config.ClientID,
 				ClientSecret:       config.ClientSecret,
-				ConfigID:           ProviderType,
+				ConfigID:           auth.SourcegraphOperatorProviderType,
 				DisplayName:        "Sourcegraph Operators",
 				Issuer:             config.Issuer,
 				RequireEmailDomain: "sourcegraph.com",
-				Type:               ProviderType,
+				Type:               auth.SourcegraphOperatorProviderType,
 			},
 			authPrefix,
+			path.Join(feAuth.AuthURLPrefix, "sourcegraph-operator", "callback"),
 		).(*openidconnect.Provider),
 	}
 }
 
 // Config implements providers.Provider.
 func (p *provider) Config() schema.AuthProviders {
+	// NOTE: Intentionally omitting rest of the information unless absolutely
+	// necessary because this provider is configured at the infrastructure level, and
+	// those fields may expose sensitive information should not be visible to
+	// non-Sourcegraph employees.
 	return schema.AuthProviders{
-		SourcegraphOperator: &p.config,
+		Openidconnect: &schema.OpenIDConnectAuthProvider{
+			ConfigID: auth.SourcegraphOperatorProviderType,
+		},
 	}
 }
 

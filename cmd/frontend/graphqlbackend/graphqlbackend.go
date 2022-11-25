@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -14,10 +13,9 @@ import (
 	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace"
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -32,6 +30,7 @@ import (
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -43,11 +42,13 @@ var (
 	}, []string{"type", "field", "error", "source", "request_name"})
 )
 
-type prometheusTracer struct {
+type requestTracer struct {
+	DB     database.DB
 	tracer trace.OpenTracingTracer
+	logger log.Logger
 }
 
-func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
+func (t *requestTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]any, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
 	start := time.Now()
 	var finish trace.TraceQueryFinishFunc
 	if policy.ShouldTrace(ctx) {
@@ -64,6 +65,48 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 		currentUserID = a.UID
 	}
 
+	// 🚨 SECURITY: We want to log every single operation the Sourcegraph operator
+	// has done on the instance, so we need to do additional logging here. Sometimes
+	// we would end up having logging twice for the same operation (here and the web
+	// app), but we would not want to risk missing logging operations. Also in the
+	// future, we expect audit logging of Sourcegraph operators to live outside the
+	// instance, which makes this pattern less of a concern in terms of redundancy.
+	if a.SourcegraphOperator {
+		const eventName = "SourcegraphOperatorGraphQLRequest"
+		args, err := json.Marshal(map[string]any{
+			"queryString": queryString,
+			"variables":   variables,
+		})
+		if err != nil {
+			t.logger.Error(
+				"failed to marshal JSON for event log argument",
+				log.String("eventName", eventName),
+				log.Error(err),
+			)
+		}
+
+		// NOTE: It is important to propagate the correct context that carries the
+		// information of the actor, especially whether the actor is a Sourcegraph
+		// operator or not.
+		err = usagestats.LogEvent(
+			ctx,
+			t.DB,
+			usagestats.Event{
+				EventName: eventName,
+				UserID:    a.UID,
+				Argument:  args,
+				Source:    "BACKEND",
+			},
+		)
+		if err != nil {
+			t.logger.Error(
+				"failed to log event",
+				log.String("eventName", eventName),
+				log.Error(err),
+			)
+		}
+	}
+
 	// Requests made by our JS frontend and other internal things will have a concrete name attached to the
 	// request which allows us to (softly) differentiate it from end-user API requests. For example,
 	// /.api/graphql?Foobar where Foobar is the name of the request we make. If there is not a request name,
@@ -78,25 +121,35 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 		}
 		d := time.Since(start)
 		if v := conf.Get().ObservabilityLogSlowGraphQLRequests; v != 0 && d.Milliseconds() > int64(v) {
-			encodedVariables, _ := json.Marshal(variables)
-			log15.Warn("slow GraphQL request", "time", d, "name", requestName, "userID", currentUserID, "source", requestSource, "error", err, "variables", string(encodedVariables))
+			enc, _ := json.Marshal(variables)
+			t.logger.Warn(
+				"slow GraphQL request",
+				log.Duration("duration", d),
+				log.Int32("user_id", currentUserID),
+				log.String("request_name", requestName),
+				log.String("source", string(requestSource)),
+				log.String("variables", string(enc)),
+			)
 			if requestName == "unknown" {
-				log.Printf(`logging complete query for slow GraphQL request above time=%v name=%s userID=%d source=%s error=%v:
-QUERY
------
-%s
-
-VARIABLES
----------
-%s
-
-`, d, requestName, currentUserID, requestSource, err, queryString, encodedVariables)
+				errFields := make([]string, 0, len(err))
+				for _, e := range err {
+					errFields = append(errFields, e.Error())
+				}
+				t.logger.Info(
+					"slow unknown GraphQL request",
+					log.Duration("duration", d),
+					log.Int32("user_id", currentUserID),
+					log.Strings("errors", errFields),
+					log.String("query", queryString),
+					log.String("source", string(requestSource)),
+					log.String("variables", string(enc)),
+				)
 			}
 		}
 	}
 }
 
-func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
+func (requestTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]any) (context.Context, trace.TraceFieldFinishFunc) {
 	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
@@ -111,7 +164,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	}
 }
 
-func (t prometheusTracer) TraceValidation(ctx context.Context) trace.TraceValidationFinishFunc {
+func (t requestTracer) TraceValidation(ctx context.Context) trace.TraceValidationFinishFunc {
 	var finish trace.TraceValidationFinishFunc
 	if policy.ShouldTrace(ctx) {
 		finish = t.tracer.TraceValidation(ctx)
@@ -388,6 +441,9 @@ func NewSchema(
 		EnterpriseResolvers.authzResolver = authz
 		resolver.AuthzResolver = authz
 		schemas = append(schemas, authzSchema)
+		for kind, res := range authz.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
 	}
 
 	if codeMonitors != nil {
@@ -458,10 +514,14 @@ func NewSchema(
 		}
 	}
 
+	logger := log.Scoped("GraphQL", "general GraphQL logging")
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
-		graphql.Tracer(&prometheusTracer{}),
+		graphql.Tracer(&requestTracer{
+			DB:     db,
+			logger: logger,
+		}),
 		graphql.UseStringDescriptions(),
 	)
 }
@@ -472,7 +532,7 @@ func NewSchema(
 //
 // schemaResolver must be instantiated using newSchemaResolver.
 type schemaResolver struct {
-	logger            sglog.Logger
+	logger            log.Logger
 	db                database.DB
 	gitserverClient   gitserver.Client
 	repoupdaterClient *repoupdater.Client
@@ -498,7 +558,7 @@ type schemaResolver struct {
 // defaults. It does not implement any sub-resolvers.
 func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schemaResolver {
 	r := &schemaResolver{
-		logger:            sglog.Scoped("schemaResolver", "GraphQL schema resolver"),
+		logger:            log.Scoped("schemaResolver", "GraphQL schema resolver"),
 		db:                db,
 		gitserverClient:   gitserverClient,
 		repoupdaterClient: repoupdater.DefaultClient,
@@ -760,49 +820,6 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 
 func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error) {
 	return CurrentUser(ctx, r.db)
-}
-
-func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struct {
-	Namespace graphql.ID
-	CodeHost  *graphql.ID
-	Query     *string
-}) (*affiliatedRepositoriesConnection, error) {
-	var userID, orgID int32
-	err := UnmarshalNamespaceID(args.Namespace, &userID, &orgID)
-	if err != nil {
-		return nil, err
-	}
-	if userID > 0 {
-		// 🚨 SECURITY: Make sure the user is the same user being requested
-		if err := auth.CheckSameUser(ctx, userID); err != nil {
-			return nil, err
-		}
-	}
-	if orgID > 0 {
-		// 🚨 SECURITY: Make sure the user can access the organization
-		if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
-			return nil, err
-		}
-	}
-	var codeHost int64
-	if args.CodeHost != nil {
-		codeHost, err = UnmarshalExternalServiceID(*args.CodeHost)
-		if err != nil {
-			return nil, err
-		}
-	}
-	var query string
-	if args.Query != nil {
-		query = *args.Query
-	}
-
-	return &affiliatedRepositoriesConnection{
-		db:       r.db,
-		userID:   userID,
-		orgID:    orgID,
-		codeHost: codeHost,
-		query:    query,
-	}, nil
 }
 
 // CodeHostSyncDue returns true if any of the supplied code hosts are due to sync

@@ -10,14 +10,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/sourcegraphoperator"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 var _ job.Job = (*sourcegraphOperatorCleaner)(nil)
@@ -39,9 +40,10 @@ func (j *sourcegraphOperatorCleaner) Config() []env.Config {
 }
 
 func (j *sourcegraphOperatorCleaner) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	// TODO(jchen): Once https://github.com/sourcegraph/customer/issues/1427 is
-	// implemented, use the env var as the toggle to determine if we need to run this
-	// background job.
+	cloudSiteConfig := cloud.SiteConfig()
+	if !cloudSiteConfig.SourcegraphOperatorAuthProviderEnabled() {
+		return nil, nil
+	}
 
 	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
@@ -53,7 +55,8 @@ func (j *sourcegraphOperatorCleaner) Routines(_ context.Context, logger log.Logg
 			context.Background(),
 			time.Minute,
 			&sourcegraphOperatorCleanHandler{
-				db: db,
+				db:                db,
+				lifecycleDuration: sourcegraphoperator.LifecycleDuration(cloudSiteConfig.AuthProviders.SourcegraphOperator.LifecycleDuration),
 			},
 		),
 	}, nil
@@ -62,24 +65,14 @@ func (j *sourcegraphOperatorCleaner) Routines(_ context.Context, logger log.Logg
 var _ goroutine.Handler = (*sourcegraphOperatorCleanHandler)(nil)
 
 type sourcegraphOperatorCleanHandler struct {
-	db database.DB
+	db                database.DB
+	lifecycleDuration time.Duration
 }
 
 // Handle hard deletes expired Sourcegraph Operator user accounts based on the
 // configured lifecycle duration every minute. It skips users that have external
 // accounts connected other than service type "sourcegraph-operator".
 func (h *sourcegraphOperatorCleanHandler) Handle(ctx context.Context) error {
-	var p *schema.SourcegraphOperatorAuthProvider
-	for _, ap := range conf.Get().AuthProviders {
-		if ap.SourcegraphOperator != nil {
-			p = ap.SourcegraphOperator
-			break
-		}
-	}
-	if p == nil {
-		return nil
-	}
-
 	q := sqlf.Sprintf(`
 SELECT user_id
 FROM users
@@ -91,14 +84,21 @@ WHERE
 AND users.created_at <= %s
 GROUP BY user_id HAVING COUNT(*) = 1
 `,
-		sourcegraphoperator.ProviderType,
-		time.Now().Add(-1*sourcegraphoperator.LifecycleDuration(p.LifecycleDuration)),
+		auth.SourcegraphOperatorProviderType,
+		time.Now().Add(-1*h.lifecycleDuration),
 	)
 	userIDs, err := basestore.ScanInt32s(h.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
 	if err != nil {
 		return errors.Wrap(err, "query user IDs")
 	}
 
+	// Help exclude Sourcegraph operator related events from analytics
+	ctx = actor.WithActor(
+		ctx,
+		&actor.Actor{
+			SourcegraphOperator: true,
+		},
+	)
 	err = h.db.Users().HardDeleteList(ctx, userIDs)
 	if err != nil && !errcode.IsNotFound(err) {
 		return errors.Wrap(err, "hard delete users")

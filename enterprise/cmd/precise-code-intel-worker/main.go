@@ -117,12 +117,15 @@ func main() {
 	}
 
 	// Initialize worker
-	worker := uploads.GetBackgroundJob(services.UploadsService).NewWorker(
+	worker := uploads.NewUploadProcessorJob(
+		services.UploadsService,
+		db,
 		uploadStore,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
 		config.WorkerPollInterval,
 		config.MaximumRuntimePerJob,
+		observationContext,
 	)
 
 	// Initialize health server

@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -33,7 +32,7 @@ import (
 // with the stored Repositories in Sourcegraph.
 type Syncer struct {
 	Sourcer Sourcer
-	Worker  *workerutil.Worker
+	Worker  *workerutil.Worker[*SyncJob]
 	Store   Store
 
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
@@ -112,12 +111,7 @@ type syncHandler struct {
 	minSyncInterval func() time.Duration
 }
 
-func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
-	sj, ok := record.(*SyncJob)
-	if !ok {
-		return errors.Errorf("expected repos.SyncJob, got %T", record)
-	}
-
+func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, sj *SyncJob) (err error) {
 	// Limit calls to progressRecorder as it will most likely hit the database
 	progressLimiter := rate.NewLimiter(rate.Limit(1.0), 1)
 
@@ -522,37 +516,6 @@ func (s *Syncer) SyncExternalService(
 		return errors.Wrap(err, "fetching external services")
 	}
 
-	// We take an advisory lock here and also when deleting an external service to
-	// ensure that they can't happen at the same time.
-	lock := locker.NewWith(s.Store, "external_service")
-
-	var locked bool
-	var unlock locker.UnlockFunc
-	// We need both code paths here since our production code doesn't use a
-	// transaction but most of our tests DO run in transactions in order to make
-	// rolling back test state easier.
-	if s.Store.Handle().InTransaction() {
-		locked, err = lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
-		if err != nil {
-			return errors.Wrap(err, "getting advisory lock")
-		}
-		if !locked {
-			return errors.Errorf("could not get advisory lock for service %d", svc.ID)
-		}
-	} else {
-		// We're NOT in a transaction
-		locked, unlock, err = lock.Lock(ctx, locker.StringKey(fmt.Sprintf("%d", svc.ID)), false)
-		if err != nil {
-			return errors.Wrap(err, "getting advisory lock")
-		}
-		if !locked {
-			return errors.Errorf("could not get advisory lock for service %d", svc.ID)
-		}
-		defer func() {
-			err = unlock(err)
-		}()
-	}
-
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -566,9 +529,7 @@ func (s *Syncer) SyncExternalService(
 		svc.NextSyncAt = now.Add(interval)
 		svc.LastSyncAt = now
 
-		// We use context.Background() here because we want this update to
-		// succeed even if the job has been canceled.
-		if err := s.Store.ExternalServiceStore().Upsert(context.Background(), svc); err != nil {
+		if err := s.Store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
 			// We only want to log this error, not return it
 			logger.Error("upserting external service", log.Error(err))
 		}
@@ -600,7 +561,6 @@ func (s *Syncer) SyncExternalService(
 
 	results := make(chan SourceResult)
 	go func() {
-		s.Logger.Debug("listing repos asynchronously")
 		src.ListRepos(ctx, results)
 		close(results)
 	}()
@@ -623,7 +583,9 @@ func (s *Syncer) SyncExternalService(
 	var syncProgress SyncProgress
 	// Record the final progress state
 	defer func() {
-		if err := progressRecorder(ctx, syncProgress, true); err != nil {
+		// Use a different context here so that we make sure to record progress
+		// even if context has been canceled
+		if err := progressRecorder(context.Background(), syncProgress, true); err != nil {
 			logger.Error("recording final sync progress", log.Error(err))
 		}
 	}()
@@ -827,7 +789,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		s.Logger.Debug("retrieved stored repo, falling through", log.String("stored", fmt.Sprintf("%v", stored)))
 		fallthrough
 	case 1: // Existing repo, update.
-		s.Logger.Debug("exisitng repo")
+		s.Logger.Debug("existing repo")
 		modified := stored[0].Update(sourced)
 		if modified == types.RepoUnmodified {
 			d.Unmodified = append(d.Unmodified, stored[0])

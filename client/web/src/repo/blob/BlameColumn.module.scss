@@ -25,6 +25,6 @@ tr:global(.highlighted) {
 
     &.visible {
         // stylelint-disable-next-line declaration-property-unit-allowed-list
-        width: 240px;
+        width: var(--blame-decoration-width);
     }
 }

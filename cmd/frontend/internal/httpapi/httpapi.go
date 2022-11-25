@@ -39,11 +39,11 @@ import (
 )
 
 type Handlers struct {
-	GitHubWebhook                   webhooks.Registerer
 	GitHubSyncWebhook               webhooks.Registerer
-	GitLabWebhook                   webhooks.RegistererHandler
-	BitbucketServerWebhook          http.Handler
-	BitbucketCloudWebhook           http.Handler
+	BatchesGitHubWebhook            webhooks.Registerer
+	BatchesGitLabWebhook            webhooks.RegistererHandler
+	BatchesBitbucketServerWebhook   webhooks.RegistererHandler
+	BatchesBitbucketCloudWebhook    http.Handler
 	BatchesChangesFileGetHandler    http.Handler
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
@@ -90,22 +90,26 @@ func NewHandler(
 	wh := webhooks.WebhookRouter{
 		DB: db,
 	}
-	webhookhandlers.Init(db, &wh)
-	handlers.GitHubWebhook.Register(&wh)
-	handlers.GitLabWebhook.Register(&wh)
+	webhookhandlers.Init(&wh)
+	handlers.BatchesGitHubWebhook.Register(&wh)
+	handlers.BatchesGitLabWebhook.Register(&wh)
+	handlers.BatchesBitbucketServerWebhook.Register(&wh)
 	handlers.GitHubSyncWebhook.Register(&wh)
 
 	// 🚨 SECURITY: This handler implements its own secret-based auth
-	// TODO: Integrate with webhookMiddleware.Logger
 	webhookHandler := webhooks.NewHandler(logger, db, &wh)
 
 	gitHubWebhook := webhooks.GitHubWebhook{WebhookRouter: &wh}
 
+	// New UUID based webhook handler
 	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))
+
+	// Old, soon to be deprecated, webhook handlers
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gitHubWebhook)))
-	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
-	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketServerWebhook)))
-	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BitbucketCloudWebhook)))
+	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesGitLabWebhook)))
+	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesBitbucketServerWebhook)))
+	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesBitbucketCloudWebhook)))
+
 	m.Get(apirouter.BatchesFileGet).Handler(trace.Route(handlers.BatchesChangesFileGetHandler))
 	m.Get(apirouter.BatchesFileExists).Handler(trace.Route(handlers.BatchesChangesFileExistsHandler))
 	m.Get(apirouter.BatchesFileUpload).Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))
@@ -122,6 +126,9 @@ func NewHandler(
 
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))
+
+	gsClient := gitserver.NewClient(db)
+	m.Get(apirouter.GitBlameStream).Handler(trace.Route(handleStreamBlame(logger, db, gsClient)))
 
 	// Set up the src-cli version cache handler (this will effectively be a
 	// no-op anywhere other than dot-com).

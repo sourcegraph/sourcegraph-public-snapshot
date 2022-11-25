@@ -1,76 +1,43 @@
-import React, { FunctionComponent, HTMLAttributes, LiHTMLAttributes, useEffect, useLayoutEffect, useState } from 'react'
+import React, { FunctionComponent, HTMLAttributes, LiHTMLAttributes } from 'react'
 
 import classNames from 'classnames'
+import { noop } from 'lodash'
 
 // In order to resolve cyclic deps in tests
 // see https://github.com/sourcegraph/sourcegraph/pull/40209#pullrequestreview-1069334480
-import { createRectangle, PopoverContent, Position } from '../../../../Popover'
+import { createRectangle, Popover, PopoverContent, PopoverTail, Position } from '../../../../Popover'
 
 import styles from './Tooltip.module.scss'
 
-const TOOLTIP_PADDING = createRectangle(0, 0, 10, 10)
+const TOOLTIP_PADDING = createRectangle(0, 0, 5, 5)
 
 interface TooltipProps {
-    containerElement: Element
-    activeElement?: HTMLElement
-}
-
-interface TooltipPosition {
-    target: HTMLElement | null
-    x: number
-    y: number
+    activeElement: HTMLElement
 }
 
 export const Tooltip: React.FunctionComponent<React.PropsWithChildren<TooltipProps>> = props => {
-    const { containerElement, activeElement = null, children } = props
-
-    const [{ target, ...pinPoint }, setVirtualElement] = useState<TooltipPosition>({
-        target: activeElement,
-        x: 0,
-        y: 0,
-    })
-
-    useLayoutEffect(() => {
-        if (activeElement) {
-            setVirtualElement(state => ({ ...state, target: activeElement }))
-        }
-    }, [activeElement])
-
-    useEffect(() => {
-        // We need this casting because Element type doesn't support
-        // pointer or mouse events in pointermove handlers
-        const element = containerElement as HTMLElement
-
-        function handleMove(event: PointerEvent): void {
-            setVirtualElement({
-                target: null,
-                x: event.clientX,
-                y: event.clientY,
-            })
-        }
-
-        element.addEventListener('pointermove', handleMove)
-
-        return () => {
-            element.removeEventListener('pointermove', handleMove)
-        }
-    }, [containerElement])
+    const { activeElement, children } = props
 
     return (
-        <PopoverContent
-            isOpen={true}
-            pin={!target ? pinPoint : null}
-            target={target}
-            autoFocus={false}
-            focusLocked={false}
-            returnTargetFocus={false}
-            targetPadding={TOOLTIP_PADDING}
-            position={Position.rightStart}
-            className={styles.tooltip}
-            tabIndex={-1}
-        >
-            {children}
-        </PopoverContent>
+        <Popover isOpen={true} onOpenChange={noop}>
+            <PopoverContent
+                target={activeElement}
+                position={Position.right}
+                autoFocus={false}
+                focusLocked={false}
+                returnTargetFocus={false}
+                targetPadding={TOOLTIP_PADDING}
+                className={styles.tooltip}
+                // Hide Tooltip UI from screen reader otherwise Voice over in Safari will
+                // catch this element and interrupt the original chart screen reader navigation flow
+                aria-hidden={true}
+                tabIndex={-1}
+            >
+                {children}
+            </PopoverContent>
+
+            <PopoverTail size="sm" tabIndex={-1} className={styles.tail} />
+        </Popover>
     )
 }
 

@@ -18,11 +18,16 @@ import {
     Position,
     PopoverOpenEventReason,
     useUpdateEffect,
+    createRectangle,
 } from '@sourcegraph/wildcard'
 
 import { SearchContextMenu } from './SearchContextMenu'
 
 import styles from './SearchContextDropdown.module.scss'
+
+// Adds padding to the popover content to add some space between the trigger
+// button and the content
+const popoverPadding = createRectangle(0, 0, 0, 2)
 
 export interface SearchContextDropdownProps
     extends SearchContextInputProps,
@@ -32,6 +37,7 @@ export interface SearchContextDropdownProps
     query: string
     showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean | null
     className?: string
     menuClassName?: string
     onEscapeMenuClose?: () => void
@@ -156,6 +162,7 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
                 position={Position.bottomStart}
                 className={classNames('a11y-ignore', styles.menu)}
                 data-testid="dropdown-content"
+                targetPadding={popoverPadding}
             >
                 <SearchContextMenu
                     {...props}

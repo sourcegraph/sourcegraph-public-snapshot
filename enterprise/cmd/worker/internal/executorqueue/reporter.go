@@ -6,10 +6,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func NewMetricReporter(observationContext *observation.Context, queueName string, store store.Store, metricsConfig *Config) (goroutine.BackgroundRoutine, error) {
+func NewMetricReporter[T workerutil.Record](observationContext *observation.Context, queueName string, store store.Store[T], metricsConfig *Config) (goroutine.BackgroundRoutine, error) {
 	// Emit metrics to control alerts.
 	initPrometheusMetric(observationContext, queueName, store)
 
@@ -17,7 +18,7 @@ func NewMetricReporter(observationContext *observation.Context, queueName string
 	return initExternalMetricReporters(queueName, store, metricsConfig)
 }
 
-func initExternalMetricReporters(queueName string, store store.Store, metricsConfig *Config) (goroutine.BackgroundRoutine, error) {
+func initExternalMetricReporters[T workerutil.Record](queueName string, store store.Store[T], metricsConfig *Config) (goroutine.BackgroundRoutine, error) {
 	awsReporter, err := newAWSReporter(metricsConfig)
 	if err != nil {
 		return nil, err
@@ -37,7 +38,7 @@ func initExternalMetricReporters(queueName string, store store.Store, metricsCon
 	}
 
 	ctx := context.Background()
-	return goroutine.NewPeriodicGoroutine(ctx, 5*time.Second, &externalEmitter{
+	return goroutine.NewPeriodicGoroutine(ctx, 5*time.Second, &externalEmitter[T]{
 		queueName:  queueName,
 		store:      store,
 		reporters:  reporters,

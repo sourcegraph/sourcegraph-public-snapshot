@@ -20,7 +20,8 @@ import {
 } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
 import { useQuery } from '@sourcegraph/http-client'
-import { CodeExcerpt, FetchFileParameters, onClickCodeExcerptHref } from '@sourcegraph/search-ui'
+import { CodeExcerpt, onClickCodeExcerptHref } from '@sourcegraph/search-ui'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { findLanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/languages'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -947,7 +948,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
         if (range !== undefined) {
             const lineNumber = range.start.line + 1
             const lineContent = location.lines[range.start.line]
-            const tableLine = `<tr><th class="line" data-line="${lineNumber}"></th><td class="code">${lineContent}</td></tr>`
+            const tableLine = `<tr><td class="line" data-line="${lineNumber}"></td><td class="code">${lineContent}</td></tr>`
             return of([tableLine])
         }
         return of([])

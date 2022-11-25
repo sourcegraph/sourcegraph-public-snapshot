@@ -1,6 +1,8 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .changeset-close-node {
+    display: contents;
+
     &__separator {
         // Make it full width in the current row.
         grid-column: 1 / -1;

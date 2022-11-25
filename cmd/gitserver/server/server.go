@@ -64,6 +64,10 @@ import (
 // tempDirName is the name used for the temporary directory under ReposDir.
 const tempDirName = ".tmp"
 
+// P4HomeName is the name used for the directory that git p4 will use as $HOME
+// and where it will store cache data.
+const P4HomeName = ".p4home"
+
 // traceLogs is controlled via the env SRC_GITSERVER_TRACE. If true we trace
 // logs to stderr
 var traceLogs bool
@@ -777,64 +781,83 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
 	}
 
+	// Make sure we fetch at least a good chunk of records, assuming that most
+	// would not need an update anyways. Don't fetch too many though to keep the
+	// DB load at a reasonable level and constrain memory usage.
+	iteratePageSize := batchSize * 2
+	if iteratePageSize < 500 {
+		iteratePageSize = 500
+	}
+
 	options := database.IterateRepoGitserverStatusOptions{
 		// We also want to include deleted repos as they may still be cloned on disk
 		IncludeDeleted: true,
+		BatchSize:      iteratePageSize,
 	}
 	if !fullSync {
 		options.OnlyWithoutShard = true
 	}
-	err := store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
-		repoSyncStateCounter.WithLabelValues("check").Inc()
-
-		// We may have a deleted repo, we need to extract the original name both to
-		// ensure that the shard check is correct and also so that we can find the
-		// directory.
-		repo.Name = api.UndeletedRepoName(repo.Name)
-
-		// Ensure we're only dealing with repos we are responsible for.
-		addr, err := s.addrForRepo(ctx, repo.Name, gitServerAddrs)
+	for {
+		repos, nextRepo, err := store.IterateRepoGitserverStatus(ctx, options)
 		if err != nil {
 			return err
 		}
-		if !s.hostnameMatch(addr) {
-			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
-			return nil
+		for _, repo := range repos {
+			repoSyncStateCounter.WithLabelValues("check").Inc()
+
+			// We may have a deleted repo, we need to extract the original name both to
+			// ensure that the shard check is correct and also so that we can find the
+			// directory.
+			repo.Name = api.UndeletedRepoName(repo.Name)
+
+			// Ensure we're only dealing with repos we are responsible for.
+			addr, err := s.addrForRepo(ctx, repo.Name, gitServerAddrs)
+			if err != nil {
+				return err
+			}
+			if !s.hostnameMatch(addr) {
+				repoSyncStateCounter.WithLabelValues("other_shard").Inc()
+				continue
+			}
+			repoSyncStateCounter.WithLabelValues("this_shard").Inc()
+
+			dir := s.dir(repo.Name)
+			cloned := repoCloned(dir)
+			_, cloning := s.locker.Status(dir)
+
+			var shouldUpdate bool
+			if repo.ShardID != s.Hostname {
+				repo.ShardID = s.Hostname
+				shouldUpdate = true
+			}
+			cloneStatus := cloneStatus(cloned, cloning)
+			if repo.CloneStatus != cloneStatus {
+				repo.CloneStatus = cloneStatus
+				shouldUpdate = true
+			}
+
+			if !shouldUpdate {
+				continue
+			}
+
+			batch = append(batch, repo.GitserverRepo)
+
+			if len(batch) >= batchSize {
+				writeBatch()
+			}
 		}
-		repoSyncStateCounter.WithLabelValues("this_shard").Inc()
 
-		dir := s.dir(repo.Name)
-		cloned := repoCloned(dir)
-		_, cloning := s.locker.Status(dir)
-
-		var shouldUpdate bool
-		if repo.ShardID != s.Hostname {
-			repo.ShardID = s.Hostname
-			shouldUpdate = true
-		}
-		cloneStatus := cloneStatus(cloned, cloning)
-		if repo.CloneStatus != cloneStatus {
-			repo.CloneStatus = cloneStatus
-			shouldUpdate = true
+		if nextRepo == 0 {
+			break
 		}
 
-		if !shouldUpdate {
-			return nil
-		}
-
-		batch = append(batch, repo.GitserverRepo)
-
-		if len(batch) >= batchSize {
-			writeBatch()
-		}
-
-		return nil
-	})
+		options.NextCursor = nextRepo
+	}
 
 	// Attempt final write
 	writeBatch()
 
-	return err
+	return nil
 }
 
 // Stop cancels the running background jobs and returns when done.
@@ -919,11 +942,12 @@ func (s *Server) tempDir(prefix string) (name string, err error) {
 }
 
 func (s *Server) ignorePath(path string) bool {
-	// We ignore any path which starts with .tmp in ReposDir
+	// We ignore any path which starts with .tmp or .p4home in ReposDir
 	if filepath.Dir(path) != s.ReposDir {
 		return false
 	}
-	return strings.HasPrefix(filepath.Base(path), tempDirName)
+	base := filepath.Base(path)
+	return strings.HasPrefix(base, tempDirName) || strings.HasPrefix(base, P4HomeName)
 }
 
 func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {

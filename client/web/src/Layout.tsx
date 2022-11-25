@@ -1,13 +1,13 @@
 import React, { Suspense, useCallback, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
+import { matchPath, Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { isMacPlatform } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -17,7 +17,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, Panel } from '@sourcegraph/wildcard'
+import { FeedbackPrompt, LoadingSpinner, Panel } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from './auth'
 import type { BatchChangesProps } from './batches'
@@ -38,6 +38,7 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
+import { useHandleSubmitFeedback } from './hooks'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import type { BlockInput, NotebookProps } from './notebooks'
@@ -50,9 +51,9 @@ import { RepoHeaderActionButton } from './repo/RepoHeader'
 import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import type { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
-import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
-import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps } from './search'
+import type { LayoutRouteComponentProps, LayoutRouteProps } from './routes'
+import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
+import { HomePanelsProps, parseSearchURLQuery, SearchStreamingProps } from './search'
 import { NotepadContainer } from './search/Notepad'
 import type { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import type { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -153,11 +154,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         props.location.pathname === PageRoutes.PasswordReset ||
         props.location.pathname === PageRoutes.Welcome
 
-    // TODO Change this behavior when we have global focus management system
-    // Need to know this for disable autofocus on nav search input
-    // and preserve autofocus for first textarea at survey page, creation UI etc.
-    const isSearchAutoFocusRequired = routeMatch === PageRoutes.Survey || routeMatch === EnterprisePageRoutes.Insights
-
     const themeProps = useThemeProps()
     const themeState = useTheme()
     const themeStateRef = useRef(themeState)
@@ -170,8 +166,14 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
 
     const showHelpShortcut = useKeyboardShortcut('keyboardShortcutsHelp')
     const [keyboardShortcutsHelpOpen, setKeyboardShortcutsHelpOpen] = useState(false)
+    const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
     const showKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(true), [])
     const hideKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(false), [])
+    const showFeedbackModal = useCallback(() => setFeedbackModalOpen(true), [])
+
+    const { handleSubmitFeedback } = useHandleSubmitFeedback({
+        routeMatch,
+    })
 
     // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
     // const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
@@ -205,6 +207,17 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 <Shortcut key={index} {...keybinding} onMatch={showKeyboardShortcutsHelp} />
             ))}
             <KeyboardShortcutsHelp isOpen={keyboardShortcutsHelpOpen} onDismiss={hideKeyboardShortcutsHelp} />
+
+            {feedbackModalOpen && (
+                <FeedbackPrompt
+                    onSubmit={handleSubmitFeedback}
+                    modal={true}
+                    openByDefault={true}
+                    authenticatedUser={props.authenticatedUser}
+                    onClose={() => setFeedbackModalOpen(false)}
+                />
+            )}
+
             <GlobalAlerts
                 authenticatedUser={props.authenticatedUser}
                 settingsCascade={props.settingsCascade}
@@ -225,9 +238,9 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         !isSearchNotebooksPage
                     }
                     setFuzzyFinderIsVisible={setFuzzyFinderVisible}
-                    isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
+                    showFeedbackModal={showFeedbackModal}
                     enableLegacyExtensions={window.context.enableLegacyExtensions}
                 />
             )}
@@ -267,6 +280,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                         defaultSize={350}
                         storageKey="panel-size"
                         ariaLabel="References panel"
+                        id="references-panel"
                     >
                         <TabbedPanelContent
                             {...props}

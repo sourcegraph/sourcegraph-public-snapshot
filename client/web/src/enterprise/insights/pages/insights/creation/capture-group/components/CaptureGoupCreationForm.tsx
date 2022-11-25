@@ -127,7 +127,7 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
                 }
             >
                 <Card className="p-3">
-                    <Label className="w-100">
+                    <Label className="w-100" id="capture-group-query-label">
                         <div className="mb-2">Search query</div>
 
                         <small className={classNames('mb-3', 'text-muted', 'd-block', 'font-weight-normal')}>
@@ -148,6 +148,7 @@ export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props
                             required={true}
                             repositories={repositories.input.value}
                             placeholder="Example: file:\.pom$ <java\.version>(.*)</java\.version>"
+                            aria-labelledby="capture-group-query-label"
                             {...getDefaultInputProps(query)}
                         />
                     </Label>

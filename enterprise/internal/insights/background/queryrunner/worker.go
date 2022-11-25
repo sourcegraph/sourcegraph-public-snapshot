@@ -36,7 +36,7 @@ import (
 
 // NewWorker returns a worker that will execute search queries and insert information about the
 // results into the code insights database.
-func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerObservability, limiter *ratelimit.InstrumentedLimiter) *workerutil.Worker {
+func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*Job], insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerObservability, limiter *ratelimit.InstrumentedLimiter) *workerutil.Worker[*Job] {
 	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
 	if numHandlers <= 0 {
 		// Default concurrency is set to 5.
@@ -65,7 +65,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		return float64(count)
 	}))
 
-	return dbworker.NewWorker(ctx, workerStore, &workHandler{
+	return dbworker.NewWorker[*Job](ctx, workerStore, &workHandler{
 		baseWorkerStore: basestore.NewWithHandle(workerStore.Handle()),
 		insightsStore:   insightsStore,
 		repoStore:       repoStore,
@@ -79,7 +79,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 
 // NewResetter returns a resetter that will reset pending query runner jobs if they take too long
 // to complete.
-func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, metrics dbworker.ResetterMetrics) *dbworker.Resetter {
+func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*Job], metrics dbworker.ResetterMetrics) *dbworker.Resetter[*Job] {
 	options := dbworker.ResetterOptions{
 		Name:     "insights_query_runner_worker_resetter",
 		Interval: 1 * time.Minute,
@@ -91,8 +91,8 @@ func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkersto
 // CreateDBWorkerStore creates the dbworker store for the query runner worker.
 //
 // See internal/workerutil/dbworker for more information about dbworkers.
-func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Context) dbworkerstore.Store {
-	return dbworkerstore.NewWithMetrics(s.Handle(), dbworkerstore.Options{
+func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Context) dbworkerstore.Store[*Job] {
+	return dbworkerstore.NewWithMetrics(s.Handle(), dbworkerstore.Options[*Job]{
 		Name:              "insights_query_runner_jobs_store",
 		TableName:         "insights_query_runner_jobs",
 		ColumnExpressions: jobsColumns,
@@ -301,12 +301,18 @@ SELECT COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s AND state=%s
 `
 
 func QueryAllSeriesStatus(ctx context.Context, workerBaseStore *basestore.Store) (_ []types.InsightSeriesStatus, err error) {
-	q := sqlf.Sprintf(queryAllSeriesStatusSql)
+	q := sqlf.Sprintf(queryAllSeriesStatusSql, true)
 	query, err := workerBaseStore.Query(ctx, q)
-	return scanAllSeriesStatusRows(query, err)
+	return scanSeriesStatusRows(query, err)
 }
 
-func scanAllSeriesStatusRows(rows *sql.Rows, queryErr error) (_ []types.InsightSeriesStatus, err error) {
+func QuerySeriesStatus(ctx context.Context, workerBaseStore *basestore.Store, seriesIDs []string) (_ []types.InsightSeriesStatus, err error) {
+	q := sqlf.Sprintf(queryAllSeriesStatusSql, sqlf.Sprintf("series_id = ANY(%s)", pq.Array(seriesIDs)))
+	query, err := workerBaseStore.Query(ctx, q)
+	return scanSeriesStatusRows(query, err)
+}
+
+func scanSeriesStatusRows(rows *sql.Rows, queryErr error) (_ []types.InsightSeriesStatus, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
@@ -339,9 +345,60 @@ select
        sum(case when state = 'completed' then 1 else 0 end) as completed,
        sum(case when state = 'queued' then 1 else 0 end) as queued
 from insights_query_runner_jobs
+WHERE %s
 group by series_id
 order by series_id;
 `
+
+func QuerySeriesSearchFailures(ctx context.Context, workerBaseStore *basestore.Store, seriesID string, limit int) (_ []types.InsightSearchFailure, err error) {
+	errorStates := []string{"errored", "failed"}
+	switch {
+	case limit <= 0:
+		limit = 50
+	case limit > 500:
+		limit = 500
+	}
+
+	q := sqlf.Sprintf(`
+						SELECT
+							search_query,
+							queued_at,
+							failure_message,
+							state,
+							record_time,
+							persist_mode
+					FROM insights_query_runner_jobs
+					WHERE series_id = %s AND state = ANY (%s)
+					ORDER BY queued_at desc
+					LIMIT %d;`,
+		seriesID, pq.Array(&errorStates), limit)
+	query, err := workerBaseStore.Query(ctx, q)
+	return scanSearchFailureRows(query, err)
+}
+
+func scanSearchFailureRows(rows *sql.Rows, queryErr error) (_ []types.InsightSearchFailure, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var results []types.InsightSearchFailure
+	for rows.Next() {
+		var temp types.InsightSearchFailure
+		if err := rows.Scan(
+			&temp.Query,
+			&temp.QueuedAt,
+			&temp.FailureMessage,
+			&temp.State,
+			&temp.RecordTime,
+			&temp.PersistMode,
+		); err != nil {
+			return []types.InsightSearchFailure{}, err
+		}
+		results = append(results, temp)
+	}
+	return results, nil
+}
 
 // Job represents a single job for the query runner worker to perform. When enqueued, it is stored
 // in the insights_query_runner_jobs table - then the worker dequeues it by reading it from that

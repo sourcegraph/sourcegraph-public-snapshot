@@ -41,7 +41,7 @@ func (r *webhooksResolver) CreateWebhook(ctx context.Context, args *graphqlbacke
 		return nil, auth.ErrMustBeSiteAdmin
 	}
 	ws := backend.NewWebhookService(r.db, keyring.Default())
-	webhook, err := ws.CreateWebhook(ctx, args.CodeHostKind, args.CodeHostURN, args.Secret)
+	webhook, err := ws.CreateWebhook(ctx, args.CodeHostKind, args.CodeHostKind, args.CodeHostURN, args.Secret)
 	if err != nil {
 		return nil, err
 	}
@@ -228,6 +228,10 @@ func (r *webhookResolver) URL() (string, error) {
 	}
 	externalURL.Path = fmt.Sprintf(".api/webhooks/%v", r.hook.UUID)
 	return externalURL.String(), nil
+}
+
+func (r *webhookResolver) Name() string {
+	return r.hook.Name
 }
 
 func (r *webhookResolver) CodeHostURN() string {

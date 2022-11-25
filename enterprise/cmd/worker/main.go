@@ -60,12 +60,12 @@ func main() {
 		"codeintel-autoindexing-dependency-scheduler": codeintel.NewAutoindexingDependencySchedulerJob(),
 		"codeintel-autoindexing-janitor":              codeintel.NewAutoindexingJanitorJob(),
 		"codeintel-autoindexing-scheduler":            codeintel.NewAutoindexingSchedulerJob(),
-		"codeintel-codenav-ranking":                   codeintel.NewRankingGraphSerializerJob(),
 		"codeintel-commitgraph-updater":               codeintel.NewCommitGraphUpdaterJob(),
 		"codeintel-metrics-reporter":                  codeintel.NewMetricsReporterJob(),
 		"codeintel-upload-backfiller":                 codeintel.NewUploadBackfillerJob(),
 		"codeintel-upload-expirer":                    codeintel.NewUploadExpirerJob(),
 		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
+		"codeintel-upload-graph-exporter":             codeintel.NewGraphExporterJob(),
 
 		"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
 

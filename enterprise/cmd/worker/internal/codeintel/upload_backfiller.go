@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/background/backfill"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
@@ -26,7 +25,7 @@ func (j *uploadBackfillerJob) Description() string {
 
 func (j *uploadBackfillerJob) Config() []env.Config {
 	return []env.Config{
-		backfill.ConfigInst,
+		uploads.ConfigCommittedAtBackfillInst,
 	}
 }
 
@@ -36,5 +35,5 @@ func (j *uploadBackfillerJob) Routines(startupCtx context.Context, logger log.Lo
 		return nil, err
 	}
 
-	return backfill.NewCommittedAtBackfiller(uploads.GetBackgroundJob(services.UploadsService)), nil
+	return uploads.NewCommittedAtBackfillerJob(services.UploadsService), nil
 }

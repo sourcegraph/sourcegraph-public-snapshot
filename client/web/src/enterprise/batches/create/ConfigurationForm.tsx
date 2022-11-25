@@ -176,14 +176,12 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     disabled={isReadOnly}
                 />
                 <Input
-                    autoFocus={true}
                     label="Batch change name"
                     value={nameInput}
                     onChange={onNameChange}
                     pattern={String(NAME_PATTERN)}
                     required={true}
                     status={isNameValid === undefined ? undefined : isNameValid ? 'valid' : 'error'}
-                    placeholder="My batch change name"
                     disabled={isReadOnly}
                 />
                 {!isReadOnly && (
@@ -195,14 +193,18 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                         </span>
                     </small>
                 )}
-                <hr className="my-3" />
+                <hr className="my-3" aria-hidden={true} />
                 <strong className="d-block mb-2">
                     Visibility
                     <Tooltip content="Coming soon">
-                        <Icon aria-label="Coming soon" className="ml-1" svgPath={mdiInformationOutline} />
+                        <Icon
+                            aria-label="Private batch changes coming soon"
+                            className="ml-1"
+                            svgPath={mdiInformationOutline}
+                        />
                     </Tooltip>
                 </strong>
-                <div className="form-group mb-1">
+                <div className="form-group mb-1" aria-hidden={true}>
                     <RadioButton
                         name="visibility"
                         value="public"
@@ -213,7 +215,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                         aria-label="Public"
                     />
                 </div>
-                <div className="form-group mb-0">
+                <div className="form-group mb-0" aria-hidden={true}>
                     <RadioButton
                         name="visibility"
                         value="private"
@@ -238,6 +240,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                         variant="primary"
                         type="submit"
                         onClick={handleCreate}
+                        aria-label={isNameValid ? undefined : 'Batch change name is invalid'}
                         disabled={loading || nameInput === '' || !isNameValid}
                     >
                         Create

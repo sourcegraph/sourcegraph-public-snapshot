@@ -4,16 +4,13 @@ import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { useHistory } from 'react-router'
 
-import { asError } from '@sourcegraph/common'
 import { Badge, Button, Container, LoadingSpinner, PageHeader, useObservable, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { PageTitle } from '../../../../../components/PageTitle'
-import { CodeInsightsIcon } from '../../../components'
-import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
-import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
+import { CodeInsightsIcon, CodeInsightsPage, SubmissionErrors } from '../../../components'
 import {
     CodeInsightsBackendContext,
     CustomInsightDashboard,
@@ -83,22 +80,17 @@ export const EditDashboardPage: React.FunctionComponent<React.PropsWithChildren<
             throw new Error('You have to specify a dashboard visibility')
         }
 
-        try {
-            const updatedDashboard = await updateDashboard({
-                id: dashboard.id,
-                nextDashboardInput: {
-                    name,
-                    owners: [owner],
-                },
-            }).toPromise()
+        const updatedDashboard = await updateDashboard({
+            id: dashboard.id,
+            nextDashboardInput: {
+                name,
+                owners: [owner],
+            },
+        }).toPromise()
 
-            history.push(`/insights/dashboards/${updatedDashboard.id}`)
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+        history.push(`/insights/dashboards/${updatedDashboard.id}`)
     }
+
     const handleCancel = (): void => history.goBack()
 
     return (

@@ -15,7 +15,7 @@ export default {
 } as Meta
 
 export const ScrollBoxDemo = () => (
-    <ScrollBox style={{ height: 400, width: 200 }}>
+    <ScrollBox style={{ height: 400, width: 200, border: '1px solid var(--border-color)' }}>
         Sorokin's works, bright and striking examples of underground culture, were banned during the Soviet period. His
         first publication in the USSR appeared in November 1989, when the Riga-based Latvian magazine Rodnik (Spring)
         presented a group of Sorokin's stories. Soon after, his stories appeared in Russian literary miscellanies and

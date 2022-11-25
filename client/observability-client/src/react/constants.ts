@@ -7,3 +7,8 @@ export type TraceContextRef = MutableRefObject<{ context: Context }>
 
 export const TraceContext = createContext<TraceContextRef>({ current: { context: ROOT_CONTEXT } })
 export const reactManualTracer = trace.getTracer('@sourcegraph/react-manual', '0.1')
+
+export enum ReactAttributes {
+    ComponentName = 'react.component.name',
+    ComponentPropPrefix = 'react.prop',
+}

@@ -8,14 +8,14 @@ public class RepoInfo {
     @NotNull
     public final String remoteUrl; // E.g. "git@github.com:sourcegraph/sourcegraph.git", with replacements already applied
     @NotNull
-    public final String branchName; // E.g. "main"
+    public final String remoteBranchName; // E.g. "main"
     @NotNull
     public final String relativePath; // E.g. "/client/jetbrains/package.json"
 
-    public RepoInfo(@NotNull VCSType vcsType, @NotNull String remoteUrl, @NotNull String branchName, @NotNull String relativePath) {
+    public RepoInfo(@NotNull VCSType vcsType, @NotNull String remoteUrl, @NotNull String remoteBranchName, @NotNull String relativePath) {
         this.vcsType = vcsType;
         this.remoteUrl = remoteUrl;
-        this.branchName = branchName;
+        this.remoteBranchName = remoteBranchName;
         this.relativePath = relativePath;
     }
 
