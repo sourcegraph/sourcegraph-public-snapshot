@@ -2,3 +2,8 @@ schema: schema/gitlab.graphql
 operations:
 - '*.graphql'
 generated: graphql.go
+bindings:
+  Time:
+    type: time.Time
+  NoteID:
+    type: string

@@ -4,31 +4,1585 @@ package gitlab
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"time"
 
 	"github.com/Khan/genqlient/graphql"
 )
 
-// validateTokenCurrentUser includes the requested fields of the GraphQL type User.
-type validateTokenCurrentUser struct {
-	// Username of the user. Unique within this instance of GitLab
+// State of a GitLab merge request
+type MergeRequestState string
+
+const (
+	// In open state.
+	MergeRequestStateOpened MergeRequestState = "opened"
+	// In closed state.
+	MergeRequestStateClosed MergeRequestState = "closed"
+	// Discussion has been locked.
+	MergeRequestStateLocked MergeRequestState = "locked"
+	// All available.
+	MergeRequestStateAll MergeRequestState = "all"
+	// Merge request has been merged.
+	MergeRequestStateMerged MergeRequestState = "merged"
+)
+
+type PipelineStatusEnum string
+
+const (
+	// Pipeline has been created.
+	PipelineStatusEnumCreated PipelineStatusEnum = "CREATED"
+	// A resource (for example, a runner) that the pipeline requires to run is unavailable.
+	PipelineStatusEnumWaitingForResource PipelineStatusEnum = "WAITING_FOR_RESOURCE"
+	// Pipeline is preparing to run.
+	PipelineStatusEnumPreparing PipelineStatusEnum = "PREPARING"
+	// Pipeline has not started running yet.
+	PipelineStatusEnumPending PipelineStatusEnum = "PENDING"
+	// Pipeline is running.
+	PipelineStatusEnumRunning PipelineStatusEnum = "RUNNING"
+	// At least one stage of the pipeline failed.
+	PipelineStatusEnumFailed PipelineStatusEnum = "FAILED"
+	// Pipeline completed successfully.
+	PipelineStatusEnumSuccess PipelineStatusEnum = "SUCCESS"
+	// Pipeline was canceled before completion.
+	PipelineStatusEnumCanceled PipelineStatusEnum = "CANCELED"
+	// Pipeline was skipped.
+	PipelineStatusEnumSkipped PipelineStatusEnum = "SKIPPED"
+	// Pipeline needs to be manually started.
+	PipelineStatusEnumManual PipelineStatusEnum = "MANUAL"
+	// Pipeline is scheduled to run.
+	PipelineStatusEnumScheduled PipelineStatusEnum = "SCHEDULED"
+)
+
+// Possible states of a user
+type UserState string
+
+const (
+	// The user is active and is able to use the system.
+	UserStateActive UserState = "active"
+	// The user has been blocked and is prevented from using the system.
+	UserStateBlocked UserState = "blocked"
+	// The user is no longer active and is unable to use the system.
+	UserStateDeactivated UserState = "deactivated"
+)
+
+// __fullMergeRequestInput is used internally by genqlient
+type __fullMergeRequestInput struct {
+	Path string `json:"path"`
+	Iid  string `json:"iid"`
+}
+
+// GetPath returns __fullMergeRequestInput.Path, and is useful for accessing the field via an interface.
+func (v *__fullMergeRequestInput) GetPath() string { return v.Path }
+
+// GetIid returns __fullMergeRequestInput.Iid, and is useful for accessing the field via an interface.
+func (v *__fullMergeRequestInput) GetIid() string { return v.Iid }
+
+// __mergeRequestLabelPageInput is used internally by genqlient
+type __mergeRequestLabelPageInput struct {
+	Path   string `json:"path"`
+	Iid    string `json:"iid"`
+	Cursor string `json:"cursor"`
+}
+
+// GetPath returns __mergeRequestLabelPageInput.Path, and is useful for accessing the field via an interface.
+func (v *__mergeRequestLabelPageInput) GetPath() string { return v.Path }
+
+// GetIid returns __mergeRequestLabelPageInput.Iid, and is useful for accessing the field via an interface.
+func (v *__mergeRequestLabelPageInput) GetIid() string { return v.Iid }
+
+// GetCursor returns __mergeRequestLabelPageInput.Cursor, and is useful for accessing the field via an interface.
+func (v *__mergeRequestLabelPageInput) GetCursor() string { return v.Cursor }
+
+// fullMergeRequestProject includes the requested fields of the GraphQL type Project.
+type fullMergeRequestProject struct {
+	// A single merge request of the project.
+	MergeRequest fullMergeRequestProjectMergeRequest `json:"mergeRequest"`
+}
+
+// GetMergeRequest returns fullMergeRequestProject.MergeRequest, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProject) GetMergeRequest() fullMergeRequestProjectMergeRequest {
+	return v.MergeRequest
+}
+
+// fullMergeRequestProjectMergeRequest includes the requested fields of the GraphQL type MergeRequest.
+type fullMergeRequestProjectMergeRequest struct {
+	mergeRequest `json:"-"`
+}
+
+// GetId returns fullMergeRequestProjectMergeRequest.Id, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetId() string { return v.mergeRequest.Id }
+
+// GetIid returns fullMergeRequestProjectMergeRequest.Iid, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetIid() string { return v.mergeRequest.Iid }
+
+// GetProjectId returns fullMergeRequestProjectMergeRequest.ProjectId, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetProjectId() int { return v.mergeRequest.ProjectId }
+
+// GetSourceProjectId returns fullMergeRequestProjectMergeRequest.SourceProjectId, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetSourceProjectId() int {
+	return v.mergeRequest.SourceProjectId
+}
+
+// GetSourceProject returns fullMergeRequestProjectMergeRequest.SourceProject, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetSourceProject() mergeRequestSourceProject {
+	return v.mergeRequest.SourceProject
+}
+
+// GetTitle returns fullMergeRequestProjectMergeRequest.Title, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetTitle() string { return v.mergeRequest.Title }
+
+// GetDescription returns fullMergeRequestProjectMergeRequest.Description, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetDescription() string {
+	return v.mergeRequest.Description
+}
+
+// GetState returns fullMergeRequestProjectMergeRequest.State, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetState() MergeRequestState {
+	return v.mergeRequest.State
+}
+
+// GetCreatedAt returns fullMergeRequestProjectMergeRequest.CreatedAt, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetCreatedAt() time.Time {
+	return v.mergeRequest.CreatedAt
+}
+
+// GetUpdatedAt returns fullMergeRequestProjectMergeRequest.UpdatedAt, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetUpdatedAt() time.Time {
+	return v.mergeRequest.UpdatedAt
+}
+
+// GetHeadPipeline returns fullMergeRequestProjectMergeRequest.HeadPipeline, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetHeadPipeline() mergeRequestHeadPipeline {
+	return v.mergeRequest.HeadPipeline
+}
+
+// GetLabels returns fullMergeRequestProjectMergeRequest.Labels, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetLabels() mergeRequestLabelsLabelConnection {
+	return v.mergeRequest.Labels
+}
+
+// GetSourceBranch returns fullMergeRequestProjectMergeRequest.SourceBranch, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetSourceBranch() string {
+	return v.mergeRequest.SourceBranch
+}
+
+// GetTargetBranch returns fullMergeRequestProjectMergeRequest.TargetBranch, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetTargetBranch() string {
+	return v.mergeRequest.TargetBranch
+}
+
+// GetWebUrl returns fullMergeRequestProjectMergeRequest.WebUrl, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetWebUrl() string { return v.mergeRequest.WebUrl }
+
+// GetDraft returns fullMergeRequestProjectMergeRequest.Draft, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetDraft() bool { return v.mergeRequest.Draft }
+
+// GetAuthor returns fullMergeRequestProjectMergeRequest.Author, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetAuthor() mergeRequestAuthorUserCore {
+	return v.mergeRequest.Author
+}
+
+// GetDiffRefs returns fullMergeRequestProjectMergeRequest.DiffRefs, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetDiffRefs() mergeRequestDiffRefs {
+	return v.mergeRequest.DiffRefs
+}
+
+// GetNotes returns fullMergeRequestProjectMergeRequest.Notes, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetNotes() mergeRequestNotesNoteConnection {
+	return v.mergeRequest.Notes
+}
+
+// GetPipelines returns fullMergeRequestProjectMergeRequest.Pipelines, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestProjectMergeRequest) GetPipelines() mergeRequestPipelinesPipelineConnection {
+	return v.mergeRequest.Pipelines
+}
+
+func (v *fullMergeRequestProjectMergeRequest) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*fullMergeRequestProjectMergeRequest
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.fullMergeRequestProjectMergeRequest = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.mergeRequest)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalfullMergeRequestProjectMergeRequest struct {
+	Id string `json:"id"`
+
+	Iid string `json:"iid"`
+
+	ProjectId int `json:"projectId"`
+
+	SourceProjectId int `json:"sourceProjectId"`
+
+	SourceProject mergeRequestSourceProject `json:"sourceProject"`
+
+	Title string `json:"title"`
+
+	Description string `json:"description"`
+
+	State MergeRequestState `json:"state"`
+
+	CreatedAt time.Time `json:"createdAt"`
+
+	UpdatedAt time.Time `json:"updatedAt"`
+
+	HeadPipeline mergeRequestHeadPipeline `json:"headPipeline"`
+
+	Labels mergeRequestLabelsLabelConnection `json:"labels"`
+
+	SourceBranch string `json:"sourceBranch"`
+
+	TargetBranch string `json:"targetBranch"`
+
+	WebUrl string `json:"webUrl"`
+
+	Draft bool `json:"draft"`
+
+	Author mergeRequestAuthorUserCore `json:"author"`
+
+	DiffRefs mergeRequestDiffRefs `json:"diffRefs"`
+
+	Notes mergeRequestNotesNoteConnection `json:"notes"`
+
+	Pipelines mergeRequestPipelinesPipelineConnection `json:"pipelines"`
+}
+
+func (v *fullMergeRequestProjectMergeRequest) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *fullMergeRequestProjectMergeRequest) __premarshalJSON() (*__premarshalfullMergeRequestProjectMergeRequest, error) {
+	var retval __premarshalfullMergeRequestProjectMergeRequest
+
+	retval.Id = v.mergeRequest.Id
+	retval.Iid = v.mergeRequest.Iid
+	retval.ProjectId = v.mergeRequest.ProjectId
+	retval.SourceProjectId = v.mergeRequest.SourceProjectId
+	retval.SourceProject = v.mergeRequest.SourceProject
+	retval.Title = v.mergeRequest.Title
+	retval.Description = v.mergeRequest.Description
+	retval.State = v.mergeRequest.State
+	retval.CreatedAt = v.mergeRequest.CreatedAt
+	retval.UpdatedAt = v.mergeRequest.UpdatedAt
+	retval.HeadPipeline = v.mergeRequest.HeadPipeline
+	retval.Labels = v.mergeRequest.Labels
+	retval.SourceBranch = v.mergeRequest.SourceBranch
+	retval.TargetBranch = v.mergeRequest.TargetBranch
+	retval.WebUrl = v.mergeRequest.WebUrl
+	retval.Draft = v.mergeRequest.Draft
+	retval.Author = v.mergeRequest.Author
+	retval.DiffRefs = v.mergeRequest.DiffRefs
+	retval.Notes = v.mergeRequest.Notes
+	retval.Pipelines = v.mergeRequest.Pipelines
+	return &retval, nil
+}
+
+// fullMergeRequestResponse is returned by fullMergeRequest on success.
+type fullMergeRequestResponse struct {
+	// Find a project.
+	Project fullMergeRequestProject `json:"project"`
+}
+
+// GetProject returns fullMergeRequestResponse.Project, and is useful for accessing the field via an interface.
+func (v *fullMergeRequestResponse) GetProject() fullMergeRequestProject { return v.Project }
+
+// label includes the GraphQL fields of Label requested by the fragment label.
+type label struct {
+	// Content of the label.
+	Title string `json:"title"`
+}
+
+// GetTitle returns label.Title, and is useful for accessing the field via an interface.
+func (v *label) GetTitle() string { return v.Title }
+
+// mergeRequest includes the GraphQL fields of MergeRequest requested by the fragment mergeRequest.
+type mergeRequest struct {
+	// ID of the merge request.
+	Id string `json:"id"`
+	// Internal ID of the merge request.
+	Iid string `json:"iid"`
+	// ID of the merge request project.
+	ProjectId int `json:"projectId"`
+	// ID of the merge request source project.
+	SourceProjectId int `json:"sourceProjectId"`
+	// Source project of the merge request.
+	SourceProject mergeRequestSourceProject `json:"sourceProject"`
+	// Title of the merge request.
+	Title string `json:"title"`
+	// Description of the merge request (Markdown rendered as HTML for caching).
+	Description string `json:"description"`
+	// State of the merge request.
+	State MergeRequestState `json:"state"`
+	// Timestamp of when the merge request was created.
+	CreatedAt time.Time `json:"createdAt"`
+	// Timestamp of when the merge request was last updated.
+	UpdatedAt time.Time `json:"updatedAt"`
+	// The pipeline running on the branch HEAD of the merge request.
+	HeadPipeline mergeRequestHeadPipeline `json:"headPipeline"`
+	// Labels of the merge request.
+	Labels mergeRequestLabelsLabelConnection `json:"labels"`
+	// Source branch of the merge request.
+	SourceBranch string `json:"sourceBranch"`
+	// Target branch of the merge request.
+	TargetBranch string `json:"targetBranch"`
+	// Web URL of the merge request.
+	WebUrl string `json:"webUrl"`
+	// Indicates if the merge request is a draft.
+	Draft bool `json:"draft"`
+	// User who created this merge request.
+	Author mergeRequestAuthorUserCore `json:"author"`
+	// References of the base SHA, the head SHA, and the start SHA for this merge request.
+	DiffRefs mergeRequestDiffRefs `json:"diffRefs"`
+	// All notes on this noteable.
+	Notes mergeRequestNotesNoteConnection `json:"notes"`
+	// Pipelines for the merge request. Note: for performance reasons, no more than
+	// the most recent 500 pipelines will be returned.
+	Pipelines mergeRequestPipelinesPipelineConnection `json:"pipelines"`
+}
+
+// GetId returns mergeRequest.Id, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetId() string { return v.Id }
+
+// GetIid returns mergeRequest.Iid, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetIid() string { return v.Iid }
+
+// GetProjectId returns mergeRequest.ProjectId, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetProjectId() int { return v.ProjectId }
+
+// GetSourceProjectId returns mergeRequest.SourceProjectId, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetSourceProjectId() int { return v.SourceProjectId }
+
+// GetSourceProject returns mergeRequest.SourceProject, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetSourceProject() mergeRequestSourceProject { return v.SourceProject }
+
+// GetTitle returns mergeRequest.Title, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetTitle() string { return v.Title }
+
+// GetDescription returns mergeRequest.Description, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetDescription() string { return v.Description }
+
+// GetState returns mergeRequest.State, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetState() MergeRequestState { return v.State }
+
+// GetCreatedAt returns mergeRequest.CreatedAt, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetCreatedAt() time.Time { return v.CreatedAt }
+
+// GetUpdatedAt returns mergeRequest.UpdatedAt, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetUpdatedAt() time.Time { return v.UpdatedAt }
+
+// GetHeadPipeline returns mergeRequest.HeadPipeline, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetHeadPipeline() mergeRequestHeadPipeline { return v.HeadPipeline }
+
+// GetLabels returns mergeRequest.Labels, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetLabels() mergeRequestLabelsLabelConnection { return v.Labels }
+
+// GetSourceBranch returns mergeRequest.SourceBranch, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetSourceBranch() string { return v.SourceBranch }
+
+// GetTargetBranch returns mergeRequest.TargetBranch, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetTargetBranch() string { return v.TargetBranch }
+
+// GetWebUrl returns mergeRequest.WebUrl, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetWebUrl() string { return v.WebUrl }
+
+// GetDraft returns mergeRequest.Draft, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetDraft() bool { return v.Draft }
+
+// GetAuthor returns mergeRequest.Author, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetAuthor() mergeRequestAuthorUserCore { return v.Author }
+
+// GetDiffRefs returns mergeRequest.DiffRefs, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetDiffRefs() mergeRequestDiffRefs { return v.DiffRefs }
+
+// GetNotes returns mergeRequest.Notes, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetNotes() mergeRequestNotesNoteConnection { return v.Notes }
+
+// GetPipelines returns mergeRequest.Pipelines, and is useful for accessing the field via an interface.
+func (v *mergeRequest) GetPipelines() mergeRequestPipelinesPipelineConnection { return v.Pipelines }
+
+// mergeRequestAuthorUserCore includes the requested fields of the GraphQL type UserCore.
+// The GraphQL type's documentation follows.
+//
+// Core represention of a GitLab user.
+type mergeRequestAuthorUserCore struct {
+	userUserCore `json:"-"`
+}
+
+// GetId returns mergeRequestAuthorUserCore.Id, and is useful for accessing the field via an interface.
+func (v *mergeRequestAuthorUserCore) GetId() string { return v.userUserCore.Id }
+
+// GetName returns mergeRequestAuthorUserCore.Name, and is useful for accessing the field via an interface.
+func (v *mergeRequestAuthorUserCore) GetName() string { return v.userUserCore.Name }
+
+// GetUsername returns mergeRequestAuthorUserCore.Username, and is useful for accessing the field via an interface.
+func (v *mergeRequestAuthorUserCore) GetUsername() string { return v.userUserCore.Username }
+
+// GetPublicEmail returns mergeRequestAuthorUserCore.PublicEmail, and is useful for accessing the field via an interface.
+func (v *mergeRequestAuthorUserCore) GetPublicEmail() string { return v.userUserCore.PublicEmail }
+
+// GetState returns mergeRequestAuthorUserCore.State, and is useful for accessing the field via an interface.
+func (v *mergeRequestAuthorUserCore) GetState() UserState { return v.userUserCore.State }
+
+// GetAvatarUrl returns mergeRequestAuthorUserCore.AvatarUrl, and is useful for accessing the field via an interface.
+func (v *mergeRequestAuthorUserCore) GetAvatarUrl() string { return v.userUserCore.AvatarUrl }
+
+// GetWebUrl returns mergeRequestAuthorUserCore.WebUrl, and is useful for accessing the field via an interface.
+func (v *mergeRequestAuthorUserCore) GetWebUrl() string { return v.userUserCore.WebUrl }
+
+func (v *mergeRequestAuthorUserCore) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*mergeRequestAuthorUserCore
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.mergeRequestAuthorUserCore = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.userUserCore)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalmergeRequestAuthorUserCore struct {
+	Id string `json:"id"`
+
+	Name string `json:"name"`
+
+	Username string `json:"username"`
+
+	PublicEmail string `json:"publicEmail"`
+
+	State UserState `json:"state"`
+
+	AvatarUrl string `json:"avatarUrl"`
+
+	WebUrl string `json:"webUrl"`
+}
+
+func (v *mergeRequestAuthorUserCore) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *mergeRequestAuthorUserCore) __premarshalJSON() (*__premarshalmergeRequestAuthorUserCore, error) {
+	var retval __premarshalmergeRequestAuthorUserCore
+
+	retval.Id = v.userUserCore.Id
+	retval.Name = v.userUserCore.Name
+	retval.Username = v.userUserCore.Username
+	retval.PublicEmail = v.userUserCore.PublicEmail
+	retval.State = v.userUserCore.State
+	retval.AvatarUrl = v.userUserCore.AvatarUrl
+	retval.WebUrl = v.userUserCore.WebUrl
+	return &retval, nil
+}
+
+// mergeRequestDiffRefs includes the requested fields of the GraphQL type DiffRefs.
+type mergeRequestDiffRefs struct {
+	// Merge base of the branch the comment was made on.
+	BaseSha string `json:"baseSha"`
+	// SHA of the HEAD at the time the comment was made.
+	HeadSha string `json:"headSha"`
+	// SHA of the branch being compared against.
+	StartSha string `json:"startSha"`
+}
+
+// GetBaseSha returns mergeRequestDiffRefs.BaseSha, and is useful for accessing the field via an interface.
+func (v *mergeRequestDiffRefs) GetBaseSha() string { return v.BaseSha }
+
+// GetHeadSha returns mergeRequestDiffRefs.HeadSha, and is useful for accessing the field via an interface.
+func (v *mergeRequestDiffRefs) GetHeadSha() string { return v.HeadSha }
+
+// GetStartSha returns mergeRequestDiffRefs.StartSha, and is useful for accessing the field via an interface.
+func (v *mergeRequestDiffRefs) GetStartSha() string { return v.StartSha }
+
+// mergeRequestHeadPipeline includes the requested fields of the GraphQL type Pipeline.
+type mergeRequestHeadPipeline struct {
+	pipeline `json:"-"`
+}
+
+// GetId returns mergeRequestHeadPipeline.Id, and is useful for accessing the field via an interface.
+func (v *mergeRequestHeadPipeline) GetId() string { return v.pipeline.Id }
+
+// GetSha returns mergeRequestHeadPipeline.Sha, and is useful for accessing the field via an interface.
+func (v *mergeRequestHeadPipeline) GetSha() string { return v.pipeline.Sha }
+
+// GetStatus returns mergeRequestHeadPipeline.Status, and is useful for accessing the field via an interface.
+func (v *mergeRequestHeadPipeline) GetStatus() PipelineStatusEnum { return v.pipeline.Status }
+
+// GetPath returns mergeRequestHeadPipeline.Path, and is useful for accessing the field via an interface.
+func (v *mergeRequestHeadPipeline) GetPath() string { return v.pipeline.Path }
+
+// GetCreatedAt returns mergeRequestHeadPipeline.CreatedAt, and is useful for accessing the field via an interface.
+func (v *mergeRequestHeadPipeline) GetCreatedAt() time.Time { return v.pipeline.CreatedAt }
+
+// GetUpdatedAt returns mergeRequestHeadPipeline.UpdatedAt, and is useful for accessing the field via an interface.
+func (v *mergeRequestHeadPipeline) GetUpdatedAt() time.Time { return v.pipeline.UpdatedAt }
+
+func (v *mergeRequestHeadPipeline) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*mergeRequestHeadPipeline
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.mergeRequestHeadPipeline = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.pipeline)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalmergeRequestHeadPipeline struct {
+	Id string `json:"id"`
+
+	Sha string `json:"sha"`
+
+	Status PipelineStatusEnum `json:"status"`
+
+	Path string `json:"path"`
+
+	CreatedAt time.Time `json:"createdAt"`
+
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+func (v *mergeRequestHeadPipeline) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *mergeRequestHeadPipeline) __premarshalJSON() (*__premarshalmergeRequestHeadPipeline, error) {
+	var retval __premarshalmergeRequestHeadPipeline
+
+	retval.Id = v.pipeline.Id
+	retval.Sha = v.pipeline.Sha
+	retval.Status = v.pipeline.Status
+	retval.Path = v.pipeline.Path
+	retval.CreatedAt = v.pipeline.CreatedAt
+	retval.UpdatedAt = v.pipeline.UpdatedAt
+	return &retval, nil
+}
+
+// mergeRequestLabelPageProject includes the requested fields of the GraphQL type Project.
+type mergeRequestLabelPageProject struct {
+	// A single merge request of the project.
+	MergeRequest mergeRequestLabelPageProjectMergeRequest `json:"mergeRequest"`
+}
+
+// GetMergeRequest returns mergeRequestLabelPageProject.MergeRequest, and is useful for accessing the field via an interface.
+func (v *mergeRequestLabelPageProject) GetMergeRequest() mergeRequestLabelPageProjectMergeRequest {
+	return v.MergeRequest
+}
+
+// mergeRequestLabelPageProjectMergeRequest includes the requested fields of the GraphQL type MergeRequest.
+type mergeRequestLabelPageProjectMergeRequest struct {
+	// Labels of the merge request.
+	Labels mergeRequestLabelPageProjectMergeRequestLabelsLabelConnection `json:"labels"`
+}
+
+// GetLabels returns mergeRequestLabelPageProjectMergeRequest.Labels, and is useful for accessing the field via an interface.
+func (v *mergeRequestLabelPageProjectMergeRequest) GetLabels() mergeRequestLabelPageProjectMergeRequestLabelsLabelConnection {
+	return v.Labels
+}
+
+// mergeRequestLabelPageProjectMergeRequestLabelsLabelConnection includes the requested fields of the GraphQL type LabelConnection.
+// The GraphQL type's documentation follows.
+//
+// The connection type for Label.
+type mergeRequestLabelPageProjectMergeRequestLabelsLabelConnection struct {
+	// Information to aid in pagination.
+	PageInfo mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo `json:"pageInfo"`
+	// A list of nodes.
+	Nodes []mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionNodesLabel `json:"nodes"`
+}
+
+// GetPageInfo returns mergeRequestLabelPageProjectMergeRequestLabelsLabelConnection.PageInfo, and is useful for accessing the field via an interface.
+func (v *mergeRequestLabelPageProjectMergeRequestLabelsLabelConnection) GetPageInfo() mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo {
+	return v.PageInfo
+}
+
+// GetNodes returns mergeRequestLabelPageProjectMergeRequestLabelsLabelConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *mergeRequestLabelPageProjectMergeRequestLabelsLabelConnection) GetNodes() []mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionNodesLabel {
+	return v.Nodes
+}
+
+// mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionNodesLabel includes the requested fields of the GraphQL type Label.
+type mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionNodesLabel struct {
+	label `json:"-"`
+}
+
+// GetTitle returns mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionNodesLabel.Title, and is useful for accessing the field via an interface.
+func (v *mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionNodesLabel) GetTitle() string {
+	return v.label.Title
+}
+
+func (v *mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionNodesLabel) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionNodesLabel
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionNodesLabel = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.label)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalmergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionNodesLabel struct {
+	Title string `json:"title"`
+}
+
+func (v *mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionNodesLabel) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionNodesLabel) __premarshalJSON() (*__premarshalmergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionNodesLabel, error) {
+	var retval __premarshalmergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionNodesLabel
+
+	retval.Title = v.label.Title
+	return &retval, nil
+}
+
+// mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
+// The GraphQL type's documentation follows.
+//
+// Information about pagination in a connection.
+type mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo struct {
+	pageInfo `json:"-"`
+}
+
+// GetHasNextPage returns mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
+func (v *mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo) GetHasNextPage() bool {
+	return v.pageInfo.HasNextPage
+}
+
+// GetEndCursor returns mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
+func (v *mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo) GetEndCursor() string {
+	return v.pageInfo.EndCursor
+}
+
+func (v *mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.pageInfo)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalmergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo struct {
+	HasNextPage bool `json:"hasNextPage"`
+
+	EndCursor string `json:"endCursor"`
+}
+
+func (v *mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *mergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo) __premarshalJSON() (*__premarshalmergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo, error) {
+	var retval __premarshalmergeRequestLabelPageProjectMergeRequestLabelsLabelConnectionPageInfo
+
+	retval.HasNextPage = v.pageInfo.HasNextPage
+	retval.EndCursor = v.pageInfo.EndCursor
+	return &retval, nil
+}
+
+// mergeRequestLabelPageResponse is returned by mergeRequestLabelPage on success.
+type mergeRequestLabelPageResponse struct {
+	// Find a project.
+	Project mergeRequestLabelPageProject `json:"project"`
+}
+
+// GetProject returns mergeRequestLabelPageResponse.Project, and is useful for accessing the field via an interface.
+func (v *mergeRequestLabelPageResponse) GetProject() mergeRequestLabelPageProject { return v.Project }
+
+// mergeRequestLabelsLabelConnection includes the requested fields of the GraphQL type LabelConnection.
+// The GraphQL type's documentation follows.
+//
+// The connection type for Label.
+type mergeRequestLabelsLabelConnection struct {
+	// Information to aid in pagination.
+	PageInfo mergeRequestLabelsLabelConnectionPageInfo `json:"pageInfo"`
+	// A list of nodes.
+	Nodes []mergeRequestLabelsLabelConnectionNodesLabel `json:"nodes"`
+}
+
+// GetPageInfo returns mergeRequestLabelsLabelConnection.PageInfo, and is useful for accessing the field via an interface.
+func (v *mergeRequestLabelsLabelConnection) GetPageInfo() mergeRequestLabelsLabelConnectionPageInfo {
+	return v.PageInfo
+}
+
+// GetNodes returns mergeRequestLabelsLabelConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *mergeRequestLabelsLabelConnection) GetNodes() []mergeRequestLabelsLabelConnectionNodesLabel {
+	return v.Nodes
+}
+
+// mergeRequestLabelsLabelConnectionNodesLabel includes the requested fields of the GraphQL type Label.
+type mergeRequestLabelsLabelConnectionNodesLabel struct {
+	label `json:"-"`
+}
+
+// GetTitle returns mergeRequestLabelsLabelConnectionNodesLabel.Title, and is useful for accessing the field via an interface.
+func (v *mergeRequestLabelsLabelConnectionNodesLabel) GetTitle() string { return v.label.Title }
+
+func (v *mergeRequestLabelsLabelConnectionNodesLabel) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*mergeRequestLabelsLabelConnectionNodesLabel
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.mergeRequestLabelsLabelConnectionNodesLabel = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.label)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalmergeRequestLabelsLabelConnectionNodesLabel struct {
+	Title string `json:"title"`
+}
+
+func (v *mergeRequestLabelsLabelConnectionNodesLabel) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *mergeRequestLabelsLabelConnectionNodesLabel) __premarshalJSON() (*__premarshalmergeRequestLabelsLabelConnectionNodesLabel, error) {
+	var retval __premarshalmergeRequestLabelsLabelConnectionNodesLabel
+
+	retval.Title = v.label.Title
+	return &retval, nil
+}
+
+// mergeRequestLabelsLabelConnectionPageInfo includes the requested fields of the GraphQL type PageInfo.
+// The GraphQL type's documentation follows.
+//
+// Information about pagination in a connection.
+type mergeRequestLabelsLabelConnectionPageInfo struct {
+	pageInfo `json:"-"`
+}
+
+// GetHasNextPage returns mergeRequestLabelsLabelConnectionPageInfo.HasNextPage, and is useful for accessing the field via an interface.
+func (v *mergeRequestLabelsLabelConnectionPageInfo) GetHasNextPage() bool {
+	return v.pageInfo.HasNextPage
+}
+
+// GetEndCursor returns mergeRequestLabelsLabelConnectionPageInfo.EndCursor, and is useful for accessing the field via an interface.
+func (v *mergeRequestLabelsLabelConnectionPageInfo) GetEndCursor() string {
+	return v.pageInfo.EndCursor
+}
+
+func (v *mergeRequestLabelsLabelConnectionPageInfo) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*mergeRequestLabelsLabelConnectionPageInfo
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.mergeRequestLabelsLabelConnectionPageInfo = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.pageInfo)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalmergeRequestLabelsLabelConnectionPageInfo struct {
+	HasNextPage bool `json:"hasNextPage"`
+
+	EndCursor string `json:"endCursor"`
+}
+
+func (v *mergeRequestLabelsLabelConnectionPageInfo) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *mergeRequestLabelsLabelConnectionPageInfo) __premarshalJSON() (*__premarshalmergeRequestLabelsLabelConnectionPageInfo, error) {
+	var retval __premarshalmergeRequestLabelsLabelConnectionPageInfo
+
+	retval.HasNextPage = v.pageInfo.HasNextPage
+	retval.EndCursor = v.pageInfo.EndCursor
+	return &retval, nil
+}
+
+// mergeRequestNotesNoteConnection includes the requested fields of the GraphQL type NoteConnection.
+// The GraphQL type's documentation follows.
+//
+// The connection type for Note.
+type mergeRequestNotesNoteConnection struct {
+	// A list of nodes.
+	Nodes []mergeRequestNotesNoteConnectionNodesNote `json:"nodes"`
+}
+
+// GetNodes returns mergeRequestNotesNoteConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *mergeRequestNotesNoteConnection) GetNodes() []mergeRequestNotesNoteConnectionNodesNote {
+	return v.Nodes
+}
+
+// mergeRequestNotesNoteConnectionNodesNote includes the requested fields of the GraphQL type Note.
+type mergeRequestNotesNoteConnectionNodesNote struct {
+	note `json:"-"`
+}
+
+// GetId returns mergeRequestNotesNoteConnectionNodesNote.Id, and is useful for accessing the field via an interface.
+func (v *mergeRequestNotesNoteConnectionNodesNote) GetId() string { return v.note.Id }
+
+// GetBody returns mergeRequestNotesNoteConnectionNodesNote.Body, and is useful for accessing the field via an interface.
+func (v *mergeRequestNotesNoteConnectionNodesNote) GetBody() string { return v.note.Body }
+
+// GetAuthor returns mergeRequestNotesNoteConnectionNodesNote.Author, and is useful for accessing the field via an interface.
+func (v *mergeRequestNotesNoteConnectionNodesNote) GetAuthor() noteAuthorUserCore {
+	return v.note.Author
+}
+
+// GetCreatedAt returns mergeRequestNotesNoteConnectionNodesNote.CreatedAt, and is useful for accessing the field via an interface.
+func (v *mergeRequestNotesNoteConnectionNodesNote) GetCreatedAt() time.Time { return v.note.CreatedAt }
+
+// GetSystem returns mergeRequestNotesNoteConnectionNodesNote.System, and is useful for accessing the field via an interface.
+func (v *mergeRequestNotesNoteConnectionNodesNote) GetSystem() bool { return v.note.System }
+
+func (v *mergeRequestNotesNoteConnectionNodesNote) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*mergeRequestNotesNoteConnectionNodesNote
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.mergeRequestNotesNoteConnectionNodesNote = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.note)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalmergeRequestNotesNoteConnectionNodesNote struct {
+	Id string `json:"id"`
+
+	Body string `json:"body"`
+
+	Author noteAuthorUserCore `json:"author"`
+
+	CreatedAt time.Time `json:"createdAt"`
+
+	System bool `json:"system"`
+}
+
+func (v *mergeRequestNotesNoteConnectionNodesNote) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *mergeRequestNotesNoteConnectionNodesNote) __premarshalJSON() (*__premarshalmergeRequestNotesNoteConnectionNodesNote, error) {
+	var retval __premarshalmergeRequestNotesNoteConnectionNodesNote
+
+	retval.Id = v.note.Id
+	retval.Body = v.note.Body
+	retval.Author = v.note.Author
+	retval.CreatedAt = v.note.CreatedAt
+	retval.System = v.note.System
+	return &retval, nil
+}
+
+// mergeRequestPipelinesPipelineConnection includes the requested fields of the GraphQL type PipelineConnection.
+// The GraphQL type's documentation follows.
+//
+// The connection type for Pipeline.
+type mergeRequestPipelinesPipelineConnection struct {
+	// A list of nodes.
+	Nodes []mergeRequestPipelinesPipelineConnectionNodesPipeline `json:"nodes"`
+}
+
+// GetNodes returns mergeRequestPipelinesPipelineConnection.Nodes, and is useful for accessing the field via an interface.
+func (v *mergeRequestPipelinesPipelineConnection) GetNodes() []mergeRequestPipelinesPipelineConnectionNodesPipeline {
+	return v.Nodes
+}
+
+// mergeRequestPipelinesPipelineConnectionNodesPipeline includes the requested fields of the GraphQL type Pipeline.
+type mergeRequestPipelinesPipelineConnectionNodesPipeline struct {
+	pipeline `json:"-"`
+}
+
+// GetId returns mergeRequestPipelinesPipelineConnectionNodesPipeline.Id, and is useful for accessing the field via an interface.
+func (v *mergeRequestPipelinesPipelineConnectionNodesPipeline) GetId() string { return v.pipeline.Id }
+
+// GetSha returns mergeRequestPipelinesPipelineConnectionNodesPipeline.Sha, and is useful for accessing the field via an interface.
+func (v *mergeRequestPipelinesPipelineConnectionNodesPipeline) GetSha() string { return v.pipeline.Sha }
+
+// GetStatus returns mergeRequestPipelinesPipelineConnectionNodesPipeline.Status, and is useful for accessing the field via an interface.
+func (v *mergeRequestPipelinesPipelineConnectionNodesPipeline) GetStatus() PipelineStatusEnum {
+	return v.pipeline.Status
+}
+
+// GetPath returns mergeRequestPipelinesPipelineConnectionNodesPipeline.Path, and is useful for accessing the field via an interface.
+func (v *mergeRequestPipelinesPipelineConnectionNodesPipeline) GetPath() string {
+	return v.pipeline.Path
+}
+
+// GetCreatedAt returns mergeRequestPipelinesPipelineConnectionNodesPipeline.CreatedAt, and is useful for accessing the field via an interface.
+func (v *mergeRequestPipelinesPipelineConnectionNodesPipeline) GetCreatedAt() time.Time {
+	return v.pipeline.CreatedAt
+}
+
+// GetUpdatedAt returns mergeRequestPipelinesPipelineConnectionNodesPipeline.UpdatedAt, and is useful for accessing the field via an interface.
+func (v *mergeRequestPipelinesPipelineConnectionNodesPipeline) GetUpdatedAt() time.Time {
+	return v.pipeline.UpdatedAt
+}
+
+func (v *mergeRequestPipelinesPipelineConnectionNodesPipeline) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*mergeRequestPipelinesPipelineConnectionNodesPipeline
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.mergeRequestPipelinesPipelineConnectionNodesPipeline = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.pipeline)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalmergeRequestPipelinesPipelineConnectionNodesPipeline struct {
+	Id string `json:"id"`
+
+	Sha string `json:"sha"`
+
+	Status PipelineStatusEnum `json:"status"`
+
+	Path string `json:"path"`
+
+	CreatedAt time.Time `json:"createdAt"`
+
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+func (v *mergeRequestPipelinesPipelineConnectionNodesPipeline) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *mergeRequestPipelinesPipelineConnectionNodesPipeline) __premarshalJSON() (*__premarshalmergeRequestPipelinesPipelineConnectionNodesPipeline, error) {
+	var retval __premarshalmergeRequestPipelinesPipelineConnectionNodesPipeline
+
+	retval.Id = v.pipeline.Id
+	retval.Sha = v.pipeline.Sha
+	retval.Status = v.pipeline.Status
+	retval.Path = v.pipeline.Path
+	retval.CreatedAt = v.pipeline.CreatedAt
+	retval.UpdatedAt = v.pipeline.UpdatedAt
+	return &retval, nil
+}
+
+// mergeRequestSourceProject includes the requested fields of the GraphQL type Project.
+type mergeRequestSourceProject struct {
+	// Namespace of the project.
+	Namespace mergeRequestSourceProjectNamespace `json:"namespace"`
+}
+
+// GetNamespace returns mergeRequestSourceProject.Namespace, and is useful for accessing the field via an interface.
+func (v *mergeRequestSourceProject) GetNamespace() mergeRequestSourceProjectNamespace {
+	return v.Namespace
+}
+
+// mergeRequestSourceProjectNamespace includes the requested fields of the GraphQL type Namespace.
+type mergeRequestSourceProjectNamespace struct {
+	// Name of the namespace.
+	Name string `json:"name"`
+}
+
+// GetName returns mergeRequestSourceProjectNamespace.Name, and is useful for accessing the field via an interface.
+func (v *mergeRequestSourceProjectNamespace) GetName() string { return v.Name }
+
+// note includes the GraphQL fields of Note requested by the fragment note.
+type note struct {
+	// ID of the note.
+	Id string `json:"id"`
+	// Content of the note.
+	Body string `json:"body"`
+	// User who wrote this note.
+	Author noteAuthorUserCore `json:"author"`
+	// Timestamp of the note creation.
+	CreatedAt time.Time `json:"createdAt"`
+	// Indicates whether this note was created by the system or by a user.
+	System bool `json:"system"`
+}
+
+// GetId returns note.Id, and is useful for accessing the field via an interface.
+func (v *note) GetId() string { return v.Id }
+
+// GetBody returns note.Body, and is useful for accessing the field via an interface.
+func (v *note) GetBody() string { return v.Body }
+
+// GetAuthor returns note.Author, and is useful for accessing the field via an interface.
+func (v *note) GetAuthor() noteAuthorUserCore { return v.Author }
+
+// GetCreatedAt returns note.CreatedAt, and is useful for accessing the field via an interface.
+func (v *note) GetCreatedAt() time.Time { return v.CreatedAt }
+
+// GetSystem returns note.System, and is useful for accessing the field via an interface.
+func (v *note) GetSystem() bool { return v.System }
+
+// noteAuthorUserCore includes the requested fields of the GraphQL type UserCore.
+// The GraphQL type's documentation follows.
+//
+// Core represention of a GitLab user.
+type noteAuthorUserCore struct {
+	userUserCore `json:"-"`
+}
+
+// GetId returns noteAuthorUserCore.Id, and is useful for accessing the field via an interface.
+func (v *noteAuthorUserCore) GetId() string { return v.userUserCore.Id }
+
+// GetName returns noteAuthorUserCore.Name, and is useful for accessing the field via an interface.
+func (v *noteAuthorUserCore) GetName() string { return v.userUserCore.Name }
+
+// GetUsername returns noteAuthorUserCore.Username, and is useful for accessing the field via an interface.
+func (v *noteAuthorUserCore) GetUsername() string { return v.userUserCore.Username }
+
+// GetPublicEmail returns noteAuthorUserCore.PublicEmail, and is useful for accessing the field via an interface.
+func (v *noteAuthorUserCore) GetPublicEmail() string { return v.userUserCore.PublicEmail }
+
+// GetState returns noteAuthorUserCore.State, and is useful for accessing the field via an interface.
+func (v *noteAuthorUserCore) GetState() UserState { return v.userUserCore.State }
+
+// GetAvatarUrl returns noteAuthorUserCore.AvatarUrl, and is useful for accessing the field via an interface.
+func (v *noteAuthorUserCore) GetAvatarUrl() string { return v.userUserCore.AvatarUrl }
+
+// GetWebUrl returns noteAuthorUserCore.WebUrl, and is useful for accessing the field via an interface.
+func (v *noteAuthorUserCore) GetWebUrl() string { return v.userUserCore.WebUrl }
+
+func (v *noteAuthorUserCore) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*noteAuthorUserCore
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.noteAuthorUserCore = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.userUserCore)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalnoteAuthorUserCore struct {
+	Id string `json:"id"`
+
+	Name string `json:"name"`
+
+	Username string `json:"username"`
+
+	PublicEmail string `json:"publicEmail"`
+
+	State UserState `json:"state"`
+
+	AvatarUrl string `json:"avatarUrl"`
+
+	WebUrl string `json:"webUrl"`
+}
+
+func (v *noteAuthorUserCore) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *noteAuthorUserCore) __premarshalJSON() (*__premarshalnoteAuthorUserCore, error) {
+	var retval __premarshalnoteAuthorUserCore
+
+	retval.Id = v.userUserCore.Id
+	retval.Name = v.userUserCore.Name
+	retval.Username = v.userUserCore.Username
+	retval.PublicEmail = v.userUserCore.PublicEmail
+	retval.State = v.userUserCore.State
+	retval.AvatarUrl = v.userUserCore.AvatarUrl
+	retval.WebUrl = v.userUserCore.WebUrl
+	return &retval, nil
+}
+
+// pageInfo includes the GraphQL fields of PageInfo requested by the fragment pageInfo.
+// The GraphQL type's documentation follows.
+//
+// Information about pagination in a connection.
+type pageInfo struct {
+	// When paginating forwards, are there more items?
+	HasNextPage bool `json:"hasNextPage"`
+	// When paginating forwards, the cursor to continue.
+	EndCursor string `json:"endCursor"`
+}
+
+// GetHasNextPage returns pageInfo.HasNextPage, and is useful for accessing the field via an interface.
+func (v *pageInfo) GetHasNextPage() bool { return v.HasNextPage }
+
+// GetEndCursor returns pageInfo.EndCursor, and is useful for accessing the field via an interface.
+func (v *pageInfo) GetEndCursor() string { return v.EndCursor }
+
+// pipeline includes the GraphQL fields of Pipeline requested by the fragment pipeline.
+type pipeline struct {
+	// ID of the pipeline.
+	Id string `json:"id"`
+	// SHA of the pipeline's commit.
+	Sha string `json:"sha"`
+	// Status of the pipeline (CREATED, WAITING_FOR_RESOURCE, PREPARING, PENDING,
+	// RUNNING, FAILED, SUCCESS, CANCELED, SKIPPED, MANUAL, SCHEDULED)
+	Status PipelineStatusEnum `json:"status"`
+	// Relative path to the pipeline's page.
+	Path string `json:"path"`
+	// Timestamp of the pipeline's creation.
+	CreatedAt time.Time `json:"createdAt"`
+	// Timestamp of the pipeline's last activity.
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// GetId returns pipeline.Id, and is useful for accessing the field via an interface.
+func (v *pipeline) GetId() string { return v.Id }
+
+// GetSha returns pipeline.Sha, and is useful for accessing the field via an interface.
+func (v *pipeline) GetSha() string { return v.Sha }
+
+// GetStatus returns pipeline.Status, and is useful for accessing the field via an interface.
+func (v *pipeline) GetStatus() PipelineStatusEnum { return v.Status }
+
+// GetPath returns pipeline.Path, and is useful for accessing the field via an interface.
+func (v *pipeline) GetPath() string { return v.Path }
+
+// GetCreatedAt returns pipeline.CreatedAt, and is useful for accessing the field via an interface.
+func (v *pipeline) GetCreatedAt() time.Time { return v.CreatedAt }
+
+// GetUpdatedAt returns pipeline.UpdatedAt, and is useful for accessing the field via an interface.
+func (v *pipeline) GetUpdatedAt() time.Time { return v.UpdatedAt }
+
+// user includes the GraphQL fields of User requested by the fragment user.
+// The GraphQL type's documentation follows.
+//
+// Representation of a GitLab user.
+//
+// user is implemented by the following types:
+// userMergeRequestAssignee
+// userMergeRequestReviewer
+// userUserCore
+type user interface {
+	implementsGraphQLInterfaceuser()
+	// GetId returns the interface-field "id" from its implementation.
+	// The GraphQL interface field's documentation follows.
+	//
+	// ID of the user.
+	GetId() string
+	// GetName returns the interface-field "name" from its implementation.
+	// The GraphQL interface field's documentation follows.
+	//
+	// Human-readable name of the user.
+	GetName() string
+	// GetUsername returns the interface-field "username" from its implementation.
+	// The GraphQL interface field's documentation follows.
+	//
+	// Username of the user. Unique within this instance of GitLab.
+	GetUsername() string
+	// GetPublicEmail returns the interface-field "publicEmail" from its implementation.
+	// The GraphQL interface field's documentation follows.
+	//
+	// User's public email.
+	GetPublicEmail() string
+	// GetState returns the interface-field "state" from its implementation.
+	// The GraphQL interface field's documentation follows.
+	//
+	// State of the user.
+	GetState() UserState
+	// GetAvatarUrl returns the interface-field "avatarUrl" from its implementation.
+	// The GraphQL interface field's documentation follows.
+	//
+	// URL of the user's avatar.
+	GetAvatarUrl() string
+	// GetWebUrl returns the interface-field "webUrl" from its implementation.
+	// The GraphQL interface field's documentation follows.
+	//
+	// Web URL of the user.
+	GetWebUrl() string
+}
+
+func (v *userMergeRequestAssignee) implementsGraphQLInterfaceuser() {}
+func (v *userMergeRequestReviewer) implementsGraphQLInterfaceuser() {}
+func (v *userUserCore) implementsGraphQLInterfaceuser()             {}
+
+func __unmarshaluser(b []byte, v *user) error {
+	if string(b) == "null" {
+		return nil
+	}
+
+	var tn struct {
+		TypeName string `json:"__typename"`
+	}
+	err := json.Unmarshal(b, &tn)
+	if err != nil {
+		return err
+	}
+
+	switch tn.TypeName {
+	case "MergeRequestAssignee":
+		*v = new(userMergeRequestAssignee)
+		return json.Unmarshal(b, *v)
+	case "MergeRequestReviewer":
+		*v = new(userMergeRequestReviewer)
+		return json.Unmarshal(b, *v)
+	case "UserCore":
+		*v = new(userUserCore)
+		return json.Unmarshal(b, *v)
+	case "":
+		return fmt.Errorf(
+			"response was missing User.__typename")
+	default:
+		return fmt.Errorf(
+			`unexpected concrete type for user: "%v"`, tn.TypeName)
+	}
+}
+
+func __marshaluser(v *user) ([]byte, error) {
+
+	var typename string
+	switch v := (*v).(type) {
+	case *userMergeRequestAssignee:
+		typename = "MergeRequestAssignee"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*userMergeRequestAssignee
+		}{typename, v}
+		return json.Marshal(result)
+	case *userMergeRequestReviewer:
+		typename = "MergeRequestReviewer"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*userMergeRequestReviewer
+		}{typename, v}
+		return json.Marshal(result)
+	case *userUserCore:
+		typename = "UserCore"
+
+		result := struct {
+			TypeName string `json:"__typename"`
+			*userUserCore
+		}{typename, v}
+		return json.Marshal(result)
+	case nil:
+		return []byte("null"), nil
+	default:
+		return nil, fmt.Errorf(
+			`unexpected concrete type for user: "%T"`, v)
+	}
+}
+
+// user includes the GraphQL fields of MergeRequestAssignee requested by the fragment user.
+// The GraphQL type's documentation follows.
+//
+// Representation of a GitLab user.
+type userMergeRequestAssignee struct {
+	// ID of the user.
+	Id string `json:"id"`
+	// Human-readable name of the user.
+	Name string `json:"name"`
+	// Username of the user. Unique within this instance of GitLab.
+	Username string `json:"username"`
+	// User's public email.
+	PublicEmail string `json:"publicEmail"`
+	// State of the user.
+	State UserState `json:"state"`
+	// URL of the user's avatar.
+	AvatarUrl string `json:"avatarUrl"`
+	// Web URL of the user.
+	WebUrl string `json:"webUrl"`
+}
+
+// GetId returns userMergeRequestAssignee.Id, and is useful for accessing the field via an interface.
+func (v *userMergeRequestAssignee) GetId() string { return v.Id }
+
+// GetName returns userMergeRequestAssignee.Name, and is useful for accessing the field via an interface.
+func (v *userMergeRequestAssignee) GetName() string { return v.Name }
+
+// GetUsername returns userMergeRequestAssignee.Username, and is useful for accessing the field via an interface.
+func (v *userMergeRequestAssignee) GetUsername() string { return v.Username }
+
+// GetPublicEmail returns userMergeRequestAssignee.PublicEmail, and is useful for accessing the field via an interface.
+func (v *userMergeRequestAssignee) GetPublicEmail() string { return v.PublicEmail }
+
+// GetState returns userMergeRequestAssignee.State, and is useful for accessing the field via an interface.
+func (v *userMergeRequestAssignee) GetState() UserState { return v.State }
+
+// GetAvatarUrl returns userMergeRequestAssignee.AvatarUrl, and is useful for accessing the field via an interface.
+func (v *userMergeRequestAssignee) GetAvatarUrl() string { return v.AvatarUrl }
+
+// GetWebUrl returns userMergeRequestAssignee.WebUrl, and is useful for accessing the field via an interface.
+func (v *userMergeRequestAssignee) GetWebUrl() string { return v.WebUrl }
+
+// user includes the GraphQL fields of MergeRequestReviewer requested by the fragment user.
+// The GraphQL type's documentation follows.
+//
+// Representation of a GitLab user.
+type userMergeRequestReviewer struct {
+	// ID of the user.
+	Id string `json:"id"`
+	// Human-readable name of the user.
+	Name string `json:"name"`
+	// Username of the user. Unique within this instance of GitLab.
+	Username string `json:"username"`
+	// User's public email.
+	PublicEmail string `json:"publicEmail"`
+	// State of the user.
+	State UserState `json:"state"`
+	// URL of the user's avatar.
+	AvatarUrl string `json:"avatarUrl"`
+	// Web URL of the user.
+	WebUrl string `json:"webUrl"`
+}
+
+// GetId returns userMergeRequestReviewer.Id, and is useful for accessing the field via an interface.
+func (v *userMergeRequestReviewer) GetId() string { return v.Id }
+
+// GetName returns userMergeRequestReviewer.Name, and is useful for accessing the field via an interface.
+func (v *userMergeRequestReviewer) GetName() string { return v.Name }
+
+// GetUsername returns userMergeRequestReviewer.Username, and is useful for accessing the field via an interface.
+func (v *userMergeRequestReviewer) GetUsername() string { return v.Username }
+
+// GetPublicEmail returns userMergeRequestReviewer.PublicEmail, and is useful for accessing the field via an interface.
+func (v *userMergeRequestReviewer) GetPublicEmail() string { return v.PublicEmail }
+
+// GetState returns userMergeRequestReviewer.State, and is useful for accessing the field via an interface.
+func (v *userMergeRequestReviewer) GetState() UserState { return v.State }
+
+// GetAvatarUrl returns userMergeRequestReviewer.AvatarUrl, and is useful for accessing the field via an interface.
+func (v *userMergeRequestReviewer) GetAvatarUrl() string { return v.AvatarUrl }
+
+// GetWebUrl returns userMergeRequestReviewer.WebUrl, and is useful for accessing the field via an interface.
+func (v *userMergeRequestReviewer) GetWebUrl() string { return v.WebUrl }
+
+// user includes the GraphQL fields of UserCore requested by the fragment user.
+// The GraphQL type's documentation follows.
+//
+// Representation of a GitLab user.
+type userUserCore struct {
+	// ID of the user.
+	Id string `json:"id"`
+	// Human-readable name of the user.
+	Name string `json:"name"`
+	// Username of the user. Unique within this instance of GitLab.
+	Username string `json:"username"`
+	// User's public email.
+	PublicEmail string `json:"publicEmail"`
+	// State of the user.
+	State UserState `json:"state"`
+	// URL of the user's avatar.
+	AvatarUrl string `json:"avatarUrl"`
+	// Web URL of the user.
+	WebUrl string `json:"webUrl"`
+}
+
+// GetId returns userUserCore.Id, and is useful for accessing the field via an interface.
+func (v *userUserCore) GetId() string { return v.Id }
+
+// GetName returns userUserCore.Name, and is useful for accessing the field via an interface.
+func (v *userUserCore) GetName() string { return v.Name }
+
+// GetUsername returns userUserCore.Username, and is useful for accessing the field via an interface.
+func (v *userUserCore) GetUsername() string { return v.Username }
+
+// GetPublicEmail returns userUserCore.PublicEmail, and is useful for accessing the field via an interface.
+func (v *userUserCore) GetPublicEmail() string { return v.PublicEmail }
+
+// GetState returns userUserCore.State, and is useful for accessing the field via an interface.
+func (v *userUserCore) GetState() UserState { return v.State }
+
+// GetAvatarUrl returns userUserCore.AvatarUrl, and is useful for accessing the field via an interface.
+func (v *userUserCore) GetAvatarUrl() string { return v.AvatarUrl }
+
+// GetWebUrl returns userUserCore.WebUrl, and is useful for accessing the field via an interface.
+func (v *userUserCore) GetWebUrl() string { return v.WebUrl }
+
+// validateTokenCurrentUserUserCore includes the requested fields of the GraphQL type UserCore.
+// The GraphQL type's documentation follows.
+//
+// Core represention of a GitLab user.
+type validateTokenCurrentUserUserCore struct {
+	// Username of the user. Unique within this instance of GitLab.
 	Username string `json:"username"`
 }
 
-// GetUsername returns validateTokenCurrentUser.Username, and is useful for accessing the field via an interface.
-func (v *validateTokenCurrentUser) GetUsername() string { return v.Username }
+// GetUsername returns validateTokenCurrentUserUserCore.Username, and is useful for accessing the field via an interface.
+func (v *validateTokenCurrentUserUserCore) GetUsername() string { return v.Username }
 
 // validateTokenResponse is returned by validateToken on success.
 type validateTokenResponse struct {
-	// Get information about current user
-	CurrentUser validateTokenCurrentUser `json:"currentUser"`
+	// Get information about current user.
+	CurrentUser validateTokenCurrentUserUserCore `json:"currentUser"`
 }
 
 // GetCurrentUser returns validateTokenResponse.CurrentUser, and is useful for accessing the field via an interface.
-func (v *validateTokenResponse) GetCurrentUser() validateTokenCurrentUser { return v.CurrentUser }
+func (v *validateTokenResponse) GetCurrentUser() validateTokenCurrentUserUserCore {
+	return v.CurrentUser
+}
 
 // versionMetadata includes the requested fields of the GraphQL type Metadata.
 type versionMetadata struct {
-	// Version
+	// Version.
 	Version string `json:"version"`
 }
 
@@ -37,12 +1591,182 @@ func (v *versionMetadata) GetVersion() string { return v.Version }
 
 // versionResponse is returned by version on success.
 type versionResponse struct {
-	// Metadata about GitLab
+	// Metadata about GitLab.
 	Metadata versionMetadata `json:"metadata"`
 }
 
 // GetMetadata returns versionResponse.Metadata, and is useful for accessing the field via an interface.
 func (v *versionResponse) GetMetadata() versionMetadata { return v.Metadata }
+
+func fullMergeRequest(
+	ctx context.Context,
+	client graphql.Client,
+	path string,
+	iid string,
+) (*fullMergeRequestResponse, error) {
+	req := &graphql.Request{
+		OpName: "fullMergeRequest",
+		Query: `
+query fullMergeRequest ($path: ID!, $iid: String!) {
+	project(fullPath: $path) {
+		mergeRequest(iid: $iid) {
+			... mergeRequest
+		}
+	}
+}
+fragment mergeRequest on MergeRequest {
+	id
+	iid
+	projectId
+	sourceProjectId
+	sourceProject {
+		namespace {
+			name
+		}
+	}
+	title
+	description
+	state
+	createdAt
+	updatedAt
+	headPipeline {
+		... pipeline
+	}
+	labels(first: 100) {
+		pageInfo {
+			... pageInfo
+		}
+		nodes {
+			... label
+		}
+	}
+	sourceBranch
+	targetBranch
+	webUrl
+	draft
+	author {
+		... user
+	}
+	diffRefs {
+		baseSha
+		headSha
+		startSha
+	}
+	notes(first: 100) {
+		nodes {
+			... note
+		}
+	}
+	pipelines(first: 100) {
+		nodes {
+			... pipeline
+		}
+	}
+}
+fragment pipeline on Pipeline {
+	id
+	sha
+	status
+	path
+	createdAt
+	updatedAt
+}
+fragment pageInfo on PageInfo {
+	hasNextPage
+	endCursor
+}
+fragment label on Label {
+	title
+}
+fragment user on User {
+	id
+	name
+	username
+	publicEmail
+	state
+	avatarUrl
+	webUrl
+}
+fragment note on Note {
+	id
+	body
+	author {
+		... user
+	}
+	createdAt
+	system
+}
+`,
+		Variables: &__fullMergeRequestInput{
+			Path: path,
+			Iid:  iid,
+		},
+	}
+	var err error
+
+	var data fullMergeRequestResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func mergeRequestLabelPage(
+	ctx context.Context,
+	client graphql.Client,
+	path string,
+	iid string,
+	cursor string,
+) (*mergeRequestLabelPageResponse, error) {
+	req := &graphql.Request{
+		OpName: "mergeRequestLabelPage",
+		Query: `
+query mergeRequestLabelPage ($path: ID!, $iid: String!, $cursor: String!) {
+	project(fullPath: $path) {
+		mergeRequest(iid: $iid) {
+			labels(first: 100, after: $cursor) {
+				pageInfo {
+					... pageInfo
+				}
+				nodes {
+					... label
+				}
+			}
+		}
+	}
+}
+fragment pageInfo on PageInfo {
+	hasNextPage
+	endCursor
+}
+fragment label on Label {
+	title
+}
+`,
+		Variables: &__mergeRequestLabelPageInput{
+			Path:   path,
+			Iid:    iid,
+			Cursor: cursor,
+		},
+	}
+	var err error
+
+	var data mergeRequestLabelPageResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
 
 func validateToken(
 	ctx context.Context,

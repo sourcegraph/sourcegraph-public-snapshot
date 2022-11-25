@@ -15,6 +15,7 @@ import (
 
 	"github.com/Khan/genqlient/graphql"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/mod/semver"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -174,6 +175,10 @@ type Client struct {
 	// The URN of the external service that the client is derived from.
 	urn string
 
+	versionOnce sync.Once
+	versionStr  string
+	versionErr  error
+
 	baseURL          *url.URL
 	httpClient       httpcli.Doer
 	gqlClient        graphql.Client
@@ -225,6 +230,23 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	}
 	c.gqlClient = graphql.NewClient(p.gqlURL.String(), gqlDoer{c})
 	return c
+}
+
+func (c *Client) version(ctx context.Context) (string, error) {
+	c.versionOnce.Do(func() {
+		c.versionStr, c.versionErr = c.GetVersion(ctx)
+	})
+
+	return c.versionStr, c.versionErr
+}
+
+func (c *Client) versionAtLeast(ctx context.Context, min string) (bool, error) {
+	version, err := c.version(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	return semver.Compare(version, min) != -1, nil
 }
 
 type gqlDoer struct {
