@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"math/rand"
-	"net/url"
 	"sort"
 	"strings"
 	"sync"
@@ -11,115 +10,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-// See schema.graphql for an explanation of how this is intended to be used. This is particularly
-// for listing collaborators to *some* of the repositories associated with this external service
-// *before* they are cloned onto Sourcegraph.
-func (r *externalServiceResolver) InvitableCollaborators(ctx context.Context) ([]*invitableCollaboratorResolver, error) {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return nil, errors.New("no current user")
-	}
-
-	// SECURITY: This API should only be exposed for user-added external services, not for example by
-	// site-wide (CloudDefault) external services (the API also makes zero sense in that context.)
-	//
-	// IMPORTANT: This API is allowed for org external services. You may not have access to every repo
-	// within an org external service, and so if we expose too much information here it could be an
-	// ACL vulnerability. Since we only expose name+email+avatar URL, this is fine to do.
-	if r.externalService.IsSiteOwned() {
-		return nil, errors.New("InvitableCollaborators may only be used on user-added external services.")
-	}
-	cfg, err := r.externalService.Configuration(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse external service config")
-	}
-	githubCfg, ok := cfg.(*schema.GitHubConnection)
-	if !ok {
-		// We only support GitHub for now as that's the most popular / important.
-		// Don't return an error, just an empty list, because e.g. that's what you want if we just
-		// can't find any collaborators.
-		return []*invitableCollaboratorResolver{}, nil
-	}
-	baseURL, err := url.Parse(githubCfg.Url)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse external service URL")
-	}
-	baseURL = extsvc.NormalizeBaseURL(baseURL)
-	githubUrl, _ := github.APIRoot(baseURL)
-	client := github.NewV4Client(r.externalService.URN(), githubUrl, &auth.OAuthBearerToken{Token: githubCfg.Token}, nil)
-
-	possibleRepos := githubCfg.Repos
-	if len(possibleRepos) == 0 {
-		// External service is describing "sync all repos" instead of a specific set. Query a few of
-		// those that we'll look for collaborators in.
-		repos, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).List(ctx, database.ReposListOptions{
-			// SECURITY: This must be the authenticated user's external service ID.
-			ExternalServiceIDs: []int64{r.externalService.ID},
-			OrderBy: database.RepoListOrderBy{{
-				Field:      "name",
-				Descending: false,
-			}},
-			LimitOffset: &database.LimitOffset{Limit: 1000},
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "Repos.List")
-		}
-		for _, repo := range repos {
-			// repo.URI is in "github.com/gorilla/mux" form, we need "gorilla/mux" form to match
-			// githubCfg.Repos and so we parse the URI and use the path.
-			uri, _ := url.Parse("https://" + repo.URI)
-			possibleRepos = append(possibleRepos, uri.Path[1:])
-		}
-	}
-
-	// We'll look in up to 25 repos for collaborators. Each client.RecentCommitters API call uses
-	// 1 point in GitHub's GraphQL API rate limiting, and we are allowed 5,000 per hour (which we
-	// share with other parts of Sourcegraph such as repo-updater.) and so we could probably safely
-	// use up to a few hundred here. However, GitHub's recent commits API is quite slow (it appears
-	// to even run separate GraphQL requests for the same client IP in sequence rather than in
-	// parallel) and so that is the true limiting factor here.
-	//
-	// We search within random repositories because many follow a pattern, such as say adding a ton
-	// of `company/scip-java`, `company/scip-python`, `company/scip-typescript` etc repos with likely
-	// the same collaborators, whereas random sampling may give us dissimilar repositories.
-	const maxReposToScan = 25
-	pickedRepos := pickReposToScanForCollaborators(possibleRepos, maxReposToScan)
-
-	// In parallel collect all recent committers info for the few repos we're going to scan.
-	recentCommitters, err := parallelRecentCommitters(ctx, pickedRepos, client.RecentCommitters)
-	if err != nil {
-		return nil, err
-	}
-
-	authUserEmails, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
-		UserID: a.UID,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	userExistsByUsername := func(username string) bool {
-		_, err := r.db.Users().GetByUsername(ctx, username)
-		return err == nil
-	}
-	userExistsByEmail := func(email string) bool {
-		_, err := r.db.Users().GetByVerifiedEmail(ctx, email)
-		return err == nil
-	}
-	return filterInvitableCollaborators(recentCommitters, authUserEmails, userExistsByUsername, userExistsByEmail), nil
-}
 
 type invitableCollaboratorResolver struct {
 	likelySourcegraphUsername string

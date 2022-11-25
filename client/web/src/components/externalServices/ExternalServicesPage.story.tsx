@@ -40,7 +40,6 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                 createdAt: '2021-03-15T19:39:11Z',
                 namespace: null,
                 webhookURL: null,
-                grantedScopes: [],
             },
             {
                 id: 'service2',
@@ -60,7 +59,6 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                     url: '/users/johndoe',
                 },
                 webhookURL: null,
-                grantedScopes: [],
             },
         ],
     })

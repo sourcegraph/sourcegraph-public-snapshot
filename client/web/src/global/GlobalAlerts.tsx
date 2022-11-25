@@ -13,7 +13,6 @@ import { Link, useObservable } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { siteFlags } from '../site/backend'
-import { CodeHostScopeAlerts, GitLabScopeAlert } from '../site/CodeHostScopeAlerts/CodeHostScopeAlerts'
 import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
@@ -64,9 +63,6 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({
                     {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
                     {window.context.likelyDockerOnMac && window.context.deployType === 'docker-container' && (
                         <DockerForMacAlert className={styles.alert} />
-                    )}
-                    {window.context.sourcegraphDotComMode && (
-                        <CodeHostScopeAlerts authenticatedUser={authenticatedUser} />
                     )}
                     {window.context.sourcegraphDotComMode && <GitLabScopeAlert authenticatedUser={authenticatedUser} />}
                     {siteFlagsValue.alerts.map((alert, index) => (

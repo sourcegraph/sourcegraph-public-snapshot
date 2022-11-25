@@ -620,9 +620,6 @@ func (e *ExternalService) URN() string {
 // IsDeleted returns true if the external service is deleted.
 func (e *ExternalService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
 
-// IsSiteOwned returns true if the external service is owned by the site.
-func (e *ExternalService) IsSiteOwned() bool { return e.NamespaceUserID == 0 && e.NamespaceOrgID == 0 }
-
 // Update updates ExternalService e with the fields from the given newer ExternalService n,
 // returning true if modified.
 func (e *ExternalService) Update(ctx context.Context, n *ExternalService) (modified bool, _ error) {
