@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	gh "github.com/google/go-github/v41/github"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
@@ -262,14 +263,14 @@ func TestExternalAccounts_List(t *testing.T) {
 			name:        "ListByAccountID",
 			expectedIDs: []int32{userIDs[2]},
 			args: ExternalAccountsListOptions{
-				AccountID: 3,
+				AccountID: "3",
 			},
 		},
 		{
 			name:        "ListByAccountNotFound",
 			expectedIDs: []int32{},
 			args: ExternalAccountsListOptions{
-				AccountID: 33333,
+				AccountID: "33333",
 			},
 		},
 		{
@@ -599,12 +600,12 @@ func TestExternalAccounts_DeleteList(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 3, len(accts))
 
-	acctIds := []int32{}
+	var acctIDs []int32
 	for _, acct := range accts {
-		acctIds = append(acctIds, acct.ID)
+		acctIDs = append(acctIDs, acct.ID)
 	}
 
-	err = db.UserExternalAccounts().Delete(ctx, acctIds...)
+	err = db.UserExternalAccounts().Delete(ctx, ExternalAccountsDeleteOptions{IDs: acctIDs})
 	require.NoError(t, err)
 
 	accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
