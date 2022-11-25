@@ -45,7 +45,7 @@ func redisLoggerMiddleware() Middleware {
 			if err != nil {
 				errorMessage = err.Error()
 			}
-			key := generateKey(time.Now())
+			key := time.Now().UTC().Format("2006-01-02T15_04_05.999999999")
 			callerStackFrame, _ := getFrames(4).Next() // Caller of the caller of redisLoggerMiddleware
 			logItem := types.OutboundRequestLogItem{
 				ID:                 key,
@@ -88,10 +88,6 @@ func deleteExcessItems(c *rcache.Cache, limit int) {
 		sort.Strings(keys)
 		c.DeleteMulti(keys[:len(keys)-limit])
 	}
-}
-
-func generateKey(now time.Time) string {
-	return fmt.Sprintf("%s", now.UTC().Format("2006-01-02T15_04_05.999999999"))
 }
 
 // GetAllOutboundRequestLogItemsAfter returns all outbound request log items after the given key,
