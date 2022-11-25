@@ -19,6 +19,7 @@ import (
 
 func Test_Gitolite_listRepos(t *testing.T) {
 	tests := []struct {
+		name            string
 		listRepos       map[string][]*gitolite.Repo
 		configs         []*schema.GitoliteConnection
 		gitoliteHost    string
@@ -26,6 +27,7 @@ func Test_Gitolite_listRepos(t *testing.T) {
 		expResponseBody string
 	}{
 		{
+			name: "Simple case (git@sourcegraph.com)",
 			listRepos: map[string][]*gitolite.Repo{
 				"git@sourcegraph.com": {
 					{Name: "myrepo", URL: "git@sourcegraph.com:myrepo"},
@@ -41,8 +43,8 @@ func Test_Gitolite_listRepos(t *testing.T) {
 			expResponseCode: 200,
 			expResponseBody: `[{"Name":"myrepo","URL":"git@sourcegraph.com:myrepo"}]` + "\n",
 		},
-		// Invalid gitoliteHost (fails ValidateRemoteAddr)
 		{
+			name: "Invalid gitoliteHost (--invalidhostnexample.com)",
 			listRepos: map[string][]*gitolite.Repo{
 				"git@sourcegraph.com": {
 					{Name: "myrepo", URL: "git@sourcegraph.com:myrepo"},
@@ -58,8 +60,8 @@ func Test_Gitolite_listRepos(t *testing.T) {
 			expResponseCode: 500,
 			expResponseBody: `invalid hostname` + "\n",
 		},
-		// Empty gitoliteHost (valid)
 		{
+			name: "Empty (but valid) gitoliteHost",
 			listRepos: map[string][]*gitolite.Repo{
 				"git@gitolite.example.com": {
 					{Name: "myrepo", URL: "git@gitolite.example.com:myrepo"},
@@ -78,7 +80,7 @@ func Test_Gitolite_listRepos(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run("", func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			g := gitoliteFetcher{
 				client: stubGitoliteClient{
 					ListRepos_: func(ctx context.Context, host string) ([]*gitolite.Repo, error) {

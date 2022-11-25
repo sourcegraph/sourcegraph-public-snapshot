@@ -154,10 +154,10 @@ func TestAddrValidation(t *testing.T) {
 		{"thissubdomaindoesnotexist.sourcegraph.com", false},
 	}
 
-	t.Run("correctly validates addresses", func(t *testing.T) {
-		for _, a := range addrTests {
+	for _, a := range addrTests {
+		t.Run(a.addr, func(t *testing.T) {
 			assert.True(t, ValidateRemoteAddr(a.addr) == a.pass)
-		}
-	})
+		})
+	}
 
 }
