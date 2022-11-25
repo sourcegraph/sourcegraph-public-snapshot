@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import { RouteComponentProps } from 'react-router'
-import { concat, Observable } from 'rxjs'
+import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -9,19 +9,19 @@ import { Hoverifier } from '@sourcegraph/codeintellify'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { HighlightResponseFormat, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { fileDiffFields, diffStatFields } from '../../backend/diff'
+import { requestGraphQL } from '../../backend/graphql'
 import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
 import { FileDiffNode } from '../../components/diff/FileDiffNode'
+import { ConnectionQueryArguments } from '../../components/FilteredConnection'
 import { RepositoryComparisonDiffResult, RepositoryComparisonDiffVariables } from '../../graphql-operations'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
-import { requestGraphQL } from '../../backend/graphql'
-import { ConnectionQueryArguments } from '../../components/FilteredConnection'
 
 export type RepositoryComparisonDiff = Extract<RepositoryComparisonDiffResult['node'], { __typename?: 'Repository' }>
 
@@ -32,7 +32,6 @@ export function queryRepositoryComparisonFileDiffs(args: {
     first: number | null
     after: string | null
     paths: string[] | null
-    format: HighlightResponseFormat
 }): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> {
     return requestGraphQL<RepositoryComparisonDiffResult, RepositoryComparisonDiffVariables>(
         gql`
