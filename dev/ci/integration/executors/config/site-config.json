@@ -1,7 +1,7 @@
 {
-  "executors.accessToken": "hunter2hunter2hunter2",
+  "executors.accessToken": "$EXECUTOR_FRONTEND_PASSWORD",
   "executors.batcheshelperImage": "us.gcr.io/sourcegraph-dev/batcheshelper",
-  "executors.batcheshelperImageTag":"$CANDIDATE_VERSION",
+  "executors.batcheshelperImageTag": "$CANDIDATE_VERSION",
   "auth.providers": [
     {
       "type": "builtin",
