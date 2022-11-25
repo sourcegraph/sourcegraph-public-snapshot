@@ -2,6 +2,7 @@ package conf
 
 import (
 	"context"
+	"encoding/base64"
 	"log"
 	"strings"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -77,6 +79,30 @@ func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, e
 		return nil, err
 	}
 	return config, nil
+}
+
+func GitHubAppEnabled() bool {
+	_, _, ok, _ := GitHubAppConfig()
+	return ok
+}
+
+func GitHubAppConfig() (privateKey []byte, appID string, set bool, err error) {
+	cfg := Get().GitHubApp
+	if cfg == nil {
+		return nil, "", false, nil
+	}
+
+	configured := cfg.AppID != "" && cfg.PrivateKey != "" && cfg.Slug != "" && cfg.ClientID != "" && cfg.ClientSecret != ""
+	if !configured {
+		return nil, "", false, nil
+	}
+
+	privateKey, err = base64.StdEncoding.DecodeString(cfg.PrivateKey)
+	if err != nil {
+		return nil, "", false, errors.Wrap(err, "decoding GitHub app private key failed")
+	}
+	appID = cfg.AppID
+	return privateKey, appID, true, nil
 }
 
 type AccessTokenAllow string
