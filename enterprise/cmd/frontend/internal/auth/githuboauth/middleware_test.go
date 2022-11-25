@@ -76,9 +76,9 @@ func TestMiddleware(t *testing.T) {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
-	t.Run("unauthenticated subpage visit -> login required", func(t *testing.T) {
+	t.Run("unauthenticated subpage visit -> sso sign-in redirect", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/page", "", nil, false)
-		if want := http.StatusOK; resp.StatusCode != want {
+		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
