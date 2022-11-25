@@ -42,14 +42,26 @@ export const Default: Story = () => (
         <H1>Repo header</H1>
         <H2>Simple</H2>
         <div className="mb-3 b-1">
-            <Simple />
+            <RepoHeader {...createProps('client/web/src/repo/RepoHeader.story.tsx')} />
         </div>
         <H2>Constrained width</H2>
         <div className="mb-3 b-1" style={{ maxWidth: 480 }}>
-            <Simple forceWrap={true} />
+            <RepoHeader {...createProps('client/web/src/repo/RepoHeader.story.tsx', true)} />
         </div>
         <H2>Long path</H2>
-        <LongPath />
+        <RepoHeader
+            {...createProps(
+                'client/web/src/repo/client/web/src/repo/client/web/src/repo/MyJavaStyleManagerReducerSuperCalifragilisticExpialidocious.tsx'
+            )}
+        />
+        <H2>Many subfolders</H2>
+        <RepoHeader {...createProps('client/web/src/repo/client/web/src/repo/client/web/src/repo/main.tsx')} />
+        <H2>Many subfolders and constrained width</H2>
+        <div className="mb-3 b-1" style={{ maxWidth: 480 }}>
+            <RepoHeader
+                {...createProps('client/web/src/repo/client/web/src/repo/client/web/src/repo/main.tsx', true)}
+            />
+        </div>
     </>
 )
 const useActionItemsToggle = () => ({
@@ -139,43 +151,22 @@ const createBreadcrumbs = (path: string) => [
     },
 ]
 
-const Simple = ({ forceWrap }: { forceWrap?: boolean }) => (
-    <RepoHeader
-        actionButtons={[]}
-        useActionItemsToggle={useActionItemsToggle}
-        breadcrumbs={createBreadcrumbs('client/web/src/repo/RepoHeader.story.tsx')}
-        repoName="sourcegraph/sourcegraph"
-        revision="main"
-        onLifecyclePropsChange={onLifecyclePropsChange}
-        location={LOCATION}
-        history={H.createMemoryHistory()}
-        settingsCascade={EMPTY_SETTINGS_CASCADE}
-        authenticatedUser={mockUser}
-        platformContext={{} as any}
-        extensionsController={null}
-        telemetryService={NOOP_TELEMETRY_SERVICE}
-        forceWrap={forceWrap}
-    />
-)
-const LongPath = () => (
-    <RepoHeader
-        actionButtons={[]}
-        useActionItemsToggle={useActionItemsToggle}
-        breadcrumbs={createBreadcrumbs(
-            'client/web/src/repo/client/web/src/repo/client/web/src/repo/MyJavaStyleManagerReducerSuperCalifragilisticExpialidocious.tsx'
-        )}
-        repoName="sourcegraph/sourcegraph"
-        revision="main"
-        onLifecyclePropsChange={onLifecyclePropsChange}
-        location={LOCATION}
-        history={H.createMemoryHistory()}
-        settingsCascade={EMPTY_SETTINGS_CASCADE}
-        authenticatedUser={mockUser}
-        platformContext={{} as any}
-        extensionsController={null}
-        telemetryService={NOOP_TELEMETRY_SERVICE}
-    />
-)
+const createProps = (path: string, forceWrap: boolean = false): React.ComponentProps<typeof RepoHeader> => ({
+    actionButtons: [],
+    useActionItemsToggle,
+    breadcrumbs: createBreadcrumbs(path),
+    repoName: 'sourcegraph/sourcegraph',
+    revision: 'main',
+    onLifecyclePropsChange,
+    location: LOCATION,
+    history: H.createMemoryHistory(),
+    settingsCascade: EMPTY_SETTINGS_CASCADE,
+    authenticatedUser: mockUser,
+    platformContext: {} as any,
+    extensionsController: null,
+    telemetryService: NOOP_TELEMETRY_SERVICE,
+    forceWrap,
+})
 
 Default.parameters = {
     chromatic: {

@@ -1,6 +1,8 @@
 import * as React from 'react'
+import { useLayoutEffect } from 'react'
 
 import classNames from 'classnames'
+import useResizeObserver from 'use-resize-observer'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -15,8 +17,6 @@ interface Props extends RepoRevision, TelemetryProps {
     filePath: string
     isDir: boolean
 }
-
-const MAXIMUM_DIRECTORIES = 8
 
 /**
  * Displays a file path in a repository in breadcrumb style, with ancestor path
@@ -42,7 +42,29 @@ export const FilePathBreadcrumbs: React.FunctionComponent<React.PropsWithChildre
             ? 'test-breadcrumb-part-last'
             : classNames('test-breadcrumb-part-directory', styles.partDirectory)
 
-    const shouldTruncate = parts.length > MAXIMUM_DIRECTORIES
+    const [truncatedElements, setTruncatedElements] = React.useState<number>(0)
+
+    // Increase the number of truncatedElements and verify if the container is
+    // still overflowing, up to the point where only the the current element is
+    // visible.
+    //
+    // Warning: This might cause a few re-renders of the file breadcrumbs until
+    // a fitting number of truncated elements is found. However the changes
+    // necessary to do this are bound by the number of folders in the file path.
+    const ref = React.useRef<HTMLDivElement>(null)
+    const { width } = useResizeObserver({ ref })
+    // Reset the truncation logic when the element is resized
+    useLayoutEffect(() => setTruncatedElements(0), [width])
+    useLayoutEffect(() => {
+        const element = ref.current
+        if (!element || truncatedElements >= parts.length - 1) {
+            return
+        }
+        const isOverflowing = Math.ceil(element.scrollWidth - element.clientWidth - element.scrollLeft) > 0
+        if (isOverflowing) {
+            setTruncatedElements(truncatedElements + 1)
+        }
+    }, [parts.length, truncatedElements])
 
     const spans: JSX.Element[] = [
         <LinkOrSpan
@@ -55,8 +77,9 @@ export const FilePathBreadcrumbs: React.FunctionComponent<React.PropsWithChildre
             /
         </LinkOrSpan>,
     ]
-    if (shouldTruncate) {
-        const truncatedParts = parts.slice(0, parts.length - MAXIMUM_DIRECTORIES)
+
+    if (truncatedElements > 0) {
+        const truncatedParts = parts.slice(0, truncatedElements)
         const truncatedPath = truncatedParts.join('/')
         const link = partToUrl(truncatedParts.length - 1)
         spans.push(
@@ -72,7 +95,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<React.PropsWithChildre
     }
 
     for (const [index, part] of parts.entries()) {
-        if (shouldTruncate && index < parts.length - MAXIMUM_DIRECTORIES) {
+        if (index < truncatedElements) {
             continue
         }
 
@@ -94,7 +117,11 @@ export const FilePathBreadcrumbs: React.FunctionComponent<React.PropsWithChildre
     }
 
     // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path
-    return <span className={styles.filePathBreadcrumbs}>{spans}</span>
+    return (
+        <span ref={ref} className={styles.filePathBreadcrumbs}>
+            {spans}
+        </span>
+    )
 }
 
 interface FilePathProps {
