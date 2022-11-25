@@ -2057,3 +2057,20 @@ func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
 	}
 	return nil
 }
+
+func addMetricsCollector(monitor *ratelimit.Monitor, resource, entityID string) *ratelimit.Monitor {
+	if monitor == nil {
+		return nil
+	}
+
+	monitor.SetCollector(&ratelimit.MetricsCollector{
+		Remaining: func(n float64) {
+			githubRemainingGauge.WithLabelValues(resource, entityID).Set(n)
+		},
+		WaitDuration: func(n time.Duration) {
+			githubRatelimitWaitCounter.WithLabelValues(resource, entityID).Add(n.Seconds())
+		},
+	})
+
+	return monitor
+}
