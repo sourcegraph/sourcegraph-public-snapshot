@@ -46,7 +46,7 @@ export const Default: Story = () => (
         </div>
         <H2>Constrained width</H2>
         <div className="mb-3 b-1" style={{ maxWidth: 480 }}>
-            <Simple />
+            <Simple forceWrap />
         </div>
         <H2>Long path</H2>
         <LongPath />
@@ -139,7 +139,7 @@ const createBreadcrumbs = (path: string) => [
     },
 ]
 
-const Simple = () => (
+const Simple = ({ forceWrap }: { forceWrap?: boolean }) => (
     <RepoHeader
         actionButtons={[]}
         useActionItemsToggle={useActionItemsToggle}
@@ -154,6 +154,7 @@ const Simple = () => (
         platformContext={{} as any}
         extensionsController={null}
         telemetryService={NOOP_TELEMETRY_SERVICE}
+        forceWrap={forceWrap}
     />
 )
 const LongPath = () => (

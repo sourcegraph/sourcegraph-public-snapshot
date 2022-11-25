@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 
 import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
@@ -7,14 +7,14 @@ import * as H from 'history'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Menu, MenuList, Position, Icon, useMeasure } from '@sourcegraph/wildcard'
+import { Menu, MenuList, Position, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsToggle, ActionItemsToggleProps } from '../extensions/components/ActionItemsBar'
 import { ActionButtonDescriptor } from '../util/contributions'
-import { breakpoints } from '../util/dom'
+import { useBreakpoint } from '../util/dom'
 
 import { RepoHeaderActionDropdownToggle } from './components/RepoHeaderActions'
 
@@ -143,6 +143,11 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
 
     location: H.Location
     history: H.History
+
+    // This is used for testing purposes only because we're using CSS media
+    // queries to determine the container height and in storybook we can't
+    // control these.
+    forceWrap?: boolean
 }
 
 /**
@@ -159,9 +164,8 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
         () => new RepoHeaderContributionStore(contributions => setRepoHeaderContributions(contributions)),
         [setRepoHeaderContributions]
     )
-    const ref = useRef<HTMLDivElement>(null)
-    const [, { width }] = useMeasure(ref.current)
-    const isLarge = width >= breakpoints.sm
+    const isLargeHook = useBreakpoint('sm')
+    const isLarge = props.forceWrap ? false : isLargeHook
 
     useEffect(() => {
         onLifecyclePropsChange(repoHeaderContributionStore.props)
@@ -194,13 +198,13 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
     )
 
     return (
-        <nav data-testid="repo-header" className={classNames('navbar navbar-expand', styles.repoHeader)} ref={ref}>
+        <nav data-testid="repo-header" className={classNames('navbar navbar-expand', styles.repoHeader)}>
             <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
                 <Breadcrumbs
                     breadcrumbs={props.breadcrumbs}
                     location={props.location}
-                    className={classNames('justify-content-start', isLarge ? 'flex-nowrap' : '')}
+                    className={classNames('justify-content-start', !props.forceWrap ? styles.breadcrumbWrap : '')}
                 />
             </div>
             <ul className="navbar-nav">

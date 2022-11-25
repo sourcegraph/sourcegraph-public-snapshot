@@ -18,4 +18,10 @@
         text-overflow: ellipsis;
         text-align: center;
     }
+
+    .part-separator {
+        color: var(--link-color);
+        min-width: 1em;
+        text-align: center;
+    }
 }
