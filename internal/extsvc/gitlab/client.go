@@ -20,6 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	gitlabgraphql "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
@@ -404,7 +405,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 }
 
 func (c *Client) ValidateToken(ctx context.Context) error {
-	_, err := validateToken(ctx, c.gqlClient)
+	_, err := gitlabgraphql.ValidateToken(ctx, c.gqlClient)
 	return err
 }
 

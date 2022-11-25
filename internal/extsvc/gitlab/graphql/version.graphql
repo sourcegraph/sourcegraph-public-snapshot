@@ -1,4 +1,4 @@
-query version {
+query Version {
     metadata {
         version
     }

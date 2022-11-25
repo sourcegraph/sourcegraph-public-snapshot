@@ -1,7 +1,7 @@
 schema: schema/gitlab.graphql
 operations:
-- '*.graphql'
-generated: graphql.go
+  - '*.graphql'
+generated: generated.go
 bindings:
   Time:
     type: time.Time

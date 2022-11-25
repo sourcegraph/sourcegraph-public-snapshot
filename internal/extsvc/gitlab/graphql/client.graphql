@@ -1,4 +1,4 @@
-query validateToken {
+query ValidateToken {
     currentUser {
         username
     }
