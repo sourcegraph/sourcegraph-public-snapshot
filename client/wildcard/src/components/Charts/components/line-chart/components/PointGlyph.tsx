@@ -14,7 +14,7 @@ interface PointGlyphProps {
     'aria-label': string
     linkURL?: string
     tabIndex?: number
-    onClick: MouseEventHandler<Element>
+    onClick?: MouseEventHandler<Element>
     onFocus?: FocusEventHandler<Element>
     onBlur?: FocusEventHandler<Element>
 }
@@ -44,7 +44,7 @@ export const PointGlyph: FC<PointGlyphProps> = props => {
             tabIndex={tabIndex}
             role={role}
             aria-label={ariaLabel}
-            onClick={onClick}
+            onClickCapture={onClick}
             onFocus={onFocus}
             onBlur={onBlur}
         >
