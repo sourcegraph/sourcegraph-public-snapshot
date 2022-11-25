@@ -411,12 +411,13 @@ describe('Repository component', () => {
         }
 
         const navigateToSymbolTests = [
-            {
-                name: 'navigates to file on symbol click for Go',
-                repoPath: '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d',
-                filePath: '/tree/cmd',
-                symbolPath: '/blob/cmd/go-diff/go-diff.go?L19:2-19:10',
-            },
+            // Flake, see https://github.com/sourcegraph/sourcegraph/issues/44791
+            // {
+            //     name: 'navigates to file on symbol click for Go',
+            //     repoPath: '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d',
+            //     filePath: '/tree/cmd',
+            //     symbolPath: '/blob/cmd/go-diff/go-diff.go?L19:2-19:10',
+            // },
             {
                 name: 'navigates to file on symbol click for Java',
                 repoPath: '/github.com/sourcegraph/java-langserver@03efbe9558acc532e88f5288b4e6cfa155c6f2dc',

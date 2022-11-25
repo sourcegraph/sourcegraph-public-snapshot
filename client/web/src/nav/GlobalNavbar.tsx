@@ -152,7 +152,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     })
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
-    const showSearchContext = useExperimentalFeatures(features => features.showSearchContext) && searchContextsEnabled
+    // Search context management is still enabled on .com
+    // but should not show in the navbar. Users can still
+    // access this feature via the context dropdown.
+    const showSearchContext =
+        useExperimentalFeatures(features => features.showSearchContext) && searchContextsEnabled && !isSourcegraphDotCom
     const showCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring) && codeMonitoringEnabled
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook) && notebooksEnabled
 

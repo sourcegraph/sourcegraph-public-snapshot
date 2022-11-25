@@ -30,10 +30,6 @@
     background-color: transparent !important;
 }
 
-.bg-primary-4 {
-    background-color: var(--primary-4);
-}
-
 // Extend Bootstrap's bg-* utilities with classes for our grey/blueish theme-aware background colors.
 @for $number from 1 through 6 {
     .bg-#{$number} {

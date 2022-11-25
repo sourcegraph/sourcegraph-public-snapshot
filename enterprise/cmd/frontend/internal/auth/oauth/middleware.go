@@ -20,7 +20,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -94,15 +93,7 @@ func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
-		op := LoginStateOp(req.URL.Query().Get("op"))
-		extraScopes, err := getExtraScopes(req.Context(), db, serviceType, op)
-		if err != nil {
-			log15.Error("Getting extra OAuth scopes", "error", err)
-			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site).", http.StatusInternalServerError)
-			return
-		}
-
-		p.Login(p.OAuth2Config(extraScopes...)).ServeHTTP(w, req)
+		p.Login(p.OAuth2Config()).ServeHTTP(w, req)
 	}))
 	mux.Handle("/callback", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		state, err := DecodeState(req.URL.Query().Get("state"))
@@ -198,31 +189,6 @@ var extraScopes = map[string][]string{
 	extsvc.TypeGitHub: {"repo"},
 	// We need full `api` scope for cloning private repos
 	extsvc.TypeGitLab: {"api"},
-}
-
-func getExtraScopes(ctx context.Context, db database.DB, serviceType string, op LoginStateOp) ([]string, error) {
-	// Extra scopes are only needed on Sourcegraph.com
-	if !envvar.SourcegraphDotComMode() {
-		return nil, nil
-	}
-	// Extra scopes are only needed when creating a code host connection, not for account creation
-	if op == LoginStateOpCreateAccount {
-		return nil, nil
-	}
-
-	scopes, ok := extraScopes[serviceType]
-	if !ok {
-		return nil, nil
-	}
-
-	mode, err := db.Users().CurrentUserAllowedExternalServices(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if mode != conf.ExternalServiceModeAll {
-		return nil, nil
-	}
-	return scopes, nil
 }
 
 // withOAuthExternalClient updates client such that the

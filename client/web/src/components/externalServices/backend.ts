@@ -18,8 +18,6 @@ import {
     DeleteExternalServiceResult,
     ExternalServicesVariables,
     ExternalServicesResult,
-    AffiliatedRepositoriesVariables,
-    AffiliatedRepositoriesResult,
     SyncExternalServiceResult,
     SyncExternalServiceVariables,
     ExternalServiceSyncJobsVariables,
@@ -118,34 +116,6 @@ export const FETCH_EXTERNAL_SERVICE = gql`
     }
     ${externalServiceFragment}
 `
-
-export function listAffiliatedRepositories(
-    args: AffiliatedRepositoriesVariables
-): Observable<NonNullable<AffiliatedRepositoriesResult>> {
-    return requestGraphQL<AffiliatedRepositoriesResult, AffiliatedRepositoriesVariables>(
-        gql`
-            query AffiliatedRepositories($namespace: ID!, $codeHost: ID, $query: String) {
-                affiliatedRepositories(namespace: $namespace, codeHost: $codeHost, query: $query) {
-                    nodes {
-                        name
-                        codeHost {
-                            kind
-                            id
-                            displayName
-                        }
-                        private
-                    }
-                    codeHostErrors
-                }
-            }
-        `,
-        {
-            namespace: args.namespace,
-            codeHost: args.codeHost ?? null,
-            query: args.query ?? null,
-        }
-    ).pipe(map(dataOrThrowErrors))
-}
 
 export async function deleteExternalService(externalService: Scalars['ID']): Promise<void> {
     const result = await requestGraphQL<DeleteExternalServiceResult, DeleteExternalServiceVariables>(

@@ -3732,9 +3732,6 @@ type MockDB struct {
 	// UserExternalAccountsFunc is an instance of a mock function object
 	// controlling the behavior of the method UserExternalAccounts.
 	UserExternalAccountsFunc *DBUserExternalAccountsFunc
-	// UserPublicReposFunc is an instance of a mock function object
-	// controlling the behavior of the method UserPublicRepos.
-	UserPublicReposFunc *DBUserPublicReposFunc
 	// UsersFunc is an instance of a mock function object controlling the
 	// behavior of the method Users.
 	UsersFunc *DBUsersFunc
@@ -3935,11 +3932,6 @@ func NewMockDB() *MockDB {
 		},
 		UserExternalAccountsFunc: &DBUserExternalAccountsFunc{
 			defaultHook: func() (r0 UserExternalAccountsStore) {
-				return
-			},
-		},
-		UserPublicReposFunc: &DBUserPublicReposFunc{
-			defaultHook: func() (r0 UserPublicRepoStore) {
 				return
 			},
 		},
@@ -4155,11 +4147,6 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.UserExternalAccounts")
 			},
 		},
-		UserPublicReposFunc: &DBUserPublicReposFunc{
-			defaultHook: func() UserPublicRepoStore {
-				panic("unexpected invocation of MockDB.UserPublicRepos")
-			},
-		},
 		UsersFunc: &DBUsersFunc{
 			defaultHook: func() UserStore {
 				panic("unexpected invocation of MockDB.Users")
@@ -4297,9 +4284,6 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		UserExternalAccountsFunc: &DBUserExternalAccountsFunc{
 			defaultHook: i.UserExternalAccounts,
-		},
-		UserPublicReposFunc: &DBUserPublicReposFunc{
-			defaultHook: i.UserPublicRepos,
 		},
 		UsersFunc: &DBUsersFunc{
 			defaultHook: i.Users,
@@ -8024,105 +8008,6 @@ func (c DBUserExternalAccountsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBUserExternalAccountsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// DBUserPublicReposFunc describes the behavior when the UserPublicRepos
-// method of the parent MockDB instance is invoked.
-type DBUserPublicReposFunc struct {
-	defaultHook func() UserPublicRepoStore
-	hooks       []func() UserPublicRepoStore
-	history     []DBUserPublicReposFuncCall
-	mutex       sync.Mutex
-}
-
-// UserPublicRepos delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockDB) UserPublicRepos() UserPublicRepoStore {
-	r0 := m.UserPublicReposFunc.nextHook()()
-	m.UserPublicReposFunc.appendCall(DBUserPublicReposFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the UserPublicRepos
-// method of the parent MockDB instance is invoked and the hook queue is
-// empty.
-func (f *DBUserPublicReposFunc) SetDefaultHook(hook func() UserPublicRepoStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UserPublicRepos method of the parent MockDB instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *DBUserPublicReposFunc) PushHook(hook func() UserPublicRepoStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBUserPublicReposFunc) SetDefaultReturn(r0 UserPublicRepoStore) {
-	f.SetDefaultHook(func() UserPublicRepoStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBUserPublicReposFunc) PushReturn(r0 UserPublicRepoStore) {
-	f.PushHook(func() UserPublicRepoStore {
-		return r0
-	})
-}
-
-func (f *DBUserPublicReposFunc) nextHook() func() UserPublicRepoStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBUserPublicReposFunc) appendCall(r0 DBUserPublicReposFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBUserPublicReposFuncCall objects
-// describing the invocations of this function.
-func (f *DBUserPublicReposFunc) History() []DBUserPublicReposFuncCall {
-	f.mutex.Lock()
-	history := make([]DBUserPublicReposFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBUserPublicReposFuncCall is an object that describes an invocation of
-// method UserPublicRepos on an instance of MockDB.
-type DBUserPublicReposFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 UserPublicRepoStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBUserPublicReposFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBUserPublicReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -16877,7 +16762,7 @@ type MockExternalServiceStore struct {
 func NewMockExternalServiceStore() *MockExternalServiceStore {
 	return &MockExternalServiceStore{
 		CancelSyncJobFunc: &ExternalServiceStoreCancelSyncJobFunc{
-			defaultHook: func(context.Context, int64) (r0 error) {
+			defaultHook: func(context.Context, ExternalServicesCancelSyncJobOptions) (r0 error) {
 				return
 			},
 		},
@@ -17000,7 +16885,7 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
 	return &MockExternalServiceStore{
 		CancelSyncJobFunc: &ExternalServiceStoreCancelSyncJobFunc{
-			defaultHook: func(context.Context, int64) error {
+			defaultHook: func(context.Context, ExternalServicesCancelSyncJobOptions) error {
 				panic("unexpected invocation of MockExternalServiceStore.CancelSyncJob")
 			},
 		},
@@ -17198,15 +17083,15 @@ func NewMockExternalServiceStoreFrom(i ExternalServiceStore) *MockExternalServic
 // CancelSyncJob method of the parent MockExternalServiceStore instance is
 // invoked.
 type ExternalServiceStoreCancelSyncJobFunc struct {
-	defaultHook func(context.Context, int64) error
-	hooks       []func(context.Context, int64) error
+	defaultHook func(context.Context, ExternalServicesCancelSyncJobOptions) error
+	hooks       []func(context.Context, ExternalServicesCancelSyncJobOptions) error
 	history     []ExternalServiceStoreCancelSyncJobFuncCall
 	mutex       sync.Mutex
 }
 
 // CancelSyncJob delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockExternalServiceStore) CancelSyncJob(v0 context.Context, v1 int64) error {
+func (m *MockExternalServiceStore) CancelSyncJob(v0 context.Context, v1 ExternalServicesCancelSyncJobOptions) error {
 	r0 := m.CancelSyncJobFunc.nextHook()(v0, v1)
 	m.CancelSyncJobFunc.appendCall(ExternalServiceStoreCancelSyncJobFuncCall{v0, v1, r0})
 	return r0
@@ -17215,7 +17100,7 @@ func (m *MockExternalServiceStore) CancelSyncJob(v0 context.Context, v1 int64) e
 // SetDefaultHook sets function that is called when the CancelSyncJob method
 // of the parent MockExternalServiceStore instance is invoked and the hook
 // queue is empty.
-func (f *ExternalServiceStoreCancelSyncJobFunc) SetDefaultHook(hook func(context.Context, int64) error) {
+func (f *ExternalServiceStoreCancelSyncJobFunc) SetDefaultHook(hook func(context.Context, ExternalServicesCancelSyncJobOptions) error) {
 	f.defaultHook = hook
 }
 
@@ -17224,7 +17109,7 @@ func (f *ExternalServiceStoreCancelSyncJobFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ExternalServiceStoreCancelSyncJobFunc) PushHook(hook func(context.Context, int64) error) {
+func (f *ExternalServiceStoreCancelSyncJobFunc) PushHook(hook func(context.Context, ExternalServicesCancelSyncJobOptions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -17233,19 +17118,19 @@ func (f *ExternalServiceStoreCancelSyncJobFunc) PushHook(hook func(context.Conte
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ExternalServiceStoreCancelSyncJobFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int64) error {
+	f.SetDefaultHook(func(context.Context, ExternalServicesCancelSyncJobOptions) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ExternalServiceStoreCancelSyncJobFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int64) error {
+	f.PushHook(func(context.Context, ExternalServicesCancelSyncJobOptions) error {
 		return r0
 	})
 }
 
-func (f *ExternalServiceStoreCancelSyncJobFunc) nextHook() func(context.Context, int64) error {
+func (f *ExternalServiceStoreCancelSyncJobFunc) nextHook() func(context.Context, ExternalServicesCancelSyncJobOptions) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -17284,7 +17169,7 @@ type ExternalServiceStoreCancelSyncJobFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int64
+	Arg1 ExternalServicesCancelSyncJobOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -46785,528 +46670,6 @@ func (c UserExternalAccountsStoreWithEncryptionKeyFuncCall) Results() []interfac
 	return []interface{}{c.Result0}
 }
 
-// MockUserPublicRepoStore is a mock implementation of the
-// UserPublicRepoStore interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/database) used for unit
-// testing.
-type MockUserPublicRepoStore struct {
-	// HandleFunc is an instance of a mock function object controlling the
-	// behavior of the method Handle.
-	HandleFunc *UserPublicRepoStoreHandleFunc
-	// ListByUserFunc is an instance of a mock function object controlling
-	// the behavior of the method ListByUser.
-	ListByUserFunc *UserPublicRepoStoreListByUserFunc
-	// SetUserRepoFunc is an instance of a mock function object controlling
-	// the behavior of the method SetUserRepo.
-	SetUserRepoFunc *UserPublicRepoStoreSetUserRepoFunc
-	// SetUserReposFunc is an instance of a mock function object controlling
-	// the behavior of the method SetUserRepos.
-	SetUserReposFunc *UserPublicRepoStoreSetUserReposFunc
-}
-
-// NewMockUserPublicRepoStore creates a new mock of the UserPublicRepoStore
-// interface. All methods return zero values for all results, unless
-// overwritten.
-func NewMockUserPublicRepoStore() *MockUserPublicRepoStore {
-	return &MockUserPublicRepoStore{
-		HandleFunc: &UserPublicRepoStoreHandleFunc{
-			defaultHook: func() (r0 basestore.TransactableHandle) {
-				return
-			},
-		},
-		ListByUserFunc: &UserPublicRepoStoreListByUserFunc{
-			defaultHook: func(context.Context, int32) (r0 []UserPublicRepo, r1 error) {
-				return
-			},
-		},
-		SetUserRepoFunc: &UserPublicRepoStoreSetUserRepoFunc{
-			defaultHook: func(context.Context, UserPublicRepo) (r0 error) {
-				return
-			},
-		},
-		SetUserReposFunc: &UserPublicRepoStoreSetUserReposFunc{
-			defaultHook: func(context.Context, int32, []UserPublicRepo) (r0 error) {
-				return
-			},
-		},
-	}
-}
-
-// NewStrictMockUserPublicRepoStore creates a new mock of the
-// UserPublicRepoStore interface. All methods panic on invocation, unless
-// overwritten.
-func NewStrictMockUserPublicRepoStore() *MockUserPublicRepoStore {
-	return &MockUserPublicRepoStore{
-		HandleFunc: &UserPublicRepoStoreHandleFunc{
-			defaultHook: func() basestore.TransactableHandle {
-				panic("unexpected invocation of MockUserPublicRepoStore.Handle")
-			},
-		},
-		ListByUserFunc: &UserPublicRepoStoreListByUserFunc{
-			defaultHook: func(context.Context, int32) ([]UserPublicRepo, error) {
-				panic("unexpected invocation of MockUserPublicRepoStore.ListByUser")
-			},
-		},
-		SetUserRepoFunc: &UserPublicRepoStoreSetUserRepoFunc{
-			defaultHook: func(context.Context, UserPublicRepo) error {
-				panic("unexpected invocation of MockUserPublicRepoStore.SetUserRepo")
-			},
-		},
-		SetUserReposFunc: &UserPublicRepoStoreSetUserReposFunc{
-			defaultHook: func(context.Context, int32, []UserPublicRepo) error {
-				panic("unexpected invocation of MockUserPublicRepoStore.SetUserRepos")
-			},
-		},
-	}
-}
-
-// NewMockUserPublicRepoStoreFrom creates a new mock of the
-// MockUserPublicRepoStore interface. All methods delegate to the given
-// implementation, unless overwritten.
-func NewMockUserPublicRepoStoreFrom(i UserPublicRepoStore) *MockUserPublicRepoStore {
-	return &MockUserPublicRepoStore{
-		HandleFunc: &UserPublicRepoStoreHandleFunc{
-			defaultHook: i.Handle,
-		},
-		ListByUserFunc: &UserPublicRepoStoreListByUserFunc{
-			defaultHook: i.ListByUser,
-		},
-		SetUserRepoFunc: &UserPublicRepoStoreSetUserRepoFunc{
-			defaultHook: i.SetUserRepo,
-		},
-		SetUserReposFunc: &UserPublicRepoStoreSetUserReposFunc{
-			defaultHook: i.SetUserRepos,
-		},
-	}
-}
-
-// UserPublicRepoStoreHandleFunc describes the behavior when the Handle
-// method of the parent MockUserPublicRepoStore instance is invoked.
-type UserPublicRepoStoreHandleFunc struct {
-	defaultHook func() basestore.TransactableHandle
-	hooks       []func() basestore.TransactableHandle
-	history     []UserPublicRepoStoreHandleFuncCall
-	mutex       sync.Mutex
-}
-
-// Handle delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockUserPublicRepoStore) Handle() basestore.TransactableHandle {
-	r0 := m.HandleFunc.nextHook()()
-	m.HandleFunc.appendCall(UserPublicRepoStoreHandleFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Handle method of the
-// parent MockUserPublicRepoStore instance is invoked and the hook queue is
-// empty.
-func (f *UserPublicRepoStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Handle method of the parent MockUserPublicRepoStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *UserPublicRepoStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserPublicRepoStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
-	f.SetDefaultHook(func() basestore.TransactableHandle {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserPublicRepoStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
-	f.PushHook(func() basestore.TransactableHandle {
-		return r0
-	})
-}
-
-func (f *UserPublicRepoStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserPublicRepoStoreHandleFunc) appendCall(r0 UserPublicRepoStoreHandleFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UserPublicRepoStoreHandleFuncCall objects
-// describing the invocations of this function.
-func (f *UserPublicRepoStoreHandleFunc) History() []UserPublicRepoStoreHandleFuncCall {
-	f.mutex.Lock()
-	history := make([]UserPublicRepoStoreHandleFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserPublicRepoStoreHandleFuncCall is an object that describes an
-// invocation of method Handle on an instance of MockUserPublicRepoStore.
-type UserPublicRepoStoreHandleFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 basestore.TransactableHandle
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserPublicRepoStoreHandleFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserPublicRepoStoreHandleFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// UserPublicRepoStoreListByUserFunc describes the behavior when the
-// ListByUser method of the parent MockUserPublicRepoStore instance is
-// invoked.
-type UserPublicRepoStoreListByUserFunc struct {
-	defaultHook func(context.Context, int32) ([]UserPublicRepo, error)
-	hooks       []func(context.Context, int32) ([]UserPublicRepo, error)
-	history     []UserPublicRepoStoreListByUserFuncCall
-	mutex       sync.Mutex
-}
-
-// ListByUser delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockUserPublicRepoStore) ListByUser(v0 context.Context, v1 int32) ([]UserPublicRepo, error) {
-	r0, r1 := m.ListByUserFunc.nextHook()(v0, v1)
-	m.ListByUserFunc.appendCall(UserPublicRepoStoreListByUserFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ListByUser method of
-// the parent MockUserPublicRepoStore instance is invoked and the hook queue
-// is empty.
-func (f *UserPublicRepoStoreListByUserFunc) SetDefaultHook(hook func(context.Context, int32) ([]UserPublicRepo, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ListByUser method of the parent MockUserPublicRepoStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *UserPublicRepoStoreListByUserFunc) PushHook(hook func(context.Context, int32) ([]UserPublicRepo, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserPublicRepoStoreListByUserFunc) SetDefaultReturn(r0 []UserPublicRepo, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32) ([]UserPublicRepo, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserPublicRepoStoreListByUserFunc) PushReturn(r0 []UserPublicRepo, r1 error) {
-	f.PushHook(func(context.Context, int32) ([]UserPublicRepo, error) {
-		return r0, r1
-	})
-}
-
-func (f *UserPublicRepoStoreListByUserFunc) nextHook() func(context.Context, int32) ([]UserPublicRepo, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserPublicRepoStoreListByUserFunc) appendCall(r0 UserPublicRepoStoreListByUserFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UserPublicRepoStoreListByUserFuncCall
-// objects describing the invocations of this function.
-func (f *UserPublicRepoStoreListByUserFunc) History() []UserPublicRepoStoreListByUserFuncCall {
-	f.mutex.Lock()
-	history := make([]UserPublicRepoStoreListByUserFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserPublicRepoStoreListByUserFuncCall is an object that describes an
-// invocation of method ListByUser on an instance of
-// MockUserPublicRepoStore.
-type UserPublicRepoStoreListByUserFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []UserPublicRepo
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserPublicRepoStoreListByUserFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserPublicRepoStoreListByUserFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// UserPublicRepoStoreSetUserRepoFunc describes the behavior when the
-// SetUserRepo method of the parent MockUserPublicRepoStore instance is
-// invoked.
-type UserPublicRepoStoreSetUserRepoFunc struct {
-	defaultHook func(context.Context, UserPublicRepo) error
-	hooks       []func(context.Context, UserPublicRepo) error
-	history     []UserPublicRepoStoreSetUserRepoFuncCall
-	mutex       sync.Mutex
-}
-
-// SetUserRepo delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockUserPublicRepoStore) SetUserRepo(v0 context.Context, v1 UserPublicRepo) error {
-	r0 := m.SetUserRepoFunc.nextHook()(v0, v1)
-	m.SetUserRepoFunc.appendCall(UserPublicRepoStoreSetUserRepoFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the SetUserRepo method
-// of the parent MockUserPublicRepoStore instance is invoked and the hook
-// queue is empty.
-func (f *UserPublicRepoStoreSetUserRepoFunc) SetDefaultHook(hook func(context.Context, UserPublicRepo) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SetUserRepo method of the parent MockUserPublicRepoStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *UserPublicRepoStoreSetUserRepoFunc) PushHook(hook func(context.Context, UserPublicRepo) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserPublicRepoStoreSetUserRepoFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, UserPublicRepo) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserPublicRepoStoreSetUserRepoFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, UserPublicRepo) error {
-		return r0
-	})
-}
-
-func (f *UserPublicRepoStoreSetUserRepoFunc) nextHook() func(context.Context, UserPublicRepo) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserPublicRepoStoreSetUserRepoFunc) appendCall(r0 UserPublicRepoStoreSetUserRepoFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UserPublicRepoStoreSetUserRepoFuncCall
-// objects describing the invocations of this function.
-func (f *UserPublicRepoStoreSetUserRepoFunc) History() []UserPublicRepoStoreSetUserRepoFuncCall {
-	f.mutex.Lock()
-	history := make([]UserPublicRepoStoreSetUserRepoFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserPublicRepoStoreSetUserRepoFuncCall is an object that describes an
-// invocation of method SetUserRepo on an instance of
-// MockUserPublicRepoStore.
-type UserPublicRepoStoreSetUserRepoFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 UserPublicRepo
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserPublicRepoStoreSetUserRepoFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserPublicRepoStoreSetUserRepoFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// UserPublicRepoStoreSetUserReposFunc describes the behavior when the
-// SetUserRepos method of the parent MockUserPublicRepoStore instance is
-// invoked.
-type UserPublicRepoStoreSetUserReposFunc struct {
-	defaultHook func(context.Context, int32, []UserPublicRepo) error
-	hooks       []func(context.Context, int32, []UserPublicRepo) error
-	history     []UserPublicRepoStoreSetUserReposFuncCall
-	mutex       sync.Mutex
-}
-
-// SetUserRepos delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockUserPublicRepoStore) SetUserRepos(v0 context.Context, v1 int32, v2 []UserPublicRepo) error {
-	r0 := m.SetUserReposFunc.nextHook()(v0, v1, v2)
-	m.SetUserReposFunc.appendCall(UserPublicRepoStoreSetUserReposFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the SetUserRepos method
-// of the parent MockUserPublicRepoStore instance is invoked and the hook
-// queue is empty.
-func (f *UserPublicRepoStoreSetUserReposFunc) SetDefaultHook(hook func(context.Context, int32, []UserPublicRepo) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SetUserRepos method of the parent MockUserPublicRepoStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *UserPublicRepoStoreSetUserReposFunc) PushHook(hook func(context.Context, int32, []UserPublicRepo) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserPublicRepoStoreSetUserReposFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32, []UserPublicRepo) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserPublicRepoStoreSetUserReposFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32, []UserPublicRepo) error {
-		return r0
-	})
-}
-
-func (f *UserPublicRepoStoreSetUserReposFunc) nextHook() func(context.Context, int32, []UserPublicRepo) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserPublicRepoStoreSetUserReposFunc) appendCall(r0 UserPublicRepoStoreSetUserReposFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UserPublicRepoStoreSetUserReposFuncCall
-// objects describing the invocations of this function.
-func (f *UserPublicRepoStoreSetUserReposFunc) History() []UserPublicRepoStoreSetUserReposFuncCall {
-	f.mutex.Lock()
-	history := make([]UserPublicRepoStoreSetUserReposFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserPublicRepoStoreSetUserReposFuncCall is an object that describes an
-// invocation of method SetUserRepos on an instance of
-// MockUserPublicRepoStore.
-type UserPublicRepoStoreSetUserReposFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 []UserPublicRepo
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserPublicRepoStoreSetUserReposFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserPublicRepoStoreSetUserReposFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // MockUserStore is a mock implementation of the UserStore interface (from
 // the package github.com/sourcegraph/sourcegraph/internal/database) used
 // for unit testing.
@@ -47327,10 +46690,6 @@ type MockUserStore struct {
 	// CreatePasswordFunc is an instance of a mock function object
 	// controlling the behavior of the method CreatePassword.
 	CreatePasswordFunc *UserStoreCreatePasswordFunc
-	// CurrentUserAllowedExternalServicesFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// CurrentUserAllowedExternalServices.
-	CurrentUserAllowedExternalServicesFunc *UserStoreCurrentUserAllowedExternalServicesFunc
 	// DeleteFunc is an instance of a mock function object controlling the
 	// behavior of the method Delete.
 	DeleteFunc *UserStoreDeleteFunc
@@ -47416,10 +46775,6 @@ type MockUserStore struct {
 	// UpdatePasswordFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdatePassword.
 	UpdatePasswordFunc *UserStoreUpdatePasswordFunc
-	// UserAllowedExternalServicesFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// UserAllowedExternalServices.
-	UserAllowedExternalServicesFunc *UserStoreUserAllowedExternalServicesFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *UserStoreWithFunc
@@ -47451,11 +46806,6 @@ func NewMockUserStore() *MockUserStore {
 		},
 		CreatePasswordFunc: &UserStoreCreatePasswordFunc{
 			defaultHook: func(context.Context, int32, string) (r0 error) {
-				return
-			},
-		},
-		CurrentUserAllowedExternalServicesFunc: &UserStoreCurrentUserAllowedExternalServicesFunc{
-			defaultHook: func(context.Context) (r0 conf.ExternalServiceMode, r1 error) {
 				return
 			},
 		},
@@ -47599,11 +46949,6 @@ func NewMockUserStore() *MockUserStore {
 				return
 			},
 		},
-		UserAllowedExternalServicesFunc: &UserStoreUserAllowedExternalServicesFunc{
-			defaultHook: func(context.Context, int32) (r0 conf.ExternalServiceMode, r1 error) {
-				return
-			},
-		},
 		WithFunc: &UserStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) (r0 UserStore) {
 				return
@@ -47639,11 +46984,6 @@ func NewStrictMockUserStore() *MockUserStore {
 		CreatePasswordFunc: &UserStoreCreatePasswordFunc{
 			defaultHook: func(context.Context, int32, string) error {
 				panic("unexpected invocation of MockUserStore.CreatePassword")
-			},
-		},
-		CurrentUserAllowedExternalServicesFunc: &UserStoreCurrentUserAllowedExternalServicesFunc{
-			defaultHook: func(context.Context) (conf.ExternalServiceMode, error) {
-				panic("unexpected invocation of MockUserStore.CurrentUserAllowedExternalServices")
 			},
 		},
 		DeleteFunc: &UserStoreDeleteFunc{
@@ -47786,11 +47126,6 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.UpdatePassword")
 			},
 		},
-		UserAllowedExternalServicesFunc: &UserStoreUserAllowedExternalServicesFunc{
-			defaultHook: func(context.Context, int32) (conf.ExternalServiceMode, error) {
-				panic("unexpected invocation of MockUserStore.UserAllowedExternalServices")
-			},
-		},
 		WithFunc: &UserStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) UserStore {
 				panic("unexpected invocation of MockUserStore.With")
@@ -47817,9 +47152,6 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		},
 		CreatePasswordFunc: &UserStoreCreatePasswordFunc{
 			defaultHook: i.CreatePassword,
-		},
-		CurrentUserAllowedExternalServicesFunc: &UserStoreCurrentUserAllowedExternalServicesFunc{
-			defaultHook: i.CurrentUserAllowedExternalServices,
 		},
 		DeleteFunc: &UserStoreDeleteFunc{
 			defaultHook: i.Delete,
@@ -47904,9 +47236,6 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		},
 		UpdatePasswordFunc: &UserStoreUpdatePasswordFunc{
 			defaultHook: i.UpdatePassword,
-		},
-		UserAllowedExternalServicesFunc: &UserStoreUserAllowedExternalServicesFunc{
-			defaultHook: i.UserAllowedExternalServices,
 		},
 		WithFunc: &UserStoreWithFunc{
 			defaultHook: i.With,
@@ -48458,115 +47787,6 @@ func (c UserStoreCreatePasswordFuncCall) Args() []interface{} {
 // invocation.
 func (c UserStoreCreatePasswordFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// UserStoreCurrentUserAllowedExternalServicesFunc describes the behavior
-// when the CurrentUserAllowedExternalServices method of the parent
-// MockUserStore instance is invoked.
-type UserStoreCurrentUserAllowedExternalServicesFunc struct {
-	defaultHook func(context.Context) (conf.ExternalServiceMode, error)
-	hooks       []func(context.Context) (conf.ExternalServiceMode, error)
-	history     []UserStoreCurrentUserAllowedExternalServicesFuncCall
-	mutex       sync.Mutex
-}
-
-// CurrentUserAllowedExternalServices delegates to the next hook function in
-// the queue and stores the parameter and result values of this invocation.
-func (m *MockUserStore) CurrentUserAllowedExternalServices(v0 context.Context) (conf.ExternalServiceMode, error) {
-	r0, r1 := m.CurrentUserAllowedExternalServicesFunc.nextHook()(v0)
-	m.CurrentUserAllowedExternalServicesFunc.appendCall(UserStoreCurrentUserAllowedExternalServicesFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// CurrentUserAllowedExternalServices method of the parent MockUserStore
-// instance is invoked and the hook queue is empty.
-func (f *UserStoreCurrentUserAllowedExternalServicesFunc) SetDefaultHook(hook func(context.Context) (conf.ExternalServiceMode, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// CurrentUserAllowedExternalServices method of the parent MockUserStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *UserStoreCurrentUserAllowedExternalServicesFunc) PushHook(hook func(context.Context) (conf.ExternalServiceMode, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserStoreCurrentUserAllowedExternalServicesFunc) SetDefaultReturn(r0 conf.ExternalServiceMode, r1 error) {
-	f.SetDefaultHook(func(context.Context) (conf.ExternalServiceMode, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserStoreCurrentUserAllowedExternalServicesFunc) PushReturn(r0 conf.ExternalServiceMode, r1 error) {
-	f.PushHook(func(context.Context) (conf.ExternalServiceMode, error) {
-		return r0, r1
-	})
-}
-
-func (f *UserStoreCurrentUserAllowedExternalServicesFunc) nextHook() func(context.Context) (conf.ExternalServiceMode, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserStoreCurrentUserAllowedExternalServicesFunc) appendCall(r0 UserStoreCurrentUserAllowedExternalServicesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// UserStoreCurrentUserAllowedExternalServicesFuncCall objects describing
-// the invocations of this function.
-func (f *UserStoreCurrentUserAllowedExternalServicesFunc) History() []UserStoreCurrentUserAllowedExternalServicesFuncCall {
-	f.mutex.Lock()
-	history := make([]UserStoreCurrentUserAllowedExternalServicesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserStoreCurrentUserAllowedExternalServicesFuncCall is an object that
-// describes an invocation of method CurrentUserAllowedExternalServices on
-// an instance of MockUserStore.
-type UserStoreCurrentUserAllowedExternalServicesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 conf.ExternalServiceMode
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserStoreCurrentUserAllowedExternalServicesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserStoreCurrentUserAllowedExternalServicesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // UserStoreDeleteFunc describes the behavior when the Delete method of the
@@ -51580,118 +50800,6 @@ func (c UserStoreUpdatePasswordFuncCall) Args() []interface{} {
 // invocation.
 func (c UserStoreUpdatePasswordFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// UserStoreUserAllowedExternalServicesFunc describes the behavior when the
-// UserAllowedExternalServices method of the parent MockUserStore instance
-// is invoked.
-type UserStoreUserAllowedExternalServicesFunc struct {
-	defaultHook func(context.Context, int32) (conf.ExternalServiceMode, error)
-	hooks       []func(context.Context, int32) (conf.ExternalServiceMode, error)
-	history     []UserStoreUserAllowedExternalServicesFuncCall
-	mutex       sync.Mutex
-}
-
-// UserAllowedExternalServices delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockUserStore) UserAllowedExternalServices(v0 context.Context, v1 int32) (conf.ExternalServiceMode, error) {
-	r0, r1 := m.UserAllowedExternalServicesFunc.nextHook()(v0, v1)
-	m.UserAllowedExternalServicesFunc.appendCall(UserStoreUserAllowedExternalServicesFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// UserAllowedExternalServices method of the parent MockUserStore instance
-// is invoked and the hook queue is empty.
-func (f *UserStoreUserAllowedExternalServicesFunc) SetDefaultHook(hook func(context.Context, int32) (conf.ExternalServiceMode, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UserAllowedExternalServices method of the parent MockUserStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *UserStoreUserAllowedExternalServicesFunc) PushHook(hook func(context.Context, int32) (conf.ExternalServiceMode, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserStoreUserAllowedExternalServicesFunc) SetDefaultReturn(r0 conf.ExternalServiceMode, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32) (conf.ExternalServiceMode, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserStoreUserAllowedExternalServicesFunc) PushReturn(r0 conf.ExternalServiceMode, r1 error) {
-	f.PushHook(func(context.Context, int32) (conf.ExternalServiceMode, error) {
-		return r0, r1
-	})
-}
-
-func (f *UserStoreUserAllowedExternalServicesFunc) nextHook() func(context.Context, int32) (conf.ExternalServiceMode, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserStoreUserAllowedExternalServicesFunc) appendCall(r0 UserStoreUserAllowedExternalServicesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// UserStoreUserAllowedExternalServicesFuncCall objects describing the
-// invocations of this function.
-func (f *UserStoreUserAllowedExternalServicesFunc) History() []UserStoreUserAllowedExternalServicesFuncCall {
-	f.mutex.Lock()
-	history := make([]UserStoreUserAllowedExternalServicesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserStoreUserAllowedExternalServicesFuncCall is an object that describes
-// an invocation of method UserAllowedExternalServices on an instance of
-// MockUserStore.
-type UserStoreUserAllowedExternalServicesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 conf.ExternalServiceMode
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserStoreUserAllowedExternalServicesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserStoreUserAllowedExternalServicesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // UserStoreWithFunc describes the behavior when the With method of the
