@@ -90,14 +90,7 @@ func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.
 
 	rl := ratelimit.DefaultRegistry.Get(urn)
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
-	rlm.SetCollector(&ratelimit.MetricsCollector{
-		Remaining: func(n float64) {
-			githubRemainingGauge.WithLabelValues("graphql").Set(n)
-		},
-		WaitDuration: func(n time.Duration) {
-			githubRatelimitWaitCounter.WithLabelValues("graphql").Add(n.Seconds())
-		},
-	})
+	collectRateLimitMonitorMetrics(rlm, "graphql")
 
 	return &V4Client{
 		log:              log.Scoped("github.v4", "github v4 client"),
