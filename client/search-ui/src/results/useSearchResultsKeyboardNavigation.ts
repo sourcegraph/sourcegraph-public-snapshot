@@ -88,18 +88,16 @@ export function useSearchResultsKeyboardNavigation(
         // When a user collapses a group of results (e.g., file matches) and hides the selected
         // result we select the last visible result in the group instead.
         const onCollapse = (): void => {
-            const selectedResult = getSelectedResult(root)
             // Get the currently selected results group.
-            const group = selectedResult?.closest('[data-selectable-search-results-group="true"]')
+            const group = getSelectedResult(root)?.closest('[data-selectable-search-results-group="true"]')
             if (!group) {
                 return
             }
 
             // Hack: use setTimeout to find out what results are visible after the collapsed group is rendered.
             setTimeout(() => {
-                const selected = getSelectedResult(root)
-                // Exit early if there is a result selected after the group is collapsed.
-                if (selected) {
+                // Exit early if there is still a result selected after the group is collapsed.
+                if (getSelectedResult(root)) {
                     return
                 }
                 // Otherwise, find the last visible result in the group and select it.
