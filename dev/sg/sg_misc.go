@@ -15,7 +15,7 @@ var miscCommand = &cli.Command{
 	Subcommands: []*cli.Command{{
 		Name: "str2regex",
 		Usage: `Turn a string into a regexp that Thorsten can paste in Sourcegraph search
-strings.Split(regexp.QuoteMeta(str), " ") 👉 foo\s+:=\s+internal\.Get\(something\)`,
+foo := internal.Get(something) 👉 foo\s+:=\s+internal\.Get\(something\)`,
 		Category:  CategoryUtil,
 		UsageText: `sg misc str2regex 'Horsegraph is (very) cool'`,
 		Action: func(cmd *cli.Context) error {
