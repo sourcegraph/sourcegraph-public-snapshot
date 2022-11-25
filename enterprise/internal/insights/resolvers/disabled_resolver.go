@@ -87,6 +87,6 @@ func (r *disabledResolver) InsightViewDebug(ctx context.Context, args graphqlbac
 	return nil, errors.New(r.reason)
 }
 
-func (r *disabledResolver) SaveInsightAsNewView(ctx context.Context) (graphqlbackend.InsightViewPayloadResolver, error) {
+func (r *disabledResolver) SaveInsightAsNewView(ctx context.Context, args graphqlbackend.SaveInsightAsNewViewArgs) (graphqlbackend.InsightViewPayloadResolver, error) {
 	return nil, errors.New(r.reason)
 }

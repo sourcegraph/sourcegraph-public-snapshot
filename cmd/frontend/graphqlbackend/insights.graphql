@@ -907,7 +907,7 @@ extend type Mutation {
     """
     Create a new insight view from an existing view.
     """
-    saveInsightAsNewView(id: ID!): InsightView!
+    saveInsightAsNewView(input: InsightNewViewInput!): InsightView!
 }
 
 """
@@ -1212,4 +1212,29 @@ type SearchInsightLivePreviewSeries {
     The label for the data series.
     """
     label: String!
+}
+
+"""
+Input for saving a new view on an insight.
+"""
+input InsightNewViewInput {
+    """
+    The insight view ID we are creating a new view from.
+    """
+    insightViewId: ID!
+
+    """
+    The options for this line chart.
+    """
+    options: LineChartOptionsInput!
+
+    """
+    The dashboard IDs to associate this insight with once created.
+    """
+    dashboards: [ID!]
+
+    """
+    The default values for filters and aggregates for this line chart.
+    """
+    viewControls: InsightViewControlsInput
 }

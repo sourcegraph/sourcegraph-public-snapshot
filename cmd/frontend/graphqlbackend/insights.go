@@ -35,7 +35,7 @@ type InsightsResolver interface {
 	UpdatePieChartSearchInsight(ctx context.Context, args *UpdatePieChartSearchInsightArgs) (InsightViewPayloadResolver, error)
 
 	DeleteInsightView(ctx context.Context, args *DeleteInsightViewArgs) (*EmptyResponse, error)
-	SaveInsightAsNewView(ctx context.Context) (InsightViewPayloadResolver, error)
+	SaveInsightAsNewView(ctx context.Context, args SaveInsightAsNewViewArgs) (InsightViewPayloadResolver, error)
 
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
@@ -434,6 +434,17 @@ type TimeIntervalStepInput struct {
 
 type LineChartOptionsInput struct {
 	Title *string
+}
+
+type SaveInsightAsNewViewArgs struct {
+	Input InsightNewViewInput
+}
+
+type InsightNewViewInput struct {
+	InsightViewID graphql.ID
+	Options       LineChartOptionsInput
+	Dashboards    *[]graphql.ID
+	ViewControls  *InsightViewControlsInput
 }
 
 type InsightViewPayloadResolver interface {

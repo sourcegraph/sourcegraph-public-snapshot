@@ -674,7 +674,7 @@ func existingSeriesHasChanged(new graphqlbackend.LineChartSearchInsightDataSerie
 	return emptyIfNil(new.GroupBy) != emptyIfNil(existing.GroupBy)
 }
 
-func (r *Resolver) SaveInsightAsNewView(ctx context.Context) (graphqlbackend.InsightViewPayloadResolver, error) {
+func (r *Resolver) SaveInsightAsNewView(ctx context.Context, args graphqlbackend.SaveInsightAsNewViewArgs) (graphqlbackend.InsightViewPayloadResolver, error) {
 	return nil, nil
 }
 
