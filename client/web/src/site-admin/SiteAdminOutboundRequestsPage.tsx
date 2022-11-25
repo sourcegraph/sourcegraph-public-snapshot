@@ -89,22 +89,27 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
         pollInterval: OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL,
     })
 
-    if (data?.outboundRequests?.length && (!lastId || data?.outboundRequests[0].id > lastId)) {
-        const newItems = items
-            .concat(...data.outboundRequests)
-            .slice(
-                Math.max(items.length + data.outboundRequests.length - (window.context.outboundRequestLogLimit ?? 0), 0)
-            )
-        // Workaround for https://github.com/apollographql/apollo-client/issues/3053 to update the variables.
-        // Weirdly enough, we don't need to wait for refetch() to complete before restarting polling.
-        // See http://www.petecorey.com/blog/2019/09/23/apollo-quirks-polling-after-refetching-with-new-variables/
-        stopPolling()
-        setItems(newItems)
-        refetch({ after: newItems[newItems.length - 1]?.id ?? null })
-            .then(() => {})
-            .catch(() => {})
-        startPolling(OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL)
-    }
+    useEffect(() => {
+        if (data?.outboundRequests?.length && (!lastId || data?.outboundRequests[0].id > lastId)) {
+            const newItems = items
+                .concat(...data.outboundRequests)
+                .slice(
+                    Math.max(
+                        items.length + data.outboundRequests.length - (window.context.outboundRequestLogLimit ?? 0),
+                        0
+                    )
+                )
+            // Workaround for https://github.com/apollographql/apollo-client/issues/3053 to update the variables.
+            // Weirdly enough, we don't need to wait for refetch() to complete before restarting polling.
+            // See http://www.petecorey.com/blog/2019/09/23/apollo-quirks-polling-after-refetching-with-new-variables/
+            stopPolling()
+            setItems(newItems)
+            refetch({ after: newItems[newItems.length - 1]?.id ?? null })
+                .then(() => {})
+                .catch(() => {})
+            startPolling(OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL)
+        }
+    }, [data, lastId, items, refetch, startPolling, stopPolling])
 
     const queryOutboundRequests = useCallback(
         (args: FilteredConnectionQueryArguments & { failed?: boolean }) =>
