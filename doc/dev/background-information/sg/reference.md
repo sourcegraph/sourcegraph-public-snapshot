@@ -1536,7 +1536,7 @@ Misc utilities.
 ### sg misc str2regex
 
 Turn a string into a regexp that Thorsten can paste in Sourcegraph search
-strings.Split(regexp.QuoteMeta(str), " ") 👉 foo\s+:=\s+internal\.Get\(something\).
+foo := internal.Get(something) 👉 foo\s+:=\s+internal\.Get\(something\).
 
 ```sh
 $ sg misc str2regex 'Horsegraph is (very) cool'
