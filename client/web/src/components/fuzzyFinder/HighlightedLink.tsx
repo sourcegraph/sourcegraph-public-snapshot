@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
-import { Code, Link } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import styles from './HighlightedLink.module.scss'
 
@@ -74,26 +74,21 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
     }
     pushElement('span', start, props.text.length)
 
-    return props.url ? (
-        <Code>
-            <Link key="link" className={styles.link} to={props.url} onClick={props.onClick}>
-                {props.icon && <span key="icon">{props.icon}</span>}
-                {spans}
-                {props.textSuffix}
-            </Link>
-        </Code>
-    ) : (
-        <Link
-            key="link"
-            className={styles.link}
-            to={`/commands/${props.text}`}
-            onClick={event => {
+    const handleClick = useCallback(
+        (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+            if (!props.url) {
                 event.preventDefault()
-                props.onClick?.()
-            }}
-        >
-            {props.icon && <span key="icon">{props.icon}</span>}
+            }
+            props.onClick?.()
+        },
+        [props.url, props.onClick]
+    )
+
+    return (
+        <Link className={styles.link} to={props.url || `/commands/${props.text}`} onClick={handleClick}>
+            {props.icon && <span>{props.icon}</span>}
             {spans}
+            {props.url ? props.textSuffix : null}
         </Link>
     )
 }
