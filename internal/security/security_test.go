@@ -151,6 +151,7 @@ func TestAddrValidation(t *testing.T) {
 		{"git-123@sourcegraph.com", false},
 		{"git-123@sourcegraph.com:foo", false},
 		{"git@sourcegraph.com", true},
+		{"thissubdomaindoesnotexist.sourcegraph.com", false},
 	}
 
 	t.Run("correctly validates addresses", func(t *testing.T) {
