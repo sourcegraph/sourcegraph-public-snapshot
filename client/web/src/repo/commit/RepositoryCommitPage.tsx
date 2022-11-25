@@ -2,7 +2,7 @@ import React, { useMemo, useCallback, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
-import { concat, Observable, ReplaySubject, Subject } from 'rxjs'
+import { Observable, ReplaySubject, Subject } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'

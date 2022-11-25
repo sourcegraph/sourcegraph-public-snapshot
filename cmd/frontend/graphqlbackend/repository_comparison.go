@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -494,6 +495,7 @@ func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs
 				return nil, err
 			}
 			lines, aborted, err := highlight.CodeAsLines(ctx, highlight.Params{
+				// We rely on the final newline to be kept for proper highlighting.
 				KeepFinalNewline:   true,
 				Content:            []byte(content),
 				Filepath:           file.Path(),
@@ -548,35 +550,46 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 	}
 
 	// If the diff ends with a newline, we have to strip it, otherwise we iterate
-	// over a ghost line.
+	// over a ghost line that we don't want to render.
 	hunkLines := strings.Split(strings.TrimSuffix(string(r.hunk.Body), "\n"), "\n")
 
 	// Lines in highlightedBase and highlightedHead are 0-indexed.
 	baseLine := r.hunk.OrigStartLine - 1
 	headLine := r.hunk.NewStartLine - 1
 
-	highlightedDiffHunkLineResolvers := make([]*highlightedDiffHunkLineResolver, 0, len(hunkLines))
-	for _, hunkLine := range hunkLines {
+	// TODO: There's been historically a lot of bugs in this code. They should be resolved now,
+	// but let's keep this in for one more release and check log aggregators before we
+	// finally remove this in Sourcegraph 4.4.
+	safeIndex := func(lines []template.HTML, target int32) string {
+		if len(lines) > int(target) {
+			return string(lines[target])
+		}
+		log15.Error("returned default value for out of bounds index on highlighted code")
+		return `<div></div>`
+	}
+
+	highlightedDiffHunkLineResolvers := make([]*highlightedDiffHunkLineResolver, len(hunkLines))
+	for i, hunkLine := range hunkLines {
 		highlightedDiffHunkLineResolver := highlightedDiffHunkLineResolver{}
 		if hunkLine[0] == ' ' {
 			highlightedDiffHunkLineResolver.kind = highlightedDiffHunkLineKindUnchanged
-			highlightedDiffHunkLineResolver.html = string(highlightedBase[baseLine])
+			highlightedDiffHunkLineResolver.html = safeIndex(highlightedBase, baseLine)
 			baseLine++
 			headLine++
 		} else if hunkLine[0] == '+' {
 			highlightedDiffHunkLineResolver.kind = highlightedDiffHunkLineKindAdded
-			highlightedDiffHunkLineResolver.html = string(highlightedHead[headLine])
+			highlightedDiffHunkLineResolver.html = safeIndex(highlightedHead, headLine)
 			headLine++
 		} else if hunkLine[0] == '-' {
 			highlightedDiffHunkLineResolver.kind = highlightedDiffHunkLineKindDeleted
-			highlightedDiffHunkLineResolver.html = string(highlightedBase[baseLine])
+			highlightedDiffHunkLineResolver.html = safeIndex(highlightedBase, baseLine)
 			baseLine++
 		} else {
 			return nil, errors.Errorf("expected patch lines to start with ' ', '-', '+', but found %q", hunkLine[0])
 		}
-
-		highlightedDiffHunkLineResolvers = append(highlightedDiffHunkLineResolvers, &highlightedDiffHunkLineResolver)
+		highlightedDiffHunkLineResolvers[i] = &highlightedDiffHunkLineResolver
 	}
+
 	return &highlightedDiffHunkBodyResolver{
 		highlightedDiffHunkLineResolvers: highlightedDiffHunkLineResolvers,
 		aborted:                          aborted,
@@ -622,7 +635,7 @@ func (r *highlightedDiffHunkLineResolver) Kind() string {
 	case highlightedDiffHunkLineKindDeleted:
 		return "DELETED"
 	}
-	panic("unreachable")
+	panic("unreachable code: r.kind didn't match a known type")
 }
 
 func NewDiffHunkRange(startLine, lines int32) *DiffHunkRange {
