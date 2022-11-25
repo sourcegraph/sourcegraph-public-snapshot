@@ -565,7 +565,8 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 	if err != nil {
 		var e *protocol.CreateCommitFromPatchError
 		if errors.As(err, &e) {
-			// Make patch does not apply error a fatal error, retries won't help here.
+			// Make "patch does not apply" errors a fatal error. Retrying the changeset
+			// rollout won't help here and just causes noise.
 			if strings.Contains(e.CombinedOutput, "patch does not apply") {
 				return errcode.MakeNonRetryable(pushCommitError{e})
 			}
