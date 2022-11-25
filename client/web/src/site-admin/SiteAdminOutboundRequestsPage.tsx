@@ -2,6 +2,7 @@ import React, { ReactNode, useCallback, useEffect, useState } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
+import copy from 'copy-to-clipboard'
 import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
 import { delay, map } from 'rxjs/operators'
@@ -11,6 +12,7 @@ import { useQuery } from '@sourcegraph/http-client/src'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
+    Code,
     Container,
     Icon,
     Link,
@@ -179,14 +181,19 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
 
 const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<OutboundRequest> }> = ({ node }) => {
     const roundedSecond = Math.round((node.duration + Number.EPSILON) * 100) / 100
+    const [copied, setCopied] = useState(false)
+
+    const copyToClipboard = (text: string): void => {
+        copy(text)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+    }
+
     return (
         <React.Fragment key={node.id}>
             <span className={styles.separator} />
-            <div>
-                <Timestamp date={node.startedAt} noAbout={true} />,{' '}
-                <Tooltip content={`Duration: ${roundedSecond} second${roundedSecond === 1 ? '' : 's'}`}>
-                    <>{roundedSecond}s</>
-                </Tooltip>
+            <div className="flex-bounded">
+                <Timestamp date={node.startedAt} noAbout={true} />
             </div>
             <div>
                 <Tooltip content="HTTP request method">
@@ -194,56 +201,68 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
                 </Tooltip>
             </div>
             <div>
-                <span className={isSuccessful(node) ? 'successful' : 'failed'}>{node.statusCode}</span>
+                <span className={isSuccessful(node) ? styles.successful : styles.failed}>{node.statusCode}</span>
             </div>
-            <div>{node.url}</div>
+            <div className={styles.urlColumn}>{node.url}</div>
             <div className={classNames('d-flex flex-row')}>
-                <HeaderPopover headers={node.requestHeaders} label={`${node.requestHeaders?.length} req headers`} />
-                <HeaderPopover headers={node.responseHeaders} label={`${node.responseHeaders?.length} resp headers`} />
                 <SimplePopover label="More info">
                     <Text>
-                        <strong>Client created at:</strong> {node.creationStackFrame}
+                        <strong>Duration:</strong> {roundedSecond.toFixed(2)} second{roundedSecond === 1 ? '' : 's'}
                     </Text>
                     <Text>
-                        <strong>Request made at:</strong> {node.callStackFrame}
+                        <strong>Client created at:</strong> <Code>{node.creationStackFrame}</Code>
+                    </Text>
+                    <Text>
+                        <strong>Request made at:</strong> <Code>{node.callStackFrame}</Code>
                     </Text>
                     <Text>
                         <strong>Error:</strong> {node.errorMessage ? node.errorMessage : 'No error'}
                     </Text>
+                    {node.requestHeaders.length ? (
+                        <>
+                            <Text>
+                                <strong>Request headers:</strong>{' '}
+                            </Text>
+                            <ul>
+                                {node.requestHeaders.map(header => (
+                                    <li key={header.name}>
+                                        <strong>{header.name}</strong>: {header.values.join(', ')}
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
+                    ) : (
+                        'No request headers'
+                    )}
+                    {node.responseHeaders.length ? (
+                        <>
+                            <Text>
+                                <strong>Response headers:</strong>{' '}
+                            </Text>
+                            <ul>
+                                {node.responseHeaders.map(header => (
+                                    <li key={header.name}>
+                                        <strong>{header.name}</strong>: {header.values.join(', ')}
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
+                    ) : (
+                        'No request headers'
+                    )}
                     <Text>
                         <strong>Request body:</strong> {node.requestBody ? node.requestBody : 'Empty body'}
                     </Text>
                 </SimplePopover>
             </div>
+            <div>
+                <Tooltip content={copied ? 'Copied' : `Copy ${buildCurlCommand(node)}`}>
+                    <Button className="ml-2" onClick={() => copyToClipboard(buildCurlCommand(node))}>
+                        Copy curl
+                    </Button>
+                </Tooltip>
+            </div>
         </React.Fragment>
-    )
-}
-
-const HeaderPopover: React.FunctionComponent<
-    React.PropsWithChildren<{ headers: OutboundRequest['requestHeaders'] | undefined; label: string }>
-> = ({ headers, label }) => {
-    const [isOpen, setIsOpen] = useState(false)
-    const handleOpenChange = useCallback(({ isOpen }: { isOpen: boolean }) => setIsOpen(isOpen), [setIsOpen])
-    return headers ? (
-        <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
-            <PopoverTrigger as={Button} variant="secondary" outline={true}>
-                <small>{label}</small>
-                <Icon aria-label="Show details" svgPath={mdiChevronDown} />
-            </PopoverTrigger>
-            <PopoverContent position={Position.bottom} focusLocked={false}>
-                <div className="p-2">
-                    <ul className="m-0 p-0">
-                        {headers.map(header => (
-                            <li key={header.name}>
-                                <strong>{header.name}</strong>: {header.values.join(', ')}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </PopoverContent>
-        </Popover>
-    ) : (
-        <></>
     )
 }
 
@@ -288,4 +307,10 @@ function matchesString(request: OutboundRequest, query: string): boolean {
                 header.values.some(value => value.toLowerCase().includes(lQuery))
         )
     )
+}
+
+function buildCurlCommand(request: OutboundRequest): string {
+    const headers = request.requestHeaders?.map(header => `-H '${header.name}: ${header.values.join(', ')}'`).join(' ')
+    const body = request.requestBody ? `-d '${request.requestBody}'` : ''
+    return `curl -X ${request.method} ${headers} ${body} '${request.url}'`
 }
