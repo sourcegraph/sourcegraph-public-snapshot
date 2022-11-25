@@ -44,7 +44,11 @@ export const Default: Story = () => (
         <div className="mb-3 b-1">
             <Simple />
         </div>
-        <H2>Long Path</H2>
+        <H2>Constrained width</H2>
+        <div className="mb-3 b-1" style={{ maxWidth: 480 }}>
+            <Simple />
+        </div>
+        <H2>Long path</H2>
         <LongPath />
     </>
 )
