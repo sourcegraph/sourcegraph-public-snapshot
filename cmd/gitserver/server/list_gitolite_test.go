@@ -27,34 +27,34 @@ func Test_Gitolite_listRepos(t *testing.T) {
 	}{
 		{
 			listRepos: map[string][]*gitolite.Repo{
-				"git@gitolite.example.com": {
-					{Name: "myrepo", URL: "git@gitolite.example.com:myrepo"},
+				"git@sourcegraph.com": {
+					{Name: "myrepo", URL: "git@sourcegraph.com:myrepo"},
 				},
 			},
 			configs: []*schema.GitoliteConnection{
 				{
-					Host:   "git@gitolite.example.com",
-					Prefix: "gitolite.example.com/",
+					Host:   "git@sourcegraph.com",
+					Prefix: "sourcegraph.com/",
 				},
 			},
-			gitoliteHost:    "git@gitolite.example.com",
+			gitoliteHost:    "git@sourcegraph.com",
 			expResponseCode: 200,
-			expResponseBody: `[{"Name":"myrepo","URL":"git@gitolite.example.com:myrepo"}]` + "\n",
+			expResponseBody: `[{"Name":"myrepo","URL":"git@sourcegraph.com:myrepo"}]` + "\n",
 		},
 		// Invalid gitoliteHost (fails ValidateRemoteAddr)
 		{
 			listRepos: map[string][]*gitolite.Repo{
-				"git@gitolite.example.com": {
-					{Name: "myrepo", URL: "git@gitolite.example.com:myrepo"},
+				"git@sourcegraph.com": {
+					{Name: "myrepo", URL: "git@sourcegraph.com:myrepo"},
 				},
 			},
 			configs: []*schema.GitoliteConnection{
 				{
-					Host:   "git@gitolite.example.com",
-					Prefix: "gitolite.example.com/",
+					Host:   "git@sourcegraph.com",
+					Prefix: "sourcegraph.com/",
 				},
 			},
-			gitoliteHost:    "--invalidhostnample.com",
+			gitoliteHost:    "--invalidhostnexample.com",
 			expResponseCode: 500,
 			expResponseBody: `invalid hostname` + "\n",
 		},
