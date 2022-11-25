@@ -26,6 +26,24 @@ type validateTokenResponse struct {
 // GetCurrentUser returns validateTokenResponse.CurrentUser, and is useful for accessing the field via an interface.
 func (v *validateTokenResponse) GetCurrentUser() validateTokenCurrentUser { return v.CurrentUser }
 
+// versionMetadata includes the requested fields of the GraphQL type Metadata.
+type versionMetadata struct {
+	// Version
+	Version string `json:"version"`
+}
+
+// GetVersion returns versionMetadata.Version, and is useful for accessing the field via an interface.
+func (v *versionMetadata) GetVersion() string { return v.Version }
+
+// versionResponse is returned by version on success.
+type versionResponse struct {
+	// Metadata about GitLab
+	Metadata versionMetadata `json:"metadata"`
+}
+
+// GetMetadata returns versionResponse.Metadata, and is useful for accessing the field via an interface.
+func (v *versionResponse) GetMetadata() versionMetadata { return v.Metadata }
+
 func validateToken(
 	ctx context.Context,
 	client graphql.Client,
@@ -43,6 +61,34 @@ query validateToken {
 	var err error
 
 	var data validateTokenResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
+func version(
+	ctx context.Context,
+	client graphql.Client,
+) (*versionResponse, error) {
+	req := &graphql.Request{
+		OpName: "version",
+		Query: `
+query version {
+	metadata {
+		version
+	}
+}
+`,
+	}
+	var err error
+
+	var data versionResponse
 	resp := &graphql.Response{Data: &data}
 
 	err = client.MakeRequest(

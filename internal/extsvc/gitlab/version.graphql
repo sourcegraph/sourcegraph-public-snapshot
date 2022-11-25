@@ -1,0 +1,5 @@
+query version {
+    metadata {
+        version
+    }
+}

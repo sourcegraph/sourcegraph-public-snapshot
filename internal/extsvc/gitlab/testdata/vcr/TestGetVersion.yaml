@@ -1,0 +1,86 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"query":"\nquery version {\n\tmetadata {\n\t\tversion\n\t}\n}\n","operationName":"version"}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json
+    url: https://gitlab.com/api/graphql
+    method: POST
+  response:
+    body: '{"data":{"metadata":{"version":"15.7.0-pre"}}}'
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 76f6bbc48e86841d-YVR
+      Content-Length:
+      - "46"
+      Content-Security-Policy:
+      - 'base-uri ''self''; child-src https://www.google.com/recaptcha/ https://www.recaptcha.net/
+        https://content.googleapis.com https://content-compute.googleapis.com https://content-cloudbilling.googleapis.com
+        https://content-cloudresourcemanager.googleapis.com https://www.googletagmanager.com/ns.html
+        https://gitlab.com/admin/ https://gitlab.com/assets/ https://gitlab.com/-/speedscope/index.html
+        https://gitlab.com/-/sandbox/ https://gitlab.com/assets/ blob: data:; connect-src
+        ''self'' https://gitlab.com wss://gitlab.com https://sentry.gitlab.net https://customers.gitlab.com
+        https://snowplow.trx.gitlab.net https://sourcegraph.com snowplow.trx.gitlab.net;
+        default-src ''self''; font-src ''self''; form-action ''self'' https: http:;
+        frame-ancestors ''self''; frame-src ''self'' https://www.google.com/recaptcha/
+        https://www.recaptcha.net/ https://content.googleapis.com https://content-cloudresourcemanager.googleapis.com
+        https://content-compute.googleapis.com https://content-cloudbilling.googleapis.com
+        https://*.codesandbox.io https://customers.gitlab.com; img-src * data: blob:;
+        manifest-src ''self''; media-src ''self'' data: http: https:; object-src ''none'';
+        report-uri https://sentry.gitlab.net/api/105/security/?sentry_key=a42ea3adc19140d9a6424906e12fba86;
+        script-src ''strict-dynamic'' ''self'' ''unsafe-inline'' ''unsafe-eval'' https://www.google.com/recaptcha/
+        https://www.gstatic.com/recaptcha/ https://www.recaptcha.net/ https://apis.google.com
+        ''nonce-hVbrz6/fg7Mt7JlE4hqWew==''; style-src ''self'' ''unsafe-inline'';
+        worker-src https://gitlab.com blob: data:'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 25 Nov 2022 01:50:26 GMT
+      Etag:
+      - W/"1f181f715544ed2825ac6b3103a70a93"
+      Gitlab-Lb:
+      - fe-28-lb-gprd
+      Gitlab-Sv:
+      - api-gke-us-east1-c
+      Nel:
+      - '{"success_fraction":0.01,"report_to":"cf-nel","max_age":604800}'
+      Permissions-Policy:
+      - interest-cohort=()
+      Pragma:
+      - no-cache
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Report-To:
+      - '{"endpoints":[{"url":"https:\/\/a.nel.cloudflare.com\/report\/v3?s=EEb76%2BTWJeESKhwmgg5POOlZiiWlJlQKUJOsQiUOdjem3q9fOYpeBMEpSxu7vEx4D42PSpdTHXKe5qZUWh%2B2uYTuLl0obVdG7uOMMlqVdQ5ytBQM%2BDA6yxLEMFI8X6VuLhaasZ5Puik%3D"}],"group":"cf-nel","max_age":604800}'
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000
+      Vary:
+      - Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Download-Options:
+      - noopen
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Permitted-Cross-Domain-Policies:
+      - none
+      X-Request-Id:
+      - 6cf046063c025b23ed5951c9551644e7
+      X-Runtime:
+      - "0.051751"
+      X-Ua-Compatible:
+      - IE=edge
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
