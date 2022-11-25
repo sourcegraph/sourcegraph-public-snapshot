@@ -62,7 +62,7 @@ func TestMiddleware(t *testing.T) {
 		return respRecorder.Result()
 	}
 
-	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg sign-in page", func(t *testing.T) {
+	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg sign-in", func(t *testing.T) {
 		cookie := &http.Cookie{Name: "sg-signout", Value: "true"}
 
 		resp := doRequest("GET", "http://example.com/", "", []*http.Cookie{cookie}, false)
@@ -70,13 +70,13 @@ func TestMiddleware(t *testing.T) {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
-	t.Run("unauthenticated homepage visit, no sign-out cookie -> sso sign-in redirect", func(t *testing.T) {
+	t.Run("unauthenticated homepage visit, no sign-out cookie -> github oauth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
-	t.Run("unauthenticated subpage visit -> sso sign-in redirect", func(t *testing.T) {
+	t.Run("unauthenticated subpage visit -> github oauth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/page", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
@@ -104,9 +104,7 @@ func TestMiddleware(t *testing.T) {
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
-
 		redirect := resp.Header.Get("Location")
-
 		if got, want := redirect, "https://github.com/login/oauth/authorize?"; !strings.HasPrefix(got, want) {
 			t.Errorf("got redirect URL %v, want contains %v", got, want)
 		}

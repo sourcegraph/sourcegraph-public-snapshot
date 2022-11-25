@@ -263,13 +263,13 @@ func TestMiddleware(t *testing.T) {
 	var (
 		authnCookies []*http.Cookie
 	)
-	t.Run("unauthenticated homepage visit, no sign-out cookie -> sso sign-in redirect", func(t *testing.T) {
+	t.Run("unauthenticated homepage visit, no sign-out cookie -> IDP SSO URL", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, false, nil)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
-	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg login page", func(t *testing.T) {
+	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg login", func(t *testing.T) {
 		cookie := &http.Cookie{Name: "sg-signout", Value: "true"}
 
 		resp := doRequest("GET", "http://example.com/", "", []*http.Cookie{cookie}, false, nil)

@@ -175,7 +175,6 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// if !idToken.Expiry.IsZero() {
 			// 	exp = time.Until(idToken.Expiry)
 			// }
-
 			if err = session.SetActor(w, r, actor.FromUser(result.User.ID), exp, result.User.CreatedAt); err != nil {
 				log15.Error("Failed to authenticate with OpenID connect: could not initiate session.", "error", err)
 				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
