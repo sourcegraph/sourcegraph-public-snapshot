@@ -6,12 +6,14 @@ import (
 	"encoding/base64"
 	"net/url"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -168,7 +170,7 @@ func (userEmails) Remove(ctx context.Context, logger log.Logger, db database.DB,
 	defer func() { err = tx.Done(err) }()
 
 	if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
-		return errors.Wrap(err, "removing user e-email")
+		return errors.Wrap(err, "removing user e-mail")
 	}
 
 	// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
@@ -185,6 +187,56 @@ func (userEmails) Remove(ctx context.Context, logger log.Logger, db database.DB,
 		if err := UserEmails.SendUserEmailOnFieldUpdate(ctx, logger, tx, userID, "removed an email"); err != nil {
 			logger.Warn("Failed to send email to inform user of email removal", log.Error(err))
 		}
+	}
+
+	return nil
+}
+
+// TODO: Tests
+func (e userEmails) SetPrimaryEmail(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string) error {
+	logger = logger.Scoped("UserEmails.SetPrimaryEmail", "handles setting primary e-mail for user")
+
+	// 🚨 SECURITY: Only the authenticated user and site admins can set the primary
+	// email for users' accounts.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
+		return err
+	}
+
+	if err := db.UserEmails().SetPrimaryEmail(ctx, userID, email); err != nil {
+		return err
+	}
+
+	if conf.CanSendEmail() {
+		if err := e.SendUserEmailOnFieldUpdate(ctx, logger, db, userID, "changed primary email"); err != nil {
+			logger.Warn("Failed to send email to inform user of primary address change", log.Error(err))
+		}
+	}
+
+	return nil
+}
+
+// TODO: Tests
+func (userEmails) SetVerified(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string, verified bool) error {
+	logger = logger.Scoped("UserEmails.SetVerified", "handles setting e-mail as verified")
+
+	if err := db.UserEmails().SetVerified(ctx, userID, email, verified); err != nil {
+		return err
+	}
+
+	// Avoid unnecessary calls if the email is set to unverified.
+	if !verified {
+		return nil
+	}
+
+	if err := db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		UserID: userID,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
+	}); err != nil {
+		log15.Error("schemaResolver.SetUserEmailVerified: failed to grant user pending permissions",
+			"userID", userID,
+			"error", err,
+		)
 	}
 
 	return nil

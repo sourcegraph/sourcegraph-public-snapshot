@@ -8,9 +8,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -60,11 +58,6 @@ func (r *userEmailResolver) VerificationPending() bool {
 func (r *userEmailResolver) User() *UserResolver { return r.user }
 
 func (r *userEmailResolver) ViewerCanManuallyVerify(ctx context.Context) (bool, error) {
-	// 🚨 SECURITY: No one can manually verify user's email on Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		return false, nil
-	}
-
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err == auth.ErrNotAuthenticated || err == auth.ErrMustBeSiteAdmin {
 		return false, nil
 	} else if err != nil {
@@ -81,12 +74,6 @@ type addUserEmailArgs struct {
 func (r *schemaResolver) AddUserEmail(ctx context.Context, args *addUserEmailArgs) (*EmptyResponse, error) {
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: Only the authenticated user or site admins can add new email to
-	// users' accounts.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 
@@ -132,20 +119,8 @@ func (r *schemaResolver) SetUserEmailPrimary(ctx context.Context, args *setUserE
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the authenticated user and site admins can set the primary
-	// email for users' accounts.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+	if err := backend.UserEmails.SetPrimaryEmail(ctx, r.logger, r.db, userID, args.Email); err != nil {
 		return nil, err
-	}
-
-	if err := r.db.UserEmails().SetPrimaryEmail(ctx, userID, args.Email); err != nil {
-		return nil, err
-	}
-
-	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, userID, "changed primary email"); err != nil {
-			log15.Warn("Failed to send email to inform user of primary address change", "error", err)
-		}
 	}
 
 	return &EmptyResponse{}, nil
@@ -168,22 +143,9 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *setUser
 	if err != nil {
 		return nil, err
 	}
-	if err := r.db.UserEmails().SetVerified(ctx, userID, args.Email, args.Verified); err != nil {
-		return nil, err
-	}
 
-	// Avoid unnecessary calls if the email is set to unverified.
-	if args.Verified {
-		if err = r.db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
-			UserID: userID,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
-		}); err != nil {
-			log15.Error("schemaResolver.SetUserEmailVerified: failed to grant user pending permissions",
-				"userID", userID,
-				"error", err,
-			)
-		}
+	if err := backend.UserEmails.SetVerified(ctx, r.logger, r.db, userID, args.Email, args.Verified); err != nil {
+		return nil, err
 	}
 
 	return &EmptyResponse{}, nil

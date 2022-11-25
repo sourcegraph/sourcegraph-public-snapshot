@@ -233,10 +233,16 @@ func TestUserEmailsAddRemove(t *testing.T) {
 	createdUser, err := db.Users().Create(ctx, newUser)
 	assert.NoError(t, err)
 
-	// Adding as non site admin or owner should fail
+	// Unauthenticated user should fail
+	assert.Error(t, UserEmails.Add(ctx, logger, db, createdUser.ID, email2))
+	// Different user should fail
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 99,
+	})
 	assert.Error(t, UserEmails.Add(ctx, logger, db, createdUser.ID, email2))
 
-	ctx = actor.WithInternalActor(ctx)
+	// Add as a site admin (or internal actor) should pass
+	ctx = actor.WithInternalActor(context.Background())
 	// Add secondary e-mail
 	assert.NoError(t, UserEmails.Add(ctx, logger, db, createdUser.ID, email2))
 
@@ -244,6 +250,18 @@ func TestUserEmailsAddRemove(t *testing.T) {
 	code, err := db.Users().RenewPasswordResetCode(ctx, createdUser.ID)
 	assert.NoError(t, err)
 
+	// Remove as unauthenticated user should fail
+	ctx = context.Background()
+	assert.Error(t, UserEmails.Remove(ctx, logger, db, createdUser.ID, email2))
+
+	// Remove as different user should fail
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 99,
+	})
+	assert.Error(t, UserEmails.Remove(ctx, logger, db, createdUser.ID, email2))
+
+	// Remove as a site admin (or internal actor) should pass
+	ctx = actor.WithInternalActor(context.Background())
 	assert.NoError(t, UserEmails.Remove(ctx, logger, db, createdUser.ID, email2))
 
 	// Trying to change the password with the old code should fail

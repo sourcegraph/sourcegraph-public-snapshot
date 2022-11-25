@@ -10,7 +10,6 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -19,126 +18,84 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func init() {
+	txemail.DisableSilently()
+}
+
 func TestUserEmail_ViewerCanManuallyVerify(t *testing.T) {
+	t.Parallel()
+
 	db := database.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+	t.Run("only allowed by site admin", func(t *testing.T) {
 		users := database.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
-
 		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
+			name    string
+			ctx     context.Context
+			setup   func()
+			allowed bool
 		}{
 			{
 				name: "unauthenticated",
 				ctx:  context.Background(),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-				},
-			},
-			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return nil, database.ErrNoCurrentUser
 					})
 				},
+				allowed: false,
+			},
+			{
+				name: "non site admin",
+				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				setup: func() {
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return &types.User{
+							ID:        2,
+							SiteAdmin: false,
+						}, nil
+					})
+				},
+				allowed: false,
 			},
 			{
 				name: "site admin",
 				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return &types.User{
+							ID:        2,
+							SiteAdmin: true,
+						}, nil
 					})
 				},
+				allowed: true,
 			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				ok, _ := (&userEmailResolver{}).ViewerCanManuallyVerify(test.ctx)
-				assert.False(t, ok, "ViewerCanManuallyVerify")
+				ok, _ := (&userEmailResolver{
+					db: db,
+				}).ViewerCanManuallyVerify(test.ctx)
+				assert.Equal(t, test.allowed, ok, "ViewerCanManuallyVerify")
 			})
 		}
 	})
 }
 
-func TestAddUserEmail(t *testing.T) {
-	db := database.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+func TestSetUserEmailVerified(t *testing.T) {
+	t.Run("only allowed by site admins", func(t *testing.T) {
+		t.Parallel()
+
+		db := database.NewMockDB()
+
 		users := database.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
-
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
-
-		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
-		}{
-			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-				},
-			},
-			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
-					})
-				},
-			},
-			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
-					})
-				},
-			},
-		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				test.setup()
-
-				_, err := newSchemaResolver(db, gitserver.NewClient(db)).AddUserEmail(
-					test.ctx,
-					&addUserEmailArgs{
-						User: MarshalUserID(1),
-					},
-				)
-				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
-			})
-		}
-	})
-}
-
-func TestRemoveUserEmail(t *testing.T) {
-	db := database.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
+		userEmails := database.NewMockUserEmailsStore()
+		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 		tests := []struct {
 			name    string
@@ -150,158 +107,44 @@ func TestRemoveUserEmail(t *testing.T) {
 				name: "unauthenticated",
 				ctx:  context.Background(),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-				},
-				wantErr: "must be authenticated as the authorized user or site admin",
-			},
-			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					user := &types.User{ID: 2}
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return user, nil
-					})
 					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
-						return user, nil
+						return nil, database.ErrNoCurrentUser
+					})
+					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, i int32) (*types.User, error) {
+						return nil, nil
 					})
 				},
-				wantErr: "must be authenticated as the authorized user or site admin",
+				wantErr: "not authenticated",
 			},
 			{
-				name: "site admin",
+				name: "another user",
 				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 				setup: func() {
-					user := &types.User{ID: 2, SiteAdmin: true}
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return user, nil
-					})
 					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
-						return user, nil
-					})
-					db.TransactFunc.SetDefaultHook(func(ctx context.Context) (database.DB, error) {
-						// We just want to check that we make past the auth check as that is all this
-						// test is checking
-						return nil, errors.Errorf("short circuit")
+						return &types.User{
+							ID:        2,
+							SiteAdmin: false,
+						}, nil
 					})
 				},
-				wantErr: "starting transaction: short circuit",
-			},
-		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				test.setup()
-
-				_, err := newSchemaResolver(db, gitserver.NewClient(db)).RemoveUserEmail(
-					test.ctx,
-					&removeUserEmailArgs{
-						User: MarshalUserID(1),
-					},
-				)
-				assert.Equal(t, test.wantErr, err.Error())
-			})
-		}
-	})
-}
-
-func TestSetUserEmailPrimary(t *testing.T) {
-	db := database.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := database.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
-
-		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
-		}{
-			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-				},
-			},
-			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
-					})
-				},
+				wantErr: "must be site admin",
 			},
 			{
 				name: "site admin",
 				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return &types.User{
+							ID:        2,
+							SiteAdmin: true,
+						}, nil
+					})
+					userEmails.SetVerifiedFunc.SetDefaultHook(func(ctx context.Context, i int32, s string, b bool) error {
+						// We just care at this point that we passed user authorization
+						return fmt.Errorf("short circuit")
 					})
 				},
-			},
-		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				test.setup()
-
-				_, err := newSchemaResolver(db, gitserver.NewClient(db)).SetUserEmailPrimary(
-					test.ctx,
-					&setUserEmailPrimaryArgs{
-						User: MarshalUserID(1),
-					},
-				)
-				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
-			})
-		}
-	})
-}
-
-func TestSetUserEmailVerified(t *testing.T) {
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		db := database.NewMockDB()
-		users := database.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
-
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
-
-		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
-		}{
-			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-				},
-			},
-			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
-					})
-				},
-			},
-			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
-					})
-				},
+				wantErr: "short circuit",
 			},
 		}
 		for _, test := range tests {
@@ -315,8 +158,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 					},
 				)
 				got := fmt.Sprintf("%v", err)
-				want := "manually verify user email is disabled"
-				assert.Equal(t, want, got)
+				assert.Equal(t, test.wantErr, got)
 			})
 		}
 	})
@@ -401,51 +243,64 @@ func TestSetUserEmailVerified(t *testing.T) {
 }
 
 func TestResendUserEmailVerification(t *testing.T) {
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+	t.Parallel()
+
+	t.Run("only allowed by authenticated user or site admin", func(t *testing.T) {
 		db := database.NewMockDB()
 		users := database.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
-
 		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
+			name    string
+			ctx     context.Context
+			setup   func()
+			wantErr string
 		}{
 			{
 				name: "unauthenticated",
 				ctx:  context.Background(),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return nil, database.ErrNoCurrentUser
+					})
 				},
+				wantErr: "must be authenticated as the authorized user or site admin",
 			},
 			{
 				name: "another user",
 				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return &types.User{
+							ID:        2,
+							SiteAdmin: false,
+						}, nil
 					})
 				},
+				wantErr: "must be authenticated as the authorized user or site admin",
 			},
 			{
 				name: "site admin",
 				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return &types.User{
+							ID:        2,
+							SiteAdmin: true,
+						}, nil
+					})
+					// All we care about in this test is that we make it past the auth check.
+					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, i int32) (*types.User, error) {
+						return nil, errors.Errorf("short circuit")
 					})
 				},
+				wantErr: "short circuit",
 			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				db := database.NewMockDB()
 				_, err := newSchemaResolver(db, gitserver.NewClient(db)).ResendVerificationEmail(
 					test.ctx,
 					&resendVerificationEmailArgs{
@@ -453,8 +308,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 					},
 				)
 				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
+				assert.Equal(t, test.wantErr, got)
 			})
 		}
 	})
