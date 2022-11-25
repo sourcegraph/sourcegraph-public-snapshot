@@ -1,14 +1,17 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
+	"os"
 	"testing"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
 var RunSlackIntegrationTest *bool = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
@@ -19,6 +22,55 @@ func newJob(name string, exit int) *Job {
 		Name:       &name,
 		ExitStatus: &exit,
 	}}
+
+}
+
+func TestLargeAmountOfFailures(t *testing.T) {
+	f, err := os.Open("testdata/build_golden.json")
+	if err != nil {
+		t.Fatalf("failed to read build.json: %s", err)
+	}
+	defer f.Close()
+
+	goldenBuild := buildkite.Build{}
+
+	if err := json.NewDecoder(f).Decode(&goldenBuild); err != nil {
+		t.Fatalf("failed to decode build json: %s", err)
+	}
+
+	flag.Parse()
+	if !*RunSlackIntegrationTest {
+		t.Skip("Slack Integration test not enabled")
+	}
+	logger := logtest.NoOp(t)
+
+	conf, err := configFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	client := NewNotificationClient(logger, conf.SlackToken, conf.GithubToken, DefaultChannel)
+
+	pipelineID := "sourcegraph"
+	jobs := make(map[string]Job)
+
+	for _, j := range goldenBuild.Jobs {
+		job := Job{*j}
+		jobs[job.name()] = job
+	}
+
+	err = client.sendFailedBuild(
+		&Build{
+			Build: goldenBuild,
+			Pipeline: &Pipeline{buildkite.Pipeline{
+				Name: &pipelineID,
+			}},
+			Jobs: jobs,
+		},
+	)
+	if err != nil {
+		t.Fatalf("failed to send build: %s", err)
+	}
 }
 
 func TestSlackMention(t *testing.T) {
