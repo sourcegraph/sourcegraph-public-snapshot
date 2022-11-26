@@ -893,7 +893,8 @@ CREATE TABLE batch_spec_resolution_jobs (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
     initiator_id integer NOT NULL,
-    cancel boolean DEFAULT false NOT NULL
+    cancel boolean DEFAULT false NOT NULL,
+    stage text
 );
 
 CREATE SEQUENCE batch_spec_resolution_jobs_id_seq

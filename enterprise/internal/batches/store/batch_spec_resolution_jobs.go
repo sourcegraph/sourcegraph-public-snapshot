@@ -20,6 +20,7 @@ import (
 var batchSpecResolutionJobInsertColumns = SQLColumns{
 	"batch_spec_id",
 	"initiator_id",
+	"stage",
 
 	"state",
 
@@ -27,7 +28,7 @@ var batchSpecResolutionJobInsertColumns = SQLColumns{
 	"updated_at",
 }
 
-const batchSpecResolutionJobInsertColsFmt = `(%s, %s, %s, %s, %s)`
+const batchSpecResolutionJobInsertColsFmt = `(%s, %s, %s, %s, %s, %s)`
 
 // ChangesetJobColumns are used by the changeset job related Store methods to query
 // and create changeset jobs.
@@ -36,6 +37,7 @@ var batchSpecResolutionJobColums = SQLColumns{
 
 	"batch_spec_resolution_jobs.batch_spec_id",
 	"batch_spec_resolution_jobs.initiator_id",
+	"batch_spec_resolution_jobs.stage",
 
 	"batch_spec_resolution_jobs.state",
 	"batch_spec_resolution_jobs.failure_message",
@@ -103,6 +105,7 @@ func (s *Store) createBatchSpecResolutionJobQuery(wj *btypes.BatchSpecResolution
 		sqlf.Join(batchSpecResolutionJobInsertColumns.ToSqlf(), ","),
 		wj.BatchSpecID,
 		wj.InitiatorID,
+		dbutil.NullStringColumn(string(wj.Stage)),
 		state,
 		wj.CreatedAt,
 		wj.UpdatedAt,
@@ -219,14 +222,47 @@ func listBatchSpecResolutionJobsQuery(opts ListBatchSpecResolutionJobsOpts) *sql
 	)
 }
 
+// SetBatchSpecResolutionJobStage sets the stage the resolution job is at.
+func (s *Store) SetBatchSpecResolutionJobStage(ctx context.Context, id int64, stage btypes.BatchSpecResolutionJobStage) (updated bool, err error) {
+	ctx, _, endObservation := s.operations.setBatchSpecResolutionJobStage.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(id)),
+		log.String("Stage", string(stage)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(setBatchSpecResolutionJobStageQueryFmtstr, stage, id)
+	res, err := s.ExecResult(ctx, q)
+	if err != nil {
+		return false, err
+	}
+
+	a, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return a != 0, nil
+}
+
+var setBatchSpecResolutionJobStageQueryFmtstr = `
+UPDATE batch_spec_resolution_jobs
+SET
+	stage = %s
+WHERE
+	state = 'processing'
+	AND
+	id = %s
+`
+
 func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 	var failureMessage string
+	var stage string
 
 	if err := s.Scan(
 		&rj.ID,
 		&rj.BatchSpecID,
 		&rj.InitiatorID,
+		&dbutil.NullString{S: &stage},
 		&rj.State,
 		&dbutil.NullString{S: &failureMessage},
 		&dbutil.NullTime{Time: &rj.StartedAt},
@@ -245,6 +281,8 @@ func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scan
 	if failureMessage != "" {
 		rj.FailureMessage = &failureMessage
 	}
+
+	rj.Stage = btypes.BatchSpecResolutionJobStage(stage)
 
 	for _, entry := range executionLogs {
 		rj.ExecutionLogs = append(rj.ExecutionLogs, workerutil.ExecutionLogEntry(entry))

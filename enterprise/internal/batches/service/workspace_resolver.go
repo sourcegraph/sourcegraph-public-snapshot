@@ -60,25 +60,26 @@ type RepoWorkspace struct {
 	Unsupported bool
 }
 
-type WorkspaceResolver interface {
-	ResolveWorkspacesForBatchSpec(
-		ctx context.Context,
-		batchSpec *batcheslib.BatchSpec,
-	) (
-		workspaces []*RepoWorkspace,
-		err error,
-	)
-}
+// WorkspaceResolutionStage defines the possible stages of workspace resolution.
+type WorkspaceResolutionStage string
 
-type WorkspaceResolverBuilder func(tx *store.Store) WorkspaceResolver
+// WorkspaceResolutionStage constants.
+const (
+	WorkspaceResolutionStageDetermineRepositories WorkspaceResolutionStage = "determine_repositories"
+	WorkspaceResolutionStageFindIgnored           WorkspaceResolutionStage = "find_ignored"
+	WorkspaceResolutionStageFindWorkspaces        WorkspaceResolutionStage = "find_workspaces"
+)
+
+type WorkspaceResolver func(ctx context.Context, batchSpec *batcheslib.BatchSpec, onProgress func(WorkspaceResolutionStage) error) (workspaces []*RepoWorkspace, err error)
 
 func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
-	return &workspaceResolver{
+	r := &workspaceResolver{
 		store:               s,
 		logger:              log.Scoped("batches.workspaceResolver", "The batch changes execution workspace resolver"),
 		gitserverClient:     gitserver.NewClient(s.DatabaseDB()),
 		frontendInternalURL: internalapi.Client.URL + "/.internal",
 	}
+	return r.ResolveWorkspacesForBatchSpec
 }
 
 type workspaceResolver struct {
@@ -88,12 +89,16 @@ type workspaceResolver struct {
 	frontendInternalURL string
 }
 
-func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, batchSpec *batcheslib.BatchSpec) (workspaces []*RepoWorkspace, err error) {
+func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, batchSpec *batcheslib.BatchSpec, onProgress func(WorkspaceResolutionStage) error) (workspaces []*RepoWorkspace, err error) {
 	tr, ctx := trace.New(ctx, "workspaceResolver.ResolveWorkspacesForBatchSpec", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	if err := onProgress(WorkspaceResolutionStageDetermineRepositories); err != nil {
+		return nil, err
+	}
 
 	// First, find all repositories that match the batch spec `on` definitions.
 	// This list is filtered by permissions using database.Repos.List.
@@ -102,9 +107,17 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 		return nil, err
 	}
 
+	if err := onProgress(WorkspaceResolutionStageFindIgnored); err != nil {
+		return nil, err
+	}
+
 	// Next, find the repos that are ignored through a .batchignore file.
 	ignored, err := findIgnoredRepositories(ctx, wr.gitserverClient, repos)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := onProgress(WorkspaceResolutionStageFindWorkspaces); err != nil {
 		return nil, err
 	}
 

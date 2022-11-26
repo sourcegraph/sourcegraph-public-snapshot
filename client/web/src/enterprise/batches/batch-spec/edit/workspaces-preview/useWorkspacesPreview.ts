@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
 import { screenReaderAnnounce } from '@sourcegraph/wildcard'
@@ -16,6 +16,7 @@ import {
     BatchSpecWorkspacesPreviewVariables,
     BatchSpecImportingChangesetsVariables,
     BatchSpecImportingChangesetsResult,
+    BatchSpecWorkspaceResolutionStage,
 } from '../../../../../graphql-operations'
 import {
     CREATE_BATCH_SPEC_FROM_RAW,
@@ -45,6 +46,8 @@ export interface UseWorkspacesPreviewResult {
     isInProgress: boolean
     /** The status of the current workspaces resolution job. */
     resolutionState: ResolutionState
+    /** The current stage of the current workspaces resolution job. */
+    resolutionStage: BatchSpecWorkspaceResolutionStage | null
     /** Any error from `previewBatchSpec` or the workspaces resolution job. */
     error?: string
     /** Callback to clear `error` when it is no longer relevant. */
@@ -120,6 +123,7 @@ export const useWorkspacesPreview = (
     // A computed state based on the state of any active workspaces resolution job as well
     // as any actions the user has taken on this page so far.
     const [uiState, setUIState] = useState<ResolutionState>('UNSTARTED')
+    const [currentStage, setCurrentStage] = useState<BatchSpecWorkspaceResolutionStage | null>(null)
     const [error, setError] = useState<string>()
 
     // Once we submit a batch spec to be previewed, we will poll for the resolution status
@@ -143,6 +147,7 @@ export const useWorkspacesPreview = (
         setError(undefined)
         stop()
         setUIState('CANCELED')
+        setCurrentStage(null)
     }, [stop])
 
     const previewBatchSpec = useCallback(
@@ -178,6 +183,7 @@ export const useWorkspacesPreview = (
                     if (resolution?.state) {
                         // Set to the current workspace resolution state.
                         setUIState(resolution.state)
+                        setCurrentStage(resolution.stage)
                     }
                     if (resolution?.failureMessage) {
                         setError(resolution.failureMessage)
@@ -231,6 +237,7 @@ export const useWorkspacesPreview = (
         const resolution = getResolution(data)
         if (resolution?.state) {
             setUIState(resolution.state)
+            setCurrentStage(resolution.stage)
         }
         if (resolution?.failureMessage) {
             setError(resolution.failureMessage)
@@ -269,11 +276,17 @@ export const useWorkspacesPreview = (
         }
     }, [uiState, startPolling, stop, onComplete, fetchWorkspaces, fetchImportingChangesets])
 
+    let resolutionStage: BatchSpecWorkspaceResolutionStage | null = null
+    if (isInProgress && uiState === BatchSpecWorkspaceResolutionState.PROCESSING) {
+        resolutionStage = currentStage
+    }
+
     return {
         preview: previewBatchSpec,
         cancel,
         isInProgress,
         resolutionState: uiState,
+        resolutionStage,
         error,
         clearError: () => setError(undefined),
         hasPreviewed: hasRequestedPreview && hasPreviewed,

@@ -42,7 +42,7 @@ func (r *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc[*btypes
 		// that are visible to the user are returned.
 		ctx = actor.WithActor(ctx, actor.FromUser(job.InitiatorID))
 
-		return r.process(ctx, service.NewWorkspaceResolver, job)
+		return r.process(ctx, service.NewWorkspaceResolver(r.store), job)
 	}
 }
 
@@ -64,7 +64,7 @@ type workspaceCacheKey struct {
 // to prevent long running transactions.
 func (r *batchSpecWorkspaceCreator) process(
 	ctx context.Context,
-	newResolver service.WorkspaceResolverBuilder,
+	workspaceResolver service.WorkspaceResolver,
 	job *btypes.BatchSpecResolutionJob,
 ) error {
 	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: job.BatchSpecID})
@@ -103,13 +103,45 @@ func (r *batchSpecWorkspaceCreator) process(
 		envVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
 	}
 
-	resolver := newResolver(r.store)
-	workspaces, err := resolver.ResolveWorkspacesForBatchSpec(ctx, evaluatableSpec)
+	setStage := func(stage btypes.BatchSpecResolutionJobStage) error {
+		if ok, err := r.store.SetBatchSpecResolutionJobStage(ctx, job.ID, stage); err != nil {
+			return errors.Wrap(err, "setting batch spec resolution job stage")
+		} else if !ok {
+			r.logger.Warn("batch spec resolution job stage not updated")
+		}
+		return nil
+	}
+
+	if err := setStage(btypes.BatchSpecResolutionJobStageResolveWorkspaces); err != nil {
+		return err
+	}
+
+	workspaces, err := workspaceResolver(ctx, evaluatableSpec, func(stage service.WorkspaceResolutionStage) error {
+		switch stage {
+		case service.WorkspaceResolutionStageDetermineRepositories:
+			if err := setStage(btypes.BatchSpecResolutionJobStageBuildWorkspaceCache); err != nil {
+				return err
+			}
+		case service.WorkspaceResolutionStageFindIgnored:
+			if err := setStage(btypes.BatchSpecResolutionJobStageResolveFindIgnored); err != nil {
+				return err
+			}
+		case service.WorkspaceResolutionStageFindWorkspaces:
+			if err := setStage(btypes.BatchSpecResolutionJobStageResolveFindWorkspaces); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		return err
 	}
 
 	r.logger.Info("resolved workspaces for batch spec", log.Int64("job", job.ID), log.Int64("spec", spec.ID), log.Int("workspaces", len(workspaces)))
+
+	if err := setStage(btypes.BatchSpecResolutionJobStageBuildWorkspaceCache); err != nil {
+		return err
+	}
 
 	// Build DB workspaces and check for cache entries.
 	ws := make([]*btypes.BatchSpecWorkspace, 0, len(workspaces))
@@ -297,6 +329,10 @@ func (r *batchSpecWorkspaceCreator) process(
 		changesetsByWorkspace[workspace.dbWorkspace] = specs
 	}
 
+	if err := setStage(btypes.BatchSpecResolutionJobStageImportingChangesets); err != nil {
+		return err
+	}
+
 	// If there are "importChangesets" statements in the spec we evaluate
 	// them now and create ChangesetSpecs for them.
 	im, err := changesetSpecsForImports(ctx, r.store, evaluatableSpec.ImportChangesets, spec.ID, spec.UserID)
@@ -313,6 +349,10 @@ func (r *batchSpecWorkspaceCreator) process(
 
 	// Mark all used cache entries as recently used for cache eviction purposes.
 	if err := tx.MarkUsedBatchSpecExecutionCacheEntries(ctx, usedCacheEntries); err != nil {
+		return err
+	}
+
+	if err := setStage(btypes.BatchSpecResolutionJobStageCreatingWorkspaces); err != nil {
 		return err
 	}
 

@@ -93,6 +93,7 @@ export const CREATE_BATCH_SPEC_FROM_RAW = gql`
                 # resolution from a previous one.
                 startedAt
                 state
+                stage
                 failureMessage
             }
         }
@@ -111,6 +112,7 @@ export const REPLACE_BATCH_SPEC_INPUT = gql`
                 # resolution from a previous one.
                 startedAt
                 state
+                stage
                 failureMessage
             }
         }
@@ -127,6 +129,7 @@ export const WORKSPACE_RESOLUTION_STATUS = gql`
                     # resolution from a previous one.
                     startedAt
                     state
+                    stage
                     failureMessage
                 }
             }

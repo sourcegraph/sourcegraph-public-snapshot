@@ -1942,6 +1942,19 @@ enum BatchSpecWorkspaceResolutionState {
 }
 
 """
+Stage of the workspace resolution.
+"""
+enum BatchSpecWorkspaceResolutionStage {
+    RESOLVE_WORKSPACES
+    DETERMINE_REPOSITORIES
+    FIND_IGNORED
+    FIND_WORKSPACES
+    BUILD_WORKSPACE_CACHE
+    IMPORTING_CHANGESETS
+    CREATING_WORKSPACES
+}
+
+"""
 Possible sort orderings for a workspace connection.
 """
 enum WorkspacesSortOrder {
@@ -1978,6 +1991,12 @@ type BatchSpecWorkspaceResolution {
     State of evaluating the workspaces.
     """
     state: BatchSpecWorkspaceResolutionState!
+
+    """
+    The current stage the workspace resolution is in.
+    Null, if the resolution has not begun.
+    """
+    stage: BatchSpecWorkspaceResolutionStage
 
     """
     The actual list of determined workspaces.

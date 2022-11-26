@@ -81,6 +81,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren
         const { debouncedCode, excludeRepo, isServerStale } = editor
         const {
             resolutionState,
+            resolutionStage,
             error,
             filters,
             setFilters,
@@ -295,6 +296,9 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<React.PropsWithChildren
                                 className={classNames({ [styles.hidden]: isWorkspacesPreviewInProgress })}
                             />
                         </div>
+                        {isWorkspacesPreviewInProgress && resolutionStage && (
+                            <div>Current stage: {resolutionStage}</div>
+                        )}
                         {ctaInstructions}
                         {ctaButton}
                     </div>

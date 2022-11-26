@@ -233,8 +233,7 @@ func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *grap
 	}
 
 	// Run the resolution.
-	resolver := service.NewWorkspaceResolver(r.store)
-	workspaces, err := resolver.ResolveWorkspacesForBatchSpec(ctx, evaluatableSpec)
+	workspaces, err := service.NewWorkspaceResolver(r.store)(ctx, evaluatableSpec, func(_ service.WorkspaceResolutionStage) error { return nil })
 	if err != nil {
 		return nil, err
 	}

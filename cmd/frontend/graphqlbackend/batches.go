@@ -820,6 +820,7 @@ type ChangesetCountsResolver interface {
 
 type BatchSpecWorkspaceResolutionResolver interface {
 	State() string
+	Stage() *string
 	StartedAt() *gqlutil.DateTime
 	FinishedAt() *gqlutil.DateTime
 	FailureMessage() *string

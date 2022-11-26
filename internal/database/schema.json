@@ -1932,6 +1932,19 @@
           "Comment": ""
         },
         {
+          "Name": "stage",
+          "Index": 18,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "started_at",
           "Index": 5,
           "TypeName": "timestamp with time zone",

@@ -137,6 +137,7 @@ Foreign-key constraints:
  queued_at         | timestamp with time zone |           |          | now()
  initiator_id      | integer                  |           | not null | 
  cancel            | boolean                  |           | not null | false
+ stage             | text                     |           |          | 
 Indexes:
     "batch_spec_resolution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_resolution_jobs_batch_spec_id_unique" UNIQUE CONSTRAINT, btree (batch_spec_id)

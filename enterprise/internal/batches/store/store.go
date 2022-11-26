@@ -273,9 +273,10 @@ type operations struct {
 	retryBatchSpecWorkspaceExecutionJobs               *observation.Operation
 	disableBatchSpecWorkspaceExecutionCache            *observation.Operation
 
-	createBatchSpecResolutionJob *observation.Operation
-	getBatchSpecResolutionJob    *observation.Operation
-	listBatchSpecResolutionJobs  *observation.Operation
+	createBatchSpecResolutionJob   *observation.Operation
+	getBatchSpecResolutionJob      *observation.Operation
+	listBatchSpecResolutionJobs    *observation.Operation
+	setBatchSpecResolutionJobStage *observation.Operation
 
 	listBatchSpecExecutionCacheEntries     *observation.Operation
 	markUsedBatchSpecExecutionCacheEntries *observation.Operation
@@ -417,9 +418,10 @@ func newOperations(observationCtx *observation.Context) *operations {
 			retryBatchSpecWorkspaceExecutionJobs:               op("RetryBatchSpecWorkspaceExecutionJobs"),
 			disableBatchSpecWorkspaceExecutionCache:            op("DisableBatchSpecWorkspaceExecutionCache"),
 
-			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
-			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
-			listBatchSpecResolutionJobs:  op("ListBatchSpecResolutionJobs"),
+			createBatchSpecResolutionJob:   op("CreateBatchSpecResolutionJob"),
+			getBatchSpecResolutionJob:      op("GetBatchSpecResolutionJob"),
+			listBatchSpecResolutionJobs:    op("ListBatchSpecResolutionJobs"),
+			setBatchSpecResolutionJobStage: op("SetBatchSpecResolutionJobStage"),
 
 			listBatchSpecExecutionCacheEntries:     op("ListBatchSpecExecutionCacheEntries"),
 			markUsedBatchSpecExecutionCacheEntries: op("MarkUsedBatchSpecExecutionCacheEntries"),

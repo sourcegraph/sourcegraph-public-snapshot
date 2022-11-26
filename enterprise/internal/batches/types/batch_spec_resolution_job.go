@@ -36,6 +36,23 @@ func (s BatchSpecResolutionJobState) Valid() bool {
 // ToGraphQL returns the GraphQL representation of the worker state.
 func (s BatchSpecResolutionJobState) ToGraphQL() string { return strings.ToUpper(string(s)) }
 
+// BatchSpecResolutionJobStage defines the possible stages of a batch spec resolution job.
+type BatchSpecResolutionJobStage string
+
+// BatchSpecResolutionJobStage constants.
+const (
+	BatchSpecResolutionJobStageResolveWorkspaces            BatchSpecResolutionJobStage = "resolve_workspaces"
+	BatchSpecResolutionJobStageResolveDetermineRepositories BatchSpecResolutionJobStage = "determine_repositories"
+	BatchSpecResolutionJobStageResolveFindIgnored           BatchSpecResolutionJobStage = "find_ignored"
+	BatchSpecResolutionJobStageResolveFindWorkspaces        BatchSpecResolutionJobStage = "find_workspaces"
+	BatchSpecResolutionJobStageBuildWorkspaceCache          BatchSpecResolutionJobStage = "build_workspace_cache"
+	BatchSpecResolutionJobStageImportingChangesets          BatchSpecResolutionJobStage = "importing_changesets"
+	BatchSpecResolutionJobStageCreatingWorkspaces           BatchSpecResolutionJobStage = "creating_workspaces"
+)
+
+// ToGraphQL returns the GraphQL representation of the stage.
+func (s BatchSpecResolutionJobStage) ToGraphQL() string { return strings.ToUpper(string(s)) }
+
 type BatchSpecResolutionJob struct {
 	ID int64
 
@@ -44,6 +61,8 @@ type BatchSpecResolutionJob struct {
 	// Currently, this is always the person who created the batch spec but we will
 	// change this in the future when we split those two operations.
 	InitiatorID int32
+
+	Stage BatchSpecResolutionJobStage
 
 	// workerutil fields
 	State           BatchSpecResolutionJobState

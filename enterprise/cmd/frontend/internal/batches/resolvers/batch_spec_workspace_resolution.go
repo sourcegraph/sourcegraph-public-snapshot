@@ -20,6 +20,14 @@ type batchSpecWorkspaceResolutionResolver struct {
 
 var _ graphqlbackend.BatchSpecWorkspaceResolutionResolver = &batchSpecWorkspaceResolutionResolver{}
 
+func (r *batchSpecWorkspaceResolutionResolver) Stage() *string {
+	if r.resolution.Stage == "" || r.resolution.State != btypes.BatchSpecResolutionJobStateProcessing {
+		return nil
+	}
+	s := r.resolution.Stage.ToGraphQL()
+	return &s
+}
+
 func (r *batchSpecWorkspaceResolutionResolver) State() string {
 	return r.resolution.State.ToGraphQL()
 }
