@@ -39,7 +39,7 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
         fullPage: true,
     },
     {
-        path: '/batch-changes/:batchChangeName/edit',
+        path: '/batch-changes/:batchChangeName/(spec|edit)',
         render: ({ match, ...props }: OrgAreaRouteContext & RouteComponentProps<{ batchChangeName: string }>) => (
             <EditBatchSpecPage
                 {...props}

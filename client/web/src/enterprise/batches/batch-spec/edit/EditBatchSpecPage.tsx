@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { useHistory } from 'react-router'
+import { Route, Router, Switch, useHistory } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -130,23 +130,20 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     const { insightTitle } = useInsightTemplates(settingsCascade)
     const { searchQuery } = useSearchTemplate()
 
-    const [activeTabKey, setActiveTabKey] = useState<TabKey>('spec')
     const tabsConfig = useMemo<TabsConfig[]>(
         () => [
             {
                 key: 'configuration',
                 isEnabled: true,
                 handler: {
-                    type: 'button',
-                    onClick: () => setActiveTabKey('configuration'),
+                    type: 'link',
                 },
             },
             {
-                key: 'spec',
+                key: 'edit',
                 isEnabled: true,
                 handler: {
-                    type: 'button',
-                    onClick: () => setActiveTabKey('spec'),
+                    type: 'link',
                 },
             },
         ],
@@ -256,30 +253,43 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
             </div>
             <TabBar activeTabKey={activeTabKey} tabsConfig={tabsConfig} />
 
-            {activeTabKey === 'configuration' ? (
-                <ConfigurationForm isReadOnly={true} batchChange={batchChange} settingsCascade={settingsCascade} />
-            ) : (
-                <div className={styles.form}>
-                    <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
-                    <div className={styles.editorContainer} role="region" aria-label="batch spec editor">
-                        <H4 as={H3} className={styles.header}>
-                            Batch spec
-                        </H4>
-                        {executionAlert}
-                        <MonacoBatchSpecEditor
-                            autoFocus={true}
-                            batchChangeNamespace={batchChange.namespace}
-                            batchChangeName={batchChange.name}
-                            className={styles.editor}
-                            isLightTheme={isLightTheme}
-                            value={editor.code}
-                            onChange={editor.handleCodeChange}
+            <Switch>
+                <Route
+                    path={`${match.url}/configuration`}
+                    render={() => (
+                        <ConfigurationForm
+                            isReadOnly={true}
+                            batchChange={batchChange}
+                            settingsCascade={settingsCascade}
                         />
-                        <EditorFeedbackPanel errors={errors} />
-                    </div>
-                    <WorkspacesPreviewPanel />
-                </div>
-            )}
+                    )}
+                />
+                <Route
+                    path={`${match.url}/edit`}
+                    render={() => (
+                        <div className={styles.form}>
+                            <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
+                            <div className={styles.editorContainer} role="region" aria-label="batch spec editor">
+                                <H4 as={H3} className={styles.header}>
+                                    Batch spec
+                                </H4>
+                                {executionAlert}
+                                <MonacoBatchSpecEditor
+                                    autoFocus={true}
+                                    batchChangeNamespace={batchChange.namespace}
+                                    batchChangeName={batchChange.name}
+                                    className={styles.editor}
+                                    isLightTheme={isLightTheme}
+                                    value={editor.code}
+                                    onChange={editor.handleCodeChange}
+                                />
+                                <EditorFeedbackPanel errors={errors} />
+                            </div>
+                            <WorkspacesPreviewPanel />
+                        </div>
+                    )}
+                />
+            </Switch>
 
             {isDownloadSpecModalOpen ? (
                 <DownloadSpecModal

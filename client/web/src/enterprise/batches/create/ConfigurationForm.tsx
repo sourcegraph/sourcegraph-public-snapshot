@@ -144,11 +144,12 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                       }).then(() => Promise.resolve(args))
                     : Promise.resolve(args)
             })
-            .then(({ data }) =>
-                data
-                    ? history.push(`${data.createEmptyBatchChange.url}/edit${serializedRedirectSearchParameters}`)
-                    : noop()
-            )
+            .then(({ data }) => {
+                if (data) {
+                    history.replace(`${data.createEmptyBatchChange.url}/spec${serializedRedirectSearchParameters}`)
+                    history.push(`${data.createEmptyBatchChange.url}/edit${serializedRedirectSearchParameters}`)
+                }
+            })
             // We destructure and surface the error from `useMutation` instead.
             .catch(noop)
     }

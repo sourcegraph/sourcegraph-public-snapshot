@@ -8,7 +8,7 @@ import { Link } from '@sourcegraph/wildcard'
 
 import styles from './TabBar.module.scss'
 
-export const TAB_KEYS = ['configuration', 'spec', 'execution', 'preview'] as const
+export const TAB_KEYS = ['configuration', 'edit', 'execution', 'preview'] as const
 export type TabKey = typeof TAB_KEYS[number]
 
 export interface TabsConfig {
@@ -19,13 +19,13 @@ export interface TabsConfig {
 
 const DEFAULT_TABS: TabsConfig[] = [
     { key: 'configuration', isEnabled: false },
-    { key: 'spec', isEnabled: false },
+    { key: 'edit', isEnabled: false },
     { key: 'execution', isEnabled: false },
     { key: 'preview', isEnabled: false },
 ]
 
 const getTabName = (key: TabKey, index: number): string => {
-    const lowerCaseName = key === 'spec' ? 'batch spec' : key
+    const lowerCaseName = key === 'edit' ? 'batch spec' : key
     return `${index + 1}. ${upperFirst(lowerCaseName)}`
 }
 
