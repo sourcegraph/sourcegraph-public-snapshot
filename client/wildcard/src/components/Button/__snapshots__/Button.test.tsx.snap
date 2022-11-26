@@ -132,6 +132,19 @@ exports[`Button renders a simple button correctly 1`] = `
 </DocumentFragment>
 `;
 
+exports[`Button renders as disabled 1`] = `
+<DocumentFragment>
+  <button
+    aria-disabled="true"
+    class="btn"
+    disabled=""
+    type="button"
+  >
+    Disabled
+  </button>
+</DocumentFragment>
+`;
+
 exports[`Button supports rendering as different elements 1`] = `
 <DocumentFragment>
   <div

@@ -14,6 +14,11 @@ describe('Button', () => {
         expect(asFragment()).toMatchSnapshot()
     })
 
+    it('renders as disabled', () => {
+        const { asFragment } = renderWithBrandedContext(<Button disabled={true}>Disabled</Button>)
+        expect(asFragment()).toMatchSnapshot()
+    })
+
     it.each(BUTTON_VARIANTS)("Renders variant '%s' correctly", variant => {
         const { asFragment } = renderWithBrandedContext(<Button variant={variant}>Hello world</Button>)
         expect(asFragment()).toMatchSnapshot()

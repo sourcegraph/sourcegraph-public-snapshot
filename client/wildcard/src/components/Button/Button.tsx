@@ -1,4 +1,4 @@
-import { MouseEvent, ButtonHTMLAttributes, forwardRef } from 'react'
+import { ButtonHTMLAttributes, forwardRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -55,9 +55,7 @@ export const Button = forwardRef(
             size,
             outline,
             className,
-            disabled,
             display,
-            onClick,
             ...attributes
         },
         reference
@@ -66,19 +64,12 @@ export const Button = forwardRef(
 
         const brandedButtonClassname = getButtonClassName({ variant, outline, display, size })
 
-        const handleClick = (event: MouseEvent<HTMLButtonElement>): void => {
-            if (!disabled) {
-                onClick?.(event)
-            }
-        }
-
         return (
             <Component
                 ref={reference}
                 type={type}
-                aria-disabled={disabled}
+                aria-disabled={attributes.disabled}
                 className={classNames(isBranded && brandedButtonClassname, className)}
-                onClick={handleClick}
                 {...attributes}
             >
                 {children}
