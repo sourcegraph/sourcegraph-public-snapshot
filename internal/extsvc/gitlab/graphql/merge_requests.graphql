@@ -1,0 +1,120 @@
+query GetMergeRequest($projectPath: ID!, $iid: String!) {
+    project(fullPath: $projectPath) {
+        mergeRequest(iid: $iid) {
+            ...MergeRequest
+        }
+    }
+}
+
+query GetMergeRequestLabelsPage($projectPath: ID!, $iid: String!, $after: String!) {
+    project(fullPath: $projectPath) {
+        mergeRequest(iid: $iid) {
+            labels(first: 100, after: $after) {
+                pageInfo {
+                    ...PageInfo
+                }
+                nodes {
+                    ...Label
+                }
+            }
+        }
+    }
+}
+
+fragment MergeRequest on MergeRequest {
+    id
+    iid
+    projectId
+    sourceProjectId
+    sourceProject {
+        namespace {
+            name
+        }
+    }
+    title
+    description
+    state
+    createdAt
+    updatedAt
+    mergedAt
+    headPipeline {
+        ...Pipeline
+    }
+    labels(first: 100) {
+        pageInfo {
+            ...PageInfo
+        }
+        nodes {
+            ...Label
+        }
+    }
+    sourceBranch
+    targetBranch
+    webUrl
+    draft
+    author {
+        ...User
+    }
+    diffRefs {
+        baseSha
+        headSha
+        startSha
+    }
+    notes(first: 100) {
+        pageInfo {
+            ...PageInfo
+        }
+        nodes {
+            ...Note
+        }
+    }
+    pipelines(first: 100) {
+        pageInfo {
+            ...PageInfo
+        }
+        nodes {
+            ...Pipeline
+        }
+    }
+}
+
+fragment Label on Label {
+    title
+}
+
+fragment Note on Note {
+    id
+    body
+    author {
+        ...User
+    }
+    createdAt
+    system
+}
+
+fragment PageInfo on PageInfo {
+    endCursor
+    hasNextPage
+    hasPreviousPage
+    startCursor
+}
+
+fragment Pipeline on Pipeline {
+    id
+    sha
+    ref
+    status
+    path
+    createdAt
+    updatedAt
+}
+
+fragment User on User {
+    id
+    name
+    username
+    publicEmail
+    state
+    avatarUrl
+    webUrl
+}

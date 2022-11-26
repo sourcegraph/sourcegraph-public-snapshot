@@ -27,36 +27,37 @@ const (
 )
 
 type MergeRequest struct {
-	ID                     ID `json:"id"`
-	IID                    ID `json:"iid"`
-	ProjectID              ID `json:"project_id"`
-	SourceProjectID        ID `json:"source_project_id"`
-	SourceProjectNamespace string
-	Title                  string            `json:"title"`
-	Description            string            `json:"description"`
-	State                  MergeRequestState `json:"state"`
-	CreatedAt              Time              `json:"created_at"`
-	UpdatedAt              Time              `json:"updated_at"`
-	MergedAt               *Time             `json:"merged_at"`
-	ClosedAt               *Time             `json:"closed_at"`
-	HeadPipeline           *Pipeline         `json:"head_pipeline"`
-	Labels                 []string          `json:"labels"`
-	SourceBranch           string            `json:"source_branch"`
-	TargetBranch           string            `json:"target_branch"`
-	WebURL                 string            `json:"web_url"`
-	WorkInProgress         bool              `json:"work_in_progress"`
-	Draft                  bool              `json:"draft"`
-	Author                 User              `json:"author"`
+	ID              ID                `json:"id"`
+	IID             ID                `json:"iid"`
+	ProjectID       ID                `json:"project_id"`
+	SourceProjectID ID                `json:"source_project_id"`
+	Title           string            `json:"title"`
+	Description     string            `json:"description"`
+	State           MergeRequestState `json:"state"`
+	CreatedAt       Time              `json:"created_at"`
+	UpdatedAt       Time              `json:"updated_at"`
+	MergedAt        *Time             `json:"merged_at"`
+	HeadPipeline    *Pipeline         `json:"head_pipeline"`
+	SourceBranch    string            `json:"source_branch"`
+	TargetBranch    string            `json:"target_branch"`
+	WebURL          string            `json:"web_url"`
+	WorkInProgress  bool              `json:"work_in_progress"`
+	Draft           bool              `json:"draft"`
+	Author          User              `json:"author"`
 
 	DiffRefs DiffRefs `json:"diff_refs"`
 
+	RawLabels []string `json:"labels"`
+
 	// The fields below are computed from other REST API requests when getting a
-	// Merge Request. Once our minimum version is GitLab 12.0, we can use the
+	// Merge Request. Once our minimum version is GitLab 14.1, we can use the
 	// GraphQL API to retrieve all of this data at once, but until then, we have
 	// to do it the old fashioned way with lots of REST requests.
-	Notes               []*Note
-	Pipelines           []*Pipeline
-	ResourceStateEvents []*ResourceStateEvent
+	SourceProjectNamespace string
+	Labels                 *PaginatedResult[string]
+	Notes                  *PaginatedResult[*Note]
+	Pipelines              *PaginatedResult[*Pipeline]
+	ResourceStateEvents    *PaginatedResult[*ResourceStateEvent]
 }
 
 // IsWIPOrDraft returns true if the given title would result in GitLab rendering the MR as 'work in progress'.
@@ -149,6 +150,16 @@ func (c *Client) GetMergeRequest(ctx context.Context, project *Project, iid ID) 
 		return MockGetMergeRequest(c, ctx, project, iid)
 	}
 
+	// We want to prefer GraphQL because it means we can get the merge requests
+	// and its associated notes and pipelines in fewer requests.
+	useGraphQL, err := c.versionAtLeast(ctx, "14.1.0")
+	if err != nil {
+		return nil, errors.Wrap(err, "checking GitLab version")
+	}
+	if useGraphQL {
+		return c.getMergeRequestGraphQL(ctx, project, iid)
+	}
+
 	time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 
 	req, err := http.NewRequest("GET", fmt.Sprintf("projects/%d/merge_requests/%d", project.ID, iid), nil)
@@ -168,6 +179,10 @@ func (c *Client) GetMergeRequest(ctx context.Context, project *Project, iid ID) 
 		}
 		return nil, errors.Wrap(err, "sending request to get a merge request")
 	}
+
+	// TODO: populate labels.
+
+	// TODO: move decorateMergeRequest() functionality in.
 
 	return resp, nil
 }

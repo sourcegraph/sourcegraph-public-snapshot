@@ -235,6 +235,7 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 
 func (c *Client) version(ctx context.Context) (string, error) {
 	c.versionOnce.Do(func() {
+		time.Sleep(c.rateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 		c.versionStr, c.versionErr = c.GetVersion(ctx)
 	})
 
@@ -259,6 +260,14 @@ var _ httpcli.Doer = gqlDoer{}
 func (c gqlDoer) Do(req *http.Request) (resp *http.Response, err error) {
 	// Used by the GraphQL client; we need to inject the authentication here.
 	ctx := req.Context()
+
+	if c.rateLimiter != nil {
+		err = c.rateLimiter.Wait(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "rate limit")
+		}
+	}
+
 	oauthAuther, ok := c.Auth.(auth.AuthenticatorWithRefresh)
 	if ok {
 		// Pre-emptively check for refresh

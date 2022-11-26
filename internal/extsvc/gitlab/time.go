@@ -15,6 +15,13 @@ import (
 // https://gitlab.com/gitlab-org/gitlab/-/issues/19567
 type Time struct{ time.Time }
 
+func NewTime(t *time.Time) *Time {
+	if t == nil {
+		return nil
+	}
+	return &Time{*t}
+}
+
 func (t *Time) UnmarshalJSON(data []byte) error {
 	// First, try the normal RFC 3339 decoding.
 	if err := t.Time.UnmarshalJSON(data); err == nil {
