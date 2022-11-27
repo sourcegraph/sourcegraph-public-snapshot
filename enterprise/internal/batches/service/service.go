@@ -509,6 +509,7 @@ var ErrBatchSpecResolutionIncomplete = errors.New("cannot execute batch spec, wo
 
 type ExecuteBatchSpecOpts struct {
 	BatchSpecRandID string
+	NoCache         bool
 }
 
 // ExecuteBatchSpec creates BatchSpecWorkspaceExecutionJobs for every created
@@ -554,20 +555,28 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 		return nil, ErrBatchSpecResolutionErrored{resolutionJob.FailureMessage}
 
 	case btypes.BatchSpecResolutionJobStateCompleted:
-		err = tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
-		if err != nil {
-			return nil, err
-		}
-		err = tx.MarkSkippedBatchSpecWorkspaces(ctx, batchSpec.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		return batchSpec, nil
 
 	default:
 		return nil, ErrBatchSpecResolutionIncomplete
 	}
+
+	// Disable caching if either the execution flag is set, or if the batch spec
+	// is tainted as no_cache.
+	err = tx.DisableBatchSpecWorkspaceExecutionCache(ctx, batchSpec.ID, opts.NoCache)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
+	if err != nil {
+		return nil, err
+	}
+	err = tx.MarkSkippedBatchSpecWorkspaces(ctx, batchSpec.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return batchSpec, nil
 }
 
 var ErrBatchSpecNotCancelable = errors.New("batch spec is not in cancelable state")

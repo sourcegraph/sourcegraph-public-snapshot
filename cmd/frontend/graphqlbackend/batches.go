@@ -363,6 +363,7 @@ type BatchSpecResolver interface {
 
 	AllowIgnored() *bool
 	AllowUnsupported() *bool
+	NoCache() *bool
 
 	ViewerCanRetry(context.Context) (bool, error)
 

@@ -271,6 +271,7 @@ type operations struct {
 	deleteBatchSpecWorkspaceExecutionJobs              *observation.Operation
 	cancelBatchSpecWorkspaceExecutionJobs              *observation.Operation
 	retryBatchSpecWorkspaceExecutionJobs               *observation.Operation
+	disableBatchSpecWorkspaceExecutionCache            *observation.Operation
 
 	createBatchSpecResolutionJob *observation.Operation
 	getBatchSpecResolutionJob    *observation.Operation
@@ -414,6 +415,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			deleteBatchSpecWorkspaceExecutionJobs:              op("DeleteBatchSpecWorkspaceExecutionJobs"),
 			cancelBatchSpecWorkspaceExecutionJobs:              op("CancelBatchSpecWorkspaceExecutionJobs"),
 			retryBatchSpecWorkspaceExecutionJobs:               op("RetryBatchSpecWorkspaceExecutionJobs"),
+			disableBatchSpecWorkspaceExecutionCache:            op("DisableBatchSpecWorkspaceExecutionCache"),
 
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),

@@ -3180,6 +3180,13 @@ type BatchSpec implements Node {
     allowUnsupported: Boolean
 
     """
+    If true, workspaces will not run with cached results.
+
+    Null, if not created through createBatchSpecFromRaw.
+    """
+    noCache: Boolean
+
+    """
     If true, viewer can retry the batch spec execution by calling
     retryBatchSpecExecution.
     """
