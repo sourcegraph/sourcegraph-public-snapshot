@@ -88,7 +88,6 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
                 first: args.first ?? null,
                 after: args.after ?? null,
                 includeLocallyExecutedSpecs: false,
-                excludeEmptySpecs: true,
             }
             return queryBatchSpecs(passedArguments)
         },
