@@ -207,30 +207,9 @@ func main() {
 		}
 		g.Wait()
 
-		//totalMemberships := len(teams) * 8
-		//membershipsPerUser := int(math.Ceil(float64(totalMemberships) / float64(cfg.userCount)))
 		membershipsPerTeam := 8
-		//teamsToSkip := int(math.Ceil(float64(cfg.teamCount) / float64(membershipsPerUser)))
-
-		//for i, u := range users {
-		//	currentUser := u
-		//	currentIter := i
-		//
-		//	g.Go(func() {
-		//		executeCreateTeamMembershipsForUser(
-		//			ctx,
-		//			&teamMembershipOpts{
-		//				currentUser:        currentUser,
-		//				teams:              teams,
-		//				membershipsPerUser: membershipsPerUser,
-		//				userIndex:          currentIter,
-		//				//teamIncrement:      teamsToSkip,
-		//			},
-		//			&membershipsDone)
-		//	})
-		//}
-
 		g2 := group.New().WithMaxConcurrency(100)
+
 		for i, t := range teams {
 			currentTeam := t
 			currentIter := i
@@ -448,6 +427,29 @@ func main() {
 		writeInfo(out, "Total orgs on instance: %d", len(remoteOrgs))
 		writeInfo(out, "Total teams on instance: %d", len(remoteTeams))
 		writeInfo(out, "Total users on instance: %d", len(remoteUsers))
+	}
+
+	if cfg.action == "validate" {
+		localTeams, err := store.loadTeams()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		teamSizes := make(map[int]int)
+		for _, t := range localTeams {
+			users, _, err := gh.Teams.ListTeamMembersBySlug(ctx, t.Org, t.Name, &github.TeamListTeamMembersOptions{
+				Role:        "member",
+				ListOptions: github.ListOptions{PerPage: 100},
+			})
+			if err != nil {
+				log.Fatal(err)
+			}
+			teamSizes[len(users)]++
+		}
+
+		for k, v := range teamSizes {
+			writeInfo(out, "Found %d teams with %d members", v, k)
+		}
 	}
 
 	end := time.Now()
