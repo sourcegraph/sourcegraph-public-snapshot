@@ -94,6 +94,7 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 						r.Context(),
 						&database.SecurityEvent{
 							Name:            database.SecurityEventAccessTokenInvalid,
+							URL:             r.URL.RequestURI(),
 							AnonymousUserID: anonymousId,
 							Source:          "BACKEND",
 							Timestamp:       time.Now(),
@@ -161,6 +162,7 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 						r.Context(),
 						&database.SecurityEvent{
 							Name:      database.SecurityEventAccessTokenSubjectNotSiteAdmin,
+							URL:       r.URL.RequestURI(),
 							UserID:    uint32(subjectUserID),
 							Argument:  args,
 							Source:    "BACKEND",
