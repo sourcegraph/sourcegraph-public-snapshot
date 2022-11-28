@@ -31,3 +31,5 @@ export BUILDKITE_WEBHOOK_TOKEN='optional'
 export GITHUB_TOKEN='optional'
 go test . -RunIntegrationTest
 ```
+
+You can enable Slack client debugging by exporting the following environment variable `BUILD_TRACKER_SLACK_DEBUG=1`

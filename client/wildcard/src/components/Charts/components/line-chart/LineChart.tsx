@@ -1,4 +1,4 @@
-import { ReactElement, useMemo, SVGProps, CSSProperties } from 'react'
+import { ReactElement, useMemo, SVGProps, CSSProperties, useCallback } from 'react'
 
 import { scaleTime, scaleLinear, getTicks } from '@visx/scale'
 import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
@@ -10,6 +10,7 @@ import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core'
 import { Series, SeriesLikeChart } from '../../types'
 
 import { LineChartContent } from './LineChartContent'
+import { Point } from './types'
 import { getSeriesData, getMinMaxBoundaries } from './utils'
 
 /**
@@ -116,6 +117,19 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         [minY, maxY]
     )
 
+    const handleDatumAreaClick = useCallback(
+        (point?: Point) => {
+            // Since click has been fired not by native link but by a click in the
+            // link area, we should synthetically trigger the link behavior
+            if (point?.linkUrl) {
+                window.open(point.linkUrl)
+            }
+
+            onDatumClick(point)
+        },
+        [onDatumClick]
+    )
+
     return (
         <SvgRoot
             {...attributes}
@@ -151,6 +165,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                         getActiveSeries={getActiveSeries}
                         getLineGroupStyle={getLineGroupStyle}
                         onDatumClick={onDatumClick}
+                        onDatumAreaClick={handleDatumAreaClick}
                     />
                 )}
             </SvgContent>

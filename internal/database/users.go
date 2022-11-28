@@ -58,7 +58,6 @@ type UserStore interface {
 	Create(context.Context, NewUser) (*types.User, error)
 	CreateInTransaction(context.Context, NewUser, *extsvc.AccountSpec) (*types.User, error)
 	CreatePassword(ctx context.Context, id int32, password string) error
-	CurrentUserAllowedExternalServices(context.Context) (conf.ExternalServiceMode, error)
 	Delete(context.Context, int32) error
 	DeleteList(context.Context, []int32) error
 	DeletePasswordResetCode(context.Context, int32) error
@@ -87,7 +86,6 @@ type UserStore interface {
 	Transact(context.Context) (UserStore, error)
 	Update(context.Context, int32, UserUpdate) error
 	UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error
-	UserAllowedExternalServices(context.Context, int32) (conf.ExternalServiceMode, error)
 	With(basestore.ShareableStore) UserStore
 }
 
@@ -1295,45 +1293,6 @@ func (u *userStore) Tags(ctx context.Context, userID int32) (map[string]bool, er
 		tagMap[t] = true
 	}
 	return tagMap, nil
-}
-
-// UserAllowedExternalServices returns whether the supplied user is allowed
-// to add public or private code. This may override the site level value read by
-// conf.ExternalServiceUserMode.
-//
-// It is added in the database package as putting it in the conf package led to
-// many cyclic imports.
-func (u *userStore) UserAllowedExternalServices(ctx context.Context, userID int32) (conf.ExternalServiceMode, error) {
-	siteMode := conf.ExternalServiceUserMode()
-	// If site level already allows all code then no need to check user
-	if userID == 0 || siteMode == conf.ExternalServiceModeAll {
-		return siteMode, nil
-	}
-
-	tags, err := u.Tags(ctx, userID)
-	if err != nil {
-		return siteMode, err
-	}
-
-	// The user may have a tag that opts them in
-	if tags[TagAllowUserExternalServicePrivate] {
-		return conf.ExternalServiceModeAll, nil
-	}
-	if tags[TagAllowUserExternalServicePublic] {
-		return conf.ExternalServiceModePublic, nil
-	}
-
-	return siteMode, nil
-}
-
-// CurrentUserAllowedExternalServices returns whether the current user is allowed
-// to add public or private code. This may override the site level value read by
-// conf.ExternalServiceUserMode.
-//
-// It is added in the database package as putting it in the conf package led to
-// many cyclic imports.
-func (u *userStore) CurrentUserAllowedExternalServices(ctx context.Context) (conf.ExternalServiceMode, error) {
-	return u.UserAllowedExternalServices(ctx, actor.FromContext(ctx).UID)
 }
 
 // MockHashPassword if non-nil is used instead of database.hashPassword. This is useful

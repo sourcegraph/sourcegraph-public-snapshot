@@ -3693,7 +3693,8 @@ CREATE TABLE webhooks (
     encryption_key_id text,
     uuid uuid DEFAULT gen_random_uuid() NOT NULL,
     created_by_user_id integer,
-    updated_by_user_id integer
+    updated_by_user_id integer,
+    name text NOT NULL
 );
 
 COMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';
@@ -3707,6 +3708,8 @@ COMMENT ON COLUMN webhooks.secret IS 'Secret used to decrypt webhook payload (if
 COMMENT ON COLUMN webhooks.created_by_user_id IS 'ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted).';
 
 COMMENT ON COLUMN webhooks.updated_by_user_id IS 'ID of a user, who updated the webhook. If NULL, then the user does not exist (never existed or was deleted).';
+
+COMMENT ON COLUMN webhooks.name IS 'Descriptive name of a webhook.';
 
 CREATE SEQUENCE webhooks_id_seq
     AS integer

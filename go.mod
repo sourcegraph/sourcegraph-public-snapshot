@@ -129,7 +129,7 @@ require (
 	github.com/smacker/go-tree-sitter v0.0.0-20220209044044-0d3022e933c3
 	github.com/snabb/sitemap v1.0.0
 	github.com/sourcegraph/go-ctags v0.0.0-20220611154803-db463692f037
-	github.com/sourcegraph/go-diff v0.6.1
+	github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3
 	github.com/sourcegraph/go-jsonschema v0.0.0-20211011105148-2e30f7bacbe1
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
@@ -149,7 +149,7 @@ require (
 	github.com/uber/gonduit v0.13.0
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
-	github.com/urfave/cli/v2 v2.16.3
+	github.com/urfave/cli/v2 v2.23.5
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9

@@ -10,7 +10,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, useWindowSize, VIEWPORT_SM } from '@sourcegraph/wildcard'
 
 import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -54,6 +54,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     const showEnterpriseHomePanels = useExperimentalFeatures(features => features.showEnterpriseHomePanels ?? false)
     const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
     const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
+    const { width } = useWindowSize()
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -66,8 +67,8 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
             <BrandLogo className={styles.logo} isLightTheme={props.isLightTheme} variant="logo" />
             {props.isSourcegraphDotCom && (
-                <div className="d-flex flex-row">
-                    <div className={classNames('text-muted text-center mt-3 mr-2 pr-2 border-right')}>
+                <div className="d-sm-flex flex-row text-center">
+                    <div className={classNames(width >= VIEWPORT_SM && 'border-right', 'text-muted mt-3 mr-sm-2 pr-2')}>
                         Search millions of open source repositories
                     </div>
                     <div className="mt-3">

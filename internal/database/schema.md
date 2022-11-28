@@ -3239,6 +3239,7 @@ Foreign-key constraints:
  uuid               | uuid                     |           | not null | gen_random_uuid()
  created_by_user_id | integer                  |           |          | 
  updated_by_user_id | integer                  |           |          | 
+ name               | text                     |           | not null | 
 Indexes:
     "webhooks_pkey" PRIMARY KEY, btree (id)
     "webhooks_uuid_key" UNIQUE CONSTRAINT, btree (uuid)
@@ -3257,6 +3258,8 @@ Webhooks registered in Sourcegraph instance.
 **code_host_urn**: URN of a code host. This column maps to external_service_id column of repo table.
 
 **created_by_user_id**: ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted).
+
+**name**: Descriptive name of a webhook.
 
 **secret**: Secret used to decrypt webhook payload (if supported by the code host).
 

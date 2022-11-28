@@ -20528,6 +20528,19 @@
           "Comment": ""
         },
         {
+          "Name": "name",
+          "Index": 12,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Descriptive name of a webhook."
+        },
+        {
           "Name": "secret",
           "Index": 5,
           "TypeName": "text",

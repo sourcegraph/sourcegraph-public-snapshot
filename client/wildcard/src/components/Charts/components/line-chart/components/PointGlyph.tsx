@@ -5,6 +5,7 @@ import { GlyphDot } from '@visx/glyph'
 import { MaybeLink } from '../../../core'
 
 interface PointGlyphProps {
+    id: string
     top: number
     left: number
     color: string
@@ -13,13 +14,14 @@ interface PointGlyphProps {
     'aria-label': string
     linkURL?: string
     tabIndex?: number
-    onClick: MouseEventHandler<Element>
+    onClick?: MouseEventHandler<Element>
     onFocus?: FocusEventHandler<Element>
     onBlur?: FocusEventHandler<Element>
 }
 
 export const PointGlyph: FC<PointGlyphProps> = props => {
     const {
+        id,
         top,
         left,
         color,
@@ -35,13 +37,14 @@ export const PointGlyph: FC<PointGlyphProps> = props => {
 
     return (
         <MaybeLink
+            data-id={id}
             to={linkURL}
             target="_blank"
             rel="noopener"
             tabIndex={tabIndex}
             role={role}
             aria-label={ariaLabel}
-            onClick={onClick}
+            onClickCapture={onClick}
             onFocus={onFocus}
             onBlur={onBlur}
         >
@@ -52,6 +55,7 @@ export const PointGlyph: FC<PointGlyphProps> = props => {
                 fill="var(--body-bg)"
                 stroke={color}
                 strokeWidth={active ? 3 : 2}
+                aria-hidden={true}
                 onFocus={onFocus}
                 onBlur={onBlur}
             />

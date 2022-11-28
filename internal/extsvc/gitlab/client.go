@@ -471,7 +471,7 @@ func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
 					AuthURL:  glURL + "/oauth/authorize",
 					TokenURL: glURL + "/oauth/token",
 				},
-				Scopes: RequestedOAuthScopes(p.ApiScope, nil),
+				Scopes: RequestedOAuthScopes(p.ApiScope),
 			}
 		}
 	}

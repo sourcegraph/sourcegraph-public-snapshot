@@ -220,7 +220,7 @@ func TestRepositoryComparison(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if have, want := rawDiff, testDiff; have != want {
+			if have, want := rawDiff, testDiff+testCopyDiff; have != want {
 				t.Fatalf("rawDiff wrong. want=%q, have=%q", want, have)
 			}
 		})
@@ -279,7 +279,8 @@ func TestRepositoryComparison(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if len(nodes) != testDiffFiles {
+			// +1 for the copyDiffFile
+			if len(nodes) != testDiffFiles+1 {
 				t.Fatalf("wrong length of nodes. want=%d, have=%d", testDiffFiles, len(nodes))
 			}
 
@@ -349,8 +350,8 @@ func TestRepositoryComparison(t *testing.T) {
 		})
 
 		t.Run("Pagination", func(t *testing.T) {
-			endCursors := []string{"1", "2"}
-			totalCount := int32(testDiffFiles)
+			endCursors := []string{"1", "2", "3"}
+			totalCount := int32(testDiffFiles) + 1
 
 			tests := []struct {
 				first int32
@@ -383,6 +384,14 @@ func TestRepositoryComparison(t *testing.T) {
 					first:           1,
 					after:           endCursors[1],
 					wantNodeCount:   1,
+					wantHasNextPage: true,
+					wantEndCursor:   &endCursors[2],
+					wantTotalCount:  nil,
+				},
+				{
+					first:           1,
+					after:           endCursors[2],
+					wantNodeCount:   1,
 					wantHasNextPage: false,
 					wantEndCursor:   nil,
 					wantTotalCount:  &totalCount,
@@ -390,7 +399,7 @@ func TestRepositoryComparison(t *testing.T) {
 				{
 					first:           testDiffFiles + 1,
 					after:           "",
-					wantNodeCount:   testDiffFiles,
+					wantNodeCount:   testDiffFiles + 1,
 					wantHasNextPage: false,
 					wantEndCursor:   nil,
 					wantTotalCount:  &totalCount,
