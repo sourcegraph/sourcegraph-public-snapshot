@@ -14,9 +14,10 @@ func HasSignOutCookie(r *http.Request) bool {
 	return ck != nil
 }
 
-func RemoveSignOutCookieIfSet(r *http.Request, w http.ResponseWriter) {
+func RemoveSignOutCookieIfSet(r *http.Request, w *http.ResponseWriter) {
 	if HasSignOutCookie(r) {
-		http.SetCookie(w, &http.Cookie{Name: SignoutCookie, Value: "", MaxAge: -1})
+		respWriter := w
+		http.SetCookie(*respWriter, &http.Cookie{Name: SignoutCookie, Value: "", MaxAge: -1})
 	}
 }
 
