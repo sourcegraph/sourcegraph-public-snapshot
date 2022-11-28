@@ -172,6 +172,11 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 					return
 				}
 
+				var tokenSubjectUserName string
+				if tokenSubjectUser, err := db.Users().GetByID(r.Context(), subjectUserID); err == nil {
+					tokenSubjectUserName = tokenSubjectUser.Username
+				}
+
 				// Sudo to the other user if this is a sudo token. We already checked that the token has
 				// the necessary scope in the Lookup call above.
 				user, err := db.Users().GetByUsername(r.Context(), sudoUser)
@@ -200,7 +205,10 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 				)
 
 				args, err := json.Marshal(map[string]any{
-					"sudo_user_id": actorUserID,
+					"sudo_user_id":            actorUserID,
+					"sudo_user":               user.Username,
+					"token_subject_user_id":   subjectUserID,
+					"token_subject_user_name": tokenSubjectUserName,
 				})
 				if err != nil {
 					logger.Error(
@@ -221,6 +229,7 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 					),
 					&database.SecurityEvent{
 						Name:      database.SecurityEventAccessTokenImpersonated,
+						URL:       r.URL.RequestURI(),
 						UserID:    uint32(subjectUserID),
 						Argument:  args,
 						Source:    "BACKEND",
