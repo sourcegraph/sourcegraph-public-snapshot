@@ -367,12 +367,11 @@ WHERE %s`, sqlf.Join(conds, "AND"))
 
 // ExternalAccountsListOptions specifies the options for listing user external accounts.
 type ExternalAccountsListOptions struct {
-	UserID        int32
-	ServiceType   string
-	ServiceID     string
-	ClientID      string
-	AccountID     string
-	AccountIDLike string
+	UserID      int32
+	ServiceType string
+	ServiceID   string
+	ClientID    string
+	AccountID   string
 
 	// Only one of these should be set
 	ExcludeExpired bool
@@ -477,9 +476,6 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	}
 	if opt.OnlyExpired {
 		conds = append(conds, sqlf.Sprintf("expired_at IS NOT NULL"))
-	}
-	if opt.AccountIDLike != "" {
-		conds = append(conds, sqlf.Sprintf("account_id LIKE %s", opt.AccountIDLike))
 	}
 
 	return conds
