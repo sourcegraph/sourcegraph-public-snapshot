@@ -9,7 +9,7 @@ import { Series } from '../../types'
 
 import { LineDataSeries, StackedArea, Tooltip, TooltipContent } from './components'
 import { getClosesVoronoiPoint, isNextTargetWithinCurrent } from './event-helpers'
-import { useKeyboardNavigation } from './keyboard-navigation';
+import { useKeyboardNavigation } from './keyboard-navigation'
 import { Point } from './types'
 import { generatePointsField, SeriesWithData } from './utils'
 

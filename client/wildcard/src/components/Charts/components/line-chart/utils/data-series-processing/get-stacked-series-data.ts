@@ -3,7 +3,7 @@ import { scaleTime } from '@visx/scale'
 import { Series as ChartSeries } from '../../../../types'
 import { isValidNumber } from '../data-guards'
 
-import { encodePointId } from './helpers';
+import { encodePointId } from './helpers'
 import { SeriesType, StackedSeries, StackedSeriesDatum } from './types'
 
 /**

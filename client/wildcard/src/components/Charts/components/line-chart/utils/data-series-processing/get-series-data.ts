@@ -1,7 +1,7 @@
 import { Series } from '../../../../types'
 
 import { getStackedSeriesData } from './get-stacked-series-data'
-import { encodePointId } from './helpers';
+import { encodePointId } from './helpers'
 import { IndependentSeries, SeriesType, SeriesWithData, StandardSeriesDatum } from './types'
 
 interface Input<Datum> {
