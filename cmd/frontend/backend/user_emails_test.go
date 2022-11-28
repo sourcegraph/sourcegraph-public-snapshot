@@ -335,9 +335,7 @@ func TestUserEmailsSetVerified(t *testing.T) {
 	// Unauthenticated user should fail
 	assert.Error(t, UserEmails.SetVerified(ctx, logger, db, createdUser.ID, email, true))
 	// Different user should fail
-	ctx = actor.WithActor(ctx, &actor.Actor{
-		UID: 99,
-	})
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 99})
 
 	// As site admin (or internal actor) should pass
 	ctx = actor.WithInternalActor(ctx)
@@ -348,6 +346,53 @@ func TestUserEmailsSetVerified(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, emails, 1)
 	assert.Equal(t, email, emails[0].Email)
+}
+
+func TestUserEmailsResendVerificationEmail(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	txemail.DisableSilently()
+
+	const email = "user@example.com"
+	const username = "test-user"
+	const verificationCode = "code"
+
+	newUser := database.NewUser{
+		Email:                 email,
+		Username:              username,
+		EmailVerificationCode: verificationCode,
+	}
+
+	createdUser, err := db.Users().Create(ctx, newUser)
+	assert.NoError(t, err)
+
+	now := time.Now()
+
+	// Set that we sent the initial e-mail
+	assert.NoError(t, db.UserEmails().SetLastVerification(ctx, createdUser.ID, email, verificationCode, now))
+
+	// Unauthenticated user should fail
+	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, logger, db, createdUser.ID, email, now))
+	// Different user should fail
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 99})
+	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, logger, db, createdUser.ID, email, now))
+
+	// As site admin (or internal actor) should pass
+	ctx = actor.WithInternalActor(ctx)
+	// Set in the future so that we can resend
+	now = now.Add(5 * time.Minute)
+	assert.NoError(t, UserEmails.ResendVerificationEmail(ctx, logger, db, createdUser.ID, email, now))
+
+	// Trying to send again too soon should fail
+	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, logger, db, createdUser.ID, email, now.Add(1*time.Second)))
+
+	// Invalid e-mail
+	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, logger, db, createdUser.ID, "another@example.com", now.Add(5*time.Minute)))
+
+	// TODO: Set as already verified
+	// TODO: Confirm Resend is a noop
+	t.Fatalf("TODOS")
 }
 
 func TestDeleteStaleExternalAccount(t *testing.T) {

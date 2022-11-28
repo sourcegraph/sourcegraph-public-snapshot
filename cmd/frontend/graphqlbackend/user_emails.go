@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var timeNow = time.Now
@@ -156,48 +155,7 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *rese
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the authenticated user and site admins can resend
-	// verification email for their accounts.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-		return nil, err
-	}
-
-	user, err := r.db.Users().GetByID(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	userEmails := r.db.UserEmails()
-	lastSent, err := userEmails.GetLatestVerificationSentEmail(ctx, args.Email)
-	if err != nil {
-		return nil, err
-	}
-	if lastSent != nil &&
-		lastSent.LastVerificationSentAt != nil &&
-		timeNow().Sub(*lastSent.LastVerificationSentAt) < 1*time.Minute {
-		return nil, errors.New("Last verification email sent too recently")
-	}
-
-	email, verified, err := userEmails.Get(ctx, userID, args.Email)
-	if err != nil {
-		return nil, err
-	}
-	if verified {
-		return &EmptyResponse{}, nil
-	}
-
-	code, err := backend.MakeEmailVerificationCode()
-	if err != nil {
-		return nil, err
-	}
-
-	err = userEmails.SetLastVerification(ctx, userID, email, code)
-	if err != nil {
-		return nil, err
-	}
-
-	err = backend.SendUserEmailVerificationEmail(ctx, user.Username, email, code)
-	if err != nil {
+	if err := backend.UserEmails.ResendVerificationEmail(ctx, r.logger, r.db, userID, args.Email, timeNow()); err != nil {
 		return nil, err
 	}
 

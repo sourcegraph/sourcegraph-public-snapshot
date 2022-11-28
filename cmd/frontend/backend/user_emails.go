@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"net/url"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -139,7 +140,7 @@ func (userEmails) Add(ctx context.Context, logger log.Logger, db database.DB, us
 			// assumed the email sending would never fail and uses the value of the
 			// "last_verification_sent_at" column to calculate cooldown (instead of using
 			// cache), while still aligning the semantics to the column name.
-			if err = db.UserEmails().SetLastVerification(ctx, userID, email, *code); err != nil {
+			if err = db.UserEmails().SetLastVerification(ctx, userID, email, *code, time.Now()); err != nil {
 				logger.Warn("Failed to set last verification sent at for the user email", log.Int32("userID", userID), log.Error(err))
 			}
 		}()
@@ -244,6 +245,55 @@ func (userEmails) SetVerified(ctx context.Context, logger log.Logger, db databas
 	}
 
 	return nil
+}
+
+// ResendVerificationEmail attempts to re-send the verification e-mail for the
+// given user and email combination. If an e-mail sent within the last minute we
+// do nothing.
+func (userEmails) ResendVerificationEmail(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string, now time.Time) error {
+	logger = logger.Scoped("UserEmails.ResendVerificationEmail", "handles re-sending verification e-mails")
+
+	// 🚨 SECURITY: Only the authenticated user and site admins can resend
+	// verification email for their accounts.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
+		return err
+	}
+
+	user, err := db.Users().GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	userEmails := db.UserEmails()
+	lastSent, err := userEmails.GetLatestVerificationSentEmail(ctx, email)
+	if err != nil {
+		return err
+	}
+	if lastSent != nil &&
+		lastSent.LastVerificationSentAt != nil &&
+		now.Sub(*lastSent.LastVerificationSentAt) < 1*time.Minute {
+		return errors.New("Last verification email sent too recently")
+	}
+
+	email, verified, err := userEmails.Get(ctx, userID, email)
+	if err != nil {
+		return err
+	}
+	if verified {
+		return nil
+	}
+
+	code, err := MakeEmailVerificationCode()
+	if err != nil {
+		return err
+	}
+
+	err = userEmails.SetLastVerification(ctx, userID, email, code, now)
+	if err != nil {
+		return err
+	}
+
+	return SendUserEmailVerificationEmail(ctx, user.Username, email, code)
 }
 
 // deleteStalePerforceExternalAccounts will remove any Perforce external accounts associated with the given user

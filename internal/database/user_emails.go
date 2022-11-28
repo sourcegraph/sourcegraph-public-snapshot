@@ -54,7 +54,7 @@ type UserEmailsStore interface {
 	GetVerifiedEmails(ctx context.Context, emails ...string) ([]*UserEmail, error)
 	ListByUser(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error)
 	Remove(ctx context.Context, userID int32, email string) error
-	SetLastVerification(ctx context.Context, userID int32, email, code string) error
+	SetLastVerification(ctx context.Context, userID int32, email, code string, when time.Time) error
 	SetPrimaryEmail(ctx context.Context, userID int32, email string) error
 	SetVerified(ctx context.Context, userID int32, email string, verified bool) error
 	Transact(ctx context.Context) (UserEmailsStore, error)
@@ -240,8 +240,8 @@ func (s *userEmailsStore) SetVerified(ctx context.Context, userID int32, email s
 }
 
 // SetLastVerification sets the "last_verification_sent_at" column to now() and updates the verification code for given email of the user.
-func (s *userEmailsStore) SetLastVerification(ctx context.Context, userID int32, email, code string) error {
-	res, err := s.Handle().ExecContext(ctx, "UPDATE user_emails SET last_verification_sent_at=now(), verification_code = $3 WHERE user_id=$1 AND email=$2", userID, email, code)
+func (s *userEmailsStore) SetLastVerification(ctx context.Context, userID int32, email, code string, when time.Time) error {
+	res, err := s.Handle().ExecContext(ctx, "UPDATE user_emails SET last_verification_sent_at=$1, verification_code = $2 WHERE user_id=$3 AND email=$4", when, code, userID, email)
 	if err != nil {
 		return err
 	}
