@@ -59,7 +59,3 @@ func TestRangeEncoding(t *testing.T) {
 		t.Fatalf("unexpected ranges (-want +got):\n%s", diff)
 	}
 }
-`
-
-
-`
