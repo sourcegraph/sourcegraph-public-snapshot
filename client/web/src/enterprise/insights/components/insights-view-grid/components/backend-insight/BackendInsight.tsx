@@ -31,7 +31,7 @@ import {
     BackendInsightChart,
     parseSeriesLimit,
 } from './components'
-import { BackendInsightTimoutIcon } from './components/backend-insight-chart/BackendInsightChart'
+import { BackendInsightTimeoutIcon } from './components/backend-insight-chart/BackendInsightChart'
 
 import styles from './BackendInsight.module.scss'
 
@@ -170,7 +170,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
             >
                 {isVisible && (
                     <>
-                        {insightData?.isAllSeriesErrored && <BackendInsightTimoutIcon />}
+                        {insightData?.isAllSeriesErrored && <BackendInsightTimeoutIcon timeoutLevel="insight" />}
                         <DrillDownFiltersPopover
                             isOpen={isFiltersOpen}
                             anchor={cardElementRef}

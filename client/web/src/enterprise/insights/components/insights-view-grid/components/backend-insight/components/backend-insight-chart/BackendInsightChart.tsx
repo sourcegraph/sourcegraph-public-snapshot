@@ -165,7 +165,7 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                     <LegendItem key={item.id as string} color={item.color}>
                         <LegendItemPoint color={item.color} />
                         {item.name}
-                        {item.errored && <BackendInsightTimoutIcon />}
+                        {item.errored && <BackendInsightTimeoutIcon />}
                     </LegendItem>
                 ))}
             </LegendList>
@@ -204,18 +204,23 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                         <LegendItemPoint color={item.color} />
                         {item.name}
                     </Button>
-                    {item.errored && <BackendInsightTimoutIcon />}
+                    {item.errored && <BackendInsightTimeoutIcon />}
                 </LegendItem>
             ))}
         </LegendList>
     )
 }
 
+interface BackendInsightTimeoutIconProps {
+    timeoutLevel?: 'series' | 'insight'
+}
+
 /**
  * Renders timeout icon and interactive tooltip with addition info about timeout
  * error. Note: It's exported because it's also used in the backend insight card.
  */
-export const BackendInsightTimoutIcon: FC = () => {
+export const BackendInsightTimeoutIcon: FC<BackendInsightTimeoutIconProps> = props => {
+    const { timeoutLevel = 'series' } = props
     const [open, setOpen] = useState(false)
 
     const handleIconClick = (event: MouseEvent<HTMLButtonElement>): void => {
@@ -239,7 +244,9 @@ export const BackendInsightTimoutIcon: FC = () => {
             open={open}
             content={
                 <>
-                    Calculating some points on this insight exceeded the timeout limit. Results may be incomplete.{' '}
+                    {timeoutLevel === 'series'
+                        ? 'Some points of this data series exceeded the time limit. Results may be incomplete.'
+                        : 'Calculating some points on this insight exceeded the timeout limit. Results may be incomplete.'}{' '}
                     <Link to="/help/code_insights/how-tos/Troubleshooting" target="_blank" rel="noopener">
                         Troubleshoot
                     </Link>

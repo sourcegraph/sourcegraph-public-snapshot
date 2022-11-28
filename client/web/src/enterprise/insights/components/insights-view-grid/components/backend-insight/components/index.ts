@@ -11,4 +11,4 @@ export { DrillDownFiltersPopover, DrillDownFiltersStep } from './drill-down-filt
 
 export { BackendInsightErrorAlert, BackendAlertOverlay } from './backend-insight-alerts/BackendInsightAlerts'
 
-export { BackendInsightChart, BackendInsightTimoutIcon } from './backend-insight-chart/BackendInsightChart'
+export { BackendInsightChart, BackendInsightTimeoutIcon } from './backend-insight-chart/BackendInsightChart'
