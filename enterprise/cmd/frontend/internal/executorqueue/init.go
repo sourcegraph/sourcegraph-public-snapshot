@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -29,15 +30,17 @@ func Init(
 	accessToken := func() string { return conf.SiteConfig().ExecutorsAccessToken }
 	logger := log.Scoped("executorqueue", "")
 
+	metricsStore := metricsstore.NewDistributedStore("executors:")
+	executorStore := db.Executors()
+
 	// Register queues. If this set changes, be sure to also update the list of valid
 	// queue names in ./metrics/queue_allocation.go, and register a metrics exporter
 	// in the worker.
 	//
 	// Note: In order register a new queue type please change the validate() check code in enterprise/cmd/executor/config.go
-	queueOptions := []handler.QueueOptions{
-		codeintelqueue.QueueOptions(db, accessToken, observationContext),
-		batches.QueueOptions(db, accessToken, observationContext),
-	}
+	codeintelHandler := handler.NewHandler(executorStore, metricsStore, codeintelqueue.QueueOptions(db, accessToken, observationContext))
+	batchesHandler := handler.NewHandler(executorStore, metricsStore, batches.QueueOptions(db, accessToken, observationContext))
+	queueOptions := []handler.ExecutorHandler{codeintelHandler, batchesHandler}
 
 	queueHandler, err := newExecutorQueueHandler(
 		logger,

@@ -27,6 +27,7 @@ describe('SearchContextDropdown', () => {
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
         authenticatedUser: null,
+        isSourcegraphDotCom: false,
         searchContextsEnabled: true,
         platformContext: NOOP_PLATFORM_CONTEXT,
     }

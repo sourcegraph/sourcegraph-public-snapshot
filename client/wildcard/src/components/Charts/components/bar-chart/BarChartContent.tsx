@@ -62,8 +62,8 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
 
     const withActiveLink = activeSegment?.datum ? getDatumLink(activeSegment?.datum) : null
 
-    const handleBarHover = (datum: Datum, category: Category<Datum>): void => {
-        setActiveSegment({ datum, category })
+    const handleBarHover = (datum: Datum, category: Category<Datum>, node: Element): void => {
+        setActiveSegment({ datum, category, node })
         onBarHover?.(datum)
     }
 
@@ -121,7 +121,7 @@ export function BarChartContent<Datum>(props: BarChartContentProps<Datum>): Reac
             )}
 
             {activeSegment && rootRef.current && (
-                <Tooltip containerElement={rootRef.current} activeElement={activeSegment.node as HTMLElement}>
+                <Tooltip activeElement={activeSegment.node as HTMLElement}>
                     <BarTooltipContent
                         category={activeSegment.category}
                         activeBar={activeSegment.datum}

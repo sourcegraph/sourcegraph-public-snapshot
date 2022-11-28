@@ -143,18 +143,20 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 		}
 
 		if len(accts) > 0 {
-			acctList := []int32{}
+			var acctList []int32
 			for _, acct := range accts {
 				acctList = append(acctList, acct.ID)
 			}
 
-			if err := r.db.UserExternalAccounts().Delete(ctx, acctList...); err != nil {
+			deleteOpts := database.ExternalAccountsDeleteOptions{IDs: acctList}
+			if err := r.db.UserExternalAccounts().Delete(ctx, deleteOpts); err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	if err := r.db.UserExternalAccounts().Delete(ctx, account.ID); err != nil {
+	deleteOpts := database.ExternalAccountsDeleteOptions{IDs: []int32{account.ID}}
+	if err := r.db.UserExternalAccounts().Delete(ctx, deleteOpts); err != nil {
 		return nil, err
 	}
 

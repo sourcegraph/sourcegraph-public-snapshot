@@ -14,7 +14,7 @@ export function generatePointsField<Datum>(dataSeries: SeriesWithData<Datum>[]):
             const datumValue = getDatumValue(datum)
 
             return {
-                id: `${id}-${index}`,
+                id: getPointId(id, index),
                 seriesId: id.toString(),
                 yValue: datumValue,
                 xValue: datum.x,
@@ -25,4 +25,8 @@ export function generatePointsField<Datum>(dataSeries: SeriesWithData<Datum>[]):
 
         return previous
     }, starter)
+}
+
+export function getPointId(seriesId: string | number, pointIndex: number): string {
+    return `${seriesId.toString()}${pointIndex}`
 }

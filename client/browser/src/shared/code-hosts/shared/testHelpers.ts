@@ -89,7 +89,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
  */
 export const mockRequestGraphQL = (
     responseMap: GraphQLResponseMap = DEFAULT_GRAPHQL_RESPONSES
-): PlatformContext['requestGraphQL'] => <R, V = object>({
+): PlatformContext['requestGraphQL'] => <R, V extends {} = object>({
     request,
     variables,
     mightContainPrivateInfo,

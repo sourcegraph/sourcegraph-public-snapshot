@@ -220,3 +220,140 @@ func getTitles(t *testing.T, args gqltestutil.GetDashboardArgs) []string {
 	}
 	return resultTitles
 }
+
+func TestUpdateInsight(t *testing.T) {
+	t.Run("metadata update only", func(t *testing.T) {
+		dataSeries := map[string]any{
+			"query": "lang:css",
+			"options": map[string]string{
+				"label":     "insights",
+				"lineColor": "#6495ED",
+			},
+			"repositoryScope": map[string]any{
+				"repositories": []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
+			},
+			"timeScope": map[string]any{
+				"stepInterval": map[string]any{
+					"unit":  "MONTH",
+					"value": 3,
+				},
+			},
+		}
+		insight, err := client.CreateSearchInsight("my gqltest insight", dataSeries)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if insight.InsightViewId == "" {
+			t.Fatal("Did not get an insight view ID")
+		}
+		defer func() {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+				t.Fatalf("couldn't disable insight series: %v", err)
+			}
+		}()
+
+		if insight.Label != "insights" {
+			t.Errorf("wrong label: %v", insight.Label)
+		}
+		if insight.Color != "#6495ED" {
+			t.Errorf("wrong color: %v", insight.Color)
+		}
+
+		dataSeries["seriesId"] = insight.SeriesId
+		dataSeries["options"] = map[string]any{
+			"label":     "insights 2",
+			"lineColor": "green",
+		}
+		// Ensure order of repositories does not affect.
+		dataSeries["repositoryScope"] = map[string]any{
+			"repositories": []string{"github.com/sourcegraph/about", "github.com/sourcegraph/sourcegraph"},
+		}
+		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
+			"dataSeries": []any{
+				dataSeries,
+			},
+			"presentationOptions": map[string]string{
+				"title": "my gql test insight (modified)",
+			},
+			"viewControls": map[string]any{
+				"filters":              struct{}{},
+				"seriesDisplayOptions": struct{}{},
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if updatedInsight.SeriesId != insight.SeriesId {
+			t.Error("expected series to get reused")
+		}
+		if updatedInsight.InsightViewId != insight.InsightViewId {
+			t.Error("expected updated series to be attached to same view")
+		}
+		if updatedInsight.Label != "insights 2" {
+			t.Error("expected series label to be updated")
+		}
+		if updatedInsight.Color != "green" {
+			t.Error("expected series color to be updated")
+		}
+	})
+
+	t.Run("repository change triggers insight recalculation", func(t *testing.T) {
+		dataSeries := map[string]any{
+			"query": "lang:go select:file",
+			"options": map[string]string{
+				"label":     "go files",
+				"lineColor": "#6495ED",
+			},
+			"repositoryScope": map[string]any{
+				"repositories": []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
+			},
+			"timeScope": map[string]any{
+				"stepInterval": map[string]any{
+					"unit":  "WEEK",
+					"value": 3,
+				},
+			},
+		}
+		insight, err := client.CreateSearchInsight("my gqltest insight 2", dataSeries)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if insight.InsightViewId == "" {
+			t.Fatal("Did not get an insight view ID")
+		}
+		defer func() {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+				t.Fatalf("couldn't disable insight series: %v", err)
+			}
+		}()
+
+		dataSeries["seriesId"] = insight.SeriesId
+		// Change repositories.
+		dataSeries["repositoryScope"] = map[string]any{
+			"repositories": []string{"github.com/sourcegraph/handbook", "github.com/sourcegraph/sourcegraph"},
+		}
+		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
+			"dataSeries": []any{
+				dataSeries,
+			},
+			"presentationOptions": map[string]string{
+				"title": "my gql test insight (needs recalculation)",
+			},
+			"viewControls": map[string]any{
+				"filters":              struct{}{},
+				"seriesDisplayOptions": struct{}{},
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if updatedInsight.SeriesId == insight.SeriesId {
+			t.Error("expected new series to get reused")
+		}
+		if updatedInsight.InsightViewId != insight.InsightViewId {
+			t.Error("expected updated series to be attached to same view")
+		}
+	})
+}

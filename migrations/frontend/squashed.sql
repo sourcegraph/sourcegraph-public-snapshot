@@ -2216,7 +2216,8 @@ CREATE TABLE insights_query_runner_jobs (
     cost integer DEFAULT 500 NOT NULL,
     persist_mode persistmode DEFAULT 'record'::persistmode NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    cancel boolean DEFAULT false NOT NULL
+    cancel boolean DEFAULT false NOT NULL,
+    trace_id text
 );
 
 COMMENT ON TABLE insights_query_runner_jobs IS 'See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
@@ -3658,7 +3659,8 @@ CREATE TABLE webhook_build_jobs (
     last_heartbeat_at timestamp with time zone,
     worker_hostname text DEFAULT ''::text NOT NULL,
     org text,
-    extsvc_id integer
+    extsvc_id integer,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE webhook_logs (
@@ -3691,7 +3693,8 @@ CREATE TABLE webhooks (
     encryption_key_id text,
     uuid uuid DEFAULT gen_random_uuid() NOT NULL,
     created_by_user_id integer,
-    updated_by_user_id integer
+    updated_by_user_id integer,
+    name text NOT NULL
 );
 
 COMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';
@@ -3705,6 +3708,8 @@ COMMENT ON COLUMN webhooks.secret IS 'Secret used to decrypt webhook payload (if
 COMMENT ON COLUMN webhooks.created_by_user_id IS 'ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted).';
 
 COMMENT ON COLUMN webhooks.updated_by_user_id IS 'ID of a user, who updated the webhook. If NULL, then the user does not exist (never existed or was deleted).';
+
+COMMENT ON COLUMN webhooks.name IS 'Descriptive name of a webhook.';
 
 CREATE SEQUENCE webhooks_id_seq
     AS integer

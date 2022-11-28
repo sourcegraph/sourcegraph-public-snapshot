@@ -66,7 +66,7 @@ func newOIDCIDServer(t *testing.T, code string, providerConfig *cloud.SchemaAuth
 
 		redirectURI, err := url.QueryUnescape(values.Get("redirect_uri"))
 		require.NoError(t, err)
-		require.Equal(t, "http://example.com/.auth/callback", redirectURI)
+		require.Equal(t, "http://example.com/.auth/sourcegraph-operator/callback", redirectURI)
 
 		w.Header().Set("Content-Type", "application/json")
 		err = json.NewEncoder(w).Encode(
@@ -190,7 +190,7 @@ func TestMiddleware(t *testing.T) {
 		loginURL, err := url.Parse(location)
 		require.NoError(t, err)
 		assert.Equal(t, mockProvider.config.ClientID, loginURL.Query().Get("client_id"))
-		assert.Equal(t, "http://example.com/.auth/callback", loginURL.Query().Get("redirect_uri"))
+		assert.Equal(t, "http://example.com/.auth/sourcegraph-operator/callback", loginURL.Query().Get("redirect_uri"))
 		assert.Equal(t, "code", loginURL.Query().Get("response_type"))
 		assert.Equal(t, "openid profile email", loginURL.Query().Get("scope"))
 	})
@@ -201,7 +201,7 @@ func TestMiddleware(t *testing.T) {
 			Redirect:   "/redirect",
 			ProviderID: mockProvider.ConfigID().ID,
 		}
-		urlStr := fmt.Sprintf("http://example.com/.auth/callback?code=%s&state=%s", testCode, badState.Encode())
+		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, badState.Encode())
 		resp := doRequest(http.MethodGet, urlStr, "", nil, false)
 		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 	})
@@ -233,7 +233,7 @@ func TestMiddleware(t *testing.T) {
 			return 1, nil
 		})
 
-		urlStr := fmt.Sprintf("http://example.com/.auth/callback?code=%s&state=%s", testCode, state.Encode())
+		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
 		cookies := []*http.Cookie{
 			{
 				Name:  stateCookieName,
@@ -267,7 +267,7 @@ func TestMiddleware(t *testing.T) {
 		}
 		defer func() { openidconnect.MockVerifyIDToken = nil }()
 
-		urlStr := fmt.Sprintf("http://example.com/.auth/callback?code=%s&state=%s", testCode, state.Encode())
+		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
 		cookies := []*http.Cookie{
 			{
 				Name:  stateCookieName,
@@ -302,7 +302,7 @@ func TestMiddleware(t *testing.T) {
 			}, nil
 		})
 
-		urlStr := fmt.Sprintf("http://example.com/.auth/callback?code=%s&state=%s", testCode, state.Encode())
+		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
 		cookies := []*http.Cookie{
 			{
 				Name:  stateCookieName,
@@ -343,7 +343,7 @@ func TestMiddleware(t *testing.T) {
 		}
 		defer func() { openidconnect.MockVerifyIDToken = nil }()
 
-		urlStr := fmt.Sprintf("http://example.com/.auth/callback?code=%s&state=%s", testCode, state.Encode())
+		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
 		cookies := []*http.Cookie{
 			{
 				Name:  stateCookieName,

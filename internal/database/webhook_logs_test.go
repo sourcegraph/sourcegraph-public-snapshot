@@ -169,7 +169,7 @@ func TestWebhookLogStore(t *testing.T) {
 		assert.Nil(t, esStore.Upsert(ctx, es))
 
 		whStore := tx.Webhooks(keyring.Default().WebhookKey)
-		wh, err := whStore.Create(ctx, extsvc.KindGitHub, "http://github.com", 0, nil)
+		wh, err := whStore.Create(ctx, "github webhook", extsvc.KindGitHub, "http://github.com", 0, nil)
 		require.NoError(t, err)
 
 		store := tx.WebhookLogs(et.TestKey{})

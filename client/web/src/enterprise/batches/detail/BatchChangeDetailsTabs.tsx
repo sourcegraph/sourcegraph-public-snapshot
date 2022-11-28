@@ -158,7 +158,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
     )
 
     const changesetCount = batchChange.changesetsStats.total - batchChange.changesetsStats.archived
-    const executionsCount = `${pendingExecutionsCount}${batchChange.batchSpecs.pageInfo.hasNextPage && '+'}`
+    const executionsCount = `${pendingExecutionsCount}${batchChange.batchSpecs.pageInfo.hasNextPage ? '+' : ''}`
 
     return (
         <BatchChangeTabs defaultIndex={defaultTabIndex} onChange={onTabChange}>
