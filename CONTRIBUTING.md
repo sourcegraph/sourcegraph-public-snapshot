@@ -10,7 +10,11 @@ Anyone is free to contribute changes to any file in this repository, including `
 
 ## Contributing large changes, new features, etc.
 
+<<<<<<< HEAD
 Unless you feel confident your change will be accepted (trivial bug fixes, code cleanup, etc) you should first create an issue or a [Sourcegraph RFC](https://handbook.sourcegraph.com/communication/rfcs#external-contributors) (preferred for bigger changes) to discuss your change with us. This lets us all discuss the design and proposed implementation of your change, which helps ensure your time is well spent and that your contribution will be accepted.
+=======
+Unless you feel confident your change will be accepted (trivial bug fixes, code cleanup, etc) you should first create an issue or a [Sourcegraph RFC](https://about.sourcegraph.com/handbook/communication/rfcs#external-contributors) (preferred for bigger changes) to discuss your change with us. This lets us all discuss the design and proposed implementation of your change, which helps ensure your time is well spent and that your contribution will be accepted.
+>>>>>>> master
 
 > Exception: If you contribute functionality that already exists as a [paid Sourcegraph feature](https://about.sourcegraph.com/pricing/), we are unlikely to accept it. Consult us beforehand for a definitive answer. (We'll add more details about the process here, and they'll be similar to [GitLab's stewardship principles](https://about.gitlab.com/stewardship/#contributing-an-existing-ee-feature-to-ce).)
 
@@ -18,6 +22,7 @@ Unless you feel confident your change will be accepted (trivial bug fixes, code 
 
 All interactions with the Sourcegraph open source project are governed by the
 [Sourcegraph Community Code of Conduct](https://handbook.sourcegraph.com/company-info-and-process/community/code_of_conduct/).
+<<<<<<< HEAD
 
 ## How to contribute
 
@@ -55,3 +60,5 @@ All open issues are not yet solved. If the task is interesting to you, take it a
 - Git branch name convention: `[developer-initials]/short-feature-description`
 - [Examples on Github](https://github.com/sourcegraph/sourcegraph/pulls?q=is%3Apr+label%3Ateam%2Ffrontend-platform)
 - (For Sourcegraph team) [How to accept contributions](https://docs.sourcegraph.com/dev/contributing/accepting_contribution)
+=======
+>>>>>>> master

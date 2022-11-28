@@ -659,6 +659,278 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	return stats, nil
 }
 
+// withResultTypes populates the ResultTypes field of args, which drives the kind
+// of search to run (e.g., text search, symbol search).
+func withResultTypes(args search.TextParameters, forceTypes result.Types) search.TextParameters {
+	var rts result.Types
+	if forceTypes != 0 {
+		rts = forceTypes
+	} else {
+		stringTypes, _ := args.Query.StringValues(query.FieldType)
+		if len(stringTypes) == 0 {
+			rts = result.TypeFile | result.TypePath | result.TypeRepo
+		} else {
+			for _, stringType := range stringTypes {
+				rts = rts.With(result.TypeFromString[stringType])
+			}
+		}
+	}
+
+	if rts.Has(result.TypeFile) {
+		args.PatternInfo.PatternMatchesContent = true
+	}
+
+	if rts.Has(result.TypePath) {
+		args.PatternInfo.PatternMatchesPath = true
+	}
+	args.ResultTypes = rts
+	return args
+}
+
+// doResults is one of the highest level search functions that handles finding results.
+//
+// If forceOnlyResultType is specified, only results of the given type are returned,
+// regardless of what `type:` is specified in the query string.
+//
+// Partial results AND an error may be returned.
+func (r *searchResolver) doResults(ctx context.Context, args *search.TextParameters) (_ *SearchResults, err error) {
+	tr, ctx := trace.New(ctx, "doResults", r.rawQuery())
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	start := time.Now()
+
+	ctx, cancel := context.WithTimeout(ctx, args.Timeout)
+	defer cancel()
+
+	limit := r.MaxResults()
+	tr.LazyPrintf("resultTypes: %s", args.ResultTypes)
+	var (
+		requiredWg sync.WaitGroup
+		optionalWg sync.WaitGroup
+	)
+
+	waitGroup := func(required bool) *sync.WaitGroup {
+		if args.UseFullDeadline {
+			// When a custom timeout is specified, all searches are required and get the full timeout.
+			return &requiredWg
+		}
+		if required {
+			return &requiredWg
+		}
+		return &optionalWg
+	}
+
+	// For streaming search we want to limit based on all results, not just
+	// per backend. This works better than batch based since we have higher
+	// defaults.
+	stream := r.stream
+	if stream != nil {
+		var cancelOnLimit context.CancelFunc
+		ctx, stream, cancelOnLimit = streaming.WithLimit(ctx, stream, limit)
+		defer cancelOnLimit()
+	}
+
+	agg := run.NewAggregator(r.db, stream)
+
+	// finalize converts the content of the aggregator to a proper return value.
+	// finalize relies on all WaitGroups being done since it relies on collecting
+	// from the streams.
+	finalize := func() (*SearchResults, error) {
+		matches, common, aggErrs := agg.Get()
+
+		if aggErrs == nil {
+			return nil, errors.New("aggErrs should never be nil")
+		}
+
+		ao := alertObserver{
+			Inputs:     r.SearchInputs,
+			hasResults: len(matches) > 0,
+		}
+		for _, err := range aggErrs.Errors {
+			ao.Error(ctx, err)
+		}
+		alert, err := ao.Done(&common)
+
+		tr.LazyPrintf("matches=%d %s", len(matches), &common)
+
+		r.sortResults(matches)
+
+		return &SearchResults{
+			Matches: matches,
+			Stats:   common,
+			Alert:   alert,
+		}, err
+	}
+
+	// This ensures we properly cleanup in the case of an early return. In
+	// particular we want to cancel global searches before returning early.
+	hasStartedAllBackends := false
+	defer func() {
+		if hasStartedAllBackends {
+			return
+		}
+		cancel()
+		requiredWg.Wait()
+		optionalWg.Wait()
+		_, _, _ = agg.Get()
+	}()
+
+	args.RepoOptions = r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+
+	// performance optimization: call zoekt early, resolve repos concurrently, filter
+	// search results with resolved repos.
+	if args.Mode == search.ZoektGlobalSearch {
+		argsIndexed := *args
+
+		// Get all private repos that are accessible by the current actor.
+		if res, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
+			OnlyPrivate: true,
+			LimitOffset: &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
+		}); err != nil {
+			tr.LazyPrintf("error resolving private repos: %v", err)
+		} else {
+			argsIndexed.UserPrivateRepos = res
+		}
+
+		wg := waitGroup(true)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			_ = agg.DoFilePathSearch(ctx, &argsIndexed)
+		})
+		// On sourcegraph.com and for unscoped queries, determineRepos returns the subset
+		// of indexed default searchrepos. No need to call searcher, because
+		// len(searcherRepos) will always be 0.
+		if envvar.SourcegraphDotComMode() {
+			args.Mode = search.SkipContentAndPathSearch
+		} else {
+			args.Mode = search.SearcherOnly
+		}
+	}
+
+	resolved, err := r.resolveRepositories(ctx, args.RepoOptions)
+	if err != nil {
+		if alert, err := errorToAlert(err); alert != nil {
+			return alert.wrapResults(), err
+		}
+		// Don't surface context errors to the user.
+		if errors.Is(err, context.Canceled) {
+			tr.LazyPrintf("context canceled during repo resolution: %v", err)
+			optionalWg.Wait()
+			requiredWg.Wait()
+			return finalize()
+		}
+		return nil, err
+	}
+
+	tr.LazyPrintf("searching %d repos, %d missing", len(resolved.RepoRevs), len(resolved.MissingRepoRevs))
+	if len(resolved.RepoRevs) == 0 {
+		return r.alertForNoResolvedRepos(ctx, args.Query).wrapResults(), nil
+	}
+
+	if len(resolved.MissingRepoRevs) > 0 {
+		agg.Error(&missingRepoRevsError{Missing: resolved.MissingRepoRevs})
+	}
+
+	// Send down our first bit of progress.
+	{
+		repos := make(map[api.RepoID]types.RepoName, len(resolved.RepoRevs))
+		for _, repoRev := range resolved.RepoRevs {
+			repos[repoRev.Repo.ID] = repoRev.Repo
+		}
+
+		agg.Send(streaming.SearchEvent{
+			Stats: streaming.Stats{
+				Repos:            repos,
+				ExcludedForks:    resolved.ExcludedRepos.Forks,
+				ExcludedArchived: resolved.ExcludedRepos.Archived,
+			},
+		})
+	}
+
+	// Resolve repo promise so searches waiting on it can proceed. We do this
+	// after reporting the above progress to ensure we don't get search
+	// results before the above reporting.
+	args.RepoPromise.Resolve(resolved.RepoRevs)
+
+	if args.ResultTypes.Has(result.TypeRepo) {
+		wg := waitGroup(true)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			_ = agg.DoRepoSearch(ctx, args, int32(limit))
+		})
+
+	}
+
+	if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
+		wg := waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			_ = agg.DoSymbolSearch(ctx, args, limit)
+		})
+	}
+
+	if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
+		if args.Mode != search.SkipContentAndPathSearch {
+			wg := waitGroup(true)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				_ = agg.DoFilePathSearch(ctx, args)
+			})
+		}
+	}
+
+	if args.ResultTypes.Has(result.TypeDiff) {
+		wg := waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			_ = agg.DoDiffSearch(ctx, args)
+		})
+	}
+
+	if args.ResultTypes.Has(result.TypeCommit) {
+		wg := waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+			_ = agg.DoCommitSearch(ctx, args)
+		})
+
+	}
+
+	hasStartedAllBackends = true
+
+	// Wait for required searches.
+	requiredWg.Wait()
+
+	// Give optional searches some minimum budget in case required searches return quickly.
+	// Cancel all remaining searches after this minimum budget.
+	budget := 100 * time.Millisecond
+	elapsed := time.Since(start)
+	timer := time.AfterFunc(budget-elapsed, cancel)
+
+	// Wait for remaining optional searches to finish or get cancelled.
+	optionalWg.Wait()
+
+	timer.Stop()
+
+	return finalize()
+}
+
+// isContextError returns true if ctx.Err() is not nil or if err
+// is an error caused by context cancelation or timeout.
+func isContextError(ctx context.Context, err error) bool {
+	return ctx.Err() != nil || err == context.Canceled || err == context.DeadlineExceeded
+}
+
+>>>>>>> master
 // SearchResultResolver is a resolver for the GraphQL union type `SearchResult`.
 //
 // Supported types:
