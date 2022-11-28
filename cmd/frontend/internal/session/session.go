@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -240,6 +241,8 @@ func SetActor(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiry
 				expiryPeriod = defaultExpiryPeriod
 			}
 		}
+		auth.RemoveSignOutCookieIfSet(r, w)
+
 		value = &sessionInfo{Actor: actor, ExpiryPeriod: expiryPeriod, LastActive: time.Now(), UserCreatedAt: userCreatedAt}
 	}
 	return SetData(w, r, "actor", value)

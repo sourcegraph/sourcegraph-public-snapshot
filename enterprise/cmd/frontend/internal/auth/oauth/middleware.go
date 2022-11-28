@@ -59,8 +59,6 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		//
 		// If a sign-out cookie has been set during a previous sign-out request, remove it by setting MaxAge < 0.
 		if actor.FromContext(ctx).IsAuthenticated() {
-			auth.RemoveSignOutCookieIfSet(r, &w)
-
 			span.AddEvent("authenticated, proceeding to next")
 			span.Finish()
 			next.ServeHTTP(w, r)
