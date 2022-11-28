@@ -13,7 +13,7 @@ import { Badge, Container, Icon, Tab, TabPanel, TabPanels } from '@sourcegraph/w
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { resetFilteredConnectionURLQuery } from '../../../components/FilteredConnection'
-import { BatchSpecState, BatchChangeFields, BatchSpecSource } from '../../../graphql-operations'
+import { BatchSpecState, BatchChangeFields, BatchSpecSource, BatchChangeState } from '../../../graphql-operations'
 import { BatchChangeTabList, BatchChangeTabs } from '../BatchChangeTabs'
 import { BatchSpecDownloadButton, BatchSpecMeta } from '../BatchSpec'
 import { BatchSpecInfo } from '../BatchSpecNode'
@@ -106,9 +106,11 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
         [batchChange.batchSpecs.nodes]
     )
 
-    const isBatchSpecLocallyCreated = batchChange.currentSpec.source === BatchSpecSource.LOCAL
+    const isBatchSpecLocallyCreated = batchChange.currentSpec?.source === BatchSpecSource.LOCAL
     const shouldDisplayExecutionsTab =
-        isExecutionEnabled && !isBatchSpecLocallyCreated && batchChange.viewerCanAdminister
+        isExecutionEnabled &&
+        (!isBatchSpecLocallyCreated || batchChange.state === BatchChangeState.DRAFT) &&
+        batchChange.viewerCanAdminister
 
     // We track the current tab in a URL parameter so that tabs are easy to navigate to
     // and share.
@@ -268,7 +270,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                 history={history}
                                 location={location}
                                 batchChangeID={batchChange.id}
-                                currentSpecID={batchChange.currentSpec.id}
+                                currentSpecID={batchChange.currentSpec?.id}
                                 isLightTheme={isLightTheme}
                             />
                         </Container>
@@ -283,10 +285,10 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                 <BatchSpecDownloadButton
                                     name={batchChange.name}
                                     isLightTheme={isLightTheme}
-                                    originalInput={batchChange.currentSpec.originalInput}
+                                    originalInput={batchChange.currentSpec!.originalInput}
                                 />
                             </div>
-                            <BatchSpecInfo spec={batchChange.currentSpec} isLightTheme={isLightTheme} />
+                            <BatchSpecInfo spec={batchChange.currentSpec!} isLightTheme={isLightTheme} />
                         </>
                     )}
                 </TabPanel>

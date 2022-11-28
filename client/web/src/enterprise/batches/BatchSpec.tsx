@@ -26,7 +26,7 @@ export const getFileName = (name: string): string => `${kebabCase(name)}.batch.y
 
 export interface BatchSpecProps extends ThemeProps {
     name: string
-    originalInput: BatchChangeFields['currentSpec']['originalInput']
+    originalInput: NonNullable<BatchChangeFields['currentSpec']>['originalInput']
     className?: string
 }
 

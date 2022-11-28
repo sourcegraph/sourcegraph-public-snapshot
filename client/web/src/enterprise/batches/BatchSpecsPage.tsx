@@ -38,7 +38,7 @@ export const BatchSpecsPage: React.FunctionComponent<React.PropsWithChildren<Bat
 
 export interface BatchChangeBatchSpecListProps extends Omit<BatchSpecListProps, 'queryBatchSpecs'> {
     batchChangeID: Scalars['ID']
-    currentSpecID: Scalars['ID']
+    currentSpecID?: Scalars['ID']
     queryBatchChangeBatchSpecs?: typeof _queryBatchChangeBatchSpecs
 }
 
