@@ -312,6 +312,44 @@ func TestUserEmailsSetPrimary(t *testing.T) {
 	assert.True(t, verified)
 }
 
+func TestUserEmailsSetVerified(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	txemail.DisableSilently()
+
+	const email = "user@example.com"
+	const email2 = "user.secondary@example.com"
+	const username = "test-user"
+	const verificationCode = "code"
+
+	newUser := database.NewUser{
+		Email:                 email,
+		Username:              username,
+		EmailVerificationCode: verificationCode,
+	}
+
+	createdUser, err := db.Users().Create(ctx, newUser)
+	assert.NoError(t, err)
+
+	// Unauthenticated user should fail
+	assert.Error(t, UserEmails.SetVerified(ctx, logger, db, createdUser.ID, email, true))
+	// Different user should fail
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 99,
+	})
+
+	// As site admin (or internal actor) should pass
+	ctx = actor.WithInternalActor(ctx)
+	// Need to set e-mail as verified
+	assert.NoError(t, UserEmails.SetVerified(ctx, logger, db, createdUser.ID, email, true))
+
+	emails, err := db.UserEmails().GetVerifiedEmails(ctx, email, email2)
+	assert.NoError(t, err)
+	assert.Len(t, emails, 1)
+	assert.Equal(t, email, emails[0].Email)
+}
+
 func TestDeleteStaleExternalAccount(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))

@@ -191,8 +191,8 @@ func (userEmails) Remove(ctx context.Context, logger log.Logger, db database.DB,
 	return nil
 }
 
-// SetPrimaryEmail sets the passed in e-mail address as the primary address
-// for the given user.
+// SetPrimaryEmail sets the supplied e-mail address as the primary address for
+// the given user.
 func (e userEmails) SetPrimaryEmail(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string) error {
 	logger = logger.Scoped("UserEmails.SetPrimaryEmail", "handles setting primary e-mail for user")
 
@@ -215,9 +215,16 @@ func (e userEmails) SetPrimaryEmail(ctx context.Context, logger log.Logger, db d
 	return nil
 }
 
-// TODO: Tests
+// SetVerified sets the supplied e-mail as the verified email for the given user.
 func (userEmails) SetVerified(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string, verified bool) error {
 	logger = logger.Scoped("UserEmails.SetVerified", "handles setting e-mail as verified")
+
+	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email
+	// verification status. Users themselves must go through the normal email
+	// verification process.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+		return err
+	}
 
 	if err := db.UserEmails().SetVerified(ctx, userID, email, verified); err != nil {
 		return err

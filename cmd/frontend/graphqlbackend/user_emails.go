@@ -133,12 +133,6 @@ type setUserEmailVerifiedArgs struct {
 }
 
 func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *setUserEmailVerifiedArgs) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email verification
-	// status. Users themselves must go through the normal email verification process.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
