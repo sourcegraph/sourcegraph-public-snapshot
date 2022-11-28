@@ -172,7 +172,7 @@ func (r *Cache) Increase(key string) {
 }
 
 // DeleteMulti deletes the given keys.
-func (r *Cache) DeleteMulti(keys []string) {
+func (r *Cache) DeleteMulti(keys ...string) {
 	for _, key := range keys {
 		r.Delete(key)
 	}

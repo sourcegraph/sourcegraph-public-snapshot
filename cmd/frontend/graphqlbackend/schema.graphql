@@ -1580,7 +1580,7 @@ type Query {
     """
     outboundRequests(
         """
-        Filters the requests by key, only returning keys greater than the given one.
+        An opaque cursor that is used for pagination.
         """
         after: String
     ): [OutboundRequest!]!

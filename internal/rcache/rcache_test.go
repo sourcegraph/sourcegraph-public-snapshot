@@ -141,7 +141,7 @@ func TestCache_multi(t *testing.T) {
 		t.Errorf("Expected %v, but got %v", exp, got)
 	}
 
-	c.DeleteMulti([]string{"k1", "k2"})
+	c.DeleteMulti("k1", "k2")
 	if got, exp := c.GetMulti("k0", "k1", "k2"), [][]byte{nil, nil, nil}; !reflect.DeepEqual(exp, got) {
 		t.Errorf("Expected %v, but got %v", exp, got)
 	}

@@ -86,7 +86,7 @@ func deleteExcessItems(c *rcache.Cache, limit int) {
 	// Delete all but the last N keys
 	if len(keys) > limit {
 		sort.Strings(keys)
-		c.DeleteMulti(keys[:len(keys)-limit])
+		c.DeleteMulti(keys[:len(keys)-limit]...)
 	}
 }
 
