@@ -358,7 +358,12 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                     ) : (
                         <H3>Find files</H3>
                     )}
-                    <Badge variant="info" className={styles.experimentalBadge}>
+                    <Badge
+                        variant="info"
+                        href="https://github.com/sourcegraph/sourcegraph/discussions/42874"
+                        tooltip="Provide feedback on this experimental feature"
+                        className={styles.experimentalBadge}
+                    >
                         Experimental
                     </Badge>
                     <Button variant="icon" onClick={onClose} aria-label="Close" className={styles.closeButton}>
