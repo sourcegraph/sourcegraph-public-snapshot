@@ -35,10 +35,11 @@
     }
 }
 
-.progress,
-.information {
-    @media (--xs-breakpoint-down) {
-        grid-column: 1 / -1;
+.more-info {
+    overflow-wrap: break-word;
+
+    strong {
+        color: var(--primary);
     }
 }
 

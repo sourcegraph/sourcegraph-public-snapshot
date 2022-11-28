@@ -220,21 +220,34 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
             <div className={styles.urlColumn}>{node.url}</div>
             <div className={classNames('d-flex flex-row')}>
                 <SimplePopover label="More info">
-                    <small>
+                    <small className={styles.moreInfo}>
                         <Text>
-                            <strong>URL:</strong> {node.url}
+                            <strong>URL: </strong>
+                            {node.url}
                         </Text>
                         <Text>
-                            <strong>Duration:</strong> {roundedSecond.toFixed(2)} second{roundedSecond === 1 ? '' : 's'}
+                            <strong>Status: </strong>
+                            {node.statusCode}
                         </Text>
                         <Text>
-                            <strong>Client created at:</strong> <Code>{node.creationStackFrame}</Code>
+                            <strong>Date/time started: </strong>
+                            <Timestamp date={node.startedAt} preferAbsolute={true} noAbout={true} />
                         </Text>
                         <Text>
-                            <strong>Request made at:</strong> <Code>{node.callStackFrame}</Code>
+                            <strong>Duration: </strong>
+                            {roundedSecond.toFixed(2)} second{roundedSecond === 1 ? '' : 's'}
                         </Text>
                         <Text>
-                            <strong>Error:</strong> {node.errorMessage ? node.errorMessage : 'No error'}
+                            <strong>Client created at: </strong>
+                            <Code>{node.creationStackFrame}</Code>
+                        </Text>
+                        <Text>
+                            <strong>Request made at: </strong>
+                            <Code>{node.callStackFrame}</Code>
+                        </Text>
+                        <Text>
+                            <strong>Error: </strong>
+                            {node.errorMessage ? node.errorMessage : 'No error'}
                         </Text>
                         {node.requestHeaders.length ? (
                             <>
