@@ -10,6 +10,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/go-rendezvous"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
