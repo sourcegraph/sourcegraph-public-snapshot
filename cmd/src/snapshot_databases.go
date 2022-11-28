@@ -94,7 +94,7 @@ TARGETS FILES
 				out.WriteLine(output.Emojif(output.EmojiInfo, "Using predefined targets for %s environments", targetKey))
 			}
 
-			commands, err := pgdump.BuildCommands(commandBuilder, targets)
+			commands, err := pgdump.BuildCommands(srcSnapshotDir, commandBuilder, targets)
 			if err != nil {
 				return errors.Wrap(err, "failed to build commands")
 			}

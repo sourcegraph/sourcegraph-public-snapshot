@@ -2,6 +2,7 @@ package pgdump
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,25 +40,33 @@ func Command(t Target) string {
 	return fmt.Sprintf("PGPASSWORD=%s %s", t.Password, dump)
 }
 
+type Output struct {
+	Output string
+	Target Target
+}
+
+// Outputs generates a set of mappings between a pgdump.Target and the desired output
+// path. It can be provided a zero-value Targets to just generate the output paths.
+func Outputs(dir string, targets Targets) []Output {
+	return []Output{{
+		Output: filepath.Join(dir, "primary.sql"),
+		Target: targets.Primary,
+	}, {
+		Output: filepath.Join(dir, "codeintel.sql"),
+		Target: targets.CodeIntel,
+	}, {
+		Output: filepath.Join(dir, "codeinsights.sql"),
+		Target: targets.CodeInsights,
+	}}
+}
+
 type CommandBuilder func(Target) (string, error)
 
 // BuildCommands generates commands that output Postgres dumps and sends them to predefined
 // files for each target database.
-func BuildCommands(commandBuilder CommandBuilder, targets Targets) ([]string, error) {
+func BuildCommands(outDir string, commandBuilder CommandBuilder, targets Targets) ([]string, error) {
 	var commands []string
-	for _, t := range []struct {
-		Output string
-		Target Target
-	}{{
-		Output: "primary.sql",
-		Target: targets.Primary,
-	}, {
-		Output: "codeintel.sql",
-		Target: targets.CodeIntel,
-	}, {
-		Output: "codeinsights.sql",
-		Target: targets.CodeInsights,
-	}} {
+	for _, t := range Outputs(outDir, targets) {
 		c, err := commandBuilder(t.Target)
 		if err != nil {
 			return nil, errors.Wrapf(err, "generating command for %q", t.Output)

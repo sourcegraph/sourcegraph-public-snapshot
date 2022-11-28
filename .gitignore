@@ -6,3 +6,4 @@ release
 .idea
 .env
 .envrc
+src-snapshot/

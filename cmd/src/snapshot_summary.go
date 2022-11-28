@@ -18,10 +18,9 @@ func init() {
 
 USAGE
 	src login # site-admin authentication required
-	src [-v] snapshot summary [-summary-path="./src-snapshot-summary.json"]
+	src [-v] snapshot summary
 `
 	flagSet := flag.NewFlagSet("summary", flag.ExitOnError)
-	snapshotPath := flagSet.String("summary-path", "./src-snapshot-summary.json", "path to write snapshot summary to")
 	apiFlags := api.NewFlags(flagSet)
 
 	snapshotCommands = append(snapshotCommands, &command{
@@ -39,7 +38,7 @@ USAGE
 				return err
 			}
 
-			f, err := os.OpenFile(*snapshotPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
+			f, err := os.OpenFile(snapshotSummaryPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 			if err != nil {
 				return errors.Wrap(err, "open snapshot file")
 			}
