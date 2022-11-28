@@ -27,37 +27,35 @@ export const DownloadDiffButton: React.FunctionComponent<React.PropsWithChildren
         async event => {
             event.preventDefault()
 
-            if (!state) {
-                setState(DownloadState.LOADING)
+            setState(DownloadState.LOADING)
+
+            try {
+                const diff = await getChangesetDiff(changesetID)
+                setState(DownloadState.READY)
+
+                // Create a URL that we can "click" on behalf of the user to
+                // prompt them to download the diff.
+                const blob = new Blob([diff], {
+                    type: 'text/x-diff',
+                })
+                const url = URL.createObjectURL(blob)
 
                 try {
-                    const diff = await getChangesetDiff(changesetID)
-                    setState(DownloadState.READY)
-
-                    // Create a URL that we can "click" on behalf of the user to
-                    // prompt them to download the diff.
-                    const blob = new Blob([diff], {
-                        type: 'text/x-diff',
-                    })
-                    const url = URL.createObjectURL(blob)
-
-                    try {
-                        const link = document.createElement('a')
-                        link.href = url
-                        link.style.display = 'none'
-                        link.download = `${changesetID}.diff`
-                        document.body.append(link)
-                        link.click()
-                        link.remove()
-                    } finally {
-                        URL.revokeObjectURL(url)
-                    }
-                } catch (error) {
-                    setState(asError(error))
+                    const link = document.createElement('a')
+                    link.href = url
+                    link.style.display = 'none'
+                    link.download = `${changesetID}.diff`
+                    document.body.append(link)
+                    link.click()
+                    link.remove()
+                } finally {
+                    URL.revokeObjectURL(url)
                 }
+            } catch (error) {
+                setState(asError(error))
             }
         },
-        [changesetID, state]
+        [changesetID]
     )
 
     let icon: JSX.Element

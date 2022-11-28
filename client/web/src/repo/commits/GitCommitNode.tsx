@@ -214,7 +214,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
     }
 
     const viewFilesCommitElement = node.tree && (
-        <div className="d-flex justify-content-between">
+        <div className="d-flex justify-content-between align-items-start">
             <Tooltip content="Browse files in the repository at this point in history">
                 <Button
                     className="align-center d-inline-flex"
