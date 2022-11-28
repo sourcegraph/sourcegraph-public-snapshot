@@ -147,13 +147,13 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 </PageHeader.Heading>
             </PageHeader>
             <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
-            {batchChange.viewerCanAdminister && (
+            {batchChange.currentSpec && batchChange.viewerCanAdminister && (
                 <MissingCredentialsAlert
                     authenticatedUser={authenticatedUser}
                     viewerBatchChangesCodeHosts={batchChange.currentSpec.viewerBatchChangesCodeHosts}
                 />
             )}
-            {batchChange.viewerCanAdminister && (
+            {batchChange.currentSpec && batchChange.viewerCanAdminister && (
                 <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             )}
             <ActiveExecutionNotice
