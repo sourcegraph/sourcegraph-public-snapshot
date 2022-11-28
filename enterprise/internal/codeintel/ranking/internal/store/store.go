@@ -140,7 +140,7 @@ func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (ma
 		return nil
 	}
 
-	if err := basestore.NewCallbackScanner[any](scanner)(s.db.Query(ctx, sqlf.Sprintf(getDocumentRanksQuery, repoName))); err != nil {
+	if err := basestore.NewCallbackScanner(scanner)(s.db.Query(ctx, sqlf.Sprintf(getDocumentRanksQuery, repoName))); err != nil {
 		return nil, false, err
 	}
 	return pathRanksWithPrecision, true, nil
