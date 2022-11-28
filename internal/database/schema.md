@@ -270,6 +270,7 @@ Referenced by:
  batch_change_id   | bigint                   |           |          | 
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
+    "batch_specs_unique_rand_id" UNIQUE, btree (rand_id)
     "batch_specs_rand_id" btree (rand_id)
 Check constraints:
     "batch_specs_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
@@ -375,6 +376,7 @@ Foreign-key constraints:
  type                | text                     |           | not null | 
 Indexes:
     "changeset_specs_pkey" PRIMARY KEY, btree (id)
+    "changeset_specs_unique_rand_id" UNIQUE, btree (rand_id)
     "changeset_specs_batch_spec_id" btree (batch_spec_id)
     "changeset_specs_created_at" btree (created_at)
     "changeset_specs_external_id" btree (external_id)
