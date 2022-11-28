@@ -112,8 +112,8 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
         const allowedVariants: { [key: string]: string | undefined } = {
             a: 'filled',
             b: 'underlined',
-            c: undefined,
-            d: 'outlined',
+            c: 'outlined',
+            d: undefined,
         }
 
         if (uxParam && Object.keys(allowedVariants).includes(uxParam)) {
