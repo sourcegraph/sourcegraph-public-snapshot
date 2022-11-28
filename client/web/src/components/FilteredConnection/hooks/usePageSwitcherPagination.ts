@@ -73,11 +73,11 @@ const DEFAULT_PAGE_SIZE = 20
 export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedConnectionQueryArguments, TData>({
     query,
     variables,
-    getConnection: getConnectionFromGraphQLResult,
+    getConnection,
     options,
 }: UsePaginatedConnectionParameters<TResult, TVariables, TData>): UsePaginatedConnectionResult<TData> => {
     const pageSize = options?.pageSize ?? DEFAULT_PAGE_SIZE
-    const [initialPaginationArgs, setPaginationArgs] = useSyncUrl(!!options?.useURL, pageSize)
+    const [initialPaginationArgs, setPaginationArgs] = useSyncPaginationArgsWithUrl(!!options?.useURL, pageSize)
 
     // TODO(philipp-spiess): Find out why Omit<TVariables, "first" | ...> & { first: number, ... } does not work
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -96,78 +96,48 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
         onCompleted: options?.onCompleted,
     })
 
-    /**
-     * Map over Apollo results to provide type-compatible `GraphQLResult`s for consumers.
-     * This ensures good interoperability between `FilteredConnection` and `useConnection`.
-     */
-    const getConnection = ({
-        data,
-        error,
-    }: Pick<QueryResult<TResult>, 'data' | 'error'>): PaginatedConnection<TData> => {
+    const connection = useMemo(() => {
+        if (!data) {
+            return undefined
+        }
         const result = asGraphQLResult({ data, errors: error?.graphQLErrors || [] })
-        return getConnectionFromGraphQLResult(result)
-    }
+        return getConnection(result)
+    }, [data, error, getConnection])
 
-    const connection = data ? getConnection({ data, error }) : undefined
+    const updatePagination = useCallback(
+        async (nextPageArgs: PaginatedConnectionQueryArguments): Promise<void> => {
+            setPaginationArgs(nextPageArgs)
+            await refetch({
+                ...initialQueryVariables,
+                ...nextPageArgs,
+            })
+        },
+        [initialQueryVariables, refetch, setPaginationArgs]
+    )
 
     const goToNextPage = useCallback(async (): Promise<void> => {
         const cursor = connection?.pageInfo?.endCursor
         if (!cursor) {
             throw new Error('No cursor available for next page')
         }
-        const nextPageArgs = { after: cursor, first: pageSize, last: null, before: null }
-        setPaginationArgs(nextPageArgs)
-        await refetch({
-            ...initialQueryVariables,
-            ...nextPageArgs,
-        })
-    }, [connection?.pageInfo?.endCursor, pageSize, setPaginationArgs, refetch, initialQueryVariables])
+        await updatePagination({ after: cursor, first: pageSize, last: null, before: null })
+    }, [connection?.pageInfo?.endCursor, updatePagination, pageSize])
 
     const goToPreviousPage = useCallback(async (): Promise<void> => {
         const cursor = connection?.pageInfo?.startCursor
         if (!cursor) {
-            throw new Error('No cursor available for next page')
+            throw new Error('No cursor available for previous page')
         }
-        const previousPageArgs = {
-            after: null,
-            first: null,
-            last: pageSize,
-            before: cursor,
-        }
-        setPaginationArgs(previousPageArgs)
-        await refetch({
-            ...initialQueryVariables,
-            ...previousPageArgs,
-        })
-    }, [connection?.pageInfo?.startCursor, pageSize, setPaginationArgs, refetch, initialQueryVariables])
+        await updatePagination({ after: null, first: null, last: pageSize, before: cursor })
+    }, [connection?.pageInfo?.startCursor, updatePagination, pageSize])
 
     const goToFirstPage = useCallback(async (): Promise<void> => {
-        const firstPageArgs = {
-            after: null,
-            first: pageSize,
-            last: null,
-            before: null,
-        }
-        setPaginationArgs(firstPageArgs)
-        await refetch({
-            ...initialQueryVariables,
-            ...firstPageArgs,
-        })
-    }, [pageSize, setPaginationArgs, refetch, initialQueryVariables])
+        await updatePagination({ after: null, first: pageSize, last: null, before: null })
+    }, [updatePagination, pageSize])
 
     const goToLastPage = useCallback(async (): Promise<void> => {
-        const lastPageArgs = {
-            after: null,
-            first: null,
-            last: pageSize,
-            before: null,
-        }
-        setPaginationArgs(lastPageArgs)
-        await refetch({
-            ...initialQueryVariables,
-            ...lastPageArgs,
-        })
-    }, [pageSize, setPaginationArgs, refetch, initialQueryVariables])
+        await updatePagination({ after: null, first: null, last: pageSize, before: null })
+    }, [updatePagination, pageSize])
 
     return {
         connection,
@@ -220,7 +190,7 @@ const getSearchFromPaginationArgs = (paginationArgs: PaginatedConnectionQueryArg
     return ''
 }
 
-export const useSyncUrl = (
+const useSyncPaginationArgsWithUrl = (
     enabled: boolean,
     pageSize: number
 ): [
