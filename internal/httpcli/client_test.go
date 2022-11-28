@@ -530,6 +530,65 @@ func TestLoggingMiddleware(t *testing.T) {
 		}
 		assert.NotZero(t, attemptsLogged)
 	})
+
+	t.Run("log redisLoggerMiddleware error", func(t *testing.T) {
+		const wantErrMessage = "redisLoggingError"
+		redisErrorMiddleware := func(next Doer) Doer {
+			return DoerFunc(func(req *http.Request) (*http.Response, error) {
+				// simplified version of what we do in redisLoggerMiddleware, since
+				// we just test that adding and reading the context key/value works
+				var middlewareErrors error
+				defer func() {
+					if middlewareErrors != nil {
+						*req = *req.WithContext(context.WithValue(req.Context(),
+							redisLoggingMiddlewareErrorKey, middlewareErrors))
+					}
+				}()
+
+				middlewareErrors = errors.New(wantErrMessage)
+
+				return next.Do(req)
+			})
+		}
+
+		logger, exportLogs := logtest.Captured(t)
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+				redisErrorMiddleware,
+				NewLoggingMiddleware(logger),
+			),
+		).Doer()
+
+		req, _ := http.NewRequest("GET", "https://example.com", nil)
+		_, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Check log entries for logged fields about retries
+		logEntries := exportLogs()
+		assert.Greater(t, len(logEntries), 0)
+		var found bool
+		for _, entry := range logEntries {
+			// Check for appropriate scope
+			if !strings.Contains(entry.Scope, "httpcli") {
+				continue
+			}
+
+			// Check for redisLogErr
+			errField, ok := entry.Fields["redisLogErr"]
+			if !ok {
+				continue
+			}
+			if assert.Contains(t, errField, wantErrMessage) {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found)
+	})
 }
 
 type notFoundTransport struct{}

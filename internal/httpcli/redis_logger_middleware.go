@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -30,18 +29,33 @@ func redisLoggerMiddleware() Middleware {
 
 			limit := OutboundRequestLogLimit()
 			if limit == 0 {
+				// at limit, do not log this request
 				return resp, err
 			}
+
+			// middlewareErrors will be set in context
+			var middlewareErrors error
+			defer func() {
+				if middlewareErrors != nil {
+					*req = *req.WithContext(context.WithValue(req.Context(),
+						redisLoggingMiddlewareErrorKey, middlewareErrors))
+				}
+			}()
 
 			var requestBody []byte
 			if req != nil {
 				body, _ := req.GetBody()
 				if body != nil {
-					requestBody, _ = io.ReadAll(body)
+					var readErr error
+					requestBody, readErr = io.ReadAll(body)
+					if err != nil {
+						middlewareErrors = errors.Append(middlewareErrors,
+							errors.Wrap(readErr, "read body"))
+					}
 				}
 			}
 
-			errorMessage := ""
+			var errorMessage string
 			if err != nil {
 				errorMessage = err.Error()
 			}
@@ -64,23 +78,27 @@ func redisLoggerMiddleware() Middleware {
 
 			logItemJson, jsonErr := json.Marshal(logItem)
 			if jsonErr != nil {
-				log.Error(jsonErr)
+				middlewareErrors = errors.Append(middlewareErrors,
+					errors.Wrap(jsonErr, "marshal log item"))
 			}
 
 			// Save new item
 			outboundRequestsRedisCache.Set(key, logItemJson)
 
-			deleteExcessItems(outboundRequestsRedisCache, limit)
+			if deleteErr := deleteExcessItems(outboundRequestsRedisCache, limit); deleteErr != nil {
+				middlewareErrors = errors.Append(middlewareErrors,
+					errors.Wrap(deleteErr, "delete excess items"))
+			}
 
 			return resp, err
 		})
 	}
 }
 
-func deleteExcessItems(c *rcache.Cache, limit int) {
+func deleteExcessItems(c *rcache.Cache, limit int) error {
 	keys, err := c.ListKeys(context.Background())
 	if err != nil {
-		log.Error(err)
+		return errors.Wrap(err, "list keys")
 	}
 
 	// Delete all but the last N keys
@@ -88,6 +106,8 @@ func deleteExcessItems(c *rcache.Cache, limit int) {
 		sort.Strings(keys)
 		c.DeleteMulti(keys[:len(keys)-limit]...)
 	}
+
+	return nil
 }
 
 // GetAllOutboundRequestLogItemsAfter returns all outbound request log items after the given key,
