@@ -331,7 +331,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		}
 
 		haveDiff := changesetSpec.Diff
-		if !bytes.Equal(haveDiff, []byte(testDiff)) {
+		if !bytes.Equal(haveDiff, testDiff) {
 			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
 		}
 
@@ -727,7 +727,7 @@ changesetTemplate:
 		}
 
 		haveDiff := changesetSpec.Diff
-		if !bytes.Equal(haveDiff, []byte(testDiff)) {
+		if !bytes.Equal(haveDiff, testDiff) {
 			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
 		}
 
@@ -825,7 +825,7 @@ changesetTemplate:
 		}
 
 		haveDiff := changesetSpec.Diff
-		if !bytes.Equal(haveDiff, []byte(testDiff)) {
+		if !bytes.Equal(haveDiff, testDiff) {
 			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
 		}
 
