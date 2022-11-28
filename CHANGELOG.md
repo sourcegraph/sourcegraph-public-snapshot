@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 - A "copy path" button has been added to file content, path, and symbol search results on hover or focus, next to the file path. The button copies the relative path of the file in the repo, in the same way as the "copy path" button in the file and repo pages. [#42721](https://github.com/sourcegraph/sourcegraph/pull/42721)
 - Unindexed search now use the index for files that have not changed between the unindexed commit and the indexed commit. The result is faster unindexed search in general. If you are noticing issues you can disable by setting the feature flag `search-hybrid` to false. [#37112](https://github.com/sourcegraph/sourcegraph/issues/37112)
 - The number of commits listed in the History tab can now be customized for all users by site admins under Configuration -> Global Settings from the site admin page by using the config `history.defaultPageSize`. Individual users may also set `history.defaultPagesize` from their user settings page to override the value set under the Global Settings. [#44651](https://github.com/sourcegraph/sourcegraph/pull/44651)
+- Batch Changes: Mounted files can be accessed via the UI on the executions page. [#43180](https://github.com/sourcegraph/sourcegraph/pull/43180)
 
 ### Changed
 
@@ -47,7 +48,6 @@ All notable changes to Sourcegraph are documented in this file.
   - [Docker Compose](https://docs.sourcegraph.com/admin/updates/docker_compose)
 - A structural search diagnostic to warn users when a language filter is not set. [#43835](https://github.com/sourcegraph/sourcegraph/pull/43835)
 - GitHub/GitLab OAuth success/fail attempts are now a part of the audit log. [#43886](https://github.com/sourcegraph/sourcegraph/pull/43886)
-- Batch Changes: Mounted files can be accessed via the UI on the executions page. [#43180](https://github.com/sourcegraph/sourcegraph/pull/43180)
 - When rendering a file which is backed by Git LFS, we show a page informing the file is LFS and linking to the file on the codehost. Previously we rendered the LFS pointer. [#43686](https://github.com/sourcegraph/sourcegraph/pull/43686)
 - Batch changes run server-side now support secrets. [#27926](https://github.com/sourcegraph/sourcegraph/issues/27926)
 - OIDC success/fail login attempts are now a part of the audit log. [#44467](https://github.com/sourcegraph/sourcegraph/pull/44467)
