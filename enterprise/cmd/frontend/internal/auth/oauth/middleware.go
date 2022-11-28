@@ -56,8 +56,6 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 
 		// If the actor is authenticated and not performing an OAuth flow, then proceed to
 		// next.
-		//
-		// If a sign-out cookie has been set during a previous sign-out request, remove it by setting MaxAge < 0.
 		if actor.FromContext(ctx).IsAuthenticated() {
 			span.AddEvent("authenticated, proceeding to next")
 			span.Finish()

@@ -85,8 +85,6 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 
 	// If the actor is authenticated and not performing an OpenID Connect flow, then proceed to
 	// next.
-	//
-	// If a sign-out cookie has been set during a previous sign-out request, remove it by setting MaxAge < 0.
 	if actor.FromContext(r.Context()).IsAuthenticated() {
 		next.ServeHTTP(w, r)
 		return
