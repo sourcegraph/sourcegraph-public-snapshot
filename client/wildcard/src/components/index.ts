@@ -3,7 +3,7 @@ export { Button, ButtonGroup, BUTTON_SIZES } from './Button'
 export type { ButtonGroupProps } from './Button'
 export { Alert, AlertLink } from './Alert'
 export { Container } from './Container'
-export { LineChart, BarChart, PieChart, LegendList, LegendItem, ScrollBox, ParentSize } from './Charts'
+export { LineChart, BarChart, PieChart, LegendList, LegendItem, LegendItemPoint, ScrollBox, ParentSize } from './Charts'
 export {
     Checkbox,
     FlexTextArea,

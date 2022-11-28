@@ -1,9 +1,11 @@
 package httpapi
 
 import (
+	"encoding/json"
 	"net/http"
+	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -16,7 +18,8 @@ import (
 
 // AccessTokenAuthMiddleware authenticates the user based on the
 // token query parameter or the "Authorization" header.
-func AccessTokenAuthMiddleware(db database.DB, next http.Handler) http.Handler {
+func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Handler) http.Handler {
+	logger = logger.Scoped("accessTokenAuth", "Access token authentication middleware")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Authorization")
 
@@ -38,7 +41,11 @@ func AccessTokenAuthMiddleware(db database.DB, next http.Handler) http.Handler {
 			if err != nil {
 				if authz.IsUnrecognizedScheme(err) {
 					// Ignore Authorization headers that we don't handle.
-					log15.Warn("Ignoring unrecognized Authorization header.", "err", err, "value", headerValue)
+					logger.Warn(
+						"ignoring unrecognized Authorization header",
+						log.String("value", headerValue),
+						log.Error(err),
+					)
 					next.ServeHTTP(w, r)
 					return
 				}
@@ -46,7 +53,7 @@ func AccessTokenAuthMiddleware(db database.DB, next http.Handler) http.Handler {
 				// Report errors on malformed Authorization headers for schemes we do handle, to
 				// make it clear to the client that their request is not proceeding with their
 				// supplied credentials.
-				log15.Error("Invalid Authorization header.", "err", err)
+				logger.Error("invalid Authorization header", log.Error(err))
 				http.Error(w, "Invalid Authorization header.", http.StatusUnauthorized)
 				return
 			}
@@ -72,15 +79,42 @@ func AccessTokenAuthMiddleware(db database.DB, next http.Handler) http.Handler {
 			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, requiredScope)
 			if err != nil {
 				if err == database.ErrAccessTokenNotFound || errors.HasType(err, database.InvalidTokenError{}) {
-					log15.Error("AccessTokenAuthMiddleware.invalidAccessToken", "token", token, "error", err)
+					logger.Error(
+						"invalid access token",
+						log.String("token", token),
+						log.Error(err),
+					)
 					http.Error(w, "Invalid access token.", http.StatusUnauthorized)
 					return
 				}
 
-				log15.Error("AccessTokenAuthMiddleware.lookingUpAccessToken.", "token", token, "error", err)
+				logger.Error(
+					"failed to look up access token",
+					log.String("token", token),
+					log.Error(err),
+				)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
+
+			// FIXME: Can we find a way to do this only for SOAP users?
+			soapCount, err := db.UserExternalAccounts().Count(
+				r.Context(),
+				database.ExternalAccountsListOptions{
+					UserID:      subjectUserID,
+					ServiceType: auth.SourcegraphOperatorProviderType,
+				},
+			)
+			if err != nil {
+				logger.Error(
+					"failed to list user external accounts",
+					log.Int32("subjectUserID", subjectUserID),
+					log.Error(err),
+				)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			sourcegraphOperator := soapCount > 0
 
 			// Determine the actor's user ID.
 			var actorUserID int32
@@ -90,7 +124,11 @@ func AccessTokenAuthMiddleware(db database.DB, next http.Handler) http.Handler {
 				// 🚨 SECURITY: Confirm that the sudo token's subject is still a site admin, to
 				// prevent users from retaining site admin privileges after being demoted.
 				if err := auth.CheckUserIsSiteAdmin(r.Context(), db, subjectUserID); err != nil {
-					log15.Error("Sudo access token's subject is not a site admin.", "subjectUserID", subjectUserID, "err", err)
+					logger.Error(
+						"sudo access token's subject is not a site admin",
+						log.Int32("subjectUserID", subjectUserID),
+						log.Error(err),
+					)
 					http.Error(w, "The subject user of a sudo access token must be a site admin.", http.StatusForbidden)
 					return
 				}
@@ -99,7 +137,11 @@ func AccessTokenAuthMiddleware(db database.DB, next http.Handler) http.Handler {
 				// the necessary scope in the Lookup call above.
 				user, err := db.Users().GetByUsername(r.Context(), sudoUser)
 				if err != nil {
-					log15.Error("Invalid username used with sudo access token.", "sudoUser", sudoUser, "err", err)
+					logger.Error(
+						"invalid username used with sudo access token",
+						log.String("sudoUser", sudoUser),
+						log.Error(err),
+					)
 					var message string
 					if errcode.IsNotFound(err) {
 						message = "Unable to sudo to nonexistent user."
@@ -110,10 +152,53 @@ func AccessTokenAuthMiddleware(db database.DB, next http.Handler) http.Handler {
 					return
 				}
 				actorUserID = user.ID
-				log15.Debug("HTTP request used sudo token.", "requestURI", r.URL.RequestURI(), "tokenSubjectUserID", subjectUserID, "actorUserID", actorUserID, "actorUsername", user.Username)
+				logger.Debug(
+					"HTTP request used sudo token",
+					log.String("requestURI", r.URL.RequestURI()),
+					log.Int32("tokenSubjectUserID", subjectUserID),
+					log.Int32("actorUserID", actorUserID),
+					log.String("actorUsername", user.Username),
+				)
+
+				args, err := json.Marshal(map[string]any{
+					"sudo_user_id": actorUserID,
+				})
+				if err != nil {
+					logger.Error(
+						"failed to marshal JSON for security event log argument",
+						log.String("eventName", string(database.SecurityEventAccessTokenImpersonated)),
+						log.String("sudoUser", sudoUser),
+						log.Error(err),
+					)
+					// OK to continue, we still want the security event log to be created
+				}
+				db.SecurityEventLogs().LogEvent(
+					actor.WithActor(
+						r.Context(),
+						&actor.Actor{
+							UID:                 subjectUserID,
+							SourcegraphOperator: sourcegraphOperator,
+						},
+					),
+					&database.SecurityEvent{
+						Name:      database.SecurityEventAccessTokenImpersonated,
+						UserID:    uint32(subjectUserID),
+						Argument:  args,
+						Source:    "BACKEND",
+						Timestamp: time.Now(),
+					},
+				)
 			}
 
-			r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{UID: actorUserID}))
+			r = r.WithContext(
+				actor.WithActor(
+					r.Context(),
+					&actor.Actor{
+						UID:                 actorUserID,
+						SourcegraphOperator: sourcegraphOperator,
+					},
+				),
+			)
 		}
 
 		next.ServeHTTP(w, r)

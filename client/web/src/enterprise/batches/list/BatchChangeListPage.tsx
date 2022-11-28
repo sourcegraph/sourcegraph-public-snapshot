@@ -8,7 +8,7 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -151,7 +151,22 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
         <Page>
             <PageHeader
                 className="test-batches-list-page mb-3"
-                actions={canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
+                actions={
+                    canCreate ? (
+                        <NewBatchChangeButton to={`${location.pathname}/create`} />
+                    ) : (
+                        <Button
+                            as={Link}
+                            to="https://signup.sourcegraph.com/?p=batch"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="primary"
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                        >
+                            Try Batch Changes
+                        </Button>
+                    )
+                }
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
             >
@@ -187,14 +202,6 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                                 />
                             </div>
                             {error && <ConnectionError errors={[error.message]} />}
-                            {/*
-                            The connection list is a `div` instead of a `ul` because `ul` doesn't support css grid and we need to grid
-                            to live on the wrapper as opposed to each `BatchChangeNode`.
-
-                            This is because the current grid pattern gets broken when the individual child of the `ConnectionList` component
-                            has a grid.
-                            Discussion: https://github.com/sourcegraph/sourcegraph/pull/34716#pullrequestreview-959790114
-                        */}
                             <ConnectionList
                                 className={classNames(styles.grid, isExecutionEnabled ? styles.wide : styles.narrow)}
                                 aria-label="batch changes"

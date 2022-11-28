@@ -121,29 +121,30 @@ func TestClient_ForkProject(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// For this test to be updated, src-cli must _not_ have been forked into
 		// the user associated with $GITLAB_TOKEN.
-		fork, err := createTestClient(t).ForkProject(ctx, project, nil)
+
+		name := "sourcegraph-src-cli"
+		fork, err := createTestClient(t).ForkProject(ctx, project, nil, &name)
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
 
-		upstreamName, err := project.Name()
 		assert.Nil(t, err)
 		forkName, err := fork.Name()
 		assert.Nil(t, err)
-		assert.Equal(t, upstreamName, forkName)
+		assert.Equal(t, name, forkName)
 	})
 
 	t.Run("already forked", func(t *testing.T) {
 		// For this test to be updated, src-cli must have been forked into the user
 		// associated with $GITLAB_TOKEN.
-		fork, err := createTestClient(t).ForkProject(ctx, project, nil)
+		name := "sourcegraph-src-cli"
+		fork, err := createTestClient(t).ForkProject(ctx, project, nil, &name)
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
 
-		upstreamName, err := project.Name()
 		assert.Nil(t, err)
 		forkName, err := fork.Name()
 		assert.Nil(t, err)
-		assert.Equal(t, upstreamName, forkName)
+		assert.Equal(t, name, forkName)
 	})
 
 	t.Run("error", func(t *testing.T) {
@@ -151,7 +152,7 @@ func TestClient_ForkProject(t *testing.T) {
 		c := newTestClient(t)
 		c.httpClient = &mock
 
-		fork, err := c.ForkProject(ctx, project, nil)
+		fork, err := c.ForkProject(ctx, project, nil, nil)
 		assert.Nil(t, fork)
 		assert.NotNil(t, err)
 	})

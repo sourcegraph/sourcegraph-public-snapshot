@@ -573,7 +573,7 @@ Modifies and runs database migrations.
 $ sg migration up
 
 # Migrate specific database down one migration
-$ sg migration down --db codeintel
+$ sg migration downto --db codeintel --target <version>
 
 # Add new migration for specific database
 $ sg migration add --db codeintel 'add missing index'
@@ -631,7 +631,7 @@ $ sg migration up [-db=<schema>]
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
+* `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: "all")
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--ignore-single-dirty-log`: Ignore a single previously failed attempt if it will be immediately retried by this operation.
 * `--ignore-single-pending-log`: Ignore a single pending migration attempt if it will be immediately retried by this operation.
@@ -723,7 +723,7 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: [all])
+* `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: "all")
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--skip-out-of-band-migrations`: Do not attempt to validate out-of-band migration status.
 
@@ -1508,3 +1508,22 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--raw`: view raw data
+
+## sg release
+
+Sourcegraph release utilities.
+
+
+### sg release cve-check
+
+Check all CVEs found in a buildkite build against a set of preapproved CVEs for a release.
+
+```sh
+$ sg release cve-check -u https://handbook.sourcegraph.com/departments/security/tooling/trivy/4-2-0/ -b 184191
+```
+
+Flags:
+
+* `--buildNumber, -b="<value>"`: The buildkite build number to check for CVEs
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--uri, -u="<value>"`: A reference url that contains approved CVEs. Often a link to a handbook page eg: https://handbook.sourcegraph.com/departments/security/tooling/trivy/4-2-0/.

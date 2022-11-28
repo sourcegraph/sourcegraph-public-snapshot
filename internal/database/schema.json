@@ -10703,6 +10703,16 @@
           "ConstraintDefinition": "PRIMARY KEY (repo_id)"
         },
         {
+          "Name": "gitserver_repo_size_bytes",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX gitserver_repo_size_bytes ON gitserver_repos USING btree (repo_size_bytes)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "gitserver_repos_cloned_status_idx",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -11172,6 +11182,19 @@
           "TypeName": "text",
           "IsNullable": true,
           "Default": "'queued'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "trace_id",
+          "Index": 20,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -19994,6 +20017,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "cancel",
+          "Index": 18,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "execution_logs",
           "Index": 13,
           "TypeName": "json[]",
@@ -20490,6 +20526,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "name",
+          "Index": 12,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Descriptive name of a webhook."
         },
         {
           "Name": "secret",

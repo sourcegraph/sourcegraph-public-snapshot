@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/syncjobs"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -33,6 +34,10 @@ type Resolver struct {
 	repoupdaterClient interface {
 		SchedulePermsSync(ctx context.Context, args protocol.PermsSyncRequest) error
 	}
+	syncJobsRecords interface {
+		Get(timestamp time.Time) (*syncjobs.Status, error)
+		GetAll(ctx context.Context, first int) ([]syncjobs.Status, error)
+	}
 }
 
 // checkLicense returns a user-facing error if the provided feature is not purchased
@@ -54,6 +59,7 @@ func NewResolver(db database.DB, clock func() time.Time) graphqlbackend.AuthzRes
 	return &Resolver{
 		db:                edb.NewEnterpriseDB(db),
 		repoupdaterClient: repoupdater.DefaultClient,
+		syncJobsRecords:   syncjobs.NewRecordsReader(),
 	}
 }
 
@@ -619,4 +625,41 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 		syncedAt:  p.SyncedAt,
 		updatedAt: p.UpdatedAt,
 	}, nil
+}
+
+func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args *graphqlbackend.PermissionsSyncJobsArgs) (graphqlbackend.PermissionsSyncJobsConnection, error) {
+	// 🚨 SECURITY: Only site admins can query sync jobs records.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	if args.First == 0 {
+		return nil, errors.Newf("expected non-zero 'first', got %d", args.First)
+	}
+
+	records, err := r.syncJobsRecords.GetAll(ctx, int(args.First))
+	if err != nil {
+		return nil, err
+	}
+
+	jobs := &permissionsSyncJobsConnection{
+		jobs: make([]graphqlbackend.PermissionsSyncJobResolver, 0, len(records)),
+	}
+	for _, j := range records {
+		// If status is not provided, add all - otherwise, check if the job's status
+		// matches the argument status.
+		if args.Status == nil {
+			jobs.jobs = append(jobs.jobs, permissionsSyncJobResolver{j})
+		} else if j.Status == *args.Status {
+			jobs.jobs = append(jobs.jobs, permissionsSyncJobResolver{j})
+		}
+	}
+
+	return jobs, nil
+}
+
+func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
+	return map[string]graphqlbackend.NodeByIDFunc{
+		permissionsSyncJobKind: getPermissionsSyncJobByIDFunc(r),
+	}
 }

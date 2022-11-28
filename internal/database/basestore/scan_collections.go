@@ -9,7 +9,7 @@ import (
 // NewCallbackScanner returns a basestore scanner function that invokes
 // the given function on every SQL row object in the given query result
 // set.
-func NewCallbackScanner[T any](f func(dbutil.Scanner) error) func(rows *sql.Rows, queryErr error) error {
+func NewCallbackScanner(f func(dbutil.Scanner) error) func(rows *sql.Rows, queryErr error) error {
 	return func(rows *sql.Rows, queryErr error) (err error) {
 		if queryErr != nil {
 			return queryErr
@@ -38,7 +38,7 @@ func NewFirstScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows *sql.Ro
 			return err
 		}
 
-		err := NewCallbackScanner[T](scanner)(rows, queryErr)
+		err := NewCallbackScanner(scanner)(rows, queryErr)
 		return value, called, err
 	}
 }
@@ -58,7 +58,7 @@ func NewSliceScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows *sql.Ro
 			return nil
 		}
 
-		err := NewCallbackScanner[T](scanner)(rows, queryErr)
+		err := NewCallbackScanner(scanner)(rows, queryErr)
 		return values, err
 	}
 }
@@ -83,7 +83,7 @@ func NewSliceWithCountScanner[T any](f func(dbutil.Scanner) (T, int, error)) fun
 			return nil
 		}
 
-		err := NewCallbackScanner[T](scanner)(rows, queryErr)
+		err := NewCallbackScanner(scanner)(rows, queryErr)
 		return values, totalCount, err
 	}
 }
@@ -113,7 +113,7 @@ func NewKeyedCollectionScanner[K comparable, V, Vs any](
 			return nil
 		}
 
-		err := NewCallbackScanner[V](scanner)(rows, queryErr)
+		err := NewCallbackScanner(scanner)(rows, queryErr)
 		return values, err
 	}
 }

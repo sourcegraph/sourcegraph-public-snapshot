@@ -667,8 +667,8 @@ type ExperimentalFeatures struct {
 	SearchIndexQueryContexts bool `json:"search.index.query.contexts,omitempty"`
 	// SearchIndexRevisions description: An array of objects describing rules for extra revisions (branch, ref, tag, commit sha, etc) to be indexed for all repositories that match them. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
 	SearchIndexRevisions []*SearchIndexRevisionsRule `json:"search.index.revisions,omitempty"`
-	// SearchSanitizePatterns description: A list of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. A pattern that is not a valid Go regular expression will have no effect.
-	SearchSanitizePatterns []string `json:"search.sanitize.patterns,omitempty"`
+	// SearchSanitization description: Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.
+	SearchSanitization *SearchSanitization `json:"search.sanitization,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: DEPRECATED. Always on. Will be removed in 3.19.
 	SearchMultipleRevisionsPerRepository *bool `json:"searchMultipleRevisionsPerRepository,omitempty"`
 	// StructuralSearch description: Enables structural search.
@@ -1573,6 +1573,14 @@ type Ranking struct {
 	// RepoScores description: a map of URI directories to numeric scores for specifying search result importance, like {"github.com": 500, "github.com/sourcegraph": 300, "github.com/sourcegraph/sourcegraph": 100}. Would rank "github.com/sourcegraph/sourcegraph" as 500+300+100=900, and "github.com/other/foo" as 500.
 	RepoScores map[string]float64 `json:"repoScores,omitempty"`
 }
+
+// RepoPurgeWorker description: Configuration for repository purge worker.
+type RepoPurgeWorker struct {
+	// DeletedTTLMinutes description: Repository TTL in minutes after deletion before it becomes eligible to be purged. A migration or admin could accidentally remove all or a significant number of repositories - recloning all of them is slow, so a TTL acts as a grace period so that admins can recover from accidental deletions
+	DeletedTTLMinutes int `json:"deletedTTLMinutes,omitempty"`
+	// IntervalMinutes description: Interval in minutes at which to run purge jobs. Set to 0 to disable.
+	IntervalMinutes int `json:"intervalMinutes,omitempty"`
+}
 type Repos struct {
 	// Callsign description: The unique Phabricator identifier for the repository, like 'MUX'.
 	Callsign string `json:"callsign"`
@@ -1700,6 +1708,14 @@ type SearchLimits struct {
 	// MaxTimeoutSeconds description: The maximum value for "timeout:" that search will respect. "timeout:" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Defaults to 1 minute.
 	MaxTimeoutSeconds int `json:"maxTimeoutSeconds,omitempty"`
 }
+
+// SearchSanitization description: Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.
+type SearchSanitization struct {
+	// OrgName description: Optionally specify the name of an organization within this Sourcegraph instance containing users whose searches should not be sanitized. Admins: ensure that ALL members of this org are trusted users. If no org exists with the given name then there will be no effect. If no org name is specified then all non-admin users will have their searches sanitized if this feature is enabled.
+	OrgName string `json:"orgName,omitempty"`
+	// SanitizePatterns description: An array of regular expressions representing matched content that should be omitted from search result events. This does not prevent users from accessing file contents through other means if they have read access. Values added to this array must be valid Go regular expressions. Site admins will not have their search results sanitized.
+	SanitizePatterns []string `json:"sanitizePatterns,omitempty"`
+}
 type SearchSavedQueries struct {
 	// Description description: Description of this saved query
 	Description string `json:"description"`
@@ -1779,6 +1795,8 @@ type Settings struct {
 	ExtensionsActiveLoggers []string `json:"extensions.activeLoggers,omitempty"`
 	// FileSidebarVisibleByDefault description: Whether the sidebar on the repo view should be open by default.
 	FileSidebarVisibleByDefault bool `json:"fileSidebarVisibleByDefault,omitempty"`
+	// HistoryDefaultPageSize description: Custom page size for the history tab. If set, the history tab will populate that number of commits the first time the history tab is opened and then double the number of commits progressively.
+	HistoryDefaultPageSize int `json:"history.defaultPageSize,omitempty"`
 	// HistoryPreferAbsoluteTimestamps description: Show absolute timestamps in the history panel and only show relative timestamps (e.g.: "5 days ago") in tooltip when hovering.
 	HistoryPreferAbsoluteTimestamps bool `json:"history.preferAbsoluteTimestamps,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
@@ -1816,6 +1834,8 @@ type Settings struct {
 	SearchContextLines int `json:"search.contextLines,omitempty"`
 	// SearchDefaultCaseSensitive description: Whether query patterns are treated case sensitively. Patterns are case insensitive by default.
 	SearchDefaultCaseSensitive bool `json:"search.defaultCaseSensitive,omitempty"`
+	// SearchDefaultMode description: Defines default properties for search behavior. The default is `smart`, which provides query assistance that automatically runs alternative queries when appropriate. When `precise`, search behavior strictly searches for the precise meaning of the query.
+	SearchDefaultMode string `json:"search.defaultMode,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
 	// SearchGlobbing description: REMOVED. Previously an experimental setting to interpret file and repo patterns as glob syntax.
@@ -2027,6 +2047,8 @@ type SiteConfiguration struct {
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
 	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
+	// AuthzSyncJobsRecordsTTL description: EXPERIMENTAL: Time interval (in minutes) of how long to keep sync job records for. Set to a negative value to disable.
+	AuthzSyncJobsRecordsTTL int `json:"authz.syncJobsRecordsTTL,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
 	BatchChangesChangesetsRetention string `json:"batchChanges.changesetsRetention,omitempty"`
 	// BatchChangesDisableWebhooksWarning description: Hides Batch Changes warnings about webhooks not being configured.
@@ -2204,6 +2226,8 @@ type SiteConfiguration struct {
 	RepoConcurrentExternalServiceSyncers int `json:"repoConcurrentExternalServiceSyncers,omitempty"`
 	// RepoListUpdateInterval description: Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
+	// RepoPurgeWorker description: Configuration for repository purge worker.
+	RepoPurgeWorker *RepoPurgeWorker `json:"repoPurgeWorker,omitempty"`
 	// SearchIndexEnabled description: Whether indexed search is enabled. If : unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.
 	SearchIndexEnabled *bool `json:"search.index.enabled,omitempty"`
 	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.

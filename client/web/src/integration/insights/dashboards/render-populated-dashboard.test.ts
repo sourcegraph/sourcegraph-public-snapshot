@@ -135,7 +135,7 @@ function getInsightViewById(id: string | null): GetInsightViewResult {
         GET_INSIGHT_VIEW_CAPTURE_GROUP_INSIGHT,
         GET_INSIGHT_VIEW_COMPUTE_INSIGHT,
         GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT,
-    ].find(insight => insight.insightViews.nodes[0].id === id)
+    ].find(insight => insight.insightViews.nodes[0]?.id === id)
 
     if (!insightView) {
         throw new Error(`Insight view with id ${id} not found`)

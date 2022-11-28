@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -31,12 +30,7 @@ func newWebhookBuildHandler(store Store, doer httpcli.Doer) *webhookBuildHandler
 	return &webhookBuildHandler{store: store, doer: doer}
 }
 
-func (w *webhookBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	job, ok := record.(*webhookworker.Job)
-	if !ok {
-		return errcode.MakeNonRetryable(errors.Newf("expected webhookworker.Job, got %T", record))
-	}
-
+func (w *webhookBuildHandler) Handle(ctx context.Context, logger log.Logger, job *webhookworker.Job) error {
 	switch job.ExtSvcKind {
 	case extsvc.KindGitHub:
 		return w.handleKindGitHub(ctx, logger, job)

@@ -8,7 +8,6 @@
     width: 80vw !important;
     background-color: var(--body-bg);
     padding: 0;
-    border-radius: 4px;
 }
 
 .content {
@@ -16,10 +15,12 @@
     align-items: stretch;
     flex-direction: column;
     height: 100%;
+    background: transparent;
 }
 
 .header {
     display: flex;
+    flex-direction: row-reverse;
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 1rem 0; // stylelint-disable-next-line declaration-property-unit-allowed-list
@@ -55,13 +56,16 @@
 }
 
 .results {
-    overflow: auto;
     flex: 1;
-    padding: 0.25rem 0;
-    margin-bottom: 0;
+
     // stylelint-disable-next-line scss/selector-no-redundant-nesting-selector
     & p {
         padding: 1rem;
+    }
+
+    ul {
+        padding: 0.25rem 0;
+        margin-bottom: 0;
     }
 
     li {
@@ -100,8 +104,7 @@
     display: flex;
     align-items: center;
     width: 100%;
-    justify-content: space-between;
-    padding: 0 1rem 0.75rem;
+    padding: 0 1.5rem 0.75rem 1rem;
 }
 
 .keyboard-explanation {
@@ -157,16 +160,12 @@
     gap: 0.75rem;
     display: flex;
     flex-direction: row;
-    background: transparent;
 }
 
 .tab {
     gap: 0.5rem;
 }
 
-.right-aligned {
-    text-align: right;
-}
 .tab-centered-text {
     text-align: center;
 }

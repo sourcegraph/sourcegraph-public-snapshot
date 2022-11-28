@@ -164,7 +164,8 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountElement.className = className
 
     // new GitHub UI
-    const container = codeViewElement.querySelector('#repos-sticky-header a[href="https://github.dev/"]')?.parentElement
+    const container = codeViewElement.querySelector('#repos-sticky-header')?.childNodes[0]?.childNodes[0]?.childNodes[1]
+        ?.childNodes[1] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
     if (container instanceof HTMLElement) {
         container.prepend(mountElement)
         return mountElement
@@ -205,7 +206,9 @@ const fileLineContainerResolver: ViewResolver<CodeView> = {
             // this is not a single-file code view
             return null
         }
-        const repositoryContent = fileLineContainer.closest('.repository-content')
+
+        // selector depends on whether the page was rendered using the client-side navigation or not
+        const repositoryContent = fileLineContainer.closest('.repository-content, #repo-content-turbo-frame')
         if (!repositoryContent) {
             throw new Error('Could not find repository content element')
         }
@@ -434,6 +437,7 @@ const isSimpleSearchPage = (): boolean => window.location.pathname === '/search'
 const isAdvancedSearchPage = (): boolean => window.location.pathname === '/search/advanced'
 const isRepoSearchPage = (): boolean => !isSimpleSearchPage() && window.location.pathname.endsWith('/search')
 const isSearchResultsPage = (): boolean =>
+    // TODO(#44327): Do not rely on window.location.search - it may be present not only on search pages (e.g., issues, pulls, etc.).
     Boolean(new URLSearchParams(window.location.search).get('q')) && !isAdvancedSearchPage()
 const isSearchPage = (): boolean =>
     isSimpleSearchPage() || isAdvancedSearchPage() || isRepoSearchPage() || isSearchResultsPage()
@@ -693,9 +697,10 @@ export const githubCodeHost: GithubCodeHost = {
                 }
 
                 // search results page filters being applied
-                if (isSearchResultsPage()) {
-                    return document.querySelector('.codesearch-results h3')?.textContent?.trim()
-                }
+                // TODO(#44327): Uncomment or remove this depending on the outcome of the issue.
+                // if (isSearchResultsPage()) {
+                //     return document.querySelector('.codesearch-results h3')?.textContent?.trim()
+                // }
 
                 // other pages
                 return pathname

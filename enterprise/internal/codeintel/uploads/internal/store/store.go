@@ -90,9 +90,18 @@ type Store interface {
 	InsertDependencySyncingJob(ctx context.Context, uploadID int) (jobID int, err error)
 
 	// Workerutil
-	WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store
+	WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store[types.Upload]
 
 	ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error)
+
+	GetUploadsForRanking(ctx context.Context, graphKey, objectPrefix string, batchSize int) ([]ExportedUpload, error)
+
+	ProcessStaleExportedUploads(
+		ctx context.Context,
+		graphKey string,
+		batchSize int,
+		deleter func(ctx context.Context, objectPrefix string) error,
+	) (totalDeleted int, err error)
 }
 
 // store manages the database operations for uploads.

@@ -198,11 +198,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker", ""), store)
 
 	// git-server repos purging thread
-	var purgeTTL time.Duration
-	if envvar.SourcegraphDotComMode() {
-		purgeTTL = 14 * 24 * time.Hour // two weeks
-	}
-	go repos.RunRepositoryPurgeWorker(ctx, log.Scoped("RepositoryPurgeWorker", ""), db, purgeTTL)
+	go repos.RunRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker", "remove deleted repositories"),
+		db, conf.DefaultClient())
 
 	// Git fetches scheduler
 	go repos.RunScheduler(ctx, logger, updateScheduler)
@@ -216,17 +213,14 @@ func Main(enterpriseInit EnterpriseInit) {
 	addr := net.JoinHostPort(host, port)
 	logger.Info("listening", log.String("addr", addr))
 
-	var handler http.Handler
-	{
-		m := repoupdater.NewHandlerMetrics()
-		m.MustRegister(prometheus.DefaultRegisterer)
+	m := repoupdater.NewHandlerMetrics()
+	m.MustRegister(prometheus.DefaultRegisterer)
 
-		handler = repoupdater.ObservedHandler(
-			logger,
-			m,
-			otel.GetTracerProvider(),
-		)(server.Handler())
-	}
+	handler := repoupdater.ObservedHandler(
+		logger,
+		m,
+		otel.GetTracerProvider(),
+	)(server.Handler())
 
 	globals.WatchExternalURL(nil)
 

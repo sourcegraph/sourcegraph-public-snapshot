@@ -676,6 +676,12 @@ type ReposListOptions struct {
 	// OnlyCloned excludes non-cloned repositories from the list.
 	OnlyCloned bool
 
+	// NoIndexed excludes repositories that are indexed by zoekt from the list.
+	NoIndexed bool
+
+	// OnlyIndexed excludes repositories that are not indexed by zoekt from the list.
+	OnlyIndexed bool
+
 	// CloneStatus if set will only return repos of that clone status.
 	CloneStatus types.CloneStatus
 
@@ -693,10 +699,6 @@ type ReposListOptions struct {
 
 	// UseOr decides between ANDing or ORing the predicates together.
 	UseOr bool
-
-	// IncludeUserPublicRepos will include repos from the user_public_repos table if this field is true, and the user_id
-	// is non-zero. Note that these are not repos owned by this user, just ones they are interested in.
-	IncludeUserPublicRepos bool
 
 	// FailedFetch, if true, will filter to only repos that failed to clone or fetch
 	// when last attempted. Specifically, this means that they have a non-null
@@ -788,6 +790,7 @@ const (
 	RepoListName      RepoListColumn = "name"
 	RepoListID        RepoListColumn = "id"
 	RepoListStars     RepoListColumn = "stars"
+	RepoListSize      RepoListColumn = "gr.repo_size_bytes"
 )
 
 // List lists repositories in the Sourcegraph repository
@@ -1017,6 +1020,12 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	if opt.CloneStatus != types.CloneStatusUnknown {
 		where = append(where, sqlf.Sprintf("gr.clone_status = %s", opt.CloneStatus))
 	}
+	if opt.NoIndexed {
+		where = append(where, sqlf.Sprintf("zr.index_status = 'not_indexed'"))
+	}
+	if opt.OnlyIndexed {
+		where = append(where, sqlf.Sprintf("zr.index_status = 'indexed'"))
+	}
 
 	if opt.FailedFetch {
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
@@ -1078,9 +1087,6 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	} else if opt.UserID != 0 {
 		userReposCTE := sqlf.Sprintf(userReposCTEFmtstr, opt.UserID)
-		if opt.IncludeUserPublicRepos {
-			userReposCTE = sqlf.Sprintf("%s UNION %s", userReposCTE, sqlf.Sprintf(userPublicReposCTEFmtstr, opt.UserID))
-		}
 		ctes = append(ctes, sqlf.Sprintf("user_repos AS (%s)", userReposCTE))
 		joins = append(joins, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
 	} else if opt.OrgID != 0 {
@@ -1088,8 +1094,12 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.joinGitserverRepos || opt.CloneStatus != types.CloneStatusUnknown {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.joinGitserverRepos ||
+		opt.CloneStatus != types.CloneStatusUnknown || containsSizeField(opt.OrderBy) {
 		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
+	}
+	if opt.OnlyIndexed || opt.NoIndexed {
+		joins = append(joins, sqlf.Sprintf("JOIN zoekt_repos zr ON zr.repo_id = repo.id"))
 	}
 
 	if len(opt.KVPFilters) > 0 {
@@ -1165,12 +1175,17 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	return q, nil
 }
 
+func containsSizeField(orderBy RepoListOrderBy) bool {
+	for _, field := range orderBy {
+		if field.Field == RepoListSize {
+			return true
+		}
+	}
+	return false
+}
+
 const userReposCTEFmtstr = `
 SELECT repo_id as id FROM external_service_repos WHERE user_id = %d
-`
-
-const userPublicReposCTEFmtstr = `
-SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
 `
 
 type ListSourcegraphDotComIndexableReposOptions struct {

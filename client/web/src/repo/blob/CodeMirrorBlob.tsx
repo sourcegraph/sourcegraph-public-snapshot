@@ -2,7 +2,7 @@
  * An experimental implementation of the Blob view using CodeMirror
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
@@ -23,10 +23,10 @@ import { useExperimentalFeatures } from '../../stores'
 
 import { BlobInfo, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { blobPropsFacet } from './codemirror'
-import { showGitBlameDecorations } from './codemirror/blame-decorations'
+import { showBlameGutter, showGitBlameDecorations } from './codemirror/blame-decorations'
 import { syntaxHighlight } from './codemirror/highlight'
 import { pin, updatePin } from './codemirror/hovercard'
-import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
+import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
@@ -79,7 +79,9 @@ const staticExtensions: Extension = [
 
 // Compartment to update various smaller settings
 const settingsCompartment = new Compartment()
-// Compartment to update blame information
+// Compartment to update blame visibility
+const blameVisibilityCompartment = new Compartment()
+// Compartment to update blame decorations
 const blameDecorationsCompartment = new Compartment()
 // Compartment for propagating component props
 const blobPropsCompartment = new Compartment()
@@ -94,6 +96,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         extensionsController,
         location,
         history,
+        isBlameVisible,
         blameHunks,
         tokenKeyboardNavigation,
 
@@ -122,7 +125,13 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         [wrapCode, isLightTheme]
     )
 
-    const blameDecorations = useMemo(() => (blameHunks ? [showGitBlameDecorations.of(blameHunks)] : []), [blameHunks])
+    const blameVisibility = useMemo(() => (isBlameVisible ? [showBlameGutter.of(isBlameVisible)] : []), [
+        isBlameVisible,
+    ])
+    const blameDecorations = useMemo(
+        () => (isBlameVisible && blameHunks?.current ? [showGitBlameDecorations.of(blameHunks.current)] : []),
+        [isBlameVisible, blameHunks]
+    )
 
     const preloadGoToDefinition = useExperimentalFeatures(features => features.preloadGoToDefinition ?? false)
 
@@ -196,6 +205,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 : [],
             blobPropsCompartment.of(blobProps),
             blameDecorationsCompartment.of(blameDecorations),
+            blameVisibilityCompartment.of(blameVisibility),
             settingsCompartment.of(settings),
             search({
                 // useFileSearch is not a dependency because the search
@@ -207,7 +217,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         ],
         // A couple of values are not dependencies (blameDecorations, blobProps,
         // hasPin, position and settings) because those are updated in effects
-        // further below. However they are still needed here because we need to
+        // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations]
@@ -248,8 +258,18 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [blobProps])
 
-    // Update blame information
+    // Update blame visibility
     useEffect(() => {
+        if (editor) {
+            editor.dispatch({ effects: blameVisibilityCompartment.reconfigure(blameVisibility) })
+        }
+        // editor is not provided because this should only be triggered after the
+        // editor was created (i.e. not on first render)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [blameVisibility])
+
+    // Update blame decorations
+    useLayoutEffect(() => {
         if (editor) {
             editor.dispatch({ effects: blameDecorationsCompartment.reconfigure(blameDecorations) })
         }

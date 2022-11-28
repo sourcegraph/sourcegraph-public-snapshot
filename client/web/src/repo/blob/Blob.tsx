@@ -140,7 +140,7 @@ export interface BlobProps
     ariaLabel?: string
 
     isBlameVisible?: boolean
-    blameHunks?: BlameHunk[]
+    blameHunks?: { current: BlameHunk[] | undefined }
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -191,7 +191,7 @@ const domFunctions = {
         if (!row) {
             throw new Error('Could not find closest row for codeCell')
         }
-        const numberCell = row.querySelector<HTMLTableCellElement>('th.line')
+        const numberCell = row.querySelector<HTMLTableCellElement>('td.line')
         if (!numberCell || !numberCell.dataset.line) {
             throw new Error('Could not find line number')
         }
@@ -891,6 +891,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     isBlameVisible={props.isBlameVisible}
                     blameHunks={props.blameHunks}
                     codeViewElements={codeViewElements}
+                    history={props.history}
                 />
 
                 {groupedDecorations &&

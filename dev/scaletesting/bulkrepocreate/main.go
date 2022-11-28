@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"sync/atomic"
 
@@ -23,10 +25,11 @@ type config struct {
 	githubUser     string
 	githubPassword string
 
-	count  int
-	prefix string
-	resume string
-	retry  int
+	count    int
+	prefix   string
+	resume   string
+	retry    int
+	insecure bool
 }
 
 type repo struct {
@@ -46,6 +49,7 @@ func main() {
 	flag.IntVar(&cfg.retry, "retry", 5, "Retries count")
 	flag.StringVar(&cfg.prefix, "prefix", "repo", "Prefix to use when naming the repo, ex '[prefix]000042'")
 	flag.StringVar(&cfg.resume, "resume", "state.db", "Temporary state to use to resume progress if interrupted")
+	flag.BoolVar(&cfg.insecure, "insecure", false, "Accept invalid TLS certificates")
 
 	flag.Parse()
 
@@ -55,6 +59,11 @@ func main() {
 	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: cfg.githubToken},
 	))
+
+	if cfg.insecure {
+		tc.Transport.(*oauth2.Transport).Base = http.DefaultTransport
+		tc.Transport.(*oauth2.Transport).Base.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
 
 	gh, err := github.NewEnterpriseClient(cfg.githubURL, cfg.githubURL, tc)
 	if err != nil {

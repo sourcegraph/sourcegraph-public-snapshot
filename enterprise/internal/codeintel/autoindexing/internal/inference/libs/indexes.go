@@ -32,8 +32,8 @@ var defaultIndexerSHAs = map[string]string{
 	"sourcegraph/lsif-rust":       "sha256:83cb769788987eb52f21a18b62d51ebb67c9436e1b0d2e99904c70fef424f9d1",
 	"sourcegraph/scip-java":       "sha256:eb3996bdc8ab3a56600e7d647bc1ef72f3db8cfffc2026550095a0af7bb762bd",
 	"sourcegraph/scip-python":     "sha256:5049c4598d03af542bde5e1254a17fa6d1eb794c1bdd14d0162fb39c604581b4",
-	"sourcegraph/scip-typescript": "sha256:4184c6a771037d854e23323db2c8a65947029c93401b696f3b5281fff5c3cbe9",
-	"sourcegraph/scip-ruby":       "sha256:091a951b3826c7acaadafae24bfe4f0a9beef26b2bef3420f54bf0de36b5a85b",
+	"sourcegraph/scip-typescript": "sha256:37546e04763d6d1853fb6f32285ad630fc0d8671d4f1d2db40c6df272120f2f8",
+	"sourcegraph/scip-ruby":       "sha256:1e7538eead787a9a220e54c442eaf10372f3f41d2be2871713e6ec367bd40f81",
 }
 
 func DefaultIndexerForLang(language string) (string, bool) {

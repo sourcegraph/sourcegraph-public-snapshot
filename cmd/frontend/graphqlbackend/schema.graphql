@@ -106,7 +106,7 @@ type Mutation {
     """
     Creates a webhook for the specified code host. Only site admins may perform this mutation.
     """
-    createWebhook(codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
+    createWebhook(name: String!, codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
 
     """
     Deletes a webhook by given ID. Only site admins may perform this mutation.
@@ -470,6 +470,10 @@ type Mutation {
         """
         referrer: String
         """
+        Device session ID to identify the user's session for analytics.
+        """
+        deviceSessionID: String
+        """
         The additional argument information.
         """
         argument: String
@@ -614,11 +618,6 @@ type Mutation {
     ): EmptyResponse!
 
     """
-    Set the repos synced by an external service
-    """
-    setExternalServiceRepos(id: ID!, repos: [String!], allRepos: Boolean!): EmptyResponse!
-
-    """
     Updates an out-of-band migration to run in a particular direction.
 
     Applied in the forward direction, an out-of-band migration migrates data into a format that
@@ -630,12 +629,6 @@ type Mutation {
     should be applied in reverse prior to downgrading the instance.
     """
     SetMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
-
-    """
-    SetUserPublicRepos sets the list of public repos for a user's search context, ensuring those repos
-    exist and are cloned
-    """
-    SetUserPublicRepos(userID: ID!, repoURIs: [String!]!): EmptyResponse!
 
     """
     (experimental) Create a new feature flag
@@ -849,6 +842,10 @@ input Event {
     Only captured and stored on Sourcegraph Cloud.
     """
     referrer: String
+    """
+    Device session ID to identify the user's session for analytics.
+    """
+    deviceSessionID: String
     """
     The additional argument information.
     """
@@ -1487,12 +1484,6 @@ type Query {
         """
         name: String!
     ): Namespace
-
-    """
-    Repos affiliated with the namespace (a user or an organization) & code hosts, these repos are not necessarily synced,
-    but ones that the configured code hosts are able to see.
-    """
-    affiliatedRepositories(namespace: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
 
     """
     Returns true if any of the code hosts supplied are syncing now or within "seconds" from now.
@@ -5474,11 +5465,6 @@ type User implements Node & SettingsSubject & Namespace {
     namespaceName: String!
 
     """
-    publicRepositories returns the repos listed in user_public_repos for this user
-    """
-    publicRepositories: [Repository!]!
-
-    """
     EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
     repositories this user has access to, and is derived from recent commit history of those.
     """
@@ -5823,10 +5809,6 @@ type Org implements Node & SettingsSubject & Namespace {
     """
     viewerIsMember: Boolean!
     """
-    Whether the viewer needs to update their code host connection.
-    """
-    viewerNeedsCodeHostUpdate: Boolean!
-    """
     The URL to the organization.
     """
     url: String!
@@ -5981,6 +5963,7 @@ enum RepositoryOrderBy {
     deprecated (use the equivalent REPOSITORY_CREATED_AT)
     """
     REPOSITORY_CREATED_AT
+    SIZE
 }
 
 """
@@ -7836,39 +7819,6 @@ type EventLogsConnection {
 }
 
 """
-A list of code host repositories
-"""
-type CodeHostRepositoryConnection {
-    """
-    Errors returned from the code host.
-    """
-    codeHostErrors: [String!]!
-
-    """
-    A list of repositories affiliated with a code host.
-    """
-    nodes: [CodeHostRepository!]!
-}
-
-"""
-A repository returned directly from a code host
-"""
-type CodeHostRepository {
-    """
-    The Name "owner/reponame" of the repo
-    """
-    name: String!
-    """
-    The code host the repo came from
-    """
-    codeHost: ExternalService
-    """
-    Is the repo private
-    """
-    private: Boolean!
-}
-
-"""
 A description of a command run inside the executor to during processing of the parent record.
 """
 type ExecutionLogEntry {
@@ -7929,6 +7879,10 @@ type Webhook implements Node {
     The URL of the webhook in the instance. This is the location where we expect to receive payloads.
     """
     url: String!
+    """
+    Descriptive webhook name.
+    """
+    name: String!
     """
     The kind of code host sending payloads. (eg. GitHub, GitLab)
     """

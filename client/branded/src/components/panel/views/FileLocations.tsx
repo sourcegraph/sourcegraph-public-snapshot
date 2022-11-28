@@ -10,7 +10,7 @@ import { Badged } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike, isDefined, property, logger } from '@sourcegraph/common'
 import { Location } from '@sourcegraph/extension-api-types'
-import { FileSearchResult } from '@sourcegraph/search-ui'
+import { FileContentSearchResult } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
@@ -185,13 +185,12 @@ export class FileLocations extends React.PureComponent<Props, State> {
         { locationsByURI }: { locationsByURI: Map<string, Location[]> },
         index: number
     ): JSX.Element => (
-        <FileSearchResult
+        <FileContentSearchResult
             index={index}
             location={this.props.location}
             telemetryService={this.props.telemetryService}
-            expanded={true}
+            defaultExpanded={true}
             result={referencesToContentMatch(uri, locationsByURI.get(uri)!)}
-            icon={this.props.icon}
             onSelect={this.onSelect}
             showAllMatches={true}
             fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}

@@ -13,6 +13,11 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+## Chrome & Firefox 22.11.24.1820, Safari v1.19
+
+- Fix route change handlers for GitHub: [issues/44074](https://github.com/sourcegraph/sourcegraph/issues/44074), [pull/44783](https://github.com/sourcegraph/sourcegraph/pull/44783)
+- Fix selectors used to inject Sourcegraph code intelligence on GitHub: [issues/44759](https://github.com/sourcegraph/sourcegraph/issues/44759), [pull/44766](https://github.com/sourcegraph/sourcegraph/pull/44766)
+
 ## Chrome 22.11.14.1520, Firefox 22.11.14.1521, Safari v1.18
 
 - Add new GitHub UI support: [issues/44237](https://github.com/sourcegraph/sourcegraph/issues/44237), [pull/44285](https://github.com/sourcegraph/sourcegraph/pull/44285)

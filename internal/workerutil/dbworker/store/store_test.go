@@ -32,7 +32,7 @@ func TestStoreQueuedCount(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false)
+	count, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).QueuedCount(context.Background(), false)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
@@ -56,7 +56,7 @@ func TestStoreQueuedCountIncludeProcessing(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), true)
+	count, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).QueuedCount(context.Background(), true)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
@@ -81,7 +81,7 @@ func TestStoreQueuedCountFailed(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	count, err := testStore(db, defaultTestStoreOptions(nil)).QueuedCount(context.Background(), false)
+	count, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).QueuedCount(context.Background(), false)
 	if err != nil {
 		t.Fatalf("unexpected error getting queued count: %s", err)
 	}
@@ -105,7 +105,7 @@ func TestStoreMaxDurationInQueue(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	age, err := testStore(db, defaultTestStoreOptions(nil)).MaxDurationInQueue(context.Background())
+	age, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).MaxDurationInQueue(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error getting max duration in queue: %s", err)
 	}
@@ -129,7 +129,7 @@ func TestStoreMaxDurationInQueueProcessAfter(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	age, err := testStore(db, defaultTestStoreOptions(nil)).MaxDurationInQueue(context.Background())
+	age, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).MaxDurationInQueue(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error getting max duration in queue: %s", err)
 	}
@@ -154,7 +154,7 @@ func TestStoreMaxDurationInQueueFailed(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	options := defaultTestStoreOptions(nil)
+	options := defaultTestStoreOptions(nil, testScanRecord)
 	options.RetryAfter = 5 * time.Minute
 
 	age, err := testStore(db, options).MaxDurationInQueue(context.Background())
@@ -169,7 +169,7 @@ func TestStoreMaxDurationInQueueFailed(t *testing.T) {
 func TestStoreMaxDurationInQueueEmpty(t *testing.T) {
 	db := setupStoreTest(t)
 
-	age, err := testStore(db, defaultTestStoreOptions(nil)).MaxDurationInQueue(context.Background())
+	age, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).MaxDurationInQueue(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error getting max duration in queue: %s", err)
 	}
@@ -193,7 +193,7 @@ func TestStoreDequeueState(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	record, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", nil)
+	record, ok, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).Dequeue(context.Background(), "test", nil)
 	assertDequeueRecordResult(t, 4, record, ok, err)
 }
 
@@ -212,7 +212,7 @@ func TestStoreDequeueOrder(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	record, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", nil)
+	record, ok, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).Dequeue(context.Background(), "test", nil)
 	assertDequeueRecordResult(t, 2, record, ok, err)
 }
 
@@ -232,7 +232,7 @@ func TestStoreDequeueConditions(t *testing.T) {
 	}
 
 	conditions := []*sqlf.Query{sqlf.Sprintf("workerutil_test.id < 4")}
-	record, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", conditions)
+	record, ok, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).Dequeue(context.Background(), "test", conditions)
 	assertDequeueRecordResult(t, 3, record, ok, err)
 }
 
@@ -247,7 +247,7 @@ func TestStoreDequeueResetExecutionLogs(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	record, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", nil)
+	record, ok, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).Dequeue(context.Background(), "test", nil)
 	assertDequeueRecordResult(t, 1, record, ok, err)
 	assertDequeueRecordResultLogCount(t, 0, record)
 }
@@ -267,7 +267,7 @@ func TestStoreDequeueDelay(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	record, ok, err := testStore(db, defaultTestStoreOptions(nil)).Dequeue(context.Background(), "test", nil)
+	record, ok, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).Dequeue(context.Background(), "test", nil)
 	assertDequeueRecordResult(t, 4, record, ok, err)
 }
 
@@ -286,9 +286,8 @@ func TestStoreDequeueView(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	options := defaultTestStoreOptions(nil)
+	options := defaultTestStoreOptions(nil, testScanRecordView)
 	options.ViewName = "workerutil_test_view v"
-	options.Scan = BuildWorkerScan(testScanRecordView)
 	options.OrderByExpression = sqlf.Sprintf("v.created_at")
 	options.ColumnExpressions = []*sqlf.Query{
 		sqlf.Sprintf("v.id"),
@@ -313,7 +312,7 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	store := testStore(db, defaultTestStoreOptions(nil))
+	store := testStore(db, defaultTestStoreOptions(nil, testScanRecord))
 
 	// Worker A
 	record1, ok, err := store.Dequeue(context.Background(), "test", nil)
@@ -333,10 +332,10 @@ func TestStoreDequeueConcurrent(t *testing.T) {
 		t.Fatalf("expected a second dequeueable record")
 	}
 
-	if val := record1.(*TestRecord).ID; val != 1 {
+	if val := record1.ID; val != 1 {
 		t.Errorf("unexpected id. want=%d have=%d", 1, val)
 	}
-	if val := record2.(*TestRecord).ID; val != 2 {
+	if val := record2.ID; val != 2 {
 		t.Errorf("unexpected id. want=%d have=%d", 2, val)
 	}
 
@@ -364,8 +363,7 @@ func TestStoreDequeueRetryAfter(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	options := defaultTestStoreOptions(nil)
-	options.Scan = BuildWorkerScan(testScanRecordRetry)
+	options := defaultTestStoreOptions(nil, testScanRecordRetry)
 	options.MaxNumRetries = 5
 	options.RetryAfter = 5 * time.Minute
 	options.ColumnExpressions = []*sqlf.Query{
@@ -403,8 +401,7 @@ func TestStoreDequeueRetryAfterDisabled(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	options := defaultTestStoreOptions(nil)
-	options.Scan = BuildWorkerScan(testScanRecordRetry)
+	options := defaultTestStoreOptions(nil, testScanRecordRetry)
 	options.MaxNumRetries = 5
 	options.RetryAfter = 0
 	options.ColumnExpressions = []*sqlf.Query{
@@ -438,7 +435,7 @@ func TestStoreRequeue(t *testing.T) {
 
 	after := testNow().Add(time.Hour)
 
-	if err := testStore(db, defaultTestStoreOptions(nil)).Requeue(context.Background(), 1, after); err != nil {
+	if err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).Requeue(context.Background(), 1, after); err != nil {
 		t.Fatalf("unexpected error requeueing record: %s", err)
 	}
 
@@ -488,7 +485,7 @@ func TestStoreAddExecutionLogEntry(t *testing.T) {
 			Out:     payload,
 		}
 
-		entryID, err := testStore(db, defaultTestStoreOptions(nil)).AddExecutionLogEntry(context.Background(), 1, entry, ExecutionLogEntryOptions{})
+		entryID, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).AddExecutionLogEntry(context.Background(), 1, entry, ExecutionLogEntryOptions{})
 		if err != nil {
 			t.Fatalf("unexpected error adding executor log entry: %s", err)
 		}
@@ -530,7 +527,7 @@ func TestStoreAddExecutionLogEntryNoRecord(t *testing.T) {
 		Out:     "output",
 	}
 
-	_, err := testStore(db, defaultTestStoreOptions(nil)).AddExecutionLogEntry(context.Background(), 1, entry, ExecutionLogEntryOptions{})
+	_, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).AddExecutionLogEntry(context.Background(), 1, entry, ExecutionLogEntryOptions{})
 	if err == nil {
 		t.Fatalf("expected error but got none")
 	}
@@ -557,7 +554,7 @@ func TestStoreUpdateExecutionLogEntry(t *testing.T) {
 			Out:     payload,
 		}
 
-		entryID, err := testStore(db, defaultTestStoreOptions(nil)).AddExecutionLogEntry(context.Background(), 1, entry, ExecutionLogEntryOptions{})
+		entryID, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).AddExecutionLogEntry(context.Background(), 1, entry, ExecutionLogEntryOptions{})
 		if err != nil {
 			t.Fatalf("unexpected error adding executor log entry: %s", err)
 		}
@@ -567,7 +564,7 @@ func TestStoreUpdateExecutionLogEntry(t *testing.T) {
 		}
 
 		entry.Out += fmt.Sprintf("\n<load payload %d again, nobody was at home>", i+1)
-		if err := testStore(db, defaultTestStoreOptions(nil)).UpdateExecutionLogEntry(context.Background(), 1, entryID, entry, ExecutionLogEntryOptions{}); err != nil {
+		if err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).UpdateExecutionLogEntry(context.Background(), 1, entryID, entry, ExecutionLogEntryOptions{}); err != nil {
 			t.Fatalf("unexpected error updating executor log entry: %s", err)
 		}
 	}
@@ -613,7 +610,7 @@ func TestStoreUpdateExecutionLogEntryUnknownEntry(t *testing.T) {
 	}
 
 	for unknownEntryID := 0; unknownEntryID < 2; unknownEntryID++ {
-		err := testStore(db, defaultTestStoreOptions(nil)).UpdateExecutionLogEntry(context.Background(), 1, unknownEntryID, entry, ExecutionLogEntryOptions{})
+		err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).UpdateExecutionLogEntry(context.Background(), 1, unknownEntryID, entry, ExecutionLogEntryOptions{})
 		if err == nil {
 			t.Fatal("expected error but got none")
 		}
@@ -631,7 +628,7 @@ func TestStoreMarkComplete(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkComplete(context.Background(), 1, MarkFinalOptions{})
+	marked, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).MarkComplete(context.Background(), 1, MarkFinalOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error marking record as completed: %s", err)
 	}
@@ -673,7 +670,7 @@ func TestStoreMarkCompleteNotProcessing(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkComplete(context.Background(), 1, MarkFinalOptions{})
+	marked, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).MarkComplete(context.Background(), 1, MarkFinalOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error marking record as completed: %s", err)
 	}
@@ -715,7 +712,7 @@ func TestStoreMarkErrored(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkErrored(context.Background(), 1, "new message", MarkFinalOptions{})
+	marked, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).MarkErrored(context.Background(), 1, "new message", MarkFinalOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error marking record as errored: %s", err)
 	}
@@ -757,7 +754,7 @@ func TestStoreMarkFailed(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkFailed(context.Background(), 1, "new message", MarkFinalOptions{})
+	marked, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).MarkFailed(context.Background(), 1, "new message", MarkFinalOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error marking upload as completed: %s", err)
 	}
@@ -799,7 +796,7 @@ func TestStoreMarkErroredAlreadyCompleted(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkErrored(context.Background(), 1, "new message", MarkFinalOptions{})
+	marked, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).MarkErrored(context.Background(), 1, "new message", MarkFinalOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error marking record as errored: %s", err)
 	}
@@ -841,7 +838,7 @@ func TestStoreMarkErroredAlreadyErrored(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	marked, err := testStore(db, defaultTestStoreOptions(nil)).MarkErrored(context.Background(), 1, "new message", MarkFinalOptions{})
+	marked, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).MarkErrored(context.Background(), 1, "new message", MarkFinalOptions{})
 	if err != nil {
 		t.Fatalf("unexpected error marking record as errored: %s", err)
 	}
@@ -884,7 +881,7 @@ func TestStoreMarkErroredRetriesExhausted(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	options := defaultTestStoreOptions(nil)
+	options := defaultTestStoreOptions(nil, testScanRecord)
 	options.MaxNumRetries = 2
 	store := testStore(db, options)
 
@@ -951,7 +948,7 @@ func TestStoreResetStalled(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resetLastHeartbeatsByIDs, erroredLastHeartbeatsByIDs, err := testStore(db, defaultTestStoreOptions(nil)).ResetStalled(context.Background())
+	resetLastHeartbeatsByIDs, erroredLastHeartbeatsByIDs, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).ResetStalled(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error resetting stalled records: %s", err)
 	}
@@ -1021,7 +1018,7 @@ func TestStoreHeartbeat(t *testing.T) {
 
 	now := time.Unix(1587396557, 0).UTC()
 	clock := glock.NewMockClockAt(now)
-	store := testStore(db, defaultTestStoreOptions(clock))
+	store := testStore(db, defaultTestStoreOptions(clock, testScanRecord))
 
 	if err := store.Exec(context.Background(), sqlf.Sprintf(`
 		INSERT INTO workerutil_test (id, state, worker_hostname, last_heartbeat_at)
@@ -1048,7 +1045,7 @@ func TestStoreHeartbeat(t *testing.T) {
 
 	clock.Advance(5 * time.Second)
 
-	if _, err := store.Heartbeat(context.Background(), []int{1, 2, 3}, HeartbeatOptions{}); err != nil {
+	if _, _, err := store.Heartbeat(context.Background(), []int{1, 2, 3}, HeartbeatOptions{}); err != nil {
 		t.Fatalf("unexpected error updating heartbeat: %s", err)
 	}
 	readAndCompareTimes(map[int]time.Duration{
@@ -1065,7 +1062,7 @@ func TestStoreHeartbeat(t *testing.T) {
 	clock.Advance(5 * time.Second)
 
 	// Only one worker
-	if _, err := store.Heartbeat(context.Background(), []int{1, 2, 3}, HeartbeatOptions{WorkerHostname: "worker1"}); err != nil {
+	if _, _, err := store.Heartbeat(context.Background(), []int{1, 2, 3}, HeartbeatOptions{WorkerHostname: "worker1"}); err != nil {
 		t.Fatalf("unexpected error updating heartbeat: %s", err)
 	}
 	readAndCompareTimes(map[int]time.Duration{
@@ -1077,7 +1074,7 @@ func TestStoreHeartbeat(t *testing.T) {
 	clock.Advance(5 * time.Second)
 
 	// Multiple workers
-	if _, err := store.Heartbeat(context.Background(), []int{1, 3}, HeartbeatOptions{}); err != nil {
+	if _, _, err := store.Heartbeat(context.Background(), []int{1, 3}, HeartbeatOptions{}); err != nil {
 		t.Fatalf("unexpected error updating heartbeat: %s", err)
 	}
 	readAndCompareTimes(map[int]time.Duration{
@@ -1105,9 +1102,9 @@ func TestStoreCanceledJobs(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	toCancel, err := testStore(db, defaultTestStoreOptions(nil)).CanceledJobs(context.Background(), []int{1, 2, 3}, CanceledJobsOptions{WorkerHostname: "worker1"})
+	_, toCancel, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).Heartbeat(context.Background(), []int{1, 2, 3}, HeartbeatOptions{WorkerHostname: "worker1"})
 	if err != nil {
-		t.Fatalf("unexpected error marking upload as completed: %s", err)
+		t.Fatalf("unexpected error fetching canceled jobs: %s", err)
 	}
 
 	require.ElementsMatch(t, toCancel, []int{3}, "invalid set of jobs returned")

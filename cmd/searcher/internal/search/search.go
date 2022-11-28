@@ -155,7 +155,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		attribute.StringSlice("languages", p.Languages),
 		attribute.Bool("isWordMatch", p.IsWordMatch),
 		attribute.Bool("isCaseSensitive", p.IsCaseSensitive),
-		attribute.Bool("pathPatternsAreRegExps", p.PathPatternsAreRegExps),
 		attribute.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive),
 		attribute.Int("limit", p.Limit),
 		attribute.Bool("patternMatchesContent", p.PatternMatchesContent),

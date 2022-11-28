@@ -83,6 +83,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
           class="input-group-append"
         >
           <button
+            aria-disabled="false"
             aria-label="Copy"
             class="btn btnSecondary"
             type="button"
@@ -187,6 +188,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
           class="input-group-append"
         >
           <button
+            aria-disabled="false"
             aria-label="Copy"
             class="btn btnSecondary"
             type="button"

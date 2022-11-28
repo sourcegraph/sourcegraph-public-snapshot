@@ -8,8 +8,8 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createInvalidGraphQLQueryResponseError, dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { Link, Icon } from '@sourcegraph/wildcard'
+import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -63,6 +63,7 @@ interface Props extends Partial<RevisionSpec>, FileSpec {
     history: H.History
     location: H.Location
     preferAbsoluteTimestamps: boolean
+    defaultPageSize?: number
 }
 
 export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
@@ -79,6 +80,7 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
             CommitAncestorsConnectionFields
         >
             className="list-group list-group-flush"
+            ariaLive="polite"
             listClassName={styles.list}
             summaryClassName={styles.summary}
             loaderClassName={styles.loader}
@@ -88,7 +90,7 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
             queryConnection={queryCommits}
             nodeComponent={CommitNode}
             nodeComponentProps={{ location: props.location, preferAbsoluteTimestamps: props.preferAbsoluteTimestamps }}
-            defaultFirst={100}
+            defaultFirst={props.defaultPageSize || 100}
             hideSearch={true}
             useURLQuery={false}
             history={props.history}

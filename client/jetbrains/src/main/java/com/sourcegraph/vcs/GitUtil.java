@@ -2,6 +2,7 @@ package com.sourcegraph.vcs;
 
 import com.intellij.dvcs.repo.Repository;
 import com.intellij.openapi.project.Project;
+import git4idea.GitLocalBranch;
 import git4idea.GitRemoteBranch;
 import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepository;
@@ -28,13 +29,17 @@ public class GitUtil {
         return url;
     }
 
-    /**
-     * @param branchName E.g. "main"
-     */
-    public static boolean doesRemoteBranchExist(@NotNull GitRepository repository, @NotNull String branchName) {
-        List<String> remoteBranchNames = repository.getInfo().getRemoteBranchesWithHashes()
-            .keySet().stream().map(GitRemoteBranch::getNameForLocalOperations).collect(Collectors.toList());
-        return remoteBranchNames.stream().anyMatch(name -> name.equals(branchName));
+    @Nullable
+    public static String getRemoteBranchName(@NotNull GitRepository repository) {
+        GitLocalBranch localBranch = repository.getCurrentBranch();
+        if (localBranch == null) {
+            return null;
+        }
+        GitRemoteBranch remoteBranch = localBranch.findTrackedBranch(repository);
+        if (remoteBranch == null) {
+            return null;
+        }
+        return remoteBranch.getNameForRemoteOperations();
     }
 
     @Nullable

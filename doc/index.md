@@ -51,12 +51,11 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
     <p>Deploy onto Microsoft Azure</p>
   </a>
   <!-- AWS One Click-->
-  <a class="btn-app btn" href="/admin/deploy/docker-compose/aws-oneclick">
+  <a class="btn-app btn" href="/admin/deploy/machine-images/aws-oneclick">
     <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
     <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
     <h3>AWS One-Click</h3>
-    <span class="badge badge-warning">Coming soon</span> 
-    <!-- <p>Deploy onto AWS in one click</p> -->
+    <p>Deploy onto AWS in one click</p>
   </a>
   <!-- Digital Ocean -->
   <a class="btn-app btn" href="/admin/deploy/docker-compose/digitalocean">

@@ -681,6 +681,11 @@
       "minimum": 0,
       "default": 1
     },
+    "search.defaultMode": {
+      "description": "Defines default properties for search behavior. The default is `smart`, which provides query assistance that automatically runs alternative queries when appropriate. When `precise`, search behavior strictly searches for the precise meaning of the query.",
+      "type": "string",
+      "pattern": "precise|smart"
+    },
     "search.defaultPatternType": {
       "description": "The default pattern type that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.",
       "type": "string",
@@ -730,6 +735,11 @@
       "description": "Show absolute timestamps in the history panel and only show relative timestamps (e.g.: \"5 days ago\") in tooltip when hovering.",
       "type": "boolean",
       "default": false
+    },
+    "history.defaultPageSize": {
+      "description": "Custom page size for the history tab. If set, the history tab will populate that number of commits the first time the history tab is opened and then double the number of commits progressively.",
+      "type": "integer",
+      "minimum": 1
     },
     "notices": {
       "description": "Custom informational messages to display to users at specific locations in the Sourcegraph user interface.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.",

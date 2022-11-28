@@ -2,30 +2,30 @@
 
 exports[`RepoFileLink renders 1`] = `
 <DocumentFragment>
-  <div
-    class=""
-  >
-    <a
-      class="anchorLink"
-      href="https://example.com"
-    >
-      my/repo
-    </a>
-    <span
-      aria-hidden="true"
-    >
-       ›
+  <span>
+    <span>
+      <a
+        class="anchorLink"
+        href="https://example.com"
+      >
+        my/repo
+      </a>
+      <span
+        aria-hidden="true"
+      >
+         ›
+      </span>
+       
+      <a
+        class="anchorLink"
+        href="/file?subtree=true"
+      >
+        my/
+        <strong>
+          file
+        </strong>
+      </a>
     </span>
-     
-    <a
-      class="anchorLink"
-      href="/file?subtree=true"
-    >
-      my/
-      <strong>
-        file
-      </strong>
-    </a>
-  </div>
+  </span>
 </DocumentFragment>
 `;

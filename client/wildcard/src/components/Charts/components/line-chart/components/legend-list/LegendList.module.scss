@@ -1,7 +1,8 @@
 .legend-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    column-gap: 0.5rem;
+    row-gap: 0.25rem;
 
     // Reset ul styles (bullets, paddings, margins)
     list-style: none;
@@ -12,19 +13,15 @@
 
 .legend-item {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     word-break: break-all;
 }
 
 .legend-mark {
-    align-self: baseline;
+    display: inline-block;
     width: 0.5rem;
     height: 0.5rem;
     flex-shrink: 0;
     margin-right: 0.25rem;
     border-radius: 50%;
-}
-
-.unselected {
-    background-color: var(--icon-muted);
 }

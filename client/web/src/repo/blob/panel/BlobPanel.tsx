@@ -103,6 +103,7 @@ function useBlobPanelViews({
 
     const maxPanelResults = maxPanelResultsFromSettings(settingsCascade)
     const preferAbsoluteTimestamps = preferAbsoluteTimestampsFromSettings(settingsCascade)
+    const defaultPageSize = defaultPageSizeFromSettings(settingsCascade)
     const isTabbedReferencesPanelEnabled =
         !isErrorLike(settingsCascade.final) &&
         settingsCascade.final !== null &&
@@ -192,6 +193,7 @@ function useBlobPanelViews({
                                     history={history}
                                     location={location}
                                     preferAbsoluteTimestamps={preferAbsoluteTimestamps}
+                                    defaultPageSize={defaultPageSize}
                                 />
                             ),
                         }))
@@ -275,6 +277,7 @@ function useBlobPanelViews({
             isTabbedReferencesPanelEnabled,
             extensionsController,
             preferAbsoluteTimestamps,
+            defaultPageSize,
             createLocationProvider,
             settingsCascade,
             platformContext,
@@ -300,6 +303,14 @@ function preferAbsoluteTimestampsFromSettings(settingsCascade: SettingsCascadeOr
         return settingsCascade.final['history.preferAbsoluteTimestamps'] as boolean
     }
     return false
+}
+
+function defaultPageSizeFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): number | undefined {
+    if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
+        return settingsCascade.final['history.defaultPageSize'] as number
+    }
+
+    return undefined
 }
 
 /**

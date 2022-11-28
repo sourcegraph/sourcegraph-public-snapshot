@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -14,6 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
+const JobShowLimit = 10
+
 type NotificationClient struct {
 	slack   slack.Client
 	team    team.TeammateResolver
@@ -22,7 +25,8 @@ type NotificationClient struct {
 }
 
 func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel string) *NotificationClient {
-	slack := slack.New(slackToken)
+	debug := os.Getenv("BUILD_TRACKER_SLACK_DEBUG") == "1"
+	slack := slack.New(slackToken, slack.OptionDebug(debug))
 
 	httpClient := http.Client{
 		Timeout: 5 * time.Second,
@@ -52,7 +56,8 @@ func (c *NotificationClient) sendFailedBuild(build *Build) error {
 	}
 
 	logger.Debug("sending notification")
-	_, _, err = c.slack.PostMessage(c.channel, slack.MsgOptionBlocks(blocks...))
+	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
+	_, _, err = c.slack.PostMessage(c.channel, msgOptBlocks)
 	if err != nil {
 		logger.Error("failed to post message", log.Error(err))
 		return err
@@ -82,16 +87,25 @@ func (c *NotificationClient) createMessageBlocks(logger log.Logger, build *Build
 	failedSection := fmt.Sprintf("> %s\n\n", commitLink(msg, build.commit()))
 
 	// create a bulleted list of all the failed jobs
-	failedSection += "*Failed jobs:*\n\n"
+	//
+	// if there are more than JobShowLimit of failed jobs, we cannot print all of it
+	// since the message will to big and slack will reject the message with "invalid_blocks"
 	failedJobs := build.failedJobs()
-	logger.Info("failed job count on build", log.Int("failedJobs", len(failedJobs)))
-	for _, j := range failedJobs {
-		failedSection += fmt.Sprintf("• %s", *j.Name)
-		if j.WebURL != "" {
-			failedSection += fmt.Sprintf(" - <%s|logs>", j.WebURL)
-		}
-		failedSection += "\n"
+	jobSection := "*Failed jobs:*\n\n"
+	if len(failedJobs) > JobShowLimit {
+		jobSection = fmt.Sprintf("* %d Failed jobs (showing %d):*\n\n", len(failedJobs), JobShowLimit)
 	}
+	logger.Info("failed job count on build", log.Int("failedJobs", len(failedJobs)))
+	for i := 0; i < JobShowLimit && i < len(failedJobs); i++ {
+		j := failedJobs[i]
+		jobSection += fmt.Sprintf("• %s", *j.Name)
+		if j.WebURL != "" {
+			jobSection += fmt.Sprintf(" - <%s|logs>", j.WebURL)
+		}
+		jobSection += "\n"
+	}
+
+	failedSection += jobSection
 
 	logger.Debug("getting teammate information using commit", log.String("commit", build.commit()))
 	teammate, err := c.getTeammateForBuild(build)

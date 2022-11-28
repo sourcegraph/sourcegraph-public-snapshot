@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -63,9 +64,12 @@ import (
 )
 
 var (
-	reposDir                       = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
-	wantPctFree                    = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
-	janitorInterval                = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
+	reposDir = env.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
+
+	// Align these variables with the 'disk_space_remaining' alerts in monitoring
+	wantPctFree     = env.MustGetInt("SRC_REPOS_DESIRED_PERCENT_FREE", 10, "Target percentage of free space on disk.")
+	janitorInterval = env.MustGetDuration("SRC_REPOS_JANITOR_INTERVAL", 1*time.Minute, "Interval between cleanup runs")
+
 	syncRepoStateInterval          = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
 	syncRepoStateBatchSize         = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of updates to perform per batch")
 	syncRepoStateUpdatePerSecond   = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of updated rows allowed per second across all gitserver instances")
@@ -141,7 +145,7 @@ func main() {
 			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, reposDir)
 		},
 		Hostname:                hostname.Get(),
 		DB:                      db,
@@ -440,6 +444,7 @@ func getVCSSyncer(
 	repoStore database.RepoStore,
 	depsSvc *dependencies.Service,
 	repo api.RepoName,
+	reposDir string,
 ) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
@@ -477,10 +482,18 @@ func getVCSSyncer(
 		if _, err := extractOptions(&c); err != nil {
 			return nil, err
 		}
+
+		p4Home := filepath.Join(reposDir, server.P4HomeName)
+		// Ensure the directory exists
+		if err := os.MkdirAll(p4Home, os.ModePerm); err != nil {
+			return nil, errors.Wrapf(err, "ensuring p4Home exists: %q", p4Home)
+		}
+
 		return &server.PerforceDepotSyncer{
 			MaxChanges:   int(c.MaxChanges),
 			Client:       c.P4Client,
 			FusionConfig: configureFusionClient(c),
+			P4Home:       p4Home,
 		}, nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection

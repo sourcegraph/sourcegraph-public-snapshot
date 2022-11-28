@@ -36,7 +36,7 @@ import (
 
 // NewWorker returns a worker that will execute search queries and insert information about the
 // results into the code insights database.
-func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerObservability, limiter *ratelimit.InstrumentedLimiter) *workerutil.Worker {
+func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*Job], insightsStore *store.Store, repoStore discovery.RepoStore, metrics workerutil.WorkerObservability, limiter *ratelimit.InstrumentedLimiter) *workerutil.Worker[*Job] {
 	numHandlers := conf.Get().InsightsQueryWorkerConcurrency
 	if numHandlers <= 0 {
 		// Default concurrency is set to 5.
@@ -65,7 +65,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		return float64(count)
 	}))
 
-	return dbworker.NewWorker(ctx, workerStore, &workHandler{
+	return dbworker.NewWorker[*Job](ctx, workerStore, &workHandler{
 		baseWorkerStore: basestore.NewWithHandle(workerStore.Handle()),
 		insightsStore:   insightsStore,
 		repoStore:       repoStore,
@@ -79,7 +79,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 
 // NewResetter returns a resetter that will reset pending query runner jobs if they take too long
 // to complete.
-func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store, metrics dbworker.ResetterMetrics) *dbworker.Resetter {
+func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*Job], metrics dbworker.ResetterMetrics) *dbworker.Resetter[*Job] {
 	options := dbworker.ResetterOptions{
 		Name:     "insights_query_runner_worker_resetter",
 		Interval: 1 * time.Minute,
@@ -91,8 +91,8 @@ func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkersto
 // CreateDBWorkerStore creates the dbworker store for the query runner worker.
 //
 // See internal/workerutil/dbworker for more information about dbworkers.
-func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Context) dbworkerstore.Store {
-	return dbworkerstore.NewWithMetrics(s.Handle(), dbworkerstore.Options{
+func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Context) dbworkerstore.Store[*Job] {
+	return dbworkerstore.NewWithMetrics(s.Handle(), dbworkerstore.Options[*Job]{
 		Name:              "insights_query_runner_jobs_store",
 		TableName:         "insights_query_runner_jobs",
 		ColumnExpressions: jobsColumns,

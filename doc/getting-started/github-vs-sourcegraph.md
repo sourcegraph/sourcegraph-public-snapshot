@@ -1,4 +1,3 @@
-Please note: this page was last updated 2022-11-09, and we will continue to make updates as offerings from both GitHub and Sourcegraph evolve.
 
 # GitHub code search vs. Sourcegraph
 
@@ -121,7 +120,7 @@ With GitHub, only the default **branch** is searchable (though GitHub is plannin
 
 **Forks** are included in the index, but they are subject to the same limitations as other repositories, so not all forks are indexed.
 
-In addition to searching your private code, GitHub has indexed over 7 million public GitHub repositories which are also searchable.
+GitHub code search supports searching across issues, pull requests, and discussions. In addition to searching your private code, GitHub has indexed over 7 million public GitHub repositories which are also searchable.
 
 Sourcegraph allows you to search indexed and [unindexed](https://docs.sourcegraph.com/code_search/how-to/exhaustive#non-indexed-backends) code. Sourcegraph’s [current limitations](https://docs.sourcegraph.com/admin/search) on indexed code are: 
 
@@ -181,6 +180,13 @@ Using the <a href="https://docs.sourcegraph.com/admin/config/site_config#search-
    <td>2.8 million 
    </td>
   </tr>
+  <tr>
+   <td><strong>Search across issues, pull requests, and discussions. </strong>
+   </td>
+   <td>✓
+   </td>
+   <td>✗
+   </td>
 </table>
 
 
@@ -637,7 +643,7 @@ With Sourcegraph’s [Batch Changes](https://docs.sourcegraph.com/batch_changes/
 
 Both GitHub and Sourcegraph offer integrations to help optimize your workflow. GitHub’s owned integrations are built and managed by GitHub, and they have a marketplace with nearly a thousand third-party applications spanning across categories such as code quality, code review, IDEs, monitoring, security, and more. These integrations are available for GitHub overall, but there aren’t any integrations related to GitHub code search. For example, the [VS Code integration](https://marketplace.visualstudio.com/items?itemName=GitHub.vscode-pull-request-github) allows you to review and manage pull requests, but it does not let you use GitHub code search in VS Code. 
 
-Sourcegraph’s [editor integrations](https://docs.sourcegraph.com/integration/editor) let you search and navigate across all of your repositories from all your code hosts and across all GitHub instances and organizations without leaving your IDE. Sourcegraph currently integrates with VS Code, JetBrains IDEs, Sublime Text, Atom, and Gitpod. You can also add Sourcegraph to your preferred [browser](https://docs.sourcegraph.com/integration/browser_extension/how-tos/browser_search_engine) to quickly search across your entire codebase from within your browser. 
+Sourcegraph’s [editor integrations](../integration/editor.md) let you search and navigate across all of your repositories from all your code hosts and across all GitHub instances and organizations without leaving your IDE. Sourcegraph currently integrates with VS Code, JetBrains IDEs, and Gitpod. You can also add Sourcegraph to your preferred [browser](../integration/browser_extension/how-tos/browser_search_engine.md) to quickly search across your entire codebase from within your browser. 
 
 
 ### API
