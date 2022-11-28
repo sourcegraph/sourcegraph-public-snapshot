@@ -1282,7 +1282,12 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 }
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
-	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
+	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
+	// If gitserver doesn't speak the binary endpoint yet, we fall back to the old one.
+	if resp.StatusCode == http.StatusNotFound {
+		resp.Body.Close()
+		resp, err = c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
+	}
 	if err != nil {
 		return "", err
 	}
