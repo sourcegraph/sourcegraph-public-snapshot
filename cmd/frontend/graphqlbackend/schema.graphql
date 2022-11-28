@@ -8060,6 +8060,9 @@ type WebhookLogResponse implements WebhookLogMessage {
     body: String!
 }
 
+"""
+A list of outbound requests.
+"""
 type OutboundRequestConnection {
     """
     A list of webhook logs.
