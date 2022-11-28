@@ -5,7 +5,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -46,7 +45,6 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 		if err != nil {
 			return nil, err
 		}
-		r.logger.Warn("after", log.String("marshaled", after), log.String("orig", string(*args.After)))
 	} else {
 		after = ""
 	}
