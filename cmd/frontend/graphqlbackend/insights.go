@@ -443,7 +443,7 @@ type SaveInsightAsNewViewArgs struct {
 type InsightNewViewInput struct {
 	InsightViewID graphql.ID
 	Options       LineChartOptionsInput
-	Dashboards    *[]graphql.ID
+	Dashboard     *graphql.ID
 	ViewControls  *InsightViewControlsInput
 }
 

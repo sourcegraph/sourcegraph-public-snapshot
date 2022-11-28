@@ -686,14 +686,12 @@ func (r *Resolver) SaveInsightAsNewView(ctx context.Context, args graphqlbackend
 	dashboardTx := r.dashboardStore.With(insightTx)
 
 	var dashboardIds []int
-	if args.Input.Dashboards != nil {
-		for _, id := range *args.Input.Dashboards {
-			dashboardID, err := unmarshalDashboardID(id)
-			if err != nil {
-				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
-			}
-			dashboardIds = append(dashboardIds, int(dashboardID.Arg))
+	if args.Input.Dashboard != nil {
+		dashboardID, err := unmarshalDashboardID(*args.Input.Dashboard)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
 		}
+		dashboardIds = append(dashboardIds, int(dashboardID.Arg))
 	}
 
 	lamDashboardId, err := createInsightLicenseCheck(ctx, insightTx, dashboardTx, dashboardIds)
@@ -749,8 +747,8 @@ func (r *Resolver) SaveInsightAsNewView(ctx context.Context, args graphqlbackend
 	}
 
 	if len(dashboardIds) > 0 {
-		if args.Input.Dashboards != nil {
-			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, r.postgresDB.Orgs())
+		if args.Input.Dashboard != nil {
+			err := validateUserDashboardPermissions(ctx, dashboardTx, []graphql.ID{*args.Input.Dashboard}, r.postgresDB.Orgs())
 			if err != nil {
 				return nil, err
 			}

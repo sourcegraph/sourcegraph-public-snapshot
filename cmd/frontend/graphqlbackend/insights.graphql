@@ -1229,9 +1229,9 @@ input InsightNewViewInput {
     options: LineChartOptionsInput!
 
     """
-    The dashboard IDs to associate this insight with once created.
+    The dashboard ID to associate this insight with once created.
     """
-    dashboards: [ID!]
+    dashboard: ID!
 
     """
     The default values for filters and aggregates for this line chart.
