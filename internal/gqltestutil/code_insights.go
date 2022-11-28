@@ -347,6 +347,9 @@ func (c *Client) SaveInsightAsNewView(input map[string]any) ([]SearchInsight, er
 		}
 	`
 
+	variables := map[string]any{
+		"new": input,
+	}
 	var resp struct {
 		Data struct {
 			SaveInsightAsNewView struct {
@@ -359,7 +362,7 @@ func (c *Client) SaveInsightAsNewView(input map[string]any) ([]SearchInsight, er
 			} `json:"saveInsightAsNewView"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", query, input, &resp)
+	err := c.GraphQL("", query, variables, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
