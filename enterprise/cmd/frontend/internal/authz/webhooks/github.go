@@ -2,6 +2,7 @@ package webhooks
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	gh "github.com/google/go-github/v43/github"
@@ -100,7 +101,7 @@ func (h *GitHubWebhook) handleMemberEvent(ctx context.Context, db database.DB, e
 
 	externalAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		ServiceID:      codeHostURN.String(),
-		AccountID:      user.GetID(),
+		AccountID:      strconv.Itoa(int(user.GetID())),
 		ExcludeExpired: true,
 	})
 	if err != nil {
@@ -133,7 +134,7 @@ func (h *GitHubWebhook) handleOrganizationEvent(ctx context.Context, db database
 
 	externalAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		ServiceID:      codeHostURN.String(),
-		AccountID:      user.GetID(),
+		AccountID:      strconv.Itoa(int(user.GetID())),
 		ExcludeExpired: true,
 	})
 	if err != nil {
@@ -166,7 +167,7 @@ func (h *GitHubWebhook) handleMembershipEvent(ctx context.Context, db database.D
 
 	externalAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		ServiceID:      codeHostURN.String(),
-		AccountID:      user.GetID(),
+		AccountID:      strconv.Itoa(int(user.GetID())),
 		ExcludeExpired: true,
 	})
 	if err != nil {
