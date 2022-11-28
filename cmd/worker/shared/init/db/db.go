@@ -20,13 +20,13 @@ func Init(observationContext *observation.Context) (*sql.DB, error) {
 	return initDatabaseMemo.Init(observationContext)
 }
 
-func InitDBWithLogger(logger log.Logger, observationContext *observation.Context) (database.DB, error) {
+func InitDBWithLogger(observationContext *observation.Context) (database.DB, error) {
 	rawDB, err := Init(observationContext)
 	if err != nil {
 		return nil, err
 	}
 
-	return database.NewDB(logger, rawDB), nil
+	return database.NewDB(observationContext.Logger, rawDB), nil
 }
 
 var initDatabaseMemo = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*sql.DB, error) {

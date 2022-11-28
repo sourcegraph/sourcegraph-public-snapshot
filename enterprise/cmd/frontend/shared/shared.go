@@ -102,5 +102,5 @@ func mustInitializeCodeIntelDB(logger log.Logger) codeintelshared.CodeIntelDB {
 		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
 
-	return codeintelshared.NewCodeIntelDB(db)
+	return codeintelshared.NewCodeIntelDB(db, logger)
 }

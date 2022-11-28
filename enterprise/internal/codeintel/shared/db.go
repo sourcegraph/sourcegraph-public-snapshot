@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -16,8 +18,8 @@ type CodeIntelDB interface {
 	Done(error) error
 }
 
-func NewCodeIntelDB(inner *sql.DB) CodeIntelDB {
-	return &codeIntelDB{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}))}
+func NewCodeIntelDB(inner *sql.DB, logger log.Logger) CodeIntelDB {
+	return &codeIntelDB{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}, logger))}
 }
 
 func NewCodeIntelDBWith(other basestore.ShareableStore) CodeIntelDB {

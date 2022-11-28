@@ -29,7 +29,6 @@ var out = output.NewOutput(os.Stdout, output.OutputOpts{
 
 func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsingConfAndStoreFactoryFunc) error {
 	observationContext := observation.NewContext(logger)
-	operations := store.NewOperations(observationContext)
 
 	outputFactory := func() *output.Output { return out }
 
@@ -39,7 +38,7 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 			return nil, err
 		}
 		storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-			return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, operations))
+			return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, observationContext))
 		}
 		r, err := connections.RunnerFromDSNsWithSchemas(logger, dsns, appName, storeFactory, schemas)
 		if err != nil {

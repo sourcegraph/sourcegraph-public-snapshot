@@ -12,16 +12,17 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
+// TODO: nsc pass shit in
+
 // InitStore initializes and returns a *store.Store instance.
 func InitStore() (*store.Store, error) {
 	return initStore.Init()
 }
 
 var initStore = memo.NewMemoizedConstructor(func() (*store.Store, error) {
-	logger := log.Scoped("store.batches", "batches store")
-	observationContext := observation.NewContext(logger)
+	observationContext := observation.NewContext(log.Scoped("store.batches", "batches store"))
 
-	db, err := workerdb.InitDBWithLogger(logger, observationContext)
+	db, err := workerdb.InitDBWithLogger(observationContext)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func InitReconcilerWorkerStore() (dbworkerstore.Store[*types.Changeset], error) 
 var initReconcilerWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store[*types.Changeset], error) {
 	observationContext := observation.NewContext(log.Scoped("store.reconciler", "reconciler worker store"))
 
-	db, err := workerdb.InitDBWithLogger(observationContext.Logger, observationContext)
+	db, err := workerdb.InitDBWithLogger(observationContext)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +54,7 @@ func InitBulkOperationWorkerStore() (dbworkerstore.Store[*types.ChangesetJob], e
 var initBulkOperationWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store[*types.ChangesetJob], error) {
 	observationContext := observation.NewContext(log.Scoped("store.bulk_ops", "bulk operation worker store"))
 
-	db, err := workerdb.InitDBWithLogger(observationContext.Logger, observationContext)
+	db, err := workerdb.InitDBWithLogger(observationContext)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +70,7 @@ func InitBatchSpecWorkspaceExecutionWorkerStore() (dbworkerstore.Store[*types.Ba
 var initBatchSpecWorkspaceExecutionWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store[*types.BatchSpecWorkspaceExecutionJob], error) {
 	observationContext := observation.NewContext(log.Scoped("store.execution", "the batch spec workspace execution worker store"))
 
-	db, err := workerdb.InitDBWithLogger(observationContext.Logger, observationContext)
+	db, err := workerdb.InitDBWithLogger(observationContext)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +86,7 @@ func InitBatchSpecResolutionWorkerStore() (dbworkerstore.Store[*types.BatchSpecR
 var initBatchSpecResolutionWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store[*types.BatchSpecResolutionJob], error) {
 	observationContext := observation.NewContext(log.Scoped("store.batch_spec_resolution", "the batch spec resolution worker store"))
 
-	db, err := workerdb.InitDBWithLogger(observationContext.Logger, observationContext)
+	db, err := workerdb.InitDBWithLogger(observationContext)
 	if err != nil {
 		return nil, err
 	}

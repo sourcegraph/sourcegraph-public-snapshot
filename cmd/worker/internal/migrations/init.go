@@ -36,7 +36,7 @@ func (m *migrator) Config() []env.Config {
 }
 
 func (m *migrator) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(logger, m.observationContext)
+	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, m.observationContext))
 	if err != nil {
 		return nil, err
 	}

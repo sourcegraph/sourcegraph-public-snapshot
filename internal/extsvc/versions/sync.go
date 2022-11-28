@@ -43,7 +43,7 @@ func (j *syncingJob) Routines(_ context.Context, logger log.Logger) ([]goroutine
 		return nil, nil
 	}
 
-	db, err := workerdb.InitDBWithLogger(logger, j.observationContext)
+	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
 	if err != nil {
 		return nil, err
 	}

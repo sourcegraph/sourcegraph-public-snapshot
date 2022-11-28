@@ -48,7 +48,7 @@ func (j *sourcegraphOperatorCleaner) Routines(_ context.Context, logger log.Logg
 		return nil, nil
 	}
 
-	db, err := workerdb.InitDBWithLogger(logger, j.observationContext)
+	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
 	if err != nil {
 		return nil, errors.Wrap(err, "init DB")
 	}

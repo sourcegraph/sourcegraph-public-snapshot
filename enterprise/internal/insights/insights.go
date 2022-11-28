@@ -81,5 +81,5 @@ func InitializeCodeInsightsDB(app string, observationContext *observation.Contex
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}
 
-	return edb.NewInsightsDB(db), nil
+	return edb.NewInsightsDB(db, observationContext.Logger), nil
 }

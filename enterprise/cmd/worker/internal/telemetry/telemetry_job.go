@@ -58,7 +58,7 @@ func (t *telemetryJob) Routines(startupCtx context.Context, logger log.Logger) (
 	}
 	logger.Info("Usage telemetry export enabled - initializing background routine")
 
-	db, err := workerdb.InitDBWithLogger(logger, t.observationContext)
+	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, t.observationContext))
 	if err != nil {
 		return nil, err
 	}

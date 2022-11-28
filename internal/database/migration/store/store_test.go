@@ -713,7 +713,7 @@ func testStore(db *sql.DB) *Store {
 }
 
 func testStoreWithName(db *sql.DB, name string) *Store {
-	return NewWithDB(db, name, NewOperations(&observation.TestContext))
+	return NewWithDB(db, name, &observation.TestContext)
 }
 
 func strPtr(v string) *string {

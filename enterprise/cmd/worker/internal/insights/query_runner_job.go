@@ -48,7 +48,7 @@ func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, logger log
 	}
 	logger.Info("Code Insights Enabled. Enabling query runner.")
 
-	db, err := workerdb.InitDBWithLogger(logger, s.observationContext)
+	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, s.observationContext))
 	if err != nil {
 		return nil, err
 	}

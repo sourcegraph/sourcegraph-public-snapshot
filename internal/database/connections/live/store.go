@@ -21,7 +21,7 @@ type StoreFactory func(db *sql.DB, migrationsTable string) Store
 
 func newStoreFactory(observationContext *observation.Context) func(db *sql.DB, migrationsTable string) Store {
 	return func(db *sql.DB, migrationsTable string) Store {
-		return NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(observationContext)))
+		return NewStoreShim(store.NewWithDB(db, migrationsTable, observationContext))
 	}
 }
 

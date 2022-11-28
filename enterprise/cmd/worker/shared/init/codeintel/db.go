@@ -25,7 +25,7 @@ func InitDBWithLogger(logger log.Logger, observationContext *observation.Context
 		return nil, err
 	}
 
-	return codeintelshared.NewCodeIntelDB(rawDB), nil
+	return codeintelshared.NewCodeIntelDB(rawDB, logger), nil
 }
 
 var initDBMemo = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*sql.DB, error) {

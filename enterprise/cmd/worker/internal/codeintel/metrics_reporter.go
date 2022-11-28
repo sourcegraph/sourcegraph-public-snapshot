@@ -43,13 +43,13 @@ func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Log
 		return nil, err
 	}
 
-	// TODO: nsc
+	// TODO: nsc pass in
 	observationContext := observation.ContextWithLogger(
 		logger.Scoped("routines", "metrics reporting routines"),
 		j.observationContext,
 	)
 
-	db, err := workerdb.InitDBWithLogger(logger, j.observationContext)
+	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
 	if err != nil {
 		return nil, err
 	}

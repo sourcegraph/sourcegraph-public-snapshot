@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -25,6 +26,7 @@ type databaseWriter struct {
 	gitserverClient gitserver.GitserverClient
 	parser          parser.Parser
 	sem             *semaphore.Weighted
+	observationCtx  *observation.Context
 }
 
 func NewDatabaseWriter(
@@ -32,12 +34,14 @@ func NewDatabaseWriter(
 	gitserverClient gitserver.GitserverClient,
 	parser parser.Parser,
 	sem *semaphore.Weighted,
+	observationCtx *observation.Context,
 ) DatabaseWriter {
 	return &databaseWriter{
 		path:            path,
 		gitserverClient: gitserverClient,
 		parser:          parser,
 		sem:             sem,
+		observationCtx:  observationCtx,
 	}
 }
 
@@ -75,7 +79,7 @@ func (w *databaseWriter) getNewestCommit(ctx context.Context, args search.Symbol
 		}
 
 		return nil
-	})
+	}, w.observationCtx)
 
 	return newest, commit, ok, err
 }
@@ -154,5 +158,5 @@ func (w *databaseWriter) parseAndWriteInTransaction(ctx context.Context, args se
 
 	return store.WithSQLiteStoreTransaction(ctx, dbFile, func(tx store.Store) error {
 		return callback(tx, symbolOrErrors)
-	})
+	}, w.observationCtx)
 }

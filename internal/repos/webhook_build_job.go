@@ -37,11 +37,12 @@ func (w *webhookBuildJob) Config() []env.Config {
 }
 
 func (w *webhookBuildJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+	// use w.observationContext?
 	observationContext := observation.ContextWithLogger(logger.Scoped("background", "background webhook build job"), w.observationContext)
 
 	webhookBuildWorkerMetrics, webhookBuildResetterMetrics := newWebhookBuildWorkerMetrics(observationContext, "webhook_build_worker")
 
-	db, err := workerdb.InitDBWithLogger(logger, w.observationContext)
+	db, err := workerdb.InitDBWithLogger(observationContext)
 	if err != nil {
 		return nil, err
 	}

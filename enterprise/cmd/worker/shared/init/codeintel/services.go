@@ -1,8 +1,6 @@
 package codeintel
 
 import (
-	"github.com/sourcegraph/log"
-
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -10,14 +8,13 @@ import (
 
 // InitServices initializes and returns code intelligence services.
 func InitServices(observationContext *observation.Context) (codeintel.Services, error) {
-	logger := log.Scoped("codeintel", "codeintel services")
-
-	db, err := workerdb.InitDBWithLogger(logger, observationContext)
+	db, err := workerdb.InitDBWithLogger(observationContext)
 	if err != nil {
 		return codeintel.Services{}, err
 	}
 
-	codeIntelDB, err := InitDBWithLogger(logger, observationContext)
+	// TODO: nsc confirm correct state, or set new scope lower
+	codeIntelDB, err := InitDBWithLogger(observationContext.Logger, observationContext)
 	if err != nil {
 		return codeintel.Services{}, err
 	}

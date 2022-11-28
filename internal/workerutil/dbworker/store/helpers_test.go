@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -19,7 +20,7 @@ import (
 )
 
 func testStore[T workerutil.Record](db *sql.DB, options Options[T]) *store[T] {
-	return newStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), options, &observation.TestContext)
+	return newStore(basestore.NewHandleWithDB(db, sql.TxOptions{}, log.NoOp()), options, &observation.TestContext)
 }
 
 type TestRecord struct {

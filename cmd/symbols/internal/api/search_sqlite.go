@@ -24,7 +24,9 @@ import (
 
 const searchTimeout = 60 * time.Second
 
-func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedDatabaseWriter writer.CachedDatabaseWriter, db database.DB) types.SearchFunc {
+func MakeSqliteSearchFunc(observationContext *observation.Context, cachedDatabaseWriter writer.CachedDatabaseWriter, db database.DB) types.SearchFunc {
+	operations := sharedobservability.NewOperations(observationContext)
+
 	return func(ctx context.Context, args search.SymbolsParameters) (results []result.Symbol, err error) {
 		ctx, trace, endObservation := operations.Search.With(ctx, &err, observation.Args{LogFields: []log.Field{
 			log.String("repo", string(args.Repo)),
@@ -91,7 +93,7 @@ func MakeSqliteSearchFunc(operations *sharedobservability.Operations, cachedData
 			}
 
 			return nil
-		})
+		}, observationContext)
 
 		return res, err
 	}

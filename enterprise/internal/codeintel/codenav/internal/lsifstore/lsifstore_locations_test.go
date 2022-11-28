@@ -67,7 +67,7 @@ func TestDatabaseReferences(t *testing.T) {
 
 func populateTestStore(t testing.TB) LsifStore {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t), logger)
 	store := New(codeIntelDB, &observation.TestContext)
 
 	contents, err := os.ReadFile("./testdata/lsif-go@ad3507cb.sql")

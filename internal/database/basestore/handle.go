@@ -44,10 +44,10 @@ var (
 )
 
 // NewHandleWithDB returns a new transactable database handle using the given database connection.
-func NewHandleWithDB(db *sql.DB, txOptions sql.TxOptions) TransactableHandle {
+func NewHandleWithDB(db *sql.DB, txOptions sql.TxOptions, logger log.Logger) TransactableHandle {
 	return &dbHandle{
 		DB:        db,
-		logger:    log.Scoped("internal", "database"),
+		logger:    logger.Scoped("internal", "database"),
 		txOptions: txOptions,
 	}
 }

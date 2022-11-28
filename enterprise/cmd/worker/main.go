@@ -21,10 +21,9 @@ func main() {
 
 	logger := log.Scoped("worker", "worker enterprise edition")
 
-	// TODO: nsc noop
-	observationContext := observation.NewContext(log.NoOp())
+	observationContext := observation.NewContext(logger)
 
-	go enterprise_shared.SetAuthzProviders(logger, observationContext)
+	go enterprise_shared.SetAuthzProviders(observationContext)
 
 	if err := shared.Start(enterprise_shared.AdditionalJobs(observationContext), migrations.RegisterEnterpriseMigrators, logger, observationContext); err != nil {
 		logger.Fatal(err.Error())

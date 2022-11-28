@@ -37,7 +37,7 @@ func (j *autoindexingJanitorJob) Routines(startupCtx context.Context, logger log
 		return nil, err
 	}
 
-	db, err := workerdb.InitDBWithLogger(logger, j.observationContext)
+	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
 	if err != nil {
 		return nil, err
 	}

@@ -51,20 +51,19 @@ func Main() {
 	})
 	defer liblog.Sync()
 
+	logger := log.Scoped("codeintel-worker", "The precise-code-intel-worker service converts LSIF upload file into Postgres data.")
+
 	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
-	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
+	tracer.Init(logger.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	profiler.Init()
-
-	logger := log.Scoped("worker", "The precise-code-intel-worker service converts LSIF upload file into Postgres data.")
 
 	if err := config.Validate(); err != nil {
 		logger.Error("Failed for load config", log.Error(err))
 	}
 
 	// Initialize tracing/metrics
-	// TODO: nsc noop
-	observationContext := observation.NewContext(log.NoOp(), observation.Honeycomb(&honey.Dataset{
+	observationContext := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
 		Name: "codeintel-worker",
 	}))
 
@@ -137,17 +136,16 @@ func mustInitializeDB(observationContext *observation.Context) *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	logger := log.Scoped("init db", "Initialize fontend database")
 	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "precise-code-intel-worker", observationContext)
 	if err != nil {
-		logger.Fatal("Failed to connect to frontend database", log.Error(err))
+		log.Scoped("init db", "Initialize fontend database").Fatal("Failed to connect to frontend database", log.Error(err))
 	}
 
 	//
 	// START FLAILING
 
 	ctx := context.Background()
-	db := database.NewDB(logger, sqlDB)
+	db := database.NewDB(observationContext.Logger, sqlDB)
 	go func() {
 		for range time.NewTicker(eiauthz.RefreshInterval()).C {
 			allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
@@ -165,13 +163,12 @@ func mustInitializeCodeIntelDB(observationContext *observation.Context) codeinte
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	logger := log.Scoped("init db", "Initialize codeintel database.")
 	db, err := connections.EnsureNewCodeIntelDB(dsn, "precise-code-intel-worker", observationContext)
 	if err != nil {
-		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
+		log.Scoped("init db", "Initialize codeintel database.").Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
 
-	return codeintelshared.NewCodeIntelDB(db)
+	return codeintelshared.NewCodeIntelDB(db, observationContext.Logger)
 }
 
 func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) error {

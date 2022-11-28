@@ -42,7 +42,7 @@ func (e *delegateBackfillRunner) Run(ctx context.Context, req pipeline.BackfillR
 func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	permStore := store.NewInsightPermissionStore(database.NewMockDB())
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&itypes.Repo{ID: 1, Name: "repo1"}, nil)
@@ -119,7 +119,7 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 func Test_PullsByPriorityGroupAge(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	permStore := store.NewInsightPermissionStore(database.NewMockDB())
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&itypes.Repo{ID: 1, Name: "repo1"}, nil)
@@ -185,7 +185,7 @@ func Test_PullsByPriorityGroupAge(t *testing.T) {
 func Test_BackfillWithRetry(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	permStore := store.NewInsightPermissionStore(database.NewMockDB())
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&itypes.Repo{ID: 1, Name: "repo1"}, nil)
@@ -263,7 +263,7 @@ func Test_BackfillWithRetry(t *testing.T) {
 func Test_BackfillWithRetryAndComplete(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	permStore := store.NewInsightPermissionStore(database.NewMockDB())
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&itypes.Repo{ID: 1, Name: "repo1"}, nil)
@@ -346,7 +346,7 @@ func Test_BackfillWithRetryAndComplete(t *testing.T) {
 func Test_BackfillWithInterrupt(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	permStore := store.NewInsightPermissionStore(database.NewMockDB())
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&itypes.Repo{ID: 1, Name: "repo1"}, nil)

@@ -48,8 +48,7 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmig
 		"gitserver-metrics":         gitserver.NewMetricsJob(observationContext),
 		"record-encrypter":          encryption.NewRecordEncrypterJob(observationContext),
 		"repo-statistics-compactor": repostatistics.NewCompactor(observationContext),
-		// TODO: nsc
-		"zoekt-repos-updater": zoektrepos.NewUpdater(observationContext),
+		"zoekt-repos-updater":       zoektrepos.NewUpdater(observationContext),
 	}
 
 	jobs := map[string]job.Job{}

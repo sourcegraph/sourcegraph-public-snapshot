@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/derision-test/glock"
+	"github.com/sourcegraph/log"
 
 	workerCodeIntel "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 	internalInsights "github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
@@ -43,7 +44,7 @@ func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oo
 
 	return registerEnterpriseMigrators(runner, false, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
-		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
+		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{}, log.NoOp())),
 		insightsStore:  insightsStore,
 		keyring:        &keyring,
 	})

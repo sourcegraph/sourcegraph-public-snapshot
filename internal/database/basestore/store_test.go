@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
@@ -219,7 +220,8 @@ func recurSavepoints(t *testing.T, store *Store, index, rollbackAt int) {
 }
 
 func testStore(db *sql.DB) *Store {
-	return NewWithHandle(NewHandleWithDB(db, sql.TxOptions{}))
+	// TODO: nsc noop
+	return NewWithHandle(NewHandleWithDB(db, sql.TxOptions{}, log.NoOp()))
 }
 
 func assertCounts(t *testing.T, db dbutil.DB, expectedCounts map[int]int) {

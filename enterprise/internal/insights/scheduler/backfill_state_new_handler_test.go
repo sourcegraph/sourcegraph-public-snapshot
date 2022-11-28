@@ -25,7 +25,7 @@ import (
 func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	repos := database.NewMockRepoStore()
 	repos.ListFunc.SetDefaultReturn([]*itypes.Repo{{ID: 1, Name: "repo1"}, {ID: 2, Name: "repo2"}}, nil)
 	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)

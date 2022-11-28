@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -66,8 +64,8 @@ func AdditionalJobs(observationContext *observation.Context) map[string]job.Job 
 // current actor stored in an operation's context, which is likely an internal actor for many of
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
-func SetAuthzProviders(logger log.Logger, observationContext *observation.Context) {
-	db, err := workerdb.InitDBWithLogger(logger, observationContext)
+func SetAuthzProviders(observationContext *observation.Context) {
+	db, err := workerdb.InitDBWithLogger(observationContext)
 	if err != nil {
 		return
 	}
