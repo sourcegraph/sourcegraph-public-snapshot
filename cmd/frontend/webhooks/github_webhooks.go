@@ -89,20 +89,15 @@ func (h *GitHubWebhook) HandleWebhook(logger log.Logger, w http.ResponseWriter, 
 		return
 	}
 
-	// handle ping event, no dispatch handler necessary
-	if eventType == "ping" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
 	// match event handlers
 	err = h.Dispatch(ctx, eventType, extsvc.KindGitHub, codeHostURN, e)
-	// We can fail to process a webhook for many legitimate reasons, such as a user not existing
-	// on our system. But if we received a webhook and the system did not crash, we must respond
-	// with a 200, as it is a valid delivery. We only log the error as an Info level event.
-	// Deeper legitimate errors should be logged within the handler itself.
-	// We can receive many webhook calls that we cannot process, and Error level logs would be
-	// extremely noisy.
+	// Webhooks should not fire for unregistered event types
+	if errors.As(err, &eventTypeNotFoundError{}) {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+	// If it is a registered event type and we receive the webhook, we must return
+	// a success.
 	if err != nil {
 		logger.Info("did not process webhook event", log.Error(err))
 	}

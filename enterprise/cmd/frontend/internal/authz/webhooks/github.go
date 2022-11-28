@@ -2,11 +2,9 @@ package webhooks
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	gh "github.com/google/go-github/v43/github"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
@@ -60,6 +58,7 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB,
 }
 
 func (h *GitHubWebhook) handleRepositoryEvent(ctx context.Context, db database.DB, e *gh.RepositoryEvent) error {
+	// On repository events, we only care if a public repository is made private, in which case a permissions sync should happen
 	if e.GetAction() != "privatized" {
 		return nil
 	}
@@ -99,7 +98,11 @@ func (h *GitHubWebhook) handleMemberEvent(ctx context.Context, db database.DB, e
 		return errors.New("no user found in webhook event")
 	}
 
-	externalAccounts, err := db.UserExternalAccounts().ListBySQL(ctx, sqlf.Sprintf("WHERE service_id=%s AND account_id=%s AND deleted_at IS NULL", codeHostURN.String(), strconv.FormatInt(user.GetID(), 10)))
+	externalAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+		ServiceID:      codeHostURN.String(),
+		AccountID:      user.GetID(),
+		ExcludeExpired: true,
+	})
 	if err != nil {
 		return err
 	}
@@ -128,7 +131,11 @@ func (h *GitHubWebhook) handleOrganizationEvent(ctx context.Context, db database
 		return errors.New("could not get user from webhook event")
 	}
 
-	externalAccounts, err := db.UserExternalAccounts().ListBySQL(ctx, sqlf.Sprintf("WHERE service_id=%s AND account_id=%s AND deleted_at IS NULL", codeHostURN.String(), strconv.FormatInt(user.GetID(), 10)))
+	externalAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+		ServiceID:      codeHostURN.String(),
+		AccountID:      user.GetID(),
+		ExcludeExpired: true,
+	})
 	if err != nil {
 		return err
 	}
@@ -156,7 +163,12 @@ func (h *GitHubWebhook) handleMembershipEvent(ctx context.Context, db database.D
 	if user == nil {
 		return errors.New("no user found in webhook event")
 	}
-	externalAccounts, err := db.UserExternalAccounts().ListBySQL(ctx, sqlf.Sprintf("WHERE service_id=%s AND account_id=%s AND deleted_at IS NULL", codeHostURN.String(), strconv.FormatInt(user.GetID(), 10)))
+
+	externalAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+		ServiceID:      codeHostURN.String(),
+		AccountID:      user.GetID(),
+		ExcludeExpired: true,
+	})
 	if err != nil {
 		return err
 	}

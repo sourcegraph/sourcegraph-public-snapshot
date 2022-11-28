@@ -220,7 +220,7 @@ func TestWebhooksHandler(t *testing.T) {
 		assert.Equal(t, expectedEvent, wh.eventReceived)
 	})
 
-	t.Run("not found handler returns 404", func(t *testing.T) {
+	t.Run("not found handler returns 200", func(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWH.UUID)
 
 		h := hmac.New(sha1.New, []byte("githubsecret"))
