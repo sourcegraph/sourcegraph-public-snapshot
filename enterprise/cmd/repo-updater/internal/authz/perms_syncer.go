@@ -394,6 +394,10 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			if unauthorized || accountSuspended || forbidden {
 				// These are fatal errors that mean we should continue as if the account no
 				// longer has any access.
+				if err = accounts.TouchExpired(ctx, acct.ID); err != nil {
+					return results, errors.Wrapf(err, "set expired for external account ID %v", acct.ID)
+				}
+
 				if unauthorized {
 					acctLogger.Warn("setExternalAccountExpired, token is revoked",
 						log.Bool("unauthorized", unauthorized),
