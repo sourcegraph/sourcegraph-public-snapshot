@@ -426,6 +426,106 @@ index 373ae20..89ad131 100644
 			wantFile: `No newline after this
 Also no newline after this`,
 		},
+		{
+			name: "Add line without newline to file that ended with no newline",
+			file: `No newline after this`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..89ad131 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1,2 @@
+-No newline after this
+\ No newline at end of file
++No newline after this
++Also no newline after this
+\ No newline at end of file
+`,
+			// Note: Has no newline at the end.
+			wantFile: `No newline after this
+Also no newline after this`,
+		},
+		{
+			name: "No newline and last hunk ends before EOF",
+			file: `1
+3
+4
+5
+6
+7
+8
+9
+10`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..89ad131 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,5 @@
+ 1
++2
+ 3
+ 4
+ 5
+`,
+			// Note: Has no newline at the end.
+			wantFile: `1
+2
+3
+4
+5
+6
+7
+8
+9
+10`,
+		},
+		{
+			name: "Multiple hunks and no newline at the end",
+			file: `1
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..89ad131 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,5 @@
+ 1
++2
+ 3
+ 4
+ 5
+@@ -6,6 +7,7 @@
+ 7
+ 8
+ 9
++9.5
+ 10
+ 11
+ 12
+\ No newline at end of file
+`,
+			// Note: Has no newline at the end.
+			wantFile: `1
+2
+3
+4
+5
+6
+7
+8
+9
+9.5
+10
+11
+12`,
+		},
 	}
 
 	for _, tc := range tests {

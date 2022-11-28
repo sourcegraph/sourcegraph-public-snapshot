@@ -188,6 +188,9 @@ func applyPatch(fileContent string, fileDiff *diff.FileDiff) (string, error) {
 		// we don't end up with a ghost line in the slice.
 		hunkLines := strings.Split(strings.TrimSuffix(string(hunk.Body), "\n"), "\n")
 		hunkHasFinalNewline := strings.HasSuffix(string(hunk.Body), "\n")
+		if isLastHunk(i) && hunkHasFinalNewline {
+			lastHunkHadNewlineInLastAddition = true
+		}
 		for _, line := range hunkLines {
 			switch {
 			case strings.HasPrefix(line, " "):
@@ -196,9 +199,7 @@ func applyPatch(fileContent string, fileDiff *diff.FileDiff) (string, error) {
 			case strings.HasPrefix(line, "-"):
 				currentLine++
 			case strings.HasPrefix(line, "+"):
-				if isLastHunk(i) && hunkHasFinalNewline {
-					lastHunkHadNewlineInLastAddition = true
-				}
+				// Append the line, stripping off the diff signifier at the beginning.
 				newContentLines = append(newContentLines, line[1:])
 			default:
 				return "", errors.Newf("malformed patch, expected hunk lines to start with ' ', '-', or '+' but got %q", line)
