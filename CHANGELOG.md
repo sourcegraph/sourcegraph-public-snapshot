@@ -47,6 +47,7 @@ All notable changes to Sourcegraph are documented in this file.
   - [Docker Compose](https://docs.sourcegraph.com/admin/updates/docker_compose)
 - A structural search diagnostic to warn users when a language filter is not set. [#43835](https://github.com/sourcegraph/sourcegraph/pull/43835)
 - GitHub/GitLab OAuth success/fail attempts are now a part of the audit log. [#43886](https://github.com/sourcegraph/sourcegraph/pull/43886)
+- Batch Changes: Mounted files can be accessed via the UI on the executions page. [#43180](https://github.com/sourcegraph/sourcegraph/pull/43180)
 - When rendering a file which is backed by Git LFS, we show a page informing the file is LFS and linking to the file on the codehost. Previously we rendered the LFS pointer. [#43686](https://github.com/sourcegraph/sourcegraph/pull/43686)
 - Batch changes run server-side now support secrets. [#27926](https://github.com/sourcegraph/sourcegraph/issues/27926)
 - OIDC success/fail login attempts are now a part of the audit log. [#44467](https://github.com/sourcegraph/sourcegraph/pull/44467)

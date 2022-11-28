@@ -15,7 +15,8 @@ import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { resetFilteredConnectionURLQuery } from '../../../components/FilteredConnection'
 import { BatchSpecState, BatchChangeFields, BatchSpecSource } from '../../../graphql-operations'
 import { BatchChangeTabList, BatchChangeTabs } from '../BatchChangeTabs'
-import { BatchSpec, BatchSpecDownloadButton, BatchSpecMeta } from '../BatchSpec'
+import { BatchSpecDownloadButton, BatchSpecMeta } from '../BatchSpec'
+import { BatchSpecInfo } from '../BatchSpecNode'
 import { BatchChangeBatchSpecList } from '../BatchSpecsPage'
 
 import {
@@ -26,8 +27,6 @@ import {
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
 import { BulkOperationsTab } from './BulkOperationsTab'
 import { BatchChangeChangesets } from './changesets/BatchChangeChangesets'
-
-import styles from './BatchChangeDetailsTabs.module.scss'
 
 export enum TabName {
     Changesets = 'changesets',
@@ -285,14 +284,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<React.PropsWithChil
                                     originalInput={batchChange.currentSpec.originalInput}
                                 />
                             </div>
-                            <Container>
-                                <BatchSpec
-                                    name={batchChange.name}
-                                    originalInput={batchChange.currentSpec.originalInput}
-                                    isLightTheme={isLightTheme}
-                                    className={styles.batchSpec}
-                                />
-                            </Container>
+                            <BatchSpecInfo spec={batchChange.currentSpec} isLightTheme={isLightTheme} />
                         </>
                     )}
                 </TabPanel>
