@@ -50,6 +50,7 @@ extend type Mutation {
 
 extend type Query {
     """
+    DEPRECATED: Auto-defined contexts are now included in the searchContexts query.
     Auto-defined search contexts available to the current user.
     """
     autoDefinedSearchContexts: [SearchContext!]!

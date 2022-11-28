@@ -548,7 +548,7 @@ func GetRepositoryRevisions(ctx context.Context, db database.DB, searchContextID
 }
 
 func IsAutoDefinedSearchContext(searchContext *types.SearchContext) bool {
-	return searchContext.ID == 0
+	return searchContext.Autodefined == true
 }
 
 func IsInstanceLevelSearchContext(searchContext *types.SearchContext) bool {

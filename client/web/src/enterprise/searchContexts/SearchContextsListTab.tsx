@@ -24,10 +24,7 @@ import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
 import styles from './SearchContextsListTab.module.scss'
 
 export interface SearchContextsListTabProps
-    extends Pick<
-            SearchContextProps,
-            'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
-        >,
+    extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'>,
         PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
@@ -38,7 +35,6 @@ export const SearchContextsListTab: React.FunctionComponent<React.PropsWithChild
     authenticatedUser,
     getUserSearchContextNamespaces,
     fetchSearchContexts,
-    fetchAutoDefinedSearchContexts,
     platformContext,
 }) => {
     const queryConnection = useCallback(

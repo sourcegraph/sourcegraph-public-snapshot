@@ -15,10 +15,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { SearchContextsListTab } from './SearchContextsListTab'
 
 export interface SearchContextsListPageProps
-    extends Pick<
-            SearchContextProps,
-            'fetchSearchContexts' | 'fetchAutoDefinedSearchContexts' | 'getUserSearchContextNamespaces'
-        >,
+    extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'>,
         PlatformContextProps<'requestGraphQL'> {
     location: H.Location
     history: H.History

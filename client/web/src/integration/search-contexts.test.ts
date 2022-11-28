@@ -457,9 +457,6 @@ describe('Search contexts', () => {
 
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            AutoDefinedSearchContexts: () => ({
-                autoDefinedSearchContexts: [],
-            }),
             ListSearchContexts: ({ after }) => {
                 const searchContexts = range(0, searchContextsCount).map(index => ({
                     __typename: 'SearchContext',
@@ -536,9 +533,6 @@ describe('Search contexts', () => {
             ...testContextForSearchContexts,
             IsSearchContextAvailable: () => ({
                 isSearchContextAvailable: true,
-            }),
-            AutoDefinedSearchContexts: () => ({
-                autoDefinedSearchContexts: [],
             }),
             ListSearchContexts: () => {
                 const nodes = range(0, 2).map(index => ({

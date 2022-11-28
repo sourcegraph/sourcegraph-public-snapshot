@@ -1657,6 +1657,9 @@ type SearchContext struct {
 	// Query is the Sourcegraph query that defines this search context
 	// e.g. repo:^github\.com/org rev:bar archive:no f:sub/dir
 	Query string
+
+	// Whether the search context is auto-defined by Sourcegraph. Auto-defined search contexts are not editable by users.
+	Autodefined bool
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions
