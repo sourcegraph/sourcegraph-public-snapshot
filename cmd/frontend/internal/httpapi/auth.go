@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -84,6 +85,21 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 						log.String("token", token),
 						log.Error(err),
 					)
+
+					anonymousId, anonCookieSet := cookie.AnonymousUID(r)
+					if !anonCookieSet {
+						anonymousId = "no identifier set"
+					}
+					db.SecurityEventLogs().LogEvent(
+						r.Context(),
+						&database.SecurityEvent{
+							Name:            database.SecurityEventAccessTokenInvalid,
+							AnonymousUserID: anonymousId,
+							Source:          "BACKEND",
+							Timestamp:       time.Now(),
+						},
+					)
+
 					http.Error(w, "Invalid access token.", http.StatusUnauthorized)
 					return
 				}
@@ -129,6 +145,29 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 						log.Int32("subjectUserID", subjectUserID),
 						log.Error(err),
 					)
+
+					args, err := json.Marshal(map[string]any{
+						"subject_user_id": subjectUserID,
+					})
+					if err != nil {
+						logger.Error(
+							"failed to marshal JSON for security event log argument",
+							log.String("eventName", string(database.SecurityEventAccessTokenSubjectNotSiteAdmin)),
+							log.Error(err),
+						)
+						// OK to continue, we still want the security event log to be created
+					}
+					db.SecurityEventLogs().LogEvent(
+						r.Context(),
+						&database.SecurityEvent{
+							Name:      database.SecurityEventAccessTokenSubjectNotSiteAdmin,
+							UserID:    uint32(subjectUserID),
+							Argument:  args,
+							Source:    "BACKEND",
+							Timestamp: time.Now(),
+						},
+					)
+
 					http.Error(w, "The subject user of a sudo access token must be a site admin.", http.StatusForbidden)
 					return
 				}
