@@ -23,6 +23,14 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.singleton_integer(value integer)\n RETURNS integer[]\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$ BEGIN\n    RETURN ARRAY[value];\nEND; $function$\n"
     },
     {
+      "Name": "update_codeintel_scip_document_lookup_schema_versions_insert",
+      "Definition": "CREATE OR REPLACE FUNCTION public.update_codeintel_scip_document_lookup_schema_versions_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    INSERT INTO codeintel_scip_document_lookup_schema_versions\n    SELECT\n        upload_id,\n        MIN(documents.schema_version) as min_schema_version,\n        MAX(documents.schema_version) as max_schema_version\n    FROM newtab\n    JOIN codeintel_scip_documents ON codeintel_scip_documents.id = newtab.document_id\n    GROUP BY newtab.upload_id\n    ON CONFLICT (upload_id) DO UPDATE SET\n        -- Update with min(old_min, new_min) and max(old_max, new_max)\n        min_schema_version = LEAST(codeintel_scip_document_lookup_schema_versions.min_schema_version, EXCLUDED.min_schema_version),\n        max_schema_version = GREATEST(codeintel_scip_document_lookup_schema_versions.max_schema_version, EXCLUDED.max_schema_version);\n    RETURN NULL;\nEND $function$\n"
+    },
+    {
+      "Name": "update_codeintel_scip_symbols_schema_versions_insert",
+      "Definition": "CREATE OR REPLACE FUNCTION public.update_codeintel_scip_symbols_schema_versions_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    INSERT INTO codeintel_scip_symbols_schema_versions\n    SELECT\n        upload_id,\n        MIN(schema_version) as min_schema_version,\n        MAX(schema_version) as max_schema_version\n    FROM newtab\n    GROUP BY upload_id\n    ON CONFLICT (upload_id) DO UPDATE SET\n        -- Update with min(old_min, new_min) and max(old_max, new_max)\n        min_schema_version = LEAST(codeintel_scip_symbols_schema_versions.min_schema_version, EXCLUDED.min_schema_version),\n        max_schema_version = GREATEST(codeintel_scip_symbols_schema_versions.max_schema_version, EXCLUDED.max_schema_version);\n    RETURN NULL;\nEND $function$\n"
+    },
+    {
       "Name": "update_lsif_data_definitions_schema_versions_insert",
       "Definition": "CREATE OR REPLACE FUNCTION public.update_lsif_data_definitions_schema_versions_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    INSERT INTO\n        lsif_data_definitions_schema_versions\n    SELECT\n        dump_id,\n        MIN(schema_version) as min_schema_version,\n        MAX(schema_version) as max_schema_version\n    FROM\n        newtab\n    GROUP BY\n        dump_id\n    ON CONFLICT (dump_id) DO UPDATE SET\n        -- Update with min(old_min, new_min) and max(old_max, new_max)\n        min_schema_version = LEAST(lsif_data_definitions_schema_versions.min_schema_version, EXCLUDED.min_schema_version),\n        max_schema_version = GREATEST(lsif_data_definitions_schema_versions.max_schema_version, EXCLUDED.max_schema_version);\n\n    RETURN NULL;\nEND $function$\n"
     },
@@ -40,6 +48,33 @@
     }
   ],
   "Sequences": [
+    {
+      "Name": "codeintel_scip_document_lookup_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "codeintel_scip_documents_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "codeintel_scip_metadata_id_seq",
+      "TypeName": "bigint",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
     {
       "Name": "migration_logs_id_seq",
       "TypeName": "integer",
@@ -133,6 +168,533 @@
       ],
       "Constraints": null,
       "Triggers": []
+    },
+    {
+      "Name": "codeintel_scip_document_lookup",
+      "Comment": "A mapping from file paths to document references within a particular SCIP index.",
+      "Columns": [
+        {
+          "Name": "document_id",
+          "Index": 4,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The foreign key to the shared document payload (see the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents))."
+        },
+        {
+          "Name": "document_path",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The file path to the document relative to the root of the index."
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('codeintel_scip_document_lookup_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An auto-generated identifier. This column is used as a foreign key target to reduce occurrences of the full document path value."
+        },
+        {
+          "Name": "upload_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the upload that provided this SCIP index."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_scip_document_lookup_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_document_lookup_pkey ON codeintel_scip_document_lookup USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_scip_document_lookup_upload_id_document_path_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_document_lookup_upload_id_document_path_key ON codeintel_scip_document_lookup USING btree (upload_id, document_path)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (upload_id, document_path)"
+        },
+        {
+          "Name": "codeintel_scip_document_lookup_document_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_scip_document_lookup_document_id ON codeintel_scip_document_lookup USING hash (document_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "codeintel_scip_document_lookup_document_id_fk",
+          "ConstraintType": "f",
+          "RefTableName": "codeintel_scip_documents",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (document_id) REFERENCES codeintel_scip_documents(id)"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "codeintel_scip_document_lookup_schema_versions",
+      "Comment": "Tracks the range of `schema_versions` values associated with each SCIP index in the [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) table.",
+      "Columns": [
+        {
+          "Name": "max_schema_version",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `upload_id` column matches the associated SCIP index."
+        },
+        {
+          "Name": "min_schema_version",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `upload_id` column matches the associated SCIP index."
+        },
+        {
+          "Name": "upload_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated SCIP index."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_scip_document_lookup_schema_versions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_document_lookup_schema_versions_pkey ON codeintel_scip_document_lookup_schema_versions USING btree (upload_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (upload_id)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": [
+        {
+          "Name": "codeintel_scip_document_lookup_schema_versions_insert",
+          "Definition": "CREATE TRIGGER codeintel_scip_document_lookup_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup_schema_versions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert()"
+        }
+      ]
+    },
+    {
+      "Name": "codeintel_scip_documents",
+      "Comment": "A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document\u0026patternType=standard) payloads by their hash.",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('codeintel_scip_documents_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An auto-generated identifier. This column is used as a foreign key target to reduce occurrences of the full payload hash value."
+        },
+        {
+          "Name": "payload_hash",
+          "Index": 2,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A deterministic hash of the raw SCIP payload. We use this as a unique value to enforce deduplication between indexes with the same document data."
+        },
+        {
+          "Name": "raw_scip_payload",
+          "Index": 4,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The raw, canonicalized SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document\u0026patternType=standard) payload."
+        },
+        {
+          "Name": "schema_version",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The schema version of this row - used to determine presence and encoding of (future) denormalized data."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_scip_documents_payload_hash_key",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_documents_payload_hash_key ON codeintel_scip_documents USING btree (payload_hash)",
+          "ConstraintType": "u",
+          "ConstraintDefinition": "UNIQUE (payload_hash)"
+        },
+        {
+          "Name": "codeintel_scip_documents_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_documents_pkey ON codeintel_scip_documents USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "codeintel_scip_metadata",
+      "Comment": "Global metadatadata about a single processed upload.",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "nextval('codeintel_scip_metadata_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An auto-generated identifier."
+        },
+        {
+          "Name": "tool_arguments",
+          "Index": 5,
+          "TypeName": "text[]",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Command-line arguments that were used to invoke this indexer."
+        },
+        {
+          "Name": "tool_name",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Name of the indexer that produced this index."
+        },
+        {
+          "Name": "tool_version",
+          "Index": 4,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Version of the indexer that produced this index."
+        },
+        {
+          "Name": "upload_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the upload that provided this SCIP index."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_scip_metadata_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_metadata_pkey ON codeintel_scip_metadata USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "codeintel_scip_symbols",
+      "Comment": "A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol\u0026patternType=standard) to path and ranges where that symbol occurs within a particular SCIP index.",
+      "Columns": [
+        {
+          "Name": "definition_ranges",
+          "Index": 5,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An encoded set of ranges within the associated document that have a **definition** relationship to the associated symbol."
+        },
+        {
+          "Name": "document_lookup_id",
+          "Index": 3,
+          "TypeName": "bigint",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A reference to the `id` column of [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup). Joining on this table yields the document path relative to the index root."
+        },
+        {
+          "Name": "implementation_ranges",
+          "Index": 7,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An encoded set of ranges within the associated document that have a **implementation** relationship to the associated symbol."
+        },
+        {
+          "Name": "reference_ranges",
+          "Index": 6,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An encoded set of ranges within the associated document that have a **reference** relationship to the associated symbol."
+        },
+        {
+          "Name": "schema_version",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The schema version of this row - used to determine presence and encoding of denormalized data."
+        },
+        {
+          "Name": "symbol_name",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol\u0026patternType=standard)."
+        },
+        {
+          "Name": "type_definition_ranges",
+          "Index": 8,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An encoded set of ranges within the associated document that have a **type definition** relationship to the associated symbol."
+        },
+        {
+          "Name": "upload_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the upload that provided this SCIP index."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_scip_symbols_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_symbols_pkey ON codeintel_scip_symbols USING btree (upload_id, symbol_name, document_lookup_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (upload_id, symbol_name, document_lookup_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "codeintel_scip_symbols_document_lookup_id_fk",
+          "ConstraintType": "f",
+          "RefTableName": "codeintel_scip_document_lookup",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "codeintel_scip_symbols_schema_versions",
+      "Comment": "Tracks the range of `schema_versions` for each index in the [`codeintel_scip_symbols`](#table-publiccodeintel_scip_symbols) table.",
+      "Columns": [
+        {
+          "Name": "max_schema_version",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_symbols`](#table-publiccodeintel_scip_symbols) where the `upload_id` column matches the associated SCIP index."
+        },
+        {
+          "Name": "min_schema_version",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_symbols`](#table-publiccodeintel_scip_symbols) where the `upload_id` column matches the associated SCIP index."
+        },
+        {
+          "Name": "upload_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The identifier of the associated SCIP index."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_scip_symbols_schema_versions_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_symbols_schema_versions_pkey ON codeintel_scip_symbols_schema_versions USING btree (upload_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (upload_id)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": [
+        {
+          "Name": "codeintel_scip_symbols_schema_versions_insert",
+          "Definition": "CREATE TRIGGER codeintel_scip_symbols_schema_versions_insert AFTER INSERT ON codeintel_scip_symbols_schema_versions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_symbols_schema_versions_insert()"
+        }
+      ]
     },
     {
       "Name": "lsif_data_definitions",
