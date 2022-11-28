@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -28,9 +28,9 @@ var tableNames = []string{
 
 // DeleteLsifDataByUploadIds deletes LSIF data by UploadIds from the lsif database.
 func (s *store) DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error) {
-	ctx, trace, endObservation := s.operations.deleteLsifDataByUploadIds.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numBundleIDs", len(bundleIDs)),
-		log.String("bundleIDs", intsToString(bundleIDs)),
+	ctx, trace, endObservation := s.operations.deleteLsifDataByUploadIds.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("numBundleIDs", len(bundleIDs)),
+		otlog.String("bundleIDs", intsToString(bundleIDs)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -57,7 +57,7 @@ func (s *store) DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int)
 	}()
 
 	for _, tableName := range tableNames {
-		trace.Log(log.String("tableName", tableName))
+		trace.Log(otlog.String("tableName", tableName))
 
 		query := sqlf.Sprintf(deleteQuery, sqlf.Sprintf(tableName), sqlf.Join(ids, ","))
 		if err := tx.Exec(ctx, query); err != nil {

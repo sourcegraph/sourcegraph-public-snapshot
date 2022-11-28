@@ -4,13 +4,20 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
+	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func (s *store) ScanDocuments(ctx context.Context, id int, f func(path string, ranges map[precise.ID]precise.RangeData) error) (err error) {
+	ctx, _, endObservation := s.operations.scanDocuments.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return runQuery(ctx, s.db, sqlf.Sprintf(scanDocumentsQuery, id), func(dbs dbutil.Scanner) error {
 		var path string
 		var rawRanges []byte
@@ -35,6 +42,11 @@ ORDER BY path
 `
 
 func (s *store) ScanResultChunks(ctx context.Context, id int, f func(idx int, resultChunk precise.ResultChunkData) error) (err error) {
+	ctx, _, endObservation := s.operations.scanResultChunks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return runQuery(ctx, s.db, sqlf.Sprintf(scanResultChunksQuery, id), func(dbs dbutil.Scanner) error {
 		var idx int
 		var rawData []byte
@@ -59,6 +71,11 @@ ORDER BY idx
 `
 
 func (s *store) ScanLocations(ctx context.Context, id int, f func(scheme, identifier, monikerType string, locations []precise.LocationData) error) (err error) {
+	ctx, _, endObservation := s.operations.scanLocations.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("id", id),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return runQuery(ctx, s.db, sqlf.Sprintf(scanLocationsQuery, id, id), func(dbs dbutil.Scanner) error {
 		var scheme, identifier, monikerType string
 		var rawData []byte
