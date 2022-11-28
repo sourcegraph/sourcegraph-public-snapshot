@@ -284,7 +284,7 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     series: [
         { id: '001', name: 'requestGraphql', query: '', stroke: 'blue' },
         { id: '002', name: 'queryGraphQL | mutateGraphQL', query: '', stroke: 'orange' },
-        { id: '003', name: 'useMutation | useQuery | useShowMorePagination hooks', query: '', stroke: 'red' },
+        { id: '003', name: 'useMutation | useQuery | useConnection hooks', query: '', stroke: 'red' },
     ],
     step: { weeks: 2 },
     filters: {
@@ -786,7 +786,7 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
                             },
                             {
                                 seriesId: '003',
-                                label: 'useMutation | useQuery | useShowMorePagination hooks',
+                                label: 'useMutation | useQuery | useConnection hooks',
                                 points: [
                                     {
                                         dateTime: '2022-04-26T00:02:53Z',
