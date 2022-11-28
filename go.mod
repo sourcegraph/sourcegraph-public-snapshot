@@ -75,7 +75,7 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/goware/urlx v0.3.1
 	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc
-	github.com/grafana/regexp v0.0.0-20221005093135-b4c2bcb0a4b6
+	github.com/grafana/regexp v0.0.0-20221123153739-15dc172cd2db
 	github.com/graph-gophers/graphql-go v1.3.0
 	github.com/graphql-go/graphql v0.8.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -135,7 +135,7 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/log v0.0.0-20221031161319-53ce5c25d78f
+	github.com/sourcegraph/log v0.0.0-20221116144936-8b7619bccc8a
 	github.com/sourcegraph/run v0.9.0
 	github.com/sourcegraph/scip v0.1.0
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
@@ -167,7 +167,7 @@ require (
 	go.uber.org/automaxprocs v1.5.1
 	go.uber.org/ratelimit v0.2.0
 	go.uber.org/zap v1.23.0
-	golang.org/x/crypto v0.2.0
+	golang.org/x/crypto v0.3.0
 	golang.org/x/net v0.2.0
 	golang.org/x/oauth2 v0.2.0
 	golang.org/x/sync v0.1.0
@@ -176,7 +176,7 @@ require (
 	golang.org/x/tools v0.3.0
 	gonum.org/v1/gonum v0.11.0
 	google.golang.org/api v0.103.0
-	google.golang.org/genproto v0.0.0-20221114212237-e4508ebdbee1
+	google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -224,18 +224,18 @@ require (
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
 	github.com/prometheus/prometheus v0.37.1
 	github.com/sourcegraph/mountinfo v0.0.0-20221027185101-272dd8baaf4a
-	github.com/xanzy/go-gitlab v0.74.0
+	github.com/xanzy/go-gitlab v0.76.0
 	go.opentelemetry.io/otel/exporters/jaeger v1.9.0
 )
 
 require (
-	github.com/sourcegraph/zoekt v0.0.0-20221121125711-20baf3ac44b3
+	github.com/sourcegraph/zoekt v0.0.0-20221128075547-15663f1a5eca
 	github.com/stretchr/objx v0.5.0 // indirect
 )
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
-	cloud.google.com/go v0.106.0 // indirect
+	cloud.google.com/go v0.107.0 // indirect
 	cloud.google.com/go/compute v1.12.1 // indirect
 	cloud.google.com/go/iam v0.7.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
@@ -265,11 +265,11 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.14.0 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bits-and-blooms/bitset v1.3.3
+	github.com/bits-and-blooms/bitset v1.4.0
 	github.com/bmatcuk/doublestar v1.3.4
 	github.com/bufbuild/buf v1.4.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
-	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
+	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
 	github.com/certifi/gocertifi v0.0.0-20210507211836-431795d63e8d // indirect
 	github.com/charmbracelet/glamour v0.5.0 // indirect
 	github.com/cockroachdb/errors v1.9.0 // indirect
@@ -317,7 +317,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-github/v41 v41.0.0
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/pprof v0.0.0-20221112000123-84eb7ad69597 // indirect
+	github.com/google/pprof v0.0.0-20221118152302-e6195bd50e26 // indirect
 	github.com/googleapis/gax-go/v2 v2.7.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20220104163920-15ed2e8cf2bd // indirect
 	github.com/gopherjs/gopherwasm v1.1.0 // indirect
@@ -325,7 +325,7 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gosimple/slug v1.12.0 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.13.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.14.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.1 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
@@ -412,7 +412,7 @@ require (
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	github.com/xanzy/ssh-agent v0.3.2 // indirect
+	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
@@ -433,7 +433,7 @@ require (
 	golang.org/x/text v0.4.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/grpc v1.50.1 // indirect
+	google.golang.org/grpc v1.51.0 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
