@@ -26,15 +26,7 @@ type AfterStepResult struct {
 
 func (a AfterStepResult) MarshalJSON() ([]byte, error) {
 	if a.Version == 2 {
-		return json.Marshal(v2AfterStepResult{
-			Version:      a.Version,
-			ChangedFiles: a.ChangedFiles,
-			Stdout:       a.Stdout,
-			Stderr:       a.Stderr,
-			StepIndex:    a.StepIndex,
-			Diff:         a.Diff,
-			Outputs:      a.Outputs,
-		})
+		return json.Marshal(v2AfterStepResult(a))
 	}
 	return json.Marshal(v1AfterStepResult{
 		ChangedFiles: a.ChangedFiles,

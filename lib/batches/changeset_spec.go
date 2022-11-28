@@ -129,13 +129,7 @@ type GitCommitDescription struct {
 
 func (a GitCommitDescription) MarshalJSON() ([]byte, error) {
 	if a.Version == 2 {
-		return json.Marshal(v2GitCommitDescription{
-			Version:     a.Version,
-			Message:     a.Message,
-			Diff:        a.Diff,
-			AuthorName:  a.AuthorName,
-			AuthorEmail: a.AuthorEmail,
-		})
+		return json.Marshal(v2GitCommitDescription(a))
 	}
 	return json.Marshal(v1GitCommitDescription{
 		Message:     a.Message,

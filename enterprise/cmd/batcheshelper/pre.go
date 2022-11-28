@@ -26,7 +26,7 @@ func execPre(ctx context.Context, stepIdx int, executionInput batcheslib.Workspa
 
 	step := executionInput.Steps[stepIdx]
 
-	changes, err := git.ChangesInDiff([]byte(previousResult.Diff))
+	changes, err := git.ChangesInDiff(previousResult.Diff)
 	if err != nil {
 		return errors.Wrap(err, "failed to compute changes")
 	}

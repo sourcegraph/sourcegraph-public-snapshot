@@ -51,7 +51,7 @@ func execPost(ctx context.Context, stepIdx int, executionInput batcheslib.Worksp
 	}
 
 	// Render the step outputs.
-	changes, err := git.ChangesInDiff([]byte(previousResult.Diff))
+	changes, err := git.ChangesInDiff(previousResult.Diff)
 	if err != nil {
 		return errors.Wrap(err, "failed to get changes in diff")
 	}

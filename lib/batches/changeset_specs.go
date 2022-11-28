@@ -238,7 +238,7 @@ func validateGroups(repoName, defaultBranch string, groups []Group) error {
 }
 
 func groupFileDiffs(completeDiff []byte, defaultBranch string, groups []Group) (map[string][]byte, error) {
-	fileDiffs, err := diff.ParseMultiFileDiff([]byte(completeDiff))
+	fileDiffs, err := diff.ParseMultiFileDiff(completeDiff)
 	if err != nil {
 		return nil, err
 	}
