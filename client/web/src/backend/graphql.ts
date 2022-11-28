@@ -1,7 +1,13 @@
 import { memoize } from 'lodash'
 import { Observable } from 'rxjs'
 
-import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
+import {
+    buildGraphQLUrl,
+    checkOk,
+    getGraphQLClient,
+    GraphQLResult,
+    requestGraphQLCommon,
+} from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
 
 const getHeaders = (): { [header: string]: string } => {
@@ -39,6 +45,77 @@ export const requestGraphQL = <TResult, TVariables = object>(
         request,
         variables,
         headers: getHeaders(),
+    })
+
+export const requestGraphQLWithProgress = <TResult, TVariables = object>(
+    request: string,
+    variables?: TVariables,
+    onProgress?: (loaded: number, total: number) => void
+): Observable<GraphQLResult<TResult>> =>
+    new Observable<GraphQLResult<TResult>>(async observer => {
+        console.log('A')
+        const response = checkOk(
+            await fetch(buildGraphQLUrl({ request }), {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ query: request, variables }),
+            })
+        )
+
+        console.log('B')
+
+        if (!response.body) {
+            throw new Error('ReadableStream not yet supported in this browser.')
+        }
+        const body = response.body
+
+        // to access headers, server must send CORS header "Access-Control-Expose-Headers: content-encoding, content-length x-file-size"
+        // server must send custom x-file-size header if gzip or other content-encoding is used
+        const contentEncoding = response.headers.get('content-encoding')
+
+        console.log({ contentEncoding })
+        const contentLength = response.headers.get(contentEncoding ? 'x-file-size' : 'content-length')
+        if (contentLength === null) {
+            throw new Error('Response size header unavailable')
+        }
+
+        const total = parseInt(contentLength, 10)
+        let loaded = 0
+        const streamingResponse = new Response(
+            new ReadableStream({
+                start(controller) {
+                    const reader = body.getReader()
+                    read()
+                    function read() {
+                        console.log('C')
+                        reader
+                            .read()
+                            .then(({ done, value }) => {
+                                if (done) {
+                                    controller.close()
+                                    return
+                                }
+                                loaded += value.byteLength
+                                onProgress?.(loaded, total)
+                                controller.enqueue(value)
+                                read()
+                            })
+                            .catch(error => {
+                                console.error(error)
+                                controller.error(error)
+                            })
+                        return undefined
+                    }
+                },
+            })
+        )
+        const data: GraphQLResult<TResult> = await streamingResponse.json()
+        console.log({ data })
+        observer.next(data)
+        //     method: 'POST',
+        //     body: JSON.stringify({ query: request, variables }),
+        //     selector: response => checkOk(response).json(),
+        // })
     })
 
 /**

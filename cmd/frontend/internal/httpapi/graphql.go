@@ -121,6 +121,16 @@ func serveGraphQL(logger sglog.Logger, schema *graphql.Schema, rlw graphqlbacken
 			return err
 		}
 
+		// In case  the response is gzipped, the Content-Length header is rewritten to
+		// the compressed byte size but when reading this data inside the browser, the
+		// browser will decompress under the hood.
+		//
+		// In order to calculate the correct progress timings, we need to emit the
+		// uncompressed size with the request.
+		//
+		// This function must be called before gzip handling.
+		w.Header().Add("x-file-size", strconv.Itoa(len(responseJSON)))
+
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(responseJSON)
 

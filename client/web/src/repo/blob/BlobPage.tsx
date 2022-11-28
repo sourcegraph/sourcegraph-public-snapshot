@@ -251,6 +251,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                             format: enableCodeMirror
                                 ? HighlightResponseFormat.JSON_SCIP
                                 : HighlightResponseFormat.HTML_HIGHLIGHT,
+                            onProgress: (loaded: number, total: number) => {
+                                console.log(new Date(), 'onProgress', loaded, total)
+                            },
                         })
                     ),
                     map(blob => {

@@ -5,7 +5,7 @@ import { memoizeObservable } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
-import { requestGraphQL } from '../../backend/graphql'
+import { requestGraphQL, requestGraphQLWithProgress } from '../../backend/graphql'
 import {
     BlobFileFields,
     BlobResult,
@@ -42,6 +42,7 @@ interface FetchBlobOptions {
     filePath: string
     disableTimeout?: boolean
     format?: HighlightResponseFormat
+    onProgress?: (loaded: number, total: number) => void
 }
 
 export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observable<BlobFileFields | null> => {
@@ -53,7 +54,7 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
     // requested via JSON_SCIP).
     const html = [HighlightResponseFormat.HTML_PLAINTEXT, HighlightResponseFormat.HTML_HIGHLIGHT].includes(format)
 
-    return requestGraphQL<BlobResult, BlobVariables>(
+    return requestGraphQLWithProgress<BlobResult, BlobVariables>(
         gql`
             query Blob(
                 $repoName: String!
@@ -92,7 +93,8 @@ export const fetchBlob = memoizeObservable((options: FetchBlobOptions): Observab
                 }
             }
         `,
-        { repoName, revision, filePath, disableTimeout, format, html }
+        { repoName, revision, filePath, disableTimeout, format, html },
+        options.onProgress
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
