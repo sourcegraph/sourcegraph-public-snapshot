@@ -222,7 +222,7 @@ func getTitles(t *testing.T, args gqltestutil.GetDashboardArgs) []string {
 }
 
 func TestUpdateInsight(t *testing.T) {
-	t.Run("metadata update only", func(t *testing.T) {
+	t.Run("metadata update no recalculation", func(t *testing.T) {
 		dataSeries := map[string]any{
 			"query": "lang:css",
 			"options": map[string]string{
@@ -298,7 +298,7 @@ func TestUpdateInsight(t *testing.T) {
 		}
 	})
 
-	t.Run("repository change triggers insight recalculation", func(t *testing.T) {
+	t.Run("repository change triggers recalculation", func(t *testing.T) {
 		dataSeries := map[string]any{
 			"query": "lang:go select:file",
 			"options": map[string]string{
@@ -351,6 +351,68 @@ func TestUpdateInsight(t *testing.T) {
 
 		if updatedInsight.SeriesId == insight.SeriesId {
 			t.Error("expected new series to get reused")
+		}
+		if updatedInsight.InsightViewId != insight.InsightViewId {
+			t.Error("expected updated series to be attached to same view")
+		}
+	})
+
+	t.Run("metadata update capture group insight no recalculation", func(t *testing.T) {
+		dataSeries := map[string]any{
+			"query": "todo([a-z])",
+			"options": map[string]string{
+				"label":     "todos",
+				"lineColor": "blue",
+			},
+			"repositoryScope": map[string]any{
+				"repositories": []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
+			},
+			"timeScope": map[string]any{
+				"stepInterval": map[string]any{
+					"unit":  "MONTH",
+					"value": 3,
+				},
+			},
+			"generatedFromCaptureGroups": true,
+		}
+		insight, err := client.CreateSearchInsight("my capture group gqltest", dataSeries)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if insight.InsightViewId == "" {
+			t.Fatal("Did not get an insight view ID")
+		}
+		defer func() {
+			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+				t.Fatalf("couldn't disable insight series: %v", err)
+			}
+		}()
+
+		if insight.Label != "todos" {
+			t.Errorf("wrong label: %v", insight.Label)
+		}
+		if insight.Color != "blue" {
+			t.Errorf("wrong color: %v", insight.Color)
+		}
+
+		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
+			"dataSeries": []any{
+				dataSeries,
+			},
+			"presentationOptions": map[string]string{
+				"title": "my capture group gqltest (modified)",
+			},
+			"viewControls": map[string]any{
+				"filters":              struct{}{},
+				"seriesDisplayOptions": struct{}{},
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if updatedInsight.SeriesId != insight.SeriesId {
+			t.Error("expected series to get reused")
 		}
 		if updatedInsight.InsightViewId != insight.InsightViewId {
 			t.Error("expected updated series to be attached to same view")
