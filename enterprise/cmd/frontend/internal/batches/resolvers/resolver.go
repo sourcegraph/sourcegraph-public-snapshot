@@ -1554,8 +1554,11 @@ func (r *Resolver) CreateEmptyBatchChange(ctx context.Context, args *graphqlback
 		NamespaceOrgID:  oid,
 		Name:            args.Name,
 	})
-
 	if err != nil {
+		// Render pretty error.
+		if err == store.ErrInvalidBatchChangeName {
+			return nil, ErrBatchChangeInvalidName{}
+		}
 		return nil, err
 	}
 

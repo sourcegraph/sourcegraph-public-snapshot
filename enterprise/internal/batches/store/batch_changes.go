@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-diff/diff"
@@ -16,6 +17,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// ErrInvalidBatchChangeName is returned when a batch change is stored with an unacceptable
+// name.
+var ErrInvalidBatchChangeName = errors.New("batch change name violates name policy")
 
 // batchChangeColumns are used by the batch change related Store methods to insert,
 // update and query batches.
@@ -57,9 +62,18 @@ func (s *Store) UpsertBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 
 	q := s.upsertBatchChangeQuery(c)
 
-	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchChange(c, sc)
 	})
+	if err != nil {
+		if pgErr, ok := errors.UnwrapAll(err).(*pgconn.PgError); ok {
+			if pgErr.ConstraintName == "batch_change_name_is_valid" {
+				return ErrInvalidBatchChangeName
+			}
+		}
+		return err
+	}
+	return nil
 }
 
 var upsertBatchChangeQueryFmtstr = `
@@ -133,9 +147,18 @@ func (s *Store) CreateBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 
 	q := s.createBatchChangeQuery(c)
 
-	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchChange(c, sc)
 	})
+	if err != nil {
+		if pgErr, ok := errors.UnwrapAll(err).(*pgconn.PgError); ok {
+			if pgErr.ConstraintName == "batch_change_name_is_valid" {
+				return ErrInvalidBatchChangeName
+			}
+		}
+		return err
+	}
+	return nil
 }
 
 var createBatchChangeQueryFmtstr = `
@@ -180,7 +203,16 @@ func (s *Store) UpdateBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 
 	q := s.updateBatchChangeQuery(c)
 
-	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) { return scanBatchChange(c, sc) })
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) { return scanBatchChange(c, sc) })
+	if err != nil {
+		if pgErr, ok := errors.UnwrapAll(err).(*pgconn.PgError); ok {
+			if pgErr.ConstraintName == "batch_change_name_is_valid" {
+				return ErrInvalidBatchChangeName
+			}
+		}
+		return err
+	}
+	return nil
 }
 
 var updateBatchChangeQueryFmtstr = `
@@ -281,11 +313,11 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 		for _, state := range opts.States {
 			switch state {
 			case btypes.BatchChangeStateOpen:
-				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.batch_change_id IS NOT NULL"))
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.batch_spec_id IS NOT NULL"))
 			case btypes.BatchChangeStateClosed:
 				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
 			case btypes.BatchChangeStateDraft:
-				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.batch_change_id IS NULL AND batch_changes.closed_at IS NULL"))
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.batch_spec_id IS NULL AND batch_changes.closed_at IS NULL"))
 			}
 		}
 		if len(stateConds) > 0 {
@@ -303,16 +335,17 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 		// If it's not my namespace and I can't see other users' drafts, filter out
 		// unapplied (draft) batch changes from this list.
 		if opts.ExcludeDraftsNotOwnedByUserID != 0 && opts.ExcludeDraftsNotOwnedByUserID != opts.NamespaceUserID {
-			preds = append(preds, sqlf.Sprintf("batch_changes.batch_change_id IS NOT NULL"))
+			preds = append(preds, sqlf.Sprintf("batch_changes.batch_spec_id IS NOT NULL"))
 		}
 		// For batch changes filtered by org namespace, or not filtered by namespace at
 		// all, if I can't see other users' drafts, filter out unapplied (draft) batch
 		// changes except those that I authored the batch spec of from this list.
 	} else if opts.ExcludeDraftsNotOwnedByUserID != 0 {
-		cond := sqlf.Sprintf(`(batch_changes.batch_change_id IS NOT NULL
-		OR
-		EXISTS (SELECT 1 FROM batch_specs WHERE batch_specs.id = batch_changes.batch_spec_id AND batch_specs.user_id = %s))
-		`, opts.ExcludeDraftsNotOwnedByUserID)
+		cond := sqlf.Sprintf(`(
+	batch_changes.batch_spec_id IS NOT NULL
+OR
+	batch_changes.creator_id = %s
+)`, opts.ExcludeDraftsNotOwnedByUserID)
 		preds = append(preds, cond)
 	}
 
@@ -608,11 +641,11 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 		for i := 0; i < len(opts.States); i++ {
 			switch opts.States[i] {
 			case btypes.BatchChangeStateOpen:
-				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.batch_change_id IS NOT NULL"))
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NULL AND batch_changes.batch_spec_id IS NOT NULL"))
 			case btypes.BatchChangeStateClosed:
 				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.closed_at IS NOT NULL"))
 			case btypes.BatchChangeStateDraft:
-				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.batch_change_id IS NULL AND batch_changes.closed_at IS NULL"))
+				stateConds = append(stateConds, sqlf.Sprintf("batch_changes.batch_spec_id IS NULL AND batch_changes.closed_at IS NULL"))
 			}
 		}
 		if len(stateConds) > 0 {
@@ -629,16 +662,17 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 		// If it's not my namespace and I can't see other users' drafts, filter out
 		// unapplied (draft) batch changes from this list.
 		if opts.ExcludeDraftsNotOwnedByUserID != 0 && opts.ExcludeDraftsNotOwnedByUserID != opts.NamespaceUserID {
-			preds = append(preds, sqlf.Sprintf("batch_changes.batch_change_id IS NOT NULL"))
+			preds = append(preds, sqlf.Sprintf("batch_changes.batch_spec_id IS NOT NULL"))
 		}
 		// For batch changes filtered by org namespace, or not filtered by namespace at
 		// all, if I can't see other users' drafts, filter out unapplied (draft) batch
-		// changes except those that I authored the batch spec of from this list.
+		// changes except those that I authored from this list.
 	} else if opts.ExcludeDraftsNotOwnedByUserID != 0 {
-		cond := sqlf.Sprintf(`(batch_changes.batch_change_id IS NOT NULL
-		OR
-		EXISTS (SELECT 1 FROM batch_specs WHERE batch_specs.id = batch_changes.batch_spec_id AND batch_specs.user_id = %s))
-		`, opts.ExcludeDraftsNotOwnedByUserID)
+		cond := sqlf.Sprintf(`(
+	batch_changes.batch_spec_id IS NOT NULL
+OR
+	batch_changes.creator_id = %s
+)`, opts.ExcludeDraftsNotOwnedByUserID)
 		preds = append(preds, cond)
 	}
 
