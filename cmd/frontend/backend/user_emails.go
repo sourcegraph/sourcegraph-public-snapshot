@@ -192,7 +192,8 @@ func (userEmails) Remove(ctx context.Context, logger log.Logger, db database.DB,
 	return nil
 }
 
-// TODO: Tests
+// SetPrimaryEmail sets the passed in e-mail address as the primary address
+// for the given user.
 func (e userEmails) SetPrimaryEmail(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string) error {
 	logger = logger.Scoped("UserEmails.SetPrimaryEmail", "handles setting primary e-mail for user")
 
