@@ -216,14 +216,22 @@ func (s BitbucketCloudSource) MergeChangeset(ctx context.Context, cs *Changeset,
 func (s BitbucketCloudSource) GetNamespaceFork(ctx context.Context, targetRepo *types.Repo, namespace string) (*types.Repo, error) {
 	targetMeta := targetRepo.Metadata.(*bitbucketcloud.Repo)
 
+	targetMetaNamespace, err := targetMeta.Namespace()
+	if err != nil {
+		return nil, errors.Wrap(err, "forking repository")
+	}
+
+	targetRepoNamespace := targetMetaNamespace + "-" + targetMeta.Slug
+
 	// Figure out if we already have the repo.
-	if fork, err := s.client.Repo(ctx, namespace, targetMeta.Slug); err == nil {
+	if fork, err := s.client.Repo(ctx, namespace, targetRepoNamespace); err == nil {
 		return s.copyRepoAsFork(targetRepo, fork)
 	} else if !errcode.IsNotFound(err) {
 		return nil, errors.Wrap(err, "checking for fork existence")
 	}
 
 	fork, err := s.client.ForkRepository(ctx, targetMeta, bitbucketcloud.ForkInput{
+		Name:      &targetRepoNamespace,
 		Workspace: bitbucketcloud.ForkInputWorkspace(namespace),
 	})
 	if err != nil {
