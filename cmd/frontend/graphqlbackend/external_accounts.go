@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -130,29 +129,6 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 	// 🚨 SECURITY: Only the user and site admins should be able to see a user's external accounts.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, account.UserID); err != nil {
 		return nil, err
-	}
-
-	if account.ServiceType == extsvc.TypeGitHub {
-		opts := database.ExternalAccountsListOptions{
-			ServiceType:   extsvc.TypeGitHubApp,
-			AccountIDLike: fmt.Sprintf("%%/%s", account.AccountID),
-		}
-		accts, err := r.db.UserExternalAccounts().List(ctx, opts)
-		if err != nil {
-			return nil, err
-		}
-
-		if len(accts) > 0 {
-			var acctList []int32
-			for _, acct := range accts {
-				acctList = append(acctList, acct.ID)
-			}
-
-			deleteOpts := database.ExternalAccountsDeleteOptions{IDs: acctList}
-			if err := r.db.UserExternalAccounts().Delete(ctx, deleteOpts); err != nil {
-				return nil, err
-			}
-		}
 	}
 
 	deleteOpts := database.ExternalAccountsDeleteOptions{IDs: []int32{account.ID}}

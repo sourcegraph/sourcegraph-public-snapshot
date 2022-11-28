@@ -3,9 +3,7 @@ package authz
 import (
 	"container/heap"
 	"context"
-	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -14,8 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
-
-	gh "github.com/google/go-github/v41/github"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -28,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -262,50 +257,6 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 	return repoNames, nil
 }
 
-func (s *PermsSyncer) getUserGitHubAppInstallations(ctx context.Context, acct *extsvc.Account) ([]gh.Installation, error) {
-	if acct.ServiceType != extsvc.TypeGitHub {
-		return nil, nil
-	}
-
-	_, tok, err := github.GetExternalAccountData(ctx, &acct.AccountData)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if tok == nil {
-		return nil, nil
-	}
-
-	// Not a GitHub App access token
-	if !github.IsGitHubAppAccessToken(tok.AccessToken) {
-		return nil, nil
-	}
-
-	oauthToken := &auth.OAuthBearerToken{
-		Token:              tok.AccessToken,
-		RefreshToken:       tok.RefreshToken,
-		Expiry:             tok.Expiry,
-		RefreshFunc:        database.GetAccountRefreshAndStoreOAuthTokenFunc(s.db, acct.ID, github.GetOAuthContext(acct.ServiceID)),
-		NeedsRefreshBuffer: 5,
-	}
-
-	apiURL, err := url.Parse(acct.ServiceID)
-	if err != nil {
-		return nil, err
-	}
-	apiURL, _ = github.APIRoot(apiURL)
-	ghClient := github.NewV3Client(log.Scoped("perms_syncer.github.v3", "github v3 client for perms syncer"),
-		extsvc.URNGitHubOAuth, apiURL, oauthToken, nil)
-
-	installations, err := ghClient.GetUserInstallations(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return installations, nil
-}
-
 type fetchUserPermsViaExternalAccountsResults struct {
 	repoIDs      []uint32
 	subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions
@@ -413,10 +364,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	results.subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
 
 	for _, acct := range accts {
-		if acct.ServiceType == extsvc.TypeGitHubApp {
-			continue
-		}
-
 		acctLogger := logger.With(log.Int32("acct.ID", acct.ID))
 
 		provider := byServiceID[acct.ServiceID]
@@ -430,18 +377,6 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		}
 
 		acctLogger.Debug("update GitHub App installation access", log.Int32("accountID", acct.ID))
-
-		installations, err := s.getUserGitHubAppInstallations(ctx, acct)
-
-		// These errors aren't fatal, so we continue with the normal flow
-		// even if things go wrong.
-		if err != nil && installations != nil {
-			if err := s.db.UserExternalAccounts().UpdateGitHubAppInstallations(ctx, acct, installations); err != nil {
-				acctLogger.Warn("failed to update GitHub App installation access", log.Error(err))
-			}
-		} else if err != nil {
-			acctLogger.Warn("failed to fetch GitHub App installations", log.Error(err))
-		}
 
 		// FetchUserPerms makes API requests using a client that will deal with the token
 		// expiration and try to refresh it when necessary. If the client fails to update
@@ -459,23 +394,8 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			if unauthorized || accountSuspended || forbidden {
 				// These are fatal errors that mean we should continue as if the account no
 				// longer has any access.
-				linkedAccts, err := s.db.UserExternalAccounts().List(ctx,
-					database.ExternalAccountsListOptions{
-						ServiceType:   extsvc.TypeGitHubApp,
-						AccountIDLike: fmt.Sprintf("%%/%s", acct.AccountID),
-					},
-				)
-				if err != nil {
-					return results, errors.Wrapf(err, "list linked accounts for %d", acct.ID)
-				}
-
-				acctIDs := make([]int32, 0, len(linkedAccts)+1)
-				acctIDs = append(acctIDs, acct.ID)
-				for _, linkedAcct := range linkedAccts {
-					acctIDs = append(acctIDs, linkedAcct.ID)
-				}
-				if err = accounts.TouchExpired(ctx, acctIDs...); err != nil {
-					return results, errors.Wrapf(err, "set expired for external account IDs %v", acctIDs)
+				if err = accounts.TouchExpired(ctx, acct.ID); err != nil {
+					return results, errors.Wrapf(err, "set expired for external account ID %v", acct.ID)
 				}
 
 				if unauthorized {
@@ -820,22 +740,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 			ServiceID:   provider.ServiceID(),
 			AccountIDs:  accountIDs,
 		})
-
-		if provider.ServiceType() == extsvc.TypeGitHub {
-			linkedAccountIDsToUserIDs, err := s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.Accounts{
-				ServiceType: extsvc.TypeGitHubApp,
-				ServiceID:   provider.ServiceID(),
-				AccountIDs:  accountIDs,
-			})
-			if err == nil {
-				for k, v := range linkedAccountIDsToUserIDs {
-					accountIDsToUserIDs[k] = v
-				}
-			} else {
-				// Only log in case of error, as there can still be valid permissions syncing.
-				logger.Warn("error fetching linked accounts", log.Error(err))
-			}
-		}
 
 		if err != nil {
 			return providerStates, errors.Wrap(err, "get user IDs by external accounts")
