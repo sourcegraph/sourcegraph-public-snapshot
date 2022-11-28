@@ -712,7 +712,7 @@ func (r *Resolver) SaveInsightAsNewView(ctx context.Context, args graphqlbackend
 		return nil, err
 	}
 
-	views, err := insightTx.GetAllMapped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorization: true})
+	views, err := insightTx.GetMapped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorization: true})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetMapped")
 	}
