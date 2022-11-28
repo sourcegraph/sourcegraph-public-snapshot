@@ -288,7 +288,7 @@ type RepoHasKVPPredicate struct {
 
 func (p *RepoHasKVPPredicate) Unmarshal(params string, negated bool) (err error) {
 	split := strings.Split(params, ":")
-	if len(split) != 2 || len(split[0]) == 0 || len(split[1]) == 0 {
+	if len(split) != 2 || len(split[0]) == 0 {
 		return errors.New("expected params in the form of key:value")
 	}
 	p.Key = split[0]
