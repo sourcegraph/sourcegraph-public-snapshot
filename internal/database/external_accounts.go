@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	gh "github.com/google/go-github/v41/github"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
@@ -57,8 +56,6 @@ type UserExternalAccountsStore interface {
 	// Delete will soft delete all accounts matching the options combined using AND.
 	// If options are all zero values then it does nothing.
 	Delete(ctx context.Context, opt ExternalAccountsDeleteOptions) error
-
-	UpdateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, installations []gh.Installation) error
 
 	// ExecResult performs a query without returning any rows, but includes the
 	// result of the execution.
@@ -382,54 +379,6 @@ type ExternalAccountsListOptions struct {
 	OnlyExpired    bool
 
 	*LimitOffset
-}
-
-func (s *userExternalAccountsStore) UpdateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, installations []gh.Installation) error {
-	acctInstallations, err := s.List(ctx, ExternalAccountsListOptions{
-		ServiceType:    extsvc.TypeGitHubApp,
-		AccountIDLike:  fmt.Sprintf("%%/%s", acct.AccountID),
-		ExcludeExpired: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	validInstallations := []*extsvc.Account{}
-ACCTINSTALLATIONS:
-	for _, acctInstallation := range acctInstallations {
-		for _, installation := range installations {
-			installationID := strconv.FormatInt(*installation.ID, 10)
-			if acctInstallation.AccountID == fmt.Sprintf("%s/%s", installationID, acct.AccountID) {
-				validInstallations = append(validInstallations, acctInstallation)
-				continue ACCTINSTALLATIONS
-			}
-		}
-		if err = s.Delete(ctx, ExternalAccountsDeleteOptions{IDs: []int32{acctInstallation.ID}}); err != nil {
-			return err
-		}
-	}
-
-INSTALLATIONS:
-	for _, installation := range installations {
-		installationID := strconv.FormatInt(*installation.ID, 10)
-		for _, validInstallation := range validInstallations {
-			if validInstallation.AccountID == fmt.Sprintf("%s/%s", installationID, acct.AccountID) {
-				continue INSTALLATIONS
-			}
-		}
-		accountID := installationID + "/" + acct.AccountID
-		if err := s.Insert(ctx, acct.UserID, extsvc.AccountSpec{
-			ServiceType: extsvc.TypeGitHubApp,
-			ServiceID:   acct.ServiceID,
-			ClientID:    acct.ClientID,
-			AccountID:   accountID,
-		},
-			extsvc.AccountData{AuthData: nil, Data: nil},
-		); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error) {
