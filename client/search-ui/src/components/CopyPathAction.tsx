@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 
 import { mdiContentCopy } from '@mdi/js'
-import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -39,7 +38,7 @@ export const CopyPathAction: React.FunctionComponent<
             <Button
                 aria-label="Copy path to clipboard"
                 variant="icon"
-                className={classNames(styles.button, className)}
+                className={className}
                 onClick={onClick}
                 size="sm"
             >
