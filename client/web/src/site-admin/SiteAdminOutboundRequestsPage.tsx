@@ -43,7 +43,7 @@ export interface SiteAdminOutboundRequestsPageProps extends RouteComponentProps,
     now?: () => Date
 }
 
-export type OutboundRequest = OutboundRequestsResult['outboundRequests'][0]
+export type OutboundRequest = OutboundRequestsResult['outboundRequests']['nodes'][0]
 
 const filters: FilteredConnectionFilter[] = [
     {
@@ -92,12 +92,14 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     })
 
     useEffect(() => {
-        if (data?.outboundRequests?.length && (!lastId || data?.outboundRequests[0].id > lastId)) {
+        if (data?.outboundRequests?.nodes?.length && (!lastId || data?.outboundRequests.nodes[0].id > lastId)) {
             const newItems = items
-                .concat(...data.outboundRequests)
+                .concat(...data.outboundRequests.nodes)
                 .slice(
                     Math.max(
-                        items.length + data.outboundRequests.length - (window.context.outboundRequestLogLimit ?? 0),
+                        items.length +
+                            data.outboundRequests.nodes.length -
+                            (window.context.outboundRequestLogLimit ?? 0),
                         0
                     )
                 )

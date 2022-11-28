@@ -1583,7 +1583,7 @@ type Query {
         An opaque cursor that is used for pagination.
         """
         after: String
-    ): [OutboundRequest!]!
+    ): OutboundRequestConnection!
 
     """
     (experimental)
@@ -8060,6 +8060,22 @@ type WebhookLogResponse implements WebhookLogMessage {
     body: String!
 }
 
+type OutboundRequestConnection {
+    """
+    A list of webhook logs.
+    """
+    nodes: [OutboundRequest!]!
+
+    """
+    The total number of webhook logs in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
 """
 A single logged webhook delivery.
 """

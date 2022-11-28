@@ -287,24 +287,26 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
 export const OUTBOUND_REQUESTS = gql`
     query OutboundRequests($after: String) {
         outboundRequests(after: $after) {
-            id
-            startedAt
-            method
-            url
-            requestHeaders {
-                name
-                values
+            nodes {
+                id
+                startedAt
+                method
+                url
+                requestHeaders {
+                    name
+                    values
+                }
+                requestBody
+                statusCode
+                responseHeaders {
+                    name
+                    values
+                }
+                duration
+                errorMessage
+                creationStackFrame
+                callStackFrame
             }
-            requestBody
-            statusCode
-            responseHeaders {
-                name
-                values
-            }
-            duration
-            errorMessage
-            creationStackFrame
-            callStackFrame
         }
     }
 `
