@@ -14,7 +14,7 @@ const ChangesetSpecJSON = `{
       "type": "object",
       "properties": {
         "version": {
-          "type": "number",
+          "type": "integer",
           "description": "A field for versioning the payload."
         },
         "baseRepository": {
@@ -36,7 +36,7 @@ const ChangesetSpecJSON = `{
       "type": "object",
       "properties": {
         "version": {
-          "type": "number",
+          "type": "integer",
           "description": "A field for versioning the payload."
         },
         "baseRepository": {
@@ -81,7 +81,7 @@ const ChangesetSpecJSON = `{
             "required": ["message", "diff", "authorName", "authorEmail"],
             "properties": {
               "version": {
-                "type": "number",
+                "type": "integer",
                 "description": "A field for versioning the payload."
               },
               "message": {

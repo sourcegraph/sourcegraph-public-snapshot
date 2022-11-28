@@ -9,7 +9,7 @@
       "type": "object",
       "properties": {
         "version": {
-          "type": "number",
+          "type": "integer",
           "description": "A field for versioning the payload."
         },
         "baseRepository": {
@@ -31,7 +31,7 @@
       "type": "object",
       "properties": {
         "version": {
-          "type": "number",
+          "type": "integer",
           "description": "A field for versioning the payload."
         },
         "baseRepository": {
@@ -76,7 +76,7 @@
             "required": ["message", "diff", "authorName", "authorEmail"],
             "properties": {
               "version": {
-                "type": "number",
+                "type": "integer",
                 "description": "A field for versioning the payload."
               },
               "message": {
