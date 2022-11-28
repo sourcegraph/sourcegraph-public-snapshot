@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -13,7 +14,7 @@ import (
 )
 
 type outboundRequestsArgs struct {
-	After *string
+	After *graphql.ID
 }
 
 type outboundRequestResolver struct {
@@ -41,7 +42,11 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 
 	var after string
 	if args.After != nil {
-		after = *args.After
+		err := relay.UnmarshalSpec(*args.After, &after)
+		if err != nil {
+			return nil, err
+		}
+		r.logger.Warn("after", log.String("marshaled", after), log.String("orig", string(*args.After)))
 	} else {
 		after = ""
 	}
@@ -57,7 +62,12 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 		return nil, err
 	}
 
-	item, _ := httpcli.GetOutboundRequestLogItem(relay.UnmarshalKind(id))
+	var key string
+	err := relay.UnmarshalSpec(id, key)
+	if err != nil {
+		return nil, err
+	}
+	item, _ := httpcli.GetOutboundRequestLogItem(key)
 	return &outboundRequestResolver{req: item}, nil
 }
 
