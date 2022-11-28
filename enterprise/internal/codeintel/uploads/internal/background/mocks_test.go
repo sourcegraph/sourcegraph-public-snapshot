@@ -9749,6 +9749,9 @@ type MockLsifStore struct {
 	// IDsWithMetaFunc is an instance of a mock function object controlling
 	// the behavior of the method IDsWithMeta.
 	IDsWithMetaFunc *LsifStoreIDsWithMetaFunc
+	// InsertSCIPDocumentFunc is an instance of a mock function object
+	// controlling the behavior of the method InsertSCIPDocument.
+	InsertSCIPDocumentFunc *LsifStoreInsertSCIPDocumentFunc
 	// ReconcileCandidatesFunc is an instance of a mock function object
 	// controlling the behavior of the method ReconcileCandidates.
 	ReconcileCandidatesFunc *LsifStoreReconcileCandidatesFunc
@@ -9782,6 +9785,9 @@ type MockLsifStore struct {
 	// WriteResultChunksFunc is an instance of a mock function object
 	// controlling the behavior of the method WriteResultChunks.
 	WriteResultChunksFunc *LsifStoreWriteResultChunksFunc
+	// WriteSCIPSymbolsFunc is an instance of a mock function object
+	// controlling the behavior of the method WriteSCIPSymbols.
+	WriteSCIPSymbolsFunc *LsifStoreWriteSCIPSymbolsFunc
 }
 
 // NewMockLsifStore creates a new mock of the LsifStore interface. All
@@ -9805,6 +9811,11 @@ func NewMockLsifStore() *MockLsifStore {
 		},
 		IDsWithMetaFunc: &LsifStoreIDsWithMetaFunc{
 			defaultHook: func(context.Context, []int) (r0 []int, r1 error) {
+				return
+			},
+		},
+		InsertSCIPDocumentFunc: &LsifStoreInsertSCIPDocumentFunc{
+			defaultHook: func(context.Context, int, string, []byte, []byte) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -9863,6 +9874,11 @@ func NewMockLsifStore() *MockLsifStore {
 				return
 			},
 		},
+		WriteSCIPSymbolsFunc: &LsifStoreWriteSCIPSymbolsFunc{
+			defaultHook: func(context.Context, int, int, []lsifstore.ProcessedSymbolData) (r0 uint32, r1 error) {
+				return
+			},
+		},
 	}
 }
 
@@ -9888,6 +9904,11 @@ func NewStrictMockLsifStore() *MockLsifStore {
 		IDsWithMetaFunc: &LsifStoreIDsWithMetaFunc{
 			defaultHook: func(context.Context, []int) ([]int, error) {
 				panic("unexpected invocation of MockLsifStore.IDsWithMeta")
+			},
+		},
+		InsertSCIPDocumentFunc: &LsifStoreInsertSCIPDocumentFunc{
+			defaultHook: func(context.Context, int, string, []byte, []byte) (int, error) {
+				panic("unexpected invocation of MockLsifStore.InsertSCIPDocument")
 			},
 		},
 		ReconcileCandidatesFunc: &LsifStoreReconcileCandidatesFunc{
@@ -9945,6 +9966,11 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.WriteResultChunks")
 			},
 		},
+		WriteSCIPSymbolsFunc: &LsifStoreWriteSCIPSymbolsFunc{
+			defaultHook: func(context.Context, int, int, []lsifstore.ProcessedSymbolData) (uint32, error) {
+				panic("unexpected invocation of MockLsifStore.WriteSCIPSymbols")
+			},
+		},
 	}
 }
 
@@ -9963,6 +9989,9 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		},
 		IDsWithMetaFunc: &LsifStoreIDsWithMetaFunc{
 			defaultHook: i.IDsWithMeta,
+		},
+		InsertSCIPDocumentFunc: &LsifStoreInsertSCIPDocumentFunc{
+			defaultHook: i.InsertSCIPDocument,
 		},
 		ReconcileCandidatesFunc: &LsifStoreReconcileCandidatesFunc{
 			defaultHook: i.ReconcileCandidates,
@@ -9996,6 +10025,9 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		},
 		WriteResultChunksFunc: &LsifStoreWriteResultChunksFunc{
 			defaultHook: i.WriteResultChunks,
+		},
+		WriteSCIPSymbolsFunc: &LsifStoreWriteSCIPSymbolsFunc{
+			defaultHook: i.WriteSCIPSymbols,
 		},
 	}
 }
@@ -10438,6 +10470,124 @@ func (c LsifStoreIDsWithMetaFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LsifStoreIDsWithMetaFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// LsifStoreInsertSCIPDocumentFunc describes the behavior when the
+// InsertSCIPDocument method of the parent MockLsifStore instance is
+// invoked.
+type LsifStoreInsertSCIPDocumentFunc struct {
+	defaultHook func(context.Context, int, string, []byte, []byte) (int, error)
+	hooks       []func(context.Context, int, string, []byte, []byte) (int, error)
+	history     []LsifStoreInsertSCIPDocumentFuncCall
+	mutex       sync.Mutex
+}
+
+// InsertSCIPDocument delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLsifStore) InsertSCIPDocument(v0 context.Context, v1 int, v2 string, v3 []byte, v4 []byte) (int, error) {
+	r0, r1 := m.InsertSCIPDocumentFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.InsertSCIPDocumentFunc.appendCall(LsifStoreInsertSCIPDocumentFuncCall{v0, v1, v2, v3, v4, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the InsertSCIPDocument
+// method of the parent MockLsifStore instance is invoked and the hook queue
+// is empty.
+func (f *LsifStoreInsertSCIPDocumentFunc) SetDefaultHook(hook func(context.Context, int, string, []byte, []byte) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// InsertSCIPDocument method of the parent MockLsifStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *LsifStoreInsertSCIPDocumentFunc) PushHook(hook func(context.Context, int, string, []byte, []byte) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreInsertSCIPDocumentFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string, []byte, []byte) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreInsertSCIPDocumentFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, int, string, []byte, []byte) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *LsifStoreInsertSCIPDocumentFunc) nextHook() func(context.Context, int, string, []byte, []byte) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreInsertSCIPDocumentFunc) appendCall(r0 LsifStoreInsertSCIPDocumentFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LsifStoreInsertSCIPDocumentFuncCall objects
+// describing the invocations of this function.
+func (f *LsifStoreInsertSCIPDocumentFunc) History() []LsifStoreInsertSCIPDocumentFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreInsertSCIPDocumentFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreInsertSCIPDocumentFuncCall is an object that describes an
+// invocation of method InsertSCIPDocument on an instance of MockLsifStore.
+type LsifStoreInsertSCIPDocumentFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 []byte
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 []byte
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreInsertSCIPDocumentFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreInsertSCIPDocumentFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -11639,6 +11789,120 @@ func (c LsifStoreWriteResultChunksFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LsifStoreWriteResultChunksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// LsifStoreWriteSCIPSymbolsFunc describes the behavior when the
+// WriteSCIPSymbols method of the parent MockLsifStore instance is invoked.
+type LsifStoreWriteSCIPSymbolsFunc struct {
+	defaultHook func(context.Context, int, int, []lsifstore.ProcessedSymbolData) (uint32, error)
+	hooks       []func(context.Context, int, int, []lsifstore.ProcessedSymbolData) (uint32, error)
+	history     []LsifStoreWriteSCIPSymbolsFuncCall
+	mutex       sync.Mutex
+}
+
+// WriteSCIPSymbols delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLsifStore) WriteSCIPSymbols(v0 context.Context, v1 int, v2 int, v3 []lsifstore.ProcessedSymbolData) (uint32, error) {
+	r0, r1 := m.WriteSCIPSymbolsFunc.nextHook()(v0, v1, v2, v3)
+	m.WriteSCIPSymbolsFunc.appendCall(LsifStoreWriteSCIPSymbolsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the WriteSCIPSymbols
+// method of the parent MockLsifStore instance is invoked and the hook queue
+// is empty.
+func (f *LsifStoreWriteSCIPSymbolsFunc) SetDefaultHook(hook func(context.Context, int, int, []lsifstore.ProcessedSymbolData) (uint32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WriteSCIPSymbols method of the parent MockLsifStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *LsifStoreWriteSCIPSymbolsFunc) PushHook(hook func(context.Context, int, int, []lsifstore.ProcessedSymbolData) (uint32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *LsifStoreWriteSCIPSymbolsFunc) SetDefaultReturn(r0 uint32, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, int, []lsifstore.ProcessedSymbolData) (uint32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *LsifStoreWriteSCIPSymbolsFunc) PushReturn(r0 uint32, r1 error) {
+	f.PushHook(func(context.Context, int, int, []lsifstore.ProcessedSymbolData) (uint32, error) {
+		return r0, r1
+	})
+}
+
+func (f *LsifStoreWriteSCIPSymbolsFunc) nextHook() func(context.Context, int, int, []lsifstore.ProcessedSymbolData) (uint32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LsifStoreWriteSCIPSymbolsFunc) appendCall(r0 LsifStoreWriteSCIPSymbolsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LsifStoreWriteSCIPSymbolsFuncCall objects
+// describing the invocations of this function.
+func (f *LsifStoreWriteSCIPSymbolsFunc) History() []LsifStoreWriteSCIPSymbolsFuncCall {
+	f.mutex.Lock()
+	history := make([]LsifStoreWriteSCIPSymbolsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LsifStoreWriteSCIPSymbolsFuncCall is an object that describes an
+// invocation of method WriteSCIPSymbols on an instance of MockLsifStore.
+type LsifStoreWriteSCIPSymbolsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 []lsifstore.ProcessedSymbolData
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 uint32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LsifStoreWriteSCIPSymbolsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LsifStoreWriteSCIPSymbolsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
