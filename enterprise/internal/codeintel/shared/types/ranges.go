@@ -26,6 +26,11 @@ func EncodeRanges(vs []int32) (buf []byte, _ error) {
 		return nil, errors.Newf("unexpected range length - have %d but expected a multiple of 4", len(vs))
 	}
 
+	// Optimistic capacity; we append exactly one or two bytes for each element in the
+	// given array. We assume that most of the delta-encoded values will be small, so
+	// we try not to over-allocate here.
+	buf = make([]byte, 0, len(vs))
+
 	// The following outer loop causes the inner loop to execute twice. The first invocation
 	// of the loop delta-encodes all of the line numbers as a contiguous sequence. The second
 	// invocation delta-encodes the character offset numbers.
