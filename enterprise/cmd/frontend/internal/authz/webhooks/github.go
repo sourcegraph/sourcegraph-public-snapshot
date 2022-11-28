@@ -107,7 +107,7 @@ func (h *GitHubWebhook) handleMemberEvent(ctx context.Context, db database.DB, e
 		return err
 	}
 
-	if len(externalAccounts) <= 0 {
+	if len(externalAccounts) == 0 {
 		return errors.Newf("no external accounts found for user with external account id %d", user.GetID())
 	}
 
@@ -140,7 +140,7 @@ func (h *GitHubWebhook) handleOrganizationEvent(ctx context.Context, db database
 		return err
 	}
 
-	if len(externalAccounts) <= 0 {
+	if len(externalAccounts) == 0 {
 		return errors.Newf("no external accounts found for user with external account id %d", user.GetID())
 	}
 
@@ -173,7 +173,7 @@ func (h *GitHubWebhook) handleMembershipEvent(ctx context.Context, db database.D
 		return err
 	}
 
-	if len(externalAccounts) <= 0 {
+	if len(externalAccounts) == 0 {
 		return errors.Newf("no github external accounts found with account id %d", user.GetID())
 	}
 
