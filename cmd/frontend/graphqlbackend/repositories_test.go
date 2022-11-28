@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 
@@ -11,8 +12,10 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -20,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestRepositories(t *testing.T) {
+func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 	mockRepos := []*types.Repo{
 		{Name: "repo1"}, // not_cloned
 		{Name: "repo2"}, // cloning
@@ -48,7 +51,7 @@ func TestRepositories(t *testing.T) {
 
 		return mockRepos, nil
 	})
-	repos.CountFunc.SetDefaultReturn(3, nil)
+	repos.CountFunc.SetDefaultReturn(len(mockRepos), nil)
 
 	users := database.NewMockUserStore()
 
@@ -308,6 +311,186 @@ func TestRepositories(t *testing.T) {
 	})
 }
 
+func TestRepositoriesIndexingFiltering(t *testing.T) {
+
+	mockRepos := map[string]bool{
+		"repo-indexed-1":     true,
+		"repo-indexed-2":     true,
+		"repo-not-indexed-3": false,
+		"repo-not-indexed-4": false,
+	}
+
+	repos := database.NewMockRepoStore()
+	repos.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
+		var repoNames []string
+		for n, idx := range mockRepos {
+			if opt.NoIndexed && idx {
+				continue
+			}
+			if opt.OnlyIndexed && !idx {
+				continue
+			}
+			repoNames = append(repoNames, n)
+		}
+		sort.Strings(repoNames)
+		var repos []*types.Repo
+		for _, n := range repoNames {
+			repos = append(repos, &types.Repo{Name: api.RepoName(n)})
+		}
+		return repos, nil
+	})
+	repos.CountFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) (int, error) {
+		var count int
+		for _, idx := range mockRepos {
+			if opt.NoIndexed && idx {
+				continue
+			}
+			if opt.OnlyIndexed && !idx {
+				continue
+			}
+			count++
+		}
+		return count, nil
+	})
+
+	users := database.NewMockUserStore()
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.UsersFunc.SetDefaultReturn(users)
+
+	schema := mustParseGraphQLSchema(t, db)
+
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+	RunTests(t, []*Test{
+		{
+			Schema: schema,
+			Query: `
+				{
+					repositories {
+						nodes { name }
+						totalCount
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [
+							{ "name": "repo-indexed-1" },
+							{ "name": "repo-indexed-2" },
+							{ "name": "repo-not-indexed-3" },
+							{ "name": "repo-not-indexed-4" }
+						],
+						"totalCount": 4,
+						"pageInfo": {"hasNextPage": false}
+					}
+				}
+			`,
+		},
+		{
+			Schema: schema,
+			// indexed and notIndexed are true by default
+			// this test ensures the behavior is the same
+			// when setting them explicitly
+			Query: `
+				{
+					repositories(indexed: true, notIndexed: true) {
+						nodes { name }
+						totalCount
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [
+							{ "name": "repo-indexed-1" },
+							{ "name": "repo-indexed-2" },
+							{ "name": "repo-not-indexed-3" },
+							{ "name": "repo-not-indexed-4" }
+						],
+						"totalCount": 4,
+						"pageInfo": {"hasNextPage": false}
+					}
+				}
+			`,
+		},
+		{
+			Schema: schema,
+			Query: `
+				{
+					repositories(indexed: false) {
+						nodes { name }
+						totalCount
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [
+							{ "name": "repo-not-indexed-3" },
+							{ "name": "repo-not-indexed-4" }
+						],
+						"totalCount": 2,
+						"pageInfo": {"hasNextPage": false}
+					}
+				}
+			`,
+		},
+		{
+			Schema: schema,
+			Query: `
+				{
+					repositories(notIndexed: false) {
+						nodes { name }
+						totalCount
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [
+							{ "name": "repo-indexed-1" },
+							{ "name": "repo-indexed-2" }
+						],
+						"totalCount": 2,
+						"pageInfo": {"hasNextPage": false}
+					}
+				}
+			`,
+		},
+		{
+			Schema: schema,
+			Query: `
+				{
+					repositories(notIndexed: false, indexed: false) {
+						nodes { name }
+						totalCount
+						pageInfo { hasNextPage }
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"repositories": {
+						"nodes": [],
+						"totalCount": 0,
+						"pageInfo": {"hasNextPage": false}
+					}
+				}
+			`,
+		},
+	})
+}
+
 func TestRepositories_CursorPagination(t *testing.T) {
 	mockRepos := []*types.Repo{
 		{ID: 0, Name: "repo1"},
@@ -471,6 +654,7 @@ func TestRepositories_Integration(t *testing.T) {
 		repo        *types.Repo
 		size        int64
 		cloneStatus types.CloneStatus
+		indexed     bool
 		lastError   string
 	}{
 		{repo: &types.Repo{Name: "repo1"}, size: 20, cloneStatus: types.CloneStatusNotCloned},
@@ -479,6 +663,8 @@ func TestRepositories_Integration(t *testing.T) {
 		{repo: &types.Repo{Name: "repo4"}, size: 50, cloneStatus: types.CloneStatusCloning, lastError: "repo4 error"},
 		{repo: &types.Repo{Name: "repo5"}, size: 60, cloneStatus: types.CloneStatusCloned},
 		{repo: &types.Repo{Name: "repo6"}, size: 10, cloneStatus: types.CloneStatusCloned, lastError: "repo6 error"},
+		{repo: &types.Repo{Name: "repo7"}, size: 70, cloneStatus: types.CloneStatusCloned, indexed: false},
+		{repo: &types.Repo{Name: "repo8"}, size: 80, cloneStatus: types.CloneStatusCloned, indexed: true},
 	}
 
 	for _, rsc := range repos {
@@ -492,6 +678,19 @@ func TestRepositories_Integration(t *testing.T) {
 		}
 		if err := gitserverRepos.SetCloneStatus(ctx, rsc.repo.Name, rsc.cloneStatus, "shard-1"); err != nil {
 			t.Fatal(err)
+		}
+
+		if rsc.indexed {
+			repo, err := db.Repos().GetByName(ctx, rsc.repo.Name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = db.ZoektRepos().UpdateIndexStatuses(ctx, map[uint32]*zoekt.MinimalRepoListEntry{
+				uint32(repo.ID): {},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
 
 		if msg := rsc.lastError; msg != "" {
@@ -510,21 +709,21 @@ func TestRepositories_Integration(t *testing.T) {
 	tests := []repositoriesQueryTest{
 		// no args
 		{
-			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
-			wantTotalCount: 6,
+			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
+			wantTotalCount: 8,
 		},
 		// first
 		{
 			args:           "first: 2",
 			wantRepos:      []string{"repo1", "repo2"},
-			wantTotalCount: 6,
+			wantTotalCount: 8,
 		},
 		// cloned
 		{
 			// cloned only says whether to "Include cloned repositories.", it doesn't exclude non-cloned.
 			args:           "cloned: true",
-			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
-			wantTotalCount: 6,
+			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
+			wantTotalCount: 8,
 		},
 		{
 			args:           "cloned: false",
@@ -539,13 +738,13 @@ func TestRepositories_Integration(t *testing.T) {
 		// notCloned
 		{
 			args:           "notCloned: true",
-			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
-			wantTotalCount: 6,
+			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
+			wantTotalCount: 8,
 		},
 		{
 			args:           "notCloned: false",
-			wantRepos:      []string{"repo5", "repo6"},
-			wantTotalCount: 2,
+			wantRepos:      []string{"repo5", "repo6", "repo7", "repo8"},
+			wantTotalCount: 4,
 		},
 		// failedFetch
 		{
@@ -560,8 +759,8 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		{
 			args:           "failedFetch: false",
-			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
-			wantTotalCount: 6,
+			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
+			wantTotalCount: 8,
 		},
 		// cloneStatus
 		{
@@ -576,18 +775,46 @@ func TestRepositories_Integration(t *testing.T) {
 		},
 		{
 			args:           "cloneStatus:CLONED",
-			wantRepos:      []string{"repo5", "repo6"},
-			wantTotalCount: 2,
+			wantRepos:      []string{"repo5", "repo6", "repo7", "repo8"},
+			wantTotalCount: 4,
 		},
 		{
 			args:           "cloneStatus:NOT_CLONED, first: 1",
 			wantRepos:      []string{"repo1"},
 			wantTotalCount: 2,
 		},
+		// indexed
+		{
+			// indexed only says whether to "Include indexed repositories.", it doesn't exclude non-indexed.
+			args:           "indexed: true",
+			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
+			wantTotalCount: 8,
+		},
+		{
+			args:           "indexed: false",
+			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
+			wantTotalCount: 7,
+		},
+		{
+			args:           "indexed: false, first: 2",
+			wantRepos:      []string{"repo1", "repo2"},
+			wantTotalCount: 7,
+		},
+		// notIndexed
+		{
+			args:           "notIndexed: true",
+			wantRepos:      []string{"repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7", "repo8"},
+			wantTotalCount: 8,
+		},
+		{
+			args:           "notIndexed: false",
+			wantRepos:      []string{"repo8"},
+			wantTotalCount: 1,
+		},
 		{
 			args:           "orderBy:SIZE, descending:false, first: 5",
 			wantRepos:      []string{"repo6", "repo1", "repo2", "repo3", "repo4"},
-			wantTotalCount: 6,
+			wantTotalCount: 8,
 		},
 	}
 
