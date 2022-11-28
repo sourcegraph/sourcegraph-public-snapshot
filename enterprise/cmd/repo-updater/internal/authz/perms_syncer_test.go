@@ -391,7 +391,6 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 		assert.Equal(t, []int32{1}, p.GenerateSortedIDsSlice())
 		return nil
 	})
-	perms.UserIsMemberOfOrgHasCodeHostConnectionFunc.SetDefaultReturn(true, nil)
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
 
@@ -566,7 +565,6 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	reposStore.ExternalServiceStoreFunc.SetDefaultReturn(externalServices)
 
 	perms := edb.NewMockPermsStore()
-	perms.UserIsMemberOfOrgHasCodeHostConnectionFunc.SetDefaultReturn(true, nil)
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
 
@@ -636,7 +634,6 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	reposStore.ExternalServiceStoreFunc.SetDefaultReturn(externalServices)
 
 	perms := edb.NewMockPermsStore()
-	perms.UserIsMemberOfOrgHasCodeHostConnectionFunc.SetDefaultReturn(true, nil)
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now, nil)
 
