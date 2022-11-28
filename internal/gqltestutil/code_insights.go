@@ -333,6 +333,47 @@ func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any)
 	}, nil
 }
 
+func (c *Client) SaveInsightAsNewView(input map[string]any) ([]SearchInsight, error) {
+	const query = `
+		mutation saveAsNewView($new: InsightNewViewInput!) {
+		  saveInsightAsNewView(input:$new) {
+			view {
+			  id 
+			  dataSeries {
+				seriesId
+			  }
+			}
+		  }
+		}
+	`
+
+	var resp struct {
+		Data struct {
+			SaveInsightAsNewView struct {
+				View struct {
+					Id         string `json:"id"`
+					DataSeries []struct {
+						SeriesId string `json:"seriesId"`
+					} `json:"dataSeries"`
+				} `json:"view"`
+			} `json:"saveInsightAsNewView"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, input, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	insights := []SearchInsight{}
+	for _, series := range resp.Data.SaveInsightAsNewView.View.DataSeries {
+		insights = append(insights, SearchInsight{
+			InsightViewId: resp.Data.SaveInsightAsNewView.View.Id,
+			SeriesId:      series.SeriesId,
+		})
+	}
+	return insights, nil
+}
+
 func (c *Client) DeleteInsightView(insightViewId string) error {
 	const query = `
 		mutation DeleteInsightView ($id: ID!) {

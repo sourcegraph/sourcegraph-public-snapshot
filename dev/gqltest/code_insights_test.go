@@ -357,3 +357,7 @@ func TestUpdateInsight(t *testing.T) {
 		}
 	})
 }
+
+func TestSaveInsightAsNewView(t *testing.T) {
+
+}
