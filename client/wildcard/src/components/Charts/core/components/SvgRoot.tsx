@@ -121,7 +121,7 @@ export const SvgRoot: FC<PropsWithChildren<SvgRootProps>> = props => {
 
     return (
         <SVGRootContext.Provider value={context}>
-            <svg {...attributes} ref={rootRef} width={width} height={height} tabIndex={-1}>
+            <svg {...attributes} ref={rootRef} width={width} height={height}>
                 {children}
             </svg>
         </SVGRootContext.Provider>

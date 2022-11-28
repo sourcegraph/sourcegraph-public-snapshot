@@ -9,6 +9,8 @@ interface Offset {
 export function getClosesVoronoiPoint<T>(
     event: PointerEvent,
     voronoiLayout: VoronoiDiagram<T>,
+    // Taking into account content area shift in point distribution map
+    // see https://github.com/sourcegraph/sourcegraph/issues/38919
     offset: Offset
 ): VoronoiSite<T> | null {
     const point = localPoint(event.currentTarget as Element, event)
