@@ -115,7 +115,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
-    const codeintel = useObservable(from(extensionsController?.extHostAPI || Promise.resolve(undefined)))
+    const extHostAPI = enableSelectionDrivenCodeNavigation ? extensionsController?.extHostAPI : undefined
+    const codeintel = useObservable(from(extHostAPI || Promise.resolve(undefined)))
 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
     // This is used to avoid reinitializing the editor when new locations in the
