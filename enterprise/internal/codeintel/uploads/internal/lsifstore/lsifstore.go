@@ -16,6 +16,9 @@ type LsifStore interface {
 	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
 	DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error)
 
+	InsertSCIPDocument(ctx context.Context, uploadID int, documentPath string, hash []byte, rawSCIPPayload []byte) (int, error)
+	WriteSCIPSymbols(ctx context.Context, uploadID, documentLookupID int, symbols []ProcessedSymbolData) (uint32, error)
+
 	WriteMeta(ctx context.Context, bundleID int, meta precise.MetaData) error
 	WriteDocuments(ctx context.Context, bundleID int, documents chan precise.KeyedDocumentData) (count uint32, err error)
 	WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) (count uint32, err error)
