@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"net/url"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -234,10 +233,7 @@ func (userEmails) SetVerified(ctx context.Context, logger log.Logger, db databas
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
 	}); err != nil {
-		log15.Error("schemaResolver.SetUserEmailVerified: failed to grant user pending permissions",
-			"userID", userID,
-			"error", err,
-		)
+		logger.Error("schemaResolver.SetUserEmailVerified: failed to grant user pending permissions", log.Int32("userID", userID), log.Error(err))
 	}
 
 	return nil
