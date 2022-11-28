@@ -19,3 +19,12 @@ func RemoveSignOutCookieIfSet(r *http.Request, w http.ResponseWriter) {
 		http.SetCookie(w, &http.Cookie{Name: SignoutCookie, Value: "", MaxAge: -1})
 	}
 }
+
+func SetSignoutCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:   SignoutCookie,
+		Value:  "true",
+		Secure: true,
+		Path:   "/",
+	})
+}

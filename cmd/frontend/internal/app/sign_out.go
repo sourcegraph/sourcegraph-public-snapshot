@@ -2,12 +2,12 @@ package app
 
 import (
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"net/http"
 	"time"
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
@@ -49,13 +49,9 @@ func serveSignOutHandler(db database.DB) http.HandlerFunc {
 			log15.Error("serveSignOutHandler", "err", err)
 		}
 
+		auth.SetSignoutCookie(w)
+
 		if ssoSignOutHandler != nil {
-			http.SetCookie(w, &http.Cookie{
-				Name:   auth.SignoutCookie,
-				Value:  "true",
-				Secure: true,
-				Path:   "/",
-			})
 			ssoSignOutHandler(w, r)
 		}
 

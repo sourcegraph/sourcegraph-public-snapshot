@@ -55,8 +55,6 @@ func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next ht
 	//
 	// If a sign-out cookie has been set during a sign-out request, remove it by setting MaxAge < 0.
 	if actor.FromContext(r.Context()).IsAuthenticated() {
-		auth.RemoveSignOutCookieIfSet(r, w)
-
 		next.ServeHTTP(w, r)
 		return
 	}
@@ -65,7 +63,8 @@ func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next ht
 	// app request, and the sign-out cookie is not present, redirect to the sso sign-in immediately.
 	//
 	// For sign-out requests (sign-out cookie is  present), the user will be redirected to the Sourcegraph login page.
-	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Saml != nil && !auth.HasSignOutCookie(r) && !isAPIRequest {
+	ps := providers.Providers()
+	if len(ps) == 1 && ps[0].Config().Saml != nil && !auth.HasSignOutCookie(r) && !isAPIRequest {
 		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
 		if handled {
 			return

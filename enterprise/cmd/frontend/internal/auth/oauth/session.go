@@ -62,6 +62,8 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 		if token.Expiry != (time.Time{}) {
 			expiryDuration = time.Until(token.Expiry)
 		}
+
+		expiryDuration = 15 * time.Second
 		if expiryDuration < 0 {
 			span.SetError(err)
 			logger.Error("OAuth failed: token was expired.")
