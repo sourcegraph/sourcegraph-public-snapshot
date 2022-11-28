@@ -17,7 +17,7 @@ RUN envsubst <./builder.template.yaml >./builder.yaml
 
 # Run the collector builder
 RUN mkdir -p /cmd/otelcol-sourcegraph
-RUN go run go.opentelemetry.io/collector/cmd/builder@v$OTEL_COLLECTOR_VERSION \
+RUN go run go.opentelemetry.io/collector/cmd/builder@v${OTEL_COLLECTOR_VERSION} \
     --config ./builder.yaml \
     --output-path=/cmd/otelcol-sourcegraph
 

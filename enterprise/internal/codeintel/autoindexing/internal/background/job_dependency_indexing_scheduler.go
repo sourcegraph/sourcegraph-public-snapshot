@@ -96,6 +96,12 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 			return errors.Wrap(err, "extsvcStore.List")
 		}
 
+		if len(externalServices) == 0 {
+			logger.Info("no external services returned, auto-index jobs cannot be added for package repos of the given external service type if it does not exist",
+				log.String("extsvcKind", job.ExternalServiceKind))
+			return nil
+		}
+
 		outdatedServices := make(map[int64]time.Duration, len(externalServices))
 		for _, externalService := range externalServices {
 			if externalService.LastSyncAt.Before(job.ExternalServiceSync) {
@@ -198,10 +204,11 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 		return errors.Wrap(err, "gitserver.RepoInfo")
 	}
 
-	for repoName, info := range results {
-		if info.CloneStatus != types.CloneStatusCloned && info.CloneStatus != types.CloneStatusCloning { // if the repository doesnt exist
+	for _, repoName := range repoNames {
+		repoInfo, ok := results[repoName]
+		if !ok || repoInfo.CloneStatus != types.CloneStatusCloned && repoInfo.CloneStatus != types.CloneStatusCloning {
 			delete(repoToPackages, repoName)
-		} else if info.CloneStatus == types.CloneStatusCloning { // we can't enqueue if still cloning
+		} else if repoInfo.CloneStatus == types.CloneStatusCloning { // we can't enqueue if still cloning
 			return h.workerStore.Requeue(ctx, job.ID, time.Now().Add(requeueBackoff))
 		}
 	}

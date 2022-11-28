@@ -16,6 +16,7 @@ export type FeatureFlagName =
     | 'search-input-show-history'
     | 'user-management-disabled'
     | 'search-results-keyboard-navigation'
+    | 'enable-streaming-git-blame'
 
 interface OrgFlagOverride {
     orgID: string

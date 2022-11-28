@@ -194,7 +194,7 @@ exports[`GlobalNavbar default 1`] = `
         </a>
       </li>
       <li
-        class="action"
+        class="action d-sm-flex d-none"
       >
         <button
           aria-expanded="false"

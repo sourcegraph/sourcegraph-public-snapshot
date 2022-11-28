@@ -4675,6 +4675,8 @@ Query: `sum by (container_label_io_kubernetes_pod_name) (rate(container_cpu_usag
 
 <p class="subtitle">Disk space remaining by instance</p>
 
+Indicates disk space remaining for each gitserver instance, which is used to determine when to start evicting least-used repository clones from disk (default 10%, configured by `SRC_REPOS_DESIRED_PERCENT_FREE`).
+
 Refer to the [alerts reference](./alerts.md#gitserver-disk-space-remaining) for 2 alerts related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100020` on your Sourcegraph instance.

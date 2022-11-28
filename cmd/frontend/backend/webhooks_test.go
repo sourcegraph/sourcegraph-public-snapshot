@@ -37,6 +37,7 @@ func TestCreateWebhook(t *testing.T) {
 	testSecret := "mysecret"
 	tests := []struct {
 		label        string
+		name         string
 		codeHostKind string
 		codeHostURN  string
 		secret       *string
@@ -45,11 +46,13 @@ func TestCreateWebhook(t *testing.T) {
 	}{
 		{
 			label:        "basic",
+			name:         "webhook name",
 			codeHostKind: extsvc.KindGitHub,
 			codeHostURN:  ghURN.String(),
 			secret:       &testSecret,
 			expected: types.Webhook{
 				ID:              1,
+				Name:            "webhook name",
 				UUID:            whUUID,
 				CodeHostKind:    extsvc.KindGitHub,
 				CodeHostURN:     ghURN,
@@ -74,16 +77,17 @@ func TestCreateWebhook(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.label, func(t *testing.T) {
 			webhookStore.CreateFunc.SetDefaultReturn(&test.expected, nil)
-			webhookStore.CreateFunc.SetDefaultHook(func(_ context.Context, _ string, _ string, _ int32, secret *encryption.Encryptable) (*types.Webhook, error) {
+			webhookStore.CreateFunc.SetDefaultHook(func(_ context.Context, _, _, _ string, _ int32, secret *encryption.Encryptable) (*types.Webhook, error) {
 				if test.secret != nil {
 					assert.NotZero(t, secret)
 				}
 				return &test.expected, nil
 			})
-			wh, err := ws.CreateWebhook(ctx, test.codeHostKind, test.codeHostURN, test.secret)
+			wh, err := ws.CreateWebhook(ctx, test.name, test.codeHostKind, test.codeHostURN, test.secret)
 			if test.expectedErr == nil {
 				assert.NoError(t, err)
 				assert.Equal(t, test.expected.ID, wh.ID)
+				assert.Equal(t, test.expected.Name, wh.Name)
 				assert.Equal(t, test.expected.CodeHostKind, wh.CodeHostKind)
 				assert.Equal(t, test.expected.UUID, wh.UUID)
 				assert.Equal(t, test.expected.Secret, wh.Secret)

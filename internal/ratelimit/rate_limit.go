@@ -10,9 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/time/rate"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -151,17 +149,8 @@ func (i *InstrumentedLimiter) WaitN(ctx context.Context, n int) error {
 	if err != nil {
 		failedLabel = "true"
 	}
-	urn := i.urn
 
-	// On sourcegraph.com the cardinality of code hosts is too high, so instead just
-	// group by kind
-	if envvar.SourcegraphDotComMode() {
-		if kind, _ := extsvc.DecodeURN(urn); kind != "" {
-			urn = kind
-		}
-	}
-
-	metricWaitDuration.WithLabelValues(urn, failedLabel).Observe(d.Seconds())
+	metricWaitDuration.WithLabelValues(i.urn, failedLabel).Observe(d.Seconds())
 	return err
 }
 

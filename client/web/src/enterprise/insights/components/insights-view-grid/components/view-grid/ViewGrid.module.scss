@@ -16,3 +16,11 @@
         }
     }
 }
+
+.item {
+    // Hardcoded value for better scroll into view positioning
+    // top = <height of global nav bar> + <sticky code insight select height>
+    // bottom = default 2 rem padding
+    scroll-margin-top: 3.75rem;
+    scroll-margin-bottom: 2rem;
+}

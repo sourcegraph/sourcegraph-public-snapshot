@@ -23,7 +23,7 @@ func NewWebhookService(db database.DB, keyRing keyring.Ring) webhookService {
 	}
 }
 
-func (ws *webhookService) CreateWebhook(ctx context.Context, codeHostKind, codeHostURN string, secretStr *string) (*types.Webhook, error) {
+func (ws *webhookService) CreateWebhook(ctx context.Context, name, codeHostKind, codeHostURN string, secretStr *string) (*types.Webhook, error) {
 	err := validateCodeHostKindAndSecret(codeHostKind, secretStr)
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (ws *webhookService) CreateWebhook(ctx context.Context, codeHostKind, codeH
 	if secretStr != nil {
 		secret = types.NewUnencryptedSecret(*secretStr)
 	}
-	return ws.db.Webhooks(ws.keyRing.WebhookKey).Create(ctx, codeHostKind, codeHostURN, actor.FromContext(ctx).UID, secret)
+	return ws.db.Webhooks(ws.keyRing.WebhookKey).Create(ctx, name, codeHostKind, codeHostURN, actor.FromContext(ctx).UID, secret)
 }
 
 func validateCodeHostKindAndSecret(codeHostKind string, secret *string) error {

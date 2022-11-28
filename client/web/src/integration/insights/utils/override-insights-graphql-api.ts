@@ -1,12 +1,7 @@
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
-import {
-    BulkSearchCommits,
-    BulkSearchFields,
-    BulkSearchRepositories,
-    WebGraphQlOperations,
-} from '../../../graphql-operations'
+import { BulkSearchRepositories, WebGraphQlOperations } from '../../../graphql-operations'
 import { WebIntegrationTestContext } from '../../context'
 import { commonWebGraphQlResults } from '../../graphQlResults'
 
@@ -18,15 +13,6 @@ import { commonWebGraphQlResults } from '../../graphQlResults'
 interface CustomInsightsOperations {
     /** API handler used for repositories field async validation. */
     BulkRepositoriesSearch: () => Record<string, BulkSearchRepositories>
-
-    /** Internal API handler for fetching commits data for live preview chart. */
-    BulkSearchCommits: () => Record<string, BulkSearchCommits>
-
-    /**
-     * Internal API handler for fetching actual data according to search commits
-     * for live preview chart.
-     */
-    BulkSearch: () => Record<string, BulkSearchFields>
 }
 
 export interface OverrideGraphQLExtensionsProps {
