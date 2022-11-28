@@ -99,7 +99,6 @@ func (p *PaginationArgs) SQL() (queryArgs *QueryArgs, err error) {
 	if p.First != nil {
 		queryArgs.Order = sqlf.Sprintf("id DESC")
 		queryArgs.Limit = sqlf.Sprintf("LIMIT %d", *p.First)
-
 	} else if p.Last != nil {
 		queryArgs.Order = sqlf.Sprintf("id ASC")
 		queryArgs.Limit = sqlf.Sprintf("LIMIT %d", *p.Last)

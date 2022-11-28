@@ -1,6 +1,8 @@
 package graphqlutil
 
 import (
+	"context"
+	"math"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -8,25 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-type ConnectionResolverArgs struct {
-	First  *int32
-	Last   *int32
-	After  *string
-	Before *string
-}
+const MAX_PAGE_SIZE int32 = 100
 
-func (a *ConnectionResolverArgs) Limit() (limit int32) {
-	if a == nil {
-		return 0
-	}
-
-	if a.First != nil {
-		limit = *a.First
-	} else if a.Last != nil {
-		limit = *a.Last
-	}
-
-	return
+func applyMaxPageSize(limit int32) int {
+	return int(math.Min(float64(limit), float64(MAX_PAGE_SIZE)))
 }
 
 type ConnectionResolver[N ConnectionNode] struct {
@@ -40,9 +27,32 @@ type ConnectionNode interface {
 	ID() graphql.ID
 }
 
+type ConnectionResolverArgs struct {
+	First  *int32
+	Last   *int32
+	After  *string
+	Before *string
+}
+
+func (a *ConnectionResolverArgs) Limit() int {
+	if a == nil {
+		return 0
+	}
+
+	limit := int(MAX_PAGE_SIZE)
+
+	if a.First != nil {
+		limit = applyMaxPageSize(*a.First)
+	} else if a.Last != nil {
+		limit = applyMaxPageSize(*a.Last)
+	}
+
+	return limit
+}
+
 type ConnectionResolverStore[N ConnectionNode] interface {
-	ComputeTotal() (*int32, error)
-	ComputeNodes(*database.PaginationArgs) ([]*N, error)
+	ComputeTotal(context.Context) (*int32, error)
+	ComputeNodes(context.Context, *database.PaginationArgs) ([]*N, error)
 	MarshalCursor(*N) (*string, error)
 	UnMarshalCursor(string) (*int32, error)
 }
@@ -68,11 +78,14 @@ func (r *ConnectionResolver[N]) paginationArgs() (*database.PaginationArgs, erro
 	paginationArgs := database.PaginationArgs{}
 
 	if r.args.First != nil {
-		limit := *r.args.First + 1
+		limit := int32(applyMaxPageSize(*r.args.First)) + 1
 		paginationArgs.First = &limit
 	} else if r.args.Last != nil {
-		limit := *r.args.Last + 1
+		limit := int32(applyMaxPageSize(*r.args.Last)) + 1
 		paginationArgs.Last = &limit
+	} else {
+		limit := MAX_PAGE_SIZE + 1
+		paginationArgs.First = &limit
 	}
 
 	if r.args.After != nil {
@@ -96,9 +109,9 @@ func (r *ConnectionResolver[N]) paginationArgs() (*database.PaginationArgs, erro
 	return &paginationArgs, nil
 }
 
-func (r *ConnectionResolver[N]) TotalCount() (int32, error) {
+func (r *ConnectionResolver[N]) TotalCount(ctx context.Context) (int32, error) {
 	r.once.total.Do(func() {
-		r.data.total, r.data.totalError = r.store.ComputeTotal()
+		r.data.total, r.data.totalError = r.store.ComputeTotal(ctx)
 	})
 
 	if r.data.totalError != nil || r.data.total == nil {
@@ -108,7 +121,7 @@ func (r *ConnectionResolver[N]) TotalCount() (int32, error) {
 	return *r.data.total, r.data.totalError
 }
 
-func (r *ConnectionResolver[N]) Nodes() ([]*N, error) {
+func (r *ConnectionResolver[N]) Nodes(ctx context.Context) ([]*N, error) {
 	r.once.nodes.Do(func() {
 		paginationArgs, err := r.paginationArgs()
 		if err != nil {
@@ -116,11 +129,12 @@ func (r *ConnectionResolver[N]) Nodes() ([]*N, error) {
 			return
 		}
 
-		r.data.nodes, r.data.nodesError = r.store.ComputeNodes(paginationArgs)
+		r.data.nodes, r.data.nodesError = r.store.ComputeNodes(ctx, paginationArgs)
 
-		// TODO(naman): add explaonondsfksjdh
+		/* NOTE(naman): with `last` argument the items are sorted in opposite
+		 * direction in the SQL query. Here we are reversing the list to return
+		 * them in correct order, to reduce complexity */
 		if r.args.Last != nil {
-			// two-way swap list reversal
 			for i, j := 0, len(r.data.nodes)-1; i < j; i, j = i+1, j-1 {
 				r.data.nodes[i], r.data.nodes[j] = r.data.nodes[j], r.data.nodes[i]
 			}
@@ -128,7 +142,12 @@ func (r *ConnectionResolver[N]) Nodes() ([]*N, error) {
 	})
 
 	nodes := r.data.nodes
-	if len(nodes) > int(r.args.Limit()) {
+
+	/* NOTE(naman): we pass actual_limit + 1 to SQL query so that we
+	 * can check for `hasNextPage`. Here we need to remove the extra item,
+	 * last item in case of `first` and first item in case of `last` as
+	 * they are sorted in opposite directions in SQL query.*/
+	if len(nodes) > r.args.Limit() {
 		if r.args.Last != nil {
 			nodes = nodes[1:]
 		} else {
@@ -139,8 +158,8 @@ func (r *ConnectionResolver[N]) Nodes() ([]*N, error) {
 	return nodes, r.data.nodesError
 }
 
-func (r *ConnectionResolver[N]) PageInfo() (*ConnectionPageInfo[N], error) {
-	nodes, err := r.Nodes()
+func (r *ConnectionResolver[N]) PageInfo(ctx context.Context) (*ConnectionPageInfo[N], error) {
+	nodes, err := r.Nodes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -154,11 +173,10 @@ func (r *ConnectionResolver[N]) PageInfo() (*ConnectionPageInfo[N], error) {
 }
 
 type ConnectionPageInfo[N ConnectionNode] struct {
-	// TODO(naman): rename this
-	rawNodesCount int
-	nodes         []*N
-	store         ConnectionResolverStore[N]
-	args          *ConnectionResolverArgs
+	fetchedNodesCount int
+	nodes             []*N
+	store             ConnectionResolverStore[N]
+	args              *ConnectionResolverArgs
 }
 
 func (p *ConnectionPageInfo[N]) HasNextPage() bool {
@@ -166,7 +184,7 @@ func (p *ConnectionPageInfo[N]) HasNextPage() bool {
 		return true
 	}
 
-	return p.rawNodesCount > int(p.args.Limit())
+	return p.fetchedNodesCount > p.args.Limit()
 }
 
 func (p *ConnectionPageInfo[N]) HasPreviousPage() bool {
@@ -175,7 +193,7 @@ func (p *ConnectionPageInfo[N]) HasPreviousPage() bool {
 	}
 
 	if p.args.Before != nil {
-		return p.rawNodesCount > int(p.args.Limit())
+		return p.fetchedNodesCount > p.args.Limit()
 	}
 
 	return false

@@ -180,7 +180,7 @@ func (r *schemaResolver) SavedSearchesByNamespace(ctx context.Context, args *str
 		return nil, errors.New(`wrong namespaceType provided. Only "Org" and "User" allowed.`)
 	}
 
-	connectionStore := &savedSearchesConnectionStore{ctx, r.db, userID, orgID}
+	connectionStore := &savedSearchesConnectionStore{r.db, userID, orgID}
 
 	connectionArgs := &graphqlutil.ConnectionResolverArgs{
 		First:  args.First,
@@ -193,7 +193,6 @@ func (r *schemaResolver) SavedSearchesByNamespace(ctx context.Context, args *str
 }
 
 type savedSearchesConnectionStore struct {
-	ctx    context.Context
 	db     database.DB
 	userID *int32
 	orgID  *int32
@@ -218,12 +217,12 @@ func (s *savedSearchesConnectionStore) UnMarshalCursor(cusror string) (*int32, e
 	return &nodeID, nil
 }
 
-func (s *savedSearchesConnectionStore) ComputeTotal() (*int32, error) {
-	return s.db.SavedSearches().CountSavedSearchesByOrgOrUser(s.ctx, s.userID, s.orgID)
+func (s *savedSearchesConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+	return s.db.SavedSearches().CountSavedSearchesByOrgOrUser(ctx, s.userID, s.orgID)
 }
 
-func (s *savedSearchesConnectionStore) ComputeNodes(args *database.PaginationArgs) ([]*savedSearchResolver, error) {
-	allSavedSearches, err := s.db.SavedSearches().ListSavedSearchesByOrgOrUser(s.ctx, s.userID, s.orgID, args)
+func (s *savedSearchesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*savedSearchResolver, error) {
+	allSavedSearches, err := s.db.SavedSearches().ListSavedSearchesByOrgOrUser(ctx, s.userID, s.orgID, args)
 	if err != nil {
 		return nil, err
 	}
