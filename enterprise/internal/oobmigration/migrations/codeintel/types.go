@@ -59,7 +59,33 @@ type DiagnosticData struct {
 	EndCharacter   int // 0-indexed, inclusive
 }
 
-// Loocation represents a range within a particular document relative to its
+// ResultChunkData represents a row of the resultChunk table. Each row is a subset
+// of definition and reference result data in the index. Results are inserted into
+// chunks based on the hash of their identifier, thus every chunk has a roughly
+// proportional amount of data.
+type ResultChunkData struct {
+	// DocumentPaths is a mapping from document identifiers to their paths. This
+	// must be used to convert a document identifier in DocumentIDRangeIDs into
+	// a key that can be used to fetch document data.
+	DocumentPaths map[ID]string
+
+	// DocumentIDRangeIDs is a mapping from a definition or result reference
+	// identifier to the set of ranges that compose that result set. Each range
+	// is paired with the identifier of the document in which it can found.
+	DocumentIDRangeIDs map[ID][]DocumentIDRangeID
+}
+
+// DocumentIDRangeID is a pair of document and range identifiers.
+type DocumentIDRangeID struct {
+	// The identifier of the document to which the range belongs. This id is only
+	// relevant within the containing result chunk.
+	DocumentID ID
+
+	// The identifier of the range.
+	RangeID ID
+}
+
+// Location represents a range within a particular document relative to its
 // containing bundle.
 type LocationData struct {
 	URI            string

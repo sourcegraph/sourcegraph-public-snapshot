@@ -361,7 +361,7 @@ export const GET_DASHBOARD_INSIGHTS_POPULATED: GetDashboardInsightsResult = {
             {
                 id: 'EACH_TYPE_OF_INSIGHT',
                 views: {
-                    nodes: [CAPTURE_GROUP_INSIGHT, LANG_STATS_INSIGHT, SEARCH_BASED_INSIGHT, COMPUTE_INSIGHT],
+                    nodes: [CAPTURE_GROUP_INSIGHT, null, LANG_STATS_INSIGHT, SEARCH_BASED_INSIGHT, COMPUTE_INSIGHT],
                     __typename: 'InsightViewConnection',
                 },
                 __typename: 'InsightsDashboard',

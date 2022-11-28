@@ -345,7 +345,7 @@
     "ts-loader": "^9.3.0",
     "ts-node": "^10.7.0",
     "typed-scss-modules": "^4.1.1",
-    "typescript": "^4.7.2",
+    "typescript": "^4.9.3",
     "utc-version": "^2.0.2",
     "vsce": "^2.7.0",
     "webpack": "^5.45.1",

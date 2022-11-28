@@ -135,6 +135,7 @@ func newComputeMatch(repoName string, repoID int32) *ComputeMatch {
 type ComputeTabulationResult struct {
 	StreamDecoderEvents
 	RepoCounts map[string]*ComputeMatch
+	TotalCount int
 }
 
 const capturedValueMaxLength = 100
@@ -184,6 +185,7 @@ func MatchContextComputeDecoder() (client.ComputeMatchContextStreamDecoder, *Com
 						if len(value) > capturedValueMaxLength {
 							value = value[:capturedValueMaxLength]
 						}
+						ctr.TotalCount += 1
 						current.ValueCounts[value] += 1
 					}
 				}

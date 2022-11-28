@@ -88,6 +88,7 @@
 
 .tab-header {
     border: none !important;
+
     @media (--lg-breakpoint-up) {
         justify-content: center !important;
     }
@@ -96,12 +97,4 @@
 .tab-panel {
     // Set a minimum height so the page doesn't shift when changing tabs
     min-height: 21rem;
-}
-
-.pro-tip-title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    border-right: 1px solid var(--border-color);
-    min-width: 60px;
 }

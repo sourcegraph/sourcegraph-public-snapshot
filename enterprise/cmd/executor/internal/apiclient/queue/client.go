@@ -3,7 +3,9 @@ package queue
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -188,6 +190,7 @@ func (c *Client) MarkFailed(ctx context.Context, queueName string, jobID int, er
 	return c.client.DoAndDrop(ctx, req)
 }
 
+// TODO: Remove this in Sourcegraph 4.4.
 func (c *Client) CanceledJobs(ctx context.Context, queueName string, knownIDs []int) (canceledIDs []int, err error) {
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/canceledJobs", queueName), executor.CanceledJobsRequest{
 		KnownJobIDs:  knownIDs,
@@ -215,7 +218,7 @@ func (c *Client) Ping(ctx context.Context, queueName string, jobIDs []int) (err 
 	return c.client.DoAndDrop(ctx, req)
 }
 
-func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs []int, err error) {
+func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) (knownIDs, cancelIDs []int, err error) {
 	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("queueName", queueName),
 		otlog.String("jobIDs", intsToString(jobIDs)),
@@ -229,6 +232,9 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	}
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", queueName), executor.HeartbeatRequest{
+		// Request the new-fashioned payload.
+		Version: executor.ExecutorAPIVersion2,
+
 		ExecutorName: c.options.ExecutorName,
 		JobIDs:       jobIDs,
 
@@ -243,14 +249,46 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 		PrometheusMetrics: metrics,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	if _, err := c.client.DoAndDecode(ctx, req, &knownIDs); err != nil {
-		return nil, err
+	// Do the request and get the reader for the response body.
+	_, body, err := c.client.Do(ctx, req)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return knownIDs, nil
+	// Now read the response body into a buffer, so that we can decode it twice.
+	// This will always be small, so no problem that we don't stream this.
+	defer body.Close()
+	bodyBytes, err := io.ReadAll(body)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// First, try to unmarshal the response into a V2 response object.
+	var respV2 executor.HeartbeatResponse
+	if err := json.Unmarshal(bodyBytes, &respV2); err == nil {
+		// If that works, we can return the data.
+		return respV2.KnownIDs, respV2.CancelIDs, nil
+	}
+
+	// If unmarshalling fails, try to parse it as a V1 payload.
+	var respV1 []int
+	if err := json.Unmarshal(bodyBytes, &respV1); err != nil {
+		return nil, nil, err
+	}
+
+	// If that works, we also have to fetch canceled jobs separately, as we
+	// are talking to a pre-4.3 Sourcegraph API and that doesn't return canceled
+	// jobs as part of heartbeats.
+
+	cancelIDs, err = c.CanceledJobs(ctx, queueName, jobIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return respV1, cancelIDs, nil
 }
 
 func intsToString(ints []int) string {

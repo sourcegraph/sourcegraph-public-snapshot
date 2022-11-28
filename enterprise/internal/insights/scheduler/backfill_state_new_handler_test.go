@@ -86,8 +86,7 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	if !inProgressFound {
 		t.Fatal(errors.New("no queued record found"))
 	}
-	job, _ := inProgressDequeue.(*BaseJob)
-	require.Equal(t, backfill.Id, job.backfillId)
+	require.Equal(t, backfill.Id, inProgressDequeue.backfillId)
 
 	recordingTimes, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, series.ID, nil, nil)
 	require.NoError(t, err)

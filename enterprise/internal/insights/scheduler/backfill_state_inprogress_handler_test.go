@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/pipeline"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/priority"
@@ -24,8 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type noopBackfillRunner struct {
-}
+type noopBackfillRunner struct{}
 
 func (n *noopBackfillRunner) Run(ctx context.Context, req pipeline.BackfillRequest) error {
 	return nil
@@ -169,22 +169,17 @@ func Test_PullsByPriorityGroupAge(t *testing.T) {
 	bf4 := addBackfillToState(series, []int32{1, 2}, 10, BackfillStateProcessing)
 
 	dequeue1, _, _ := monitor.inProgressStore.Dequeue(ctx, "test1", nil)
-	job1 := dequeue1.(*BaseJob)
 	dequeue2, _, _ := monitor.inProgressStore.Dequeue(ctx, "test2", nil)
-	job2 := dequeue2.(*BaseJob)
 	dequeue3, _, _ := monitor.inProgressStore.Dequeue(ctx, "test3", nil)
-	job3 := dequeue3.(*BaseJob)
 	dequeue4, _, _ := monitor.inProgressStore.Dequeue(ctx, "test4", nil)
-	job4 := dequeue4.(*BaseJob)
 
 	// cost split is in 4 equal buckets based on 0 - max(cost)
 
 	// 1st job is bf1 it has higher cost but it's grouped in same cost and is older
-	assert.Equal(t, bf1.Id, job1.backfillId)
-	assert.Equal(t, bf2.Id, job2.backfillId)
-	assert.Equal(t, bf4.Id, job3.backfillId)
-	assert.Equal(t, bf3.Id, job4.backfillId)
-
+	assert.Equal(t, bf1.Id, dequeue1.backfillId)
+	assert.Equal(t, bf2.Id, dequeue2.backfillId)
+	assert.Equal(t, bf4.Id, dequeue3.backfillId)
+	assert.Equal(t, bf3.Id, dequeue4.backfillId)
 }
 
 func Test_BackfillWithRetry(t *testing.T) {

@@ -330,7 +330,10 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     }
 
     const [isBlameVisible] = useBlameVisibility()
-    const blameDecorations = useBlameHunks({ repoName, revision, filePath }, props.platformContext.sourcegraphURL)
+    const blameDecorations = useBlameHunks(
+        { repoName, revision, filePath, enableCodeMirror },
+        props.platformContext.sourcegraphURL
+    )
 
     const isSearchNotebook = Boolean(
         blobInfoOrError &&

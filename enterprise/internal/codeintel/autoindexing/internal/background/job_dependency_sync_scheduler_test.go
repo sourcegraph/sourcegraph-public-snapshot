@@ -21,7 +21,7 @@ func init() {
 }
 
 func TestDependencySyncSchedulerJVM(t *testing.T) {
-	mockWorkerStore := NewMockWorkerStore()
+	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencySyncingJob]()
 	mockUploadsSvc := NewMockUploadService()
 	mockDepedenciesSvc := NewMockDependenciesService()
 	mockStore := NewMockStore()
@@ -72,7 +72,7 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 
 func TestDependencySyncSchedulerGomod(t *testing.T) {
 	t.Skip()
-	mockWorkerStore := NewMockWorkerStore()
+	mockWorkerStore := NewMockWorkerStore[autoindexingshared.DependencySyncingJob]()
 	mockUploadsSvc := NewMockUploadService()
 	mockDepedenciesSvc := NewMockDependenciesService()
 	mockStore := NewMockStore()

@@ -91,7 +91,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
 
 		setMockLicenseCheck(true)
-		err = checkAndEnforceLicense(ctx, insightsDB)
+		err = checkAndEnforceLicense(ctx, insightsDB, logger)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -110,7 +110,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 0)
 
 		setMockLicenseCheck(false)
-		checkAndEnforceLicense(ctx, insightsDB)
+		checkAndEnforceLicense(ctx, insightsDB, logger)
 		numFrozen, err = getNumFrozenInsights()
 		if err != nil {
 			t.Fatal(err)
@@ -132,7 +132,7 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 		autogold.Want("NumFrozen", numFrozen).Equal(t, 4)
 
 		setMockLicenseCheck(false)
-		checkAndEnforceLicense(ctx, insightsDB)
+		checkAndEnforceLicense(ctx, insightsDB, logger)
 		numFrozen, err = getNumFrozenInsights()
 		if err != nil {
 			t.Fatal(err)

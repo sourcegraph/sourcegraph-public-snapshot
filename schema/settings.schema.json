@@ -736,6 +736,11 @@
       "type": "boolean",
       "default": false
     },
+    "history.defaultPageSize": {
+      "description": "Custom page size for the history tab. If set, the history tab will populate that number of commits the first time the history tab is opened and then double the number of commits progressively.",
+      "type": "integer",
+      "minimum": 1
+    },
     "notices": {
       "description": "Custom informational messages to display to users at specific locations in the Sourcegraph user interface.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that single user.",
       "type": "array",

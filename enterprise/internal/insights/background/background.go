@@ -77,7 +77,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 			InsightStore:            insightsStore,
 			CommitClient:            discovery.NewGitCommitClient(mainAppDB),
 			SearchPlanWorkerLimit:   1,
-			SearchRunnerWorkerLimit: 5, //TODO: move these to settings
+			SearchRunnerWorkerLimit: 5, // TODO: move these to settings
 			SearchRateLimiter:       searchRateLimiter,
 			HistoricRateLimiter:     historicRateLimiter,
 		}
@@ -160,7 +160,9 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 // Individual insights workers may then _also_ want to register their own metrics, if desired, in
 // their NewWorker functions.
 func newWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerObservability, dbworker.ResetterMetrics) {
-	workerMetrics := workerutil.NewMetrics(observationContext, workerName+"_processor")
+	workerMetrics := workerutil.NewMetrics(observationContext, workerName+"_processor", workerutil.WithSampler(func(job workerutil.Record) bool {
+		return true
+	}))
 	resetterMetrics := dbworker.NewMetrics(observationContext, workerName)
 	return workerMetrics, *resetterMetrics
 }

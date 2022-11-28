@@ -2,16 +2,20 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSubRepoPermsInsert(t *testing.T) {
@@ -137,7 +141,9 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthzEnforceForSiteAdmins: true}})
+	t.Cleanup(func() { conf.Mock(nil) })
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -175,9 +181,43 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 			Paths: []string{"/src/foo2/*", "-/src/bar2/*"},
 		},
 	}
+	assert.Equal(t, want, have)
 
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatal(diff)
+	// Check all combinations of site admin / AuthzEnforceForSiteAdmins
+	for _, tc := range []struct {
+		siteAdmin           bool
+		enforceForSiteAdmin bool
+		wantRows            bool
+	}{
+		{siteAdmin: true, enforceForSiteAdmin: true, wantRows: true},
+		{siteAdmin: false, enforceForSiteAdmin: false, wantRows: true},
+		{siteAdmin: true, enforceForSiteAdmin: false, wantRows: false},
+		{siteAdmin: false, enforceForSiteAdmin: true, wantRows: true},
+	} {
+		t.Run(fmt.Sprintf("SiteAdmin:%t-Enforce:%t", tc.siteAdmin, tc.enforceForSiteAdmin), func(t *testing.T) {
+			conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthzEnforceForSiteAdmins: tc.enforceForSiteAdmin}})
+			result, err := db.ExecContext(ctx, "UPDATE users SET site_admin = $1 WHERE id = $2", tc.siteAdmin, userID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			affected, err := result.RowsAffected()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if affected != 1 {
+				t.Fatalf("Wanted 1 row affected, got %d", affected)
+			}
+
+			have, err = s.GetByUser(ctx, userID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.wantRows {
+				assert.NotEmpty(t, have)
+			} else {
+				assert.Empty(t, have)
+			}
+		})
 	}
 }
 
@@ -321,7 +361,7 @@ func prepareSubRepoTestData(ctx context.Context, t *testing.T, db dbutil.DB) {
 
 	// Prepare data
 	qs := []string{
-		`INSERT INTO users(username) VALUES ('alice')`,
+		`INSERT INTO users(username ) VALUES ('alice')`,
 
 		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(1, 'GitHub #1', 'GITHUB', '{}', 1, NOW() + INTERVAL '10min')`,
 		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(2, 'Perforce #1', 'PERFORCE', '{}', 1, NOW() + INTERVAL '10min')`,

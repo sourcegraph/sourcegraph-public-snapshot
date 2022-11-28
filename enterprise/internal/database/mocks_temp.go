@@ -6931,9 +6931,6 @@ type MockEnterpriseDB struct {
 	// UserExternalAccountsFunc is an instance of a mock function object
 	// controlling the behavior of the method UserExternalAccounts.
 	UserExternalAccountsFunc *EnterpriseDBUserExternalAccountsFunc
-	// UserPublicReposFunc is an instance of a mock function object
-	// controlling the behavior of the method UserPublicRepos.
-	UserPublicReposFunc *EnterpriseDBUserPublicReposFunc
 	// UsersFunc is an instance of a mock function object controlling the
 	// behavior of the method Users.
 	UsersFunc *EnterpriseDBUsersFunc
@@ -7144,11 +7141,6 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		UserExternalAccountsFunc: &EnterpriseDBUserExternalAccountsFunc{
 			defaultHook: func() (r0 database.UserExternalAccountsStore) {
-				return
-			},
-		},
-		UserPublicReposFunc: &EnterpriseDBUserPublicReposFunc{
-			defaultHook: func() (r0 database.UserPublicRepoStore) {
 				return
 			},
 		},
@@ -7374,11 +7366,6 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.UserExternalAccounts")
 			},
 		},
-		UserPublicReposFunc: &EnterpriseDBUserPublicReposFunc{
-			defaultHook: func() database.UserPublicRepoStore {
-				panic("unexpected invocation of MockEnterpriseDB.UserPublicRepos")
-			},
-		},
 		UsersFunc: &EnterpriseDBUsersFunc{
 			defaultHook: func() database.UserStore {
 				panic("unexpected invocation of MockEnterpriseDB.Users")
@@ -7523,9 +7510,6 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		UserExternalAccountsFunc: &EnterpriseDBUserExternalAccountsFunc{
 			defaultHook: i.UserExternalAccounts,
-		},
-		UserPublicReposFunc: &EnterpriseDBUserPublicReposFunc{
-			defaultHook: i.UserPublicRepos,
 		},
 		UsersFunc: &EnterpriseDBUsersFunc{
 			defaultHook: i.Users,
@@ -11487,106 +11471,6 @@ func (c EnterpriseDBUserExternalAccountsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// EnterpriseDBUserPublicReposFunc describes the behavior when the
-// UserPublicRepos method of the parent MockEnterpriseDB instance is
-// invoked.
-type EnterpriseDBUserPublicReposFunc struct {
-	defaultHook func() database.UserPublicRepoStore
-	hooks       []func() database.UserPublicRepoStore
-	history     []EnterpriseDBUserPublicReposFuncCall
-	mutex       sync.Mutex
-}
-
-// UserPublicRepos delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockEnterpriseDB) UserPublicRepos() database.UserPublicRepoStore {
-	r0 := m.UserPublicReposFunc.nextHook()()
-	m.UserPublicReposFunc.appendCall(EnterpriseDBUserPublicReposFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the UserPublicRepos
-// method of the parent MockEnterpriseDB instance is invoked and the hook
-// queue is empty.
-func (f *EnterpriseDBUserPublicReposFunc) SetDefaultHook(hook func() database.UserPublicRepoStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UserPublicRepos method of the parent MockEnterpriseDB instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *EnterpriseDBUserPublicReposFunc) PushHook(hook func() database.UserPublicRepoStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *EnterpriseDBUserPublicReposFunc) SetDefaultReturn(r0 database.UserPublicRepoStore) {
-	f.SetDefaultHook(func() database.UserPublicRepoStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *EnterpriseDBUserPublicReposFunc) PushReturn(r0 database.UserPublicRepoStore) {
-	f.PushHook(func() database.UserPublicRepoStore {
-		return r0
-	})
-}
-
-func (f *EnterpriseDBUserPublicReposFunc) nextHook() func() database.UserPublicRepoStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnterpriseDBUserPublicReposFunc) appendCall(r0 EnterpriseDBUserPublicReposFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of EnterpriseDBUserPublicReposFuncCall objects
-// describing the invocations of this function.
-func (f *EnterpriseDBUserPublicReposFunc) History() []EnterpriseDBUserPublicReposFuncCall {
-	f.mutex.Lock()
-	history := make([]EnterpriseDBUserPublicReposFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnterpriseDBUserPublicReposFuncCall is an object that describes an
-// invocation of method UserPublicRepos on an instance of MockEnterpriseDB.
-type EnterpriseDBUserPublicReposFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 database.UserPublicRepoStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnterpriseDBUserPublicReposFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnterpriseDBUserPublicReposFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // EnterpriseDBUsersFunc describes the behavior when the Users method of the
 // parent MockEnterpriseDB instance is invoked.
 type EnterpriseDBUsersFunc struct {
@@ -12071,13 +11955,6 @@ type MockPermsStore struct {
 	// UserIDsWithOldestPermsFunc is an instance of a mock function object
 	// controlling the behavior of the method UserIDsWithOldestPerms.
 	UserIDsWithOldestPermsFunc *PermsStoreUserIDsWithOldestPermsFunc
-	// UserIDsWithOutdatedPermsFunc is an instance of a mock function object
-	// controlling the behavior of the method UserIDsWithOutdatedPerms.
-	UserIDsWithOutdatedPermsFunc *PermsStoreUserIDsWithOutdatedPermsFunc
-	// UserIsMemberOfOrgHasCodeHostConnectionFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// UserIsMemberOfOrgHasCodeHostConnection.
-	UserIsMemberOfOrgHasCodeHostConnectionFunc *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *PermsStoreWithFunc
@@ -12204,16 +12081,6 @@ func NewMockPermsStore() *MockPermsStore {
 		},
 		UserIDsWithOldestPermsFunc: &PermsStoreUserIDsWithOldestPermsFunc{
 			defaultHook: func(context.Context, int, time.Duration) (r0 map[int32]time.Time, r1 error) {
-				return
-			},
-		},
-		UserIDsWithOutdatedPermsFunc: &PermsStoreUserIDsWithOutdatedPermsFunc{
-			defaultHook: func(context.Context) (r0 map[int32]time.Time, r1 error) {
-				return
-			},
-		},
-		UserIsMemberOfOrgHasCodeHostConnectionFunc: &PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc{
-			defaultHook: func(context.Context, int32) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -12349,16 +12216,6 @@ func NewStrictMockPermsStore() *MockPermsStore {
 				panic("unexpected invocation of MockPermsStore.UserIDsWithOldestPerms")
 			},
 		},
-		UserIDsWithOutdatedPermsFunc: &PermsStoreUserIDsWithOutdatedPermsFunc{
-			defaultHook: func(context.Context) (map[int32]time.Time, error) {
-				panic("unexpected invocation of MockPermsStore.UserIDsWithOutdatedPerms")
-			},
-		},
-		UserIsMemberOfOrgHasCodeHostConnectionFunc: &PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc{
-			defaultHook: func(context.Context, int32) (bool, error) {
-				panic("unexpected invocation of MockPermsStore.UserIsMemberOfOrgHasCodeHostConnection")
-			},
-		},
 		WithFunc: &PermsStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) PermsStore {
 				panic("unexpected invocation of MockPermsStore.With")
@@ -12442,12 +12299,6 @@ func NewMockPermsStoreFrom(i PermsStore) *MockPermsStore {
 		},
 		UserIDsWithOldestPermsFunc: &PermsStoreUserIDsWithOldestPermsFunc{
 			defaultHook: i.UserIDsWithOldestPerms,
-		},
-		UserIDsWithOutdatedPermsFunc: &PermsStoreUserIDsWithOutdatedPermsFunc{
-			defaultHook: i.UserIDsWithOutdatedPerms,
-		},
-		UserIsMemberOfOrgHasCodeHostConnectionFunc: &PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc{
-			defaultHook: i.UserIsMemberOfOrgHasCodeHostConnection,
 		},
 		WithFunc: &PermsStoreWithFunc{
 			defaultHook: i.With,
@@ -15056,227 +14907,6 @@ func (c PermsStoreUserIDsWithOldestPermsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PermsStoreUserIDsWithOldestPermsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// PermsStoreUserIDsWithOutdatedPermsFunc describes the behavior when the
-// UserIDsWithOutdatedPerms method of the parent MockPermsStore instance is
-// invoked.
-type PermsStoreUserIDsWithOutdatedPermsFunc struct {
-	defaultHook func(context.Context) (map[int32]time.Time, error)
-	hooks       []func(context.Context) (map[int32]time.Time, error)
-	history     []PermsStoreUserIDsWithOutdatedPermsFuncCall
-	mutex       sync.Mutex
-}
-
-// UserIDsWithOutdatedPerms delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockPermsStore) UserIDsWithOutdatedPerms(v0 context.Context) (map[int32]time.Time, error) {
-	r0, r1 := m.UserIDsWithOutdatedPermsFunc.nextHook()(v0)
-	m.UserIDsWithOutdatedPermsFunc.appendCall(PermsStoreUserIDsWithOutdatedPermsFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// UserIDsWithOutdatedPerms method of the parent MockPermsStore instance is
-// invoked and the hook queue is empty.
-func (f *PermsStoreUserIDsWithOutdatedPermsFunc) SetDefaultHook(hook func(context.Context) (map[int32]time.Time, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UserIDsWithOutdatedPerms method of the parent MockPermsStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *PermsStoreUserIDsWithOutdatedPermsFunc) PushHook(hook func(context.Context) (map[int32]time.Time, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *PermsStoreUserIDsWithOutdatedPermsFunc) SetDefaultReturn(r0 map[int32]time.Time, r1 error) {
-	f.SetDefaultHook(func(context.Context) (map[int32]time.Time, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *PermsStoreUserIDsWithOutdatedPermsFunc) PushReturn(r0 map[int32]time.Time, r1 error) {
-	f.PushHook(func(context.Context) (map[int32]time.Time, error) {
-		return r0, r1
-	})
-}
-
-func (f *PermsStoreUserIDsWithOutdatedPermsFunc) nextHook() func(context.Context) (map[int32]time.Time, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *PermsStoreUserIDsWithOutdatedPermsFunc) appendCall(r0 PermsStoreUserIDsWithOutdatedPermsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of PermsStoreUserIDsWithOutdatedPermsFuncCall
-// objects describing the invocations of this function.
-func (f *PermsStoreUserIDsWithOutdatedPermsFunc) History() []PermsStoreUserIDsWithOutdatedPermsFuncCall {
-	f.mutex.Lock()
-	history := make([]PermsStoreUserIDsWithOutdatedPermsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// PermsStoreUserIDsWithOutdatedPermsFuncCall is an object that describes an
-// invocation of method UserIDsWithOutdatedPerms on an instance of
-// MockPermsStore.
-type PermsStoreUserIDsWithOutdatedPermsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 map[int32]time.Time
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c PermsStoreUserIDsWithOutdatedPermsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c PermsStoreUserIDsWithOutdatedPermsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc describes the
-// behavior when the UserIsMemberOfOrgHasCodeHostConnection method of the
-// parent MockPermsStore instance is invoked.
-type PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc struct {
-	defaultHook func(context.Context, int32) (bool, error)
-	hooks       []func(context.Context, int32) (bool, error)
-	history     []PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall
-	mutex       sync.Mutex
-}
-
-// UserIsMemberOfOrgHasCodeHostConnection delegates to the next hook
-// function in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockPermsStore) UserIsMemberOfOrgHasCodeHostConnection(v0 context.Context, v1 int32) (bool, error) {
-	r0, r1 := m.UserIsMemberOfOrgHasCodeHostConnectionFunc.nextHook()(v0, v1)
-	m.UserIsMemberOfOrgHasCodeHostConnectionFunc.appendCall(PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// UserIsMemberOfOrgHasCodeHostConnection method of the parent
-// MockPermsStore instance is invoked and the hook queue is empty.
-func (f *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc) SetDefaultHook(hook func(context.Context, int32) (bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UserIsMemberOfOrgHasCodeHostConnection method of the parent
-// MockPermsStore instance invokes the hook at the front of the queue and
-// discards it. After the queue is empty, the default hook function is
-// invoked for any future action.
-func (f *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc) PushHook(hook func(context.Context, int32) (bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32) (bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, int32) (bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc) nextHook() func(context.Context, int32) (bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc) appendCall(r0 PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall objects
-// describing the invocations of this function.
-func (f *PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFunc) History() []PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall {
-	f.mutex.Lock()
-	history := make([]PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall is an object
-// that describes an invocation of method
-// UserIsMemberOfOrgHasCodeHostConnection on an instance of MockPermsStore.
-type PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c PermsStoreUserIsMemberOfOrgHasCodeHostConnectionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

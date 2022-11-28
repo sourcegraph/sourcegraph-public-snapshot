@@ -36,16 +36,6 @@ func Middleware(db database.DB) *auth.Middleware {
 		},
 		App: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// Fix up the URL path because we use "/.auth/callback" as the redirect URI for
-				// Sourcegraph Operator, but the rest of handlers in this middleware expect paths
-				// of "/.auth/sourcegraph-operator/...", so adding the "sourcegraph-operator"
-				// path component as we can't change the redirect URI that it is hardcoded in
-				// instances' external authentication providers.
-				if r.URL.Path == auth.AuthURLPrefix+"/callback" {
-					// Rewrite "/.auth/callback" -> "/.auth/sourcegraph-operator/callback".
-					r.URL.Path = authPrefix + "/callback"
-				}
-
 				// Delegate to the Sourcegraph Operator authentication handler.
 				if strings.HasPrefix(r.URL.Path, authPrefix+"/") {
 					authHandler(db)(w, r)

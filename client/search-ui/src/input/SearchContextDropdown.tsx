@@ -37,6 +37,7 @@ export interface SearchContextDropdownProps
     query: string
     showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean | null
     className?: string
     menuClassName?: string
     onEscapeMenuClose?: () => void

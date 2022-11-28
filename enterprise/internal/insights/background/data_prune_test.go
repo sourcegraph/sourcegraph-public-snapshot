@@ -169,7 +169,7 @@ func TestPerformPurge(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = performPurge(ctx, postgres, insightsDB, time.Now())
+	err = performPurge(ctx, postgres, insightsDB, logger, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}

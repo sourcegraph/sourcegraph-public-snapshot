@@ -41,4 +41,5 @@ export interface QueryInputProps
     placeholder?: string
 
     ariaLabel?: string
+    ariaLabelledby?: string
 }

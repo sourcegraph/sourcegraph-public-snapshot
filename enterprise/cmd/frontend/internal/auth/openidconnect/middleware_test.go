@@ -127,6 +127,7 @@ func TestMiddleware(t *testing.T) {
 			RequireEmailDomain: "example.com",
 			Type:               providerType,
 		},
+		callbackUrl: ".auth/callback",
 	}
 	defer func() { mockGetProviderValue = nil }()
 	providers.MockProviders = []providers.Provider{mockGetProviderValue}
@@ -320,6 +321,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 			ClientSecret: "aaaaaaaaaaaaaaaaaaaaaaaaa",
 			Type:         providerType,
 		},
+		callbackUrl: ".auth/callback",
 	}
 	defer func() { mockGetProviderValue = nil }()
 	providers.MockProviders = []providers.Provider{mockGetProviderValue}

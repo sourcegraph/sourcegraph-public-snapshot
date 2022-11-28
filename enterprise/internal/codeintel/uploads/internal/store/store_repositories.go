@@ -29,16 +29,29 @@ func (s *store) GetRepositoriesForIndexScan(ctx context.Context, table, column s
 	}})
 	defer endObservation(1, observation.Args{})
 
-	limitExpression := sqlf.Sprintf("")
-	if repositoryMatchLimit != nil {
-		limitExpression = sqlf.Sprintf("LIMIT %s", *repositoryMatchLimit)
+	queries := make([]*sqlf.Query, 0, 3)
+	if allowGlobalPolicies {
+		limitExpression := sqlf.Sprintf("")
+		if repositoryMatchLimit != nil {
+			limitExpression = sqlf.Sprintf("LIMIT %s", *repositoryMatchLimit)
+		}
+
+		queries = append(queries, sqlf.Sprintf(
+			getRepositoriesForIndexScanGlobalRepositoriesQuery,
+			limitExpression,
+		))
+	}
+	queries = append(queries, sqlf.Sprintf(getRepositoriesForIndexScanRepositoriesWithPolicyQuery))
+	queries = append(queries, sqlf.Sprintf(getRepositoriesForIndexScanRepositoriesWithPolicyViaPatternQuery))
+
+	for i, query := range queries {
+		queries[i] = sqlf.Sprintf("(%s)", query)
 	}
 
 	replacer := strings.NewReplacer("{column_name}", column)
 	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(
 		replacer.Replace(getRepositoriesForIndexScanQuery),
-		allowGlobalPolicies,
-		limitExpression,
+		sqlf.Join(queries, " UNION ALL "),
 		quote(table),
 		now,
 		int(processDelay/time.Second),
@@ -53,41 +66,9 @@ func quote(s string) *sqlf.Query { return sqlf.Sprintf(s) }
 
 const getRepositoriesForIndexScanQuery = `
 WITH
-repositories_matching_policy AS ((
-	SELECT r.id
-	FROM repo r
-	WHERE
-		r.deleted_at IS NULL AND
-		r.blocked IS NULL AND
-		EXISTS (
-			SELECT 1
-			FROM lsif_configuration_policies p
-			WHERE
-				p.indexing_enabled AND
-				p.repository_id IS NULL AND
-				p.repository_patterns IS NULL
-		) AND
-		%s -- completely enable or disable this query
-	ORDER BY stars DESC NULLS LAST, id
+repositories_matching_policy AS (
 	%s
-) UNION ALL (
-	SELECT r.id
-	FROM repo r
-	JOIN lsif_configuration_policies p ON p.repository_id = r.id
-	WHERE
-		r.deleted_at IS NULL AND
-		r.blocked IS NULL AND
-		p.indexing_enabled
-) UNION ALL (
-	SELECT r.id
-	FROM repo r
-	JOIN lsif_configuration_policies_repository_pattern_lookup rpl ON rpl.repo_id = r.id
-	JOIN lsif_configuration_policies p ON p.id = rpl.policy_id
-	WHERE
-		r.deleted_at IS NULL AND
-		r.blocked IS NULL AND
-		p.indexing_enabled
-)),
+),
 repositories AS (
 	SELECT rmp.id
 	FROM repositories_matching_policy rmp
@@ -106,6 +87,45 @@ SELECT DISTINCT r.id, %s::timestamp FROM repositories r
 ON CONFLICT (repository_id) DO UPDATE
 SET {column_name} = %s
 RETURNING repository_id
+`
+
+const getRepositoriesForIndexScanGlobalRepositoriesQuery = `
+SELECT r.id
+FROM repo r
+WHERE
+	r.deleted_at IS NULL AND
+	r.blocked IS NULL AND
+	EXISTS (
+		SELECT 1
+		FROM lsif_configuration_policies p
+		WHERE
+			p.indexing_enabled AND
+			p.repository_id IS NULL AND
+			p.repository_patterns IS NULL
+	)
+ORDER BY stars DESC NULLS LAST, id
+%s
+`
+
+const getRepositoriesForIndexScanRepositoriesWithPolicyQuery = `
+SELECT r.id
+FROM repo r
+JOIN lsif_configuration_policies p ON p.repository_id = r.id
+WHERE
+	r.deleted_at IS NULL AND
+	r.blocked IS NULL AND
+	p.indexing_enabled
+`
+
+const getRepositoriesForIndexScanRepositoriesWithPolicyViaPatternQuery = `
+SELECT r.id
+FROM repo r
+JOIN lsif_configuration_policies_repository_pattern_lookup rpl ON rpl.repo_id = r.id
+JOIN lsif_configuration_policies p ON p.id = rpl.policy_id
+WHERE
+	r.deleted_at IS NULL AND
+	r.blocked IS NULL AND
+	p.indexing_enabled
 `
 
 // SetRepositoriesForRetentionScan returns a set of repository identifiers with live code intelligence

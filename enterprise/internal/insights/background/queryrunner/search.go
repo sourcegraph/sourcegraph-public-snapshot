@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -15,25 +16,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 func GetSearchHandlers() map[types.GenerationMethod]InsightsHandler {
 
 	searchStream := func(ctx context.Context, query string) (*streaming.TabulationResult, error) {
+		tr, ctx := trace.New(ctx, "CodeInsightsSearch", "searchStream")
+		defer tr.Finish()
+
 		decoder, streamResults := streaming.TabulationDecoder()
 		err := streaming.Search(ctx, query, nil, decoder)
 		if err != nil {
 			return nil, errors.Wrap(err, "streaming.Search")
 		}
+		tr.AddEvent("search results", attribute.Int("count", streamResults.TotalCount), attribute.Bool("timeout", streamResults.DidTimeout), attribute.Int("repo_count", len(streamResults.RepoCounts)))
 		return streamResults, nil
 	}
 
 	computeSearchStream := func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
 		decoder, streamResults := streaming.MatchContextComputeDecoder()
+		tr, ctx := trace.New(ctx, "CodeInsightsSearch", "computeMatchContextSearchStream")
+		defer tr.Finish()
+
 		err := streaming.ComputeMatchContextStream(ctx, query, decoder)
 		if err != nil {
 			return nil, errors.Wrap(err, "streaming.Compute")
 		}
+		tr.AddEvent("compute match context results", attribute.Int("count", streamResults.TotalCount), attribute.Bool("timeout", streamResults.DidTimeout), attribute.Int("repo_count", len(streamResults.RepoCounts)))
+
 		return streamResults, nil
 	}
 
