@@ -74,7 +74,7 @@ export const GettingStarted: React.FunctionComponent<React.PropsWithChildren<Get
             </div>
         </Container>
         {isSourcegraphDotCom ? (
-            <CloudCtaBanner>
+            <CloudCtaBanner variant="filled">
                 To automate changes across your team's private repos,{' '}
                 <Link
                     to="https://signup.sourcegraph.com/?p=batch"
