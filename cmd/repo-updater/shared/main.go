@@ -89,11 +89,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	profiler.Init()
 
 	logger := log.Scoped("service", "repo-updater service")
-	observationContext := &observation.Context{
-		Logger:     log.NoOp(),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	// TODO: remove NoOp
+	observationContext := observation.NewContext(log.NoOp())
 
 	// Signals health of startup
 	ready := make(chan struct{})
@@ -173,10 +170,9 @@ func Main(enterpriseInit EnterpriseInit) {
 		Store:   store,
 		// We always want to listen on the Synced channel since external service syncing
 		// happens on both Cloud and non Cloud instances.
-		Synced:     make(chan repos.Diff),
-		Now:        clock,
-		Registerer: prometheus.DefaultRegisterer,
-		ObsvCtx:    observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationContext),
+		Synced:  make(chan repos.Diff),
+		Now:     clock,
+		ObsvCtx: observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationContext),
 	}
 
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer, server.ChangesetSyncRegistry)

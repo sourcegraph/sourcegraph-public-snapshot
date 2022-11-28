@@ -276,9 +276,9 @@ type Server struct {
 	// Logger should be used for all logging and logger creation.
 	Logger log.Logger
 
-	// ObservationContext is used to initialize an operations struct
+	// ObservationCtx is used to initialize an operations struct
 	// with the appropriate metrics register etc.
-	ObservationContext *observation.Context
+	ObservationCtx *observation.Context
 
 	// ReposDir is the path to the base directory for gitserver storage.
 	ReposDir string
@@ -1525,7 +1525,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 // constructs and memoizes a no-op operations value (for use in tests).
 func (s *Server) ensureOperations() *operations {
 	if s.operations == nil {
-		s.operations = newOperations(s.ObservationContext)
+		s.operations = newOperations(s.ObservationCtx)
 	}
 
 	return s.operations

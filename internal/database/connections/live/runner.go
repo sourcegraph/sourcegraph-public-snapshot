@@ -36,7 +36,7 @@ func RunnerFromDSNsWithSchemas(logger log.Logger, dsns map[string]string, appNam
 		factory func(dsn, appName string, observationContext *observation.Context) (*sql.DB, error),
 	) runner.StoreFactory {
 		return func(ctx context.Context) (runner.Store, error) {
-			db, err := factory(dsns[name], appName, &observation.TestContext)
+			db, err := factory(dsns[name], appName, observation.NewContext(logger))
 			if err != nil {
 				return nil, err
 			}

@@ -71,9 +71,9 @@ func init() {
 
 	srv := &http.Server{
 		Handler: (&server.Server{
-			Logger:             sglog.Scoped("server", "the gitserver service"),
-			ObservationContext: &observation.TestContext,
-			ReposDir:           filepath.Join(root, "repos"),
+			Logger:         sglog.Scoped("server", "the gitserver service"),
+			ObservationCtx: &observation.TestContext,
+			ReposDir:       filepath.Join(root, "repos"),
 			GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 				return filepath.Join(root, "remotes", string(name)), nil
 			},

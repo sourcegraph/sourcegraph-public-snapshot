@@ -20,12 +20,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -585,10 +585,7 @@ func newStore(t *testing.T, files map[string]struct {
 		Path: t.TempDir(),
 		Log:  logtest.Scoped(t),
 
-		ObservationContext: &observation.Context{
-			Registerer: metrics.TestRegisterer,
-			Logger:     logtest.Scoped(t),
-		},
+		ObservationContext: observation.TestContextTB(t),
 	}
 }
 

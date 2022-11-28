@@ -8,9 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
@@ -18,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	apiworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -189,11 +186,7 @@ func endpointOptions(c *config.Config, pathPrefix string) apiclient.EndpointOpti
 }
 
 func makeWorkerMetrics(queueName string) workerutil.WorkerObservability {
-	observationContext := &observation.Context{
-		Logger:     log.Scoped("executor_processor", "executor worker processor"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationContext := observation.NewContext(log.Scoped("executor_processor", "executor worker processor"))
 
 	return workerutil.NewMetrics(observationContext, "executor_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true }),
 		// derived from historic data, ideally we will use spare high-res histograms once they're a reality

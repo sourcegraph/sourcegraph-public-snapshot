@@ -28,6 +28,8 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/go-diff/diff"
@@ -93,8 +95,9 @@ func NewClient(db database.DB) Client {
 // NewTestClient returns a test client that will use the given hard coded list of
 // addresses instead of reading them from config.
 func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
+	logger := sglog.Scoped("NewTestClient", "Test New client")
 	return &clientImplementor{
-		logger: sglog.Scoped("NewTestClient", "Test New client"),
+		logger: logger,
 		addrs: func() []string {
 			return addrs
 		},
@@ -106,7 +109,7 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 		// frontend internal API)
 		userAgent:  filepath.Base(os.Args[0]),
 		db:         db,
-		operations: newOperations(&observation.TestContext),
+		operations: newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
 	}
 }
 

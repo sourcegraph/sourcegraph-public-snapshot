@@ -15,12 +15,10 @@ import (
 	"syscall"
 	"time"
 
-	"go.opentelemetry.io/otel"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
@@ -140,18 +138,10 @@ func run(logger log.Logger) error {
 		return errors.Wrap(err, "failed to setup TMPDIR")
 	}
 
-	storeObservationContext := &observation.Context{
-		// Explicitly don't scope Store logger under the parent logger
-		Logger:     log.Scoped("Store", "searcher archives store"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	// Explicitly don't scope Store logger under the parent logger
+	storeObservationContext := observation.NewContext(log.Scoped("Store", "searcher archives store"))
 
-	db, err := frontendDB(&observation.Context{
-		Logger:     log.Scoped("db", "server frontend db"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	})
+	db, err := frontendDB(observation.NewContext(log.Scoped("db", "server frontend db")))
 	if err != nil {
 		return errors.Wrap(err, "failed to connect to frontend database")
 	}

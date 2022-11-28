@@ -16,7 +16,6 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -653,7 +652,7 @@ func TestSyncerSync(t *testing.T) {
 			}
 
 			syncer := &repos.Syncer{
-				ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+				ObsvCtx: observation.TestContextTB(t),
 				Sourcer: tc.sourcer,
 				Store:   st,
 				Now:     now,
@@ -873,7 +872,7 @@ func TestSyncRepo(t *testing.T) {
 			}
 
 			syncer := &repos.Syncer{
-				ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+				ObsvCtx: observation.TestContextTB(t),
 				Now:     time.Now,
 				Store:   store,
 				Synced:  make(chan repos.Diff, 1),
@@ -954,7 +953,7 @@ func TestSyncRun(t *testing.T) {
 	lockChan := fakeSource.InitLockChan()
 
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: repos.NewFakeSourcer(nil, fakeSource),
 		Store:   store,
 		Synced:  make(chan repos.Diff),
@@ -1110,7 +1109,7 @@ func TestSyncerMultipleServices(t *testing.T) {
 	}
 
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s, ok := sourcers[service.ID]
 			if !ok {
@@ -1247,7 +1246,7 @@ func TestOrphanedRepo(t *testing.T) {
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, githubRepo)
 			return s, nil
@@ -1348,7 +1347,7 @@ func TestCloudDefaultExternalServicesDontSync(t *testing.T) {
 	}
 
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, githubRepo)
 			return s, nil
@@ -1410,7 +1409,7 @@ func TestConflictingSyncers(t *testing.T) {
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, githubRepo)
 			return s, nil
@@ -1424,7 +1423,7 @@ func TestConflictingSyncers(t *testing.T) {
 
 	// Sync second service
 	syncer = &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc2, nil, githubRepo)
 			return s, nil
@@ -1469,7 +1468,7 @@ func TestConflictingSyncers(t *testing.T) {
 
 	// Start syncing using tx1
 	syncer = &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, updatedRepo)
 			return s, nil
@@ -1482,7 +1481,7 @@ func TestConflictingSyncers(t *testing.T) {
 	}
 
 	syncer2 := &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc2, nil, githubRepo.With(func(r *types.Repo) {
 				r.Description = newDescription
@@ -1569,7 +1568,7 @@ func TestSyncRepoMaintainsOtherSources(t *testing.T) {
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, githubRepo)
 			return s, nil
@@ -1583,7 +1582,7 @@ func TestSyncRepoMaintainsOtherSources(t *testing.T) {
 
 	// Sync second service
 	syncer = &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc2, nil, githubRepo)
 			return s, nil
@@ -1670,7 +1669,7 @@ func TestNameOnConflictOnRename(t *testing.T) {
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, githubRepo1)
 			return s, nil
@@ -1684,7 +1683,7 @@ func TestNameOnConflictOnRename(t *testing.T) {
 
 	// Sync second service
 	syncer = &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(context.Context, *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc2, nil, githubRepo2)
 			return s, nil
@@ -1703,7 +1702,7 @@ func TestNameOnConflictOnRename(t *testing.T) {
 
 	// Sync first service
 	syncer = &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(context.Context, *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, renamedRepo1)
 			return s, nil
@@ -1778,7 +1777,7 @@ func TestDeleteExternalService(t *testing.T) {
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc1, nil, githubRepo)
 			return s, nil
@@ -1792,7 +1791,7 @@ func TestDeleteExternalService(t *testing.T) {
 
 	// Sync second service
 	syncer = &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
 			s := repos.NewFakeSource(svc2, nil, githubRepo)
 			return s, nil
@@ -2000,7 +1999,7 @@ func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
 	}
 
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext),
+		ObsvCtx: observation.TestContextTB(t),
 		Now:     time.Now,
 		Store:   s,
 		Synced:  make(chan repos.Diff, 1),
@@ -2019,8 +2018,7 @@ func TestEnqueueWebhookBuildJob(t *testing.T) {
 	store := getTestRepoStore(t)
 
 	ctx := context.Background()
-	logger := logtest.Scoped(t)
-	observationContext := observation.ContextWithLogger(logger, &observation.TestContext)
+	observationContext := observation.TestContextTB(t)
 
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 		ExperimentalFeatures: &schema.ExperimentalFeatures{

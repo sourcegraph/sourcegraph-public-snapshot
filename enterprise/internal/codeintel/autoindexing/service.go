@@ -66,7 +66,7 @@ func newService(
 		repoUpdater,
 		gitserver,
 		jobSelector,
-		&observation.TestContext,
+		observationContext,
 	)
 
 	return &Service{

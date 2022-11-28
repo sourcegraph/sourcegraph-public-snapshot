@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
-	"go.opentelemetry.io/otel"
 
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -35,8 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type telemetryJob struct {
@@ -117,10 +114,7 @@ func (j *queueSizeJob) Handle(ctx context.Context) error {
 }
 
 func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.BackgroundRoutine {
-	observationContext := &observation.Context{
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationContext := observation.NewContext(log.NoOp())
 	handlerMetrics := newHandlerMetrics(observationContext)
 	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents, handlerMetrics)
 	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), JobCooldownDuration, th, handlerMetrics.handler)

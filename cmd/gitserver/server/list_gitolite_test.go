@@ -111,10 +111,10 @@ func TestCheckSSRFHeader(t *testing.T) {
 	gr := database.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	s := &Server{
-		Logger:             logtest.Scoped(t),
-		ObservationContext: &observation.TestContext,
-		ReposDir:           "/testroot",
-		skipCloneForTests:  true,
+		Logger:            logtest.Scoped(t),
+		ObservationCtx:    observation.TestContextTB(t),
+		ReposDir:          "/testroot",
+		skipCloneForTests: true,
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return "https://" + string(name) + ".git", nil
 		},

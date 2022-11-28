@@ -8,7 +8,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -56,7 +55,7 @@ func TestSyncWorkerPlumbing(t *testing.T) {
 	worker, resetter := repos.NewSyncWorker(ctx, store.Handle(), h, repos.SyncWorkerOptions{
 		NumHandlers:    1,
 		WorkerInterval: 1 * time.Millisecond,
-	}, observation.ContextWithLogger(logtest.Scoped(t), &observation.TestContext))
+	}, observation.TestContextTB(t))
 	go worker.Start()
 	go resetter.Start()
 

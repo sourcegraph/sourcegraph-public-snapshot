@@ -649,7 +649,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				Now:     clock.Now,
 				Store:   store,
 				Sourcer: repos.NewFakeSourcer(nil, tc.src),
-				ObsvCtx: observation.ContextWithLogger(logger, &observation.TestContext),
+				ObsvCtx: observation.TestContextTB(t),
 			}
 
 			scheduler := repos.NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())

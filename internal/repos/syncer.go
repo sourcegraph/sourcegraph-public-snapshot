@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"golang.org/x/sync/singleflight"
 	"golang.org/x/time/rate"
@@ -44,9 +43,6 @@ type Syncer struct {
 	// Now is time.Now. Can be set by tests to get deterministic output.
 	Now func() time.Time
 
-	// Registerer is the interface to register / unregister prometheus metrics.
-	Registerer prometheus.Registerer
-
 	// Ensure that we only run one sync per repo at a time
 	syncGroup singleflight.Group
 }
@@ -80,10 +76,9 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		store:           store,
 		minSyncInterval: opts.MinSyncInterval,
 	}, SyncWorkerOptions{
-		WorkerInterval:       opts.DequeueInterval,
-		NumHandlers:          ConfRepoConcurrentExternalServiceSyncers(),
-		PrometheusRegisterer: s.Registerer,
-		CleanupOldJobs:       true,
+		WorkerInterval: opts.DequeueInterval,
+		NumHandlers:    ConfRepoConcurrentExternalServiceSyncers(),
+		CleanupOldJobs: true,
 	}, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx))
 
 	go worker.Start()

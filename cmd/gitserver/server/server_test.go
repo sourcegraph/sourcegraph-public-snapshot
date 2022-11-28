@@ -170,10 +170,10 @@ func TestExecRequest(t *testing.T) {
 	gr := database.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	s := &Server{
-		Logger:             logtest.Scoped(t),
-		ObservationContext: &observation.TestContext,
-		ReposDir:           "/testroot",
-		skipCloneForTests:  true,
+		Logger:            logtest.Scoped(t),
+		ObservationCtx:    observation.TestContextTB(t),
+		ReposDir:          "/testroot",
+		skipCloneForTests: true,
 		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
 			return "https://" + string(name) + ".git", nil
 		},
@@ -289,10 +289,10 @@ func TestServer_handleP4Exec(t *testing.T) {
 	}
 
 	s := &Server{
-		Logger:             logtest.Scoped(t),
-		ObservationContext: &observation.TestContext,
-		skipCloneForTests:  true,
-		DB:                 database.NewMockDB(),
+		Logger:            logtest.Scoped(t),
+		ObservationCtx:    observation.TestContextTB(t),
+		skipCloneForTests: true,
+		DB:                database.NewMockDB(),
 	}
 	h := s.Handler()
 
@@ -549,10 +549,10 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		db = mDB
 	}
 	s := &Server{
-		Logger:             logtest.Scoped(t),
-		ObservationContext: &observation.TestContext,
-		ReposDir:           repoDir,
-		GetRemoteURLFunc:   staticGetRemoteURL(remote),
+		Logger:           logtest.Scoped(t),
+		ObservationCtx:   observation.TestContextTB(t),
+		ReposDir:         repoDir,
+		GetRemoteURLFunc: staticGetRemoteURL(remote),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
@@ -1343,10 +1343,10 @@ func TestHostnameMatch(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
 			s := Server{
-				Logger:             logtest.Scoped(t),
-				ObservationContext: &observation.TestContext,
-				Hostname:           tc.hostname,
-				DB:                 database.NewMockDB(),
+				Logger:         logtest.Scoped(t),
+				ObservationCtx: observation.TestContextTB(t),
+				Hostname:       tc.hostname,
+				DB:             database.NewMockDB(),
 			}
 			have := s.hostnameMatch(tc.addr)
 			if have != tc.shouldMatch {
@@ -1558,7 +1558,7 @@ func TestHandleBatchLog(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			server := &Server{
 				Logger:                  logtest.Scoped(t),
-				ObservationContext:      &observation.TestContext,
+				ObservationCtx:          observation.TestContextTB(t),
 				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
 				DB:                      database.NewMockDB(),
 			}
@@ -1669,7 +1669,6 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 		}
 
 		assertBody(result, failureExpectation)
-
 	})
 
 	t.Run("x-requested-with invalid value", func(t *testing.T) {
@@ -1733,7 +1732,6 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusOK, result.StatusCode)
 		}
 	})
-
 }
 
 func mustEncodeJSONResponse(value any) string {

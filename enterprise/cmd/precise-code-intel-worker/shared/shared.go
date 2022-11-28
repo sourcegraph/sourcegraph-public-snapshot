@@ -7,9 +7,7 @@ import (
 	"time"
 
 	smithyhttp "github.com/aws/smithy-go/transport/http"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel"
 
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
@@ -31,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -66,14 +63,10 @@ func Main() {
 	}
 
 	// Initialize tracing/metrics
-	observationContext := &observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-		HoneyDataset: &honey.Dataset{
-			Name: "codeintel-worker",
-		},
-	}
+	// TODO: nsc noop
+	observationContext := observation.NewContext(log.NoOp(), observation.Honeycomb(&honey.Dataset{
+		Name: "codeintel-worker",
+	}))
 
 	// Start debug server
 	ready := make(chan struct{})

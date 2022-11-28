@@ -17,10 +17,8 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"github.com/tidwall/gjson"
-	"go.opentelemetry.io/otel"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
@@ -101,11 +99,7 @@ func Main() {
 	profiler.Init()
 
 	logger := log.Scoped("server", "the gitserver service")
-	observationContext := &observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationContext := observation.NewContext(logger)
 
 	if reposDir == "" {
 		logger.Fatal("SRC_REPOS_DIR is required")
@@ -141,7 +135,7 @@ func Main() {
 
 	gitserver := server.Server{
 		Logger:             logger,
-		ObservationContext: observationContext,
+		ObservationCtx:     observationContext,
 		ReposDir:           reposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {

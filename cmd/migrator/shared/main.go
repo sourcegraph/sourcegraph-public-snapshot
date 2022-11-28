@@ -5,9 +5,7 @@ import (
 	"database/sql"
 	"os"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli/v2"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -18,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	ossmigrations "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -31,11 +28,7 @@ var out = output.NewOutput(os.Stdout, output.OutputOpts{
 })
 
 func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsingConfAndStoreFactoryFunc) error {
-	observationContext := &observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationContext := observation.NewContext(logger)
 	operations := store.NewOperations(observationContext)
 
 	outputFactory := func() *output.Output { return out }

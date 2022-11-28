@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -238,7 +237,7 @@ func TestSymlink(t *testing.T) {
 }
 
 func createSymlinkRepo(dir string) error {
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 	script := `mkdir repo
@@ -284,10 +283,7 @@ func tmpStore(t *testing.T) *Store {
 		Path: d,
 		Log:  logtest.Scoped(t),
 
-		ObservationContext: &observation.Context{
-			Registerer: metrics.TestRegisterer,
-			Logger:     logtest.Scoped(t),
-		},
+		ObservationContext: observation.TestContextTB(t),
 	}
 }
 

@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"go.opentelemetry.io/otel"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -27,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
@@ -43,11 +40,7 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 	workerBaseStore := basestore.NewWithHandle(mainAppDB.Handle())
 
 	// Create basic metrics for recording information about background jobs.
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("background", "insights background jobs"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationContext := observation.NewContext(logger.Scoped("background", "insights background jobs"))
 
 	insightsMetadataStore := store.NewInsightStore(insightsDB)
 	featureFlagStore := mainAppDB.FeatureFlags()
@@ -132,11 +125,7 @@ func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainApp
 	repoStore := mainAppDB.Repos()
 
 	// Create basic metrics for recording information about background jobs.
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("background", "background query runner job"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationContext := observation.NewContext(logger.Scoped("background", "background query runner job"))
 	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationContext, "query_runner_worker")
 
 	workerStore := queryrunner.CreateDBWorkerStore(workerBaseStore, observationContext)

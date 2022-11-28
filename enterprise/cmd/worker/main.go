@@ -1,9 +1,7 @@
 package main
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	enterprise_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared"
@@ -11,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -23,11 +20,9 @@ func main() {
 	defer liblog.Sync()
 
 	logger := log.Scoped("worker", "worker enterprise edition")
-	observationContext := &observation.Context{
-		Logger:     log.NoOp(),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+
+	// TODO: nsc noop
+	observationContext := observation.NewContext(log.NoOp())
 
 	go enterprise_shared.SetAuthzProviders(logger, observationContext)
 

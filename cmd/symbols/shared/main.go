@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -74,15 +72,10 @@ func Main(setup SetupFunc) {
 
 	// Initialize tracing/metrics
 	logger := log.Scoped("service", "the symbols service")
-	observationContext := &observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-		HoneyDataset: &honey.Dataset{
-			Name:       "codeintel-symbols",
-			SampleRate: 20,
-		},
-	}
+	observationContext := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
+		Name:       "codeintel-symbols",
+		SampleRate: 20,
+	}))
 
 	// Allow to do a sanity check of sqlite.
 	if sanityCheck {

@@ -1,9 +1,7 @@
 package batches
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel"
 
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -11,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -22,11 +19,7 @@ func InitStore() (*store.Store, error) {
 
 var initStore = memo.NewMemoizedConstructor(func() (*store.Store, error) {
 	logger := log.Scoped("store.batches", "batches store")
-	observationContext := &observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationContext := observation.NewContext(logger)
 
 	db, err := workerdb.InitDBWithLogger(logger, observationContext)
 	if err != nil {
@@ -42,11 +35,7 @@ func InitReconcilerWorkerStore() (dbworkerstore.Store[*types.Changeset], error) 
 }
 
 var initReconcilerWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store[*types.Changeset], error) {
-	observationContext := &observation.Context{
-		Logger:     log.Scoped("store.reconciler", "reconciler worker store"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationContext := observation.NewContext(log.Scoped("store.reconciler", "reconciler worker store"))
 
 	db, err := workerdb.InitDBWithLogger(observationContext.Logger, observationContext)
 	if err != nil {
@@ -62,11 +51,7 @@ func InitBulkOperationWorkerStore() (dbworkerstore.Store[*types.ChangesetJob], e
 }
 
 var initBulkOperationWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store[*types.ChangesetJob], error) {
-	observationContext := &observation.Context{
-		Logger:     log.Scoped("store.bulk_ops", "bulk operation worker store"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationContext := observation.NewContext(log.Scoped("store.bulk_ops", "bulk operation worker store"))
 
 	db, err := workerdb.InitDBWithLogger(observationContext.Logger, observationContext)
 	if err != nil {
@@ -82,11 +67,7 @@ func InitBatchSpecWorkspaceExecutionWorkerStore() (dbworkerstore.Store[*types.Ba
 }
 
 var initBatchSpecWorkspaceExecutionWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store[*types.BatchSpecWorkspaceExecutionJob], error) {
-	observationContext := &observation.Context{
-		Logger:     log.Scoped("store.execution", "the batch spec workspace execution worker store"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationContext := observation.NewContext(log.Scoped("store.execution", "the batch spec workspace execution worker store"))
 
 	db, err := workerdb.InitDBWithLogger(observationContext.Logger, observationContext)
 	if err != nil {
@@ -102,11 +83,7 @@ func InitBatchSpecResolutionWorkerStore() (dbworkerstore.Store[*types.BatchSpecR
 }
 
 var initBatchSpecResolutionWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store[*types.BatchSpecResolutionJob], error) {
-	observationContext := &observation.Context{
-		Logger:     log.Scoped("store.batch_spec_resolution", "the batch spec resolution worker store"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationContext := observation.NewContext(log.Scoped("store.batch_spec_resolution", "the batch spec resolution worker store"))
 
 	db, err := workerdb.InitDBWithLogger(observationContext.Logger, observationContext)
 	if err != nil {

@@ -270,7 +270,7 @@ func TestStatusMessages(t *testing.T) {
 
 			clock := timeutil.NewFakeClock(time.Now(), 0)
 			syncer := &Syncer{
-				ObsvCtx: observation.ContextWithLogger(logger, &observation.TestContext),
+				ObsvCtx: observation.TestContextTB(t),
 				Store:   store,
 				Now:     clock.Now,
 			}

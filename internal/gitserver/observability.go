@@ -4,14 +4,10 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type operations struct {
@@ -57,11 +53,7 @@ var (
 
 func getOperations() *operations {
 	operationsInstOnce.Do(func() {
-		observationContext := &observation.Context{
-			Logger:     log.Scoped("gitserver.client", "gitserver client"),
-			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
+		observationContext := observation.NewContext(log.Scoped("gitserver.client", "gitserver client"))
 		operationsInst = newOperations(observationContext)
 	})
 

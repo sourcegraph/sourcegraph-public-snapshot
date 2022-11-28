@@ -25,6 +25,7 @@ func newOperations(observationContext *observation.Context, component string) *o
 
 	// we dont enable tracing for evict, as it doesnt take a context.Context
 	// so it cannot be part of a trace
+	// TODO: nsc revisit
 	evictObservationContext := &observation.Context{
 		Logger:       observationContext.Logger,
 		Registerer:   observationContext.Registerer,

@@ -5,14 +5,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type operations struct {
@@ -57,11 +53,7 @@ var (
 
 func getOperations() *operations {
 	opsOnce.Do(func() {
-		observationContext := &observation.Context{
-			Logger:     log.Scoped("npm", ""),
-			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
+		observationContext := observation.NewContext(log.Scoped("npm", ""))
 
 		ops = newOperations(observationContext)
 	})
