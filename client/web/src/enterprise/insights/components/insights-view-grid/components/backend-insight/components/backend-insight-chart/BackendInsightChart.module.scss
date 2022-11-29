@@ -93,3 +93,8 @@
     display: flex;
     padding: 0 0.25rem;
 }
+
+.troubleshoot-link {
+    // A special link color override for the link within the tooltip UI case
+    --link-color: #4393e7;
+}

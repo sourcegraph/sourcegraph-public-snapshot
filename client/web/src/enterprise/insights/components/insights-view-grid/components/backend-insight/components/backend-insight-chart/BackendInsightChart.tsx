@@ -247,7 +247,12 @@ export const BackendInsightTimeoutIcon: FC<BackendInsightTimeoutIconProps> = pro
                     {timeoutLevel === 'series'
                         ? 'Some points of this data series exceeded the time limit. Results may be incomplete.'
                         : 'Calculating some points on this insight exceeded the timeout limit. Results may be incomplete.'}{' '}
-                    <Link to="/help/code_insights/how-tos/Troubleshooting" target="_blank" rel="noopener">
+                    <Link
+                        to="/help/code_insights/how-tos/Troubleshooting"
+                        target="_blank"
+                        rel="noopener"
+                        className={styles.troubleshootLink}
+                    >
                         Troubleshoot
                     </Link>
                 </>
