@@ -45,20 +45,10 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
     seriesToggleState: UseSeriesToggleReturn
     className?: string
     onDatumClick: () => void
-    onChartKeyDown?: (event: KeyboardEvent) => void
 }
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
-    const {
-        data,
-        isFetchingHistoricalData,
-        locked,
-        zeroYAxisMin,
-        seriesToggleState,
-        className,
-        onDatumClick,
-        onChartKeyDown,
-    } = props
+    const { data, isFetchingHistoricalData, locked, zeroYAxisMin, seriesToggleState, className, onDatumClick } = props
 
     const { ref, width = 0 } = useResizeObserver()
 

@@ -26,6 +26,17 @@ export function useKeyboardNavigation(props: Props): void {
                 return
             }
 
+            // Focus the first element within the chart
+            if (isFocusOnTheRootElement) {
+                if (event.key === Key.Enter) {
+                    const firstElementId = findTheFirstPointId(series)
+                    const firstElement = element?.querySelector<HTMLElement>(`[data-id="${firstElementId}"]`)
+                    firstElement?.focus()
+                }
+
+                return
+            }
+
             if (!isArrowPressed(event)) {
                 return
             }
@@ -33,15 +44,6 @@ export function useKeyboardNavigation(props: Props): void {
             // Prevent native browser scrolling by arrow like key presses
             event.preventDefault()
             event.stopImmediatePropagation()
-
-            // Focus the first element within the chart
-            if (isFocusOnTheRootElement) {
-                const firstElementId = findTheFirstPointId(series)
-                const firstElement = element?.querySelector<HTMLElement>(`[data-id="${firstElementId}"]`)
-
-                firstElement?.focus()
-                return
-            }
 
             const focusedElementId = focusedElement?.getAttribute('data-id')
 

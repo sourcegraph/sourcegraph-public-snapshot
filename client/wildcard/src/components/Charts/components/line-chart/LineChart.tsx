@@ -77,9 +77,10 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
 const identity = <T,>(argument: T): T => argument
 const DEFAULT_LINE_CHART_PADDING = { top: 16, right: 18, bottom: 0, left: 0 }
 const TOOLTIP_NAVIGATION_MESSAGE = `
+    Press Enter to enter the arrow keys navigation mode.
     Use left and right arrow keys to navigate through the Y axis.
     Use up and down keys to navigate through multiple data points on the same X line.
-    Press Esc key to exit navigation mode.
+    Press Esc key to exit arrow keys navigation mode.
 `
 
 /**

@@ -1,7 +1,6 @@
-import { forwardRef, HTMLAttributes, KeyboardEvent, useContext, useRef, useState } from 'react'
+import { forwardRef, HTMLAttributes, useContext, useRef, useState } from 'react'
 
 import classNames from 'classnames'
-import { Key } from 'ts-key-enum'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { isDefined } from '@sourcegraph/common'
@@ -147,12 +146,6 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
         setIsFiltersOpen(false)
     }
 
-    const handleChartKeyDown = (event: KeyboardEvent): void => {
-        if (event.key === Key.Escape) {
-            cardElementRef.current?.focus()
-        }
-    }
-
     const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
         insightType: getTrackingTypeByInsightType(insight.type),
@@ -217,7 +210,6 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
                     zeroYAxisMin={zeroYAxisMin}
                     seriesToggleState={seriesToggleState}
                     onDatumClick={trackDatumClicks}
-                    onChartKeyDown={handleChartKeyDown}
                 />
             )}
             {
