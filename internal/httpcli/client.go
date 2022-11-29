@@ -291,6 +291,10 @@ const (
 	// requestRetryAttemptKey is the key to the rehttp.Attempt attached to a request, if
 	// a request undergoes retries via NewRetryPolicy
 	requestRetryAttemptKey requestContextKey = iota
+
+	// redisLoggingMiddlewareErrorKey is the key to any errors that occurred when logging
+	// a request to Redis via redisLoggerMiddleware
+	redisLoggingMiddlewareErrorKey
 )
 
 // NewLoggingMiddleware logs basic diagnostics about requests made through this client at
@@ -329,6 +333,10 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 				fields = append(fields, log.Object("retry",
 					log.Int("attempts", attempt.Index),
 					log.Error(attempt.Error)))
+			}
+			if redisErr, ok := ctx.Value(redisLoggingMiddlewareErrorKey).(error); ok {
+				// Get fields from redisLoggerMiddleware
+				fields = append(fields, log.NamedError("redisLoggerErr", redisErr))
 			}
 
 			// Log results with link to trace if present
