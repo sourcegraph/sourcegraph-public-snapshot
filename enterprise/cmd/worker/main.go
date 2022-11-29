@@ -66,6 +66,7 @@ func main() {
 		"codeintel-upload-expirer":                    codeintel.NewUploadExpirerJob(),
 		"codeintel-upload-janitor":                    codeintel.NewUploadJanitorJob(),
 		"codeintel-upload-graph-exporter":             codeintel.NewGraphExporterJob(),
+		"codeintel-uploadstore-expirer":               codeintel.NewPreciseCodeIntelUploadExpirer(),
 
 		"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
 
