@@ -140,9 +140,14 @@ func TestCache_multi(t *testing.T) {
 	if got, exp := c.GetMulti("k0", "k1", "k2"), [][]byte{nil, []byte("y"), []byte("z")}; !reflect.DeepEqual(exp, got) {
 		t.Errorf("Expected %v, but got %v", exp, got)
 	}
+
+	c.DeleteMulti("k1", "k2")
+	if got, exp := c.GetMulti("k0", "k1", "k2"), [][]byte{nil, nil, nil}; !reflect.DeepEqual(exp, got) {
+		t.Errorf("Expected %v, but got %v", exp, got)
+	}
 }
 
-func TestCache_deleteKeysWithPrefix(t *testing.T) {
+func TestCache_deleteAllKeysWithPrefix(t *testing.T) {
 	SetupForTest(t)
 
 	// decrease the deleteBatchSize
@@ -168,7 +173,7 @@ func TestCache_deleteKeysWithPrefix(t *testing.T) {
 	conn := pool.Get()
 	defer conn.Close()
 
-	err := deleteKeysWithPrefix(conn, c.rkeyPrefix()+"a")
+	err := deleteAllKeysWithPrefix(conn, c.rkeyPrefix()+"a")
 	if err != nil {
 		t.Error(err)
 	}
@@ -187,7 +192,7 @@ func TestCache_deleteKeysWithPrefix(t *testing.T) {
 func TestCache_Increase(t *testing.T) {
 	SetupForTest(t)
 
-	c := NewWithTTL("some_prefix:", 1)
+	c := NewWithTTL("some_prefix", 1)
 	c.Increase("a")
 
 	got, ok := c.Get("a")
@@ -206,7 +211,7 @@ func TestCache_Increase(t *testing.T) {
 func TestCache_ListKeys(t *testing.T) {
 	SetupForTest(t)
 
-	c := NewWithTTL("some_prefix:", 1)
+	c := NewWithTTL("some_prefix", 1)
 	c.SetMulti(
 		[2]string{"foobar", "123"},
 		[2]string{"bazbar", "456"},
