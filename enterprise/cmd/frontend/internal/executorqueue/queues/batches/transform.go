@@ -296,7 +296,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			"-tmp", srcTempDir,
 		}
 
-		ok, err := api.CheckSourcegraphVersion(version, ">= 4.3.0-0", "2022-11-24")
+		ok, err := api.CheckSourcegraphVersion(version, ">= 4.3.0-0", "2022-11-29")
 		if err != nil {
 			return apiclient.Job{}, err
 		}
