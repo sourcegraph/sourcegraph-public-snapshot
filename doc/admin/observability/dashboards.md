@@ -24437,3 +24437,32 @@ Query: `rate(src_telemetry_job_total{op="SendEvents"}[1h]) / on() group_right() 
 
 <br />
 
+## Open Telemetry Collector
+
+<p class="subtitle">Metrics about the operation of the open telemetry collector.</p>
+
+To see this dashboard, visit `/-/debug/grafana/d/otel-collector/otel-collector` on your Sourcegraph instance.
+
+### Open Telemetry Collector: Export failures
+
+#### otel-collector: otel-export-failures
+
+<p class="subtitle">Items that have failed to be exported by the exported</p>
+
+								A value above 0 indicates that the exporter has failing to export one more items to its configured endpoint
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(otelcol_exporter_enqueue_failed_log_records[5m])`
+
+</details>
+
+<br />
+
