@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - The Code Insights commit indexer no longer errors when fetching commits from empty repositories when sub-repo permissions are enabled. [#44558](https://github.com/sourcegraph/sourcegraph/pull/44558)
+- Signing out doesn't log in the user back immediately when there's only one OAuth provider enabled. It now redirects the user to the Sourcegraph login page. [#44803](https://github.com/sourcegraph/sourcegraph/pull/44803)
 
 ### Removed
 
