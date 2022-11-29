@@ -311,7 +311,7 @@ func serveHome(db database.DB) handlerFunc {
 			return nil // request was handled
 		}
 
-		// we only allow HEAD requests on Sourcegraph.com -
+		// we only allow HEAD requests on sourcegraph.com.
 		if r.Method == "HEAD" {
 			w.WriteHeader(http.StatusOK)
 			return nil
