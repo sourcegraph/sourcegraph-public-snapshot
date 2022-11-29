@@ -57,7 +57,7 @@ export const observeQuerySelector = ({ selector, timeout, target }: ObserveQuery
     })
 
 /** Media breakpoints */
-export const breakpoints = {
+const breakpoints = {
     sm: 576,
     md: 768,
     lg: 992,
