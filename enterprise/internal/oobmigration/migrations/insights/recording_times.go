@@ -16,8 +16,12 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 		return referenceTimes
 	}
 
+	// The set of recording times will be augmented with zeros for missing points in the expected leading set and the
+	// expected trailing set.
+
 	var calculatedRecordingTimes []time.Time
 
+	// If the first existing point is newer than the oldest expected point then leading points are added.
 	oldestReferencePoint := referenceTimes[0]
 	if !withinHalfAnInterval(existingPoints[0], oldestReferencePoint, interval) {
 		referencePoint, index := oldestReferencePoint, 0
@@ -27,8 +31,10 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 			referencePoint = referenceTimes[index]
 		}
 	}
+	// Any existing middle points are added.
 	calculatedRecordingTimes = append(calculatedRecordingTimes, existingPoints...)
 
+	// If the last existing point is older than the newest expected point then trailing points are added.
 	newestReferencePoint := referenceTimes[len(referenceTimes)-1]
 	if !withinHalfAnInterval(newestReferencePoint, existingPoints[len(existingPoints)-1], interval) {
 		referencePoint, i := newestReferencePoint, len(existingPoints)-1
