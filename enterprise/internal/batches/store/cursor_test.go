@@ -151,9 +151,7 @@ CREATE TABLE pagination_test (
 
 func (s *Store) CreatePaginationTest(ctx context.Context, pt *PaginationTest) error {
 	q := sqlf.Sprintf("INSERT INTO pagination_test DEFAULT VALUES RETURNING id")
-	return s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return scanPaginationTest(pt, sc)
-	})
+	return createOrUpdateRecord(ctx, s, q, scanPaginationTest, pt)
 }
 
 type ListPaginationTestOpts struct {
@@ -172,17 +170,7 @@ func (s *Store) ListPaginationTests(ctx context.Context, opts ListPaginationTest
 		sqlf.Sprintf(opts.Direction.String()),
 		opts.LimitDB(),
 	)
-	tests := []*PaginationTest{}
-	err := s.query(ctx, q, func(sc dbutil.Scanner) error {
-		pt := PaginationTest{}
-		if err := scanPaginationTest(&pt, sc); err != nil {
-			return err
-		}
-		tests = append(tests, &pt)
-		return nil
-	})
-
-	return CursorResultset(opts.CursorOpts, tests, err)
+	return listRecords(ctx, s, q, opts.CursorOpts, scanPaginationTest)
 }
 
 func scanPaginationTest(pt *PaginationTest, sc dbutil.Scanner) error {
