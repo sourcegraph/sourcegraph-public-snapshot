@@ -57,6 +57,7 @@ func newS3FromConfig(ctx context.Context, config Config, operations *Operations)
 	return newS3WithClients(api, uploader, config.Bucket, config.ManageBucket, lifecycleConfiguration, canConfigureLifecycle, operations), nil
 }
 
+
 func newS3WithClients(client s3API, uploader s3Uploader, bucket string, manageBucket bool, lifecycleConfiguration *s3types.BucketLifecycleConfiguration, canConfigureLifecycle bool, operations *Operations) *s3Store {
 	return &s3Store{
 		bucket:                       bucket,
@@ -274,6 +275,42 @@ func (s *s3Store) Delete(ctx context.Context, key string) (err error) {
 	})
 
 	return errors.Wrap(err, "failed to delete object")
+}
+
+func (s *s3Store) ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) (err error) {
+	ctx, _, endObservation := s.operations.ExpireObjects.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("prefix", prefix),
+		log.String("maxAge", maxAge.String()),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	var toDelete []s3types.ObjectIdentifier
+	paginator := s.client.NewListObjectsV2Paginator(&s3.ListObjectsV2Input{
+		Bucket: aws.String(s.bucket),
+		Prefix: aws.String(prefix),
+	})
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			log15.Warn("Failed to paginate S3 bucket", "error", err)
+			break // we'll try again later
+		}
+		for _, object := range page.Contents {
+			if time.Since(*object.LastModified) >= maxAge {
+				toDelete = append(toDelete,
+					s3types.ObjectIdentifier{
+					Key: object.Key,
+				})
+			}
+		}
+	}
+	_, err = s.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+		Bucket: &s.bucket,
+		Delete: &s3types.Delete{
+			Objects: toDelete,
+		},
+	})
+	return errors.Wrap(err, "failed to delete objects")
 }
 
 func (s *s3Store) create(ctx context.Context) error {

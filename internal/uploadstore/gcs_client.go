@@ -10,6 +10,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"google.golang.org/api/option"
+	"google.golang.org/api/iterator"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -158,6 +159,35 @@ func (s *gcsStore) Delete(ctx context.Context, key string) (err error) {
 	defer endObservation(1, observation.Args{})
 
 	return errors.Wrap(s.client.Bucket(s.bucket).Object(key).Delete(ctx), "failed to delete object")
+}
+
+func (s *gcsStore) ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) (err error) {
+	ctx, _, endObservation := s.operations.ExpireObjects.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("prefix", prefix),
+		log.String("maxAge", maxAge.String()),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	bucket := s.client.Bucket(s.bucket)
+	it := bucket.Objects(ctx, &storage.Query{Prefix: prefix})
+	for {
+		objAttrs, err := it.Next()
+		if err != nil && err != iterator.Done {
+			log15.Warn("Failed to iterate GCS bucket", "error", err)
+			break // we'll try again later
+		}
+		if err == iterator.Done {
+			break
+		}
+
+		if time.Since(objAttrs.Created) >= maxAge {
+			if err := bucket.Object(objAttrs.Name).Delete(ctx); err != nil {
+				log15.Warn("Failed to delete expired GCS object", "error", err, "bucket", s.bucket, "object", objAttrs.Name)
+				continue
+			}
+		}
+	}
+	return nil
 }
 
 func (s *gcsStore) create(ctx context.Context, bucket gcsBucketHandle) error {
