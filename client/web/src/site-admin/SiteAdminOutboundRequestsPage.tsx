@@ -1,6 +1,7 @@
 import React, { ReactNode, useCallback, useEffect, useState } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import { RouteComponentProps } from 'react-router'
@@ -200,11 +201,13 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
             <div>
                 <Tooltip content="HTTP request method">
                     <span>
+                        <VisuallyHidden>Request method</VisuallyHidden>
                         <span
                             className={classNames(
                                 styles.method,
                                 styles[node.method.toLowerCase() as keyof typeof styles]
                             )}
+                            aria-hidden={true}
                         >
                             ●
                         </span>{' '}
@@ -214,7 +217,10 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
             </div>
             <div>
                 <Tooltip content="HTTP response status code">
-                    <span className={isSuccessful(node) ? styles.successful : styles.failed}>{node.statusCode}</span>
+                    <span className={isSuccessful(node) ? styles.successful : styles.failed}>
+                        <VisuallyHidden>Status code</VisuallyHidden>
+                        {node.statusCode}
+                    </span>
                 </Tooltip>
             </div>
             <div className={styles.urlColumn}>{node.url}</div>
@@ -288,7 +294,7 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
                 </SimplePopover>
             </div>
             <div>
-                <Tooltip content={copied ? 'Curl command copied' : `Copy ${buildCurlCommand(node)}`}>
+                <Tooltip content={copied ? 'Curl command copied' : 'Copy curl command (may contain REDACTED fields!)'}>
                     <Button className="ml-2" onClick={() => copyToClipboard(buildCurlCommand(node))}>
                         Copy curl
                     </Button>
