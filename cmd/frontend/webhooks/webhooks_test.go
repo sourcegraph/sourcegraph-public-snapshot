@@ -80,6 +80,7 @@ func TestWebhooksHandler(t *testing.T) {
 
 	bbCloudWH, err := dbWebhooks.Create(
 		context.Background(),
+		"bb webhook",
 		extsvc.KindBitbucketCloud,
 		"http://bitbucket.com",
 		u.ID,
