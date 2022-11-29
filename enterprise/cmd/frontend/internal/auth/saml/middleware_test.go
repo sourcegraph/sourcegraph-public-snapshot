@@ -2,6 +2,7 @@ package saml
 
 import (
 	"bytes"
+	"compress/flate"
 	"context"
 	"crypto"
 	"crypto/x509"
@@ -12,6 +13,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -261,12 +263,32 @@ func TestMiddleware(t *testing.T) {
 	}
 
 	var (
-		authnCookies []*http.Cookie
+		authnRequest    saml.AuthnRequest
+		authnCookies    []*http.Cookie
+		authnRequestURL string
 	)
 	t.Run("unauthenticated homepage visit, no sign-out cookie -> IDP SSO URL", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, false, nil)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+		}
+		locURL, err := url.Parse(resp.Header.Get("Location"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.HasPrefix(locURL.String(), idpServer.IDP.SSOURL.String()) {
+			t.Error("wrong redirect URL")
+		}
+
+		// save cookies and Authn request
+		authnCookies = unexpiredCookies(resp)
+		authnRequestURL = locURL.String()
+		deflatedSAMLRequest, err := base64.StdEncoding.DecodeString(locURL.Query().Get("SAMLRequest"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := xml.NewDecoder(flate.NewReader(bytes.NewBuffer(deflatedSAMLRequest))).Decode(&authnRequest); err != nil {
+			t.Fatal(err)
 		}
 	})
 	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg login", func(t *testing.T) {
@@ -311,13 +333,7 @@ func TestMiddleware(t *testing.T) {
 	})
 
 	t.Run("get SAML assertion from IDP and post the assertion to the SP ACS URL", func(t *testing.T) {
-		respLogin := doRequest("GET", "http://example.com/.auth/saml/login", "", nil, false, nil)
-		locURL, err := url.Parse(respLogin.Header.Get("Location"))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		authnReq, err := http.NewRequest("GET", locURL.String(), nil)
+		authnReq, err := http.NewRequest("GET", authnRequestURL, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

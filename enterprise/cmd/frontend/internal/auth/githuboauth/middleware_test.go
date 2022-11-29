@@ -76,11 +76,32 @@ func TestMiddleware(t *testing.T) {
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
+		if got, want := resp.Header.Get("Location"), "/.auth/github/login?"; !strings.Contains(got, want) {
+			t.Errorf("got redirect URL %v, want contains %v", got, want)
+		}
+		redirectURL, err := url.Parse(resp.Header.Get("Location"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := redirectURL.Query().Get("redirect"), "/"; got != want {
+			t.Errorf("got return-to URL %v, want %v", got, want)
+		}
 	})
 	t.Run("unauthenticated subpage visit -> github oauth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/page", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+		}
+
+		if got, want := resp.Header.Get("Location"), "/.auth/github/login?"; !strings.Contains(got, want) {
+			t.Errorf("got redirect URL %v, want contains %v", got, want)
+		}
+		redirectURL, err := url.Parse(resp.Header.Get("Location"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := redirectURL.Query().Get("redirect"), "/page"; got != want {
+			t.Errorf("got return-to URL %v, want %v", got, want)
 		}
 	})
 
