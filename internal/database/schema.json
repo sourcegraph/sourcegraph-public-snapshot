@@ -17995,6 +17995,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "autodefined",
+          "Index": 11,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "created_at",
           "Index": 7,
           "TypeName": "timestamp with time zone",
