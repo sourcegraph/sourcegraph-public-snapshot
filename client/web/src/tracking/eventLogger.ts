@@ -19,7 +19,8 @@ export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
 export const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
 export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
 export const DEVICE_SESSION_ID_KEY = 'sourcegraphSessionId'
-export const ORIGINAL_REFERRER_KEY = '_mkto_referrer'
+export const ORIGINAL_REFERRER_KEY = 'originalReferrer'
+export const MKTO_ORIGINAL_REFERRER_KEY = '_mkto_referrer'
 
 const EXTENSION_MARKER_ID = '#sourcegraph-app-background'
 
@@ -236,8 +237,8 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     }
 
     public getOriginalReferrer(): string {
-        // Gets the referrer URL from the cookie
-        const referrer = this.originalReferrer || cookies.get(ORIGINAL_REFERRER_KEY)
+        // Gets the original referrer from the cookie or if it doesn't exist, the mkto_referrer from the URL.
+        const referrer = this.originalReferrer || cookies.get(ORIGINAL_REFERRER_KEY) || cookies.get(MKTO_ORIGINAL_REFERRER_KEY)
         this.originalReferrer = referrer || ''
         return this.originalReferrer
     }
@@ -320,9 +321,30 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
         }
 
+        let originalReferrer = cookies.get(ORIGINAL_REFERRER_KEY)
+        if (!originalReferrer) {
+            originalReferrer = document.referrer
+                // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
+                // only send the hostname instead of the whole URL to avoid
+                // leaking private repository names and files into our data.
+                try {
+                    const url = new URL(originalReferrer)
+                    // if the referrer is a sourcegraph domain we want to set it as ''
+                    if (url.hostname === 'sourcegraph.com') {
+                        originalReferrer = ''
+                    }
+                }
+                // if the referrer is not a valid URL we want to set it as ''
+                catch {
+                    originalReferrer = ''
+                }
+            cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
+        }
+
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
         this.deviceID = deviceID
+        this.originalReferrer = originalReferrer
     }
 
     public addEventLogListener(callback: (eventName: string) => void): () => void {
