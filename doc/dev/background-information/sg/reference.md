@@ -1016,6 +1016,7 @@ Flags:
 * `--grafana.headers="<value>"`: Additional headers for HTTP requests to the Grafana instance
 * `--grafana.url="<value>"`: Address for the Grafana instance to reload (default: http://127.0.0.1:3370)
 * `--inject-label-matcher="<value>"`: Labels to inject into all selectors in Prometheus expressions: observable queries, dashboard template variables, etc.
+* `--multi-instance-groupings="<value>"`: [WIP] If non-empty, indicates whether or not a multi-instance dashboard should be generated with the provided labels to group on.
 * `--no-prune`: Toggles pruning of dangling generated assets through simple heuristic - should be disabled during builds.
 * `--prometheus.dir="<value>"`: Output directory for generated Prometheus assets (default: $SG_ROOT/docker-images/prometheus/config/)
 * `--prometheus.url="<value>"`: Address for the Prometheus instance to reload (default: http://127.0.0.1:9090)
