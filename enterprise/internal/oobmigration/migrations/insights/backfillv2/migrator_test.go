@@ -196,9 +196,6 @@ Test cases for migrator
 | l    | Group By      | Year Ago   | Year Ago        | false        | named      | false           | no change                                                                                             |
 | m    | Search        | Recent     | Recent          | false        | all        | true            | no change                                                                                             |
 +------+---------------+------------+-----------------+--------------+------------+-----------------+-------------------------------------------------------------------------------------------------------+
-
-
-
 */
 
 type testCase struct {
