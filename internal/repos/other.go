@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -61,8 +60,6 @@ func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli
 
 	return &OtherSource{svc: svc, conn: &c, client: cli, logger: logger}, nil
 }
-
-var defaultPing time.Duration = time.Second * 10
 
 // IsAvailable at this point assumes availability and relies on errors returned
 // from the subsequent calls. This is going to be expanded as part of issue #44683
