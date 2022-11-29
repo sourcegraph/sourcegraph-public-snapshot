@@ -3,8 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -14,12 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type cratesSyncerJob struct {
-	observationContext *observation.Context
-}
+type cratesSyncerJob struct{}
 
-func NewCratesSyncerJob(observationContext *observation.Context) job.Job {
-	return &cratesSyncerJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewCratesSyncerJob() job.Job {
+	return &cratesSyncerJob{}
 }
 
 func (j *cratesSyncerJob) Description() string {
@@ -30,19 +26,19 @@ func (j *cratesSyncerJob) Config() []env.Config {
 	return nil
 }
 
-func (j *cratesSyncerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
+func (j *cratesSyncerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
 	gitserverClient := gitserver.NewClient(db)
-	dependenciesService := dependencies.NewService(db, j.observationContext)
+	dependenciesService := dependencies.NewService(db, observationCtx)
 
 	return dependencies.CrateSyncerJob(
 		dependenciesService,
 		gitserverClient,
 		db.ExternalServices(),
-		observation.ContextWithLogger(logger, j.observationContext),
+		observationCtx,
 	), nil
 }

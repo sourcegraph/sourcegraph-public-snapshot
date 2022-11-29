@@ -3,8 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
@@ -13,12 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type policiesRepositoryMatcherJob struct {
-	observationContext *observation.Context
-}
+type policiesRepositoryMatcherJob struct{}
 
-func NewPoliciesRepositoryMatcherJob(observationContext *observation.Context) job.Job {
-	return &policiesRepositoryMatcherJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewPoliciesRepositoryMatcherJob() job.Job {
+	return &policiesRepositoryMatcherJob{}
 }
 
 func (j *policiesRepositoryMatcherJob) Description() string {
@@ -31,12 +27,12 @@ func (j *policiesRepositoryMatcherJob) Config() []env.Config {
 	}
 }
 
-func (j *policiesRepositoryMatcherJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(j.observationContext)
+func (j *policiesRepositoryMatcherJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO(nsc): https://github.com/sourcegraph/sourcegraph/pull/42765
-	return policies.PolicyMatcherJobs(services.PoliciesService, observation.ScopedContext("codeintel", "policies", "repoMatcherJob", j.observationContext)), nil
+	return policies.PolicyMatcherJobs(services.PoliciesService, observation.ScopedContext("codeintel", "policies", "repoMatcherJob", observationCtx)), nil
 }

@@ -3,8 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
@@ -13,12 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type commitGraphUpdaterJob struct {
-	observationContext *observation.Context
-}
+type commitGraphUpdaterJob struct{}
 
-func NewCommitGraphUpdaterJob(observationContext *observation.Context) job.Job {
-	return &commitGraphUpdaterJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewCommitGraphUpdaterJob() job.Job {
+	return &commitGraphUpdaterJob{}
 }
 
 func (j *commitGraphUpdaterJob) Description() string {
@@ -31,8 +27,8 @@ func (j *commitGraphUpdaterJob) Config() []env.Config {
 	}
 }
 
-func (j *commitGraphUpdaterJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(j.observationContext)
+func (j *commitGraphUpdaterJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}

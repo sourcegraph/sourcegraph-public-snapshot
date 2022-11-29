@@ -15,14 +15,10 @@ import (
 )
 
 // compactor is a worker responsible for compacting rows in the repo_statistics table.
-type compactor struct {
-	observationContext *observation.Context
-}
+type compactor struct{}
 
-var _ job.Job = &compactor{}
-
-func NewCompactor(observationContext *observation.Context) job.Job {
-	return &compactor{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewCompactor() job.Job {
+	return &compactor{}
 }
 
 func (j *compactor) Description() string {
@@ -33,8 +29,8 @@ func (j *compactor) Config() []env.Config {
 	return nil
 }
 
-func (j *compactor) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
+func (j *compactor) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +38,7 @@ func (j *compactor) Routines(startupCtx context.Context, logger log.Logger) ([]g
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(context.Background(), 30*time.Minute, &handler{
 			store:  db.RepoStatistics(),
-			logger: logger,
+			logger: observationCtx.Logger,
 		}),
 	}, nil
 }

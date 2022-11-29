@@ -28,8 +28,6 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/go-diff/diff"

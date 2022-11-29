@@ -42,13 +42,13 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmig
 	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(migrations.RegisterOSSMigrators, registerEnterpriseMigrators)
 
 	builtins := map[string]job.Job{
-		"webhook-log-janitor":       webhooks.NewJanitor(observationContext),
-		"out-of-band-migrations":    workermigrations.NewMigrator(registerMigrators, observationContext),
-		"codeintel-crates-syncer":   codeintel.NewCratesSyncerJob(observationContext),
-		"gitserver-metrics":         gitserver.NewMetricsJob(observationContext),
-		"record-encrypter":          encryption.NewRecordEncrypterJob(observationContext),
-		"repo-statistics-compactor": repostatistics.NewCompactor(observationContext),
-		"zoekt-repos-updater":       zoektrepos.NewUpdater(observationContext),
+		"webhook-log-janitor":       webhooks.NewJanitor(),
+		"out-of-band-migrations":    workermigrations.NewMigrator(registerMigrators),
+		"codeintel-crates-syncer":   codeintel.NewCratesSyncerJob(),
+		"gitserver-metrics":         gitserver.NewMetricsJob(),
+		"record-encrypter":          encryption.NewRecordEncrypterJob(),
+		"repo-statistics-compactor": repostatistics.NewCompactor(),
+		"zoekt-repos-updater":       zoektrepos.NewUpdater(),
 	}
 
 	jobs := map[string]job.Job{}
@@ -234,6 +234,7 @@ func runRoutinesConcurrently(logger log.Logger, jobs map[string]job.Job) chan ro
 
 	for _, name := range jobNames(jobs) {
 		jobLogger := logger.Scoped(name, jobs[name].Description())
+		observationCtx := observation.NewContext(jobLogger)
 
 		if !shouldRunJob(name) {
 			jobLogger.Info("Skipping job")
@@ -246,7 +247,7 @@ func runRoutinesConcurrently(logger log.Logger, jobs map[string]job.Job) chan ro
 		go func(name string) {
 			defer wg.Done()
 
-			routines, err := jobs[name].Routines(ctx, jobLogger)
+			routines, err := jobs[name].Routines(ctx, observationCtx)
 			results <- routinesResult{name, routines, err}
 
 			if err == nil {

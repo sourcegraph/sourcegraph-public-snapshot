@@ -3,8 +3,6 @@ package insights
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
@@ -28,7 +26,6 @@ func (i *insightsQueryRunnerBaseConfig) Load() {
 
 type insightsQueryRunnerJob struct {
 	env.BaseConfig
-	observationContext *observation.Context
 }
 
 var insightsQueryRunnerConfigInst = &insightsQueryRunnerBaseConfig{}
@@ -41,14 +38,14 @@ func (s *insightsQueryRunnerJob) Config() []env.Config {
 	return []env.Config{insightsQueryRunnerConfigInst}
 }
 
-func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	if !insights.IsEnabled() {
-		logger.Info("Code Insights Disabled. Disabling query runner.")
+		observationCtx.Logger.Info("Code Insights Disabled. Disabling query runner.")
 		return []goroutine.BackgroundRoutine{}, nil
 	}
-	logger.Info("Code Insights Enabled. Enabling query runner.")
+	observationCtx.Logger.Info("Code Insights Enabled. Enabling query runner.")
 
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, s.observationContext))
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -58,14 +55,14 @@ func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, logger log
 		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)
 	}
 
-	insightsDB, err := insights.InitializeCodeInsightsDB("query-runner-worker", s.observationContext)
+	insightsDB, err := insights.InitializeCodeInsightsDB("query-runner-worker", observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return background.GetBackgroundQueryRunnerJob(context.Background(), logger, db, insightsDB), nil
+	return background.GetBackgroundQueryRunnerJob(context.Background(), observationCtx.Logger, db, insightsDB), nil
 }
 
-func NewInsightsQueryRunnerJob(observationContext *observation.Context) job.Job {
-	return &insightsQueryRunnerJob{observationContext: observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewInsightsQueryRunnerJob() job.Job {
+	return &insightsQueryRunnerJob{}
 }

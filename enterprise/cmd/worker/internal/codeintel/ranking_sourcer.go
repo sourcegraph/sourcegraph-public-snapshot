@@ -3,8 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 
@@ -14,12 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type rankingSourcerJob struct {
-	observationContext *observation.Context
-}
+type rankingSourcerJob struct{}
 
-func NewRankingSourcerJob(observationContext *observation.Context) job.Job {
-	return &rankingSourcerJob{observationContext}
+func NewRankingSourcerJob() job.Job {
+	return &rankingSourcerJob{}
 }
 
 func (j *rankingSourcerJob) Description() string {
@@ -33,14 +29,14 @@ func (j *rankingSourcerJob) Config() []env.Config {
 	}
 }
 
-func (j *rankingSourcerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(j.observationContext)
+func (j *rankingSourcerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
 	return append(
-		ranking.NewIndexer(services.RankingService, observation.ContextWithLogger(logger, j.observationContext)),
-		ranking.NewPageRankLoader(services.RankingService, observation.ContextWithLogger(logger, j.observationContext))...,
+		ranking.NewIndexer(services.RankingService, observationCtx),
+		ranking.NewPageRankLoader(services.RankingService, observationCtx)...,
 	), nil
 }

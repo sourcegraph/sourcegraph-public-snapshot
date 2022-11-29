@@ -3,8 +3,6 @@ package executors
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -12,12 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type janitorJob struct {
-	observationContext *observation.Context
-}
+type janitorJob struct{}
 
-func NewJanitorJob(observationContext *observation.Context) job.Job {
-	return &janitorJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewJanitorJob() job.Job {
+	return &janitorJob{}
 }
 
 func (j *janitorJob) Description() string {
@@ -28,8 +24,8 @@ func (j *janitorJob) Config() []env.Config {
 	return []env.Config{janitorConfigInst}
 }
 
-func (j *janitorJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
+func (j *janitorJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}

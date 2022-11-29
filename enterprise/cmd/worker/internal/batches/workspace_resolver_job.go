@@ -3,8 +3,6 @@ package batches
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/workers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -27,8 +25,8 @@ func (j *workspaceResolverJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *workspaceResolverJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := observation.NewContext(logger.Scoped("routines", "workspace resolver job routines"))
+func (j *workspaceResolverJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	observationContext := observation.NewContext(observationCtx.Logger.Scoped("routines", "workspace resolver job routines"))
 	workCtx := actor.WithInternalActor(context.Background())
 
 	bstore, err := InitStore()

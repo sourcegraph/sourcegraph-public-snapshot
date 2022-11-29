@@ -25,7 +25,7 @@ func main() {
 
 	go enterprise_shared.SetAuthzProviders(observationContext)
 
-	if err := shared.Start(enterprise_shared.AdditionalJobs(observationContext), migrations.RegisterEnterpriseMigrators, logger, observationContext); err != nil {
+	if err := shared.Start(enterprise_shared.AdditionalJobs, migrations.RegisterEnterpriseMigrators, logger, observationContext); err != nil {
 		logger.Fatal(err.Error())
 	}
 }

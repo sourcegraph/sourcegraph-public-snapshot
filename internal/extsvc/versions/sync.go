@@ -21,13 +21,11 @@ import (
 
 const syncInterval = 24 * time.Hour
 
-func NewSyncingJob(observationContext *observation.Context) job.Job {
-	return &syncingJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewSyncingJob() job.Job {
+	return &syncingJob{}
 }
 
-type syncingJob struct {
-	observationContext *observation.Context
-}
+type syncingJob struct{}
 
 func (j *syncingJob) Description() string {
 	return ""
@@ -37,18 +35,18 @@ func (j *syncingJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *syncingJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *syncingJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	if envvar.SourcegraphDotComMode() {
 		// If we're on sourcegraph.com we don't want to run this
 		return nil, nil
 	}
 
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	sourcerLogger := logger.Scoped("repos.Sourcer", "repository source for syncing")
+	sourcerLogger := observationCtx.Logger.Scoped("repos.Sourcer", "repository source for syncing")
 	sourcerCF := httpcli.NewExternalClientFactory(
 		httpcli.NewLoggingMiddleware(sourcerLogger),
 	)
@@ -56,7 +54,7 @@ func (j *syncingJob) Routines(_ context.Context, logger log.Logger) ([]goroutine
 
 	store := db.ExternalServices()
 	handler := goroutine.NewHandlerWithErrorMessage("sync versions of external services", func(ctx context.Context) error {
-		versions, err := loadVersions(ctx, logger, store, sourcer)
+		versions, err := loadVersions(ctx, observationCtx.Logger, store, sourcer)
 		if err != nil {
 			return err
 		}

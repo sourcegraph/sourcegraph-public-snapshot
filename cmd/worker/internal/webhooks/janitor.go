@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -16,14 +14,12 @@ import (
 
 // janitor is a worker responsible for expunging stale webhook logs from the
 // database.
-type janitor struct {
-	observationContext *observation.Context
-}
+type janitor struct{}
 
 var _ job.Job = &janitor{}
 
-func NewJanitor(observationContext *observation.Context) job.Job {
-	return &janitor{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewJanitor() job.Job {
+	return &janitor{}
 }
 
 func (j *janitor) Description() string {
@@ -34,8 +30,8 @@ func (j *janitor) Config() []env.Config {
 	return nil
 }
 
-func (j *janitor) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
+func (j *janitor) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}

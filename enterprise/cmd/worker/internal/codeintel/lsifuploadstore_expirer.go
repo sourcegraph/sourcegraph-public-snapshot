@@ -15,12 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type lsifuploadstoreExpirer struct {
-	observationContext *observation.Context
-}
+type lsifuploadstoreExpirer struct{}
 
-func NewPreciseCodeIntelUploadExpirer(observationContext *observation.Context) job.Job {
-	return &lsifuploadstoreExpirer{observationContext}
+func NewPreciseCodeIntelUploadExpirer() job.Job {
+	return &lsifuploadstoreExpirer{}
 }
 
 func (j *lsifuploadstoreExpirer) Description() string {
@@ -33,10 +31,10 @@ func (j *lsifuploadstoreExpirer) Config() []env.Config {
 	}
 }
 
-func (j *lsifuploadstoreExpirer) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	uploadStore, err := lsifuploadstore.New(context.Background(), lsifuploadstoreExpirerConfigInst.LSIFUploadStoreConfig, observation.ContextWithLogger(logger, j.observationContext))
+func (j *lsifuploadstoreExpirer) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	uploadStore, err := lsifuploadstore.New(context.Background(), lsifuploadstoreExpirerConfigInst.LSIFUploadStoreConfig, observationCtx)
 	if err != nil {
-		logger.Fatal("Failed to create upload store", log.Error(err))
+		observationCtx.Logger.Fatal("Failed to create upload store", log.Error(err))
 	}
 
 	return []goroutine.BackgroundRoutine{

@@ -3,8 +3,6 @@ package batches
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/workers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
@@ -30,8 +28,8 @@ func (j *reconcilerJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *reconcilerJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := observation.NewContext(logger.Scoped("routines", "reconciler job routines"))
+func (j *reconcilerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	observationContext := observation.NewContext(observationCtx.Logger.Scoped("routines", "reconciler job routines"))
 	workCtx := actor.WithInternalActor(context.Background())
 
 	bstore, err := InitStore()
@@ -50,7 +48,7 @@ func (j *reconcilerJob) Routines(_ context.Context, logger log.Logger) ([]gorout
 		reconcilerStore,
 		gitserver.NewClient(bstore.DatabaseDB()),
 		sources.NewSourcer(httpcli.NewExternalClientFactory(
-			httpcli.NewLoggingMiddleware(logger.Scoped("sourcer", "batches sourcer")),
+			httpcli.NewLoggingMiddleware(observationCtx.Logger.Scoped("sourcer", "batches sourcer")),
 		)),
 		observationContext,
 	)

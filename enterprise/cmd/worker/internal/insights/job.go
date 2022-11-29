@@ -3,8 +3,6 @@ package insights
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
@@ -16,9 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type insightsJob struct {
-	observationContext *observation.Context
-}
+type insightsJob struct{}
 
 func (s *insightsJob) Description() string {
 	return ""
@@ -28,14 +24,14 @@ func (s *insightsJob) Config() []env.Config {
 	return nil
 }
 
-func (s *insightsJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (s *insightsJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	if !insights.IsEnabled() {
-		logger.Info("Code Insights Disabled. Disabling background jobs.")
+		observationCtx.Logger.Info("Code Insights Disabled. Disabling background jobs.")
 		return []goroutine.BackgroundRoutine{}, nil
 	}
-	logger.Info("Code Insights Enabled. Enabling background jobs.")
+	observationCtx.Logger.Info("Code Insights Enabled. Enabling background jobs.")
 
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, s.observationContext))
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -45,14 +41,14 @@ func (s *insightsJob) Routines(startupCtx context.Context, logger log.Logger) ([
 		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)
 	}
 
-	insightsDB, err := insights.InitializeCodeInsightsDB("worker", s.observationContext)
+	insightsDB, err := insights.InitializeCodeInsightsDB("worker", observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return background.GetBackgroundJobs(context.Background(), logger, db, insightsDB), nil
+	return background.GetBackgroundJobs(context.Background(), observationCtx.Logger, db, insightsDB), nil
 }
 
-func NewInsightsJob(observationContext *observation.Context) job.Job {
-	return &insightsJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewInsightsJob() job.Job {
+	return &insightsJob{}
 }

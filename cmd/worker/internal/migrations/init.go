@@ -4,8 +4,6 @@ import (
 	"context"
 	"os"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -17,14 +15,13 @@ import (
 
 // migrator configures an out of band migration runner process to execute in the background.
 type migrator struct {
-	registerMigrators  oobmigration.RegisterMigratorsFunc
-	observationContext *observation.Context
+	registerMigrators oobmigration.RegisterMigratorsFunc
 }
 
 var _ job.Job = &migrator{}
 
-func NewMigrator(registerMigrators oobmigration.RegisterMigratorsFunc, observationContext *observation.Context) job.Job {
-	return &migrator{registerMigrators, observationContext}
+func NewMigrator(registerMigrators oobmigration.RegisterMigratorsFunc) job.Job {
+	return &migrator{registerMigrators}
 }
 
 func (m *migrator) Description() string {
@@ -35,13 +32,13 @@ func (m *migrator) Config() []env.Config {
 	return nil
 }
 
-func (m *migrator) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, m.observationContext))
+func (m *migrator) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, m.observationContext)
+	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, observationCtx)
 
 	if outOfBandMigrationRunner.SynchronizeMetadata(startupCtx); err != nil {
 		return nil, errors.Wrap(err, "failed to synchronized out of band migration metadata")
@@ -52,7 +49,7 @@ func (m *migrator) Routines(startupCtx context.Context, logger log.Logger) ([]go
 	}
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		logger.Warn("Skipping out-of-band migrations check")
+		observationCtx.Logger.Warn("Skipping out-of-band migrations check")
 	} else {
 		if err := oobmigration.ValidateOutOfBandMigrationRunner(startupCtx, db, outOfBandMigrationRunner); err != nil {
 			return nil, err

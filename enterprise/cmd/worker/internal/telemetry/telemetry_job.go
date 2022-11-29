@@ -36,12 +36,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type telemetryJob struct {
-	observationContext *observation.Context
-}
+type telemetryJob struct{}
 
-func NewTelemetryJob(observationContext *observation.Context) *telemetryJob {
-	return &telemetryJob{observationContext}
+func NewTelemetryJob() *telemetryJob {
+	return &telemetryJob{}
 }
 
 func (t *telemetryJob) Description() string {
@@ -52,19 +50,19 @@ func (t *telemetryJob) Config() []env.Config {
 	return nil
 }
 
-func (t *telemetryJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (t *telemetryJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	if !isEnabled() {
 		return nil, nil
 	}
-	logger.Info("Usage telemetry export enabled - initializing background routine")
+	observationCtx.Logger.Info("Usage telemetry export enabled - initializing background routine")
 
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, t.observationContext))
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
 	return []goroutine.BackgroundRoutine{
-		newBackgroundTelemetryJob(logger, db),
+		newBackgroundTelemetryJob(observationCtx.Logger, db),
 		queueSizeMetricJob(db),
 	}, nil
 }

@@ -14,14 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type metricsJob struct {
-	observationContext *observation.Context
-}
+type metricsJob struct{}
 
-func NewMetricsJob(observationContext *observation.Context) job.Job {
-	return &metricsJob{
-		observationContext: observationContext,
-	}
+func NewMetricsJob() job.Job {
+	return &metricsJob{}
 }
 
 func (j *metricsJob) Description() string {
@@ -32,8 +28,8 @@ func (j *metricsJob) Config() []env.Config {
 	return nil
 }
 
-func (j *metricsJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.Init(j.observationContext)
+func (j *metricsJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	db, err := workerdb.Init(observationCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +44,7 @@ func (j *metricsJob) Routines(startupCtx context.Context, logger log.Logger) ([]
 		var count int64
 		err := db.QueryRowContext(ctx, `SELECT COALESCE(SUM(failed_fetch), 0) FROM gitserver_repos_statistics`).Scan(&count)
 		if err != nil {
-			logger.Error("failed to count repository errors", log.Error(err))
+			observationCtx.Logger.Error("failed to count repository errors", log.Error(err))
 			return 0
 		}
 		return float64(count)
@@ -65,7 +61,7 @@ func (j *metricsJob) Routines(startupCtx context.Context, logger log.Logger) ([]
 		var count int64
 		err := db.QueryRowContext(ctx, `SELECT COALESCE(SUM(total), 0) FROM repo_statistics`).Scan(&count)
 		if err != nil {
-			logger.Error("failed to count repositories", log.Error(err))
+			observationCtx.Logger.Error("failed to count repositories", log.Error(err))
 			return 0
 		}
 		return float64(count)

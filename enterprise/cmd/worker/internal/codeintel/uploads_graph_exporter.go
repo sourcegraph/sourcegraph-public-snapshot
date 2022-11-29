@@ -3,8 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
@@ -13,12 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type graphExporterJob struct {
-	observationContext *observation.Context
-}
+type graphExporterJob struct{}
 
-func NewGraphExporterJob(observationContext *observation.Context) job.Job {
-	return &graphExporterJob{observationContext}
+func NewGraphExporterJob() job.Job {
+	return &graphExporterJob{}
 }
 
 func (j *graphExporterJob) Description() string {
@@ -31,11 +27,11 @@ func (j *graphExporterJob) Config() []env.Config {
 	}
 }
 
-func (j *graphExporterJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(j.observationContext)
+func (j *graphExporterJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return uploads.NewGraphExporters(services.UploadsService, observation.ContextWithLogger(logger, j.observationContext)), nil
+	return uploads.NewGraphExporters(services.UploadsService, observationCtx), nil
 }

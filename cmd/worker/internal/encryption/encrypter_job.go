@@ -3,8 +3,6 @@ package encryption
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -13,12 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type recordEncrypterJob struct {
-	observationContext *observation.Context
-}
+type recordEncrypterJob struct{}
 
-func NewRecordEncrypterJob(observationContext *observation.Context) job.Job {
-	return &recordEncrypterJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewRecordEncrypterJob() job.Job {
+	return &recordEncrypterJob{}
 }
 
 func (j *recordEncrypterJob) Description() string {
@@ -31,10 +27,10 @@ func (j *recordEncrypterJob) Config() []env.Config {
 	}
 }
 
-func (j *recordEncrypterJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	metrics := newMetrics(j.observationContext)
+func (j *recordEncrypterJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	metrics := newMetrics(observationCtx)
 
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -45,12 +41,12 @@ func (j *recordEncrypterJob) Routines(startupCtx context.Context, logger log.Log
 			store:   store,
 			decrypt: ConfigInst.Decrypt,
 			metrics: metrics,
-			logger:  logger,
+			logger:  observationCtx.Logger,
 		}),
 		goroutine.NewPeriodicGoroutine(context.Background(), ConfigInst.MetricsInterval, &recordCounter{
 			store:   store,
 			metrics: metrics,
-			logger:  logger,
+			logger:  observationCtx.Logger,
 		}),
 	}, nil
 }

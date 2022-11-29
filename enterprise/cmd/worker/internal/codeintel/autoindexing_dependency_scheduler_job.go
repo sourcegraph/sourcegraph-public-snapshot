@@ -3,8 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
@@ -16,12 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type autoindexingDependencyScheduler struct {
-	observationContext *observation.Context
-}
+type autoindexingDependencyScheduler struct{}
 
-func NewAutoindexingDependencySchedulerJob(observationContext *observation.Context) job.Job {
-	return &autoindexingDependencyScheduler{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewAutoindexingDependencySchedulerJob() job.Job {
+	return &autoindexingDependencyScheduler{}
 }
 
 func (j *autoindexingDependencyScheduler) Description() string {
@@ -34,13 +30,13 @@ func (j *autoindexingDependencyScheduler) Config() []env.Config {
 	}
 }
 
-func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(j.observationContext)
+func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +47,6 @@ func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, l
 		services.DependenciesService,
 		services.AutoIndexingService,
 		repoupdater.DefaultClient,
-		observation.ContextWithLogger(logger, j.observationContext),
+		observationCtx,
 	), nil
 }

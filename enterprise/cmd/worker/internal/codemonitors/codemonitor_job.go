@@ -3,8 +3,6 @@ package codemonitors
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
@@ -14,12 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type codeMonitorJob struct {
-	observationContext *observation.Context
-}
+type codeMonitorJob struct{}
 
-func NewCodeMonitorJob(observationContext *observation.Context) job.Job {
-	return &codeMonitorJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewCodeMonitorJob() job.Job {
+	return &codeMonitorJob{}
 }
 
 func (j *codeMonitorJob) Description() string {
@@ -30,11 +26,11 @@ func (j *codeMonitorJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *codeMonitorJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
+func (j *codeMonitorJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return background.NewBackgroundJobs(edb.NewEnterpriseDB(db), j.observationContext), nil
+	return background.NewBackgroundJobs(edb.NewEnterpriseDB(db), observationCtx), nil
 }

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -26,12 +25,10 @@ var _ job.Job = (*sourcegraphOperatorCleaner)(nil)
 
 // sourcegraphOperatorCleaner is a worker responsible for cleaning up expired
 // Sourcegraph Operator user accounts.
-type sourcegraphOperatorCleaner struct {
-	observationContext *observation.Context
-}
+type sourcegraphOperatorCleaner struct{}
 
-func NewSourcegraphOperatorCleaner(observationContext *observation.Context) job.Job {
-	return &sourcegraphOperatorCleaner{observationContext}
+func NewSourcegraphOperatorCleaner() job.Job {
+	return &sourcegraphOperatorCleaner{}
 }
 
 func (j *sourcegraphOperatorCleaner) Description() string {
@@ -42,13 +39,13 @@ func (j *sourcegraphOperatorCleaner) Config() []env.Config {
 	return nil
 }
 
-func (j *sourcegraphOperatorCleaner) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *sourcegraphOperatorCleaner) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	cloudSiteConfig := cloud.SiteConfig()
 	if !cloudSiteConfig.SourcegraphOperatorAuthProviderEnabled() {
 		return nil, nil
 	}
 
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "init DB")
 	}

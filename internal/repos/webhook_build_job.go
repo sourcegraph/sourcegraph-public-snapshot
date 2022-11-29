@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/log"
-
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -20,12 +18,10 @@ import (
 
 // webhookBuildJob implements the Job interface
 // from package job
-type webhookBuildJob struct {
-	observationContext *observation.Context
-}
+type webhookBuildJob struct{}
 
-func NewWebhookBuildJob(observationContext *observation.Context) *webhookBuildJob {
-	return &webhookBuildJob{observationContext}
+func NewWebhookBuildJob() *webhookBuildJob {
+	return &webhookBuildJob{}
 }
 
 func (w *webhookBuildJob) Description() string {
@@ -36,22 +32,20 @@ func (w *webhookBuildJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (w *webhookBuildJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	// use w.observationContext?
-	observationContext := observation.ContextWithLogger(logger.Scoped("background", "background webhook build job"), w.observationContext)
+func (w *webhookBuildJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	webhookBuildWorkerMetrics, webhookBuildResetterMetrics := newWebhookBuildWorkerMetrics(observationCtx, "webhook_build_worker")
 
-	webhookBuildWorkerMetrics, webhookBuildResetterMetrics := newWebhookBuildWorkerMetrics(observationContext, "webhook_build_worker")
-
-	db, err := workerdb.InitDBWithLogger(observationContext)
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	store := NewStore(logger, db)
+	store := NewStore(observationCtx.Logger, db)
 	baseStore := basestore.NewWithHandle(store.Handle())
-	workerStore := webhookworker.CreateWorkerStore(store.Handle(), observation.ContextWithLogger(logger.Scoped("webhookworker.WorkerStore", ""), observationContext))
+	// TODO: nsc move scope down
+	workerStore := webhookworker.CreateWorkerStore(store.Handle(), observation.ContextWithLogger(observationCtx.Logger.Scoped("webhookworker.WorkerStore", ""), observationCtx))
 
-	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(logger))
+	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(observationCtx.Logger))
 	doer, err := cf.Doer()
 	if err != nil {
 		return nil, errors.Wrap(err, "create client")
@@ -59,8 +53,9 @@ func (w *webhookBuildJob) Routines(_ context.Context, logger log.Logger) ([]goro
 
 	return []goroutine.BackgroundRoutine{
 		webhookworker.NewWorker(context.Background(), newWebhookBuildHandler(store, doer), workerStore, webhookBuildWorkerMetrics),
-		webhookworker.NewResetter(context.Background(), logger.Scoped("webhookworker.Resetter", ""), workerStore, webhookBuildResetterMetrics),
-		webhookworker.NewCleaner(context.Background(), baseStore, observationContext),
+		// TODO: nsc move scope down
+		webhookworker.NewResetter(context.Background(), observationCtx.Logger.Scoped("webhookworker.Resetter", ""), workerStore, webhookBuildResetterMetrics),
+		webhookworker.NewCleaner(context.Background(), baseStore, observationCtx),
 	}, nil
 }
 

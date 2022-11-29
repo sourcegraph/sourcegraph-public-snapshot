@@ -15,7 +15,7 @@ import (
 
 func TestInsertMetadata(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t), logger)
 	store := New(codeIntelDB, &observation.TestContext)
 	ctx := context.Background()
 
@@ -32,7 +32,7 @@ func TestInsertMetadata(t *testing.T) {
 
 func TestInsertSCIPDocument(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t), logger)
 	store := New(codeIntelDB, &observation.TestContext)
 	ctx := context.Background()
 
@@ -76,7 +76,7 @@ func TestInsertSCIPDocument(t *testing.T) {
 
 func TestWriteSCIPSymbols(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t), logger)
 	store := New(codeIntelDB, &observation.TestContext)
 	ctx := context.Background()
 

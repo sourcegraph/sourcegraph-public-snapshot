@@ -3,8 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 
@@ -14,12 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type uploadExpirerJob struct {
-	observationContext *observation.Context
-}
+type uploadExpirerJob struct{}
 
-func NewUploadExpirerJob(observationContext *observation.Context) job.Job {
-	return &uploadExpirerJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewUploadExpirerJob() job.Job {
+	return &uploadExpirerJob{}
 }
 
 func (j *uploadExpirerJob) Description() string {
@@ -32,11 +28,11 @@ func (j *uploadExpirerJob) Config() []env.Config {
 	}
 }
 
-func (j *uploadExpirerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(j.observationContext)
+func (j *uploadExpirerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return uploads.NewExpirationTasks(services.UploadsService, observation.ContextWithLogger(logger, j.observationContext)), nil
+	return uploads.NewExpirationTasks(services.UploadsService, observationCtx), nil
 }

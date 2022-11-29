@@ -15,14 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
-type updater struct {
-	observationContext *observation.Context
-}
+type updater struct{}
 
 var _ job.Job = &updater{}
 
-func NewUpdater(observationContext *observation.Context) job.Job {
-	return &updater{observationContext}
+func NewUpdater() job.Job {
+	return &updater{}
 }
 
 func (j *updater) Description() string {
@@ -33,8 +31,8 @@ func (j *updater) Config() []env.Config {
 	return nil
 }
 
-func (j *updater) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
+func (j *updater) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +40,7 @@ func (j *updater) Routines(startupCtx context.Context, logger log.Logger) ([]gor
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(context.Background(), 1*time.Hour, &handler{
 			db:     db,
-			logger: logger,
+			logger: observationCtx.Logger,
 		}),
 	}, nil
 }

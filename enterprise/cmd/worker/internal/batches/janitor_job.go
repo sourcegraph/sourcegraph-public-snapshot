@@ -3,8 +3,6 @@ package batches
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
@@ -28,8 +26,8 @@ func (j *janitorJob) Config() []env.Config {
 	return []env.Config{janitorConfigInst}
 }
 
-func (j *janitorJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := observation.NewContext(logger.Scoped("routines", "janitor job routines"))
+func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	observationContext := observation.NewContext(observationCtx.Logger.Scoped("routines", "janitor job routines"))
 	workCtx := actor.WithInternalActor(context.Background())
 
 	bstore, err := InitStore()
@@ -65,22 +63,22 @@ func (j *janitorJob) Routines(_ context.Context, logger log.Logger) ([]goroutine
 		executorMetricsReporter,
 
 		janitor.NewReconcilerWorkerResetter(
-			logger.Scoped("ReconcilerWorkerResetter", ""),
+			observationCtx.Logger.Scoped("ReconcilerWorkerResetter", ""),
 			reconcilerStore,
 			janitorMetrics,
 		),
 		janitor.NewBulkOperationWorkerResetter(
-			logger.Scoped("BulkOperationWorkerResetter", ""),
+			observationCtx.Logger.Scoped("BulkOperationWorkerResetter", ""),
 			bulkOperationStore,
 			janitorMetrics,
 		),
 		janitor.NewBatchSpecWorkspaceExecutionWorkerResetter(
-			logger.Scoped("BatchSpecWorkspaceExecutionWorkerResetter", ""),
+			observationCtx.Logger.Scoped("BatchSpecWorkspaceExecutionWorkerResetter", ""),
 			workspaceExecutionStore,
 			janitorMetrics,
 		),
 		janitor.NewBatchSpecWorkspaceResolutionWorkerResetter(
-			logger.Scoped("BatchSpecWorkspaceResolutionWorkerResetter", ""),
+			observationCtx.Logger.Scoped("BatchSpecWorkspaceResolutionWorkerResetter", ""),
 			workspaceResolutionStore,
 			janitorMetrics,
 		),

@@ -3,8 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 
@@ -14,12 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type uploadBackfillerJob struct {
-	observationContext *observation.Context
-}
+type uploadBackfillerJob struct{}
 
-func NewUploadBackfillerJob(observationContext *observation.Context) job.Job {
-	return &uploadBackfillerJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewUploadBackfillerJob() job.Job {
+	return &uploadBackfillerJob{}
 }
 
 func (j *uploadBackfillerJob) Description() string {
@@ -32,8 +28,8 @@ func (j *uploadBackfillerJob) Config() []env.Config {
 	}
 }
 
-func (j *uploadBackfillerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(j.observationContext)
+func (j *uploadBackfillerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}

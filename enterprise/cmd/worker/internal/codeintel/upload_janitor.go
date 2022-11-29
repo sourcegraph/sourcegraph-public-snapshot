@@ -3,8 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
@@ -15,12 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type uploadJanitorJob struct {
-	observationContext *observation.Context
-}
+type uploadJanitorJob struct{}
 
-func NewUploadJanitorJob(observationContext *observation.Context) job.Job {
-	return &uploadJanitorJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewUploadJanitorJob() job.Job {
+	return &uploadJanitorJob{}
 }
 
 func (j *uploadJanitorJob) Description() string {
@@ -33,24 +29,25 @@ func (j *uploadJanitorJob) Config() []env.Config {
 	}
 }
 
-func (j *uploadJanitorJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(j.observationContext)
+func (j *uploadJanitorJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	gitserverClient := gitserver.New(db, observation.ScopedContext("codeintel", "janitor", "gitserver", j.observationContext))
+	// TODO: nsc move scope down
+	gitserverClient := gitserver.New(db, observation.ScopedContext("codeintel", "janitor", "gitserver", observationCtx))
 
 	return append(
-		uploads.NewJanitor(services.UploadsService, gitserverClient, observation.ContextWithLogger(logger, j.observationContext)),
+		uploads.NewJanitor(services.UploadsService, gitserverClient, observationCtx),
 		append(
-			uploads.NewReconciler(services.UploadsService, observation.ContextWithLogger(logger, j.observationContext)),
-			uploads.NewResetters(db, observation.ContextWithLogger(logger, j.observationContext))...,
+			uploads.NewReconciler(services.UploadsService, observationCtx),
+			uploads.NewResetters(db, observationCtx)...,
 		)...,
 	), nil
 }

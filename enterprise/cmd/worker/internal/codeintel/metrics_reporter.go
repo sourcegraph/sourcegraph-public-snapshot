@@ -3,8 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
@@ -19,12 +17,10 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-type metricsReporterJob struct {
-	observationContext *observation.Context
-}
+type metricsReporterJob struct{}
 
-func NewMetricsReporterJob(observationContext *observation.Context) job.Job {
-	return &metricsReporterJob{observation.ContextWithLogger(log.NoOp(), observationContext)}
+func NewMetricsReporterJob() job.Job {
+	return &metricsReporterJob{}
 }
 
 func (j *metricsReporterJob) Description() string {
@@ -37,19 +33,19 @@ func (j *metricsReporterJob) Config() []env.Config {
 	}
 }
 
-func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(j.observationContext)
+func (j *metricsReporterJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: nsc pass in
+	// TODO: nsc move description up
 	observationContext := observation.ContextWithLogger(
-		logger.Scoped("routines", "metrics reporting routines"),
-		j.observationContext,
+		observationCtx.Logger.Scoped("routines", "metrics reporting routines"),
+		observationCtx,
 	)
 
-	db, err := workerdb.InitDBWithLogger(observation.ContextWithLogger(logger, j.observationContext))
+	db, err := workerdb.InitDBWithLogger(observationContext)
 	if err != nil {
 		return nil, err
 	}
