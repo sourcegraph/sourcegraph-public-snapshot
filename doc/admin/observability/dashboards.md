@@ -24445,11 +24445,11 @@ To see this dashboard, visit `/-/debug/grafana/d/otel-collector/otel-collector` 
 
 ### Open Telemetry Collector: Export failures
 
-#### otel-collector: otel-export-failures
+#### otel-collector: otel-span-receive-rate
 
-<p class="subtitle">Items that have failed to be exported by the exported</p>
+<p class="subtitle">Spans received per second</p>
 
-								A value above 0 indicates that the exporter has failing to export one more items to its configured endpoint
+								Shows the rate of spans accepted by the configured reveiver
 
 This panel has no related alerts.
 
@@ -24460,7 +24460,49 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(otelcol_exporter_enqueue_failed_log_records[5m])`
+Query: `sum(rate(otelcol_receiver_accepted_spans[1m])) by (receiver)`
+
+</details>
+
+<br />
+
+#### otel-collector: otel-span-export-rate
+
+<p class="subtitle">Spans exported per second</p>
+
+								Shows the rate of spans being sent by the exporter
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100001` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(otelcol_exporter_sent_spans[1m])) by (exporter)`
+
+</details>
+
+<br />
+
+#### otel-collector: otel-span-queue-size
+
+<p class="subtitle">Exporter queue size</p>
+
+								Shows the rate of spans accepted by the configured reveiver
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100002` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(otelcol_exporter_sent_spans[1m])) by (exporter)`
 
 </details>
 
