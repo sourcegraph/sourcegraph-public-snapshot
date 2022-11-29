@@ -70,7 +70,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
-    const { recentSearches, addRecentSearch } = useRecentSearches()
+    const { recentSearches } = useRecentSearches()
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -78,11 +78,10 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 history: props.history,
                 source: 'nav',
                 selectedSearchContextSpec: props.selectedSearchContextSpec,
-                addRecentSearch,
                 ...parameters,
             })
         },
-        [submitSearch, props.history, props.selectedSearchContextSpec, addRecentSearch]
+        [submitSearch, props.history, props.selectedSearchContextSpec]
     )
 
     const onSubmit = useCallback(

@@ -33,6 +33,7 @@ import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { useExperimentalFeatures, useNavbarQueryState, useNotepad } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { submitSearch } from '../helpers'
+import { useRecentSearches } from '../input/useRecentSearches'
 import { DidYouMean } from '../suggestion/DidYouMean'
 import { SmartSearch, smartSearchEvent } from '../suggestion/SmartSearch'
 
@@ -104,6 +105,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
         // Nested use memo here is used for avoiding extra object calculation step on each render
         useMemo(() => new URLSearchParams(location.search).getAll('feat') ?? [], [location.search])
     )
+    const { addRecentSearch } = useRecentSearches()
 
     const options: StreamSearchOptions = useMemo(
         () => ({
@@ -175,8 +177,11 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             telemetryService.log('SearchResultsFetched', {
                 code_search: {
                     // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
+                    query_data: {
+                        combined: submittedURLQuery,
+                    },
                     results: {
-                        results_count: results.results.length,
+                        results_count: results.progress.matchCount,
                         any_cloning: results.progress.skipped.some(skipped => skipped.reason === 'repository-cloning'),
                         alert: results.alert ? results.alert.title : null,
                     },
@@ -185,12 +190,13 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             if (results.results.length > 0) {
                 telemetryService.log('SearchResultsNonEmpty')
             }
+            addRecentSearch(submittedURLQuery, results.progress.matchCount)
         } else if (results?.state === 'error') {
             telemetryService.log('SearchResultsFetchFailed', {
                 code_search: { error_message: asError(results.error).message },
             })
         }
-    }, [results, telemetryService])
+    }, [addRecentSearch, results, submittedURLQuery, telemetryService])
 
     useEffect(() => {
         if (

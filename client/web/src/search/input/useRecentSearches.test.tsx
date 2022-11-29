@@ -77,7 +77,7 @@ const InnerWrapper: React.FunctionComponent<{}> = () => {
                 value={searchToAdd}
                 onInput={event => setSearchToAdd(event.currentTarget.value)}
             />
-            <button type="button" data-testid="button" onClick={() => addRecentSearch(searchToAdd)} />
+            <button type="button" data-testid="button" onClick={() => addRecentSearch(searchToAdd, 555)} />
         </>
     )
 }
@@ -164,7 +164,7 @@ describe('recentSearches', () => {
             `)
         })
 
-        test('adding an exisitng item to recent searches deduplicates it and puts it at the top', async () => {
+        test('adding an existing item to recent searches de-duplicates it and puts it at the top', async () => {
             const { queryAllByRole, getByTestId } = render(
                 <Wrapper tempSettings={buildMockTempSettings(4)} eventLogs={buildMockEventLogs(0)} />
             )
