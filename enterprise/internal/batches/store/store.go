@@ -280,6 +280,12 @@ type operations struct {
 	markUsedBatchSpecExecutionCacheEntries *observation.Operation
 	createBatchSpecExecutionCacheEntry     *observation.Operation
 	cleanBatchSpecExecutionCacheEntries    *observation.Operation
+
+	createRepoMetadata            *observation.Operation
+	getRepoMetadata               *observation.Operation
+	listReposMissingMetadata      *observation.Operation
+	listReposWithOutdatedMetadata *observation.Operation
+	upsertRepoMetadata            *observation.Operation
 }
 
 var (
@@ -424,6 +430,12 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecExecutionCacheEntry:     op("CreateBatchSpecExecutionCacheEntry"),
 
 			cleanBatchSpecExecutionCacheEntries: op("CleanBatchSpecExecutionCacheEntries"),
+
+			createRepoMetadata:            op("CreateRepoMetadata"),
+			getRepoMetadata:               op("GetRepoMetadata"),
+			listReposMissingMetadata:      op("ListReposMissingMetadata"),
+			listReposWithOutdatedMetadata: op("ListReposWithOutdatedMetadata"),
+			upsertRepoMetadata:            op("UpsertRepoMetadata"),
 		}
 	})
 
