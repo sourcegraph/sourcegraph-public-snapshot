@@ -30,8 +30,9 @@ import (
 )
 
 const (
-	defaultInterruptSeconds   = 60
-	inProgressPollingInterval = time.Second * 5
+	defaultInterruptSeconds    = 60
+	inProgressPollingInterval  = time.Second * 5
+	defaultErrorThresholdFloor = 50
 )
 
 func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker[*BaseJob], *dbworker.Resetter[*BaseJob], dbworkerstore.Store[*BaseJob]) {
@@ -124,38 +125,44 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, job *
 		return err
 	}
 
-	backfillJob := execution.backfill
-	series := execution.series
-	frames := execution.frames
-	itr := execution.itr
-
 	logger.Info("insights backfill progress handler loaded",
 		log.Int("recordId", job.RecordID()),
 		log.Int("jobNumFailures", job.NumFailures),
-		log.Int("seriesId", series.ID),
-		log.String("seriesUniqueId", series.SeriesID),
-		log.Int("backfillId", backfillJob.Id),
-		log.Int("repoTotalCount", itr.TotalCount),
-		log.Float64("percentComplete", itr.PercentComplete),
-		log.Int("erroredRepos", itr.ErroredRepos()),
-		log.Int("totalErrors", itr.TotalErrors()))
+		log.Int("seriesId", execution.series.ID),
+		log.String("seriesUniqueId", execution.series.SeriesID),
+		log.Int("backfillId", execution.backfill.Id),
+		log.Int("repoTotalCount", execution.itr.TotalCount),
+		log.Float64("percentComplete", execution.itr.PercentComplete),
+		log.Int("erroredRepos", execution.itr.ErroredRepos()),
+		log.Int("totalErrors", execution.itr.TotalErrors()))
 
+	interrupt, err := h.doExecution(ctx, execution)
+	if err != nil {
+		return err
+	}
+	if interrupt {
+		return h.doInterrupt(ctx, job)
+	}
+	return nil
+}
+
+func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfillExecution) (interrupt bool, err error) {
 	timeExpired := h.clock.After(h.config.interruptAfter)
 
 	itrConfig := iterator.IterationConfig{
 		MaxFailures: 3,
 		OnTerminal: func(ctx context.Context, tx *basestore.Store, repoId int32, terminalErr error) error {
 			reason := translateIncompleteReasons(terminalErr)
-			logger.Debug("insights backfill incomplete repo writing all datapoints",
+			execution.logger.Debug("insights backfill incomplete repo writing all datapoints",
 				execution.logFields(
 					log.Int32("repoId", repoId),
 					log.String("reason", string(reason)))...)
 
 			id := int(repoId)
-			for _, frame := range frames {
+			for _, frame := range execution.frames {
 				tss := h.insightsStore.WithOther(tx)
 				if err := tss.AddIncompleteDatapoint(ctx, store.AddIncompleteDatapointInput{
-					SeriesID: series.ID,
+					SeriesID: execution.series.ID,
 					RepoID:   &id,
 					Reason:   reason,
 					Time:     frame.From,
@@ -187,10 +194,10 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, job *
 					continue
 				}
 
-				logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
-				runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, Frames: frames})
+				execution.logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
+				runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: execution.series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, Frames: execution.frames})
 				if runErr != nil {
-					logger.Error("error during backfill execution", execution.logFields(log.Error(runErr))...)
+					execution.logger.Error("error during backfill execution", execution.logFields(log.Error(runErr))...)
 				}
 				err = finish(ctx, h.backfillStore.Store, runErr)
 				if err != nil {
@@ -201,34 +208,34 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, job *
 		return false, nil
 	}
 
-	logger.Debug("starting primary loop", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id))
-	if interrupted, err := itrLoop(itr.NextWithFinish); err != nil {
-		return errors.Wrap(err, "InProgressHandler.PrimaryLoop")
+	execution.logger.Debug("starting primary loop", log.Int("seriesId", execution.series.ID), log.Int("backfillId", execution.backfill.Id))
+	if interrupted, err := itrLoop(execution.itr.NextWithFinish); err != nil {
+		return false, errors.Wrap(err, "InProgressHandler.PrimaryLoop")
 	} else if interrupted {
-		logger.Info("interrupted insight series backfill", execution.logFields()...)
-		return h.doInterrupt(ctx, job)
+		execution.logger.Info("interrupted insight series backfill", execution.logFields()...)
+		return true, nil
 	}
 
-	logger.Debug("starting retry loop", log.Int("seriesId", series.ID), log.Int("backfillId", backfillJob.Id))
-	if interrupted, err := itrLoop(itr.NextRetryWithFinish); err != nil {
-		return errors.Wrap(err, "InProgressHandler.RetryLoop")
+	execution.logger.Debug("starting retry loop", log.Int("seriesId", execution.series.ID), log.Int("backfillId", execution.backfill.Id))
+	if interrupted, err := itrLoop(execution.itr.NextRetryWithFinish); err != nil {
+		return false, errors.Wrap(err, "InProgressHandler.RetryLoop")
 	} else if interrupted {
-		logger.Info("interrupted insight series backfill retry", execution.logFields()...)
-		return h.doInterrupt(ctx, job)
+		execution.logger.Info("interrupted insight series backfill retry", execution.logFields()...)
+		return true, nil
 	}
 
-	if itr.TotalErrors() > errorThreshold(itr.TotalCount) {
+	if execution.exceedsErrorThreshold() {
 		err = h.disableBackfill(ctx, execution)
 		if err != nil {
-			return errors.Wrap(err, "disableBackfill")
+			return false, errors.Wrap(err, "disableBackfill")
 		}
 	}
 
-	if !itr.HasMore() && !itr.HasErrors() {
-		return h.finish(ctx, execution)
+	if !execution.itr.HasMore() && !execution.itr.HasErrors() {
+		return false, h.finish(ctx, execution)
 	} else {
 		// in this state we have some errors that will need reprocessing, we will place this job back in queue
-		return h.doInterrupt(ctx, job)
+		return true, nil
 	}
 }
 
@@ -299,11 +306,12 @@ func (h *inProgressHandler) load(ctx context.Context, logger log.Logger, backfil
 	}, series.CreatedAt.Truncate(time.Hour*24))
 
 	return &backfillExecution{
-		series:   series,
-		backfill: backfillJob,
-		itr:      itr,
-		logger:   logger,
-		frames:   frames,
+		series:              series,
+		backfill:            backfillJob,
+		itr:                 itr,
+		logger:              logger,
+		frames:              frames,
+		errorThresholdFloor: defaultErrorThresholdFloor,
 	}, nil
 }
 
@@ -313,6 +321,8 @@ type backfillExecution struct {
 	itr      *iterator.PersistentRepoIterator
 	logger   log.Logger
 	frames   []itypes.Frame
+
+	errorThresholdFloor int
 }
 
 func (b *backfillExecution) logFields(extra ...log.Field) []log.Field {
@@ -349,8 +359,8 @@ func translateIncompleteReasons(err error) store.IncompleteReason {
 	return store.ReasonGeneric
 }
 
-func errorThreshold(cardinality int) int {
-	return calculateErrorThreshold(.05, 50, cardinality)
+func (b *backfillExecution) exceedsErrorThreshold() bool {
+	return b.itr.TotalErrors() > calculateErrorThreshold(.05, b.errorThresholdFloor, b.itr.TotalCount)
 }
 
 func calculateErrorThreshold(percent float64, floor int, cardinality int) int {
