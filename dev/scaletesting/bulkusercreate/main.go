@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"sort"
@@ -14,7 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	github "github.com/google/go-github/v41/github"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/oauth2"
 
@@ -30,7 +31,7 @@ type config struct {
 
 	userCount      int
 	teamCount      int
-	orgCount       int
+	subOrgCount    int
 	orgAdmin       string
 	action         string
 	resume         string
@@ -61,7 +62,7 @@ func main() {
 	flag.StringVar(&cfg.githubPassword, "github.password", "", "(required) password of the GitHub user to authenticate with")
 	flag.IntVar(&cfg.userCount, "user.count", 100, "Amount of users to create or delete")
 	flag.IntVar(&cfg.teamCount, "team.count", 20, "Amount of teams to create or delete")
-	flag.IntVar(&cfg.orgCount, "org.count", 10, "Amount of orgs to create or delete")
+	flag.IntVar(&cfg.subOrgCount, "suborg.count", 10, "Amount of sub-orgs to create or delete")
 	flag.StringVar(&cfg.orgAdmin, "org.admin", "", "Login of admin of orgs")
 
 	flag.IntVar(&cfg.retry, "retry", 5, "Retries count")
@@ -170,64 +171,64 @@ func main() {
 		}
 
 		bars := []output.ProgressBar{
-			{Label: "Creating orgs", Max: float64(cfg.orgCount)},
+			{Label: "Creating orgs", Max: float64(cfg.subOrgCount)},
 			{Label: "Creating teams", Max: float64(cfg.teamCount)},
 			{Label: "Creating users", Max: float64(cfg.userCount)},
 			{Label: "Adding users to teams", Max: float64(cfg.userCount)},
-			{Label: "Assigning repos", Max: float64(200000)},
+			//{Label: "Assigning repos", Max: float64(200000)},
 		}
 		if cfg.generateTokens {
 			bars = append(bars, output.ProgressBar{Label: "Generating OAuth tokens", Max: float64(cfg.userCount)})
 		}
 		progress = out.Progress(bars, nil)
-		//var usersDone int64
-		//var orgsDone int64
-		//var teamsDone int64
+		var usersDone int64
+		var orgsDone int64
+		var teamsDone int64
 		var tokensDone int64
-		//var membershipsDone int64
+		var membershipsDone int64
 		//var reposDone int64
 
-		//for _, o := range orgs {
-		//	currentOrg := o
-		//	g.Go(func() {
-		//		executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, &orgsDone)
-		//	})
-		//}
-		//g.Wait()
-		//
-		//for _, t := range teams {
-		//	currentTeam := t
-		//	g.Go(func() {
-		//		executeCreateTeam(ctx, currentTeam, &teamsDone)
-		//	})
-		//}
-		//g.Wait()
-		//
-		//for _, u := range users {
-		//	currentUser := u
-		//	g.Go(func() {
-		//		executeCreateUser(ctx, currentUser, &usersDone)
-		//	})
-		//}
-		//g.Wait()
-		//
-		//membershipsPerTeam := 8
-		//g2 := group.New().WithMaxConcurrency(100)
-		//
-		//for i, t := range teams {
-		//	currentTeam := t
-		//	currentIter := i
-		//	var usersToAssign []*user
-		//
-		//	for j := currentIter * membershipsPerTeam; j < ((currentIter + 1) * membershipsPerTeam); j++ {
-		//		usersToAssign = append(usersToAssign, users[j])
-		//	}
-		//
-		//	g2.Go(func() {
-		//		executeCreateTeamMembershipsForTeam(ctx, currentTeam, usersToAssign, &membershipsDone)
-		//	})
-		//}
-		//g2.Wait()
+		for _, o := range orgs {
+			currentOrg := o
+			g.Go(func() {
+				executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, &orgsDone)
+			})
+		}
+		g.Wait()
+
+		for _, t := range teams {
+			currentTeam := t
+			g.Go(func() {
+				executeCreateTeam(ctx, currentTeam, &teamsDone)
+			})
+		}
+		g.Wait()
+
+		for _, u := range users {
+			currentUser := u
+			g.Go(func() {
+				executeCreateUser(ctx, currentUser, &usersDone)
+			})
+		}
+		g.Wait()
+
+		membershipsPerTeam := int(math.Ceil(float64(cfg.userCount) / float64(cfg.teamCount)))
+		g2 := group.New().WithMaxConcurrency(100)
+
+		for i, t := range teams {
+			currentTeam := t
+			currentIter := i
+			var usersToAssign []*user
+
+			for j := currentIter * membershipsPerTeam; j < ((currentIter + 1) * membershipsPerTeam); j++ {
+				usersToAssign = append(usersToAssign, users[j])
+			}
+
+			g2.Go(func() {
+				executeCreateTeamMembershipsForTeam(ctx, currentTeam, usersToAssign, &membershipsDone)
+			})
+		}
+		g2.Wait()
 
 		var repos []*repo
 		if repos, err = store.loadRepos(); err != nil {
@@ -237,7 +238,7 @@ func main() {
 		if len(repos) == 0 {
 			remoteRepos := getGitHubRepos(ctx)
 
-			if err := store.insertRepos(remoteRepos); err != nil {
+			if err = store.insertRepos(remoteRepos); err != nil {
 				log.Fatal(err)
 			}
 			writeSuccess(out, "Fetched %d private repos and stored in state", len(remoteRepos))
@@ -245,7 +246,7 @@ func main() {
 			writeSuccess(out, "resuming repo jobs from %s", cfg.resume)
 		}
 
-		_ = categorizeRepos(repos, orgs)
+		//_ = categorizeRepos(repos, orgs)
 
 		if cfg.generateTokens {
 			tg := group.NewWithResults[userToken]().WithMaxConcurrency(1000)
@@ -385,6 +386,7 @@ func main() {
 				executeDeleteTeam(ctx, currentTeam)
 			})
 		}
+		g.Wait()
 
 		for _, t := range localTeams {
 			currentTeam := t
@@ -392,7 +394,6 @@ func main() {
 				executeDeleteTeamMembershipsForTeam(ctx, currentTeam.Org, currentTeam.Name)
 			})
 		}
-
 		g.Wait()
 
 	case "validate":
@@ -435,38 +436,38 @@ func main() {
 	writeInfo(out, "Started at %s, finished at %s", start.String(), end.String())
 }
 
-func categorizeRepos(repos []*repo, orgs []*org) map[*org]map[*repo]*entity {
-	repoCategories := make(map[*org]map[*repo]*entity)
-
-	// 1. divide equally over orgs (might leave some unassigned due to rounding but within acceptable margins)
-	reposPerOrg := len(repos) / len(orgs)
-	for i, o := range orgs {
-		repoCategories[o] = make(map[*repo]*entity)
-		orgRepos := repos[i*reposPerOrg : (i+1)*reposPerOrg]
-		for _, r := range orgRepos {
-			// set entity to nil: equals org-wide assigned repo
-			repoCategories[o][r] = nil
-		}
-		writeInfo(out, "Total repos in org %s: %d", o.Login, len(repoCategories[o]))
-	}
-
-	// 2.
-
-	return repoCategories
-}
+//func categorizeRepos(repos []*repo, orgs []*org) map[*org]map[*repo]*entity {
+//	repoCategories := make(map[*org]map[*repo]*entity)
+//
+//	// 1. divide equally over orgs (might leave some unassigned due to rounding but within acceptable margins)
+//	reposPerOrg := len(repos) / len(orgs)
+//	for i, o := range orgs {
+//		repoCategories[o] = make(map[*repo]*entity)
+//		orgRepos := repos[i*reposPerOrg : (i+1)*reposPerOrg]
+//		for _, r := range orgRepos {
+//			// set entity to nil: equals org-wide assigned repo
+//			repoCategories[o][r] = nil
+//		}
+//		writeInfo(out, "Total repos in org %s: %d", o.Login, len(repoCategories[o]))
+//	}
+//
+//	// 2.
+//
+//	return repoCategories
+//}
 
 func executeDeleteTeam(ctx context.Context, currentTeam *team) {
 	existingTeam, resp, grErr := gh.Teams.GetTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
 
 	if grErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "Failed to get team %s, reason: %s", currentTeam.Name, grErr)
+		writeFailure(out, "Failed to get team %s, reason: %s\n", currentTeam.Name, grErr)
 	}
 
 	grErr = nil
 	if existingTeam != nil {
 		_, grErr = gh.Teams.DeleteTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
 		if grErr != nil {
-			writeFailure(out, "Failed to delete team %s, reason: %s", currentTeam.Name, grErr)
+			writeFailure(out, "Failed to delete team %s, reason: %s\n", currentTeam.Name, grErr)
 			currentTeam.Failed = grErr.Error()
 			if grErr = store.saveTeam(currentTeam); grErr != nil {
 				log.Fatal(grErr)
@@ -486,7 +487,7 @@ func executeDeleteUser(ctx context.Context, currentUser *user) {
 	existingUser, resp, grErr := gh.Users.Get(ctx, currentUser.Login)
 
 	if grErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "Failed to get user %s, reason: %s", currentUser.Login, grErr)
+		writeFailure(out, "Failed to get user %s, reason: %s\n", currentUser.Login, grErr)
 		return
 	}
 
@@ -495,7 +496,7 @@ func executeDeleteUser(ctx context.Context, currentUser *user) {
 		_, grErr = gh.Admin.DeleteUser(ctx, currentUser.Login)
 
 		if grErr != nil {
-			writeFailure(out, "Failed to delete user with login %s, reason: %s", currentUser.Login, grErr)
+			writeFailure(out, "Failed to delete user with login %s, reason: %s\n", currentUser.Login, grErr)
 			currentUser.Failed = grErr.Error()
 			if grErr = store.saveUser(currentUser); grErr != nil {
 				log.Fatal(grErr)
@@ -563,7 +564,7 @@ func executeCreateTeamMembershipsForUser(ctx context.Context, opts *teamMembersh
 		})
 
 		if mErr != nil {
-			writeFailure(out, "Failed to add user %s to organization %s, reason: %s", opts.currentUser.Login, candidateTeam.Org, mErr)
+			writeFailure(out, "Failed to add user %s to organization %s, reason: %s\n", opts.currentUser.Login, candidateTeam.Org, mErr)
 			candidateTeam.Failed = mErr.Error()
 			if mErr = store.saveTeam(candidateTeam); mErr != nil {
 				log.Fatal(mErr)
@@ -575,7 +576,7 @@ func executeCreateTeamMembershipsForUser(ctx context.Context, opts *teamMembersh
 		_, _, mErr = gh.Teams.AddTeamMembershipBySlug(ctx, candidateTeam.Org, candidateTeam.Name, opts.currentUser.Login, nil)
 
 		if mErr != nil {
-			writeFailure(out, "Failed to add user %s to team %s, reason: %s", opts.currentUser, candidateTeam.Name, mErr)
+			writeFailure(out, "Failed to add user %s to team %s, reason: %s\n", opts.currentUser, candidateTeam.Name, mErr)
 			candidateTeam.Failed = mErr.Error()
 			if mErr = store.saveTeam(candidateTeam); mErr != nil {
 				log.Fatal(mErr)
@@ -602,40 +603,48 @@ func executeCreateTeamMembershipsForTeam(ctx context.Context, t *team, users []*
 
 	for _, u := range users {
 		// add user to team's parent org first
-		_, _, mErr := gh.Organizations.EditOrgMembership(ctx, u.Login, t.Org, &github.Membership{
-			State:        &userState,
-			Role:         &userRole,
-			Organization: &github.Organization{Login: &t.Org},
-			User:         &github.User{Login: &u.Login},
-		})
-
-		if mErr != nil {
-			writeFailure(out, "Failed to add user %s to organization %s, reason: %s", u.Login, t.Org, mErr)
-			t.Failed = mErr.Error()
-			if mErr = store.saveTeam(t); mErr != nil {
-				log.Fatal(mErr)
+		var res *github.Response
+		var err error
+		for res == nil || res.StatusCode == 502 || res.StatusCode == 504 {
+			if res != nil {
+				time.Sleep(30 * time.Second)
 			}
-			continue
+			_, res, err = gh.Organizations.EditOrgMembership(ctx, u.Login, t.Org, &github.Membership{
+				State:        &userState,
+				Role:         &userRole,
+				Organization: &github.Organization{Login: &t.Org},
+				User:         &github.User{Login: &u.Login},
+			})
+
+			if err != nil {
+				if err = t.setFailedAndSave(err); err != nil {
+					log.Fatal(err)
+				}
+				continue
+			}
 		}
 
-		// this is an idempotent operation so no need to check existing membership
-		_, _, mErr = gh.Teams.AddTeamMembershipBySlug(ctx, t.Org, t.Name, u.Login, nil)
-
-		if mErr != nil {
-			writeFailure(out, "Failed to add user %s to team %s, reason: %s", u, t.Name, mErr)
-			t.Failed = mErr.Error()
-			if mErr = store.saveTeam(t); mErr != nil {
-				log.Fatal(mErr)
+		res = nil
+		for res == nil || res.StatusCode == 502 || res.StatusCode == 504 {
+			if res != nil {
+				time.Sleep(30 * time.Second)
 			}
-			continue
+			// this is an idempotent operation so no need to check existing membership
+			_, res, err = gh.Teams.AddTeamMembershipBySlug(ctx, t.Org, t.Name, u.Login, nil)
+			if err != nil {
+				if err = t.setFailedAndSave(err); err != nil {
+					log.Fatal(err)
+				}
+				continue
+			}
 		}
 
 		t.TotalMembers += 1
 		atomic.AddInt64(membershipsDone, 1)
 		progress.SetValue(3, float64(*membershipsDone))
 
-		if mErr = store.saveTeam(t); mErr != nil {
-			log.Fatal(mErr)
+		if err = store.saveTeam(t); err != nil {
+			log.Fatal(err)
 		}
 	}
 }
@@ -761,7 +770,7 @@ func executeCreateUser(ctx context.Context, u *user, usersDone *int64) {
 
 	existingUser, resp, uErr := gh.Users.Get(ctx, u.Login)
 	if uErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "Failed to get user %s, reason: %s", u.Login, uErr)
+		writeFailure(out, "Failed to get user %s, reason: %s\n", u.Login, uErr)
 		return
 	}
 
@@ -780,7 +789,7 @@ func executeCreateUser(ctx context.Context, u *user, usersDone *int64) {
 
 	_, _, uErr = gh.Admin.CreateUser(ctx, u.Login, u.Email)
 	if uErr != nil {
-		writeFailure(out, "Failed to create user with login %s, reason: %s", u.Login, uErr)
+		writeFailure(out, "Failed to create user with login %s, reason: %s\n", u.Login, uErr)
 		u.Failed = uErr.Error()
 		if uErr = store.saveUser(u); uErr != nil {
 			log.Fatal(uErr)
@@ -818,7 +827,7 @@ func executeCreateTeam(ctx context.Context, t *team, teamsDone *int64) {
 	existingTeam, resp, tErr := gh.Teams.GetTeamBySlug(ctx, t.Org, t.Name)
 
 	if tErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "failed to get team with name %s, reason: %s", t.Name, tErr)
+		writeFailure(out, "failed to get team with name %s, reason: %s\n", t.Name, tErr)
 		return
 	}
 
@@ -834,11 +843,18 @@ func executeCreateTeam(ctx context.Context, t *team, teamsDone *int64) {
 		}
 	} else {
 		// Create the team if not exists
-		if _, _, tErr = gh.Teams.CreateTeam(ctx, t.Org, github.NewTeam{Name: t.Name}); tErr != nil {
-			writeFailure(out, "Failed to create team with name %s, reason: %s", t.Name, tErr)
-			t.Failed = tErr.Error()
-			if tErr = store.saveTeam(t); tErr != nil {
-				log.Fatal(tErr)
+		var res *github.Response
+		var err error
+		for res == nil || res.StatusCode == 502 || res.StatusCode == 504 {
+			if res != nil {
+				// give some breathing room
+				time.Sleep(30 * time.Second)
+			}
+
+			if _, res, err = gh.Teams.CreateTeam(ctx, t.Org, github.NewTeam{Name: t.Name}); err != nil {
+				if err = t.setFailedAndSave(err); err != nil {
+					log.Fatalf("Failed saving to state: %s", err)
+				}
 			}
 		}
 
@@ -862,7 +878,7 @@ func executeCreateOrg(ctx context.Context, o *org, orgAdmin string, orgsDone *in
 
 	existingOrg, resp, oErr := gh.Organizations.Get(ctx, o.Login)
 	if oErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "Failed to get org %s, reason: %s", o.Login, oErr)
+		writeFailure(out, "Failed to get org %s, reason: %s\n", o.Login, oErr)
 		return
 	}
 
@@ -882,7 +898,7 @@ func executeCreateOrg(ctx context.Context, o *org, orgAdmin string, orgsDone *in
 	_, _, oErr = gh.Admin.CreateOrg(ctx, &github.Organization{Login: &o.Login}, orgAdmin)
 
 	if oErr != nil {
-		writeFailure(out, "Failed to create org with login %s, reason: %s", o.Login, oErr)
+		writeFailure(out, "Failed to create org with login %s, reason: %s\n", o.Login, oErr)
 		o.Failed = oErr.Error()
 		if oErr = store.saveOrg(o); oErr != nil {
 			log.Fatal(oErr)

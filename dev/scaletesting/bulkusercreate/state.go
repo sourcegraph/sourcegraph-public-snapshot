@@ -72,24 +72,23 @@ func newState(path string) (*state, error) {
 	}, nil
 }
 
-type entity struct {
-	user *user
-	team *team
-}
-
-func (e *entity) Get() any {
-	if e.user != nil {
-		return e.user
-	} else {
-		return e.team
-	}
-}
-
 type user struct {
 	Login   string
 	Email   string
 	Failed  string
 	Created bool
+}
+
+type failable interface {
+	setFailedAndSave(e error) error
+}
+
+func (u *user) setFailedAndSave(e error) error {
+	u.Failed = e.Error()
+	if err := store.saveUser(u); err != nil {
+		return err
+	}
+	return nil
 }
 
 type team struct {
@@ -100,11 +99,27 @@ type team struct {
 	TotalMembers int
 }
 
+func (t *team) setFailedAndSave(e error) error {
+	t.Failed = e.Error()
+	if err := store.saveTeam(t); err != nil {
+		return err
+	}
+	return nil
+}
+
 type org struct {
 	Login   string
 	Admin   string
 	Failed  string
 	Created bool
+}
+
+func (o *org) setFailedAndSave(e error) error {
+	o.Failed = e.Error()
+	if err := store.saveOrg(o); err != nil {
+		return err
+	}
+	return nil
 }
 
 type repo struct {
@@ -265,7 +280,7 @@ func (s *state) generateTeams(cfg config) ([]*team, error) {
 
 func (s *state) generateOrgs(cfg config) ([]*org, error) {
 	names := []string{"main-org"}
-	names = append(names, generateNames("sub-org", cfg.orgCount)...)
+	names = append(names, generateNames("sub-org", cfg.subOrgCount)...)
 	if err := s.insertOrgs(names, cfg.orgAdmin); err != nil {
 		return nil, err
 	}
