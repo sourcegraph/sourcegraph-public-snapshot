@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"reflect"
 	"sync"
-	"sync/atomic"
 
 	"go.opentelemetry.io/otel/attribute"
 
@@ -27,8 +26,6 @@ var tlsExternalConfig struct {
 	*schema.TlsExternal
 }
 
-var outboundRequestLogLimit atomic.Int32
-
 // SetTLSExternalConfig is called by the conf package whenever TLSExternalConfig changes.
 // This is needed to avoid circular imports.
 func SetTLSExternalConfig(c *schema.TlsExternal) {
@@ -42,17 +39,6 @@ func TLSExternalConfig() *schema.TlsExternal {
 	tlsExternalConfig.RLock()
 	defer tlsExternalConfig.RUnlock()
 	return tlsExternalConfig.TlsExternal
-}
-
-// SetOutboundRequestLogLimit is called by the conf package whenever OutboundRequestLogLimit changes.
-// This is needed to avoid circular imports.
-func SetOutboundRequestLogLimit(i int) {
-	outboundRequestLogLimit.Store(int32(i))
-}
-
-// OutboundRequestLogLimit returns the current value of the global OutboundRequestLogLimit value.
-func OutboundRequestLogLimit() int {
-	return int(outboundRequestLogLimit.Load())
 }
 
 func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {
