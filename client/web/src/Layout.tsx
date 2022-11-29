@@ -197,7 +197,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     }
         
     useEffect(() => {
-        if (props.authenticatedUser && !document.cookie.includes('displayName=' || 'email=')) {
+        if (props.isSourcegraphDotCom && props.authenticatedUser && !document.cookie.includes('displayName=' || 'email=')) {
             document.cookie = `displayName=${props.authenticatedUser.displayName || ''}`
             document.cookie = `email=${props.authenticatedUser.email}`
         }
