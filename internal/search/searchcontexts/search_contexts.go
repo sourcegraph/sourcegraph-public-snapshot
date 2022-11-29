@@ -213,6 +213,7 @@ func validateSearchContextQuery(contextQuery string) error {
 						errors.Errorf("unsupported repo field predicate in search context query: %q", value))
 					return
 				}
+				return
 			}
 
 			repoRegex, revs := search.ParseRepositoryRevisions(value)
