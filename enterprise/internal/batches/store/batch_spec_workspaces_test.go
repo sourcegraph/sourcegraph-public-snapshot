@@ -459,7 +459,10 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 		cs := &btypes.ChangesetSpec{}
 		require.NoError(t, s.CreateChangesetSpec(ctx, cs))
 
-		batchSpecID := int64(101010)
+		bc := &btypes.BatchSpec{NoCache: true, NamespaceUserID: 1}
+		require.NoError(t, s.CreateBatchSpec(ctx, bc))
+		batchSpecID := bc.ID
+
 		workspace := &btypes.BatchSpecWorkspace{
 			BatchSpecID:       batchSpecID,
 			RepoID:            repos[0].ID,
