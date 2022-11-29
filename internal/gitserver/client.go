@@ -1288,6 +1288,7 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 	}
 	// If gitserver doesn't speak the binary endpoint yet, we fall back to the old one.
 	if resp.StatusCode == http.StatusNotFound {
+		resp.Body.Close()
 		resp, err = c.httpPost(ctx, req.Repo, "create-commit-from-patch", protocol.V1CreateCommitFromPatchRequest{
 			Repo:         req.Repo,
 			BaseCommit:   req.BaseCommit,
