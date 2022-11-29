@@ -1,11 +1,9 @@
-import {FetchResult, gql, useMutation} from '@apollo/client'
+import { FetchResult, gql, useMutation } from '@apollo/client'
 
-import {SaveInsightAsNewViewResult, SaveInsightAsNewViewVariables} from '../../../../graphql-operations';
-import {
-    parseSeriesDisplayOptions
-} from '../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils';
-import {INSIGHT_VIEW_FRAGMENT} from '../backend/gql-backend/gql/GetInsights'
-import {BackendInsight, InsightFilters} from '../types';
+import { SaveInsightAsNewViewResult, SaveInsightAsNewViewVariables } from '../../../../graphql-operations'
+import { parseSeriesDisplayOptions } from '../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
+import { INSIGHT_VIEW_FRAGMENT } from '../backend/gql-backend/gql/GetInsights'
+import { BackendInsight, InsightFilters } from '../types'
 
 export const SAVE_INSIGHT_AS_NEW_VIEW_GQL = gql`
     mutation SaveInsightAsNewView($input: InsightNewViewInput!) {
@@ -23,7 +21,7 @@ export function getSaveInsightAsNewViewGqlInput(input: saveNewInsightViewVariabl
     return {
         input: {
             insightViewId: insight.id,
-            options: {title},
+            options: { title },
             viewControls: {
                 seriesDisplayOptions:
                     insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
@@ -34,7 +32,7 @@ export function getSaveInsightAsNewViewGqlInput(input: saveNewInsightViewVariabl
                 },
             },
             dashboard,
-        }
+        },
     }
 }
 
@@ -50,11 +48,15 @@ type useSaveInsightAsNewViewTuple = [
 ]
 
 export function useSaveInsightAsNewView(): useSaveInsightAsNewViewTuple {
-    const [saveInsightAsNewView] = useMutation<SaveInsightAsNewViewResult, SaveInsightAsNewViewVariables>(SAVE_INSIGHT_AS_NEW_VIEW_GQL)
+    const [saveInsightAsNewView] = useMutation<SaveInsightAsNewViewResult, SaveInsightAsNewViewVariables>(
+        SAVE_INSIGHT_AS_NEW_VIEW_GQL
+    )
 
-    return [(variables) => {
-        const input = getSaveInsightAsNewViewGqlInput(variables)
+    return [
+        variables => {
+            const input = getSaveInsightAsNewViewGqlInput(variables)
 
-        return saveInsightAsNewView({ variables: input })
-    }]
+            return saveInsightAsNewView({ variables: input })
+        },
+    ]
 }

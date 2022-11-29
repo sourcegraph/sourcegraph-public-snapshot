@@ -19,7 +19,7 @@ import {
     BackendInsightData,
     CodeInsightsBackendContext,
     InsightFilters,
-    isVirtualDashboard
+    isVirtualDashboard,
 } from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
@@ -39,7 +39,7 @@ import {
 } from './components'
 
 import styles from './BackendInsight.module.scss'
-import {useSaveInsightAsNewView} from "../../../../core/hooks/use-save-insight-as-new-view";
+import { useSaveInsightAsNewView } from '../../../../core/hooks/use-save-insight-as-new-view'
 
 interface BackendInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
     insight: BackendInsight
@@ -137,14 +137,12 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
             return
         }
 
-        await saveNewView(
-            {
-                insight,
-                filters,
-                title: insightName,
-                dashboard: (!currentDashboard.id || isVirtualDashboard(currentDashboard)) ? null : currentDashboard.id,
-            }
-        )
+        await saveNewView({
+            insight,
+            filters,
+            title: insightName,
+            dashboard: !currentDashboard.id || isVirtualDashboard(currentDashboard) ? null : currentDashboard.id,
+        })
 
         telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
         setOriginalInsightFilters(filters)

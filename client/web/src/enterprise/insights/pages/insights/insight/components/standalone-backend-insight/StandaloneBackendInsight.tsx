@@ -35,7 +35,7 @@ import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../
 import { StandaloneInsightContextMenu } from '../context-menu/StandaloneInsightContextMenu'
 
 import styles from './StandaloneBackendInsight.module.scss'
-import {useSaveInsightAsNewView} from '../../../../../core/hooks/use-save-insight-as-new-view';
+import { useSaveInsightAsNewView } from '../../../../../core/hooks/use-save-insight-as-new-view'
 
 interface StandaloneBackendInsight extends TelemetryProps {
     insight: BackendInsight
@@ -119,14 +119,12 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     }
 
     const handleInsightFilterCreation = async (values: DrillDownInsightCreationFormValues): Promise<void> => {
-        await saveNewView(
-            {
-                insight,
-                filters,
-                title: values.insightName,
-                dashboard: null,
-            }
-            )
+        await saveNewView({
+            insight,
+            filters,
+            title: values.insightName,
+            dashboard: null,
+        })
 
         setOriginalInsightFilters(filters)
         history.push(`/insights/dashboard/${ALL_INSIGHTS_DASHBOARD.id}`)
