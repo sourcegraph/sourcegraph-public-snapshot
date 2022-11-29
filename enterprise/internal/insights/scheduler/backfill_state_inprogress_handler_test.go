@@ -506,6 +506,10 @@ func Test_BackfillCrossingErrorThreshold(t *testing.T) {
 	require.Equal(t, itr.PercentComplete, float64(1))
 
 	// check for incomplete points
+	incomplete, err := seriesStore.LoadAggregatedIncompleteDatapoints(ctx, series.ID)
+	require.NoError(t, err)
+	require.Len(t, incomplete, 12)
+	require.Equal(t, incomplete[0].Reason, store.ReasonExceedsErrorLimit)
 }
 
 func Test_calculateErrorThreshold(t *testing.T) {
