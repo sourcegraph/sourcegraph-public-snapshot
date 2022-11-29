@@ -476,6 +476,9 @@ type CommonUsageOptions struct {
 	ExcludeNonActiveUsers bool
 	// Exclude Sourcegraph (employee) admins.
 	ExcludeSourcegraphAdmins bool
+	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
+	// user accounts.
+	ExcludeSourcegraphOperators bool
 }
 
 // CountUniqueUsersOptions provides options for counting unique users.
@@ -574,6 +577,8 @@ func buildCommonUsageConds(opt *CommonUsageOptions, conds []*sqlf.Query) []*sqlf
 		// This method of filtering is imperfect and may still incur false positives, but
 		// the two together should help prevent that in the majority of cases, and we
 		// acknowledge this risk as we would prefer to undercount rather than overcount.
+		//
+		// TODO(jchen): This hack will be removed as part of https://github.com/sourcegraph/customer/issues/1531
 		if opt.ExcludeSourcegraphAdmins {
 			conds = append(conds, sqlf.Sprintf(`
 -- No matching user exists
@@ -593,6 +598,10 @@ OR NOT(
 			AND user_emails.email ILIKE '%%@sourcegraph.com')
 )
 `))
+		}
+
+		if opt.ExcludeSourcegraphOperators {
+			conds = append(conds, sqlf.Sprintf(`NOT event_logs.public_argument @> '{"sourcegraph_operator": true}'`))
 		}
 	}
 	return conds
@@ -848,9 +857,10 @@ type SiteUsageOptions struct {
 func (l *eventLogStore) SiteUsageCurrentPeriods(ctx context.Context) (types.SiteUsageSummary, error) {
 	return l.siteUsageCurrentPeriods(ctx, time.Now().UTC(), &SiteUsageOptions{
 		CommonUsageOptions{
-			ExcludeSystemUsers:       true,
-			ExcludeNonActiveUsers:    true,
-			ExcludeSourcegraphAdmins: true,
+			ExcludeSystemUsers:          true,
+			ExcludeNonActiveUsers:       true,
+			ExcludeSourcegraphAdmins:    true,
+			ExcludeSourcegraphOperators: true,
 		},
 	})
 }

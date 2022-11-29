@@ -814,7 +814,8 @@ type UsersListOptions struct {
 	InactiveSince time.Time
 
 	ExcludeSourcegraphAdmins bool // filter out users with a known Sourcegraph admin username
-	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator user accounts.
+	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
+	// user accounts.
 	ExcludeSourcegraphOperators bool
 
 	*LimitOffset
