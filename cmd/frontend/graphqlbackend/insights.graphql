@@ -69,11 +69,6 @@ type InsightsSeries {
     The status of this series of data, e.g. progress collecting it.
     """
     status: InsightSeriesStatus!
-
-    """
-    Metadata for any data points that are flagged as dirty due to partially or wholly unsuccessfully queries.
-    """
-    dirtyMetadata: [InsightDirtyQueryMetadata!]!
 }
 
 """
@@ -89,26 +84,6 @@ type InsightDataPoint {
     The value of the insight at this point in time.
     """
     value: Float!
-}
-
-"""
-An insight query that has been marked dirty (some form of partially or wholly unsuccessful state).
-"""
-type InsightDirtyQueryMetadata {
-    """
-    The number of dirty queries for this data point and reason combination.
-    """
-    count: Int!
-
-    """
-    The reason the query was marked dirty.
-    """
-    reason: String!
-
-    """
-    The time in the data series that is marked dirty.
-    """
-    time: DateTime!
 }
 
 """
