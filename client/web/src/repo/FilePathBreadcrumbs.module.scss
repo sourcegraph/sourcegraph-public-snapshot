@@ -15,6 +15,7 @@
     }
 
     .part-directory {
+        min-width: 1px;
         max-width: fit-content;
         overflow: hidden;
         text-overflow: ellipsis;
