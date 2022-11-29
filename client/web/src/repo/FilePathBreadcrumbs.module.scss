@@ -11,8 +11,6 @@
     }
 
     .part-directory {
-        flex: 1 1 1em;
-        min-width: 1em;
         max-width: fit-content;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -21,7 +19,7 @@
 
     .part-separator {
         color: var(--link-color);
-        min-width: 1em;
+        min-width: 0.5em;
         text-align: center;
     }
 }

@@ -3,6 +3,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import { CopyPathAction } from '@sourcegraph/search-ui'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -10,7 +11,6 @@ import { Button, H1, H2, Icon, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 
-import { CopyPathAction } from './actions/CopyPathAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { FilePathBreadcrumbs } from './FilePathBreadcrumbs'
 import { RepoHeader, RepoHeaderContributionsLifecycleProps } from './RepoHeader'

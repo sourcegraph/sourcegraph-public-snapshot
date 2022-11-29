@@ -1,8 +1,6 @@
 import * as React from 'react'
-import { useLayoutEffect } from 'react'
 
 import classNames from 'classnames'
-import useResizeObserver from 'use-resize-observer'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -44,40 +42,19 @@ export const FilePathBreadcrumbs: React.FunctionComponent<React.PropsWithChildre
             ? 'test-breadcrumb-part-last'
             : classNames('test-breadcrumb-part-directory', styles.partDirectory)
 
-    const minimumTruncatedElements = parts.length > MAX_ITEMS ? parts.length - MAX_ITEMS : 0
-    const [truncatedElements, setTruncatedElements] = React.useState<number>(minimumTruncatedElements)
-    // Increase the number of truncatedElements and verify if the container is
-    // still overflowing, up to the point where only the the current element is
-    // visible.
-    //
-    // Warning: This might cause a few re-renders of the file breadcrumbs until
-    // a fitting number of truncated elements is found. However the changes
-    // necessary to do this are bound by the number of folders in the file path.
-    const ref = React.useRef<HTMLDivElement>(null)
-    const { width } = useResizeObserver({ ref })
-    // Reset the truncation logic when the element is resized
-    useLayoutEffect(() => setTruncatedElements(minimumTruncatedElements), [width, minimumTruncatedElements])
-    useLayoutEffect(() => {
-        const element = ref.current
-        if (!element || truncatedElements >= parts.length - 1) {
-            return
-        }
-        const isOverflowing = Math.ceil(element.scrollWidth - element.clientWidth - element.scrollLeft) > 0
-        if (isOverflowing) {
-            setTruncatedElements(truncatedElements + 1)
-        }
-    }, [parts.length, width, truncatedElements])
+    // Ensure that we never show more than at most MAX_ITEMS elements
+    const truncatedElements = parts.length > MAX_ITEMS ? parts.length - MAX_ITEMS : 0
 
     const spans: JSX.Element[] = [
-        <LinkOrSpan
+        <FilePath
             key="root-dir"
+            label="/"
             className={classNames('test-breadcrumb-part-directory', styles.partDirectory)}
-            to={toRepoURL({ repoName, revision })}
-            aria-current={false}
+            isFirst={true}
+            isLast={false}
+            link={toRepoURL({ repoName, revision })}
             onClick={() => telemetryService.log('RootBreadcrumbClicked', { action: 'click', label: 'root directory' })}
-        >
-            /
-        </LinkOrSpan>,
+        />,
     ]
 
     if (truncatedElements > 0) {
@@ -89,6 +66,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<React.PropsWithChildre
                 key="truncated-dir"
                 className={classNames('test-breadcrumb-part-truncated', styles.partDirectory)}
                 link={link}
+                isFirst={false}
                 isLast={false}
                 label="..."
                 fullLabel={truncatedPath}
@@ -109,6 +87,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<React.PropsWithChildre
                 key={`link-${index}`}
                 className={className}
                 link={link}
+                isFirst={false}
                 isLast={index === parts.length - 1}
                 label={part}
             />
@@ -119,21 +98,19 @@ export const FilePathBreadcrumbs: React.FunctionComponent<React.PropsWithChildre
     }
 
     // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path
-    return (
-        <span ref={ref} className={styles.filePathBreadcrumbs}>
-            {spans}
-        </span>
-    )
+    return <span className={styles.filePathBreadcrumbs}>{spans}</span>
 }
 
 interface FilePathProps {
     label: string
+    isFirst: boolean
     isLast: boolean
     className: string
     link: string
     fullLabel?: string
+    onClick?: () => void
 }
-function FilePath({ label, isLast, className, link, fullLabel }: FilePathProps): JSX.Element {
+function FilePath({ label, isFirst, isLast, className, link, fullLabel, onClick }: FilePathProps): JSX.Element {
     const [ref, truncated, checkTruncation] = useIsTruncated<HTMLAnchorElement>()
     return (
         <>
@@ -146,11 +123,12 @@ function FilePath({ label, isLast, className, link, fullLabel }: FilePathProps):
                     aria-current={isLast ? 'page' : 'false'}
                     aria-label={fullLabel}
                     ref={ref}
+                    onClick={onClick}
                 >
                     {label}
                 </LinkOrSpan>
             </Tooltip>
-            {!isLast ? <span className={styles.partSeparator}>/</span> : null}
+            {!isFirst && !isLast ? <span className={styles.partSeparator}>/</span> : null}
         </>
     )
 }
