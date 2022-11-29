@@ -1,4 +1,4 @@
-import { ReactElement, useMemo, SVGProps, CSSProperties, useCallback } from 'react'
+import { ReactElement, useMemo, SVGProps, CSSProperties, FocusEvent, useCallback, useState } from 'react'
 
 import { scaleTime, scaleLinear, getTicks } from '@visx/scale'
 import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
@@ -6,6 +6,7 @@ import { ScaleLinear, ScaleTime } from 'd3-scale'
 import { timeFormat } from 'd3-time-format'
 import { noop } from 'lodash'
 
+import { Tooltip } from '../../../Tooltip'
 import { Padding } from '../../../Popover'
 import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core'
 import { Series, SeriesLikeChart } from '../../types'
@@ -75,6 +76,11 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
 
 const identity = <T,>(argument: T): T => argument
 const DEFAULT_LINE_CHART_PADDING = { top: 16, right: 18, bottom: 0, left: 0 }
+const TOOLTIP_NAVIGATION_MESSAGE = `
+    Use left and right arrow keys to navigate through the Y axis.
+    Use up and down keys to navigate through multiple data points on the same X line.
+    Press Esc key to exit navigation mode.
+`
 
 /**
  * Visual component that renders svg line chart with pre-defined sizes, tooltip,
@@ -95,6 +101,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         ...attributes
     } = props
 
+    const [isTooltipOpen, setTooltipOpen] = useState(false)
     const dataSeries = useMemo(() => getSeriesData({ series, stacked }), [series, stacked])
 
     const { minX, maxX, minY, maxY } = useMemo(
@@ -135,45 +142,55 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         [onDatumClick]
     )
 
+    const handleSvgFocus = (event: FocusEvent): void => {
+        if (event.currentTarget === event.target) {
+            setTooltipOpen(true)
+        }
+    }
+
     return (
-        <SvgRoot
-            {...attributes}
-            role="group"
-            width={width}
-            height={height}
-            xScale={xScale}
-            yScale={yScale}
-            padding={padding}
-        >
-            <SvgAxisLeft />
+        <Tooltip open={isTooltipOpen} content={TOOLTIP_NAVIGATION_MESSAGE}>
+            <SvgRoot
+                {...attributes}
+                role="group"
+                width={width}
+                height={height}
+                xScale={xScale}
+                yScale={yScale}
+                padding={padding}
+                onFocus={handleSvgFocus}
+                onBlur={() => setTooltipOpen(false)}
+            >
+                <SvgAxisLeft />
 
-            <SvgAxisBottom
-                pixelsPerTick={70}
-                minRotateAngle={20}
-                maxRotateAngle={60}
-                tickFormat={formatDateTick}
-                getScaleTicks={getXScaleTicks}
-            />
+                <SvgAxisBottom
+                    pixelsPerTick={70}
+                    minRotateAngle={20}
+                    maxRotateAngle={60}
+                    tickFormat={formatDateTick}
+                    getScaleTicks={getXScaleTicks}
+                />
 
-            <SvgContent>
-                {({ xScale, yScale, content }) => (
-                    <LineChartContent<D>
-                        width={content.width}
-                        height={content.height}
-                        top={content.top}
-                        left={content.left}
-                        stacked={stacked}
-                        xScale={xScale as ScaleTime<number, number>}
-                        yScale={yScale as ScaleLinear<number, number>}
-                        dataSeries={dataSeries}
-                        activeSeriesId={activeSeriesId}
-                        getActiveSeries={getActiveSeries}
-                        getLineGroupStyle={getLineGroupStyle}
-                        onDatumClick={onDatumClick}
-                        onDatumAreaClick={handleDatumAreaClick}
-                    />
-                )}
-            </SvgContent>
-        </SvgRoot>
+                <SvgContent>
+                    {({ xScale, yScale, content }) => (
+                        <LineChartContent<D>
+                            width={content.width}
+                            height={content.height}
+                            top={content.top}
+                            left={content.left}
+                            stacked={stacked}
+                            xScale={xScale as ScaleTime<number, number>}
+                            yScale={yScale as ScaleLinear<number, number>}
+                            dataSeries={dataSeries}
+                            activeSeriesId={activeSeriesId}
+                            getActiveSeries={getActiveSeries}
+                            getLineGroupStyle={getLineGroupStyle}
+                            onDatumClick={onDatumClick}
+                            onDatumAreaClick={handleDatumAreaClick}
+                        />
+                    )}
+                </SvgContent>
+            </SvgRoot>
+        </Tooltip>
     )
 }

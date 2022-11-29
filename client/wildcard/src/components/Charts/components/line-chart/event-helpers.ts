@@ -18,9 +18,15 @@ export function getClosesVoronoiPoint<T>(
     return point && voronoiLayout.find(point.x - offset.left, point.y - offset.top)
 }
 
-export function isNextTargetWithinCurrent(event: PointerEvent | FocusEvent): boolean {
+export function isNextTargetWithinCurrent(event: PointerEvent | FocusEvent, excludeRoot = true): boolean {
     const relatedTarget = event.relatedTarget as Element
     const currentTarget = event.currentTarget as Element
+
+    // Contains on the root element (like svg.contains(svg)) always
+    // returns true, to avoid it handle root case manually.
+    if (excludeRoot && currentTarget === relatedTarget) {
+        return false
+    }
 
     return currentTarget.contains(relatedTarget)
 }

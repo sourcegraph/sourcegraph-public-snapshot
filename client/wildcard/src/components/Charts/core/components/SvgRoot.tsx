@@ -2,7 +2,7 @@ import {
     createContext,
     Dispatch,
     FC,
-    PropsWithChildren,
+    forwardRef,
     ReactElement,
     ReactNode,
     SetStateAction,
@@ -71,7 +71,7 @@ interface SvgRootProps extends SVGProps<SVGSVGElement> {
  * calculates and prepares all important canvas measurements for x/y-axis,
  * content and other chart elements.
  */
-export const SvgRoot: FC<PropsWithChildren<SvgRootProps>> = props => {
+export const SvgRoot = forwardRef<SVGSVGElement, SvgRootProps>(function SvgRoot(props, ref) {
     const {
         width,
         height,
@@ -82,7 +82,7 @@ export const SvgRoot: FC<PropsWithChildren<SvgRootProps>> = props => {
         ...attributes
     } = props
 
-    const rootRef = useRef<SVGSVGElement>(null)
+    const rootRef = useMergeRefs<SVGSVGElement>([ref])
     const [padding, setPadding] = useState<Padding>(propPadding)
 
     const contentRectangle = useMemo(
@@ -116,7 +116,7 @@ export const SvgRoot: FC<PropsWithChildren<SvgRootProps>> = props => {
             svgElement: rootRef.current,
             setPadding,
         }),
-        [width, height, contentRectangle, xScale, yScale]
+        [width, height, xScale, yScale, contentRectangle, rootRef]
     )
 
     return (
@@ -126,7 +126,7 @@ export const SvgRoot: FC<PropsWithChildren<SvgRootProps>> = props => {
             </svg>
         </SVGRootContext.Provider>
     )
-}
+}) as FC<SvgRootProps>
 
 interface SvgAxisLeftProps {
     pixelsPerTick?: number

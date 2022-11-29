@@ -21,9 +21,18 @@ export function useKeyboardNavigation(props: Props): void {
             const focusedElement = document.activeElement
             const isFocusOnTheRootElement = element === focusedElement
 
+            if (event.key === Key.Escape) {
+                element?.focus()
+                return
+            }
+
             if (!isArrowPressed(event)) {
                 return
             }
+
+            // Prevent native browser scrolling by arrow like key presses
+            event.preventDefault()
+            event.stopImmediatePropagation()
 
             // Focus the first element within the chart
             if (isFocusOnTheRootElement) {
@@ -42,18 +51,16 @@ export function useKeyboardNavigation(props: Props): void {
                 return
             }
 
-            // Prevent native browser scrolling by arrow like key presses
-            event.preventDefault()
             const nextElementId = findNextElementId(event, focusedElementId, series)
             const nextElement = element?.querySelector<HTMLElement>(`[data-id="${nextElementId}"]`)
 
             nextElement?.focus()
         }
 
-        element.addEventListener('keydown', handleKeyPress)
+        element.addEventListener('keydown', handleKeyPress, true)
 
         return () => {
-            element.removeEventListener('keydown', handleKeyPress)
+            element.removeEventListener('keydown', handleKeyPress, true)
         }
     }, [element, series])
 }
@@ -132,9 +139,13 @@ function getAbovePointId(
         )
     )
 
+    // Handle group of series with the same values case first before searching
+    // for series with higher/lower value
     if (seriesWithSameValue.length > 0) {
         const currentSeriesIndex = seriesWithSameValue.findIndex(series => series.id === currentSeriesId)
 
+        // if we still within the group with same value then return next
+        // series within the group
         if (currentSeriesIndex < seriesWithSameValue.length - 1) {
             const nextSeries = seriesWithSameValue[currentSeriesIndex + 1]
             return (
@@ -149,6 +160,7 @@ function getAbovePointId(
         (series.data as SeriesDatum<unknown>[]).filter(datum => +currentPoint.x === +datum.x)
     )
 
+    // Try to find element above the current point
     const elementsAboveThePoint = flatListOfAllPoints
         .filter(datum => getDatumValue(datum) > currentYValue)
         .sort((a, b) => getDatumValue(a) - getDatumValue(b))
@@ -157,6 +169,7 @@ function getAbovePointId(
         return elementsAboveThePoint[0].id
     }
 
+    // Try to find element above the current point
     const elementsBelowThePoint = flatListOfAllPoints
         .filter(datum => getDatumValue(datum) < currentYValue)
         .sort((a, b) => getDatumValue(a) - getDatumValue(b))
@@ -165,8 +178,11 @@ function getAbovePointId(
         return elementsBelowThePoint[0].id
     }
 
+    // If we haven't found anything above and below the current point
+    // this means there is only one case we should cover which is all series
+    // are in the same point on the chart, then focus point of the first series
+    // in the group
     const nextSeries = seriesWithSameValue[0]
-
     return (
         (nextSeries.data as SeriesDatum<unknown>[]).find(
             datum => getDatumValue(datum) === currentYValue && +currentPoint.x === +datum.x
@@ -187,12 +203,13 @@ function getBelowPointId(
         )
     )
 
+    // Handle group of series with the same values case first before searching
+    // for series with higher/lower value
     if (seriesWithSameValue.length > 0) {
         const currentSeriesIndex = seriesWithSameValue.findIndex(series => series.id === currentSeriesId)
 
         if (currentSeriesIndex > 0) {
             const nextSeries = seriesWithSameValue[currentSeriesIndex - 1]
-
             return (
                 (nextSeries.data as SeriesDatum<unknown>[]).find(
                     datum => getDatumValue(datum) === currentYValue && +currentPoint.x === +datum.x
@@ -205,26 +222,29 @@ function getBelowPointId(
         (series.data as SeriesDatum<unknown>[]).filter(datum => +currentPoint.x === +datum.x)
     )
 
+    // Try to find element below the current point
     const elementsBelowThePoint = flatListOfAllPoints
         .filter(datum => getDatumValue(datum) < currentYValue)
         .sort((a, b) => getDatumValue(b) - getDatumValue(a))
 
     if (elementsBelowThePoint.length > 0) {
+        // Focus the last element within the group of series with the same values
         const lastElementFromTheBelowGroup = findLastWithSameValue(elementsBelowThePoint, item => getDatumValue(item))
         return lastElementFromTheBelowGroup?.id ?? null
     }
 
+    // Try to find element above the current point
     const elementsAboveThePoint = flatListOfAllPoints
         .filter(datum => getDatumValue(datum) > currentYValue)
         .sort((a, b) => getDatumValue(b) - getDatumValue(a))
 
     if (elementsAboveThePoint.length > 0) {
+        // Focus the last element within the group of series with the same values
         const lastElementFromTheAboveGroup = findLastWithSameValue(elementsAboveThePoint, item => getDatumValue(item))
         return lastElementFromTheAboveGroup?.id ?? null
     }
 
     const nextSeries = seriesWithSameValue[seriesWithSameValue.length - 1]
-
     return (
         (nextSeries.data as SeriesDatum<unknown>[]).find(
             datum => getDatumValue(datum) === currentYValue && +currentPoint.x === +datum.x
