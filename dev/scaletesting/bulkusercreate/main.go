@@ -245,8 +245,11 @@ func main() {
 		}
 
 		mainOrg, orgRepos := categorizeOrgRepos(cfg, repos, orgs)
-
-		_ = categorizeTeamRepos(cfg, mainOrg, orgRepos[mainOrg], teams)
+		amountReposWithOnlyUsers := int(math.Ceil(float64(len(repos)) * 0.005))
+		reposWithOnlyUsers := orgRepos[mainOrg][:amountReposWithOnlyUsers]
+		orgRepos[mainOrg] = orgRepos[mainOrg][amountReposWithOnlyUsers:]
+		_ = categorizeTeamRepos(cfg, orgRepos[mainOrg], teams)
+		_ = categorizeUserRepos(reposWithOnlyUsers, users)
 
 		//if cfg.generateTokens {
 		//	tg := group.NewWithResults[userToken]().WithMaxConcurrency(1000)
@@ -466,7 +469,7 @@ func categorizeOrgRepos(cfg config, repos []*repo, orgs []*org) (*org, map[*org]
 	return mainOrg, repoCategories
 }
 
-func categorizeTeamRepos(cfg config, mainOrg *org, mainOrgRepos []*repo, teams []*team) map[*team][]*repo {
+func categorizeTeamRepos(cfg config, mainOrgRepos []*repo, teams []*team) map[*team][]*repo {
 	// 95% of teams
 	teamsSmall := int(math.Ceil(float64(cfg.teamCount) * 0.95))
 	reposSmall := int(math.Ceil(float64(len(mainOrgRepos)) * 0.00015))
@@ -505,7 +508,7 @@ func categorizeTeamRepos(cfg config, mainOrg *org, mainOrgRepos []*repo, teams [
 
 	counts := make(map[int]int)
 	for _, t := range teams {
-		counts[len(teamCategories[t])] += 1
+		counts[len(teamCategories[t])]++
 	}
 
 	for k, v := range counts {
@@ -513,6 +516,26 @@ func categorizeTeamRepos(cfg config, mainOrg *org, mainOrgRepos []*repo, teams [
 	}
 
 	return teamCategories
+}
+
+func categorizeUserRepos(mainOrgRepos []*repo, users []*user) map[*repo][]*user {
+	repoUsers := make(map[*repo][]*user)
+	usersPerRepo := 3
+	for i, r := range mainOrgRepos {
+		usersForRepo := users[i*usersPerRepo : (i+1)*usersPerRepo]
+		repoUsers[r] = usersForRepo
+	}
+
+	counts := make(map[int]int)
+	for _, r := range mainOrgRepos {
+		counts[len(repoUsers[r])]++
+	}
+
+	for k, v := range counts {
+		writeInfo(out, "Categorised %d repos with %d users", v, k)
+	}
+
+	return repoUsers
 }
 
 func executeDeleteTeam(ctx context.Context, currentTeam *team) {
