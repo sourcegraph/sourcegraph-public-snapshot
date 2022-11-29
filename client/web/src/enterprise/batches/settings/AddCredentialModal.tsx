@@ -57,6 +57,7 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
 
     // These are just for type completeness and serve as placeholders for a bright future.
     [ExternalServiceKind.GERRIT]: <span>Unsupported</span>,
+    [ExternalServiceKind.GITEA]: <span>Unsupported</span>,
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,
     [ExternalServiceKind.GOMODULES]: <span>Unsupported</span>,
     [ExternalServiceKind.PYTHONPACKAGES]: <span>Unsupported</span>,

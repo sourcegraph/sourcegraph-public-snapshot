@@ -20,6 +20,7 @@ import awsCodeCommitSchemaJSON from '../../../../../schema/aws_codecommit.schema
 import bitbucketCloudSchemaJSON from '../../../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../../../schema/bitbucket_server.schema.json'
 import gerritSchemaJSON from '../../../../../schema/gerrit.schema.json'
+import giteaSchemaJSON from '../../../../../schema/gitea.schema.json'
 import githubSchemaJSON from '../../../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../../schema/gitolite.schema.json'
@@ -516,6 +517,61 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
         },
     },
 ]
+
+const GITEA: AddExternalServiceOptions = {
+    kind: ExternalServiceKind.GITEA,
+    title: 'Gitea',
+    icon: GitIcon, // TODO
+    jsonSchema: giteaSchemaJSON,
+    defaultDisplayName: 'Gitea',
+    defaultConfig: `{
+  "url": "https://gitea.example.com",
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>url</Field> to the URL of Gitea instance.
+                </li>
+                <li>
+                    Add search queries based on the
+                    <Link
+                        to="https://try.gitea.io/api/swagger#/repository/repoSearch"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        repoSearch API
+                    </Link>
+                </li>
+                <Text>
+                    ⚠️ Sourcegraph does not sync permissions, so all Gitea repositories are visible by all users of the
+                    Sourcegraph instance regardless if they are private on Gitea. If you intentionally want to sync a
+                    private repository set private=true in your searchQuery.
+                </Text>
+            </ol>
+        </div>
+    ),
+    editorActions: [
+        {
+            id: 'setSearchQuery',
+            label: 'Set searchQuery',
+            run: (config: string) => {
+                const value = '?q=<search>'
+                const edits = modify(config, ['searchQuery', -1], value, defaultModificationOptions)
+                return { edits, selectText: '<search>' }
+            },
+        },
+        {
+            id: 'setToken',
+            label: 'Set token',
+            run: (config: string) => {
+                const value = '<token>'
+                const edits = modify(config, ['token'], value, defaultModificationOptions)
+                return { edits, selectText: value }
+            },
+        },
+    ],
+}
 
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITHUB,
@@ -1458,6 +1514,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
     ...(window.context?.experimentalFeatures?.gerrit === 'enabled' ? { gerrit: GERRIT } : {}),
+    ...(window.context?.experimentalFeatures?.gitea === 'enabled' ? { gitea: GITEA } : {}),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
@@ -1481,6 +1538,7 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.PERFORCE]: PERFORCE,
     [ExternalServiceKind.GERRIT]: GERRIT,
     [ExternalServiceKind.PAGURE]: PAGURE,
+    [ExternalServiceKind.GITEA]: GITEA,
     [ExternalServiceKind.GOMODULES]: GO_MODULES,
     [ExternalServiceKind.JVMPACKAGES]: JVM_PACKAGES,
     [ExternalServiceKind.NPMPACKAGES]: NPM_PACKAGES,

@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitea"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -538,6 +539,8 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		return nil
 	}
 	switch typ {
+	case extsvc.TypeGitea:
+		r.Metadata = new(gitea.Repository)
 	case extsvc.TypeGitHub:
 		r.Metadata = new(github.Repository)
 	case extsvc.TypeGitLab:

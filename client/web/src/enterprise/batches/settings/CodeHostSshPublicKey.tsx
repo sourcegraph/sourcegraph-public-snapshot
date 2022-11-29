@@ -17,6 +17,7 @@ const configInstructionLinks: Record<ExternalServiceKind, string> = {
     [ExternalServiceKind.AWSCODECOMMIT]: 'unsupported',
     [ExternalServiceKind.BITBUCKETCLOUD]: 'unsupported',
     [ExternalServiceKind.GERRIT]: 'unsupported',
+    [ExternalServiceKind.GITEA]: 'unsupported',
     [ExternalServiceKind.GITOLITE]: 'unsupported',
     [ExternalServiceKind.GOMODULES]: 'unsupported',
     [ExternalServiceKind.JVMPACKAGES]: 'unsupported',

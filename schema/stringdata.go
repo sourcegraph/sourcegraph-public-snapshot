@@ -32,6 +32,11 @@ var ChangesetSpecSchemaJSON string
 //go:embed gerrit.schema.json
 var GerritSchemaJSON string
 
+// GiteaSchemaJSON is the content of the file "gitea.schema.json".
+//
+//go:embed gitea.schema.json
+var GiteaSchemaJSON string
+
 // GitHubSchemaJSON is the content of the file "github.schema.json".
 //
 //go:embed github.schema.json

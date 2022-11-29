@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitea"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -63,6 +64,10 @@ func cloneURL(parsed any, logger log.Logger, kind string, repo *types.Repo) (str
 	case *schema.GerritConnection:
 		if r, ok := repo.Metadata.(*gerrit.Project); ok {
 			return gerritCloneURL(logger, r, t), nil
+		}
+	case *schema.GiteaConnection:
+		if r, ok := repo.Metadata.(*gitea.Repository); ok {
+			return giteaCloneURL(logger, r, t), nil
 		}
 	case *schema.GitHubConnection:
 		if r, ok := repo.Metadata.(*github.Repository); ok {
@@ -176,6 +181,22 @@ func bitbucketCloudCloneURL(logger log.Logger, repo *bitbucketcloud.Repo, cfg *s
 	}
 
 	u.User = url.UserPassword(cfg.Username, cfg.AppPassword)
+	return u.String()
+}
+
+func giteaCloneURL(logger log.Logger, repo *gitea.Repository, cfg *schema.GiteaConnection) string {
+	if cfg.Token == "" {
+		return repo.CloneURL
+	}
+
+	u, err := url.Parse(repo.CloneURL)
+	if err != nil {
+		logger.Warn("Error adding authentication to Gitea repository Git remote URL.", log.String("url", repo.CloneURL), log.Error(err))
+		return repo.CloneURL
+	}
+
+	u.User = url.User(cfg.Token)
+
 	return u.String()
 }
 

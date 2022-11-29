@@ -637,6 +637,8 @@ type ExperimentalFeatures struct {
 	Gerrit string `json:"gerrit,omitempty"`
 	// GitServerPinnedRepos description: List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.
 	GitServerPinnedRepos map[string]string `json:"gitServerPinnedRepos,omitempty"`
+	// Gitea description: Allow adding Gitea code host connections
+	Gitea string `json:"gitea,omitempty"`
 	// GoPackages description: Allow adding Go package host connections
 	GoPackages string `json:"goPackages,omitempty"`
 	// HideSourcegraphOperatorLogin description: Enables hiding Sourcegraph operator auth provider on login page.
@@ -994,6 +996,30 @@ type GitLabRateLimit struct {
 type GitLabWebhook struct {
 	// Secret description: The secret used to authenticate incoming webhook requests
 	Secret string `json:"secret"`
+}
+
+// GiteaConnection description: Configuration for a connection to Gitea.
+type GiteaConnection struct {
+	// RateLimit description: Rate limit applied when making API requests to Gitea.
+	RateLimit *GiteaRateLimit `json:"rateLimit,omitempty"`
+	// SearchQuery description: An array of strings specifying which Gitea projects to mirror on Sourcegraph. Each string is a URL query for the ${url}/api/v1/repos/search endpoint. See the documentation on your instance or on the public Gitea instance https://try.gitea.io/api/swagger#/repository/repoSearch. For example the empty string "" or "all" will sync everything the user has access to. The query "?archived=false&private=true" will only sync all non-archived repositories.
+	//
+	// Note: The query parameter private, sort, order and limit have the default values of false, created_at, asc and 100 respectively.
+	//
+	// SECURITY: All repositories synced onto Sourcegraph will be public since Sourcegraph does not yet synchronize Gitea permissions. This is why by default we set private=false. If you override this your private repositories will be available on this Sourcegraph instance.
+	SearchQuery []string `json:"searchQuery,omitempty"`
+	// Token description: API token for the Gitea instance. If empty we do unauthenticated requests. Note: Sourcegraph does not sync permissions from Gitea, so any private repositories this token can access will be regarded as public on Sourcegraph. See https://docs.gitea.io/en-us/api-usage/#generating-and-listing-api-tokens
+	Token string `json:"token,omitempty"`
+	// Url description: URL of a Gitea instance, such as https://gitea.example.com
+	Url string `json:"url,omitempty"`
+}
+
+// GiteaRateLimit description: Rate limit applied when making API requests to Gitea.
+type GiteaRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 500, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 500 requests immediately, provided that the complexity cost of each request is 1.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
 // Github description: GitHub configuration, both for queries and receiving release webhooks.

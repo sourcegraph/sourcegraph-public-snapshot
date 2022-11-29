@@ -116,6 +116,7 @@ const (
 	KindBitbucketServer = "BITBUCKETSERVER"
 	KindBitbucketCloud  = "BITBUCKETCLOUD"
 	KindGerrit          = "GERRIT"
+	KindGitea           = "GITEA"
 	KindGitHub          = "GITHUB"
 	KindGitLab          = "GITLAB"
 	KindGitolite        = "GITOLITE"
@@ -149,6 +150,9 @@ const (
 
 	// TypeGerrit is the (api.ExternalRepoSpec).ServiceType value for Gerrit projects.
 	TypeGerrit = "gerrit"
+
+	// TypeGitea is the (api.ExternalRepoSpec).ServiceType value for Gitea projects.
+	TypeGitea = "gitea"
 
 	// TypeGitHub is the (api.ExternalRepoSpec).ServiceType value for GitHub repositories. The ServiceID value
 	// is the base URL to the GitHub instance (https://github.com or the GitHub Enterprise URL).
@@ -204,6 +208,8 @@ func KindToType(kind string) string {
 		return TypeBitbucketCloud
 	case KindGerrit:
 		return TypeGerrit
+	case KindGitea:
+		return TypeGitea
 	case KindGitHub:
 		return TypeGitHub
 	case KindGitLab:
@@ -247,6 +253,8 @@ func TypeToKind(t string) string {
 		return KindBitbucketCloud
 	case TypeGerrit:
 		return KindGerrit
+	case TypeGitea:
+		return KindGitea
 	case TypeGitHub:
 		return KindGitHub
 	case TypeGitLab:
@@ -302,6 +310,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypeBitbucketCloud, true
 	case TypeGerrit:
 		return TypeGerrit, true
+	case TypeGitea:
+		return TypeGitea, true
 	case TypeGitHub:
 		return TypeGitHub, true
 	case TypeGitLab:
@@ -345,6 +355,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindBitbucketCloud, true
 	case KindGerrit:
 		return KindGerrit, true
+	case KindGitea:
+		return KindGitea, true
 	case KindGitHub:
 		return KindGitHub, true
 	case KindGitLab:
@@ -424,6 +436,8 @@ func getConfigPrototype(kind string) (any, error) {
 		return &schema.BitbucketCloudConnection{}, nil
 	case KindGerrit:
 		return &schema.GerritConnection{}, nil
+	case KindGitea:
+		return &schema.GiteaConnection{}, nil
 	case KindGitHub:
 		return &schema.GitHubConnection{}, nil
 	case KindGitLab:
@@ -509,6 +523,8 @@ func ExtractToken(config string, kind string) (string, error) {
 
 func extractToken(parsed any, kind string) (string, error) {
 	switch c := parsed.(type) {
+	case *schema.GiteaConnection:
+		return c.Token, nil
 	case *schema.GitHubConnection:
 		return c.Token, nil
 	case *schema.GitLabConnection:
@@ -563,6 +579,13 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 
 	var limit rate.Limit
 	switch c := config.(type) {
+	case *schema.GiteaConnection:
+		// 8/s is the default limit we enforce
+		limit = rate.Limit(8)
+		if c != nil && c.RateLimit != nil {
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
+
 	case *schema.GitLabConnection:
 		// 10/s is the default enforced by GitLab on their end
 		limit = rate.Limit(10)
@@ -721,6 +744,8 @@ func UniqueCodeHostIdentifier(kind, config string) (string, error) {
 func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 	var rawURL string
 	switch c := cfg.(type) {
+	case *schema.GiteaConnection:
+		rawURL = c.Url
 	case *schema.GitLabConnection:
 		rawURL = c.Url
 	case *schema.GitHubConnection:

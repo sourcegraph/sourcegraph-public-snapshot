@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The number of commits listed in the History tab can now be customized for all users by site admins under Configuration -> Global Settings from the site admin page by using the config `history.defaultPageSize`. Individual users may also set `history.defaultPagesize` from their user settings page to override the value set under the Global Settings. [#44651](https://github.com/sourcegraph/sourcegraph/pull/44651)
 - Batch Changes: Mounted files can be accessed via the UI on the executions page. [#43180](https://github.com/sourcegraph/sourcegraph/pull/43180)
 - Added "Outbound request log" feature for site admins [#44286](https://github.com/sourcegraph/sourcegraph/pull/44286)
+- Added experimental support syncing repositories from the Gitea codehost. Set `experimentalFeatures.gitea` to `enabled` then Gitea will be an option under "Manage code hosts". [#343](https://github.com/sourcegraph/sourcegraph/pull/343)
 
 ### Changed
 

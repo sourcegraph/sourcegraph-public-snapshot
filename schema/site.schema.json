@@ -264,6 +264,12 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
+        "gitea": {
+          "description": "Allow adding Gitea code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "subRepoPermissions": {
           "type": "object",
           "additionalProperties": false,

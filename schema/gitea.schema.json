@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "gitea.schema.json#",
+  "title": "GiteaConnection",
+  "description": "Configuration for a connection to Gitea.",
+  "allowComments": true,
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "rateLimit": {
+      "description": "Rate limit applied when making API requests to Gitea.",
+      "title": "GiteaRateLimit",
+      "type": "object",
+      "required": ["enabled", "requestsPerHour"],
+      "properties": {
+        "enabled": {
+          "description": "true if rate limiting is enabled.",
+          "type": "boolean",
+          "default": true
+        },
+        "requestsPerHour": {
+          "description": "Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 500, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 500 requests immediately, provided that the complexity cost of each request is 1.",
+          "type": "number",
+          "default": 28800,
+          "minimum": 0
+        }
+      },
+      "default": {
+        "enabled": true,
+        "requestsPerHour": 28800
+      }
+    },
+    "url": {
+      "description": "URL of a Gitea instance, such as https://gitea.example.com",
+      "type": "string",
+      "examples": ["https://gitea.example.com", "https://try.gitea.io"]
+    },
+    "token": {
+      "description": "API token for the Gitea instance. If empty we do unauthenticated requests. Note: Sourcegraph does not sync permissions from Gitea, so any private repositories this token can access will be regarded as public on Sourcegraph. See https://docs.gitea.io/en-us/api-usage/#generating-and-listing-api-tokens",
+      "type": "string"
+    },
+    "searchQuery": {
+      "description": "An array of strings specifying which Gitea projects to mirror on Sourcegraph. Each string is a URL query for the ${url}/api/v1/repos/search endpoint. See the documentation on your instance or on the public Gitea instance https://try.gitea.io/api/swagger#/repository/repoSearch. For example the empty string \"\" or \"all\" will sync everything the user has access to. The query \"?archived=false&private=true\" will only sync all non-archived repositories.\n\nNote: The query parameter private, sort, order and limit have the default values of false, created_at, asc and 100 respectively.\n\nSECURITY: All repositories synced onto Sourcegraph will be public since Sourcegraph does not yet synchronize Gitea permissions. This is why by default we set private=false. If you override this your private repositories will be available on this Sourcegraph instance.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "examples": [[""], ["?archived=false&private=true", "?team_id=2"]]
+    }
+  }
+}

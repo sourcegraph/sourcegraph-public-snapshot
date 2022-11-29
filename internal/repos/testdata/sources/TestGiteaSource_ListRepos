@@ -1,0 +1,104 @@
+[
+  {
+   "ID": 0,
+   "Name": "try.gitea.io/DaemonPhenex/minecraft-infinityScroll",
+   "URI": "try.gitea.io/DaemonPhenex/minecraft-infinityScroll",
+   "Description": "# TESTING MIRROR:\r\nBasic AutoHotkey script made for assisted building by generating random block patterns via endlessly scrolling over the hotbar.",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "19395",
+    "ServiceType": "gitea",
+    "ServiceID": "https://try.gitea.io/"
+   },
+   "Sources": {
+    "extsvc:gitea:0": {
+     "ID": "extsvc:gitea:0",
+     "CloneURL": "https://try.gitea.io/DaemonPhenex/minecraft-infinityScroll.git"
+    }
+   },
+   "Metadata": {
+    "id": 19395,
+    "full_name": "DaemonPhenex/minecraft-infinityScroll",
+    "description": "# TESTING MIRROR:\r\nBasic AutoHotkey script made for assisted building by generating random block patterns via endlessly scrolling over the hotbar.",
+    "private": false,
+    "fork": false,
+    "clone_url": "https://try.gitea.io/DaemonPhenex/minecraft-infinityScroll.git",
+    "stars_count": 0,
+    "forks_count": 0,
+    "archived": false
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "try.gitea.io/lunny/baRSS",
+   "URI": "try.gitea.io/lunny/baRSS",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "14996",
+    "ServiceType": "gitea",
+    "ServiceID": "https://try.gitea.io/"
+   },
+   "Sources": {
+    "extsvc:gitea:0": {
+     "ID": "extsvc:gitea:0",
+     "CloneURL": "https://try.gitea.io/lunny/baRSS.git"
+    }
+   },
+   "Metadata": {
+    "id": 14996,
+    "full_name": "lunny/baRSS",
+    "description": "",
+    "private": false,
+    "fork": false,
+    "clone_url": "https://try.gitea.io/lunny/baRSS.git",
+    "stars_count": 0,
+    "forks_count": 0,
+    "archived": false
+   }
+  },
+  {
+   "ID": 0,
+   "Name": "try.gitea.io/lunny/test-dll",
+   "URI": "try.gitea.io/lunny/test-dll",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "30260",
+    "ServiceType": "gitea",
+    "ServiceID": "https://try.gitea.io/"
+   },
+   "Sources": {
+    "extsvc:gitea:0": {
+     "ID": "extsvc:gitea:0",
+     "CloneURL": "https://try.gitea.io/lunny/test-dll.git"
+    }
+   },
+   "Metadata": {
+    "id": 30260,
+    "full_name": "lunny/test-dll",
+    "description": "",
+    "private": false,
+    "fork": false,
+    "clone_url": "https://try.gitea.io/lunny/test-dll.git",
+    "stars_count": 0,
+    "forks_count": 0,
+    "archived": false
+   }
+  }
+ ]

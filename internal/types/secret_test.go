@@ -71,6 +71,11 @@ func TestExternalService_RedactedConfig(t *testing.T) {
 			out:  schema.PhabricatorConnection{Token: RedactedSecret, Url: "https://phabricator.biz"},
 		},
 		{
+			kind: extsvc.KindGitea,
+			in:   schema.GiteaConnection{Url: "https://try.gitea.io", Token: "bar"},
+			out:  schema.GiteaConnection{Url: "https://try.gitea.io", Token: RedactedSecret},
+		},
+		{
 			kind: extsvc.KindGitolite,
 			in:   schema.GitoliteConnection{Host: "https://gitolite.ninja"},
 			out:  schema.GitoliteConnection{Host: "https://gitolite.ninja"},
@@ -239,6 +244,18 @@ func TestExternalService_UnredactConfig(t *testing.T) {
 			old:  schema.PhabricatorConnection{Token: "foobar", Url: "https://phabricator.biz"},
 			in:   schema.PhabricatorConnection{Token: RedactedSecret, Url: "https://phabricator.corp.biz"},
 			out:  schema.PhabricatorConnection{Token: "foobar", Url: "https://phabricator.corp.biz"},
+		},
+		{
+			kind: extsvc.KindGitea,
+			old:  schema.GiteaConnection{Url: "https://try.gitea.io", Token: "bar"},
+			in:   schema.GiteaConnection{Url: "https://try.gitea.io"},
+			out:  schema.GiteaConnection{Url: "https://try.gitea.io"},
+		},
+		{
+			kind: extsvc.KindGitea,
+			old:  schema.GiteaConnection{Url: "https://try.gitea.io", Token: "bar"},
+			in:   schema.GiteaConnection{Url: "https://try.gitea.io", Token: RedactedSecret},
+			out:  schema.GiteaConnection{Url: "https://try.gitea.io", Token: "bar"},
 		},
 		{
 			kind: extsvc.KindGitolite,

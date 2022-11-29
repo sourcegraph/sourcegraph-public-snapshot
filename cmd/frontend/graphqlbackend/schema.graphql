@@ -2620,6 +2620,7 @@ enum ExternalServiceKind {
     BITBUCKETCLOUD
     BITBUCKETSERVER
     GERRIT
+    GITEA
     GITHUB
     GITLAB
     GITOLITE

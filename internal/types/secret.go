@@ -45,6 +45,8 @@ func (e *ExternalService) RedactedConfig(ctx context.Context) (string, error) {
 	case *schema.GitLabConnection:
 		es.redactString(c.Token, "token")
 		es.redactString(c.TokenOauthRefresh, "token.oauth.refresh")
+	case *schema.GiteaConnection:
+		es.redactString(c.Token, "token")
 	case *schema.GerritConnection:
 		es.redactString(c.Password, "password")
 	case *schema.BitbucketServerConnection:
@@ -162,6 +164,9 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 	case *schema.PerforceConnection:
 		o := oldCfg.(*schema.PerforceConnection)
 		es.unredactString(c.P4Passwd, o.P4Passwd, "p4.passwd")
+	case *schema.GiteaConnection:
+		o := oldCfg.(*schema.GiteaConnection)
+		es.unredactString(c.Token, o.Token, "token")
 	case *schema.GitoliteConnection:
 		// Nothing to redact
 	case *schema.GoModulesConnection:
