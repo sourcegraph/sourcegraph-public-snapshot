@@ -183,8 +183,12 @@ steps:
 	})
 
 	t.Run("with cache disabled", func(t *testing.T) {
-		// Set the no cache flag on the batch spec.
-		batchSpec.NoCache = true
+		// Copy.
+		workspace := *workspace
+		workspace.CachedResultFound = false
+		workspace.StepCacheResults = map[int]btypes.StepCacheResult{}
+		workspace.ChangesetSpecIDs = []int64{}
+		store.GetBatchSpecWorkspaceFunc.PushReturn(&workspace, nil)
 
 		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob, "0.0.0-dev")
 		if err != nil {
@@ -242,8 +246,6 @@ steps:
 			store.ListBatchSpecWorkspaceFilesFunc.SetDefaultReturn(nil, 0, nil)
 		})
 
-		batchSpec.NoCache = true
-
 		workspaceFileModifiedAt := time.Now()
 		store.ListBatchSpecWorkspaceFilesFunc.SetDefaultReturn(
 			[]*btypes.BatchSpecWorkspaceFile{
@@ -264,7 +266,7 @@ steps:
 			t.Fatalf("unexpected error transforming record: %s", err)
 		}
 
-		marshaledInput, err := json.Marshal(wantInput(false, execution.AfterStepResult{}))
+		marshaledInput, err := json.Marshal(wantInput(true, execution.AfterStepResult{Diff: []byte("123")}))
 		if err != nil {
 			t.Fatal(err)
 		}
