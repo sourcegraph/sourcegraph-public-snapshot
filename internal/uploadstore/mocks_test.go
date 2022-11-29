@@ -180,6 +180,9 @@ type MockGcsBucketHandle struct {
 	// ObjectFunc is an instance of a mock function object controlling the
 	// behavior of the method Object.
 	ObjectFunc *GcsBucketHandleObjectFunc
+	// ObjectsFunc is an instance of a mock function object controlling the
+	// behavior of the method Objects.
+	ObjectsFunc *GcsBucketHandleObjectsFunc
 	// UpdateFunc is an instance of a mock function object controlling the
 	// behavior of the method Update.
 	UpdateFunc *GcsBucketHandleUpdateFunc
@@ -202,6 +205,11 @@ func NewMockGcsBucketHandle() *MockGcsBucketHandle {
 		},
 		ObjectFunc: &GcsBucketHandleObjectFunc{
 			defaultHook: func(string) (r0 gcsObjectHandle) {
+				return
+			},
+		},
+		ObjectsFunc: &GcsBucketHandleObjectsFunc{
+			defaultHook: func(context.Context, *storage.Query) (r0 gcsObjectIterator) {
 				return
 			},
 		},
@@ -232,6 +240,11 @@ func NewStrictMockGcsBucketHandle() *MockGcsBucketHandle {
 				panic("unexpected invocation of MockGcsBucketHandle.Object")
 			},
 		},
+		ObjectsFunc: &GcsBucketHandleObjectsFunc{
+			defaultHook: func(context.Context, *storage.Query) gcsObjectIterator {
+				panic("unexpected invocation of MockGcsBucketHandle.Objects")
+			},
+		},
 		UpdateFunc: &GcsBucketHandleUpdateFunc{
 			defaultHook: func(context.Context, storage.BucketAttrsToUpdate) error {
 				panic("unexpected invocation of MockGcsBucketHandle.Update")
@@ -248,6 +261,7 @@ type surrogateMockGcsBucketHandle interface {
 	Attrs(context.Context) (*storage.BucketAttrs, error)
 	Create(context.Context, string, *storage.BucketAttrs) error
 	Object(string) gcsObjectHandle
+	Objects(context.Context, *storage.Query) gcsObjectIterator
 	Update(context.Context, storage.BucketAttrsToUpdate) error
 }
 
@@ -264,6 +278,9 @@ func NewMockGcsBucketHandleFrom(i surrogateMockGcsBucketHandle) *MockGcsBucketHa
 		},
 		ObjectFunc: &GcsBucketHandleObjectFunc{
 			defaultHook: i.Object,
+		},
+		ObjectsFunc: &GcsBucketHandleObjectsFunc{
+			defaultHook: i.Objects,
 		},
 		UpdateFunc: &GcsBucketHandleUpdateFunc{
 			defaultHook: i.Update,
@@ -583,6 +600,111 @@ func (c GcsBucketHandleObjectFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GcsBucketHandleObjectFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GcsBucketHandleObjectsFunc describes the behavior when the Objects method
+// of the parent MockGcsBucketHandle instance is invoked.
+type GcsBucketHandleObjectsFunc struct {
+	defaultHook func(context.Context, *storage.Query) gcsObjectIterator
+	hooks       []func(context.Context, *storage.Query) gcsObjectIterator
+	history     []GcsBucketHandleObjectsFuncCall
+	mutex       sync.Mutex
+}
+
+// Objects delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGcsBucketHandle) Objects(v0 context.Context, v1 *storage.Query) gcsObjectIterator {
+	r0 := m.ObjectsFunc.nextHook()(v0, v1)
+	m.ObjectsFunc.appendCall(GcsBucketHandleObjectsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Objects method of
+// the parent MockGcsBucketHandle instance is invoked and the hook queue is
+// empty.
+func (f *GcsBucketHandleObjectsFunc) SetDefaultHook(hook func(context.Context, *storage.Query) gcsObjectIterator) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Objects method of the parent MockGcsBucketHandle instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GcsBucketHandleObjectsFunc) PushHook(hook func(context.Context, *storage.Query) gcsObjectIterator) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GcsBucketHandleObjectsFunc) SetDefaultReturn(r0 gcsObjectIterator) {
+	f.SetDefaultHook(func(context.Context, *storage.Query) gcsObjectIterator {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GcsBucketHandleObjectsFunc) PushReturn(r0 gcsObjectIterator) {
+	f.PushHook(func(context.Context, *storage.Query) gcsObjectIterator {
+		return r0
+	})
+}
+
+func (f *GcsBucketHandleObjectsFunc) nextHook() func(context.Context, *storage.Query) gcsObjectIterator {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GcsBucketHandleObjectsFunc) appendCall(r0 GcsBucketHandleObjectsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GcsBucketHandleObjectsFuncCall objects
+// describing the invocations of this function.
+func (f *GcsBucketHandleObjectsFunc) History() []GcsBucketHandleObjectsFuncCall {
+	f.mutex.Lock()
+	history := make([]GcsBucketHandleObjectsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GcsBucketHandleObjectsFuncCall is an object that describes an invocation
+// of method Objects on an instance of MockGcsBucketHandle.
+type GcsBucketHandleObjectsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *storage.Query
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 gcsObjectIterator
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GcsBucketHandleObjectsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GcsBucketHandleObjectsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
