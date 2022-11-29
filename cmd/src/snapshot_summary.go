@@ -14,12 +14,15 @@ import (
 )
 
 func init() {
-	usage := `'src snapshot summary' generates summary data for acceptance testing of a restored Sourcegraph instance with 'src snapshot test'.
+	usage := fmt.Sprintf(`'src snapshot summary' generates summary data for acceptance testing of a restored Sourcegraph instance with 'src snapshot test'.
 
 USAGE
 	src login # site-admin authentication required
 	src [-v] snapshot summary
-`
+
+SUMMARY DATA
+	Use '-dump-requests' to see what data is requested, or open the generated summary at %q.
+`, srcSnapshotSummaryPath)
 	flagSet := flag.NewFlagSet("summary", flag.ExitOnError)
 	apiFlags := api.NewFlags(flagSet)
 
@@ -38,7 +41,9 @@ USAGE
 				return err
 			}
 
-			f, err := os.OpenFile(snapshotSummaryPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
+			_ = os.MkdirAll(srcSnapshotDir, os.ModePerm)
+
+			f, err := os.OpenFile(srcSnapshotSummaryPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 			if err != nil {
 				return errors.Wrap(err, "open snapshot file")
 			}
@@ -48,7 +53,7 @@ USAGE
 				return errors.Wrap(err, "write snapshot file")
 			}
 
-			out.WriteLine(output.Emoji(output.EmojiSuccess, "Summary snapshot data generated!"))
+			out.WriteLine(output.Emojif(output.EmojiSuccess, "Summary snapshot data generated in %q!", srcSnapshotSummaryPath))
 			return nil
 		},
 		usageFunc: func() { fmt.Fprint(flag.CommandLine.Output(), usage) },

@@ -99,7 +99,9 @@ TARGETS FILES
 				return errors.Wrap(err, "failed to build commands")
 			}
 
-			b := out.Block(output.Emoji(output.EmojiSuccess, "Commands generated - run them all to generate required database dumps:"))
+			_ = os.MkdirAll(srcSnapshotDir, os.ModePerm)
+
+			b := out.Block(output.Emoji(output.EmojiSuccess, "Run these commands to generate the required database dumps:"))
 			b.Write("\n" + strings.Join(commands, "\n"))
 			b.Close()
 
