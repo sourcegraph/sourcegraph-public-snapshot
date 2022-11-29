@@ -52,18 +52,21 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
         provider => provider.isBuiltin
     )
 
-    const showSourcegraphOperatorLogin = function (provider: AuthProvider): boolean {
+    const shouldShowProvider = function (provider: AuthProvider): boolean {
+        // Hide the legacy OIDC sign-in by default if the hiding feature flag is turned on.
         if (provider.serviceType === 'openidconnect' && provider.displayName === 'Sourcegraph Employee') {
             return !isOperatorHidingEnabled || new URLSearchParams(location.search).has('sourcegraph-operator')
         }
 
+        // Hide the Sourcegraph Operator authentication provider by default because it is
+        // not useful to customer users and may even cause confusion.
         if (provider.serviceType === 'sourcegraph-operator') {
             return new URLSearchParams(location.search).has('sourcegraph-operator')
         }
         return true
     }
 
-    const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => showSourcegraphOperatorLogin(provider))
+    const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))
 
     const body =
         !builtInAuthProvider && thirdPartyAuthProviders.length === 0 ? (
