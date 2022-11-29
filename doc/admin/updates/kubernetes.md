@@ -40,13 +40,9 @@ _Upgrade notes for the next version will appear here._
 
   For more information, see [deploy-sourcegraph-helm's Changelog](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/CHANGELOG.md) or contact customer support.
 
-_Upgrade notes for the next version will appear here._
-
 ## v4.0 ➔ v4.1.3
 
 <!-- Add changes changes to this section before release. -->
-
-_Upgrade notes for the next version will appear here._
 
 ## v3.43 ➔ v4.0
 
