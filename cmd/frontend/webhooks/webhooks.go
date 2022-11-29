@@ -135,7 +135,9 @@ func webhookHandler(logger log.Logger, db database.DB, wh *WebhookRouter) http.H
 			wh.handleBitbucketServerWebhook(logger, w, r, webhook.CodeHostURN, secret)
 			return
 		case extsvc.KindBitbucketCloud:
-			// TODO: handle Bitbucket Cloud secret verification
+			// Bitbucket Cloud does not support secrets for webhooks
+			wh.HandleBitbucketCloudWebhook(logger, w, r, webhook.CodeHostURN)
+			return
 		}
 
 		http.Error(w, fmt.Sprintf("webhooks not implemented for code host kind %q", webhook.CodeHostKind), http.StatusNotImplemented)
