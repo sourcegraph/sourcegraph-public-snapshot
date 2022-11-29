@@ -72,6 +72,19 @@ func newState(path string) (*state, error) {
 	}, nil
 }
 
+type entity struct {
+	user *user
+	team *team
+}
+
+func (e *entity) Get() any {
+	if e.user != nil {
+		return e.user
+	} else {
+		return e.team
+	}
+}
+
 type user struct {
 	Login   string
 	Email   string
@@ -311,6 +324,33 @@ func (s *state) saveOrg(o *org) error {
 		o.Failed,
 		o.Created,
 		o.Login)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+var saveRepoStmt = `UPDATE repos SET
+owner = ?,
+assignedTeams = ?,
+assignedUsers = ?,
+assignedOrgs = ?,
+complete = ?
+WHERE name = ?`
+
+func (s *state) saveRepo(r *repo) error {
+	s.Lock()
+	defer s.Unlock()
+
+	_, err := s.db.Exec(
+		saveRepoStmt,
+		r.Owner,
+		r.AssignedTeams,
+		r.AssignedUsers,
+		r.AssignedOrgs,
+		r.Complete,
+		r.Name)
 
 	if err != nil {
 		return err

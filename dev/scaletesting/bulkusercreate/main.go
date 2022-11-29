@@ -136,7 +136,9 @@ func main() {
 	start := time.Now()
 
 	g := group.New().WithMaxConcurrency(1000)
-	if cfg.action == "create" {
+
+	switch cfg.action {
+	case "create":
 		// load or generate users
 		var users []*user
 		if users, err = store.loadUsers(); err != nil {
@@ -172,58 +174,60 @@ func main() {
 			{Label: "Creating teams", Max: float64(cfg.teamCount)},
 			{Label: "Creating users", Max: float64(cfg.userCount)},
 			{Label: "Adding users to teams", Max: float64(cfg.userCount)},
+			{Label: "Assigning repos", Max: float64(200000)},
 		}
 		if cfg.generateTokens {
 			bars = append(bars, output.ProgressBar{Label: "Generating OAuth tokens", Max: float64(cfg.userCount)})
 		}
 		progress = out.Progress(bars, nil)
-		var usersDone int64
-		var orgsDone int64
-		var teamsDone int64
+		//var usersDone int64
+		//var orgsDone int64
+		//var teamsDone int64
 		var tokensDone int64
-		var membershipsDone int64
+		//var membershipsDone int64
+		//var reposDone int64
 
-		for _, o := range orgs {
-			currentOrg := o
-			g.Go(func() {
-				executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, &orgsDone)
-			})
-		}
-		g.Wait()
-
-		for _, t := range teams {
-			currentTeam := t
-			g.Go(func() {
-				executeCreateTeam(ctx, currentTeam, &teamsDone)
-			})
-		}
-		g.Wait()
-
-		for _, u := range users {
-			currentUser := u
-			g.Go(func() {
-				executeCreateUser(ctx, currentUser, &usersDone)
-			})
-		}
-		g.Wait()
-
-		membershipsPerTeam := 8
-		g2 := group.New().WithMaxConcurrency(100)
-
-		for i, t := range teams {
-			currentTeam := t
-			currentIter := i
-			var usersToAssign []*user
-
-			for j := currentIter * membershipsPerTeam; j < ((currentIter + 1) * membershipsPerTeam); j++ {
-				usersToAssign = append(usersToAssign, users[j])
-			}
-
-			g2.Go(func() {
-				executeCreateTeamMembershipsForTeam(ctx, currentTeam, usersToAssign, &membershipsDone)
-			})
-		}
-		g2.Wait()
+		//for _, o := range orgs {
+		//	currentOrg := o
+		//	g.Go(func() {
+		//		executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, &orgsDone)
+		//	})
+		//}
+		//g.Wait()
+		//
+		//for _, t := range teams {
+		//	currentTeam := t
+		//	g.Go(func() {
+		//		executeCreateTeam(ctx, currentTeam, &teamsDone)
+		//	})
+		//}
+		//g.Wait()
+		//
+		//for _, u := range users {
+		//	currentUser := u
+		//	g.Go(func() {
+		//		executeCreateUser(ctx, currentUser, &usersDone)
+		//	})
+		//}
+		//g.Wait()
+		//
+		//membershipsPerTeam := 8
+		//g2 := group.New().WithMaxConcurrency(100)
+		//
+		//for i, t := range teams {
+		//	currentTeam := t
+		//	currentIter := i
+		//	var usersToAssign []*user
+		//
+		//	for j := currentIter * membershipsPerTeam; j < ((currentIter + 1) * membershipsPerTeam); j++ {
+		//		usersToAssign = append(usersToAssign, users[j])
+		//	}
+		//
+		//	g2.Go(func() {
+		//		executeCreateTeamMembershipsForTeam(ctx, currentTeam, usersToAssign, &membershipsDone)
+		//	})
+		//}
+		//g2.Wait()
 
 		var repos []*repo
 		if repos, err = store.loadRepos(); err != nil {
@@ -241,6 +245,8 @@ func main() {
 			writeSuccess(out, "resuming repo jobs from %s", cfg.resume)
 		}
 
+		_ = categorizeRepos(repos, orgs)
+
 		if cfg.generateTokens {
 			tg := group.NewWithResults[userToken]().WithMaxConcurrency(1000)
 			for _, u := range users {
@@ -248,7 +254,7 @@ func main() {
 				tg.Go(func() userToken {
 					token := executeCreateUserImpersonationToken(ctx, currentU)
 					atomic.AddInt64(&tokensDone, 1)
-					progress.SetValue(4, float64(tokensDone))
+					progress.SetValue(5, float64(tokensDone))
 					return userToken{
 						login: currentU.Login,
 						token: token,
@@ -275,40 +281,9 @@ func main() {
 				}
 			}
 		}
-
 		g.Wait()
 
-		allUsers, err := store.countAllUsers()
-		if err != nil {
-			log.Fatal(err)
-		}
-		completedUsers, err := store.countCompletedUsers()
-		if err != nil {
-			log.Fatal(err)
-		}
-		allOrgs, err := store.countAllOrgs()
-		if err != nil {
-			log.Fatal(err)
-		}
-		completedOrgs, err := store.countCompletedOrgs()
-		if err != nil {
-			log.Fatal(err)
-		}
-		allTeams, err := store.countAllTeams()
-		if err != nil {
-			log.Fatal(err)
-		}
-		completedTeams, err := store.countCompletedTeams()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		writeSuccess(out, "Successfully added %d users (%d failures)", completedUsers, allUsers-completedUsers)
-		writeSuccess(out, "Successfully added %d orgs (%d failures)", completedOrgs, allOrgs-completedOrgs)
-		writeSuccess(out, "Successfully added %d teams (%d failures)", completedTeams, allTeams-completedTeams)
-	}
-
-	if cfg.action == "delete" {
+	case "delete":
 		localOrgs, err := store.loadOrgs()
 		if err != nil {
 			log.Fatal("Failed to load orgs", err)
@@ -420,19 +395,15 @@ func main() {
 
 		g.Wait()
 
-		remoteOrgs := getGitHubOrgs(ctx)
-		remoteTeams := getGitHubTeams(ctx, localOrgs)
-		remoteUsers := getGitHubUsers(ctx)
+	case "validate":
+		localOrgs, err := store.loadOrgs()
+		if err != nil {
+			log.Fatal("Failed to load orgs", err)
+		}
 
-		writeInfo(out, "Total orgs on instance: %d", len(remoteOrgs))
-		writeInfo(out, "Total teams on instance: %d", len(remoteTeams))
-		writeInfo(out, "Total users on instance: %d", len(remoteUsers))
-	}
-
-	if cfg.action == "validate" {
 		localTeams, err := store.loadTeams()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("Failed to load teams", err)
 		}
 
 		teamSizes := make(map[int]int)
@@ -450,10 +421,38 @@ func main() {
 		for k, v := range teamSizes {
 			writeInfo(out, "Found %d teams with %d members", v, k)
 		}
+
+		remoteOrgs := getGitHubOrgs(ctx)
+		remoteTeams := getGitHubTeams(ctx, localOrgs)
+		remoteUsers := getGitHubUsers(ctx)
+
+		writeInfo(out, "Total orgs on instance: %d", len(remoteOrgs))
+		writeInfo(out, "Total teams on instance: %d", len(remoteTeams))
+		writeInfo(out, "Total users on instance: %d", len(remoteUsers))
 	}
 
 	end := time.Now()
 	writeInfo(out, "Started at %s, finished at %s", start.String(), end.String())
+}
+
+func categorizeRepos(repos []*repo, orgs []*org) map[*org]map[*repo]*entity {
+	repoCategories := make(map[*org]map[*repo]*entity)
+
+	// 1. divide equally over orgs (might leave some unassigned due to rounding but within acceptable margins)
+	reposPerOrg := len(repos) / len(orgs)
+	for i, o := range orgs {
+		repoCategories[o] = make(map[*repo]*entity)
+		orgRepos := repos[i*reposPerOrg : (i+1)*reposPerOrg]
+		for _, r := range orgRepos {
+			// set entity to nil: equals org-wide assigned repo
+			repoCategories[o][r] = nil
+		}
+		writeInfo(out, "Total repos in org %s: %d", o.Login, len(repoCategories[o]))
+	}
+
+	// 2.
+
+	return repoCategories
 }
 
 func executeDeleteTeam(ctx context.Context, currentTeam *team) {
@@ -901,6 +900,41 @@ func executeCreateOrg(ctx context.Context, o *org, orgAdmin string, orgsDone *in
 	}
 
 	//writeSuccess(out, "Created org with login %s", o.Login)
+}
+
+func executeAssignReposToOrg(ctx context.Context, o *org, repos []*repo) {
+	for _, r := range repos {
+		if r.Owner == o.Login {
+			// Repo is already owned by this org
+			continue
+		}
+
+		_, _, err := gh.Repositories.Transfer(ctx, r.Owner, r.Name, github.TransferRequest{NewOwner: o.Login})
+		if err != nil {
+			if _, ok := err.(*github.AcceptedError); ok {
+				writeInfo(out, "Repository %s scheduled for transfer as a background job", r.Name)
+			} else {
+				log.Fatalf("Failed transfering repository %s to %s: %s", r.Name, o.Login, err)
+			}
+		}
+
+		r.Owner = o.Login
+		r.AssignedOrgs += 1
+		if err = store.saveRepo(r); err != nil {
+			log.Fatalf("Failed to save repository %s: %s", r.Name, err)
+		}
+	}
+}
+
+func executeAssignReposToTeam(ctx context.Context, team *team, repos []*repo) {
+	//for _, r := range repos {
+	//
+	//	gh.Teams.AddTeamRepoBySlug()
+	//}
+}
+
+func executeAssignReposToUser() {
+
 }
 
 func writeSuccess(out *output.Output, format string, a ...any) {
