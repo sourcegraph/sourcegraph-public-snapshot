@@ -88,8 +88,7 @@ func searchContextsPermissionsCondition(ctx context.Context, logger log.Logger, 
 	return q, nil
 }
 
-const listSearchContextsFmtStr = `
-SELECT * FROM (
+const searchContextQueryFmtStr = `
 	SELECT -- The global context is not in the database, it needs to be added here for the sake of pagination.
 		0 as id, -- All other contexts have a non-zero ID.
 		'global' as context_name,
@@ -120,6 +119,11 @@ SELECT * FROM (
 	FROM search_contexts sc
 	LEFT JOIN users u on sc.namespace_user_id = u.id
 	LEFT JOIN orgs o on sc.namespace_org_id = o.id
+`
+
+const listSearchContextsFmtStr = `
+SELECT * FROM (
+	` + searchContextQueryFmtStr + `
 ) AS t
 WHERE
 	(%s) -- permission conditions
@@ -133,12 +137,12 @@ OFFSET %d
 
 const countSearchContextsFmtStr = `
 SELECT COUNT(*)
-FROM search_contexts sc
-LEFT JOIN users u on sc.namespace_user_id = u.id
-LEFT JOIN orgs o on sc.namespace_org_id = o.id
+FROM (
+	` + searchContextQueryFmtStr + `
+) AS t
 WHERE
-	(%s) -- permission conditions
-	AND (%s) -- query conditions
+(%s) -- permission conditions
+AND (%s) -- query conditions
 `
 
 type SearchContextsOrderByOption uint8
