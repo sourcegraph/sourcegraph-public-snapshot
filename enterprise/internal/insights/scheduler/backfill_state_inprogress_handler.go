@@ -108,11 +108,12 @@ type inProgressHandler struct {
 }
 
 type handlerConfig struct {
-	interruptAfter time.Duration
+	interruptAfter      time.Duration
+	errorThresholdFloor int
 }
 
 func newHandlerConfig() handlerConfig {
-	return handlerConfig{interruptAfter: getInterruptAfter()}
+	return handlerConfig{interruptAfter: getInterruptAfter(), errorThresholdFloor: getErrorThresholdfloor()}
 }
 
 var _ workerutil.Handler[*BaseJob] = &inProgressHandler{}
@@ -124,6 +125,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, job *
 	if err != nil {
 		return err
 	}
+	execution.config = h.config
 
 	logger.Info("insights backfill progress handler loaded",
 		log.Int("recordId", job.RecordID()),
@@ -281,7 +283,7 @@ func (h *inProgressHandler) disableBackfill(ctx context.Context, ex *backfillExe
 			return errors.Wrap(err, "SetFailed.AddIncompleteDatapoint")
 		}
 	}
-	ex.logger.Info("backfill disabled due to exceeding error threshold", ex.logFields()...)
+	ex.logger.Info("backfill disabled due to exceeding error threshold", ex.logFields(log.Int("threshold", ex.getThreshold()))...)
 	return nil
 }
 
@@ -306,12 +308,11 @@ func (h *inProgressHandler) load(ctx context.Context, logger log.Logger, backfil
 	}, series.CreatedAt.Truncate(time.Hour*24))
 
 	return &backfillExecution{
-		series:              series,
-		backfill:            backfillJob,
-		itr:                 itr,
-		logger:              logger,
-		frames:              frames,
-		errorThresholdFloor: defaultErrorThresholdFloor,
+		series:   series,
+		backfill: backfillJob,
+		itr:      itr,
+		logger:   logger,
+		frames:   frames,
 	}, nil
 }
 
@@ -321,8 +322,7 @@ type backfillExecution struct {
 	itr      *iterator.PersistentRepoIterator
 	logger   log.Logger
 	frames   []itypes.Frame
-
-	errorThresholdFloor int
+	config   handlerConfig
 }
 
 func (b *backfillExecution) logFields(extra ...log.Field) []log.Field {
@@ -352,6 +352,10 @@ func getInterruptAfter() time.Duration {
 	return time.Duration(defaultInterruptSeconds) * time.Second
 }
 
+func getErrorThresholdfloor() int {
+	return defaultErrorThresholdFloor
+}
+
 func translateIncompleteReasons(err error) store.IncompleteReason {
 	if errors.Is(err, queryrunner.SearchTimeoutError) {
 		return store.ReasonTimeout
@@ -360,7 +364,11 @@ func translateIncompleteReasons(err error) store.IncompleteReason {
 }
 
 func (b *backfillExecution) exceedsErrorThreshold() bool {
-	return b.itr.TotalErrors() > calculateErrorThreshold(.05, b.errorThresholdFloor, b.itr.TotalCount)
+	return b.itr.TotalErrors() > calculateErrorThreshold(.05, b.config.errorThresholdFloor, b.itr.TotalCount)
+}
+
+func (b *backfillExecution) getThreshold() int {
+	return calculateErrorThreshold(.05, b.config.errorThresholdFloor, b.itr.TotalCount)
 }
 
 func calculateErrorThreshold(percent float64, floor int, cardinality int) int {
