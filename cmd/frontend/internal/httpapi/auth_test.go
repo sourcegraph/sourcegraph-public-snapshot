@@ -84,8 +84,17 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		accessTokens.LookupFunc.SetDefaultReturn(0, database.InvalidTokenError{})
 		db.AccessTokensFunc.SetDefaultReturn(accessTokens)
 
+		securityEventLogs := database.NewMockSecurityEventLogsStore()
+		securityEventLogs.LogEventFunc.SetDefaultHook(func(ctx context.Context, se *database.SecurityEvent) {
+			if want := database.SecurityEventAccessTokenInvalid; se.Name != want {
+				t.Errorf("got %q, want %q", se.Name, want)
+			}
+		})
+		db.SecurityEventLogsFunc.SetDefaultReturn(securityEventLogs)
+
 		checkHTTPResponse(t, db, req, http.StatusUnauthorized, "Invalid access token.\n")
 		mockrequire.Called(t, accessTokens.LookupFunc)
+		mockrequire.Called(t, securityEventLogs.LogEventFunc)
 	})
 
 	for _, headerValue := range []string{"token abcdef", `token token="abcdef"`} {
@@ -287,12 +296,21 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			return &types.User{ID: userID, SiteAdmin: false}, nil
 		})
 
+		securityEventLogsStore := database.NewMockSecurityEventLogsStore()
+		securityEventLogsStore.LogEventFunc.SetDefaultHook(func(_ context.Context, se *database.SecurityEvent) {
+			if want := database.SecurityEventAccessTokenSubjectNotSiteAdmin; se.Name != want {
+				t.Errorf("got %q, want %q", se.Name, want)
+			}
+		})
+
 		db.AccessTokensFunc.SetDefaultReturn(accessTokens)
 		db.UsersFunc.SetDefaultReturn(users)
+		db.SecurityEventLogsFunc.SetDefaultReturn(securityEventLogsStore)
 
 		checkHTTPResponse(t, db, req, http.StatusForbidden, "The subject user of a sudo access token must be a site admin.\n")
 		mockrequire.Called(t, accessTokens.LookupFunc)
 		mockrequire.Called(t, users.GetByIDFunc)
+		mockrequire.Called(t, securityEventLogsStore.LogEventFunc)
 	})
 
 	t.Run("valid sudo token, invalid sudo user", func(t *testing.T) {
