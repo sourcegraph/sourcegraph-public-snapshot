@@ -169,8 +169,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Prompt users with browsers that would crash to download a modern browser. */
     RedirectUnsupportedBrowser?: boolean
-
-    outboundRequestLogLimit?: number
 }
 
 export interface BrandAssets {
