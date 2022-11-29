@@ -38,8 +38,7 @@ func (j *autoindexingJanitorJob) Routines(startupCtx context.Context, observatio
 		return nil, err
 	}
 
-	// TODO: nsc move scope down
-	gitserverClient := gitserver.New(db, observation.ScopedContext("codeintel", "janitor", "gitserver", observationCtx))
+	gitserverClient := gitserver.New(db, observationCtx)
 
 	return append(
 		autoindexing.NewJanitorJobs(services.AutoIndexingService, gitserverClient, observationCtx),

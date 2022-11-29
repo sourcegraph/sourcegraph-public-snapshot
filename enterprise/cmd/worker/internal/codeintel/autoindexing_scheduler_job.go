@@ -41,8 +41,7 @@ func (j *autoindexingScheduler) Routines(startupCtx context.Context, observation
 		return nil, err
 	}
 
-	// TODO: nsc move scope down
-	gitserverClient := gitserver.New(db, observation.ScopedContext("codeintel", "indexScheduler", "gitserver", observationCtx))
+	gitserverClient := gitserver.New(db, observationCtx)
 
 	return autoindexing.NewIndexSchedulers(
 		services.UploadsService,

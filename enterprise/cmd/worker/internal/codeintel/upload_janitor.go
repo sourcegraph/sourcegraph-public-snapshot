@@ -40,8 +40,7 @@ func (j *uploadJanitorJob) Routines(startupCtx context.Context, observationCtx *
 		return nil, err
 	}
 
-	// TODO: nsc move scope down
-	gitserverClient := gitserver.New(db, observation.ScopedContext("codeintel", "janitor", "gitserver", observationCtx))
+	gitserverClient := gitserver.New(db, observationCtx)
 
 	return append(
 		uploads.NewJanitor(services.UploadsService, gitserverClient, observationCtx),

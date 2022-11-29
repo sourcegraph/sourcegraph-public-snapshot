@@ -42,8 +42,7 @@ func (w *webhookBuildJob) Routines(_ context.Context, observationCtx *observatio
 
 	store := NewStore(observationCtx.Logger, db)
 	baseStore := basestore.NewWithHandle(store.Handle())
-	// TODO: nsc move scope down
-	workerStore := webhookworker.CreateWorkerStore(store.Handle(), observation.ContextWithLogger(observationCtx.Logger.Scoped("webhookworker.WorkerStore", ""), observationCtx))
+	workerStore := webhookworker.CreateWorkerStore(store.Handle(), observationCtx)
 
 	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(observationCtx.Logger))
 	doer, err := cf.Doer()
@@ -53,8 +52,7 @@ func (w *webhookBuildJob) Routines(_ context.Context, observationCtx *observatio
 
 	return []goroutine.BackgroundRoutine{
 		webhookworker.NewWorker(context.Background(), newWebhookBuildHandler(store, doer), workerStore, webhookBuildWorkerMetrics),
-		// TODO: nsc move scope down
-		webhookworker.NewResetter(context.Background(), observationCtx.Logger.Scoped("webhookworker.Resetter", ""), workerStore, webhookBuildResetterMetrics),
+		webhookworker.NewResetter(context.Background(), observationCtx.Logger, workerStore, webhookBuildResetterMetrics),
 		webhookworker.NewCleaner(context.Background(), baseStore, observationCtx),
 	}, nil
 }

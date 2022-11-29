@@ -24,7 +24,7 @@ func NewMetricsReporterJob() job.Job {
 }
 
 func (j *metricsReporterJob) Description() string {
-	return ""
+	return "executor push-based metrics reporting routines"
 }
 
 func (j *metricsReporterJob) Config() []env.Config {
@@ -39,29 +39,23 @@ func (j *metricsReporterJob) Routines(startupCtx context.Context, observationCtx
 		return nil, err
 	}
 
-	// TODO: nsc move description up
-	observationContext := observation.ContextWithLogger(
-		observationCtx.Logger.Scoped("routines", "metrics reporting routines"),
-		observationCtx,
-	)
-
-	db, err := workerdb.InitDBWithLogger(observationContext)
+	db, err := workerdb.InitDBWithLogger(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO: move this and dependency {sync,index} metrics back to their respective jobs and keep for executor reporting only
-	uploads.MetricReporters(services.UploadsService, observationContext)
+	uploads.MetricReporters(services.UploadsService, observationCtx)
 
-	dependencySyncStore := dbworkerstore.New(db.Handle(), autoindexing.DependencySyncingJobWorkerStoreOptions, observationContext)
-	dependencyIndexingStore := dbworkerstore.New(db.Handle(), autoindexing.DependencyIndexingJobWorkerStoreOptions, observationContext)
-	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_sync", nil)
-	dbworker.InitPrometheusMetric(observationContext, dependencyIndexingStore, "codeintel", "dependency_index", nil)
+	dependencySyncStore := dbworkerstore.New(db.Handle(), autoindexing.DependencySyncingJobWorkerStoreOptions, observationCtx)
+	dependencyIndexingStore := dbworkerstore.New(db.Handle(), autoindexing.DependencyIndexingJobWorkerStoreOptions, observationCtx)
+	dbworker.InitPrometheusMetric(observationCtx, dependencySyncStore, "codeintel", "dependency_sync", nil)
+	dbworker.InitPrometheusMetric(observationCtx, dependencyIndexingStore, "codeintel", "dependency_index", nil)
 
 	executorMetricsReporter, err := executorqueue.NewMetricReporter(
-		observationContext,
+		observationCtx,
 		"codeintel",
-		dbworkerstore.New(db.Handle(), autoindexing.IndexWorkerStoreOptions, observationContext),
+		dbworkerstore.New(db.Handle(), autoindexing.IndexWorkerStoreOptions, observationCtx),
 		configInst.MetricsConfig,
 	)
 	if err != nil {

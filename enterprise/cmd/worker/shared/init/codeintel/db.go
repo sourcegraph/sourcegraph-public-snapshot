@@ -16,6 +16,7 @@ import (
 
 // InitDB initializes and returns a connection to the codeintel db.
 func InitDB(observationContext *observation.Context) (*sql.DB, error) {
+	// memo here means first-wins provenance :(
 	return initDBMemo.Init(observationContext)
 }
 

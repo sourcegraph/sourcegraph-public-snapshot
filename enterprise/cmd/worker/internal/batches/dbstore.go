@@ -12,8 +12,6 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// TODO: nsc pass shit in
-
 // InitStore initializes and returns a *store.Store instance.
 func InitStore() (*store.Store, error) {
 	return initStore.Init()

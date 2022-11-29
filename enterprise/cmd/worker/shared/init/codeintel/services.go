@@ -13,7 +13,6 @@ func InitServices(observationContext *observation.Context) (codeintel.Services, 
 		return codeintel.Services{}, err
 	}
 
-	// TODO: nsc confirm correct state, or set new scope lower
 	codeIntelDB, err := InitDBWithLogger(observationContext.Logger, observationContext)
 	if err != nil {
 		return codeintel.Services{}, err
