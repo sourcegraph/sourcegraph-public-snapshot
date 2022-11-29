@@ -311,8 +311,12 @@ func serveHome(db database.DB) handlerFunc {
 			return nil // request was handled
 		}
 
-		if r.Method == "HEAD" && envvar.SourcegraphDotComMode() {
-			w.WriteHeader(http.StatusOK)
+		if r.Method == "HEAD" {
+			if envvar.SourcegraphDotComMode() {
+				w.WriteHeader(http.StatusOK)
+				return nil
+			}
+			w.WriteHeader(http.StatusMethodNotAllowed)
 			return nil
 		}
 
