@@ -303,7 +303,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             size="sm"
                             onClick={() => eventLogger.log('ClickedOnCloudCTA')}
                         >
-                            Try Sourcegraph Cloud
+                            Search private code
                         </ButtonLink>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
