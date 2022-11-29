@@ -389,7 +389,7 @@ const ReferencesList: React.FunctionComponent<
     // Manual management of the open/closed state of collapsible lists so they
     // stay open/closed across re-renders and re-mounts.
     const location = useLocation()
-    const initialCollapseState = useMemo((): Record<string, boolean> => {
+    const initialCollapseState = useMemo(() => {
         const { viewState } = parseQueryAndHash(location.search, location.hash)
         const state = {
             references: viewState === 'references',
@@ -477,7 +477,7 @@ const ReferencesList: React.FunctionComponent<
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
-                    {implementations.length > 0 && (
+                    {(implementations.length > 0 || initialCollapseState.implementations) && (
                         <CollapsibleLocationList
                             {...props}
                             name="implementations"
