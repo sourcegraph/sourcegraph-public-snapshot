@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -14,6 +15,7 @@ import (
 )
 
 const workspaceFileIDKind = "BatchSpecWorkspaceFile"
+const workspaceFileURLKind = "URLBatchSpecWorkspaceFile"
 
 func marshalWorkspaceFileRandID(id string) graphql.ID {
 	return relay.MarshalID(workspaceFileIDKind, id)
@@ -21,6 +23,15 @@ func marshalWorkspaceFileRandID(id string) graphql.ID {
 
 func unmarshalWorkspaceFileRandID(id graphql.ID) (batchWorkspaceFileRandID string, err error) {
 	err = relay.UnmarshalSpec(id, &batchWorkspaceFileRandID)
+	return
+}
+
+func marshalWorkspaceFileURL(id string) graphql.ID {
+	return relay.MarshalID(workspaceFileURLKind, id)
+}
+
+func unmarshalWorkspaceFileURL(id graphql.ID) (batchWorkspaceFileURL string, err error) {
+	err = relay.UnmarshalSpec(id, &batchWorkspaceFileURL)
 	return
 }
 
@@ -101,7 +112,9 @@ func (r *batchSpecWorkspaceFileResolver) RichHTML(ctx context.Context) (string, 
 }
 
 func (r *batchSpecWorkspaceFileResolver) URL(ctx context.Context) (string, error) {
-	return "", errors.New("not implemented")
+	var u = fmt.Sprintf("%s-%s", r.file.RandID, r.batchSpecRandID)
+	url := marshalWorkspaceFileURL(u)
+	return string(url), nil
 }
 
 func (r *batchSpecWorkspaceFileResolver) CanonicalURL() string {
