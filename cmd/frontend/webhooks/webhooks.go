@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
+const pingEventType = "ping"
+
 type webhookEventHandlers map[string][]WebhookHandler
 
 // WebhookRouter is responsible for handling incoming http requests for all webhooks
@@ -41,6 +43,20 @@ type RegistererHandler interface {
 	http.Handler
 }
 
+func defaultHandlers() map[string]webhookEventHandlers {
+	handlePing := func(_ context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, event any) error {
+		return nil
+	}
+	return map[string]webhookEventHandlers{
+		extsvc.KindGitHub: map[string][]WebhookHandler{
+			pingEventType: {handlePing},
+		},
+		extsvc.KindBitbucketServer: map[string][]WebhookHandler{
+			pingEventType: {handlePing},
+		},
+	}
+}
+
 // Register associates a given event type(s) with the specified handler.
 // Handlers are organized into a stack and executed sequentially, so the order in
 // which they are provided is significant.
@@ -48,7 +64,7 @@ func (wr *WebhookRouter) Register(handler WebhookHandler, codeHostKind string, e
 	wr.mu.Lock()
 	defer wr.mu.Unlock()
 	if wr.handlers == nil {
-		wr.handlers = make(map[string]webhookEventHandlers)
+		wr.handlers = defaultHandlers()
 	}
 	if _, ok := wr.handlers[codeHostKind]; !ok {
 		wr.handlers[codeHostKind] = make(map[string][]WebhookHandler)

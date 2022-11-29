@@ -90,6 +90,24 @@ func TestWebhooksHandler(t *testing.T) {
 	base.Path("/.api/webhooks/{webhook_uuid}").Methods("POST").Handler(webhookMiddleware.Logger(NewHandler(logger, db, gwh.WebhookRouter)))
 	srv := httptest.NewServer(base)
 
+	t.Run("ping event from Github returns 200", func(t *testing.T) {
+		wh := fakeWebhookHandler{}
+		// need to call wr.Register to initialize the default handlers. Any eventType/codeHostKind will work.
+		wr.Register(wh.handleEvent, extsvc.KindBitbucketCloud, "push")
+		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWHNoSecret.UUID)
+		payload := []byte(`{"body": "text"}`)
+
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		require.NoError(t, err)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Github-Event", "ping")
+
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+	})
+
 	t.Run("found GitLab webhook with correct secret returns 200", func(t *testing.T) {
 		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitLabWH.UUID)
 
