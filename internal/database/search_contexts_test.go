@@ -665,6 +665,56 @@ func TestSearchContexts_Delete(t *testing.T) {
 	}
 }
 
+func TestSearchContexts_Count(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	t.Parallel()
+	ctx := context.Background()
+	sc := db.SearchContexts()
+
+	// With no contexts added yet, count should be 1 (the global context only)
+	count, err := sc.CountSearchContexts(ctx, ListSearchContextsOptions{})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	if count != 1 {
+		t.Fatalf("Expected count to be 1, got %d", count)
+	}
+
+	_, err = createSearchContexts(ctx, sc, []*types.SearchContext{
+		{Name: "ctx", Public: true},
+	})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	// With one context added, count should be 2
+	count, err = sc.CountSearchContexts(ctx, ListSearchContextsOptions{})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	if count != 2 {
+		t.Fatalf("Expected count to be 2, got %d", count)
+	}
+
+	// Filtering by name should return 1
+	count, err = sc.CountSearchContexts(ctx, ListSearchContextsOptions{Name: "ctx"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	if count != 1 {
+		t.Fatalf("Expected count to be 1, got %d", count)
+	}
+
+	count, err = sc.CountSearchContexts(ctx, ListSearchContextsOptions{Name: "glob"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	if count != 1 {
+		t.Fatalf("Expected count to be 1, got %d", count)
+	}
+}
+
 func reverseSearchContextsSlice(s []*types.SearchContext) []*types.SearchContext {
 	copySlice := make([]*types.SearchContext, len(s))
 	copy(copySlice, s)
