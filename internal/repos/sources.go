@@ -91,6 +91,9 @@ type Source interface {
 	// ListRepos sends all the repos a source yields over the passed in channel
 	// as SourceResults
 	ListRepos(context.Context, chan SourceResult)
+	// IsAvailable returns true if there is evidence that the Source can
+	// be reached and serve requests.
+	IsAvailable(context.Context) bool
 	// ExternalServices returns the ExternalServices for the Source.
 	ExternalServices() types.ExternalServices
 }

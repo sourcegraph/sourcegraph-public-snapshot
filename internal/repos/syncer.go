@@ -559,6 +559,10 @@ func (s *Syncer) SyncExternalService(
 		return err
 	}
 
+	if !src.IsAvailable(ctx) {
+		return errors.New("code host does not seem to be available")
+	}
+
 	results := make(chan SourceResult)
 	go func() {
 		src.ListRepos(ctx, results)
