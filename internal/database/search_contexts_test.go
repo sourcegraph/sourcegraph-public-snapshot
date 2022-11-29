@@ -179,14 +179,14 @@ func TestSearchContexts_List(t *testing.T) {
 	wantInstanceLevelSearchContexts := createdSearchContexts[:1]
 	gotInstanceLevelSearchContexts, err := sc.ListSearchContexts(
 		ctx,
-		ListSearchContextsPageOptions{First: 1},
+		ListSearchContextsPageOptions{First: 2},
 		ListSearchContextsOptions{NoNamespace: true},
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
-	if !reflect.DeepEqual(wantInstanceLevelSearchContexts, gotInstanceLevelSearchContexts) {
-		t.Fatalf("wanted %v search contexts, got %v", wantInstanceLevelSearchContexts, gotInstanceLevelSearchContexts)
+	if !reflect.DeepEqual(wantInstanceLevelSearchContexts, gotInstanceLevelSearchContexts[1:]) { // Ignore the first result since it's the global search context
+		t.Fatalf("wanted %#v search contexts, got %#v", wantInstanceLevelSearchContexts, &gotInstanceLevelSearchContexts)
 	}
 
 	wantUserSearchContexts := createdSearchContexts[1:]
@@ -520,7 +520,7 @@ func TestSearchContexts_Permissions(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Expected no error, got %s", err)
 			}
-			if !reflect.DeepEqual(tt.wantSearchContexts, gotSearchContexts) {
+			if !reflect.DeepEqual(tt.wantSearchContexts, gotSearchContexts[1:]) { // Ignore the first result since it's the global search context
 				t.Fatalf("wanted %v search contexts, got %v", tt.wantSearchContexts, gotSearchContexts)
 			}
 
@@ -783,13 +783,15 @@ func TestSearchContexts_OrderBy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotSearchContexts, err := sc.ListSearchContexts(internalCtx, ListSearchContextsPageOptions{First: 6}, ListSearchContextsOptions{OrderBy: tt.orderBy, OrderByDescending: tt.descending})
+			gotSearchContexts, err := sc.ListSearchContexts(internalCtx, ListSearchContextsPageOptions{First: 7}, ListSearchContextsOptions{OrderBy: tt.orderBy, OrderByDescending: tt.descending})
 			if err != nil {
 				t.Fatal(err)
 			}
 			gotSearchContextNames := getSearchContextNames(gotSearchContexts)
-			if !reflect.DeepEqual(tt.wantSearchContextNames, gotSearchContextNames) {
-				t.Fatalf("wanted %+v search contexts, got %+v", tt.wantSearchContextNames, gotSearchContextNames)
+			wantSearchContextNames := []string{"global"}
+			wantSearchContextNames = append(wantSearchContextNames, tt.wantSearchContextNames...)
+			if !reflect.DeepEqual(wantSearchContextNames, gotSearchContextNames) {
+				t.Fatalf("wanted %+v search contexts, got %+v", wantSearchContextNames, gotSearchContextNames)
 			}
 		})
 	}

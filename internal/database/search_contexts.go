@@ -89,40 +89,44 @@ func searchContextsPermissionsCondition(ctx context.Context, logger log.Logger, 
 }
 
 const listSearchContextsFmtStr = `
-SELECT -- The global context is not in the database, it needs to be added here for the sake of pagination.
-	0 as id, -- All other contexts have a non-zero ID.
-	'global' as name,
-	'All repositories on Sourcegraph' as description,
-	true as public,
-	true as autodefined,
-	NULL as namespace_user_id,
-	NULL as namespace_org_id,
-	TIMESTAMP WITH TIME ZONE 'epoch' as updated_at, -- Timestamp is not used for global context, but we need to return something.
-	NULL as query,
-	NULL as namespace_name,
-	NULL as namespace_username,
-	NULL as namespace_org_name
-UNION ALL
-SELECT
-	sc.id as id,
-	sc.name as name,
-	sc.description as description,
-	sc.public as public,
-	false as autodefined, -- Context in the database are never autodefined.
-	sc.namespace_user_id as namespace_user_id,
-	sc.namespace_org_id as namespace_org_id,
-	sc.updated_at as updated_at,
-	sc.query as query,
-	COALESCE(u.username, o.name) as namespace_name,
-	u.username as namespace_username,
-	o.name as namespace_org_name
-FROM search_contexts sc
-LEFT JOIN users u on sc.namespace_user_id = u.id
-LEFT JOIN orgs o on sc.namespace_org_id = o.id
+SELECT * FROM (
+	SELECT -- The global context is not in the database, it needs to be added here for the sake of pagination.
+		0 as id, -- All other contexts have a non-zero ID.
+		'global' as context_name,
+		'All repositories on Sourcegraph' as description,
+		true as public,
+		true as autodefined,
+		NULL as namespace_user_id,
+		NULL as namespace_org_id,
+		TIMESTAMP WITH TIME ZONE 'epoch' as updated_at, -- Timestamp is not used for global context, but we need to return something.
+		NULL as query,
+		NULL as namespace_name,
+		NULL as namespace_username,
+		NULL as namespace_org_name
+	UNION ALL
+	SELECT
+		sc.id as id,
+		sc.name as context_name,
+		sc.description as description,
+		sc.public as public,
+		false as autodefined, -- Context in the database are never autodefined.
+		sc.namespace_user_id as namespace_user_id,
+		sc.namespace_org_id as namespace_org_id,
+		sc.updated_at as updated_at,
+		sc.query as query,
+		COALESCE(u.username, o.name) as namespace_name,
+		u.username as namespace_username,
+		o.name as namespace_org_name
+	FROM search_contexts sc
+	LEFT JOIN users u on sc.namespace_user_id = u.id
+	LEFT JOIN orgs o on sc.namespace_org_id = o.id
+) AS t
 WHERE
 	(%s) -- permission conditions
 	AND (%s) -- query conditions
-ORDER BY %s
+ORDER BY
+	autodefined DESC, -- Always show global context first
+	%s
 LIMIT %d
 OFFSET %d
 `
@@ -180,7 +184,7 @@ func getSearchContextOrderByClause(orderBy SearchContextsOrderByOption, descendi
 	}
 	switch orderBy {
 	case SearchContextsOrderBySpec:
-		return sqlf.Sprintf(fmt.Sprintf("namespace_name %s, name %s", orderDirection, orderDirection))
+		return sqlf.Sprintf(fmt.Sprintf("namespace_name %s, context_name %s", orderDirection, orderDirection))
 	case SearchContextsOrderByUpdatedAt:
 		return sqlf.Sprintf("updated_at " + orderDirection)
 	case SearchContextsOrderByID:
@@ -230,7 +234,7 @@ func getSearchContextsQueryConditions(opts ListSearchContextsOptions) []*sqlf.Qu
 
 	if opts.Name != "" {
 		// name column has type citext which automatically performs case-insensitive comparison
-		conds = append(conds, sqlf.Sprintf("name LIKE %s", "%"+opts.Name+"%"))
+		conds = append(conds, sqlf.Sprintf("context_name LIKE %s", "%"+opts.Name+"%"))
 	}
 
 	if opts.NamespaceName != "" {
@@ -295,7 +299,7 @@ func (s *searchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 		}
 		conds = append(conds, namespaceConds...)
 	}
-	conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
+	conds = append(conds, sqlf.Sprintf("context_name = %s", opts.Name))
 
 	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.logger, s)
 	if err != nil {
