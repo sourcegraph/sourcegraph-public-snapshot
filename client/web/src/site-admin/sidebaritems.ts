@@ -138,6 +138,11 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/outbound-requests',
             source: 'server',
         },
+        {
+            label: 'Workers',
+            to: '/site-admin/workers',
+            source: 'server',
+        },
     ],
 }
 
