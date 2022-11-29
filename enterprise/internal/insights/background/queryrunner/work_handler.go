@@ -205,3 +205,21 @@ func (z *zoektHealthChecker) Handle(ctx context.Context) error {
 	z.sample(ctx)
 	return nil
 }
+
+func (z *zoektHealthChecker) Start(ctx context.Context) (err error) {
+	ticker := time.NewTicker(30 * time.Second)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				err = ctx.Err()
+				return
+			case <-ticker.C:
+				z.sample(ctx)
+			}
+		}
+	}()
+
+	return err
+}
