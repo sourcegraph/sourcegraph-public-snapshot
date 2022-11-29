@@ -451,11 +451,13 @@ WHERE %s
 const disableBatchSpecWorkspaceExecutionCacheQueryFmtstr = `
 WITH batch_spec AS (
 	SELECT
-		id, no_cache
+		id
 	FROM
 		batch_specs
 	WHERE
 		id = %s
+		AND
+		no_cache
 ),
 candidate_batch_spec_workspaces AS (
 	SELECT
@@ -463,7 +465,7 @@ candidate_batch_spec_workspaces AS (
 	FROM
 		batch_spec_workspaces
 	WHERE
-		batch_spec_workspaces.batch_spec_id = %s
+		batch_spec_workspaces.batch_spec_id = (SELECT id FROM batch_spec)
 	ORDER BY id
 ),
 removable_changeset_specs AS (
@@ -472,7 +474,7 @@ removable_changeset_specs AS (
 	FROM
 		changeset_specs
 	WHERE
-		id IN (SELECT jsonb_object_keys(changeset_spec_ids)::bigint FROM batch_spec_workspaces)
+		id IN (SELECT jsonb_object_keys(changeset_spec_ids)::bigint FROM candidate_batch_spec_workspaces)
 	ORDER BY id
 ),
 removed_changeset_specs AS (
@@ -497,7 +499,7 @@ func (s *Store) DisableBatchSpecWorkspaceExecutionCache(ctx context.Context, bat
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q := sqlf.Sprintf(disableBatchSpecWorkspaceExecutionCacheQueryFmtstr, batchSpecID, batchSpecID)
+	q := sqlf.Sprintf(disableBatchSpecWorkspaceExecutionCacheQueryFmtstr, batchSpecID)
 	return s.Exec(ctx, q)
 }
 

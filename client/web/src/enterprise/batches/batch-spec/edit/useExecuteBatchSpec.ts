@@ -38,9 +38,7 @@ export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID'], noCache?: boole
         submitBatchSpec({
             variables: {
                 batchSpec: batchSpecID,
-                // Only set this variable to a boolean value if true, otherwise we might overwrite a previous
-                // setting set when resolving workspaces.
-                noCache: noCache === true ? true : null,
+                noCache: noCache ?? false,
             },
         })
             .then(({ data }) => {
