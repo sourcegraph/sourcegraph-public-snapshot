@@ -26,6 +26,7 @@ function createWebhook(): WebhookFields {
         __typename: 'Webhook',
         createdAt: formatRFC3339(TIMESTAMP_MOCK),
         id: '1',
+        name: 'webhook with name',
         secret: 'secret-secret',
         updatedAt: formatRFC3339(addMinutes(TIMESTAMP_MOCK, 5)),
         url: 'sg.com/.api/webhooks/1aa2b42c-a14c-4aaa-b756-70c82e94d3e7',

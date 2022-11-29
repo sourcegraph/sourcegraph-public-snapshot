@@ -53,7 +53,7 @@ export const SiteAdminWebhookPage: FC<WebhookPageProps> = props => {
                     path={[
                         { icon: mdiCog },
                         { to: '/site-admin/webhooks', text: 'Incoming webhooks' },
-                        { text: webhookData.node.codeHostURN },
+                        { text: webhookData.node.name },
                     ]}
                     byline={
                         <CreatedByAndUpdatedByInfoByline

@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { Button, Container, Link, PageHeader } from '@sourcegraph/wildcard'
 
-import { UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
+import { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -103,7 +103,7 @@ export const OrgExecutorSecretsListPage: React.FunctionComponent<
 interface ExecutorSecretsListPageProps extends GlobalExecutorSecretsListPageProps {
     namespaceID: Scalars['ID'] | null
     headerLine: JSX.Element
-    connectionLoader: (scope: ExecutorSecretScope) => UseConnectionResult<ExecutorSecretFields>
+    connectionLoader: (scope: ExecutorSecretScope) => UseShowMorePaginationResult<ExecutorSecretFields>
 }
 
 const ExecutorSecretsListPage: React.FunctionComponent<React.PropsWithChildren<ExecutorSecretsListPageProps>> = ({

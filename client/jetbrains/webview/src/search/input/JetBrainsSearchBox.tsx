@@ -96,6 +96,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                     <>
                         <SearchContextDropdown
                             authenticatedUser={props.authenticatedUser}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
                             searchContextsEnabled={props.searchContextsEnabled}
                             showSearchContextManagement={props.showSearchContextManagement}
                             defaultSearchContextSpec={props.defaultSearchContextSpec}

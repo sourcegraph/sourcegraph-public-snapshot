@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Container, Link, H3, Text } from '@sourcegraph/wildcard'
 
-import { UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
+import { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -37,7 +37,7 @@ export const UserCodeHostConnections: React.FunctionComponent<
 
 interface CodeHostConnectionsProps extends GlobalCodeHostConnectionsProps {
     userID: Scalars['ID'] | null
-    connectionResult: UseConnectionResult<BatchChangesCodeHostFields>
+    connectionResult: UseShowMorePaginationResult<BatchChangesCodeHostFields>
 }
 
 const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeHostConnectionsProps>> = ({

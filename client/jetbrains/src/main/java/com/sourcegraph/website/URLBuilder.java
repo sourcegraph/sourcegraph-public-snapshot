@@ -27,15 +27,15 @@ public class URLBuilder {
     }
 
     @NotNull
-    public static String buildEditorSearchUrl(@NotNull Project project, @NotNull String search, @Nullable String remoteUrl, @Nullable String branchName) {
+    public static String buildEditorSearchUrl(@NotNull Project project, @NotNull String search, @Nullable String remoteUrl, @Nullable String remoteBranchName) {
         String url = ConfigUtil.getSourcegraphUrl(project) + "-/editor"
             + "?" + buildVersionParams()
             + "&search=" + URLEncoder.encode(search, StandardCharsets.UTF_8);
 
         if (remoteUrl != null) {
             url += "&search_remote_url=" + URLEncoder.encode(remoteUrl, StandardCharsets.UTF_8);
-            if (branchName != null) {
-                url += "&search_branch=" + URLEncoder.encode(branchName, StandardCharsets.UTF_8);
+            if (remoteBranchName != null) {
+                url += "&search_branch=" + URLEncoder.encode(remoteBranchName, StandardCharsets.UTF_8);
             }
         }
 

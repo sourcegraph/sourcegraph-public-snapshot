@@ -411,7 +411,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                 <div className={styles.divider} />
                 <div className={styles.footer}>
                     <SearchQueryLink {...props} />
-                    <span className={styles.rightAligned}>
+                    <span className="ml-auto">
                         <ArrowKeyExplanation />
                     </span>
                 </div>

@@ -987,11 +987,6 @@ func TestSyncRun(t *testing.T) {
 	// Once we receive on lockChan we know our syncer is running
 	<-lockChan
 
-	// Our sync is in progress, we should not be allowed to delete the service
-	if err := store.ExternalServiceStore().Delete(ctx, svc.ID); err == nil {
-		t.Fatal("Expected an error")
-	}
-
 	// We can now send on lockChan again to unblock the sync job
 	lockChan <- struct{}{}
 

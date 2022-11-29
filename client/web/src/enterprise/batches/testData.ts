@@ -1,6 +1,11 @@
 import { subSeconds } from 'date-fns'
 
-import { BatchSpecListFields, BatchSpecSource, BatchSpecState } from '../../graphql-operations'
+import {
+    BatchSpecListFields,
+    BatchSpecSource,
+    BatchSpecState,
+    BatchSpecWorkspaceFileResult,
+} from '../../graphql-operations'
 
 const COMMON_NODE_FIELDS = {
     __typename: 'BatchSpec',
@@ -9,6 +14,7 @@ const COMMON_NODE_FIELDS = {
     finishedAt: new Date().toISOString(),
     originalInput: 'name: super-cool-spec',
     description: {
+        __typename: 'BatchChangeDescription',
         name: 'super-cool-spec',
     },
     source: BatchSpecSource.LOCAL,
@@ -19,6 +25,7 @@ const COMMON_NODE_FIELDS = {
     creator: {
         username: 'courier-new',
     },
+    files: null,
 } as const
 
 export const successNode = (id: string): BatchSpecListFields => ({
@@ -34,4 +41,90 @@ export const NODES: BatchSpecListFields[] = [
     { ...COMMON_NODE_FIELDS, id: 'id4', state: BatchSpecState.FAILED },
     { ...COMMON_NODE_FIELDS, id: 'id5', state: BatchSpecState.CANCELING },
     { ...COMMON_NODE_FIELDS, id: 'id6', state: BatchSpecState.CANCELED },
+    {
+        ...COMMON_NODE_FIELDS,
+        state: BatchSpecState.COMPLETED,
+        source: BatchSpecSource.REMOTE,
+        id: 'id7',
+        originalInput: `name: super-cool-spec
+description: doing something super interesting
+
+on:
+    - repository: github.com/foo/bar
+`,
+        description: {
+            __typename: 'BatchChangeDescription',
+            name: 'remote-super-cool-spec',
+        },
+        files: {
+            totalCount: 2,
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            nodes: [
+                {
+                    id: 'fileId1',
+                    name: 'test.sh',
+                    binary: false,
+                    byteSize: 12,
+                },
+                {
+                    id: 'fileId2',
+                    name: 'src-cli',
+                    binary: true,
+                    byteSize: 19000,
+                },
+            ],
+        },
+    },
+    {
+        ...COMMON_NODE_FIELDS,
+        state: BatchSpecState.COMPLETED,
+        source: BatchSpecSource.LOCAL,
+        id: 'id8',
+        originalInput: `name: super-cool-spec
+description: doing something super interesting
+
+on:
+    - repository: github.com/foo/bar
+`,
+        description: {
+            __typename: 'BatchChangeDescription',
+            name: 'local-super-cool-spec',
+        },
+        files: {
+            totalCount: 1,
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            nodes: [
+                {
+                    id: 'fileId3',
+                    name: 'test.sh',
+                    binary: false,
+                    byteSize: 12,
+                },
+            ],
+        },
+    },
 ]
+
+export const MOCK_HIGHLIGHTED_FILES: BatchSpecWorkspaceFileResult = {
+    __typename: 'Query',
+    node: {
+        __typename: 'BatchSpecWorkspaceFile',
+        id: 'fileId1',
+        name: 'test.sh',
+        binary: false,
+        byteSize: 12,
+        highlight: {
+            aborted: false,
+            __typename: 'HighlightedFile',
+            html: `import { React } from 'react';
+
+const MyComponent = () => <div>My Component</div>`,
+        },
+    },
+}

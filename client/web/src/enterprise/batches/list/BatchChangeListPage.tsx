@@ -8,12 +8,12 @@ import { dataOrThrowErrors, useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import { Button, PageHeader, Link, Container, H3, Text, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
-import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -107,7 +107,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
         { onCompleted: onUsageCheckCompleted }
     )
 
-    const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
+    const { connection, error, loading, fetchMore, hasNextPage } = useShowMorePagination<
         BatchChangesByNamespaceResult | BatchChangesResult,
         BatchChangesByNamespaceVariables | BatchChangesVariables,
         ListBatchChange
@@ -151,7 +151,22 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
         <Page>
             <PageHeader
                 className="test-batches-list-page mb-3"
-                actions={canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
+                actions={
+                    canCreate ? (
+                        <NewBatchChangeButton to={`${location.pathname}/create`} />
+                    ) : (
+                        <Button
+                            as={Link}
+                            to="https://signup.sourcegraph.com/?p=batch"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="primary"
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                        >
+                            Try Batch Changes
+                        </Button>
+                    )
+                }
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
             >

@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -97,7 +96,7 @@ type ExternalServiceStore interface {
 
 	// CancelSyncJob cancels a given sync job. It returns an error when the job was not
 	// found or not in processing or queued state.
-	CancelSyncJob(ctx context.Context, id int64) error
+	CancelSyncJob(ctx context.Context, opts ExternalServicesCancelSyncJobOptions) error
 
 	// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
 	UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error
@@ -992,15 +991,36 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// We take an advisory lock here and also when syncing an external service to
-	// ensure that they can't happen at the same time.
-	lock := locker.NewWith(tx, "external_service")
-	locked, err := lock.LockInTransaction(ctx, locker.StringKey(fmt.Sprintf("%d", id)), false)
-	if err != nil {
-		return errors.Wrap(err, "getting advisory lock")
+	// Load the external service *for update* so that no sync job can be created
+	if err := tx.selectForUpdate(ctx, id); err != nil {
+		return err
 	}
-	if !locked {
-		return errors.Errorf("could not get advisory lock for service %d", id)
+
+	// Cancel all currently running sync jobs, *outside* the transaction.
+	err = e.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ExternalServiceID: id})
+	if err != nil {
+		return err
+	}
+
+	// Wait until all the sync jobs we just canceled are done executing to
+	// ensure that we delete all repositories and no new ones are inserted.
+	runningJobsCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
+	defer cancel()
+
+	for {
+		if err := runningJobsCtx.Err(); err != nil {
+			return err
+		}
+
+		runningJobsExist, err := e.hasRunningSyncJobs(runningJobsCtx, id)
+		if err != nil {
+			return err
+		}
+
+		if !runningJobsExist {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
 	}
 
 	// Create a temporary table where we'll store repos affected by the deletion of
@@ -1066,6 +1086,23 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 	}
 	if nrows == 0 {
 		return externalServiceNotFoundError{id: id}
+	}
+	return nil
+}
+
+// selectForUpdate loads an external service with FOR UPDATE with the given ID
+// and that is not deleted. It's used by Delete.
+func (e *externalServiceStore) selectForUpdate(ctx context.Context, id int64) error {
+	q := sqlf.Sprintf(
+		`SELECT id FROM external_services WHERE id = %s AND deleted_at IS NULL FOR UPDATE`,
+		id,
+	)
+	_, ok, err := basestore.ScanFirstInt(e.Query(ctx, q))
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return &externalServiceNotFoundError{id: id}
 	}
 	return nil
 }
@@ -1170,10 +1207,17 @@ func (e *externalServiceStore) CountSyncJobs(ctx context.Context, opt ExternalSe
 	return count, err
 }
 
-type errSyncJobNotFound struct{ id int64 }
+type errSyncJobNotFound struct {
+	id, externalServiceID int64
+}
 
 func (e errSyncJobNotFound) Error() string {
-	return fmt.Sprintf("sync job with id %d not found", e.id)
+	if e.id != 0 {
+		return fmt.Sprintf("sync job with id %d not found", e.id)
+	} else if e.externalServiceID != 0 {
+		return fmt.Sprintf("sync job with external service id %d not found", e.externalServiceID)
+	}
+	return "sync job not found"
 }
 
 func (errSyncJobNotFound) NotFound() bool {
@@ -1259,7 +1303,24 @@ LIMIT 1
 	return lastError, err
 }
 
-func (e *externalServiceStore) CancelSyncJob(ctx context.Context, id int64) error {
+type ExternalServicesCancelSyncJobOptions struct {
+	ID                int64
+	ExternalServiceID int64
+}
+
+func buildCancelSyncJobQuery(opts ExternalServicesCancelSyncJobOptions) (*sqlf.Query, error) {
+	var conds []*sqlf.Query
+	if opts.ID != 0 {
+		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+	if opts.ExternalServiceID != 0 {
+		conds = append(conds, sqlf.Sprintf("external_service_id = %s", opts.ExternalServiceID))
+	}
+
+	if len(conds) == 0 {
+		return nil, errors.New("not enough conditions given to build query to cancel external service sync job")
+	}
+
 	now := timeutil.Now()
 	q := sqlf.Sprintf(`
 UPDATE
@@ -1271,10 +1332,21 @@ SET
 	state = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.state ELSE 'canceled' END,
 	finished_at = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.finished_at ELSE %s END
 WHERE
-	id = %s
+	%s
 	AND
 	state IN ('queued', 'processing')
-`, now, id)
+	AND
+	cancel IS FALSE
+`, now, sqlf.Join(conds, " AND "))
+
+	return q, nil
+}
+
+func (e *externalServiceStore) CancelSyncJob(ctx context.Context, opts ExternalServicesCancelSyncJobOptions) error {
+	q, err := buildCancelSyncJobQuery(opts)
+	if err != nil {
+		return err
+	}
 
 	res, err := e.ExecResult(ctx, q)
 	if err != nil {
@@ -1284,10 +1356,33 @@ WHERE
 	if err != nil {
 		return err
 	}
-	if af != 1 {
-		return &errSyncJobNotFound{id: id}
+	if opts.ID != 0 && af != 1 {
+		return &errSyncJobNotFound{id: opts.ID, externalServiceID: opts.ExternalServiceID}
 	}
+
+	// If opts.ExternalServiceID is set and affected rows are 0 we don't treat
+	// it as an error, because we want to be able to use this method to cancel
+	// jobs *if there are any*.
+	// Just like a `DeleteUserByID(1234)` function should fail if there is no
+	// user with that ID, but a `DeleteUsersWithUsernameStartingWith("foo")`
+	// shouldn't fail if there are no users with that prefix in the name.
+
 	return nil
+}
+
+func (e *externalServiceStore) hasRunningSyncJobs(ctx context.Context, id int64) (bool, error) {
+	q := sqlf.Sprintf(`
+SELECT 1
+FROM external_service_sync_jobs
+WHERE
+	external_service_id = %s
+	AND
+	state IN ('queued', 'processing')
+LIMIT 1
+`, id)
+
+	_, ok, err := basestore.ScanFirstInt(e.Query(ctx, q))
+	return ok, err
 }
 
 func (e *externalServiceStore) GetLatestSyncErrors(ctx context.Context) (map[int64]string, error) {

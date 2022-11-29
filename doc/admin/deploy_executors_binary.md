@@ -156,10 +156,11 @@ To make sure that the executor runs post-boot of the machine, you might want to 
 cat <<EOF >/etc/systemd/system/executor.service
 [Unit]
 Description=Sourcegraph executor
+After=docker.service
+BindsTo=docker.service
 
 [Service]
 ExecStart=/usr/local/bin/executor
-Requires=docker
 Restart=on-failure
 EnvironmentFile=/etc/systemd/system/executor.env
 Environment=HOME="%h"

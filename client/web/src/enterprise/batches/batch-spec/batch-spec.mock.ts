@@ -163,6 +163,7 @@ export const mockWorkspaceResolutionStatus = (
         workspaceResolution: {
             __typename: 'BatchSpecWorkspaceResolution',
             state: status,
+            startedAt: new Date().toISOString(),
             failureMessage: error || null,
         },
     },

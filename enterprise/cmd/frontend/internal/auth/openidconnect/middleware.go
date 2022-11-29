@@ -91,10 +91,12 @@ func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Requ
 	}
 
 	// If there is only one auth provider configured, the single auth provider is OpenID Connect,
-	// and it's an app request, redirect to signin immediately. The user wouldn't be able to do
-	// anything else anyway; there's no point in showing them a signin screen with just a single
-	// signin option.
-	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && !isAPIRequest {
+	// it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
+	//
+	// For sign-out requests (sign-out cookie is  present), the user is redirected to the Sourcegraph login page.
+	ps := providers.Providers()
+	openIDConnectEnabled := len(ps) == 1 && ps[0].Config().Openidconnect != nil
+	if openIDConnectEnabled && !auth.HasSignOutCookie(r) && !isAPIRequest {
 		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
 		if err != nil {
 			log15.Error("Failed to get provider", "error", err)

@@ -331,7 +331,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		}
 
 		haveDiff := changesetSpec.Diff
-		if !bytes.Equal(haveDiff, []byte(testDiff)) {
+		if !bytes.Equal(haveDiff, testDiff) {
 			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
 		}
 
@@ -511,7 +511,7 @@ changesetTemplate:
 		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
 
 		resultWithoutDiff := *executionResult
-		resultWithoutDiff.Diff = ""
+		resultWithoutDiff.Diff = []byte("")
 
 		entry := createCacheEntry(t, batchSpec, workspace, &resultWithoutDiff, secretValue, nil)
 
@@ -727,7 +727,7 @@ changesetTemplate:
 		}
 
 		haveDiff := changesetSpec.Diff
-		if !bytes.Equal(haveDiff, []byte(testDiff)) {
+		if !bytes.Equal(haveDiff, testDiff) {
 			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
 		}
 
@@ -825,7 +825,7 @@ changesetTemplate:
 		}
 
 		haveDiff := changesetSpec.Diff
-		if !bytes.Equal(haveDiff, []byte(testDiff)) {
+		if !bytes.Equal(haveDiff, testDiff) {
 			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
 		}
 
@@ -1058,7 +1058,7 @@ func (d *dummyWorkspaceResolver) ResolveWorkspacesForBatchSpec(context.Context, 
 	return d.workspaces, d.err
 }
 
-const testDiff = `diff README.md README.md
+var testDiff = []byte(`diff README.md README.md
 index 671e50a..851b23a 100644
 --- README.md
 +++ README.md
@@ -1075,7 +1075,7 @@ index 6f8b5d9..17400bc 100644
 -example.com
 +sourcegraph.com
  never-touch-the-mouse.com
-`
+`)
 
 func assertWorkspacesEqual(t *testing.T, have, want []*btypes.BatchSpecWorkspace) {
 	t.Helper()

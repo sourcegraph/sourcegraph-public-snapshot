@@ -2,11 +2,10 @@ import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 
-import { DownloadSourcegraphIcon } from '@sourcegraph/branded/src/components/DownloadSourcegraphIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Card, CardBody, PageHeader, H3 } from '@sourcegraph/wildcard'
+import { Button, Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
 
-import { CtaBanner } from '../../../../../components/CtaBanner'
+import { CloudCtaBanner } from '../../../../../components/CloudCtaBanner'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
@@ -30,15 +29,26 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
         telemetryService.logViewEvent('CloudInsightsGetStartedPage')
     }, [telemetryService])
 
-    const handleInstallLocalInstanceClick = (): void => {
-        telemetryService.log('CloudCodeInsightsGetStartedInstallInstance')
-    }
-
     return (
         <CodeInsightsLandingPageContext.Provider value={DOT_COM_CONTEXT}>
             <Page>
                 <PageTitle title="Code Insights" />
-                <PageHeader path={[{ icon: CodeInsightsIcon, text: 'Insights' }]} className="mb-4" />
+                <PageHeader
+                    path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
+                    actions={
+                        <Button
+                            as={Link}
+                            to="https://signup.sourcegraph.com/?p=insights"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="primary"
+                            onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                        >
+                            Try insights
+                        </Button>
+                    }
+                    className="mb-4"
+                />
                 <main className="pb-5">
                     <Card as={CardBody} className={styles.heroSection}>
                         <aside className={styles.heroVideoBlock}>
@@ -66,18 +76,20 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         <CodeInsightsDescription className={styles.heroDescriptionBlock} />
                     </Card>
 
-                    <CodeInsightsExamplesPicker telemetryService={telemetryService} />
+                    <CloudCtaBanner variant="filled">
+                        To track Insights across your team's private repos,{' '}
+                        <Link
+                            to="https://signup.sourcegraph.com/?p=insights"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                        >
+                            try Sourcegraph Cloud
+                        </Link>
+                        .
+                    </CloudCtaBanner>
 
-                    <section className="d-flex justify-content-start mt-3">
-                        <CtaBanner
-                            bodyText="Code Insights requires a Sourcegraph Cloud or self-hosted instance."
-                            title={<H3>Start using Code Insights</H3>}
-                            linkText="Get started"
-                            href="/help/admin/install?utm_medium=direct-traffic&utm_source=in-product&utm_campaign=code-insights-getting-started"
-                            icon={<DownloadSourcegraphIcon />}
-                            onClick={handleInstallLocalInstanceClick}
-                        />
-                    </section>
+                    <CodeInsightsExamplesPicker telemetryService={telemetryService} />
                 </main>
             </Page>
         </CodeInsightsLandingPageContext.Provider>

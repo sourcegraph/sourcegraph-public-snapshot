@@ -8,7 +8,7 @@ import { createAggregateError, escapeRevspecForURL } from '@sourcegraph/common'
 import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useDebounce } from '@sourcegraph/wildcard'
 
-import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import { ConnectionSummary } from '../../components/FilteredConnection/ui'
 import { GitRefFields, RepositoryGitRefsResult, RepositoryGitRefsVariables } from '../../graphql-operations'
 import { GitReferenceNodeProps, REPOSITORY_GIT_REFS } from '../GitReference'
@@ -139,7 +139,7 @@ export const RevisionsPopoverReferences: React.FunctionComponent<
     const query = useDebounce(searchValue, 200)
     const location = useLocation()
 
-    const response = useConnection<RepositoryGitRefsResult, RepositoryGitRefsVariables, GitRefFields>({
+    const response = useShowMorePagination<RepositoryGitRefsResult, RepositoryGitRefsVariables, GitRefFields>({
         query: REPOSITORY_GIT_REFS,
         variables: {
             query,

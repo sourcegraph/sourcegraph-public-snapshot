@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -85,7 +86,7 @@ func checkEmailAbuse(ctx context.Context, db database.DB, userID int32) (abused 
 // Add adds an email address to a user. If email verification is required, it sends an email
 // verification email.
 func (userEmails) Add(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string) error {
-	logger = logger.Scoped("UserEmails", "handles user emails")
+	logger = logger.Scoped("UserEmails.Add", "handles addition of user emails")
 	// 🚨 SECURITY: Only the user and site admins can add an email address to a user.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return err
@@ -148,6 +149,55 @@ func (userEmails) Add(ctx context.Context, logger log.Logger, db database.DB, us
 		}
 	}
 	return nil
+}
+
+// Remove removes the e-mail from the specified user.
+func (userEmails) Remove(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string) (err error) {
+	logger = logger.Scoped("UserEmails.Remove", "handles removal of user emails")
+
+	// 🚨 SECURITY: Only the authenticated user and site admins can remove email
+	// from users' accounts.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
+		return err
+	}
+
+	tx, err := db.Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "starting transaction")
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
+		return errors.Wrap(err, "removing user e-email")
+	}
+
+	// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
+	// tokens that may have been sent to that email.
+	if err := tx.Users().DeletePasswordResetCode(ctx, userID); err != nil {
+		return errors.Wrap(err, "deleting reset codes")
+	}
+
+	if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
+		return errors.Wrap(err, "removing stale perforce external account")
+	}
+
+	if conf.CanSendEmail() {
+		if err := UserEmails.SendUserEmailOnFieldUpdate(ctx, logger, tx, userID, "removed an email"); err != nil {
+			logger.Warn("Failed to send email to inform user of email removal", log.Error(err))
+		}
+	}
+
+	return nil
+}
+
+// deleteStalePerforceExternalAccounts will remove any Perforce external accounts associated with the given user
+// and e-mail combination.
+func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, userID int32, email string) error {
+	return db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
+		UserID:      userID,
+		AccountID:   email,
+		ServiceType: extsvc.TypePerforce,
+	})
 }
 
 // MakeEmailVerificationCode returns a random string that can be used as an email verification

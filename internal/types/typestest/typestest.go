@@ -105,6 +105,18 @@ func GenerateRepos(n int, base ...*types.Repo) types.Repos {
 	return rs
 }
 
+func MakeGitLabExternalService() *types.ExternalService {
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+	return &types.ExternalService{
+		Kind:        extsvc.KindGitLab,
+		DisplayName: "GitLab - Test",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`),
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+}
+
 // MakeExternalServices creates one configured external service per kind and returns the list.
 func MakeExternalServices() types.ExternalServices {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -118,13 +130,9 @@ func MakeExternalServices() types.ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	gitlabSvc := types.ExternalService{
-		Kind:        extsvc.KindGitLab,
-		DisplayName: "GitLab - Test",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`),
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
+	gitlabSvc := MakeGitLabExternalService()
+	gitlabSvc.CreatedAt = now
+	gitlabSvc.UpdatedAt = now
 
 	bitbucketServerSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
@@ -168,58 +176,13 @@ func MakeExternalServices() types.ExternalServices {
 
 	return []*types.ExternalService{
 		&githubSvc,
-		&gitlabSvc,
+		gitlabSvc,
 		&bitbucketServerSvc,
 		&bitbucketCloudSvc,
 		&awsSvc,
 		&otherSvc,
 		&gitoliteSvc,
 	}
-}
-
-// MakeNamespacedExternalServices creates one configured external service per kind, per user or org.
-func MakeNamespacedExternalServices(userID int32, orgID int32) types.ExternalServices {
-	clock := timeutil.NewFakeClock(time.Now(), 0)
-	now := clock.Now()
-
-	services := []*types.ExternalService{}
-
-	if userID > 0 {
-		services = append(services, &types.ExternalService{
-			Kind:            extsvc.KindGitHub,
-			DisplayName:     "Github - User",
-			Config:          extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`),
-			CreatedAt:       now,
-			UpdatedAt:       now,
-			NamespaceUserID: userID,
-		}, &types.ExternalService{
-			Kind:            extsvc.KindGitLab,
-			DisplayName:     "GitLab - User",
-			Config:          extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`),
-			CreatedAt:       now,
-			UpdatedAt:       now,
-			NamespaceUserID: userID,
-		})
-	}
-	if orgID > 0 {
-		services = append(services, &types.ExternalService{
-			Kind:           extsvc.KindGitHub,
-			DisplayName:    "Github - Org",
-			Config:         extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`),
-			CreatedAt:      now,
-			UpdatedAt:      now,
-			NamespaceOrgID: orgID,
-		}, &types.ExternalService{
-			Kind:           extsvc.KindGitLab,
-			DisplayName:    "GitLab - Org",
-			Config:         extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`),
-			CreatedAt:      now,
-			UpdatedAt:      now,
-			NamespaceOrgID: orgID,
-		})
-	}
-
-	return services
 }
 
 // GenerateExternalServices takes a list of base external services and generates n ones with different names.
