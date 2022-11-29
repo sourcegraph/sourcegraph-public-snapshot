@@ -92,6 +92,7 @@ func TestWebhooksHandler(t *testing.T) {
 
 	t.Run("ping event from Github returns 200", func(t *testing.T) {
 		wh := fakeWebhookHandler{}
+		// need to call wr.Register to initialize the default handlers. Any eventType/codeHostKind will work.
 		wr.Register(wh.handleEvent, extsvc.KindBitbucketCloud, "push")
 		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWHNoSecret.UUID)
 		payload := []byte(`{"body": "text"}`)
