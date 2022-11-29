@@ -427,3 +427,33 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 		t.Fatal(errors.New("backfill should be state completed"))
 	}
 }
+
+func Test_calculateErrorThreshold(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    int
+		floor   int
+		percent float64
+		size    int
+	}{
+		{
+			name:    "test floor overrides percent",
+			want:    10,
+			floor:   10,
+			percent: .05,
+			size:    100,
+		},
+		{
+			name:    "test percent overrides floor",
+			want:    15,
+			floor:   10,
+			percent: .10,
+			size:    150,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			require.Equal(t, test.want, calculateErrorThreshold(test.percent, test.floor, test.size))
+		})
+	}
+}
