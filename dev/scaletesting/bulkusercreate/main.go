@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"encoding/csv"
 	"flag"
 	"fmt"
 	"log"
 	"math"
 	"net/http"
 	"os"
-	"sort"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -171,7 +169,7 @@ func main() {
 		}
 
 		bars := []output.ProgressBar{
-			{Label: "Creating orgs", Max: float64(cfg.subOrgCount)},
+			{Label: "Creating orgs", Max: float64(cfg.subOrgCount + 1)},
 			{Label: "Creating teams", Max: float64(cfg.teamCount)},
 			{Label: "Creating users", Max: float64(cfg.userCount)},
 			{Label: "Adding users to teams", Max: float64(cfg.userCount)},
@@ -181,54 +179,54 @@ func main() {
 			bars = append(bars, output.ProgressBar{Label: "Generating OAuth tokens", Max: float64(cfg.userCount)})
 		}
 		progress = out.Progress(bars, nil)
-		var usersDone int64
-		var orgsDone int64
-		var teamsDone int64
-		var tokensDone int64
-		var membershipsDone int64
+		//var usersDone int64
+		//var orgsDone int64
+		//var teamsDone int64
+		//var tokensDone int64
+		//var membershipsDone int64
 		//var reposDone int64
 
-		for _, o := range orgs {
-			currentOrg := o
-			g.Go(func() {
-				executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, &orgsDone)
-			})
-		}
-		g.Wait()
-
-		for _, t := range teams {
-			currentTeam := t
-			g.Go(func() {
-				executeCreateTeam(ctx, currentTeam, &teamsDone)
-			})
-		}
-		g.Wait()
-
-		for _, u := range users {
-			currentUser := u
-			g.Go(func() {
-				executeCreateUser(ctx, currentUser, &usersDone)
-			})
-		}
-		g.Wait()
-
-		membershipsPerTeam := int(math.Ceil(float64(cfg.userCount) / float64(cfg.teamCount)))
-		g2 := group.New().WithMaxConcurrency(100)
-
-		for i, t := range teams {
-			currentTeam := t
-			currentIter := i
-			var usersToAssign []*user
-
-			for j := currentIter * membershipsPerTeam; j < ((currentIter + 1) * membershipsPerTeam); j++ {
-				usersToAssign = append(usersToAssign, users[j])
-			}
-
-			g2.Go(func() {
-				executeCreateTeamMembershipsForTeam(ctx, currentTeam, usersToAssign, &membershipsDone)
-			})
-		}
-		g2.Wait()
+		//for _, o := range orgs {
+		//	currentOrg := o
+		//	g.Go(func() {
+		//		executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, &orgsDone)
+		//	})
+		//}
+		//g.Wait()
+		//
+		//for _, t := range teams {
+		//	currentTeam := t
+		//	g.Go(func() {
+		//		executeCreateTeam(ctx, currentTeam, &teamsDone)
+		//	})
+		//}
+		//g.Wait()
+		//
+		//for _, u := range users {
+		//	currentUser := u
+		//	g.Go(func() {
+		//		executeCreateUser(ctx, currentUser, &usersDone)
+		//	})
+		//}
+		//g.Wait()
+		//
+		//membershipsPerTeam := int(math.Ceil(float64(cfg.userCount) / float64(cfg.teamCount)))
+		//g2 := group.New().WithMaxConcurrency(100)
+		//
+		//for i, t := range teams {
+		//	currentTeam := t
+		//	currentIter := i
+		//	var usersToAssign []*user
+		//
+		//	for j := currentIter * membershipsPerTeam; j < ((currentIter + 1) * membershipsPerTeam); j++ {
+		//		usersToAssign = append(usersToAssign, users[j])
+		//	}
+		//
+		//	g2.Go(func() {
+		//		executeCreateTeamMembershipsForTeam(ctx, currentTeam, usersToAssign, &membershipsDone)
+		//	})
+		//}
+		//g2.Wait()
 
 		var repos []*repo
 		if repos, err = store.loadRepos(); err != nil {
@@ -246,42 +244,44 @@ func main() {
 			writeSuccess(out, "resuming repo jobs from %s", cfg.resume)
 		}
 
-		//_ = categorizeRepos(repos, orgs)
+		mainOrg, orgRepos := categorizeOrgRepos(cfg, repos, orgs)
 
-		if cfg.generateTokens {
-			tg := group.NewWithResults[userToken]().WithMaxConcurrency(1000)
-			for _, u := range users {
-				currentU := u
-				tg.Go(func() userToken {
-					token := executeCreateUserImpersonationToken(ctx, currentU)
-					atomic.AddInt64(&tokensDone, 1)
-					progress.SetValue(5, float64(tokensDone))
-					return userToken{
-						login: currentU.Login,
-						token: token,
-					}
-				})
-			}
+		_ = categorizeTeamRepos(cfg, mainOrg, orgRepos[mainOrg], teams)
 
-			csvFile, err := os.Create("users.csv")
-			if err != nil {
-				log.Fatalf("Failed creating csv: %s", err)
-			}
-			defer csvFile.Close()
-			csvwriter := csv.NewWriter(csvFile)
-			defer csvwriter.Flush()
-			_ = csvwriter.Write([]string{"login", "token"})
-			pairs := tg.Wait()
-			sort.Slice(pairs, func(i, j int) bool {
-				comp := strings.Compare(pairs[i].login, pairs[j].login)
-				return comp == -1
-			})
-			for _, pair := range pairs {
-				if err = csvwriter.Write([]string{pair.login, pair.token}); err != nil {
-					log.Fatalln("error writing pair to file", err)
-				}
-			}
-		}
+		//if cfg.generateTokens {
+		//	tg := group.NewWithResults[userToken]().WithMaxConcurrency(1000)
+		//	for _, u := range users {
+		//		currentU := u
+		//		tg.Go(func() userToken {
+		//			token := executeCreateUserImpersonationToken(ctx, currentU)
+		//			atomic.AddInt64(&tokensDone, 1)
+		//			progress.SetValue(5, float64(tokensDone))
+		//			return userToken{
+		//				login: currentU.Login,
+		//				token: token,
+		//			}
+		//		})
+		//	}
+		//
+		//	csvFile, err := os.Create("users.csv")
+		//	if err != nil {
+		//		log.Fatalf("Failed creating csv: %s", err)
+		//	}
+		//	defer csvFile.Close()
+		//	csvwriter := csv.NewWriter(csvFile)
+		//	defer csvwriter.Flush()
+		//	_ = csvwriter.Write([]string{"login", "token"})
+		//	pairs := tg.Wait()
+		//	sort.Slice(pairs, func(i, j int) bool {
+		//		comp := strings.Compare(pairs[i].login, pairs[j].login)
+		//		return comp == -1
+		//	})
+		//	for _, pair := range pairs {
+		//		if err = csvwriter.Write([]string{pair.login, pair.token}); err != nil {
+		//			log.Fatalln("error writing pair to file", err)
+		//		}
+		//	}
+		//}
 		g.Wait()
 
 	case "delete":
@@ -436,25 +436,84 @@ func main() {
 	writeInfo(out, "Started at %s, finished at %s", start.String(), end.String())
 }
 
-//func categorizeRepos(repos []*repo, orgs []*org) map[*org]map[*repo]*entity {
-//	repoCategories := make(map[*org]map[*repo]*entity)
-//
-//	// 1. divide equally over orgs (might leave some unassigned due to rounding but within acceptable margins)
-//	reposPerOrg := len(repos) / len(orgs)
-//	for i, o := range orgs {
-//		repoCategories[o] = make(map[*repo]*entity)
-//		orgRepos := repos[i*reposPerOrg : (i+1)*reposPerOrg]
-//		for _, r := range orgRepos {
-//			// set entity to nil: equals org-wide assigned repo
-//			repoCategories[o][r] = nil
-//		}
-//		writeInfo(out, "Total repos in org %s: %d", o.Login, len(repoCategories[o]))
-//	}
-//
-//	// 2.
-//
-//	return repoCategories
-//}
+func categorizeOrgRepos(cfg config, repos []*repo, orgs []*org) (*org, map[*org][]*repo) {
+	repoCategories := make(map[*org][]*repo)
+
+	// 1% of repos divided equally over sub-orgs
+	var mainOrg *org
+	var subOrgs []*org
+	reposPerSubOrg := (len(repos) / 100) / cfg.subOrgCount
+	for _, o := range orgs {
+		if strings.HasPrefix(o.Login, "sub-org") {
+			subOrgs = append(subOrgs, o)
+		} else {
+			mainOrg = o
+		}
+	}
+
+	for i, o := range subOrgs {
+		subOrgRepos := repos[i*reposPerSubOrg : (i+1)*reposPerSubOrg]
+		repoCategories[o] = subOrgRepos
+	}
+
+	// rest assigned to main org
+	repoCategories[mainOrg] = repos[len(subOrgs)*reposPerSubOrg:]
+
+	for _, o := range orgs {
+		writeInfo(out, "Total repos in org %s: %d", o.Login, len(repoCategories[o]))
+	}
+
+	return mainOrg, repoCategories
+}
+
+func categorizeTeamRepos(cfg config, mainOrg *org, mainOrgRepos []*repo, teams []*team) map[*team][]*repo {
+	// 95% of teams
+	teamsSmall := int(math.Ceil(float64(cfg.teamCount) * 0.95))
+	reposSmall := int(math.Ceil(float64(len(mainOrgRepos)) * 0.00015))
+
+	// 4% of teams
+	teamsMedium := int(math.Ceil(float64(cfg.teamCount) * 0.04))
+	reposMedium := int(math.Ceil(float64(len(mainOrgRepos)) * 0.00037))
+
+	// 1% of teams
+	teamsLarge := int(math.Ceil(float64(cfg.teamCount) * 0.01))
+	reposLarge := int(math.Ceil(float64(len(mainOrgRepos)) * 0.0043))
+
+	teamCategories := make(map[*team][]*repo)
+
+	for i := 0; i < teamsSmall; i++ {
+		currentTeam := teams[i]
+		teamRepos := mainOrgRepos[i*reposSmall : (i+1)*reposSmall]
+		teamCategories[currentTeam] = teamRepos
+	}
+
+	for i := 0; i < teamsMedium; i++ {
+		currentTeam := teams[teamsSmall+i]
+		startIndex := (teamsSmall * reposSmall) + (i * reposMedium)
+		endIndex := (teamsSmall * reposSmall) + ((i + 1) * reposMedium)
+		teamRepos := mainOrgRepos[startIndex:endIndex]
+		teamCategories[currentTeam] = teamRepos
+	}
+
+	for i := 0; i < teamsLarge; i++ {
+		currentTeam := teams[teamsSmall+teamsMedium+i]
+		startIndex := (teamsSmall * reposSmall) + (teamsMedium * reposMedium) + (i * reposLarge)
+		endIndex := (teamsSmall * reposSmall) + (teamsMedium * reposMedium) + ((i + 1) * reposLarge)
+		teamRepos := mainOrgRepos[startIndex:endIndex]
+		teamCategories[currentTeam] = teamRepos
+	}
+
+	counts := make(map[int]int)
+	for _, t := range teams {
+		counts[len(teamCategories[t])] += 1
+	}
+
+	for k, v := range counts {
+		writeInfo(out, "Categorised %d teams with %d repos", v, k)
+	}
+
+	return teamCategories
+}
 
 func executeDeleteTeam(ctx context.Context, currentTeam *team) {
 	existingTeam, resp, grErr := gh.Teams.GetTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
