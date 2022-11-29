@@ -1660,6 +1660,12 @@ type SearchContext struct {
 
 	// Whether the search context is auto-defined by Sourcegraph. Auto-defined search contexts are not editable by users.
 	Autodefined bool
+
+	// Whether the search context is the default for the user. If the user hasn't explicitly set a default or is not authenticated, the global search context is used.
+	Default bool
+
+	// Whether the user has starred the context. If the user is not authenticated, this field is always false.
+	Starred bool
 }
 
 // SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions
