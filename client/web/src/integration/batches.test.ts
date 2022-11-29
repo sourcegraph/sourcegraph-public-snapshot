@@ -270,6 +270,7 @@ const BatchChangeBatchSpecs: (variables: BatchChangeBatchSpecsVariables) => Batc
                     finishedAt: '2022-07-06T23:21:45Z',
                     createdAt: '2022-07-06T23:21:45Z',
                     description: {
+                        __typename: 'BatchChangeDescription',
                         name: 'test-batch-change',
                     },
                     source: BatchSpecSource.REMOTE,
@@ -282,6 +283,7 @@ const BatchChangeBatchSpecs: (variables: BatchChangeBatchSpecsVariables) => Batc
                         username: 'alice',
                     },
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
+                    files: null,
                 },
             ],
         },
@@ -408,6 +410,11 @@ function mockCommonGraphQLResponses(
                         __typename: 'BatchChangesCodeHostConnection',
                         nodes: [],
                         totalCount: 0,
+                    },
+                    files: null,
+                    description: {
+                        __typename: 'BatchChangeDescription',
+                        name: 'awesome batch spec',
                     },
                 },
                 batchSpecs: {

@@ -4286,6 +4286,8 @@ CREATE INDEX batch_spec_workspaces_id_batch_spec_id ON batch_spec_workspaces USI
 
 CREATE INDEX batch_specs_rand_id ON batch_specs USING btree (rand_id);
 
+CREATE UNIQUE INDEX batch_specs_unique_rand_id ON batch_specs USING btree (rand_id);
+
 CREATE INDEX changeset_jobs_bulk_group_idx ON changeset_jobs USING btree (bulk_group);
 
 CREATE INDEX changeset_jobs_state_idx ON changeset_jobs USING btree (state);
@@ -4301,6 +4303,8 @@ CREATE INDEX changeset_specs_head_ref ON changeset_specs USING btree (head_ref);
 CREATE INDEX changeset_specs_rand_id ON changeset_specs USING btree (rand_id);
 
 CREATE INDEX changeset_specs_title ON changeset_specs USING btree (title);
+
+CREATE UNIQUE INDEX changeset_specs_unique_rand_id ON changeset_specs USING btree (rand_id);
 
 CREATE INDEX changesets_batch_change_ids ON changesets USING gin (batch_change_ids);
 

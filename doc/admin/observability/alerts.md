@@ -6571,8 +6571,8 @@ Generated query for warning alert: `max((sum by(code) (increase(src_zoekt_reques
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> zoekt: 70%+ process memory map areas percentage used (per instance)
-- <span class="badge badge-critical">critical</span> zoekt: 90%+ process memory map areas percentage used (per instance)
+- <span class="badge badge-warning">warning</span> zoekt: 60%+ process memory map areas percentage used (per instance)
+- <span class="badge badge-critical">critical</span> zoekt: 80%+ process memory map areas percentage used (per instance)
 
 **Next steps**
 
@@ -6581,7 +6581,7 @@ Generated query for warning alert: `max((sum by(code) (increase(src_zoekt_reques
     - Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
 means that each _individual_ replica will have fewer shards. This, in turn, decreases the
 amount of memory map areas that a _single_ replica can create (in order to load the shards into memory).
-    - Increase the virtual memory subsystem`s `max_map_count` parameter which defines the upper limit of memory areas
+    - Increase the virtual memory subsystem`s "max_map_count" parameter which defines the upper limit of memory areas
 a process can use. The exact instructions for tuning this parameter can differ depending on your environment.
 See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#zoekt-memory-map-areas-percentage-used).
@@ -6599,9 +6599,9 @@ See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max(((proc_metrics_memory_map_current_count / proc_metrics_memory_map_max_limit) * 100) >= 70)`
+Generated query for warning alert: `max(((proc_metrics_memory_map_current_count / proc_metrics_memory_map_max_limit) * 100) >= 60)`
 
-Generated query for critical alert: `max(((proc_metrics_memory_map_current_count / proc_metrics_memory_map_max_limit) * 100) >= 90)`
+Generated query for critical alert: `max(((proc_metrics_memory_map_current_count / proc_metrics_memory_map_max_limit) * 100) >= 80)`
 
 </details>
 

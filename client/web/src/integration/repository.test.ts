@@ -349,6 +349,7 @@ describe('Repository', () => {
                 }),
                 RepositoryComparisonDiff: () => ({
                     node: {
+                        __typename: 'Repository',
                         comparison: {
                             fileDiffs: {
                                 nodes: [
@@ -1687,6 +1688,7 @@ describe('Repository', () => {
                     }),
                     RepositoryComparisonDiff: () => ({
                         node: {
+                            __typename: 'Repository',
                             comparison: {
                                 fileDiffs: {
                                     nodes: [

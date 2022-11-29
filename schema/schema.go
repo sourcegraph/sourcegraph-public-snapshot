@@ -398,6 +398,8 @@ type BranchChangesetSpec struct {
 	Published interface{} `json:"published,omitempty"`
 	// Title description: The title of the changeset on the code host.
 	Title string `json:"title"`
+	// Version description: A field for versioning the payload.
+	Version int `json:"version,omitempty"`
 }
 type BrandAssets struct {
 	// Logo description: The URL to the image used on the homepage. This will replace the Sourcegraph logo on the homepage. Maximum width: 320px. We recommend using the following file formats: SVG, PNG
@@ -593,6 +595,8 @@ type ExistingChangesetSpec struct {
 	BaseRepository string `json:"baseRepository"`
 	// ExternalID description: The ID that uniquely identifies the existing changeset on the code host
 	ExternalID string `json:"externalID"`
+	// Version description: A field for versioning the payload.
+	Version int `json:"version,omitempty"`
 }
 
 // ExpandedGitCommitDescription description: The Git commit to create with the changes.
@@ -767,6 +771,8 @@ type GitCommitDescription struct {
 	Diff string `json:"diff"`
 	// Message description: The Git commit message.
 	Message string `json:"message"`
+	// Version description: A field for versioning the payload.
+	Version int `json:"version,omitempty"`
 }
 
 // GitHubApp description: The config options for Sourcegraph GitHub App.

@@ -178,14 +178,14 @@ func (r *changesetDescriptionResolver) DiffStat() *graphqlbackend.DiffStat {
 }
 
 func (r *changesetDescriptionResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
-	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repoResolver, r.spec.BaseRev, string(r.spec.Diff))
+	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repoResolver, r.spec.BaseRev, r.spec.Diff)
 }
 
 func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescriptionResolver {
 	return []graphqlbackend.GitCommitDescriptionResolver{&gitCommitDescriptionResolver{
 		store:       r.store,
 		message:     r.spec.CommitMessage,
-		diff:        string(r.spec.Diff),
+		diff:        r.spec.Diff,
 		authorName:  r.spec.CommitAuthorName,
 		authorEmail: r.spec.CommitAuthorEmail,
 	}}
@@ -196,7 +196,7 @@ var _ graphqlbackend.GitCommitDescriptionResolver = &gitCommitDescriptionResolve
 type gitCommitDescriptionResolver struct {
 	store       *store.Store
 	message     string
-	diff        string
+	diff        []byte
 	authorName  string
 	authorEmail string
 }
@@ -221,7 +221,7 @@ func (r *gitCommitDescriptionResolver) Body() *string {
 	}
 	return &body
 }
-func (r *gitCommitDescriptionResolver) Diff() string { return r.diff }
+func (r *gitCommitDescriptionResolver) Diff() string { return string(r.diff) }
 
 type forkTargetResolver struct {
 	changesetSpec *btypes.ChangesetSpec

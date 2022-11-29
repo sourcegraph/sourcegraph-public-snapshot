@@ -3,6 +3,7 @@ module github.com/sourcegraph/sourcegraph/lib
 go 1.19
 
 require (
+	github.com/Masterminds/semver v1.5.0
 	github.com/charmbracelet/glamour v0.5.0
 	github.com/cockroachdb/errors v1.9.0
 	github.com/derision-test/go-mockgen v1.3.7
