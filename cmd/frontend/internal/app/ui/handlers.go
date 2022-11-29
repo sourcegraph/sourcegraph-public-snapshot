@@ -311,12 +311,9 @@ func serveHome(db database.DB) handlerFunc {
 			return nil // request was handled
 		}
 
+		// we only allow HEAD requests on Sourcegraph.com -
 		if r.Method == "HEAD" {
-			if envvar.SourcegraphDotComMode() {
-				w.WriteHeader(http.StatusOK)
-				return nil
-			}
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			w.WriteHeader(http.StatusOK)
 			return nil
 		}
 
