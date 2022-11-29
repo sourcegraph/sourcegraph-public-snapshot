@@ -8042,16 +8042,16 @@ type WebhookLogResponse implements WebhookLogMessage {
 }
 
 """
-A list of outbound requests.
+A list of logged outbound requests.
 """
 type OutboundRequestConnection {
     """
-    A list of webhook logs.
+    A list of outbound requests.
     """
     nodes: [OutboundRequest!]!
 
     """
-    The total number of webhook logs in the connection.
+    The total number of outbound request log items in the connection.
     """
     totalCount: Int!
 
@@ -8060,12 +8060,13 @@ type OutboundRequestConnection {
     """
     pageInfo: PageInfo!
 }
+
 """
-A single logged webhook delivery.
+A single outbound request.
 """
-type OutboundRequest {
+type OutboundRequest implements Node {
     """
-    The request log item ID. Looks like "2021-01-01T00_00_00.000000" – Same as the Redis keys.
+    The request log item ID.
     """
     id: ID!
 
@@ -8105,7 +8106,7 @@ type OutboundRequest {
     responseHeaders: [HTTPHeader!]!
 
     """
-    The total time the request took to complete.
+    The total time the request took to complete, in seconds.
     """
     duration: Float!
 
