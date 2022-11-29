@@ -16,9 +16,9 @@ _Upgrade notes for the next version will appear here._
 
 ## v4.1 ➔ v4.2
 
-<!-- Add changes changes to this section before release. -->
+As a template, perform the same actions as the following diffs in your own deployment:
 
-_Upgrade notes for the next version will appear here._
+- [`➔ v4.2.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a2bd81af53c8b8ad5b0d69e7857945a1f96e331f)
 
 ## v4.0 ➔ v4.1.3
 
