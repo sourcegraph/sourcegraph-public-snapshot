@@ -1,4 +1,14 @@
-load("@aspect_rules_js//js:defs.bzl", "js_binary")
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library")
+
+js_binary(
+    name = "generate_schema",
+    data = [
+        "//:node_modules/json-schema-to-typescript",
+        "//:node_modules/mz",
+    ],
+    entry_point = "generateSchema.js",
+    visibility = ["//client/shared:__pkg__"],
+)
 
 # gazelle:exclude .
 
@@ -18,12 +28,28 @@ js_binary(
     visibility = ["//client/shared:__pkg__"],
 )
 
-js_binary(
-    name = "generate_schema",
-    data = [
-        "//:node_modules/json-schema-to-typescript",
-        "//:node_modules/mz",
+js_library(
+    name = "extract_graphql_operation_codegen_plugin",
+    srcs = [
+        "extractGraphQlOperationCodegenPlugin.js",
     ],
-    entry_point = "generateSchema.js",
-    visibility = ["//client/shared:__pkg__"],
+    deps = [
+        "//:node_modules/graphql",
+        "//:node_modules/signale",
+    ],
+)
+
+js_binary(
+    name = "generate_graphql_operations",
+    data = [
+        ":extract_graphql_operation_codegen_plugin",
+        "//:node_modules/@graphql-codegen/cli",
+        "//:node_modules/@graphql-codegen/typescript",
+        "//:node_modules/@graphql-codegen/typescript-apollo-client-helpers",
+        "//:node_modules/@graphql-codegen/typescript-operations",
+        "//:node_modules/prettier",
+        "//cmd/frontend/graphqlbackend:graphql_schema",
+    ],
+    entry_point = "generateGraphQlOperations.js",
+    visibility = ["//client:__subpackages__"],
 )
