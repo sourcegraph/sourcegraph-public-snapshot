@@ -9,8 +9,8 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
-	"google.golang.org/api/option"
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
