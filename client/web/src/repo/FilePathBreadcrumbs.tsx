@@ -49,7 +49,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<React.PropsWithChildre
         <FilePath
             key="root-dir"
             label="/"
-            className={classNames('test-breadcrumb-part-directory', styles.partDirectory)}
+            className={classNames('test-breadcrumb-part-directory', styles.partDirectory, styles.rootDirectory)}
             isFirst={true}
             isLast={false}
             link={toRepoURL({ repoName, revision })}
