@@ -2832,7 +2832,6 @@ When a user stars a search context, a row is inserted into this table. If the us
  updated_at        | timestamp with time zone |           | not null | now()
  deleted_at        | timestamp with time zone |           |          | 
  query             | text                     |           |          | 
- autodefined       | boolean                  |           | not null | false
 Indexes:
     "search_contexts_pkey" PRIMARY KEY, btree (id)
     "search_contexts_name_namespace_org_id_unique" UNIQUE, btree (name, namespace_org_id) WHERE namespace_org_id IS NOT NULL

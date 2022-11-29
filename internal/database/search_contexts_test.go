@@ -179,14 +179,14 @@ func TestSearchContexts_List(t *testing.T) {
 	wantInstanceLevelSearchContexts := createdSearchContexts[:1]
 	gotInstanceLevelSearchContexts, err := sc.ListSearchContexts(
 		ctx,
-		ListSearchContextsPageOptions{First: 1},
+		ListSearchContextsPageOptions{First: 2},
 		ListSearchContextsOptions{NoNamespace: true},
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
-	if !reflect.DeepEqual(wantInstanceLevelSearchContexts, gotInstanceLevelSearchContexts) {
-		t.Fatalf("wanted %v search contexts, got %v", wantInstanceLevelSearchContexts, gotInstanceLevelSearchContexts)
+	if !reflect.DeepEqual(wantInstanceLevelSearchContexts, gotInstanceLevelSearchContexts[1:]) { // Ignore the first result since it's the global search context
+		t.Fatalf("wanted %#v search contexts, got %#v", wantInstanceLevelSearchContexts, &gotInstanceLevelSearchContexts)
 	}
 
 	wantUserSearchContexts := createdSearchContexts[1:]
@@ -520,7 +520,7 @@ func TestSearchContexts_Permissions(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Expected no error, got %s", err)
 			}
-			if !reflect.DeepEqual(tt.wantSearchContexts, gotSearchContexts) {
+			if !reflect.DeepEqual(tt.wantSearchContexts, gotSearchContexts[1:]) { // Ignore the first result since it's the global search context
 				t.Fatalf("wanted %v search contexts, got %v", tt.wantSearchContexts, gotSearchContexts)
 			}
 
@@ -665,6 +665,56 @@ func TestSearchContexts_Delete(t *testing.T) {
 	}
 }
 
+func TestSearchContexts_Count(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	t.Parallel()
+	ctx := context.Background()
+	sc := db.SearchContexts()
+
+	// With no contexts added yet, count should be 1 (the global context only)
+	count, err := sc.CountSearchContexts(ctx, ListSearchContextsOptions{})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	if count != 1 {
+		t.Fatalf("Expected count to be 1, got %d", count)
+	}
+
+	_, err = createSearchContexts(ctx, sc, []*types.SearchContext{
+		{Name: "ctx", Public: true},
+	})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	// With one context added, count should be 2
+	count, err = sc.CountSearchContexts(ctx, ListSearchContextsOptions{})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	if count != 2 {
+		t.Fatalf("Expected count to be 2, got %d", count)
+	}
+
+	// Filtering by name should return 1
+	count, err = sc.CountSearchContexts(ctx, ListSearchContextsOptions{Name: "ctx"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	if count != 1 {
+		t.Fatalf("Expected count to be 1, got %d", count)
+	}
+
+	count, err = sc.CountSearchContexts(ctx, ListSearchContextsOptions{Name: "glob"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	if count != 1 {
+		t.Fatalf("Expected count to be 1, got %d", count)
+	}
+}
+
 func reverseSearchContextsSlice(s []*types.SearchContext) []*types.SearchContext {
 	copySlice := make([]*types.SearchContext, len(s))
 	copy(copySlice, s)
@@ -783,13 +833,15 @@ func TestSearchContexts_OrderBy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotSearchContexts, err := sc.ListSearchContexts(internalCtx, ListSearchContextsPageOptions{First: 6}, ListSearchContextsOptions{OrderBy: tt.orderBy, OrderByDescending: tt.descending})
+			gotSearchContexts, err := sc.ListSearchContexts(internalCtx, ListSearchContextsPageOptions{First: 7}, ListSearchContextsOptions{OrderBy: tt.orderBy, OrderByDescending: tt.descending})
 			if err != nil {
 				t.Fatal(err)
 			}
 			gotSearchContextNames := getSearchContextNames(gotSearchContexts)
-			if !reflect.DeepEqual(tt.wantSearchContextNames, gotSearchContextNames) {
-				t.Fatalf("wanted %+v search contexts, got %+v", tt.wantSearchContextNames, gotSearchContextNames)
+			wantSearchContextNames := []string{"global"}
+			wantSearchContextNames = append(wantSearchContextNames, tt.wantSearchContextNames...)
+			if !reflect.DeepEqual(wantSearchContextNames, gotSearchContextNames) {
+				t.Fatalf("wanted %+v search contexts, got %+v", wantSearchContextNames, gotSearchContextNames)
 			}
 		})
 	}

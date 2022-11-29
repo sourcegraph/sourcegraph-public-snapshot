@@ -36,27 +36,3 @@ ALTER TABLE ONLY search_context_default
     ADD CONSTRAINT search_context_default_search_context_id_fk FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE;
 
 COMMENT ON TABLE search_context_default IS 'When a user sets a search context as default, a row is inserted into this table. A user can only have one default search context. If the user has not set their default search context, it will fall back to `global`.';
-
--- Add autodefined value to search contexts table and add the global context
-ALTER TABLE search_contexts
-    ADD COLUMN IF NOT EXISTS autodefined boolean NOT NULL DEFAULT false;
-
-INSERT INTO search_contexts (
-    id,
-    name,
-    description,
-    public,
-    namespace_user_id,
-    namespace_org_id,
-    query,
-    autodefined
-) VALUES (
-    0, -- IDs start at 1 so 0 is reserved for the global context
-    'global',
-    'All repositories on Sourcegraph',
-    true,
-    NULL,
-    NULL,
-    NULL,
-    true
-) ON CONFLICT DO NOTHING;
