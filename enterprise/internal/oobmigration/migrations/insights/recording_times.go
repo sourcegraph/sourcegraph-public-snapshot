@@ -17,37 +17,43 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 	}
 
 	var calculatedRecordingTimes []time.Time
-	// For each reference time, we compare it to existing recording times.
-	// If the reference time is before the next existing point (i.e. no time exists there), we add it to the list.
-	// Else if the existing point is + half an interval close to the reference time, we add that to the list.
-	// We use + half an interval because once a recording is queued there might be a delay in stamping. It could not
-	// be stamped in the past.
-	currentPointIndex := 0
-	for _, referenceTime := range referenceTimes {
-		referenceTime := referenceTime
-		if currentPointIndex < len(existingPoints) {
-			existingTime := existingPoints[currentPointIndex]
-			intervalDuration := interval.toDuration() // precise to rough estimate of an interval's length (e.g. 1 year = 365 * 24 hours)
-			halfAnInterval := intervalDuration / 2
-			if interval.unit == hour {
-				halfAnInterval = intervalDuration / 4
-			}
-			differenceInExpectedTime := existingTime.Sub(referenceTime)
-			if differenceInExpectedTime >= 0 && differenceInExpectedTime <= halfAnInterval {
-				calculatedRecordingTimes = append(calculatedRecordingTimes, existingTime)
-				currentPointIndex++
-			} else {
-				calculatedRecordingTimes = append(calculatedRecordingTimes, referenceTime)
-				if referenceTime.After(existingTime) {
-					currentPointIndex++
-				}
-			}
-		} else {
-			calculatedRecordingTimes = append(calculatedRecordingTimes, referenceTime)
+
+	oldestReferencePoint := referenceTimes[0]
+	if !withinHalfAnInterval(existingPoints[0], oldestReferencePoint, interval) {
+		referencePoint, index := oldestReferencePoint, 0
+		for referencePoint.Before(existingPoints[index]) {
+			calculatedRecordingTimes = append(calculatedRecordingTimes, referencePoint)
+			index++
+			referencePoint = referenceTimes[index]
+		}
+	}
+	calculatedRecordingTimes = append(calculatedRecordingTimes, existingPoints...)
+
+	newestReferencePoint := referenceTimes[len(referenceTimes)-1]
+	if !withinHalfAnInterval(newestReferencePoint, existingPoints[len(existingPoints)-1], interval) {
+		referencePoint, i := newestReferencePoint, len(existingPoints)-1
+		var backwardTrailingPoints []time.Time
+		for existingPoints[i].Before(referencePoint) {
+			backwardTrailingPoints = append(backwardTrailingPoints, referencePoint)
+			i--
+			referencePoint = referenceTimes[i]
+		}
+		for i := len(backwardTrailingPoints) - 1; i >= 0; i-- {
+			calculatedRecordingTimes = append(calculatedRecordingTimes, backwardTrailingPoints[i])
 		}
 	}
 
 	return calculatedRecordingTimes
+}
+
+func withinHalfAnInterval(firstTime, secondTime time.Time, interval timeInterval) bool {
+	intervalDuration := interval.toDuration() // precise to rough estimate of an interval's length (e.g. 1 year = 365 * 24 hours)
+	halfAnInterval := intervalDuration / 2
+	if interval.unit == hour {
+		halfAnInterval = intervalDuration / 4
+	}
+	differenceInExpectedTime := firstTime.Sub(secondTime)
+	return differenceInExpectedTime >= 0 && differenceInExpectedTime <= halfAnInterval
 }
 
 type intervalUnit string
