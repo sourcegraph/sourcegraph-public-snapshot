@@ -207,9 +207,12 @@ func validateSearchContextQuery(contextQuery string) error {
 		switch field {
 		case query.FieldRepo:
 			if a.Labels.IsSet(query.IsPredicate) {
-				errs = errors.Append(errs,
-					errors.Errorf("unsupported repo field predicate in search context query: %q", value))
-				return
+				predName, _ := query.ParseAsPredicate(value)
+				if predName != "has" && predName != "has.tag" && predName != "has.key" {
+					errs = errors.Append(errs,
+						errors.Errorf("unsupported repo field predicate in search context query: %q", value))
+					return
+				}
 			}
 
 			repoRegex, revs := search.ParseRepositoryRevisions(value)
