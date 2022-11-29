@@ -213,7 +213,7 @@ export const predicateCompletion = (field: string): Completion[] => {
                 label: 'has.key(...)',
                 insertText: 'has.key(${1})',
                 asSnippet: true,
-            }
+            },
         ]
     }
     return []
