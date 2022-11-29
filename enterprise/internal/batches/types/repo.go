@@ -12,3 +12,5 @@ type RepoMetadata struct {
 	UpdatedAt time.Time
 	Ignored   bool
 }
+
+func (meta *RepoMetadata) Cursor() int64 { return int64(meta.ID) }

@@ -283,7 +283,7 @@ type operations struct {
 
 	createRepoMetadata            *observation.Operation
 	getRepoMetadata               *observation.Operation
-	listReposMissingMetadata      *observation.Operation
+	listRepoIDsMissingMetadata    *observation.Operation
 	listReposWithOutdatedMetadata *observation.Operation
 	upsertRepoMetadata            *observation.Operation
 }
@@ -433,7 +433,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 			createRepoMetadata:            op("CreateRepoMetadata"),
 			getRepoMetadata:               op("GetRepoMetadata"),
-			listReposMissingMetadata:      op("ListReposMissingMetadata"),
+			listRepoIDsMissingMetadata:    op("ListReposMissingMetadata"),
 			listReposWithOutdatedMetadata: op("ListReposWithOutdatedMetadata"),
 			upsertRepoMetadata:            op("UpsertRepoMetadata"),
 		}

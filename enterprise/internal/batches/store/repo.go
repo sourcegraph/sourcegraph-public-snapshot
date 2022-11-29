@@ -22,21 +22,14 @@ func (s *Store) CreateRepoMetadata(ctx context.Context, meta *btypes.RepoMetadat
 		meta.UpdatedAt = meta.CreatedAt
 	}
 
-	q := createRepoMetadataQuery(meta)
-	return s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return scanRepoMetadata(meta, sc)
-	})
+	return createOrUpdateRecord(ctx, s, createRepoMetadataQuery(meta), scanRepoMetadata, meta)
 }
 
 const createRepoMetadataQueryFmtstr = `
-INSERT INTO batch_changes_repo_metadata (
-  repo_id,
-  created_at,
-  updated_at,
-  ignored
-)
+INSERT INTO batch_changes_repo_metadata
+  (created_at, updated_at, ignored)
 VALUES
-  (%s, %s, %s, %s)
+  (%s, %s, %s)
 RETURNING
   %s
 `
@@ -44,7 +37,6 @@ RETURNING
 func createRepoMetadataQuery(meta *btypes.RepoMetadata) *sqlf.Query {
 	return sqlf.Sprintf(
 		createRepoMetadataQueryFmtstr,
-		meta.ID,
 		meta.CreatedAt,
 		meta.UpdatedAt,
 		meta.Ignored,
@@ -58,21 +50,7 @@ func (s *Store) GetRepoMetadata(ctx context.Context, repoID api.RepoID) (meta *b
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q := getRepoMetadataQuery(repoID)
-
-	m := btypes.RepoMetadata{}
-	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return scanRepoMetadata(&m, sc)
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if m.ID == 0 {
-		return nil, ErrNoResults
-	}
-
-	return &m, nil
+	return getRecord(ctx, s, getRepoMetadataQuery(repoID), scanRepoMetadata)
 }
 
 const getRepoMetadataQueryFmtstr = `
@@ -92,17 +70,13 @@ func getRepoMetadataQuery(repoID api.RepoID) *sqlf.Query {
 	)
 }
 
-type ListRepoMetadataOpts struct {
-	CursorOpts
-}
-
-func (s *Store) ListReposMissingMetadata(ctx context.Context, opts ListRepoMetadataOpts) (repoIDs []api.RepoID, cursor int64, err error) {
-	ctx, _, endObservation := s.operations.listReposMissingMetadata.With(ctx, &err, observation.Args{})
+func (s *Store) ListRepoIDsMissingMetadata(ctx context.Context, opts CursorOpts) (repoIDs []api.RepoID, cursor int64, err error) {
+	ctx, _, endObservation := s.operations.listRepoIDsMissingMetadata.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	q := listReposMissingMetadataQuery(opts)
+	q := listRepoIDsMissingMetadataQuery(opts)
 	ids := []api.RepoID{}
-	s.query(ctx, q, func(sc dbutil.Scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var id api.RepoID
 		if err := sc.Scan(&id); err != nil {
 			return err
@@ -111,34 +85,100 @@ func (s *Store) ListReposMissingMetadata(ctx context.Context, opts ListRepoMetad
 		return nil
 	})
 
-	return CursorIntResultset(opts.CursorOpts, ids, nil)
+	return CursorIntResultset(opts, ids, err)
 }
 
-const listReposMissingMetadataQueryFmtstr = `
+const listRepoIDsMissingMetadataQueryFmtstr = `
 SELECT
   id
 FROM
   repo
 WHERE
   NOT EXISTS (
-    SELECT
-      repo_id
+    SELECT 1
     FROM
       batch_changes_repo_metadata
     WHERE
       batch_changes_repo_metadata.repo_id = repo.id
   )
-  AND %s
-ORDER BY
-  id ASC
+  AND %s -- cursor where clause
+ORDER BY id ASC
 %s -- LIMIT
 `
 
-func listReposMissingMetadataQuery(opts ListRepoMetadataOpts) *sqlf.Query {
+func listRepoIDsMissingMetadataQuery(opts CursorOpts) *sqlf.Query {
 	return sqlf.Sprintf(
-		listReposMissingMetadataQueryFmtstr,
+		listRepoIDsMissingMetadataQueryFmtstr,
 		opts.WhereDB("id", CursorDirectionAscending),
 		opts.LimitDB(),
+	)
+}
+
+func (s *Store) ListReposWithOutdatedMetadata(ctx context.Context, opts CursorOpts) (metas []*btypes.RepoMetadata, cursor int64, err error) {
+	ctx, _, endObservation := s.operations.listReposWithOutdatedMetadata.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return listRecords(ctx, s, listReposWithOutdatedMetadataQuery(opts), opts, scanRepoMetadata)
+}
+
+const listReposWithOutdatedMetadataQueryFmtstr = `
+SELECT
+  %s
+FROM
+  batch_changes_repo_metadata
+WHERE
+  EXISTS (
+    SELECT 1
+    FROM
+      repo
+    WHERE
+      repo.id = batch_changes_repo_metadata.repo_id
+      AND repo.updated_at > batch_changes_repo_metadata.updated_at
+  )
+  AND %s -- cursor where clause
+ORDER BY id ASC
+%s -- LIMIT
+`
+
+func listReposWithOutdatedMetadataQuery(opts CursorOpts) *sqlf.Query {
+	return sqlf.Sprintf(
+		listReposWithOutdatedMetadataQueryFmtstr,
+		sqlf.Join(repoMetadataColumns, ","),
+		opts.WhereDB("id", CursorDirectionAscending),
+		opts.LimitDB(),
+	)
+}
+
+func (s *Store) UpsertRepoMetadata(ctx context.Context, meta *btypes.RepoMetadata) (err error) {
+	ctx, _, endObservation := s.operations.upsertRepoMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(meta.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	meta.UpdatedAt = s.now()
+	return createOrUpdateRecord(ctx, s, upsertRepoMetadataQuery(meta), scanRepoMetadata, meta)
+}
+
+const upsertRepoMetadataQueryFmtstr = `
+INSERT INTO batch_changes_repo_metadata
+  (created_at, updated_at, ignored)
+VALUES
+  (%s, %s, %s)
+ON CONFLICT DO UPDATE SET
+  (updated_at, ignored) = (%s, %s)
+RETURNING
+  %s
+`
+
+func upsertRepoMetadataQuery(meta *btypes.RepoMetadata) *sqlf.Query {
+	return sqlf.Sprintf(
+		upsertRepoMetadataQueryFmtstr,
+		meta.CreatedAt,
+		meta.UpdatedAt,
+		meta.Ignored,
+		meta.UpdatedAt,
+		meta.Ignored,
+		sqlf.Join(repoMetadataColumns, ","),
 	)
 }
 
