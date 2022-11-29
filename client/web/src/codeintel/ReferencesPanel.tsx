@@ -782,17 +782,16 @@ const LocationsList: React.FunctionComponent<React.PropsWithChildren<LocationsLi
     activeURL,
 }) => {
     const repoLocationGroups = useMemo(() => buildRepoLocationGroups(locations), [locations])
-    const openByDefault = repoLocationGroups.length === 1
 
     return (
         <>
-            {repoLocationGroups.map(group => (
+            {repoLocationGroups.map((group, index) => (
                 <CollapsibleRepoLocationGroup
                     key={group.repoName}
                     activeURL={activeURL}
                     searchToken={searchToken}
                     repoLocationGroup={group}
-                    openByDefault={openByDefault}
+                    openByDefault={index === 0}
                     isActiveLocation={isActiveLocation}
                     setActiveLocation={setActiveLocation}
                     filter={filter}
