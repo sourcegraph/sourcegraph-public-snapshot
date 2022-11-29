@@ -80,7 +80,7 @@ const onLifecyclePropsChange = (lifecycleProps: RepoHeaderContributionsLifecycle
     lifecycleProps.repoHeaderContributionsLifecycleProps?.onRepoHeaderContributionAdd({
         id: 'copy-path',
         position: 'left',
-        children: () => <CopyPathAction />,
+        children: () => <CopyPathAction filePath="foobar" />,
     })
     lifecycleProps.repoHeaderContributionsLifecycleProps?.onRepoHeaderContributionAdd({
         id: 'go-to-permalink',
