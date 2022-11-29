@@ -323,7 +323,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
         let originalReferrer = cookies.get(ORIGINAL_REFERRER_KEY)
         if (!originalReferrer) {
-            originalReferrer = document.referrer
+            originalReferrer = cookies.get(MKTO_ORIGINAL_REFERRER_KEY) || ''
                 // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
                 // only send the hostname instead of the whole URL to avoid
                 // leaking private repository names and files into our data.
