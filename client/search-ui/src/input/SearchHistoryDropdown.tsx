@@ -1,11 +1,11 @@
 import React, {
-    useState,
-    useCallback,
     KeyboardEvent,
     KeyboardEventHandler,
-    useRef,
-    MouseEventHandler,
     MouseEvent,
+    MouseEventHandler,
+    useCallback,
+    useRef,
+    useState,
 } from 'react'
 
 import { mdiClockOutline } from '@mdi/js'
@@ -17,15 +17,15 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import {
+    createRectangle,
+    Flipping,
     Icon,
     Popover,
-    PopoverTrigger,
     PopoverContent,
-    usePopoverContext,
-    Flipping,
-    Tooltip,
     PopoverOpenEvent,
-    createRectangle,
+    PopoverTrigger,
+    Tooltip,
+    usePopoverContext,
 } from '@sourcegraph/wildcard'
 
 import styles from './SearchHistoryDropdown.module.scss'
@@ -42,6 +42,7 @@ interface SearchHistoryDropdownProps extends TelemetryProps {
 // button and the content
 const popoverPadding = createRectangle(0, 0, 0, 2)
 
+// eslint-disable-next-line react/display-name
 export const SearchHistoryDropdown: React.FunctionComponent<SearchHistoryDropdownProps> = React.memo(
     ({ recentSearches = [], onSelect, className, telemetryService }) => {
         const [isOpen, setIsOpen] = useState(false)
@@ -149,7 +150,12 @@ const SearchHistoryEntries: React.FunctionComponent<SearchHistoryEntriesProps> =
             onClick={clickHandler}
         >
             {recentSearches.map((search, index) => (
-                <SearchHistoryEntry key={index} index={index} search={search} selected={index === selectedIndex} />
+                <SearchHistoryEntry
+                    key={`${search.timestamp}-${search.query}`}
+                    index={index}
+                    search={search}
+                    selected={index === selectedIndex}
+                />
             ))}
         </ul>
     )
@@ -163,8 +169,11 @@ const SearchHistoryEntry: React.FunctionComponent<{
     <li role="option" data-index={index} aria-selected={selected}>
         <SyntaxHighlightedSearchQuery query={search.query} tabIndex={-1} />
         <span className="ml-1 text-nowrap text-muted">
-            <span className="sr-only">,</span>
-            <Timestamp date={search.timestamp} />
+            {search.resultCount !== undefined && <span>{search.resultCount} results</span>}
+            <span className="d-inline-block text-right">
+                <span className="sr-only">,</span>
+                <Timestamp date={search.timestamp} />
+            </span>
         </span>
     </li>
 ))

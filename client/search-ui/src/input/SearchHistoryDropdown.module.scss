@@ -20,6 +20,10 @@
         &[aria-selected='true'] {
             background-color: var(--dropdown-link-hover-bg);
         }
+
+        > span:last-child span:last-child {
+            width: 12em;
+        }
     }
 }
 

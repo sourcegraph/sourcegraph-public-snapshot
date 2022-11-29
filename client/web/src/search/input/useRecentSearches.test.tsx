@@ -16,6 +16,7 @@ import { SEARCH_HISTORY_EVENT_LOGS_QUERY, useRecentSearches } from './useRecentS
 export function buildMockTempSettings(items: number): RecentSearch[] {
     return Array.from({ length: items }, (_item, index) => ({
         query: `test${index}`,
+        resultCount: 555,
         timestamp: '2021-01-01T00:00:00Z',
     }))
 }
