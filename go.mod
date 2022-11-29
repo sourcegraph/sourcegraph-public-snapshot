@@ -29,7 +29,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
-	github.com/crewjam/saml v0.4.6
+	github.com/crewjam/saml v0.4.9
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v1.0.0
 	github.com/derision-test/glock v1.0.0
@@ -55,7 +55,7 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2
-	github.com/golang-jwt/jwt/v4 v4.2.0
+	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
 	github.com/gomodule/oauth1 v0.2.0
@@ -418,7 +418,6 @@ require (
 	github.com/xlab/treeprint v1.1.0 // indirect
 	github.com/yuin/goldmark v1.4.13 // indirect
 	github.com/yuin/goldmark-emoji v1.0.1 // indirect
-	github.com/zenazn/goji v1.0.1 // indirect
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/collector/pdata v0.56.0 // indirect
