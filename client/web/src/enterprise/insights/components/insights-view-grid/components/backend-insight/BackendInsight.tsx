@@ -14,7 +14,13 @@ import {
     GetInsightViewVariables,
 } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
-import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
+import {
+    BackendInsight,
+    BackendInsightData,
+    CodeInsightsBackendContext,
+    InsightFilters,
+    isVirtualDashboard
+} from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
@@ -33,6 +39,7 @@ import {
 } from './components'
 
 import styles from './BackendInsight.module.scss'
+import {useSaveInsightAsNewView} from "../../../../core/hooks/use-save-insight-as-new-view";
 
 interface BackendInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
     insight: BackendInsight
@@ -43,7 +50,8 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
     const { telemetryService, insight, resizing, children, className, ...attributes } = props
 
     const { currentDashboard, dashboards } = useContext(InsightContext)
-    const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+    const { updateInsight } = useContext(CodeInsightsBackendContext)
+    const [saveNewView] = useSaveInsightAsNewView()
 
     const cardElementRef = useMergeRefs([ref])
     const { wasEverVisible, isVisible } = useVisibility(cardElementRef)
@@ -129,14 +137,14 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
             return
         }
 
-        await createInsight({
-            insight: {
-                ...insight,
-                title: insightName,
+        await saveNewView(
+            {
+                insight,
                 filters,
-            },
-            dashboard: currentDashboard,
-        }).toPromise()
+                title: insightName,
+                dashboard: (!currentDashboard.id || isVirtualDashboard(currentDashboard)) ? null : currentDashboard.id,
+            }
+        )
 
         telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
         setOriginalInsightFilters(filters)

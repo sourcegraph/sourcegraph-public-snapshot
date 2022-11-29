@@ -33,7 +33,7 @@ export function getSaveInsightAsNewViewGqlInput(input: saveNewInsightViewVariabl
                     includeRepoRegex: filters.includeRepoRegexp,
                 },
             },
-            dashboard: dashboard || null,
+            dashboard,
         }
     }
 }
