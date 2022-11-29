@@ -214,7 +214,7 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 	if interrupted, err := itrLoop(execution.itr.NextWithFinish); err != nil {
 		return false, errors.Wrap(err, "InProgressHandler.PrimaryLoop")
 	} else if interrupted {
-		execution.logger.Info("interrupted insight series backfill", execution.logFields()...)
+		execution.logger.Info("interrupted insight series backfill", execution.logFields(log.Duration("interruptAfter", h.config.interruptAfter))...)
 		return true, nil
 	}
 
@@ -222,7 +222,7 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 	if interrupted, err := itrLoop(execution.itr.NextRetryWithFinish); err != nil {
 		return false, errors.Wrap(err, "InProgressHandler.RetryLoop")
 	} else if interrupted {
-		execution.logger.Info("interrupted insight series backfill retry", execution.logFields()...)
+		execution.logger.Info("interrupted insight series backfill retry", execution.logFields(log.Duration("interruptAfter", h.config.interruptAfter))...)
 		return true, nil
 	}
 
@@ -272,6 +272,9 @@ func (h *inProgressHandler) disableBackfill(ctx context.Context, ex *backfillExe
 	// fail the backfill, this should help prevent out of control jobs from consuming all of the resources
 	if err = ex.backfill.SetFailed(ctx, bfs); err != nil {
 		return errors.Wrap(err, "SetFailed")
+	}
+	if err = ex.itr.MarkComplete(ctx, tx.Store); err != nil {
+		return errors.Wrap(err, "itr.MarkComplete")
 	}
 	for _, frame := range ex.frames {
 		tss := h.insightsStore.WithOther(tx)

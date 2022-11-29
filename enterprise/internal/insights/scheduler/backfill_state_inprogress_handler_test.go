@@ -428,7 +428,6 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 }
 
 func Test_BackfillCrossingErrorThreshold(t *testing.T) {
-	t.Skip()
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
@@ -479,6 +478,10 @@ func Test_BackfillCrossingErrorThreshold(t *testing.T) {
 		return wantErr
 	}}
 
+	handlerConfig := newHandlerConfig()
+	handlerConfig.errorThresholdFloor = 3 // set this low enough that we will exceed it
+	handlerConfig.interruptAfter = time.Hour * 24
+
 	dequeue, _, _ := monitor.inProgressStore.Dequeue(ctx, "test", nil)
 	handler := inProgressHandler{
 		workerStore:    monitor.newBackfillStore,
@@ -487,7 +490,7 @@ func Test_BackfillCrossingErrorThreshold(t *testing.T) {
 		repoStore:      repos,
 		insightsStore:  seriesStore,
 		backfillRunner: &runner,
-		config:         newHandlerConfig(),
+		config:         handlerConfig,
 		clock:          clock,
 	}
 
@@ -497,20 +500,12 @@ func Test_BackfillCrossingErrorThreshold(t *testing.T) {
 	// we will check that it was interrupted by verifying the backfill has progress, but is not completed yet
 	reloaded, err := bfs.loadBackfill(ctx, backfill.Id)
 	require.NoError(t, err)
-	require.Equal(t, BackfillStateProcessing, reloaded.State)
+	require.Equal(t, BackfillStateFailed, reloaded.State)
 	itr, err := iterator.LoadWithClock(ctx, basestore.NewWithHandle(insightsDB.Handle()), reloaded.repoIteratorId, clock)
 	require.NoError(t, err)
-	require.Greater(t, itr.PercentComplete, float64(0))
+	require.Equal(t, itr.PercentComplete, float64(1))
 
-	// the queue won't immediately dequeue so we will just pass it back to the handler as if it was dequeued again
-	err = handler.Handle(ctx, logger, dequeue)
-	require.NoError(t, err)
-
-	completedBackfill, err := bfs.loadBackfill(ctx, backfill.Id)
-	require.NoError(t, err)
-	if completedBackfill.State != BackfillStateCompleted {
-		t.Fatal(errors.New("backfill should be state completed"))
-	}
+	// check for incomplete points
 }
 
 func Test_calculateErrorThreshold(t *testing.T) {
