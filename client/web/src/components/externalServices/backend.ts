@@ -13,7 +13,6 @@ import {
     Scalars,
     AddExternalServiceVariables,
     AddExternalServiceResult,
-    ExternalServiceFields,
     DeleteExternalServiceVariables,
     DeleteExternalServiceResult,
     ExternalServicesVariables,

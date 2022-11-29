@@ -64,7 +64,6 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({
                     {window.context.likelyDockerOnMac && window.context.deployType === 'docker-container' && (
                         <DockerForMacAlert className={styles.alert} />
                     )}
-                    {window.context.sourcegraphDotComMode && <GitLabScopeAlert authenticatedUser={authenticatedUser} />}
                     {siteFlagsValue.alerts.map((alert, index) => (
                         <GlobalAlert key={index} alert={alert} className={styles.alert} />
                     ))}
