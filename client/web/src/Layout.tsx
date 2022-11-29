@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useRef, useState } from 'react'
+import React, { Suspense, useCallback, useRef, useState, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { matchPath, Redirect, Route, RouteComponentProps, Switch } from 'react-router'
@@ -195,6 +195,13 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
     }
+        
+    useEffect(() => {
+        if (props.authenticatedUser && !document.cookie.includes('displayName=' || 'email=')) {
+            document.cookie = `displayName=${props.authenticatedUser.displayName || ''}`
+            document.cookie = `email=${props.authenticatedUser.email}`
+        }
+    }, [])
 
     return (
         <div
