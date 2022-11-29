@@ -847,6 +847,89 @@ func TestSearchContexts_OrderBy(t *testing.T) {
 	}
 }
 
+func TestSearchContexts_OrderByWithDefaultAndStarred(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	t.Parallel()
+	internalCtx := actor.WithInternalActor(context.Background())
+	u := db.Users()
+	o := db.Orgs()
+	om := db.OrgMembers()
+	sc := db.SearchContexts()
+
+	user1, err := u.Create(internalCtx, NewUser{Username: "u1", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	err = u.SetIsSiteAdmin(internalCtx, user1.ID, false)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	displayName := "My Org"
+	org, err := o.Create(internalCtx, "myorg", &displayName)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	_, err = om.Create(internalCtx, org.ID, user1.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	searchContexts, err := createSearchContexts(internalCtx, sc, []*types.SearchContext{
+		{Name: "A-instance-level", Public: true},                         // Starred, returned 3rd
+		{Name: "B-instance-level", Public: false},                        // Not returned, not public and not owned but this user or their org
+		{Name: "A-user-level", Public: true, NamespaceUserID: user1.ID},  // Default, returned 1st
+		{Name: "B-user-level", Public: false, NamespaceUserID: user1.ID}, // Starred, returned 2nd
+		{Name: "A-org-level", Public: true, NamespaceOrgID: org.ID},      // Returned 4th
+		{Name: "B-org-level", Public: false, NamespaceOrgID: org.ID},     // Returned 5th
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantedSearchContexts := []*types.SearchContext{searchContexts[2], searchContexts[3], searchContexts[0], searchContexts[4], searchContexts[5]}
+
+	_, err = sc.UpdateSearchContextWithRepositoryRevisions(internalCtx, searchContexts[1], nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = sc.UpdateSearchContextWithRepositoryRevisions(internalCtx, searchContexts[3], nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = sc.UpdateSearchContextWithRepositoryRevisions(internalCtx, searchContexts[5], nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Set user1 has a default search context of searchContexts[2]
+	err = sc.SetUserDefaultSearchContextID(internalCtx, user1.ID, searchContexts[2].ID)
+
+	// Set user1 as a star for searchContexts[0] and searchContexts[3]
+	err = sc.CreateSearchContextStarForUser(internalCtx, user1.ID, searchContexts[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = sc.CreateSearchContextStarForUser(internalCtx, user1.ID, searchContexts[3].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Use a different user to list the search contexts so that we can test that user's starred and default search contexts
+	ctx := actor.WithActor(internalCtx, actor.FromUser(user1.ID))
+	gotSearchContexts, err := sc.ListSearchContexts(ctx, ListSearchContextsPageOptions{First: 7}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gotSearchContextNames := getSearchContextNames(gotSearchContexts)
+	wantSearchContextNames := append([]string{"global"}, getSearchContextNames(wantedSearchContexts)...)
+	if !reflect.DeepEqual(wantSearchContextNames, gotSearchContextNames) {
+		t.Fatalf("wanted %+v search contexts, got %+v", wantSearchContextNames, gotSearchContextNames)
+	}
+}
+
 func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))

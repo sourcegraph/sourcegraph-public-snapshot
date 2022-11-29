@@ -677,6 +677,12 @@ func (s *searchContextsStore) GetAllQueries(ctx context.Context) (qs []string, _
 
 // 🚨 SECURITY: The caller must ensure that the actor is the user setting the context as their default.
 func (s *searchContextsStore) SetUserDefaultSearchContextID(ctx context.Context, userID int32, searchContextID int64) error {
+	if searchContextID == 0 {
+		// If the search context ID is 0, we want to delete the default search context for the user.
+		// This will cause the user to use the global search context as their default.
+		return s.Exec(ctx, sqlf.Sprintf("DELETE FROM user_default_search_contexts WHERE user_id = %d", userID))
+	}
+
 	q := sqlf.Sprintf(
 		`INSERT INTO search_context_default (user_id, search_context_id)
 		VALUES (%d, %d)
