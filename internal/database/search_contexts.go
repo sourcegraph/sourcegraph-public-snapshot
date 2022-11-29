@@ -138,7 +138,21 @@ const searchContextQueryFmtStr = `
 `
 
 const listSearchContextsFmtStr = `
-SELECT * FROM (
+SELECT
+	id,
+	context_name,
+	description,
+	public,
+	autodefined,
+	namespace_user_id,
+	namespace_org_id,
+	updated_at,
+	query,
+	namespace_username,
+	namespace_org_name,
+	user_default,
+	user_starred
+FROM (
 	` + searchContextQueryFmtStr + `
 ) AS t
 WHERE
@@ -518,7 +532,6 @@ func scanSearchContexts(rows *sql.Rows) ([]*types.SearchContext, error) {
 	var out []*types.SearchContext
 	for rows.Next() {
 		sc := &types.SearchContext{}
-		var unusedNamespaceName *string
 		err := rows.Scan(
 			&sc.ID,
 			&sc.Name,
@@ -529,7 +542,6 @@ func scanSearchContexts(rows *sql.Rows) ([]*types.SearchContext, error) {
 			&dbutil.NullInt32{N: &sc.NamespaceOrgID},
 			&sc.UpdatedAt,
 			&dbutil.NullString{S: &sc.Query},
-			&unusedNamespaceName, // namespace_name is only used for sorting, it should not be returned
 			&dbutil.NullString{S: &sc.NamespaceUserName},
 			&dbutil.NullString{S: &sc.NamespaceOrgName},
 			&sc.Starred,
