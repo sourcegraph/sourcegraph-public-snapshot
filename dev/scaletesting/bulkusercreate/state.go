@@ -246,14 +246,26 @@ func (s *state) generateTeams(cfg config) ([]*team, error) {
 	if len(orgs) == 0 {
 		log.Fatal("Organisations must be generated before teams")
 	}
-	if err = s.insertTeams(names, orgs); err != nil {
+	var mainOrg *org
+	for _, o := range orgs {
+		if o.Login == "main-org" {
+			mainOrg = o
+			break
+		}
+	}
+	if mainOrg == nil {
+		log.Fatal("Unable to locate main-org")
+	}
+
+	if err = s.insertTeams(names, mainOrg); err != nil {
 		return nil, err
 	}
 	return s.loadTeams()
 }
 
 func (s *state) generateOrgs(cfg config) ([]*org, error) {
-	names := generateNames("org", cfg.orgCount)
+	names := []string{"main-org"}
+	names = append(names, generateNames("sub-org", cfg.orgCount)...)
 	if err := s.insertOrgs(names, cfg.orgAdmin); err != nil {
 		return nil, err
 	}
@@ -293,7 +305,7 @@ totalMembers = ?
 WHERE name = ?`
 
 func (s *state) saveTeam(t *team) error {
-	err := s.insertTeams([]string{t.Name}, []*org{{Login: t.Org}})
+	err := s.insertTeams([]string{t.Name}, &org{Login: t.Org})
 	s.Lock()
 	defer s.Unlock()
 
@@ -373,16 +385,14 @@ func (s *state) insertUsers(logins []string) error {
 	return tx.Commit()
 }
 
-func (s *state) insertTeams(names []string, orgs []*org) error {
+func (s *state) insertTeams(names []string, org *org) error {
 	s.Lock()
 	defer s.Unlock()
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
-	for i, name := range names {
-		// distribute teams evenly over orgs
-		org := orgs[i%len(orgs)]
+	for _, name := range names {
 		if _, err = tx.Exec(`INSERT OR IGNORE INTO teams(name, org) VALUES (?, ?)`, name, org.Login); err != nil {
 			return err
 		}
