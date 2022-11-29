@@ -535,7 +535,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		Repo:       api.RepoName(args.RepoName),
 		BaseCommit: api.CommitID(args.BaseRev),
 		TargetRef:  targetRef,
-		Patch:      patch,
+		Patch:      []byte(patch),
 		CommitInfo: protocol.PatchCommitInfo{
 			AuthorName:  info.AuthorName,
 			AuthorEmail: info.AuthorEmail,

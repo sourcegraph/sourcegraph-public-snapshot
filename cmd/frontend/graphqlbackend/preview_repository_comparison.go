@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"strconv"
@@ -19,7 +20,7 @@ type PreviewRepositoryComparisonResolver interface {
 }
 
 // NewPreviewRepositoryComparisonResolver is a convenience function to get a preview diff from a repo, given a base rev and the git patch.
-func NewPreviewRepositoryComparisonResolver(ctx context.Context, db database.DB, client gitserver.Client, repo *RepositoryResolver, baseRev, patch string) (*previewRepositoryComparisonResolver, error) {
+func NewPreviewRepositoryComparisonResolver(ctx context.Context, db database.DB, client gitserver.Client, repo *RepositoryResolver, baseRev string, patch []byte) (*previewRepositoryComparisonResolver, error) {
 	args := &RepositoryCommitArgs{Rev: baseRev}
 	commit, err := repo.Commit(ctx, args)
 	if err != nil {
@@ -39,7 +40,7 @@ type previewRepositoryComparisonResolver struct {
 	client gitserver.Client
 	repo   *RepositoryResolver
 	commit *GitCommitResolver
-	patch  string
+	patch  []byte
 }
 
 // Type guard.
@@ -61,7 +62,7 @@ func (r *previewRepositoryComparisonResolver) FileDiffs(_ context.Context, args 
 	return NewFileDiffConnectionResolver(r.db, r.client, r.commit, r.commit, args, fileDiffConnectionCompute(r.patch), previewNewFile), nil
 }
 
-func fileDiffConnectionCompute(patch string) func(ctx context.Context, args *FileDiffsConnectionArgs) ([]*diff.FileDiff, int32, bool, error) {
+func fileDiffConnectionCompute(patch []byte) func(ctx context.Context, args *FileDiffsConnectionArgs) ([]*diff.FileDiff, int32, bool, error) {
 	var (
 		once        sync.Once
 		fileDiffs   []*diff.FileDiff
@@ -86,7 +87,7 @@ func fileDiffConnectionCompute(patch string) func(ctx context.Context, args *Fil
 				totalAmount += *args.First
 			}
 
-			dr := diff.NewMultiFileDiffReader(strings.NewReader(patch))
+			dr := diff.NewMultiFileDiffReader(bytes.NewReader(patch))
 			for {
 				var fileDiff *diff.FileDiff
 				fileDiff, err = dr.ReadFile()

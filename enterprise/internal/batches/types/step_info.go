@@ -42,7 +42,8 @@ type StepInfo struct {
 	FinishedAt      time.Time
 	Environment     map[string]string
 	OutputVariables map[string]any
-	Diff            *string
+	DiffFound       bool
+	Diff            []byte
 	ExitCode        *int
 }
 
@@ -95,7 +96,8 @@ func ParseLogLines(entry workerutil.ExecutionLogEntry, lines []*batcheslib.LogEv
 							outputs = map[string]any{}
 						}
 						si.OutputVariables = outputs
-						si.Diff = &m.Diff
+						si.Diff = m.Diff
+						si.DiffFound = true
 					}
 				})
 			} else if l.Status == batcheslib.LogEventStatusStarted {

@@ -90,7 +90,7 @@ steps:
 			1: {
 				Key: "testcachekey",
 				Value: &execution.AfterStepResult{
-					Diff: "123",
+					Diff: []byte("123"),
 				},
 			},
 		},
@@ -131,12 +131,12 @@ steps:
 	}
 
 	t.Run("with cache entry", func(t *testing.T) {
-		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob)
+		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob, "0.0.0-dev")
 		if err != nil {
 			t.Fatalf("unexpected error transforming record: %s", err)
 		}
 
-		marshaledInput, err := json.Marshal(wantInput(true, execution.AfterStepResult{Diff: "123"}))
+		marshaledInput, err := json.Marshal(wantInput(true, execution.AfterStepResult{Diff: []byte("123")}))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -149,7 +149,7 @@ steps:
 			ShallowClone:        true,
 			SparseCheckout:      []string{"a/b/c/*"},
 			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
-				"input.json": {Content: string(marshaledInput)},
+				"input.json": {Content: marshaledInput},
 			},
 			CliSteps: []apiclient.CliStep{
 				{
@@ -186,7 +186,7 @@ steps:
 		// Set the no cache flag on the batch spec.
 		batchSpec.NoCache = true
 
-		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob)
+		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob, "0.0.0-dev")
 		if err != nil {
 			t.Fatalf("unexpected error transforming record: %s", err)
 		}
@@ -204,7 +204,7 @@ steps:
 			ShallowClone:        true,
 			SparseCheckout:      []string{"a/b/c/*"},
 			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
-				"input.json": {Content: string(marshaledInput)},
+				"input.json": {Content: marshaledInput},
 			},
 			CliSteps: []apiclient.CliStep{
 				{
@@ -259,7 +259,7 @@ steps:
 			nil,
 		)
 
-		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob)
+		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob, "0.0.0-dev")
 		if err != nil {
 			t.Fatalf("unexpected error transforming record: %s", err)
 		}
@@ -277,7 +277,7 @@ steps:
 			ShallowClone:        true,
 			SparseCheckout:      []string{"a/b/c/*"},
 			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
-				"input.json":                        {Content: string(marshaledInput)},
+				"input.json":                        {Content: marshaledInput},
 				"workspace-files/foo/bar/script.sh": {Bucket: "batch-changes", Key: "abc/xyz", ModifiedAt: workspaceFileModifiedAt},
 			},
 			CliSteps: []apiclient.CliStep{
