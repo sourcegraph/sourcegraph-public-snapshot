@@ -20,7 +20,7 @@ js_library(
 generate_graphql_operations(
     name = "graphql_operations",
     srcs = [
-        ":graphql_operations_files",
+        "//client/jetbrains/webview:graphql_operations_files",
     ],
     interface_name = "JetBrainsGraphQlOperations",
     output = "src/graphql-operations.ts",
