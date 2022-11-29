@@ -63,16 +63,18 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		}
 
 		// If there is only one auth provider configured, the single auth provider is a OAuth
-		// instance, and it's an app request, redirect to signin immediately. The user wouldn't be
-		// able to do anything else anyway; there's no point in showing them a signin screen with
-		// just a single signin option.
-		if pc := getExactlyOneOAuthProvider(); pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && isHuman(r) {
-			span.AddEvent("redirect to singin")
+		// instance, it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
+		//
+		// For sign-out requests (signout cookie is  present), the user will be redirected to the SG login page.
+		pc := getExactlyOneOAuthProvider()
+		if pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && !auth.HasSignOutCookie(r) && isHuman(r) {
+			span.AddEvent("redirect to signin")
 			v := make(url.Values)
 			v.Set("redirect", auth.SafeRedirectURL(r.URL.String()))
 			v.Set("pc", pc.ConfigID().ID)
 			span.Finish()
 			http.Redirect(w, r, authPrefix+"/login?"+v.Encode(), http.StatusFound)
+
 			return
 		}
 
