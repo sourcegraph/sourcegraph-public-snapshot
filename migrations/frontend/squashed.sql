@@ -3387,6 +3387,7 @@ CREATE TABLE search_contexts (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     deleted_at timestamp with time zone,
     query text,
+    autodefined boolean DEFAULT false NOT NULL,
     CONSTRAINT search_contexts_has_one_or_no_namespace CHECK (((namespace_user_id IS NULL) OR (namespace_org_id IS NULL)))
 );
 
