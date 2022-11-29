@@ -138,7 +138,7 @@ func decodeRangesFromReader(r io.ByteReader) ([]int32, error) {
 // runs of zeros as a single zero followed by the length of the run. The `readVarints` function will
 // re-expand these runs of zeroes.
 func writeVarints(values []int32) []byte {
-	// Optimistic capacity; we append exactly oen or two bytes for each non-zero element in the given
+	// Optimistic capacity; we append exactly one or two bytes for each non-zero element in the given
 	// array. We assume that most of the values are small, so we try not to over-allocate here. We may
 	// resize only once in the worst case.
 	buf := make([]byte, 0, len(values))
