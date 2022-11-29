@@ -46,6 +46,37 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 		log.String("commit", string(p.Commit)),
 	)
 
+	// recordHybridFinalState is a wrapper around metricHybridState to make the
+	// callsites more succinct.
+	finalState := "unknown"
+	recordHybridFinalState := func(state string) {
+		finalState = state
+	}
+
+	// We call out to external services in several places, and in each case
+	// the most common error condition for those is searcher cancelling the
+	// request. As such we centralize our observability to always take into
+	// account the state of the ctx.
+	defer func() {
+		if err != nil {
+			switch ctx.Err() {
+			case context.Canceled:
+				// We swallow the error since we only cancel requests once we
+				// have hit limits or the RPC request has gone away.
+				recordHybridFinalState("search-canceled")
+				unsearched, ok, err = nil, true, nil
+			case context.DeadlineExceeded:
+				// We return the error because hitting a deadline should be
+				// unexpected. We also don't need to run the normal searcher
+				// path in this case.
+				recordHybridFinalState("search-timeout")
+				unsearched, ok = nil, true
+			}
+		}
+
+		metricHybridFinalState.WithLabelValues(finalState).Inc()
+	}()
+
 	client := s.Indexed
 
 	// There is a race condition between asking zoekt what is indexed vs
@@ -105,24 +136,8 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 
 		ok, err = zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
 		if err != nil {
-			// Check for error conditions related to the request rather than
-			// zoekt misbehaving.
-			switch ctx.Err() {
-			case context.Canceled:
-				// We swallow the error since we only cancel requests once we
-				// have hit limits or the RPC request has gone away.
-				recordHybridFinalState("search-canceled")
-				return nil, true, nil
-			case context.DeadlineExceeded:
-				// We return the error because hitting a deadline should be
-				// unexpected. We also don't need to run the normal searcher
-				// path in this case.
-				recordHybridFinalState("search-timeout")
-				return nil, true, err
-			default:
-				recordHybridFinalState("zoekt-search-error")
-				return nil, false, err
-			}
+			recordHybridFinalState("zoekt-search-error")
+			return nil, false, err
 		} else if !ok {
 			metricHybridIndexChanged.Inc()
 			logger.Debug("retrying search since index changed while searching")
@@ -401,10 +416,4 @@ func totalStringsLen(ss []string) int {
 // TraceContext associated with ctx.
 func logWithTrace(ctx context.Context, l log.Logger) log.Logger {
 	return l.WithTrace(trace.Context(ctx))
-}
-
-// recordHybridFinalState is a wrapper around metricHybridState to make the
-// callsites more succinct.
-func recordHybridFinalState(state string) {
-	metricHybridFinalState.WithLabelValues(state).Inc()
 }

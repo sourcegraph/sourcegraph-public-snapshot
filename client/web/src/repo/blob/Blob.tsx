@@ -140,7 +140,7 @@ export interface BlobProps
     ariaLabel?: string
 
     isBlameVisible?: boolean
-    blameHunks?: BlameHunk[]
+    blameHunks?: { current: BlameHunk[] | undefined }
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {

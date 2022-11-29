@@ -373,15 +373,16 @@ func TestCreateWebhook(t *testing.T) {
 	whUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 	expectedWebhook := types.Webhook{
-		ID: 1, UUID: whUUID,
+		ID: 1, UUID: whUUID, Name: "webhookName",
 	}
 	webhookStore.CreateFunc.SetDefaultReturn(&expectedWebhook, nil)
 
 	db := database.NewMockDB()
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
 	db.UsersFunc.SetDefaultReturn(users)
-	queryStr := `mutation CreateWebhook($codeHostKind: String!, $codeHostURN: String!, $secret: String) {
-				createWebhook(codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
+	queryStr := `mutation CreateWebhook($name: String!, $codeHostKind: String!, $codeHostURN: String!, $secret: String) {
+				createWebhook(name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
+					name
 					id
 					uuid
 				}
@@ -397,12 +398,14 @@ func TestCreateWebhook(t *testing.T) {
 			ExpectedResult: fmt.Sprintf(`
 				{
 					"createWebhook": {
+						"name": "webhookName",
 						"id": "V2ViaG9vazox",
 						"uuid": "%s"
 					}
 				}
 			`, whUUID),
 			Variables: map[string]any{
+				"name":         "webhookName",
 				"codeHostKind": "GITHUB",
 				"codeHostURN":  "https://github.com",
 			},
@@ -420,6 +423,7 @@ func TestCreateWebhook(t *testing.T) {
 				},
 			},
 			Variables: map[string]any{
+				"name":         "webhookName",
 				"codeHostKind": "InvalidKind",
 				"codeHostURN":  "https://github.com",
 			},
@@ -437,6 +441,7 @@ func TestCreateWebhook(t *testing.T) {
 				},
 			},
 			Variables: map[string]any{
+				"name":         "webhookName",
 				"codeHostKind": "BITBUCKETCLOUD",
 				"codeHostURN":  "https://bitbucket.com",
 				"secret":       "mysupersecret",
@@ -459,6 +464,7 @@ func TestCreateWebhook(t *testing.T) {
 			},
 		},
 		Variables: map[string]any{
+			"name":         "webhookName",
 			"codeHostKind": "GITHUB",
 			"codeHostURN":  "https://github.com",
 			"secret":       "mysupersecret",

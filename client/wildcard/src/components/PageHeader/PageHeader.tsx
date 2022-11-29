@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Text, HeadingElement } from '../Typography'
 
-import { Breadcrumb, BreadcrumbIcon, BreadcrumbText } from './Breadcrumb'
+import { Breadcrumb, BreadcrumbIcon, BreadcrumbProps, BreadcrumbText } from './Breadcrumb'
 import { Heading } from './Heading'
 
 import styles from './PageHeader.module.scss'
@@ -62,9 +62,9 @@ export const PageHeader: React.FunctionComponent<React.PropsWithChildren<PageHea
     const heading = (
         <Heading as={headingElement}>
             {path.map(({ to, text, icon, ariaLabel }, index) => (
-                <Breadcrumb key={index} to={to} icon={icon} aria-label={ariaLabel}>
+                <PageHeader.Breadcrumb key={index} to={to} icon={icon} aria-label={ariaLabel}>
                     {text}
-                </Breadcrumb>
+                </PageHeader.Breadcrumb>
             ))}
         </Heading>
     )
@@ -82,5 +82,8 @@ export const PageHeader: React.FunctionComponent<React.PropsWithChildren<PageHea
     )
 }
 
-PageHeader.Breadcrumb = Breadcrumb
+PageHeader.Breadcrumb = (props: BreadcrumbProps) => (
+    <Breadcrumb {...props} className={classNames(props.className, styles.breadcrumb)} />
+)
+PageHeader.Breadcrumb.displayName = 'PageHeader.Breadcrumb'
 PageHeader.Heading = Heading

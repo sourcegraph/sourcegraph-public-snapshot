@@ -212,18 +212,16 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	}
 
 	{
-		// WORKAROUND: On Sourcegraph.com not all repositories are
-		// indexed. So searcher (which does no ranking) can race with
-		// Zoekt (which does ranking). This leads to unpleasant results,
-		// especially due to the large index on Sourcegraph.com. We have
-		// this hacky workaround here to ensure we search Zoekt first.
-		// Context:
+		// WORKAROUND: On Sourcegraph.com some jobs can race with Zoekt (which
+		// does ranking). This leads to unpleasant results, especially due to
+		// the large index on Sourcegraph.com. We have this hacky workaround
+		// here to ensure we search Zoekt first. Context:
 		// https://github.com/sourcegraph/sourcegraph/issues/35993
 		// https://github.com/sourcegraph/sourcegraph/issues/35994
 
 		if inputs.OnSourcegraphDotCom && b.Pattern != nil {
 			if _, ok := b.Pattern.(query.Pattern); ok {
-				basicJob = orderSearcherJob(basicJob)
+				basicJob = orderRacingJobs(basicJob)
 			}
 		}
 
@@ -232,33 +230,39 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	return basicJob, nil
 }
 
-// orderSearcherJob ensures that, if a searcher job exists, then it is only ever
-// run sequentially after a Zoekt search has returned all its results.
-func orderSearcherJob(j job.Job) job.Job {
-	// First collect the searcher job, if any, and delete it from the tree.
-	// This job will be sequentially ordered after any Zoekt jobs. We assume
-	// at most one searcher job exists.
-	var pagedSearcherJob job.Job
+// orderRacingJobs ensures that searcher and repo search jobs only ever run
+// sequentially after a Zoekt search has returned all its results.
+func orderRacingJobs(j job.Job) job.Job {
+	// First collect the searcher and repo job, if any, and delete them from
+	// the tree. The jobs will be sequentially ordered after any Zoekt jobs. We
+	// assume at most one searcher and one repo job exists.
+	var collection []job.Job
+
 	newJob := job.MapType(j, func(pager *repoPagerJob) job.Job {
 		if job.HasDescendent[*searcher.TextSearchJob](pager) {
-			pagedSearcherJob = pager
+			collection = append(collection, pager)
 			return &NoopJob{}
 		}
+
 		return pager
 	})
 
-	if pagedSearcherJob == nil {
-		// No searcher job, nothing to worry about.
+	newJob = job.MapType(newJob, func(j *RepoSearchJob) job.Job {
+		collection = append(collection, j)
+		return &NoopJob{}
+	})
+
+	if len(collection) == 0 {
 		return j
 	}
 
-	// Map the tree to execute paged searcher jobs after any Zoekt jobs.
-	// We assume at most one of either two Zoekt search jobs may exist.
+	// Map the tree to execute jobs in "collection" after any Zoekt jobs. We
+	// assume at most one of either two Zoekt search jobs may exist.
 	seenZoektRepoSearch := false
 	newJob = job.MapType(newJob, func(pager *repoPagerJob) job.Job {
 		if job.HasDescendent[*zoekt.RepoSubsetTextSearchJob](pager) {
 			seenZoektRepoSearch = true
-			return NewSequentialJob(false, pager, pagedSearcherJob)
+			return NewSequentialJob(false, append([]job.Job{pager}, collection...)...)
 		}
 		return pager
 	})
@@ -267,7 +271,7 @@ func orderSearcherJob(j job.Job) job.Job {
 	newJob = job.MapType(newJob, func(current *zoekt.GlobalTextSearchJob) job.Job {
 		if !seenZoektGlobalSearch {
 			seenZoektGlobalSearch = true
-			return NewSequentialJob(false, current, pagedSearcherJob)
+			return NewSequentialJob(false, append([]job.Job{current}, collection...)...)
 		}
 		return current
 	})

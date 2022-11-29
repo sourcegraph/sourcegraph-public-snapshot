@@ -131,7 +131,12 @@ export const QueryExamplesHomepage: React.FunctionComponent<QueryExamplesHomepag
                     </Tabs>
                     <div className="d-flex align-items-baseline justify-content-lg-center my-5">
                         <H4 className={classNames('mr-2 mb-0 pr-2', styles.proTipTitle)}>Pro Tip</H4>
-                        <Link to="https://signup.sourcegraph.com/" onClick={() => eventLogger.log('ClickedOnCloudCTA')}>
+                        <Link
+                            to="https://signup.sourcegraph.com/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                        >
                             Use Sourcegraph to search across your team's code.
                         </Link>
                     </div>

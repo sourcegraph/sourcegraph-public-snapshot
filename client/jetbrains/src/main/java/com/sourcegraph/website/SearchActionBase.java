@@ -14,8 +14,8 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.find.SourcegraphVirtualFile;
-import com.sourcegraph.vcs.RepoUtil;
 import com.sourcegraph.vcs.RepoInfo;
+import com.sourcegraph.vcs.RepoUtil;
 import com.sourcegraph.vcs.VCSType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,14 +49,14 @@ public abstract class SearchActionBase extends DumbAwareAction {
                     String url;
                     RepoInfo repoInfo = RepoUtil.getRepoInfo(project, currentFile);
                     String remoteUrl = (scope == Scope.REPOSITORY) ? repoInfo.remoteUrl : null;
-                    String branchName = (scope == Scope.REPOSITORY) ? repoInfo.branchName : null;
+                    String remoteBranchName = (scope == Scope.REPOSITORY) ? repoInfo.remoteBranchName : null;
                     if (repoInfo.vcsType == VCSType.PERFORCE) {
                         // Our "editor" backend doesn't support Perforce, but we have all the info we need, so we'll go to the final URL directly.
                         String codeHostUrl = (scope == Scope.REPOSITORY) ? repoInfo.getCodeHostUrl() : null;
                         String repoName = (scope == Scope.REPOSITORY) ? repoInfo.getRepoName() : null;
                         url = URLBuilder.buildDirectSearchUrl(project, selectedText, codeHostUrl, repoName);
                     } else {
-                        url = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, branchName);
+                        url = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, remoteBranchName);
                     }
                     BrowserOpener.openInBrowser(project, url);
                 }

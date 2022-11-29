@@ -1,8 +1,7 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
 import { useHistory, useLocation } from 'react-router'
-import { catchError } from 'rxjs/operators'
 
 import {
     SearchContextProps,
@@ -12,7 +11,6 @@ import {
     SearchContextMinimalFields,
 } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Badge, useObservable, Link, Card } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import {
@@ -65,13 +63,6 @@ export const SearchContextsListTab: React.FunctionComponent<React.PropsWithChild
             })
         },
         [authenticatedUser, fetchSearchContexts, getUserSearchContextNamespaces, platformContext]
-    )
-
-    const autoDefinedSearchContexts = useObservable(
-        useMemo(() => fetchAutoDefinedSearchContexts({ platformContext }).pipe(catchError(() => [])), [
-            fetchAutoDefinedSearchContexts,
-            platformContext,
-        ])
     )
 
     const ownerNamespaceFilterValues: FilteredConnectionFilterValue[] = authenticatedUser
@@ -161,37 +152,6 @@ export const SearchContextsListTab: React.FunctionComponent<React.PropsWithChild
     const location = useLocation()
     return (
         <>
-            {isSourcegraphDotCom && (
-                <div
-                    className={classNames(
-                        styles.autoDefinedSearchContexts,
-                        'mb-4',
-                        autoDefinedSearchContexts && autoDefinedSearchContexts.length >= 3
-                            ? styles.autoDefinedSearchContextsRepeat3
-                            : styles.autoDefinedSearchContextsRepeat2
-                    )}
-                >
-                    {autoDefinedSearchContexts?.map(context => (
-                        <Card key={context.spec} className="p-3">
-                            <div>
-                                <Link to={`/contexts/${context.spec}`}>
-                                    <strong>{context.spec}</strong>
-                                </Link>
-                                <Badge
-                                    variant="secondary"
-                                    pill={true}
-                                    className={classNames('ml-1', styles.badge)}
-                                    tooltip="Automatic contexts are created by Sourcegraph."
-                                >
-                                    auto
-                                </Badge>
-                            </div>
-                            <div className="text-muted mt-1">{context.description}</div>
-                        </Card>
-                    ))}
-                </div>
-            )}
-
             <FilteredConnection<
                 SearchContextMinimalFields,
                 Omit<SearchContextNodeProps, 'node'>,

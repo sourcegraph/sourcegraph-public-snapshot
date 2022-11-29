@@ -139,8 +139,8 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 			p.codeHost.ServiceID, account.AccountSpec.ServiceID)
 	}
 
-	var user bitbucketserver.User
-	if err := encryption.DecryptJSON(ctx, account.Data, &user); err != nil {
+	user, err := encryption.DecryptJSON[bitbucketserver.User](ctx, account.Data)
+	if err != nil {
 		return nil, errors.Wrap(err, "unmarshaling account data")
 	}
 

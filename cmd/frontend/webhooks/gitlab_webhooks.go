@@ -7,13 +7,15 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (h *WebhookRouter) HandleGitLabWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
+func (wr *WebhookRouter) HandleGitLabWebhook(logger log.Logger, w http.ResponseWriter, r *http.Request, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
 	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
 	// internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
@@ -46,16 +48,14 @@ func (h *WebhookRouter) HandleGitLabWebhook(logger log.Logger, w http.ResponseWr
 	}
 
 	// Route the request based on the event type.
-	err = h.Dispatch(ctx, eventKind.ObjectKind, extsvc.KindGitLab, codeHostURN, event)
+	err = wr.Dispatch(ctx, eventKind.ObjectKind, extsvc.KindGitLab, codeHostURN, event)
 	if err != nil {
 		logger.Error("Error handling gitlab webhook event", log.Error(err))
-		switch err.(type) {
-		case eventTypeNotFoundError:
+		if errcode.IsNotFound(err) {
 			http.Error(w, err.Error(), http.StatusNotFound)
-		default:
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-		return
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -74,15 +74,16 @@ func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
 	return body, nil
 }
 
-func (h *WebhookRouter) handleGitLabWebHook(logger log.Logger, w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string) {
+func (wr *WebhookRouter) handleGitLabWebHook(logger log.Logger, w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string) {
 	if secret == "" {
 		payload, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Error while reading request body.", http.StatusInternalServerError)
 			return
 		}
+		defer r.Body.Close()
 
-		h.HandleGitLabWebhook(logger, w, r, urn, payload)
+		wr.HandleGitLabWebhook(logger, w, r, urn, payload)
 		return
 	}
 
@@ -92,5 +93,5 @@ func (h *WebhookRouter) handleGitLabWebHook(logger log.Logger, w http.ResponseWr
 		return
 	}
 
-	h.HandleGitLabWebhook(logger, w, r, urn, payload)
+	wr.HandleGitLabWebhook(logger, w, r, urn, payload)
 }

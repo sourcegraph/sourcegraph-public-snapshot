@@ -20,7 +20,7 @@ import (
 type WebhookStore interface {
 	basestore.ShareableStore
 
-	Create(ctx context.Context, kind, urn string, actorUID int32, secret *types.EncryptableSecret) (*types.Webhook, error)
+	Create(ctx context.Context, name, kind, urn string, actorUID int32, secret *types.EncryptableSecret) (*types.Webhook, error)
 	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
 	GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error)
 	Delete(ctx context.Context, opts DeleteWebhookOpts) error
@@ -63,7 +63,7 @@ type GetWebhookOpts WebhookOpts
 // If encryption IS enabled then the encrypted value will be stored in secret and
 // the encryption_key_id field will also be populated so that we can decrypt the
 // value later.
-func (s *webhookStore) Create(ctx context.Context, kind, urn string, actorUID int32, secret *types.EncryptableSecret) (*types.Webhook, error) {
+func (s *webhookStore) Create(ctx context.Context, name, kind, urn string, actorUID int32, secret *types.EncryptableSecret) (*types.Webhook, error) {
 	var (
 		err             error
 		encryptedSecret string
@@ -81,6 +81,7 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, actorUID in
 	}
 
 	q := sqlf.Sprintf(webhookCreateQueryFmtstr,
+		name,
 		kind,
 		urn,
 		dbutil.NullStringColumn(encryptedSecret),
@@ -101,6 +102,7 @@ func (s *webhookStore) Create(ctx context.Context, kind, urn string, actorUID in
 const webhookCreateQueryFmtstr = `
 INSERT INTO
 	webhooks (
+        name,
 		code_host_kind,
 		code_host_urn,
 		secret,
@@ -108,6 +110,7 @@ INSERT INTO
 		created_by_user_id
 	)
 	VALUES (
+		%s,
 		%s,
 		%s,
 		%s,
@@ -128,6 +131,7 @@ var webhookColumns = []*sqlf.Query{
 	sqlf.Sprintf("encryption_key_id"),
 	sqlf.Sprintf("created_by_user_id"),
 	sqlf.Sprintf("updated_by_user_id"),
+	sqlf.Sprintf("name"),
 }
 
 const webhookGetFmtstr = `
@@ -261,7 +265,7 @@ func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *t
 	}
 
 	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
-		newWebhook.CodeHostURN.String(), encryptedSecret, keyID, dbutil.NullInt32Column(actorUID), newWebhook.ID,
+		newWebhook.Name, newWebhook.CodeHostURN.String(), encryptedSecret, keyID, dbutil.NullInt32Column(actorUID), newWebhook.ID,
 		sqlf.Join(webhookColumns, ", "))
 
 	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
@@ -278,6 +282,7 @@ func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *t
 const webhookUpdateQueryFmtstr = `
 UPDATE webhooks
 SET
+    name = %s,
 	code_host_urn = %s,
 	secret = %s,
 	encryption_key_id = %s,
@@ -402,6 +407,7 @@ func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) 
 		&dbutil.NullString{S: &keyID},
 		&dbutil.NullInt32{N: &hook.CreatedByUserID},
 		&dbutil.NullInt32{N: &hook.UpdatedByUserID},
+		&hook.Name,
 	); err != nil {
 		return nil, err
 	}

@@ -5,7 +5,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Insight, isBackendInsight } from '../../../../core'
 
 import { StandaloneBackendInsight } from './standalone-backend-insight/StandaloneBackendInsight'
-import { StandaloneRuntimeInsight } from './standalone-runtime-insight/StandaloneRuntimeInsight'
+import { StandaloneLangStatsInsight } from './standalone-lang-stats-insight/StandaloneLangStatsInsight'
 
 interface SmartStandaloneInsightProps extends TelemetryProps {
     insight: Insight
@@ -20,5 +20,5 @@ export const SmartStandaloneInsight: FunctionComponent<SmartStandaloneInsightPro
     }
 
     // Search based extension and lang stats insight are handled by built-in fetchers
-    return <StandaloneRuntimeInsight insight={insight} telemetryService={telemetryService} className={className} />
+    return <StandaloneLangStatsInsight insight={insight} telemetryService={telemetryService} className={className} />
 }

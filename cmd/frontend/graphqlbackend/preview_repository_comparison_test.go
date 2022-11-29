@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -359,6 +360,172 @@ index 0000000..122f5d9
 			wantFile: `filecontent
 `,
 		},
+		{
+			name: "New file without newline",
+			file: "",
+			patch: `diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..373ae20
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1 @@
++No newline after this
+\ No newline at end of file
+`,
+			// Note: No newline.
+			wantFile: `No newline after this`,
+		},
+		{
+			name: "Add newline to file without newline",
+			// Note: No newline.
+			file: `No newline after this`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..7e17295 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1 @@
+-No newline after this
+\ No newline at end of file
++No newline after this
+`,
+			// Note: Has a newline now.
+			wantFile: `No newline after this
+`,
+		},
+		{
+			name: "Remove newline at end of file",
+			file: `No newline after this
+`,
+			patch: `diff --git a/README.md b/README.md
+index 7e17295..373ae20 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1 @@
+-No newline after this
++No newline after this
+\ No newline at end of file
+`,
+			// Note: Has no newline anymore.
+			wantFile: `No newline after this`,
+		},
+		{
+			name: "Add line without newline to file that ended with no newline",
+			file: `No newline after this`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..89ad131 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1,2 @@
+-No newline after this
+\ No newline at end of file
++No newline after this
++Also no newline after this
+\ No newline at end of file
+`,
+			// Note: Has no newline at the end.
+			wantFile: `No newline after this
+Also no newline after this`,
+		},
+		{
+			name: "Add line without newline to file that ended with no newline",
+			file: `No newline after this`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..89ad131 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1,2 @@
+-No newline after this
+\ No newline at end of file
++No newline after this
++Also no newline after this
+\ No newline at end of file
+`,
+			// Note: Has no newline at the end.
+			wantFile: `No newline after this
+Also no newline after this`,
+		},
+		{
+			name: "No newline and last hunk ends before EOF",
+			file: `1
+3
+4
+5
+6
+7
+8
+9
+10`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..89ad131 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,5 @@
+ 1
++2
+ 3
+ 4
+ 5
+`,
+			// Note: Has no newline at the end.
+			wantFile: `1
+2
+3
+4
+5
+6
+7
+8
+9
+10`,
+		},
+		{
+			name: "Multiple hunks and no newline at the end",
+			file: `1
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12`,
+			patch: `diff --git a/README.md b/README.md
+index 373ae20..89ad131 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,5 @@
+ 1
++2
+ 3
+ 4
+ 5
+@@ -6,6 +7,7 @@
+ 7
+ 8
+ 9
++9.5
+ 10
+ 11
+ 12
+\ No newline at end of file
+`,
+			// Note: Has no newline at the end.
+			wantFile: `1
+2
+3
+4
+5
+6
+7
+8
+9
+9.5
+10
+11
+12`,
+		},
 	}
 
 	for _, tc := range tests {
@@ -367,7 +534,10 @@ index 0000000..122f5d9
 			if err != nil {
 				t.Fatal(err)
 			}
-			have := applyPatch(tc.file, fileDiff)
+			have, err := applyPatch(tc.file, fileDiff)
+			if err != nil {
+				t.Fatal(err)
+			}
 			if have != tc.wantFile {
 				t.Fatalf("wrong patched file content %q, want=%q", have, tc.wantFile)
 			}

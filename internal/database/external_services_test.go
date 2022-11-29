@@ -18,7 +18,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
@@ -33,7 +36,6 @@ import (
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -991,6 +993,87 @@ VALUES (%d, 1, ''), (%d, 2, '')
 	}
 }
 
+func TestExternalServiceStore_Delete_WithSyncJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := &externalServiceStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+	}
+	if err := store.Create(ctx, confGet, es); err != nil {
+		t.Fatal(err)
+	}
+
+	// Insert a sync job
+	syncJobID, _, err := basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, $2, now())
+RETURNING id
+`, es.ID, "processing"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// When we now delete the external service it'll mark the sync job as
+	// 'cancel = true', so in a separate goroutine we need to wait until the
+	// job is marked as cancel true and then set it to canceled
+	go func() {
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+
+		for {
+			jobCancel, _, err := basestore.ScanFirstBool(db.Handle().QueryContext(ctx, `SELECT cancel FROM external_service_sync_jobs WHERE id = $1`, syncJobID))
+			if err != nil {
+				logger.Error("querying 'cancel' failed", log.Error(err))
+				return
+			}
+			if jobCancel {
+				break
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+
+		// Job has been marked as to-be-canceled, let's cancel it
+		_, err := db.Handle().ExecContext(ctx, `UPDATE external_service_sync_jobs SET state = 'canceled', finished_at = now() WHERE id = $1`, syncJobID)
+		if err != nil {
+			logger.Error("marking job as cancelled failed", log.Error(err))
+			return
+		}
+	}()
+
+	deleted := make(chan error)
+	go func() {
+		// This will block until the goroutine above has finished
+		err = db.ExternalServices().Delete(ctx, es.ID)
+		deleted <- err
+	}()
+
+	select {
+	case <-time.After(10 * time.Second):
+		t.Fatal("timeout waiting for external service deletion")
+	case err := <-deleted:
+		if err != nil {
+			t.Fatalf("deleting external service failed: %s", err)
+		}
+	}
+
+	_, err = db.ExternalServices().GetByID(ctx, es.ID)
+	if !errcode.IsNotFound(err) {
+		t.Fatal("expected an error")
+	}
+}
+
 // reposNumber is a number of repos created in one batch.
 // TestExternalServicesStore_DeleteExtServiceWithManyRepos does 5 such batches
 const reposNumber = 1000
@@ -1393,6 +1476,54 @@ VALUES ($1,$2,'errored', now())
 	}
 }
 
+func TestExternalServiceStore_HasRunningSyncJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := &externalServiceStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified { return &conf.Unified{} }
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+	}
+	if err := store.Create(ctx, confGet, es); err != nil {
+		t.Fatal(err)
+	}
+
+	ok, err := store.hasRunningSyncJobs(ctx, es.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if ok {
+		t.Fatal("unexpected running sync jobs")
+	}
+
+	_, err = db.Handle().ExecContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, 'processing', now())
+RETURNING id
+`, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ok, err = store.hasRunningSyncJobs(ctx, es.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if !ok {
+		t.Fatal("unexpected running sync jobs")
+	}
+}
+
 func TestExternalServiceStore_CancelSyncJob(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1400,99 +1531,94 @@ func TestExternalServiceStore_CancelSyncJob(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := db.ExternalServices()
 	ctx := context.Background()
 
 	// Create a new external service
-	confGet := func() *conf.Unified {
-		return &conf.Unified{}
-	}
+	confGet := func() *conf.Unified { return &conf.Unified{} }
 	es := &types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "GITHUB #1",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err := store.Create(ctx, confGet, es)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Make sure "not found" is handled
-	err = db.ExternalServices().CancelSyncJob(ctx, 99999)
+	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ID: 9999})
 	if !errors.HasType(err, &errSyncJobNotFound{}) {
 		t.Fatalf("Expected not-found error, have %q", err)
 	}
-
-	// Insert 'processing' sync job that can be canceled
-	syncJobID, _, err := basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
-VALUES ($1, 'processing', now())
-RETURNING id
-`, es.ID))
+	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ExternalServiceID: 9999})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("Expected no error, but have %q", err)
 	}
 
-	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	assertCanceled := func(t *testing.T, syncJobID int64, wantState string, wantFinished bool) {
+		t.Helper()
+
+		// Make sure it was canceled
+		syncJob, err := store.GetSyncJobByID(ctx, syncJobID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !syncJob.Cancel {
+			t.Fatalf("syncjob not canceled")
+		}
+		if syncJob.State != wantState {
+			t.Fatalf("syncjob state unexpectedly changed")
+		}
+		if !wantFinished && !syncJob.FinishedAt.IsZero() {
+			t.Fatalf("syncjob finishedAt is set but should not be")
+		}
+		if wantFinished && syncJob.FinishedAt.IsZero() {
+			t.Fatalf("syncjob finishedAt is not set but should be")
+		}
+	}
+
+	insertSyncJob := func(t *testing.T, state string) int64 {
+		t.Helper()
+
+		syncJobID, _, err := basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
+INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+VALUES ($1, $2, now())
+RETURNING id
+`, es.ID, state))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return syncJobID
+	}
+
+	// Insert 'processing' sync job that can be canceled and cancel by ID
+	syncJobID := insertSyncJob(t, "processing")
+	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ID: syncJobID})
 	if err != nil {
 		t.Fatalf("Cancel failed: %s", err)
 	}
+	assertCanceled(t, syncJobID, "processing", false)
 
-	// Make sure it was canceled
-	syncJob, err := db.ExternalServices().GetSyncJobByID(ctx, syncJobID)
+	// Insert another 'processing' sync job that can be canceled, but cancel by external_service_id
+	syncJobID2 := insertSyncJob(t, "processing")
+	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ExternalServiceID: es.ID})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("Cancel failed: %s", err)
 	}
-	if !syncJob.Cancel {
-		t.Fatalf("syncjob not canceled")
-	}
-	if syncJob.State != "processing" {
-		t.Fatalf("syncjob state unexpectedly changed")
-	}
-	if !syncJob.FinishedAt.IsZero() {
-		t.Fatalf("syncjob finishedAt is set but should not be")
-	}
+	assertCanceled(t, syncJobID2, "processing", false)
 
 	// Insert 'queued' sync job that can be canceled
-	syncJobID, _, err = basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
-VALUES ($1, 'queued', now())
-RETURNING id
-`, es.ID))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	syncJobID3 := insertSyncJob(t, "queued")
+	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ID: syncJobID3})
 	if err != nil {
 		t.Fatalf("Cancel failed: %s", err)
 	}
-
-	// Make sure it was canceled
-	syncJob, err = db.ExternalServices().GetSyncJobByID(ctx, syncJobID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !syncJob.Cancel {
-		t.Fatalf("syncjob not canceled")
-	}
-	if syncJob.State != "canceled" {
-		t.Fatalf("syncjob state not changed to 'canceled'")
-	}
-	if syncJob.FinishedAt.IsZero() {
-		t.Fatalf("syncjob finishedAt is not set")
-	}
+	assertCanceled(t, syncJobID3, "canceled", true)
 
 	// Insert sync job in state that is not cancelable
-	syncJobID, _, err = basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
-VALUES ($1, 'completed', now())
-RETURNING id
-`, es.ID))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = db.ExternalServices().CancelSyncJob(ctx, syncJobID)
+	syncJobID4 := insertSyncJob(t, "completed")
+	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ID: syncJobID4})
 	if !errors.HasType(err, &errSyncJobNotFound{}) {
 		t.Fatalf("Expected not-found error, have %q", err)
 	}
@@ -1855,37 +1981,48 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 
-	svcs := typestest.MakeExternalServices()
-
 	t.Run("no external services", func(t *testing.T) {
+		db := NewDB(logger, dbtest.NewDB(logger, t))
 		if err := db.ExternalServices().Upsert(ctx); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
 	})
 
-	t.Run("one external service", func(t *testing.T) {
-		tx, err := db.ExternalServices().Transact(ctx)
-		if err != nil {
-			t.Fatalf("Transact error: %s", err)
-		}
-		defer func() {
-			err = tx.Done(err)
-			if err != nil {
-				t.Fatalf("Done error: %s", err)
+	t.Run("validation", func(t *testing.T) {
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+		store := db.ExternalServices()
+
+		t.Run("config can't be empty", func(t *testing.T) {
+			want := typestest.MakeGitLabExternalService()
+
+			want.Config.Set("")
+
+			if err := store.Upsert(ctx, want); err == nil {
+				t.Fatalf("Wanted an error")
 			}
-		}()
+		})
 
-		svc := svcs[1]
-		if svc.Kind != extsvc.KindGitLab {
-			t.Fatalf("expected external service at [1] to be GitLab; got %s", svc.Kind)
-		}
+		t.Run("config can't be only comments", func(t *testing.T) {
+			want := typestest.MakeGitLabExternalService()
+			want.Config.Set(`// {}`)
 
-		if err := tx.Upsert(ctx, svc); err != nil {
+			if err := store.Upsert(ctx, want); err == nil {
+				t.Fatalf("Wanted an error")
+			}
+		})
+
+	})
+
+	t.Run("one external service", func(t *testing.T) {
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+		store := db.ExternalServices()
+
+		svc := typestest.MakeGitLabExternalService()
+		if err := store.Upsert(ctx, svc); err != nil {
 			t.Fatalf("upsert error: %v", err)
 		}
 		if *svc.HasWebhooks != false {
@@ -1899,7 +2036,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		// Add webhooks to the config and upsert.
 		svc.Config.Set(`{"webhooks":[{"secret": "secret"}],` + cfg[1:])
-		if err := tx.Upsert(ctx, svc); err != nil {
+		if err := store.Upsert(ctx, svc); err != nil {
 			t.Fatalf("upsert error: %v", err)
 		}
 		if *svc.HasWebhooks != true {
@@ -1908,32 +2045,13 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("many external services", func(t *testing.T) {
-		user, err := db.Users().Create(ctx, NewUser{Username: "alice"})
-		if err != nil {
-			t.Fatalf("Test setup error %s", err)
-		}
-		org, err := db.Orgs().Create(ctx, "acme", nil)
-		if err != nil {
-			t.Fatalf("Test setup error %s", err)
-		}
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+		store := db.ExternalServices()
 
-		namespacedSvcs := typestest.MakeNamespacedExternalServices(user.ID, org.ID)
+		svcs := typestest.MakeExternalServices()
+		want := typestest.GenerateExternalServices(11, svcs...)
 
-		tx, err := db.ExternalServices().Transact(ctx)
-		if err != nil {
-			t.Fatalf("Transact error: %s", err)
-		}
-		defer func() {
-			err = tx.Done(err)
-			if err != nil {
-				t.Fatalf("Done error: %s", err)
-			}
-		}()
-
-		services := append(svcs, namespacedSvcs...)
-		want := typestest.GenerateExternalServices(11, services...)
-
-		if err := tx.Upsert(ctx, want...); err != nil {
+		if err := store.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
 
@@ -1946,15 +2064,12 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		sort.Sort(want)
 
-		have, err := tx.List(ctx, ExternalServicesListOptions{
-			Kinds: services.Kinds(),
-		})
+		have, err := store.List(ctx, ExternalServicesListOptions{Kinds: svcs.Kinds()})
 		if err != nil {
 			t.Fatalf("List error: %s", err)
 		}
 
 		sort.Sort(types.ExternalServices(have))
-
 		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
 			t.Fatalf("List:\n%s", diff)
 		}
@@ -1968,10 +2083,10 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			r.CreatedAt = now
 		}
 
-		if err = tx.Upsert(ctx, want...); err != nil {
+		if err = store.Upsert(ctx, want...); err != nil {
 			t.Errorf("Upsert error: %s", err)
 		}
-		have, err = tx.List(ctx, ExternalServicesListOptions{})
+		have, err = store.List(ctx, ExternalServicesListOptions{})
 		if err != nil {
 			t.Fatalf("List error: %s", err)
 		}
@@ -1984,12 +2099,12 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		// Delete external services
 		for _, es := range want {
-			if err := tx.Delete(ctx, es.ID); err != nil {
+			if err := store.Delete(ctx, es.ID); err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		have, err = tx.List(ctx, ExternalServicesListOptions{})
+		have, err = store.List(ctx, ExternalServicesListOptions{})
 		if err != nil {
 			t.Errorf("List error: %s", err)
 		}
@@ -2001,75 +2116,14 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		}
 	})
 
-	t.Run("config can't be empty", func(t *testing.T) {
-		tx, err := db.ExternalServices().WithEncryptionKey(et.TestKey{}).Transact(ctx)
-		if err != nil {
-			t.Fatalf("Transact error: %s", err)
-		}
-		defer func() {
-			err = tx.Done(err)
-			if err != nil {
-				t.Fatalf("Done error: %s", err)
-			}
-		}()
-
-		want := typestest.GenerateExternalServices(1, svcs...)
-		oldValue, err := want[0].Config.Decrypt(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Cleanup(func() {
-			want[0].Config.Set(oldValue)
-		})
-		want[0].Config.Set("")
-
-		if err := tx.Upsert(ctx, want...); err == nil {
-			t.Fatalf("Wanted an error")
-		}
-	})
-
-	t.Run("config can't be only comments", func(t *testing.T) {
-		tx, err := db.ExternalServices().WithEncryptionKey(et.TestKey{}).Transact(ctx)
-		if err != nil {
-			t.Fatalf("Transact error: %s", err)
-		}
-		defer func() {
-			err = tx.Done(err)
-			if err != nil {
-				t.Fatalf("Done error: %s", err)
-			}
-		}()
-
-		want := typestest.GenerateExternalServices(1, svcs...)
-		oldValue, err := want[0].Config.Decrypt(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Cleanup(func() {
-			want[0].Config.Set(oldValue)
-		})
-		want[0].Config.Set(`// {}`)
-
-		if err := tx.Upsert(ctx, want...); err == nil {
-			t.Fatalf("Wanted an error")
-		}
-	})
-
 	t.Run("with encryption key", func(t *testing.T) {
-		tx, err := db.ExternalServices().WithEncryptionKey(et.TestKey{}).Transact(ctx)
-		if err != nil {
-			t.Fatalf("Transact error: %s", err)
-		}
-		defer func() {
-			err = tx.Done(err)
-			if err != nil {
-				t.Fatalf("Done error: %s", err)
-			}
-		}()
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+		store := db.ExternalServices().WithEncryptionKey(et.TestKey{})
 
+		svcs := typestest.MakeExternalServices()
 		want := typestest.GenerateExternalServices(7, svcs...)
 
-		if err := tx.Upsert(ctx, want...); err != nil {
+		if err := store.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
 		for _, e := range want {
@@ -2080,7 +2134,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		}
 
 		// values encrypted should not be readable without the encrypting key
-		noopStore := ExternalServicesWith(logger, tx).WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
+		noopStore := ExternalServicesWith(logger, store).WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
 
 		for _, e := range want {
 			svc, err := noopStore.GetByID(ctx, e.ID)
@@ -2092,9 +2146,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			}
 		}
 
-		have, err := tx.List(ctx, ExternalServicesListOptions{
-			Kinds: svcs.Kinds(),
-		})
+		have, err := store.List(ctx, ExternalServicesListOptions{Kinds: svcs.Kinds()})
 		if err != nil {
 			t.Fatalf("List error: %s", err)
 		}
@@ -2115,10 +2167,10 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			r.CreatedAt = now
 		}
 
-		if err = tx.Upsert(ctx, want...); err != nil {
+		if err = store.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
-		have, err = tx.List(ctx, ExternalServicesListOptions{})
+		have, err = store.List(ctx, ExternalServicesListOptions{})
 		if err != nil {
 			t.Fatalf("List error: %s", err)
 		}
@@ -2131,18 +2183,17 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 		// Delete external services
 		for _, es := range want {
-			if err := tx.Delete(ctx, es.ID); err != nil {
+			if err := store.Delete(ctx, es.ID); err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		have, err = tx.List(ctx, ExternalServicesListOptions{})
+		have, err = store.List(ctx, ExternalServicesListOptions{})
 		if err != nil {
 			t.Errorf("List error: %s", err)
 		}
 
 		sort.Sort(types.ExternalServices(have))
-
 		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
 			t.Errorf("List:\n%s", diff)
 		}

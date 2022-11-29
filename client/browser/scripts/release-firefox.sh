@@ -23,20 +23,3 @@ error=${PIPESTATUS[0]}
 if ! grep -q "$ok" "$tmp" && [ "$error" = 1 ]; then
   exit "$error"
 fi
-set -e
-
-# Upload to gcp and make it public
-pushd build/web-ext
-for filename in *; do
-  gsutil cp "$filename" "gs://sourcegraph-for-firefox/$filename"
-  gsutil cp "$filename" "gs://sourcegraph-for-firefox/latest.xpi"
-  gsutil -m acl set -R -a public-read "gs://sourcegraph-for-firefox/$filename"
-  gsutil -m acl set -R -a public-read "gs://sourcegraph-for-firefox/latest.xpi"
-done
-popd
-
-export TS_NODE_COMPILER_OPTIONS="{\"module\":\"commonjs\"}"
-
-gsutil ls gs://sourcegraph-for-firefox | xargs yarn ts-node scripts/build-updates-manifest.ts
-gsutil cp src/browser-extension/updates.manifest.json gs://sourcegraph-for-firefox/updates.json
-gsutil -m acl set -R -a public-read gs://sourcegraph-for-firefox/updates.json
