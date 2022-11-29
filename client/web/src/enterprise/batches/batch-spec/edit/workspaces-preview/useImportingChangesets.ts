@@ -1,6 +1,9 @@
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 
-import { useConnection, UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
+import {
+    useShowMorePagination,
+    UseShowMorePaginationResult,
+} from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     Scalars,
     PreviewBatchSpecImportingChangesetFields,
@@ -20,8 +23,10 @@ export type ImportingChangesetFields =
  *
  * @param batchSpecID The id of the batch spec to query
  */
-export const useImportingChangesets = (batchSpecID: Scalars['ID']): UseConnectionResult<ImportingChangesetFields> =>
-    useConnection<
+export const useImportingChangesets = (
+    batchSpecID: Scalars['ID']
+): UseShowMorePaginationResult<ImportingChangesetFields> =>
+    useShowMorePagination<
         BatchSpecImportingChangesetsResult,
         BatchSpecImportingChangesetsVariables,
         PreviewBatchSpecImportingChangesetFields | { __typename: 'HiddenChangesetSpec'; id: Scalars['ID'] }

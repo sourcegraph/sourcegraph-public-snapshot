@@ -12,7 +12,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, ButtonGroup, Link, CardHeader, CardBody, Card, Input, Label, Tooltip } from '@sourcegraph/wildcard'
 
-import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionList,
     ConnectionContainer,
@@ -202,7 +202,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
     const [after, setAfter] = useState(spec.after)
     const [path, setPath] = useState(spec.path)
 
-    const { connection, error, loading, hasNextPage, fetchMore } = useConnection<
+    const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         RepositoryContributorsResult,
         RepositoryContributorsVariables,
         RepositoryContributorNodeFields
