@@ -4,6 +4,7 @@
     overflow: hidden;
     align-items: center;
     white-space: nowrap;
+    justify-content: flex-end;
 
     .part {
         /* Ensure focus shadow is not clipped by overflow: hidden */
@@ -11,7 +12,7 @@
     }
 
     .root-directory {
-        min-width: 0.5rem;
+        min-width: 0.5rem !important;
     }
 
     .part-directory {
