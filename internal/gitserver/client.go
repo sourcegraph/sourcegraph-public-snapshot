@@ -1286,6 +1286,7 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
 	// If gitserver doesn't speak the binary endpoint yet, we fall back to the old one.
 	if resp.StatusCode == http.StatusNotFound {
 		resp.Body.Close()
@@ -1302,8 +1303,8 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 		if err != nil {
 			return "", err
 		}
+		defer resp.Body.Close()
 	}
-	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
