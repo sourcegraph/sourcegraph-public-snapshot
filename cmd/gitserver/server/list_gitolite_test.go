@@ -137,7 +137,7 @@ func TestCheckSSRFHeader(t *testing.T) {
 
 	t.Run("header missing", func(t *testing.T) {
 		rw := httptest.NewRecorder()
-		r, err := http.NewRequest("GET", "/list-gitolite?gitolite=host", nil)
+		r, err := http.NewRequest("GET", "/list-gitolite?gitolite=127.0.0.1", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -148,7 +148,7 @@ func TestCheckSSRFHeader(t *testing.T) {
 
 	t.Run("header supplied", func(t *testing.T) {
 		rw := httptest.NewRecorder()
-		r, err := http.NewRequest("GET", "/list-gitolite?gitolite=host", nil)
+		r, err := http.NewRequest("GET", "/list-gitolite?gitolite=127.0.0.1", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
