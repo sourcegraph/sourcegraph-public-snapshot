@@ -35,6 +35,7 @@ import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../
 import { StandaloneInsightContextMenu } from '../context-menu/StandaloneInsightContextMenu'
 
 import styles from './StandaloneBackendInsight.module.scss'
+import {useSaveInsightAsNewView} from "../../../../../core/hooks/use-save-insight-as-new-view";
 
 interface StandaloneBackendInsight extends TelemetryProps {
     insight: BackendInsight
@@ -44,7 +45,8 @@ interface StandaloneBackendInsight extends TelemetryProps {
 export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackendInsight> = props => {
     const { telemetryService, insight, className } = props
     const history = useHistory()
-    const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+    const { updateInsight } = useContext(CodeInsightsBackendContext)
+    const [saveNewView] = useSaveInsightAsNewView()
 
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
@@ -117,14 +119,14 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     }
 
     const handleInsightFilterCreation = async (values: DrillDownInsightCreationFormValues): Promise<void> => {
-        await createInsight({
-            insight: {
-                ...insight,
-                title: values.insightName,
+        await saveNewView(
+            {
+                insight,
                 filters,
-            },
-            dashboard: null,
-        }).toPromise()
+                title: values.insightName,
+                dashboard: null,
+            }
+         )
 
         setOriginalInsightFilters(filters)
         history.push(`/insights/dashboard/${ALL_INSIGHTS_DASHBOARD.id}`)

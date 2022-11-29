@@ -17,6 +17,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public getActiveInsightsCount = errorMockMethod('getNonFrozenInsightsCount')
     public createInsight = errorMockMethod('createInsight')
     public updateInsight = errorMockMethod('updateInsight')
+    public saveInsightAsNewView = errorMockMethod('saveInsightAsNewView')
     public deleteInsight = errorMockMethod('deleteInsight')
     public removeInsightFromDashboard = errorMockMethod('removeInsightFromDashboard')
 

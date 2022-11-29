@@ -11,6 +11,7 @@ import {
     DashboardUpdateResult,
     InsightCreateInput,
     InsightUpdateInput,
+    InsightNewViewInput,
     RemoveInsightFromDashboardInput,
 } from './code-insights-backend-types'
 
@@ -57,6 +58,8 @@ export interface CodeInsightsBackend {
     createInsight: (input: InsightCreateInput) => Observable<unknown>
 
     updateInsight: (event: InsightUpdateInput) => Observable<unknown>
+
+    saveInsightAsNewView: (input: InsightNewViewInput) => Observable<unknown>
 
     deleteInsight: (insightId: string) => Observable<unknown>
 
