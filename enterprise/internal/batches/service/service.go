@@ -560,11 +560,22 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 		return nil, ErrBatchSpecResolutionIncomplete
 	}
 
-	// Disable caching if either the execution flag is set, or if the batch spec
-	// is tainted as no_cache.
-	err = tx.DisableBatchSpecWorkspaceExecutionCache(ctx, batchSpec.ID, opts.NoCache)
-	if err != nil {
-		return nil, err
+	// If the batch spec is not set to nocache yet and the option for it is true,
+	// update the batch spec state in the db.
+	if !batchSpec.NoCache && opts.NoCache {
+		batchSpec.NoCache = true
+		if err := tx.UpdateBatchSpec(ctx, batchSpec); err != nil {
+			return nil, err
+		}
+	}
+
+	if batchSpec.NoCache {
+		// Disable caching if either the execution flag is set, or if the batch spec
+		// is tainted as no_cache.
+		err = tx.DisableBatchSpecWorkspaceExecutionCache(ctx, batchSpec.ID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)

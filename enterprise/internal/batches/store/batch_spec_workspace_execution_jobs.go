@@ -489,15 +489,6 @@ candidate_batch_spec_workspaces AS (
 		batch_spec_workspaces
 	WHERE
 		batch_spec_workspaces.batch_spec_id = %s
-		AND
-		EXISTS (
-			SELECT 1
-			FROM batch_spec
-			WHERE
-				no_cache
-				OR
-				%s
-		)
 	ORDER BY id
 ),
 removable_changeset_specs AS (
@@ -525,13 +516,13 @@ WHERE
 `
 
 // DisableBatchSpecWorkspaceExecutionCache removes caching information from workspaces prior to execution.
-func (s *Store) DisableBatchSpecWorkspaceExecutionCache(ctx context.Context, batchSpecID int64, noCache bool) (err error) {
+func (s *Store) DisableBatchSpecWorkspaceExecutionCache(ctx context.Context, batchSpecID int64) (err error) {
 	ctx, _, endObservation := s.operations.disableBatchSpecWorkspaceExecutionCache.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("batchSpecID", int(batchSpecID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q := sqlf.Sprintf(disableBatchSpecWorkspaceExecutionCacheQueryFmtstr, batchSpecID, batchSpecID, noCache)
+	q := sqlf.Sprintf(disableBatchSpecWorkspaceExecutionCacheQueryFmtstr, batchSpecID, batchSpecID)
 	return s.Exec(ctx, q)
 }
 
