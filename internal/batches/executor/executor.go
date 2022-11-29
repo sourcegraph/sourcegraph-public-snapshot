@@ -69,6 +69,8 @@ type NewExecutorOpts struct {
 	IsRemote         bool
 	GlobalEnv        []string
 	ForceRoot        bool
+
+	BinaryDiffs bool
 }
 
 type executor struct {
@@ -180,6 +182,7 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 		RepoArchive:      repoArchive,
 		WorkingDirectory: x.opts.WorkingDirectory,
 		ForceRoot:        x.opts.ForceRoot,
+		BinaryDiffs:      x.opts.BinaryDiffs,
 
 		UI: ui.StepsExecutionUI(task),
 	}

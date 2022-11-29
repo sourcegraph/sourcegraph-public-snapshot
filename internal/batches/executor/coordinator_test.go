@@ -39,10 +39,11 @@ func TestCoordinator_Execute(t *testing.T) {
 			Body:           testChangesetTemplate.Body,
 			Commits: []batcheslib.GitCommitDescription{
 				{
+					Version:     2,
 					Message:     testChangesetTemplate.Commit.Message,
 					AuthorName:  testChangesetTemplate.Commit.Author.Name,
 					AuthorEmail: testChangesetTemplate.Commit.Author.Email,
-					Diff:        `dummydiff1`,
+					Diff:        []byte(`dummydiff1`),
 				},
 			},
 			Published: batcheslib.PublishedValue{Val: false},
@@ -78,8 +79,8 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			executor: &dummyExecutor{
 				results: []taskResult{
-					{task: srcCLITask, stepResults: []execution.AfterStepResult{{Diff: `dummydiff1`}}},
-					{task: sourcegraphTask, stepResults: []execution.AfterStepResult{{Diff: `dummydiff2`}}},
+					{task: srcCLITask, stepResults: []execution.AfterStepResult{{Version: 2, Diff: []byte(`dummydiff1`)}}},
+					{task: sourcegraphTask, stepResults: []execution.AfterStepResult{{Version: 2, Diff: []byte(`dummydiff2`)}}},
 				},
 			},
 			opts: NewCoordinatorOpts{},
@@ -87,10 +88,10 @@ func TestCoordinator_Execute(t *testing.T) {
 			wantCacheEntries: 2,
 			wantSpecs: []*batcheslib.ChangesetSpec{
 				buildSpecFor(testRepo1, func(spec *batcheslib.ChangesetSpec) {
-					spec.Commits[0].Diff = `dummydiff1`
+					spec.Commits[0].Diff = []byte(`dummydiff1`)
 				}),
 				buildSpecFor(testRepo2, func(spec *batcheslib.ChangesetSpec) {
-					spec.Commits[0].Diff = `dummydiff2`
+					spec.Commits[0].Diff = []byte(`dummydiff2`)
 				}),
 			},
 		},
@@ -133,7 +134,8 @@ func TestCoordinator_Execute(t *testing.T) {
 					{
 						task: srcCLITask,
 						stepResults: []execution.AfterStepResult{{
-							Diff: `dummydiff1`,
+							Version: 2,
+							Diff:    []byte(`dummydiff1`),
 							Outputs: map[string]interface{}{
 								"output1": "myOutputValue1",
 								"output2": map[string]interface{}{
@@ -171,10 +173,11 @@ func TestCoordinator_Execute(t *testing.T) {
 		batch_change_description=the description`
 					spec.Commits = []batcheslib.GitCommitDescription{
 						{
+							Version:     2,
 							Message:     "output1=myOutputValue1,output2=subFieldValue",
 							AuthorName:  "output1=myOutputValue1",
 							AuthorEmail: "output1=myOutputValue1",
-							Diff:        `dummydiff1`,
+							Diff:        []byte(`dummydiff1`),
 						},
 					}
 				}),
@@ -197,8 +200,8 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			executor: &dummyExecutor{
 				results: []taskResult{
-					{task: srcCLITask, stepResults: []execution.AfterStepResult{{Diff: nestedChangesDiff}}},
-					{task: sourcegraphTask, stepResults: []execution.AfterStepResult{{Diff: nestedChangesDiff}}},
+					{task: srcCLITask, stepResults: []execution.AfterStepResult{{Version: 2, Diff: nestedChangesDiff}}},
+					{task: sourcegraphTask, stepResults: []execution.AfterStepResult{{Version: 2, Diff: nestedChangesDiff}}},
 				},
 			},
 			opts: NewCoordinatorOpts{},
@@ -210,19 +213,19 @@ func TestCoordinator_Execute(t *testing.T) {
 			wantSpecs: []*batcheslib.ChangesetSpec{
 				buildSpecFor(testRepo1, func(spec *batcheslib.ChangesetSpec) {
 					spec.HeadRef = "refs/heads/" + testChangesetTemplate.Branch
-					spec.Commits[0].Diff = nestedChangesDiffSubdirA + nestedChangesDiffSubdirB
+					spec.Commits[0].Diff = []byte(nestedChangesDiffSubdirA + nestedChangesDiffSubdirB)
 				}),
 				buildSpecFor(testRepo2, func(spec *batcheslib.ChangesetSpec) {
 					spec.HeadRef = "refs/heads/in-directory-b"
-					spec.Commits[0].Diff = nestedChangesDiffSubdirB + nestedChangesDiffSubdirC
+					spec.Commits[0].Diff = []byte(nestedChangesDiffSubdirB + nestedChangesDiffSubdirC)
 				}),
 				buildSpecFor(testRepo1, func(spec *batcheslib.ChangesetSpec) {
 					spec.HeadRef = "refs/heads/in-directory-c"
-					spec.Commits[0].Diff = nestedChangesDiffSubdirC
+					spec.Commits[0].Diff = []byte(nestedChangesDiffSubdirC)
 				}),
 				buildSpecFor(testRepo2, func(spec *batcheslib.ChangesetSpec) {
 					spec.HeadRef = util.EnsureRefPrefix(testChangesetTemplate.Branch)
-					spec.Commits[0].Diff = nestedChangesDiffSubdirA
+					spec.Commits[0].Diff = []byte(nestedChangesDiffSubdirA)
 				}),
 			},
 		},
@@ -245,8 +248,8 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			executor: &dummyExecutor{
 				results: []taskResult{
-					{task: srcCLITask, stepResults: []execution.AfterStepResult{{Diff: `dummydiff1`, StepIndex: 0}}},
-					{task: sourcegraphTask, stepResults: []execution.AfterStepResult{{Diff: `dummydiff2`, StepIndex: 0}}},
+					{task: srcCLITask, stepResults: []execution.AfterStepResult{{Version: 2, Diff: []byte(`dummydiff1`), StepIndex: 0}}},
+					{task: sourcegraphTask, stepResults: []execution.AfterStepResult{{Version: 2, Diff: []byte(`dummydiff2`), StepIndex: 0}}},
 				},
 			},
 			opts: NewCoordinatorOpts{},
@@ -254,10 +257,10 @@ func TestCoordinator_Execute(t *testing.T) {
 			wantCacheEntries: 2,
 			wantSpecs: []*batcheslib.ChangesetSpec{
 				buildSpecFor(testRepo1, func(spec *batcheslib.ChangesetSpec) {
-					spec.Commits[0].Diff = `dummydiff1`
+					spec.Commits[0].Diff = []byte(`dummydiff1`)
 				}),
 				buildSpecFor(testRepo2, func(spec *batcheslib.ChangesetSpec) {
-					spec.Commits[0].Diff = `dummydiff2`
+					spec.Commits[0].Diff = []byte(`dummydiff2`)
 				}),
 			},
 		},
@@ -280,6 +283,7 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			tc.opts.Cache = c
 			tc.opts.Logger = logManager
+			tc.opts.BinaryDiffs = true
 
 			coord := Coordinator{
 				exec: tc.executor,
@@ -369,9 +373,9 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 	executor.results = []taskResult{{
 		task: task,
 		stepResults: []execution.AfterStepResult{
-			{StepIndex: 0, Diff: `step-0-diff`},
-			{StepIndex: 1, Diff: `step-1-diff`},
-			{StepIndex: 2, Diff: `step-2-diff`},
+			{Version: 2, StepIndex: 0, Diff: []byte(`step-0-diff`)},
+			{Version: 2, StepIndex: 1, Diff: []byte(`step-1-diff`)},
+			{Version: 2, StepIndex: 2, Diff: []byte(`step-2-diff`)},
 		},
 	}}
 
@@ -660,4 +664,4 @@ index 7f96c22..43df362 100644
 +var c = 3
 `
 
-const nestedChangesDiff = nestedChangesDiffSubdirA + nestedChangesDiffSubdirB + nestedChangesDiffSubdirC
+var nestedChangesDiff = []byte(nestedChangesDiffSubdirA + nestedChangesDiffSubdirB + nestedChangesDiffSubdirC)

@@ -5,10 +5,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/sourcegraph/src-cli/internal/batches/ui"
 	"github.com/sourcegraph/src-cli/internal/cmderrors"
-
-	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func init() {
@@ -47,15 +44,7 @@ Examples:
 		ctx, cancel := contextCancelOnInterrupt(context.Background())
 		defer cancel()
 
-		var execUI ui.ExecUI
-		if flags.textOnly {
-			execUI = &ui.JSONLines{}
-		} else {
-			out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
-			execUI = &ui.TUI{Out: out}
-		}
-
-		if err = executeBatchSpec(ctx, execUI, executeBatchSpecOpts{
+		if err = executeBatchSpec(ctx, executeBatchSpecOpts{
 			flags:  flags,
 			client: cfg.apiClient(flags.api, flagSet.Output()),
 			file:   file,

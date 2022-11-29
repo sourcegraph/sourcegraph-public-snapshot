@@ -297,7 +297,7 @@ func (ui *taskExecTUI) TaskChangesetSpecsBuilt(task *executor.Task, specs []*bat
 
 	var fileDiffs []*diff.FileDiff
 	for _, spec := range specs {
-		fd, err := diff.ParseMultiFileDiff([]byte(spec.Commits[0].Diff))
+		fd, err := diff.ParseMultiFileDiff(spec.Commits[0].Diff)
 		if err != nil {
 			ui.progress.Verbosef("%-*s failed to display status: %s", ui.maxRepoName, ts.displayName, err)
 			return
@@ -471,7 +471,7 @@ func (ui stepsExecTUI) StepOutputWriter(ctx context.Context, task *executor.Task
 	return executor.NoopStepOutputWriter{}
 }
 
-func (ui stepsExecTUI) StepFinished(idx int, diff string, changes git.Changes, outputs map[string]interface{}) {
+func (ui stepsExecTUI) StepFinished(idx int, diff []byte, changes git.Changes, outputs map[string]interface{}) {
 	// noop right now
 }
 func (ui stepsExecTUI) StepFailed(idx int, err error, exitCode int) {

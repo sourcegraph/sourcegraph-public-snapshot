@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	cloud.google.com/go/storage v1.28.0
-	github.com/Masterminds/semver v1.5.0
 	github.com/creack/goselect v0.1.2
 	github.com/derision-test/glock v0.0.0-20210316032053-f5b74334bb29
 	github.com/dineshappavoo/basex v0.0.0-20170425072625-481a6f6dc663
@@ -23,7 +22,7 @@ require (
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/scip v0.2.3
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20221128221602-4b48d5d69f5d
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20221129022201-2804729b069c
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/net v0.2.0
 	golang.org/x/sync v0.1.0
@@ -39,11 +38,9 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.1 // indirect
 	cloud.google.com/go/iam v0.5.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
+	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.15.0+incompatible // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
-	github.com/alecthomas/kingpin v2.2.6+incompatible // indirect
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
-	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
 	github.com/aokoli/goutils v1.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/bufbuild/buf v1.4.0 // indirect
@@ -52,9 +49,7 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f // indirect
 	github.com/cockroachdb/redact v1.1.3 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
-	github.com/dave/jennifer v1.6.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/derision-test/go-mockgen v1.3.7 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.3.0-java // indirect
 	github.com/fatih/color v1.13.0 // indirect
@@ -85,7 +80,6 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.17 // indirect
-	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect

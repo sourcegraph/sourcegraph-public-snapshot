@@ -29,9 +29,10 @@ type Coordinator struct {
 type NewCoordinatorOpts struct {
 	ExecOpts NewExecutorOpts
 
-	Cache     cache.Cache
-	Logger    log.LogManager
-	GlobalEnv []string
+	Cache       cache.Cache
+	Logger      log.LogManager
+	GlobalEnv   []string
+	BinaryDiffs bool
 
 	IsRemote bool
 }
@@ -89,7 +90,7 @@ func (c *Coordinator) checkCacheForTask(ctx context.Context, batchSpec *batchesl
 		// add it to the list of specs that are displayed to the user and
 		// send to the server. Instead, we can just report that the task is
 		// complete and move on.
-		if task.CachedStepResult.Diff == "" {
+		if len(task.CachedStepResult.Diff) == 0 {
 			return specs, true, nil
 		}
 
@@ -101,6 +102,10 @@ func (c *Coordinator) checkCacheForTask(ctx context.Context, batchSpec *batchesl
 }
 
 func (c *Coordinator) buildChangesetSpecs(task *Task, batchSpec *batcheslib.BatchSpec, result execution.AfterStepResult) ([]*batcheslib.ChangesetSpec, error) {
+	version := 1
+	if c.opts.BinaryDiffs {
+		version = 2
+	}
 	input := &batcheslib.ChangesetSpecInput{
 		Repository: batcheslib.Repository{
 			ID:          task.Repository.ID,
@@ -115,13 +120,14 @@ func (c *Coordinator) buildChangesetSpecs(task *Task, batchSpec *batcheslib.Batc
 		TransformChanges:      batchSpec.TransformChanges,
 
 		Result: execution.AfterStepResult{
+			Version:      version,
 			Diff:         result.Diff,
 			ChangedFiles: result.ChangedFiles,
 			Outputs:      result.Outputs,
 		},
 	}
 
-	return batcheslib.BuildChangesetSpecs(input)
+	return batcheslib.BuildChangesetSpecs(input, c.opts.BinaryDiffs)
 }
 
 func (c *Coordinator) loadCachedStepResults(ctx context.Context, task *Task, globalEnv []string) error {
@@ -155,7 +161,7 @@ func (c *Coordinator) buildSpecs(ctx context.Context, batchSpec *batcheslib.Batc
 
 	// If the steps didn't result in any diff, we don't need to create a
 	// changeset spec that's displayed to the user and send to the server.
-	if lastStepResult.Diff == "" {
+	if len(lastStepResult.Diff) == 0 {
 		return nil, nil
 	}
 

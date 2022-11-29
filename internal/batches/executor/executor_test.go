@@ -455,7 +455,7 @@ func TestExecutor_Integration(t *testing.T) {
 
 				lastStepResult := taskResult.stepResults[len(taskResult.stepResults)-1]
 
-				fileDiffs, err := diff.ParseMultiFileDiff([]byte(lastStepResult.Diff))
+				fileDiffs, err := diff.ParseMultiFileDiff(lastStepResult.Diff)
 				if err != nil {
 					t.Fatalf("failed to parse diff: %s", err)
 				}
@@ -517,14 +517,14 @@ func TestExecutor_CachedStepResults(t *testing.T) {
 			},
 		}
 
-		cachedDiff := `diff --git README.md README.md
+		cachedDiff := []byte(`diff --git README.md README.md
 index 02a19af..c9644dd 100644
 --- README.md
 +++ README.md
 @@ -1 +1,2 @@
  # Welcome to the README
 +foobar
-`
+`)
 
 		task := &Task{
 			BatchChangeAttributes: &template.BatchChangeAttributes{},
@@ -533,6 +533,7 @@ index 02a19af..c9644dd 100644
 			},
 			CachedStepResultFound: true,
 			CachedStepResult: execution.AfterStepResult{
+				Version:   2,
 				StepIndex: 0,
 				Diff:      cachedDiff,
 				Outputs:   map[string]interface{}{},
@@ -579,7 +580,7 @@ This repository is used to test opening and closing pull request with Automation
 			},
 		}
 
-		cachedDiff := `diff --git README.md README.md
+		cachedDiff := []byte(`diff --git README.md README.md
 index 1914491..cd2ccbf 100644
 --- README.md
 +++ README.md
@@ -598,9 +599,9 @@ index 0000000..888e1ec
 +++ README.txt
 @@ -0,0 +1 @@
 +this is step 1
-`
+`)
 
-		wantFinalDiff := `diff --git README.md README.md
+		wantFinalDiff := []byte(`diff --git README.md README.md
 index 1914491..d6782d3 100644
 --- README.md
 +++ README.md
@@ -628,7 +629,7 @@ index 0000000..257ae8e
 +++ my-output.txt
 @@ -0,0 +1 @@
 +this is step 5
-`
+`)
 
 		task := &Task{
 			Repository:            testRepo1,
@@ -648,6 +649,7 @@ echo "previous_step.modified_files=${{ previous_step.modified_files }}" >> READM
 			},
 			CachedStepResultFound: true,
 			CachedStepResult: execution.AfterStepResult{
+				Version:   2,
 				StepIndex: 2,
 				Diff:      cachedDiff,
 				Outputs: map[string]interface{}{
@@ -705,7 +707,7 @@ This repository is used to test opening and closing pull request with Automation
 			},
 		}
 
-		wantFinalDiff := `diff --git README.md README.md
+		wantFinalDiff := []byte(`diff --git README.md README.md
 index 3040106..5f2f924 100644
 --- README.md
 +++ README.md
@@ -713,7 +715,7 @@ index 3040106..5f2f924 100644
  # automation-testing
  This repository is used to test opening and closing pull request with Automation
 +hello world
-`
+`)
 
 		task := &Task{
 			Repository:            testRepo1,
@@ -724,8 +726,9 @@ index 3040106..5f2f924 100644
 			},
 			CachedStepResultFound: true,
 			CachedStepResult: execution.AfterStepResult{
+				Version:      2,
 				StepIndex:    0,
-				Diff:         "",
+				Diff:         []byte(""),
 				Outputs:      map[string]interface{}{},
 				ChangedFiles: git.Changes{},
 				Stdout:       "hello world",

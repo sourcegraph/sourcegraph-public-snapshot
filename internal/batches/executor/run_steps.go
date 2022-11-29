@@ -54,6 +54,8 @@ type RunStepsOpts struct {
 	// ForceRoot forces Docker containers to be run as root:root, rather than
 	// whatever the image's default user and group are.
 	ForceRoot bool
+
+	BinaryDiffs bool
 }
 
 func RunSteps(ctx context.Context, opts *RunStepsOpts) (stepResults []execution.AfterStepResult, err error) {
@@ -120,8 +122,8 @@ func RunSteps(ctx context.Context, opts *RunStepsOpts) (stepResults []execution.
 
 		// If the previous steps made any modifications to the workspace yet,
 		// apply them.
-		if opts.Task.CachedStepResult.Diff != "" {
-			if err := ws.ApplyDiff(ctx, []byte(opts.Task.CachedStepResult.Diff)); err != nil {
+		if len(opts.Task.CachedStepResult.Diff) > 0 {
+			if err := ws.ApplyDiff(ctx, opts.Task.CachedStepResult.Diff); err != nil {
 				return nil, errors.Wrap(err, "applying diff of cache result")
 			}
 		}
@@ -195,12 +197,17 @@ func RunSteps(ctx context.Context, opts *RunStepsOpts) (stepResults []execution.
 			return stepResults, errors.Wrap(err, "getting changed files in step")
 		}
 
+		version := 1
+		if opts.BinaryDiffs {
+			version = 2
+		}
 		stepResult := execution.AfterStepResult{
+			Version:      version,
 			ChangedFiles: changes,
 			Stdout:       stdoutBuffer.String(),
 			Stderr:       stderrBuffer.String(),
 			StepIndex:    i,
-			Diff:         string(stepDiff),
+			Diff:         stepDiff,
 			// Those will be set below.
 			Outputs: make(map[string]interface{}),
 		}

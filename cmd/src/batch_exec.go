@@ -37,6 +37,7 @@ type executorModeFlags struct {
 	tempDir           string
 	repoDir           string
 	workspaceFilesDir string
+	binaryDiffs       bool
 }
 
 func newExecutorModeFlags(flagSet *flag.FlagSet) (f *executorModeFlags) {
@@ -47,6 +48,7 @@ func newExecutorModeFlags(flagSet *flag.FlagSet) (f *executorModeFlags) {
 	flagSet.StringVar(&f.tempDir, "tmp", "", "Directory for storing temporary data.")
 	flagSet.StringVar(&f.repoDir, "repo", "", "Path of the checked out repo on disk.")
 	flagSet.StringVar(&f.workspaceFilesDir, "workspaceFiles", "", "Path of workspace files on disk.")
+	flagSet.BoolVar(&f.binaryDiffs, "binaryDiffs", false, "Whether to encode diffs as base64.")
 
 	return f
 }
@@ -121,7 +123,7 @@ Examples:
 }
 
 func executeBatchSpecInWorkspaces(ctx context.Context, flags *executorModeFlags) (err error) {
-	ui := &ui.JSONLines{}
+	ui := &ui.JSONLines{BinaryDiffs: flags.binaryDiffs}
 
 	// Ensure the temp dir exists.
 	tempDir := flags.tempDir
@@ -211,6 +213,7 @@ func executeBatchSpecInWorkspaces(ctx context.Context, flags *executorModeFlags)
 		RepoArchive:      &repozip.NoopArchive{},
 		UI:               taskExecUI.StepsExecutionUI(task),
 		ForceRoot:        !flags.runAsImageUser,
+		BinaryDiffs:      flags.binaryDiffs,
 	}
 	results, err := executor.RunSteps(ctx, opts)
 

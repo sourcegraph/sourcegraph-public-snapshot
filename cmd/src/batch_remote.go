@@ -52,7 +52,12 @@ Examples:
 			Client: cfg.apiClient(flags.api, flagSet.Output()),
 		})
 
-		if err := validateSourcegraphVersionConstraint(ctx, svc); err != nil {
+		ffs, err := svc.DetermineFeatureFlags(ctx)
+		if err != nil {
+			return err
+		}
+
+		if err := validateSourcegraphVersionConstraint(ctx, ffs); err != nil {
 			return err
 		}
 

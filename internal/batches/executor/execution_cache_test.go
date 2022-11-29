@@ -29,7 +29,7 @@ var cacheRepo2 = batches.Repository{
 	FileMatches: []string{"main.go"},
 }
 
-const testDiff = `diff --git a/README.md b/README.md
+var testDiff = []byte(`diff --git a/README.md b/README.md
 new file mode 100644
 index 0000000..3363c39
 --- /dev/null
@@ -38,7 +38,7 @@ index 0000000..3363c39
 +# README
 +
 +This is the readme
-`
+`)
 
 func TestExecutionDiskCache_GetSet(t *testing.T) {
 	ctx := context.Background()
@@ -58,7 +58,8 @@ func TestExecutionDiskCache_GetSet(t *testing.T) {
 	}
 
 	value := execution.AfterStepResult{
-		Diff: testDiff,
+		Version: 2,
+		Diff:    testDiff,
 		ChangedFiles: git.Changes{
 			Added: []string{"README.md"},
 		},
