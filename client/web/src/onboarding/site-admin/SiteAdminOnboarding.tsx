@@ -74,7 +74,7 @@ function useSiteAdminOnboardingSteps(): UseSiteAdminOnboardingReturnType {
                     data =>
                         [
                             {
-                                id: 'add-code-host',
+                                id: 'AddCodeHost',
                                 title: 'Add your code host',
                                 url: '/site-admin/external-services/new',
                                 description:
@@ -90,7 +90,7 @@ function useSiteAdminOnboardingSteps(): UseSiteAdminOnboardingReturnType {
                             //     isCompleted: !!data.repositories?.totalCount && data.repositories?.totalCount > 0,
                             // },
                             {
-                                id: 'SSO',
+                                id: 'ConfigureSSO',
                                 title: 'Configure SSO',
                                 url: '/help/admin/auth#user-authentication-sso',
                                 description:
@@ -98,7 +98,7 @@ function useSiteAdminOnboardingSteps(): UseSiteAdminOnboardingReturnType {
                                 isCompleted: data.site.authProviders.nodes.filter(node => !node.isBuiltin).length > 0,
                             },
                             {
-                                id: 'run-search',
+                                id: 'RunSearch',
                                 title: 'Search your code',
                                 description: (
                                     <span>
@@ -179,9 +179,15 @@ const SiteAdminOnboardingContent: React.FunctionComponent<SiteAdminOnboardingCon
                                     target="_blank"
                                     rel="noreferrer"
                                     onClick={() =>
-                                        telemetryService.log('SiteAdminOnboardingStepClicked', {
-                                            id: step.id,
-                                        })
+                                        telemetryService.log(
+                                            'SiteAdminOnboardingStepClicked',
+                                            {
+                                                id: step.id,
+                                            },
+                                            {
+                                                id: step.id,
+                                            }
+                                        )
                                     }
                                 >
                                     {step.title}
