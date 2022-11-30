@@ -15,7 +15,9 @@ import { Link, useWindowSize, VIEWPORT_SM } from '@sourcegraph/wildcard'
 import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
+import { SiteAdminOnboarding } from '../../onboarding/site-admin/SiteAdminOnboarding'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -55,6 +57,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
     const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
     const { width } = useWindowSize()
+    const [isAdminOnboardingEnabled] = useFeatureFlag('enable-admin-onboarding', true) // TODO: change default to false
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -78,7 +81,12 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                     </div>
                 </div>
             )}
+
             <div className={styles.searchContainer}>
+                {props?.authenticatedUser?.siteAdmin && isAdminOnboardingEnabled && (
+                    <SiteAdminOnboarding className="mb-4" telemetryService={props.telemetryService} />
+                )}
+
                 <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} source="home" />
             </div>
             <div

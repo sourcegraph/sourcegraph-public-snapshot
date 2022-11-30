@@ -17,6 +17,7 @@ export type FeatureFlagName =
     | 'user-management-disabled'
     | 'search-results-keyboard-navigation'
     | 'enable-streaming-git-blame'
+    | 'enable-admin-onboarding'
 
 interface OrgFlagOverride {
     orgID: string
