@@ -84,6 +84,8 @@ func Main() {
 	})
 	defer liblog.Sync()
 
+	logger := sglog.Scoped("server", "Sourcegraph server")
+
 	// Ensure CONFIG_DIR and DATA_DIR
 
 	// Load $CONFIG_DIR/env before we set any defaults
@@ -169,8 +171,12 @@ func Main() {
 		procfile = append(procfile, monitoringLines...)
 	}
 
+	// TODO(blobstore): remove minio support
 	if minioLines := maybeMinio(); len(minioLines) != 0 {
 		procfile = append(procfile, minioLines...)
+	}
+	if blobstoreLines := maybeBlobstore(logger); len(blobstoreLines) != 0 {
+		procfile = append(procfile, blobstoreLines...)
 	}
 
 	redisStoreLine, err := maybeRedisStoreProcFile()
