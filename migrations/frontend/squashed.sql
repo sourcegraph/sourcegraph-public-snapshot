@@ -3279,6 +3279,56 @@ CREATE SEQUENCE registry_extensions_id_seq
 
 ALTER SEQUENCE registry_extensions_id_seq OWNED BY registry_extensions.id;
 
+CREATE TABLE repo_directories (
+    id integer NOT NULL,
+    repo_id integer NOT NULL,
+    absolute_path text NOT NULL,
+    parent_id integer
+);
+
+CREATE SEQUENCE repo_directories_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_directories_id_seq OWNED BY repo_directories.id;
+
+CREATE TABLE repo_file_contents (
+    id integer NOT NULL,
+    text_contents text NOT NULL
+);
+
+CREATE SEQUENCE repo_file_contents_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_file_contents_id_seq OWNED BY repo_file_contents.id;
+
+CREATE TABLE repo_files (
+    id integer NOT NULL,
+    directory_id integer NOT NULL,
+    version_id integer NOT NULL,
+    base_name text NOT NULL,
+    content_id integer NOT NULL
+);
+
+CREATE SEQUENCE repo_files_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_files_id_seq OWNED BY repo_files.id;
+
 CREATE SEQUENCE repo_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -3330,6 +3380,27 @@ COMMENT ON COLUMN repo_statistics.cloning IS 'Number of repositories that are NO
 COMMENT ON COLUMN repo_statistics.cloned IS 'Number of repositories that are NOT soft-deleted and not blocked and cloned by gitserver';
 
 COMMENT ON COLUMN repo_statistics.failed_fetch IS 'Number of repositories that are NOT soft-deleted and not blocked and have last_error set in gitserver_repos table';
+
+CREATE TABLE repo_versions (
+    id integer NOT NULL,
+    repo_id integer NOT NULL,
+    external_id text NOT NULL,
+    path_cover_color integer NOT NULL,
+    path_cover_index integer NOT NULL,
+    path_cover_reachability jsonb NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE repo_versions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_versions_id_seq OWNED BY repo_versions.id;
 
 CREATE TABLE saved_searches (
     id integer NOT NULL,
@@ -3859,6 +3930,14 @@ ALTER TABLE ONLY registry_extensions ALTER COLUMN id SET DEFAULT nextval('regist
 
 ALTER TABLE ONLY repo ALTER COLUMN id SET DEFAULT nextval('repo_id_seq'::regclass);
 
+ALTER TABLE ONLY repo_directories ALTER COLUMN id SET DEFAULT nextval('repo_directories_id_seq'::regclass);
+
+ALTER TABLE ONLY repo_file_contents ALTER COLUMN id SET DEFAULT nextval('repo_file_contents_id_seq'::regclass);
+
+ALTER TABLE ONLY repo_files ALTER COLUMN id SET DEFAULT nextval('repo_files_id_seq'::regclass);
+
+ALTER TABLE ONLY repo_versions ALTER COLUMN id SET DEFAULT nextval('repo_versions_id_seq'::regclass);
+
 ALTER TABLE ONLY saved_searches ALTER COLUMN id SET DEFAULT nextval('saved_searches_id_seq'::regclass);
 
 ALTER TABLE ONLY search_contexts ALTER COLUMN id SET DEFAULT nextval('search_contexts_id_seq'::regclass);
@@ -4171,6 +4250,15 @@ ALTER TABLE ONLY registry_extension_releases
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY repo_directories
+    ADD CONSTRAINT repo_directories_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY repo_file_contents
+    ADD CONSTRAINT repo_file_contents_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY repo_files
+    ADD CONSTRAINT repo_files_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_pkey PRIMARY KEY (repo_id, key) INCLUDE (value);
 
@@ -4185,6 +4273,9 @@ ALTER TABLE ONLY repo_permissions
 
 ALTER TABLE ONLY repo
     ADD CONSTRAINT repo_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY repo_versions
+    ADD CONSTRAINT repo_versions_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_pkey PRIMARY KEY (id);
@@ -4554,9 +4645,15 @@ CREATE INDEX repo_created_at ON repo USING btree (created_at);
 
 CREATE INDEX repo_description_trgm_idx ON repo USING gin (lower(description) gin_trgm_ops);
 
+CREATE INDEX repo_directories_index_absolute_path ON repo_directories USING btree (repo_id, absolute_path);
+
 CREATE INDEX repo_dotcom_indexable_repos_idx ON repo USING btree (stars DESC NULLS LAST) INCLUDE (id, name) WHERE ((deleted_at IS NULL) AND (blocked IS NULL) AND (((stars >= 5) AND (NOT COALESCE(fork, false)) AND (NOT archived)) OR (lower((name)::text) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'::text)));
 
 CREATE UNIQUE INDEX repo_external_unique_idx ON repo USING btree (external_service_type, external_service_id, external_id);
+
+CREATE INDEX repo_files_directory ON repo_files USING btree (directory_id);
+
+CREATE INDEX repo_files_version ON repo_files USING btree (version_id);
 
 CREATE INDEX repo_fork ON repo USING btree (fork);
 
@@ -4583,6 +4680,8 @@ CREATE INDEX repo_stars_desc_id_desc_idx ON repo USING btree (stars DESC NULLS L
 CREATE INDEX repo_stars_idx ON repo USING btree (stars DESC NULLS LAST);
 
 CREATE INDEX repo_uri_idx ON repo USING btree (uri);
+
+CREATE INDEX repo_versions_external_id ON repo_versions USING btree (external_id);
 
 CREATE UNIQUE INDEX search_contexts_name_namespace_org_id_unique ON search_contexts USING btree (name, namespace_org_id) WHERE (namespace_org_id IS NOT NULL);
 
@@ -5003,8 +5102,26 @@ ALTER TABLE ONLY registry_extensions
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_publisher_user_id_fkey FOREIGN KEY (publisher_user_id) REFERENCES users(id);
 
+ALTER TABLE ONLY repo_directories
+    ADD CONSTRAINT repo_directories_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES repo_directories(id);
+
+ALTER TABLE ONLY repo_directories
+    ADD CONSTRAINT repo_directories_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY repo_files
+    ADD CONSTRAINT repo_files_content_id_fkey FOREIGN KEY (content_id) REFERENCES repo_file_contents(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY repo_files
+    ADD CONSTRAINT repo_files_directory_id_fkey FOREIGN KEY (directory_id) REFERENCES repo_directories(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY repo_files
+    ADD CONSTRAINT repo_files_version_id_fkey FOREIGN KEY (version_id) REFERENCES repo_versions(id) ON DELETE CASCADE DEFERRABLE;
+
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY repo_versions
+    ADD CONSTRAINT repo_versions_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY saved_searches
     ADD CONSTRAINT saved_searches_org_id_fkey FOREIGN KEY (org_id) REFERENCES orgs(id);

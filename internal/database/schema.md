@@ -2662,7 +2662,9 @@ Referenced by:
     TABLE "gitserver_repos" CONSTRAINT "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "repo_directories" CONSTRAINT "repo_directories_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "repo_versions" CONSTRAINT "repo_versions_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -2674,6 +2676,59 @@ Triggers:
     trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert()
     trig_recalc_repo_statistics_on_repo_update AFTER UPDATE ON repo REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_update()
     trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()
+
+```
+
+# Table "public.repo_directories"
+```
+    Column     |  Type   | Collation | Nullable |                   Default                    
+---------------+---------+-----------+----------+----------------------------------------------
+ id            | integer |           | not null | nextval('repo_directories_id_seq'::regclass)
+ repo_id       | integer |           | not null | 
+ absolute_path | text    |           | not null | 
+ parent_id     | integer |           |          | 
+Indexes:
+    "repo_directories_pkey" PRIMARY KEY, btree (id)
+    "repo_directories_index_absolute_path" btree (repo_id, absolute_path)
+Foreign-key constraints:
+    "repo_directories_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES repo_directories(id)
+    "repo_directories_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "repo_directories" CONSTRAINT "repo_directories_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES repo_directories(id)
+    TABLE "repo_files" CONSTRAINT "repo_files_directory_id_fkey" FOREIGN KEY (directory_id) REFERENCES repo_directories(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+# Table "public.repo_file_contents"
+```
+    Column     |  Type   | Collation | Nullable |                    Default                     
+---------------+---------+-----------+----------+------------------------------------------------
+ id            | integer |           | not null | nextval('repo_file_contents_id_seq'::regclass)
+ text_contents | text    |           | not null | 
+Indexes:
+    "repo_file_contents_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "repo_files" CONSTRAINT "repo_files_content_id_fkey" FOREIGN KEY (content_id) REFERENCES repo_file_contents(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+# Table "public.repo_files"
+```
+    Column    |  Type   | Collation | Nullable |                Default                 
+--------------+---------+-----------+----------+----------------------------------------
+ id           | integer |           | not null | nextval('repo_files_id_seq'::regclass)
+ directory_id | integer |           | not null | 
+ version_id   | integer |           | not null | 
+ base_name    | text    |           | not null | 
+ content_id   | integer |           | not null | 
+Indexes:
+    "repo_files_pkey" PRIMARY KEY, btree (id)
+    "repo_files_directory" btree (directory_id)
+    "repo_files_version" btree (version_id)
+Foreign-key constraints:
+    "repo_files_content_id_fkey" FOREIGN KEY (content_id) REFERENCES repo_file_contents(id) ON DELETE CASCADE DEFERRABLE
+    "repo_files_directory_id_fkey" FOREIGN KEY (directory_id) REFERENCES repo_directories(id) ON DELETE CASCADE DEFERRABLE
+    "repo_files_version_id_fkey" FOREIGN KEY (version_id) REFERENCES repo_versions(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -2744,6 +2799,28 @@ Indexes:
 **soft_deleted**: Number of repositories that are soft-deleted and not blocked
 
 **total**: Number of repositories that are not soft-deleted and not blocked
+
+# Table "public.repo_versions"
+```
+         Column          |           Type           | Collation | Nullable |                  Default                  
+-------------------------+--------------------------+-----------+----------+-------------------------------------------
+ id                      | integer                  |           | not null | nextval('repo_versions_id_seq'::regclass)
+ repo_id                 | integer                  |           | not null | 
+ external_id             | text                     |           | not null | 
+ path_cover_color        | integer                  |           | not null | 
+ path_cover_index        | integer                  |           | not null | 
+ path_cover_reachability | jsonb                    |           | not null | 
+ updated_at              | timestamp with time zone |           | not null | now()
+ created_at              | timestamp with time zone |           | not null | now()
+Indexes:
+    "repo_versions_pkey" PRIMARY KEY, btree (id)
+    "repo_versions_external_id" btree (external_id)
+Foreign-key constraints:
+    "repo_versions_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "repo_files" CONSTRAINT "repo_files_version_id_fkey" FOREIGN KEY (version_id) REFERENCES repo_versions(id) ON DELETE CASCADE DEFERRABLE
+
+```
 
 # Table "public.saved_searches"
 ```
