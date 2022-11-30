@@ -509,8 +509,8 @@ func scanSearchContexts(rows *sql.Rows) ([]*types.SearchContext, error) {
 			&dbutil.NullString{S: &sc.Query},
 			&dbutil.NullString{S: &sc.NamespaceUserName},
 			&dbutil.NullString{S: &sc.NamespaceOrgName},
-			&sc.Starred,
 			&sc.Default,
+			&sc.Starred,
 		)
 		if err != nil {
 			return nil, err
@@ -657,7 +657,7 @@ func (s *searchContextsStore) SetUserDefaultSearchContextID(ctx context.Context,
 	if searchContextID == 0 {
 		// If the search context ID is 0, we want to delete the default search context for the user.
 		// This will cause the user to use the global search context as their default.
-		return s.Exec(ctx, sqlf.Sprintf("DELETE FROM user_default_search_contexts WHERE user_id = %d", userID))
+		return s.Exec(ctx, sqlf.Sprintf("DELETE FROM search_context_default WHERE user_id = %d", userID))
 	}
 
 	q := sqlf.Sprintf(
@@ -668,11 +668,13 @@ func (s *searchContextsStore) SetUserDefaultSearchContextID(ctx context.Context,
 	return s.Exec(ctx, q)
 }
 
+// 🚨 SECURITY: The caller must ensure that the actor is the user creating the star for themselves.
 func (s *searchContextsStore) CreateSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error {
 	q := sqlf.Sprintf(`INSERT INTO search_context_stars (user_id, search_context_id) VALUES (%d, %d)`, userID, searchContextID)
 	return s.Exec(ctx, q)
 }
 
+// 🚨 SECURITY: The caller must ensure that the actor is the user deleting the star for themselves.
 func (s *searchContextsStore) DeleteSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error {
 	q := sqlf.Sprintf(`DELETE FROM search_context_stars WHERE user_id = %d AND search_context_id = %d`, userID, searchContextID)
 	return s.Exec(ctx, q)

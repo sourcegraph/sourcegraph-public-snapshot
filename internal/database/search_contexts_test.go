@@ -1007,3 +1007,128 @@ func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
 		})
 	}
 }
+
+func getDefaultContext(searchContexts []*types.SearchContext) *types.SearchContext {
+	for _, c := range searchContexts {
+		if c.Default {
+			return c
+		}
+	}
+	return nil
+}
+
+func TestSearchContexts_DefaultContexts(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	t.Parallel()
+	internalCtx := actor.WithInternalActor(context.Background())
+	u := db.Users()
+	sc := db.SearchContexts()
+
+	user1, err := u.Create(internalCtx, NewUser{Username: "u1", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	err = u.SetIsSiteAdmin(internalCtx, user1.ID, false)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	// Use a different user to list the search contexts so that we can test that user's default search contexts
+	userCtx := actor.WithActor(internalCtx, actor.FromUser(user1.ID))
+
+	searchContexts, err := createSearchContexts(userCtx, sc, []*types.SearchContext{
+		{Name: "A-user-level", Public: true, NamespaceUserID: user1.ID},
+		{Name: "B-user-level", Public: false, NamespaceUserID: user1.ID},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Global context should be the default
+	gotSearchContexts, err := sc.ListSearchContexts(userCtx, ListSearchContextsPageOptions{First: 3}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defaultContext := getDefaultContext(gotSearchContexts)
+	if defaultContext == nil || defaultContext.Name != "global" {
+		t.Fatalf("Expected global context to be the default, got %+v", defaultContext)
+	}
+
+	// Set user1 has a default search context of searchContexts[1]
+	err = sc.SetUserDefaultSearchContextID(userCtx, user1.ID, searchContexts[1].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// B-user-level context should be the default
+	gotSearchContexts, err = sc.ListSearchContexts(userCtx, ListSearchContextsPageOptions{First: 3}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defaultContext = getDefaultContext(gotSearchContexts)
+	if defaultContext == nil || defaultContext.Name != "B-user-level" {
+		t.Fatalf("Expected B-user-level context to be the default, got %+v", defaultContext)
+	}
+
+	// Set user1 default context back to global
+	err = sc.SetUserDefaultSearchContextID(userCtx, user1.ID, gotSearchContexts[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Global context should be the default again
+	gotSearchContexts, err = sc.ListSearchContexts(userCtx, ListSearchContextsPageOptions{First: 3}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defaultContext = getDefaultContext(gotSearchContexts)
+	if defaultContext == nil || defaultContext.Name != "global" {
+		t.Fatalf("Expected global context to be the default, got %+v", defaultContext)
+	}
+}
+
+func getStarredContexts(searchContexts []*types.SearchContext) []*types.SearchContext {
+	var starredContexts []*types.SearchContext
+	for _, c := range searchContexts {
+		if c.Starred {
+			starredContexts = append(starredContexts, c)
+		}
+	}
+	return starredContexts
+}
+
+func TestSearchContexts_StarringContexts(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	t.Parallel()
+	internalCtx := actor.WithInternalActor(context.Background())
+	u := db.Users()
+	sc := db.SearchContexts()
+
+	user1, err := u.Create(internalCtx, NewUser{Username: "u1", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+	err = u.SetIsSiteAdmin(internalCtx, user1.ID, false)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	// Use a different user to list the search contexts so that we can test that user's starred search contexts
+	userCtx := actor.WithActor(internalCtx, actor.FromUser(user1.ID))
+
+	searchContexts, err := createSearchContexts(userCtx, sc, []*types.SearchContext{
+		{Name: "A-user-level", Public: true, NamespaceUserID: user1.ID},
+		{Name: "B-user-level", Public: false, NamespaceUserID: user1.ID},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create star
+	err = sc.SetUserDefaultSearchContextID(userCtx, user1.ID, searchContexts[1].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
