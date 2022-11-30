@@ -245,11 +245,15 @@ func main() {
 		}
 
 		mainOrg, orgRepos := categorizeOrgRepos(cfg, repos, orgs)
+
+		// 0.5% repos with only users attached
 		amountReposWithOnlyUsers := int(math.Ceil(float64(len(repos)) * 0.005))
 		reposWithOnlyUsers := orgRepos[mainOrg][:amountReposWithOnlyUsers]
+		// slice out the user repos
 		orgRepos[mainOrg] = orgRepos[mainOrg][amountReposWithOnlyUsers:]
-		_ = categorizeTeamRepos(cfg, orgRepos[mainOrg], teams)
-		_ = categorizeUserRepos(reposWithOnlyUsers, users)
+
+		teamRepos := categorizeTeamRepos(cfg, orgRepos[mainOrg], teams)
+		userRepos := categorizeUserRepos(reposWithOnlyUsers, users)
 
 		//if cfg.generateTokens {
 		//	tg := group.NewWithResults[userToken]().WithMaxConcurrency(1000)
