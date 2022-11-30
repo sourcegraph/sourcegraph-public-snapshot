@@ -195,8 +195,8 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
     }
-
-    useEffect(() => {
+    
+    const setCookie = () => {
         if (
             props.isSourcegraphDotCom &&
             props.authenticatedUser &&
@@ -205,7 +205,11 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
             document.cookie = `displayName=${props.authenticatedUser.displayName || ''}`
             document.cookie = `email=${props.authenticatedUser.email}`
         }
-    }, [])
+    }
+
+    useEffect(() => {
+        setCookie()
+    }, [props.authenticatedUser, props.isSourcegraphDotCom])
 
     return (
         <div
