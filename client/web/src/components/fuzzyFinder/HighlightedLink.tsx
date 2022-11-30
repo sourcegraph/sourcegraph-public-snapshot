@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react'
 
 import classNames from 'classnames'
+
 import { Link } from '@sourcegraph/wildcard'
 
 import styles from './HighlightedLink.module.scss'
