@@ -433,6 +433,32 @@
           "Comment": "An auto-generated identifier."
         },
         {
+          "Name": "protocol_version",
+          "Index": 7,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The version of the SCIP protocol used to encode this index."
+        },
+        {
+          "Name": "text_document_encoding",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The encoding of the text documents within this index. May affect range boundaries."
+        },
+        {
           "Name": "tool_arguments",
           "Index": 5,
           "TypeName": "text[]",
