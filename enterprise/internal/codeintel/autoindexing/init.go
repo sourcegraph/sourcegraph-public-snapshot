@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
@@ -31,13 +30,12 @@ func GetService(
 	policiesSvc PoliciesService,
 	gitserver GitserverClient,
 ) *Service {
-	svc, _ := initServiceMemo.Init(serviceDependencies{
-		db,
-		uploadSvc,
-		depsSvc,
-		policiesSvc,
-		gitserver,
-	})
+	store := store.New(db, scopedContext("store"))
+	symbolsClient := symbols.DefaultClient
+	repoUpdater := repoupdater.DefaultClient
+	inferenceSvc := inference.NewService(db)
+
+	svc := newService(store, uploadSvc, inferenceSvc, repoUpdater, gitserver, symbolsClient, scopedContext("service"))
 
 	return svc
 }
@@ -49,17 +47,6 @@ type serviceDependencies struct {
 	policiesSvc PoliciesService
 	gitserver   GitserverClient
 }
-
-var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
-	store := store.New(deps.db, scopedContext("store"))
-	symbolsClient := symbols.DefaultClient
-	repoUpdater := repoupdater.DefaultClient
-	inferenceSvc := inference.NewService(deps.db)
-
-	svc := newService(store, deps.uploadSvc, inferenceSvc, repoUpdater, deps.gitserver, symbolsClient, scopedContext("service"))
-
-	return svc, nil
-})
 
 func scopedContext(component string) *observation.Context {
 	return observation.ScopedContext("codeintel", "autoindexing", component)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -44,13 +45,26 @@ type operations struct {
 	expireFailedRecords         *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
-	m := metrics.NewREDMetrics(
-		observationContext.Registerer,
+var m = memo.NewMemoizedConstructorWithArg(func(r prometheus.Registerer) (*metrics.REDMetrics, error) {
+	return metrics.NewREDMetrics(
+		r,
 		"codeintel_autoindexing_store",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
-	)
+	), nil
+})
+
+var indexesInsertedCounterMemo = memo.NewMemoizedConstructorWithArg(func(r prometheus.Registerer) (prometheus.Counter, error) {
+	indexesInsertedCounter := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_codeintel_dbstore_indexes_inserted",
+		Help: "The number of codeintel index records inserted.",
+	})
+	r.MustRegister(indexesInsertedCounter)
+	return indexesInsertedCounter, nil
+})
+
+func newOperations(observationContext *observation.Context) *operations {
+	m, _ := m.Init(observationContext.Registerer)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
@@ -60,11 +74,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		})
 	}
 
-	indexesInsertedCounter := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_codeintel_dbstore_indexes_inserted",
-		Help: "The number of codeintel index records inserted.",
-	})
-	observationContext.Registerer.MustRegister(indexesInsertedCounter)
+	indexesInsertedCounter, _ := indexesInsertedCounterMemo.Init(observationContext.Registerer)
 
 	return &operations{
 		// Commits

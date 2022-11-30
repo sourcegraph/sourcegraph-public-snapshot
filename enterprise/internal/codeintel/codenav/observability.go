@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -23,13 +25,17 @@ type operations struct {
 	getClosestDumpsForBlob *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+var m = memo.NewMemoizedConstructorWithArg(func(r prometheus.Registerer) (*metrics.REDMetrics, error) {
+	return metrics.NewREDMetrics(
+		r,
 		"codeintel_codenav",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
-	)
+	), nil
+})
+
+func newOperations(observationContext *observation.Context) *operations {
+	metrics, _ := m.Init(observationContext.Registerer)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{

@@ -3,12 +3,14 @@ package uploads
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -66,13 +68,22 @@ type operations struct {
 	numBytesDeleted        prometheus.Counter
 }
 
-func newOperations(observationContext *observation.Context) *operations {
-	m := metrics.NewREDMetrics(
+var m = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*metrics.REDMetrics, error) {
+	return metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_uploads",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
-	)
+	), nil
+})
+
+var (
+	metricsMap = make(map[string]prometheus.Counter)
+	metricsMu  sync.Mutex
+)
+
+func newOperations(observationContext *observation.Context) *operations {
+	m, _ := m.Init(observationContext)
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
@@ -83,12 +94,21 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	counter := func(name, help string) prometheus.Counter {
+		metricsMu.Lock()
+		defer metricsMu.Unlock()
+
+		if c, ok := metricsMap[name]; ok {
+			return c
+		}
+
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
 			Help: help,
 		})
-
 		observationContext.Registerer.MustRegister(counter)
+
+		metricsMap[name] = counter
+
 		return counter
 	}
 
