@@ -150,13 +150,6 @@ export interface SearchContextFields {
     }[]
 }
 
-export type AutoDefinedSearchContextsVariables = Exact<{ [key: string]: never }>
-
-export interface AutoDefinedSearchContextsResult {
-    __typename?: 'Query'
-    autoDefinedSearchContexts: ({ __typename?: 'SearchContext' } & SearchContextFields)[]
-}
-
 export type ListSearchContextsVariables = Exact<{
     first: Scalars['Int']
     after: Maybe<Scalars['String']>

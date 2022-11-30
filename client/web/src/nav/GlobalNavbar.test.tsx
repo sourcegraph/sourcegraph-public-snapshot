@@ -5,7 +5,6 @@ import { createLocation, createMemoryHistory } from 'history'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -43,7 +42,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     branding: undefined,
     routes: [],
     searchContextsEnabled: true,
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     showKeyboardShortcutsHelp: () => undefined,

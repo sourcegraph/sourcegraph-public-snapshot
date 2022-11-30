@@ -35729,14 +35729,6 @@ type MockSearchContextsStore struct {
 	// function object controlling the behavior of the method
 	// GetSearchContextRepositoryRevisions.
 	GetSearchContextRepositoryRevisionsFunc *SearchContextsStoreGetSearchContextRepositoryRevisionsFunc
-	// GetSearchContextStarForUserFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// GetSearchContextStarForUser.
-	GetSearchContextStarForUserFunc *SearchContextsStoreGetSearchContextStarForUserFunc
-	// GetUserDefaultSearchContextIDFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// GetUserDefaultSearchContextID.
-	GetUserDefaultSearchContextIDFunc *SearchContextsStoreGetUserDefaultSearchContextIDFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *SearchContextsStoreHandleFunc
@@ -35817,16 +35809,6 @@ func NewMockSearchContextsStore() *MockSearchContextsStore {
 		},
 		GetSearchContextRepositoryRevisionsFunc: &SearchContextsStoreGetSearchContextRepositoryRevisionsFunc{
 			defaultHook: func(context.Context, int64) (r0 []*types.SearchContextRepositoryRevisions, r1 error) {
-				return
-			},
-		},
-		GetSearchContextStarForUserFunc: &SearchContextsStoreGetSearchContextStarForUserFunc{
-			defaultHook: func(context.Context, int32, int64) (r0 bool, r1 error) {
-				return
-			},
-		},
-		GetUserDefaultSearchContextIDFunc: &SearchContextsStoreGetUserDefaultSearchContextIDFunc{
-			defaultHook: func(context.Context, int32) (r0 int64, r1 error) {
 				return
 			},
 		},
@@ -35923,16 +35905,6 @@ func NewStrictMockSearchContextsStore() *MockSearchContextsStore {
 				panic("unexpected invocation of MockSearchContextsStore.GetSearchContextRepositoryRevisions")
 			},
 		},
-		GetSearchContextStarForUserFunc: &SearchContextsStoreGetSearchContextStarForUserFunc{
-			defaultHook: func(context.Context, int32, int64) (bool, error) {
-				panic("unexpected invocation of MockSearchContextsStore.GetSearchContextStarForUser")
-			},
-		},
-		GetUserDefaultSearchContextIDFunc: &SearchContextsStoreGetUserDefaultSearchContextIDFunc{
-			defaultHook: func(context.Context, int32) (int64, error) {
-				panic("unexpected invocation of MockSearchContextsStore.GetUserDefaultSearchContextID")
-			},
-		},
 		HandleFunc: &SearchContextsStoreHandleFunc{
 			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockSearchContextsStore.Handle")
@@ -36003,12 +35975,6 @@ func NewMockSearchContextsStoreFrom(i SearchContextsStore) *MockSearchContextsSt
 		},
 		GetSearchContextRepositoryRevisionsFunc: &SearchContextsStoreGetSearchContextRepositoryRevisionsFunc{
 			defaultHook: i.GetSearchContextRepositoryRevisions,
-		},
-		GetSearchContextStarForUserFunc: &SearchContextsStoreGetSearchContextStarForUserFunc{
-			defaultHook: i.GetSearchContextStarForUser,
-		},
-		GetUserDefaultSearchContextIDFunc: &SearchContextsStoreGetUserDefaultSearchContextIDFunc{
-			defaultHook: i.GetUserDefaultSearchContextID,
 		},
 		HandleFunc: &SearchContextsStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -37243,233 +37209,6 @@ func (c SearchContextsStoreGetSearchContextRepositoryRevisionsFuncCall) Args() [
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SearchContextsStoreGetSearchContextRepositoryRevisionsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// SearchContextsStoreGetSearchContextStarForUserFunc describes the behavior
-// when the GetSearchContextStarForUser method of the parent
-// MockSearchContextsStore instance is invoked.
-type SearchContextsStoreGetSearchContextStarForUserFunc struct {
-	defaultHook func(context.Context, int32, int64) (bool, error)
-	hooks       []func(context.Context, int32, int64) (bool, error)
-	history     []SearchContextsStoreGetSearchContextStarForUserFuncCall
-	mutex       sync.Mutex
-}
-
-// GetSearchContextStarForUser delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockSearchContextsStore) GetSearchContextStarForUser(v0 context.Context, v1 int32, v2 int64) (bool, error) {
-	r0, r1 := m.GetSearchContextStarForUserFunc.nextHook()(v0, v1, v2)
-	m.GetSearchContextStarForUserFunc.appendCall(SearchContextsStoreGetSearchContextStarForUserFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetSearchContextStarForUser method of the parent MockSearchContextsStore
-// instance is invoked and the hook queue is empty.
-func (f *SearchContextsStoreGetSearchContextStarForUserFunc) SetDefaultHook(hook func(context.Context, int32, int64) (bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetSearchContextStarForUser method of the parent MockSearchContextsStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *SearchContextsStoreGetSearchContextStarForUserFunc) PushHook(hook func(context.Context, int32, int64) (bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SearchContextsStoreGetSearchContextStarForUserFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32, int64) (bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SearchContextsStoreGetSearchContextStarForUserFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, int32, int64) (bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *SearchContextsStoreGetSearchContextStarForUserFunc) nextHook() func(context.Context, int32, int64) (bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SearchContextsStoreGetSearchContextStarForUserFunc) appendCall(r0 SearchContextsStoreGetSearchContextStarForUserFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// SearchContextsStoreGetSearchContextStarForUserFuncCall objects describing
-// the invocations of this function.
-func (f *SearchContextsStoreGetSearchContextStarForUserFunc) History() []SearchContextsStoreGetSearchContextStarForUserFuncCall {
-	f.mutex.Lock()
-	history := make([]SearchContextsStoreGetSearchContextStarForUserFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SearchContextsStoreGetSearchContextStarForUserFuncCall is an object that
-// describes an invocation of method GetSearchContextStarForUser on an
-// instance of MockSearchContextsStore.
-type SearchContextsStoreGetSearchContextStarForUserFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int64
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SearchContextsStoreGetSearchContextStarForUserFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SearchContextsStoreGetSearchContextStarForUserFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// SearchContextsStoreGetUserDefaultSearchContextIDFunc describes the
-// behavior when the GetUserDefaultSearchContextID method of the parent
-// MockSearchContextsStore instance is invoked.
-type SearchContextsStoreGetUserDefaultSearchContextIDFunc struct {
-	defaultHook func(context.Context, int32) (int64, error)
-	hooks       []func(context.Context, int32) (int64, error)
-	history     []SearchContextsStoreGetUserDefaultSearchContextIDFuncCall
-	mutex       sync.Mutex
-}
-
-// GetUserDefaultSearchContextID delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockSearchContextsStore) GetUserDefaultSearchContextID(v0 context.Context, v1 int32) (int64, error) {
-	r0, r1 := m.GetUserDefaultSearchContextIDFunc.nextHook()(v0, v1)
-	m.GetUserDefaultSearchContextIDFunc.appendCall(SearchContextsStoreGetUserDefaultSearchContextIDFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetUserDefaultSearchContextID method of the parent
-// MockSearchContextsStore instance is invoked and the hook queue is empty.
-func (f *SearchContextsStoreGetUserDefaultSearchContextIDFunc) SetDefaultHook(hook func(context.Context, int32) (int64, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUserDefaultSearchContextID method of the parent
-// MockSearchContextsStore instance invokes the hook at the front of the
-// queue and discards it. After the queue is empty, the default hook
-// function is invoked for any future action.
-func (f *SearchContextsStoreGetUserDefaultSearchContextIDFunc) PushHook(hook func(context.Context, int32) (int64, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SearchContextsStoreGetUserDefaultSearchContextIDFunc) SetDefaultReturn(r0 int64, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32) (int64, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SearchContextsStoreGetUserDefaultSearchContextIDFunc) PushReturn(r0 int64, r1 error) {
-	f.PushHook(func(context.Context, int32) (int64, error) {
-		return r0, r1
-	})
-}
-
-func (f *SearchContextsStoreGetUserDefaultSearchContextIDFunc) nextHook() func(context.Context, int32) (int64, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SearchContextsStoreGetUserDefaultSearchContextIDFunc) appendCall(r0 SearchContextsStoreGetUserDefaultSearchContextIDFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// SearchContextsStoreGetUserDefaultSearchContextIDFuncCall objects
-// describing the invocations of this function.
-func (f *SearchContextsStoreGetUserDefaultSearchContextIDFunc) History() []SearchContextsStoreGetUserDefaultSearchContextIDFuncCall {
-	f.mutex.Lock()
-	history := make([]SearchContextsStoreGetUserDefaultSearchContextIDFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SearchContextsStoreGetUserDefaultSearchContextIDFuncCall is an object
-// that describes an invocation of method GetUserDefaultSearchContextID on
-// an instance of MockSearchContextsStore.
-type SearchContextsStoreGetUserDefaultSearchContextIDFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int64
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SearchContextsStoreGetUserDefaultSearchContextIDFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SearchContextsStoreGetUserDefaultSearchContextIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

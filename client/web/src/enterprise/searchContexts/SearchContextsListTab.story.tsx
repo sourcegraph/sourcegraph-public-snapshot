@@ -4,7 +4,6 @@ import { Observable, of } from 'rxjs'
 
 import { ListSearchContextsResult } from '@sourcegraph/search'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -33,7 +32,6 @@ export default config
 const defaultProps: SearchContextsListTabProps = {
     authenticatedUser: null,
     isSourcegraphDotCom: true,
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     platformContext: NOOP_PLATFORM_CONTEXT,
@@ -41,7 +39,6 @@ const defaultProps: SearchContextsListTabProps = {
 
 const propsWithContexts: SearchContextsListTabProps = {
     ...defaultProps,
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(1),
     fetchSearchContexts: ({
         first,
         query,
@@ -113,40 +110,19 @@ export const With1AutoDefinedContext: Story = () => (
 With1AutoDefinedContext.storyName = 'with 1 auto-defined context'
 
 export const With2AutoDefinedContexts: Story = () => (
-    <WebStory>
-        {() => (
-            <SearchContextsListTab
-                {...propsWithContexts}
-                fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(2)}
-            />
-        )}
-    </WebStory>
+    <WebStory>{() => <SearchContextsListTab {...propsWithContexts} />}</WebStory>
 )
 
 With2AutoDefinedContexts.storyName = 'with 2 auto-defined contexts'
 
 export const With3AutoDefinedContexts: Story = () => (
-    <WebStory>
-        {() => (
-            <SearchContextsListTab
-                {...propsWithContexts}
-                fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(3)}
-            />
-        )}
-    </WebStory>
+    <WebStory>{() => <SearchContextsListTab {...propsWithContexts} />}</WebStory>
 )
 
 With3AutoDefinedContexts.storyName = 'with 3 auto-defined contexts'
 
 export const With4AutoDefinedContexts: Story = () => (
-    <WebStory>
-        {() => (
-            <SearchContextsListTab
-                {...propsWithContexts}
-                fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(4)}
-            />
-        )}
-    </WebStory>
+    <WebStory>{() => <SearchContextsListTab {...propsWithContexts} />}</WebStory>
 )
 
 With4AutoDefinedContexts.storyName = 'with 4 auto-defined contexts'

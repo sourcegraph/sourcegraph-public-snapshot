@@ -11,8 +11,6 @@ import {
     EventLogsDataVariables,
     ListSearchContextsResult,
     ListSearchContextsVariables,
-    AutoDefinedSearchContextsResult,
-    AutoDefinedSearchContextsVariables,
     IsSearchContextAvailableResult,
     IsSearchContextAvailableVariables,
     Scalars,
@@ -89,34 +87,6 @@ const searchContextWithSkippableFieldsFragment = gql`
         }
     }
 `
-
-export function fetchAutoDefinedSearchContexts({
-    platformContext,
-    useMinimalFields,
-}: {
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
-    useMinimalFields?: boolean
-}): Observable<AutoDefinedSearchContextsResult['autoDefinedSearchContexts']> {
-    return platformContext
-        .requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>({
-            request: gql`
-                query AutoDefinedSearchContexts($useMinimalFields: Boolean!) {
-                    autoDefinedSearchContexts {
-                        ...SearchContextMinimalFields
-                    }
-                }
-                ${searchContextWithSkippableFieldsFragment}
-            `,
-            variables: {
-                useMinimalFields: useMinimalFields ?? false,
-            },
-            mightContainPrivateInfo: false,
-        })
-        .pipe(
-            map(dataOrThrowErrors),
-            map(({ autoDefinedSearchContexts }) => autoDefinedSearchContexts)
-        )
-}
 
 export function getUserSearchContextNamespaces(
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'> | null
