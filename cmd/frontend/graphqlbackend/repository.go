@@ -251,7 +251,7 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, commitID, "", false)
 	if err != nil {
 		return "", err
 	}

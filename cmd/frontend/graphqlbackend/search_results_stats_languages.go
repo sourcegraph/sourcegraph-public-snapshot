@@ -139,7 +139,7 @@ func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db data
 					run.Error(err)
 					return
 				}
-				inv, err := backend.NewRepos(logger, db, gsClient).GetInventory(ctx, repoName.ToRepo(), oid, true)
+				inv, err := backend.NewRepos(logger, db, gsClient).GetInventory(ctx, repoName.ToRepo(), oid, "", true)
 				if err != nil {
 					run.Error(err)
 					return

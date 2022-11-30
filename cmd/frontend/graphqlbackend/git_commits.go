@@ -21,6 +21,7 @@ type gitCommitConnectionResolver struct {
 	path   *string
 	author *string
 	after  *string
+	before *string
 
 	repo *RepositoryResolver
 
@@ -53,12 +54,17 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 		if r.after != nil {
 			after = *r.after
 		}
+		var before string
+		if r.before != nil {
+			before = *r.before
+		}
 		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
 			Range:        r.revisionRange,
 			N:            uint(n),
 			MessageQuery: query,
 			Author:       author,
 			After:        after,
+			Before:       before,
 			Path:         path,
 		}, authz.DefaultSubRepoPermsChecker)
 	}

@@ -4438,11 +4438,11 @@ type GitCommit implements Node {
     """
     Lists the programming languages present in the tree at this commit.
     """
-    languages: [String!]!
+    languages(paths: [String!]): [[String!]!]!
     """
     List statistics for each language present in the repository.
     """
-    languageStatistics: [LanguageStatistics!]!
+    languageStatistics(paths: [String!]): [[LanguageStatistics!]!]!
     """
     The log of commits consisting of this commit and its ancestors.
     """
@@ -4463,6 +4463,10 @@ type GitCommit implements Node {
         Return commits more recent than the specified date.
         """
         after: String
+        """
+        Return commits before the specified date.
+        """
+        before: String
     ): GitCommitConnection!
     """
     Returns the number of commits that this commit is behind and ahead of revspec.
@@ -4576,6 +4580,16 @@ type Submodule {
 }
 
 """
+Statistics for a tree entry
+"""
+type GitTreeEntryStats {
+    """
+	Language statistics
+    """
+  	languages: [LanguageStatistics!]!
+}
+
+"""
 A file, directory, or other tree entry.
 """
 interface TreeEntry {
@@ -4637,6 +4651,8 @@ interface TreeEntry {
         """
         recursiveSingleChild: Boolean = false
     ): Boolean!
+
+	stats: GitTreeEntryStats!
 }
 
 """
@@ -4792,7 +4808,9 @@ type GitTree implements TreeEntry {
         Recurse into sub-trees of single-child directories
         """
         recursiveSingleChild: Boolean = false
-    ): Boolean!
+  ): Boolean!
+
+  stats: GitTreeEntryStats!
 }
 
 """
@@ -5107,6 +5125,8 @@ type GitBlob implements TreeEntry & File2 {
     LFS is set if the GitBlob is a pointer to a file stored in LFS.
     """
     lfs: LFS
+
+	stats: GitTreeEntryStats!
 }
 
 """

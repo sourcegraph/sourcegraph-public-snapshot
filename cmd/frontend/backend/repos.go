@@ -219,7 +219,7 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 	})
 }
 
-func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
+func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, path string, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
@@ -236,7 +236,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return nil, err
 	}
 
-	root, err := s.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
+	root, err := s.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, path)
 	if err != nil {
 		return nil, err
 	}

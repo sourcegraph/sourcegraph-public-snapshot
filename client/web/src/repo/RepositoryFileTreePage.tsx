@@ -99,7 +99,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                 // Add `.blob-status-bar__container` because this is the
                 // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
                 <BlobStatusBarContainer>
-                    <GettingStartedTour.Info isSourcegraphDotCom={context.isSourcegraphDotCom} className="mr-3 mb-3" />
+                    {/* <GettingStartedTour.Info isSourcegraphDotCom={context.isSourcegraphDotCom} className="mr-3 mb-3" /> */}
                     <ErrorBoundary location={context.location}>
                         {objectType === 'blob' ? (
                             <TraceSpanProvider name="BlobPage">
