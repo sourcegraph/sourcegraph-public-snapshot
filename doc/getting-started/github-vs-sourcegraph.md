@@ -570,7 +570,7 @@ GitHub does not offer comprehensive insights that account for the content of the
 
 With [insights for Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects/viewing-insights-from-your-project/about-insights-for-projects) in GitHub, you can view, create, and customize charts that are built from the project’s data. [Organization activity insights](https://docs.github.com/en/enterprise-cloud@latest/organizations/collaborating-with-groups-in-organizations/viewing-insights-for-your-organization) help you understand how members of the organization are using GitHub, e.g. issue and pull request activity, top languages used, and cumulative information about where members spend their time. 
 
-Sourcegraph offers [in-product analytics](https://docs.sourcegraph.com/admin/analytics) to help Sourcegraph administrators understand user engagement across the various Sourcegraph features, identify power users, and convey value to engineering leaders. Easy-to-consume audit logs which include security events, Gitserver access events, monitoring, pings, and GraphQL requests is avialble for Sourcegraph self-hosted instances. Audit logs are coming soon for Sourcegraph Cloud. 
+Sourcegraph offers [in-product analytics](https://docs.sourcegraph.com/admin/analytics) to help Sourcegraph administrators understand user engagement across the various Sourcegraph features, identify power users, and convey value to engineering leaders.
 
 
 <table>
