@@ -24,11 +24,8 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 	// If the first existing point is newer than the oldest expected point then leading points are added.
 	oldestReferencePoint := referenceTimes[0]
 	if !withinHalfAnInterval(existingPoints[0], oldestReferencePoint, interval) {
-		referencePoint, index := oldestReferencePoint, 0
-		for referencePoint.Before(existingPoints[index]) {
-			calculatedRecordingTimes = append(calculatedRecordingTimes, referencePoint)
-			index++
-			referencePoint = referenceTimes[index]
+		for i := 0; i < len(referenceTimes) && !withinHalfAnInterval(referenceTimes[i], existingPoints[0], interval); i++ {
+			calculatedRecordingTimes = append(calculatedRecordingTimes, referenceTimes[i])
 		}
 	}
 	// Any existing middle points are added.
@@ -37,12 +34,9 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 	// If the last existing point is older than the newest expected point then trailing points are added.
 	newestReferencePoint := referenceTimes[len(referenceTimes)-1]
 	if !withinHalfAnInterval(newestReferencePoint, existingPoints[len(existingPoints)-1], interval) {
-		referencePoint, i := newestReferencePoint, len(existingPoints)-1
 		var backwardTrailingPoints []time.Time
-		for existingPoints[i].Before(referencePoint) {
-			backwardTrailingPoints = append(backwardTrailingPoints, referencePoint)
-			i--
-			referencePoint = referenceTimes[i]
+		for i := len(referenceTimes) - 1; i >= 0 && !withinHalfAnInterval(referenceTimes[i], existingPoints[len(existingPoints)-1], interval); i-- {
+			backwardTrailingPoints = append(backwardTrailingPoints, referenceTimes[i])
 		}
 		for i := len(backwardTrailingPoints) - 1; i >= 0; i-- {
 			calculatedRecordingTimes = append(calculatedRecordingTimes, backwardTrailingPoints[i])
@@ -52,13 +46,13 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 	return calculatedRecordingTimes
 }
 
-func withinHalfAnInterval(firstTime, secondTime time.Time, interval timeInterval) bool {
+func withinHalfAnInterval(a, b time.Time, interval timeInterval) bool {
 	intervalDuration := interval.toDuration() // precise to rough estimate of an interval's length (e.g. 1 year = 365 * 24 hours)
 	halfAnInterval := intervalDuration / 2
 	if interval.unit == hour {
 		halfAnInterval = intervalDuration / 4
 	}
-	differenceInExpectedTime := firstTime.Sub(secondTime)
+	differenceInExpectedTime := b.Sub(a)
 	return differenceInExpectedTime >= 0 && differenceInExpectedTime <= halfAnInterval
 }
 

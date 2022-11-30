@@ -64,8 +64,8 @@ func Test_calculateRecordingTimes(t *testing.T) {
 		},
 		{
 			interval:      timeInterval{unit: week, value: 2},
-			existingTimes: []time.Time{time.Date(2022, 10, 21, 0, 0, 0, 0, time.UTC)}, // existing point within half an interval
-			want: autogold.Want("2 week intervals with existing time returns modified list", []string{
+			existingTimes: []time.Time{time.Date(2022, 11, 2, 1, 0, 0, 0, time.UTC)}, // existing point within half an interval
+			want: autogold.Want("oldest existing point after oldest expected point", []string{
 				"2022-05-31 00:00:00 +0000 UTC",
 				"2022-06-14 00:00:00 +0000 UTC",
 				"2022-06-28 00:00:00 +0000 UTC",
@@ -76,26 +76,92 @@ func Test_calculateRecordingTimes(t *testing.T) {
 				"2022-09-06 00:00:00 +0000 UTC",
 				"2022-09-20 00:00:00 +0000 UTC",
 				"2022-10-04 00:00:00 +0000 UTC",
-				"2022-10-21 00:00:00 +0000 UTC", // this is the modified rough point
+				"2022-10-18 00:00:00 +0000 UTC",
+				"2022-11-02 01:00:00 +0000 UTC", // this is the existing point
+			}),
+		},
+		{
+			interval: timeInterval{unit: hour, value: 2},
+			existingTimes: []time.Time{
+				time.Date(2022, 10, 31, 2, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 4, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 6, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 8, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 10, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 12, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 14, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 16, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 18, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 20, 12, 0, 0, time.UTC),
+			},
+			want: autogold.Want("newest existing point before newest expected point", []string{
+				"2022-10-31 02:01:00 +0000 UTC",
+				"2022-10-31 04:01:00 +0000 UTC",
+				"2022-10-31 06:01:00 +0000 UTC",
+				"2022-10-31 08:01:00 +0000 UTC",
+				"2022-10-31 10:01:00 +0000 UTC",
+				"2022-10-31 12:01:00 +0000 UTC",
+				"2022-10-31 14:01:00 +0000 UTC",
+				"2022-10-31 16:01:00 +0000 UTC",
+				"2022-10-31 18:01:00 +0000 UTC",
+				"2022-10-31 20:12:00 +0000 UTC", // trailing points are added after this
+				"2022-10-31 22:00:00 +0000 UTC",
 				"2022-11-01 00:00:00 +0000 UTC",
 			}),
 		},
 		{
-			interval:      timeInterval{unit: hour, value: 2},
-			existingTimes: []time.Time{time.Date(2022, 9, 31, 03, 50, 0, 0, time.UTC), time.Date(2022, 10, 31, 18, 26, 0, 0, time.UTC)},
-			want: autogold.Want("2 hour intervals with existing time returns modified list", []string{
+			interval: timeInterval{unit: hour, value: 2},
+			existingTimes: []time.Time{
+				time.Date(2022, 10, 31, 8, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 10, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 12, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 14, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 16, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 18, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 20, 12, 0, 0, time.UTC),
+			},
+			want: autogold.Want("oldest expected before oldest existing and newest existing before newest expected", []string{
 				"2022-10-31 02:00:00 +0000 UTC",
 				"2022-10-31 04:00:00 +0000 UTC",
 				"2022-10-31 06:00:00 +0000 UTC",
-				"2022-10-31 08:00:00 +0000 UTC",
-				"2022-10-31 10:00:00 +0000 UTC",
-				"2022-10-31 12:00:00 +0000 UTC",
-				"2022-10-31 14:00:00 +0000 UTC",
-				"2022-10-31 16:00:00 +0000 UTC",
-				"2022-10-31 18:26:00 +0000 UTC", // this is the modified rough point
-				"2022-10-31 20:00:00 +0000 UTC",
+				"2022-10-31 08:01:00 +0000 UTC", // leading points are added before this
+				"2022-10-31 10:01:00 +0000 UTC",
+				"2022-10-31 12:01:00 +0000 UTC",
+				"2022-10-31 14:01:00 +0000 UTC",
+				"2022-10-31 16:01:00 +0000 UTC",
+				"2022-10-31 18:01:00 +0000 UTC",
+				"2022-10-31 20:12:00 +0000 UTC", // trailing points are added after this
 				"2022-10-31 22:00:00 +0000 UTC",
 				"2022-11-01 00:00:00 +0000 UTC",
+			}),
+		},
+		{
+			interval: timeInterval{unit: hour, value: 2},
+			existingTimes: []time.Time{
+				time.Date(2022, 10, 31, 2, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 4, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 6, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 8, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 10, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 12, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 14, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 16, 1, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 20, 12, 0, 0, time.UTC),
+				time.Date(2022, 10, 31, 22, 2, 0, 0, time.UTC),
+				time.Date(2022, 11, 1, 0, 2, 0, 0, time.UTC),
+			},
+			want: autogold.Want("all existing points are reused with valleys", []string{
+				"2022-10-31 02:01:00 +0000 UTC",
+				"2022-10-31 04:01:00 +0000 UTC",
+				"2022-10-31 06:01:00 +0000 UTC",
+				"2022-10-31 08:01:00 +0000 UTC",
+				"2022-10-31 10:01:00 +0000 UTC",
+				"2022-10-31 12:01:00 +0000 UTC",
+				"2022-10-31 14:01:00 +0000 UTC",
+				"2022-10-31 16:01:00 +0000 UTC",
+				"2022-10-31 20:12:00 +0000 UTC", // we would have a gap before this point.
+				"2022-10-31 22:02:00 +0000 UTC",
+				"2022-11-01 00:02:00 +0000 UTC",
 			}),
 		},
 	}
@@ -257,6 +323,47 @@ func Test_buildRecordingTimesBetween(t *testing.T) {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			got := buildRecordingTimesBetween(tc.from, tc.to, tc.interval)
 			tc.want.Equal(t, convert(got))
+		})
+	}
+}
+
+func Test_withinHalfAnInterval(t *testing.T) {
+	someInterval := timeInterval{month, 1}
+	testCases := []struct {
+		possiblyLaterTime time.Time
+		earlierTime       time.Time
+		interval          timeInterval
+		want              autogold.Value
+	}{
+		{
+			possiblyLaterTime: time.Date(2022, 11, 23, 12, 10, 0, 0, time.UTC),
+			earlierTime:       time.Date(2022, 11, 22, 12, 10, 0, 0, time.UTC),
+			interval:          someInterval,
+			want:              autogold.Want("time is close after existing", true),
+		},
+		{
+			possiblyLaterTime: time.Date(2022, 11, 21, 12, 10, 0, 0, time.UTC),
+			earlierTime:       time.Date(2022, 11, 22, 12, 10, 0, 0, time.UTC),
+			interval:          someInterval,
+			want:              autogold.Want("time is before existing", false),
+		},
+		{
+			possiblyLaterTime: time.Date(2022, 11, 22, 13, 10, 0, 0, time.UTC),
+			earlierTime:       time.Date(2022, 11, 22, 12, 0, 0, 0, time.UTC),
+			interval:          timeInterval{"hour", 2},
+			want:              autogold.Want("hourly interval has smaller allowance", false),
+		},
+		{
+			possiblyLaterTime: time.Date(2022, 12, 29, 12, 10, 0, 0, time.UTC),
+			earlierTime:       time.Date(2022, 11, 22, 13, 10, 0, 0, time.UTC),
+			interval:          someInterval,
+			want:              autogold.Want("later time is too far ahead", false),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			got := withinHalfAnInterval(tc.earlierTime, tc.possiblyLaterTime, tc.interval)
+			tc.want.Equal(t, got)
 		})
 	}
 }
