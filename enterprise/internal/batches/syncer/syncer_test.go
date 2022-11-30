@@ -3,6 +3,7 @@ package syncer
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -217,8 +218,17 @@ func TestSyncerRun(t *testing.T) {
 		// ensure the deleted namespace error is logged as a debug
 		captured := export()
 		assert.Greater(t, len(captured), 0)
-		assert.Equal(t, log.LevelDebug, captured[2].Level)
-		assert.Equal(t, "SyncChangeset skipping changeset: namespace deleted", captured[2].Message)
+		var found bool
+		for _, c := range captured {
+			if strings.Contains(c.Message, "namespace deleted") {
+				assert.Equal(t, log.LevelDebug, c.Level)
+				assert.Equal(t, "SyncChangeset skipping changeset: namespace deleted", c.Message)
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("expected to find log message about namespace being deleted, found none")
+		}
 	})
 }
 
