@@ -254,18 +254,6 @@ func (p *precalculatedInsightSeriesResolver) Status(ctx context.Context) (graphq
 	return p.statusResolver, nil
 }
 
-func (p *precalculatedInsightSeriesResolver) DirtyMetadata(ctx context.Context) ([]graphqlbackend.InsightDirtyQueryResolver, error) {
-	data, err := p.metadataStore.GetDirtyQueriesAggregated(ctx, p.series.SeriesID)
-	if err != nil {
-		return nil, err
-	}
-	resolvers := make([]graphqlbackend.InsightDirtyQueryResolver, 0, len(data))
-	for _, dqa := range data {
-		resolvers = append(resolvers, &insightDirtyQueryResolver{dqa})
-	}
-	return resolvers, nil
-}
-
 type insightSeriesResolverGenerator interface {
 	Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error)
 	handles(series types.InsightViewSeries) bool

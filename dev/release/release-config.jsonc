@@ -11,16 +11,16 @@
 {
     // Captain information
     // To get your slack username, navigate to Profile -> More -> Account settings -> Username (at the bottom) -> Expand
-    "captainSlackUsername": "coury",
-    "captainGitHubUsername": "coury-clark",
+    "captainSlackUsername": "dax",
+    "captainGitHubUsername": "daxmc99",
     // Release versions
-    "previousRelease": "4.1.3",
-    "upcomingRelease": "4.2.0",
-    "oneWorkingWeekBeforeRelease": "15 November 2022 10:00 PST",
-    "threeWorkingDaysBeforeRelease": "17 November 2022 10:00 PST",
-    "releaseDate": "22 November 2022 10:00 PST",
-    "oneWorkingDayAfterRelease": "23 November 2022 10:00 PST",
-    "oneWorkingWeekAfterRelease": "27 November 2022 10:00 PST",
+    "previousRelease": "4.2.0",
+    "upcomingRelease": "4.3.0",
+    "oneWorkingWeekBeforeRelease": "15 December 2022 10:00 PST",
+    "threeWorkingDaysBeforeRelease": "19 December 2022 10:00 PST",
+    "releaseDate": "22 December 2022 10:00 PST",
+    "oneWorkingDayAfterRelease": "23 December 2022 10:00 PST",
+    "oneWorkingWeekAfterRelease": "30 December 2022 10:00 PST",
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "eng-announce",
     // Email for preparing calendar events

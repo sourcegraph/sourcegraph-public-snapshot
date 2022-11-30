@@ -38,7 +38,14 @@ func (s *store) GetDefinitionLocations(ctx context.Context, bundleID int, path s
 	return s.getLocations(ctx, extractor, s.operations.getDefinitions, bundleID, path, line, character, limit, offset)
 }
 
-func (s *store) getLocations(ctx context.Context, extractor func(r precise.RangeData) precise.ID, operation *observation.Operation, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
+func (s *store) getLocations(
+	ctx context.Context,
+	extractor func(r precise.RangeData) precise.ID,
+	operation *observation.Operation,
+	bundleID int,
+	path string,
+	line, character, limit, offset int,
+) (_ []shared.Location, _ int, err error) {
 	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
@@ -47,13 +54,21 @@ func (s *store) getLocations(ctx context.Context, extractor func(r precise.Range
 	}})
 	defer endObservation(1, observation.Args{})
 
-	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(locationsDocumentQuery, bundleID, path)))
+	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
+		locationsDocumentQuery,
+		bundleID,
+		path,
+	)))
 	if err != nil || !exists {
 		return nil, 0, err
 	}
 
-	trace.Log(log.Int("numRanges", len(documentData.Document.Ranges)))
-	ranges := precise.FindRanges(documentData.Document.Ranges, line, character)
+	if documentData.SCIPData != nil {
+		return nil, 0, errors.New("SCIP locations unimplemented")
+	}
+
+	trace.Log(log.Int("numRanges", len(documentData.LSIFData.Ranges)))
+	ranges := precise.FindRanges(documentData.LSIFData.Ranges, line, character)
 	trace.Log(log.Int("numIntersectingRanges", len(ranges)))
 
 	orderedResultIDs := extractResultIDs(ranges, extractor)
@@ -80,7 +95,8 @@ SELECT
 	NULL AS hovers,
 	NULL AS monikers,
 	NULL AS packages,
-	NULL AS diagnostics
+	NULL AS diagnostics,
+	NULL AS scip_document
 FROM
 	lsif_data_documents
 WHERE
@@ -293,7 +309,8 @@ SELECT
 	NULL AS hovers,
 	NULL AS monikers,
 	NULL AS packages,
-	NULL AS diagnostics
+	NULL AS diagnostics,
+	NULL AS scip_document
 FROM
 	lsif_data_documents
 WHERE

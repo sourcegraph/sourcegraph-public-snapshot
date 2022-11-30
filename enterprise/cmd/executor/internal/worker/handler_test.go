@@ -39,7 +39,7 @@ func TestHandle(t *testing.T) {
 		Commit:         "deadbeef",
 		RepositoryName: "linux",
 		VirtualMachineFiles: map[string]executor.VirtualMachineFile{
-			"test.txt": {Content: "<file payload>"},
+			"test.txt": {Content: []byte("<file payload>")},
 		},
 		DockerSteps: []executor.DockerStep{
 			{
@@ -148,7 +148,7 @@ func TestHandle_WorkspaceFile(t *testing.T) {
 		Commit:         "deadbeef",
 		RepositoryName: "linux",
 		VirtualMachineFiles: map[string]executor.VirtualMachineFile{
-			"test.txt":  {Content: "<file payload>"},
+			"test.txt":  {Content: []byte("<file payload>")},
 			"script.sh": {Bucket: "batch-changes", Key: "123/abc", ModifiedAt: virtualFileModifiedAt},
 		},
 		DockerSteps: []executor.DockerStep{

@@ -222,6 +222,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		},
 		latestStepResult.Value,
 		workspace.Path,
+		true,
 	)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to build changeset specs from cache")

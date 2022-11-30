@@ -20,8 +20,6 @@
 
 .header {
     display: flex;
-    flex-direction: row-reverse;
-    justify-content: space-between;
     align-items: center;
     padding: 0.5rem 1rem 0; // stylelint-disable-next-line declaration-property-unit-allowed-list
     margin-bottom: -1px;
@@ -136,6 +134,11 @@
     flex: 1;
     font-size: 0.75rem;
     color: var(--text-muted);
+}
+
+.experimental-badge {
+    margin: -0.5rem 0.75rem 0 auto;
+    text-transform: uppercase;
 }
 
 .close-button {
