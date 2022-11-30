@@ -68,4 +68,6 @@ async function main(args) {
   await writeFile(outputFile, typings)
 }
 
-;(async () => await main(process.argv.slice(2)))().then(() => {}).catch(() => {})
+;(async () => await main(process.argv.slice(2)))()
+  .then(() => {})
+  .catch(() => {})
