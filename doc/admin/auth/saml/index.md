@@ -80,7 +80,7 @@ Error prefetching SAML service provider metadata
 
 > NOTE: Email or NameID changes in the identity provider are not automatically reflected in Sourcegraph. Admins may manually update a users email via the admin interface at `https://example-sourcegraph.com/users/<user>/settings/emails`, or remove the user and recreate a new account. 
 >
-> Work is planned to support SCIM on SAML auth providers, which should automate this process.
+> Work is planned to support SCIM on SAML auth providers, which should automate this process. ([tracking issue](https://github.com/sourcegraph/sourcegraph/issues/22732))
 
 ### How to control user sign-up and sign-in
 
