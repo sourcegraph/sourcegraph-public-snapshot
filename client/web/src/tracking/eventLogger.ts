@@ -238,7 +238,8 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
     public getOriginalReferrer(): string {
         // Gets the original referrer from the cookie or if it doesn't exist, the mkto_referrer from the URL.
-        const referrer = this.originalReferrer || cookies.get(ORIGINAL_REFERRER_KEY) || cookies.get(MKTO_ORIGINAL_REFERRER_KEY)
+        const referrer =
+            this.originalReferrer || cookies.get(ORIGINAL_REFERRER_KEY) || cookies.get(MKTO_ORIGINAL_REFERRER_KEY)
         this.originalReferrer = referrer || ''
         return this.originalReferrer
     }
@@ -324,20 +325,19 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         let originalReferrer = cookies.get(ORIGINAL_REFERRER_KEY)
         if (!originalReferrer) {
             originalReferrer = cookies.get(MKTO_ORIGINAL_REFERRER_KEY) || ''
-                // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
-                // only send the hostname instead of the whole URL to avoid
-                // leaking private repository names and files into our data.
-                try {
-                    const url = new URL(originalReferrer)
-                    // if the referrer is a sourcegraph domain we want to set it as ''
-                    if (url.hostname === 'sourcegraph.com') {
-                        originalReferrer = ''
-                    }
-                }
-                // if the referrer is not a valid URL we want to set it as ''
-                catch {
+            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
+            // only send the hostname instead of the whole URL to avoid
+            // leaking private repository names and files into our data.
+            try {
+                const url = new URL(originalReferrer)
+                // if the referrer is a sourcegraph domain we want to set it as ''
+                if (url.hostname === 'sourcegraph.com') {
                     originalReferrer = ''
                 }
+            } catch {
+                // if the referrer is not a valid URL we want to set it as ''
+                originalReferrer = ''
+            }
             cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
         }
 
