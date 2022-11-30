@@ -71,29 +71,12 @@ const searchContextsPermissionsConditionFmtStr = `(
     OR (namespace_user_id IS NULL AND namespace_org_id IS NULL AND EXISTS (SELECT FROM users u WHERE u.id = %d AND u.site_admin))
 )`
 
-func getAuthenticatedUserId(ctx context.Context, logger log.Logger, store basestore.ShareableStore) (int32, error) {
+func searchContextsPermissionsCondition(ctx context.Context, logger log.Logger, store basestore.ShareableStore) *sqlf.Query {
 	a := actor.FromContext(ctx)
-	authenticatedUserID := int32(0)
-	if a.IsAuthenticated() {
-		currentUser, err := UsersWith(logger, store).GetByCurrentAuthUser(ctx)
-		if err != nil {
-			return 0, err
-		}
-		authenticatedUserID = currentUser.ID
-	}
-
-	return authenticatedUserID, nil
-}
-
-func searchContextsPermissionsCondition(ctx context.Context, logger log.Logger, store basestore.ShareableStore) (*sqlf.Query, error) {
-	authenticatedUserID, err := getAuthenticatedUserId(ctx, logger, store)
-	a := actor.FromContext(ctx)
+	authenticatedUserID := a.UID
 	bypassPermissionsCheck := a.Internal
-	if err != nil {
-		return nil, err
-	}
 	q := sqlf.Sprintf(searchContextsPermissionsConditionFmtStr, bypassPermissionsCheck, authenticatedUserID, authenticatedUserID, authenticatedUserID)
-	return q, nil
+	return q
 }
 
 const searchContextQueryFmtStr = `
@@ -286,14 +269,8 @@ func getSearchContextsQueryConditions(opts ListSearchContextsOptions) []*sqlf.Qu
 }
 
 func (s *searchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query, orderBy *sqlf.Query, limit int32, offset int32) ([]*types.SearchContext, error) {
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.logger, s)
-	if err != nil {
-		return nil, err
-	}
-	authenticatedUserId, err := getAuthenticatedUserId(ctx, s.logger, s)
-	if err != nil {
-		return nil, err
-	}
+	permissionsCond := searchContextsPermissionsCondition(ctx, s.logger, s)
+	authenticatedUserId := actor.FromContext(ctx).UID
 
 	query := sqlf.Sprintf(listSearchContextsFmtStr, authenticatedUserId, authenticatedUserId, authenticatedUserId, permissionsCond, cond, orderBy, limit, offset)
 	rows, err := s.Query(ctx, query)
@@ -312,18 +289,12 @@ func (s *searchContextsStore) ListSearchContexts(ctx context.Context, pageOpts L
 
 func (s *searchContextsStore) CountSearchContexts(ctx context.Context, opts ListSearchContextsOptions) (int32, error) {
 	conds := getSearchContextsQueryConditions(opts)
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.logger, s)
-	if err != nil {
-		return -1, err
-	}
-	authenticatedUserId, err := getAuthenticatedUserId(ctx, s.logger, s)
-	if err != nil {
-		return -1, err
-	}
+	permissionsCond := searchContextsPermissionsCondition(ctx, s.logger, s)
+	authenticatedUserId := actor.FromContext(ctx).UID
 
 	var count int32
 	query := sqlf.Sprintf(countSearchContextsFmtStr, authenticatedUserId, authenticatedUserId, authenticatedUserId, permissionsCond, sqlf.Join(conds, "\n AND "))
-	err = s.QueryRow(ctx, query).Scan(&count)
+	err := s.QueryRow(ctx, query).Scan(&count)
 	if err != nil {
 		return -1, err
 	}
@@ -349,14 +320,8 @@ func (s *searchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 	}
 	conds = append(conds, sqlf.Sprintf("context_name = %s", opts.Name))
 
-	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.logger, s)
-	if err != nil {
-		return nil, err
-	}
-	authenticatedUserId, err := getAuthenticatedUserId(ctx, s.logger, s)
-	if err != nil {
-		return nil, err
-	}
+	permissionsCond := searchContextsPermissionsCondition(ctx, s.logger, s)
+	authenticatedUserId := actor.FromContext(ctx).UID
 	rows, err := s.Query(
 		ctx,
 		sqlf.Sprintf(
