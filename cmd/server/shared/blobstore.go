@@ -4,12 +4,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/inconshreveable/log15"
+	sglog "github.com/sourcegraph/log"
 )
 
-func maybeBlobstore() []string {
+func maybeBlobstore(logger sglog.Logger) []string {
 	if os.Getenv("DISABLE_BLOBSTORE") != "" {
-		log15.Info("WARNING: Running with blobstore disabled")
+		logger.Warn("running with blobstore disabled"))
 		return []string{""}
 	}
 
