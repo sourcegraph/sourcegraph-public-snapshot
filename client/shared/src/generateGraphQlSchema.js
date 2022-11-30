@@ -7,6 +7,7 @@
  */
 const path = require('path')
 
+const { logger } = require('@sourcegraph/common')
 const { generateNamespace } = require('@gql2ts/from-schema')
 const { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } = require('@gql2ts/language-typescript')
 const glob = require('glob')
@@ -18,7 +19,7 @@ const GRAPHQL_SCHEMA_GLOB = path.join(__dirname, '../../../cmd/frontend/graphqlb
 
 async function main(args) {
   if (args.length !== 1) {
-    console.error('Usage: node generateGraphQlSchema.js <outputFile>')
+    logger.error('Usage: node generateGraphQlSchema.js <outputFile>')
     process.exit(1)
   }
 
@@ -67,4 +68,4 @@ async function main(args) {
   await writeFile(outputFile, typings)
 }
 
-;(async () => await main(process.argv.slice(2)))()
+;(async () => await main(process.argv.slice(2)))().then(() => {}).catch(() => {})
