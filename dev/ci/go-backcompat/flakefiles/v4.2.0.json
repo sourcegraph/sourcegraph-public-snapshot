@@ -16,6 +16,11 @@
   },
   {
     "path": "internal/database",
+    "prefix": "TestGetByID",
+    "reason": "New NOT NULL `name` column is added. The test is trying to add an entry without populating this column."
+  },
+  {
+    "path": "internal/database",
     "prefix": "TestGetByUUID",
     "reason": "New NOT NULL `name` column is added. The test is trying to add an entry without populating this column."
   },
