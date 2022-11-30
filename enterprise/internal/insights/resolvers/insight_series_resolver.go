@@ -558,8 +558,6 @@ func (g *genericIncompleteDatapointAlertResolver) Time() gqlutil.DateTime {
 
 func (g *genericIncompleteDatapointAlertResolver) Reason() string {
 	switch g.point.Reason {
-	case store.ReasonTimeout:
-		return "Search timeouts during data processing caused this point to be incomplete."
 	default:
 		return "There was an issue during data processing that caused this point to be incomplete."
 	}

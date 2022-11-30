@@ -175,7 +175,7 @@ type TimeoutDatapointAlert implements IncompleteDatapointAlert {
 }
 
 """
-Represents a terminally incomplete data point at a specific time.
+Represents a terminally incomplete data point at a specific time. Only returns alerts that do not satisfy a specific implementation.
 """
 type GenericIncompleteDatapointAlert implements IncompleteDatapointAlert {
     """
