@@ -1071,6 +1071,22 @@ func TestSearchContexts_DefaultContexts(t *testing.T) {
 		t.Fatalf("Expected B-user-level context to be the default, got %+v", defaultContext)
 	}
 
+	// Set user1 has a default search context of searchContexts[0]
+	err = sc.SetUserDefaultSearchContextID(userCtx, user1.ID, searchContexts[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// A-user-level context should be the default
+	gotSearchContexts, err = sc.ListSearchContexts(userCtx, ListSearchContextsPageOptions{First: 3}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defaultContext = getDefaultContext(gotSearchContexts)
+	if defaultContext == nil || defaultContext.Name != "A-user-level" {
+		t.Fatalf("Expected A-user-level context to be the default, got %+v", defaultContext)
+	}
+
 	// Set user1 default context back to global
 	err = sc.SetUserDefaultSearchContextID(userCtx, user1.ID, gotSearchContexts[0].ID)
 	if err != nil {
@@ -1126,9 +1142,99 @@ func TestSearchContexts_StarringContexts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Create star
-	err = sc.SetUserDefaultSearchContextID(userCtx, user1.ID, searchContexts[1].ID)
+	// Create star for searchContexts[1]
+	err = sc.CreateSearchContextStarForUser(userCtx, user1.ID, searchContexts[1].ID)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	// B-user-level context should be starred
+	gotSearchContexts, err := sc.ListSearchContexts(userCtx, ListSearchContextsPageOptions{First: 3}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	starredContexts := getStarredContexts(gotSearchContexts)
+	if len(starredContexts) != 1 || starredContexts[0].Name != "B-user-level" {
+		t.Fatalf("Expected B-user-level context to be starred, got %+v", starredContexts)
+	}
+
+	// Try to star searchContexts[0] again, should be a no-op
+	err = sc.CreateSearchContextStarForUser(userCtx, user1.ID, searchContexts[1].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// B-user-level context should still be starred
+	gotSearchContexts, err = sc.ListSearchContexts(userCtx, ListSearchContextsPageOptions{First: 3}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	starredContexts = getStarredContexts(gotSearchContexts)
+	if len(starredContexts) != 1 || starredContexts[0].Name != "B-user-level" {
+		t.Fatalf("Expected B-user-level context to be starred, got %+v", starredContexts)
+	}
+
+	// Star searchContexts[0]
+	err = sc.CreateSearchContextStarForUser(userCtx, user1.ID, searchContexts[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Both contexts should be starred
+	gotSearchContexts, err = sc.ListSearchContexts(userCtx, ListSearchContextsPageOptions{First: 3}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	starredContexts = getStarredContexts(gotSearchContexts)
+	if len(starredContexts) != 2 || starredContexts[0].Name != "A-user-level" || starredContexts[1].Name != "B-user-level" {
+		t.Fatalf("Expected both contexts to be starred, got %+v", starredContexts)
+	}
+
+	// Unstar searchContexts[0]
+	err = sc.DeleteSearchContextStarForUser(userCtx, user1.ID, searchContexts[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Only B-user-level context should be starred
+	gotSearchContexts, err = sc.ListSearchContexts(userCtx, ListSearchContextsPageOptions{First: 3}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	starredContexts = getStarredContexts(gotSearchContexts)
+	if len(starredContexts) != 1 || starredContexts[0].Name != "B-user-level" {
+		t.Fatalf("Expected only B-user-level context to be starred, got %+v", starredContexts)
+	}
+
+	// Try to unstar searchContexts[0] again, should be a no-op
+	err = sc.DeleteSearchContextStarForUser(userCtx, user1.ID, searchContexts[0].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Only B-user-level context should be starred
+	gotSearchContexts, err = sc.ListSearchContexts(userCtx, ListSearchContextsPageOptions{First: 3}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	starredContexts = getStarredContexts(gotSearchContexts)
+	if len(starredContexts) != 1 || starredContexts[0].Name != "B-user-level" {
+		t.Fatalf("Expected only B-user-level context to be starred, got %+v", starredContexts)
+	}
+
+	// Try to star the global context, should fail
+	err = sc.CreateSearchContextStarForUser(userCtx, user1.ID, 0)
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+
+	// Only B-user-level context should be starred
+	gotSearchContexts, err = sc.ListSearchContexts(userCtx, ListSearchContextsPageOptions{First: 3}, ListSearchContextsOptions{OrderBy: SearchContextsOrderBySpec, OrderByDescending: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	starredContexts = getStarredContexts(gotSearchContexts)
+	if len(starredContexts) != 1 || starredContexts[0].Name != "B-user-level" {
+		t.Fatalf("Expected only B-user-level context to be starred, got %+v", starredContexts)
 	}
 }

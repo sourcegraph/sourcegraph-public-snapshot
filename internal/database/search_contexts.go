@@ -664,18 +664,26 @@ func (s *searchContextsStore) SetUserDefaultSearchContextID(ctx context.Context,
 		`INSERT INTO search_context_default (user_id, search_context_id)
 		VALUES (%d, %d)
 		ON CONFLICT (user_id) DO
-		UPDATE SET search_context_id=EXCLUDED.search_context_id`, userID, searchContextID)
+		UPDATE SET search_context_id=EXCLUDED.search_context_id`,
+		userID,
+		searchContextID)
 	return s.Exec(ctx, q)
 }
 
 // 🚨 SECURITY: The caller must ensure that the actor is the user creating the star for themselves.
 func (s *searchContextsStore) CreateSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error {
-	q := sqlf.Sprintf(`INSERT INTO search_context_stars (user_id, search_context_id) VALUES (%d, %d)`, userID, searchContextID)
+	q := sqlf.Sprintf(
+		`INSERT INTO search_context_stars (user_id, search_context_id)
+		VALUES (%d, %d)
+		ON CONFLICT DO NOTHING`, userID, searchContextID)
 	return s.Exec(ctx, q)
 }
 
 // 🚨 SECURITY: The caller must ensure that the actor is the user deleting the star for themselves.
 func (s *searchContextsStore) DeleteSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error {
-	q := sqlf.Sprintf(`DELETE FROM search_context_stars WHERE user_id = %d AND search_context_id = %d`, userID, searchContextID)
+	q := sqlf.Sprintf(
+		`DELETE FROM search_context_stars
+		WHERE user_id = %d AND search_context_id = %d`,
+		userID, searchContextID)
 	return s.Exec(ctx, q)
 }
