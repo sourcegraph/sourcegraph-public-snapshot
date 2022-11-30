@@ -204,9 +204,10 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         ) {
             // eslint-disable-next-line unicorn/no-document-cookie
             document.cookie = `displayName=${props.authenticatedUser.displayName || ''}`
+            // eslint-disable-next-line unicorn/no-document-cookie
             document.cookie = `email=${props.authenticatedUser.email}`
         } else {
-            null
+            return
         }
     }, [props.authenticatedUser, props.isSourcegraphDotCom])
 
