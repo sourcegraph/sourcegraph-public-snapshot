@@ -721,7 +721,7 @@ func TestV3Client_Fork(t *testing.T) {
 				client, save := newV3TestClient(t, testName)
 				defer save()
 
-				fork, err := client.Fork(ctx, "sourcegraph", "automation-testing", org)
+				fork, err := client.Fork(ctx, "sourcegraph", "automation-testing", org, "sourcegraph-automation-testing")
 				assert.Nil(t, err)
 				assert.NotNil(t, fork)
 				if org != nil {
@@ -742,7 +742,7 @@ func TestV3Client_Fork(t *testing.T) {
 		client, save := newV3TestClient(t, testName)
 		defer save()
 
-		fork, err := client.Fork(ctx, "sourcegraph-testing", "unforkable", nil)
+		fork, err := client.Fork(ctx, "sourcegraph-testing", "unforkable", nil, "sourcegraph-testing-unforkable")
 		assert.NotNil(t, err)
 		assert.Nil(t, fork)
 
