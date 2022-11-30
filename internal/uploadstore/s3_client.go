@@ -325,6 +325,8 @@ func (s *s3Store) create(ctx context.Context) error {
 }
 
 func (s *s3Store) update(ctx context.Context) error {
+	// TODO(blobstore): remove lifecycle configuration entirely and rely just on our
+	// built-in expiration. See https://github.com/sourcegraph/sourcegraph/pull/44255#discussion_r1036336557
 	if !s.canConfigureLifecycle {
 		return nil
 	}
