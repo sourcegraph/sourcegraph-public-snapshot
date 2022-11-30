@@ -9,10 +9,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func InitPrometheusMetric(observationContext *observation.Context, workerStore store.Store, team, resource string, constLabels prometheus.Labels) {
+func InitPrometheusMetric[T workerutil.Record](observationContext *observation.Context, workerStore store.Store[T], team, resource string, constLabels prometheus.Labels) {
 	teamAndResource := resource
 	if team != "" {
 		teamAndResource = team + "_" + teamAndResource

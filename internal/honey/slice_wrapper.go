@@ -11,7 +11,7 @@ import (
 type sliceWrapper []any
 
 func (s sliceWrapper) MarshalJSON() ([]byte, error) {
-	if s == nil || len(s) == 0 {
+	if len(s) == 0 {
 		return nil, nil
 	}
 

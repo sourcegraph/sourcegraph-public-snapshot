@@ -1,6 +1,7 @@
 import { useCallback, useRef, useEffect, FormEvent, useMemo, useState, FC } from 'react'
 
-import { mdiClose } from '@mdi/js'
+import { mdiClose, mdiArrowRight } from '@mdi/js'
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, switchMap, tap } from 'rxjs/operators'
@@ -16,6 +17,8 @@ import {
     useObservable,
     Icon,
     ButtonLink,
+    Link,
+    Text,
     Tooltip,
     Combobox,
     ComboboxInput,
@@ -32,6 +35,7 @@ export interface SearchContextMenuProps
         TelemetryProps {
     showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean | null
     selectSearchContextSpec: (spec: string) => void
     className?: string
     onMenuClose: (isEscapeKey?: boolean) => void
@@ -64,6 +68,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
         showSearchContextManagement,
         platformContext,
         telemetryService,
+        isSourcegraphDotCom,
         className,
     } = props
 
@@ -249,14 +254,49 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                 <div ref={infiniteScrollTrigger} className={styles.infiniteScrollTrigger} />
             </ComboboxList>
             <div className={styles.footer}>
-                <Button size="sm" variant="link" className={styles.footerButton} onClick={reset}>
-                    Reset
-                </Button>
-                <span className="flex-grow-1" />
-                {showSearchContextManagement && (
-                    <ButtonLink variant="link" to="/contexts" size="sm" className={styles.footerButton}>
-                        Manage contexts
-                    </ButtonLink>
+                {isSourcegraphDotCom ? (
+                    <>
+                        <div className="d-flex col-7 px-0 mr-auto">
+                            <Icon
+                                className={classNames('text-merged mr-1', styles.footerIcon)}
+                                size="md"
+                                aria-hidden={true}
+                                svgPath={mdiArrowRight}
+                            />
+                            <Text className="mb-0">
+                                To search across your team's private repositories,{' '}
+                                <Link
+                                    to="https://signup.sourcegraph.com/?p=context"
+                                    onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                                >
+                                    try Sourcegraph Cloud
+                                </Link>
+                                .
+                            </Text>
+                        </div>
+                        <div className="d-flex flex-column align-items-end">
+                            {showSearchContextManagement && (
+                                <ButtonLink variant="link" to="/contexts" className={styles.footerButton}>
+                                    Manage contexts
+                                </ButtonLink>
+                            )}
+                            <Button variant="link" className={styles.footerButton} onClick={reset}>
+                                Reset
+                            </Button>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <Button size="sm" variant="link" className={styles.footerButton} onClick={reset}>
+                            Reset
+                        </Button>
+                        <span className="flex-grow-1" />
+                        {showSearchContextManagement && (
+                            <ButtonLink variant="link" to="/contexts" size="sm" className={styles.footerButton}>
+                                Manage contexts
+                            </ButtonLink>
+                        )}
+                    </>
                 )}
             </div>
         </Combobox>
@@ -279,6 +319,7 @@ export const SearchContextMenuItem: FC<SearchContextMenuItemProps> = props => {
     return (
         <ComboboxOption
             value={spec}
+            selected={selected}
             data-testid="search-context-menu-item"
             data-search-context-spec={spec}
             data-selected={selected || undefined}
@@ -288,14 +329,18 @@ export const SearchContextMenuItem: FC<SearchContextMenuItemProps> = props => {
                 <small data-testid="search-context-menu-item-name" className={styles.itemName}>
                     <ComboboxOptionText />
                 </small>
-            </Tooltip>{' '}
+            </Tooltip>
+            {descriptionOrQuery && <VisuallyHidden>,</VisuallyHidden>}{' '}
             <Tooltip content={descriptionOrQuery}>
                 <small className={styles.itemDescription}>{descriptionOrQuery}</small>
             </Tooltip>
             {isDefault && (
-                <Badge variant="secondary" className={classNames('text-uppercase', styles.itemDefault)}>
-                    Default
-                </Badge>
+                <>
+                    <VisuallyHidden>,</VisuallyHidden>
+                    <Badge variant="secondary" className={classNames('text-uppercase', styles.itemDefault)}>
+                        Default
+                    </Badge>
+                </>
             )}
         </ComboboxOption>
     )

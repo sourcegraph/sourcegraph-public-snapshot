@@ -29,12 +29,12 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 	// We'll search for collaborators in 25 of the user's most-starred repositories.
 	const maxReposToScan = 25
 	db := r.db
-	pickedRepos, err := backend.NewRepos(r.logger, db).List(ctx, database.ReposListOptions{
+	gsClient := gitserver.NewClient(db)
+	pickedRepos, err := backend.NewRepos(r.logger, db, gsClient).List(ctx, database.ReposListOptions{
 		// SECURITY: This must be the authenticated user's ID.
-		UserID:                 a.UID,
-		IncludeUserPublicRepos: false,
-		NoForks:                true,
-		NoArchived:             true,
+		UserID:     a.UID,
+		NoForks:    true,
+		NoArchived: true,
 		OrderBy: database.RepoListOrderBy{{
 			Field:      "stars",
 			Descending: true,
@@ -46,7 +46,7 @@ func (r *UserResolver) InvitableCollaborators(ctx context.Context) ([]*invitable
 	}
 
 	// In parallel collect all recent committers info for the few repos we're going to scan.
-	recentCommitters := gitserverParallelRecentCommitters(ctx, pickedRepos, gitserver.NewClient(db).Commits)
+	recentCommitters := gitserverParallelRecentCommitters(ctx, pickedRepos, gsClient.Commits)
 
 	authUserEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 		UserID: a.UID,

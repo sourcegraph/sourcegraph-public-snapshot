@@ -1,7 +1,5 @@
 import { subDays } from 'date-fns'
 
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
-
 import {
     BatchChangeFields,
     BulkOperationState,
@@ -14,6 +12,7 @@ import {
     ChangesetCheckState,
     BatchSpecState,
     BatchChangeState,
+    BatchSpecSource,
 } from '../../../graphql-operations'
 
 const now = new Date()
@@ -71,6 +70,31 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
             __typename: 'BatchChangesCodeHostConnection',
             nodes: [],
             totalCount: 0,
+        },
+        description: {
+            __typename: 'BatchChangeDescription',
+            name: 'Spec Description',
+        },
+        files: {
+            totalCount: 2,
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            nodes: [
+                {
+                    id: 'random-id',
+                    name: 'test.txt',
+                    binary: false,
+                    byteSize: 74,
+                },
+                {
+                    id: 'random-id-2',
+                    name: 'src-cli',
+                    binary: true,
+                    byteSize: 75,
+                },
+            ],
         },
     },
     batchSpecs: {

@@ -359,7 +359,7 @@ func Test_IsEmptyRepoError(t *testing.T) {
 	t.Parallel()
 
 	defaultDate := time.Date(2022, 07, 01, 12, 12, 12, 10, time.UTC)
-	defaultError := generateEmptyRepoErrorMessage(defaultDate, nil)
+	defaultError := errors.New(generateEmptyRepoErrorMessagePrefix(defaultDate, nil) + emptyRepoErrMessageSuffix)
 
 	testCases := []struct {
 		err   error
@@ -368,7 +368,7 @@ func Test_IsEmptyRepoError(t *testing.T) {
 		want  autogold.Value
 	}{
 		{
-			err:   errors.New(defaultError),
+			err:   defaultError,
 			after: defaultDate,
 			until: nil,
 			want:  autogold.Want("EmptyRepo", true),
@@ -392,10 +392,21 @@ func Test_IsEmptyRepoError(t *testing.T) {
 			want:  autogold.Want("NestedNotEmptyRepoError", false),
 		},
 		{
-			err:   errors.New(generateEmptyRepoErrorMessage(defaultDate, &defaultDate)),
+			err:   errors.New(generateEmptyRepoErrorMessagePrefix(defaultDate, &defaultDate) + emptyRepoErrMessageSuffix),
 			after: defaultDate,
 			until: &defaultDate,
 			want:  autogold.Want("EmptyRepoUntil", true),
+		},
+		{
+			err:   errors.New(generateEmptyRepoErrorMessagePrefix(defaultDate, nil) + emptyRepoErrMessageSuffixWithNameOnly),
+			after: defaultDate,
+			want:  autogold.Want("EmptyRepoSubRepoPermissions", true),
+		},
+		{
+			err:   errors.New(generateEmptyRepoErrorMessagePrefix(defaultDate, &defaultDate) + emptyRepoErrMessageSuffixWithNameOnly),
+			after: defaultDate,
+			until: &defaultDate,
+			want:  autogold.Want("EmptyRepoUntilSubRepoPermissions", true),
 		},
 		{
 			err:   errors.New("A different error"),

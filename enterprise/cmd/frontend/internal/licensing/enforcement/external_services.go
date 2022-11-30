@@ -30,11 +30,6 @@ func NewBeforeCreateExternalServiceHook() func(ctx context.Context, store databa
 			return errors.Wrap(err, "get license info")
 		}
 
-		// Free instances maintains status quo (unlimited)
-		if info == nil {
-			return nil
-		}
-
 		switch info.Plan() {
 		case licensing.PlanBusiness0: // The "business-0" plan can only have cloud code hosts (GitHub.com/GitLab.com/Bitbucket.org)
 			config, err := es.Configuration(ctx)
@@ -63,6 +58,8 @@ func NewBeforeCreateExternalServiceHook() func(ctx context.Context, store databa
 				return presentationError
 			}
 
+		case licensing.PlanFree0:
+			// Free plan can have unlimited number of code host connections for now
 		default:
 			// Default to unlimited number of code host connections
 		}

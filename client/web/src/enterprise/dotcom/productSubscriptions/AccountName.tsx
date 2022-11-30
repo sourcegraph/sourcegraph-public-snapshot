@@ -1,8 +1,8 @@
 import React from 'react'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Link } from '@sourcegraph/wildcard'
 
+import { ProductLicenseSubscriptionAccount } from '../../../graphql-operations'
 import { userURL } from '../../../user'
 
 /**
@@ -10,7 +10,7 @@ import { userURL } from '../../../user'
  */
 export const AccountName: React.FunctionComponent<
     React.PropsWithChildren<{
-        account: Pick<GQL.IUser, 'username' | 'displayName'> | null
+        account: Pick<ProductLicenseSubscriptionAccount, 'username' | 'displayName'> | null
         link?: string
     }>
 > = ({ account, link }) =>

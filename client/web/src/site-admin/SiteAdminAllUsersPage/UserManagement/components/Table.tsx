@@ -326,7 +326,7 @@ export function Table<T>({
             </table>
             {selectable && (
                 <div className="mt-4 d-flex justify-content-between align-items-center">
-                    <SelectionActions<T> actions={actions} position="bottom" selection={selection} />
+                    <SelectionActions<T> actions={bulkActions} position="bottom" selection={selection} />
                     {note}
                 </div>
             )}

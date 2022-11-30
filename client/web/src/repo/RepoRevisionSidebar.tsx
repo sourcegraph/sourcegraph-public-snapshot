@@ -45,7 +45,6 @@ interface RepoRevisionSidebarProps
     defaultBranch: string
     className: string
     history: H.History
-    location: H.Location
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
 }
@@ -164,7 +163,6 @@ export const RepoRevisionSidebar: React.FunctionComponent<
                                         revision={props.revision}
                                         commitID={props.commitID}
                                         history={props.history}
-                                        location={props.location}
                                         scrollRootSelector=".explorer"
                                         activePath={props.filePath}
                                         activePathIsDir={props.isDir}

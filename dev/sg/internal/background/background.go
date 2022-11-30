@@ -77,8 +77,10 @@ func Wait(ctx context.Context, out *std.Output) {
 	defer span.End()
 
 	firstResultWithOutput := true
-	out.WriteLine(output.Styledf(output.StylePending, "Waiting for %d remaining background %s to complete...",
-		count, pluralize("job", "jobs", count)))
+	if jobs.verbose {
+		out.WriteLine(output.Styledf(output.StylePending, "Waiting for %d remaining background %s to complete...",
+			count, pluralize("job", "jobs", count)))
+	}
 	go func() {
 		// Stream job output as they complete
 		for jobOutput := range jobs.output {
@@ -96,7 +98,9 @@ func Wait(ctx context.Context, out *std.Output) {
 
 	// Done!
 	close(jobs.output)
-	out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
+	if jobs.verbose {
+		out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
+	}
 	span.Succeeded()
 }
 

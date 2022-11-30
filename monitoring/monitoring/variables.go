@@ -123,7 +123,7 @@ func (c *ContainerVariable) toGrafanaTemplateVar(injectLabelMatchers []*labels.M
 	switch {
 	case c.OptionsLabelValues.Query != "":
 		variable.Type = "query"
-		expr, err := promql.Inject(c.OptionsLabelValues.Query, injectLabelMatchers, nil)
+		expr, err := promql.InjectMatchers(c.OptionsLabelValues.Query, injectLabelMatchers, nil)
 		if err != nil {
 			return variable, errors.Wrap(err, "OptionsLabelValues.Query")
 		}

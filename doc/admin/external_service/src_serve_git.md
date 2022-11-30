@@ -23,7 +23,7 @@ The most common use-case for `src serve-git` is to create git repos that do not 
 - Using `git p4` to serve up Perforce repositories.
 - Serve up local repositories to Sourcegraph while trialling it.
 
-> WARNING: `src serve-git` is not intended to be used to serve repos from a code host which is already configured to be synced by a seperate code host config. For instance if you have a self managed Gitlab code host, it is not advised to use `src serve-git` to serve repos on the gitlab server. 
+> WARNING: `src serve-git` is not intended to be used to serve repos from a code host which is already configured to be synced by a seperate code host config. For instance if you have a self managed GitLab code host, it is not advised to use `src serve-git` to serve repos on the gitlab server. 
 
 ## Quickstart
 

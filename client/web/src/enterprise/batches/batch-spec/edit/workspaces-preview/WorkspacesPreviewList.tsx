@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { Connection } from '../../../../../components/FilteredConnection'
-import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
+import { UseShowMorePaginationResult } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -20,7 +20,7 @@ import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 
 interface WorkspacesPreviewListProps {
     /** The current workspaces preview connection result used to render the list. */
-    workspacesConnection: UseConnectionResult<
+    workspacesConnection: UseShowMorePaginationResult<
         PreviewHiddenBatchSpecWorkspaceFields | PreviewVisibleBatchSpecWorkspaceFields
     >
     /**
@@ -68,7 +68,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<React.PropsWithChild
     return (
         <ConnectionContainer className="w-100">
             {error && <ConnectionError errors={[error]} />}
-            <ConnectionList className="list-group list-group-flush w-100" aria-label="Workspace results found">
+            <ConnectionList className="list-group list-group-flush w-100" aria-label="workspace results found">
                 {connectionOrCached?.nodes?.map(node => (
                     <WorkspacesPreviewListItem
                         key={node.id}

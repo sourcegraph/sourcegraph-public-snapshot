@@ -1,7 +1,6 @@
 import { InsightDataSeries } from '../../../../../graphql-operations'
+import { DATA_SERIES_COLORS_LIST } from '../../../constants'
 import { BackendInsight, InsightType, SearchBasedInsightSeries } from '../../types'
-
-import { DATA_SERIES_COLORS_LIST } from './create-line-chart-content'
 
 export function getParsedSeriesMetadata(
     insight: BackendInsight,

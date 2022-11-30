@@ -20,11 +20,7 @@ const SHARED_DOCUMENTS_GLOB = [
   `!${SHARED_FOLDER}/src/schema.ts`,
 ]
 
-const WEB_DOCUMENTS_GLOB = [
-  `${WEB_FOLDER}/src/**/*.{ts,tsx}`,
-  `!${WEB_FOLDER}/src/regression/**/*.*`,
-  `!${WEB_FOLDER}/src/end-to-end/**/*.*`,
-]
+const WEB_DOCUMENTS_GLOB = [`${WEB_FOLDER}/src/**/*.{ts,tsx}`, `!${WEB_FOLDER}/src/end-to-end/**/*.*`]
 
 const BROWSER_DOCUMENTS_GLOB = [
   `${BROWSER_FOLDER}/src/**/*.{ts,tsx}`,

@@ -45,12 +45,12 @@ export const ChangesetNode: React.FunctionComponent<React.PropsWithChildren<Chan
     separator = <span className={styles.changesetNodeSeparator} />,
     ...props
 }) => (
-    <>
+    <li className={styles.changesetNode}>
         {separator}
         {node.__typename === 'ExternalChangeset' ? (
             <ExternalChangesetNode node={node} {...props} />
         ) : (
             <HiddenExternalChangesetNode node={node} {...props} />
         )}
-    </>
+    </li>
 )

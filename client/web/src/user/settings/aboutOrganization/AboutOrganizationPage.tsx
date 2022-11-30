@@ -22,7 +22,7 @@ export const AboutOrganizationPage: React.FunctionComponent<React.PropsWithChild
             <PageHeader
                 headingElement="h2"
                 path={[{ text: 'Organizations' }]}
-                description="Support for organizations is not currently available on Sourcegraph Cloud."
+                description="Support for organizations is not currently available on Sourcegraph.com."
                 className="mb-3"
             />
             <SelfHostedCta

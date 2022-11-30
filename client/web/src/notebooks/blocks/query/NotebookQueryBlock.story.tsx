@@ -44,6 +44,7 @@ const noopBlockCallbacks = {
     onDeleteBlock: noop,
     onMoveBlock: noop,
     onDuplicateBlock: noop,
+    onNewBlock: noop,
 }
 
 export const Default: Story = () => (
@@ -58,7 +59,7 @@ export const Default: Story = () => (
                 output={of(streamingSearchResult)}
                 isSelected={false}
                 isReadOnly={false}
-                isOtherBlockSelected={false}
+                showMenu={false}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 globbing={false}
@@ -82,7 +83,7 @@ export const Selected: Story = () => (
                 input={{ query: 'query' }}
                 output={of(streamingSearchResult)}
                 isSelected={true}
-                isOtherBlockSelected={false}
+                showMenu={false}
                 isReadOnly={false}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
@@ -109,7 +110,7 @@ export const ReadOnlySelected: Story = () => (
                 output={of(streamingSearchResult)}
                 isSelected={true}
                 isReadOnly={true}
-                isOtherBlockSelected={false}
+                showMenu={false}
                 isSourcegraphDotCom={true}
                 searchContextsEnabled={true}
                 globbing={false}

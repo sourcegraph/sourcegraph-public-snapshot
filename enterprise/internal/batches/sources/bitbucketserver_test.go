@@ -693,12 +693,18 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	newBitbucketServerRepo := func(key, slug string, id int) *types.Repo {
+	newBitbucketServerRepo := func(urn, key, slug string, id int) *types.Repo {
 		return &types.Repo{
 			Metadata: &bitbucketserver.Repo{
 				ID:      id,
 				Slug:    slug,
 				Project: &bitbucketserver.Project{Key: key},
+			},
+			Sources: map[string]*types.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: "https://bitbucket.sgdev.org/" + key + "/" + slug,
+				},
 			},
 		}
 	}
@@ -726,6 +732,7 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 
 	lg := log15.New()
 	lg.SetHandler(log15.DiscardHandler())
+	urn := extsvc.URN(extsvc.KindBitbucketCloud, 1)
 
 	t.Run("bad username", func(t *testing.T) {
 		cf, save := newClientFactory(t, testName(t))
@@ -737,7 +744,7 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
 		assert.Nil(t, err)
 
-		fork, err := bbsSrc.GetUserFork(ctx, newBitbucketServerRepo("SOUR", "read-only", 10103))
+		fork, err := bbsSrc.GetUserFork(ctx, newBitbucketServerRepo(urn, "SOUR", "read-only", 10103))
 		assert.Nil(t, fork)
 		assert.NotNil(t, err)
 		assert.Contains(t, err.Error(), "getting username")
@@ -749,9 +756,11 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		defer save(t)
 
 		svc := newExternalService(t, nil)
-		// If an update is run by someone who's not aharvey, this needs to be a
-		// repo that isn't a fork.
-		target := newBitbucketServerRepo("~AHARVEY", "old-talk", 0)
+		// This is a repo that isn't a fork. Use credentials in 1Password for "milton" to
+		// access or update this test. If an update is run by someone who's not aharvey, this
+		// needs to be a repo that isn't a fork.
+		// This test is to ensure that a user cannot fork a repo that is already in their user namespace
+		target := newBitbucketServerRepo(urn, "~milton", "vcr-fork-test-repo", 0)
 
 		ctx := context.Background()
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
@@ -759,10 +768,13 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 
 		fork, err := bbsSrc.GetUserFork(ctx, target)
 		assert.Nil(t, fork)
-		assert.ErrorIs(t, err, errNotAFork)
+		assert.ErrorContains(t, err, "This repository URL is already taken")
 	})
 
 	t.Run("not forked from parent", func(t *testing.T) {
+		// This test expects that:
+		// - The repo BAT/vcr-fork-test-repo-already-forked already exists.
+		// - The repo ~MILTON/BAT-vcr-fork-test-repo-already-forked exists and is a fork of it.
 		name := testName(t)
 		cf, save := newClientFactory(t, name)
 		defer save(t)
@@ -770,7 +782,7 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		svc := newExternalService(t, nil)
 		// We'll give the target repo the incorrect ID, which will result in the
 		// parent check in getFork() failing.
-		target := newBitbucketServerRepo("SOUR", "read-only", 0)
+		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo-already-forked", 0)
 
 		ctx := context.Background()
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
@@ -782,12 +794,16 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 	})
 
 	t.Run("already forked", func(t *testing.T) {
+		// This test expects that:
+		// - The repo BAT/vcr-fork-test-repo-already-forked already exists.
+		// - The repo ~MILTON/BAT-vcr-fork-test-repo-already-forked exists and is a fork of it.
 		name := testName(t)
 		cf, save := newClientFactory(t, name)
 		defer save(t)
 
 		svc := newExternalService(t, nil)
-		target := newBitbucketServerRepo("SOUR", "read-only", 10103)
+		// Use credentials in 1Password for "milton" to access or update this repo.
+		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo-already-forked", 24378)
 
 		ctx := context.Background()
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
@@ -799,21 +815,28 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		fork, err := bbsSrc.GetUserFork(ctx, target)
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
+		assert.NotEqual(t, fork, target)
 		assert.Equal(t, "~"+strings.ToUpper(user), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
+		assert.Equal(t, fork.Sources[urn].CloneURL, "https://bitbucket.sgdev.org/~"+user+"/bat-vcr-fork-test-repo-already-forked")
 
 		testutil.AssertGolden(t, "testdata/golden/"+name, update(name), fork)
 	})
 
 	t.Run("new fork", func(t *testing.T) {
+		// This test expects that:
+		// - The repo BAT/vcr-fork-test-repo already exists.
+		// - The repo ~MILTON/BAT-vcr-fork-test-repo does NOT already exist.
 		name := testName(t)
 		cf, save := newClientFactory(t, name)
 		defer save(t)
 
 		svc := newExternalService(t, nil)
-		target := newBitbucketServerRepo("SGDEMO", "go", 10060)
+		// Use credentials in 1Password for "milton" to access or update this repo.
+		target := newBitbucketServerRepo(urn, "BAT", "vcr-fork-test-repo", 24373)
 
 		ctx := context.Background()
 		bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+
 		assert.Nil(t, err)
 
 		user, err := bbsSrc.client.AuthenticatedUsername(ctx)
@@ -822,7 +845,10 @@ func TestBitbucketServerSource_GetUserFork(t *testing.T) {
 		fork, err := bbsSrc.GetUserFork(ctx, target)
 		assert.Nil(t, err)
 		assert.NotNil(t, fork)
+		assert.NotEqual(t, fork, target)
 		assert.Equal(t, "~"+strings.ToUpper(user), fork.Metadata.(*bitbucketserver.Repo).Project.Key)
+		// Fork name should be of the form "projectkey-slug"
+		assert.Equal(t, fork.Sources[urn].CloneURL, "https://bitbucket.sgdev.org/~"+user+"/bat-vcr-fork-test-repo")
 
 		testutil.AssertGolden(t, "testdata/golden/"+name, update(name), fork)
 	})

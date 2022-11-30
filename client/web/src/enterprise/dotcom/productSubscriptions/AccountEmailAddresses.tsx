@@ -2,15 +2,16 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Link } from '@sourcegraph/wildcard'
+
+import { DotComProductSubscriptionEmailFields } from '../../../graphql-operations'
 
 /**
  * Displays an inline list of email addresses for an account.
  */
 export const AccountEmailAddresses: React.FunctionComponent<
     React.PropsWithChildren<{
-        emails: Pick<GQL.IUserEmail, 'email' | 'verified'>[]
+        emails: DotComProductSubscriptionEmailFields['emails']
     }>
 > = ({ emails }) => (
     <>

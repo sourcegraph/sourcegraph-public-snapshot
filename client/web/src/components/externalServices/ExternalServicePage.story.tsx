@@ -42,7 +42,6 @@ const externalService = {
     nextSyncAt: null,
     updatedAt: '2021-03-15T19:39:11Z',
     createdAt: '2021-03-15T19:39:11Z',
-    grantedScopes: [],
     namespace: {
         id: 'userid',
         namespaceName: 'johndoe',
@@ -62,6 +61,12 @@ const queryExternalServiceSyncJobs: typeof _queryExternalServiceSyncJobs = () =>
                 finishedAt: null,
                 id: 'SYNCJOB1',
                 state: ExternalServiceSyncJobState.CANCELING,
+                reposSynced: 5,
+                repoSyncErrors: 0,
+                reposAdded: 5,
+                reposDeleted: 0,
+                reposModified: 0,
+                reposUnmodified: 0,
             },
             {
                 __typename: 'ExternalServiceSyncJob',
@@ -70,6 +75,12 @@ const queryExternalServiceSyncJobs: typeof _queryExternalServiceSyncJobs = () =>
                 finishedAt: null,
                 id: 'SYNCJOB1',
                 state: ExternalServiceSyncJobState.PROCESSING,
+                reposSynced: 5,
+                repoSyncErrors: 0,
+                reposAdded: 5,
+                reposDeleted: 0,
+                reposModified: 0,
+                reposUnmodified: 0,
             },
             {
                 __typename: 'ExternalServiceSyncJob',
@@ -78,6 +89,12 @@ const queryExternalServiceSyncJobs: typeof _queryExternalServiceSyncJobs = () =>
                 finishedAt: subMinutes(new Date(), 25).toISOString(),
                 id: 'SYNCJOB1',
                 state: ExternalServiceSyncJobState.FAILED,
+                reposSynced: 5,
+                repoSyncErrors: 0,
+                reposAdded: 5,
+                reposDeleted: 0,
+                reposModified: 0,
+                reposUnmodified: 0,
             },
             {
                 __typename: 'ExternalServiceSyncJob',
@@ -86,6 +103,12 @@ const queryExternalServiceSyncJobs: typeof _queryExternalServiceSyncJobs = () =>
                 finishedAt: subMinutes(new Date(), 25).toISOString(),
                 id: 'SYNCJOB1',
                 state: ExternalServiceSyncJobState.COMPLETED,
+                reposSynced: 5,
+                repoSyncErrors: 0,
+                reposAdded: 5,
+                reposDeleted: 0,
+                reposModified: 0,
+                reposUnmodified: 0,
             },
         ],
     })
@@ -114,6 +137,8 @@ export const ViewConfig: Story = () => (
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     externalServiceID="service123"
                     autoFocusForm={false}
+                    externalServicesFromFile={false}
+                    allowEditExternalServicesWithFile={false}
                 />
             </MockedTestProvider>
         )}
@@ -133,6 +158,8 @@ export const ConfigWithInvalidUrl: Story = () => (
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     externalServiceID="service123"
                     autoFocusForm={false}
+                    externalServicesFromFile={false}
+                    allowEditExternalServicesWithFile={false}
                 />
             </MockedTestProvider>
         )}
@@ -154,6 +181,8 @@ export const ConfigWithWarning: Story = () => (
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     externalServiceID="service123"
                     autoFocusForm={false}
+                    externalServicesFromFile={false}
+                    allowEditExternalServicesWithFile={false}
                 />
             </MockedTestProvider>
         )}
@@ -161,3 +190,26 @@ export const ConfigWithWarning: Story = () => (
 )
 
 ConfigWithWarning.storyName = 'External service config with warning after update'
+
+export const EditingDisabled: Story = () => (
+    <WebStory>
+        {webProps => (
+            <MockedTestProvider
+                link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}
+            >
+                <ExternalServicePage
+                    {...webProps}
+                    queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}
+                    afterUpdateRoute="/site-admin/after"
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    externalServiceID="service123"
+                    autoFocusForm={false}
+                    externalServicesFromFile={true}
+                    allowEditExternalServicesWithFile={false}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+EditingDisabled.storyName = 'External service config EXTSVC_CONFIG_FIlE set'

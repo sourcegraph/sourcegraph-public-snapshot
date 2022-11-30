@@ -125,6 +125,7 @@ const (
 	KindJVMPackages     = "JVMPACKAGES"
 	KindPythonPackages  = "PYTHONPACKAGES"
 	KindRustPackages    = "RUSTPACKAGES"
+	KindRubyPackages    = "RUBYPACKAGES"
 	KindNpmPackages     = "NPMPACKAGES"
 	KindPagure          = "PAGURE"
 	KindOther           = "OTHER"
@@ -152,9 +153,6 @@ const (
 	// TypeGitHub is the (api.ExternalRepoSpec).ServiceType value for GitHub repositories. The ServiceID value
 	// is the base URL to the GitHub instance (https://github.com or the GitHub Enterprise URL).
 	TypeGitHub = "github"
-
-	// TypeGitHubApp is used for GitHub App linked user external accounts.
-	TypeGitHubApp = "githubApp"
 
 	// TypeGitLab is the (api.ExternalRepoSpec).ServiceType value for GitLab projects. The ServiceID
 	// value is the base URL to the GitLab instance (https://gitlab.com or self-hosted GitLab URL).
@@ -184,8 +182,11 @@ const (
 	// TypePythonPackages is the (api.ExternalRepoSpec).ServiceType value for Python packages.
 	TypePythonPackages = "pythonPackages"
 
-	// TypeRustPackages is the (api.ExternalRepoSpec).ServiceType value for Python packages.
+	// TypeRustPackages is the (api.ExternalRepoSpec).ServiceType value for Rust packages.
 	TypeRustPackages = "rustPackages"
+
+	// TypeRubyPackages is the (api.ExternalRepoSpec).ServiceType value for Ruby packages.
+	TypeRubyPackages = "rubyPackages"
 
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
 	TypeOther = "other"
@@ -219,6 +220,8 @@ func KindToType(kind string) string {
 		return TypePythonPackages
 	case KindRustPackages:
 		return TypeRustPackages
+	case KindRubyPackages:
+		return TypeRubyPackages
 	case KindNpmPackages:
 		return TypeNpmPackages
 	case KindGoPackages:
@@ -262,6 +265,8 @@ func TypeToKind(t string) string {
 		return KindPythonPackages
 	case TypeRustPackages:
 		return KindRustPackages
+	case TypeRubyPackages:
+		return KindRubyPackages
 	case TypeGoModules:
 		return KindGoPackages
 	case TypePagure:
@@ -282,6 +287,7 @@ var (
 	goLower     = strings.ToLower(TypeGoModules)
 	pythonLower = strings.ToLower(TypePythonPackages)
 	rustLower   = strings.ToLower(TypeRustPackages)
+	rubyLower   = strings.ToLower(TypeRubyPackages)
 )
 
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
@@ -316,6 +322,8 @@ func ParseServiceType(s string) (string, bool) {
 		return TypePythonPackages, true
 	case rustLower:
 		return TypeRustPackages, true
+	case rubyLower:
+		return TypeRubyPackages, true
 	case TypePagure:
 		return TypePagure, true
 	case TypeOther:
@@ -355,6 +363,8 @@ func ParseServiceKind(s string) (string, bool) {
 		return KindPythonPackages, true
 	case KindRustPackages:
 		return KindRustPackages, true
+	case KindRubyPackages:
+		return KindRubyPackages, true
 	case KindPagure:
 		return KindPagure, true
 	case KindOther:
@@ -436,6 +446,8 @@ func getConfigPrototype(kind string) (any, error) {
 		return &schema.PythonPackagesConnection{}, nil
 	case KindRustPackages:
 		return &schema.RustPackagesConnection{}, nil
+	case KindRubyPackages:
+		return &schema.RubyPackagesConnection{}, nil
 	case KindOther:
 		return &schema.OtherExternalServiceConnection{}, nil
 	default:
@@ -616,6 +628,12 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
+	case *schema.RubyPackagesConnection:
+		// The rubygems.org API allows 10 rps https://guides.rubygems.org/rubygems-org-rate-limits/
+		limit = rate.Limit(10)
+		if c != nil && c.RateLimit != nil {
+			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
 	default:
 		return limit, ErrRateLimitUnsupported{codehostKind: kind}
 	}
@@ -736,6 +754,8 @@ func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 		return KindPythonPackages, nil
 	case *schema.RustPackagesConnection:
 		return KindRustPackages, nil
+	case *schema.RubyPackagesConnection:
+		return KindRubyPackages, nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
 	default:
@@ -748,4 +768,30 @@ func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 	}
 
 	return NormalizeBaseURL(u).String(), nil
+}
+
+// CodeHostBaseURL is an identifier for a unique code host in the form
+// of its host URL.
+// To create a new CodeHostBaseURL, use NewCodeHostURN.
+// e.g. NewCodeHostURN("https://github.com")
+// To use the string value again, use codeHostURN.String()
+type CodeHostBaseURL struct {
+	baseURL string
+}
+
+// NewCodeHostBaseURL takes a code host URL string, normalizes it,
+// and returns a CodeHostURN. If the string is required, use the
+// .String() method on the CodeHostURN.
+func NewCodeHostBaseURL(baseURL string) (CodeHostBaseURL, error) {
+	codeHostURL, err := url.Parse(baseURL)
+	if err != nil {
+		return CodeHostBaseURL{}, err
+	}
+
+	return CodeHostBaseURL{baseURL: NormalizeBaseURL(codeHostURL).String()}, nil
+}
+
+// String returns the stored, normalized code host URN as a string.
+func (c CodeHostBaseURL) String() string {
+	return c.baseURL
 }

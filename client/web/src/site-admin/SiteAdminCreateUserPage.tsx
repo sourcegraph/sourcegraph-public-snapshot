@@ -8,12 +8,12 @@ import { catchError, mergeMap, tap } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, logger } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, Link, Alert, Label, H2, Text } from '@sourcegraph/wildcard'
 
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
 import { CopyableText } from '../components/CopyableText'
 import { PageTitle } from '../components/PageTitle'
+import { CreateUserResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { createUser } from './backend'
@@ -27,7 +27,7 @@ interface State {
     /**
      * The result of creating the user.
      */
-    createUserResult?: GQL.ICreateUserResult
+    createUserResult?: CreateUserResult['createUser']
 
     // Form
     username: string

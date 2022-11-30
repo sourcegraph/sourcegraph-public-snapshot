@@ -4,13 +4,65 @@ package security
 
 import (
 	"fmt"
+	"net"
+	"strconv"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var userRegex = lazyregexp.New("^[a-zA-Z0-9]+$")
+
+// ValidateRemoteAddr validates if the input is a valid IP or a valid hostname.
+// It validates the hostname by attempting to resolve it.
+func ValidateRemoteAddr(raddr string) bool {
+	host, port, err := net.SplitHostPort(raddr)
+
+	if err == nil {
+		raddr = host
+		_, err := strconv.Atoi(port)
+
+		// return false if port is not an int
+		if err != nil {
+			return false
+		}
+	}
+
+	// Check if the string contains a username (e.g. git@example.com); if so validate username
+	fragments := strings.Split(raddr, "@")
+	// raddr contains more than one `@`
+	if len(fragments) > 2 {
+		return false
+	}
+	// raddr contains exactly one `@`
+	if len(fragments) == 2 {
+		user := fragments[0]
+
+		if match := userRegex.MatchString(user); !match {
+			return false
+		}
+
+		// Set raddr to host minus the user
+		raddr = fragments[1]
+	}
+
+	validIP := net.ParseIP(raddr) != nil
+	validHost := true
+
+	_, err = net.LookupHost(raddr)
+
+	if err != nil {
+		// we cannot resolve the addr
+		validHost = false
+	}
+
+	return validIP || validHost
+}
 
 // maxPasswordRunes is the maximum number of UTF-8 runes that a password can contain.
 // This safety limit is to protect us from a DDOS attack caused by hashing very large passwords on Sourcegraph.com.

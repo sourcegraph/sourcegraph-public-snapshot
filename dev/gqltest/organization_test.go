@@ -115,21 +115,25 @@ func TestOrganization(t *testing.T) {
 
 		// Update site configuration to set "auth.userOrgMap" which makes the new user join
 		// the organization (gqltest-org) automatically.
-		siteConfig, err := client.SiteConfiguration()
+		siteConfig, lastID, err := client.SiteConfiguration()
 		if err != nil {
 			t.Fatal(err)
 		}
 		oldSiteConfig := new(schema.SiteConfiguration)
 		*oldSiteConfig = *siteConfig
 		defer func() {
-			err = client.UpdateSiteConfiguration(oldSiteConfig)
+			_, lastID, err := client.SiteConfiguration()
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}()
 
 		siteConfig.AuthUserOrgMap = map[string][]string{"*": {testOrgName}}
-		err = client.UpdateSiteConfiguration(siteConfig)
+		err = client.UpdateSiteConfiguration(siteConfig, lastID)
 		if err != nil {
 			t.Fatal(err)
 		}

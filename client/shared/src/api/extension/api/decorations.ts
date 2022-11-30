@@ -11,7 +11,6 @@ import { hasProperty } from '@sourcegraph/common'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 
 // LINE DECORATIONS
-
 export const createDecorationType = (): TextDocumentDecorationType => ({ key: uniqueId('TextDocumentDecorationType') })
 
 /**

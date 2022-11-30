@@ -10,6 +10,7 @@ import * as tasks from './tasks'
 const buildChrome = tasks.buildChrome('prod')
 const buildFirefox = tasks.buildFirefox('prod')
 const buildSafari = tasks.buildSafari('prod')
+const buildEdge = tasks.buildEdge('prod')
 
 tasks.copyAssets()
 
@@ -27,6 +28,7 @@ compiler.run(async (error, stats) => {
     signale.success('Webpack compilation done')
 
     buildChrome()
+    buildEdge()
     buildFirefox()
     if (isXcodeAvailable()) {
         buildSafari()

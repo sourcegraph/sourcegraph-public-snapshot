@@ -6,14 +6,13 @@ import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { SearchContextProps } from '@sourcegraph/search'
+import { SearchContextFields, SearchContextProps } from '@sourcegraph/search'
 import {
     Scalars,
     SearchContextEditInput,
     SearchContextRepositoryRevisionsInput,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
@@ -46,7 +45,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<
             id: Scalars['ID'] | undefined,
             searchContext: SearchContextEditInput,
             repositories: SearchContextRepositoryRevisionsInput[]
-        ): Observable<ISearchContext> => {
+        ): Observable<SearchContextFields> => {
             if (!id) {
                 return throwError(new Error('Cannot update search context with undefined ID'))
             }

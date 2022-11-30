@@ -88,13 +88,13 @@ func initSourcegraph() {
 	}
 
 	// Ensure site configuration is set up correctly
-	siteConfig, err := client.SiteConfiguration()
+	siteConfig, lastID, err := client.SiteConfiguration()
 	if err != nil {
 		log.Fatal(err)
 	}
 	if siteConfig.ExternalURL != *baseURL {
 		siteConfig.ExternalURL = *baseURL
-		err = client.UpdateSiteConfiguration(siteConfig)
+		err = client.UpdateSiteConfiguration(siteConfig, lastID)
 		if err != nil {
 			log.Fatal(err)
 		}

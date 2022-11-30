@@ -215,7 +215,7 @@ func mergeLeft(left, right reflect.Value, depth int) reflect.Value {
 	return right
 }
 
-func (r schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, error) {
+func (r *schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, error) {
 	user, err := CurrentUser(ctx, r.db)
 	if err != nil {
 		return nil, err
@@ -228,5 +228,5 @@ func (r schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, e
 
 // Deprecated: in the GraphQL API
 func (r *schemaResolver) ViewerConfiguration(ctx context.Context) (*settingsCascade, error) {
-	return newSchemaResolver(r.db).ViewerSettings(ctx)
+	return newSchemaResolver(r.db, r.gitserverClient).ViewerSettings(ctx)
 }

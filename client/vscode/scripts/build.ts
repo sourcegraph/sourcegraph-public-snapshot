@@ -103,8 +103,6 @@ export async function build(): Promise<void> {
                 packageResolutionPlugin({
                     path: require.resolve('path-browserify'),
                     ...RXJS_RESOLUTIONS,
-                    './Link': require.resolve('../src/webview/search-panel/alias/Link'),
-                    '../Link': require.resolve('../src/webview/search-panel/alias/Link'),
                     './RepoSearchResult': require.resolve('../src/webview/search-panel/alias/RepoSearchResult'),
                     './CommitSearchResult': require.resolve('../src/webview/search-panel/alias/CommitSearchResult'),
                     './FileMatchChildren': require.resolve('../src/webview/search-panel/alias/FileMatchChildren'),

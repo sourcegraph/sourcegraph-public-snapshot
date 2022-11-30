@@ -1,3 +1,5 @@
+import type { Response as NodeFetchResponse } from 'node-fetch'
+
 import { isErrorLike } from '@sourcegraph/common'
 
 const EHTTPSTATUS = 'HTTPStatusError'
@@ -6,7 +8,7 @@ export class HTTPStatusError extends Error {
     public readonly name = EHTTPSTATUS
     public readonly status: number
 
-    constructor(response: Response) {
+    constructor(response: Response | NodeFetchResponse) {
         super(`Request to ${response.url} failed with ${response.status} ${response.statusText}`)
         this.status = response.status
     }
@@ -30,11 +32,11 @@ export const isHTTPAuthError = (error: unknown): boolean =>
     failedWithHTTPStatus(error, 401) || failedWithHTTPStatus(error, 403)
 
 /**
- * Checks if a given fetch Response has a HTTP 2xx status code and throws an HTTPStatusError otherwise.
+ * Checks if a given fetch Response has an HTTP 2xx status code and throws an HTTPStatusError otherwise.
  */
-export function checkOk(response: Response): Response {
+export function checkOk(response: Response | NodeFetchResponse): Response {
     if (!response.ok) {
         throw new HTTPStatusError(response)
     }
-    return response
+    return response as Response
 }

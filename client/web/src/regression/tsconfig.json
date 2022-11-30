@@ -5,6 +5,6 @@
     "types": ["mocha", "node"],
     "module": "commonjs",
   },
-  "include": ["**/*"],
+  "include": ["**/*", "../graphql-operations.ts"],
   "exclude": [],
 }

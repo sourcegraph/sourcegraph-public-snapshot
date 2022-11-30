@@ -99,7 +99,7 @@ func parseDiff(diffOutput string) (map[string][]DiffHunk, error) {
 
 	diffs := make(map[string][]DiffHunk)
 	for _, d := range fullDiffs {
-		if d.NewName == "" {
+		if d.NewName == "" || d.NewName == "/dev/null" {
 			continue
 		}
 

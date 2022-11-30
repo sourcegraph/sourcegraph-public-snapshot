@@ -59,6 +59,32 @@ export const FormatListBulletedIcon: React.FunctionComponent<React.PropsWithChil
     </svg>
 )
 
+export const PerforceIcon: React.FunctionComponent<React.PropsWithChildren<IconProps & { color?: string }>> = props => (
+    <svg
+        {...props}
+        width={props.size}
+        height={props.size}
+        className={props.className}
+        fill={props.color ?? 'currentColor'}
+        viewBox="0 0 24 24"
+    >
+        <path d="M3.742 8.754c.16-.418.352-.828.57-1.219l-.71-.644c2.773-3.325 6.39-4.32 9.59-3.743.656.09 1.308.247 1.956.485 4.582 1.703 6.903 6.754 5.18 11.285-.172.45-.387.883-.613 1.285.254.219.808.629.777.664-3.078 3.637-7.176 4.48-10.59 3.469-.328-.082-.652-.18-.98-.297-4.574-1.703-6.899-6.75-5.18-11.285zM19.372.98L17.75 2.512c-.54-.301-1.121-.582-1.727-.801C10.82-.227 5.336 1.965 2.316 6.03.738 8.363-.195 11.234.036 14.188c0 0 .007 5.558 5.136 8.832l1.305-1.786c.57.328 1.175.621 1.816.86 5.89 2.183 12.418-.606 14.555-6.23 0 0 1.562-3.43 1.047-7.177 0 0-.399-5.058-4.524-7.71zm0 0" />
+    </svg>
+)
+
+export const HelixSwarmIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
+    <svg viewBox="0 0 38.7 44.4" {...props} width={props.size} height={props.size} className={props.className}>
+        <path
+            d="M.5 10.75c-.3.2-.5.6-.5.9v21.1c0 .3.2.8.5.9l18.3 10.6c.3.2.8.2 1.1 0l18.3-10.6c.3-.2.5-.6.5-.9v-21.1c0-.3-.2-.8-.5-.9L19.9.15c-.3-.2-.8-.2-1.1 0z"
+            fill="#f1f1f2"
+        />
+        <path
+            d="M17.3 24.65c-.3 0-.5-.1-.7-.3l-4.4-3.6 4.3-3.5a1.08 1.08 0 0 1 .7-.3c.3 0 .7.2.9.4s.3.5.3.8-.2.6-.4.8l-2.2 1.8 2.2 1.8c.2.2.4.5.4.8s-.1.6-.3.8c-.1.4-.4.5-.8.5zm4.3 0c-.3 0-.7-.2-.9-.4-.4-.5-.3-1.2.2-1.6l2.2-1.8-2.2-1.8c-.2-.2-.4-.5-.4-.8s.1-.6.3-.8c.2-.3.5-.4.9-.4.3 0 .5.1.7.3l4.3 3.5-4.4 3.6c-.2.2-.5.2-.7.2zm5.8-12.8H11.3a3.8 3.8 0 0 0-3.8 3.8v10a3.8 3.8 0 0 0 3.8 3.8h13.2l-4.5 6.1h3.7l3.7-4.8c.7-1 .9-2 .5-2.9s-1.4-1.4-2.6-1.4h-14c-.4 0-.8-.3-.8-.8v-10c0-.4.3-.8.8-.8h16.1c.4 0 .8.3.8.8v7a1.54 1.54 0 0 0 1.5 1.5 1.54 1.54 0 0 0 1.5-1.5v-7c0-2-1.7-3.8-3.8-3.8z"
+            fill="#63a70a"
+        />
+    </svg>
+)
+
 export const PhabricatorIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
     <svg
         {...props}

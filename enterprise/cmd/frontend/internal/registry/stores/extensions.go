@@ -157,7 +157,6 @@ func (s *extensionStore) Create(ctx context.Context, publisherUserID, publisherO
 	// Include users/orgs table query (with "FOR UPDATE") to ensure that the publisher user/org
 	// not been deleted. If it was deleted, the query will return an error.
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/extensions.go:Create
 INSERT INTO registry_extensions
 	(uuid, publisher_user_id, publisher_org_id, name)
 VALUES(
@@ -384,7 +383,6 @@ WHERE (%s)
 func (s *extensionStore) list(ctx context.Context, conds, order []*sqlf.Query, limitOffset *database.LimitOffset) ([]*Extension, error) {
 	order = append(order, sqlf.Sprintf("TRUE"))
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/extensions.go:list
 SELECT x.id, x.uuid, x.publisher_user_id, x.publisher_org_id, x.name, x.created_at, x.updated_at,
   `+extensionIDExpr+` AS non_canonical_extension_id, `+extensionPublisherNameExpr+` AS non_canonical_publisher_name,
   (%s) AS non_canonical_is_work_in_progress
@@ -424,7 +422,6 @@ ORDER BY %s,
 
 func (s *extensionStore) Count(ctx context.Context, opt ExtensionsListOptions) (int, error) {
 	q := sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/extensions.go:Count
 SELECT COUNT(*) %s
 `, s.listCountSQL(opt.sqlConditions()))
 
@@ -439,7 +436,6 @@ SELECT COUNT(*) %s
 func (s *extensionStore) Update(ctx context.Context, id int32, name *string) error {
 	res, err := s.ExecResult(ctx,
 		sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/extensions.go:Update
 UPDATE
 	registry_extensions
 SET
@@ -472,7 +468,6 @@ WHERE
 
 func (s *extensionStore) Delete(ctx context.Context, id int32) error {
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
--- source: enterprise/cmd/frontend/internal/registry/stores/extensions.go:Delete
 UPDATE
 	registry_extensions
 SET

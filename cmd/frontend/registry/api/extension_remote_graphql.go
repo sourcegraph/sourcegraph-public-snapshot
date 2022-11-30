@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 // registryExtensionRemoteResolver implements the GraphQL type RegistryExtension with data from a
@@ -49,16 +50,16 @@ func (r *registryExtensionRemoteResolver) Manifest(context.Context) (graphqlback
 	return NewExtensionManifest(r.v.Manifest), nil
 }
 
-func (r *registryExtensionRemoteResolver) CreatedAt() *graphqlbackend.DateTime {
-	return &graphqlbackend.DateTime{Time: r.v.CreatedAt}
+func (r *registryExtensionRemoteResolver) CreatedAt() *gqlutil.DateTime {
+	return &gqlutil.DateTime{Time: r.v.CreatedAt}
 }
 
-func (r *registryExtensionRemoteResolver) UpdatedAt() *graphqlbackend.DateTime {
-	return &graphqlbackend.DateTime{Time: r.v.UpdatedAt}
+func (r *registryExtensionRemoteResolver) UpdatedAt() *gqlutil.DateTime {
+	return &gqlutil.DateTime{Time: r.v.UpdatedAt}
 }
 
-func (r *registryExtensionRemoteResolver) PublishedAt(context.Context) (*graphqlbackend.DateTime, error) {
-	return &graphqlbackend.DateTime{Time: r.v.PublishedAt}, nil
+func (r *registryExtensionRemoteResolver) PublishedAt(context.Context) (*gqlutil.DateTime, error) {
+	return &gqlutil.DateTime{Time: r.v.PublishedAt}, nil
 }
 
 func (r *registryExtensionRemoteResolver) URL() string {

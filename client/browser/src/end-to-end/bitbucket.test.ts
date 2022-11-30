@@ -137,7 +137,7 @@ describe('Sourcegraph browser extension on Bitbucket Server', () => {
         this.timeout(4 * 60 * 1000)
         driver = await createDriverForTest({ loadExtension: !TEST_NATIVE_INTEGRATION, sourcegraphBaseUrl })
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com' && restConfig.testUserPassword) {
-            await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+            await driver.ensureSignedIn({ username: 'test', password: restConfig.testUserPassword })
         }
 
         await bitbucketLogin(driver)
@@ -152,7 +152,7 @@ describe('Sourcegraph browser extension on Bitbucket Server', () => {
 
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             if (restConfig.testUserPassword) {
-                await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
+                await driver.ensureSignedIn({ username: 'test', password: restConfig.testUserPassword })
             }
             await driver.ensureHasExternalService({
                 kind: ExternalServiceKind.BITBUCKETSERVER,

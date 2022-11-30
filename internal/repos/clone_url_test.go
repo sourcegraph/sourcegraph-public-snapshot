@@ -66,10 +66,7 @@ func TestBitbucketServerCloneURLs(t *testing.T) {
 	}
 
 	t.Run("ssh", func(t *testing.T) {
-		repo.Links.Clone = []struct {
-			Href string "json:\"href\""
-			Name string "json:\"name\""
-		}{
+		repo.Links.Clone = []bitbucketserver.Link{
 			// even if the first link is http, ssh should prevail
 			{Name: "http", Href: "https://asdine@bitbucket.example.com/scm/sg/sourcegraph.git"},
 			{Name: "ssh", Href: "ssh://git@bitbucket.example.com:7999/sg/sourcegraph.git"},
@@ -86,10 +83,7 @@ func TestBitbucketServerCloneURLs(t *testing.T) {
 
 	t.Run("http", func(t *testing.T) {
 		// Second test: http
-		repo.Links.Clone = []struct {
-			Href string "json:\"href\""
-			Name string "json:\"name\""
-		}{
+		repo.Links.Clone = []bitbucketserver.Link{
 			{Name: "http", Href: "https://asdine@bitbucket.example.com/scm/sg/sourcegraph.git"},
 		}
 

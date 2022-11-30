@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -46,7 +47,7 @@ func TestNullIDResilience(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	sr := New(store.New(db, &observation.TestContext, nil))
+	sr := New(store.New(db, &observation.TestContext, nil), gitserver.NewMockClient())
 
 	s, err := newSchema(db, sr)
 	if err != nil {
@@ -2394,7 +2395,7 @@ func TestMaxUnlicensedChangesets(t *testing.T) {
 
 	apitest.MustExec(actorCtx, t, s, nil, &response, querymaxUnlicensedChangesets)
 
-	assert.Equal(t, int32(10), response.MaxUnlicensedChangesets)
+	assert.Equal(t, int32(5), response.MaxUnlicensedChangesets)
 }
 
 const querymaxUnlicensedChangesets = `

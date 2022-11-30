@@ -109,7 +109,16 @@ func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 
 func Search(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
 	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
-	inputs, err := searchClient.Plan(ctx, "V3", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	inputs, err := searchClient.Plan(
+		ctx,
+		"V3",
+		nil,
+		query,
+		search.Precise,
+		search.Streaming,
+		settings,
+		envvar.SourcegraphDotComMode(),
+	)
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
 	}
@@ -180,7 +189,16 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 // be searched from the beginning.
 func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) error {
 	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
-	inputs, err := searchClient.Plan(ctx, "V3", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
+	inputs, err := searchClient.Plan(
+		ctx,
+		"V3",
+		nil,
+		query,
+		search.Precise,
+		search.Streaming,
+		settings,
+		envvar.SourcegraphDotComMode(),
+	)
 	if err != nil {
 		return err
 	}

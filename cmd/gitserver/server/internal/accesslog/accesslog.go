@@ -12,20 +12,19 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type contextKey struct{}
 
 type paramsContext struct {
 	repo     string
-	metadata map[string]string
+	metadata []log.Field
 }
 
 // Record updates a mutable unexported field stored in the context,
 // making it available for Middleware to log at the end of the middleware
 // chain.
-func Record(ctx context.Context, repo string, meta map[string]string) {
+func Record(ctx context.Context, repo string, meta ...log.Field) {
 	pc := fromContext(ctx)
 	if pc == nil {
 		return
@@ -87,12 +86,7 @@ func (a *accessLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if paramsCtx != nil {
-		params := []log.Field{
-			log.String("repo", paramsCtx.repo),
-		}
-		for k, v := range paramsCtx.metadata {
-			params = append(params, log.String(k, v))
-		}
+		params := append([]log.Field{log.String("repo", paramsCtx.repo)}, paramsCtx.metadata...)
 		fields = append(fields, log.Object("params", params...))
 	} else {
 		fields = append(fields, log.String("params", "nil"))
@@ -111,7 +105,7 @@ func HTTPMiddleware(logger log.Logger, watcher conftypes.WatchableSiteConfig, ne
 	handler := &accessLogger{
 		logger:     logger,
 		next:       next,
-		logEnabled: atomic.NewBool(shouldLog(watcher.SiteConfig())),
+		logEnabled: atomic.NewBool(audit.IsEnabled(watcher.SiteConfig(), audit.GitserverAccess)),
 	}
 	if handler.logEnabled.Load() {
 		logger.Info(accessLoggingEnabledMessage)
@@ -119,7 +113,7 @@ func HTTPMiddleware(logger log.Logger, watcher conftypes.WatchableSiteConfig, ne
 
 	// Allow live toggling of access logging
 	watcher.Watch(func() {
-		newShouldLog := shouldLog(watcher.SiteConfig())
+		newShouldLog := audit.IsEnabled(watcher.SiteConfig(), audit.GitserverAccess)
 		changed := handler.logEnabled.Swap(newShouldLog) != newShouldLog
 		if changed {
 			if newShouldLog {
@@ -131,14 +125,4 @@ func HTTPMiddleware(logger log.Logger, watcher conftypes.WatchableSiteConfig, ne
 	})
 
 	return handler.ServeHTTP
-}
-
-func shouldLog(c schema.SiteConfiguration) bool {
-	if c.Log == nil {
-		return false
-	}
-	if c.Log.GitserverAccessLogs { // legacy setting
-		return true
-	}
-	return c.Log.AuditLog != nil && c.Log.AuditLog.GitserverAccess
 }

@@ -6,9 +6,8 @@ import classNames from 'classnames'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
 
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 import { eventLogger } from '../../tracking/eventLogger'
-
-import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
 import styles from './CodeMonitoringGettingStarted.module.scss'
 
@@ -66,6 +65,7 @@ const createCodeMonitorUrl = (example: ExampleCodeMonitor): string => {
 export const CodeMonitoringGettingStarted: React.FunctionComponent<
     React.PropsWithChildren<CodeMonitoringGettingStartedProps>
 > = ({ isLightTheme, isSignedIn }) => {
+    const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
     const assetsRoot = window.context?.assetsRoot || ''
 
     const logExampleMonitorClicked = useCallback(() => {
@@ -74,7 +74,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
 
     return (
         <div>
-            <Card className={classNames('mb-5 flex-column flex-lg-row', styles.hero)}>
+            <Card className={classNames('mb-4 flex-column flex-lg-row', styles.hero)}>
                 <img
                     src={`${assetsRoot}/img/codemonitoring-illustration-${isLightTheme ? 'light' : 'dark'}.svg`}
                     alt="A code monitor observes a depcreated library being used in code and sends an email alert."
@@ -92,20 +92,30 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                         <li>Identify when bad patterns are committed </li>
                         <li>Identify use of deprecated libraries</li>
                     </ul>
-                    {isSignedIn ? (
+                    {isSignedIn && (
                         <Button to="/code-monitoring/new" className={styles.createButton} variant="primary" as={Link}>
                             <Icon aria-hidden={true} className="mr-2" svgPath={mdiPlus} />
                             Create a code monitor
                         </Button>
-                    ) : (
-                        <CodeMonitorSignUpLink
-                            className={styles.createButton}
-                            eventName="SignUpPLGMonitor_GettingStarted"
-                            text="Get started with code monitors"
-                        />
                     )}
                 </div>
             </Card>
+
+            {isSourcegraphDotCom && (
+                <CloudCtaBanner variant="filled">
+                    To monitor changes across your team's private repositories,{' '}
+                    <Link
+                        to="https://signup.sourcegraph.com/?p=monitoring"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => eventLogger.log('ClickedOnCloudCTA')}
+                    >
+                        try Sourcegraph Cloud
+                    </Link>
+                    .
+                </CloudCtaBanner>
+            )}
+
             <div>
                 <H3 className="mb-3">Example code monitors</H3>
 
@@ -151,32 +161,17 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                             </Link>
                         </div>
                     </div>
-                    {isSignedIn ? (
-                        <div className="col-4">
-                            <div>
-                                <H4>Questions and feedback</H4>
-                                <Text className="text-muted">
-                                    Have a question or idea about code monitoring? We want to hear your feedback!
-                                </Text>
-                                <Link to="mailto:feedback@sourcegraph.com" className="link">
-                                    Share your thoughts
-                                </Link>
-                            </div>
+                    <div className="col-4">
+                        <div>
+                            <H4>Questions and feedback</H4>
+                            <Text className="text-muted">
+                                Have a question or idea about code monitoring? We want to hear your feedback!
+                            </Text>
+                            <Link to="mailto:feedback@sourcegraph.com" className="link">
+                                Share your thoughts
+                            </Link>
                         </div>
-                    ) : (
-                        <div className="col-4">
-                            <Card className={styles.signUpCard}>
-                                <H4>Free for registered users</H4>
-                                <Text className="text-muted">Sign up and build your first code monitor today.</Text>
-                                <CodeMonitorSignUpLink
-                                    className={styles.createButton}
-                                    eventName="SignUpPLGMonitor_GettingStarted"
-                                    text="Get started"
-                                    forDotcom={true}
-                                />
-                            </Card>
-                        </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>

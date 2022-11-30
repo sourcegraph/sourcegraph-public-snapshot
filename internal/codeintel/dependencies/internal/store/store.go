@@ -7,9 +7,8 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -83,7 +82,6 @@ func (s *store) ListDependencyRepos(ctx context.Context, opts ListDependencyRepo
 }
 
 const listDependencyReposQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:ListDependencyRepos
 SELECT %s
 FROM lsif_dependency_repos
 WHERE %s
@@ -192,7 +190,6 @@ func (s *store) DeleteDependencyReposByID(ctx context.Context, ids ...int) (err 
 }
 
 const deleteDependencyReposByIDQuery = `
--- source: internal/codeintel/dependencies/internal/store/store.go:DeleteDependencyReposByID
 DELETE FROM lsif_dependency_repos
 WHERE id = ANY(%s)
 `

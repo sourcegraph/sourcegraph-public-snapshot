@@ -6,8 +6,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 // accessTokenResolver resolves an access token.
@@ -34,7 +35,7 @@ func accessTokenByID(ctx context.Context, db database.DB, id graphql.ID) (*acces
 		return nil, err
 	}
 	// 🚨 SECURITY: Only the user (token owner) and site admins may retrieve the token.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, db, accessToken.SubjectUserID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, accessToken.SubjectUserID); err != nil {
 		return nil, err
 	}
 	return &accessTokenResolver{db: db, accessToken: *accessToken}, nil
@@ -61,8 +62,10 @@ func (r *accessTokenResolver) Creator(ctx context.Context) (*UserResolver, error
 	return UserByIDInt32(ctx, r.db, r.accessToken.CreatorUserID)
 }
 
-func (r *accessTokenResolver) CreatedAt() DateTime { return DateTime{Time: r.accessToken.CreatedAt} }
+func (r *accessTokenResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.accessToken.CreatedAt}
+}
 
-func (r *accessTokenResolver) LastUsedAt() *DateTime {
-	return DateTimeOrNil(r.accessToken.LastUsedAt)
+func (r *accessTokenResolver) LastUsedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(r.accessToken.LastUsedAt)
 }

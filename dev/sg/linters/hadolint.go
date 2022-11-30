@@ -9,9 +9,9 @@ import (
 
 	"github.com/sourcegraph/run"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/internal/download"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -68,7 +68,7 @@ func hadolint() *linter {
 		// Download
 		os.MkdirAll("./.bin", os.ModePerm)
 		std.Out.WriteNoticef("Downloading hadolint from %s", url)
-		if _, err := download.Executable(ctx, url, hadolintBinary); err != nil {
+		if _, err := download.Executable(ctx, url, hadolintBinary, false); err != nil {
 			return errors.Wrap(err, "downloading hadolint")
 		}
 

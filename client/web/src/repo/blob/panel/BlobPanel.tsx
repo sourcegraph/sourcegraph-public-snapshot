@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useEffect, useCallback, useMemo } from 'react'
 
 import * as H from 'history'
 import { EMPTY, from, Observable, ReplaySubject, Subscription } from 'rxjs'
@@ -14,9 +14,8 @@ import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegrap
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { isErrorLike } from '@sourcegraph/common'
 import * as clientType from '@sourcegraph/extension-api-types'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { Activation, ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -26,6 +25,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
+import { CodeIntelligenceProps } from '../../../codeintel'
 import { ReferencesPanelWithMemoryRouter } from '../../../codeintel/ReferencesPanel'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 
@@ -34,9 +34,9 @@ interface Props
         ModeSpec,
         SettingsCascadeProps,
         ExtensionsControllerProps,
-        ActivationProps,
         ThemeProps,
         PlatformContextProps,
+        Pick<CodeIntelligenceProps, 'useCodeIntel'>,
         TelemetryProps {
     location: H.Location
     history: H.History
@@ -68,7 +68,6 @@ interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<UIPositionSpe
  */
 function useBlobPanelViews({
     extensionsController,
-    activation,
     repoName,
     commitID,
     revision,
@@ -80,14 +79,11 @@ function useBlobPanelViews({
     settingsCascade,
     isLightTheme,
     platformContext,
+    useCodeIntel,
     telemetryService,
     fetchHighlightedFileLineRanges,
 }: Props): void {
     const subscriptions = useMemo(() => new Subscription(), [])
-
-    // Activation props are not stable
-    const activationReference = useRef<Activation | undefined>(activation)
-    activationReference.current = activation
 
     // Keep active code editor position subscription active to prevent empty loading state
     // (for main thread -> ext host -> main thread roundtrip for editor position)
@@ -107,6 +103,7 @@ function useBlobPanelViews({
 
     const maxPanelResults = maxPanelResultsFromSettings(settingsCascade)
     const preferAbsoluteTimestamps = preferAbsoluteTimestampsFromSettings(settingsCascade)
+    const defaultPageSize = defaultPageSizeFromSettings(settingsCascade)
     const isTabbedReferencesPanelEnabled =
         !isErrorLike(settingsCascade.final) &&
         settingsCascade.final !== null &&
@@ -143,13 +140,7 @@ function useBlobPanelViews({
                         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                         locationProvider: provideLocations({
                             ...textDocumentPositionParameters,
-                        } as P).pipe(
-                            tap(({ result: locations }) => {
-                                if (activationReference.current && id === 'references' && locations.length > 0) {
-                                    activationReference.current.update({ FoundReferences: true })
-                                }
-                            })
-                        ),
+                        } as P),
                     }
                 })
             ),
@@ -202,6 +193,7 @@ function useBlobPanelViews({
                                     history={history}
                                     location={location}
                                     preferAbsoluteTimestamps={preferAbsoluteTimestamps}
+                                    defaultPageSize={defaultPageSize}
                                 />
                             ),
                         }))
@@ -269,6 +261,7 @@ function useBlobPanelViews({
                                     externalHistory={history}
                                     externalLocation={location}
                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                    useCodeIntel={useCodeIntel}
                                 />
                             ) : (
                                 <></>
@@ -280,16 +273,18 @@ function useBlobPanelViews({
 
             return panelDefinitions
         }, [
-            isTabbedReferencesPanelEnabled,
-            createLocationProvider,
             panelSubjectChanges,
-            preferAbsoluteTimestamps,
-            isLightTheme,
-            settingsCascade,
-            telemetryService,
-            platformContext,
+            isTabbedReferencesPanelEnabled,
             extensionsController,
+            preferAbsoluteTimestamps,
+            defaultPageSize,
+            createLocationProvider,
+            settingsCascade,
+            platformContext,
+            isLightTheme,
+            telemetryService,
             fetchHighlightedFileLineRanges,
+            useCodeIntel,
         ])
     )
 
@@ -308,6 +303,14 @@ function preferAbsoluteTimestampsFromSettings(settingsCascade: SettingsCascadeOr
         return settingsCascade.final['history.preferAbsoluteTimestamps'] as boolean
     }
     return false
+}
+
+function defaultPageSizeFromSettings(settingsCascade: SettingsCascadeOrError<Settings>): number | undefined {
+    if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
+        return settingsCascade.final['history.defaultPageSize'] as number
+    }
+
+    return undefined
 }
 
 /**

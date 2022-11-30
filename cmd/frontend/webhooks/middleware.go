@@ -19,7 +19,17 @@ import (
 func SetExternalServiceID(ctx context.Context, id int64) {
 	// There's no else case here because it is expected that there's no setter
 	// if logging is disabled.
-	if setter, ok := ctx.Value(setterContextKey).(contextFunc); ok {
+	if setter, ok := ctx.Value(extSvcIDSetterContextKey).(contextFuncInt64); ok {
+		setter(id)
+	}
+}
+
+// SetWebhookID attaches a specific webhook ID to the current
+// webhook request for logging purposes.
+func SetWebhookID(ctx context.Context, id int32) {
+	// There's no else case here because it is expected that there's no setter
+	// if logging is disabled.
+	if setter, ok := ctx.Value(webhookIDSetterContextKey).(contextFuncInt32); ok {
 		setter(id)
 	}
 }
@@ -63,17 +73,22 @@ func (mw *LogMiddleware) Logger(next http.Handler) http.Handler {
 			statusCode:     200,
 		}
 
-		// The external service ID is looked up within the webhook handler, but
+		// The external service ID and webhook id is looked up within the webhook handler, but
 		// we need access to it to be able to store the webhook log with the
-		// appropriate external service ID. To handle this, we'll put a setter
+		// appropriate external service/webhook ID. To handle this, we'll put a setter
 		// closure into the context that can then be used by
 		// SetExternalServiceID to receive the external service ID from the
 		// handler.
 		var externalServiceID *int64
-		var setter contextFunc = func(id int64) {
-			externalServiceID = &id
+		var extSvcIDSetter contextFuncInt64 = func(extSvcID int64) {
+			externalServiceID = &extSvcID
 		}
-		ctx := context.WithValue(r.Context(), setterContextKey, setter)
+		ctx := context.WithValue(r.Context(), extSvcIDSetterContextKey, extSvcIDSetter)
+		var webhookID *int32
+		var webhookIDSetter contextFuncInt32 = func(whID int32) {
+			webhookID = &whID
+		}
+		ctx = context.WithValue(ctx, webhookIDSetterContextKey, webhookIDSetter)
 
 		// Delegate to the next handler.
 		next.ServeHTTP(writer, r.WithContext(ctx))
@@ -87,6 +102,7 @@ func (mw *LogMiddleware) Logger(next http.Handler) http.Handler {
 		// Write the payload.
 		if err := mw.store.Create(r.Context(), &types.WebhookLog{
 			ExternalServiceID: externalServiceID,
+			WebhookID:         webhookID,
 			StatusCode:        writer.statusCode,
 			Request: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
 				Header:  r.Header,
@@ -156,6 +172,10 @@ func LoggingEnabled(c *conf.Unified) bool {
 
 type contextKey string
 
-var setterContextKey = contextKey("webhook setter")
+var extSvcIDSetterContextKey = contextKey("webhook external service ID setter")
 
-type contextFunc func(int64)
+type contextFuncInt64 func(int64)
+
+var webhookIDSetterContextKey = contextKey("webhook ID setter")
+
+type contextFuncInt32 func(int32)

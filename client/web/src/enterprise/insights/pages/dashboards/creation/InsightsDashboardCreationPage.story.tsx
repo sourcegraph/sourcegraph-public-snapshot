@@ -4,13 +4,14 @@ import { of } from 'rxjs'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../components/WebStory'
+import { useCodeInsightsState } from '../../../../../stores'
 import { CodeInsightsBackendStoryMock } from '../../../CodeInsightsBackendStoryMock'
 import { CodeInsightsGqlBackend } from '../../../core/backend/gql-backend/code-insights-gql-backend'
 import { InsightsDashboardOwnerType } from '../../../core/types'
 
 import { InsightsDashboardCreationPage } from './InsightsDashboardCreationPage'
 
-const defaultStory: Meta = {
+const config: Meta = {
     title: 'web/insights/InsightsDashboardCreationPage',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
     parameters: {
@@ -21,7 +22,7 @@ const defaultStory: Meta = {
     },
 }
 
-export default defaultStory
+export default config
 
 const codeInsightsBackend: Partial<CodeInsightsGqlBackend> = {
     getDashboardOwners: () =>
@@ -33,8 +34,22 @@ const codeInsightsBackend: Partial<CodeInsightsGqlBackend> = {
         ]),
 }
 
-export const InsightsDashboardCreationStory: Story = () => (
-    <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
-        <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
-    </CodeInsightsBackendStoryMock>
-)
+export const InsightsDashboardCreationLicensed: Story = () => {
+    useCodeInsightsState.setState({ licensed: true, insightsLimit: null })
+
+    return (
+        <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
+            <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+        </CodeInsightsBackendStoryMock>
+    )
+}
+
+export const InsightsDashboardCreationUnlicensed: Story = () => {
+    useCodeInsightsState.setState({ licensed: false, insightsLimit: 2 })
+
+    return (
+        <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
+            <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
+        </CodeInsightsBackendStoryMock>
+    )
+}

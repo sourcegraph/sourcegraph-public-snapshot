@@ -461,7 +461,6 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
            
           <span
             class=""
-            data-state="closed"
             style="background-color: black;"
           >
             head content
@@ -603,7 +602,6 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
            
           <span
             class=""
-            data-state="closed"
             style="background-color: black;"
           >
             base content
@@ -868,7 +866,6 @@ exports[`DiffHunk renders decorations if given 1`] = `
            
           <span
             class=""
-            data-state="closed"
             style="background-color: black;"
           >
             head content
@@ -1010,7 +1007,6 @@ exports[`DiffHunk renders decorations if given 1`] = `
            
           <span
             class=""
-            data-state="closed"
             style="background-color: black;"
           >
             base content

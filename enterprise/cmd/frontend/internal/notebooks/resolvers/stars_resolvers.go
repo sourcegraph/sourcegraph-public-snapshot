@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 func marshalNotebookStarCursor(cursor int64) string {
@@ -60,8 +61,8 @@ func (r *notebookStarResolver) User(ctx context.Context) (*graphqlbackend.UserRe
 	return graphqlbackend.UserByIDInt32(ctx, r.db, r.star.UserID)
 }
 
-func (r *notebookStarResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.star.CreatedAt}
+func (r *notebookStarResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.star.CreatedAt}
 }
 
 func (r *notebookResolver) notebookStarsToResolvers(notebookStars []*notebooks.NotebookStar) []graphqlbackend.NotebookStarResolver {

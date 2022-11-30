@@ -3,8 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -23,7 +23,7 @@ func (r *schemaResolver) SurveyResponses(args *struct {
 
 func (r *surveyResponseConnectionResolver) Nodes(ctx context.Context) ([]*surveyResponseResolver, error) {
 	// 🚨 SECURITY: Survey responses can only be viewed by site admins.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -42,7 +42,7 @@ func (r *surveyResponseConnectionResolver) Nodes(ctx context.Context) ([]*survey
 
 func (r *surveyResponseConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	// 🚨 SECURITY: Only site admins can count survey responses.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
 
@@ -52,7 +52,7 @@ func (r *surveyResponseConnectionResolver) TotalCount(ctx context.Context) (int3
 
 func (r *surveyResponseConnectionResolver) AverageScore(ctx context.Context) (float64, error) {
 	// 🚨 SECURITY: Only site admins can see average scores.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
 	return database.SurveyResponses(r.db).Last30DaysAverageScore(ctx)
@@ -60,7 +60,7 @@ func (r *surveyResponseConnectionResolver) AverageScore(ctx context.Context) (fl
 
 func (r *surveyResponseConnectionResolver) NetPromoterScore(ctx context.Context) (int32, error) {
 	// 🚨 SECURITY: Only site admins can see net promoter scores.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
 	nps, err := database.SurveyResponses(r.db).Last30DaysNetPromoterScore(ctx)
@@ -69,7 +69,7 @@ func (r *surveyResponseConnectionResolver) NetPromoterScore(ctx context.Context)
 
 func (r *surveyResponseConnectionResolver) Last30DaysCount(ctx context.Context) (int32, error) {
 	// 🚨 SECURITY: Only site admins can count survey responses.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
 	count, err := database.SurveyResponses(r.db).Last30DaysCount(ctx)

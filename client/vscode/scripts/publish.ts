@@ -27,16 +27,17 @@ const tokens = {
 // Assume this is for testing purpose if tokens are not found
 const hasTokens = tokens.vscode !== undefined && tokens.openvsx !== undefined
 const commands = {
-    vscode_info: 'yarn vsce show sourcegraph.sourcegraph --json',
+    vscode_info: 'vsce show sourcegraph.sourcegraph --json',
     // To publish to VS Code Marketplace
-    vscode_publish: `yarn vsce publish ${isPreRelease} --pat $VSCODE_MARKETPLACE_TOKEN --yarn --allow-star-activation`,
+    vscode_publish: `vsce publish ${isPreRelease} --pat $VSCODE_MARKETPLACE_TOKEN --yarn --allow-star-activation`,
     // To package the extension without publishing
-    vscode_package: `yarn vsce package ${isPreRelease} --yarn --allow-star-activation`,
+    vscode_package: `vsce package ${isPreRelease} --yarn --allow-star-activation`,
     // To publish to the open-vsx registry
-    openvsx_publish: 'yarn npx --yes ovsx publish --yarn -p $VSCODE_OPENVSX_TOKEN',
+    openvsx_publish: 'npx --yes ovsx publish --yarn -p $VSCODE_OPENVSX_TOKEN',
 }
 // Publish the extension with the correct extension name "sourcegraph"
 try {
+    childProcess.execSync('yarn build-inline-extensions && yarn build', { stdio: 'inherit' })
     // Get the latest release version nubmer of the last release from VS Code Marketplace using the vsce cli tool
     const response = childProcess.execSync(commands.vscode_info).toString()
     /*

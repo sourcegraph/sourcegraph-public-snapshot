@@ -2,7 +2,6 @@ export enum PageRoutes {
     Index = '/',
     Search = '/search',
     SearchConsole = '/search/console',
-    SearchNotebook = '/search/notebook',
     SignIn = '/sign-in',
     SignUp = '/sign-up',
     UnlockAccount = '/unlock-account/:token',
@@ -19,9 +18,6 @@ export enum PageRoutes {
     Extensions = '/extensions',
     Help = '/help',
     Debug = '/-/debug/*',
-    NotebookCreate = '/notebooks/new',
-    Notebook = '/notebooks/:id',
-    Notebooks = '/notebooks',
     RepoContainer = '/:repoRevAndRest+',
     InstallGitHubAppSuccess = '/install-github-app-success',
 }
@@ -35,4 +31,8 @@ export enum EnterprisePageRoutes {
     CreateContext = '/contexts/new',
     EditContext = '/contexts/:spec+/edit',
     Context = '/contexts/:spec+',
+    NotebookCreate = '/notebooks/new',
+    Notebook = '/notebooks/:id',
+    Notebooks = '/notebooks',
+    SearchNotebook = '/search/notebook',
 }

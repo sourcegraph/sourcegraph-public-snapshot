@@ -52,11 +52,11 @@ func (r *Resolved) String() string {
 	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d}", len(r.RepoRevs), len(r.MissingRepoRevs))
 }
 
-func NewResolver(logger log.Logger, db database.DB, searcher *endpoint.Map, zoekt zoekt.Streamer) *Resolver {
+func NewResolver(logger log.Logger, db database.DB, gitserverClient gitserver.Client, searcher *endpoint.Map, zoekt zoekt.Streamer) *Resolver {
 	return &Resolver{
 		logger:    logger,
 		db:        db,
-		gitserver: gitserver.NewClient(db),
+		gitserver: gitserverClient,
 		zoekt:     zoekt,
 		searcher:  searcher,
 	}
@@ -175,7 +175,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		options.SearchContextID = searchContext.ID
 		options.UserID = searchContext.NamespaceUserID
 		options.OrgID = searchContext.NamespaceOrgID
-		options.IncludeUserPublicRepos = searchContext.ID == 0 && searchContext.NamespaceUserID != 0
 	}
 
 	tr.LazyPrintf("Repos.ListMinimalRepos - start")
@@ -451,7 +450,7 @@ func (r *Resolver) filterHasCommitAfter(
 	error,
 ) {
 	// Early return if HasCommitAfter is not set
-	if op.CommitAfter == "" {
+	if op.CommitAfter == nil {
 		return repoRevs, nil
 	}
 
@@ -468,7 +467,7 @@ func (r *Resolver) filterHasCommitAfter(
 		for _, rev := range allRevs {
 			rev := rev
 			g.Go(func(ctx context.Context) error {
-				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter, rev, authz.DefaultSubRepoPermsChecker); err != nil {
+				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev, authz.DefaultSubRepoPermsChecker); err != nil {
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 						// If the revision does not exist or the repo does not exist,
 						// it certainly does not have any commits after some time.
@@ -476,7 +475,9 @@ func (r *Resolver) filterHasCommitAfter(
 						return nil
 					}
 					return err
-				} else if !hasCommitAfter {
+				} else if !op.CommitAfter.Negated && !hasCommitAfter {
+					return nil
+				} else if op.CommitAfter.Negated && hasCommitAfter {
 					return nil
 				}
 
@@ -707,7 +708,6 @@ func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.Mi
 		false, // not using zoekt, don't need indexing
 		&patternInfo,
 		time.Hour,         // depend on context for timeout
-		nil,               // not using zoekt, don't need indexing
 		search.Features{}, // not using any search features
 		onMatches,
 	)
@@ -744,17 +744,16 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 		IncludePatterns: includePatterns,
 		ExcludePattern:  query.UnionRegExps(excludePatterns),
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-		LimitOffset:            &database.LimitOffset{Limit: limit + 1},
-		NoForks:                op.NoForks,
-		OnlyForks:              op.OnlyForks,
-		NoArchived:             op.NoArchived,
-		OnlyArchived:           op.OnlyArchived,
-		NoPrivate:              op.Visibility == query.Public,
-		OnlyPrivate:            op.Visibility == query.Private,
-		SearchContextID:        searchContext.ID,
-		UserID:                 searchContext.NamespaceUserID,
-		OrgID:                  searchContext.NamespaceOrgID,
-		IncludeUserPublicRepos: searchContext.ID == 0 && searchContext.NamespaceUserID != 0,
+		LimitOffset:     &database.LimitOffset{Limit: limit + 1},
+		NoForks:         op.NoForks,
+		OnlyForks:       op.OnlyForks,
+		NoArchived:      op.NoArchived,
+		OnlyArchived:    op.OnlyArchived,
+		NoPrivate:       op.Visibility == query.Public,
+		OnlyPrivate:     op.Visibility == query.Private,
+		SearchContextID: searchContext.ID,
+		UserID:          searchContext.NamespaceUserID,
+		OrgID:           searchContext.NamespaceOrgID,
 	}
 
 	g, ctx := errgroup.WithContext(ctx)

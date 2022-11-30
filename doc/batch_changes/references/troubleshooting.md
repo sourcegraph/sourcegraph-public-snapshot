@@ -162,6 +162,12 @@ src batch preview -workspace volume -f my-spec.yaml
 
 If you're using SELinux then neither workspace is fully supported. See [this issue](https://github.com/sourcegraph/src-cli/issues/570) for more details.
 
+### Are the Docker images running as different users?
+
+Running steps with images that run with different user IDs is unsupported.
+
+While doing so may work in `bind` workspace mode on macOS due to specific implementation details of how Docker for Mac mounts from the host filesystem, this is a common source of confusing permission errors similar to [the previous step](#does-it-work-if-you-switch-to-using-the-workspace-mode-using-docker-volumes).
+
 ### Are you on the latest version of Docker?
 
 If not, please update to the latest version of [Docker Desktop](https://docs.docker.com/desktop/release-notes/).

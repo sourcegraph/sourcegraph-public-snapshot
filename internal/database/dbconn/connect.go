@@ -22,7 +22,6 @@ import (
 // Note: github.com/jackc/pgx parses the environment as well. This function will also use the value
 // of PGDATASOURCE if supplied and dataSource is the empty string.
 func ConnectInternal(logger log.Logger, dsn, appName, dbName string) (_ *sql.DB, err error) {
-
 	cfg, err := buildConfig(logger, dsn, appName)
 	if err != nil {
 		return nil, err

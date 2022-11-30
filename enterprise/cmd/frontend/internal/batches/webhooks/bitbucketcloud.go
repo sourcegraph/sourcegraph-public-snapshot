@@ -2,9 +2,12 @@ package webhooks
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+
+	sglog "github.com/sourcegraph/log"
 
 	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
@@ -14,19 +17,65 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type BitbucketCloudWebhook struct {
-	*Webhook
+var bitbucketCloudEvents = []string{
+	"pullrequest:approved",
+	"pullrequest:changes_request_created",
+	"pullrequest:changes_request_removed",
+	"pullrequest:comment_created",
+	"pullrequest:comment_deleted",
+	"pullrequest:comment_updated",
+	"pullrequest:fulfilled",
+	"pullrequest:rejected",
+	"pullrequest:unapproved",
+	"pullrequest:updated",
+	"repo:commit_status_created",
+	"repo:commit_status_updated",
 }
 
-func NewBitbucketCloudWebhook(store *store.Store) *BitbucketCloudWebhook {
+type BitbucketCloudWebhook struct {
+	*webhook
+}
+
+func NewBitbucketCloudWebhook(store *store.Store, gitserverClient gitserver.Client, logger sglog.Logger) *BitbucketCloudWebhook {
 	return &BitbucketCloudWebhook{
-		Webhook: &Webhook{store, extsvc.TypeBitbucketCloud},
+		webhook: &webhook{store, gitserverClient, logger, extsvc.TypeBitbucketCloud},
 	}
+}
+
+func (h *BitbucketCloudWebhook) Register(router *fewebhooks.WebhookRouter) {
+	router.Register(
+		h.handleEvent,
+		extsvc.KindBitbucketCloud,
+		bitbucketCloudEvents...,
+	)
+}
+
+func (h *BitbucketCloudWebhook) handleEvent(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error {
+	ctx = actor.WithInternalActor(ctx)
+
+	prs, ev, err := h.convertEvent(ctx, event, codeHostURN)
+	if err != nil {
+		return err
+	}
+
+	for _, pr := range prs {
+		if pr == (PR{}) {
+			h.logger.Warn("Dropping Bitbucket Cloud webhook event", sglog.String("type", fmt.Sprintf("%T", event)))
+			continue
+		}
+
+		eventErr := h.upsertChangesetEvent(ctx, codeHostURN, pr, ev)
+		if eventErr != nil {
+			err = errors.Append(err, eventErr)
+		}
+	}
+	return err
 }
 
 func (h *BitbucketCloudWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -42,31 +91,27 @@ func (h *BitbucketCloudWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request
 	// internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
 
-	externalServiceID, err := extractExternalServiceID(ctx, extSvc)
+	c, err := extSvc.Configuration(ctx)
 	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
+		h.logger.Error("Could not decode external service config", sglog.Error(err))
+		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}
 
-	prs, ev, err := h.convertEvent(r.Context(), e, externalServiceID)
-	if err != nil {
-		if !errors.Is(err, bitbucketcloud.UnknownWebhookEventKey("")) {
-			respond(w, http.StatusInternalServerError, err)
-		} else {
-			// Unknown type, so we'll just ignore it.
-			return
-		}
+	config, ok := c.(*schema.BitbucketCloudConnection)
+	if !ok {
+		h.logger.Error("Could not decode external service config", sglog.Error(err))
+		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
+		return
 	}
 
-	var m error
-	for _, pr := range prs {
-		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
-		if err != nil {
-			m = errors.Append(m, err)
-		}
+	codeHostURN, err := extsvc.NewCodeHostBaseURL(config.Url)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, errors.Wrap(err, "parsing code host base url"))
 	}
-	if m != nil {
-		respond(w, http.StatusInternalServerError, m)
+	err = h.handleEvent(ctx, h.Store.DatabaseDB(), codeHostURN, e)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
 	} else {
 		respond(w, http.StatusNoContent, nil)
 	}
@@ -133,7 +178,7 @@ func (h *BitbucketCloudWebhook) parseEvent(r *http.Request) (interface{}, *types
 	return e, extSvc, nil
 }
 
-func (h *BitbucketCloudWebhook) convertEvent(ctx context.Context, theirs interface{}, externalServiceID string) ([]PR, keyer, error) {
+func (h *BitbucketCloudWebhook) convertEvent(ctx context.Context, theirs interface{}, externalServiceID extsvc.CodeHostBaseURL) ([]PR, keyer, error) {
 	switch e := theirs.(type) {
 	case *bitbucketcloud.PullRequestApprovedEvent:
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
@@ -177,7 +222,7 @@ func bitbucketCloudPullRequestEventPRs(e *bitbucketcloud.PullRequestEvent) []PR 
 
 func bitbucketCloudRepoCommitStatusEventPRs(
 	ctx context.Context, bstore *store.Store,
-	e *bitbucketcloud.RepoCommitStatusEvent, externalServiceID string,
+	e *bitbucketcloud.RepoCommitStatusEvent, externalServiceID extsvc.CodeHostBaseURL,
 ) ([]PR, error) {
 	// Bitbucket Cloud repo commit statuses only include the commit hash they
 	// relate to, not the branch or PR, so we have to go look up the relevant
@@ -189,7 +234,7 @@ func bitbucketCloudRepoCommitStatusEventPRs(
 			{
 				ID:          e.Repository.UUID,
 				ServiceType: extsvc.TypeBitbucketCloud,
-				ServiceID:   externalServiceID,
+				ServiceID:   externalServiceID.String(),
 			},
 		},
 	})

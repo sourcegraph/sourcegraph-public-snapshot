@@ -1,6 +1,6 @@
 import React, { FunctionComponent } from 'react'
 
-import { mdiChevronRight } from '@mdi/js'
+import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Link, H3, Icon, Checkbox } from '@sourcegraph/wildcard'
@@ -69,7 +69,7 @@ export const CodeIntelUploadNode: FunctionComponent<React.PropsWithChildren<Code
         </span>
         <span>
             <Link to={`./uploads/${node.id}`}>
-                <Icon svgPath={mdiChevronRight} inline={false} aria-label="View more information" />
+                <Icon svgPath={mdiDotsVertical} inline={false} aria-label="View more information" />
             </Link>
         </span>
     </>

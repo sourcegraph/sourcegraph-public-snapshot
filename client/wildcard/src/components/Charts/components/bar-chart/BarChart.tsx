@@ -31,6 +31,7 @@ export interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGPr
     getDatumFadeColor?: (datum: Datum) => string
 
     onDatumHover?: (datum: Datum) => void
+    getDatumHoverValueLabel?: (datum: Datum) => string
 }
 
 export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
@@ -45,6 +46,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         maxAngleXTick,
         stacked = false,
         sortByValue,
+        'aria-label': ariaLabel = 'Bar chart',
         getDatumHover,
         getScaleXTicks,
         getTruncatedXTick,
@@ -52,6 +54,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         getDatumValue,
         getDatumColor,
         getDatumFadeColor,
+        getDatumHoverValueLabel,
         getDatumLink = DEFAULT_LINK_GETTER,
         getCategory = getDatumName,
         onDatumLinkClick,
@@ -92,7 +95,15 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
     }
 
     return (
-        <SvgRoot {...attributes} width={outerWidth} height={outerHeight} xScale={xScale} yScale={yScale}>
+        <SvgRoot
+            {...attributes}
+            width={outerWidth}
+            height={outerHeight}
+            role="group"
+            aria-label={ariaLabel}
+            xScale={xScale}
+            yScale={yScale}
+        >
             <SvgAxisLeft pixelsPerTick={pixelsPerYTick} />
             <SvgAxisBottom
                 pixelsPerTick={pixelsPerXTick}
@@ -124,6 +135,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
                         getDatumLink={getDatumLink}
                         onBarClick={handleBarClick}
                         onBarHover={onDatumHover}
+                        getDatumHoverValueLabel={getDatumHoverValueLabel}
                     />
                 )}
             </SvgContent>

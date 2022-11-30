@@ -125,23 +125,22 @@ func TestRepoHasDescriptionPredicate(t *testing.T) {
 	})
 }
 
-func TestFileHasOwnerPredicate(t *testing.T) {
+func TestRepoHasKVPPredicate(t *testing.T) {
 	t.Run("Unmarshal", func(t *testing.T) {
 		type test struct {
 			name     string
 			params   string
-			expected *FileHasOwnerPredicate
+			expected *RepoHasKVPPredicate
 		}
 
 		valid := []test{
-			{`literal`, `test`, &FileHasOwnerPredicate{Owner: "test"}},
-			{`regexp`, `@octo-org/octocats`, &FileHasOwnerPredicate{Owner: "@octo-org/octocats"}},
-			{`regexp`, `test@example.com`, &FileHasOwnerPredicate{Owner: "test@example.com"}},
+			{`key:value`, `key:value`, &RepoHasKVPPredicate{Key: "key", Value: "value", Negated: false}},
+			{`empty string value`, `key:`, &RepoHasKVPPredicate{Key: "key", Value: "", Negated: false}},
 		}
 
 		for _, tc := range valid {
 			t.Run(tc.name, func(t *testing.T) {
-				p := &FileHasOwnerPredicate{}
+				p := &RepoHasKVPPredicate{}
 				err := p.Unmarshal(tc.params, false)
 				if err != nil {
 					t.Fatalf("unexpected error: %s", err)
@@ -155,11 +154,14 @@ func TestFileHasOwnerPredicate(t *testing.T) {
 
 		invalid := []test{
 			{`empty`, ``, nil},
+			{`no key`, `:value`, nil},
+			{`no key or value`, `:`, nil},
+			{`invalid syntax`, `key-value`, nil},
 		}
 
 		for _, tc := range invalid {
 			t.Run(tc.name, func(t *testing.T) {
-				p := &FileHasOwnerPredicate{}
+				p := &RepoHasKVPPredicate{}
 				err := p.Unmarshal(tc.params, false)
 				if err == nil {
 					t.Fatal("expected error but got none")

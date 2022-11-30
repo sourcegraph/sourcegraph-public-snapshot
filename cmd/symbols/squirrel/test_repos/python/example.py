@@ -46,6 +46,9 @@ def f(x):
     #                                v py.f.g ref
     _ = y + l1 + l2 + l3 + l4 + l5 + g()
 
+    #                     vvv recursive.foo ref,nodef
+    recursive = recursive.foo
+
 
 #     vv py.C1 def
 class C1:

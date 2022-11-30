@@ -18,6 +18,8 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
     @Nullable
     public String accessToken;
     @Nullable
+    public String customRequestHeaders;
+    @Nullable
     public String defaultBranch;
     @Nullable
     public String remoteUrlReplacements;
@@ -50,6 +52,11 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
     @Nullable
     public String getAccessToken() {
         return accessToken;
+    }
+
+    @Nullable
+    public String getCustomRequestHeaders() {
+        return customRequestHeaders;
     }
 
     @Nullable
@@ -100,6 +107,7 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
         this.instanceType = settings.instanceType;
         this.url = settings.url;
         this.accessToken = settings.accessToken;
+        this.customRequestHeaders = settings.customRequestHeaders;
         this.defaultBranch = settings.defaultBranch;
         this.remoteUrlReplacements = settings.remoteUrlReplacements;
         this.isGlobbingEnabled = settings.isGlobbingEnabled;

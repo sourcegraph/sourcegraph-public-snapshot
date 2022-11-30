@@ -18,6 +18,7 @@ export const Tick: FC<TickProps> = props => {
         formattedValue = '',
         className,
         'aria-label': ariaLabel,
+        role = 'listitem',
         getTruncatedTick,
         ...tickLabelProps
     } = props
@@ -36,8 +37,7 @@ export const Tick: FC<TickProps> = props => {
     // phrase in voice over we hide nested children from a11y tree and put explicit aria-label
     // on the parent Group element with role text
     return (
-        // eslint-disable-next-line jsx-a11y/aria-role
-        <Group role="text" aria-label={ariaLabel}>
+        <Group role={role} aria-label={ariaLabel}>
             <text
                 aria-hidden={true}
                 className={classNames(styles.tick, className)}

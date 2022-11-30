@@ -45,7 +45,7 @@ func (j *metricsJob) Routines(startupCtx context.Context, logger log.Logger) ([]
 		defer cancel()
 
 		var count int64
-		err := db.QueryRowContext(ctx, `SELECT SUM(failed_fetch) FROM gitserver_repos_statistics`).Scan(&count)
+		err := db.QueryRowContext(ctx, `SELECT COALESCE(SUM(failed_fetch), 0) FROM gitserver_repos_statistics`).Scan(&count)
 		if err != nil {
 			j.Logger.Error("failed to count repository errors", log.Error(err))
 			return 0
@@ -62,7 +62,7 @@ func (j *metricsJob) Routines(startupCtx context.Context, logger log.Logger) ([]
 		defer cancel()
 
 		var count int64
-		err := db.QueryRowContext(ctx, `SELECT SUM(total) FROM repo_statistics`).Scan(&count)
+		err := db.QueryRowContext(ctx, `SELECT COALESCE(SUM(total), 0) FROM repo_statistics`).Scan(&count)
 		if err != nil {
 			j.Logger.Error("failed to count repositories", log.Error(err))
 			return 0

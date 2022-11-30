@@ -67,7 +67,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
 			// Sort branches by most recently committed.
 
-			ok, err := hydrateBranchCommits(ctx, db, r.RepoName(), args.Interactive, branches)
+			ok, err := hydrateBranchCommits(ctx, db, r.gitserverClient, r.RepoName(), args.Interactive, branches)
 			if err != nil {
 				return nil, err
 			}
@@ -149,7 +149,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	}, nil
 }
 
-func hydrateBranchCommits(ctx context.Context, db database.DB, repo api.RepoName, interactive bool, branches []*gitdomain.Branch) (ok bool, err error) {
+func hydrateBranchCommits(ctx context.Context, db database.DB, gitserverClient gitserver.Client, repo api.RepoName, interactive bool, branches []*gitdomain.Branch) (ok bool, err error) {
 	parentCtx := ctx
 	if interactive {
 		if len(branches) > 1000 {
@@ -161,7 +161,7 @@ func hydrateBranchCommits(ctx context.Context, db database.DB, repo api.RepoName
 	}
 
 	for _, branch := range branches {
-		branch.Commit, err = gitserver.NewClient(db).GetCommit(ctx, repo, branch.Head, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
+		branch.Commit, err = gitserverClient.GetCommit(ctx, repo, branch.Head, gitserver.ResolveRevisionOptions{}, authz.DefaultSubRepoPermsChecker)
 		if err != nil {
 			if parentCtx.Err() == nil && ctx.Err() != nil {
 				// reached interactive timeout

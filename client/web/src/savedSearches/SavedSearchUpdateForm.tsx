@@ -16,11 +16,11 @@ import {
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Alert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
+import { SavedSearchFields } from '../graphql-operations'
 import { NamespaceProps } from '../namespaces'
 import { fetchSavedSearch, updateSavedSearch } from '../search/backend'
 import { eventLogger } from '../tracking/eventLogger'
@@ -35,7 +35,7 @@ interface Props extends RouteComponentProps<{ id: Scalars['ID'] }>, NamespacePro
 const LOADING = 'loading' as const
 
 interface State {
-    savedSearchOrError: typeof LOADING | GQL.ISavedSearch | ErrorLike
+    savedSearchOrError: typeof LOADING | SavedSearchFields | ErrorLike
     updatedOrError: null | true | typeof LOADING | ErrorLike
 }
 

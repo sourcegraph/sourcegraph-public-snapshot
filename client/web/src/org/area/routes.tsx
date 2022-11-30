@@ -8,7 +8,6 @@ import { OrgAreaRoute } from './OrgArea'
 
 const OrgSettingsArea = lazyComponent(() => import('../settings/OrgSettingsArea'), 'OrgSettingsArea')
 const OrgMembersArea = lazyComponent(() => import('../members/OrgMembersArea'), 'OrgMembersArea')
-const OpenBetaGetStartedPage = lazyComponent(() => import('../openBeta/GettingStarted'), 'OpenBetaGetStartedPage')
 
 const redirectToOrganizationProfile: OrgAreaRoute['render'] = props => (
     <Redirect to={`${props.match.url}/settings/profile`} />
@@ -17,7 +16,7 @@ const redirectToOrganizationProfile: OrgAreaRoute['render'] = props => (
 export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     {
         path: '/getstarted',
-        render: props => <OpenBetaGetStartedPage {...props} />,
+        render: props => <Redirect to={`/organizations/${props.org.name}/settings/members`} />,
     },
     {
         path: '/settings/members',
@@ -26,7 +25,14 @@ export const orgAreaRoutes: readonly OrgAreaRoute[] = [
     },
     {
         path: '/settings',
-        render: props => <OrgSettingsArea {...props} isLightTheme={props.isLightTheme} />,
+        render: props => (
+            <OrgSettingsArea
+                {...props}
+                routes={props.orgSettingsAreaRoutes}
+                sideBarItems={props.orgSettingsSideBarItems}
+                isLightTheme={props.isLightTheme}
+            />
+        ),
     },
     ...namespaceAreaRoutes,
 

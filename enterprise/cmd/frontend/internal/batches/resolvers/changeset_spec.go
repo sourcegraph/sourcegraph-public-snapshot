@@ -11,7 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -80,19 +82,20 @@ func (r *changesetSpecResolver) Type() string {
 }
 
 func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend.ChangesetDescription, error) {
+	db := r.store.DatabaseDB()
 	descriptionResolver := &changesetDescriptionResolver{
 		store: r.store,
 		spec:  r.changesetSpec,
 		// Note: r.repo can never be nil, because Description is a VisibleChangesetSpecResolver-only field.
-		repoResolver: graphqlbackend.NewRepositoryResolver(r.store.DatabaseDB(), r.repo),
+		repoResolver: graphqlbackend.NewRepositoryResolver(db, gitserver.NewClient(db), r.repo),
 		diffStat:     r.changesetSpec.DiffStat(),
 	}
 
 	return descriptionResolver, nil
 }
 
-func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
-	return &graphqlbackend.DateTime{Time: r.changesetSpec.ExpiresAt()}
+func (r *changesetSpecResolver) ExpiresAt() *gqlutil.DateTime {
+	return &gqlutil.DateTime{Time: r.changesetSpec.ExpiresAt()}
 }
 
 func (r *changesetSpecResolver) ForkTarget() graphqlbackend.ForkTargetInterface {
@@ -175,14 +178,14 @@ func (r *changesetDescriptionResolver) DiffStat() *graphqlbackend.DiffStat {
 }
 
 func (r *changesetDescriptionResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
-	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repoResolver, r.spec.BaseRev, string(r.spec.Diff))
+	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repoResolver, r.spec.BaseRev, r.spec.Diff)
 }
 
 func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescriptionResolver {
 	return []graphqlbackend.GitCommitDescriptionResolver{&gitCommitDescriptionResolver{
 		store:       r.store,
 		message:     r.spec.CommitMessage,
-		diff:        string(r.spec.Diff),
+		diff:        r.spec.Diff,
 		authorName:  r.spec.CommitAuthorName,
 		authorEmail: r.spec.CommitAuthorEmail,
 	}}
@@ -193,7 +196,7 @@ var _ graphqlbackend.GitCommitDescriptionResolver = &gitCommitDescriptionResolve
 type gitCommitDescriptionResolver struct {
 	store       *store.Store
 	message     string
-	diff        string
+	diff        []byte
 	authorName  string
 	authorEmail string
 }
@@ -218,7 +221,7 @@ func (r *gitCommitDescriptionResolver) Body() *string {
 	}
 	return &body
 }
-func (r *gitCommitDescriptionResolver) Diff() string { return r.diff }
+func (r *gitCommitDescriptionResolver) Diff() string { return string(r.diff) }
 
 type forkTargetResolver struct {
 	changesetSpec *btypes.ChangesetSpec
@@ -231,5 +234,9 @@ func (r *forkTargetResolver) PushUser() bool {
 }
 
 func (r *forkTargetResolver) Namespace() *string {
-	return r.changesetSpec.GetForkNamespace()
+	// We don't use `changesetSpec.GetForkNamespace()` here because it returns `nil` if
+	// the namespace matches the user default namespace. This is a perfectly reasonable
+	// thing to do for the way we use the method internally, but for resolving this field
+	// on the GraphQL scehma, we want to return the namespace regardless of what it is.
+	return r.changesetSpec.ForkNamespace
 }

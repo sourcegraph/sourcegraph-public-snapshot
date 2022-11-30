@@ -37,9 +37,8 @@
     "build.allowImplicitNetworkAccess": true,
     "local": "github.com/sourcegraph/sourcegraph",
   },
-  "jest.pathToJest": "yarn -s test",
+  "jest.jestCommandLine": "yarn test",
   "jest.showCoverageOnLoad": false,
-  "jest.autoEnable": false, // until we confirm people like it
   "gulp.autoDetect": "off",
   "npm.packageManager": "yarn",
   "npm.runSilent": true,
@@ -51,20 +50,20 @@
   "eslint.packageManager": "yarn",
   "eslint.lintTask.enable": false,
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true,
-  },
+  "editor.codeActionsOnSave": {},
   "eslint.codeActionsOnSave.mode": "problems",
   "eslint.options": { "cache": true },
   "eslint.workingDirectories": ["./dev/release", "./client/*"],
   "go.lintTool": "golangci-lint",
   "shellformat.flag": "-i 2 -ci",
   "vscode-graphql.useSchemaFileDefinitions": true,
-  "jest.jestCommandLine": "yarn -s test",
   "nixEnvSelector.nixFile": "${workspaceRoot}/shell.nix",
   "nix.enableLanguageServer": true,
   "[nix]": {
     "editor.insertSpaces": true,
     "editor.tabSize": 2,
+  },
+  "files.watcherExclude": {
+    "**/target": true,
   },
 }

@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
+	"net/url"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -106,11 +109,11 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 
 func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return db.Users().Count(ctx, &database.UsersListOptions{})
+	return db.Users().Count(ctx, &database.UsersListOptions{ExcludeSourcegraphOperators: true})
 }
 
 func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
-	defer recordOperation("getTotalUsersCount")(&err)
+	defer recordOperation("getTotalOrgsCount")(&err)
 	return db.Orgs().Count(ctx, database.OrgsListOptions{})
 }
 
@@ -394,6 +397,8 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	if envvar.SourcegraphDotComMode() {
 		logFunc = scopedLog.Warn
 	}
+	// Used for cases where large pings objects might otherwise fail silently.
+	logFuncWarn := scopedLog.Warn
 
 	r := &pingRequest{
 		ClientSiteID:                  siteid.Get(),
@@ -515,7 +520,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 
 		r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db)
 		if err != nil {
-			logFunc("getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
+			logFuncWarn("getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
 		}
 
 		r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
@@ -629,10 +634,31 @@ func authProviderTypes() []string {
 	return types
 }
 
+const defaultUpdateCheckBaseURL = "https://sourcegraph.com"
+const updateCheckPath = "/.api/updates"
+
 func externalServiceKinds(ctx context.Context, db database.DB) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
 	kinds, err = db.ExternalServices().DistinctKinds(ctx)
 	return kinds, err
+}
+
+// updateCheckURL returns an URL to the update checks route on Sourcegraph.com or
+// if provided through "UPDATE_CHECK_BASE_URL", that specific endpoint instead, to
+// accomodate network limitations on the customer side.
+func updateCheckURL(logger log.Logger) string {
+	base := os.Getenv("UPDATE_CHECK_BASE_URL")
+	if base == "" {
+		base = defaultUpdateCheckBaseURL
+	}
+	u, err := url.Parse(base)
+	if err != nil || u.Scheme != "https" {
+		logger.Error("Invalid UPDATE_CHECK_BASE_URL", log.String("UPDATE_CHECK_BASE_URL", base))
+		// Revert to the default value
+		return fmt.Sprintf("%s%s", defaultUpdateCheckBaseURL, updateCheckPath)
+	}
+	u.Path = updateCheckPath
+	return u.String()
 }
 
 // check performs an update check and updates the global state.
@@ -640,13 +666,15 @@ func check(logger log.Logger, db database.DB) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
+	endpoint := updateCheckURL(logger)
+
 	doCheck := func() (updateVersion string, err error) {
 		body, err := updateBody(ctx, logger, db)
 		if err != nil {
 			return "", err
 		}
 
-		req, err := http.NewRequest("POST", "https://sourcegraph.com/.api/updates", body)
+		req, err := http.NewRequest("POST", endpoint, body)
 		if err != nil {
 			return "", err
 		}

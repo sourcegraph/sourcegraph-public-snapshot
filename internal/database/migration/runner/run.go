@@ -415,7 +415,24 @@ pollIndexStatusLoop:
 		}
 
 		if exists && indexStatus.IsValid {
-			// Index exists and is valid; nothing to do
+			// Index exists and is valid; nothing to do. We'll return here, but we need to ensure
+			// we add a migration log here before moving on.
+			//
+			// This was a particular problem when we would create an index concurrently on DotCom
+			// ahead of a merge+rollout to confirm expected performance changes. When the migrator
+			// runs, it sees a valid index and exits without adding a log. This causes the frontend
+			// to fail as it's still missing proof that the index's migration was ran.
+			//
+			// This doesn't happen normally, where the migration log is missing AND the index does
+			// not yet exist (or is invalid). This may have affected customers that have previously
+			// downgraded.
+			noop := func() error {
+				return nil
+			}
+			if err := schemaContext.store.WithMigrationLog(ctx, definition, true, noop); err != nil {
+				return false, errors.Wrapf(err, "failed to create migration log %d", definition.ID)
+			}
+
 			return unlocked, nil
 		}
 

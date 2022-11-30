@@ -5,9 +5,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -42,12 +42,12 @@ func settingsSubjectForNode(ctx context.Context, n Node) (*settingsSubject, erro
 		// 🚨 SECURITY: Only the authenticated user can view their settings on
 		// Sourcegraph.com.
 		if envvar.SourcegraphDotComMode() {
-			if err := backend.CheckSameUser(ctx, s.user.ID); err != nil {
+			if err := auth.CheckSameUser(ctx, s.user.ID); err != nil {
 				return nil, err
 			}
 		} else {
 			// 🚨 SECURITY: Only the user and site admins are allowed to view the user's settings.
-			if err := backend.CheckSiteAdminOrSameUser(ctx, s.db, s.user.ID); err != nil {
+			if err := auth.CheckSiteAdminOrSameUser(ctx, s.db, s.user.ID); err != nil {
 				return nil, err
 			}
 		}
@@ -55,7 +55,7 @@ func settingsSubjectForNode(ctx context.Context, n Node) (*settingsSubject, erro
 
 	case *OrgResolver:
 		// 🚨 SECURITY: Check that the current user is a member of the org.
-		if err := backend.CheckOrgAccessOrSiteAdmin(ctx, s.db, s.org.ID); err != nil {
+		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, s.db, s.org.ID); err != nil {
 			return nil, err
 		}
 		return &settingsSubject{org: s}, nil

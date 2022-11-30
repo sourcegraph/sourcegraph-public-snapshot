@@ -7,6 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
+// newConfWatcher subscribes to changes in site configuration and propagates them to the
+// provided switchable tracers.
 func newConfWatcher(
 	logger log.Logger,
 	c conftypes.SiteConfigQuerier,

@@ -6,6 +6,7 @@
     align-items: center;
     flex: 1 1 auto;
     min-width: 12rem;
+    min-height: 32px;
 
     @media (--xs-breakpoint-down) {
         background-color: var(--color-bg-1);
@@ -58,7 +59,6 @@
 
         &:not(:first-child) {
             padding-left: 0.5rem; // smaller padding if the search context selector is visible
-            margin-left: 0.0625rem;
 
             @media (--xs-breakpoint-down) {
                 padding-left: 0;
@@ -85,8 +85,7 @@
         }
     }
 
-    &__version-context-dropdown,
-    &__context-dropdown {
+    &__align-middle {
         @media (--xs-breakpoint-down) {
             display: inline-block;
             vertical-align: middle;
@@ -97,7 +96,7 @@
     &__separator {
         // stylelint-disable-next-line declaration-property-unit-allowed-list
         width: 1px;
-        height: 1.125rem;
+        height: 1rem;
         background-color: var(--border-color-2);
 
         @media (--xs-breakpoint-down) {
@@ -144,4 +143,8 @@
             float: right;
         }
     }
+}
+
+.help-button {
+    margin-left: 0.25rem;
 }

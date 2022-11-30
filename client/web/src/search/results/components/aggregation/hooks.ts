@@ -3,11 +3,15 @@ import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { gql, useQuery } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
 
-import { NotAvailableReasonType, SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { GetSearchAggregationResult, GetSearchAggregationVariables } from '../../../../graphql-operations'
+import {
+    GetSearchAggregationResult,
+    GetSearchAggregationVariables,
+    SearchAggregationMode,
+    NotAvailableReasonType,
+    SearchPatternType,
+} from '../../../../graphql-operations'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
 import { GroupResultsPing } from './pings'
@@ -232,13 +236,13 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
         query,
         patternType,
         aggregationMode,
-        proactive = false,
         caseSensitive,
         extendedTimeout,
+        proactive = false,
         telemetryService,
     } = input
 
-    const [, setAggregationMode] = useAggregationSearchMode()
+    const [, setURLAggregationMode] = useAggregationSearchMode()
     const [state, setState] = useState<AggregationState>(INITIAL_STATE)
 
     // Search parses out the case argument, but backend needs it in the query
@@ -281,14 +285,13 @@ export const useSearchAggregationData = (input: SearchAggregationDataInput): Sea
                 // Catch initial page mount when aggregation mode isn't set on the FE and BE
                 // calculated aggregation mode automatically on the backend based on given query
                 if (calculatedAggregationMode !== aggregationMode) {
-                    setAggregationMode(calculatedAggregationMode)
+                    setURLAggregationMode(calculatedAggregationMode)
                 }
 
                 // skip: true resets data field in the useQuery hook, in order to use previously
                 // saved data we use useState to store data outside useQuery hook
                 setState({ data, calculatedMode: calculatedAggregationMode })
-
-                sendAggregationPing({ data, aggregationMode, extendedTimeout, proactive, telemetryService })
+                sendAggregationPing({ data, extendedTimeout, proactive, telemetryService })
             },
         }
     )
@@ -337,53 +340,55 @@ interface UseAggregationPingsArgs {
     proactive: boolean
     extendedTimeout: boolean
     telemetryService: TelemetryService
-    aggregationMode: SearchAggregationMode | null
 }
 
-function sendAggregationPing({
-    data,
-    proactive,
-    extendedTimeout,
-    telemetryService,
-    aggregationMode,
-}: UseAggregationPingsArgs): void {
-    if (!data?.searchQueryAggregate.aggregations) {
+function sendAggregationPing(props: UseAggregationPingsArgs): void {
+    const { data, proactive, extendedTimeout, telemetryService } = props
+
+    const aggregation = data?.searchQueryAggregate.aggregations
+
+    if (!aggregation) {
         return
     }
 
-    const aggregation = data.searchQueryAggregate.aggregations
-    const aggregationType = aggregation.__typename
-    const aggregationAvailable =
-        aggregationType === 'ExhaustiveSearchAggregationResult' ||
-        aggregationType === 'NonExhaustiveSearchAggregationResult'
-    const aggregationUnavailable = aggregationType === 'SearchAggregationNotAvailable'
+    const { __typename: aggregationType } = aggregation
 
-    let pingType
+    if (aggregationType === 'SearchAggregationNotAvailable') {
+        const { reasonType, mode } = aggregation
 
-    if (aggregationUnavailable) {
-        const extensionAvailable = aggregation.reasonType === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE
-        const noExtensionAvailable = aggregation.reasonType === NotAvailableReasonType.TIMEOUT_NO_EXTENSION_AVAILABLE
+        const extensionAvailable = reasonType === NotAvailableReasonType.TIMEOUT_EXTENSION_AVAILABLE
+        const noExtensionAvailable = reasonType === NotAvailableReasonType.TIMEOUT_NO_EXTENSION_AVAILABLE
 
         if (proactive && extensionAvailable) {
-            pingType = GroupResultsPing.ProactiveLimitHit
+            telemetryService.log(
+                GroupResultsPing.ProactiveLimitHit,
+                { aggregationMode: mode },
+                { aggregationMode: mode }
+            )
         }
 
         if (noExtensionAvailable) {
-            pingType = GroupResultsPing.ExplicitLimitHit
+            telemetryService.log(
+                GroupResultsPing.ExplicitLimitHit,
+                { aggregationMode: mode },
+                { aggregationMode: mode }
+            )
         }
-    }
-
-    if (aggregationAvailable) {
-        if (proactive) {
-            pingType = GroupResultsPing.ProactiveLimitSuccess
-        }
+    } else {
+        const { mode } = aggregation
 
         if (extendedTimeout) {
-            pingType = GroupResultsPing.ExplicitLimitSuccess
+            telemetryService.log(
+                GroupResultsPing.ExplicitLimitSuccess,
+                { aggregationMode: mode },
+                { aggregationMode: mode }
+            )
+        } else {
+            telemetryService.log(
+                GroupResultsPing.ProactiveLimitSuccess,
+                { aggregationMode: mode },
+                { aggregationMode: mode }
+            )
         }
-    }
-
-    if (pingType) {
-        telemetryService.log(pingType, { aggregationMode }, { aggregationMode })
     }
 }

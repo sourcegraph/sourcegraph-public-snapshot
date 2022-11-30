@@ -21,9 +21,9 @@ describe('CodeExcerpt', () => {
         commitID: 'e64efc72b421e893cbf63f17ba2221e7d6d0b0f3',
         filePath: '.travis.yml',
         highlightRanges: [
-            { line: 0, character: 6, highlightLength: 4 },
-            { line: 1, character: 7, highlightLength: 4 },
-            { line: 2, character: 6, highlightLength: 4 },
+            { startLine: 0, startCharacter: 6, endLine: 0, endCharacter: 10 },
+            { startLine: 1, startCharacter: 7, endLine: 1, endCharacter: 11 },
+            { startLine: 2, startCharacter: 6, endLine: 2, endCharacter: 10 },
         ],
         startLine,
         endLine,
@@ -64,7 +64,7 @@ describe('CodeExcerpt', () => {
     })
 
     it('highlights matches correctly in syntax highlighted code blocks', () => {
-        const highlightRanges = [{ line: 12, character: 7, highlightLength: 4 }]
+        const highlightRanges = [{ startLine: 12, startCharacter: 7, endLine: 12, endCharacter: 11 }]
         const startLine = 0
         const endLine = 13
         const { container } = render(
@@ -87,16 +87,16 @@ describe('CodeExcerpt', () => {
 
     it('displays the correct number of lines, with no highlight matches on the context lines', () => {
         const highlightRanges = [
-            { line: 0, character: 0, highlightLength: 1 },
-            { line: 1, character: 0, highlightLength: 1 },
-            { line: 2, character: 0, highlightLength: 1 },
-            { line: 4, character: 0, highlightLength: 1 },
-            { line: 7, character: 0, highlightLength: 1 },
-            { line: 10, character: 0, highlightLength: 1 },
-            { line: 11, character: 0, highlightLength: 1 },
-            { line: 16, character: 0, highlightLength: 1 },
-            { line: 17, character: 0, highlightLength: 1 },
-            { line: 19, character: 0, highlightLength: 1 },
+            { startLine: 0, startCharacter: 0, endLine: 0, endCharacter: 1 },
+            { startLine: 1, startCharacter: 0, endLine: 1, endCharacter: 1 },
+            { startLine: 2, startCharacter: 0, endLine: 2, endCharacter: 1 },
+            { startLine: 4, startCharacter: 0, endLine: 4, endCharacter: 1 },
+            { startLine: 7, startCharacter: 0, endLine: 7, endCharacter: 1 },
+            { startLine: 10, startCharacter: 0, endLine: 10, endCharacter: 1 },
+            { startLine: 11, startCharacter: 0, endLine: 11, endCharacter: 1 },
+            { startLine: 16, startCharacter: 0, endLine: 16, endCharacter: 1 },
+            { startLine: 17, startCharacter: 0, endLine: 17, endCharacter: 1 },
+            { startLine: 19, startCharacter: 0, endLine: 19, endCharacter: 1 },
         ]
         const startLine = 0
         const endLine = 22
@@ -117,17 +117,17 @@ describe('CodeExcerpt', () => {
 
     it('displays the correct number of lines, with matches on the context line', () => {
         const highlightRanges = [
-            { line: 0, character: 0, highlightLength: 1 },
-            { line: 1, character: 0, highlightLength: 1 },
-            { line: 2, character: 0, highlightLength: 1 },
-            { line: 4, character: 0, highlightLength: 1 },
-            { line: 7, character: 0, highlightLength: 1 },
-            { line: 10, character: 0, highlightLength: 1 },
-            { line: 11, character: 0, highlightLength: 1 },
-            { line: 16, character: 0, highlightLength: 1 },
-            { line: 17, character: 0, highlightLength: 1 },
-            { line: 19, character: 0, highlightLength: 1 },
-            { line: 20, character: 0, highlightLength: 1 },
+            { startLine: 0, startCharacter: 0, endLine: 0, endCharacter: 1 },
+            { startLine: 1, startCharacter: 0, endLine: 1, endCharacter: 1 },
+            { startLine: 2, startCharacter: 0, endLine: 2, endCharacter: 1 },
+            { startLine: 4, startCharacter: 0, endLine: 4, endCharacter: 1 },
+            { startLine: 7, startCharacter: 0, endLine: 7, endCharacter: 1 },
+            { startLine: 10, startCharacter: 0, endLine: 10, endCharacter: 1 },
+            { startLine: 11, startCharacter: 0, endLine: 11, endCharacter: 1 },
+            { startLine: 16, startCharacter: 0, endLine: 16, endCharacter: 1 },
+            { startLine: 17, startCharacter: 0, endLine: 17, endCharacter: 1 },
+            { startLine: 19, startCharacter: 0, endLine: 19, endCharacter: 1 },
+            { startLine: 20, startCharacter: 0, endLine: 20, endCharacter: 1 },
         ]
         const startLine = 0
         const endLine = 22

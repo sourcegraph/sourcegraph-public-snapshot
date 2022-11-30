@@ -3,6 +3,7 @@
 This page documents how to configure a Sourcegraph instance. For deployment configuration, please refer to the [relevant deployment docs for your deployment type](../deploy/index.md#deployment-types).
 
 - [Site configuration](site_config.md)
+- [Global and user settings](settings.md)
 - [Code host configuration](../external_service/index.md) (GitHub, GitLab, and the [Nginx HTTP server](../http_https_configuration.md).)
 - [Search configuration](../search.md)
 - [Configuring Authorization and Authentication](./authorization_and_authentication.md)

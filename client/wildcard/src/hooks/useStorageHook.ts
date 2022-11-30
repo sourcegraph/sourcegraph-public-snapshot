@@ -1,13 +1,9 @@
-import { useCallback, useRef, useState } from 'react'
+import { Dispatch, SetStateAction, useCallback, useRef, useState } from 'react'
 
 /**
  * A helper method to convert any `Storage` object into a React hook, such as `useLocalStorage`.
  */
-export const useStorageHook = <T>(
-    storage: Storage,
-    key: string,
-    initialValue: T
-): [T, (value: T | ((previousValue: T) => T)) => void] => {
+export const useStorageHook = <T>(storage: Storage, key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>] => {
     const [storedValue, setStoredValue] = useState<T>(() => {
         try {
             const item = storage.getItem(key)
@@ -22,7 +18,7 @@ export const useStorageHook = <T>(
     const storedValueReference = useRef<T>(storedValue)
     storedValueReference.current = storedValue
 
-    const setValue = useCallback(
+    const setValue: Dispatch<SetStateAction<T>> = useCallback(
         (value: T | ((previousValue: T) => T)): void => {
             // We need to cast here because T could be a function type itself,
             // but we cannot tell TypeScript that functions are not allowed as T.

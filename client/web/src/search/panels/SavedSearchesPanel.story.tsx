@@ -1,10 +1,10 @@
 import { Meta, Story } from '@storybook/react'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
+import { SearchPatternType } from '../../graphql-operations'
 
 import { SavedSearchesPanel } from './SavedSearchesPanel'
 import { savedSearchesPayload, authUser } from './utils'

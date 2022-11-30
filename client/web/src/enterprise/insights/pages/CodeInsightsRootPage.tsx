@@ -1,10 +1,9 @@
-import React, { useEffect, Suspense } from 'react'
+import React, { Suspense } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import { matchPath, useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import {
@@ -22,7 +21,7 @@ import {
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { CodeInsightsPage } from '../components'
-import { ALL_INSIGHTS_DASHBOARD } from '../core'
+import { ALL_INSIGHTS_DASHBOARD } from '../constants'
 
 import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'
 
@@ -64,8 +63,6 @@ export const CodeInsightsRootPage: React.FunctionComponent<
             path: `/insights${CodeInsightsRootPageURLPaths.CodeInsights}`,
         }) ?? {}
 
-    const [hasInsightPageBeenViewed, markMainPageAsViewed] = useTemporarySetting('insights.wasMainPageOpen', false)
-
     const dashboardId = params?.dashboardId ?? ALL_INSIGHTS_DASHBOARD.id
     const queryParameterDashboardId = query.get('dashboardId') ?? ALL_INSIGHTS_DASHBOARD.id
 
@@ -77,12 +74,6 @@ export const CodeInsightsRootPage: React.FunctionComponent<
                 return history.push(`/insights/about?dashboardId=${dashboardId}`)
         }
     }
-
-    useEffect(() => {
-        if (hasInsightPageBeenViewed === false) {
-            markMainPageAsViewed(true)
-        }
-    }, [hasInsightPageBeenViewed, markMainPageAsViewed])
 
     return (
         <CodeInsightsPage>
@@ -115,7 +106,6 @@ export const CodeInsightsRootPage: React.FunctionComponent<
             <Tabs index={activeView} size="medium" className="mb-3" onChange={handleTabNavigationChange} lazy={true}>
                 <TabList>
                     <Tab index={CodeInsightsRootPageTab.CodeInsights}>Code Insights</Tab>
-
                     <Tab index={CodeInsightsRootPageTab.GettingStarted}>Getting started</Tab>
                 </TabList>
                 <TabPanels className="mt-3">
@@ -123,7 +113,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<
                         <DashboardsContentPage telemetryService={telemetryService} dashboardID={params?.dashboardId} />
                     </TabPanel>
                     <TabPanel>
-                        <Suspense fallback={<LoadingSpinner />}>
+                        <Suspense fallback={<LoadingSpinner aria-label="Loading Code Insights Getting started page" />}>
                             <LazyCodeInsightsGettingStartedPage telemetryService={telemetryService} />
                         </Suspense>
                     </TabPanel>

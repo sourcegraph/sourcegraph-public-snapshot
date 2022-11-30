@@ -16,6 +16,21 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
 <a class="btn" href="explanations/features">Search features</a>
 </div>
 
+## Recommended
+
+<div>
+  <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
+    <div class="cloud-cta-copy">
+      <h2>Get Sourcegraph on your code.</h2>
+      <h3>A single-tenant instance managed by Sourcegraph.</h3>
+      <p>Sign up for a 30 day trial for your team.</p>
+    </div>
+    <div class="cloud-cta-btn-container">
+      <div class="visual-btn">Get free trial now</div>
+    </div>
+  </a>
+</div>
+
 ## Getting started
 
 <div class="getting-started">

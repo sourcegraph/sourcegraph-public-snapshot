@@ -82,7 +82,7 @@ func TestMain(m *testing.M) {
 
 	licenseKey := os.Getenv("SOURCEGRAPH_LICENSE_KEY")
 	if licenseKey != "" {
-		siteConfig, err := client.SiteConfiguration()
+		siteConfig, lastID, err := client.SiteConfiguration()
 		if err != nil {
 			log.Fatal("Failed to get site configuration:", err)
 		}
@@ -94,7 +94,7 @@ func TestMain(m *testing.M) {
 			}
 
 			siteConfig.LicenseKey = licenseKey
-			err = client.UpdateSiteConfiguration(siteConfig)
+			err = client.UpdateSiteConfiguration(siteConfig, lastID)
 			if err != nil {
 				return errors.Wrap(err, "update site configuration")
 			}

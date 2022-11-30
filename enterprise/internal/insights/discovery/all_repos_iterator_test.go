@@ -9,7 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/hexops/autogold"
-	"github.com/hexops/valast"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -18,7 +18,6 @@ import (
 // TestAllReposIterator tests the AllReposIterator in the common use cases.
 func TestAllReposIterator(t *testing.T) {
 	ctx := context.Background()
-	indexableReposLister := NewMockIndexableReposLister()
 	repoStore := NewMockRepoStore()
 	var timeOffset time.Duration
 	clock := func() time.Time { return time.Now().Add(timeOffset) }
@@ -41,7 +40,7 @@ func TestAllReposIterator(t *testing.T) {
 		return result, nil
 	})
 
-	iter := NewAllReposIterator(indexableReposLister, repoStore, clock, false, 15*time.Minute, &prometheus.CounterOpts{Name: "fake_name123"})
+	iter := NewAllReposIterator(repoStore, clock, false, 15*time.Minute, &prometheus.CounterOpts{Name: "fake_name123"})
 	{
 		// Do we get all 9 repositories?
 		var each []string
@@ -52,29 +51,24 @@ func TestAllReposIterator(t *testing.T) {
 		autogold.Want("items0", []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}).Equal(t, each)
 	}
 
-	trueP := true
 	// Were the RepoStore.List calls as we expected?
 	autogold.Want("repoStoreListCalls0", []database.ReposListOptions{
 		{
-			Index:       valast.Addr(true).(*bool),
 			LimitOffset: &database.LimitOffset{Limit: 1000},
 		},
 		{
-			Index: valast.Addr(true).(*bool),
 			LimitOffset: &database.LimitOffset{
 				Limit:  1000,
 				Offset: 3,
 			},
 		},
 		{
-			Index: valast.Addr(true).(*bool),
 			LimitOffset: &database.LimitOffset{
 				Limit:  1000,
 				Offset: 6,
 			},
 		},
 		{
-			Index: valast.Addr(true).(*bool),
 			LimitOffset: &database.LimitOffset{
 				Limit:  1000,
 				Offset: 9,
@@ -108,25 +102,21 @@ func TestAllReposIterator(t *testing.T) {
 		autogold.Want("items2", []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}).Equal(t, each)
 		autogold.Want("repoStoreListCalls2", []database.ReposListOptions{
 			{
-				Index:       &trueP,
 				LimitOffset: &database.LimitOffset{Limit: 1000},
 			},
 			{
-				Index: &trueP,
 				LimitOffset: &database.LimitOffset{
 					Limit:  1000,
 					Offset: 3,
 				},
 			},
 			{
-				Index: &trueP,
 				LimitOffset: &database.LimitOffset{
 					Limit:  1000,
 					Offset: 6,
 				},
 			},
 			{
-				Index: &trueP,
 				LimitOffset: &database.LimitOffset{
 					Limit:  1000,
 					Offset: 9,

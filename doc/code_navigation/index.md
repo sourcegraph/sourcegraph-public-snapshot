@@ -58,8 +58,65 @@ developers to explore code by
 
 Code navigation is made up of multiple features that build on top of each other:
 
-- [Search-based code navigation](explanations/search_based_code_navigation.md) works out of the box with all of the most popular programming languages, powered by Sourcegraph's code search and [extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
-- [Precise code navigation](explanations/precise_code_navigation.md) uses code graph data to provide correct code navigation features and accurate cross-repository navigation.
+- [Search-based code navigation](explanations/search_based_code_navigation.md) works out of the box with all of the most popular programming languages, powered by Sourcegraph's code search.
+- [Precise code navigation](explanations/precise_code_navigation.md) uses code graph data to provide precise code navigation features and accurate cross-repository navigation. We currently have precise support the languages below. See the [indexers page](references/indexers.md) for a detailed breakdown of each indexer's status.
+<table>
+   <thead>
+      <tr>
+        <th>Language</th>
+        <th>Indexer</th>
+        <th>Status</th>
+      </tr>
+   </thead>
+   <tbody>
+      <tr>
+        <td>Go</td>
+        <td><a href="https://github.com/sourcegraph/lsif-go">lsif-go</a></td>
+        <td>🟢 GA</td>
+      </tr>
+      <tr>
+        <td>TypeScript/JavaScript</td>
+        <td><a href="https://github.com/sourcegraph/scip-typescript">scip-typescript</a></td>
+        <td>🟢 GA</td>
+      </tr>
+      <tr>
+        <td>C/C++</td>
+        <td><a href="https://github.com/sourcegraph/lsif-clang">lsif-clang</a></td>
+        <td>🟡 Partially available</td>
+      </tr>
+      <tr>
+         <td>Java</td>
+        <td><a href="https://github.com/sourcegraph/scip-java">scip-java</a></td>
+        <td>🟢 GA</td>
+      </tr>
+      <tr>
+        <td>Scala</td>
+        <td><a href="https://github.com/sourcegraph/scip-java">scip-java</a></td>
+        <td>🟢 GA</td>
+      </tr>
+      <tr>
+        <td>Kotlin</td>
+        <td><a href="https://github.com/sourcegraph/scip-java">scip-java</a></td>
+        <td>🟢 GA</td>
+      </tr>
+      <tr>
+        <td>Rust</td>
+        <td><a href="https://github.com/rust-lang/rust-analyzer">rust-analyzer</a></td>
+        <td>🟢 GA</td>
+      </tr>
+     <tr>
+        <td>Python</td>
+        <td><a href="https://github.com/sourcegraph/scip-python">scip-python</a></td>
+        <td>🟢 GA</td>
+      </tr>
+     <tr>
+        <td>Ruby</td>
+        <td><a href="https://github.com/sourcegraph/scip-ruby">scip-ruby</a></td>
+        <td>🟡 Partially available</td>
+      </tr>
+   </tbody>
+</table>
+
 - [Auto-indexing](explanations/auto_indexing.md) uses [Sourcegraph executors](../admin/executors.md) to create indexes for the code in your Sourcegraph instance, giving you up-to-date cross-repository code navigation.
 - <span class="badge badge-beta">Beta</span> [Dependency navigation](explanations/features.md#dependency-navigation) allows you to navigate and search through the dependencies of your code, by leveraging precise code navigation and auto-indexing.
 

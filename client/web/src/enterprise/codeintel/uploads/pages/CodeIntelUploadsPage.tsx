@@ -161,6 +161,22 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
 
     const deletes = useMemo(() => new Subject<undefined>(), [])
 
+    const queryConnection = useCallback(
+        (args: FilteredConnectionQueryArguments) => {
+            setArgs({
+                query: args.query ?? null,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+                state: (args as any).state ?? null,
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+                isLatestForRepo: (args as any).isLatestForRepo ?? null,
+                repository: repo?.id ?? null,
+            })
+            setSelection(new Set())
+            return queryLsifUploads(args)
+        },
+        [queryLsifUploads, repo?.id]
+    )
+
     return (
         <div className="code-intel-uploads">
             <PageTitle title="Code graph data uploads" />
@@ -255,18 +271,7 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
                         pluralNoun="uploads"
                         nodeComponent={CodeIntelUploadNode}
                         nodeComponentProps={{ now, selection, onCheckboxToggle }}
-                        queryConnection={args => {
-                            setArgs({
-                                query: args.query ?? null,
-                                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-                                state: (args as any).state ?? null,
-                                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-                                isLatestForRepo: (args as any).isLatestForRepo ?? null,
-                                repository: repo?.id ?? null,
-                            })
-                            setSelection(new Set())
-                            return queryLsifUploads(args)
-                        }}
+                        queryConnection={queryConnection}
                         history={history}
                         location={props.location}
                         cursorPaging={true}

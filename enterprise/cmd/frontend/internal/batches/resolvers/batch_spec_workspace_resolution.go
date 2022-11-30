@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -23,18 +24,18 @@ func (r *batchSpecWorkspaceResolutionResolver) State() string {
 	return r.resolution.State.ToGraphQL()
 }
 
-func (r *batchSpecWorkspaceResolutionResolver) StartedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceResolutionResolver) StartedAt() *gqlutil.DateTime {
 	if r.resolution.StartedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.resolution.StartedAt}
+	return &gqlutil.DateTime{Time: r.resolution.StartedAt}
 }
 
-func (r *batchSpecWorkspaceResolutionResolver) FinishedAt() *graphqlbackend.DateTime {
+func (r *batchSpecWorkspaceResolutionResolver) FinishedAt() *gqlutil.DateTime {
 	if r.resolution.FinishedAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.resolution.FinishedAt}
+	return &gqlutil.DateTime{Time: r.resolution.FinishedAt}
 }
 
 func (r *batchSpecWorkspaceResolutionResolver) FailureMessage() *string {

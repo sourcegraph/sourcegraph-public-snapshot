@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/textproto"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -239,6 +241,8 @@ func SetActor(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiry
 				expiryPeriod = defaultExpiryPeriod
 			}
 		}
+		auth.RemoveSignOutCookieIfSet(r, w)
+
 		value = &sessionInfo{Actor: actor, ExpiryPeriod: expiryPeriod, LastActive: time.Now(), UserCreatedAt: userCreatedAt}
 	}
 	return SetData(w, r, "actor", value)
@@ -283,12 +287,6 @@ func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db dat
 	// because SetData actually reuses the client session cookie if it exists.
 	// See https://github.com/sourcegraph/security-issues/issues/136
 	return deleteSession(w, r)
-}
-
-// InvalidateSessionsByID invalidates all sessions for a user
-// If an error occurs, it returns the error
-func InvalidateSessionsByID(ctx context.Context, db database.DB, id int32) error {
-	return InvalidateSessionsByIDs(ctx, db, []int32{id})
 }
 
 // Bulk "InvalidateSessionsByID" action.
@@ -365,7 +363,7 @@ func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w 
 
 	var info *sessionInfo
 	if err := GetData(r, "actor", &info); err != nil {
-		if strings.Contains(err.Error(), "connect: connection refused") {
+		if errors.HasType(err, &net.OpError{}) {
 			// If fetching session info failed because of a Redis error, return empty Context
 			// without deleting the session cookie and throw an internal server error.
 			// This prevents background requests made by off-screen tabs from signing

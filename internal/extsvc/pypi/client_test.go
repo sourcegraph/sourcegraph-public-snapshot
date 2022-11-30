@@ -57,7 +57,7 @@ func TestDownload(t *testing.T) {
 	}
 
 	tmp := t.TempDir()
-	err = unpack.Tgz(bytes.NewReader(p), tmp, unpack.Opts{})
+	err = unpack.Tgz(p, tmp, unpack.Opts{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,13 +119,13 @@ func TestVersion(t *testing.T) {
 }
 
 func TestParse_empty(t *testing.T) {
-	b := []byte(`
+	b := bytes.NewReader([]byte(`
 <!DOCTYPE html>
 <html>
   <body>
   </body>
 </html>
-`)
+`))
 
 	_, err := parse(b)
 	if err != nil {
@@ -166,7 +166,7 @@ func TestParse_broken(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err := parse(buf.Bytes())
+			_, err := parse(&buf)
 			if err == nil {
 				t.Fatal("expected error")
 			}
@@ -177,7 +177,7 @@ func TestParse_broken(t *testing.T) {
 func TestParse_PEP503(t *testing.T) {
 	// There may be any other HTML elements on the API pages as long as the required
 	// anchor elements exist.
-	b := []byte(`
+	b := bytes.NewReader([]byte(`
 <!DOCTYPE html>
 <html>
   <head>
@@ -194,7 +194,7 @@ func TestParse_PEP503(t *testing.T) {
 	</div>
   </body>
 </html>
-`)
+`))
 
 	got, err := parse(b)
 	if err != nil {

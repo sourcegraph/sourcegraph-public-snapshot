@@ -142,7 +142,6 @@ func (m *insightsMigrator) migrateInsight(ctx context.Context, insight searchIns
 }
 
 const insightsMigratorMigrateInsightsQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights.go:migrateInsight
 SELECT COUNT(*)
 FROM (
 	SELECT *
@@ -156,7 +155,6 @@ WHERE i.deleted_at IS NULL
 `
 
 const insightsMigratorMigrateInsightInsertViewQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights.go:migrateInsight
 INSERT INTO insight_view (
 	title,
 	description,
@@ -170,13 +168,11 @@ RETURNING id
 `
 
 const insightsMigratorMigrateInsightInsertViewSeriesQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights.go:migrateInsight
 INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
 VALUES (%s, %s, %s, %s)
 `
 
 const insightsMigratorMigrateInsightInsertViewGrantQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights.go:migrateInsight
 INSERT INTO insight_view_grants (insight_view_id, user_id, org_id, global)
 VALUES (%s, %s, %s, %s)
 `
@@ -214,7 +210,6 @@ func (m *insightsMigrator) getOrCreateSeries(ctx context.Context, tx *basestore.
 }
 
 const insightsMigratorGetOrCreateSeriesSelectSeriesQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights.go:getOrCreateSeries
 SELECT
 	id,
 	series_id,
@@ -270,7 +265,6 @@ func (m *insightsMigrator) createSeries(ctx context.Context, tx *basestore.Store
 }
 
 const insightsMigratorCreateSeriesQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights.go:createSeries
 INSERT INTO insight_series (
 	series_id,
 	query,
@@ -328,7 +322,6 @@ func (m *insightsMigrator) migrateBackendSeries(ctx context.Context, tx *basesto
 }
 
 const insightsMigratorMigrateBackendSeriesUpdateSeriesPointsQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights.go:migrateBackendSeries
 WITH updated AS (
 	UPDATE series_points sp
 	SET series_id = %s
@@ -339,12 +332,10 @@ SELECT count(*) FROM updated;
 `
 
 const insightsMigratorMigrateBackendSeriesUpdateJobsQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights.go:migrateBackendSeries
 UPDATE insights_query_runner_jobs SET series_id = %s WHERE series_id = %s
 `
 
 const insightsMigratorMigrateBackendSeriesUpdateBackfillQueuedAtQuery = `
--- source: enterprise/internal/oobmigration/migrations/insights/insights.go:migrateBackendSeries
 UPDATE insight_series SET backfill_queued_at = %s WHERE id = %s
 `
 

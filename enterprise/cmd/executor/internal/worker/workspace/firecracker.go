@@ -12,6 +12,7 @@ import (
 	"github.com/c2h5oh/datasize"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -23,6 +24,7 @@ import (
 // VM can mount this loopback device. This prevents host file system access.
 func NewFirecrackerWorkspace(
 	ctx context.Context,
+	filesStore store.FilesStore,
 	job executor.Job,
 	diskSpace string,
 	keepWorkspace bool,
@@ -59,7 +61,7 @@ func NewFirecrackerWorkspace(
 		}
 	}
 
-	scriptPaths, err := prepareScripts(ctx, job, tmpMountDir, commandRunner, logger)
+	scriptPaths, err := prepareScripts(ctx, filesStore, job, tmpMountDir, logger)
 	if err != nil {
 		return nil, err
 	}

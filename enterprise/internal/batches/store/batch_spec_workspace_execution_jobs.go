@@ -10,6 +10,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -38,6 +39,8 @@ var batchSpecWorkspaceExecutionJobColumns = SQLColumns{
 
 	"batch_spec_workspace_execution_jobs.created_at",
 	"batch_spec_workspace_execution_jobs.updated_at",
+
+	"batch_spec_workspace_execution_jobs.version",
 }
 
 var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
@@ -62,6 +65,8 @@ var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 
 	"batch_spec_workspace_execution_jobs.created_at",
 	"batch_spec_workspace_execution_jobs.updated_at",
+
+	"batch_spec_workspace_execution_jobs.version",
 }
 
 const executionPlaceInQueueFragment = `
@@ -71,12 +76,12 @@ FROM batch_spec_workspace_execution_queue
 `
 
 const createBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CreateBatchSpecWorkspaceExecutionJobs
 INSERT INTO
-	batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id)
+	batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id, version)
 SELECT
 	batch_spec_workspaces.id,
-	batch_specs.user_id
+	batch_specs.user_id,
+	%s
 FROM
 	batch_spec_workspaces
 JOIN batch_specs ON batch_specs.id = batch_spec_workspaces.batch_spec_id
@@ -106,17 +111,17 @@ func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batch
 	defer endObservation(1, observation.Args{})
 
 	cond := sqlf.Sprintf(executableWorkspaceJobsConditionFmtstr)
-	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsQueryFmtstr, batchSpecID, cond)
+	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsQueryFmtstr, versionForExecution(ctx, s), batchSpecID, cond)
 	return s.Exec(ctx, q)
 }
 
 const createBatchSpecWorkspaceExecutionJobsForWorkspacesQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CreateBatchSpecWorkspaceExecutionJobsForWorkspaces
 INSERT INTO
-	batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id)
+	batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id, version)
 SELECT
 	batch_spec_workspaces.id,
-	batch_specs.user_id
+	batch_specs.user_id,
+	%s
 FROM
 	batch_spec_workspaces
 JOIN
@@ -130,7 +135,7 @@ func (s *Store) CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx context.C
 	ctx, _, endObservation := s.operations.createBatchSpecWorkspaceExecutionJobsForWorkspaces.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsForWorkspacesQueryFmtstr, pq.Array(workspaceIDs))
+	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsForWorkspacesQueryFmtstr, versionForExecution(ctx, s), pq.Array(workspaceIDs))
 	return s.Exec(ctx, q)
 }
 
@@ -141,7 +146,6 @@ type DeleteBatchSpecWorkspaceExecutionJobsOpts struct {
 }
 
 const deleteBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:DeleteBatchSpecWorkspaceExecutionJobs
 DELETE FROM
 	batch_spec_workspace_execution_jobs
 WHERE
@@ -224,7 +228,6 @@ func (s *Store) GetBatchSpecWorkspaceExecutionJob(ctx context.Context, opts GetB
 }
 
 var getBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:GetBatchSpecWorkspaceExecutionJob
 SELECT
 	%s
 FROM
@@ -304,7 +307,6 @@ func (s *Store) ListBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts Li
 }
 
 var listBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:ListBatchSpecWorkspaceExecutionJobs
 SELECT
 	%s
 FROM
@@ -409,7 +411,6 @@ func (s *Store) CancelBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts 
 }
 
 var cancelBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CancelBatchSpecWorkspaceExecutionJobs
 WITH candidates AS (
 	SELECT
 		batch_spec_workspace_execution_jobs.id
@@ -494,6 +495,7 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 		&dbutil.NullInt64{N: &wj.PlaceInGlobalQueue},
 		&wj.CreatedAt,
 		&wj.UpdatedAt,
+		&wj.Version,
 	); err != nil {
 		return err
 	}
@@ -507,4 +509,13 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 	}
 
 	return nil
+}
+
+func versionForExecution(ctx context.Context, s *Store) int {
+	version := 1
+	if featureflag.FromContext(featureflag.WithFlags(ctx, s.DatabaseDB().FeatureFlags())).GetBoolOr("native-ssbc-execution", false) {
+		version = 2
+	}
+
+	return version
 }

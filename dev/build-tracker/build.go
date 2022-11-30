@@ -83,6 +83,7 @@ func (b *Build) message() string {
 func (b *Build) failedJobs() []*Job {
 	result := make([]*Job, 0)
 	for _, j := range b.Jobs {
+		j := j
 		if j.failed() {
 			result = append(result, &j)
 		}
@@ -197,6 +198,7 @@ func (s *BuildStore) Add(event *Event) {
 	defer s.m.Unlock()
 
 	build, ok := s.builds[event.buildNumber()]
+	// if we don't know about this build, convert it and add it to the store
 	if !ok {
 		build = event.build()
 		s.builds[event.buildNumber()] = build
@@ -223,12 +225,12 @@ func (s *BuildStore) Add(event *Event) {
 	// Keep track of the job, if there is one
 	wrappedJob := event.job()
 	if wrappedJob.name() != "" {
+		build.Jobs[wrappedJob.name()] = *wrappedJob
 		s.logger.Debug("job added",
 			log.Int("buildNumber", event.buildNumber()),
 			log.Object("job", log.String("name", wrappedJob.name()), log.String("id", wrappedJob.id())),
 			log.Int("totalJobs", len(build.Jobs)),
 		)
-		build.Jobs[wrappedJob.name()] = *wrappedJob
 	} else {
 		s.logger.Warn("job has no name - not added",
 			log.Int("buildNumber", event.buildNumber()),

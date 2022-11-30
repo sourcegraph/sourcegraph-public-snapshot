@@ -4,6 +4,7 @@ import { combineLatest, from, Observable, of } from 'rxjs'
 import { startWith, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
+import { SearchMode } from '@sourcegraph/search'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { discreteValueAliases, escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
@@ -45,6 +46,23 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
     return undefined
 }
 
+export function parseSearchURLSearchMode(query: string): SearchMode {
+    const defaultSearchMode = SearchMode.Precise
+    const searchParameters = new URLSearchParams(query)
+    const searchModeStr = searchParameters.get('sm')
+    if (!searchModeStr) {
+        return defaultSearchMode
+    }
+
+    const searchMode = parseInt(searchModeStr, 10)
+    switch (searchMode) {
+        case SearchMode.Precise:
+        case SearchMode.SmartSearch:
+            return searchMode
+    }
+    return defaultSearchMode
+}
+
 function searchURLIsCaseSensitive(query: string): boolean {
     const globalCase = findFilter(parseSearchURLQuery(query) || '', 'case', FilterKind.Global)
     if (globalCase?.value && globalCase.value.type === 'literal') {
@@ -60,6 +78,7 @@ export interface ParsedSearchURL {
     query: string | undefined
     patternType: SearchPatternType | undefined
     caseSensitive: boolean
+    searchMode: SearchMode
 }
 
 /**
@@ -68,6 +87,7 @@ export interface ParsedSearchURL {
  * - the canonical, user-visible query (with `patternType` and `case` filters excluded),
  * - the effective pattern type, and
  * - the effective case sensitivity of the query.
+ * - the search mode that defines general search behavior
  *
  * @param urlSearchQuery a URL's query string.
  */
@@ -78,6 +98,7 @@ export function parseSearchURL(
     let queryInput = parseSearchURLQuery(urlSearchQuery) || ''
     let patternTypeInput = parseSearchURLPatternType(urlSearchQuery)
     let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
+    const searchMode = parseSearchURLSearchMode(urlSearchQuery)
 
     const globalPatternType = findFilter(queryInput, 'patterntype', FilterKind.Global)
     if (globalPatternType?.value && globalPatternType.value.type === 'literal') {
@@ -114,6 +135,7 @@ export function parseSearchURL(
         query,
         patternType,
         caseSensitive,
+        searchMode,
     }
 }
 

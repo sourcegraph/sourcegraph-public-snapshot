@@ -6,16 +6,16 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { FilterLink, RevisionsProps, TabIndex } from '@sourcegraph/search-ui'
 // eslint-disable-next-line no-restricted-imports
 import styles from '@sourcegraph/search-ui/src/results/sidebar/SearchFilterSection.module.scss'
-import { GitRefType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from '@sourcegraph/wildcard'
 
-import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     SearchSidebarGitRefsResult,
     SearchSidebarGitRefsVariables,
     SearchSidebarGitRefFields,
+    GitRefType,
 } from '../../../graphql-operations'
 
 import revisionStyles from './Revisions.module.scss'
@@ -64,7 +64,7 @@ const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionList
     pluralNoun,
     query,
 }) => {
-    const { connection, fetchMore, hasNextPage, loading, error } = useConnection<
+    const { connection, fetchMore, hasNextPage, loading, error } = useShowMorePagination<
         SearchSidebarGitRefsResult,
         SearchSidebarGitRefsVariables,
         SearchSidebarGitRefFields

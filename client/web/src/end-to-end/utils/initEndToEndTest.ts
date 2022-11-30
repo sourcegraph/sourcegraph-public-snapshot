@@ -18,7 +18,7 @@ export async function initEndToEndTest(): Promise<Driver> {
         ...config,
     })
 
-    await driver.ensureLoggedIn({ username: 'test', password: config.testUserPassword, email: 'test@test.com' })
+    await driver.ensureSignedIn({ username: 'test', password: config.testUserPassword, email: 'test@test.com' })
     await driver.resetUserSettings()
 
     return driver

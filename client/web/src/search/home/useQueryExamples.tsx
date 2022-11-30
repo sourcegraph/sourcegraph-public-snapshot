@@ -1,11 +1,11 @@
-import React, { useMemo, useEffect, useState } from 'react'
+import { useMemo, useEffect, useState, useCallback } from 'react'
 
-import { mdiOpenInNew } from '@mdi/js'
 import { differenceInHours, formatISO, parseISO } from 'date-fns'
 
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { Icon, Link } from '@sourcegraph/wildcard'
+
+import { basicSyntaxColumns } from './QueryExamplesHomepage.constants'
 
 export interface QueryExamplesContent {
     repositoryName: string
@@ -13,14 +13,14 @@ export interface QueryExamplesContent {
     author: string
 }
 
-interface QueryExample {
+export interface QueryExamplesSection {
     title: string
     queryExamples: {
         id: string
         query: string
         helperText?: string
+        slug?: string
     }[]
-    footer?: React.ReactElement
 }
 
 interface ComputeResult {
@@ -66,7 +66,10 @@ function getRepoFilterExamples(repositoryName: string): { singleRepoExample: str
     }
 }
 
-export function useQueryExamples(): QueryExample[][] {
+export function useQueryExamples(
+    selectedSearchContextSpec: string,
+    isSourcegraphDotCom: boolean = false
+): QueryExamplesSection[][] {
     const [queryExamplesContent, setQueryExamplesContent] = useState<QueryExamplesContent>()
     const [
         cachedQueryExamplesContent,
@@ -74,11 +77,39 @@ export function useQueryExamples(): QueryExample[][] {
         cachedQueryExamplesContentLoadStatus,
     ] = useTemporarySetting('search.homepage.queryExamplesContent')
 
+    const loadQueryExamples = useCallback(
+        (selectedSearchContextSpec: string) =>
+            // We are using `,|` as the separator so we can "safely" split the compute output.
+            streamComputeQuery(
+                `context:${selectedSearchContextSpec} type:diff count:1 content:output((.|\n)* -> $repo,|$author,|$path)`
+            ).subscribe(
+                results => {
+                    const firstComputeOutput = results
+                        .flatMap(result => JSON.parse(result) as ComputeResult)
+                        .find(result => result.kind === 'output')
+
+                    const queryExamplesContent = firstComputeOutput
+                        ? getQueryExamplesContentFromComputeOutput(firstComputeOutput.value)
+                        : defaultQueryExamplesContent
+
+                    setQueryExamplesContent(queryExamplesContent)
+                    setCachedQueryExamplesContent({
+                        ...queryExamplesContent,
+                        lastCachedTimestamp: formatISO(Date.now()),
+                    })
+                },
+                () => {
+                    // In case of an error set default content.
+                    setQueryExamplesContent(defaultQueryExamplesContent)
+                }
+            ),
+        [setQueryExamplesContent, setCachedQueryExamplesContent]
+    )
+
     useEffect(() => {
-        if (queryExamplesContent || cachedQueryExamplesContentLoadStatus === 'initial') {
+        if (queryExamplesContent || cachedQueryExamplesContentLoadStatus === 'initial' || isSourcegraphDotCom) {
             return
         }
-
         if (
             cachedQueryExamplesContentLoadStatus === 'loaded' &&
             cachedQueryExamplesContent &&
@@ -88,40 +119,33 @@ export function useQueryExamples(): QueryExample[][] {
             return
         }
 
-        // We are using `,|` as the separator so we can "safely" split the compute output.
-        const subscription = streamComputeQuery(
-            'type:diff count:1 content:output((.|\n)* -> $repo,|$author,|$path)'
-        ).subscribe(
-            results => {
-                const firstComputeOutput = results
-                    .flatMap(result => JSON.parse(result) as ComputeResult)
-                    .find(result => result.kind === 'output')
-
-                const queryExamplesContent = firstComputeOutput
-                    ? getQueryExamplesContentFromComputeOutput(firstComputeOutput.value)
-                    : defaultQueryExamplesContent
-
-                setQueryExamplesContent(queryExamplesContent)
-                setCachedQueryExamplesContent({
-                    ...queryExamplesContent,
-                    lastCachedTimestamp: formatISO(Date.now()),
-                })
-            },
-            () => {
-                // In case of an error set default content.
-                setQueryExamplesContent(defaultQueryExamplesContent)
-            }
-        )
-
+        const subscription = loadQueryExamples(selectedSearchContextSpec)
         return () => subscription.unsubscribe()
     }, [
+        selectedSearchContextSpec,
         queryExamplesContent,
         cachedQueryExamplesContent,
         setCachedQueryExamplesContent,
         cachedQueryExamplesContentLoadStatus,
+        loadQueryExamples,
+        isSourcegraphDotCom,
     ])
 
+    useEffect(() => {
+        if (!queryExamplesContent) {
+            return
+        }
+        const subscription = loadQueryExamples(selectedSearchContextSpec)
+        return () => subscription.unsubscribe()
+        // Only re-run this hook if the search context changes
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedSearchContextSpec])
+
     return useMemo(() => {
+        // Static examples for DotCom
+        if (isSourcegraphDotCom) {
+            return basicSyntaxColumns
+        }
         if (!queryExamplesContent) {
             return []
         }
@@ -176,16 +200,8 @@ export function useQueryExamples(): QueryExample[][] {
                 {
                     title: 'Get advanced',
                     queryExamples: [{ id: 'repo-has-description', query: 'repo:has.description(hello world)' }],
-                    footer: (
-                        <small className="d-block mt-3">
-                            <Link target="blank" to="/help/code_search/reference/queries">
-                                Complete query reference{' '}
-                                <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
-                            </Link>
-                        </small>
-                    ),
                 },
             ],
         ]
-    }, [queryExamplesContent])
+    }, [queryExamplesContent, isSourcegraphDotCom])
 }

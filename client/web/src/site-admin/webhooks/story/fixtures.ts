@@ -10,7 +10,10 @@ import {
 import { WEBHOOK_LOG_PAGE_HEADER } from '../backend'
 
 export const BODY_JSON = '{"this is":"valid JSON","that should be":["re","indented"]}'
+export const LARGE_BODY_JSON =
+    '{"message": "webhooks: Add database Create method (#42639)\\n\\nAdd the Create method for the WebhookStore.\\r\\n\\r\\nThis change also switches to use two ids:\\r\\n\\r\\n`id` which is an auto-incremented id which we can use for sorting and pagination.\\r\\n`rand_id` which is an UUID and will be the user facing id use in the GraphQL layer\\r\\nand as part of the webhook URL.\\r\\n\\r\\nCo-authored-by: Someone"}'
 export const BODY_PLAIN = 'this is definitely not valid JSON\n\tand should not be reformatted in any way'
+export const LARGE_BODY_PLAIN = 'External service not found because we decided to be amazing and let you look for it'
 
 export const HEADERS_JSON = [
     {
@@ -27,6 +30,25 @@ export const HEADERS_JSON = [
     },
 ]
 
+export const LARGE_HEADERS_JSON = [
+    {
+        name: 'Content-Type',
+        values: ['application/json; charset=utf-8'],
+    },
+    {
+        name: 'Content-Length',
+        values: [LARGE_BODY_JSON.length.toString()],
+    },
+    {
+        name: 'X-Complex-Header',
+        values: ['value 1', 'value 2'],
+    },
+    {
+        name: 'X-Scheme',
+        values: ['https'],
+    },
+]
+
 export const HEADERS_PLAIN = [
     {
         name: 'Content-Type',
@@ -35,6 +57,21 @@ export const HEADERS_PLAIN = [
     {
         name: 'Content-Length',
         values: [BODY_PLAIN.length.toString()],
+    },
+    {
+        name: 'X-Complex-Header',
+        values: ['value 1', 'value 2'],
+    },
+]
+
+export const LARGE_HEADERS_PLAIN = [
+    {
+        name: 'Content-Type',
+        values: ['text/plain'],
+    },
+    {
+        name: 'Content-Length',
+        values: [LARGE_BODY_PLAIN.length.toString()],
     },
     {
         name: 'X-Complex-Header',

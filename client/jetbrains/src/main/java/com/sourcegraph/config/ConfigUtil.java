@@ -20,6 +20,7 @@ public class ConfigUtil {
         JsonObject configAsJson = new JsonObject();
         configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
         configAsJson.addProperty("accessToken", ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE ? ConfigUtil.getAccessToken(project) : null);
+        configAsJson.addProperty("customRequestHeadersAsString", ConfigUtil.getCustomRequestHeaders(project));
         configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(project));
         configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
         configAsJson.addProperty("anonymousUserId", ConfigUtil.getAnonymousUserId());
@@ -83,6 +84,24 @@ public class ConfigUtil {
         // Project level → application level
         String projectLevelAccessToken = getProjectLevelConfig(project).getAccessToken();
         return projectLevelAccessToken != null ? projectLevelAccessToken : getApplicationLevelConfig().getAccessToken();
+    }
+
+    @NotNull
+    public static String getCustomRequestHeaders(@NotNull Project project) {
+        // Project level
+        String projectLevelCustomRequestHeaders = getProjectLevelConfig(project).getCustomRequestHeaders();
+        if (projectLevelCustomRequestHeaders != null && projectLevelCustomRequestHeaders.length() > 0) {
+            return projectLevelCustomRequestHeaders;
+        }
+
+        // Application level
+        String applicationLevelCustomRequestHeaders = getApplicationLevelConfig().getCustomRequestHeaders();
+        if (applicationLevelCustomRequestHeaders != null && applicationLevelCustomRequestHeaders.length() > 0) {
+            return applicationLevelCustomRequestHeaders;
+        }
+
+        // Default
+        return "";
     }
 
     @NotNull

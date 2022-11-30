@@ -30,9 +30,7 @@ import { languageSpecs } from './legacy-extensions/language-specs/languages'
 import { RedactingLogger } from './legacy-extensions/logging'
 import { createProviders, emptySourcegraphProviders, SourcegraphProviders } from './legacy-extensions/providers'
 
-export type QueryGraphQLFn<T> = () => Promise<T>
-
-export interface CodeIntelAPI {
+interface CodeIntelAPI {
     hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Observable<boolean>
     getDefinition(textParameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
     getReferences(
@@ -44,7 +42,7 @@ export interface CodeIntelAPI {
     getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<sglegacy.DocumentHighlight[]>
 }
 
-export function newCodeIntelAPI(context: sourcegraph.CodeIntelContext): CodeIntelAPI {
+function newCodeIntelAPI(context: sourcegraph.CodeIntelContext): CodeIntelAPI {
     sourcegraph.updateCodeIntelContext(context)
     return new DefaultCodeIntelAPI()
 }

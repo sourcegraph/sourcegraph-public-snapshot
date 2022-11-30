@@ -36,7 +36,9 @@ func Search(ctx context.Context, query string, patternType *string, decoder stre
 		return err
 	}
 	if patternType != nil {
-		req.URL.Query().Add("t", *patternType)
+		query := req.URL.Query()
+		query.Add("t", *patternType)
+		req.URL.RawQuery = query.Encode()
 	}
 
 	req = req.WithContext(ctx)

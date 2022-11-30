@@ -36,6 +36,22 @@ func TestNewGenerator(t *testing.T) {
 	}
 }
 
+func TestSkippedRules(t *testing.T) {
+	test := func(input string) string {
+		q, _ := query.ParseStandard(input)
+		b, _ := query.ToBasicQuery(q)
+		g := NewGenerator(b, rulesNarrow, rulesWiden)
+		result, _ := json.MarshalIndent(generateAll(g, input), "", "  ")
+		return string(result)
+	}
+
+	c := `type:diff foo bar`
+
+	t.Run("do not apply rules for type:diff", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(c)))
+	})
+}
+
 func generateAll(g next, input string) []want {
 	var autoQ *autoQuery
 	generated := []want{}

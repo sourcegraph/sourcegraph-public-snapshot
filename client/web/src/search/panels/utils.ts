@@ -1,11 +1,14 @@
-import { ISavedSearch, Namespace, IOrg, IUser } from '@sourcegraph/shared/src/schema'
-
 import { AuthenticatedUser } from '../../auth'
+import { SavedSearchesPanelFragment } from '../../graphql-operations'
 import { EventLogResult } from '../backend'
 
 import { InvitableCollaborator } from './CollaboratorsPanel'
 
-export const authUser: AuthenticatedUser & { namespaceName: string } = {
+type SavedSearchPanelFields = NonNullable<SavedSearchesPanelFragment['savedSearches']>[number]
+type NameSpaceOrg = Extract<SavedSearchPanelFields['namespace'], { __typename: 'Org' }>
+type NameSpaceUser = Extract<SavedSearchPanelFields['namespace'], { __typename: 'User' }>
+
+export const authUser: AuthenticatedUser & NameSpaceUser = {
     __typename: 'User',
     id: '0',
     email: 'alice@sourcegraph.com',
@@ -20,7 +23,7 @@ export const authUser: AuthenticatedUser & { namespaceName: string } = {
         nodes: [
             { id: '0', settingsURL: '#', displayName: 'Acme Corp' },
             { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
-        ] as IOrg[],
+        ] as AuthenticatedUser['organizations']['nodes'],
     },
     tags: [],
     viewerCanAdminister: true,
@@ -31,46 +34,13 @@ export const authUser: AuthenticatedUser & { namespaceName: string } = {
     emails: [],
 }
 
-export const org: IOrg = {
+const org: NameSpaceOrg = {
     __typename: 'Org',
     id: '1',
-    name: 'test-org',
-    displayName: 'test org',
-    createdAt: '2020-01-01',
-    members: {
-        __typename: 'UserConnection',
-        nodes: [authUser] as IUser[],
-        totalCount: 1,
-        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
-    },
-    latestSettings: null,
-    settingsCascade: {
-        __typename: 'SettingsCascade',
-        subjects: [],
-        final: '',
-        merged: { __typename: 'Configuration', contents: '', messages: [] },
-    },
-    configurationCascade: {
-        __typename: 'ConfigurationCascade',
-        subjects: [],
-        merged: { __typename: 'Configuration', contents: '', messages: [] },
-    },
-    viewerPendingInvitation: null,
-    viewerCanAdminister: true,
-    viewerIsMember: true,
-    viewerNeedsCodeHostUpdate: false,
-    url: '/organizations/test-org',
-    settingsURL: '/organizations/test-org/settings',
     namespaceName: 'test-org',
-    batchChanges: {
-        __typename: 'BatchChangeConnection',
-        nodes: [],
-        totalCount: 0,
-        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
-    },
 }
 
-export const savedSearchesPayload = (): ISavedSearch[] => [
+export const savedSearchesPayload = (): SavedSearchPanelFields[] => [
     {
         __typename: 'SavedSearch',
         id: 'test',
@@ -78,7 +48,7 @@ export const savedSearchesPayload = (): ISavedSearch[] => [
         query: 'test',
         notify: false,
         notifySlack: false,
-        namespace: authUser as Namespace,
+        namespace: authUser,
         slackWebhookURL: null,
     },
     {

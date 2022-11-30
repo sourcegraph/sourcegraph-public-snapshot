@@ -3,7 +3,7 @@ export function isChrome(): boolean {
 }
 
 export function isSafari(): boolean {
-    return !!window.navigator.userAgent.match(/safari/i)
+    return !!window.navigator.userAgent.match(/safari/i) && !isChrome()
 }
 
 export function isFirefox(): boolean {

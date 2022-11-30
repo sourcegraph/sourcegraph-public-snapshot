@@ -80,26 +80,16 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
 
         const token = props.hoveredTokenElement
         const click = props.hoveredTokenClick ?? (token ? fromEvent(token, 'click') : null)
-
-        const definitionAction =
-            Array.isArray(props.actionsOrError) &&
-            props.actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded' && !a.disabledWhen)
-
-        const referenceAction =
-            Array.isArray(props.actionsOrError) &&
-            props.actionsOrError.find(a => a.action.id === 'findReferences' && !a.disabledWhen)
-
-        const action = definitionAction || referenceAction
-        if (!action) {
-            return undefined
-        }
-        const url = urlForClientCommandOpen(action.action, props.location.hash)
-
-        if (!click || !url || !props.nav) {
+        const nav = props.nav
+        if (!click || !nav) {
             return
         }
 
-        const nav = props.nav
+        const urlAndType = getGoToURL(props.actionsOrError, props.location)
+        if (!urlAndType) {
+            return
+        }
+        const { url, actionType } = urlAndType
 
         const oldCursor = token?.style.cursor
         if (token) {
@@ -114,7 +104,6 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
                         return
                     }
 
-                    const actionType = action === definitionAction ? 'definition' : 'reference'
                     props.telemetryService.log(`${actionType}HoverOverlay.click`)
                     nav(url)
                 }),
@@ -131,7 +120,7 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
         props.actionsOrError,
         props.hoveredTokenElement,
         props.hoveredTokenClick,
-        props.location.hash,
+        props.location,
         props.nav,
         props.telemetryService,
         clickToGoToDefinition,
@@ -155,6 +144,36 @@ export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<We
 }
 
 WebHoverOverlay.displayName = 'WebHoverOverlay'
+
+/**
+ * Returns the URL and type to perform the "go to ..." navigation.
+ */
+export const getGoToURL = (
+    actionsOrError: WebHoverOverlayProps['actionsOrError'],
+    location: WebHoverOverlayProps['location']
+): {
+    url: string
+    actionType: 'definition' | 'reference'
+} | null => {
+    const definitionAction =
+        Array.isArray(actionsOrError) &&
+        actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded' && !a.disabledWhen)
+
+    const referenceAction =
+        Array.isArray(actionsOrError) && actionsOrError.find(a => a.action.id === 'findReferences' && !a.disabledWhen)
+
+    const action = definitionAction || referenceAction
+    if (!action) {
+        return null
+    }
+
+    const url = urlForClientCommandOpen(action.action, location.hash)
+    if (!url) {
+        return null
+    }
+
+    return { url, actionType: action === definitionAction ? 'definition' : 'reference' }
+}
 
 export const getClickToGoToDefinition = (settingsCascade: SettingsCascadeOrError<Settings>): boolean => {
     if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {

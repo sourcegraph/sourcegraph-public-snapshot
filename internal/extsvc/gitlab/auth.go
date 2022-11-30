@@ -47,7 +47,7 @@ func (pat *SudoableToken) Hash() string {
 
 // RequestedOAuthScopes returns the list of OAuth scopes given the default API
 // scope and any extra scopes.
-func RequestedOAuthScopes(defaultAPIScope string, extraScopes []string) []string {
+func RequestedOAuthScopes(defaultAPIScope string) []string {
 	scopes := []string{"read_user"}
 	if defaultAPIScope == "" {
 		defaultAPIScope = "api"
@@ -60,20 +60,6 @@ func RequestedOAuthScopes(defaultAPIScope string, extraScopes []string) []string
 		// For customer instances we default to api scope so that they can clone private
 		// repos but in they can optionally override this in config.
 		scopes = append(scopes, defaultAPIScope)
-	}
-	// Append extra scopes and ensure there are no duplicates
-	for _, s := range extraScopes {
-		var found bool
-		for _, inner := range scopes {
-			if inner == s {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			scopes = append(scopes, s)
-		}
 	}
 
 	return scopes

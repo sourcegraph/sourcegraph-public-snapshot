@@ -1,6 +1,5 @@
 import { FC, useCallback, useEffect, useMemo } from 'react'
 
-import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, Link, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
@@ -65,27 +64,21 @@ export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = pro
 
     const handleSubmit = useCallback<SearchInsightCreationContentProps['onSubmit']>(
         async values => {
-            try {
-                const insight = getSanitizedSearchInsight(values)
+            const insight = getSanitizedSearchInsight(values)
 
-                await onInsightCreateRequest({ insight })
+            await onInsightCreateRequest({ insight })
 
-                telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
-                telemetryService.log(
-                    'InsightAddition',
-                    { insightType: CodeInsightTrackType.SearchBasedInsight },
-                    { insightType: CodeInsightTrackType.SearchBasedInsight }
-                )
+            telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
+            telemetryService.log(
+                'InsightAddition',
+                { insightType: CodeInsightTrackType.SearchBasedInsight },
+                { insightType: CodeInsightTrackType.SearchBasedInsight }
+            )
 
-                // Clear initial values if user successfully created search insight
-                setLocalStorageFormValues(undefined)
+            // Clear initial values if user successfully created search insight
+            setLocalStorageFormValues(undefined)
 
-                onSuccessfulCreation()
-            } catch (error) {
-                return { [FORM_ERROR]: asError(error) }
-            }
-
-            return
+            onSuccessfulCreation()
         },
         [onInsightCreateRequest, telemetryService, setLocalStorageFormValues, onSuccessfulCreation]
     )

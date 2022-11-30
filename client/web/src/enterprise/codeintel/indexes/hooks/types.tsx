@@ -42,6 +42,7 @@ export const lsifIndexFieldsFragment = gql`
             finishedAt
             placeInQueue
         }
+        shouldReindex
     }
 
     fragment LsifIndexStepsFields on IndexSteps {

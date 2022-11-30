@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
@@ -48,7 +49,7 @@ func createTestProvider(t *testing.T) *ClientProvider {
 		t.Fatal(err)
 	}
 	baseURL, _ := url.Parse("https://gitlab.com/")
-	provider := NewClientProvider("Test", baseURL, doer, nil)
+	provider := NewClientProvider("Test", baseURL, doer)
 	return provider
 }
 
@@ -111,11 +112,14 @@ func TestClient_doWithBaseURL(t *testing.T) {
 		Scopes: []string{"read_user"},
 	}
 
-	provider := NewClientProvider("Test", baseURL, doer, func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.OAuthContext) (string, error) {
-		return "refreshed-token", nil
-	})
+	provider := NewClientProvider("Test", baseURL, doer)
 
-	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token"})
+	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token", RefreshToken: "refresh token", RefreshFunc: func(ctx context.Context, cli httpcli.Doer, obt *auth.OAuthBearerToken) (string, string, time.Time, error) {
+		obt.Token = "refreshed-token"
+		obt.RefreshToken = "refresh-now"
+
+		return "refreshed-token", "refresh-now", time.Now().Add(1 * time.Hour), nil
+	}})
 
 	req, err := http.NewRequest(http.MethodGet, "url", nil)
 	require.NoError(t, err)
@@ -192,7 +196,7 @@ func TestGetOAuthContext(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := getOAuthContext(test.baseURL)
+			got := GetOAuthContext(test.baseURL)
 			assert.Equal(t, test.want, got)
 		})
 	}

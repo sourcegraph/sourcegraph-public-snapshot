@@ -16,12 +16,12 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/run"
-	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -214,22 +214,15 @@ func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bo
 	}
 
 	var (
-		m   sync.Mutex
-		g   = errors.Group{}
-		sem = semaphore.NewWeighted(int64(runtime.GOMAXPROCS(0)))
+		m sync.Mutex
+		g = group.New().WithContext(ctx).WithMaxConcurrency(runtime.GOMAXPROCS(0))
 	)
 
 	for _, pkgPath := range pkgPaths {
-		if err := sem.Acquire(ctx, 1); err != nil {
-			return err
-		}
-
 		// Do not capture loop variable in goroutine below
 		pkgPath := pkgPath
 
-		g.Go(func() error {
-			defer sem.Release(1)
-
+		g.Go(func(ctx context.Context) error {
 			if verbosity == VerboseOutput {
 				progress.Writef("Generating %s...", pkgPath)
 			}

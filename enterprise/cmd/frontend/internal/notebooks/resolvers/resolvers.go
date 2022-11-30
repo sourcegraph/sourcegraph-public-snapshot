@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -450,12 +451,12 @@ func (r *notebookResolver) Public(ctx context.Context) bool {
 	return r.notebook.Public
 }
 
-func (r *notebookResolver) UpdatedAt(ctx context.Context) graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.notebook.UpdatedAt}
+func (r *notebookResolver) UpdatedAt(ctx context.Context) gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.notebook.UpdatedAt}
 }
 
-func (r *notebookResolver) CreatedAt(ctx context.Context) graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.notebook.CreatedAt}
+func (r *notebookResolver) CreatedAt(ctx context.Context) gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.notebook.CreatedAt}
 }
 
 func (r *notebookResolver) ViewerCanManage(ctx context.Context) (bool, error) {

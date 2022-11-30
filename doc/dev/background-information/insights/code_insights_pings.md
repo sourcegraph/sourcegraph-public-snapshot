@@ -345,6 +345,20 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - **Version added:** 3.38
 <!-- - **Version(s) broken:**  -->
 
+### Series backfill time
+
+**Type:** BE capture
+
+**Intended purpose:** To track how long on average it takes series to backfill.
+
+**Functional implementation:** Exposes aggregate information using the backfill times found on `insight_series`.
+
+**Other considerations:** N/A
+
+- Aggregation: weekly
+- Event Code: [WeeklySeriesBackfillTime](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+WeeklySeriesBackfillTime&patternType=standard)
+- **Version added:** 4.1
+
 ## Search results aggregations metrics
 
 ### Information icon hovers
@@ -409,3 +423,15 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
   - [WeeklyGroupResultsChartBarClick](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsChartBarClick&patternType=regexp)
   - [WeeklyGroupResultsChartBarHover](https://sourcegraph.com/search?q=context:%40sourcegraph/all+GroupResultsChartBarHover&patternType=regexp)
 - **Version added:** 4.0 ([#40977](https://github.com/sourcegraph/sourcegraph/pull/40977))
+
+### Search mode (proactive/extended) success rate
+
+**Type:** FE event
+
+**Intended purpose:** To track the number of aggregation searches that succeed or hit limit in either a proactive or extended search. 
+
+**Functional implementation:** These pings fire a telemetry event when an aggregation search completes or times out.
+
+- Aggregation: weekly
+- Event Code: [WeeklyGroupResultsSearches](https://sourcegraph.com/search?q=context:%40sourcegraph/all+WeeklyGroupResultsSearches&patternType=lucky)
+- **Version added:** 4.1 ([#42554](https://github.com/sourcegraph/sourcegraph/pull/42554))

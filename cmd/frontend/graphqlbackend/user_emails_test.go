@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -115,7 +116,7 @@ func TestAddUserEmail(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db).AddUserEmail(
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).AddUserEmail(
 					test.ctx,
 					&addUserEmailArgs{
 						User: MarshalUserID(1),
@@ -140,9 +141,10 @@ func TestRemoveUserEmail(t *testing.T) {
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
 
 		tests := []struct {
-			name  string
-			ctx   context.Context
-			setup func()
+			name    string
+			ctx     context.Context
+			setup   func()
+			wantErr string
 		}{
 			{
 				name: "unauthenticated",
@@ -150,39 +152,53 @@ func TestRemoveUserEmail(t *testing.T) {
 				setup: func() {
 					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 				},
+				wantErr: "must be authenticated as the authorized user or site admin",
 			},
 			{
 				name: "another user",
 				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 				setup: func() {
+					user := &types.User{ID: 2}
 					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
+						return user, nil
+					})
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return user, nil
 					})
 				},
+				wantErr: "must be authenticated as the authorized user or site admin",
 			},
 			{
 				name: "site admin",
 				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 				setup: func() {
+					user := &types.User{ID: 2, SiteAdmin: true}
 					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
+						return user, nil
+					})
+					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+						return user, nil
+					})
+					db.TransactFunc.SetDefaultHook(func(ctx context.Context) (database.DB, error) {
+						// We just want to check that we make past the auth check as that is all this
+						// test is checking
+						return nil, errors.Errorf("short circuit")
 					})
 				},
+				wantErr: "starting transaction: short circuit",
 			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db).RemoveUserEmail(
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).RemoveUserEmail(
 					test.ctx,
 					&removeUserEmailArgs{
 						User: MarshalUserID(1),
 					},
 				)
-				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
+				assert.Equal(t, test.wantErr, err.Error())
 			})
 		}
 	})
@@ -233,7 +249,7 @@ func TestSetUserEmailPrimary(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db).SetUserEmailPrimary(
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).SetUserEmailPrimary(
 					test.ctx,
 					&setUserEmailPrimaryArgs{
 						User: MarshalUserID(1),
@@ -292,7 +308,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(database.NewMockDB()).SetUserEmailVerified(
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).SetUserEmailVerified(
 					test.ctx,
 					&setUserEmailVerifiedArgs{
 						User: MarshalUserID(1),
@@ -429,7 +445,8 @@ func TestResendUserEmailVerification(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(database.NewMockDB()).ResendVerificationEmail(
+				db := database.NewMockDB()
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).ResendVerificationEmail(
 					test.ctx,
 					&resendVerificationEmailArgs{
 						User: MarshalUserID(1),

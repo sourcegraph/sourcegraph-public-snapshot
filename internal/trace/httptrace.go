@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -195,10 +196,17 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 
 		if m.Code >= minCode || m.Duration >= minDuration {
 			fields := make([]log.Field, 0, 10)
+
+			var url string
+			if strings.Contains(r.URL.Path, ".auth") {
+				url = r.URL.Path // omit sensitive query params
+			} else {
+				url = r.URL.String()
+			}
 			fields = append(fields,
 				log.String("route_name", fullRouteTitle),
 				log.String("method", r.Method),
-				log.String("url", truncate(r.URL.String(), 100)),
+				log.String("url", truncate(url, 100)),
 				log.Int("code", m.Code),
 				log.Duration("duration", m.Duration),
 				log.Bool("shouldTrace", policy.ShouldTrace(ctx)),
@@ -220,7 +228,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 				parts = append(parts, "slow http request")
 			}
 			if m.Code >= minCode {
-				parts = append(parts, "unexpected status code")
+				parts = append(parts, fmt.Sprintf("unexpected status code %d", m.Code))
 			}
 
 			msg := strings.Join(parts, ", ")
@@ -271,7 +279,7 @@ func loggingRecoverer(logger log.Logger, handler http.Handler) http.Handler {
 		defer func() {
 			if r := recover(); r != nil {
 				err := errors.Errorf("handler panic: %v", redact.Safe(r))
-				logger.Error("handler panic", log.Error(err))
+				logger.Error("handler panic", log.Error(err), log.String("stacktrace", string(debug.Stack())))
 				w.WriteHeader(http.StatusInternalServerError)
 			}
 		}()

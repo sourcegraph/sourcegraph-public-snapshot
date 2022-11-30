@@ -13,6 +13,7 @@ const INSIGHT_DATA_SERIES_FRAGMENT = gql`
             completedJobs
             pendingJobs
             failedJobs
+            isLoadingData
         }
     }
 `

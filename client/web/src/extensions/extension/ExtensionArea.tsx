@@ -15,7 +15,6 @@ import {
     toConfiguredRegistryExtension,
 } from '@sourcegraph/shared/src/extensions/extension'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -26,6 +25,7 @@ import { queryGraphQL } from '../../backend/graphql'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
+import { RegistryExtensionFields } from '../../graphql-operations'
 import { RouteDescriptor } from '../../util/contributions'
 import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
 
@@ -88,7 +88,7 @@ export interface ExtensionAreaProps
 
 interface ExtensionAreaState {
     /** The registry extension, undefined while loading, or an error.  */
-    extensionOrError?: ConfiguredRegistryExtension<GQL.IRegistryExtension> | ErrorLike
+    extensionOrError?: ConfiguredRegistryExtension<RegistryExtensionFields> | ErrorLike
 }
 
 /**
@@ -103,7 +103,7 @@ export interface ExtensionAreaRouteContext
     url: string
 
     /** The extension that is the subject of the page. */
-    extension: ConfiguredRegistryExtension<GQL.IRegistryExtension>
+    extension: ConfiguredRegistryExtension<RegistryExtensionFields>
 
     onDidUpdateExtension: () => void
 
@@ -251,7 +251,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
     private onDidUpdateExtension = (): void => this.refreshRequests.next()
 }
 
-function queryExtension(extensionID: string): Observable<ConfiguredRegistryExtension<GQL.IRegistryExtension>> {
+function queryExtension(extensionID: string): Observable<ConfiguredRegistryExtension<RegistryExtensionFields>> {
     return queryGraphQL(
         gql`
             query RegistryExtension($extensionID: String!) {

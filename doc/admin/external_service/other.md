@@ -11,6 +11,8 @@ To connect generic Git host to Sourcegraph:
 
 ## Constructing the `url` for SSH access
 
+>NOTE: Repository access over SSH is not yet supported on [Sourcegraph Cloud](../../cloud/index.md).
+
 If your code host serves git repositories over SSH (e.g. Gerrit), make sure your Sourcegraph instance can connect to your code host over SSH:
 
 ```

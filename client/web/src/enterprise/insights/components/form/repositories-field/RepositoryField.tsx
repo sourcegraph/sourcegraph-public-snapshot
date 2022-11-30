@@ -2,7 +2,7 @@ import { ChangeEvent, forwardRef, Ref, useImperativeHandle, useRef } from 'react
 
 import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
 
-import { FlexTextArea } from '@sourcegraph/wildcard'
+import { FlexTextArea, useDebounce } from '@sourcegraph/wildcard'
 
 import { getSanitizedRepositories } from '../../creation-ui'
 
@@ -20,8 +20,9 @@ export const RepositoryField = forwardRef((props: RepositoryFieldProps, referenc
 
     const inputReference = useRef<HTMLInputElement>(null)
 
-    const { searchValue, suggestions } = useRepoSuggestions({
-        search: getSanitizedRepositories(value)[0],
+    const debouncedSearchTerm = useDebounce(getSanitizedRepositories(value)[0], 1000)
+    const suggestions = useRepoSuggestions({
+        search: debouncedSearchTerm,
     })
 
     // Support top level reference prop
@@ -42,7 +43,7 @@ export const RepositoryField = forwardRef((props: RepositoryFieldProps, referenc
             />
 
             <ComboboxPopover className={styles.comboboxReachPopover}>
-                <SuggestionsPanel value={searchValue} suggestions={suggestions} className={styles.popover} />
+                <SuggestionsPanel value={debouncedSearchTerm} suggestions={suggestions} className={styles.popover} />
             </ComboboxPopover>
         </Combobox>
     )

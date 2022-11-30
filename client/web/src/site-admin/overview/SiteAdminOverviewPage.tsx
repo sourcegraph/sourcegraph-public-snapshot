@@ -8,22 +8,20 @@ import { map, catchError } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, asError, isErrorLike, numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { ActivationProps, percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
-import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { LoadingSpinner, useObservable, Button, Link, Icon, H2, H3 } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Button, Link, Icon, H3, Heading } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { Collapsible } from '../../components/Collapsible'
 import { PageTitle } from '../../components/PageTitle'
-import { Scalars } from '../../graphql-operations'
+import { Scalars, WAUsResult } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+import { SiteUsagePeriodFragment } from '../backend'
 import { UsageChart } from '../SiteAdminUsageStatisticsPage'
 
 import styles from './SiteAdminOverviewPage.module.scss'
 
-interface Props extends ActivationProps, ThemeProps {
+interface Props extends ThemeProps {
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
 
     /** For testing only */
@@ -41,7 +39,7 @@ interface Props extends ActivationProps, ThemeProps {
         }
     }>
     /** For testing only */
-    _fetchWeeklyActiveUsers?: () => Observable<GQL.ISiteUsageStatistics>
+    _fetchWeeklyActiveUsers?: () => Observable<WAUsResult['site']['usageStatistics']>
 }
 
 const fetchOverview = (): Observable<{
@@ -88,20 +86,19 @@ const fetchOverview = (): Observable<{
         }))
     )
 
-const fetchWeeklyActiveUsers = (): Observable<GQL.ISiteUsageStatistics> =>
+const fetchWeeklyActiveUsers = (): Observable<WAUsResult['site']['usageStatistics']> =>
     queryGraphQL(gql`
         query WAUs {
             site {
                 usageStatistics {
                     waus {
-                        userCount
-                        registeredUserCount
-                        anonymousUserCount
-                        startTime
+                        ...SiteUsagePeriodFields
                     }
                 }
             }
         }
+
+        ${SiteUsagePeriodFragment}
     `).pipe(
         map(dataOrThrowErrors),
         map(data => data.site.usageStatistics)
@@ -112,7 +109,6 @@ const fetchWeeklyActiveUsers = (): Observable<GQL.ISiteUsageStatistics> =>
  */
 export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isLightTheme,
-    activation,
     overviewComponents,
     _fetchOverview = fetchOverview,
     _fetchWeeklyActiveUsers = fetchWeeklyActiveUsers,
@@ -126,15 +122,16 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
     )
 
     const stats = useObservable(
-        useMemo(() => _fetchWeeklyActiveUsers().pipe(catchError(error => of<ErrorLike>(asError(error)))), [
-            _fetchWeeklyActiveUsers,
-        ])
+        useMemo(
+            () =>
+                _fetchWeeklyActiveUsers().pipe(
+                    map(({ waus }) => ({ waus, daus: [], maus: [] })),
+                    catchError(error => of<ErrorLike>(asError(error)))
+                ),
+            [_fetchWeeklyActiveUsers]
+        )
     )
 
-    let setupPercentage = 0
-    if (activation) {
-        setupPercentage = percentageDone(activation.completed)
-    }
     return (
         <div className="site-admin-overview-page">
             <PageTitle title="Overview - Admin" />
@@ -146,38 +143,6 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                 </div>
             )}
             {info === undefined && <LoadingSpinner />}
-            <div className="pt-3 mb-4">
-                {activation?.completed && (
-                    <Collapsible
-                        title={
-                            <div className="p-2">
-                                {setupPercentage > 0 && setupPercentage < 100
-                                    ? 'Almost there!'
-                                    : 'Welcome to Sourcegraph'}
-                            </div>
-                        }
-                        detail={
-                            setupPercentage < 100 ? 'Complete the steps below to finish onboarding to Sourcegraph' : ''
-                        }
-                        defaultExpanded={setupPercentage < 100}
-                        className="p-0 list-group-item font-weight-normal"
-                        data-testid="site-admin-overview-menu"
-                        buttonClassName="mb-0 py-3 px-3"
-                        titleClassName={classNames('mb-0 font-weight-bold', styles.adminOverviewMenuText)}
-                        detailClassName={classNames('mb-0 font-weight-normal', styles.adminOverviewMenuText)}
-                        titleAtStart={true}
-                    >
-                        {activation.completed && (
-                            <ActivationChecklist
-                                steps={activation.steps}
-                                completed={activation.completed}
-                                buttonClassName={classNames('mb-0 font-weight-normal', styles.adminOverviewMenuText)}
-                            />
-                        )}
-                    </Collapsible>
-                )}
-            </div>
-
             <div className="list-group">
                 {info && !isErrorLike(info) && (
                     <>
@@ -283,7 +248,9 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                                             showLegend={false}
                                             header={
                                                 <div className="site-admin-overview-page__detail-header">
-                                                    <H2>Weekly unique users</H2>
+                                                    <Heading as="h3" styleAs="h2">
+                                                        Weekly unique users
+                                                    </Heading>
                                                     <H3>
                                                         <Button
                                                             to="/site-admin/usage-statistics"

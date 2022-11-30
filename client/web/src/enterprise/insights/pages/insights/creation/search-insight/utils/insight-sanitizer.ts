@@ -1,7 +1,7 @@
 import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
 import { getSanitizedRepositories, getSanitizedSeries } from '../../../../../components'
+import { MAX_NUMBER_OF_SERIES } from '../../../../../constants'
 import { MinimalSearchBasedInsightData, InsightExecutionType, InsightType } from '../../../../../core'
-import { MAX_NUMBER_OF_SERIES } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { CreateInsightFormFields } from '../types'
 
 /**
