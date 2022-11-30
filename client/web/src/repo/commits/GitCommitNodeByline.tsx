@@ -82,7 +82,7 @@ export const GitCommitNodeByline: React.FunctionComponent<React.PropsWithChildre
 
     return (
         <div data-testid="git-commit-node-byline" className={className}>
-            <div>
+            {/* <div>
                 <Tooltip content={formatPersonName(author.person)}>
                     <UserAvatar
                         inline={true}
@@ -90,7 +90,7 @@ export const GitCommitNodeByline: React.FunctionComponent<React.PropsWithChildre
                         user={author.person}
                     />
                 </Tooltip>
-            </div>
+            </div> */}
             <div className="overflow-hidden">
                 {!compact && (
                     <>

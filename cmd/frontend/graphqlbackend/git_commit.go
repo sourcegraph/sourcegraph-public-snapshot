@@ -81,6 +81,11 @@ func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *Repos
 		gitRepo:         repoName,
 		oid:             GitObjectID(id),
 		commit:          commit,
+		logger: log.Scoped("gitCommitResolver", "resolve a specific commit of a repository").
+			With(log.Object("repoCommit",
+				log.String("repoName", string(repo.Name())),
+				log.Int32("repoID", int32(repo.IDInt32())),
+				log.String("commitID", string(id)))),
 	}
 }
 
@@ -282,49 +287,82 @@ func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
 	return r.gitserverClient.LsFiles(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid))
 }
 
-func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
+func (r *GitCommitResolver) Languages(ctx context.Context, args *struct {
+	Paths *[]string
+}) ([][]string, error) {
 	repo, err := r.repoResolver.repo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, api.CommitID(r.oid), false)
-	if err != nil {
-		return nil, err
+	var paths []string
+	if args.Paths == nil {
+		paths = []string{""}
+	} else {
+		paths = *args.Paths
 	}
 
-	names := make([]string, len(inventory.Languages))
-	for i, l := range inventory.Languages {
-		names[i] = l.Name
+	repos := backend.NewRepos(r.logger, r.db, r.gitserverClient)
+	pathLanguages := make([][]string, len(paths))
+	for i, path := range paths {
+		inventory, err := repos.GetInventory(ctx, repo, api.CommitID(r.oid), path, false)
+		if err != nil {
+			return nil, err
+		}
+
+		names := make([]string, len(inventory.Languages))
+		for i, l := range inventory.Languages {
+			names[i] = l.Name
+		}
+		pathLanguages[i] = names
 	}
-	return names, nil
+	return pathLanguages, nil
 }
 
-func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*languageStatisticsResolver, error) {
+type LanguageStatisticsArgs struct {
+	Paths *[]string
+}
+
+func (r *GitCommitResolver) LanguageStatistics(ctx context.Context, args *LanguageStatisticsArgs) ([][]*languageStatisticsResolver, error) {
 	repo, err := r.repoResolver.repo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, api.CommitID(r.oid), false)
-	if err != nil {
-		return nil, err
+	var paths []string
+	if args.Paths == nil {
+		paths = []string{""}
+	} else {
+		paths = *args.Paths
 	}
-	stats := make([]*languageStatisticsResolver, 0, len(inventory.Languages))
-	for _, lang := range inventory.Languages {
-		stats = append(stats, &languageStatisticsResolver{
-			l: lang,
-		})
+
+	repos := backend.NewRepos(r.logger, r.db, r.gitserverClient)
+	inventories := make([][]*languageStatisticsResolver, len(paths))
+	for i, path := range paths {
+		inventory, err := repos.GetInventory(ctx, repo, api.CommitID(r.oid), path, false)
+		if err != nil {
+			return nil, err
+		}
+		stats := make([]*languageStatisticsResolver, 0, len(inventory.Languages))
+		for _, lang := range inventory.Languages {
+			stats = append(stats, &languageStatisticsResolver{
+				l: lang,
+			})
+		}
+		inventories[i] = stats
 	}
-	return stats, nil
+	return inventories, nil
 }
 
-func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
+type AncestorsArgs struct {
 	graphqlutil.ConnectionArgs
-	Query *string
-	Path  *string
-	After *string
-}) (*gitCommitConnectionResolver, error) {
+	Query  *string
+	Path   *string
+	After  *string
+	Before *string
+}
+
+func (r *GitCommitResolver) Ancestors(ctx context.Context, args *AncestorsArgs) (*gitCommitConnectionResolver, error) {
 	return &gitCommitConnectionResolver{
 		db:              r.db,
 		gitserverClient: r.gitserverClient,
@@ -333,6 +371,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 		query:           args.Query,
 		path:            args.Path,
 		after:           args.After,
+		before:          args.Before,
 		repo:            r.repoResolver,
 	}, nil
 }

@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .tree-page {
     // For the other sub-pages in the RepoArea, we use a child selector to add the
     // border and radius to the sub-page containers. Since we use the Container
@@ -18,8 +20,7 @@
 }
 
 .git-commit-node {
-    padding-left: 0;
-    padding-right: 0;
+    padding: 0.25rem 0;
 
     &-message-subject {
         opacity: 0.9;
@@ -28,6 +29,15 @@
     :global(.btn) {
         opacity: 0.85;
     }
+}
+
+.file-stat-selector {
+    margin: -0.125rem 0 0 0;
+    height: 1rem;
+}
+
+.bar-svg {
+    border-radius: 5px;
 }
 
 .container {
@@ -40,4 +50,58 @@
 .section {
     width: 100%;
     max-width: var(--media-xl);
+}
+
+.readme-container {
+    max-height: 30rem;
+    overflow: hidden;
+    position: relative;
+    margin-top: 1rem;
+    margin-left: -0.25rem;
+}
+
+.readme-fader {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 2.5rem;
+    transition: ease-in;
+    background-image: linear-gradient(transparent, 75%, var(--code-bg));
+}
+
+.readme-fader-invisible {
+    visibility: hidden;
+}
+
+.readme {
+    padding: 0 0.25rem;
+}
+
+.readme-more {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    visibility: hidden;
+}
+
+.readme-more-visible {
+    visibility: visible;
+    transition: ease-in;
+}
+
+.meter-container {
+    padding-top: 0.125rem;
+}
+
+.card-col-header {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.menu {
+    .text {
+        @media (--lg-breakpoint-down) {
+            display: none;
+        }
+    }
 }

@@ -53,7 +53,7 @@ export const fetchTreeEntries = memoizeObservable(
     ({
         requestGraphQL,
         ...args
-    }: AbsoluteRepoFile & { first?: number } & Pick<PlatformContext, 'requestGraphQL'>): Observable<TreeFields> =>
+    }: AbsoluteRepoFile & { first?: number, numFilenamesPerDirectory?: number } & Pick<PlatformContext, 'requestGraphQL'>): Observable<TreeFields> =>
         requestGraphQL<TreeEntriesResult>({
             request: gql`
                 query TreeEntries(
@@ -62,6 +62,7 @@ export const fetchTreeEntries = memoizeObservable(
                     $commitID: String!
                     $filePath: String!
                     $first: Int
+                    $numFilenamesPerDirectory: Int
                 ) {
                     repository(name: $repoName) {
                         commit(rev: $commitID, inputRevspec: $revision) {
@@ -78,6 +79,11 @@ export const fetchTreeEntries = memoizeObservable(
                         ...TreeEntryFields
                     }
                 }
+                fragment SubDirectoryFields on GitTree {
+                    files(first: $numFilenamesPerDirectory) {
+                        name
+                    }
+                }
                 fragment TreeEntryFields on TreeEntry {
                     name
                     path
@@ -88,6 +94,10 @@ export const fetchTreeEntries = memoizeObservable(
                         commit
                     }
                     isSingleChild
+
+                    ... on GitTree {
+                        ...SubDirectoryFields                        
+                    }
                 }
             `,
             variables: args,

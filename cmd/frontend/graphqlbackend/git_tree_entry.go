@@ -13,6 +13,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
@@ -222,6 +223,59 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 		return false, err
 	}
 	return len(entries) == 1, nil
+}
+
+func (r *GitTreeEntryResolver) Stats(ctx context.Context) *treeEntryStatsResolver {
+	return NewTreeEntryStatsResolver(r)
+}
+
+func NewTreeEntryStatsResolver(tree *GitTreeEntryResolver) *treeEntryStatsResolver {
+	return &treeEntryStatsResolver{tree: tree}
+}
+
+type treeEntryStatsResolver struct {
+	languages []*languageStatisticsResolver
+	tree      *GitTreeEntryResolver
+}
+
+func (r *treeEntryStatsResolver) Languages(ctx context.Context) ([]*languageStatisticsResolver, error) {
+	repo, err := r.tree.commit.repoResolver.repo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	path := r.tree.stat.Name()
+	inventory, err := backend.NewRepos(r.tree.commit.logger, r.tree.db, r.tree.gitserverClient).GetInventory(ctx, repo, api.CommitID(r.tree.commit.oid), path, false)
+	if err != nil {
+		return nil, err
+	}
+	langStats := make([]*languageStatisticsResolver, 0, len(inventory.Languages))
+	for _, lang := range inventory.Languages {
+		langStats = append(langStats, &languageStatisticsResolver{
+			l: lang,
+		})
+	}
+
+	return langStats, nil
+}
+
+// treeDiffStatter batches diff stat computations for a single directory and its entries
+type treeDiffStatter struct {
+	// tree is the directory we'll cache diff stat info for
+	tree       *GitTreeEntryResolver
+	headCommit string
+
+	cacheMu              sync.Mutex
+	cachedHeadCommitDate string
+	cachedBaseCommits    map[string]string
+	cachedDiffStats      map[string]map[string]struct {
+		*DiffStat
+		Error error
+	}
+}
+
+func (s *treeDiffStatter) getDiffStat(ctx context.Context, beforeHeadSpec, path string) (*DiffStat, error) {
+	return nil, nil
 }
 
 func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName *string }) (resolverstubs.GitBlobLSIFDataResolver, error) {
