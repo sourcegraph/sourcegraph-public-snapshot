@@ -188,3 +188,6 @@ go.work.sum
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# SCIP
+index.scip

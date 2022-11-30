@@ -3,6 +3,8 @@ package batches
 import (
 	"context"
 
+	sglog "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers"
@@ -43,11 +45,12 @@ func Init(
 
 	// Register enterprise services.
 	gitserverClient := gitserver.NewClient(db)
+	logger := sglog.Scoped("Batches", "batch changes webhooks")
 	enterpriseServices.BatchChangesResolver = resolvers.New(bstore, gitserverClient)
-	enterpriseServices.BatchesGitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient)
-	enterpriseServices.BatchesBitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient)
-	enterpriseServices.BatchesBitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient)
-	enterpriseServices.BatchesGitLabWebhook = webhooks.NewGitLabWebhook(bstore, gitserverClient)
+	enterpriseServices.BatchesGitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient, logger)
+	enterpriseServices.BatchesBitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient, logger)
+	enterpriseServices.BatchesBitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient, logger)
+	enterpriseServices.BatchesGitLabWebhook = webhooks.NewGitLabWebhook(bstore, gitserverClient, logger)
 
 	operations := httpapi.NewOperations(observationContext)
 	fileHandler := httpapi.NewFileHandler(db, bstore, operations)

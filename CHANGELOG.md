@@ -21,20 +21,25 @@ All notable changes to Sourcegraph are documented in this file.
 - Unindexed search now use the index for files that have not changed between the unindexed commit and the indexed commit. The result is faster unindexed search in general. If you are noticing issues you can disable by setting the feature flag `search-hybrid` to false. [#37112](https://github.com/sourcegraph/sourcegraph/issues/37112)
 - The number of commits listed in the History tab can now be customized for all users by site admins under Configuration -> Global Settings from the site admin page by using the config `history.defaultPageSize`. Individual users may also set `history.defaultPagesize` from their user settings page to override the value set under the Global Settings. [#44651](https://github.com/sourcegraph/sourcegraph/pull/44651)
 - Batch Changes: Mounted files can be accessed via the UI on the executions page. [#43180](https://github.com/sourcegraph/sourcegraph/pull/43180)
+- Added "Outbound request log" feature for site admins [#44286](https://github.com/sourcegraph/sourcegraph/pull/44286)
 
 ### Changed
 
 - Batch Change: When one or more changesets are selected, we now display all bulk operations but disable the ones that aren't applicable to the changesets. [#44617](https://github.com/sourcegraph/sourcegraph/pull/44617)
 - Gitserver's repository purge worker now runs on a regular interval instead of just on weekends, configurable by the `repoPurgeWorker` site configuration. [#44753](https://github.com/sourcegraph/sourcegraph/pull/44753)
 - Editing the presentation metadata (title, line color, line label) or the default filters of a scoped Code Insight will no longer trigger insight recalculation. [#44769](https://github.com/sourcegraph/sourcegraph/pull/44769), [#44797](https://github.com/sourcegraph/sourcegraph/pull/44797)
+- Indexed Search's `memory_map_areas_percentage_used` alert has been modified to alert earlier than it used to. It now issues a warning at 60% (previously 70%) and issues a critical alert at 80% (previously 90%).
 
 ### Fixed
 
 - The Code Insights commit indexer no longer errors when fetching commits from empty repositories when sub-repo permissions are enabled. [#44558](https://github.com/sourcegraph/sourcegraph/pull/44558)
+- Unintended newline characters that could appear in diff view rendering have been fixed. [#44805](https://github.com/sourcegraph/sourcegraph/pull/44805)
+- Signing out doesn't immediately log the user back in when there's only one OAuth provider enabled. It now redirects the user to the Sourcegraph login page. [#44803](https://github.com/sourcegraph/sourcegraph/pull/44803)
+- An issue causing certain kinds of queries to behave inconsistently in Code Insights. [#44917](https://github.com/sourcegraph/sourcegraph/pull/44917)
 
 ### Removed
 
--
+- Removed legacy GraphQL field `dirtyMetadata` on an insight series. `insightViewDebug` can be used as an alternative. [#44416](https://github.com/sourcegraph/sourcegraph/pull/44416)
 
 ## 4.2.0
 

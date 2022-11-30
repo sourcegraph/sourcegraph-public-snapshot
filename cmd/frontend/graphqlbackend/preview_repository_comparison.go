@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type PreviewRepositoryComparisonResolver interface {
@@ -18,7 +20,7 @@ type PreviewRepositoryComparisonResolver interface {
 }
 
 // NewPreviewRepositoryComparisonResolver is a convenience function to get a preview diff from a repo, given a base rev and the git patch.
-func NewPreviewRepositoryComparisonResolver(ctx context.Context, db database.DB, client gitserver.Client, repo *RepositoryResolver, baseRev, patch string) (*previewRepositoryComparisonResolver, error) {
+func NewPreviewRepositoryComparisonResolver(ctx context.Context, db database.DB, client gitserver.Client, repo *RepositoryResolver, baseRev string, patch []byte) (*previewRepositoryComparisonResolver, error) {
 	args := &RepositoryCommitArgs{Rev: baseRev}
 	commit, err := repo.Commit(ctx, args)
 	if err != nil {
@@ -38,7 +40,7 @@ type previewRepositoryComparisonResolver struct {
 	client gitserver.Client
 	repo   *RepositoryResolver
 	commit *GitCommitResolver
-	patch  string
+	patch  []byte
 }
 
 // Type guard.
@@ -60,7 +62,7 @@ func (r *previewRepositoryComparisonResolver) FileDiffs(_ context.Context, args 
 	return NewFileDiffConnectionResolver(r.db, r.client, r.commit, r.commit, args, fileDiffConnectionCompute(r.patch), previewNewFile), nil
 }
 
-func fileDiffConnectionCompute(patch string) func(ctx context.Context, args *FileDiffsConnectionArgs) ([]*diff.FileDiff, int32, bool, error) {
+func fileDiffConnectionCompute(patch []byte) func(ctx context.Context, args *FileDiffsConnectionArgs) ([]*diff.FileDiff, int32, bool, error) {
 	var (
 		once        sync.Once
 		fileDiffs   []*diff.FileDiff
@@ -85,7 +87,7 @@ func fileDiffConnectionCompute(patch string) func(ctx context.Context, args *Fil
 				totalAmount += *args.First
 			}
 
-			dr := diff.NewMultiFileDiffReader(strings.NewReader(patch))
+			dr := diff.NewMultiFileDiffReader(bytes.NewReader(patch))
 			for {
 				var fileDiff *diff.FileDiff
 				fileDiff, err = dr.ReadFile()
@@ -137,57 +139,101 @@ func fileDiffVirtualFileContent(r *FileDiffResolver) FileContentFunc {
 					return
 				}
 			}
-			newContent = applyPatch(oldContent, r.FileDiff)
+			newContent, err = applyPatch(oldContent, r.FileDiff)
 		})
 		return newContent, err
 	}
 }
 
-func applyPatch(fileContent string, fileDiff *diff.FileDiff) string {
+// applyPatch takes the contents of a file and a file diff to apply to it. It
+// returns the patched file content.
+func applyPatch(fileContent string, fileDiff *diff.FileDiff) (string, error) {
 	if diffPathOrNull(fileDiff.NewName) == nil {
 		// the file was deleted, no need to do costly computation.
-		return ""
+		return "", nil
 	}
-	addNewline := true
-	contentLines := strings.Split(fileContent, "\n")
+
+	// Capture if the original file content had a final newline.
+	origHasFinalNewline := strings.HasSuffix(fileContent, "\n")
+
+	// All the lines of the original file.
+	var contentLines []string
+	// For empty files, don't split otherwise we end up with an empty ghost line.
+	if len(fileContent) > 0 {
+		// Trim a potential final newline so that we don't end up with an empty
+		// ghost line at the end.
+		contentLines = strings.Split(strings.TrimSuffix(fileContent, "\n"), "\n")
+	}
+	// The new lines of the file.
 	newContentLines := make([]string, 0)
-	var lastLine int32 = 1
+	// Track whether the last hunk seen ended with an addition and the hunk indicated
+	// the new file potentially has a final new line, if the last hunk was at the
+	// end of the file. This is rechecked further down.
+	lastHunkHadNewlineInLastAddition := false
+	// Track the current line index to be processed. Line is 1-indexed.
+	var currentLine int32 = 1
+	isLastHunk := func(i int) bool {
+		return i == len(fileDiff.Hunks)-1
+	}
 	// Assumes the hunks are sorted by ascending lines.
-	for _, hunk := range fileDiff.Hunks {
-		if hunk.OrigNoNewlineAt > 0 {
-			addNewline = true
-		}
-		// Detect holes.
-		if hunk.OrigStartLine != 0 && hunk.OrigStartLine != lastLine {
-			originalLines := contentLines[lastLine-1 : hunk.OrigStartLine-1]
+	for i, hunk := range fileDiff.Hunks {
+		// Detect holes. If we are not at the start, or the hunks are not fully consecutive,
+		// we need to fill up the lines in between.
+		if hunk.OrigStartLine != 0 && hunk.OrigStartLine != currentLine {
+			originalLines := contentLines[currentLine-1 : hunk.OrigStartLine-1]
 			newContentLines = append(newContentLines, originalLines...)
-			lastLine += int32(len(originalLines))
+			// If we add the first 10 lines, we are now at line 11.
+			currentLine += int32(len(originalLines))
 		}
-		hunkLines := strings.Split(string(hunk.Body), "\n")
+		// Iterate over all the hunk lines. Trim a potential final newline, so that
+		// we don't end up with a ghost line in the slice.
+		hunkLines := strings.Split(strings.TrimSuffix(string(hunk.Body), "\n"), "\n")
+		hunkHasFinalNewline := strings.HasSuffix(string(hunk.Body), "\n")
+		if isLastHunk(i) && hunkHasFinalNewline {
+			lastHunkHadNewlineInLastAddition = true
+		}
 		for _, line := range hunkLines {
 			switch {
-			case line == "":
-				// Ignore empty lines, they just indicate the last line of a hunk.
+			case strings.HasPrefix(line, " "):
+				newContentLines = append(newContentLines, contentLines[currentLine-1])
+				currentLine++
 			case strings.HasPrefix(line, "-"):
-				lastLine++
+				currentLine++
 			case strings.HasPrefix(line, "+"):
+				// Append the line, stripping off the diff signifier at the beginning.
 				newContentLines = append(newContentLines, line[1:])
 			default:
-				newContentLines = append(newContentLines, contentLines[lastLine-1])
-				lastLine++
+				return "", errors.Newf("malformed patch, expected hunk lines to start with ' ', '-', or '+' but got %q", line)
 			}
 		}
 	}
-	// Append remaining lines from original file.
-	if origLines := int32(len(contentLines)); origLines > 0 && origLines != lastLine {
-		newContentLines = append(newContentLines, contentLines[lastLine-1:]...)
-	} else {
+
+	// If we are not at the end of the file, append remaining lines from original content.
+	// Example:
+	// The file had 20 lines, origLines = 20.
+	// We only had a hunk go until line 14 of the original content.
+	// currentLine is 15 now.
+	// So we need to add all the remaining lines, from 15-20.
+	if origLines := int32(len(contentLines)); origLines > 0 && origLines != currentLine-1 {
+		newContentLines = append(newContentLines, contentLines[currentLine-1:]...)
 		content := strings.Join(newContentLines, "\n")
-		if addNewline {
-			// If the file has a final newline character, we need to append it again.
+		if origHasFinalNewline {
 			content += "\n"
 		}
-		return content
+		return content, nil
 	}
-	return strings.Join(newContentLines, "\n")
+
+	content := strings.Join(newContentLines, "\n")
+	// If we are here, that means that a hunk covered the end of the file.
+	// If the very last hunk ends with a deletion we're done.
+	// If we ended with a new line, we need to make sure that we correctly reflect
+	// the newline state of that.
+	// If a newline IS present in the new content, we need to apply a final newline,
+	// otherwise that means the file has no newline at the end.
+	if lastHunkHadNewlineInLastAddition {
+		// If the file has a final newline character, we need to append it again.
+		content += "\n"
+	}
+
+	return content, nil
 }

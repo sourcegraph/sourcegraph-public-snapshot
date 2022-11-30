@@ -55,6 +55,8 @@ type MonikerData struct {
 
 // PackageInformationData indicates a globally unique namespace for a moniker.
 type PackageInformationData struct {
+	Manager string
+
 	// Name of the package that contains the moniker.
 	Name string
 
@@ -215,6 +217,7 @@ type DocumentationSearchResult struct {
 // Package pairs a package name and the dump that provides it.
 type Package struct {
 	Scheme  string
+	Manager string
 	Name    string
 	Version string
 }

@@ -238,7 +238,7 @@ type Mutation {
     createPassword(newPassword: String!): EmptyResponse
     """
     Sets the user to accept the site's Terms of Service and Privacy Policy.
-    If the ID is ommitted, the current user is assumed.
+    If the ID is omitted, the current user is assumed.
 
     Only the user or site admins may perform this mutation.
     """
@@ -1576,6 +1576,16 @@ type Query {
     ): WebhookLogConnection!
 
     """
+    Get a log of the latest outbound external requests. Only available to site admins.
+    """
+    outboundRequests(
+        """
+        An opaque cursor that is used for pagination.
+        """
+        after: ID
+    ): OutboundRequestConnection!
+
+    """
     (experimental)
     Get invitation based on the JWT in the invitation URL
     """
@@ -2701,15 +2711,6 @@ type ExternalService implements Node {
     nextSyncAt: DateTime
 
     """
-    Returns a list of scopes granted by the code host. It is based on the token used
-    when configuring the external service.
-
-    NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
-    so it should be used sparingly.
-    """
-    grantedScopes: [String!]
-
-    """
     Returns recently received webhooks on this external service.
 
     Only site admins may access this field.
@@ -2740,20 +2741,6 @@ type ExternalService implements Node {
         """
         until: DateTime
     ): WebhookLogConnection!
-
-    """
-    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
-    repositories included by this external service, and is derived from commit history (because that
-    for example gives more accurate collaborator work email addresses than the contributors API which
-    often returns personal emails.
-
-    Importantly, this API works when repositories are not cloned on Sourcegraph yet so as to allow
-    inviting collaborators while repositories are cloning.
-
-    In general, this API should NOT be used once repositories are cloned on to Sourcegraph as it
-    reaches out to the code host directly which is wasteful if repositories are already cloned.
-    """
-    invitableCollaborators: [Person!]!
 
     """
     The list of recent sync jobs for this external service.
@@ -3723,6 +3710,10 @@ type FileDiffHunk {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Specifies which format/highlighting technique to use.
+        """
+        format: HighlightResponseFormat = HTML_HIGHLIGHT
     ): HighlightedDiffHunkBody!
 }
 
@@ -5065,7 +5056,7 @@ type GitBlob implements TreeEntry & File2 {
         query: String
     ): SymbolConnection!
     """
-    (Experimental) Symbol defined in this blob at the specfic line number and character offset.
+    (Experimental) Symbol defined in this blob at the specific line number and character offset.
     """
     symbol(
         """
@@ -7997,7 +7988,7 @@ interface WebhookLogMessage {
     """
     The headers in the HTTP message.
     """
-    headers: [WebhookLogHeader!]!
+    headers: [HTTPHeader!]!
 
     """
     The body content of the HTTP message.
@@ -8012,7 +8003,7 @@ type WebhookLogRequest implements WebhookLogMessage {
     """
     The headers in the HTTP message.
     """
-    headers: [WebhookLogHeader!]!
+    headers: [HTTPHeader!]!
 
     """
     The body content of the HTTP message.
@@ -8042,7 +8033,7 @@ type WebhookLogResponse implements WebhookLogMessage {
     """
     The headers in the HTTP message.
     """
-    headers: [WebhookLogHeader!]!
+    headers: [HTTPHeader!]!
 
     """
     The body content of the HTTP message.
@@ -8051,16 +8042,100 @@ type WebhookLogResponse implements WebhookLogMessage {
 }
 
 """
-A single HTTP header within a webhook log.
+A list of outbound requests.
 """
-type WebhookLogHeader {
+type OutboundRequestConnection {
     """
-    The header name.
+    A list of webhook logs.
+    """
+    nodes: [OutboundRequest!]!
+
+    """
+    The total number of webhook logs in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+"""
+A single logged webhook delivery.
+"""
+type OutboundRequest {
+    """
+    The request log item ID. Looks like "2021-01-01T00_00_00.000000" – Same as the Redis keys.
+    """
+    id: ID!
+
+    """
+    The time the request was sent at.
+    """
+    startedAt: DateTime!
+
+    """
+    The method used in the HTTP request. E.g. GET, POST, etc.
+    """
+    method: String!
+
+    """
+    The full URL the request was sent to.
+    """
+    url: String!
+
+    """
+    The headers sent with the HTTP request.
+    """
+    requestHeaders: [HTTPHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    requestBody: String!
+
+    """
+    The HTTP status code received.
+    """
+    statusCode: Int!
+
+    """
+    The headers received with the HTTP response.
+    """
+    responseHeaders: [HTTPHeader!]!
+
+    """
+    The total time the request took to complete.
+    """
+    duration: Float!
+
+    """
+    Any error message got from the request Doer in case of an error, otherwise an empty string.
+    """
+    errorMessage: String!
+
+    """
+    Stack information to figure out where the ExternalClientFactory was created.
+    """
+    creationStackFrame: String!
+
+    """
+    Stack information to figure out where in the code base the request was initiated.
+    """
+    callStackFrame: String!
+}
+
+"""
+A key-value pair
+"""
+type HTTPHeader {
+    """
+    The header name
     """
     name: String!
 
     """
-    The header values.
+    Can be multiple values
     """
     values: [String!]!
 }

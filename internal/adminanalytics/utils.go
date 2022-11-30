@@ -106,7 +106,7 @@ func getSgEmpUserIDs(ctx context.Context, db database.DB, cache bool) ([]*int32,
 	return ids, nil
 }
 
-var eventLogsNodesQuery = `
+const eventLogsNodesQuery = `
 SELECT
 	%s AS date,
 	COUNT(*) AS total_count,
@@ -118,7 +118,7 @@ FROM
 GROUP BY date
 `
 
-var eventLogsSummaryQuery = `
+const eventLogsSummaryQuery = `
 SELECT
 	COUNT(*) AS total_count,
 	COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS unique_users,

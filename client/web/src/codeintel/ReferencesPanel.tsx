@@ -3,7 +3,7 @@ import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useLayoutEffe
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import { capitalize } from 'lodash'
+import { capitalize, uniqBy } from 'lodash'
 import { MemoryRouter, useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -570,6 +570,12 @@ const CollapsibleLocationList: React.FunctionComponent<
     React.PropsWithChildren<CollapsibleLocationListProps>
 > = props => {
     const isOpen = props.isOpen(props.name) ?? true
+    const quantityLabel = useMemo(() => {
+        const repoNumber = uniqBy(props.locations, 'repo').length
+        return `(${props.locations.length} ${pluralize('item', props.locations.length)}${
+            repoNumber > 1 ? ` from ${repoNumber} repositories` : ''
+        } displayed${props.hasMore ? ', more available' : ''})`
+    }, [props.locations, props.hasMore])
 
     return (
         <Collapse isOpen={isOpen} onOpenChange={isOpen => props.handleOpenChange(props.name, isOpen)}>
@@ -588,7 +594,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                         )}{' '}
                         <H4 className="mb-0">{capitalize(props.name)}</H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
-                            ({props.locations.length} displayed{props.hasMore ? ', more available)' : ')'}
+                            {quantityLabel}
                         </span>
                     </CollapseHeader>
                 </CardHeader>
@@ -782,17 +788,16 @@ const LocationsList: React.FunctionComponent<React.PropsWithChildren<LocationsLi
     activeURL,
 }) => {
     const repoLocationGroups = useMemo(() => buildRepoLocationGroups(locations), [locations])
-    const openByDefault = repoLocationGroups.length === 1
 
     return (
         <>
-            {repoLocationGroups.map(group => (
+            {repoLocationGroups.map((group, index) => (
                 <CollapsibleRepoLocationGroup
                     key={group.repoName}
                     activeURL={activeURL}
                     searchToken={searchToken}
                     repoLocationGroup={group}
-                    openByDefault={openByDefault}
+                    openByDefault={index === 0}
                     isActiveLocation={isActiveLocation}
                     setActiveLocation={setActiveLocation}
                     filter={filter}

@@ -14,7 +14,10 @@ import {
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
-import { useConnection, UseConnectionResult } from '../components/FilteredConnection/hooks/useConnection'
+import {
+    useShowMorePagination,
+    UseShowMorePaginationResult,
+} from '../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     AllConfigResult,
     CheckMirrorRepositoryConnectionResult,
@@ -283,6 +286,35 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
         )
     )
 }
+
+export const OUTBOUND_REQUESTS = gql`
+    query OutboundRequests($after: ID) {
+        outboundRequests(after: $after) {
+            nodes {
+                id
+                startedAt
+                method
+                url
+                requestHeaders {
+                    name
+                    values
+                }
+                requestBody
+                statusCode
+                responseHeaders {
+                    name
+                    values
+                }
+                duration
+                errorMessage
+                creationStackFrame
+                callStackFrame
+            }
+        }
+    }
+`
+
+export const OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL = 5000
 
 export const UPDATE_MIRROR_REPOSITORY = gql`
     mutation UpdateMirrorRepository($repository: ID!) {
@@ -963,8 +995,8 @@ export const WEBHOOK_BY_ID = gql`
     }
 `
 
-export const useWebhooksConnection = (): UseConnectionResult<WebhookFields> =>
-    useConnection<WebhooksListResult, WebhooksListVariables, WebhookFields>({
+export const useWebhooksConnection = (): UseShowMorePaginationResult<WebhookFields> =>
+    useShowMorePagination<WebhooksListResult, WebhooksListVariables, WebhookFields>({
         query: WEBHOOKS,
         variables: {},
         getConnection: result => {
@@ -982,8 +1014,8 @@ export const useWebhookLogsConnection = (
     webhookID: string,
     first: number,
     onlyErrors: boolean
-): UseConnectionResult<WebhookLogFields> =>
-    useConnection<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables, WebhookLogFields>({
+): UseShowMorePaginationResult<WebhookLogFields> =>
+    useShowMorePagination<WebhookLogsByWebhookIDResult, WebhookLogsByWebhookIDVariables, WebhookLogFields>({
         query: WEBHOOK_LOGS_BY_ID,
         variables: {
             first: first ?? 20,

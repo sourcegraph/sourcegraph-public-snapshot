@@ -2,6 +2,7 @@ package lsifstore
 
 import (
 	"context"
+	"errors"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
@@ -18,17 +19,44 @@ func (s *store) GetStencil(ctx context.Context, bundleID int, path string) (_ []
 	}})
 	defer endObservation(1, observation.Args{})
 
-	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(rangesDocumentQuery, bundleID, path)))
+	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
+		stencilQuery,
+		bundleID,
+		path,
+	)))
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	trace.Log(log.Int("numRanges", len(documentData.Document.Ranges)))
+	if documentData.SCIPData != nil {
+		return nil, errors.New("SCIP stencil unimplemented")
+	}
 
-	ranges := make([]types.Range, 0, len(documentData.Document.Ranges))
-	for _, r := range documentData.Document.Ranges {
+	trace.Log(log.Int("numRanges", len(documentData.LSIFData.Ranges)))
+
+	ranges := make([]types.Range, 0, len(documentData.LSIFData.Ranges))
+	for _, r := range documentData.LSIFData.Ranges {
 		ranges = append(ranges, newRange(r.StartLine, r.StartCharacter, r.EndLine, r.EndCharacter))
 	}
 
 	return ranges, nil
 }
+
+const stencilQuery = `
+SELECT
+	dump_id,
+	path,
+	data,
+	ranges,
+	hovers,
+	NULL AS monikers,
+	NULL AS packages,
+	NULL AS diagnostics,
+	NULL AS scip_document
+FROM
+	lsif_data_documents
+WHERE
+	dump_id = %s AND
+	path = %s
+LIMIT 1
+`
