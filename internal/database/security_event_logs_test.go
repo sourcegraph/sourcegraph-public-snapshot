@@ -34,7 +34,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 		{
 			name:  "InvalidUser",
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB"},
-			err:   `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_has_user" (SQLSTATE 23514)`,
+			err:   `<nil>`,
 		},
 		{
 			name:  "EmptySource",
@@ -44,7 +44,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 		{
 			name:  "UserAndAnonymousMissing",
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB", UserID: 0, AnonymousUserID: ""},
-			err:   `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_has_user" (SQLSTATE 23514)`,
+			err:   `<nil>`,
 		},
 		{
 			name:  "JustUser",
@@ -72,7 +72,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 
 	logs := exportLogs()
 	auditLogs := filterAudit(logs)
-	assert.Equal(t, 3, len(auditLogs))
+	assert.Equal(t, 5, len(auditLogs))
 	for _, auditLog := range auditLogs {
 		assertAuditField(t, auditLog.Fields["audit"].(map[string]any))
 		assertEventField(t, auditLog.Fields["event"].(map[string]any))
