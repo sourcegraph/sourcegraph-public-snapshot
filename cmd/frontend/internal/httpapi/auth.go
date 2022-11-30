@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -88,7 +89,7 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 
 					anonymousId, anonCookieSet := cookie.AnonymousUID(r)
 					if !anonCookieSet {
-						anonymousId = "no identifier set"
+						anonymousId = fmt.Sprintf("unknown user @ %s", time.Now()) // we don't have a reliable user identifier at the time of the failure
 					}
 					db.SecurityEventLogs().LogEvent(
 						r.Context(),
