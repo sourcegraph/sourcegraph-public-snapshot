@@ -35,6 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The Code Insights commit indexer no longer errors when fetching commits from empty repositories when sub-repo permissions are enabled. [#44558](https://github.com/sourcegraph/sourcegraph/pull/44558)
 - Unintended newline characters that could appear in diff view rendering have been fixed. [#44805](https://github.com/sourcegraph/sourcegraph/pull/44805)
 - An issue causing certain kinds of queries to behave inconsistently in Code Insights. [#44917](https://github.com/sourcegraph/sourcegraph/pull/44917)
+- Batch change forks are now created under a specific, consistent naming convention for all codehosts, preventing an error that occured when `batches.enforceForks` were enebaled and would interpret created forks as a duplicate. [#43681](https://github.com/sourcegraph/sourcegraph/pull/43681), [#44456](https://github.com/sourcegraph/sourcegraph/pull/44456), [#44546](https://github.com/sourcegraph/sourcegraph/pull/44546), [#44547](https://github.com/sourcegraph/sourcegraph/pull/44547)
 
 ### Removed
 
