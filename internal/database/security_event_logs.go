@@ -44,10 +44,12 @@ const (
 
 	SecurityEventNameAccessGranted SecurityEventName = "AccessGranted"
 
-	SecurityEventAccessTokenCreated      SecurityEventName = "AccessTokenCreated"
-	SecurityEventAccessTokenDeleted      SecurityEventName = "AccessTokenDeleted"
-	SecurityEventAccessTokenHardDeleted  SecurityEventName = "AccessTokenHardDeleted"
-	SecurityEventAccessTokenImpersonated SecurityEventName = "AccessTokenImpersonated"
+	SecurityEventAccessTokenCreated             SecurityEventName = "AccessTokenCreated"
+	SecurityEventAccessTokenDeleted             SecurityEventName = "AccessTokenDeleted"
+	SecurityEventAccessTokenHardDeleted         SecurityEventName = "AccessTokenHardDeleted"
+	SecurityEventAccessTokenImpersonated        SecurityEventName = "AccessTokenImpersonated"
+	SecurityEventAccessTokenInvalid             SecurityEventName = "AccessTokenInvalid"
+	SecurityEventAccessTokenSubjectNotSiteAdmin SecurityEventName = "AccessTokenSubjectNotSiteAdmin"
 
 	SecurityEventGitHubAuthSucceeded SecurityEventName = "GitHubAuthSucceeded"
 	SecurityEventGitHubAuthFailed    SecurityEventName = "GitHubAuthFailed"
