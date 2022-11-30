@@ -152,6 +152,21 @@ Use the following filters to restrict how users can create accounts and sign in 
 
 See [SAML troubleshooting](#troubleshooting) for more tips.
 
+### Updating user emails
+
+Whe SAML authentication is enabled and a user email registered on the IdP is changed, Sourcegraph doesn’t apply that change on its side. In consequence, site admins have to update the user email.
+To do that, go to the site Admin area > Users page and:
+
+- click the username whose email needs to be updated to see their account
+- in the left menu, click "Emails"
+- add the new email address that matches the one registered in the IdP and mark it as verified (you can also send a verification link to the user)
+- in the "Primary email address" section, select the new verified email and click Save
+- the new email should now have the "Verified" and "Primary" labels
+- remove the old email by clicking the "Remove" link besides it
+
+Depending on the IdP configuration, there can be a case when users will continue to log in successfully to Sourcegraph despite the email mismatch (for example, when there's a match between the username or NameID).
+But we still recommend site-admin to follow the steps above to avoid having a mismatch between a user IdP email and their Sourcegraph account email.
+
 ## Troubleshooting
 
 ### Enable logging in Sourcegraph containers
