@@ -53,6 +53,33 @@ func SortRanges(ranges []*scip.Range) []*scip.Range {
 	return ranges
 }
 
+// SortSymbols sorts the given symbols slice (in-place) and returns it (for convenience).
+// Symbol information objects are sorted in ascending order by name.
+func SortSymbols(symbols []*scip.SymbolInformation) []*scip.SymbolInformation {
+	sort.Slice(symbols, func(i, j int) bool {
+		return symbols[i].Symbol < symbols[j].Symbol
+	})
+
+	return symbols
+}
+
+// SortDiagnostics sorts the given diagnostics slice (in-place) and returns it (for convenience).
+// Diagnostics are sorted firs tyb severity (more severe earlier in the slice) and then by the
+// diagnostic message.
+func SortDiagnostics(diagnostics []*scip.Diagnostic) []*scip.Diagnostic {
+	sort.Slice(diagnostics, func(i, j int) bool {
+		if diagnostics[i].Severity < diagnostics[j].Severity {
+			return true
+		} else if diagnostics[i].Severity == diagnostics[j].Severity {
+			return diagnostics[i].Message < diagnostics[j].Message
+		}
+
+		return false
+	})
+
+	return diagnostics
+}
+
 // compareRanges compares the order of the leading edge of the two ranges. This method returns
 //
 // - -1 if the leading edge of r2 occurs before r1,
