@@ -533,6 +533,10 @@ func (i *IncompleteDataPointAlertResolver) ToTimeoutDatapointAlert() (graphqlbac
 }
 
 func (i *IncompleteDataPointAlertResolver) ToGenericIncompleteDatapointAlert() (graphqlbackend.GenericIncompleteDatapointAlert, bool) {
+	switch i.point.Reason {
+	case store.ReasonTimeout:
+		return nil, false
+	}
 	return &genericIncompleteDatapointAlertResolver{point: i.point}, true
 }
 
