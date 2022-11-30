@@ -46,6 +46,6 @@ func maybeBlobstore() []string {
 	// Configure blobstore service
 	dataDir := filepath.Join(os.Getenv("DATA_DIR"), "blobstore")
 	SetDefaultEnv("JCLOUDS_FILESYSTEM_BASEDIR", dataDir)
-	procline := fmt.Sprintf(`blobstore: /opt/s3proxy/run-docker-container.sh >> /var/opt/sourcegraph/blobstore.log 2>&1`)
+	procline := `blobstore: /opt/s3proxy/run-docker-container.sh >> /var/opt/sourcegraph/blobstore.log 2>&1`
 	return []string{procline}
 }

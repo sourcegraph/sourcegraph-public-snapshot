@@ -57,7 +57,6 @@ func newS3FromConfig(ctx context.Context, config Config, operations *Operations)
 	return newS3WithClients(api, uploader, config.Bucket, config.ManageBucket, lifecycleConfiguration, canConfigureLifecycle, operations), nil
 }
 
-
 func newS3WithClients(client s3API, uploader s3Uploader, bucket string, manageBucket bool, lifecycleConfiguration *s3types.BucketLifecycleConfiguration, canConfigureLifecycle bool, operations *Operations) *s3Store {
 	return &s3Store{
 		bucket:                       bucket,
@@ -299,8 +298,8 @@ func (s *s3Store) ExpireObjects(ctx context.Context, prefix string, maxAge time.
 			if time.Since(*object.LastModified) >= maxAge {
 				toDelete = append(toDelete,
 					s3types.ObjectIdentifier{
-					Key: object.Key,
-				})
+						Key: object.Key,
+					})
 			}
 		}
 	}
