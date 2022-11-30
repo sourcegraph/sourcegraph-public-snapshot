@@ -80,8 +80,8 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 				switch match := match.(type) {
 				case *streamhttp.EventContentMatch:
 					count := 0
-					for _, lineMatch := range match.LineMatches {
-						count += len(lineMatch.OffsetAndLengths)
+					for _, chunkMatch := range match.ChunkMatches {
+						count += len(chunkMatch.Ranges)
 					}
 					tr.TotalCount += count
 					addCount(match.Repository, match.RepositoryID, count)
