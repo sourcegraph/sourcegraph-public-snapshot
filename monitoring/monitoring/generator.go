@@ -345,7 +345,7 @@ func renderMultiInstanceDashboard(dashboards []*Dashboard, groupings []string) (
 	board.Time.From = "now-6h"
 	board.Time.To = "now"
 	board.SharedCrosshair = true
-	// board.Editable = false
+	board.Editable = false
 
 	var variableMatchers []*labels.Matcher
 	for _, g := range groupings {
