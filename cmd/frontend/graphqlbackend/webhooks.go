@@ -50,6 +50,14 @@ type DeleteWebhookArgs struct {
 	ID graphql.ID
 }
 
+type UpdateWebhookArgs struct {
+	ID           graphql.ID
+	Name         *string
+	CodeHostKind *string
+	CodeHostURN  *string
+	Secret       *string
+}
+
 type ListWebhookArgs struct {
 	graphqlutil.ConnectionArgs
 	After *string
