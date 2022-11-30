@@ -18019,6 +18019,16 @@
       ],
       "Indexes": [
         {
+          "Name": "repo_versions_external_id",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX repo_versions_external_id ON repo_versions USING btree (repo_id, external_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "repo_versions_pkey",
           "IsPrimaryKey": true,
           "IsUnique": true,
@@ -18027,16 +18037,6 @@
           "IndexDefinition": "CREATE UNIQUE INDEX repo_versions_pkey ON repo_versions USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "repo_versions_external_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX repo_versions_external_id ON repo_versions USING btree (external_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [

@@ -82,6 +82,19 @@ type Repo struct {
 	KeyValuePairs map[string]*string `json:",omitempty"`
 }
 
+type RepoVersionPathCoverage struct {
+	PathColor int
+	PathIndex int
+}
+
+type RepoVersion struct {
+	ID           int
+	RepoID       api.RepoID
+	ExternalID   string
+	PathCoverage RepoVersionPathCoverage
+	Reachability map[int]int
+}
+
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results
 type SearchedRepo struct {
 	// ID is the unique numeric ID for this repository.

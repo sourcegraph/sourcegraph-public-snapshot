@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS repo_versions (
 );
 
 -- TODO should this possibly be just on external_id ?
-CREATE INDEX IF NOT EXISTS repo_versions_external_id ON repo_versions USING btree (external_id);
+CREATE UNIQUE INDEX IF NOT EXISTS repo_versions_external_id ON repo_versions USING btree (repo_id, external_id);
 
 CREATE TABLE IF NOT EXISTS repo_directories (
     id SERIAL PRIMARY KEY,

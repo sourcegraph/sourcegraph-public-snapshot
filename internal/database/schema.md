@@ -2814,7 +2814,7 @@ Indexes:
  created_at              | timestamp with time zone |           | not null | now()
 Indexes:
     "repo_versions_pkey" PRIMARY KEY, btree (id)
-    "repo_versions_external_id" btree (external_id)
+    "repo_versions_external_id" UNIQUE, btree (repo_id, external_id)
 Foreign-key constraints:
     "repo_versions_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:

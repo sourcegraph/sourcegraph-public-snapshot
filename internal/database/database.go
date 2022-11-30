@@ -38,6 +38,7 @@ type DB interface {
 	OrgStats() OrgStatsStore
 	Phabricator() PhabricatorStore
 	Repos() RepoStore
+	RepoVersions() RepoVersionsStore
 	RepoKVPs() RepoKVPStore
 	SavedSearches() SavedSearchStore
 	SearchContexts() SearchContextsStore
@@ -171,6 +172,10 @@ func (d *db) Phabricator() PhabricatorStore {
 
 func (d *db) Repos() RepoStore {
 	return ReposWith(d.logger, d.Store)
+}
+
+func (d *db) RepoVersions() RepoVersionsStore {
+	return RepoVersionsWith(d.logger, d.Store)
 }
 
 func (d *db) RepoKVPs() RepoKVPStore {

@@ -4681,7 +4681,7 @@ CREATE INDEX repo_stars_idx ON repo USING btree (stars DESC NULLS LAST);
 
 CREATE INDEX repo_uri_idx ON repo USING btree (uri);
 
-CREATE INDEX repo_versions_external_id ON repo_versions USING btree (external_id);
+CREATE UNIQUE INDEX repo_versions_external_id ON repo_versions USING btree (repo_id, external_id);
 
 CREATE UNIQUE INDEX search_contexts_name_namespace_org_id_unique ON search_contexts USING btree (name, namespace_org_id) WHERE (namespace_org_id IS NOT NULL);
 
