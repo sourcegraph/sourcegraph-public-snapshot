@@ -200,6 +200,8 @@ func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
 	return l.BulkInsert(ctx, []*Event{e})
 }
 
+const EventLogsSourcegraphOperatorKey = "sourcegraph_operator"
+
 func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	coalesce := func(v json.RawMessage) json.RawMessage {
 		if v != nil {
@@ -231,7 +233,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			result, err := jsonc.Edit(
 				string(publicArgument),
 				true,
-				"sourcegraph_operator",
+				EventLogsSourcegraphOperatorKey,
 			)
 			publicArgument = json.RawMessage(result)
 			if err != nil {
@@ -601,7 +603,7 @@ OR NOT(
 		}
 
 		if opt.ExcludeSourcegraphOperators {
-			conds = append(conds, sqlf.Sprintf(`NOT event_logs.public_argument @> '{"sourcegraph_operator": true}'`))
+			conds = append(conds, sqlf.Sprintf(fmt.Sprintf(`NOT event_logs.public_argument @> '{"%s": true}'`, EventLogsSourcegraphOperatorKey)))
 		}
 	}
 	return conds

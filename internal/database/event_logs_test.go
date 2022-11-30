@@ -233,11 +233,12 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	secondDay := startDate.Add(time.Hour * 24)
 	thirdDay := startDate.Add(time.Hour * 24 * 2)
 
+	soPublicArgument := json.RawMessage(fmt.Sprintf(`{"%s": true}`, EventLogsSourcegraphOperatorKey))
 	events := []*Event{
 		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: startDate}),
 		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: startDate}),
-		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: startDate, PublicArgument: json.RawMessage(`{"sourcegraph_operator": true}`)}),
-		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: startDate, PublicArgument: json.RawMessage(`{"sourcegraph_operator": true}`)}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: startDate, PublicArgument: soPublicArgument}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: startDate, PublicArgument: soPublicArgument}),
 		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: startDate}),
 		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: startDate}),
 
@@ -245,8 +246,8 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: secondDay}),
 		makeTestEvent(&Event{UserID: uint32(user2.ID), Timestamp: secondDay}),
 		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: secondDay}),
-		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: secondDay, PublicArgument: json.RawMessage(`{"sourcegraph_operator": true}`)}),
-		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: secondDay, PublicArgument: json.RawMessage(`{"sourcegraph_operator": true}`)}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: secondDay, PublicArgument: soPublicArgument}),
+		makeTestEvent(&Event{UserID: uint32(soLoganID), Timestamp: secondDay, PublicArgument: soPublicArgument}),
 
 		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: thirdDay}),
 		makeTestEvent(&Event{UserID: uint32(user2.ID), Timestamp: thirdDay}),
@@ -524,7 +525,7 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 						}
 
 						if userID == uint32(soLoganID) {
-							e.PublicArgument = json.RawMessage(`{"sourcegraph_operator": true}`)
+							e.PublicArgument = json.RawMessage(fmt.Sprintf(`{"%s": true}`, EventLogsSourcegraphOperatorKey))
 						}
 
 						err := db.EventLogs().Insert(ctx, e)
