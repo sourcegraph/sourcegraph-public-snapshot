@@ -69,6 +69,8 @@ export interface SearchResultsInfoBarProps
 
     sidebarCollapsed: boolean
     setSidebarCollapsed: (collapsed: boolean) => void
+
+    isSourcegraphDotCom: boolean
 }
 
 /**
@@ -167,18 +169,20 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             <div className={styles.row}>
                 {props.stats}
 
-                <CloudCtaBanner className="mb-5" variant="outlined">
-                    To search across your private repositories,{' '}
-                    <Link
-                        to="https://signup.sourcegraph.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => props.telemetryService.log('ClickedOnCloudCTA')}
-                    >
-                        try Sourcegraph Cloud
-                    </Link>
-                    .
-                </CloudCtaBanner>
+                {props.isSourcegraphDotCom && 
+                    <CloudCtaBanner className="mb-5" variant="outlined">
+                        To search across your private repositories,{' '}
+                        <Link
+                            to="https://signup.sourcegraph.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => props.telemetryService.log('ClickedOnCloudCTA')}
+                        >
+                            try Sourcegraph Cloud
+                        </Link>
+                        .
+                    </CloudCtaBanner>
+                }
 
                 <div className={styles.expander} />
 
