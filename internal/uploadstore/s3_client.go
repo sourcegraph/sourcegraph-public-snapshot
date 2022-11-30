@@ -284,6 +284,19 @@ func (s *s3Store) ExpireObjects(ctx context.Context, prefix string, maxAge time.
 	defer endObservation(1, observation.Args{})
 
 	var toDelete []s3types.ObjectIdentifier
+	flush := func() {
+		_, err = s.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+			Bucket: &s.bucket,
+			Delete: &s3types.Delete{
+				Objects: toDelete,
+			},
+		})
+		if err != nil {
+			log15.Error("Failed to delete objects in S3 bucket", "error", err, "bucket", s.bucket)
+			return // try again at next flush
+		}
+		toDelete = toDelete[:0]
+	}
 	paginator := s.client.NewListObjectsV2Paginator(&s3.ListObjectsV2Input{
 		Bucket: aws.String(s.bucket),
 		Prefix: aws.String(prefix),
@@ -300,16 +313,16 @@ func (s *s3Store) ExpireObjects(ctx context.Context, prefix string, maxAge time.
 					s3types.ObjectIdentifier{
 						Key: object.Key,
 					})
+				if len(toDelete) >= 1000 {
+					flush()
+				}
 			}
 		}
 	}
-	_, err = s.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
-		Bucket: &s.bucket,
-		Delete: &s3types.Delete{
-			Objects: toDelete,
-		},
-	})
-	return errors.Wrap(err, "failed to delete objects")
+	if len(toDelete) > 0 {
+		flush()
+	}
+	return nil
 }
 
 func (s *s3Store) create(ctx context.Context) error {
