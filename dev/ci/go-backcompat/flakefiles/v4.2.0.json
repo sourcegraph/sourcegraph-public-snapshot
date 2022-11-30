@@ -31,6 +31,11 @@
   },
   {
     "path": "internal/database",
+    "prefix": "TestWebhookLogStore",
+    "reason": "New NOT NULL `name` column is added. The test is trying to add an entry without populating this column."
+  },
+  {
+    "path": "internal/database",
     "prefix": "TestGetByID",
     "reason": "New NOT NULL `name` column is added. The test is trying to add an entry without populating this column."
   },
