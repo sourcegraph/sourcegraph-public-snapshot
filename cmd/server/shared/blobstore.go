@@ -9,7 +9,7 @@ import (
 
 func maybeBlobstore(logger sglog.Logger) []string {
 	if os.Getenv("DISABLE_BLOBSTORE") != "" {
-		logger.Warn("running with blobstore disabled"))
+		logger.Warn("running with blobstore disabled")
 		return []string{""}
 	}
 
