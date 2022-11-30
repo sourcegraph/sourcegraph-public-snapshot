@@ -905,6 +905,9 @@ func TestSearchContexts_OrderByWithDefaultAndStarred(t *testing.T) {
 
 	// Set user1 has a default search context of searchContexts[2]
 	err = sc.SetUserDefaultSearchContextID(internalCtx, user1.ID, searchContexts[2].ID)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Set user1 as a star for searchContexts[0] and searchContexts[3]
 	err = sc.CreateSearchContextStarForUser(internalCtx, user1.ID, searchContexts[0].ID)
