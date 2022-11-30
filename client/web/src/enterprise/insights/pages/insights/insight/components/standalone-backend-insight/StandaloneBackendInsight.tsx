@@ -46,7 +46,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const { telemetryService, insight, className } = props
     const history = useHistory()
     const { updateInsight } = useContext(CodeInsightsBackendContext)
-    const [saveNewView] = useSaveInsightAsNewView({ dashboard: null })
+    const [saveAsNewView] = useSaveInsightAsNewView({ dashboard: null })
 
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
@@ -119,7 +119,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     }
 
     const handleInsightFilterCreation = async (values: DrillDownInsightCreationFormValues): Promise<void> => {
-        await saveNewView({
+        await saveAsNewView({
             insight,
             filters,
             title: values.insightName,
@@ -127,7 +127,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         })
 
         setOriginalInsightFilters(filters)
-        history.push(`/insights/dashboard/${ALL_INSIGHTS_DASHBOARD.id}`)
+        history.push(`/insights/dashboards/${ALL_INSIGHTS_DASHBOARD.id}`)
         telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
     }
 
