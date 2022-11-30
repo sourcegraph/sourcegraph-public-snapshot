@@ -137,7 +137,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     )
 
     return (
-        <div className="site-admin-migrations-page">
+        <div className="site-admin-outbound-requests-page">
             <PageTitle title="Outbound requests - Admin" />
             <PageHeader
                 path={[{ text: 'Outbound requests' }]}
@@ -163,7 +163,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
                         noun="request"
                         pluralNoun="requests"
                         queryConnection={queryOutboundRequests}
-                        nodeComponent={MigrationNode}
+                        nodeComponent={OutboundRequestNode}
                         filters={filters}
                         history={history}
                         location={history.location}
@@ -182,7 +182,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     )
 }
 
-const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<OutboundRequest> }> = ({ node }) => {
+const OutboundRequestNode: React.FunctionComponent<{ node: React.PropsWithChildren<OutboundRequest> }> = ({ node }) => {
     const [copied, setCopied] = useState(false)
 
     const copyToClipboard = (text: string): void => {
