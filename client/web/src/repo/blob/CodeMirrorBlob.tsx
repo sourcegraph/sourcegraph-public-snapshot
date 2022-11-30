@@ -31,6 +31,7 @@ import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
+import { foldGutter, foldService } from '@codemirror/language'
 
 const staticExtensions: Extension = [
     EditorState.readOnly.of(true),
@@ -72,6 +73,35 @@ const staticExtensions: Extension = [
             backgroundColor: 'var(--code-selection-bg)',
         },
     }),
+    foldService.of(({ doc }, lineStart, lineEnd) => {
+        const startLine = doc.lineAt(lineStart)
+        const startIndentation = startLine.text.match(/^\s*/)?.[0] ?? ''
+        // console.log('foldService', startLine, startIndentation.length)
+
+        // @TODO: upper bound the lookeahead
+        let isFoldable = false
+        // return null
+        for (let lineNumber = startLine.number + 1; lineNumber < doc.lines; lineNumber++) {
+            const line = doc.line(lineNumber)
+
+            const indentation = line.text.match(/^\s*/)?.[0] ?? ''
+            // console.log(startLine.number, line.text)
+            // continue
+
+            // console.log(startLine.text, line.text)
+            // console.log(indentation.length, startIndentation.length)
+            if (indentation.length > startIndentation.length) {
+                isFoldable = true
+            } else if (isFoldable) {
+                // debugger
+                return { from: lineEnd, to: line.from + indentation.length }
+            } else {
+                return null
+            }
+        }
+        return null
+    }),
+    foldGutter(),
 ]
 
 // Compartments are used to reconfigure some parts of the editor without
