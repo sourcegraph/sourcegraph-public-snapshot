@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"math"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -34,6 +35,11 @@ type HttpHeaders struct {
 type outboundRequestConnectionResolver struct {
 	first *int32
 	after string
+
+	// cache results because they are used by multiple fields
+	once      sync.Once
+	resolvers []*OutboundRequestResolver
+	err       error
 }
 
 func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundRequestsArgs) (*outboundRequestConnectionResolver, error) {
@@ -75,29 +81,54 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 }
 
 func (r *outboundRequestConnectionResolver) Nodes(ctx context.Context) ([]*OutboundRequestResolver, error) {
-	requests, err := httpcli.GetOutboundRequestLogItems(ctx, r.first, r.after)
+	resolvers, err := r.compute(ctx)
+
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]*OutboundRequestResolver, 0, len(requests))
-	for _, item := range requests {
-		resolvers = append(resolvers, &OutboundRequestResolver{req: item})
+	if r.first != nil && *r.first > -1 && len(resolvers) > int(*r.first) {
+		resolvers = resolvers[:*r.first]
 	}
 
 	return resolvers, nil
 }
 
 func (r *outboundRequestConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	requests, err := httpcli.GetOutboundRequestLogItems(ctx, r.first, r.after)
+	resolvers, err := r.compute(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(len(requests)), nil
+	return int32(len(resolvers)), nil
 }
 
-func (r *outboundRequestConnectionResolver) PageInfo() (*graphqlutil.PageInfo, error) {
+func (r *outboundRequestConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	resolvers, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.first != nil && *r.first > -1 && len(resolvers) > int(*r.first) {
+		return graphqlutil.NextPageCursor(string(resolvers[*r.first-1].ID())), nil
+	}
 	return graphqlutil.HasNextPage(false), nil
+}
+
+func (r *outboundRequestConnectionResolver) compute(ctx context.Context) ([]*OutboundRequestResolver, error) {
+	r.once.Do(func() {
+		requests, err := httpcli.GetOutboundRequestLogItems(ctx, r.after)
+		if err != nil {
+			r.resolvers, r.err = nil, err
+		}
+
+		resolvers := make([]*OutboundRequestResolver, 0, len(requests))
+		for _, item := range requests {
+			resolvers = append(resolvers, &OutboundRequestResolver{req: item})
+		}
+
+		r.resolvers, r.err = resolvers, nil
+	})
+	return r.resolvers, r.err
 }
 
 func (r *OutboundRequestResolver) ID() graphql.ID {

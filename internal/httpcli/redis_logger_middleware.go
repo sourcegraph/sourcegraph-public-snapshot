@@ -116,12 +116,8 @@ func deleteExcessItems(c *rcache.Cache, limit int) error {
 
 // GetOutboundRequestLogItems returns all outbound request log items after the given key,
 // in ascending order, trimmed to maximum {limit} items. Example for `after`: "2021-01-01T00_00_00.000000".
-func GetOutboundRequestLogItems(ctx context.Context, first *int32, after string) ([]*types.OutboundRequestLogItem, error) {
-	// Take the min of first and OutboundRequestLogLimit()
+func GetOutboundRequestLogItems(ctx context.Context, after string) ([]*types.OutboundRequestLogItem, error) {
 	var limit = OutboundRequestLogLimit()
-	if first != nil && *first > -1 && limit > *first {
-		limit = *first
-	}
 
 	if limit == 0 {
 		return []*types.OutboundRequestLogItem{}, nil
