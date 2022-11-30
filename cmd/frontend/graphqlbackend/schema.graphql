@@ -1580,6 +1580,11 @@ type Query {
     """
     outboundRequests(
         """
+        Returns the first n log items. If omitted then it returns all of them.
+        """
+        first: Int
+
+        """
         Opaque pagination cursor.
         """
         after: String

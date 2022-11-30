@@ -14,6 +14,7 @@ import (
 )
 
 type outboundRequestsArgs struct {
+	First *int32
 	After *string
 }
 
@@ -31,6 +32,7 @@ type HttpHeaders struct {
 // 🚨 SECURITY: When instantiating an outboundRequestConnectionResolver value, the caller MUST check
 // permissions.
 type outboundRequestConnectionResolver struct {
+	first *int32
 	after string
 }
 
@@ -40,6 +42,7 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 		return nil, err
 	}
 
+	// Parse `after` argument
 	var after string
 	if args.After != nil {
 		err := relay.UnmarshalSpec(graphql.ID(*args.After), &after)
@@ -51,6 +54,7 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 	}
 
 	return &outboundRequestConnectionResolver{
+		first: args.First,
 		after: after,
 	}, nil
 }
@@ -71,7 +75,7 @@ func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID)
 }
 
 func (r *outboundRequestConnectionResolver) Nodes(ctx context.Context) ([]*OutboundRequestResolver, error) {
-	requests, err := httpcli.GetAllOutboundRequestLogItemsAfter(ctx, r.after)
+	requests, err := httpcli.GetOutboundRequestLogItems(ctx, r.first, r.after)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +89,7 @@ func (r *outboundRequestConnectionResolver) Nodes(ctx context.Context) ([]*Outbo
 }
 
 func (r *outboundRequestConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	requests, err := httpcli.GetAllOutboundRequestLogItemsAfter(ctx, r.after)
+	requests, err := httpcli.GetOutboundRequestLogItems(ctx, r.first, r.after)
 	if err != nil {
 		return 0, err
 	}
