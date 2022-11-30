@@ -52,12 +52,7 @@ class BlameDecorationWidget extends WidgetType {
     private reactRoot: Root | null = null
     private state: { history: History }
 
-    constructor(
-        public view: EditorView,
-        public readonly hunk: BlameHunk | undefined,
-        public readonly line: number,
-        public readonly isFirstInHunk: boolean
-    ) {
+    constructor(public view: EditorView, public readonly hunk: BlameHunk | undefined, public readonly line: number) {
         super()
         this.state = { history: this.view.state.facet(blobPropsFacet).history }
     }
@@ -75,8 +70,7 @@ class BlameDecorationWidget extends WidgetType {
             this.reactRoot = createRoot(this.container)
             this.reactRoot.render(
                 <BlameDecoration
-                    line={this.hunk?.startLine ?? 0}
-                    isFirstInHunk={this.isFirstInHunk}
+                    line={this.line ?? 0}
                     blameHunk={this.hunk}
                     history={this.state.history}
                     onSelect={this.selectRow}

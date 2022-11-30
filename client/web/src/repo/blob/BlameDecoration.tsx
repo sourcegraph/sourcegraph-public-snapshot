@@ -110,17 +110,17 @@ const usePopover = ({
 export const BlameDecoration: React.FunctionComponent<{
     line: number // 1-based line number
     blameHunk?: BlameHunk
-    isFirstInHunk: boolean
     history: History
     onSelect?: (line: number) => void
     onDeselect?: (line: number) => void
-}> = ({ line, blameHunk, isFirstInHunk, history, onSelect, onDeselect }) => {
-    const id = line?.toString() || ''
+}> = ({ line, blameHunk, history, onSelect, onDeselect }) => {
+    const hunkStartLine = blameHunk?.startLine ?? line
+    const id = hunkStartLine?.toString() || ''
     const onOpen = useCallback(() => {
-        onSelect?.(line)
+        onSelect?.(hunkStartLine)
         eventLogger.log('GitBlamePopupViewed')
-    }, [onSelect, line])
-    const onClose = useCallback(() => onDeselect?.(line), [onDeselect, line])
+    }, [onSelect, hunkStartLine])
+    const onClose = useCallback(() => onDeselect?.(hunkStartLine), [onDeselect, hunkStartLine])
     const { isOpen, open, close, closeWithTimeout, openWithTimeout } = usePopover({
         id,
         timeout: 250,
@@ -136,18 +136,20 @@ export const BlameDecoration: React.FunctionComponent<{
     // Prevent hitting the backend (full page reloads) for links that stay inside the app.
     const handleParentCommitLinkClick = useMemo(() => createLinkClickHandler(history), [history])
 
-    const recencyColor = useBlameRecencyColor(blameHunk?.displayInfo.commitDate)
-    console.log({ recencyColor })
+    const recencyColor = useBlameRecencyColor(blameHunk?.displayInfo.commitDate, undefined)
 
     if (!blameHunk) {
         return null
     }
     const displayInfo = blameHunk.displayInfo
 
+    const isFirstInHunk = blameHunk?.startLine === line ?? false
+    const isLastInHunk = blameHunk?.endLine - 1 === line ?? false
+
     return (
         <div className={classNames(styles.blame)}>
             <div
-                className={classNames(styles.recency)}
+                className={classNames(styles.recency, isLastInHunk ? styles.recencyLastInHunk : null)}
                 // eslint-disable-next-line react/forbid-dom-props
                 style={{ backgroundColor: recencyColor }}
             />

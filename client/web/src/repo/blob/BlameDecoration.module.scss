@@ -13,6 +13,10 @@
     flex: 0 0 5px;
 }
 
+.recency-last-in-hunk {
+    height: calc(1.5rem - 1px);
+}
+
 .popover {
     &-trigger {
         overflow: hidden;
