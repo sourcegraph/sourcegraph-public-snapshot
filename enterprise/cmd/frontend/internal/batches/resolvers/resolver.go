@@ -1899,6 +1899,10 @@ func (r *Resolver) batchSpecWorkspaceFileByID(ctx context.Context, gqlID graphql
 		return nil, err
 	}
 
+	if batchWorkspaceFileRandID == "" {
+		return nil, nil
+	}
+
 	file, err := r.store.GetBatchSpecWorkspaceFile(ctx, store.GetBatchSpecWorkspaceFileOpts{RandID: batchWorkspaceFileRandID})
 	if err != nil {
 		if err == store.ErrNoResults {
