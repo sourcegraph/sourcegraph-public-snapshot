@@ -200,7 +200,7 @@ func (s *store) GetDumpsWithDefinitionsForMonikers(ctx context.Context, monikers
 
 	qs := make([]*sqlf.Query, 0, len(monikers))
 	for _, moniker := range monikers {
-		qs = append(qs, sqlf.Sprintf("(%s, %s, %s)", moniker.Scheme, moniker.Name, moniker.Version))
+		qs = append(qs, sqlf.Sprintf("(%s, %s, %s, %s)", moniker.Scheme, moniker.Manager, moniker.Name, moniker.Version))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
@@ -234,7 +234,7 @@ ranked_uploads AS (
 	WHERE
 		-- Don't match deleted uploads
 		u.state = 'completed' AND
-		(p.scheme, p.name, p.version) IN (%s) AND
+		(p.scheme, p.manager, p.name, p.version) IN (%s) AND
 		%s -- authz conds
 ),
 canonical_uploads AS (
