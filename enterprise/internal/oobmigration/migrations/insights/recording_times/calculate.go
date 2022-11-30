@@ -1,4 +1,4 @@
-package insights
+package recording_times
 
 import (
 	"sort"
