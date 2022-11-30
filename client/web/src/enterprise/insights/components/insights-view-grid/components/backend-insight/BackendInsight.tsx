@@ -14,16 +14,11 @@ import {
     GetInsightViewVariables,
 } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
-import {
-    BackendInsight,
-    BackendInsightData,
-    CodeInsightsBackendContext,
-    InsightFilters,
-    isVirtualDashboard,
-} from '../../../../core'
+import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
+import { useSaveInsightAsNewView } from '../../../../core/hooks/use-save-insight-as-new-view'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
 import { useVisibility } from '../../hooks/use-insight-data'
@@ -39,7 +34,6 @@ import {
 } from './components'
 
 import styles from './BackendInsight.module.scss'
-import { useSaveInsightAsNewView } from '../../../../core/hooks/use-save-insight-as-new-view'
 
 interface BackendInsightProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
     insight: BackendInsight
@@ -51,7 +45,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
 
     const { currentDashboard, dashboards } = useContext(InsightContext)
     const { updateInsight } = useContext(CodeInsightsBackendContext)
-    const [saveNewView] = useSaveInsightAsNewView()
+    const [saveNewView] = useSaveInsightAsNewView({ dashboard: currentDashboard })
 
     const cardElementRef = useMergeRefs([ref])
     const { wasEverVisible, isVisible } = useVisibility(cardElementRef)
@@ -141,7 +135,7 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
             insight,
             filters,
             title: insightName,
-            dashboard: !currentDashboard.id || isVirtualDashboard(currentDashboard) ? null : currentDashboard.id,
+            dashboard: currentDashboard,
         })
 
         telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')

@@ -3,7 +3,8 @@ import { FetchResult, gql, useMutation } from '@apollo/client'
 import { SaveInsightAsNewViewResult, SaveInsightAsNewViewVariables } from '../../../../graphql-operations'
 import { parseSeriesDisplayOptions } from '../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
 import { INSIGHT_VIEW_FRAGMENT } from '../backend/gql-backend/gql/GetInsights'
-import { BackendInsight, InsightFilters } from '../types'
+import { searchInsightCreationOptimisticUpdate } from '../backend/gql-backend/methods/create-insight/create-insight'
+import { BackendInsight, InsightDashboard, InsightFilters, isVirtualDashboard } from '../types'
 
 export const SAVE_INSIGHT_AS_NEW_VIEW_GQL = gql`
     mutation SaveInsightAsNewView($input: InsightNewViewInput!) {
@@ -31,7 +32,7 @@ export function getSaveInsightAsNewViewGqlInput(input: saveNewInsightViewVariabl
                     includeRepoRegex: filters.includeRepoRegexp,
                 },
             },
-            dashboard,
+            dashboard: dashboard ? (isVirtualDashboard(dashboard) ? null : dashboard.id) : null,
         },
     }
 }
@@ -40,16 +41,37 @@ interface saveNewInsightViewVariables {
     insight: BackendInsight
     filters: InsightFilters
     title: string
-    dashboard: string | null
+    dashboard: InsightDashboard | null
 }
 
-type useSaveInsightAsNewViewTuple = [
+interface useSaveInsightAsNewViewProps {
+    /**
+     * Dashboard in which we should include newly created insight optimistically after
+     * it's created via save as new insight mutation.
+     */
+    dashboard: InsightDashboard | null
+}
+
+type UseSaveInsightAsNewViewResultTuple = [
     (variables: saveNewInsightViewVariables) => Promise<FetchResult<SaveInsightAsNewViewResult>>
 ]
 
-export function useSaveInsightAsNewView(): useSaveInsightAsNewViewTuple {
+export function useSaveInsightAsNewView(props: useSaveInsightAsNewViewProps): UseSaveInsightAsNewViewResultTuple {
+    const { dashboard } = props
+
     const [saveInsightAsNewView] = useMutation<SaveInsightAsNewViewResult, SaveInsightAsNewViewVariables>(
-        SAVE_INSIGHT_AS_NEW_VIEW_GQL
+        SAVE_INSIGHT_AS_NEW_VIEW_GQL,
+        {
+            update: (cache, result) => {
+                const { data } = result
+
+                if (!data) {
+                    return
+                }
+
+                searchInsightCreationOptimisticUpdate(cache, data.saveInsightAsNewView.view, dashboard)
+            },
+        }
     )
 
     return [

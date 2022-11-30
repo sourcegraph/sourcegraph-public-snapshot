@@ -31,11 +31,11 @@ import { BackendInsightData, BackendInsight, CodeInsightsBackendContext, Insight
 import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../../core/backend/gql-backend/utils/insight-polling'
+import { useSaveInsightAsNewView } from '../../../../../core/hooks/use-save-insight-as-new-view'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../../pings'
 import { StandaloneInsightContextMenu } from '../context-menu/StandaloneInsightContextMenu'
 
 import styles from './StandaloneBackendInsight.module.scss'
-import { useSaveInsightAsNewView } from '../../../../../core/hooks/use-save-insight-as-new-view'
 
 interface StandaloneBackendInsight extends TelemetryProps {
     insight: BackendInsight
@@ -46,7 +46,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const { telemetryService, insight, className } = props
     const history = useHistory()
     const { updateInsight } = useContext(CodeInsightsBackendContext)
-    const [saveNewView] = useSaveInsightAsNewView()
+    const [saveNewView] = useSaveInsightAsNewView({ dashboard: null })
 
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
