@@ -173,7 +173,7 @@ func (s *gcsStore) ExpireObjects(ctx context.Context, prefix string, maxAge time
 	for {
 		objAttrs, err := it.Next()
 		if err != nil && err != iterator.Done {
-			log15.Warn("Failed to iterate GCS bucket", "error", err)
+			log15.Error("Failed to iterate GCS bucket", "error", err)
 			break // we'll try again later
 		}
 		if err == iterator.Done {
@@ -182,7 +182,7 @@ func (s *gcsStore) ExpireObjects(ctx context.Context, prefix string, maxAge time
 
 		if time.Since(objAttrs.Created) >= maxAge {
 			if err := bucket.Object(objAttrs.Name).Delete(ctx); err != nil {
-				log15.Warn("Failed to delete expired GCS object", "error", err, "bucket", s.bucket, "object", objAttrs.Name)
+				log15.Error("Failed to delete expired GCS object", "error", err, "bucket", s.bucket, "object", objAttrs.Name)
 				continue
 			}
 		}

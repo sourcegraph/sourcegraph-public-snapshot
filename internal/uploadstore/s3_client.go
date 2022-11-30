@@ -291,7 +291,7 @@ func (s *s3Store) ExpireObjects(ctx context.Context, prefix string, maxAge time.
 	for paginator.HasMorePages() {
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
-			log15.Warn("Failed to paginate S3 bucket", "error", err)
+			log15.Error("Failed to paginate S3 bucket", "error", err)
 			break // we'll try again later
 		}
 		for _, object := range page.Contents {
