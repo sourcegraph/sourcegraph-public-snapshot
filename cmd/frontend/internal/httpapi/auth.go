@@ -86,10 +86,7 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 						log.Error(err),
 					)
 
-					anonymousId, anonCookieSet := cookie.AnonymousUID(r)
-					if !anonCookieSet {
-						anonymousId = "no identifier set"
-					}
+					anonymousId, _ := cookie.AnonymousUID(r)
 					db.SecurityEventLogs().LogEvent(
 						r.Context(),
 						&database.SecurityEvent{
