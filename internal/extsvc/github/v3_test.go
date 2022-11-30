@@ -957,3 +957,16 @@ func TestSyncWebhook_webhookURLBuilderWithID(t *testing.T) {
 		})
 	}
 }
+
+func TestResponseHasNextPage(t *testing.T) {
+	headers := http.Header{}
+	headers.Add("Link", `<https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=2&per_page=100&affiliation=direct>; rel="next", <https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=8&per_page=100&affiliation=direct>; rel="last"`)
+	responseState := httpResponseState{
+		statusCode: 200,
+		headers:    headers,
+	}
+
+	if responseHasNextPage(&responseState) != true {
+		t.Fatal("expected true, got false")
+	}
+}
