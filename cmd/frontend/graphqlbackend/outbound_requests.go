@@ -14,7 +14,7 @@ import (
 )
 
 type outboundRequestsArgs struct {
-	After *graphql.ID
+	After *string
 }
 
 type OutboundRequestResolver struct {
@@ -42,7 +42,7 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 
 	var after string
 	if args.After != nil {
-		err := relay.UnmarshalSpec(*args.After, &after)
+		err := relay.UnmarshalSpec(graphql.ID(*args.After), &after)
 		if err != nil {
 			return nil, err
 		}

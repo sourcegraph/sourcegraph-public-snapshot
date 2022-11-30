@@ -1580,9 +1580,9 @@ type Query {
     """
     outboundRequests(
         """
-        An opaque cursor that is used for pagination.
+        Opaque pagination cursor.
         """
-        after: ID
+        after: String
     ): OutboundRequestConnection!
 
     """
