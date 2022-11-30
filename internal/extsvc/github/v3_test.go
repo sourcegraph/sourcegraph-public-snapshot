@@ -959,14 +959,41 @@ func TestSyncWebhook_webhookURLBuilderWithID(t *testing.T) {
 }
 
 func TestResponseHasNextPage(t *testing.T) {
-	headers := http.Header{}
-	headers.Add("Link", `<https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=2&per_page=100&affiliation=direct>; rel="next", <https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=8&per_page=100&affiliation=direct>; rel="last"`)
-	responseState := httpResponseState{
-		statusCode: 200,
-		headers:    headers,
-	}
+	t.Run("has next page", func(t *testing.T) {
+		headers := http.Header{}
+		headers.Add("Link", `<https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=2&per_page=100&affiliation=direct>; rel="next", <https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=8&per_page=100&affiliation=direct>; rel="last"`)
+		responseState := httpResponseState{
+			statusCode: 200,
+			headers:    headers,
+		}
 
-	if responseHasNextPage(&responseState) != true {
-		t.Fatal("expected true, got false")
-	}
+		if responseHasNextPage(&responseState) != true {
+			t.Fatal("expected true, got false")
+		}
+	})
+
+	t.Run("does not have next page", func(t *testing.T) {
+		headers := http.Header{}
+		headers.Add("Link", `<https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=2&per_page=100&affiliation=direct>; rel="prev", <https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=1&per_page=100&affiliation=direct>; rel="first"`)
+		responseState := httpResponseState{
+			statusCode: 200,
+			headers:    headers,
+		}
+
+		if responseHasNextPage(&responseState) != false {
+			t.Fatal("expected false, got true")
+		}
+	})
+
+	t.Run("no header returns false", func(t *testing.T) {
+		headers := http.Header{}
+		responseState := httpResponseState{
+			statusCode: 200,
+			headers:    headers,
+		}
+
+		if responseHasNextPage(&responseState) != false {
+			t.Fatal("expected false, got true")
+		}
+	})
 }

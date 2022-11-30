@@ -908,9 +908,9 @@ func webhookURLBuilderWithID(repoName string, hookID int) (string, error) {
 // URL tagged with rel="next".
 // If this header is not present, it also means there is only one page.
 func responseHasNextPage(responseState *httpResponseState) bool {
-    if responseState == nil {
-        return false
-    }
+	if responseState == nil {
+		return false
+	}
 
 	return strings.Contains(responseState.headers.Get("Link"), "rel=\"next\"")
 }
