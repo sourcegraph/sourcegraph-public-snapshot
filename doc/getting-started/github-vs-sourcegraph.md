@@ -291,7 +291,7 @@ GitHub only returns the first 10 pages of search results. You cannot currently g
 
 Sourcegraph can retrieve all search results. By default, Sourcegraph returns 500 search results, but this number can be increased by increasing the ‘count’ value. Sourcegraph can display a maximum of 1,500 results, but all matches can be fetched using the [src CLI](https://docs.sourcegraph.com/cli/quickstart), the [Stream API](https://docs.sourcegraph.com/api/stream_api), or [GraphQL API](https://docs.sourcegraph.com/api/graphql). You can also export the results via CSV. 
 
-Souregraph's Smart Search is a query assistant that activies when a search returns no results. It helps you find search results by trying slight variations of your original query when a search shows "no reuslts," and the alternative results are shown automatically once Smart Search is enabled. 
+Souregraph's Smart Search is a query assistant that activates when a search returns no results. It helps you find search results by trying slight variations of your original query when a search shows "no results," and the alternative results are shown automatically once Smart Search is enabled. 
 
 GitHub code search includes suggestions, completions, and the ability to save your searches. Sourcegraph offers suggestions through search query examples and [saved searches](https://docs.sourcegraph.com/code_search/how-to/saved_searches#creating-saved-searches). 
 
