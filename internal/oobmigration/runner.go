@@ -56,7 +56,7 @@ func newRunner(store storeIface, refreshTicker glock.Ticker, observationContext 
 
 	return &Runner{
 		store:         store,
-		logger:        log.Scoped("oobmigration", ""),
+		logger:        observationContext.Logger.Scoped("oobmigration", ""),
 		refreshTicker: refreshTicker,
 		operations:    newOperations(observationContext),
 		migrators:     map[int]migratorAndOption{},
