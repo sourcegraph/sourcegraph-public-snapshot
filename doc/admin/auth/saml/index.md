@@ -154,7 +154,8 @@ See [SAML troubleshooting](#troubleshooting) for more tips.
 
 ### Updating user emails
 
-Whe SAML authentication is enabled and a user email registered on the IdP is updated, Sourcegraph doesn’t apply that change on its side. In consequence, site admins have to update the user email.
+Whe SAML authentication is enabled and a user email registered on the IdP is updated, Sourcegraph doesn’t apply that change on its side. In consequence, site admins have to update the user email to make sure they
+can continue signing in to Sourcegraph.
 To do that, go to the "Site admin" area, navigate to the "Users" page and:
 
 - click the username whose email needs to be updated
