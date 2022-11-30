@@ -5,9 +5,13 @@
 }
 
 .filters-form {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+
     @media (--xs-breakpoint-down) {
         display: flex;
         flex-direction: column;
+        gap: 1rem;
     }
 }
 

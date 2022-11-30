@@ -534,6 +534,7 @@ export class FilteredConnection<
                     <ConnectionForm
                         ref={this.setFilterRef}
                         hideSearch={this.props.hideSearch}
+                        showSearchFirst={this.props.showSearchFirst}
                         inputClassName={this.props.inputClassName}
                         inputPlaceholder={inputPlaceholder}
                         inputAriaLabel={this.props.inputAriaLabel || inputPlaceholder}
