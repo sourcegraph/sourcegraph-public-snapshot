@@ -30,7 +30,7 @@ type Config struct {
 
 func (c *Config) Load() {
 	// TODO(blobstore): default to blobstore here
-	c.Backend = strings.ToLower(c.Get("PRECISE_CODE_INTEL_UPLOAD_BACKEND", "Minio", "The target file service for code intelligence uploads. S3, GCS, Minio, and Blobstore are supported."))
+	c.Backend = strings.ToLower(c.Get("PRECISE_CODE_INTEL_UPLOAD_BACKEND", "MinIO", "The target file service for code intelligence uploads. S3, GCS, Minio, and Blobstore are supported."))
 	c.ManageBucket = c.GetBool("PRECISE_CODE_INTEL_UPLOAD_MANAGE_BUCKET", "false", "Whether or not the client should manage the target bucket configuration.")
 	c.Bucket = c.Get("PRECISE_CODE_INTEL_UPLOAD_BUCKET", "lsif-uploads", "The name of the bucket to store LSIF uploads in.")
 	c.TTL = c.GetInterval("PRECISE_CODE_INTEL_UPLOAD_TTL", "168h", "The maximum age of an upload before deletion.")
