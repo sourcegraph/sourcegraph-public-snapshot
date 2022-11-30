@@ -340,6 +340,13 @@ func renderMultiInstanceDashboard(dashboards []*Dashboard, groupings []string) (
 	board := sdk.NewBoard("Multi-instance overviews")
 	board.AddTags("builtin")
 
+	board.Timezone = "utc"
+	board.Timepicker.RefreshIntervals = []string{"5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"}
+	board.Time.From = "now-6h"
+	board.Time.To = "now"
+	board.SharedCrosshair = true
+	board.Editable = false
+
 	// TODO generate variables
 	// board.Templating.List = append(board.Templating.List, grafanasdk.TemplateVar{
 	// 	Name: "instance", // or project, or use grouping
@@ -359,6 +366,7 @@ func renderMultiInstanceDashboard(dashboards []*Dashboard, groupings []string) (
 					// do it once per dashboard
 					addDashboardRow.Do(func() {
 						row = board.AddRow(d.Title)
+						row.ShowTitle = true
 					})
 
 					// TODO make this size correctly in this context and output a valid
