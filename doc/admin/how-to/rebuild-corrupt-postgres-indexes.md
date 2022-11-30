@@ -51,7 +51,7 @@ reindex (verbose) database sg;
 ```
 
 
-In docker, you can go ahead and try to fix the indexes while the server is running. It is not required to stop the single server image.
+In docker, you can fix the indexes while the server is running. It is not required to stop the single server image.
 The only risk here is that connections and every other process might be slow.
 
 Using the following commands you can re-index  the database: 
