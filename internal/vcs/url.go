@@ -19,6 +19,7 @@ package vcs
 import (
 	"fmt"
 	"net/url"
+	"path"
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -153,6 +154,49 @@ const (
 	formatRsync
 	formatLocal
 )
+
+// JoinPath returns a new URL with the provided path elements joined to
+// any existing path and the resulting path cleaned of any ./ or ../ elements.
+// Any sequences of multiple / characters will be reduced to a single /.
+func (u *URL) JoinPath(elem ...string) *URL {
+	// Until our minimum version is go1.19 we copy-pasta the implementation of
+	// URL.JoinPath
+
+	// START copy from go stdlib URL.JoinPath
+	elem = append([]string{u.EscapedPath()}, elem...)
+	var p string
+	if !strings.HasPrefix(elem[0], "/") {
+		// Return a relative path if u is relative,
+		// but ensure that it contains no ../ elements.
+		elem[0] = "/" + elem[0]
+		p = path.Join(elem...)[1:]
+	} else {
+		p = path.Join(elem...)
+	}
+	// path.Join will remove any trailing slashes.
+	// Preserve at least one.
+	if strings.HasSuffix(elem[len(elem)-1], "/") && !strings.HasSuffix(p, "/") {
+		p += "/"
+	}
+	// END copy from go stdlib URL.JoinPath
+
+	// We don't have access to URL.setPath, so we work around it by parsing
+	// the URL as a path. This is extremely ugly hacks, but it makes the
+	// stdlib tests from go1.19 pass.
+	up, err := url.Parse("file:///" + p)
+	if err != nil {
+		u2 := *u
+		u2.Path = p
+		u2.RawPath = ""
+		return &u2
+	}
+
+	u2 := *u
+	u2.Path = strings.TrimPrefix(up.Path, "/")
+	u2.RawPath = strings.TrimPrefix(up.RawPath, "/")
+
+	return &u2
+}
 
 // String will return standard url.URL.String() if the url has a .Scheme set, but if
 // not it will produce an rsync format URL, eg `git@foo.com:foo/bar.git`

@@ -4,7 +4,7 @@ import { SpanExporter, ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
 import { logger } from '@sourcegraph/common'
 
-import { parseAttributes } from '../sdk/pareAttributes'
+import { parseAttributes } from '../sdk/parseAttributes'
 
 interface FormattedSpan {
     name?: string

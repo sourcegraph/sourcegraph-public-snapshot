@@ -2,6 +2,7 @@ import React from 'react'
 
 import { useLocation } from 'react-router'
 
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LayoutRouteComponentProps } from '../routes'
@@ -21,5 +22,13 @@ export const SearchPageWrapper: React.FunctionComponent<
     const location = useLocation()
     const hasSearchQuery = parseSearchURLQuery(location.search)
 
-    return hasSearchQuery ? <StreamingSearchResults {...props} /> : <SearchPage {...props} />
+    return hasSearchQuery ? (
+        <TraceSpanProvider name="StreamingSearchResults">
+            <StreamingSearchResults {...props} />
+        </TraceSpanProvider>
+    ) : (
+        <TraceSpanProvider name="SearchPage">
+            <SearchPage {...props} />
+        </TraceSpanProvider>
+    )
 }

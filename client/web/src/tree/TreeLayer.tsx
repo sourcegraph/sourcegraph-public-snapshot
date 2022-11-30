@@ -332,7 +332,6 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                 linkRowClick={this.linkRowClick}
                                 isActive={isActive}
                                 isSelected={isSelected}
-                                location={this.props.location}
                                 enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
                             />
                         )}

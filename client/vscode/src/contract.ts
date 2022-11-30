@@ -25,9 +25,9 @@ export interface ExtensionCoreAPI {
     getAuthenticatedUser: () => ProxySubscribable<AuthenticatedUser | null>
     /** Endpoint settings */
     getInstanceURL: () => ProxySubscribable<string>
-    getAccessToken: string | undefined
-    setAccessToken: (accessToken: string) => void
-    setEndpointUri: (uri: string, accessToken?: string) => void
+    getAccessToken: Promise<string | undefined>
+    removeAccessToken: () => Promise<void>
+    setEndpointUri: (accessToken: string, uri: string) => Promise<void>
     /**
      * Observe search box query state.
      * Used to send current query from panel to sidebar.
@@ -42,9 +42,9 @@ export interface ExtensionCoreAPI {
     observeState: () => ProxySubscribable<VSCEState>
     emit: VSCEStateMachine['emit']
     /** Opens a remote file given a serialized SourcegraphUri */
-    openSourcegraphFile: (uri: string) => void
-    openLink: (uri: string) => void
-    copyLink: (uri: string) => void
+    openSourcegraphFile: (uri: string) => Promise<void>
+    openLink: (uri: string) => Promise<void>
+    copyLink: (uri: string) => Promise<void>
     reloadWindow: () => void
     focusSearchPanel: () => void
     /** Cancels previous search when called. */

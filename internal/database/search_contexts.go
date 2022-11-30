@@ -402,9 +402,9 @@ func createSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		searchContext.Name,
 		searchContext.Description,
 		searchContext.Public,
-		nullInt32Column(searchContext.NamespaceUserID),
-		nullInt32Column(searchContext.NamespaceOrgID),
-		nullStringColumn(searchContext.Query),
+		dbutil.NullInt32Column(searchContext.NamespaceUserID),
+		dbutil.NullInt32Column(searchContext.NamespaceOrgID),
+		dbutil.NullStringColumn(searchContext.Query),
 	)
 	_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -423,7 +423,7 @@ func updateSearchContext(ctx context.Context, s SearchContextsStore, searchConte
 		searchContext.Name,
 		searchContext.Description,
 		searchContext.Public,
-		nullStringColumn(searchContext.Query),
+		dbutil.NullStringColumn(searchContext.Query),
 		searchContext.ID,
 	)
 	_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
@@ -473,7 +473,6 @@ func scanSearchContexts(rows *sql.Rows) ([]*types.SearchContext, error) {
 }
 
 var getSearchContextRepositoryRevisionsFmtStr = `
--- source:internal/database/search_contexts.go:GetSearchContextRepositoryRevisions
 SELECT
 	sc.repo_id,
 	sc.revision,
@@ -547,7 +546,6 @@ func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 }
 
 var getAllRevisionsForReposFmtStr = `
--- source:internal/database/search_contexts.go:GetAllRevisionsForRepos
 SELECT DISTINCT
 	scr.repo_id,
 	scr.revision

@@ -8,6 +8,7 @@ on:
 
 jobs:
   resources-report:
+    if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2

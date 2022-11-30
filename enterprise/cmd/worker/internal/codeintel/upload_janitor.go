@@ -3,22 +3,17 @@ package codeintel
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type uploadJanitorJob struct{}
@@ -33,44 +28,28 @@ func (j *uploadJanitorJob) Description() string {
 
 func (j *uploadJanitorJob) Config() []env.Config {
 	return []env.Config{
-		cleanup.ConfigInst,
+		uploads.ConfigJanitorInst,
 	}
 }
 
 func (j *uploadJanitorJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("routines", "codeintel job routines"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	metrics := cleanup.NewMetrics(observationContext)
-
-	// Initialize stores
-	rawDB, err := workerdb.Init()
+	services, err := codeintel.InitServices()
 	if err != nil {
 		return nil, err
 	}
-	db := database.NewDB(logger, rawDB)
 
-	rawCodeIntelDB, err := codeintel.InitCodeIntelDatabase()
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
-	codeIntelDB := database.NewDB(logger, rawCodeIntelDB)
 
-	// Initialize clients
-	gitserverClient, err := codeintel.InitGitserverClient()
-	if err != nil {
-		return nil, err
-	}
-	repoUpdaterClient := codeintel.InitRepoUpdaterClient()
+	gitserverClient := gitserver.New(db, observation.ScopedContext("codeintel", "janitor", "gitserver"))
 
-	// Initialize services
-	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
-	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdaterClient)
-	resetters := cleanup.NewResetters(uploadSvc, logger, observationContext)
-
-	return append([]goroutine.BackgroundRoutine{
-		cleanup.NewJanitor(db, uploadSvc, autoindexingSvc, observationContext.Logger, metrics),
-	}, resetters...), nil
+	return append(
+		uploads.NewJanitor(services.UploadsService, gitserverClient, observation.ContextWithLogger(logger)),
+		append(
+			uploads.NewReconciler(services.UploadsService, observation.ContextWithLogger(logger)),
+			uploads.NewResetters(db, observation.ContextWithLogger(logger))...,
+		)...,
+	), nil
 }

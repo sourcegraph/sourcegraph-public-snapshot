@@ -69,7 +69,6 @@ func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err e
 }
 
 var createBatchSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:CreateBatchSpec
 INSERT INTO batch_specs (%s)
 VALUES ` + batchSpecInsertColsFmt + `
 RETURNING %s`
@@ -100,14 +99,14 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.RandID,
 		c.RawSpec,
 		spec,
-		nullInt32Column(c.NamespaceUserID),
-		nullInt32Column(c.NamespaceOrgID),
-		nullInt32Column(c.UserID),
+		dbutil.NullInt32Column(c.NamespaceUserID),
+		dbutil.NullInt32Column(c.NamespaceOrgID),
+		dbutil.NullInt32Column(c.UserID),
 		c.CreatedFromRaw,
 		c.AllowUnsupported,
 		c.AllowIgnored,
 		c.NoCache,
-		nullInt64Column(c.BatchChangeID),
+		dbutil.NullInt64Column(c.BatchChangeID),
 		c.CreatedAt,
 		c.UpdatedAt,
 		sqlf.Join(batchSpecColumns, ", "),
@@ -132,7 +131,6 @@ func (s *Store) UpdateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err e
 }
 
 var updateBatchSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:UpdateBatchSpec
 UPDATE batch_specs
 SET (%s) = ` + batchSpecInsertColsFmt + `
 WHERE id = %s
@@ -152,14 +150,14 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.RandID,
 		c.RawSpec,
 		spec,
-		nullInt32Column(c.NamespaceUserID),
-		nullInt32Column(c.NamespaceOrgID),
-		nullInt32Column(c.UserID),
+		dbutil.NullInt32Column(c.NamespaceUserID),
+		dbutil.NullInt32Column(c.NamespaceOrgID),
+		dbutil.NullInt32Column(c.UserID),
 		c.CreatedFromRaw,
 		c.AllowUnsupported,
 		c.AllowIgnored,
 		c.NoCache,
-		nullInt64Column(c.BatchChangeID),
+		dbutil.NullInt64Column(c.BatchChangeID),
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
@@ -178,7 +176,6 @@ func (s *Store) DeleteBatchSpec(ctx context.Context, id int64) (err error) {
 }
 
 var deleteBatchSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:DeleteBatchSpec
 DELETE FROM batch_specs WHERE id = %s
 `
 
@@ -189,6 +186,7 @@ type CountBatchSpecsOpts struct {
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
 	IncludeLocallyExecutedSpecs         bool
+	ExcludeEmptySpecs                   bool
 }
 
 // CountBatchSpecs returns the number of code mods in the database.
@@ -202,7 +200,6 @@ func (s *Store) CountBatchSpecs(ctx context.Context, opts CountBatchSpecsOpts) (
 }
 
 var countBatchSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:CountBatchSpecs
 SELECT COUNT(batch_specs.id)
 FROM batch_specs
 -- Joins go here:
@@ -231,6 +228,11 @@ ON
 
 	if !opts.IncludeLocallyExecutedSpecs {
 		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
+	}
+
+	if opts.ExcludeEmptySpecs {
+		// An empty batch spec's YAML only contains the name, so we filter to batch specs that have at least one key other than "name"
+		preds = append(preds, sqlf.Sprintf("(EXISTS (SELECT * FROM jsonb_object_keys(batch_specs.spec) AS t (k) WHERE t.k NOT LIKE 'name'))"))
 	}
 
 	if len(preds) == 0 {
@@ -278,7 +280,6 @@ func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (spec *
 }
 
 var getBatchSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:GetBatchSpec
 SELECT %s FROM batch_specs
 WHERE %s
 LIMIT 1
@@ -343,7 +344,6 @@ func (s *Store) GetNewestBatchSpec(ctx context.Context, opts GetNewestBatchSpecO
 }
 
 const getNewestBatchSpecQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:GetNewestBatchSpec
 SELECT %s FROM batch_specs
 WHERE %s
 ORDER BY id DESC
@@ -387,6 +387,7 @@ type ListBatchSpecsOpts struct {
 
 	ExcludeCreatedFromRawNotOwnedByUser int32
 	IncludeLocallyExecutedSpecs         bool
+	ExcludeEmptySpecs                   bool
 }
 
 // ListBatchSpecs lists BatchSpecs with the given filters.
@@ -415,7 +416,6 @@ func (s *Store) ListBatchSpecs(ctx context.Context, opts ListBatchSpecsOpts) (cs
 }
 
 var listBatchSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:ListBatchSpecs
 SELECT %s FROM batch_specs
 -- Joins go here:
 %s
@@ -445,6 +445,11 @@ ON
 
 	if !opts.IncludeLocallyExecutedSpecs {
 		preds = append(preds, sqlf.Sprintf("batch_specs.created_from_raw IS TRUE"))
+	}
+
+	if opts.ExcludeEmptySpecs {
+		// An empty batch spec's YAML only contains the name, so we filter to batch specs that have at least one key other than "name"
+		preds = append(preds, sqlf.Sprintf("(EXISTS (SELECT * FROM jsonb_object_keys(batch_specs.spec) AS t (k) WHERE t.k NOT LIKE 'name'))"))
 	}
 
 	if opts.NewestFirst {
@@ -508,7 +513,6 @@ func (s *Store) ListBatchSpecRepoIDs(ctx context.Context, id int64) (ids []api.R
 }
 
 const listBatchSpecRepoIDsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:ListBatchSpecRepoIDs
 SELECT DISTINCT repo.id
 FROM repo
 LEFT JOIN changeset_specs ON repo.id = changeset_specs.repo_id
@@ -578,7 +582,6 @@ func getBatchSpecStatsQuery(ids []int64) *sqlf.Query {
 }
 
 const getBatchSpecStatsFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:GetBatchSpecStats
 SELECT
 	batch_specs.id AS batch_spec_id,
 	COALESCE(res_job.state IN ('completed', 'failed'), FALSE) AS resolution_done,
@@ -604,7 +607,6 @@ GROUP BY batch_specs.id, res_job.state
 `
 
 var deleteExpiredBatchSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:DeleteExpiredBatchSpecs
 DELETE FROM
   batch_specs
 WHERE
@@ -638,7 +640,6 @@ func (s *Store) GetBatchSpecDiffStat(ctx context.Context, id int64) (added, dele
 }
 
 const getTotalDiffStatQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_specs.go:GetTotalDiffStat
 SELECT
 	COALESCE(SUM(diff_stat_added), 0) AS added,
 	COALESCE(SUM(diff_stat_deleted), 0) AS deleted

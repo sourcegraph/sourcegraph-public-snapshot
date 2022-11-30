@@ -120,7 +120,7 @@ import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './c
 import { ContentView, handleContentViews } from './contentViews'
 import { NotAuthenticatedError, RepoURLParseError } from './errors'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
-import { createPrivateCodeHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
+import { createRepoNotFoundHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
     handleNativeTooltips,
     NativeTooltip,
@@ -429,7 +429,7 @@ function initCodeIntelligence({
                         ...hoverAlerts,
                         repoSyncErrors.pipe(
                             distinctUntilChanged(),
-                            map(showAlert => (showAlert ? createPrivateCodeHoverAlert(codeHost) : undefined)),
+                            map(showAlert => (showAlert ? createRepoNotFoundHoverAlert(codeHost) : undefined)),
                             filter(isDefined)
                         ),
                     ]),
@@ -885,13 +885,14 @@ export async function handleCodeHost({
 
     if (isGithubCodeHost(codeHost)) {
         // TODO: add tests in codeHost.test.tsx
-        const { searchEnhancement, enhanceSearchPage } = codeHost
+        const { searchEnhancement } = codeHost
         if (searchEnhancement) {
             subscriptions.add(initializeGithubSearchInputEnhancement(searchEnhancement, sourcegraphURL, mutations))
         }
-        if (enhanceSearchPage) {
-            subscriptions.add(enhanceSearchPage(sourcegraphURL))
-        }
+        // TODO(#44327): Uncomment or remove this depending on the outcome of the issue.
+        // if (codeHost.enhanceSearchPage) {
+        //     subscriptions.add(enhanceSearchPage(sourcegraphURL))
+        // }
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {

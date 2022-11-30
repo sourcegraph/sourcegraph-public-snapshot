@@ -432,7 +432,6 @@ func canAggregateByAuthor(searchQuery, patternType string) (bool, *notAvailableR
 }
 
 func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, *notAvailableReason, error) {
-
 	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
 	if err != nil {
 		return false, &notAvailableReason{reason: invalidQueryMsg, reasonType: types.INVALID_QUERY}, errors.Wrapf(err, "ParseQuery")

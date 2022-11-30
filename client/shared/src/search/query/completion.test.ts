@@ -383,6 +383,9 @@ describe('getCompletionItems()', () => {
               "has.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
               "has.commit.after(\${1:1 month ago}) ",
               "has.description(\${1}) ",
+              "has.tag(\${1}) ",
+              "has(\${1:key}:\${2:value}) ",
+              "has.key(\${1}) ",
               "^repo/with\\\\ a\\\\ space$ "
             ]
         `)
@@ -404,7 +407,10 @@ describe('getCompletionItems()', () => {
               "has.content(\${1:TODO}) ",
               "has.file(path:\${1:CHANGELOG} content:\${2:fix}) ",
               "has.commit.after(\${1:1 month ago}) ",
-              "has.description(\${1}) "
+              "has.description(\${1}) ",
+              "has.tag(\${1}) ",
+              "has(\${1:key}:\${2:value}) ",
+              "has.key(\${1}) "
             ]
         `)
     })

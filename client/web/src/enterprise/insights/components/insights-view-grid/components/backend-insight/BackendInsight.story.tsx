@@ -148,6 +148,7 @@ function generateSeries(chartContent: SeriesChartContent<BackendInsightDatum>, i
             completedJobs: 0,
             pendingJobs: isFetchingHistoricalData ? 10 : 0,
             failedJobs: 0,
+            isLoading: isFetchingHistoricalData,
             __typename: 'InsightSeriesStatus',
         },
         __typename: 'InsightsSeries',
@@ -243,7 +244,6 @@ const TestBackendInsight: React.FunctionComponent<React.PropsWithChildren<unknow
         style={{ width: 400, height: 400 }}
         insight={INSIGHT_CONFIGURATION_MOCK}
         telemetryService={NOOP_TELEMETRY_SERVICE}
-        innerRef={() => {}}
     />
 )
 
@@ -427,6 +427,7 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
                                     completedJobs: 10,
                                     pendingJobs: 0,
                                     failedJobs: 0,
+                                    isLoadingData: false,
                                     __typename: 'InsightSeriesStatus',
                                 },
                                 __typename: 'InsightsSeries',
@@ -506,6 +507,7 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
                                     completedJobs: 10,
                                     pendingJobs: 0,
                                     failedJobs: 0,
+                                    isLoadingData: false,
                                     __typename: 'InsightSeriesStatus',
                                 },
                                 __typename: 'InsightsSeries',
@@ -585,6 +587,7 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
                                     completedJobs: 10,
                                     pendingJobs: 0,
                                     failedJobs: 0,
+                                    isLoadingData: false,
                                     __typename: 'InsightSeriesStatus',
                                 },
                                 __typename: 'InsightsSeries',
@@ -696,6 +699,7 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
                                     completedJobs: 9,
                                     pendingJobs: 0,
                                     failedJobs: 0,
+                                    isLoadingData: false,
                                     __typename: 'InsightSeriesStatus',
                                 },
                                 __typename: 'InsightsSeries',
@@ -775,6 +779,7 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
                                     completedJobs: 9,
                                     pendingJobs: 0,
                                     failedJobs: 0,
+                                    isLoadingData: false,
                                     __typename: 'InsightSeriesStatus',
                                 },
                                 __typename: 'InsightsSeries',
@@ -854,6 +859,7 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
                                     completedJobs: 10,
                                     pendingJobs: 0,
                                     failedJobs: 0,
+                                    isLoadingData: false,
                                     __typename: 'InsightSeriesStatus',
                                 },
                                 __typename: 'InsightsSeries',
@@ -965,6 +971,7 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
                                     completedJobs: 10,
                                     pendingJobs: 0,
                                     failedJobs: 544,
+                                    isLoadingData: false,
                                     __typename: 'InsightSeriesStatus',
                                 },
                                 __typename: 'InsightsSeries',
@@ -1044,6 +1051,7 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
                                     completedJobs: 10,
                                     pendingJobs: 0,
                                     failedJobs: 544,
+                                    isLoadingData: false,
                                     __typename: 'InsightSeriesStatus',
                                 },
                                 __typename: 'InsightsSeries',
@@ -1123,6 +1131,7 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
                                     completedJobs: 10,
                                     pendingJobs: 0,
                                     failedJobs: 544,
+                                    isLoadingData: false,
                                     __typename: 'InsightSeriesStatus',
                                 },
                                 __typename: 'InsightsSeries',
@@ -1202,6 +1211,7 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
                                     completedJobs: 10,
                                     pendingJobs: 0,
                                     failedJobs: 544,
+                                    isLoadingData: false,
                                     __typename: 'InsightSeriesStatus',
                                 },
                                 __typename: 'InsightsSeries',
@@ -1223,7 +1233,6 @@ export const BackendInsightDemoCasesShowcase: Story = () => (
                 style={{ width: 400, height: 400 }}
                 insight={COMPONENT_MIGRATION_INSIGHT_CONFIGURATION}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                innerRef={() => {}}
             />
         </MockedTestProvider>
 
@@ -1232,7 +1241,6 @@ export const BackendInsightDemoCasesShowcase: Story = () => (
                 style={{ width: 400, height: 400 }}
                 insight={DATA_FETCHING_INSIGHT_CONFIGURATION}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                innerRef={() => {}}
             />
         </MockedTestProvider>
 
@@ -1241,7 +1249,6 @@ export const BackendInsightDemoCasesShowcase: Story = () => (
                 style={{ width: 400, height: 400 }}
                 insight={TERRAFORM_INSIGHT_CONFIGURATION}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                innerRef={() => {}}
             />
         </MockedTestProvider>
     </div>
@@ -1286,7 +1293,6 @@ export const BackendInsightVitrine: Story = () => (
                     style={{ width: 400, height: 400 }}
                     insight={{ ...INSIGHT_CONFIGURATION_MOCK, isFrozen: true }}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
-                    innerRef={() => {}}
                 />
             </MockedTestProvider>
         </article>

@@ -25,12 +25,7 @@ Adding Perforce depots as an [external code host](../external_service/index.md) 
 
 To connect Perforce to Sourcegraph:
 
-1. Depending on whether you are a site admin or user:
-   1. *Site admin*: Go to **Site admin > Manage code hosts > Add code host**
-   1. *User*: Go to **Settings > Code host connections**.
-
-        > NOTE: That adding code hosts as a user is currently in private beta.
-
+1. Go to **Site admin > Manage code hosts > Add code host**
 2. Select **Perforce**.
 3. Configure the connection to Perforce using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 4. Click **Add repositories**.

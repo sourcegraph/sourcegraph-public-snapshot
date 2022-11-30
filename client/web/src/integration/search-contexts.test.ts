@@ -3,9 +3,8 @@ import expect from 'expect'
 import { range } from 'lodash'
 import { test } from 'mocha'
 
-import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/search'
+import { highlightFileResult, mixedSearchStreamEvents, SearchContextMinimalFields } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -475,7 +474,7 @@ describe('Search contexts', () => {
                     repositories: [],
                     query: '',
                     updatedAt: subDays(new Date(), 1).toISOString(),
-                })) as ISearchContext[]
+                })) as SearchContextMinimalFields[]
 
                 if (after === null) {
                     return {
@@ -555,7 +554,7 @@ describe('Search contexts', () => {
                     repositories: [],
                     query: '',
                     updatedAt: subDays(new Date(), 1).toISOString(),
-                })) as ISearchContext[]
+                })) as SearchContextMinimalFields[]
 
                 return {
                     searchContexts: {

@@ -142,7 +142,7 @@ func ProvidersFromConfig(
 			enableGithubInternalRepoVisibility = ef.EnableGithubInternalRepoVisibility
 		}
 
-		ghProviders, ghProblems, ghWarnings, ghInvalidConnections := github.NewAuthzProviders(store, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
+		ghProviders, ghProblems, ghWarnings, ghInvalidConnections := github.NewAuthzProviders(db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
 		providers = append(providers, ghProviders...)
 		seriousProblems = append(seriousProblems, ghProblems...)
 		warnings = append(warnings, ghWarnings...)
@@ -231,7 +231,7 @@ func ProviderFromExternalService(
 	switch c := cfg.(type) {
 	case *schema.GitHubConnection:
 		providers, problems, _, _ = github.NewAuthzProviders(
-			externalServicesStore,
+			db,
 			[]*github.ExternalConnection{
 				{
 					ExternalService: svc,

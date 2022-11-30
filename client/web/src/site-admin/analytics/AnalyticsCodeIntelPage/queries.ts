@@ -1,14 +1,16 @@
 import { gql } from '@sourcegraph/http-client'
 
 const analyticsStatItemFragment = gql`
-    fragment AnalyticsStatItemFragment on AnalyticsStatItem {
+    fragment CodeIntelStatItemFragment on AnalyticsStatItem {
         nodes {
             date
             count
+            uniqueUsers
             registeredUsers
         }
         summary {
             totalCount
+            totalUniqueUsers
             totalRegisteredUsers
         }
     }
@@ -24,10 +26,10 @@ export const CODEINTEL_STATISTICS = gql`
                 }
                 codeIntel(dateRange: $dateRange, grouping: $grouping) {
                     referenceClicks {
-                        ...AnalyticsStatItemFragment
+                        ...CodeIntelStatItemFragment
                     }
                     definitionClicks {
-                        ...AnalyticsStatItemFragment
+                        ...CodeIntelStatItemFragment
                     }
                     inAppEvents {
                         summary {

@@ -67,7 +67,7 @@ func (p Provider) FetchAccount(ctx context.Context, user *types.User, current []
 }
 
 func (p Provider) checkAccountsAgainstVerifiedEmails(accts gerrit.ListAccountsResponse, user *types.User, verifiedEmails []string) (*extsvc.Account, bool, error) {
-	if accts == nil || len(accts) == 0 {
+	if len(accts) == 0 {
 		return nil, false, nil
 	}
 	for _, email := range verifiedEmails {
@@ -117,10 +117,6 @@ func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, o
 
 func (p Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	return nil, &authz.ErrUnimplemented{Feature: "gerrit.FetchRepoPerms"}
-}
-
-func (p Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return nil, &authz.ErrUnimplemented{Feature: "gerrit.FetchUserPermsByToken"}
 }
 
 func (p Provider) ServiceType() string {

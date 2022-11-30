@@ -1,10 +1,20 @@
+import { Redirect } from 'react-router'
+
 import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps, routes } from '../routes'
-import { EnterprisePageRoutes } from '../routes.constants'
+import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
+import { useExperimentalFeatures } from '../stores'
+
+const NotebookPage = lazyComponent(() => import('../notebooks/notebookPage/NotebookPage'), 'NotebookPage')
+const CreateNotebookPage = lazyComponent(
+    () => import('../notebooks/createPage/CreateNotebookPage'),
+    'CreateNotebookPage'
+)
+const NotebooksListPage = lazyComponent(() => import('../notebooks/listPage/NotebooksListPage'), 'NotebooksListPage')
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) &&
@@ -57,6 +67,44 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         path: EnterprisePageRoutes.Context,
         render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
+    },
+    {
+        path: EnterprisePageRoutes.SearchNotebook,
+        render: () => <Redirect to={EnterprisePageRoutes.Notebooks} />,
+        exact: true,
+    },
+    {
+        path: EnterprisePageRoutes.NotebookCreate,
+        render: props =>
+            useExperimentalFeatures.getState().showSearchNotebook && props.authenticatedUser ? (
+                <CreateNotebookPage {...props} authenticatedUser={props.authenticatedUser} />
+            ) : (
+                <Redirect to={EnterprisePageRoutes.Notebooks} />
+            ),
+        exact: true,
+    },
+    {
+        path: EnterprisePageRoutes.Notebook,
+        render: props => {
+            const { showSearchNotebook, showSearchContext } = useExperimentalFeatures.getState()
+
+            return showSearchNotebook ? (
+                <NotebookPage {...props} showSearchContext={showSearchContext ?? false} />
+            ) : (
+                <Redirect to={PageRoutes.Search} />
+            )
+        },
+        exact: true,
+    },
+    {
+        path: EnterprisePageRoutes.Notebooks,
+        render: props =>
+            useExperimentalFeatures.getState().showSearchNotebook ? (
+                <NotebooksListPage {...props} />
+            ) : (
+                <Redirect to={PageRoutes.Search} />
+            ),
+        exact: true,
     },
     ...routes,
 ]

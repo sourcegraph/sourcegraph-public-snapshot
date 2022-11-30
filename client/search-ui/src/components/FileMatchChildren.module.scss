@@ -10,32 +10,6 @@
     }
 }
 
-.symbols {
-    background-color: var(--body-bg) !important;
-}
-
-.symbol {
-    display: flex;
-    align-items: center;
-    background-color: var(--color-bg-2);
-    padding: 0.25rem;
-    border-radius: var(--border-radius);
-    cursor: pointer;
-
-    &:not(:last-child) {
-        margin-bottom: 0.5rem;
-    }
-
-    &-code-excerpt {
-        flex: 1;
-
-        :global(.code) {
-            white-space: pre-line !important;
-            overflow-wrap: anywhere;
-        }
-    }
-}
-
 .item {
     display: flex;
     align-items: center;

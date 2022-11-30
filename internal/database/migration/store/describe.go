@@ -222,7 +222,6 @@ func (s *Store) listExtensions(ctx context.Context) ([]Extension, error) {
 }
 
 const listExtensionsQuery = `
--- source: internal/database/migration/store/store.go:listExtensions
 SELECT
 	n.nspname AS schemaName,
 	e.extname AS extensionName
@@ -242,7 +241,6 @@ func (s *Store) listEnums(ctx context.Context) ([]enum, error) {
 }
 
 const listEnumQuery = `
--- source: internal/database/migration/store/store.go:listEnums
 SELECT
 	n.nspname AS schemaName,
 	t.typname AS typeName,
@@ -267,7 +265,6 @@ func (s *Store) listFunctions(ctx context.Context) ([]function, error) {
 // TODO - not belonging to something else?
 
 const listFunctionsQuery = `
--- source: internal/database/migration/store/store.go:listFunctions
 SELECT
 	n.nspname AS schemaName,
 	p.proname AS functionName,
@@ -295,7 +292,6 @@ func (s *Store) listSequences(ctx context.Context) ([]sequence, error) {
 }
 
 const listSequencesQuery = `
--- source: internal/database/migration/store/store.go:listSequences
 SELECT
 	s.sequence_schema AS schemaName,
 	s.sequence_name AS sequenceName,
@@ -320,7 +316,6 @@ func (s *Store) listTables(ctx context.Context) ([]table, error) {
 }
 
 const listTablesQuery = `
--- source: internal/database/migration/store/store.go:listTables
 SELECT
 	t.table_schema AS schemaName,
 	t.table_name AS tableName,
@@ -341,7 +336,6 @@ func (s *Store) listColumns(ctx context.Context) ([]column, error) {
 }
 
 const listColumnsQuery = `
--- source: internal/database/migration/store/store.go:listColumns
 WITH
 tables AS MATERIALIZED (
 	SELECT
@@ -404,7 +398,6 @@ func (s *Store) listIndexes(ctx context.Context) ([]index, error) {
 }
 
 const listIndexesQuery = `
--- source: internal/database/migration/store/store.go:listIndexes
 SELECT
 	n.nspname AS schemaName,
 	table_class.relname AS tableName,
@@ -440,7 +433,6 @@ func (s *Store) listConstraints(ctx context.Context) ([]constraint, error) {
 }
 
 const listConstraintsQuery = `
--- source: internal/database/migration/store/store.go:listConstraints
 SELECT
 	n.nspname AS schemaName,
 	table_class.relname AS tableName,
@@ -469,7 +461,6 @@ func (s *Store) listTriggers(ctx context.Context) ([]trigger, error) {
 }
 
 const listTriggersQuery = `
--- source: internal/database/migration/store/store.go:listTriggers
 SELECT
 	n.nspname AS schemaName,
 	c.relname AS tableName,
@@ -494,7 +485,6 @@ func (s *Store) listViews(ctx context.Context) ([]view, error) {
 }
 
 const listViewsQuery = `
--- source: internal/database/migration/store/store.go:listViews
 SELECT
 	v.schemaname AS schemaName,
 	v.viewname AS viewName,

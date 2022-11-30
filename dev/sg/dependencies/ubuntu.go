@@ -33,8 +33,8 @@ var Ubuntu = []category{
 			},
 			{
 				Name:  "git",
-				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.34.1"))),
-				Fix:   aptGetInstall("git", "sudo add-apt-repository ppa:git-core/ppa"),
+				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.38.1"))),
+				Fix:   aptGetInstall("git", "sudo add-apt-repository -y ppa:git-core/ppa"),
 			}, {
 				Name:  "pcre",
 				Check: checkAction(check.HasUbuntuLibrary("libpcre3-dev")),
@@ -128,7 +128,14 @@ var Ubuntu = []category{
 		},
 	},
 	categoryCloneRepositories(),
-	categoryProgrammingLanguagesAndTools(),
+	categoryProgrammingLanguagesAndTools(
+		// src-cli is installed differently on Ubuntu and Mac
+		&dependency{
+			Name:  "src",
+			Check: checkAction(check.Combine(check.InPath("src"), checkSrcCliVersion(">= 4.0.2"))),
+			Fix:   cmdFix(`sudo curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src && sudo chmod +x /usr/local/bin/src`),
+		},
+	),
 	{
 		Name:      "Postgres database",
 		DependsOn: []string{depsBaseUtilities},

@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -72,14 +73,14 @@ func (d *insightsDB) Done(err error) error {
 }
 
 func (d *insightsDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
-	return d.Handle().QueryContext(ctx, q, args...)
+	return d.Handle().QueryContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 }
 
 func (d *insightsDB) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
-	return d.Handle().ExecContext(ctx, q, args...)
+	return d.Handle().ExecContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 
 }
 
 func (d *insightsDB) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
-	return d.Handle().QueryRowContext(ctx, q, args...)
+	return d.Handle().QueryRowContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
 }

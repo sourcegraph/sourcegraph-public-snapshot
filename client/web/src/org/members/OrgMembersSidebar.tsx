@@ -5,11 +5,11 @@ import { RouteComponentProps } from 'react-router-dom'
 
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { OrgAreaPageProps } from '../area/OrgArea'
+import { OrgAreaRouteContext } from '../area/OrgArea'
 
 import styles from './OrgMembersSidebar.module.scss'
 
-interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
+interface Props extends OrgAreaRouteContext, RouteComponentProps<{}> {
     className?: string
 }
 

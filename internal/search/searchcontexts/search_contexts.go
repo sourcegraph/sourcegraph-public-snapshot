@@ -11,10 +11,10 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -122,7 +122,7 @@ func ValidateSearchContextWriteAccessForCurrentUser(ctx context.Context, db data
 		return errors.New("namespaceUserID and namespaceOrgID are mutually exclusive")
 	}
 
-	user, err := backend.CurrentUser(ctx, db)
+	user, err := auth.CurrentUser(ctx, db)
 	if err != nil {
 		return err
 	}
@@ -207,8 +207,12 @@ func validateSearchContextQuery(contextQuery string) error {
 		switch field {
 		case query.FieldRepo:
 			if a.Labels.IsSet(query.IsPredicate) {
-				errs = errors.Append(errs,
-					errors.Errorf("unsupported repo field predicate in search context query: %q", value))
+				predName, _ := query.ParseAsPredicate(value)
+				if predName != "has" && predName != "has.tag" && predName != "has.key" {
+					errs = errors.Append(errs,
+						errors.Errorf("unsupported repo field predicate in search context query: %q", value))
+					return
+				}
 				return
 			}
 

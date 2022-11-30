@@ -42,7 +42,7 @@ exports[`Notices shows notices for location 1`] = `
         </div>
       </div>
       <button
-        aria-label="Close alert"
+        aria-label="Dismiss alert"
         class="btn btnIcon closeButton"
         type="button"
       >

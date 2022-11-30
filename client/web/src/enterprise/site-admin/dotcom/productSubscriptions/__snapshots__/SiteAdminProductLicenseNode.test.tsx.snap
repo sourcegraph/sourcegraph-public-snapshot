@@ -35,7 +35,6 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
         </span>
         <div
           class="d-inline-block mr-3"
-          data-state="closed"
         >
           <strong
             class="text-success"
@@ -50,7 +49,6 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
           Created 
           <span
             class="timestamp"
-            data-state="closed"
           >
             in almost 14 years
           </span>
@@ -61,7 +59,6 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
       Tags: 
       <div
         class="badge secondary mr-1"
-        data-state="closed"
       >
         a
       </div>
@@ -86,6 +83,7 @@ exports[`SiteAdminProductLicenseNode active 1`] = `
           class="input-group-append"
         >
           <button
+            aria-disabled="false"
             aria-label="Copy"
             class="btn btnSecondary"
             type="button"
@@ -147,7 +145,6 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
         </span>
         <span
           class="text-warning font-weight-bold mr-3"
-          data-state="closed"
         >
           Inactive
         </span>
@@ -157,7 +154,6 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
           Created 
           <span
             class="timestamp"
-            data-state="closed"
           >
             in almost 14 years
           </span>
@@ -168,7 +164,6 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
       Tags: 
       <div
         class="badge secondary mr-1"
-        data-state="closed"
       >
         a
       </div>
@@ -193,6 +188,7 @@ exports[`SiteAdminProductLicenseNode inactive 1`] = `
           class="input-group-append"
         >
           <button
+            aria-disabled="false"
             aria-label="Copy"
             class="btn btnSecondary"
             type="button"

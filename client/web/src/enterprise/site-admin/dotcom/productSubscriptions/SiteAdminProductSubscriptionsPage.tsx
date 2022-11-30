@@ -6,12 +6,16 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, Link, Icon, H2 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
+import {
+    ProductSubscriptionsDotComResult,
+    ProductSubscriptionsDotComVariables,
+    SiteAdminProductSubscriptionFields,
+} from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
 import {
@@ -24,7 +28,7 @@ import {
 interface Props extends RouteComponentProps<{}> {}
 
 class FilteredSiteAdminProductSubscriptionConnection extends FilteredConnection<
-    GQL.IProductSubscription,
+    SiteAdminProductSubscriptionFields,
     SiteAdminProductSubscriptionNodeProps
 > {}
 
@@ -65,7 +69,7 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
 function queryProductSubscriptions(args: {
     first?: number
     query?: string
-}): Observable<GQL.IProductSubscriptionConnection> {
+}): Observable<ProductSubscriptionsDotComResult['dotcom']['productSubscriptions']> {
     return queryGraphQL(
         gql`
             query ProductSubscriptionsDotCom($first: Int, $account: ID, $query: String) {
@@ -86,7 +90,7 @@ function queryProductSubscriptions(args: {
         {
             first: args.first,
             query: args.query,
-        } as GQL.IProductSubscriptionsOnDotcomQueryArguments
+        } as Partial<ProductSubscriptionsDotComVariables>
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.dotcom.productSubscriptions)

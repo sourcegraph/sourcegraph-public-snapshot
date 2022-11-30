@@ -8,10 +8,8 @@
 
     // Change the icon color on hover/focus state
     &:hover,
-    &:focus {
-        .filter-icon {
-            fill: var(--body-color);
-        }
+    &[aria-expanded='true'] {
+        background-color: var(--color-bg-2) !important;
     }
 
     // Change the icon and button state with opened filter panel

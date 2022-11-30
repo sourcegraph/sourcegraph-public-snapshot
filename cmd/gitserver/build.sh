@@ -5,9 +5,11 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 set -ex
 
 OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
+
 cleanup() {
   rm -rf "$OUTPUT"
 }
+
 trap cleanup EXIT
 
 cp -a ./cmd/gitserver/p4-fusion-install-alpine.sh "$OUTPUT"

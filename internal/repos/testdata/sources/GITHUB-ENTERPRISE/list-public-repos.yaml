@@ -67,6 +67,63 @@ interactions:
     code: 200
     duration: ""
 - request:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tforkCount\n\tstargazerCount\n}\n\t\nquery($query:
+      String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
+      $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
+      { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
+      } }\n\t}\n}","variables":{"first":100,"query":"archived:true is:public","type":"REPOSITORY"}}'
+    form: {}
+    headers:
+      Accept:
+        - application/vnd.github.antiope-preview+json
+      Content-Type:
+        - application/json; charset=utf-8
+    url: https://ghe.sgdev.org/api/graphql
+    method: POST
+  response:
+    body: '{"data":{"search":{"repositoryCount":1,"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOjI="},"nodes":[{"id":"MDEwOlJlcG9zaXRvcnkx","databaseId":442312,"nameWithOwner":"sourcegraph/sourcegraph-sirupsen-logrus","description":null,"url":"https://ghe.sgdev.org/sourcegraph/sourcegraph-sirupsen-logrus","isPrivate":false,"isFork":false,"isArchived":true,"isLocked":false,"isDisabled":false,"forkCount":0,"stargazerCount":0}]}}}'
+    headers:
+      Access-Control-Allow-Origin:
+        - '*'
+      Access-Control-Expose-Headers:
+        - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+          X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+          X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
+          Sunset
+      Content-Security-Policy:
+        - default-src 'none'
+      Content-Type:
+        - application/json; charset=utf-8
+      Date:
+        - Mon, 19 Sep 2022 19:31:23 GMT
+      Referrer-Policy:
+        - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+        - GitHub.com
+      Strict-Transport-Security:
+        - max-age=31536000; includeSubdomains
+      X-Content-Type-Options:
+        - nosniff
+      X-Frame-Options:
+        - deny
+      X-Github-Enterprise-Version:
+        - 3.3.0
+      X-Github-Media-Type:
+        - github.v4; param=antiope-preview; format=json
+      X-Github-Request-Id:
+        - 98a90810-1d86-4513-9fab-4e5d219555bd
+      X-Ratelimit-Resource:
+        - graphql
+      X-Ratelimit-Used:
+        - "0"
+      X-Runtime-Rack:
+        - "0.215086"
+      X-Xss-Protection:
+        - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
     body: ""
     form: {}
     headers:

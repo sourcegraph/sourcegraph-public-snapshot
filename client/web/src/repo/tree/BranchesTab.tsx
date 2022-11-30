@@ -7,7 +7,6 @@ import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike, asError, ErrorLike } from '@sourcegraph/common'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, Card, CardHeader, Icon, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
@@ -34,8 +33,8 @@ interface OverviewTabProps {
 }
 
 interface Data {
-    defaultBranch: GQL.IGitRef | null
-    activeBranches: GQL.IGitRef[]
+    defaultBranch: GitRefFields | null
+    activeBranches: GitRefFields[]
     hasMoreActiveBranches: boolean
 }
 

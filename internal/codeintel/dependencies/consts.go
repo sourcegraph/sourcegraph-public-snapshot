@@ -8,4 +8,5 @@ const (
 	GoPackagesScheme     = shared.GoPackagesScheme
 	PythonPackagesScheme = shared.PythonPackagesScheme
 	RustPackagesScheme   = shared.RustPackagesScheme
+	RubyPackagesScheme   = shared.RubyPackagesScheme
 )

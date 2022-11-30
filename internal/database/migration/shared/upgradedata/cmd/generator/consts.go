@@ -6,7 +6,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-const maxVersionString = "4.0.0"
+// NOTE: This should be kept up-to-date with cmd/migrator/build.sh
+// so that we "bake in" fallback schemas everything we support migrating
+// to.
+const maxVersionString = "4.1.0"
 
 // MaxVersion is the highest known released version at the time the migrator was built.
 var MaxVersion = func() oobmigration.Version {

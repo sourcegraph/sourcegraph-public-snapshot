@@ -41,7 +41,6 @@ func cleanJobs(ctx context.Context, workerBaseStore *basestore.Store) (numCleane
 }
 
 const cleanJobsFmtStr = `
--- source: internal/repos/worker/cleaner.go:cleanJobs
 WITH deleted AS (
 	DELETE FROM webhook_build_jobs WHERE state='completed' OR state='failed' AND started_at <= %s RETURNING *
 ) SELECT count(*) from deleted

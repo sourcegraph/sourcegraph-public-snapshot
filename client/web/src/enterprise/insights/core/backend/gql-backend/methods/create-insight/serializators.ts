@@ -57,6 +57,7 @@ export function getCaptureGroupInsightCreateInput(
             seriesDisplayOptions:
                 insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
             filters: {
+                searchContexts: [insight.filters.context],
                 excludeRepoRegex: insight.filters.excludeRepoRegexp,
                 includeRepoRegex: insight.filters.includeRepoRegexp,
             },
@@ -88,6 +89,15 @@ export function getSearchInsightCreateInput(
             timeScope: { stepInterval: { unit, value } },
         })),
         options: { title: insight.title },
+        viewControls: {
+            seriesDisplayOptions:
+                insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+            filters: {
+                searchContexts: [insight.filters.context],
+                excludeRepoRegex: insight.filters.excludeRepoRegexp,
+                includeRepoRegex: insight.filters.includeRepoRegexp,
+            },
+        },
     }
 
     if (dashboard && !isVirtualDashboard(dashboard)) {
@@ -137,6 +147,15 @@ export function getComputeInsightCreateInput(
             generatedFromCaptureGroups: true,
         })),
         options: { title: insight.title },
+        viewControls: {
+            seriesDisplayOptions:
+                insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+            filters: {
+                searchContexts: [insight.filters.context],
+                excludeRepoRegex: insight.filters.excludeRepoRegexp,
+                includeRepoRegex: insight.filters.includeRepoRegexp,
+            },
+        },
     }
 
     if (dashboard && !isVirtualDashboard(dashboard)) {

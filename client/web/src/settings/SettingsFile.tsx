@@ -5,12 +5,12 @@ import * as H from 'history'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { SaveToolbar } from '../components/SaveToolbar'
+import { SiteAdminSettingsCascadeFields } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './SettingsFile.module.scss'
@@ -18,7 +18,7 @@ import styles from './SettingsFile.module.scss'
 interface Props extends ThemeProps, TelemetryProps {
     history: H.History
 
-    settings: GQL.ISettings | null
+    settings: SiteAdminSettingsCascadeFields['subjects'][number]['latestSettings'] | null
 
     /**
      * JSON Schema of the document.

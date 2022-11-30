@@ -117,14 +117,12 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))
 	match := limitOrDefault(first) + 1
 	resp, err := search.Indexed().Search(ctx, final, &zoekt.SearchOptions{
-		Trace:                  policy.ShouldTrace(ctx),
-		MaxWallTime:            3 * time.Second,
-		ShardMaxMatchCount:     match * 25,
-		TotalMaxMatchCount:     match * 25,
-		ShardMaxImportantMatch: match * 25,
-		TotalMaxImportantMatch: match * 25,
-		MaxDocDisplayCount:     match,
-		ChunkMatches:           true,
+		Trace:              policy.ShouldTrace(ctx),
+		MaxWallTime:        3 * time.Second,
+		ShardMaxMatchCount: match * 25,
+		TotalMaxMatchCount: match * 25,
+		MaxDocDisplayCount: match,
+		ChunkMatches:       true,
 	})
 	if err != nil {
 		return nil, err

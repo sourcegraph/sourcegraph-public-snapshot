@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -51,20 +52,20 @@ func (j bitbucketProjectsPermissionJobResolver) FailureMessage() *string {
 	return j.job.FailureMessage
 }
 
-func (j bitbucketProjectsPermissionJobResolver) QueuedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: j.job.QueuedAt}
+func (j bitbucketProjectsPermissionJobResolver) QueuedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: j.job.QueuedAt}
 }
 
-func (j bitbucketProjectsPermissionJobResolver) StartedAt() *graphqlbackend.DateTime {
-	return graphqlbackend.DateTimeOrNil(j.job.StartedAt)
+func (j bitbucketProjectsPermissionJobResolver) StartedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(j.job.StartedAt)
 }
 
-func (j bitbucketProjectsPermissionJobResolver) FinishedAt() *graphqlbackend.DateTime {
-	return graphqlbackend.DateTimeOrNil(j.job.FinishedAt)
+func (j bitbucketProjectsPermissionJobResolver) FinishedAt() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(j.job.FinishedAt)
 }
 
-func (j bitbucketProjectsPermissionJobResolver) ProcessAfter() *graphqlbackend.DateTime {
-	return graphqlbackend.DateTimeOrNil(j.job.ProcessAfter)
+func (j bitbucketProjectsPermissionJobResolver) ProcessAfter() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(j.job.ProcessAfter)
 }
 
 func (j bitbucketProjectsPermissionJobResolver) NumResets() int32 {

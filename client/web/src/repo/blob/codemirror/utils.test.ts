@@ -4,25 +4,31 @@ import {
     isValidLineRange,
     offsetToUIPosition,
     positionToOffset,
-    rangesContain,
     sortRangeValuesByStart,
     uiPositionToOffset,
+    zeroToOneBasedPosition,
+    zeroToOneBasedRange,
 } from './utils'
 
 describe('blob/codemirror/utils', () => {
-    describe('rangeContains', () => {
-        const ranges = [
-            { from: 10, to: 20 },
-            { from: 30, to: 40 },
-        ]
-
-        it('returns true when the point is within one of the specific ranges (inclusively)', () => {
-            expect(rangesContain(ranges, 15)).toBe(true)
-            expect(rangesContain(ranges, 20)).toBe(true)
+    describe('zeroToOneBased...', () => {
+        it('converts zero-based to one-based positions', () => {
+            expect(zeroToOneBasedPosition({ line: 5, character: 10 })).toEqual({
+                line: 6,
+                character: 11,
+            })
         })
-
-        it('returns false when the point is within one of the specific ranges (inclusively)', () => {
-            expect(rangesContain(ranges, 25)).toBe(false)
+        it('converts zero-based to one-based ranges', () => {
+            expect(zeroToOneBasedRange({ start: { line: 5, character: 10 }, end: { line: 7, character: 3 } })).toEqual({
+                start: {
+                    line: 6,
+                    character: 11,
+                },
+                end: {
+                    line: 8,
+                    character: 4,
+                },
+            })
         })
     })
 

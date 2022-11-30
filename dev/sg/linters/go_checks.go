@@ -91,6 +91,8 @@ func lintLoggingLibraries() *linter {
 			"cmd/frontend/internal/app/otlpadapter",
 			// Not worth fixing the deprecated package
 			"cmd/frontend/internal/usagestatsdeprecated",
+			// Valid usage of "log" package as a CLI
+			"enterprise/internal/cloud/sign_site_config.go",
 		},
 		ErrorFunc: func(bannedImport string) error {
 			return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/log" instead`,

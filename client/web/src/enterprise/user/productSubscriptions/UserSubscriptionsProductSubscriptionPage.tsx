@@ -5,15 +5,16 @@ import * as H from 'history'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
+import { validate as validateUUID } from 'uuid'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { LoadingSpinner, useObservable, Link, H2 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
+import { ProductSubscriptionFieldsOnSubscriptionPage, UserAreaUserFields } from '../../../graphql-operations'
 import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -21,7 +22,7 @@ import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
 
 interface Props extends Pick<RouteComponentProps<{ subscriptionUUID: string }>, 'match'> {
-    user: Pick<GQL.IUser, 'settingsURL'>
+    user: Pick<UserAreaUserFields, 'settingsURL'>
 
     /** For mocking in tests only. */
     _queryProductSubscription?: typeof queryProductSubscription
@@ -41,6 +42,9 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
     _queryProductSubscription = queryProductSubscription,
 }) => {
     useEffect(() => eventLogger.logViewEvent('UserSubscriptionsProductSubscription'), [])
+
+    const isValidUUID = validateUUID(subscriptionUUID)
+    const validationError = !isValidUUID && new Error('Subscription ID is not a valid UUID')
 
     /**
      * The product subscription, or loading, or an error.
@@ -74,8 +78,8 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
             </div>
             {productSubscription === LOADING ? (
                 <LoadingSpinner />
-            ) : isErrorLike(productSubscription) ? (
-                <ErrorAlert className="my-2" error={productSubscription} />
+            ) : !isValidUUID || isErrorLike(productSubscription) ? (
+                <ErrorAlert className="my-2" error={validationError || productSubscription} />
             ) : (
                 <>
                     <H2>Subscription {productSubscription.name}</H2>
@@ -94,7 +98,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
     )
 }
 
-function queryProductSubscription(uuid: string): Observable<GQL.IProductSubscription> {
+function queryProductSubscription(uuid: string): Observable<ProductSubscriptionFieldsOnSubscriptionPage> {
     return queryGraphQL(
         gql`
             query ProductSubscription($uuid: String!) {

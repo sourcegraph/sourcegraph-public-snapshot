@@ -24,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestExtractCloneURL(t *testing.T) {
+func TestGetCloneURL(t *testing.T) {
 	tcs := []struct {
 		name      string
 		want      string
@@ -80,7 +80,7 @@ func TestExtractCloneURL(t *testing.T) {
 				},
 			}
 
-			have, err := extractCloneURL(repo)
+			have, err := getCloneURL(repo)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -554,7 +554,7 @@ func TestGetRemoteRepo(t *testing.T) {
 				ForkNamespace: &forkNamespace,
 			})
 			assert.Nil(t, repo)
-			assert.ErrorIs(t, err, ErrChangesetSourceCannotFork)
+			assert.ErrorContains(t, err, ErrChangesetSourceCannotFork.Error())
 		})
 
 		t.Run("forkable changeset source", func(t *testing.T) {
@@ -580,7 +580,7 @@ func TestGetRemoteRepo(t *testing.T) {
 					ForkNamespace: &forkNamespace,
 				})
 				assert.Nil(t, repo)
-				assert.Same(t, want, err)
+				assert.Contains(t, err.Error(), want.Error())
 				mockassert.CalledOnce(t, css.GetUserForkFunc)
 			})
 		})

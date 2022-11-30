@@ -1,14 +1,16 @@
 import { gql } from '@sourcegraph/http-client'
 
 const analyticsStatItemFragment = gql`
-    fragment AnalyticsStatItemFragment on AnalyticsStatItem {
+    fragment SearchStatItemFragment on AnalyticsStatItem {
         nodes {
             date
             count
+            uniqueUsers
             registeredUsers
         }
         summary {
             totalCount
+            totalUniqueUsers
             totalRegisteredUsers
         }
     }
@@ -20,20 +22,21 @@ export const SEARCH_STATISTICS = gql`
             analytics {
                 search(dateRange: $dateRange, grouping: $grouping) {
                     searches {
-                        ...AnalyticsStatItemFragment
+                        ...SearchStatItemFragment
                     }
                     resultClicks {
-                        ...AnalyticsStatItemFragment
+                        ...SearchStatItemFragment
                     }
                     fileViews {
-                        ...AnalyticsStatItemFragment
+                        ...SearchStatItemFragment
                     }
                     fileOpens {
-                        ...AnalyticsStatItemFragment
+                        ...SearchStatItemFragment
                     }
                     codeCopied {
                         summary {
                             totalCount
+                            totalUniqueUsers
                             totalRegisteredUsers
                         }
                     }

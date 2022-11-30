@@ -3,7 +3,7 @@ import React, { useCallback, useEffect } from 'react'
 import { mdiClose, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { SearchContextProps } from '@sourcegraph/search'
+import { SearchContextProps, SearchMode } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery, Toggles } from '@sourcegraph/search-ui'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { NoResultsSectionID as SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
@@ -49,7 +49,7 @@ const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<Search
             >
                 {showSearchContext && (
                     <>
-                        <div className={classNames(searchBoxStyle.searchBoxContextDropdown, styles.fakeSearchContext)}>
+                        <div className={classNames(searchBoxStyle.searchBoxAlignMiddle, styles.fakeSearchContext)}>
                             <Button
                                 as="div"
                                 variant="link"
@@ -95,8 +95,10 @@ const SearchInputExample: React.FunctionComponent<React.PropsWithChildren<Search
                         navbarSearchQuery={query}
                         caseSensitive={false}
                         patternType={patternType}
+                        searchMode={SearchMode.Precise}
                         setCaseSensitivity={noop}
                         setPatternType={noop}
+                        setSearchMode={noop}
                         settingsCascade={{ subjects: null, final: {} }}
                         showCopyQueryButton={false}
                         interactive={false}

@@ -3,23 +3,20 @@ package codeintel
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type metricsReporterJob struct{}
@@ -39,48 +36,40 @@ func (j *metricsReporterJob) Config() []env.Config {
 }
 
 func (j *metricsReporterJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("routines", "metrics reporting routines"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-
-	rawDB, err := workerdb.Init()
-	if err != nil {
-		return nil, err
-	}
-	db := database.NewDB(logger, rawDB)
-	rawCodeIntelDB, err := codeintel.InitCodeIntelDatabase()
-	if err != nil {
-		return nil, err
-	}
-	codeIntelDB := database.NewDB(logger, rawCodeIntelDB)
-
-	gitserverClient, err := codeintel.InitGitserverClient()
+	services, err := codeintel.InitServices()
 	if err != nil {
 		return nil, err
 	}
 
-	repoUpdater := codeintel.InitRepoUpdaterClient()
-	uploadSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
-	autoindexingSvc := autoindexing.GetService(db, uploadSvc, gitserverClient, repoUpdater)
+	observationContext := observation.ContextWithLogger(
+		logger.Scoped("routines", "metrics reporting routines"),
+	)
 
-	indexWorkerStore := autoindexingSvc.WorkerutilStore()
-
-	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "codeintel", indexWorkerStore, configInst.MetricsConfig)
+	db, err := workerdb.InitDBWithLogger(logger)
 	if err != nil {
 		return nil, err
 	}
 
-	routines := []goroutine.BackgroundRoutine{
-		executorMetricsReporter,
+	// TODO: move this and dependency {sync,index} metrics back to their respective jobs and keep for executor reporting only
+	uploads.MetricReporters(services.UploadsService, observationContext)
+
+	dependencySyncStore := dbworkerstore.NewWithMetrics(db.Handle(), autoindexing.DependencySyncingJobWorkerStoreOptions, observationContext)
+	dependencyIndexingStore := dbworkerstore.NewWithMetrics(db.Handle(), autoindexing.DependencyIndexingJobWorkerStoreOptions, observationContext)
+	dbworker.InitPrometheusMetric(observationContext, dependencySyncStore, "codeintel", "dependency_sync", nil)
+	dbworker.InitPrometheusMetric(observationContext, dependencyIndexingStore, "codeintel", "dependency_index", nil)
+
+	executorMetricsReporter, err := executorqueue.NewMetricReporter(
+		observationContext,
+		"codeintel",
+		dbworkerstore.NewWithMetrics(db.Handle(), autoindexing.IndexWorkerStoreOptions, observationContext),
+		configInst.MetricsConfig,
+	)
+	if err != nil {
+		return nil, err
 	}
 
-	return routines, nil
+	return []goroutine.BackgroundRoutine{executorMetricsReporter}, nil
 }
-
-//
-//
 
 type janitorConfig struct {
 	MetricsConfig *executorqueue.Config

@@ -124,6 +124,12 @@ export const DiffSplitHunk: React.FunctionComponent<React.PropsWithChildren<Diff
                     key: current.anchor,
                     'data-split-mode': 'split',
                     'data-testid': current.anchor,
+                    /*
+                        a11y-ignore
+                        Rule: "color-contrast" (Elements must have sufficient color contrast) for all changes in this file
+                        GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
+                    */
+                    className: 'a11y-ignore',
                 }
 
                 const lineProps = {

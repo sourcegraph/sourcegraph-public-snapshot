@@ -1470,6 +1470,16 @@ declare module 'sourcegraph' {
 
         /** Predefined icons to display next ot the summary. */
         iconKind?: 'info' | 'error' | 'warning'
+
+        /**
+         * When set, this renders a row of button underneath the content. Note
+         * that this was added after the extension deprecation and will only
+         * work with newer clients.
+         *
+         * When buttons are rendered this way, an eventual dismiss button is
+         * appended to this list.
+         */
+        buttons?: React.ReactNode[]
     }
 
     export interface HoverProvider {

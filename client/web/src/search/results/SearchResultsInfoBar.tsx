@@ -12,9 +12,10 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 
 import {
     getCodeMonitoringCreateAction,
@@ -68,6 +69,8 @@ export interface SearchResultsInfoBarProps
 
     sidebarCollapsed: boolean
     setSidebarCollapsed: (collapsed: boolean) => void
+
+    isSourcegraphDotCom: boolean
 }
 
 /**
@@ -77,14 +80,24 @@ export interface SearchResultsInfoBarProps
 export const SearchResultsInfoBar: React.FunctionComponent<
     React.PropsWithChildren<SearchResultsInfoBarProps>
 > = props => {
+    const globalTypeFilter = useMemo(
+        () => (props.query ? findFilter(props.query, 'type', FilterKind.Global)?.value?.value : undefined),
+        [props.query]
+    )
+
     const canCreateMonitorFromQuery = useMemo(() => {
-        if (!props.query) {
+        if (globalTypeFilter) {
             return false
         }
-        const globalTypeFilterInQuery = findFilter(props.query, 'type', FilterKind.Global)
-        const globalTypeFilterValue = globalTypeFilterInQuery?.value ? globalTypeFilterInQuery.value.value : undefined
-        return globalTypeFilterValue === 'diff' || globalTypeFilterValue === 'commit'
-    }, [props.query])
+        return globalTypeFilter === 'diff' || globalTypeFilter === 'commit'
+    }, [globalTypeFilter])
+
+    const canCreateBatchChangeFromQuery = useMemo(() => {
+        if (!globalTypeFilter) {
+            return true
+        }
+        return globalTypeFilter !== 'diff' && globalTypeFilter !== 'commit'
+    }, [globalTypeFilter])
 
     // When adding a new create action check and update the $collapse-breakpoint in CreateActions.module.scss.
     // The collapse breakpoint indicates at which window size we hide the buttons and show the collapsed menu instead.
@@ -94,8 +107,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 getBatchChangeCreateAction(
                     props.query,
                     props.patternType,
-                    props.authenticatedUser,
-                    props.batchChangesEnabled && props.batchChangesExecutionEnabled
+                    Boolean(
+                        props.batchChangesEnabled &&
+                            props.batchChangesExecutionEnabled &&
+                            props.authenticatedUser &&
+                            canCreateBatchChangeFromQuery
+                    )
                 ),
                 getSearchContextCreateAction(props.query, props.authenticatedUser),
                 getInsightsCreateAction(
@@ -112,6 +129,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             props.query,
             props.batchChangesEnabled,
             props.batchChangesExecutionEnabled,
+            canCreateBatchChangeFromQuery,
         ]
     )
 
@@ -150,6 +168,21 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         >
             <div className={styles.row}>
                 {props.stats}
+
+                {props.isSourcegraphDotCom && (
+                    <CloudCtaBanner className="mb-5" variant="outlined">
+                        To search across your private repositories,{' '}
+                        <Link
+                            to="https://signup.sourcegraph.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => props.telemetryService.log('ClickedOnCloudCTA')}
+                        >
+                            try Sourcegraph Cloud
+                        </Link>
+                        .
+                    </CloudCtaBanner>
+                )}
 
                 <div className={styles.expander} />
 

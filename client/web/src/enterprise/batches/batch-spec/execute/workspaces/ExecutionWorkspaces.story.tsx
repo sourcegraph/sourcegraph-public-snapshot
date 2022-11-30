@@ -3,11 +3,10 @@ import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../components/WebStory'
-import { BatchSpecWorkspaceResolutionState } from '../../../../../graphql-operations'
+import { BatchSpecSource, BatchSpecWorkspaceResolutionState } from '../../../../../graphql-operations'
 import { GET_BATCH_CHANGE_TO_EDIT, WORKSPACE_RESOLUTION_STATUS } from '../../../create/backend'
 import {
     mockBatchChange,

@@ -9,5 +9,5 @@ import styles from './TruncatedText.module.scss'
 export const TruncatedText = forwardRef((props, reference) => {
     const { as: Component = 'span', className, ...otherProps } = props
 
-    return <Component className={classNames(className, styles.truncatedText)} {...otherProps} />
+    return <Component ref={reference} className={classNames(className, styles.truncatedText)} {...otherProps} />
 }) as ForwardReferenceComponent<'span'>

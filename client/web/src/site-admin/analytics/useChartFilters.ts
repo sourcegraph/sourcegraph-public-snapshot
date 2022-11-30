@@ -2,7 +2,7 @@ import { AnalyticsDateRange, AnalyticsGrouping } from '../../graphql-operations'
 import { useURLSyncedState } from '../../hooks'
 import { eventLogger } from '../../tracking/eventLogger'
 
-type IAggregation = 'count' | 'registeredUsers'
+type IAggregation = 'count' | 'uniqueUsers'
 
 interface IProps {
     name: string
@@ -71,7 +71,7 @@ export function useChartFilters(props: IProps): IResult {
                 {
                     tooltip: 'unique # of users triggered',
                     label: 'Unique users',
-                    value: 'registeredUsers',
+                    value: 'uniqueUsers',
                 },
             ],
         },

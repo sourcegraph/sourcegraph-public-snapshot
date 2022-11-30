@@ -1,7 +1,7 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, HTMLAttributes } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { useDeepMemo, Text, Series } from '@sourcegraph/wildcard'
+import { useDeepMemo, Text, Series, useDebounce } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
 import {
@@ -15,11 +15,9 @@ import {
     LivePreviewBanner,
     LivePreviewLegend,
     getSanitizedRepositories,
-    useLivePreview,
-    StateStatus,
     SERIES_MOCK_CHART,
 } from '../../../components'
-import { CodeInsightsBackendContext, SeriesChartContent } from '../../../core'
+import { useLivePreviewSeriesInsight, LivePreviewStatus } from '../../../core/hooks/live-preview-insight'
 
 import { getSanitizedCaptureQuery } from './capture-group/utils/capture-group-insight-sanitizer'
 import { InsightStep } from './search-insight'
@@ -31,68 +29,64 @@ export interface LivePreviewSeries {
     stroke: string
 }
 
-interface LineChartLivePreviewProps {
+interface LineChartLivePreviewProps extends HTMLAttributes<HTMLElement> {
     disabled: boolean
     repositories: string
     stepValue: string
     step: InsightStep
     isAllReposMode: boolean
-    className?: string
     series: LivePreviewSeries[]
 }
 
-export const LineChartLivePreview: React.FunctionComponent<LineChartLivePreviewProps> = props => {
-    const { disabled, repositories, stepValue, step, series, isAllReposMode, className } = props
-    const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
+export const LineChartLivePreview: FC<LineChartLivePreviewProps> = props => {
+    const { disabled, repositories, stepValue, step, series, isAllReposMode, ...attributes } = props
     const seriesToggleState = useSeriesToggle()
 
-    const sanitizedSeries = series.map(srs => {
-        const sanitizer = srs.generatedFromCaptureGroup ? getSanitizedCaptureQuery : (query: string) => query
-        return {
-            query: sanitizer(srs.query),
-            generatedFromCaptureGroup: srs.generatedFromCaptureGroup,
-            label: srs.label,
-            stroke: srs.stroke,
-        }
-    })
+    const settings = useDebounce(
+        useDeepMemo({
+            repositories: getSanitizedRepositories(repositories),
+            step: { [step]: stepValue },
+            series: series.map(srs => {
+                const sanitizer = srs.generatedFromCaptureGroup
+                    ? getSanitizedCaptureQuery
+                    : (query: string) => query.trim()
 
-    const settings = useDeepMemo({
-        disabled,
-        repositories: getSanitizedRepositories(repositories),
-        step: { [step]: stepValue },
-        series: sanitizedSeries,
-    })
-
-    const getLivePreview = useMemo(
-        () => ({
-            disabled: settings.disabled,
-            fetcher: () => getLivePreviewContent(settings),
+                return {
+                    query: sanitizer(srs.query),
+                    generatedFromCaptureGroups: srs.generatedFromCaptureGroup,
+                    label: srs.label,
+                    stroke: srs.stroke,
+                }
+            }),
         }),
-        [settings, getLivePreviewContent]
+        500
     )
 
-    const { state, update } = useLivePreview(getLivePreview)
+    const { state, refetch } = useLivePreviewSeriesInsight({
+        skip: disabled,
+        ...settings,
+    })
 
     return (
-        <aside className={className}>
-            <LivePreviewUpdateButton disabled={disabled} onClick={update} />
+        <aside {...attributes}>
+            <LivePreviewUpdateButton disabled={disabled} onClick={refetch} />
 
             <LivePreviewCard>
-                {state.status === StateStatus.Loading ? (
+                {state.status === LivePreviewStatus.Loading ? (
                     <LivePreviewLoading>Loading code insight</LivePreviewLoading>
-                ) : state.status === StateStatus.Error ? (
+                ) : state.status === LivePreviewStatus.Error ? (
                     <ErrorAlert error={state.error} />
                 ) : (
                     <LivePreviewChart>
                         {parent =>
-                            state.status === StateStatus.Data ? (
+                            state.status === LivePreviewStatus.Data ? (
                                 <SeriesChart
                                     type={SeriesBasedChartTypes.Line}
                                     width={parent.width}
                                     height={parent.height}
                                     data-testid="code-search-insight-live-preview"
                                     seriesToggleState={seriesToggleState}
-                                    {...state.data}
+                                    series={state.data}
                                 />
                             ) : (
                                 <>
@@ -101,10 +95,9 @@ export const LineChartLivePreview: React.FunctionComponent<LineChartLivePreviewP
                                         type={SeriesBasedChartTypes.Line}
                                         width={parent.width}
                                         height={parent.height}
-                                        seriesToggleState={seriesToggleState}
                                         // We cast to unknown here because ForwardReferenceComponent
                                         // doesn't support inferring as component with generic.
-                                        {...(SERIES_MOCK_CHART as SeriesChartContent<unknown>)}
+                                        series={SERIES_MOCK_CHART as Series<unknown>[]}
                                     />
                                     <LivePreviewBanner>
                                         {isAllReposMode
@@ -117,8 +110,8 @@ export const LineChartLivePreview: React.FunctionComponent<LineChartLivePreviewP
                     </LivePreviewChart>
                 )}
 
-                {state.status === StateStatus.Data && (
-                    <LivePreviewLegend series={state.data.series as Series<unknown>[]} />
+                {state.status === LivePreviewStatus.Data && (
+                    <LivePreviewLegend series={state.data as Series<unknown>[]} />
                 )}
             </LivePreviewCard>
 

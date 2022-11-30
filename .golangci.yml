@@ -16,8 +16,11 @@ linters:
     - staticcheck
     - typecheck
     - unconvert
-    - unused
-    - unparam
+    # Both of these are disabled because they produce a lot of errors. The issues below address these errors
+    # https://github.com/sourcegraph/sourcegraph/issues/43753
+    # https://github.com/sourcegraph/sourcegraph/issues/43755
+    #- unused
+    #- unparam
     - exportloopref
 
 linters-settings:
@@ -43,9 +46,15 @@ linters-settings:
       - exitAfterDefer # Only occurs in auxiliary tools
       - ifElseChain # Noisy for not much gain
       - singleCaseSwitch # Noisy for not much gain
+  unparam:
+
   govet:
     disable:
       - composites
+  staticcheck:
+    checks:
+      - "all"
+      - "-SA1019" #TODO(burmudar): Mostly because of opentracing deprecatio
   forbidigo:
     forbid:
       # Use errors.Newf instead
@@ -58,6 +67,9 @@ issues:
     - path: _test\.go
       linters:
         - bodyclose
+        - unparam
+        - gosimple
+        - unused
 
 run:
   timeout: 5m

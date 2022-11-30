@@ -2,7 +2,6 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
 import { EditorView } from '@codemirror/view'
 import { mdiOpenInNew, mdiFileDocument, mdiCheck, mdiPencil } from '@mdi/js'
-import classNames from 'classnames'
 import { debounce } from 'lodash'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
@@ -14,7 +13,6 @@ import { CodeExcerpt } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
-import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -24,6 +22,7 @@ import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeI
 import { LoadingSpinner, useObservable, Icon, Alert } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '../..'
+import { HighlightLineRange } from '../../../graphql-operations'
 import { focusEditor } from '../../codemirror-utils'
 import { parseFileBlockInput } from '../../serialize'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
@@ -55,7 +54,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
         output,
         telemetryService,
         isSelected,
-        isOtherBlockSelected,
+        showMenu,
         isReadOnly,
         hoverifier,
         extensionsController,
@@ -77,7 +76,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
         )
 
         const onLineRangeChange = useCallback(
-            (lineRange: IHighlightLineRange | null) => {
+            (lineRange: HighlightLineRange | null) => {
                 onFileSelected({
                     repositoryName: input.repositoryName,
                     revision: input.revision,
@@ -185,7 +184,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                 id={id}
                 aria-label="Notebook file block"
                 isSelected={isSelected}
-                isOtherBlockSelected={isOtherBlockSelected}
+                showMenu={showMenu}
                 isReadOnly={isReadOnly}
                 isInputVisible={showInputs}
                 setIsInputVisible={setShowInputs}
@@ -210,12 +209,12 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                     />
                 )}
                 {blobLines && blobLines === LOADING && (
-                    <div className={classNames('d-flex justify-content-center py-3', styles.highlightedFileWrapper)}>
+                    <div className="d-flex justify-content-center py-3">
                         <LoadingSpinner inline={false} />
                     </div>
                 )}
                 {blobLines && blobLines !== LOADING && !isErrorLike(blobLines) && (
-                    <div className={styles.highlightedFileWrapper}>
+                    <div>
                         <CodeExcerpt
                             className={styles.code}
                             repoName={input.repositoryName}

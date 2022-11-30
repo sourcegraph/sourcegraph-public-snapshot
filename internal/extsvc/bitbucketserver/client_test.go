@@ -1227,7 +1227,7 @@ func TestClient_WithAuthenticator(t *testing.T) {
 	}
 
 	if newClient.Auth != newToken {
-		t.Fatalf("auth: want %q but got %q", newToken, newClient.Auth)
+		t.Fatalf("auth: want %p but got %p", newToken, newClient.Auth)
 	}
 
 	if newClient.URL != old.URL {

@@ -250,8 +250,6 @@ func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int6
 
 	var result protocol.ExternalServiceSyncResult
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		// TODO(tsenart): Use response type for unmarshalling errors too.
-		// This needs to be done after rolling out the response type in prod.
 		return nil, errors.New(string(bs))
 	} else if len(bs) == 0 {
 		return &result, nil

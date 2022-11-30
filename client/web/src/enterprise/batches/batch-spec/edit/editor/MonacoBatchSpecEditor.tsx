@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { JSONSchemaType } from 'ajv'
 import classNames from 'classnames'
 import { cloneDeep } from 'lodash'
 // eslint-disable-next-line import/order
@@ -7,12 +8,21 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import 'monaco-yaml'
 
 import { Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
+import { distinctUntilChanged, filter, map, startWith, switchMap } from 'rxjs/operators'
 
+import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import batchSpecSchemaJSON from '../../../../../../../../schema/batch_spec.schema.json'
+import { requestGraphQL } from '../../../../../backend/graphql'
+import {
+    Scalars,
+    BatchSpecExecutionAvailableSecretKeysResult,
+    BatchSpecExecutionAvailableSecretKeysVariables,
+} from '../../../../../graphql-operations'
+
+import { BATCH_SPEC_EXECUTION_AVAILABLE_SECRET_KEYS } from './backend'
 
 import styles from './MonacoBatchSpecEditor.module.scss'
 
@@ -26,6 +36,7 @@ interface JSONSchema {
 
 export interface Props extends ThemeProps {
     className?: string
+    batchChangeNamespace?: { id: Scalars['ID']; __typename: 'User' | 'Org' }
     batchChangeName: string
     value: string | undefined
     onChange?: (newValue: string) => void
@@ -33,7 +44,9 @@ export interface Props extends ThemeProps {
     autoFocus?: boolean
 }
 
-interface State {}
+interface State {
+    availableSecrets?: string[]
+}
 
 /**
  * Editor for Batch specs using Monaco editor.
@@ -50,6 +63,37 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
+
+        // We fetch the execution secrets available in this namespace to provide
+        // autocomplete for env fields. The secrets are namespace-specific.
+        this.subscriptions.add(
+            componentUpdates
+                .pipe(
+                    filter(props => !props.readOnly && props.batchChangeNamespace !== undefined),
+                    distinctUntilChanged((prev, next) => prev.batchChangeNamespace === next.batchChangeNamespace),
+                    switchMap(props =>
+                        requestGraphQL<
+                            BatchSpecExecutionAvailableSecretKeysResult,
+                            BatchSpecExecutionAvailableSecretKeysVariables
+                        >(BATCH_SPEC_EXECUTION_AVAILABLE_SECRET_KEYS, {
+                            namespace: props.batchChangeNamespace!.id,
+                        })
+                    ),
+                    map(dataOrThrowErrors)
+                )
+                .subscribe(data => {
+                    if (data.node && (data.node.__typename === 'User' || data.node.__typename === 'Org')) {
+                        this.setState({ availableSecrets: data.node.executorSecrets.nodes.map(node => node.key) })
+                        if (this.monaco) {
+                            setDiagnosticsOptions(
+                                this.monaco,
+                                this.props.batchChangeName,
+                                data.node.executorSecrets.nodes.map(node => node.key)
+                            )
+                        }
+                    }
+                })
+        )
 
         this.subscriptions.add(
             componentUpdates
@@ -117,7 +161,7 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
     private onDidEditorMount(): void {
         const monaco = this.monaco!
 
-        setDiagnosticsOptions(monaco, this.props.batchChangeName)
+        setDiagnosticsOptions(monaco, this.props.batchChangeName, this.state.availableSecrets)
 
         // Only listen to 1 event each to avoid receiving events from other Monaco editors on the
         // same page (if there are multiple).
@@ -148,18 +192,22 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
     }
 }
 
-function setDiagnosticsOptions(editor: typeof monaco, batchChangeName: string): void {
+function setDiagnosticsOptions(editor: typeof monaco, batchChangeName: string, availableSecrets?: string[]): void {
     const schema = cloneDeep(batchSpecSchemaJSON)
-    // We don't allow env forwarding in src-cli so we remove it from the schema
-    // so that monaco can show the error inline.
-    schema.properties.steps.items.properties.env.oneOf[2].items!.oneOf = schema.properties.steps.items.properties.env.oneOf[2].items!.oneOf.filter(
-        type => type.type !== 'string'
-    )
 
     // Temporarily remove the mount field from the schema, so it does not show up in the auto-suggestion.
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     delete schema.properties.steps.items.properties.mount
+
+    if (availableSecrets !== undefined) {
+        // Rewrite the JSON schema so that the env field has proper auto completion and
+        // warns if any secrets referenced don't exist.
+        ;(schema.properties.steps.items.properties.env.oneOf[2].items!
+            .oneOf[0] as JSONSchemaType<'string'>).examples = availableSecrets
+        ;(schema.properties.steps.items.properties.env.oneOf[2].items!
+            .oneOf[0] as JSONSchemaType<'string'>).enum = availableSecrets
+    }
 
     // Enforce the exact name match. The user must use the settings UI to change the name.
     schema.properties.name.pattern = `^${batchChangeName}$`

@@ -11,7 +11,7 @@ import { Alert, Icon, Text, Link, AnchorLink, Button } from '@sourcegraph/wildca
 import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { SourcegraphContext } from '../jscontext'
+import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SourcegraphIcon } from './icons'
@@ -25,7 +25,12 @@ interface SignInPageProps {
     authenticatedUser: AuthenticatedUser | null
     context: Pick<
         SourcegraphContext,
-        'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'resetPasswordEnabled'
+        | 'allowSignup'
+        | 'authProviders'
+        | 'sourcegraphDotComMode'
+        | 'xhrHeaders'
+        | 'resetPasswordEnabled'
+        | 'experimentalFeatures'
     >
 }
 
@@ -35,15 +40,33 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const location = useLocation()
     const [error, setError] = useState<Error | null>(null)
 
+    const isOperatorHidingEnabled = props.context.experimentalFeatures.hideSourcegraphOperatorLogin ?? false
+
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(location)
         return <Navigate to={returnTo} replace={true} />
     }
 
-    const [[builtInAuthProvider], thirdPartyAuthProviders] = partition(
+    const [[builtInAuthProvider], nonBuiltinAuthProviders] = partition(
         props.context.authProviders,
         provider => provider.isBuiltin
     )
+
+    const shouldShowProvider = function (provider: AuthProvider): boolean {
+        // Hide the legacy OIDC sign-in by default if the hiding feature flag is turned on.
+        if (provider.serviceType === 'openidconnect' && provider.displayName === 'Sourcegraph Employee') {
+            return !isOperatorHidingEnabled || new URLSearchParams(location.search).has('sourcegraph-operator')
+        }
+
+        // Hide the Sourcegraph Operator authentication provider by default because it is
+        // not useful to customer users and may even cause confusion.
+        if (provider.serviceType === 'sourcegraph-operator') {
+            return new URLSearchParams(location.search).has('sourcegraph-operator')
+        }
+        return true
+    }
+
+    const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))
 
     const body =
         !builtInAuthProvider && thirdPartyAuthProviders.length === 0 ? (
@@ -91,7 +114,10 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 </div>
                 {props.context.allowSignup ? (
                     <Text>
-                        New to Sourcegraph? <Link to={`/sign-up${location.search}`}>Sign up</Link>
+                        New to Sourcegraph?{' '}
+                        <Link to="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
+                            Sign up
+                        </Link>
                     </Text>
                 ) : (
                     <Text className="text-muted">Need an account? Contact your site admin</Text>

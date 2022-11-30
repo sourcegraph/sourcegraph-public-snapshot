@@ -12,17 +12,12 @@ import {
     appendSubtreeQueryParameter,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import {
-    LastSyncedIcon,
-    FileMatchChildrenStyles as styles,
-    CodeExcerpt,
-    FetchFileParameters,
-} from '@sourcegraph/search-ui'
+import { LastSyncedIcon, FileMatchChildrenStyles as styles, CodeExcerpt } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
-import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
@@ -30,6 +25,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { Button, Code } from '@sourcegraph/wildcard'
 
+import { HighlightLineRange } from '../../../graphql-operations'
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
@@ -160,7 +156,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     filePath: result.path,
                     disableTimeout: false,
                     ranges: grouped.map(
-                        (group): IHighlightLineRange => ({
+                        (group): HighlightLineRange => ({
                             startLine: group.startLine,
                             endLine: group.endLine,
                         })

@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { Button, ButtonGroup, Input } from '@sourcegraph/wildcard'
 
 import { SeriesSortOptionsInput, SeriesSortDirection, SeriesSortMode } from '../../../../../../../../graphql-operations'
-import { MAX_NUMBER_OF_SERIES } from '../../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
+import { MAX_NUMBER_OF_SERIES } from '../../../../../../constants'
 import { DrillDownFiltersFormValues } from '../drill-down-filters-panel'
 
 import styles from './SortFilterSeriesPanel.module.scss'
@@ -18,10 +18,6 @@ interface SortFilterSeriesPanelProps {
     onChange: (parameter: DrillDownFiltersFormValues['seriesDisplayOptions']) => void
 }
 
-// It is possible to have N number of series, but we need to have maximum to render in UI
-// or else it gets too cluttered to view
-const maxLimit = MAX_NUMBER_OF_SERIES
-
 export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = ({ value, onChange }) => {
     const handleToggle = (sortOptions: SeriesSortOptionsInput): void => {
         onChange({ ...value, sortOptions })
@@ -33,7 +29,7 @@ export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = ({ value, o
 
         // If a value is provided, clamp that value between 1 and maxLimit
         if (inputValue.length > 0) {
-            limit = Math.max(Math.min(parseInt(inputValue, 10), maxLimit), 1).toString()
+            limit = Math.max(Math.min(parseInt(inputValue, 10), MAX_NUMBER_OF_SERIES), 1).toString()
         }
         onChange({ ...value, limit })
     }
@@ -41,7 +37,7 @@ export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = ({ value, o
     const handleBlur: FocusEventHandler<HTMLInputElement> = event => {
         const limit = event.target.value
         if (limit === '') {
-            onChange({ ...value, limit: `${maxLimit}` })
+            onChange({ ...value, limit: `${MAX_NUMBER_OF_SERIES}` })
         }
     }
 
@@ -114,13 +110,13 @@ export const SortFilterSeriesPanel: FC<SortFilterSeriesPanelProps> = ({ value, o
             </section>
             <footer className={styles.footer}>
                 <span>
-                    Number of data series <small className="text-muted">(max {maxLimit})</small>
+                    Number of data series <small className="text-muted">(max {MAX_NUMBER_OF_SERIES})</small>
                 </span>
                 <Input
                     type="number"
                     step="1"
                     min={1}
-                    max={maxLimit}
+                    max={MAX_NUMBER_OF_SERIES}
                     value={value.limit}
                     onChange={handleChange}
                     onBlur={handleBlur}

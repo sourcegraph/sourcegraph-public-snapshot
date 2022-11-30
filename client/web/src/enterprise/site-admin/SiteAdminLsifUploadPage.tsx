@@ -38,7 +38,7 @@ export const SiteAdminLsifUploadPage: FunctionComponent<React.PropsWithChildren<
             ) : !uploadOrError.projectRoot ? (
                 <ErrorAlert prefix="Error loading LSIF upload" error={{ message: 'Cannot resolve project root' }} />
             ) : (
-                <Redirect to={`${uploadOrError.projectRoot.repository.url}/-/code-graph/uploads/${id}`} />
+                <Redirect to={`${uploadOrError.projectRoot.commit.repository.url}/-/code-graph/uploads/${id}`} />
             )}
         </div>
     )

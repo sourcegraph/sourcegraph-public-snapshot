@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -24,7 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -39,7 +40,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-const testDiff = `diff README.md README.md
+var testDiff = []byte(`diff README.md README.md
 index 671e50a..851b23a 100644
 --- README.md
 +++ README.md
@@ -56,12 +57,12 @@ index 6f8b5d9..17400bc 100644
 -example.com
 +sourcegraph.com
  never-touch-the-mouse.com
-`
+`)
 
 // testDiffGraphQL is the parsed representation of testDiff.
 var testDiffGraphQL = apitest.FileDiffs{
 	TotalCount: 2,
-	RawDiff:    testDiff,
+	RawDiff:    string(testDiff),
 	DiffStat:   apitest.DiffStat{Added: 2, Deleted: 2},
 	PageInfo:   apitest.PageInfo{},
 	Nodes: []apitest.FileDiff{
@@ -97,7 +98,7 @@ var testDiffGraphQL = apitest.FileDiffs{
 func marshalDateTime(t testing.TB, ts time.Time) string {
 	t.Helper()
 
-	dt := graphqlbackend.DateTime{Time: ts}
+	dt := gqlutil.DateTime{Time: ts}
 
 	bs, err := dt.MarshalJSON()
 	if err != nil {
@@ -178,30 +179,13 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 		return api.CommitID(rev), nil
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
-
-	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*gitdomain.Commit, error) {
-		if _, ok := byRev[id]; !ok {
-			t.Fatalf("GetCommit received unexpected ID: %s", id)
-		}
-		return &gitdomain.Commit{ID: id}, nil
-	}
-	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 }
 
-func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
+func mockRepoComparison(t *testing.T, gitserverClient *gitserver.MockClient, baseRev, headRev string, diff []byte) {
 	t.Helper()
 
 	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
-
-	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		if spec != baseRev && spec != headRev {
-			t.Fatalf("gitserver.Mocks.ResolveRevision received unknown spec: %s", spec)
-		}
-		return api.CommitID(spec), nil
-	}
-	t.Cleanup(func() { gitserver.Mocks.GetCommit = nil })
-
-	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+	gitserverClientWithExecReader := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
 			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
 		}
@@ -209,17 +193,23 @@ func mockRepoComparison(t *testing.T, baseRev, headRev, diff string) {
 		if have, want := args[len(args)-2], spec; have != want {
 			t.Fatalf("gitserver.ExecReader received wrong spec: %q, want %q", have, want)
 		}
-		return io.NopCloser(strings.NewReader(diff)), nil
-	}
-	t.Cleanup(func() { gitserver.Mocks.ExecReader = nil })
+		return io.NopCloser(bytes.NewReader(diff)), nil
+	})
 
-	gitserver.Mocks.MergeBase = func(repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
+	gitserverClientWithExecReader.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		if spec != baseRev && spec != headRev {
+			t.Fatalf("gitserver.Mocks.ResolveRevision received unknown spec: %s", spec)
+		}
+		return api.CommitID(spec), nil
+	})
+
+	gitserverClientWithExecReader.MergeBaseFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, a api.CommitID, b api.CommitID) (api.CommitID, error) {
 		if string(a) != baseRev && string(b) != headRev {
 			t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
 		}
 		return a, nil
-	}
-	t.Cleanup(func() { gitserver.Mocks.MergeBase = nil })
+	})
+	*gitserverClient = *gitserverClientWithExecReader
 }
 
 func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.Changeset, batchChange int64) {

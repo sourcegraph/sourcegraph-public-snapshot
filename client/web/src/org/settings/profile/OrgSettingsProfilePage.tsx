@@ -9,10 +9,10 @@ import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { OrgAreaPageProps } from '../../area/OrgArea'
+import { OrgAreaRouteContext } from '../../area/OrgArea'
 import { updateOrganization } from '../../backend'
 
-interface Props extends Pick<OrgAreaPageProps, 'org' | 'onOrganizationUpdate'> {}
+interface Props extends Pick<OrgAreaRouteContext, 'org' | 'onOrganizationUpdate'> {}
 
 /**
  * The organization profile settings page.

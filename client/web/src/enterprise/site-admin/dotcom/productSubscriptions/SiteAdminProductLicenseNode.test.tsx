@@ -1,4 +1,3 @@
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 
 import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
@@ -10,25 +9,25 @@ describe('SiteAdminProductLicenseNode', () => {
         expect(
             renderWithBrandedContext(
                 <SiteAdminProductLicenseNode
-                    node={
-                        {
-                            createdAt: '2020-01-01',
-                            id: 'l1',
-                            licenseKey: 'lk1',
-                            info: {
-                                __typename: 'ProductLicenseInfo',
-                                expiresAt: '2021-01-01',
-                                productNameWithBrand: 'NB',
-                                tags: ['a'],
-                                userCount: 123,
-                            },
-                            subscription: {
-                                name: 's',
-                                activeLicense: { id: 'l1' },
-                                urlForSiteAdmin: '/s',
-                            } as GQL.IProductSubscription,
-                        } as GQL.IProductLicense
-                    }
+                    node={{
+                        createdAt: '2020-01-01',
+                        id: 'l1',
+                        licenseKey: 'lk1',
+                        info: {
+                            __typename: 'ProductLicenseInfo',
+                            expiresAt: '2021-01-01',
+                            productNameWithBrand: 'NB',
+                            tags: ['a'],
+                            userCount: 123,
+                        },
+                        subscription: {
+                            id: 'id1',
+                            account: null,
+                            name: 's',
+                            activeLicense: { id: 'l1' },
+                            urlForSiteAdmin: '/s',
+                        },
+                    }}
                     showSubscription={true}
                 />
             ).asFragment()
@@ -39,25 +38,25 @@ describe('SiteAdminProductLicenseNode', () => {
         expect(
             renderWithBrandedContext(
                 <SiteAdminProductLicenseNode
-                    node={
-                        {
-                            createdAt: '2020-01-01',
-                            id: 'l1',
-                            licenseKey: 'lk1',
-                            info: {
-                                __typename: 'ProductLicenseInfo',
-                                expiresAt: '2021-01-01',
-                                productNameWithBrand: 'NB',
-                                tags: ['a'],
-                                userCount: 123,
-                            },
-                            subscription: {
-                                name: 's',
-                                activeLicense: { id: 'l0' },
-                                urlForSiteAdmin: '/s',
-                            } as GQL.IProductSubscription,
-                        } as GQL.IProductLicense
-                    }
+                    node={{
+                        createdAt: '2020-01-01',
+                        id: 'l1',
+                        licenseKey: 'lk1',
+                        info: {
+                            __typename: 'ProductLicenseInfo',
+                            expiresAt: '2021-01-01',
+                            productNameWithBrand: 'NB',
+                            tags: ['a'],
+                            userCount: 123,
+                        },
+                        subscription: {
+                            id: 'id1',
+                            account: null,
+                            name: 's',
+                            activeLicense: { id: 'l0' },
+                            urlForSiteAdmin: '/s',
+                        },
+                    }}
                     showSubscription={true}
                 />
             ).asFragment()

@@ -7,12 +7,15 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -83,15 +86,15 @@ func checkEmailAbuse(ctx context.Context, db database.DB, userID int32) (abused 
 // Add adds an email address to a user. If email verification is required, it sends an email
 // verification email.
 func (userEmails) Add(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string) error {
-	logger = logger.Scoped("UserEmails", "handles user emails")
+	logger = logger.Scoped("UserEmails.Add", "handles addition of user emails")
 	// 🚨 SECURITY: Only the user and site admins can add an email address to a user.
-	if err := CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return err
 	}
 
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
 	// following abuse prevention checks.
-	if isSiteAdmin := CheckCurrentUserIsSiteAdmin(ctx, db) == nil; !isSiteAdmin {
+	if isSiteAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, db) == nil; !isSiteAdmin {
 		abused, reason, err := checkEmailAbuse(ctx, db, userID)
 		if err != nil {
 			return err
@@ -148,6 +151,55 @@ func (userEmails) Add(ctx context.Context, logger log.Logger, db database.DB, us
 	return nil
 }
 
+// Remove removes the e-mail from the specified user.
+func (userEmails) Remove(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string) (err error) {
+	logger = logger.Scoped("UserEmails.Remove", "handles removal of user emails")
+
+	// 🚨 SECURITY: Only the authenticated user and site admins can remove email
+	// from users' accounts.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
+		return err
+	}
+
+	tx, err := db.Transact(ctx)
+	if err != nil {
+		return errors.Wrap(err, "starting transaction")
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
+		return errors.Wrap(err, "removing user e-email")
+	}
+
+	// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
+	// tokens that may have been sent to that email.
+	if err := tx.Users().DeletePasswordResetCode(ctx, userID); err != nil {
+		return errors.Wrap(err, "deleting reset codes")
+	}
+
+	if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
+		return errors.Wrap(err, "removing stale perforce external account")
+	}
+
+	if conf.CanSendEmail() {
+		if err := UserEmails.SendUserEmailOnFieldUpdate(ctx, logger, tx, userID, "removed an email"); err != nil {
+			logger.Warn("Failed to send email to inform user of email removal", log.Error(err))
+		}
+	}
+
+	return nil
+}
+
+// deleteStalePerforceExternalAccounts will remove any Perforce external accounts associated with the given user
+// and e-mail combination.
+func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, userID int32, email string) error {
+	return db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
+		UserID:      userID,
+		AccountID:   email,
+		ServiceType: extsvc.TypePerforce,
+	})
+}
+
 // MakeEmailVerificationCode returns a random string that can be used as an email verification
 // code. If there is not enough entropy to create a random string, it returns a non-nil error.
 func MakeEmailVerificationCode() (string, error) {
@@ -165,7 +217,7 @@ func SendUserEmailVerificationEmail(ctx context.Context, username, email, code s
 	q.Set("code", code)
 	q.Set("email", email)
 	verifyEmailPath, _ := router.Router().Get(router.VerifyEmail).URLPath()
-	return txemail.Send(ctx, txemail.Message{
+	return txemail.Send(ctx, "user_email_verification", txemail.Message{
 		To:       []string{email},
 		Template: verifyEmailTemplates,
 		Data: struct {
@@ -214,7 +266,7 @@ func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, logger log.Log
 		return err
 	}
 
-	return txemail.Send(ctx, txemail.Message{
+	return txemail.Send(ctx, "user_account_update", txemail.Message{
 		To:       []string{email},
 		Template: updateAccountEmailTemplate,
 		Data: struct {

@@ -5,9 +5,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/assert"
 )
 
 // mockPolicyOpts configurable options for the mock password policy
@@ -19,6 +20,11 @@ type mockPolicyOpts struct {
 type passwordTest struct {
 	password string
 	errorStr string
+}
+
+type addrTest struct {
+	addr string
+	pass bool
 }
 
 // setMockPasswordPolicyConfig helper for returning a customized mock config
@@ -126,4 +132,32 @@ func TestPasswordPolicy(t *testing.T) {
 		password = "thisshouldnowpassaswell"
 		assert.Nil(t, ValidatePassword(password))
 	})
+}
+
+func TestAddrValidation(t *testing.T) {
+	var addrTests = []addrTest{
+		{"127/0.0.1", false},
+		{"-oFooBaz", false},
+		{"sourcegraph com", false},
+		{"127.0.0.1", true},
+		{"127.0.0.1:80", true},
+		{"127.0.0.1:foo", false},
+		{"sourcegraph.com", true},
+		{"sourcegraph.com:443", true},
+		{"sourcegraph.com:-baz", false},
+		{"git123@sourcegraph.com", true},
+		{"git123@127.0.0.1:80", true},
+		{"git123@git456@sourcegraph.com", false},
+		{"git-123@sourcegraph.com", false},
+		{"git-123@sourcegraph.com:foo", false},
+		{"git@sourcegraph.com", true},
+		{"thissubdomaindoesnotexist.sourcegraph.com", false},
+	}
+
+	for _, a := range addrTests {
+		t.Run(a.addr, func(t *testing.T) {
+			assert.True(t, ValidateRemoteAddr(a.addr) == a.pass)
+		})
+	}
+
 }

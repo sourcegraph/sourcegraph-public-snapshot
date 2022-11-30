@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,7 +18,7 @@ func (s *GitRepoSyncer) Type() string {
 
 // IsCloneable checks to see if the Git remote URL is cloneable.
 func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
-	if isAlwaysCloningTest(api.RepoName(remoteURL.String())) {
+	if isAlwaysCloningTestRemoteURL(remoteURL) {
 		return nil
 	}
 	if testGitRepoExists != nil {

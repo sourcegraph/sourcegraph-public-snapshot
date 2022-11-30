@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox/libs"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
+	"github.com/sourcegraph/sourcegraph/internal/memo"
 )
 
 type LuaLib interface {
@@ -12,15 +13,14 @@ type LuaLib interface {
 }
 
 var defaultAPIs = map[string]LuaLib{
-	"json": libs.JSON,
-	"path": libs.Path,
+	"internal_path": libs.Path,
 }
 
-var DefaultGoModules = func() map[string]lua.LGFunction {
+var DefaultGoModules = memo.NewMemoizedConstructor(func() (map[string]lua.LGFunction, error) {
 	modules := map[string]lua.LGFunction{}
 	for name, api := range defaultAPIs {
 		modules[name] = util.CreateModule(api.LuaAPI())
 	}
 
-	return modules
-}()
+	return modules, nil
+})

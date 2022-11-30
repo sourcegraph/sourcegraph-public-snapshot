@@ -6,6 +6,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/ext"
 
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -13,11 +14,11 @@ import (
 // MonitoringAlert implements GraphQL getters on top of srcprometheus.MonitoringAlert
 type MonitoringAlert srcprometheus.MonitoringAlert
 
-func (r *MonitoringAlert) Timestamp() DateTime { return DateTime{r.TimestampValue} }
-func (r *MonitoringAlert) Name() string        { return r.NameValue }
-func (r *MonitoringAlert) ServiceName() string { return r.ServiceNameValue }
-func (r *MonitoringAlert) Owner() string       { return r.OwnerValue }
-func (r *MonitoringAlert) Average() float64    { return r.AverageValue }
+func (r *MonitoringAlert) Timestamp() gqlutil.DateTime { return gqlutil.DateTime{r.TimestampValue} }
+func (r *MonitoringAlert) Name() string                { return r.NameValue }
+func (r *MonitoringAlert) ServiceName() string         { return r.ServiceNameValue }
+func (r *MonitoringAlert) Owner() string               { return r.OwnerValue }
+func (r *MonitoringAlert) Average() float64            { return r.AverageValue }
 
 func (r *siteResolver) MonitoringStatistics(ctx context.Context, args *struct {
 	Days *int32

@@ -36,7 +36,7 @@ var Mac = []category{
 		Checks: []*dependency{
 			{
 				Name:  "git",
-				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.34.1"))),
+				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.38.1"))),
 				Fix:   cmdFix(`brew install git`),
 			},
 			{
@@ -135,7 +135,14 @@ var Mac = []category{
 		},
 	},
 	categoryCloneRepositories(),
-	categoryProgrammingLanguagesAndTools(),
+	categoryProgrammingLanguagesAndTools(
+		// src-cli is installed differently on Ubuntu and Mac
+		&dependency{
+			Name:  "src",
+			Check: checkAction(check.Combine(check.InPath("src"), checkSrcCliVersion(">= 4.0.2"))),
+			Fix:   cmdFix(`brew upgrade sourcegraph/src-cli/src-cli || brew install sourcegraph/src-cli/src-cli`),
+		},
+	),
 	{
 		Name:      "Postgres database",
 		DependsOn: []string{depsHomebrew},

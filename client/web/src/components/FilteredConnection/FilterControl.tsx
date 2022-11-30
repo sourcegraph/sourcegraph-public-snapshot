@@ -14,12 +14,13 @@ export interface FilteredConnectionFilterValue {
 }
 
 /**
- * A filter to display next to the filter input field.
+ * A filter to display next to the search input field.
  */
 export interface FilteredConnectionFilter {
     /** The UI label for the filter. */
     label: string
 
+    /** "radio" or "select" */
     type: string
 
     /**

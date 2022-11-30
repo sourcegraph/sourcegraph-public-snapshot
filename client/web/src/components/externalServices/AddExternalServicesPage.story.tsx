@@ -33,6 +33,8 @@ export const Overview: Story = () => (
                 codeHostExternalServices={codeHostExternalServices}
                 nonCodeHostExternalServices={nonCodeHostExternalServices}
                 autoFocusForm={false}
+                externalServicesFromFile={false}
+                allowEditExternalServicesWithFile={false}
             />
         )}
     </WebStory>
@@ -49,6 +51,8 @@ export const AddConnectionBykind: Story = () => (
                 codeHostExternalServices={codeHostExternalServices}
                 nonCodeHostExternalServices={nonCodeHostExternalServices}
                 autoFocusForm={false}
+                externalServicesFromFile={false}
+                allowEditExternalServicesWithFile={false}
             />
         )}
     </WebStory>

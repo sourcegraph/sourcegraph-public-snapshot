@@ -14,11 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -53,7 +53,6 @@ func NewCommitIndexer(background context.Context, base database.DB, insights edb
 	commitStore := NewCommitStore(insights)
 
 	iterator := discovery.NewAllReposIterator(
-		dbcache.NewIndexableReposLister(observationContext.Logger, repoStore),
 		repoStore,
 		time.Now,
 		envvar.SourcegraphDotComMode(),
@@ -75,9 +74,13 @@ func NewCommitIndexer(background context.Context, base database.DB, insights edb
 		commitStore:       commitStore,
 		maxHistoricalTime: startTime,
 		background:        background,
-		getCommits:        getCommits,
-		operations:        operations,
-		clock:             clock,
+		getCommits: func(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error) {
+			// As this is an internal background task we should use an internal actor.
+			ctx = actor.WithInternalActor(ctx)
+			return getCommits(ctx, db, name, after, until, operation)
+		},
+		operations: operations,
+		clock:      clock,
 	}
 
 	return &indexer
@@ -199,26 +202,28 @@ func (i *CommitIndexer) indexNextWindow(name string, id api.RepoID, windowDurati
 }
 
 const (
-	emptyRepoErrMessagePrefix = `git command [git log --format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00`
-	emptyRepoErrMessageSuffix = ` --date-order] failed (output: ""): exit status 128`
+	emptyRepoErrMessagePrefix             = `git command [git log --format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00`
+	emptyRepoErrMessageSuffix             = `--date-order] failed (output: ""): exit status 128`
+	emptyRepoErrMessageSuffixWithNameOnly = `--date-order --name-only] failed (output: ""): exit status 128`
 )
 
-func generateEmptyRepoErrorMessage(after time.Time, until *time.Time) string {
-	fullEmptyRepoErrMessage := emptyRepoErrMessagePrefix + " --after=" + after.Format(time.RFC3339)
+func generateEmptyRepoErrorMessagePrefix(after time.Time, until *time.Time) string {
+	fullPrefix := emptyRepoErrMessagePrefix + " --after=" + after.Format(time.RFC3339)
 	if until != nil {
-		fullEmptyRepoErrMessage += " --before=" + until.Format(time.RFC3339Nano)
+		fullPrefix += " --before=" + until.Format(time.RFC3339)
 	}
-	return fullEmptyRepoErrMessage + emptyRepoErrMessageSuffix
+	return fullPrefix + emptyRepoErrMessageSuffix
 }
 
 func isCommitEmptyRepoError(err error, after time.Time, until *time.Time) bool {
-	emptyRepoErrMessage := generateEmptyRepoErrorMessage(after, until)
-	unwrappedErr := err
-	for unwrappedErr != nil {
-		if strings.Contains(err.Error(), emptyRepoErrMessage) {
+	for err != nil {
+		unwrappedErr := err
+		errString := unwrappedErr.Error()
+		if strings.HasPrefix(errString, generateEmptyRepoErrorMessagePrefix(after, until)) &&
+			(strings.HasPrefix(errString, emptyRepoErrMessagePrefix) || strings.HasPrefix(errString, emptyRepoErrMessageSuffixWithNameOnly)) {
 			return true
 		}
-		unwrappedErr = errors.Unwrap(unwrappedErr)
+		err = errors.Unwrap(unwrappedErr)
 	}
 	return false
 }

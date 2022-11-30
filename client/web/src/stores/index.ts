@@ -17,6 +17,7 @@ export {
     setQueryStateFromSettings,
     setSearchPatternType,
     setSearchCaseSensitivity,
+    setSearchMode,
     buildSearchURLQueryFromQueryState,
 } from './navbarSearchQueryState'
 export {
@@ -25,6 +26,7 @@ export {
     setExperimentalFeaturesFromSettings,
 } from './experimentalFeatures'
 export { useNotepadState, useNotepad } from './notepad'
+export { useCodeInsightsState as useCodeInsightsState } from './codeInsights'
 
 /**
  * observeStore converts a zustand store to an observable. The observable emits

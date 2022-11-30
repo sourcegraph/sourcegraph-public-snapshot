@@ -9,28 +9,26 @@ export interface StandardDatum {
 }
 
 export function buildFrequencyDatum(
-    datums: { daysUsed: number; frequency: number }[],
-    min: number,
-    max: number,
-    isGradual = true
+    datums: { daysUsed: number; frequency: number; percentage: number }[],
+    uniqueOrPercentage: 'unique' | 'percentage',
+    max: number
 ): FrequencyDatum[] {
     const result: FrequencyDatum[] = []
-    for (let days = min; days <= max; ++days) {
-        const index = datums.findIndex(datum => datum.daysUsed >= days)
-        if (isGradual || days === max) {
+    // loop from 30+ days to -> 1 day
+    for (let index = max - 1; index >= 0; index--) {
+        const daysUsed = index + 1
+        const datum = datums.find(data => data.daysUsed === daysUsed)
+
+        if (datum) {
             result.push({
-                label: days === max ? `${days}+` : `${days}`,
-                value: index >= 0 ? datums.slice(index).reduce((sum, datum) => sum + datum.frequency, 0) : 0,
-            })
-        } else if (index >= 0 && datums[index].daysUsed === days) {
-            result.push({
-                label: `${days}`,
-                value: datums[index].frequency,
+                label: `${daysUsed}`,
+                value: Math.round(datum[uniqueOrPercentage === 'unique' ? 'frequency' : 'percentage'] * 100) / 100, // round to .2,
             })
         } else {
             result.push({
-                label: `${days}+`,
-                value: 0,
+                label: daysUsed === max ? `${daysUsed}+` : `${daysUsed}`,
+                // if no item for 18 days in datums then copy value from last result item, i.e. 19 days.
+                value: result[result.length - 1]?.value || 0,
             })
         }
     }

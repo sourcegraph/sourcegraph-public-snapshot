@@ -41,9 +41,11 @@ export interface EditorActionsGroupProps {
 
 export const EditorActionsGroup: React.FunctionComponent<EditorActionsGroupProps> = ({ actions, onClick }) => (
     <>
-        <Text className="mb-1">
-            <strong>Quick actions:</strong>
-        </Text>
+        {actions.length > 0 && (
+            <Text className="mb-1">
+                <strong>Quick actions:</strong>
+            </Text>
+        )}
         <div className={classNames(styles.actions, 'mb-2')}>
             {actions.map(({ id, label }) => (
                 <Button key={id} className={styles.action} onClick={() => onClick(id)} variant="secondary" size="sm">

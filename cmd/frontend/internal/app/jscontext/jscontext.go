@@ -37,6 +37,7 @@ type authProviderInfo struct {
 	DisplayName       string `json:"displayName"`
 	ServiceType       string `json:"serviceType"`
 	AuthenticationURL string `json:"authenticationURL"`
+	ServiceID         string `json:"serviceID"`
 }
 
 // GenericPasswordPolicy a generic password policy that holds password requirements
@@ -115,6 +116,8 @@ type JSContext struct {
 	EnableLegacyExtensions bool `json:"enableLegacyExtensions"`
 
 	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
+
+	OutboundRequestLogLimit int `json:"outboundRequestLogLimit"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -152,6 +155,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 				DisplayName:       info.DisplayName,
 				ServiceType:       p.ConfigID().Type,
 				AuthenticationURL: info.AuthenticationURL,
+				ServiceID:         info.ServiceID,
 			})
 		}
 	}
@@ -245,9 +249,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
-		EnableLegacyExtensions: *conf.ExperimentalFeatures().EnableLegacyExtensions,
+		EnableLegacyExtensions: conf.ExperimentalFeatures().EnableLegacyExtensions,
 
 		LicenseInfo: licenseInfo,
+
+		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
 	}
 }
 

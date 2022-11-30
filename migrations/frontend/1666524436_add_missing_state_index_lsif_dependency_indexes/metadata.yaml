@@ -1,0 +1,3 @@
+name: Add missing state index on lsif_dependency_indexing_jobs table
+parents: [1666131819, 1666145729]
+createIndexConcurrently: true

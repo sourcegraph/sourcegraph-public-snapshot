@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 type resolvedBatchSpecWorkspaceResolver struct {
@@ -49,7 +50,8 @@ func (r *resolvedBatchSpecWorkspaceResolver) SearchResultPaths() []string {
 
 func (r *resolvedBatchSpecWorkspaceResolver) computeRepoResolver(ctx context.Context) *graphqlbackend.RepositoryResolver {
 	r.repoResolverOnce.Do(func() {
-		r.repoResolver = graphqlbackend.NewRepositoryResolver(r.store.DatabaseDB(), r.workspace.Repo)
+		db := r.store.DatabaseDB()
+		r.repoResolver = graphqlbackend.NewRepositoryResolver(db, gitserver.NewClient(db), r.workspace.Repo)
 	})
 
 	return r.repoResolver

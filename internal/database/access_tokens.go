@@ -6,12 +6,15 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -125,22 +128,23 @@ type AccessTokenStore interface {
 
 type accessTokenStore struct {
 	*basestore.Store
+	logger log.Logger
 }
 
 var _ AccessTokenStore = (*accessTokenStore)(nil)
 
 // AccessTokensWith instantiates and returns a new AccessTokenStore using the other store handle.
-func AccessTokensWith(other basestore.ShareableStore) AccessTokenStore {
-	return &accessTokenStore{Store: basestore.NewWithHandle(other.Handle())}
+func AccessTokensWith(other basestore.ShareableStore, logger log.Logger) AccessTokenStore {
+	return &accessTokenStore{Store: basestore.NewWithHandle(other.Handle()), logger: logger}
 }
 
 func (s *accessTokenStore) With(other basestore.ShareableStore) AccessTokenStore {
-	return &accessTokenStore{Store: s.Store.With(other)}
+	return &accessTokenStore{Store: s.Store.With(other), logger: s.logger}
 }
 
 func (s *accessTokenStore) Transact(ctx context.Context) (AccessTokenStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &accessTokenStore{Store: txBase}, err
+	return &accessTokenStore{Store: txBase, logger: s.logger}, err
 }
 
 func (s *accessTokenStore) Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {
@@ -184,6 +188,34 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 	).Scan(&id); err != nil {
 		return 0, "", err
 	}
+
+	// only log access tokens created by users
+	if !internal {
+		arg, err := json.Marshal(struct {
+			SubjectUserId int32    `json:"subject_user_id"`
+			CreatorUserId int32    `json:"creator_user_id"`
+			Scopes        []string `json:"scopes"`
+			Note          string   `json:"note"`
+		}{
+			SubjectUserId: subjectUserID,
+			CreatorUserId: creatorUserID,
+			Scopes:        scopes,
+			Note:          note,
+		})
+		if err != nil {
+			s.logger.Error("failed to marshall the access token log argument")
+		}
+
+		securityEventStore := NewDBWith(s.logger, s).SecurityEventLogs()
+		securityEventStore.LogEvent(ctx, &SecurityEvent{
+			Name:      SecurityEventAccessTokenCreated,
+			UserID:    uint32(creatorUserID),
+			Argument:  arg,
+			Source:    "BACKEND",
+			Timestamp: time.Now(),
+		})
+	}
+
 	return id, token, nil
 }
 
@@ -317,7 +349,21 @@ func (s *accessTokenStore) Count(ctx context.Context, opt AccessTokensListOption
 }
 
 func (s *accessTokenStore) DeleteByID(ctx context.Context, id int64) error {
-	return s.delete(ctx, sqlf.Sprintf("id=%d", id))
+	err := s.delete(ctx, sqlf.Sprintf("id=%d", id))
+	if err != nil {
+		return err
+	}
+
+	arg, err := json.Marshal(struct {
+		AccessTokenId int64 `json:"access_token_id"`
+	}{AccessTokenId: id})
+	if err != nil {
+		s.logger.Error("failed to marshall the access token log argument")
+	}
+
+	s.logAccessTokenDeleted(ctx, SecurityEventAccessTokenDeleted, arg)
+
+	return nil
 }
 
 func (s *accessTokenStore) HardDeleteByID(ctx context.Context, id int64) error {
@@ -332,6 +378,16 @@ func (s *accessTokenStore) HardDeleteByID(ctx context.Context, id int64) error {
 	if nrows == 0 {
 		return ErrAccessTokenNotFound
 	}
+
+	arg, err := json.Marshal(struct {
+		AccessTokenId int64 `json:"access_token_id"`
+	}{AccessTokenId: id})
+	if err != nil {
+		s.logger.Error("failed to marshall the access token log argument")
+	}
+
+	s.logAccessTokenDeleted(ctx, SecurityEventAccessTokenHardDeleted, arg)
+
 	return nil
 }
 
@@ -341,7 +397,23 @@ func (s *accessTokenStore) DeleteByToken(ctx context.Context, tokenHexEncoded st
 		return errors.Wrap(err, "AccessTokens.DeleteByToken")
 	}
 
-	return s.delete(ctx, sqlf.Sprintf("value_sha256=%s", toSHA256Bytes(token)))
+	err = s.delete(ctx, sqlf.Sprintf("value_sha256=%s", toSHA256Bytes(token)))
+	if err != nil {
+		return err
+	}
+
+	arg, err := json.Marshal(struct {
+		AccessTokenSHA256 []byte `json:"access_token_sha256"`
+	}{
+		AccessTokenSHA256: toSHA256Bytes(token),
+	})
+	if err != nil {
+		s.logger.Error("failed to marshall the access token log argument")
+	}
+
+	s.logAccessTokenDeleted(ctx, SecurityEventAccessTokenDeleted, arg)
+
+	return nil
 }
 
 func (s *accessTokenStore) delete(ctx context.Context, cond *sqlf.Query) error {
@@ -373,6 +445,19 @@ func decodeToken(tokenHexEncoded string) ([]byte, error) {
 func toSHA256Bytes(input []byte) []byte {
 	b := sha256.Sum256(input)
 	return b[:]
+}
+
+func (s *accessTokenStore) logAccessTokenDeleted(ctx context.Context, deletionType SecurityEventName, arg []byte) {
+	a := actor.FromContext(ctx)
+
+	securityEventStore := NewDBWith(s.logger, s).SecurityEventLogs()
+	securityEventStore.LogEvent(ctx, &SecurityEvent{
+		Name:      deletionType,
+		UserID:    uint32(a.UID),
+		Argument:  arg,
+		Source:    "BACKEND",
+		Timestamp: time.Now(),
+	})
 }
 
 type MockAccessTokens struct {

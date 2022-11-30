@@ -51,6 +51,7 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<Director
         isActive={props.isActive}
         isSelected={props.isSelected}
         isExpanded={props.isExpanded}
+        depth={props.depth}
     >
         <TreeLayerCell className="test-sidebar-file-decorable">
             <TreeLayerRowContents data-tree-is-directory="true" data-tree-path={props.entryInfo.path} isNew={true}>

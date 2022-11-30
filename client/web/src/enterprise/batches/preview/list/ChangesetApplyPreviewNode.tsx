@@ -31,24 +31,18 @@ export interface ChangesetApplyPreviewNodeProps extends ThemeProps {
 
 export const ChangesetApplyPreviewNode: React.FunctionComponent<
     React.PropsWithChildren<ChangesetApplyPreviewNodeProps>
-> = ({ node, queryChangesetSpecFileDiffs, expandChangesetDescriptions, ...props }) => {
-    if (node.__typename === 'HiddenChangesetApplyPreview') {
-        return (
-            <>
-                <span className={styles.changesetApplyPreviewNodeSeparator} />
-                <HiddenChangesetApplyPreviewNode node={node} />
-            </>
-        )
-    }
-    return (
-        <>
-            <span className={styles.changesetApplyPreviewNodeSeparator} />
+> = ({ node, queryChangesetSpecFileDiffs, expandChangesetDescriptions, ...props }) => (
+    <li className={styles.changesetApplyPreviewNode}>
+        <span className={styles.changesetApplyPreviewNodeSeparator} />
+        {node.__typename === 'HiddenChangesetApplyPreview' ? (
+            <HiddenChangesetApplyPreviewNode node={node} />
+        ) : (
             <VisibleChangesetApplyPreviewNode
                 node={node}
                 {...props}
                 queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                 expandChangesetDescriptions={expandChangesetDescriptions}
             />
-        </>
-    )
-}
+        )}
+    </li>
+)

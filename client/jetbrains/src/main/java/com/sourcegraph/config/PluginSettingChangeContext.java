@@ -4,21 +4,29 @@ import org.jetbrains.annotations.Nullable;
 
 public class PluginSettingChangeContext {
     @Nullable
-    final public String oldUrl;
+    public final String oldUrl;
 
     @Nullable
-    final public String oldAccessToken;
+    public final String oldAccessToken;
 
     @Nullable
-    final public String newUrl;
+    public final String newUrl;
 
     @Nullable
-    final public String newAccessToken;
+    public final String newAccessToken;
 
-    public PluginSettingChangeContext(@Nullable String oldUrl, @Nullable String oldAccessToken, @Nullable String newUrl, @Nullable String newAccessToken) {
+    @Nullable
+    public final String newCustomRequestHeaders;
+
+    public PluginSettingChangeContext(@Nullable String oldUrl,
+                                      @Nullable String oldAccessToken,
+                                      @Nullable String newUrl,
+                                      @Nullable String newAccessToken,
+                                      @Nullable String newCustomRequestHeaders) {
         this.oldUrl = oldUrl;
         this.oldAccessToken = oldAccessToken;
         this.newUrl = newUrl;
         this.newAccessToken = newAccessToken;
+        this.newCustomRequestHeaders = newCustomRequestHeaders;
     }
 }

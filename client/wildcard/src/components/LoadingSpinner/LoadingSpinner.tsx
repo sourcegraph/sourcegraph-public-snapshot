@@ -1,4 +1,4 @@
-import React from 'react'
+import { FC, SVGProps } from 'react'
 
 import classNames from 'classnames'
 
@@ -6,8 +6,7 @@ import { Icon } from '../Icon'
 
 import styles from './LoadingSpinner.module.scss'
 
-export interface LoadingSpinnerProps {
-    className?: string
+export interface LoadingSpinnerProps extends SVGProps<SVGSVGElement> {
     /**
      * Whether to show loading spinner with icon-inline
      *
@@ -16,14 +15,17 @@ export interface LoadingSpinnerProps {
     inline?: boolean
 }
 
-export const LoadingSpinner: React.FunctionComponent<React.PropsWithChildren<LoadingSpinnerProps>> = ({
-    inline = true,
-    className,
-    ...props
-}) => {
-    const finalClassName = classNames(styles.loadingSpinner, className)
+export const LoadingSpinner: FC<LoadingSpinnerProps> = props => {
+    const { inline = true, className, ...attribute } = props
 
     return (
-        <Icon inline={inline} aria-label="Loading" aria-live="polite" className={finalClassName} as="div" {...props} />
+        <Icon
+            as="div"
+            inline={inline}
+            aria-label="Loading"
+            aria-live="polite"
+            className={classNames(styles.loadingSpinner, className)}
+            {...attribute}
+        />
     )
 }

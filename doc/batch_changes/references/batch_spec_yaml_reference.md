@@ -204,7 +204,8 @@ steps:
 In this case, `steps.env` is an array. Each array item is either:
 
 1. An object with a single property, in which case the key is used as the environment variable name and the value the value, or
-2. A string that defines an environment variable to include from the environment `src` is being run within. This is useful to define secrets that you don't want to include in the spec file, but this makes the spec dependent on your environment, means that the local execution cache will be invalidated each time the environment variable changes, and means that the batch spec file is no longer [the sole source of truth intended by the Batch Changes design](../explanations/batch_changes_design.md).
+2. For src-cli execution: A string that defines an environment variable to include from the environment `src` is being run within. This is useful to define secrets that you don't want to include in the spec file, but this makes the spec dependent on your environment, means that the local execution cache will be invalidated each time the environment variable changes, and means that the batch spec file is no longer [the sole source of truth intended by the Batch Changes design](../explanations/batch_changes_design.md).
+3. For server-side execution: A string that defines a secret value to expose as an environment variable. Follow [the guide on executor secrets](../../admin/executor_secrets.md) to set them up. The editor will suggest available secrets. This is useful to use secret values that you don't want to include in the spec file. The execution cache will be invalidated each time the secret value changes, and means that the batch spec file is no longer [the sole source of truth intended by the Batch Changes design](../explanations/batch_changes_design.md).
 
 #### Examples
 
@@ -218,7 +219,7 @@ steps:
       - MESSAGE: Hello world!
 ```
 
-This example pulls in the `USER` environment variable and uses it to construct the line that will be appended to `README.md`:
+This example pulls in the `USER` environment variable, or for server-side uses the executor secret called `USER`, and uses it to construct the line that will be appended to `README.md`:
 
 ```yaml
 steps:
@@ -420,8 +421,8 @@ steps:
 
 ## [`steps.mount`](#steps-mount)
 
-<aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> <code>mount</code> is an experimental feature in Sourcegraph 3.41 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.41. It's a <b>preview</b> of functionality we're currently exploring to make running custom scripts/binaries easier. If you have any feedback, please let us know!
+<aside class="note">
+<span class="badge badge-note">New</span> <code>mount</code> is a new feature. Using <code>mount</code> locally is supported in Sourcegraph 3.41 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.41. Using <code>mount</code> in batch changes server-side is supported in Sourcegraph 4.1 and <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 4.0.1. It's a <b>preview</b> of functionality we're currently exploring to make running custom scripts/binaries easier. If you have any feedback, please let us know!
 </aside>
 
 > NOTE: This feature is currently only available for <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a>.
@@ -432,6 +433,8 @@ A `path` can point to a file or a directory. The `path` can be an absolute path 
 path is absolute or relative, the path must be within the same directory as the batch spec that is being run (the batch 
 spec directory is considered the "working directory"). If the batch spec is provided using standard input, the current 
 directory is used as the working directory.
+
+Individual files are restricted to a max size of 10MB. Do not include any sensitive information in files being uploaded.
 
 ### Examples
 

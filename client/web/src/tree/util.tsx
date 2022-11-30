@@ -100,8 +100,7 @@ export function compareTreeProps(a: ComparisonTreeRootProps, b: ComparisonTreeRo
         a.revision === b.revision &&
         a.commitID === b.commitID &&
         a.parentPath === b.parentPath &&
-        a.isExpanded === b.isExpanded &&
-        a.location === b.location
+        a.isExpanded === b.isExpanded
     )
 }
 

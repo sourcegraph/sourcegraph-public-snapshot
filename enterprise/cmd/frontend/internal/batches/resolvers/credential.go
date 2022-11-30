@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -99,8 +100,8 @@ func (c *batchChangesUserCredentialResolver) SSHPublicKey(ctx context.Context) (
 	return nil, nil
 }
 
-func (c *batchChangesUserCredentialResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: c.credential.CreatedAt}
+func (c *batchChangesUserCredentialResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: c.credential.CreatedAt}
 }
 
 func (c *batchChangesUserCredentialResolver) IsSiteCredential() bool {
@@ -143,8 +144,8 @@ func (c *batchChangesSiteCredentialResolver) SSHPublicKey(ctx context.Context) (
 	return nil, nil
 }
 
-func (c *batchChangesSiteCredentialResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: c.credential.CreatedAt}
+func (c *batchChangesSiteCredentialResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: c.credential.CreatedAt}
 }
 
 func (c *batchChangesSiteCredentialResolver) IsSiteCredential() bool {

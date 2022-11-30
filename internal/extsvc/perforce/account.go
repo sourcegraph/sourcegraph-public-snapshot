@@ -19,7 +19,5 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (*Acc
 		return nil, nil
 	}
 
-	var d AccountData
-	err := encryption.DecryptJSON(ctx, data.Data, &d)
-	return &d, err
+	return encryption.DecryptJSON[AccountData](ctx, data.Data)
 }

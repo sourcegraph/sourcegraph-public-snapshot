@@ -1,9 +1,9 @@
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 
 import { WebStory } from '../../../components/WebStory'
+import { BatchSpecSource } from '../../../graphql-operations'
 
 import { WebhookAlert } from './WebhookAlert'
 
@@ -26,6 +26,11 @@ const currentSpec = {
     viewerBatchChangesCodeHosts: {
         totalCount: 0,
         nodes: [],
+    },
+    files: null,
+    description: {
+        __typename: 'BatchChangeDescription' as const,
+        name: 'spec with ID 1',
     },
 }
 

@@ -1142,26 +1142,30 @@ type GroupProjectPermission struct {
 	Project *Project
 }
 
+type Link struct {
+	Href string `json:"href"`
+	Name string `json:"name"`
+}
+
+type RepoLinks struct {
+	Clone []Link `json:"clone"`
+	Self  []struct {
+		Href string `json:"href"`
+	} `json:"self"`
+}
+
 type Repo struct {
-	Slug          string   `json:"slug"`
-	ID            int      `json:"id"`
-	Name          string   `json:"name"`
-	SCMID         string   `json:"scmId"`
-	State         string   `json:"state"`
-	StatusMessage string   `json:"statusMessage"`
-	Forkable      bool     `json:"forkable"`
-	Origin        *Repo    `json:"origin"`
-	Project       *Project `json:"project"`
-	Public        bool     `json:"public"`
-	Links         struct {
-		Clone []struct {
-			Href string `json:"href"`
-			Name string `json:"name"`
-		} `json:"clone"`
-		Self []struct {
-			Href string `json:"href"`
-		} `json:"self"`
-	} `json:"links"`
+	Slug          string    `json:"slug"`
+	ID            int       `json:"id"`
+	Name          string    `json:"name"`
+	SCMID         string    `json:"scmId"`
+	State         string    `json:"state"`
+	StatusMessage string    `json:"statusMessage"`
+	Forkable      bool      `json:"forkable"`
+	Origin        *Repo     `json:"origin"`
+	Project       *Project  `json:"project"`
+	Public        bool      `json:"public"`
+	Links         RepoLinks `json:"links"`
 }
 
 // IsPersonalRepository tells if the repository is a personal one.

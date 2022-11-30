@@ -3,12 +3,10 @@ import React, { useContext, useState } from 'react'
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 
-import { asError } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Card, CardBody, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
-import { useFeatureFlag } from '../../../../../../../featureFlags/useFeatureFlag'
 import {
     GetInsightViewResult,
     GetInsightViewVariables,
@@ -16,14 +14,7 @@ import {
     SeriesDisplayOptionsInput,
 } from '../../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
-import {
-    InsightCard,
-    InsightCardHeader,
-    InsightCardLoading,
-    FORM_ERROR,
-    FormChangeEvent,
-    SubmissionErrors,
-} from '../../../../../components'
+import { InsightCard, InsightCardHeader, InsightCardLoading, FormChangeEvent } from '../../../../../components'
 import {
     DrillDownInsightFilters,
     FilterSectionVisualMode,
@@ -35,13 +26,8 @@ import {
     DrillDownInsightCreationFormValues,
     parseSeriesLimit,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
-import {
-    BackendInsightData,
-    ALL_INSIGHTS_DASHBOARD,
-    BackendInsight,
-    CodeInsightsBackendContext,
-    InsightFilters,
-} from '../../../../../core'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../../constants'
+import { BackendInsightData, BackendInsight, CodeInsightsBackendContext, InsightFilters } from '../../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../../core/backend/gql-backend/utils/insight-polling'
@@ -62,8 +48,6 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
 
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
-    const [enablePolling] = useFeatureFlag('insight-polling-enabled', true)
-    const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
@@ -95,10 +79,15 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         {
             variables: { id: insight.id, filters: filterInput, seriesDisplayOptions },
             fetchPolicy: 'cache-and-network',
-            pollInterval: pollingInterval,
+            pollInterval: insightPollingInterval(insight),
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
             onCompleted: data => {
-                const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
+                const node = data.insightViews.nodes[0]
+                if (node === null) {
+                    stopPolling()
+                    return
+                }
+                const parsedData = createBackendInsightData({ ...insight, filters }, node)
                 if (!parsedData.isFetchingHistoricalData) {
                     stopPolling()
                 }
@@ -121,39 +110,25 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         }
     }
 
-    const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
-        try {
-            await updateInsight({ insightId: insight.id, nextInsightData: { ...insight, filters } }).toPromise()
-            setOriginalInsightFilters(filters)
-            telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+    const handleFilterSave = async (filters: InsightFilters): Promise<void> => {
+        await updateInsight({ insightId: insight.id, nextInsightData: { ...insight, filters } }).toPromise()
+        setOriginalInsightFilters(filters)
+        telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
     }
 
-    const handleInsightFilterCreation = async (
-        values: DrillDownInsightCreationFormValues
-    ): Promise<SubmissionErrors> => {
-        try {
-            await createInsight({
-                insight: {
-                    ...insight,
-                    title: values.insightName,
-                    filters,
-                },
-                dashboard: null,
-            }).toPromise()
+    const handleInsightFilterCreation = async (values: DrillDownInsightCreationFormValues): Promise<void> => {
+        await createInsight({
+            insight: {
+                ...insight,
+                title: values.insightName,
+                filters,
+            },
+            dashboard: null,
+        }).toPromise()
 
-            setOriginalInsightFilters(filters)
-            history.push(`/insights/dashboard/${ALL_INSIGHTS_DASHBOARD.id}`)
-            telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
-        } catch (error) {
-            return { [FORM_ERROR]: asError(error) }
-        }
-
-        return
+        setOriginalInsightFilters(filters)
+        history.push(`/insights/dashboard/${ALL_INSIGHTS_DASHBOARD.id}`)
+        telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
     }
 
     return (

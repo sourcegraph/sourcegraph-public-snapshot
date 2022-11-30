@@ -6,9 +6,8 @@ import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
@@ -43,10 +42,9 @@ const NotSiteAdminPage: React.ComponentType<React.PropsWithChildren<{}>> = () =>
 export interface SiteAdminAreaRouteContext
     extends PlatformContextProps,
         SettingsCascadeProps,
-        ActivationProps,
         BatchChangesProps,
         TelemetryProps {
-    site: Pick<GQL.ISite, '__typename' | 'id'>
+    site: Pick<SiteSettingFields, '__typename' | 'id'>
     authenticatedUser: AuthenticatedUser
     isLightTheme: boolean
     isSourcegraphDotCom: boolean
@@ -61,7 +59,6 @@ interface SiteAdminAreaProps
     extends RouteComponentProps<{}>,
         PlatformContextProps,
         SettingsCascadeProps,
-        ActivationProps,
         BatchChangesProps,
         TelemetryProps {
     routes: readonly SiteAdminAreaRoute[]
@@ -192,7 +189,6 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         batchChangesEnabled: props.batchChangesEnabled,
         batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
         batchChangesWebhookLogsEnabled: props.batchChangesWebhookLogsEnabled,
-        activation: props.activation,
         site: { __typename: 'Site' as const, id: window.context.siteGQLID },
         overviewComponents: props.overviewComponents,
         telemetryService: props.telemetryService,
@@ -200,10 +196,14 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
 
     return (
         <Page>
-            <PageHeader path={[{ text: 'Admin' }]} />
-            <div className="d-flex my-3" ref={reference}>
+            <PageHeader>
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb>Admin</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
+            <div className="d-flex my-3 flex-column flex-sm-row" ref={reference}>
                 <SiteAdminSidebar
-                    className={classNames('flex-0 mr-3', styles.sidebar)}
+                    className={classNames('flex-0 mr-3 mb-4', styles.sidebar)}
                     groups={adminSideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     batchChangesEnabled={props.batchChangesEnabled}

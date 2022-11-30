@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/grafana/regexp"
 	"golang.org/x/oauth2"
@@ -18,6 +19,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
+
+var PublicDrive = DriveSpec{
+	DisplayName: "Public",
+	DriveID:     "0AIPqhxqhpBETUk9PVA", // EXT - Sourcegraph RFC drive
+	FolderID:    "1zP3FxdDlcSQGC1qvM9lHZRaHH4I9Jwwa",
+	OrderBy:     "createdTime,name",
+}
+
+var PrivateDrive = DriveSpec{
+	DisplayName: "Private",
+	DriveID:     "0AK4DcztHds_pUk9PVA", // Sourcegraph DriveID
+	FolderID:    "1KCq4tMLnVlC0a1rwGuU5OSCw6mdDxLuv",
+	OrderBy:     "createdTime,name",
+}
+
+type DriveSpec struct {
+	DisplayName string
+	DriveID     string
+	FolderID    string
+	OrderBy     string
+}
+
+func (d *DriveSpec) Query(q string) string {
+	return fmt.Sprintf("%s and parents in '%s'", q, d.FolderID)
+}
 
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(ctx context.Context, config *oauth2.Config, out *std.Output) (*http.Client, error) {
@@ -62,18 +88,16 @@ func getTokenFromWeb(ctx context.Context, config *oauth2.Config, out *std.Output
 	return config.Exchange(ctx, authCode)
 }
 
-func queryRFCs(ctx context.Context, query string, orderBy string, pager func(r *drive.FileList) error, out *std.Output) error {
+func queryRFCs(ctx context.Context, query string, driveSpec DriveSpec, pager func(r *drive.FileList) error, out *std.Output) error {
 	// If modifying these scopes, delete your previously saved token.json.
 	sec, err := secrets.FromContext(ctx)
 	if err != nil {
 		return err
 	}
 	clientCredentials, err := sec.GetExternal(ctx, secrets.ExternalSecret{
-		Provider: secrets.ExternalProvider1Pass,
-		Project:  "Shared",
+		Project: "sourcegraph-local-dev",
 		// sg Google client credentials
-		Name:  "xyyaeojdvkch3uksxb5yoye7am",
-		Field: "credential",
+		Name: "SG_GOOGLE_CREDS",
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to get google client credentials")
@@ -96,34 +120,34 @@ func queryRFCs(ctx context.Context, query string, orderBy string, pager func(r *
 	if query == "" {
 		query = "name contains 'RFC'"
 	}
-	q := fmt.Sprintf("%s and parents in '1zP3FxdDlcSQGC1qvM9lHZRaHH4I9Jwwa' or %s and parents in '1KCq4tMLnVlC0a1rwGuU5OSCw6mdDxLuv'", query, query)
+	q := driveSpec.Query(query)
 
 	list := srv.Files.List().
 		Corpora("drive").SupportsAllDrives(true).
-		DriveId("0AK4DcztHds_pUk9PVA").
+		DriveId(driveSpec.DriveID).
 		IncludeItemsFromAllDrives(true).
 		SupportsAllDrives(true).
 		PageSize(100).
 		Q(q).
-		Fields("nextPageToken, files(id, name, parents)")
+		Fields("nextPageToken, files(id, name, parents, description, modifiedTime)")
 
-	if orderBy != "" {
-		list = list.OrderBy(orderBy)
+	if driveSpec.OrderBy != "" {
+		list = list.OrderBy(driveSpec.OrderBy)
 	}
 
 	return list.Pages(ctx, pager)
 }
 
-func List(ctx context.Context, out *std.Output) error {
-	return queryRFCs(ctx, "", "createdTime,name", rfcTitlesPrinter(out), out)
+func List(ctx context.Context, driveSpec DriveSpec, out *std.Output) error {
+	return queryRFCs(ctx, "", driveSpec, rfcTitlesPrinter(out), out)
 }
 
-func Search(ctx context.Context, query string, out *std.Output) error {
-	return queryRFCs(ctx, fmt.Sprintf("(name contains '%s' or fullText contains '%s')", query, query), "", rfcTitlesPrinter(out), out)
+func Search(ctx context.Context, query string, driveSpec DriveSpec, out *std.Output) error {
+	return queryRFCs(ctx, fmt.Sprintf("(name contains '%[1]s' or fullText contains '%[1]s')", query), driveSpec, rfcTitlesPrinter(out), out)
 }
 
-func Open(ctx context.Context, number string, out *std.Output) error {
-	return queryRFCs(ctx, fmt.Sprintf("name contains 'RFC %s'", number), "", func(r *drive.FileList) error {
+func Open(ctx context.Context, number string, driveSpec DriveSpec, out *std.Output) error {
+	return queryRFCs(ctx, fmt.Sprintf("name contains 'RFC %s'", number), driveSpec, func(r *drive.FileList) error {
 		for _, f := range r.Files {
 			open.URL(fmt.Sprintf("https://docs.google.com/document/d/%s/edit", f.Id))
 		}
@@ -131,7 +155,19 @@ func Open(ctx context.Context, number string, out *std.Output) error {
 	}, out)
 }
 
-var rfcTitleRegex = regexp.MustCompile(`RFC\s(\d+):*\s(\w+):\s(.*)$`)
+// RFCs should have the following format:
+//
+//	RFC 123: WIP: Foobar
+//	    ^^^  ^^^  ^^^^^^
+//	     |    |       |
+//	     | matches[2] |
+//	 matches[1]     matches[3]
+//
+// Variations supported:
+//
+//	RFC 123 WIP: Foobar
+//	RFC 123 PRIVATE WIP: Foobar
+var rfcTitleRegex = regexp.MustCompile(`RFC\s(\d+):*\s([\w\s]+):\s(.*)$`)
 
 func rfcTitlesPrinter(out *std.Output) func(r *drive.FileList) error {
 	return func(r *drive.FileList) error {
@@ -139,30 +175,51 @@ func rfcTitlesPrinter(out *std.Output) func(r *drive.FileList) error {
 			return nil
 		}
 
-		for _, i := range r.Files {
-			matches := rfcTitleRegex.FindStringSubmatch(i.Name)
+		for _, f := range r.Files {
+			modified, err := time.Parse("2006-01-02T15:04:05.000Z", f.ModifiedTime)
+			if err != nil {
+				// if this errors then we are handling the Google API wrong, return an error
+				return errors.Wrap(err, "ModifiedTime")
+			}
+
+			matches := rfcTitleRegex.FindStringSubmatch(f.Name)
 			if len(matches) == 4 {
 				number := matches[1]
-				status := strings.ToUpper(matches[2])
+				statuses := strings.Split(strings.ToUpper(matches[2]), " ")
 				name := matches[3]
 
-				var statusColor output.Style
-				switch strings.ToUpper(status) {
-				case "WIP":
-					statusColor = output.StylePending
-				case "REVIEW":
-					statusColor = output.Fg256Color(208)
-				case "IMPLEMENTED", "APPROVED":
-					statusColor = output.StyleSuccess
-				case "ABANDONED", "PAUSED":
-					statusColor = output.StyleSearchAlertTitle
+				var statusColor output.Style = output.StyleItalic
+				for _, s := range statuses {
+					switch strings.ToUpper(s) {
+					case "WIP":
+						statusColor = output.StylePending
+					case "REVIEW":
+						statusColor = output.Fg256Color(208)
+					case "IMPLEMENTED", "APPROVED", "DONE":
+						statusColor = output.StyleSuccess
+					case "ABANDONED", "PAUSED":
+						statusColor = output.StyleSearchAlertTitle
+					}
+				}
+
+				// Modifiers should combine existing styles, applied after the first iteration
+				for _, s := range statuses {
+					switch strings.ToUpper(s) {
+					case "PRIVATE":
+						statusColor = output.CombineStyles(statusColor, output.StyleUnderline)
+					}
 				}
 
 				numberColor := output.Fg256Color(8)
 
-				out.Writef("RFC %s%s %s%s%s %s", numberColor, number, statusColor, status, output.StyleReset, name)
+				out.Writef("RFC %s%s %s%s%s %s %s%s %s%s",
+					numberColor, number,
+					statusColor, strings.Join(statuses, " "),
+					output.StyleReset, name,
+					output.StyleSuggestion, modified.Format("2006-01-02"), f.Description,
+					output.StyleReset)
 			} else {
-				out.Writef("%s%s", i.Name, output.StyleReset)
+				out.Writef("%s%s", f.Name, output.StyleReset)
 			}
 		}
 

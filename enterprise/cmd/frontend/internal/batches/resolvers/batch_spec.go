@@ -9,18 +9,20 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,7 +41,8 @@ func unmarshalBatchSpecID(id graphql.ID) (batchSpecRandID string, err error) {
 var _ graphqlbackend.BatchSpecResolver = &batchSpecResolver{}
 
 type batchSpecResolver struct {
-	store *store.Store
+	store           *store.Store
+	gitserverClient gitserver.Client
 
 	batchSpec          *btypes.BatchSpec
 	preloadedNamespace *graphqlbackend.NamespaceResolver
@@ -146,6 +149,7 @@ func (r *batchSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbacke
 
 	return &changesetApplyPreviewConnectionResolver{
 		store:             r.store,
+		gitserverClient:   r.gitserverClient,
 		opts:              opts,
 		action:            (*btypes.ReconcilerOperation)(args.Action),
 		batchSpecID:       r.batchSpec.ID,
@@ -185,12 +189,12 @@ func (r *batchSpecResolver) ApplyURL(ctx context.Context) (*string, error) {
 	return &url, nil
 }
 
-func (r *batchSpecResolver) CreatedAt() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.batchSpec.CreatedAt}
+func (r *batchSpecResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.batchSpec.CreatedAt}
 }
 
-func (r *batchSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
-	return &graphqlbackend.DateTime{Time: r.batchSpec.ExpiresAt()}
+func (r *batchSpecResolver) ExpiresAt() *gqlutil.DateTime {
+	return &gqlutil.DateTime{Time: r.batchSpec.ExpiresAt()}
 }
 
 func (r *batchSpecResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
@@ -232,8 +236,9 @@ func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlba
 	}
 
 	return &batchChangeResolver{
-		store:       r.store,
-		batchChange: batchChange,
+		store:           r.store,
+		gitserverClient: r.gitserverClient,
+		batchChange:     batchChange,
 	}, nil
 }
 
@@ -278,7 +283,7 @@ func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlba
 func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerBatchChangesCodeHostsArgs) (graphqlbackend.BatchChangesCodeHostConnectionResolver, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
-		return nil, backend.ErrNotAuthenticated
+		return nil, auth.ErrNotAuthenticated
 	}
 
 	repoIDs, err := r.store.ListBatchSpecRepoIDs(ctx, r.batchSpec.ID)
@@ -342,7 +347,7 @@ func (r *batchSpecResolver) State(ctx context.Context) (string, error) {
 	return state.ToGraphQL(), nil
 }
 
-func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+func (r *batchSpecResolver) StartedAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	if !r.batchSpec.CreatedFromRaw {
 		return nil, nil
 	}
@@ -364,10 +369,10 @@ func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.Date
 		return nil, nil
 	}
 
-	return &graphqlbackend.DateTime{Time: stats.StartedAt}, nil
+	return &gqlutil.DateTime{Time: stats.StartedAt}, nil
 }
 
-func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*gqlutil.DateTime, error) {
 	if !r.batchSpec.CreatedFromRaw {
 		return nil, nil
 	}
@@ -389,7 +394,7 @@ func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.Dat
 		return nil, nil
 	}
 
-	return &graphqlbackend.DateTime{Time: stats.FinishedAt}, nil
+	return &gqlutil.DateTime{Time: stats.FinishedAt}, nil
 }
 
 func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error) {

@@ -70,7 +70,6 @@ func siteConfig(ctx context.Context, store *basestore.Store) (siteConfig schema.
 }
 
 const siteConfigQuery = `
--- source: cmd/migrator/shared/conf.go:siteConfig
 SELECT c.contents
 FROM critical_and_site_config c
 WHERE c.type = 'site'

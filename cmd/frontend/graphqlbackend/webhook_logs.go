@@ -12,10 +12,11 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -29,6 +30,7 @@ type webhookLogsArgs struct {
 	OnlyErrors *bool
 	Since      *time.Time
 	Until      *time.Time
+	WebhookID  *graphql.ID
 }
 
 // webhookLogsExternalServiceID is used to represent an external service ID,
@@ -80,6 +82,18 @@ func (args *webhookLogsArgs) toListOpts(externalServiceID webhookLogsExternalSer
 		opts.OnlyErrors = true
 	}
 
+	// Both nil and "-1" webhook IDs should be resolved to nil WebhookID
+	// WebhookLogListOpts option
+	if args.WebhookID != nil {
+		id, err := unmarshalWebhookID(*args.WebhookID)
+		if err != nil {
+			return opts, errors.Wrap(err, "unmarshalling webhook ID")
+		}
+		if id > 0 {
+			opts.WebhookID = &id
+		}
+	}
+
 	return opts, nil
 }
 
@@ -115,7 +129,7 @@ func newWebhookLogConnectionResolver(
 	ctx context.Context, db database.DB, args *webhookLogsArgs,
 	externalServiceID webhookLogsExternalServiceID,
 ) (*webhookLogConnectionResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
@@ -198,7 +212,7 @@ func unmarshalWebhookLogID(id graphql.ID) (logID int64, err error) {
 }
 
 func webhookLogByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*webhookLogResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
@@ -219,8 +233,8 @@ func (r *webhookLogResolver) ID() graphql.ID {
 	return marshalWebhookLogID(r.log.ID)
 }
 
-func (r *webhookLogResolver) ReceivedAt() DateTime {
-	return DateTime{Time: r.log.ReceivedAt}
+func (r *webhookLogResolver) ReceivedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.log.ReceivedAt}
 }
 
 func (r *webhookLogResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
@@ -257,16 +271,8 @@ type webhookLogMessageResolver struct {
 	message *types.WebhookLogMessage
 }
 
-func (r *webhookLogMessageResolver) Headers() []*webhookLogHeaderResolver {
-	headers := make([]*webhookLogHeaderResolver, 0, len(r.message.Header))
-	for k, v := range r.message.Header {
-		headers = append(headers, &webhookLogHeaderResolver{
-			name:   k,
-			values: v,
-		})
-	}
-
-	return headers
+func (r *webhookLogMessageResolver) Headers() ([]*HttpHeaders, error) {
+	return newHttpHeaders(r.message.Header)
 }
 
 func (r *webhookLogMessageResolver) Body() string {
@@ -289,15 +295,11 @@ func (r *webhookLogRequestResolver) Version() string {
 	return r.message.Version
 }
 
-type webhookLogHeaderResolver struct {
-	name   string
-	values []string
+func marshalWebhookID(id int32) graphql.ID {
+	return relay.MarshalID("Webhook", id)
 }
 
-func (r *webhookLogHeaderResolver) Name() string {
-	return r.name
-}
-
-func (r *webhookLogHeaderResolver) Values() []string {
-	return r.values
+func unmarshalWebhookID(id graphql.ID) (hookID int32, err error) {
+	err = relay.UnmarshalSpec(id, &hookID)
+	return
 }

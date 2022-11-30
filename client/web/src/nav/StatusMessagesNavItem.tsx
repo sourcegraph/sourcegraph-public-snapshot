@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'
 
-import { mdiInformation, mdiAlert, mdiSync, mdiCheckboxMarkedCircle } from '@mdi/js'
+import { mdiInformation, mdiAlert, mdiSync, mdiCheckboxMarkedCircle, mdiDatabaseSyncOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -30,7 +30,7 @@ import { STATUS_MESSAGES } from './StatusMessagesNavItemQueries'
 
 import styles from './StatusMessagesNavItem.module.scss'
 
-type EntryType = 'progress' | 'warning' | 'success' | 'error'
+type EntryType = 'progress' | 'warning' | 'success' | 'error' | 'indexing'
 
 interface StatusMessageEntryProps {
     title: string
@@ -82,6 +82,15 @@ function entryIcon(entryType: EntryType): JSX.Element {
                     aria-label="In progress"
                 />
             )
+        case 'indexing':
+            return (
+                <Icon
+                    {...sharedProps}
+                    className={classNames('text-primary', styles.icon)}
+                    svgPath={mdiDatabaseSyncOutline}
+                    aria-label="Indexing"
+                />
+            )
     }
 }
 
@@ -105,6 +114,8 @@ const getBorderClassname = (entryType: EntryType): string => {
         case 'success':
             return styles.entryBorderSuccess
         case 'progress':
+            return styles.entryBorderProgress
+        case 'indexing':
             return styles.entryBorderProgress
         default:
             return ''
@@ -154,8 +165,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
 
     const { data, error } = useQuery<StatusMessagesResult>(STATUS_MESSAGES, {
         fetchPolicy: 'no-cache',
-        pollInterval:
-            props.disablePolling !== undefined && !props.disablePolling ? STATUS_MESSAGES_POLL_INTERVAL : undefined,
+        pollInterval: props.disablePolling !== true ? STATUS_MESSAGES_POLL_INTERVAL : undefined,
     })
 
     const icon: JSX.Element | null = useMemo(() => {
@@ -164,25 +174,32 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
         }
 
         let codeHostMessage
-        let icon
+        let iconProps
         if (
             data.statusMessages?.some(
                 ({ __typename: type }) => type === 'ExternalServiceSyncError' || type === 'SyncError'
             )
         ) {
             codeHostMessage = 'Syncing repositories failed!'
-            icon = CloudAlertIconRefresh
+            iconProps = { as: CloudAlertIconRefresh }
         } else if (data.statusMessages?.some(({ __typename: type }) => type === 'CloningProgress')) {
             codeHostMessage = 'Cloning repositories...'
-            icon = CloudSyncIconRefresh
+            iconProps = { as: CloudSyncIconRefresh }
+        } else if (data.statusMessages?.some(({ __typename: type }) => type === 'IndexingProgress')) {
+            codeHostMessage = 'Indexing repositories...'
+            iconProps = { as: CloudSyncIconRefresh }
         } else {
             codeHostMessage = 'Repositories up to date'
-            icon = CloudCheckIconRefresh
+            iconProps = { as: CloudCheckIconRefresh }
         }
 
         return (
             <Tooltip content={isOpen ? undefined : codeHostMessage}>
-                <Icon as={icon} size="md" {...(isOpen ? { 'aria-hidden': true } : { 'aria-label': codeHostMessage })} />
+                <Icon
+                    {...iconProps}
+                    size="md"
+                    {...(isOpen ? { 'aria-hidden': true } : { 'aria-label': codeHostMessage })}
+                />
             </Tooltip>
         )
     }, [data, isOpen])
@@ -221,6 +238,22 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                                 linkText="View repositories"
                                 linkOnClick={toggleIsOpen}
                                 entryType="progress"
+                            />
+                        )
+                    }
+                    if (status.__typename === 'IndexingProgress') {
+                        return (
+                            <StatusMessagesNavItemEntry
+                                key="indexing-progress"
+                                message={`Indexing repositories. ${status.indexed} out of ${
+                                    status.indexed + status.notIndexed
+                                } indexed.`}
+                                title="Indexing repositories"
+                                messageHint="Indexing repositories speeds up search."
+                                linkTo="/site-admin/repositories"
+                                linkText="View repositories"
+                                linkOnClick={toggleIsOpen}
+                                entryType="indexing"
                             />
                         )
                     }
@@ -266,7 +299,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                 variant="link"
                 aria-label={isOpen ? 'Hide status messages' : 'Show status messages'}
             >
-                {error && (
+                {error ? (
                     <Tooltip content="Sorry, we couldn’t fetch notifications!">
                         <Icon
                             aria-label="Sorry, we couldn’t fetch notifications!"
@@ -274,8 +307,9 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                             size="md"
                         />
                     </Tooltip>
+                ) : (
+                    icon
                 )}
-                {icon}
             </PopoverTrigger>
 
             <PopoverContent position={Position.bottom} className={classNames('p-0', styles.dropdownMenu)}>

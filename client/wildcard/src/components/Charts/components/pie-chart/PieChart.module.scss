@@ -2,19 +2,23 @@
     overflow: visible;
 }
 
-.link:hover {
+.link {
     text-decoration: none;
-}
 
-.arc-path {
-    &--with-link {
-        cursor: pointer;
+    &:focus .arc-path {
+        stroke-width: 3;
+        stroke: var(--primary);
+    }
+
+    &--fade {
+        opacity: 0.5;
     }
 }
 
-.link:focus .arc-path {
-    stroke-width: 3;
-    stroke: var(--primary);
-    z-index: 2;
-    position: relative;
+.arc-path {
+    &--fake {
+        stroke-width: 3;
+        stroke: var(--primary);
+        transform: scale(1.03);
+    }
 }

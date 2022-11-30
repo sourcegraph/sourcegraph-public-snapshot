@@ -38,7 +38,7 @@ export const diffDomFunctions: DOMFunctions = {
     getDiffCodePart: (codeElement: HTMLElement): DiffPart => {
         const tableCell = codeElement.closest('td') as HTMLTableCellElement
         const tableRow = codeElement.parentElement as HTMLTableRowElement
-        const isSplitMode = tableRow.getAttribute('data-diff-mode') === 'split'
+        const isSplitMode = tableRow.getAttribute('data-split-mode') === 'split'
         const lineKind = tableRow.getAttribute('data-hunk-line-kind')
 
         if (lineKind === DiffHunkLineType.ADDED) {

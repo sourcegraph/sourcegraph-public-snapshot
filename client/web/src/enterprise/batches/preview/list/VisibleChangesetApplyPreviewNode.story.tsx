@@ -80,7 +80,7 @@ ChangeDiff.args = { node: stories['Change diff'] }
 ChangeDiff.storyName = 'Change diff'
 
 export const CloseChangeset = Template.bind({})
-CloseChangeset.args = { node: stories['Change diff'] }
+CloseChangeset.args = { node: stories['Close changeset'] }
 CloseChangeset.storyName = 'Close changeset'
 
 export const DetachChangeset = Template.bind({})
@@ -103,6 +103,6 @@ export const ForkedRepo = Template.bind({})
 ForkedRepo.args = { node: stories['Forked repo'] }
 ForkedRepo.storyName = 'Forked repo'
 
-export const ReattachedChangeset = Template.bind({})
-ForkedRepo.args = { node: stories['Reattach changeset'] }
-ForkedRepo.storyName = 'Reattach Changeseet'
+export const ReattachChangeset = Template.bind({})
+ReattachChangeset.args = { node: stories['Reattach changeset'] }
+ReattachChangeset.storyName = 'Reattach Changeset'

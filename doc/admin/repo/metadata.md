@@ -1,12 +1,12 @@
 # Repository metadata
 
 <aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> Tagging repositories with key/value pairs is an experimental feature in Sourcegraph 4.0. It's a <b>preview</b> of functionality we're currently exploring to make searching large numbers of repositories easier. If you have any feedback, please let us know!
+<span class="badge badge-experimental">Experimental</span> Tagging repositories with key/value pairs is an experimental feature in Sourcegraph 4.0. It's a <b>preview</b> of functionality we're currently exploring to make searching large numbers of repositories easier. To enable this feature, enable the `repository-metadata` feature flag for your org. If you have any feedback, please let us know!
 </aside>
 
 Repositories tracked by Sourcegraph can be associated with user-provided key-value pairs. Once this metadata is added, it can be used to filter searches to the subset of matching repositories.
 
-Metadata can be added either as key-value pairs or as tags. Key-value pairs can be searched with the filter `repo:has(mykey:myvalue)`. Tags are just key-value pairs with a `null` value and can be searched with the filter `repo:has.tag(mytag)`.
+Metadata can be added either as key-value pairs or as tags. Key-value pairs can be searched with the filter `repo:has(mykey:myvalue)`. `repo:has.key(mykey)` can be used to search over repositories with a given key irrespective of its value. Tags are just key-value pairs with a `null` value and can be searched with the filter `repo:has.tag(mytag)`.
 
 ## Examples
 ### Repository owners

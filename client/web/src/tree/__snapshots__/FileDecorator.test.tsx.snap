@@ -10,7 +10,6 @@ exports[`FileDecorator renders after text content 1`] = `
     >
       <small
         class="text-monospace font-weight-normal test-file-decoration-text after"
-        data-state="closed"
       >
         src decoration
       </small>
@@ -29,13 +28,10 @@ exports[`FileDecorator renders both after text content and meter 1`] = `
     >
       <small
         class="text-monospace font-weight-normal test-file-decoration-text after"
-        data-state="closed"
       >
         src decoration
       </small>
-      <div
-        data-state="closed"
-      >
+      <div>
         <span
           style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
         />
@@ -63,9 +59,7 @@ exports[`FileDecorator renders meter 1`] = `
     <div
       class="d-flex align-items-center fileDecoration"
     >
-      <div
-        data-state="closed"
-      >
+      <div>
         <span
           style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
         />
@@ -95,7 +89,6 @@ exports[`FileDecorator respects active state 1`] = `
     >
       <small
         class="text-monospace font-weight-normal test-file-decoration-text after afterActive"
-        data-state="closed"
       >
         src decoration
       </small>

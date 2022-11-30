@@ -3,12 +3,13 @@ import * as React from 'react'
 import classNames from 'classnames'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Tooltip } from '@sourcegraph/wildcard'
+
+import { RegistryExtensionFields } from '../../../graphql-operations'
 
 export const RegistryExtensionSourceBadge: React.FunctionComponent<
     React.PropsWithChildren<{
-        extension: Pick<GQL.IRegistryExtension, 'remoteURL' | 'registryName' | 'isLocal'>
+        extension: Pick<RegistryExtensionFields, 'remoteURL' | 'registryName' | 'isLocal'>
         showText?: boolean
         showRegistryName?: boolean
         className?: string

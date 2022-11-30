@@ -45,6 +45,7 @@ Code Insights is based on our universal code search, making it precise and confi
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ Quickstart</a>
 <a class="btn" href="language_insight_quickstart">Language Insight Quickstart</a>
+<a href="https://www.youtube.com/watch?v=fMCUJQHfbUA" class="btn" alt="Watch the Code Insights demo video">Demo video</a>
 <a class="btn" href="references/requirements">Requirements</a>
 </div>
 

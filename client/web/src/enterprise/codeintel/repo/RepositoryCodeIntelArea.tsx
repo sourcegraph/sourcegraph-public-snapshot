@@ -14,6 +14,7 @@ import { RepositoryFields } from '../../../graphql-operations'
 import { RouteDescriptor } from '../../../util/contributions'
 import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeIntelConfigurationPage'
 import { CodeIntelConfigurationPolicyPageProps } from '../configuration/pages/CodeIntelConfigurationPolicyPage'
+import { CodeIntelInferenceConfigurationPageProps } from '../configuration/pages/CodeIntelInferenceConfigurationPage'
 import { CodeIntelRepositoryIndexConfigurationPageProps } from '../configuration/pages/CodeIntelRepositoryIndexConfigurationPage'
 import { CodeIntelIndexesPageProps } from '../indexes/pages/CodeIntelIndexesPage'
 import { CodeIntelIndexPageProps } from '../indexes/pages/CodeIntelIndexPage'
@@ -51,6 +52,11 @@ const CodeIntelConfigurationPage = lazyComponent<CodeIntelConfigurationPageProps
     () => import('../configuration/pages/CodeIntelConfigurationPage'),
     'CodeIntelConfigurationPage'
 )
+
+const CodeIntelInferenceConfigurationPage = lazyComponent<
+    CodeIntelInferenceConfigurationPageProps,
+    'CodeIntelInferenceConfigurationPage'
+>(() => import('../configuration/pages/CodeIntelInferenceConfigurationPage'), 'CodeIntelInferenceConfigurationPage')
 
 const RepositoryIndexConfigurationPage = lazyComponent<
     CodeIntelRepositoryIndexConfigurationPageProps,
@@ -102,6 +108,11 @@ export const routes: readonly CodeIntelAreaRoute[] = [
         path: '/index-configuration',
         exact: true,
         render: props => <RepositoryIndexConfigurationPage {...props} />,
+    },
+    {
+        path: '/inference-configuration',
+        exact: true,
+        render: props => <CodeIntelInferenceConfigurationPage {...props} />,
     },
     {
         path: '/configuration/:id',

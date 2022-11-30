@@ -77,6 +77,8 @@ func (e *ExternalService) RedactedConfig(ctx context.Context) (string, error) {
 		}
 	case *schema.RustPackagesConnection:
 		// Nothing to redact
+	case *schema.RubyPackagesConnection:
+		es.redactString(c.Repository, "repository")
 	case *schema.JVMPackagesConnection:
 		if c.Maven != nil {
 			es.redactString(c.Maven.Credentials, "maven", "credentials")
@@ -174,6 +176,9 @@ func (e *ExternalService) UnredactConfig(ctx context.Context, old *ExternalServi
 		}
 	case *schema.RustPackagesConnection:
 		// Nothing to unredact
+	case *schema.RubyPackagesConnection:
+		o := oldCfg.(*schema.RubyPackagesConnection)
+		es.unredactString(c.Repository, o.Repository, "repository")
 	case *schema.JVMPackagesConnection:
 		o := oldCfg.(*schema.JVMPackagesConnection)
 		if c.Maven != nil && o.Maven != nil {

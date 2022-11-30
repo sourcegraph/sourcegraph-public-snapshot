@@ -98,7 +98,7 @@ func TestDetectSearchType(t *testing.T) {
 		searchType    query.SearchType
 	}{
 		{
-			"subitted and query match types",
+			"submitted and query match types",
 			"select:repo test fork:only",
 			"literal",
 			query.SearchTypeLiteral,
@@ -115,6 +115,18 @@ func TestDetectSearchType(t *testing.T) {
 			"lucky",
 			query.SearchTypeRegex,
 		},
+		{
+			"submit structural with structural patterntype",
+			"[a] patterntype:structural",
+			"structural",
+			query.SearchTypeStructural,
+		},
+		{
+			"submit regexp with structural patterntype",
+			"[a] patterntype:regexp",
+			"structural",
+			query.SearchTypeRegex,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -124,6 +136,81 @@ func TestDetectSearchType(t *testing.T) {
 			}
 			if tc.searchType != searchType {
 				t.Errorf("expected %d result, got %d", tc.searchType, searchType)
+			}
+		})
+	}
+}
+
+func TestContainsField(t *testing.T) {
+	testCases := []struct {
+		name  string
+		query string
+		field string
+		found bool
+	}{
+		{
+			"field not present",
+			"select:repo",
+			query.FieldRepo,
+			false,
+		},
+		{
+			"field present",
+			"select:file repo:test",
+			query.FieldRepo,
+			true,
+		},
+		{
+			"field multiple times",
+			"(file:test repo:test) OR (file:nottest repo:nottest)",
+			query.FieldRepo,
+			true,
+		},
+		{
+			"finds alias",
+			"r:test thing",
+			query.FieldRepo,
+			true,
+		},
+		{
+			"does not false positive",
+			`file:test content:"repo:"`,
+			query.FieldRepo,
+			false,
+		},
+		{
+			"is not case sensitive",
+			`rEpO:test my search`,
+			query.FieldRepo,
+			true,
+		},
+		{
+			"field in first plan of query",
+			"(file:test repo:test) OR (some other search)",
+			query.FieldRepo,
+			true,
+		},
+		{
+			"field in 2nd plan of query",
+			"(some other search) OR (file:test repo:test) ",
+			query.FieldRepo,
+			true,
+		},
+		{
+			"doesn't count empty field",
+			"mysearch repo:",
+			query.FieldRepo,
+			false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			found, err := ContainsField(tc.query, tc.field)
+			if err != nil {
+				t.Errorf("expected valid query, got error: %v", err)
+			}
+			if diff := cmp.Diff(found, tc.found); diff != "" {
+				t.Errorf("expected %v, got %v", tc.found, found)
 			}
 		})
 	}

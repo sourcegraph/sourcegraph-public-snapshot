@@ -39,7 +39,7 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                 updatedAt: '2021-03-15T19:39:11Z',
                 createdAt: '2021-03-15T19:39:11Z',
                 namespace: null,
-                grantedScopes: [],
+                webhookURL: null,
             },
             {
                 id: 'service2',
@@ -58,7 +58,7 @@ const queryExternalServices: typeof _queryExternalServices = () =>
                     namespaceName: 'johndoe',
                     url: '/users/johndoe',
                 },
-                grantedScopes: [],
+                webhookURL: null,
             },
         ],
     })
@@ -73,6 +73,8 @@ export const ListOfExternalServices: Story = () => (
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 authenticatedUser={{ id: '123' }}
                 queryExternalServices={queryExternalServices}
+                externalServicesFromFile={false}
+                allowEditExternalServicesWithFile={false}
             />
         )}
     </WebStory>

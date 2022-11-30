@@ -19,16 +19,15 @@ import {
     AnchorLink,
     Select,
     Icon,
-    Badge,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { ThemePreferenceProps, ThemePreference } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './UserNavItem.module.scss'
 
+const MAX_VISIBLE_ORGS = 5
 export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
     authenticatedUser: Pick<
         AuthenticatedUser,
@@ -39,6 +38,7 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
     position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showKeyboardShortcutsHelp: () => void
+    showFeedbackModal: () => void
 }
 
 /**
@@ -72,8 +72,8 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
 
     // Target ID for tooltip
     const targetID = 'target-user-avatar'
-    const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
     const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
+    const organizations = props.authenticatedUser.organizations.nodes
 
     return (
         <>
@@ -115,14 +115,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                             <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                                 Saved searches
                             </MenuLink>
-                            {isOpenBetaEnabled && (
-                                <MenuLink
-                                    as={Link}
-                                    to={`/users/${props.authenticatedUser.username}/settings/organizations`}
-                                >
-                                    Your organizations <Badge variant="info">NEW</Badge>
-                                </MenuLink>
-                            )}
                             <MenuDivider />
                             <div className="px-2 py-1">
                                 <div className="d-flex align-items-center">
@@ -156,15 +148,20 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                     </div>
                                 )}
                             </div>
-                            {!isOpenBetaEnabled && props.authenticatedUser.organizations.nodes.length > 0 && (
+                            {organizations.length > 0 && (
                                 <>
                                     <MenuDivider className={styles.dropdownDivider} />
                                     <MenuHeader className={styles.dropdownHeader}>Your organizations</MenuHeader>
-                                    {props.authenticatedUser.organizations.nodes.map(org => (
+                                    {organizations.slice(0, MAX_VISIBLE_ORGS).map(org => (
                                         <MenuLink as={Link} key={org.id} to={org.settingsURL || org.url}>
                                             {org.displayName || org.name}
                                         </MenuLink>
                                     ))}
+                                    {organizations.length > MAX_VISIBLE_ORGS && (
+                                        <MenuLink as={Link} to={props.authenticatedUser.settingsURL!}>
+                                            Show all organizations
+                                        </MenuLink>
+                                    )}
                                 </>
                             )}
                             <MenuDivider className={styles.dropdownDivider} />
@@ -176,6 +173,9 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                             <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
                                 Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                             </MenuLink>
+
+                            <MenuItem onSelect={props.showFeedbackModal}>Feedback</MenuItem>
+
                             <MenuItem onSelect={props.showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
                             {props.authenticatedUser.session?.canSignOut && (

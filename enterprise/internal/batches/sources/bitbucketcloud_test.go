@@ -572,7 +572,13 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 		FullName: "upstream/repo",
 		Slug:     "repo",
 	}
-	upstreamRepo := &types.Repo{Metadata: upstream}
+	urn := extsvc.URN(extsvc.KindBitbucketCloud, 1)
+	upstreamRepo := &types.Repo{Metadata: upstream, Sources: map[string]*types.SourceInfo{
+		urn: {
+			ID:       urn,
+			CloneURL: "https://bitbucket.org/upstream/repo",
+		},
+	}}
 
 	fork := &bitbucketcloud.Repo{
 		UUID:     "fork-uuid",
@@ -587,7 +593,7 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 			want := errors.New("error")
 			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
 				assert.Equal(t, "fork", namespace)
-				assert.Equal(t, "repo", slug)
+				assert.Equal(t, "upstream-repo", slug)
 				return nil, want
 			})
 
@@ -602,14 +608,16 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 
 			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
 				assert.Equal(t, "fork", namespace)
-				assert.Equal(t, "repo", slug)
+				assert.Equal(t, "upstream-repo", slug)
 				return fork, nil
 			})
 
-			repo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
+			forkRepo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
 			assert.Nil(t, err)
-			assert.NotNil(t, repo)
-			assert.Same(t, fork, repo.Metadata)
+			assert.NotNil(t, forkRepo)
+			assert.NotEqual(t, forkRepo, upstreamRepo)
+			assert.Equal(t, fork, forkRepo.Metadata)
+			assert.Equal(t, forkRepo.Sources[urn].CloneURL, "https://bitbucket.org/fork/repo")
 		})
 
 		t.Run("fork error", func(t *testing.T) {
@@ -617,7 +625,7 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 
 			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
 				assert.Equal(t, "fork", namespace)
-				assert.Equal(t, "repo", slug)
+				assert.Equal(t, "upstream-repo", slug)
 				return nil, &notFoundError{}
 			})
 
@@ -639,7 +647,7 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 
 			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
 				assert.Equal(t, "fork", namespace)
-				assert.Equal(t, "repo", slug)
+				assert.Equal(t, "upstream-repo", slug)
 				return nil, &notFoundError{}
 			})
 
@@ -649,10 +657,12 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 				return fork, nil
 			})
 
-			repo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
+			forkRepo, err := s.GetNamespaceFork(ctx, upstreamRepo, "fork")
 			assert.Nil(t, err)
-			assert.NotNil(t, repo)
-			assert.Same(t, fork, repo.Metadata)
+			assert.NotNil(t, forkRepo)
+			assert.NotEqual(t, forkRepo, upstreamRepo)
+			assert.Equal(t, fork, forkRepo.Metadata)
+			assert.Equal(t, forkRepo.Sources[urn].CloneURL, "https://bitbucket.org/fork/repo")
 		})
 	})
 
@@ -681,7 +691,7 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 
 			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
 				assert.Equal(t, "user", namespace)
-				assert.Equal(t, "repo", slug)
+				assert.Equal(t, "upstream-repo", slug)
 				return fork, nil
 			})
 

@@ -482,6 +482,58 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1663626068,
+				"Name": "backfill_completed_at",
+				"UpQuery": "ALTER TABLE IF EXISTS insight_series\n    ADD COLUMN IF NOT EXISTS backfill_completed_at TIMESTAMP;",
+				"DownQuery": "ALTER TABLE IF EXISTS insight_series DROP COLUMN IF EXISTS backfill_completed_at;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1659572248
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1664984848,
+				"Name": "insights_scheduler_table",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS insights_background_jobs (\n                              id                SERIAL PRIMARY KEY,\n                              state             text DEFAULT 'queued',\n                              failure_message   text,\n                              queued_at         timestamp with time zone DEFAULT NOW(),\n                              started_at        timestamp with time zone,\n                              finished_at       timestamp with time zone,\n                              process_after     timestamp with time zone,\n                              num_resets        integer not null default 0,\n                              num_failures      integer not null default 0,\n                              last_heartbeat_at timestamp with time zone,\n                              execution_logs    json[],\n                              worker_hostname   text not null default '',\n                              cancel            boolean not null default false\n);\n\nCREATE INDEX IF NOT EXISTS insights_jobs_state_idx ON insights_background_jobs(state);",
+				"DownQuery": "DROP TABLE IF EXISTS insights_background_jobs;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1663626068
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1665003565,
+				"Name": "insights_backfill_scheduler_state",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS repo_iterator\n(\n    id               SERIAL\n        CONSTRAINT repo_iterator_pk PRIMARY KEY,\n    created_at       TIMESTAMP          DEFAULT NOW(),\n    started_at       TIMESTAMP,\n    completed_at     TIMESTAMP,\n    last_updated_at  TIMESTAMP NOT NULL DEFAULT NOW(),\n    runtime_duration BIGINT NOT NULL DEFAULT 0,\n    percent_complete DOUBLE PRECISION NOT NULL DEFAULT 0,\n    total_count            INT NOT NULL DEFAULT 0,\n    success_count INT NOT NULL DEFAULT 0,\n    repos            INT[],\n    repo_cursor      INT                DEFAULT 0\n);\n\nCREATE TABLE IF NOT EXISTS repo_iterator_errors\n(\n    id               SERIAL\n        CONSTRAINT repo_iterator_errors_pk PRIMARY KEY,\n    repo_iterator_id INT    NOT NULL,\n    repo_id          INT    NOT NULL,\n    error_message    TEXT[] NOT NULL,\n    failure_count    INT DEFAULT 1,\n\n    CONSTRAINT repo_iterator_fk FOREIGN KEY (repo_iterator_id) REFERENCES repo_iterator (id)\n);\n\nCREATE INDEX IF NOT EXISTS repo_iterator_errors_fk_idx\n    ON repo_iterator_errors (repo_iterator_id);",
+				"DownQuery": "drop table if exists repo_iterator CASCADE;\ndrop table if exists repo_iterator_errors;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1664984848
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1665616961,
+				"Name": "backfill_table",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS insight_series_backfill\n(\n    id               SERIAL\n        CONSTRAINT insight_series_backfill_pk PRIMARY KEY,\n    series_id        INT  NOT NULL,\n    repo_iterator_id INT,\n    estimated_cost   DOUBLE PRECISION,\n    state            TEXT NOT NULL DEFAULT 'new',\n\n    CONSTRAINT insight_series_backfill_series_id_fk\n        FOREIGN KEY (series_id) REFERENCES insight_series (id) ON DELETE CASCADE\n);\n\nALTER TABLE insights_background_jobs\n    ADD COLUMN IF NOT EXISTS backfill_id INT REFERENCES insight_series_backfill(id) ON DELETE CASCADE;\n\nCREATE OR REPLACE VIEW insights_jobs_backfill_in_progress AS\nSELECT jobs.*, isb.state AS backfill_state, isb.estimated_cost\nFROM insights_background_jobs jobs\n         JOIN insight_series_backfill isb ON jobs.backfill_id = isb.id\nWHERE isb.state = 'processing';\n\nCREATE OR REPLACE VIEW insights_jobs_backfill_new AS\nSELECT jobs.*, isb.state AS backfill_state, isb.estimated_cost\nFROM insights_background_jobs jobs\n         JOIN insight_series_backfill isb ON jobs.backfill_id = isb.id\nWHERE isb.state = 'new';",
+				"DownQuery": "DROP VIEW IF EXISTS insights_jobs_backfill_in_progress;\n\nDROP VIEW IF EXISTS insights_jobs_backfill_new;\n\nALTER TABLE insights_background_jobs\n    DROP COLUMN IF EXISTS backfill_id;\n\nDROP TABLE IF EXISTS insight_series_backfill;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1665003565
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -649,6 +701,13 @@
 				"RootID": 1000000027,
 				"LeafIDs": [
 					1659572248
+				],
+				"PreCreation": false
+			},
+			"v4.1.0": {
+				"RootID": 1000000027,
+				"LeafIDs": [
+					1665616961
 				],
 				"PreCreation": false
 			}
@@ -1130,6 +1189,19 @@
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
+			},
+			{
+				"ID": 1665531314,
+				"Name": "Remove API docs tables",
+				"UpQuery": "DROP TRIGGER IF EXISTS lsif_data_docs_search_private_delete ON lsif_data_docs_search_private;\n\nDROP TRIGGER IF EXISTS lsif_data_docs_search_private_insert ON lsif_data_docs_search_private;\n\nDROP TRIGGER IF EXISTS lsif_data_docs_search_public_delete ON lsif_data_docs_search_public;\n\nDROP TRIGGER IF EXISTS lsif_data_docs_search_public_insert ON lsif_data_docs_search_public;\n\nDROP TRIGGER IF EXISTS lsif_data_documentation_pages_delete ON lsif_data_documentation_pages;\n\nDROP TRIGGER IF EXISTS lsif_data_documentation_pages_insert ON lsif_data_documentation_pages;\n\nDROP TRIGGER IF EXISTS lsif_data_documentation_pages_update ON lsif_data_documentation_pages;\n\nDROP FUNCTION IF EXISTS lsif_data_docs_search_private_delete();\n\nDROP FUNCTION IF EXISTS lsif_data_docs_search_private_insert();\n\nDROP FUNCTION IF EXISTS lsif_data_docs_search_public_delete();\n\nDROP FUNCTION IF EXISTS lsif_data_docs_search_public_insert();\n\nDROP FUNCTION IF EXISTS lsif_data_documentation_pages_delete();\n\nDROP FUNCTION IF EXISTS lsif_data_documentation_pages_insert();\n\nDROP FUNCTION IF EXISTS lsif_data_documentation_pages_update();\n\nDROP TABLE IF EXISTS lsif_data_apidocs_num_dumps CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_apidocs_num_dumps_indexed CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_apidocs_num_pages CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_apidocs_num_search_results_private CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_apidocs_num_search_results_public CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_docs_search_current_private CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_docs_search_current_public CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_docs_search_lang_names_private CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_docs_search_lang_names_public CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_docs_search_private CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_docs_search_public CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_docs_search_repo_names_private CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_docs_search_repo_names_public CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_docs_search_tags_private CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_docs_search_tags_public CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_documentation_mappings CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_documentation_pages CASCADE;\n\nDROP TABLE IF EXISTS lsif_data_documentation_path_info CASCADE;",
+				"DownQuery": "CREATE OR REPLACE FUNCTION lsif_data_docs_search_private_delete() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$\nBEGIN\nUPDATE lsif_data_apidocs_num_search_results_private SET count = count - (select count(*) from oldtbl);\nRETURN NULL;\nEND $$;\n\nCREATE OR REPLACE FUNCTION lsif_data_docs_search_private_insert() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$\nBEGIN\nUPDATE lsif_data_apidocs_num_search_results_private SET count = count + (select count(*) from newtbl);\nRETURN NULL;\nEND $$;\n\nCREATE OR REPLACE FUNCTION lsif_data_docs_search_public_delete() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$\nBEGIN\nUPDATE lsif_data_apidocs_num_search_results_public SET count = count - (select count(*) from oldtbl);\nRETURN NULL;\nEND $$;\n\nCREATE OR REPLACE FUNCTION lsif_data_docs_search_public_insert() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$\nBEGIN\nUPDATE lsif_data_apidocs_num_search_results_public SET count = count + (select count(*) from newtbl);\nRETURN NULL;\nEND $$;\n\nCREATE OR REPLACE FUNCTION lsif_data_documentation_pages_delete() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$\nBEGIN\nUPDATE lsif_data_apidocs_num_pages SET count = count - (select count(*) from oldtbl);\nUPDATE lsif_data_apidocs_num_dumps SET count = count - (select count(DISTINCT dump_id) from oldtbl);\nUPDATE lsif_data_apidocs_num_dumps_indexed SET count = count - (select count(DISTINCT dump_id) from oldtbl WHERE search_indexed='true');\nRETURN NULL;\nEND $$;\n\nCREATE OR REPLACE FUNCTION lsif_data_documentation_pages_insert() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$\nBEGIN\nUPDATE lsif_data_apidocs_num_pages SET count = count + (select count(*) from newtbl);\nUPDATE lsif_data_apidocs_num_dumps SET count = count + (select count(DISTINCT dump_id) from newtbl);\nUPDATE lsif_data_apidocs_num_dumps_indexed SET count = count + (select count(DISTINCT dump_id) from newtbl WHERE search_indexed='true');\nRETURN NULL;\nEND $$;\n\nCREATE OR REPLACE FUNCTION lsif_data_documentation_pages_update() RETURNS trigger\n    LANGUAGE plpgsql\n    AS $$\nBEGIN\nWITH\n    beforeIndexed AS (SELECT count(DISTINCT dump_id) FROM oldtbl WHERE search_indexed='true'),\n    afterIndexed AS (SELECT count(DISTINCT dump_id) FROM newtbl WHERE search_indexed='true')\nUPDATE lsif_data_apidocs_num_dumps_indexed SET count=count + ((select * from afterIndexed) - (select * from beforeIndexed));\nRETURN NULL;\nEND $$;\n\nCREATE TABLE IF NOT EXISTS lsif_data_apidocs_num_dumps (count bigint);\nCREATE TABLE IF NOT EXISTS lsif_data_apidocs_num_dumps_indexed (count bigint);\nCREATE TABLE IF NOT EXISTS lsif_data_apidocs_num_pages (count bigint);\nCREATE TABLE IF NOT EXISTS lsif_data_apidocs_num_search_results_private (count bigint);\nCREATE TABLE IF NOT EXISTS lsif_data_apidocs_num_search_results_public (count bigint);\n\nINSERT INTO lsif_data_apidocs_num_dumps VALUES (0);\nINSERT INTO lsif_data_apidocs_num_dumps_indexed VALUES (0);\nINSERT INTO lsif_data_apidocs_num_pages VALUES (0);\nINSERT INTO lsif_data_apidocs_num_search_results_private VALUES (0);\nINSERT INTO lsif_data_apidocs_num_search_results_public VALUES (0);\n\nCREATE TABLE IF NOT EXISTS lsif_data_docs_search_current_private (\n    repo_id integer NOT NULL,\n    dump_root text NOT NULL,\n    lang_name_id integer NOT NULL,\n    dump_id integer NOT NULL,\n    last_cleanup_scan_at timestamp with time zone DEFAULT now() NOT NULL,\n    created_at timestamp with time zone DEFAULT now() NOT NULL,\n    id BIGSERIAL,\n    PRIMARY KEY(id)\n);\n\nCREATE TABLE IF NOT EXISTS lsif_data_docs_search_current_public (\n    repo_id integer NOT NULL,\n    dump_root text NOT NULL,\n    lang_name_id integer NOT NULL,\n    dump_id integer NOT NULL,\n    last_cleanup_scan_at timestamp with time zone DEFAULT now() NOT NULL,\n    created_at timestamp with time zone DEFAULT now() NOT NULL,\n    id BIGSERIAL,\n    PRIMARY KEY(id)\n);\n\nCREATE TABLE IF NOT EXISTS lsif_data_docs_search_lang_names_private (\n    id BIGSERIAL,\n    lang_name text NOT NULL,\n    tsv tsvector NOT NULL,\n    PRIMARY KEY(id),\n    UNIQUE(lang_name)\n);\n\nCREATE TABLE IF NOT EXISTS lsif_data_docs_search_lang_names_public (\n    id BIGSERIAL,\n    lang_name text NOT NULL,\n    tsv tsvector NOT NULL,\n    PRIMARY KEY(id),\n    UNIQUE(lang_name)\n);\n\nCREATE TABLE IF NOT EXISTS lsif_data_docs_search_private (\n    id BIGSERIAL,\n    repo_id integer NOT NULL,\n    dump_id integer NOT NULL,\n    dump_root text NOT NULL,\n    path_id text NOT NULL,\n    detail text NOT NULL,\n    lang_name_id integer NOT NULL,\n    repo_name_id integer NOT NULL,\n    tags_id integer NOT NULL,\n    search_key text NOT NULL,\n    search_key_tsv tsvector NOT NULL,\n    search_key_reverse_tsv tsvector NOT NULL,\n    label text NOT NULL,\n    label_tsv tsvector NOT NULL,\n    label_reverse_tsv tsvector NOT NULL,\n    PRIMARY KEY(id)\n);\n\nCREATE TABLE IF NOT EXISTS lsif_data_docs_search_public (\n    id BIGSERIAL,\n    repo_id integer NOT NULL,\n    dump_id integer NOT NULL,\n    dump_root text NOT NULL,\n    path_id text NOT NULL,\n    detail text NOT NULL,\n    lang_name_id integer NOT NULL,\n    repo_name_id integer NOT NULL,\n    tags_id integer NOT NULL,\n    search_key text NOT NULL,\n    search_key_tsv tsvector NOT NULL,\n    search_key_reverse_tsv tsvector NOT NULL,\n    label text NOT NULL,\n    label_tsv tsvector NOT NULL,\n    label_reverse_tsv tsvector NOT NULL,\n    PRIMARY KEY(id)\n);\n\nCREATE TABLE IF NOT EXISTS lsif_data_docs_search_repo_names_private (\n    id BIGSERIAL,\n    repo_name text NOT NULL,\n    tsv tsvector NOT NULL,\n    reverse_tsv tsvector NOT NULL,\n    PRIMARY KEY(id),\n    UNIQUE(repo_name)\n);\n\nCREATE TABLE IF NOT EXISTS lsif_data_docs_search_repo_names_public (\n    id BIGSERIAL,\n    repo_name text NOT NULL,\n    tsv tsvector NOT NULL,\n    reverse_tsv tsvector NOT NULL,\n    PRIMARY KEY(id),\n    UNIQUE(repo_name)\n);\n\nCREATE TABLE IF NOT EXISTS lsif_data_docs_search_tags_private (\n    id BIGSERIAL,\n    tags text NOT NULL UNIQUE,\n    tsv tsvector NOT NULL,\n    PRIMARY KEY(id)\n);\n\nCREATE TABLE IF NOT EXISTS lsif_data_docs_search_tags_public (\n    id BIGSERIAL,\n    tags text NOT NULL UNIQUE,\n    tsv tsvector NOT NULL,\n    PRIMARY KEY(id),\n    UNIQUE(tags)\n);\n\nCREATE TABLE IF NOT EXISTS lsif_data_documentation_mappings (\n    dump_id integer NOT NULL,\n    path_id text NOT NULL,\n    result_id integer NOT NULL,\n    file_path text,\n    PRIMARY KEY(dump_id, path_id)\n);\n\nCREATE TABLE IF NOT EXISTS lsif_data_documentation_pages (\n    dump_id integer NOT NULL,\n    path_id text NOT NULL,\n    data bytea,\n    search_indexed boolean DEFAULT false,\n    PRIMARY KEY(dump_id, path_id)\n);\n\nCREATE TABLE IF NOT EXISTS lsif_data_documentation_path_info (\n    dump_id integer NOT NULL,\n    path_id text NOT NULL,\n    data bytea,\n    PRIMARY KEY(dump_id, path_id)\n);\n\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_current_private_last_cleanup_scan_at ON lsif_data_docs_search_current_private USING btree (last_cleanup_scan_at);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_current_private_lookup ON lsif_data_docs_search_current_private USING btree (repo_id, dump_root, lang_name_id, created_at) INCLUDE (dump_id);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_current_public_last_cleanup_scan_at ON lsif_data_docs_search_current_public USING btree (last_cleanup_scan_at);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_current_public_lookup ON lsif_data_docs_search_current_public USING btree (repo_id, dump_root, lang_name_id, created_at) INCLUDE (dump_id);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_lang_names_private_tsv_idx ON lsif_data_docs_search_lang_names_private USING gin (tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_lang_names_public_tsv_idx ON lsif_data_docs_search_lang_names_public USING gin (tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_private_dump_id_idx ON lsif_data_docs_search_private USING btree (dump_id);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_private_dump_root_idx ON lsif_data_docs_search_private USING btree (dump_root);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_private_label_reverse_tsv_idx ON lsif_data_docs_search_private USING gin (label_reverse_tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_private_label_tsv_idx ON lsif_data_docs_search_private USING gin (label_tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_private_repo_id_idx ON lsif_data_docs_search_private USING btree (repo_id);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_private_search_key_reverse_tsv_idx ON lsif_data_docs_search_private USING gin (search_key_reverse_tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_private_search_key_tsv_idx ON lsif_data_docs_search_private USING gin (search_key_tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_public_dump_id_idx ON lsif_data_docs_search_public USING btree (dump_id);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_public_dump_root_idx ON lsif_data_docs_search_public USING btree (dump_root);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_public_label_reverse_tsv_idx ON lsif_data_docs_search_public USING gin (label_reverse_tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_public_label_tsv_idx ON lsif_data_docs_search_public USING gin (label_tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_public_repo_id_idx ON lsif_data_docs_search_public USING btree (repo_id);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_public_search_key_reverse_tsv_idx ON lsif_data_docs_search_public USING gin (search_key_reverse_tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_public_search_key_tsv_idx ON lsif_data_docs_search_public USING gin (search_key_tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_repo_names_private_reverse_tsv_idx ON lsif_data_docs_search_repo_names_private USING gin (reverse_tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_repo_names_private_tsv_idx ON lsif_data_docs_search_repo_names_private USING gin (tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_repo_names_public_reverse_tsv_idx ON lsif_data_docs_search_repo_names_public USING gin (reverse_tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_repo_names_public_tsv_idx ON lsif_data_docs_search_repo_names_public USING gin (tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_tags_private_tsv_idx ON lsif_data_docs_search_tags_private USING gin (tsv);\nCREATE INDEX IF NOT EXISTS lsif_data_docs_search_tags_public_tsv_idx ON lsif_data_docs_search_tags_public USING gin (tsv);\nCREATE UNIQUE INDEX IF NOT EXISTS lsif_data_documentation_mappings_inverse_unique_idx ON lsif_data_documentation_mappings USING btree (dump_id, result_id);\nCREATE INDEX IF NOT EXISTS lsif_data_documentation_pages_dump_id_unindexed ON lsif_data_documentation_pages USING btree (dump_id) WHERE (NOT search_indexed);\n\nDROP TRIGGER IF EXISTS lsif_data_docs_search_private_delete ON lsif_data_docs_search_private;\nCREATE TRIGGER lsif_data_docs_search_private_delete AFTER DELETE ON lsif_data_docs_search_private REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_private_delete();\nDROP TRIGGER IF EXISTS lsif_data_docs_search_private_insert ON lsif_data_docs_search_private;\nCREATE TRIGGER lsif_data_docs_search_private_insert AFTER INSERT ON lsif_data_docs_search_private REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_private_insert();\nDROP TRIGGER IF EXISTS lsif_data_docs_search_public_delete ON lsif_data_docs_search_public;\nCREATE TRIGGER lsif_data_docs_search_public_delete AFTER DELETE ON lsif_data_docs_search_public REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_public_delete();\nDROP TRIGGER IF EXISTS lsif_data_docs_search_public_insert ON lsif_data_docs_search_public;\nCREATE TRIGGER lsif_data_docs_search_public_insert AFTER INSERT ON lsif_data_docs_search_public REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_public_insert();\nDROP TRIGGER IF EXISTS lsif_data_documentation_pages_delete ON lsif_data_documentation_pages;\nCREATE TRIGGER lsif_data_documentation_pages_delete AFTER DELETE ON lsif_data_documentation_pages REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_delete();\nDROP TRIGGER IF EXISTS lsif_data_documentation_pages_insert ON lsif_data_documentation_pages;\nCREATE TRIGGER lsif_data_documentation_pages_insert AFTER INSERT ON lsif_data_documentation_pages REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_insert();\nDROP TRIGGER IF EXISTS lsif_data_documentation_pages_update ON lsif_data_documentation_pages;\nCREATE TRIGGER lsif_data_documentation_pages_update AFTER UPDATE ON lsif_data_documentation_pages REFERENCING OLD TABLE AS oldtbl NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_update();\n\nCOMMENT ON TABLE lsif_data_docs_search_current_private IS 'A table indicating the most current search index for a unique repository, root, and language.';\nCOMMENT ON COLUMN lsif_data_docs_search_current_private.repo_id IS 'The repository identifier of the associated dump.';\nCOMMENT ON COLUMN lsif_data_docs_search_current_private.dump_root IS 'The root of the associated dump.';\nCOMMENT ON COLUMN lsif_data_docs_search_current_private.lang_name_id IS 'The interned index name of the associated dump.';\nCOMMENT ON COLUMN lsif_data_docs_search_current_private.dump_id IS 'The associated dump identifier.';\nCOMMENT ON COLUMN lsif_data_docs_search_current_private.last_cleanup_scan_at IS 'The last time this record was checked as part of a data retention scan.';\nCOMMENT ON COLUMN lsif_data_docs_search_current_private.created_at IS 'The time this record was inserted. The records with the latest created_at value for the same repository, root, and language is the only visible one and others will be deleted asynchronously.';\n\nCOMMENT ON TABLE lsif_data_docs_search_current_public IS 'A table indicating the most current search index for a unique repository, root, and language.';\nCOMMENT ON COLUMN lsif_data_docs_search_current_public.repo_id IS 'The repository identifier of the associated dump.';\nCOMMENT ON COLUMN lsif_data_docs_search_current_public.dump_root IS 'The root of the associated dump.';\nCOMMENT ON COLUMN lsif_data_docs_search_current_public.lang_name_id IS 'The interned index name of the associated dump.';\nCOMMENT ON COLUMN lsif_data_docs_search_current_public.dump_id IS 'The associated dump identifier.';\nCOMMENT ON COLUMN lsif_data_docs_search_current_public.last_cleanup_scan_at IS 'The last time this record was checked as part of a data retention scan.';\nCOMMENT ON COLUMN lsif_data_docs_search_current_public.created_at IS 'The time this record was inserted. The records with the latest created_at value for the same repository, root, and language is the only visible one and others will be deleted asynchronously.';\n\nCOMMENT ON TABLE lsif_data_docs_search_lang_names_private IS 'Each unique language name being stored in the API docs search index.';\nCOMMENT ON COLUMN lsif_data_docs_search_lang_names_private.id IS 'The ID of the language name.';\nCOMMENT ON COLUMN lsif_data_docs_search_lang_names_private.lang_name IS 'The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name.';\nCOMMENT ON COLUMN lsif_data_docs_search_lang_names_private.tsv IS 'Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\n\nCOMMENT ON TABLE lsif_data_docs_search_lang_names_public IS 'Each unique language name being stored in the API docs search index.';\nCOMMENT ON COLUMN lsif_data_docs_search_lang_names_public.id IS 'The ID of the language name.';\nCOMMENT ON COLUMN lsif_data_docs_search_lang_names_public.lang_name IS 'The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name.';\nCOMMENT ON COLUMN lsif_data_docs_search_lang_names_public.tsv IS 'Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\n\nCOMMENT ON TABLE lsif_data_docs_search_private IS 'A tsvector search index over API documentation (private repos only)';\nCOMMENT ON COLUMN lsif_data_docs_search_private.id IS 'The row ID of the search result.';\nCOMMENT ON COLUMN lsif_data_docs_search_private.repo_id IS 'The repo ID, from the main app DB repo table. Used to search over a select set of repos by ID.';\nCOMMENT ON COLUMN lsif_data_docs_search_private.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_docs_search_private.dump_root IS 'Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root.';\nCOMMENT ON COLUMN lsif_data_docs_search_private.path_id IS 'The fully qualified documentation page path ID, e.g. including \"#section\". See GraphQL codeintel.schema:documentationPage for what this is.';\nCOMMENT ON COLUMN lsif_data_docs_search_private.detail IS 'The detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation';\nCOMMENT ON COLUMN lsif_data_docs_search_private.lang_name_id IS 'The programming language (or indexer name) that produced the result. Foreign key into lsif_data_docs_search_lang_names_private.';\nCOMMENT ON COLUMN lsif_data_docs_search_private.repo_name_id IS 'The repository name that produced the result. Foreign key into lsif_data_docs_search_repo_names_private.';\nCOMMENT ON COLUMN lsif_data_docs_search_private.tags_id IS 'The tags from the documentation node. Foreign key into lsif_data_docs_search_tags_private.';\nCOMMENT ON COLUMN lsif_data_docs_search_private.search_key IS 'The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific, and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey';\nCOMMENT ON COLUMN lsif_data_docs_search_private.search_key_tsv IS 'Indexed tsvector for the search_key field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\nCOMMENT ON COLUMN lsif_data_docs_search_private.search_key_reverse_tsv IS 'Indexed tsvector for the reverse of the search_key field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\nCOMMENT ON COLUMN lsif_data_docs_search_private.label IS 'The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation';\nCOMMENT ON COLUMN lsif_data_docs_search_private.label_tsv IS 'Indexed tsvector for the label field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\nCOMMENT ON COLUMN lsif_data_docs_search_private.label_reverse_tsv IS 'Indexed tsvector for the reverse of the label field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\n\nCOMMENT ON TABLE lsif_data_docs_search_public IS 'A tsvector search index over API documentation (public repos only)';\nCOMMENT ON COLUMN lsif_data_docs_search_public.id IS 'The row ID of the search result.';\nCOMMENT ON COLUMN lsif_data_docs_search_public.repo_id IS 'The repo ID, from the main app DB repo table. Used to search over a select set of repos by ID.';\nCOMMENT ON COLUMN lsif_data_docs_search_public.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_docs_search_public.dump_root IS 'Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root.';\nCOMMENT ON COLUMN lsif_data_docs_search_public.path_id IS 'The fully qualified documentation page path ID, e.g. including \"#section\". See GraphQL codeintel.schema:documentationPage for what this is.';\nCOMMENT ON COLUMN lsif_data_docs_search_public.detail IS 'The detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation';\nCOMMENT ON COLUMN lsif_data_docs_search_public.lang_name_id IS 'The programming language (or indexer name) that produced the result. Foreign key into lsif_data_docs_search_lang_names_public.';\nCOMMENT ON COLUMN lsif_data_docs_search_public.repo_name_id IS 'The repository name that produced the result. Foreign key into lsif_data_docs_search_repo_names_public.';\nCOMMENT ON COLUMN lsif_data_docs_search_public.tags_id IS 'The tags from the documentation node. Foreign key into lsif_data_docs_search_tags_public.';\nCOMMENT ON COLUMN lsif_data_docs_search_public.search_key IS 'The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific, and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey';\nCOMMENT ON COLUMN lsif_data_docs_search_public.search_key_tsv IS 'Indexed tsvector for the search_key field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\nCOMMENT ON COLUMN lsif_data_docs_search_public.search_key_reverse_tsv IS 'Indexed tsvector for the reverse of the search_key field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\nCOMMENT ON COLUMN lsif_data_docs_search_public.label IS 'The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation';\nCOMMENT ON COLUMN lsif_data_docs_search_public.label_tsv IS 'Indexed tsvector for the label field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\nCOMMENT ON COLUMN lsif_data_docs_search_public.label_reverse_tsv IS 'Indexed tsvector for the reverse of the label field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\n\nCOMMENT ON TABLE lsif_data_docs_search_repo_names_private IS 'Each unique repository name being stored in the API docs search index.';\nCOMMENT ON COLUMN lsif_data_docs_search_repo_names_private.id IS 'The ID of the repository name.';\nCOMMENT ON COLUMN lsif_data_docs_search_repo_names_private.repo_name IS 'The fully qualified name of the repository.';\nCOMMENT ON COLUMN lsif_data_docs_search_repo_names_private.tsv IS 'Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\nCOMMENT ON COLUMN lsif_data_docs_search_repo_names_private.reverse_tsv IS 'Indexed tsvector for the reverse of the lang_name field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\n\nCOMMENT ON TABLE lsif_data_docs_search_repo_names_public IS 'Each unique repository name being stored in the API docs search index.';\nCOMMENT ON COLUMN lsif_data_docs_search_repo_names_public.id IS 'The ID of the repository name.';\nCOMMENT ON COLUMN lsif_data_docs_search_repo_names_public.repo_name IS 'The fully qualified name of the repository.';\nCOMMENT ON COLUMN lsif_data_docs_search_repo_names_public.tsv IS 'Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\nCOMMENT ON COLUMN lsif_data_docs_search_repo_names_public.reverse_tsv IS 'Indexed tsvector for the reverse of the lang_name field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\n\nCOMMENT ON TABLE lsif_data_docs_search_tags_private IS 'Each uniques sequence of space-separated tags being stored in the API docs search index.';\nCOMMENT ON COLUMN lsif_data_docs_search_tags_private.id IS 'The ID of the tags.';\nCOMMENT ON COLUMN lsif_data_docs_search_tags_private.tags IS 'The full sequence of space-separated tags. See protocol/documentation.go:Documentation';\nCOMMENT ON COLUMN lsif_data_docs_search_tags_private.tsv IS 'Indexed tsvector for the tags field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\n\nCOMMENT ON TABLE lsif_data_docs_search_tags_public IS 'Each uniques sequence of space-separated tags being stored in the API docs search index.';\nCOMMENT ON COLUMN lsif_data_docs_search_tags_public.id IS 'The ID of the tags.';\nCOMMENT ON COLUMN lsif_data_docs_search_tags_public.tags IS 'The full sequence of space-separated tags. See protocol/documentation.go:Documentation';\nCOMMENT ON COLUMN lsif_data_docs_search_tags_public.tsv IS 'Indexed tsvector for the tags field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.';\n\nCOMMENT ON TABLE lsif_data_documentation_mappings IS 'Maps documentation path IDs to their corresponding integral documentationResult vertex IDs, which are unique within a dump.';\nCOMMENT ON COLUMN lsif_data_documentation_mappings.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_documentation_mappings.path_id IS 'The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is.';\nCOMMENT ON COLUMN lsif_data_documentation_mappings.result_id IS 'The documentationResult vertex ID.';\nCOMMENT ON COLUMN lsif_data_documentation_mappings.file_path IS 'The document file path for the documentationResult, if any. e.g. the path to the file where the symbol described by this documentationResult is located, if it is a symbol.';\n\nCOMMENT ON TABLE lsif_data_documentation_pages IS 'Associates documentation pathIDs to their documentation page hierarchy chunk.';\nCOMMENT ON COLUMN lsif_data_documentation_pages.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_documentation_pages.path_id IS 'The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is.';\nCOMMENT ON COLUMN lsif_data_documentation_pages.data IS 'A gob-encoded payload conforming to a `type DocumentationPageData struct` pointer (lib/codeintel/semantic/types.go)';\n\nCOMMENT ON TABLE lsif_data_documentation_path_info IS 'Associates documentation page pathIDs to information about what is at that pathID, its immediate children, etc.';\nCOMMENT ON COLUMN lsif_data_documentation_path_info.dump_id IS 'The identifier of the associated dump in the lsif_uploads table (state=completed).';\nCOMMENT ON COLUMN lsif_data_documentation_path_info.path_id IS 'The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is.';\nCOMMENT ON COLUMN lsif_data_documentation_path_info.data IS 'A gob-encoded payload conforming to a `type DocumentationPathInoData struct` pointer (lib/codeintel/semantic/types.go)';",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1000000034
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
 			}
 		],
 		"BoundsByRev": {
@@ -1301,6 +1373,13 @@
 				"RootID": 1000000033,
 				"LeafIDs": [
 					1000000034
+				],
+				"PreCreation": false
+			},
+			"v4.1.0": {
+				"RootID": 1000000033,
+				"LeafIDs": [
+					1665531314
 				],
 				"PreCreation": false
 			}
@@ -6538,6 +6617,20 @@
 				"IndexMetadata": null
 			},
 			{
+				"ID": 1661441160,
+				"Name": "batch spec remote mounts",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS batch_spec_workspace_files\n(\n    id            serial PRIMARY KEY,\n    rand_id       text                                   NOT NULL,\n    batch_spec_id bigint                                 NOT NULL,\n    filename      text                                   NOT NULL,\n    path          text                                   NOT NULL,\n    size          bigint                                 NOT NULL,\n    content       bytea                                  NOT NULL,\n    modified_at   timestamp with time zone               NOT NULL,\n    created_at    timestamp with time zone DEFAULT now() NOT NULL,\n    updated_at    timestamp with time zone DEFAULT now() NOT NULL\n);\n\nALTER TABLE batch_spec_workspace_files\n    DROP CONSTRAINT IF EXISTS batch_spec_workspace_files_batch_spec_id_fkey;\n\nALTER TABLE ONLY batch_spec_workspace_files\n    ADD CONSTRAINT batch_spec_workspace_files_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs (id) ON DELETE CASCADE;\n\nCREATE INDEX IF NOT EXISTS batch_spec_workspace_files_rand_id ON batch_spec_workspace_files USING btree (rand_id);\n\nCREATE UNIQUE INDEX IF NOT EXISTS batch_spec_workspace_files_batch_spec_id_filename_path ON batch_spec_workspace_files (batch_spec_id, filename, path);",
+				"DownQuery": "DROP TABLE IF EXISTS batch_spec_workspace_files;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1659085788,
+					1660742069
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
 				"ID": 1661502186,
 				"Name": "fix_repo_stats_initial_state",
 				"UpQuery": "-- In the previous migration (1659085788_add_repo_stats_table) the triggers\n-- adding data to the stats table and the initial state of the stats table were\n-- setup in the wrong order:\n--\n--   1. Create repo_statistics/gitserver_repos_statistics tables\n--   2. Insert initial state into tables\n--   3. Setup database triggers that insert/update these tables\n--\n-- That's wrong. Instead we should've :\n--\n--   1. Create repo_statistics/gitserver_repos_statistics tables\n--   2. Setup database triggers that insert/update these tables\n--   3. Update tables to have correct initial state\n--\n--\n-- What this migration does is correct the initial wrong states by\n\n-- 1. Lock repo and gitserver_repos tables, so that no inserts/updates/deletes happen while we compute new total state.\n--    EXCLUSIVE is the mode that says \"no one else can write, only read\".\n\nLOCK repo IN EXCLUSIVE MODE;            -- first lock repo, since we have triggers that write `repo` and cause updates on `gitserver_repos` but not the other way around\nLOCK gitserver_repos IN EXCLUSIVE MODE; -- then lock `gitserver_repos`\n\n--- 2. Delete old state in `repo_statistics` (we can't update the state, since this is an append-only table).\nDELETE FROM repo_statistics;\n\n--- 3. Insert new total counts in `repo_statistics`\nINSERT INTO repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch)\nSELECT\n  COUNT(*) AS total,\n  (SELECT COUNT(*) FROM repo WHERE deleted_at is NOT NULL AND blocked IS NULL) AS soft_deleted,\n  COUNT(*) FILTER(WHERE gitserver_repos.clone_status = 'not_cloned') AS not_cloned,\n  COUNT(*) FILTER(WHERE gitserver_repos.clone_status = 'cloning') AS cloning,\n  COUNT(*) FILTER(WHERE gitserver_repos.clone_status = 'cloned') AS cloned,\n  COUNT(*) FILTER(WHERE gitserver_repos.last_error IS NOT NULL) AS failed_fetch\nFROM repo\nJOIN gitserver_repos ON gitserver_repos.repo_id = repo.id\nWHERE\n  repo.deleted_at is NULL AND repo.blocked IS NULL;\n\n--- 4. Insert/update `gitserver_repos_statistics` by updating/insert the recalculated counts per shard.\nINSERT INTO\n  gitserver_repos_statistics (shard_id, total, not_cloned, cloning, cloned, failed_fetch)\nSELECT\n  shard_id,\n  COUNT(*) AS total,\n  COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,\n  COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,\n  COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,\n  COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch\nFROM\n  gitserver_repos\nGROUP BY shard_id\nON CONFLICT(shard_id)\nDO UPDATE\nSET\n  total        = excluded.total,\n  not_cloned   = excluded.not_cloned,\n  cloning      = excluded.cloning,\n  cloned       = excluded.cloned,\n  failed_fetch = excluded.failed_fetch\n;",
@@ -6575,6 +6668,215 @@
 				"Parents": [
 					1661502186,
 					1661507724
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1663569995,
+				"Name": "update_username_valid_chars_contraint",
+				"UpQuery": "-- Allow underscores in usernames.\n\nALTER TABLE users\n  DROP CONSTRAINT users_username_valid_chars,\n    ADD CONSTRAINT users_username_valid_chars CHECK (username ~ '^\\w(?:\\w|[-.](?=\\w))*-?$'::citext);",
+				"DownQuery": "-- Undo allow underscores in usernames.\n\nALTER TABLE users\n  DROP CONSTRAINT users_username_valid_chars,\n    ADD CONSTRAINT users_username_valid_chars CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-.](?=[a-zA-Z0-9]))*-?$'::citext);",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1662467128
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1664300936,
+				"Name": "Move lsif_upload reference count to different table",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS lsif_uploads_reference_counts (\n    upload_id INTEGER UNIQUE NOT NULL,\n    reference_count INTEGER NOT NULL\n);\n\nCOMMENT ON TABLE lsif_uploads_reference_counts IS 'A less hot-path reference count for upload records.';\n\nCOMMENT ON COLUMN lsif_uploads_reference_counts.upload_id IS 'The identifier of the referenced upload.';\n\nCOMMENT ON COLUMN lsif_uploads_reference_counts.reference_count IS 'The number of references to the associated upload from other records (via lsif_references).';\n\nALTER TABLE\n    lsif_uploads_reference_counts DROP CONSTRAINT IF EXISTS lsif_data_docs_search_private_repo_name_id_fk;\n\nALTER TABLE\n    lsif_uploads_reference_counts\nADD\n    CONSTRAINT lsif_data_docs_search_private_repo_name_id_fk FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;",
+				"DownQuery": "-- Force recalculation of reference counts\nUPDATE\n    lsif_uploads\nSET\n    reference_count = NULL;\n\n-- Remove new table\nDROP TABLE IF EXISTS lsif_uploads_reference_counts;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1660711451,
+					1661441160,
+					1663569995
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1663665519,
+				"Name": "perforce_merge_includes_excludes_columns",
+				"UpQuery": "ALTER TABLE ONLY sub_repo_permissions\n    ADD COLUMN IF NOT EXISTS paths text[];\n\nCOMMENT ON COLUMN sub_repo_permissions.paths IS 'Paths that begin with a minus sign (-) are exclusion paths.';\n\nUPDATE sub_repo_permissions\n    SET paths = (ARRAY(SELECT CONCAT('/', path_include) FROM unnest(path_includes) as path_include) || ARRAY(SELECT CONCAT('-/', path_exclude) FROM unnest(path_excludes) as path_exclude));",
+				"DownQuery": "ALTER TABLE sub_repo_permissions\n    DROP COLUMN IF EXISTS paths;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1660711451,
+					1662467128
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1663871069,
+				"Name": "changeset specs null published",
+				"UpQuery": "UPDATE changeset_specs\nSET published = NULL\nWHERE published = 'null';\n\nALTER TABLE changeset_specs\n    DROP CONSTRAINT IF EXISTS changeset_specs_published_valid_values,\n    ADD CONSTRAINT changeset_specs_published_valid_values CHECK (published = 'true' OR published = 'false' OR\n                                                                 published = '\"draft\"' OR published IS NULL);",
+				"DownQuery": "ALTER TABLE changeset_specs\n    DROP CONSTRAINT IF EXISTS changeset_specs_published_valid_values;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1660711451,
+					1662467128
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1664988036,
+				"Name": "create_webhooks_table",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS webhooks(\n    id UUID NOT NULL,\n    code_host_kind TEXT NOT NULL,\n    code_host_urn TEXT NOT NULL,\n    secret TEXT,\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,\n    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,\n    encryption_key_id TEXT NOT NULL DEFAULT ''\n);\n\nCOMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';\nCOMMENT ON COLUMN webhooks.code_host_kind IS 'Kind of an external service for which webhooks are registered.';\nCOMMENT ON COLUMN webhooks.code_host_urn IS 'URN of a code host. This column maps to external_service_id column of repo table.';\nCOMMENT ON COLUMN webhooks.secret IS 'Secret used to decrypt webhook payload (if supported by the code host).';",
+				"DownQuery": "DROP TABLE IF EXISTS webhooks;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1663665519,
+					1663871069,
+					1664300936
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1665056530,
+				"Name": "auto-generate-webhook-id",
+				"UpQuery": "ALTER TABLE webhooks\n   DROP CONSTRAINT IF EXISTS webhooks_pkey,\n   ADD CONSTRAINT webhooks_pkey PRIMARY KEY (id),\n   ALTER COLUMN id SET DEFAULT gen_random_uuid();",
+				"DownQuery": "ALTER TABLE IF EXISTS webhooks\n    ALTER COLUMN id DROP DEFAULT,\n    DROP CONSTRAINT IF EXISTS webhooks_pkey;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1664988036
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1665138849,
+				"Name": "add-rand-id-to-webhooks",
+				"UpQuery": "-- We are changing the schema and we don't expect any rows yet so we can just drop\n-- the old table\nDROP TABLE IF EXISTS webhooks;\n\nCREATE TABLE webhooks (\n      id SERIAL PRIMARY KEY,\n      rand_id uuid DEFAULT gen_random_uuid() NOT NULL,\n      code_host_kind text NOT NULL,\n      code_host_urn text NOT NULL,\n      secret text,\n      created_at timestamp with time zone DEFAULT now() NOT NULL,\n      updated_at timestamp with time zone DEFAULT now() NOT NULL,\n      encryption_key_id text\n);\n\nCOMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';\n\nCOMMENT ON COLUMN webhooks.code_host_kind IS 'Kind of an external service for which webhooks are registered.';\n\nCOMMENT ON COLUMN webhooks.code_host_urn IS 'URN of a code host. This column maps to external_service_id column of repo table.';\n\nCOMMENT ON COLUMN webhooks.secret IS 'Secret used to decrypt webhook payload (if supported by the code host).';\n\nCOMMENT ON COLUMN webhooks.rand_id IS 'rand_id will be the user facing ID';",
+				"DownQuery": "-- We can just drop the new table and create the old one again\n\nDROP TABLE IF EXISTS webhooks;\n\nCREATE TABLE webhooks (\n      id uuid DEFAULT gen_random_uuid() NOT NULL,\n      code_host_kind text NOT NULL,\n      code_host_urn text NOT NULL,\n      secret text,\n      created_at timestamp with time zone DEFAULT now() NOT NULL,\n      updated_at timestamp with time zone DEFAULT now() NOT NULL,\n      encryption_key_id text DEFAULT ''::text NOT NULL\n);\n\nCOMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';\n\nCOMMENT ON COLUMN webhooks.code_host_kind IS 'Kind of an external service for which webhooks are registered.';\n\nCOMMENT ON COLUMN webhooks.code_host_urn IS 'URN of a code host. This column maps to external_service_id column of repo table.';\n\nCOMMENT ON COLUMN webhooks.secret IS 'Secret used to decrypt webhook payload (if supported by the code host).';\n\nALTER TABLE webhooks\n    ADD CONSTRAINT webhooks_pkey PRIMARY KEY (id);",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1665056530
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1665399117,
+				"Name": "rename a column and add an index to webhooks table",
+				"UpQuery": "ALTER TABLE webhooks\n    DROP COLUMN IF EXISTS rand_id,\n    ADD COLUMN IF NOT EXISTS uuid UUID UNIQUE NOT NULL DEFAULT gen_random_uuid();",
+				"DownQuery": "ALTER TABLE webhooks\n    DROP COLUMN IF EXISTS uuid,\n    ADD COLUMN IF NOT EXISTS rand_id UUID DEFAULT gen_random_uuid() NOT NULL;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1665138849
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1662636054,
+				"Name": "autoindexing_persisted_inference_script",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS codeintel_inference_scripts (\n    insert_timestamp timestamptz NOT NULL default NOW(),\n    script text NOT NULL\n);\n\nCOMMENT ON table codeintel_inference_scripts IS 'Contains auto-index job inference Lua scripts as an alternative to setting via environment variables.';",
+				"DownQuery": "-- Undo the changes made in the up migration\nDROP TABLE IF EXISTS codeintel_inference_scripts;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1661502186,
+					1661507724
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1665420690,
+				"Name": "persisted repo document ranks",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS codeintel_path_ranks (\n    repository_id integer NOT NULL UNIQUE,\n    payload text NOT NULL\n);",
+				"DownQuery": "DROP TABLE IF EXISTS codeintel_path_ranks;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1662636054,
+					1665399117
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1665488828,
+				"Name": "add columns to webhooks table",
+				"UpQuery": "ALTER TABLE webhooks\n    DROP COLUMN IF EXISTS created_by_user_id,\n    DROP COLUMN IF EXISTS updated_by_user_id,\n    ADD COLUMN created_by_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,\n    ADD COLUMN updated_by_user_id INTEGER DEFAULT NULL REFERENCES users(id) ON DELETE SET NULL;\n\nCOMMENT ON COLUMN webhooks.created_by_user_id IS 'ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted).';\nCOMMENT ON COLUMN webhooks.updated_by_user_id IS 'ID of a user, who updated the webhook. If NULL, then the user does not exist (never existed or was deleted).';",
+				"DownQuery": "ALTER TABLE webhooks\n    DROP COLUMN IF EXISTS created_by_user_id,\n    DROP COLUMN IF EXISTS updated_by_user_id;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1662636054,
+					1665399117
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1665524865,
+				"Name": "add column repo_status to gitserver_repos table",
+				"UpQuery": "ALTER TABLE gitserver_repos\n      -- repo_status indicates the \"live\" status of a cloned repo and\n      -- is to be used in addition to clone_status. For example, it\n      -- may indicate if a repo is currently being \"fetched\" or if it\n      -- is currently being garbage collcted by one of the cleanup\n      -- jobs.\n      ADD COLUMN IF NOT EXISTS repo_status text;",
+				"DownQuery": "-- Undo the changes made in the up migration\n\nALTER TABLE gitserver_repos\n      DROP COLUMN IF EXISTS repo_status;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1662636054,
+					1665399117
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1665646849,
+				"Name": "add-counters-to-external-service-sync-job",
+				"UpQuery": "ALTER TABLE IF EXISTS external_service_sync_jobs\nADD COLUMN IF NOT EXISTS repos_synced integer DEFAULT 0 NOT NULL,\nADD COLUMN IF NOT EXISTS repo_sync_errors integer DEFAULT 0 NOT NULL,\nADD COLUMN IF NOT EXISTS repos_added integer DEFAULT 0 NOT NULL,\nADD COLUMN IF NOT EXISTS repos_deleted integer DEFAULT 0 NOT NULL,\nADD COLUMN IF NOT EXISTS repos_modified integer DEFAULT 0 NOT NULL,\nADD COLUMN IF NOT EXISTS repos_unmodified integer DEFAULT 0 NOT NULL;\n\nCOMMENT ON COLUMN external_service_sync_jobs.repos_synced IS 'The number of repos synced during this sync job.';\nCOMMENT ON COLUMN external_service_sync_jobs.repo_sync_errors IS 'The number of times an error occurred syncing a repo during this sync job.';\nCOMMENT ON COLUMN external_service_sync_jobs.repos_added IS 'The number of new repos discovered during this sync job.';\nCOMMENT ON COLUMN external_service_sync_jobs.repos_deleted IS 'The number of repos deleted as a result of this sync job.';\nCOMMENT ON COLUMN external_service_sync_jobs.repos_modified IS 'The number of existing repos whose metadata has changed during this sync job.';\nCOMMENT ON COLUMN external_service_sync_jobs.repos_unmodified IS 'The number of existing repos whose metadata did not change during this sync job.';",
+				"DownQuery": "ALTER TABLE IF EXISTS external_service_sync_jobs\nDROP COLUMN IF EXISTS repos_synced,\nDROP COLUMN IF EXISTS repo_sync_errors,\nDROP COLUMN IF EXISTS repos_added,\nDROP COLUMN IF EXISTS repos_deleted,\nDROP COLUMN IF EXISTS repos_modified,\nDROP COLUMN IF EXISTS repos_unmodified;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1665524865
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1665588249,
+				"Name": "Rename bad fk constraint",
+				"UpQuery": "-- Migration 1664300936 had a really weird copy and paste error we can fix here.\nALTER TABLE\n    lsif_uploads_reference_counts DROP CONSTRAINT IF EXISTS lsif_uploads_reference_counts_upload_id_fk;\n\nALTER TABLE\n    lsif_uploads_reference_counts DROP CONSTRAINT IF EXISTS lsif_data_docs_search_private_repo_name_id_fk;\n\nALTER TABLE\n    lsif_uploads_reference_counts\nADD\n    CONSTRAINT lsif_uploads_reference_counts_upload_id_fk FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;",
+				"DownQuery": "-- Put the weird name back\nALTER TABLE\n    lsif_uploads_reference_counts DROP CONSTRAINT IF EXISTS lsif_uploads_reference_counts_upload_id_fk;\n\nALTER TABLE\n    lsif_uploads_reference_counts DROP CONSTRAINT IF EXISTS lsif_data_docs_search_private_repo_name_id_fk;\n\nALTER TABLE\n    lsif_uploads_reference_counts\nADD\n    CONSTRAINT lsif_data_docs_search_private_repo_name_id_fk FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1662636054,
+					1665399117
+				],
+				"IsCreateIndexConcurrently": false,
+				"IndexMetadata": null
+			},
+			{
+				"ID": 1665770699,
+				"Name": "Add codeintel_commit_dates",
+				"UpQuery": "CREATE TABLE IF NOT EXISTS codeintel_commit_dates(\n    repository_id integer NOT NULL,\n    commit_bytea bytea NOT NULL,\n    committed_at timestamp with time zone,\n    PRIMARY KEY(repository_id, commit_bytea)\n);\n\nCOMMENT ON TABLE codeintel_commit_dates IS 'Maps commits within a repository to the commit date as reported by gitserver.';\n\nCOMMENT ON COLUMN codeintel_commit_dates.repository_id IS 'Identifies a row in the `repo` table.';\n\nCOMMENT ON COLUMN codeintel_commit_dates.commit_bytea IS 'Identifies the 40-character commit hash.';\n\nCOMMENT ON COLUMN codeintel_commit_dates.committed_at IS 'The commit date (may be -infinity if unresolvable).';\n\nINSERT INTO\n    codeintel_commit_dates (repository_id, commit_bytea, committed_at)\nSELECT\n    u.repository_id,\n    decode(u.commit, 'hex'),\n    MIN(u.committed_at)\nFROM\n    lsif_uploads u\nWHERE\n    u.committed_at IS NOT NULL\nGROUP BY\n    u.repository_id,\n    u.commit\nON CONFLICT DO NOTHING;",
+				"DownQuery": "DROP TABLE IF EXISTS codeintel_commit_dates;",
+				"Privileged": false,
+				"NonIdempotent": false,
+				"Parents": [
+					1665420690,
+					1665488828,
+					1665524865,
+					1665588249
 				],
 				"IsCreateIndexConcurrently": false,
 				"IndexMetadata": null
@@ -6762,6 +7064,14 @@
 				"LeafIDs": [
 					1660711451,
 					1662467128
+				],
+				"PreCreation": false
+			},
+			"v4.1.0": {
+				"RootID": 1648051770,
+				"LeafIDs": [
+					1665646849,
+					1665770699
 				],
 				"PreCreation": false
 			}

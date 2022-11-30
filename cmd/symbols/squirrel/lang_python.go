@@ -405,6 +405,9 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 		if found == nil {
 			return nil, nil
 		}
+		if isRecursiveDefinitionPython(node, *found) {
+			return nil, nil
+		}
 		return squirrel.defToTypePython(ctx, *found)
 	}
 
@@ -788,4 +791,31 @@ func lazyTypePythonStringer(ty *TypePython) func() fmt.Stringer {
 			return String("<nil>")
 		}
 	}
+}
+
+// isRecursiveDefinitionPython detects cases like `x = x.foo` that would cause infinite recursion when
+// attempting to determine the type of `x`. This is known to happen in the wild, but it's not clear (to
+// me) what the proper type should be or how to find it, so it's simply unsupported.
+func isRecursiveDefinitionPython(node Node, def Node) bool {
+	if node.RepoCommitPath != def.RepoCommitPath {
+		return false
+	}
+	if def.Type() != "identifier" {
+		return false
+	}
+	if def.Parent() == nil {
+		return false
+	}
+	if def.Parent().Type() != "assignment" {
+		return false
+	}
+	assignment := def.Parent()
+	nodeAncestor := node.Parent()
+	for nodeAncestor != nil {
+		if nodeId(nodeAncestor) == nodeId(assignment) {
+			return true
+		}
+		nodeAncestor = nodeAncestor.Parent()
+	}
+	return false
 }

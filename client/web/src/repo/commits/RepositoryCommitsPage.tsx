@@ -1,26 +1,32 @@
-import React, { useEffect, useCallback } from 'react'
+import React, { useEffect, useCallback, useMemo } from 'react'
 
 import * as H from 'history'
+import { RouteComponentProps } from 'react-router'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Heading, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Code, Heading, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { GitCommitFields, RepositoryFields, Scalars } from '../../graphql-operations'
+import { GitCommitFields, RepositoryFields, RepositoryGitCommitsResult, Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
+import { basename } from '../../util/path'
 import { externalLinkFieldsFragment } from '../backend'
+import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 
 import styles from './RepositoryCommitsPage.module.scss'
+
+type RepositoryGitCommitsRepository = Extract<RepositoryGitCommitsResult['node'], { __typename?: 'Repository' }>
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {
@@ -75,14 +81,15 @@ const fetchGitCommits = (args: {
     revspec: string
     first?: number
     query?: string
-}): Observable<GQL.IGitCommitConnection> =>
+    filePath?: string
+}): Observable<NonNullable<RepositoryGitCommitsRepository['commit']>['ancestors']> =>
     queryGraphQL(
         gql`
-            query RepositoryGitCommits($repo: ID!, $revspec: String!, $first: Int, $query: String) {
+            query RepositoryGitCommits($repo: ID!, $revspec: String!, $first: Int, $query: String, $filePath: String) {
                 node(id: $repo) {
                     ... on Repository {
                         commit(rev: $revspec) {
-                            ancestors(first: $first, query: $query) {
+                            ancestors(first: $first, query: $query, path: $filePath) {
                                 nodes {
                                     ...GitCommitFields
                                 }
@@ -102,7 +109,7 @@ const fetchGitCommits = (args: {
             if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as GQL.IRepository
+            const repo = data.node as RepositoryGitCommitsRepository
             if (!repo.commit || !repo.commit.ancestors) {
                 throw createAggregateError(errors)
             }
@@ -110,47 +117,102 @@ const fetchGitCommits = (args: {
         })
     )
 
-export interface RepositoryCommitsPageProps extends RevisionSpec, BreadcrumbSetters {
+export interface RepositoryCommitsPageProps
+    extends RevisionSpec,
+        BreadcrumbSetters,
+        RouteComponentProps<{
+            filePath?: string | undefined
+        }>,
+        TelemetryProps {
     repo: RepositoryFields | undefined
 
     history: H.History
     location: H.Location
 }
 
-const BREADCRUMB = { key: 'commits', element: <>Commits</> }
-
-/** A page that shows a repository's commits at the current revision. */
+// A page that shows a repository's commits at the current revision.
 export const RepositoryCommitsPage: React.FunctionComponent<React.PropsWithChildren<RepositoryCommitsPageProps>> = ({
     useBreadcrumb,
     ...props
 }) => {
+    const repo = props.repo
+    const filePath = props.match.params.filePath
+
     useEffect(() => {
-        eventLogger.logViewEvent('RepositoryCommits')
+        eventLogger.logPageView('RepositoryCommits')
     }, [])
 
-    useBreadcrumb(BREADCRUMB)
+    useBreadcrumb(
+        useMemo(() => {
+            if (!filePath || !repo) {
+                return
+            }
+            return {
+                key: 'treePath',
+                className: 'flex-shrink-past-contents',
+                element: (
+                    <FilePathBreadcrumbs
+                        key="path"
+                        repoName={repo.name}
+                        revision={props.revision}
+                        filePath={filePath}
+                        isDir={true}
+                        telemetryService={props.telemetryService}
+                    />
+                ),
+            }
+        }, [filePath, repo, props.revision, props.telemetryService])
+    )
+    // We need to resolve the Commits breadcrumb at the same time as the
+    // filePath, so that the order is correct (otherwise Commits will show
+    // before the path)
+    useBreadcrumb(
+        useMemo(() => {
+            if (!repo) {
+                return
+            }
+            return { key: 'commits', element: <>Commits</> }
+        }, [repo])
+    )
 
     const queryCommits = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<GQL.IGitCommitConnection> => {
-            if (!props.repo?.id) {
+        (
+            args: FilteredConnectionQueryArguments
+        ): Observable<NonNullable<RepositoryGitCommitsRepository['commit']>['ancestors']> => {
+            if (!repo?.id) {
                 return of()
             }
 
-            return fetchGitCommits({ ...args, repo: props.repo?.id, revspec: props.revision })
+            return fetchGitCommits({ ...args, repo: repo?.id, revspec: props.revision, filePath })
         },
-        [props.repo?.id, props.revision]
+        [repo?.id, props.revision, filePath]
     )
 
-    if (!props.repo) {
+    if (!repo) {
         return <LoadingSpinner />
+    }
+
+    const getPageTitle = (): string => {
+        const repoString = displayRepoName(repo.name)
+        if (filePath) {
+            return `Commits - ${basename(filePath)} - ${repoString}`
+        }
+        return `Commits - ${repoString}`
     }
 
     return (
         <div className={styles.repositoryCommitsPage} data-testid="commits-page">
-            <PageTitle title="Commits" />
+            <PageTitle title={getPageTitle()} />
+
             <div className={styles.content}>
                 <Heading as="h2" styleAs="h1">
-                    View commits from this repository
+                    {filePath ? (
+                        <>
+                            View commits inside <Code>{basename(filePath)}</Code>
+                        </>
+                    ) : (
+                        <>View commits from this repository</>
+                    )}
                 </Heading>
                 <FilteredConnection<
                     GitCommitFields,

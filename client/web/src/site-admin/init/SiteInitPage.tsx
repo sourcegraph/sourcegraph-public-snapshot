@@ -10,7 +10,6 @@ import { AuthenticatedUser } from '../../auth'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { SourcegraphContext } from '../../jscontext'
-import { submitTrialRequest } from '../../marketing/backend'
 import { PageRoutes } from '../../routes.constants'
 
 import styles from './SiteInitPage.module.scss'
@@ -40,9 +39,6 @@ const initSite = async (args: SignUpArguments): Promise<void> => {
     if (response.status !== 200) {
         const text = await response.text()
         throw new Error(text)
-    }
-    if (args.requestedTrial) {
-        submitTrialRequest(args.email)
     }
     window.location.replace('/site-admin')
 }

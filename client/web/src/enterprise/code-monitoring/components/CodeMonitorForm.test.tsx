@@ -2,6 +2,7 @@ import { fireEvent, getByRole, screen } from '@testing-library/react'
 import { createMemoryHistory, createLocation } from 'history'
 import { NEVER } from 'rxjs'
 
+import { assertAriaDisabled } from '@sourcegraph/shared/dev/aria-asserts'
 import { renderWithBrandedContext } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -51,7 +52,7 @@ describe('CodeMonitorForm', () => {
         fireEvent.click(getByTestId('form-action-toggle-email'))
         fireEvent.click(getByTestId('delete-action-email'))
 
-        expect(getByTestId('submit-monitor')).toBeDisabled()
+        assertAriaDisabled(getByTestId('submit-monitor'))
     })
 
     test('Submit button enabled if one action is present', () => {

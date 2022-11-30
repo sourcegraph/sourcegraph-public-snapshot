@@ -3,6 +3,7 @@ package webhookhandlers
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	gh "github.com/google/go-github/v43/github"
 	"github.com/inconshreveable/log15"
@@ -11,16 +12,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // handleGitHubUserAuthzEvent handles a github webhook for the events described in webhookhandlers/handlers.go
 // extracting a user from the github event and scheduling it for a perms update in repo-updater
-func handleGitHubUserAuthzEvent(db database.DB, opts authz.FetchPermsOptions) func(ctx context.Context, extSvc *types.ExternalService, payload any) error {
-	return func(ctx context.Context, extSvc *types.ExternalService, payload any) error {
+func handleGitHubUserAuthzEvent(db database.DB, opts authz.FetchPermsOptions) func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
+	return func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
 		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 			return nil
 		}
@@ -44,7 +45,7 @@ func handleGitHubUserAuthzEvent(db database.DB, opts authz.FetchPermsOptions) fu
 			return errors.Errorf("could not extract GitHub user from %T GitHub event", payload)
 		}
 
-		return scheduleUserUpdate(ctx, db, extSvc, user, opts)
+		return scheduleUserUpdate(ctx, db, user, opts)
 	}
 }
 
@@ -56,14 +57,13 @@ type membershipGetter interface {
 	GetMembership() *gh.Membership
 }
 
-func scheduleUserUpdate(ctx context.Context, db database.DB, extSvc *types.ExternalService, githubUser *gh.User, opts authz.FetchPermsOptions) error {
+func scheduleUserUpdate(ctx context.Context, db database.DB, githubUser *gh.User, opts authz.FetchPermsOptions) error {
 	if githubUser == nil {
 		return nil
 	}
 	accs, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
-		ServiceID:   fmt.Sprint(extSvc.ID),
 		ServiceType: "github",
-		AccountID:   githubUser.GetID(),
+		AccountID:   strconv.FormatInt(githubUser.GetID(), 10),
 	})
 	if err != nil {
 		return err

@@ -28,6 +28,10 @@ export function decodeDashboardIds(repsonse: GetSharableInsightInfoResult): stri
     // We get insight by id some we expect exactly one entity from the backend
     const insight = repsonse.insightViews.nodes[0]
 
+    if (insight === null) {
+        throw new Error('Insight was not found')
+    }
+
     if (!insight.dashboards) {
         throw new Error('Insight is not included in any dashboard')
     }

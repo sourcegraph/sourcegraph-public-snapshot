@@ -69,6 +69,7 @@ var DeploySourcegraphDockerImages = []string{
 	"jaeger-agent",
 	"jaeger-all-in-one",
 	"minio",
+	"node-exporter",
 	"postgres-12-alpine",
 	"postgres_exporter",
 	"precise-code-intel-worker",
@@ -86,6 +87,7 @@ var DeploySourcegraphDockerImages = []string{
 	"migrator",
 	"executor",
 	"executor-vm",
+	"batcheshelper",
 	"opentelemetry-collector",
 }
 

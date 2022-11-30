@@ -3,17 +3,14 @@ package database
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/log"
 
-	gh "github.com/google/go-github/v41/github"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -56,10 +53,9 @@ type UserExternalAccountsStore interface {
 	// create already exists, it returns an error.
 	CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error)
 
-	// Delete deletes a user external account.
-	Delete(ctx context.Context, ids ...int32) error
-
-	UpdateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, installations []gh.Installation) error
+	// Delete will soft delete all accounts matching the options combined using AND.
+	// If options are all zero values then it does nothing.
+	Delete(ctx context.Context, opt ExternalAccountsDeleteOptions) error
 
 	// ExecResult performs a query without returning any rows, but includes the
 	// result of the execution.
@@ -150,7 +146,6 @@ func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec 
 	}
 
 	err = s.Handle().QueryRowContext(ctx, `
--- source: internal/database/external_accounts.go:UserExternalAccountsStore.LookupUserAndSave
 UPDATE user_external_accounts
 SET
 	auth_data = $5,
@@ -186,7 +181,6 @@ func (s *userExternalAccountsStore) AssociateUserAndSave(ctx context.Context, us
 	var exists bool
 	var existingID, associatedUserID int32
 	err = tx.QueryRow(ctx, sqlf.Sprintf(`
--- source: internal/database/external_accounts.go:UserExternalAccountsStore.AssociateUserAndSave
 SELECT id, user_id
 FROM user_external_accounts
 WHERE
@@ -228,7 +222,6 @@ AND deleted_at IS NULL
 
 	// Update the external account (it exists).
 	res, err := tx.ExecResult(ctx, sqlf.Sprintf(`
--- source: internal/database/external_accounts.go:UserExternalAccountsStore.AssociateUserAndSave
 UPDATE user_external_accounts
 SET
 	auth_data = %s,
@@ -264,7 +257,7 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 	}
 	defer func() { err = tx.Done(err) }()
 
-	createdUser, err := UsersWith(s.logger, tx).CreateInTransaction(ctx, newUser)
+	createdUser, err := UsersWith(s.logger, tx).CreateInTransaction(ctx, newUser, &spec)
 	if err != nil {
 		return 0, err
 	}
@@ -292,7 +285,6 @@ func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, sp
 	}
 
 	return s.Exec(ctx, sqlf.Sprintf(`
--- source: internal/database/external_accounts.go:UserExternalAccountsStore.insert
 INSERT INTO user_external_accounts (user_id, service_type, service_id, client_id, account_id, auth_data, account_data, encryption_key_id)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 `, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, encryptedAuthData, encryptedAccountData, keyID))
@@ -308,17 +300,15 @@ func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, ids ...int
 		idStrings[i] = strconv.Itoa(int(id))
 	}
 	_, err := s.Handle().ExecContext(ctx, fmt.Sprintf(`
--- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchExpired
 UPDATE user_external_accounts
 SET expired_at = now()
-WHERE id IN (%s) 
+WHERE id IN (%s)
 `, strings.Join(idStrings, ", ")))
 	return err
 }
 
 func (s *userExternalAccountsStore) TouchLastValid(ctx context.Context, id int32) error {
 	_, err := s.Handle().ExecContext(ctx, `
--- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchLastValid
 UPDATE user_external_accounts
 SET
 	expired_at = NULL,
@@ -328,89 +318,66 @@ WHERE id = $1
 	return err
 }
 
-func (s *userExternalAccountsStore) Delete(ctx context.Context, ids ...int32) error {
-	idStrings := make([]string, len(ids))
-	for i, id := range ids {
-		idStrings[i] = strconv.Itoa(int(id))
+// ExternalAccountsDeleteOptions defines criteria that will be used to select
+// which accounts to soft delete.
+type ExternalAccountsDeleteOptions struct {
+	// A slice of ExternalAccountIDs
+	IDs         []int32
+	UserID      int32
+	AccountID   string
+	ServiceType string
+}
+
+// Delete will soft delete all accounts matching the options combined using AND.
+// If options are all zero values then it does nothing.
+func (s *userExternalAccountsStore) Delete(ctx context.Context, opt ExternalAccountsDeleteOptions) error {
+	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+
+	if len(opt.IDs) > 0 {
+		ids := make([]*sqlf.Query, len(opt.IDs))
+		for i, id := range opt.IDs {
+			ids[i] = sqlf.Sprintf("%s", id)
+		}
+		conds = append(conds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
 	}
-	res, err := s.Handle().ExecContext(ctx, fmt.Sprintf(`
--- source: internal/database/external_accounts.go:UserExternalAccountsStore.Delete
+	if opt.UserID != 0 {
+		conds = append(conds, sqlf.Sprintf("user_id=%d", opt.UserID))
+	}
+	if opt.AccountID != "" {
+		conds = append(conds, sqlf.Sprintf("account_id=%s", opt.AccountID))
+	}
+	if opt.ServiceType != "" {
+		conds = append(conds, sqlf.Sprintf("service_type=%s", opt.ServiceType))
+	}
+
+	// We only have the default deleted_at clause, do nothing
+	if len(conds) == 1 {
+		return nil
+	}
+
+	q := sqlf.Sprintf(`
 UPDATE user_external_accounts
 SET deleted_at=now()
-WHERE id IN (%s) AND deleted_at IS NULL`, strings.Join(idStrings, ", ")))
-	if err != nil {
-		return err
-	}
-	nrows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if nrows == 0 {
-		return userExternalAccountNotFoundError{[]any{ids}}
-	}
-	return nil
+WHERE %s`, sqlf.Join(conds, "AND"))
+
+	err := s.Exec(ctx, q)
+
+	return errors.Wrap(err, "executing delete")
 }
 
 // ExternalAccountsListOptions specifies the options for listing user external accounts.
 type ExternalAccountsListOptions struct {
-	UserID                           int32
-	ServiceType, ServiceID, ClientID string
-	AccountID                        int64
-	AccountIDLike                    string
+	UserID      int32
+	ServiceType string
+	ServiceID   string
+	ClientID    string
+	AccountID   string
 
 	// Only one of these should be set
 	ExcludeExpired bool
 	OnlyExpired    bool
 
 	*LimitOffset
-}
-
-func (s *userExternalAccountsStore) UpdateGitHubAppInstallations(ctx context.Context, acct *extsvc.Account, installations []gh.Installation) error {
-	acctInstallations, err := s.List(ctx, ExternalAccountsListOptions{
-		ServiceType:    extsvc.TypeGitHubApp,
-		AccountIDLike:  fmt.Sprintf("%%/%s", acct.AccountID),
-		ExcludeExpired: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	validInstallations := []*extsvc.Account{}
-ACCTINSTALLATIONS:
-	for _, acctInstallation := range acctInstallations {
-		for _, installation := range installations {
-			installationID := strconv.FormatInt(*installation.ID, 10)
-			if acctInstallation.AccountID == fmt.Sprintf("%s/%s", installationID, acct.AccountID) {
-				validInstallations = append(validInstallations, acctInstallation)
-				continue ACCTINSTALLATIONS
-			}
-		}
-		if err = s.Delete(ctx, acctInstallation.ID); err != nil {
-			return err
-		}
-	}
-
-INSTALLATIONS:
-	for _, installation := range installations {
-		installationID := strconv.FormatInt(*installation.ID, 10)
-		for _, validInstallation := range validInstallations {
-			if validInstallation.AccountID == fmt.Sprintf("%s/%s", installationID, acct.AccountID) {
-				continue INSTALLATIONS
-			}
-		}
-		accountID := installationID + "/" + acct.AccountID
-		if err := s.Insert(ctx, acct.UserID, extsvc.AccountSpec{
-			ServiceType: extsvc.TypeGitHubApp,
-			ServiceID:   acct.ServiceID,
-			ClientID:    acct.ClientID,
-			AccountID:   accountID,
-		},
-			extsvc.AccountData{AuthData: nil, Data: nil},
-		); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error) {
@@ -501,8 +468,8 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	if opt.ClientID != "" {
 		conds = append(conds, sqlf.Sprintf("client_id=%s", opt.ClientID))
 	}
-	if opt.AccountID != 0 {
-		conds = append(conds, sqlf.Sprintf("account_id=%d", strconv.Itoa(int(opt.AccountID))))
+	if opt.AccountID != "" {
+		conds = append(conds, sqlf.Sprintf("account_id=%s", opt.AccountID))
 	}
 	if opt.ExcludeExpired {
 		conds = append(conds, sqlf.Sprintf("expired_at IS NULL"))
@@ -510,14 +477,6 @@ func (s *userExternalAccountsStore) listSQL(opt ExternalAccountsListOptions) (co
 	if opt.OnlyExpired {
 		conds = append(conds, sqlf.Sprintf("expired_at IS NOT NULL"))
 	}
-	if opt.AccountIDLike != "" {
-		conds = append(conds, sqlf.Sprintf("account_id LIKE %s", opt.AccountIDLike))
-	}
 
 	return conds
-}
-
-func rawMessagePtr(s string) *json.RawMessage {
-	msg := json.RawMessage(s)
-	return &msg
 }
