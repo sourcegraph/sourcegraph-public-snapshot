@@ -3,7 +3,7 @@
     min-height: 0;
     position: relative;
     display: grid;
-    gap: 0.75rem;
+    grid-template-areas: 'chart';
 
     // Hack for generating a proper scoped css nested class
     // see https://css-tricks.com/using-sass-control-scope-bem-naming/
@@ -14,6 +14,7 @@
         grid-template-areas:
             'chart'
             'legend';
+        gap: 0.75rem;
 
         // Chart section can grow and take all space if we don't have any legends
         // Legends section can grow until the chart section is bigger than 12rem.
