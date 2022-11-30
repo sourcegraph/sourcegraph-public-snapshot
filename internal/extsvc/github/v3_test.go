@@ -174,11 +174,12 @@ func Test_GetAuthenticatedOAuthScopes(t *testing.T) {
 // for GITHUB_TOKEN, which can be found in 1Password.
 func TestListRepositoryCollaborators(t *testing.T) {
 	tests := []struct {
-		name        string
-		owner       string
-		repo        string
-		affiliation CollaboratorAffiliation
-		wantUsers   []*Collaborator
+		name            string
+		owner           string
+		repo            string
+		affiliation     CollaboratorAffiliation
+		wantUsers       []*Collaborator
+		wantHasNextPage bool
 	}{
 		{
 			name:  "public repo",
@@ -190,6 +191,7 @@ func TestListRepositoryCollaborators(t *testing.T) {
 					DatabaseID: 63290851,
 				},
 			},
+			wantHasNextPage: false,
 		},
 		{
 			name:  "private repo",
@@ -210,6 +212,7 @@ func TestListRepositoryCollaborators(t *testing.T) {
 					DatabaseID: 89494884,
 				},
 			},
+			wantHasNextPage: false,
 		},
 		{
 			name:        "direct collaborator outside collaborator",
@@ -222,6 +225,7 @@ func TestListRepositoryCollaborators(t *testing.T) {
 					DatabaseID: 66464926,
 				},
 			},
+			wantHasNextPage: false,
 		},
 		{
 			name:        "direct collaborator repo owner",
@@ -234,6 +238,15 @@ func TestListRepositoryCollaborators(t *testing.T) {
 					DatabaseID: 63290851,
 				},
 			},
+			wantHasNextPage: false,
+		},
+		{
+			name:            "has next page is true",
+			owner:           "sourcegraph-vcr",
+			repo:            "private-repo-1",
+			affiliation:     AffiliationDirect,
+			wantUsers:       nil,
+			wantHasNextPage: true,
 		},
 	}
 	for _, test := range tests {
@@ -241,13 +254,19 @@ func TestListRepositoryCollaborators(t *testing.T) {
 			client, save := newV3TestClient(t, "ListRepositoryCollaborators_"+test.name)
 			defer save()
 
-			users, _, err := client.ListRepositoryCollaborators(context.Background(), test.owner, test.repo, 1, test.affiliation)
+			users, hasNextPage, err := client.ListRepositoryCollaborators(context.Background(), test.owner, test.repo, 1, test.affiliation)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(test.wantUsers, users); diff != "" {
-				t.Fatalf("Users mismatch (-want +got):\n%s", diff)
+			if test.wantUsers != nil {
+				if diff := cmp.Diff(test.wantUsers, users); diff != "" {
+					t.Fatalf("Users mismatch (-want +got):\n%s", diff)
+				}
+			}
+
+			if diff := cmp.Diff(test.wantHasNextPage, hasNextPage); diff != "" {
+				t.Fatalf("HasNextPage mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
