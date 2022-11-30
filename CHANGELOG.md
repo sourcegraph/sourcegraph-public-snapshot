@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The number of commits listed in the History tab can now be customized for all users by site admins under Configuration -> Global Settings from the site admin page by using the config `history.defaultPageSize`. Individual users may also set `history.defaultPagesize` from their user settings page to override the value set under the Global Settings. [#44651](https://github.com/sourcegraph/sourcegraph/pull/44651)
 - Batch Changes: Mounted files can be accessed via the UI on the executions page. [#43180](https://github.com/sourcegraph/sourcegraph/pull/43180)
 - Added "Outbound request log" feature for site admins [#44286](https://github.com/sourcegraph/sourcegraph/pull/44286)
+- Added a best-effort migration such that existing Code Insights will display zero values instead of missing points at the start and end of a graph.
 
 ### Changed
 
@@ -46,8 +47,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Creating access tokens is now tracked in the security events. [#43226](https://github.com/sourcegraph/sourcegraph/pull/43226)
 - Added `codeIntelAutoIndexing.indexerMap` to site-config that allows users to update the indexers used when inferring precise code intelligence auto-indexing jobs (without having to overwrite the entire inference scripts). For example, `"codeIntelAutoIndexing.indexerMap": {"go": "my.registry/sourcegraph/lsif-go"}` will cause Go projects to use the specified container (in a alternative Docker registry). [#43199](https://github.com/sourcegraph/sourcegraph/pull/43199)
 - Code Insights data points that do not contain any results will display zero instead of being omitted from the visualization. Only applies to insight data created after 4.2. [#43166](https://github.com/sourcegraph/sourcegraph/pull/43166)
-- Added `codeIntelAutoIndexing.indexerMap` to site-config that allows users to update the indexers used when inferring precise code intelligence auto-indexing jobs (without having to overwrite the entire inference scripts). For example, `"codeIntelAutoIndexing.indexerMap": {"go": "my.registry/sourcegraph/lsif-go"}` will casue Go projects to use the specified container (in a alternative Docker registry). [#43199](https://github.com/sourcegraph/sourcegraph/pull/43199)
-- Code Insights data points that do not contain any results will display zero instead of being omitted from the visualization. [#43166](https://github.com/sourcegraph/sourcegraph/pull/43166), [#44499](https://github.com/sourcegraph/sourcegraph/pull/44499/)
 - Sourcegraph ships with node-exporter, a Prometheus tool that provides hardware / OS metrics that helps Sourcegraph scale your deployment. See your deployment update for more information:
   - [Kubernetes](https://docs.sourcegraph.com/admin/updates/kubernetes)
   - [Docker Compose](https://docs.sourcegraph.com/admin/updates/docker_compose)
