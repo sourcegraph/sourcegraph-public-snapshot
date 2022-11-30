@@ -11,8 +11,6 @@ import (
 )
 
 func TestIntegration(t *testing.T) {
-	t.Skip("Fails for v4.2.0 release")
-
 	if testing.Short() {
 		t.Skip()
 	}

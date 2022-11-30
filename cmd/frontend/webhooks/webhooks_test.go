@@ -30,8 +30,6 @@ import (
 )
 
 func TestWebhooksHandler(t *testing.T) {
-	t.Skip("Fails for v4.2.0 release")
-
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	u, err := db.Users().Create(context.Background(), database.NewUser{
