@@ -2832,7 +2832,6 @@ Indexes:
     "security_event_logs_pkey" PRIMARY KEY, btree (id)
     "security_event_logs_timestamp" btree ("timestamp")
 Check constraints:
-    "security_event_logs_check_has_user" CHECK (user_id = 0 AND anonymous_user_id <> ''::text OR user_id <> 0 AND anonymous_user_id = ''::text OR user_id <> 0 AND anonymous_user_id <> ''::text)
     "security_event_logs_check_name_not_empty" CHECK (name <> ''::text)
     "security_event_logs_check_source_not_empty" CHECK (source <> ''::text)
     "security_event_logs_check_version_not_empty" CHECK (version <> ''::text)

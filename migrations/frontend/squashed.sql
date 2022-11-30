@@ -3396,7 +3396,6 @@ CREATE TABLE security_event_logs (
     argument jsonb NOT NULL,
     version text NOT NULL,
     "timestamp" timestamp with time zone NOT NULL,
-    CONSTRAINT security_event_logs_check_has_user CHECK ((((user_id = 0) AND (anonymous_user_id <> ''::text)) OR ((user_id <> 0) AND (anonymous_user_id = ''::text)) OR ((user_id <> 0) AND (anonymous_user_id <> ''::text)))),
     CONSTRAINT security_event_logs_check_name_not_empty CHECK ((name <> ''::text)),
     CONSTRAINT security_event_logs_check_source_not_empty CHECK ((source <> ''::text)),
     CONSTRAINT security_event_logs_check_version_not_empty CHECK ((version <> ''::text))
