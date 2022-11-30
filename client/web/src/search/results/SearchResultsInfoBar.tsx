@@ -12,9 +12,10 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
+import { CloudCtaBanner } from '../../components/CloudCtaBanner'
 
 import {
     getCodeMonitoringCreateAction,
@@ -165,6 +166,19 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         >
             <div className={styles.row}>
                 {props.stats}
+
+                <CloudCtaBanner className="mb-5" variant="outlined">
+                    To search across your private repositories,{' '}
+                    <Link
+                        to="https://signup.sourcegraph.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => props.telemetryService.log('ClickedOnCloudCTA')}
+                    >
+                        try Sourcegraph Cloud
+                    </Link>
+                    .
+                </CloudCtaBanner>
 
                 <div className={styles.expander} />
 
