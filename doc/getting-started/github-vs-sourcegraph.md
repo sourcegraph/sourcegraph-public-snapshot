@@ -718,7 +718,7 @@ GitHub is closed source, while Sourcegraph’s code is publicly available.
 
 Sourcegraph offers two versions of its product: Sourcegraph OSS (just universal code search) and Sourcegraph Enterprise (full code intelligence platform). 
 
-Sourceraph OSS is Apache 2 licensed and allows any developer to use, modify, and redistribute.
+Sourcegraph OSS is Apache 2 licensed and allows any developer to use, modify, and redistribute.
 
 
 ## Availability

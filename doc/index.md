@@ -127,3 +127,8 @@ Sourcegraph is runnable in a variety of environments, from cloud to self-hosted 
 * [Twitter](https://twitter.com/sourcegraph)
 * [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
 * [Contact us](https://about.sourcegraph.com/contact)
+
+## Explanations
+
+- [How GitHub code search compares to Sourcegraph](https://docs.sourcegraph.com/getting-started/github-vs-sourcegraph)
+- [How Sourcegraph is licensed](https://docs.sourcegraph.com/getting-started/oss-enterprise)
