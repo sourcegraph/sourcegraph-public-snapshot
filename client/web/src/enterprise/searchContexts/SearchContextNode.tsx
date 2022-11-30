@@ -1,11 +1,11 @@
 import React from 'react'
 
-import classNames from 'classnames'
 import * as H from 'history'
 
+import { pluralize } from '@sourcegraph/common'
 import { SearchContextMinimalFields } from '@sourcegraph/search'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
-import { Badge, Link } from '@sourcegraph/wildcard'
+import { Badge } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 
@@ -20,35 +20,47 @@ export interface SearchContextNodeProps {
 export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<SearchContextNodeProps>> = ({
     node,
 }: SearchContextNodeProps) => (
-    <li className={classNames('py-3', styles.searchContextNode)}>
-        <div className={classNames('flex-grow-1', styles.left)}>
-            <div>
-                <Link to={`/contexts/${node.spec}`}>
-                    <strong>{node.spec}</strong>
-                </Link>
-                {!node.public && (
-                    <Badge variant="secondary" pill={true} className="ml-1" as="div">
-                        Private
-                    </Badge>
-                )}
-            </div>
-            {node.query.length > 0 && (
+    <tr className={styles.row}>
+        <td />
+        <td>
+            {node.spec}
+            {!node.public ? (
+                <Badge variant="secondary" className="ml-2" pill={true}>
+                    Private
+                </Badge>
+            ) : null}
+            {node.autoDefined ? (
+                <Badge variant="outlineSecondary" className="ml-2" pill={true}>
+                    Auto
+                </Badge>
+            ) : null}
+        </td>
+        <td>
+            {node.description ? (
+                <div className="text-muted">{node.description}</div>
+            ) : node.query ? (
                 <small>
                     <SyntaxHighlightedSearchQuery query={node.query} key={node.name} />
                 </small>
-            )}
-
-            {node.description.length > 0 && (
-                <div className={classNames('text-muted mt-1', styles.leftDescription)}>{node.description}</div>
-            )}
-        </div>
-        <div className={classNames('text-muted d-flex', styles.right)}>
-            {node.repositories && node.repositories.length > 0 && (
-                <div className="mr-2">{node.repositories.length} repositories</div>
-            )}
-            <div>
-                Updated <Timestamp date={node.updatedAt} noAbout={true} />
-            </div>
-        </div>
-    </li>
+            ) : null}
+        </td>
+        <td className="text-muted">
+            {node.repositories && node.repositories.length > 0 ? (
+                <>
+                    {node.repositories.length} {pluralize('repository', node.repositories.length, 'repositories')}
+                </>
+            ) : node.query ? (
+                <>Query based</>
+            ) : null}
+        </td>
+        <td className="text-muted">{node.autoDefined ? null : <Timestamp date={node.updatedAt} noAbout={true} />}</td>
+        <td>
+            {node.viewerHasAsDefault ? (
+                <Badge variant="secondary" className="text-uppercase">
+                    Default
+                </Badge>
+            ) : null}
+        </td>
+        <td />
+    </tr>
 )

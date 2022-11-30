@@ -22,3 +22,17 @@
         max-width: 100%;
     }
 }
+
+.table-wrapper {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--color-bg-1);
+    border-radius: var(--border-radius);
+}
+
+.table-header th {
+    border-bottom: 2px solid var(--border-color-2);
+    padding-bottom: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}

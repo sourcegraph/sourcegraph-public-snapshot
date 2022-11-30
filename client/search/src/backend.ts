@@ -73,6 +73,8 @@ const searchContextWithSkippableFieldsFragment = gql`
         autoDefined
         updatedAt
         viewerCanManage
+        viewerHasStarred
+        viewerHasAsDefault
         namespace @skip(if: $useMinimalFields) {
             __typename
             id
