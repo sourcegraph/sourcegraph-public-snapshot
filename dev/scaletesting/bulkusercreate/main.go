@@ -255,6 +255,10 @@ func main() {
 		teamRepos := categorizeTeamRepos(cfg, orgRepos[mainOrg], teams)
 		userRepos := categorizeUserRepos(reposWithOnlyUsers, users)
 
+		executeAssignOrgRepos(ctx, orgRepos)
+		executeAssignTeamRepos(ctx, teamRepos)
+		executeAssignUserRepos(ctx, userRepos)
+
 		//if cfg.generateTokens {
 		//	tg := group.NewWithResults[userToken]().WithMaxConcurrency(1000)
 		//	for _, u := range users {
@@ -473,6 +477,39 @@ func categorizeOrgRepos(cfg config, repos []*repo, orgs []*org) (*org, map[*org]
 	return mainOrg, repoCategories
 }
 
+func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo) {
+	for o, repos := range reposPerOrg {
+		currentOrg := o
+		currentRepos := repos
+		var res *github.Response
+		var err error
+		for _, r := range currentRepos {
+			if currentOrg.Login == r.Owner {
+				// already owned by this org
+				continue
+			}
+
+			for res == nil || res.StatusCode == 502 || res.StatusCode == 504 {
+				if res.StatusCode == 502 || res.StatusCode == 504 {
+					time.Sleep(30 * time.Second)
+				}
+				_, res, err = gh.Repositories.Transfer(ctx, r.Owner, r.Name, github.TransferRequest{NewOwner: currentOrg.Login})
+				if err != nil {
+					if _, ok := err.(*github.AcceptedError); ok {
+						writeInfo(out, "Repository %s scheduled for transfer as a background job", r.Name)
+					}
+					log.Fatalf("Failed to transfer repository %s from %s to %s: %s", r.Name, r.Owner, currentOrg.Login, err)
+				}
+			}
+
+			r.Owner = currentOrg.Login
+			if err = store.saveRepo(r); err != nil {
+				log.Fatalf("Failed to save repository %s: %s", r.Name, err)
+			}
+		}
+	}
+}
+
 func categorizeTeamRepos(cfg config, mainOrgRepos []*repo, teams []*team) map[*team][]*repo {
 	// 95% of teams
 	teamsSmall := int(math.Ceil(float64(cfg.teamCount) * 0.95))
@@ -522,6 +559,49 @@ func categorizeTeamRepos(cfg config, mainOrgRepos []*repo, teams []*team) map[*t
 	return teamCategories
 }
 
+func executeAssignTeamRepos(ctx context.Context, reposPerTeam map[*team][]*repo) {
+	for t, repos := range reposPerTeam {
+		currentTeam := t
+		currentRepos := repos
+
+		var res *github.Response
+		var err error
+
+		ghTeam, _, err := gh.Teams.GetTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for _, r := range currentRepos {
+			if r.Owner == fmt.Sprintf("%s/%s", currentTeam.Org, currentTeam.Name) {
+				// team is already owner
+				continue
+			}
+
+			for res == nil || res.StatusCode == 502 || res.StatusCode == 504 {
+				if res.StatusCode == 502 || res.StatusCode == 504 {
+					time.Sleep(30 * time.Second)
+				}
+				_, res, err = gh.Repositories.Transfer(ctx, r.Owner, r.Name, github.TransferRequest{
+					NewOwner: currentTeam.Org,
+					TeamID:   []int64{*ghTeam.ID},
+				})
+				if err != nil {
+					if _, ok := err.(*github.AcceptedError); ok {
+						writeInfo(out, "Repository %s scheduled for transfer as a background job", r.Name)
+					}
+					log.Fatalf("Failed to transfer repository %s from %s to %s: %s", r.Name, r.Owner, currentTeam.Name, err)
+				}
+			}
+
+			r.Owner = fmt.Sprintf("%s/%s", currentTeam.Org, currentTeam.Name)
+			if err = store.saveRepo(r); err != nil {
+				log.Fatalf("Failed to save repository %s: %s", r.Name, err)
+			}
+		}
+	}
+}
+
 func categorizeUserRepos(mainOrgRepos []*repo, users []*user) map[*repo][]*user {
 	repoUsers := make(map[*repo][]*user)
 	usersPerRepo := 3
@@ -540,6 +620,40 @@ func categorizeUserRepos(mainOrgRepos []*repo, users []*user) map[*repo][]*user 
 	}
 
 	return repoUsers
+}
+
+func executeAssignUserRepos(ctx context.Context, usersPerRepo map[*repo][]*user) {
+	// scrap this, needs to be added as meembers on the repo. not owner
+	for r, users := range usersPerRepo {
+		currentRepo := r
+		currentUsers := r
+		var res *github.Response
+		var err error
+		for _, r := range currentRepos {
+			if currentUser.Login == r.Owner {
+				// already owned by this user
+				continue
+			}
+
+			for res == nil || res.StatusCode == 502 || res.StatusCode == 504 {
+				if res.StatusCode == 502 || res.StatusCode == 504 {
+					time.Sleep(30 * time.Second)
+				}
+				_, res, err = gh.Repositories.Transfer(ctx, r.Owner, r.Name, github.TransferRequest{NewOwner: currentUser.Login})
+				if err != nil {
+					if _, ok := err.(*github.AcceptedError); ok {
+						writeInfo(out, "Repository %s scheduled for transfer as a background job", r.Name)
+					}
+					log.Fatalf("Failed to transfer repository %s from %s to %s: %s", r.Name, r.Owner, currentUser.Login, err)
+				}
+			}
+
+			r.Owner = currentUser.Login
+			if err = store.saveRepo(r); err != nil {
+				log.Fatalf("Failed to save repository %s: %s", r.Name, err)
+			}
+		}
+	}
 }
 
 func executeDeleteTeam(ctx context.Context, currentTeam *team) {
@@ -1002,41 +1116,6 @@ func executeCreateOrg(ctx context.Context, o *org, orgAdmin string, orgsDone *in
 	}
 
 	//writeSuccess(out, "Created org with login %s", o.Login)
-}
-
-func executeAssignReposToOrg(ctx context.Context, o *org, repos []*repo) {
-	for _, r := range repos {
-		if r.Owner == o.Login {
-			// Repo is already owned by this org
-			continue
-		}
-
-		_, _, err := gh.Repositories.Transfer(ctx, r.Owner, r.Name, github.TransferRequest{NewOwner: o.Login})
-		if err != nil {
-			if _, ok := err.(*github.AcceptedError); ok {
-				writeInfo(out, "Repository %s scheduled for transfer as a background job", r.Name)
-			} else {
-				log.Fatalf("Failed transfering repository %s to %s: %s", r.Name, o.Login, err)
-			}
-		}
-
-		r.Owner = o.Login
-		r.AssignedOrgs += 1
-		if err = store.saveRepo(r); err != nil {
-			log.Fatalf("Failed to save repository %s: %s", r.Name, err)
-		}
-	}
-}
-
-func executeAssignReposToTeam(ctx context.Context, team *team, repos []*repo) {
-	//for _, r := range repos {
-	//
-	//	gh.Teams.AddTeamRepoBySlug()
-	//}
-}
-
-func executeAssignReposToUser() {
-
 }
 
 func writeSuccess(out *output.Output, format string, a ...any) {
