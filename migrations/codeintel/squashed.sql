@@ -236,7 +236,9 @@ CREATE TABLE codeintel_scip_metadata (
     upload_id integer NOT NULL,
     tool_name text NOT NULL,
     tool_version text NOT NULL,
-    tool_arguments text[] NOT NULL
+    tool_arguments text[] NOT NULL,
+    text_document_encoding text NOT NULL,
+    protocol_version integer NOT NULL
 );
 
 COMMENT ON TABLE codeintel_scip_metadata IS 'Global metadatadata about a single processed upload.';
@@ -250,6 +252,10 @@ COMMENT ON COLUMN codeintel_scip_metadata.tool_name IS 'Name of the indexer that
 COMMENT ON COLUMN codeintel_scip_metadata.tool_version IS 'Version of the indexer that produced this index.';
 
 COMMENT ON COLUMN codeintel_scip_metadata.tool_arguments IS 'Command-line arguments that were used to invoke this indexer.';
+
+COMMENT ON COLUMN codeintel_scip_metadata.text_document_encoding IS 'The encoding of the text documents within this index. May affect range boundaries.';
+
+COMMENT ON COLUMN codeintel_scip_metadata.protocol_version IS 'The version of the SCIP protocol used to encode this index.';
 
 CREATE SEQUENCE codeintel_scip_metadata_id_seq
     START WITH 1
