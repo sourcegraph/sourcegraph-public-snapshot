@@ -440,7 +440,7 @@ func (c *V3Client) ListRepositoryCollaborators(ctx context.Context, owner, repo 
 	if err != nil {
 		return nil, false, err
 	}
-	return users, len(users) > 0, nil
+	return users, len(users) == 100, nil
 }
 
 // ListRepositoryTeams lists GitHub teams that has access to the repository.
