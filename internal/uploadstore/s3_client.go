@@ -16,6 +16,7 @@ import (
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -292,7 +293,9 @@ func (s *s3Store) ExpireObjects(ctx context.Context, prefix string, maxAge time.
 			},
 		})
 		if err != nil {
-			log15.Error("Failed to delete objects in S3 bucket", "error", err, "bucket", s.bucket)
+			s.operations.ExpireObjects.Logger.Error("Failed to delete objects in S3 bucket",
+				sglog.Error(err),
+				sglog.String("bucket", s.bucket))
 			return // try again at next flush
 		}
 		toDelete = toDelete[:0]
@@ -304,7 +307,7 @@ func (s *s3Store) ExpireObjects(ctx context.Context, prefix string, maxAge time.
 	for paginator.HasMorePages() {
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
-			log15.Error("Failed to paginate S3 bucket", "error", err)
+			s.operations.ExpireObjects.Error("Failed to paginate S3 bucket", sglog.Error(err))
 			break // we'll try again later
 		}
 		for _, object := range page.Contents {

@@ -9,6 +9,7 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
+	sglog "github.com/sourcegraph/log"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
@@ -173,7 +174,7 @@ func (s *gcsStore) ExpireObjects(ctx context.Context, prefix string, maxAge time
 	for {
 		objAttrs, err := it.Next()
 		if err != nil && err != iterator.Done {
-			log15.Error("Failed to iterate GCS bucket", "error", err)
+			s.operations.ExpireObjects.Logger.Error("Failed to iterate GCS bucket", sglog.Error(err))
 			break // we'll try again later
 		}
 		if err == iterator.Done {
@@ -182,7 +183,10 @@ func (s *gcsStore) ExpireObjects(ctx context.Context, prefix string, maxAge time
 
 		if time.Since(objAttrs.Created) >= maxAge {
 			if err := bucket.Object(objAttrs.Name).Delete(ctx); err != nil {
-				log15.Error("Failed to delete expired GCS object", "error", err, "bucket", s.bucket, "object", objAttrs.Name)
+				s.operations.ExpireObjects.Logger.Error("Failed to delete expired GCS object",
+					sglog.Error(err),
+					sglog.String("bucket", s.bucket),
+					sglog.String("object", objAttrs.Name))
 				continue
 			}
 		}
