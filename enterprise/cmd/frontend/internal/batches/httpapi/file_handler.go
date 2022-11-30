@@ -242,7 +242,7 @@ func (h *FileHandler) upload(r *http.Request) (resp uploadResponse, statusCode i
 	// stored in temporary files on disk. The reason for parsing the whole request in one go is because data cannot be
 	// "streamed" or "appended" to the bytea type column. Data for the bytea column must be inserted in one go.
 	//
-	// When we move to using a blob store (MinIO/S3/GCS), we can stream the parts instead. This means we won't need to
+	// When we move to using a blob store (Blobstore/S3/GCS), we can stream the parts instead. This means we won't need to
 	// parse the entire request body up front. We will be able to iterate over and write the parts/chunks one at a time
 	// - thus avoiding putting everything into memory.
 	// See example: https://sourcegraph.com/github.com/rfielding/uploader@master/-/blob/uploader.go?L167

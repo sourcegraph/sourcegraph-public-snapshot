@@ -89,6 +89,7 @@ Available commands in `sg.config.yaml`:
 * batches-executor-firecracker
 * batcheshelper-builder
 * bext
+* blobstore
 * caddy
 * codeintel-executor
 * codeintel-executor-firecracker
@@ -105,7 +106,6 @@ Available commands in `sg.config.yaml`:
 * grafana
 * jaeger
 * loki
-* minio
 * monitoring-generator
 * oss-frontend
 * oss-repo-updater
