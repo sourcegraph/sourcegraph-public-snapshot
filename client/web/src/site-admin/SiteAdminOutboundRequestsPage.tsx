@@ -183,7 +183,6 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
 }
 
 const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<OutboundRequest> }> = ({ node }) => {
-    const roundedSecond = Math.round((node.duration + Number.EPSILON) * 100) / 100
     const [copied, setCopied] = useState(false)
 
     const copyToClipboard = (text: string): void => {
@@ -241,7 +240,7 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
                         </Text>
                         <Text>
                             <strong>Duration: </strong>
-                            {roundedSecond.toFixed(2)} second{roundedSecond === 1 ? '' : 's'}
+                            {(node.durationMs / 1000).toFixed(2)} second{node.durationMs === 1000 ? '' : 's'}
                         </Text>
                         <Text>
                             <strong>Client created at: </strong>

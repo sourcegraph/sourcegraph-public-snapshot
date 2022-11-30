@@ -8106,9 +8106,9 @@ type OutboundRequest implements Node {
     responseHeaders: [HTTPHeader!]!
 
     """
-    The total time the request took to complete, in seconds.
+    The total time the request took to complete, in milliseconds.
     """
-    duration: Float!
+    durationMs: Int!
 
     """
     Any error message got from the request Doer in case of an error, otherwise an empty string.
