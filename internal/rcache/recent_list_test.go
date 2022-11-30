@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestRecentCacheOK(t *testing.T) {
+func TestRecentListOK(t *testing.T) {
 	SetupForTest(t)
 
 	type testcase struct {
@@ -39,7 +39,7 @@ func TestRecentCacheOK(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		r := NewRecent(c.key, c.size)
+		r := NewRecentList(c.key, c.size)
 		t.Run(fmt.Sprintf("size %d with %d entries", c.size, len(c.inserts)), func(t *testing.T) {
 			for _, b := range c.inserts {
 				r.Insert(b)
@@ -55,8 +55,8 @@ func TestRecentCacheOK(t *testing.T) {
 	}
 }
 
-func TestRecentCacheContext(t *testing.T) {
-	r := NewRecent("a", 3)
+func TestRecentListContextCancellation(t *testing.T) {
+	r := NewRecentList("a", 3)
 	r.Insert([]byte("a"))
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()

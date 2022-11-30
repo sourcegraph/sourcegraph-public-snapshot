@@ -10,22 +10,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// RecentCache holds the most recently inserted items, discarding older ones if the total item count goes over the configured size.
-type RecentCache struct {
+// RecentList holds the most recently inserted items, discarding older ones if the total item count goes over the configured size.
+type RecentList struct {
 	key  string
 	size int
 }
 
-// NewRecent returns a RecentCache, storing only a fixed amount of elements, discarding old ones if needed.
-func NewRecent(key string, size int) *RecentCache {
-	return &RecentCache{
+// NewRecentList returns a RecentCache, storing only a fixed amount of elements, discarding old ones if needed.
+func NewRecentList(key string, size int) *RecentList {
+	return &RecentList{
 		key:  key,
 		size: size,
 	}
 }
 
 // Insert b in the cache and drops the last recently inserted item if the size exceeds the configured limit.
-func (q *RecentCache) Insert(b []byte) {
+func (q *RecentList) Insert(b []byte) {
 	c := pool.Get()
 	defer c.Close()
 
@@ -50,7 +50,7 @@ func (q *RecentCache) Insert(b []byte) {
 // All return all items stored in the RecentCache.
 //
 // This a O(n) operation, where n is the list size.
-func (q *RecentCache) All(ctx context.Context) ([][]byte, error) {
+func (q *RecentList) All(ctx context.Context) ([][]byte, error) {
 	c, err := pool.GetContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "get redis conn")
@@ -77,6 +77,6 @@ func (q *RecentCache) All(ctx context.Context) ([][]byte, error) {
 	return bs, nil
 }
 
-func (q *RecentCache) globalPrefixKey() string {
+func (q *RecentList) globalPrefixKey() string {
 	return fmt.Sprintf("%s:%s", globalPrefix, q.key)
 }
