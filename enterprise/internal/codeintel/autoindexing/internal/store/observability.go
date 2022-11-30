@@ -45,26 +45,27 @@ type operations struct {
 	expireFailedRecords         *observation.Operation
 }
 
-var m = memo.NewMemoizedConstructorWithArg(func(r prometheus.Registerer) (*metrics.REDMetrics, error) {
-	return metrics.NewREDMetrics(
-		r,
-		"codeintel_autoindexing_store",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	), nil
-})
-
-var indexesInsertedCounterMemo = memo.NewMemoizedConstructorWithArg(func(r prometheus.Registerer) (prometheus.Counter, error) {
-	indexesInsertedCounter := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "src_codeintel_dbstore_indexes_inserted",
-		Help: "The number of codeintel index records inserted.",
+var (
+	indexesInsertedCounterMemo = memo.NewMemoizedConstructorWithArg(func(r prometheus.Registerer) (prometheus.Counter, error) {
+		indexesInsertedCounter := prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "src_codeintel_dbstore_indexes_inserted",
+			Help: "The number of codeintel index records inserted.",
+		})
+		r.MustRegister(indexesInsertedCounter)
+		return indexesInsertedCounter, nil
 	})
-	r.MustRegister(indexesInsertedCounter)
-	return indexesInsertedCounter, nil
-})
+	m = new(metrics.SingletonREDMetrics)
+)
 
 func newOperations(observationContext *observation.Context) *operations {
-	m, _ := m.Init(observationContext.Registerer)
+	m := m.Get(func() *metrics.REDMetrics {
+		return metrics.NewREDMetrics(
+			observationContext.Registerer,
+			"codeintel_autoindexing_store",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+	})
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{

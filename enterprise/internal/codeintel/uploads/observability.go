@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -68,22 +67,21 @@ type operations struct {
 	numBytesDeleted        prometheus.Counter
 }
 
-var m = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*metrics.REDMetrics, error) {
-	return metrics.NewREDMetrics(
-		observationContext.Registerer,
-		"codeintel_uploads",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	), nil
-})
-
 var (
 	metricsMap = make(map[string]prometheus.Counter)
+	m          = new(metrics.SingletonREDMetrics)
 	metricsMu  sync.Mutex
 )
 
 func newOperations(observationContext *observation.Context) *operations {
-	m, _ := m.Init(observationContext)
+	m := m.Get(func() *metrics.REDMetrics {
+		return metrics.NewREDMetrics(
+			observationContext.Registerer,
+			"codeintel_uploads",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+	})
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{

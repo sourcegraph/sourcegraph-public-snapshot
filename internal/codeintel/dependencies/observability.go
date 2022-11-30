@@ -3,7 +3,6 @@ package dependencies
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -14,17 +13,17 @@ type operations struct {
 	deleteDependencyReposByID *observation.Operation
 }
 
-var m = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*metrics.REDMetrics, error) {
-	return metrics.NewREDMetrics(
-		observationContext.Registerer,
-		"codeintel_dependencies",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	), nil
-})
+var m = new(metrics.SingletonREDMetrics)
 
 func newOperations(observationContext *observation.Context) *operations {
-	m, _ := m.Init(observationContext)
+	m := m.Get(func() *metrics.REDMetrics {
+		return metrics.NewREDMetrics(
+			observationContext.Registerer,
+			"codeintel_dependencies",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+	})
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
