@@ -175,7 +175,11 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 </PageHeader.Heading>
             </PageHeader>
             <BatchChangesListIntro isLicensed={licenseAndUsageInfo?.batchChanges || licenseAndUsageInfo?.campaigns} />
-            <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} isSourcegraphDotCom={isSourcegraphDotCom} />
+            <BatchChangeListTabHeader
+                selectedTab={selectedTab}
+                setSelectedTab={setSelectedTab}
+                isSourcegraphDotCom={isSourcegraphDotCom}
+            />
             {selectedTab === 'gettingStarted' && (
                 <GettingStarted isSourcegraphDotCom={isSourcegraphDotCom} className="mb-4" />
             )}
