@@ -43,7 +43,7 @@ func (j *autoindexingJanitorJob) Routines(startupCtx context.Context, logger log
 	gitserverClient := gitserver.New(db, observation.ScopedContext("codeintel", "janitor", "gitserver"))
 
 	return append(
-		autoindexing.NewJanitorJobs(services.AutoIndexingService, gitserverClient),
+		autoindexing.NewJanitorJobs(services.AutoIndexingService, gitserverClient, observation.ContextWithLogger(logger)),
 		autoindexing.NewResetters(db, observation.ContextWithLogger(logger))...,
 	), nil
 }
