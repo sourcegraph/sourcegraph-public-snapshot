@@ -102,6 +102,7 @@ func serializeDocument(state *State, documentID int) precise.DocumentData {
 			if moniker.PackageInformationID != 0 {
 				packageInformation := state.PackageInformationData[moniker.PackageInformationID]
 				document.PackageInformation[toID(moniker.PackageInformationID)] = precise.PackageInformationData{
+					Manager: "",
 					Name:    packageInformation.Name,
 					Version: packageInformation.Version,
 				}
@@ -380,6 +381,7 @@ func gatherPackages(state *State) []precise.Package {
 
 		uniques[makeKey(source.Scheme, packageInfo.Name, packageInfo.Version)] = precise.Package{
 			Scheme:  source.Scheme,
+			Manager: "",
 			Name:    packageInfo.Name,
 			Version: packageInfo.Version,
 		}
@@ -439,6 +441,7 @@ func gatherPackageReferences(state *State, packageDefinitions []precise.Package)
 		packageReferences = append(packageReferences, precise.PackageReference{
 			Package: precise.Package{
 				Scheme:  v.Scheme,
+				Manager: "",
 				Name:    v.Name,
 				Version: v.Version,
 			},
