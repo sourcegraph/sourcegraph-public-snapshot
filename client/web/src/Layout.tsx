@@ -196,19 +196,18 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         isMacPlatform: isMacPlatform(),
     }
 
-    const setCookie = () => {
+    useEffect(() => {
         if (
             props.isSourcegraphDotCom &&
             props.authenticatedUser &&
             !document.cookie.includes('displayName=' || 'email=')
         ) {
+            // eslint-disable-next-line unicorn/no-document-cookie
             document.cookie = `displayName=${props.authenticatedUser.displayName || ''}`
             document.cookie = `email=${props.authenticatedUser.email}`
+        } else {
+            null
         }
-    }
-
-    useEffect(() => {
-        setCookie()
     }, [props.authenticatedUser, props.isSourcegraphDotCom])
 
     return (
