@@ -450,11 +450,11 @@ func (r *searchContextResolver) ViewerCanManage(ctx context.Context) bool {
 }
 
 func (r *searchContextResolver) ViewerHasAsDefault(ctx context.Context) bool {
-	return searchcontexts.CurrentUserHasSearchContextAsDefault(ctx, r.db, r.sc.ID)
+	return r.sc.Default
 }
 
 func (r *searchContextResolver) ViewerHasStarred(ctx context.Context) bool {
-	return searchcontexts.CurrentUserHasStarredSearchContext(ctx, r.db, r.sc.ID)
+	return r.sc.Starred
 }
 
 func (r *searchContextResolver) Repositories(ctx context.Context) ([]graphqlbackend.SearchContextRepositoryRevisionsResolver, error) {
