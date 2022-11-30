@@ -195,7 +195,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         ...breadcrumbProps,
         isMacPlatform: isMacPlatform(),
     }
-    
+
     const setCookie = () => {
         if (
             props.isSourcegraphDotCom &&
