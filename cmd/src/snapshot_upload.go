@@ -36,6 +36,7 @@ BUCKET
 	flagSet := flag.NewFlagSet("upload", flag.ExitOnError)
 	bucketName := flagSet.String("bucket", "", "destination Cloud Storage bucket name")
 	credentialsPath := flagSet.String("credentials", "", "JSON credentials file for Google Cloud service account")
+	trimExtensions := flagSet.Bool("trim-extensions", true, "trim EXTENSION statements from database dumps for import to Google Cloud SQL")
 
 	snapshotCommands = append(snapshotCommands, &command{
 		flagSet: flagSet,
@@ -59,8 +60,9 @@ BUCKET
 			}
 
 			type upload struct {
-				file *os.File
-				stat os.FileInfo
+				file           *os.File
+				stat           os.FileInfo
+				trimExtensions bool
 			}
 			var (
 				uploads      []upload             // index aligned with progressBars
@@ -76,8 +78,9 @@ BUCKET
 					return errors.Wrap(err, "get file size")
 				}
 				uploads = append(uploads, upload{
-					file: f,
-					stat: stat,
+					file:           f,
+					stat:           stat,
+					trimExtensions: false, // not a database dump
 				})
 				progressBars = append(progressBars, output.ProgressBar{
 					Label: stat.Name(),
@@ -95,8 +98,9 @@ BUCKET
 						return errors.Wrap(err, "get file size")
 					}
 					uploads = append(uploads, upload{
-						file: f,
-						stat: stat,
+						file:           f,
+						stat:           stat,
+						trimExtensions: *trimExtensions,
 					})
 					progressBars = append(progressBars, output.ProgressBar{
 						Label: stat.Name(),
@@ -116,7 +120,7 @@ BUCKET
 				g.Go(func(ctx context.Context) error {
 					progressFn := func(p int64) { progress.SetValue(i, float64(p)) }
 
-					if err := copyToBucket(ctx, u.file, u.stat, bucket, progressFn); err != nil {
+					if err := copyDumpToBucket(ctx, u.file, u.stat, bucket, progressFn, u.trimExtensions); err != nil {
 						return errors.Wrap(err, u.stat.Name())
 					}
 
@@ -139,26 +143,43 @@ BUCKET
 	})
 }
 
-func copyToBucket(ctx context.Context, src io.Reader, stat fs.FileInfo, dst *storage.BucketHandle, progressFn func(int64)) error {
-	writer := dst.Object(stat.Name()).NewWriter(ctx)
-	writer.ProgressFunc = progressFn
-	defer writer.Close()
+func copyDumpToBucket(ctx context.Context, src io.ReadSeeker, stat fs.FileInfo, dst *storage.BucketHandle, progressFn func(int64), trimExtensions bool) error {
+	// Set up object to write to
+	object := dst.Object(stat.Name()).NewWriter(ctx)
+	object.ProgressFunc = progressFn
+	defer object.Close()
 
-	// io.Copy is the best way to copy from a reader to writer in Go, and storage.Writer
-	// has its own chunking mechanisms internally.
-	written, err := io.Copy(writer, src)
-	if err != nil {
-		return err
+	// To assert against actual file size
+	var totalWritten int64
+
+	// Do a partial copy that trims out unwanted statements
+	if trimExtensions {
+		written, err := pgdump.PartialCopyWithoutExtensions(object, src, progressFn)
+		if err != nil {
+			return errors.Wrap(err, "trim extensions and upload")
+		}
+		totalWritten += written
 	}
 
-	// Progress is not called on completion, so we call it manually after io.Copy is done
+	// io.Copy is the best way to copy from a reader to writer in Go, and storage.Writer
+	// has its own chunking mechanisms internally. io.Reader is stateful, so this copy
+	// will just continue from where we left off if we use copyAndTrimExtensions.
+	written, err := io.Copy(object, src)
+	if err != nil {
+		return errors.Wrap(err, "upload")
+	}
+	totalWritten += written
+
+	// Progress is not called on completion of io.Copy, so we call it manually after to
+	// update our pretty progress bars.
 	progressFn(written)
 
-	// Validate we have sent all data
+	// Validate we have sent all data. copyAndTrimExtensions may add some bytes, so the
+	// check is not a strict equality.
 	size := stat.Size()
-	if written != size {
-		return errors.Newf("expected to write %d bytes, but actually wrote %d bytes",
-			size, written)
+	if totalWritten < size {
+		return errors.Newf("expected to write %d bytes, but actually wrote %d bytes (diff: %d bytes)",
+			size, totalWritten, totalWritten-size)
 	}
 
 	return nil
