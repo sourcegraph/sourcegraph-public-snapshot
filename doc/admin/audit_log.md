@@ -121,13 +121,12 @@ audit.Log(ctx, logger, audit.Record{
 
 **How do I map actor ID to the Sourcegraph user?**
 
-The `audit.actor` node carries the actor ID, but it’s not hydrated into a full Sourcegraph user right now. You can, however, obtain the user details by following these steps:
+The `audit.actor` node carries ID of the user who performed the action (`actorUID`), but it’s not mapped into a full Sourcegraph user right now. You can, however, obtain the user details by following these steps:
 
-1. grab the user ID from the audit log
-2. base64 [encode](https://www.base64encode.org) it with a "User:" prefix. Example for Actor with ID 71: `User:71`
-3. sample encoded value: `VXNlcjo3MQ==`
-4. navigate to Site Admin -> API Console and run the query below
-5. find the corresponding user using the encoded ID from above
+1. Grab the user ID from the audit log
+2. Base64 [encode](https://www.base64encode.org) the ID with a "User:" prefix. For example, for Actor with ID 71 use `User:71`, which encodes to `VXNlcjo3MQ==`
+4. Navigate to Site Admin -> API Console and run the query below
+5. Find the corresponding user by searching the query results for the encoded ID from above
 
 GraphQL query:
 ```
