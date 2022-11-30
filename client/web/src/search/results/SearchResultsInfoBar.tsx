@@ -169,7 +169,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             <div className={styles.row}>
                 {props.stats}
 
-                {props.isSourcegraphDotCom && 
+                {props.isSourcegraphDotCom && (
                     <CloudCtaBanner className="mb-5" variant="outlined">
                         To search across your private repositories,{' '}
                         <Link
@@ -182,7 +182,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         </Link>
                         .
                     </CloudCtaBanner>
-                }
+                )}
 
                 <div className={styles.expander} />
 
