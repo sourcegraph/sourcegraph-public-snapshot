@@ -15,6 +15,7 @@ func maybeBlobstore(logger sglog.Logger) []string {
 
 	// Point at local blobstore endpoint.
 	SetDefaultEnv("PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://127.0.0.1:9000")
+	SetDefaultEnv("PRECISE_CODE_INTEL_UPLOAD_BACKEND", "blobstore")
 
 	// blobstore env vars copied from upstream Dockerfile:
 	// https://github.com/gaul/s3proxy/blob/master/Dockerfile
@@ -32,6 +33,7 @@ func maybeBlobstore(logger sglog.Logger) []string {
 	SetDefaultEnv("S3PROXY_ENCRYPTED_BLOBSTORE", "")
 	SetDefaultEnv("S3PROXY_ENCRYPTED_BLOBSTORE_PASSWORD", "")
 	SetDefaultEnv("S3PROXY_ENCRYPTED_BLOBSTORE_SALT", "")
+	SetDefaultEnv("S3PROXY_V4_MAX_NON_CHUNKED_REQ_SIZE", "33554432")
 	SetDefaultEnv("JCLOUDS_PROVIDER", "filesystem")
 	SetDefaultEnv("JCLOUDS_ENDPOINT", "")
 	SetDefaultEnv("JCLOUDS_REGION", "")
@@ -45,6 +47,8 @@ func maybeBlobstore(logger sglog.Logger) []string {
 	// Configure blobstore service
 	dataDir := filepath.Join(os.Getenv("DATA_DIR"), "blobstore")
 	SetDefaultEnv("JCLOUDS_FILESYSTEM_BASEDIR", dataDir)
+	SetDefaultEnv("S3PROXY_AUTHORIZATION", "none")
+	SetDefaultEnv("S3PROXY_ENDPOINT", "http://0.0.0.0:9000")
 	procline := `blobstore: /opt/s3proxy/run-docker-container.sh >> /var/opt/sourcegraph/blobstore.log 2>&1`
 	return []string{procline}
 }
