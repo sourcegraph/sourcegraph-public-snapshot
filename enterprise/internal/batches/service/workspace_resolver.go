@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"os"
 	"path"
 	"sort"
 	"strings"
@@ -19,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -103,7 +101,7 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 	}
 
 	// Next, find the repos that are ignored through a .batchignore file.
-	ignored, err := findIgnoredRepositories(ctx, wr.gitserverClient, repos)
+	ignored, err := findIgnoredRepositories(ctx, wr.store, wr.gitserverClient, repos)
 	if err != nil {
 		return nil, err
 	}
@@ -175,9 +173,9 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 // findIgnoredRepositories will hit gitserver for file info.
 const ignoredWorkspaceResolverConcurrency = 5
 
-func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Client, repos []*RepoRevision) (map[*types.Repo]struct{}, error) {
+func findIgnoredRepositories(ctx context.Context, tx *store.Store, gitserverClient gitserver.Client, repos []*RepoRevision) (map[*types.Repo]struct{}, error) {
 	type result struct {
-		repo           *RepoRevision
+		repo           *types.Repo
 		hasBatchIgnore bool
 		err            error
 	}
@@ -185,7 +183,7 @@ func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Clie
 	var (
 		ignored = make(map[*types.Repo]struct{})
 
-		input   = make(chan *RepoRevision, len(repos))
+		input   = make(chan *types.Repo, len(repos))
 		results = make(chan result, len(repos))
 
 		wg sync.WaitGroup
@@ -194,18 +192,22 @@ func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Clie
 	// Spawn N workers.
 	for i := 0; i < ignoredWorkspaceResolverConcurrency; i++ {
 		wg.Add(1)
-		go func(in chan *RepoRevision, out chan result) {
+		go func(in chan *types.Repo, out chan result) {
 			defer wg.Done()
 			for repo := range in {
-				hasBatchIgnore, err := hasBatchIgnoreFile(ctx, gitserverClient, repo)
-				out <- result{repo, hasBatchIgnore, err}
+				meta, err := GetRepoMetadata(ctx, tx, gitserverClient, repo)
+				if err != nil {
+					out <- result{repo, false, err}
+				} else {
+					out <- result{repo, meta.Ignored, nil}
+				}
 			}
 		}(input, results)
 	}
 
 	// Queue all the repos for processing.
 	for _, repo := range repos {
-		input <- repo
+		input <- repo.Repo
 	}
 	close(input)
 
@@ -222,7 +224,7 @@ func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Clie
 		}
 
 		if result.hasBatchIgnore {
-			ignored[result.repo.Repo] = struct{}{}
+			ignored[result.repo] = struct{}{}
 		}
 	}
 
@@ -459,29 +461,6 @@ func repoToRepoRevisionWithDefaultBranch(ctx context.Context, gitserverClient gi
 		FileMatches: fileMatches,
 	}
 	return repoRev, nil
-}
-
-const batchIgnoreFilePath = ".batchignore"
-
-func hasBatchIgnoreFile(ctx context.Context, gitserverClient gitserver.Client, r *RepoRevision) (_ bool, err error) {
-	traceTitle := fmt.Sprintf("RepoID: %q", r.Repo.ID)
-	tr, ctx := trace.New(ctx, "hasBatchIgnoreFile", traceTitle)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	stat, err := gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.Repo.Name, r.Commit, batchIgnoreFilePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-		return false, err
-	}
-	if !stat.Mode().IsRegular() {
-		return false, errors.Errorf("not a blob: %q", batchIgnoreFilePath)
-	}
-	return true, nil
 }
 
 var defaultQueryCountRegex = regexp.MustCompile(`\bcount:(\d+|all)\b`)
