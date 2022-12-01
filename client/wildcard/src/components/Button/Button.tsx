@@ -67,13 +67,15 @@ export const Button = forwardRef(
         const brandedButtonClassname = getButtonClassName({ variant, outline, display, size })
 
         const handleClick = (event: MouseEvent<HTMLButtonElement>): void => {
-            if (!disabled) {
+            if (disabled) {
                 // Prevent any native button element behaviour, such as submit
                 // functionality if the button is used within form elements without
-                // type attribute
+                // type attribute (or with explicitly set "submit" type.
                 event.preventDefault()
-                onClick?.(event)
+                return
             }
+
+            onClick?.(event)
         }
 
         return (
