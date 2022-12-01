@@ -192,8 +192,7 @@ func generateAll(
 		}
 	}
 	if grafanaClient != nil {
-		logger.Debug("Reloading Grafana dashboard",
-			log.Int("folder.id", grafanaFolderID))
+		logger.Debug("Reloading Grafana dashboard")
 		if _, err := grafanaClient.SetRawDashboardWithParam(ctx, grafanasdk.RawBoardRequest{
 			Dashboard: data,
 			Parameters: grafanasdk.SetDashboardParams{
