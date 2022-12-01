@@ -7,10 +7,10 @@ import (
 )
 
 type RepoMetadata struct {
-	ID        api.RepoID
+	RepoID    api.RepoID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Ignored   bool
 }
 
-func (meta *RepoMetadata) Cursor() int64 { return int64(meta.ID) }
+func (meta *RepoMetadata) Cursor() int64 { return int64(meta.RepoID) }

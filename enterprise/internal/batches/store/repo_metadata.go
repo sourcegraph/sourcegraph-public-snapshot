@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
@@ -11,42 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *Store) CreateRepoMetadata(ctx context.Context, meta *btypes.RepoMetadata) (err error) {
-	ctx, _, endObservation := s.operations.createRepoMetadata.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	if meta.CreatedAt.IsZero() {
-		meta.CreatedAt = s.now()
-	}
-	if meta.UpdatedAt.IsZero() {
-		meta.UpdatedAt = meta.CreatedAt
-	}
-
-	return createOrUpdateRecord(ctx, s, createRepoMetadataQuery(meta), scanRepoMetadata, meta)
-}
-
-const createRepoMetadataQueryFmtstr = `
-INSERT INTO batch_changes_repo_metadata
-  (created_at, updated_at, ignored)
-VALUES
-  (%s, %s, %s)
-RETURNING
-  %s
-`
-
-func createRepoMetadataQuery(meta *btypes.RepoMetadata) *sqlf.Query {
-	return sqlf.Sprintf(
-		createRepoMetadataQueryFmtstr,
-		meta.CreatedAt,
-		meta.UpdatedAt,
-		meta.Ignored,
-		sqlf.Join(repoMetadataColumns, ","),
-	)
-}
-
 func (s *Store) GetRepoMetadata(ctx context.Context, repoID api.RepoID) (meta *btypes.RepoMetadata, err error) {
 	ctx, _, endObservation := s.operations.getRepoMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(meta.ID)),
+		log.Int("ID", int(repoID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -136,7 +104,7 @@ WHERE
       AND repo.updated_at > batch_changes_repo_metadata.updated_at
   )
   AND %s -- cursor where clause
-ORDER BY id ASC
+ORDER BY repo_id ASC
 %s -- LIMIT
 `
 
@@ -151,40 +119,45 @@ func listReposWithOutdatedMetadataQuery(opts CursorOpts) *sqlf.Query {
 
 func (s *Store) UpsertRepoMetadata(ctx context.Context, meta *btypes.RepoMetadata) (err error) {
 	ctx, _, endObservation := s.operations.upsertRepoMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(meta.ID)),
+		log.Int("ID", int(meta.RepoID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	meta.UpdatedAt = s.now()
-	return createOrUpdateRecord(ctx, s, upsertRepoMetadataQuery(meta), scanRepoMetadata, meta)
+	now := s.now()
+	meta.UpdatedAt = now
+	return createOrUpdateRecord(ctx, s, upsertRepoMetadataQuery(meta, now), scanRepoMetadata, meta)
 }
 
 const upsertRepoMetadataQueryFmtstr = `
 INSERT INTO batch_changes_repo_metadata
-  (created_at, updated_at, ignored)
+  (%s)
 VALUES
-  (%s, %s, %s)
-ON CONFLICT DO UPDATE SET
+  (%s, %s, %s, %s)
+ON CONFLICT (repo_id) DO UPDATE SET
   (updated_at, ignored) = (%s, %s)
 RETURNING
   %s
 `
 
-func upsertRepoMetadataQuery(meta *btypes.RepoMetadata) *sqlf.Query {
+func upsertRepoMetadataQuery(meta *btypes.RepoMetadata, now time.Time) *sqlf.Query {
+	columns := sqlf.Join(repoMetadataColumns, ",")
+
 	return sqlf.Sprintf(
 		upsertRepoMetadataQueryFmtstr,
-		meta.CreatedAt,
+		columns,
+		meta.RepoID,
+		now,
 		meta.UpdatedAt,
 		meta.Ignored,
 		meta.UpdatedAt,
 		meta.Ignored,
-		sqlf.Join(repoMetadataColumns, ","),
+		columns,
 	)
 }
 
 func scanRepoMetadata(meta *btypes.RepoMetadata, sc dbutil.Scanner) error {
 	return sc.Scan(
-		&meta.ID,
+		&meta.RepoID,
 		&meta.CreatedAt,
 		&meta.UpdatedAt,
 		&meta.Ignored,
