@@ -64,6 +64,7 @@ func renderMultiInstanceDashboard(dashboards []*Dashboard, groupings []string) (
 					addDashboardRow.Do(func() {
 						row = board.AddRow(d.Title)
 						row.ShowTitle = true
+						row.Collapse = true // avoid crazy loading times
 					})
 
 					// TODO make this size correctly in this context and output a valid
