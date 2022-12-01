@@ -98,7 +98,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 type inProgressHandler struct {
 	workerStore        dbworkerstore.Store[*BaseJob]
 	backfillStore      *BackfillStore
-	seriesReadComplete SeriesBackfillReadWrite
+	seriesReadComplete SeriesReadBackfillComplete
 	repoStore          database.RepoStore
 	insightsStore      store.Interface
 	backfillRunner     pipeline.Backfiller
