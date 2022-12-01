@@ -18,10 +18,10 @@ type InvertedRangeIndex struct {
 // document.
 func ExtractSymbolIndexes(document *scip.Document) []InvertedRangeIndex {
 	rangesBySymbol := make(map[string]struct {
-		definitionRanges     []*scip.Range
-		referenceRanges      []*scip.Range
-		implementationRanges []*scip.Range
-		typeDefinitionRanges []*scip.Range
+		definitionRanges []*scip.Range
+		referenceRanges  []*scip.Range
+		// implementationRanges []*scip.Range // TODO
+		// typeDefinitionRanges []*scip.Range // TODO
 	}, len(document.Occurrences))
 	for _, occurrence := range document.Occurrences {
 		if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
@@ -46,11 +46,11 @@ func ExtractSymbolIndexes(document *scip.Document) []InvertedRangeIndex {
 	invertedRangeIndexes := make([]InvertedRangeIndex, 0, len(rangesBySymbol))
 	for symbolName, rangeSet := range rangesBySymbol {
 		invertedRangeIndexes = append(invertedRangeIndexes, InvertedRangeIndex{
-			SymbolName:           symbolName,
-			DefinitionRanges:     collapseRanges(rangeSet.definitionRanges),
-			ReferenceRanges:      collapseRanges(rangeSet.referenceRanges),
-			ImplementationRanges: collapseRanges(rangeSet.implementationRanges),
-			TypeDefinitionRanges: collapseRanges(rangeSet.typeDefinitionRanges),
+			SymbolName:       symbolName,
+			DefinitionRanges: collapseRanges(rangeSet.definitionRanges),
+			ReferenceRanges:  collapseRanges(rangeSet.referenceRanges),
+			// ImplementationRanges: collapseRanges(rangeSet.implementationRanges), // TODO
+			// TypeDefinitionRanges: collapseRanges(rangeSet.typeDefinitionRanges), // TODO
 		})
 	}
 	sort.Slice(invertedRangeIndexes, func(i, j int) bool {
@@ -68,7 +68,7 @@ func collapseRanges(ranges []*scip.Range) []int32 {
 		return nil
 	}
 
-	rangeComponents := make([]int32, len(ranges)*4)
+	rangeComponents := make([]int32, 0, len(ranges)*4)
 	for _, r := range SortRanges(ranges) {
 		rangeComponents = append(rangeComponents, r.Start.Line, r.Start.Character, r.End.Line, r.End.Character)
 	}
