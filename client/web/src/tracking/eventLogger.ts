@@ -250,7 +250,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             deviceID = anonymousUserID
             cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
         }
-        return this.deviceID
+        return deviceID
     }
 
     // Insert ID is used to deduplicate events in Amplitude.
