@@ -455,11 +455,11 @@ commands:
 
   zoekt-web-0:
     <<: *zoekt_webserver_template
-    cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-0" -pprof -rpc -listen "127.0.0.1:3070"
+    cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-0" -pprof -rpc -indexserver_proxy -listen "127.0.0.1:3070"
 
   zoekt-web-1:
     <<: *zoekt_webserver_template
-    cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -listen "127.0.0.1:3071"
+    cmd: env PATH="${PWD}/.bin:$PATH" .bin/zoekt-webserver -index "$HOME/.sourcegraph/zoekt/index-1" -pprof -rpc -indexserver_proxy -listen "127.0.0.1:3071"
 
   codeintel-worker:
     cmd: |
