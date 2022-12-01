@@ -5,7 +5,7 @@ import { lazyComponent } from '../util/lazyComponent'
 
 import { SymbolIcon } from './SymbolIcon'
 
-const SymbolTag = lazyComponent(() => import('src/symbols/SymbolTag'), 'SymbolTag')
+const SymbolTag = lazyComponent(() => import('./SymbolTag'), 'SymbolTag')
 
 export const SymbolKind: React.FC<{
     kind: SymbolKindEnum
