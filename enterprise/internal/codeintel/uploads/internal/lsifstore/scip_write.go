@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
@@ -17,9 +18,18 @@ import (
 )
 
 type ProcessedSCIPData struct {
+	Metadata          ProcessedMetadata
 	Documents         <-chan ProcessedSCIPDocument
-	Packages          []precise.Package
-	PackageReferences []precise.PackageReference
+	Packages          <-chan precise.Package
+	PackageReferences <-chan precise.PackageReference
+}
+
+type ProcessedMetadata struct {
+	TextDocumentEncoding string
+	ToolName             string
+	ToolVersion          string
+	ToolArguments        []string
+	ProtocolVersion      int
 }
 
 type ProcessedSCIPDocument struct {
@@ -29,6 +39,36 @@ type ProcessedSCIPDocument struct {
 	Symbols        []types.InvertedRangeIndex
 	Err            error
 }
+
+func (s *store) InsertMetadata(ctx context.Context, uploadID int, meta ProcessedMetadata) (err error) {
+	ctx, _, endObservation := s.operations.insertMetadata.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		otlog.Int("uploadID", uploadID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if meta.ToolArguments == nil {
+		meta.ToolArguments = []string{}
+	}
+
+	if err := s.db.Exec(ctx, sqlf.Sprintf(
+		insertMetadataQuery,
+		uploadID,
+		meta.TextDocumentEncoding,
+		meta.ToolName,
+		meta.ToolVersion,
+		pq.Array(meta.ToolArguments),
+		meta.ProtocolVersion,
+	)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const insertMetadataQuery = `
+INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tool_name, tool_version, tool_arguments, protocol_version)
+VALUES (%s, %s, %s, %s, %s, %s)
+`
 
 func (s *store) InsertSCIPDocument(ctx context.Context, uploadID int, documentPath string, hash []byte, rawSCIPPayload []byte) (_ int, err error) {
 	ctx, _, endObservation := s.operations.insertSCIPDocument.With(ctx, &err, observation.Args{LogFields: []otlog.Field{

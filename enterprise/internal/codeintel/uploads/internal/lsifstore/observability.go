@@ -15,6 +15,7 @@ type operations struct {
 	scanDocuments             *observation.Operation
 	scanResultChunks          *observation.Operation
 	scanLocations             *observation.Operation
+	insertMetadata            *observation.Operation
 	insertSCIPDocument        *observation.Operation
 	writeMeta                 *observation.Operation
 	writeDocuments            *observation.Operation
@@ -48,6 +49,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		scanDocuments:             op("ScanDocuments"),
 		scanResultChunks:          op("ScanResultChunks"),
 		scanLocations:             op("ScanLocations"),
+		insertMetadata:            op("InsertMetadata"),
 		insertSCIPDocument:        op("InsertSCIPDocument"),
 		writeMeta:                 op("WriteMeta"),
 		writeDocuments:            op("WriteDocuments"),
