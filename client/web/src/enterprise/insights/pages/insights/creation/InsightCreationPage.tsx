@@ -53,7 +53,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     const handleInsightSuccessfulCreation = (): void => {
         if (!dashboard) {
             // Navigate to the dashboard page with new created dashboard
-            history.push('/insights/dashboards/')
+            history.push('/insights/dashboards/all')
 
             return
         }

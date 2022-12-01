@@ -1,4 +1,4 @@
-package lucky
+package smartsearch
 
 import (
 	"context"
@@ -27,12 +27,12 @@ type autoQuery struct {
 // dependencies), and otherwise abstracts job creation for tests.
 type newJob func(query.Basic) (job.Job, error)
 
-// NewFeelingLuckySearchJob creates generators for opportunistic search queries
+// NewSmartSearchJob creates generators for opportunistic search queries
 // that apply various rules, transforming the original input plan into various
 // queries that alter its interpretation (e.g., search literally for quotes or
 // not, attempt to search the pattern as a regexp, and so on). There is no
 // random choice when applying rules.
-func NewFeelingLuckySearchJob(initialJob job.Job, newJob newJob, plan query.Plan) *FeelingLuckySearchJob {
+func NewSmartSearchJob(initialJob job.Job, newJob newJob, plan query.Plan) *FeelingLuckySearchJob {
 	generators := make([]next, 0, len(plan))
 	for _, b := range plan {
 		generators = append(generators, NewGenerator(b, rulesNarrow, rulesWiden))

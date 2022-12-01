@@ -7,10 +7,28 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
+
+func TestInsertMetadata(t *testing.T) {
+	logger := logtest.Scoped(t)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
+	store := New(codeIntelDB, &observation.TestContext)
+	ctx := context.Background()
+
+	if err := store.InsertMetadata(ctx, 42, ProcessedMetadata{
+		TextDocumentEncoding: "UTF8",
+		ToolName:             "scip-test",
+		ToolVersion:          "0.1.0",
+		ToolArguments:        []string{"-p", "src"},
+		ProtocolVersion:      1,
+	}); err != nil {
+		t.Fatalf("failed to insert metadata: %s", err)
+	}
+}
 
 func TestInsertSCIPDocument(t *testing.T) {
 	logger := logtest.Scoped(t)
@@ -75,7 +93,7 @@ func TestWriteSCIPSymbols(t *testing.T) {
 		t.Fatalf("failed to write SCIP document: %s", err)
 	}
 
-	symbols := []ProcessedSymbolData{
+	symbols := []types.InvertedRangeIndex{
 		{
 			SymbolName: "foo.bar.ident",
 			DefinitionRanges: []int32{
@@ -116,11 +134,24 @@ func TestWriteSCIPSymbols(t *testing.T) {
 			},
 		},
 	}
-	n, err := store.WriteSCIPSymbols(ctx, uploadID, documentLookupID, symbols)
+
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		t.Fatalf("failed to start transaction: %s", err)
+	}
+	defer func() { _ = tx.Done(nil) }()
+
+	symbolWriter, err := tx.NewSymbolWriter(ctx, uploadID)
 	if err != nil {
 		t.Fatalf("failed to write SCIP symbols: %s", err)
 	}
-	if expected := uint32(3); n != expected {
+	if err := symbolWriter.WriteSCIPSymbols(ctx, documentLookupID, symbols); err != nil {
+		t.Fatalf("failed to write SCIP symbols: %s", err)
+	}
+
+	if n, err := symbolWriter.Flush(ctx); err != nil {
+		t.Fatalf("failed to write SCIP symbols: %s", err)
+	} else if expected := uint32(3); n != expected {
 		t.Fatalf("unexpected number of symbols inserted. want=%d have=%d", expected, n)
 	}
 }

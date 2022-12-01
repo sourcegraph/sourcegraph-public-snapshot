@@ -187,11 +187,6 @@ export const commonWebGraphQlResults: Partial<
             pageInfo: { hasNextPage: false, endCursor: null },
         },
     }),
-    ExternalServicesScopes: () => ({
-        externalServices: {
-            nodes: [],
-        },
-    }),
     EvaluateFeatureFlag: () => ({
         evaluateFeatureFlag: false,
     }),

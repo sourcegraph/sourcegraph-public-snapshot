@@ -175,7 +175,11 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 </PageHeader.Heading>
             </PageHeader>
             <BatchChangesListIntro isLicensed={licenseAndUsageInfo?.batchChanges || licenseAndUsageInfo?.campaigns} />
-            <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+            <BatchChangeListTabHeader
+                selectedTab={selectedTab}
+                setSelectedTab={setSelectedTab}
+                isSourcegraphDotCom={isSourcegraphDotCom}
+            />
             {selectedTab === 'gettingStarted' && (
                 <GettingStarted isSourcegraphDotCom={isSourcegraphDotCom} className="mb-4" />
             )}
@@ -282,8 +286,9 @@ const BatchChangeListTabHeader: React.FunctionComponent<
     React.PropsWithChildren<{
         selectedTab: SelectedTab
         setSelectedTab: (selectedTab: SelectedTab) => void
+        isSourcegraphDotCom: boolean
     }>
-> = ({ selectedTab, setSelectedTab }) => {
+> = ({ selectedTab, setSelectedTab, isSourcegraphDotCom }) => {
     const onSelectBatchChanges = useCallback<React.MouseEventHandler>(
         event => {
             event.preventDefault()
@@ -301,19 +306,21 @@ const BatchChangeListTabHeader: React.FunctionComponent<
     return (
         <nav className="overflow-auto mb-2" aria-label="Batch Changes">
             <div className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap" role="tablist">
-                <div className="nav-item">
-                    <Link
-                        to=""
-                        onClick={onSelectBatchChanges}
-                        className={classNames('nav-link', selectedTab === 'batchChanges' && 'active')}
-                        aria-selected={selectedTab === 'batchChanges'}
-                        role="tab"
-                    >
-                        <span className="text-content" data-tab-content="All batch changes">
-                            All batch changes
-                        </span>
-                    </Link>
-                </div>
+                {!isSourcegraphDotCom && (
+                    <div className="nav-item">
+                        <Link
+                            to=""
+                            onClick={onSelectBatchChanges}
+                            className={classNames('nav-link', selectedTab === 'batchChanges' && 'active')}
+                            aria-selected={selectedTab === 'batchChanges'}
+                            role="tab"
+                        >
+                            <span className="text-content" data-tab-content="All batch changes">
+                                All batch changes
+                            </span>
+                        </Link>
+                    </div>
+                )}
                 <div className="nav-item">
                     <Link
                         to=""
