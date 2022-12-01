@@ -284,8 +284,8 @@ func (s *GitHubSource) Version(ctx context.Context) (string, error) {
 // IsAvailable at this point assumes availability and relies on errors returned
 // from the subsequent calls. This is going to be expanded as part of issue #44683
 // to actually only return true if the source can serve requests.
-func (s *GitHubSource) IsAvailable(ctx context.Context) bool {
-	return true
+func (s *GitHubSource) CheckConnection(ctx context.Context) error {
+	return nil
 }
 
 // ListRepos returns all Github repositories accessible to all connections configured

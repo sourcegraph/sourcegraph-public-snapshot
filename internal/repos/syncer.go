@@ -559,8 +559,8 @@ func (s *Syncer) SyncExternalService(
 		return err
 	}
 
-	if !src.IsAvailable(ctx) {
-		return errors.New("code host does not seem to be available")
+	if err := src.CheckConnection(ctx); err != nil {
+		return err
 	}
 
 	results := make(chan SourceResult)

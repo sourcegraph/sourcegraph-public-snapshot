@@ -64,8 +64,8 @@ func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli
 // IsAvailable at this point assumes availability and relies on errors returned
 // from the subsequent calls. This is going to be expanded as part of issue #44683
 // to actually only return true if the source can serve requests.
-func (s OtherSource) IsAvailable(ctx context.Context) bool {
-	return true
+func (s OtherSource) CheckConnection(ctx context.Context) error {
+	return nil
 }
 
 // ListRepos returns all Other repositories accessible to all connections configured
