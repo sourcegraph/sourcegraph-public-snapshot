@@ -24590,7 +24590,7 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `otelcol_process_cpu_seconds`
+Query: `sum(rate(otelcol_process_cpu_seconds{job=~"^.*"}[1m])) by (job)`
 
 </details>
 
@@ -24611,7 +24611,7 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `otelcol_process_cpu_seconds`
+Query: `sum(rate(otelcol_process_memory_rss{job=~"^.*"}[1m])) by (job)`
 
 </details>
 
@@ -24636,7 +24636,7 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `otelcol_process_runtime_total_alloc_bytes`
+Query: `sum(rate(otelcol_process_runtime_total_alloc_bytes{job=~"^.*"}[1m])) by (job)`
 
 </details>
 

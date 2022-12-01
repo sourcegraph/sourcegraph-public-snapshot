@@ -19,7 +19,7 @@ func OtelCollector() *monitoring.Dashboard {
 						{
 							Name:        "otel-span-receive-rate",
 							Description: "spans received per second",
-							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("receiver"),
+							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("receiver: {{receiver}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							Query:       "sum(rate(otelcol_receiver_accepted_spans{receiver=~\"^.*\"}[1m])) by (receiver)",
 							NoAlert:     true,
@@ -29,7 +29,7 @@ func OtelCollector() *monitoring.Dashboard {
 						{
 							Name:        "otel-span-refused",
 							Description: "spans that the receiver refused",
-							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("receiver=%s"),
+							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("receiver: {{receiver}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							Query:       "sum(rate(otelcol_receiver_refused_spans{receiver=~\"^.*.*\"}[1m])) by (receiver)",
 							NoAlert:     true,
@@ -47,7 +47,7 @@ func OtelCollector() *monitoring.Dashboard {
 						{
 							Name:        "otel-span-export-rate",
 							Description: "spans exported per second",
-							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter=%s"),
+							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							Query:       "sum(rate(otelcol_exporter_sent_spans{exporter=~\"^.*\"}[1m])) by (exporter)",
 							NoAlert:     true,
@@ -57,7 +57,7 @@ func OtelCollector() *monitoring.Dashboard {
 						{
 							Name:        "otel-span-failed-send-size",
 							Description: "spans that the exporter failed to send",
-							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter=%s"),
+							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							Query:       "sum(rate(otelcol_exporter_send_failed_spans{exporter=~\"^.*\"}[1m])) by (exporter)",
 							NoAlert:     true,
@@ -67,7 +67,7 @@ func OtelCollector() *monitoring.Dashboard {
 						{
 							Name:        "otel-span-queue-size",
 							Description: "spans pending to be sent",
-							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter=%s"),
+							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							Query:       "sum(rate(otelcol_exporter_queue_size{exporter=~\"^.*\"}[1m])) by (exporter)",
 							NoAlert:     true,
@@ -77,7 +77,7 @@ func OtelCollector() *monitoring.Dashboard {
 						{
 							Name:        "otel-span-queue-capacity",
 							Description: "spans max items that can be pending to be sent",
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
+							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							Query:       "sum(rate(otelcol_exporter_queue_capacity{exporter=~\"^.*\"}[1m])) by (exporter)",
 							NoAlert:     true,
@@ -95,9 +95,9 @@ func OtelCollector() *monitoring.Dashboard {
 						{
 							Name:        "otel-cpu-usage",
 							Description: "cpu usuge of the collector",
-							Panel:       monitoring.Panel().Unit(monitoring.Seconds),
+							Panel:       monitoring.Panel().Unit(monitoring.Seconds).LegendFormat("{{job}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "otelcol_process_cpu_seconds",
+							Query:       "sum(rate(otelcol_process_cpu_seconds{job=~\"^.*\"}[1m])) by (job)",
 							NoAlert:     true,
 							Interpretation: `
 								Shows the rate of spans accepted by the configured reveiver`,
@@ -105,9 +105,9 @@ func OtelCollector() *monitoring.Dashboard {
 						{
 							Name:        "otel-memory-rss",
 							Description: "memory allocated to the otel collector",
-							Panel:       monitoring.Panel().Unit(monitoring.Bytes),
+							Panel:       monitoring.Panel().Unit(monitoring.Bytes).LegendFormat("{{job}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "otelcol_process_cpu_seconds",
+							Query:       "sum(rate(otelcol_process_memory_rss{job=~\"^.*\"}[1m])) by (job)",
 							NoAlert:     true,
 							Interpretation: `
 								Shows the rate of spans accepted by the configured reveiver`,
@@ -115,9 +115,9 @@ func OtelCollector() *monitoring.Dashboard {
 						{
 							Name:        "otel-memory-usage",
 							Description: "total memory usage",
-							Panel:       monitoring.Panel().Unit(monitoring.Bytes).LegendFormat("process_memory")
+							Panel:       monitoring.Panel().Unit(monitoring.Bytes).LegendFormat("{{job}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "rate(otelcol_process_runtime_total_alloc_bytes{job=\"^.*\"})[1m])",
+							Query:       "sum(rate(otelcol_process_runtime_total_alloc_bytes{job=~\"^.*\"}[1m])) by (job)",
 							NoAlert:     true,
 							Interpretation: `
 								Shows how much memory is being used by the otel collector.
