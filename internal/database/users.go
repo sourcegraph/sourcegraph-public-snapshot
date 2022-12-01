@@ -808,8 +808,10 @@ type UsersListOptions struct {
 	// InactiveSince filters out users that have had an eventlog entry with a
 	// `timestamp` greater-than-or-equal to the given timestamp, excluding users who have never been active.
 	InactiveSince time.Time
-	// IncludeNeverActive includes users that have never had an eventlog entry if true.
-	IncludeNeverActive bool
+	// IncludeNullActive includes users that have no eventlog entry if true. Users may be in this state
+	// due to never having been active, or all events tagged to them having expires
+	// event_logs only persist for 93 days
+	IncludeNullActive bool
 
 	ExcludeSourcegraphAdmins bool // filter out users with a known Sourcegraph admin username
 
@@ -915,7 +917,7 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	}
 
 	if !opt.InactiveSince.IsZero() {
-		if opt.IncludeNeverActive {
+		if opt.IncludeNullActive {
 			conds = append(conds, sqlf.Sprintf(listUsersInactiveWithNeverActiveCond, opt.InactiveSince))
 		} else {
 			conds = append(conds, sqlf.Sprintf(listUsersInactiveWithoutNeverActiveCond, opt.InactiveSince))

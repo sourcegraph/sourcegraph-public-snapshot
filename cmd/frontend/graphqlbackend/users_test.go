@@ -164,7 +164,7 @@ func TestUsers_InactiveSince(t *testing.T) {
 	})
 }
 
-func TestUsers_IncludeNeverActive(t *testing.T) {
+func TestUsers_IncludeNullActive(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -214,8 +214,8 @@ func TestUsers_IncludeNeverActive(t *testing.T) {
 	ctx = actor.WithInternalActor(ctx)
 
 	query := `
-		query InactiveUsers($since: DateTime, $includeNeverActive: Boolean) {
-			users(inactiveSince: $since, includeNeverActive: $includeNeverActive) {
+		query InactiveUsers($since: DateTime, $includeNullActive: Boolean) {
+			users(inactiveSince: $since, includeNullActive: $includeNullActive) {
 				nodes { username }
 				totalCount
 			}
@@ -227,8 +227,8 @@ func TestUsers_IncludeNeverActive(t *testing.T) {
 			Context: ctx,
 			Schema:  schema,
 			Query:   query,
-			// This returns all users because includeNeverActive only has an effect if inactiveSince is set.
-			Variables: map[string]any{"includeNeverActive": true},
+			// This returns all users because IncludeNullActive only has an effect if inactiveSince is set.
+			Variables: map[string]any{"includeNullActive": true},
 			ExpectedResult: `
 			{"users": { "nodes": [
 				{ "username": "user-1" },
@@ -243,8 +243,8 @@ func TestUsers_IncludeNeverActive(t *testing.T) {
 			Context: ctx,
 			Schema:  schema,
 			Query:   query,
-			// This returns all users because includeNeverActive only has an effect if inactiveSince is set.
-			Variables: map[string]any{"includeNeverActive": false},
+			// This returns all users because IncludeNullActive only has an effect if inactiveSince is set.
+			Variables: map[string]any{"includeNullActive": false},
 			// Should return all users, because `inactiveSince` is not set
 			ExpectedResult: `
 			{"users": { "nodes": [
@@ -276,7 +276,7 @@ func TestUsers_IncludeNeverActive(t *testing.T) {
 			Context:   ctx,
 			Schema:    schema,
 			Query:     query,
-			Variables: map[string]any{"since": daysAgo(3).Format(time.RFC3339Nano), "includeNeverActive": true},
+			Variables: map[string]any{"since": daysAgo(3).Format(time.RFC3339Nano), "includeNullActive": true},
 			ExpectedResult: `
 			{"users": { "nodes": [
 				{ "username": "user-1" },
@@ -289,7 +289,7 @@ func TestUsers_IncludeNeverActive(t *testing.T) {
 			Context:   ctx,
 			Schema:    schema,
 			Query:     query,
-			Variables: map[string]any{"since": daysAgo(3).Format(time.RFC3339Nano), "includeNeverActive": false},
+			Variables: map[string]any{"since": daysAgo(3).Format(time.RFC3339Nano), "includeNullActive": false},
 			ExpectedResult: `
 			{"users": { "nodes": [
 				{ "username": "user-1" },
@@ -301,7 +301,7 @@ func TestUsers_IncludeNeverActive(t *testing.T) {
 			Context:   ctx,
 			Schema:    schema,
 			Query:     query,
-			Variables: map[string]any{"since": daysAgo(0).Format(time.RFC3339Nano), "includeNeverActive": true},
+			Variables: map[string]any{"since": daysAgo(0).Format(time.RFC3339Nano), "includeNullActive": true},
 			ExpectedResult: `
 			{"users": { "nodes": [
 				{ "username": "user-1" },
