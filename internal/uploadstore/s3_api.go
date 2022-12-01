@@ -17,6 +17,8 @@ type s3API interface {
 	CompleteMultipartUpload(ctx context.Context, input *s3.CompleteMultipartUploadInput) (*s3.CompleteMultipartUploadOutput, error)
 	CreateBucket(ctx context.Context, input *s3.CreateBucketInput) (*s3.CreateBucketOutput, error)
 	PutBucketLifecycleConfiguration(ctx context.Context, input *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error)
+	DeleteObjects(ctx context.Context, params *s3.DeleteObjectsInput, optFns ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error)
+	NewListObjectsV2Paginator(input *s3.ListObjectsV2Input) *s3.ListObjectsV2Paginator
 }
 
 type s3Uploader interface {
@@ -67,6 +69,14 @@ func (s *s3APIShim) UploadPartCopy(ctx context.Context, input *s3.UploadPartCopy
 
 func (s *s3APIShim) CompleteMultipartUpload(ctx context.Context, input *s3.CompleteMultipartUploadInput) (*s3.CompleteMultipartUploadOutput, error) {
 	return s.Client.CompleteMultipartUpload(ctx, input)
+}
+
+func (s *s3APIShim) DeleteObjects(ctx context.Context, params *s3.DeleteObjectsInput, optFns ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error) {
+	return s.Client.DeleteObjects(ctx, params, optFns...)
+}
+
+func (s *s3APIShim) NewListObjectsV2Paginator(input *s3.ListObjectsV2Input) *s3.ListObjectsV2Paginator {
+	return s3.NewListObjectsV2Paginator(s.Client, input)
 }
 
 func (s *s3UploaderShim) Upload(ctx context.Context, input *s3.PutObjectInput) error {

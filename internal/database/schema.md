@@ -1956,6 +1956,7 @@ Associates commits with the closest ancestor commit with usable upload data. Tog
  name    | text    |           | not null | 
  version | text    |           |          | 
  dump_id | integer |           | not null | 
+ manager | text    |           | not null | ''::text
 Indexes:
     "lsif_packages_pkey" PRIMARY KEY, btree (id)
     "lsif_packages_dump_id" btree (dump_id)
@@ -1968,6 +1969,8 @@ Foreign-key constraints:
 Associates an upload with the set of packages they provide within a given packages management scheme.
 
 **dump_id**: The identifier of the upload that provides the package.
+
+**manager**: The package manager name.
 
 **name**: The package name.
 
@@ -1984,6 +1987,7 @@ Associates an upload with the set of packages they provide within a given packag
  name    | text    |           | not null | 
  version | text    |           |          | 
  dump_id | integer |           | not null | 
+ manager | text    |           | not null | ''::text
 Indexes:
     "lsif_references_pkey" PRIMARY KEY, btree (id)
     "lsif_references_dump_id" btree (dump_id)
@@ -1996,6 +2000,8 @@ Foreign-key constraints:
 Associates an upload with the set of packages they require within a given packages management scheme.
 
 **dump_id**: The identifier of the upload that references the package.
+
+**manager**: The package manager name.
 
 **name**: The package name.
 

@@ -160,7 +160,7 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
             </Tooltip>
             <PopoverContent
                 position={Position.bottomStart}
-                className={classNames('a11y-ignore', styles.menu)}
+                className={classNames('a11y-ignore overflow-hidden', styles.menu)}
                 data-testid="dropdown-content"
                 targetPadding={popoverPadding}
             >

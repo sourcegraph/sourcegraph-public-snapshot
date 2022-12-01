@@ -2737,7 +2737,8 @@ CREATE TABLE lsif_packages (
     scheme text NOT NULL,
     name text NOT NULL,
     version text,
-    dump_id integer NOT NULL
+    dump_id integer NOT NULL,
+    manager text DEFAULT ''::text NOT NULL
 );
 
 COMMENT ON TABLE lsif_packages IS 'Associates an upload with the set of packages they provide within a given packages management scheme.';
@@ -2749,6 +2750,8 @@ COMMENT ON COLUMN lsif_packages.name IS 'The package name.';
 COMMENT ON COLUMN lsif_packages.version IS 'The package version.';
 
 COMMENT ON COLUMN lsif_packages.dump_id IS 'The identifier of the upload that provides the package.';
+
+COMMENT ON COLUMN lsif_packages.manager IS 'The package manager name.';
 
 CREATE SEQUENCE lsif_packages_id_seq
     START WITH 1
@@ -2764,7 +2767,8 @@ CREATE TABLE lsif_references (
     scheme text NOT NULL,
     name text NOT NULL,
     version text,
-    dump_id integer NOT NULL
+    dump_id integer NOT NULL,
+    manager text DEFAULT ''::text NOT NULL
 );
 
 COMMENT ON TABLE lsif_references IS 'Associates an upload with the set of packages they require within a given packages management scheme.';
@@ -2776,6 +2780,8 @@ COMMENT ON COLUMN lsif_references.name IS 'The package name.';
 COMMENT ON COLUMN lsif_references.version IS 'The package version.';
 
 COMMENT ON COLUMN lsif_references.dump_id IS 'The identifier of the upload that references the package.';
+
+COMMENT ON COLUMN lsif_references.manager IS 'The package manager name.';
 
 CREATE SEQUENCE lsif_references_id_seq
     START WITH 1

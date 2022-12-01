@@ -1,4 +1,4 @@
-package lucky
+package smartsearch
 
 import (
 	"strings"

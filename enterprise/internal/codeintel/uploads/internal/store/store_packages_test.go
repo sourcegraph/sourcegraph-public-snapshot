@@ -71,6 +71,7 @@ func insertPackages(t testing.TB, store Store, packages []shared.Package) {
 		if err := store.UpdatePackages(context.Background(), pkg.DumpID, []precise.Package{
 			{
 				Scheme:  pkg.Scheme,
+				Manager: pkg.Manager,
 				Name:    pkg.Name,
 				Version: pkg.Version,
 			},
@@ -87,6 +88,7 @@ func insertPackageReferences(t testing.TB, store Store, packageReferences []shar
 			{
 				Package: precise.Package{
 					Scheme:  packageReference.Scheme,
+					Manager: packageReference.Manager,
 					Name:    packageReference.Name,
 					Version: packageReference.Version,
 				},

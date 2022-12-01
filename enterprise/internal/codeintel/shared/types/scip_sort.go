@@ -11,9 +11,9 @@ import (
 // occurrences are properly enclosed by later occurrences.
 func FindOccurrences(occurrences []*scip.Occurrence, targetLine, targetCharacter int32) []*scip.Occurrence {
 	var filtered []*scip.Occurrence
-	for _, o := range occurrences {
-		if compareRanges(o.Range, targetLine, targetCharacter) == 0 {
-			filtered = append(filtered, o)
+	for _, occurrence := range occurrences {
+		if compareRanges(occurrence.Range, targetLine, targetCharacter) == 0 {
+			filtered = append(filtered, occurrence)
 		}
 	}
 
