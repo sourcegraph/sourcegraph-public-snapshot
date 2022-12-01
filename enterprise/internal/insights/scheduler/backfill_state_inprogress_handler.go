@@ -236,7 +236,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, job *
 			return err
 		}
 
-		err = h.seriesReadComplete.SetSeriesBackfillComplete(ctx, series.SeriesID, h.clock.Now())
+		err = h.seriesReadComplete.SetSeriesBackfillComplete(ctx, series.SeriesID, itr.CompletedAt)
 		if err != nil {
 			return err
 		}
