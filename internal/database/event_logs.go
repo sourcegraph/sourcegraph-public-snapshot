@@ -477,6 +477,9 @@ type CommonUsageOptions struct {
 	// are mostly actions taken by signed-out users.
 	ExcludeNonActiveUsers bool
 	// Exclude Sourcegraph (employee) admins.
+	//
+	// Deprecated: Use ExcludeSourcegraphOperators instead. If you have to use this,
+	// then set both fields with the same value at the same time.
 	ExcludeSourcegraphAdmins bool
 	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
 	// user accounts.

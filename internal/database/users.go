@@ -813,7 +813,11 @@ type UsersListOptions struct {
 	// `timestamp` greater-than-or-equal to the given timestamp.
 	InactiveSince time.Time
 
-	ExcludeSourcegraphAdmins bool // filter out users with a known Sourcegraph admin username
+	// Filter out users with a known Sourcegraph admin username
+	//
+	// Deprecated: Use ExcludeSourcegraphOperators instead. If you have to use this,
+	// then set both fields with the same value at the same time.
+	ExcludeSourcegraphAdmins bool
 	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
 	// user accounts.
 	ExcludeSourcegraphOperators bool
