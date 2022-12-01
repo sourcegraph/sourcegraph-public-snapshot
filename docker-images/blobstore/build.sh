@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-cd "$(dirname "${BASH_SOURCE[0]}")"
-set -ex
 
-docker build --no-cache -t "${IMAGE:-"sourcegraph/blobstore"}" . \
-  --progress=plain \
-  --build-arg COMMIT_SHA \
-  --build-arg DATE \
-  --build-arg VERSION
+set -ex
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+# Retag the release
+S3PROXY_RELEASE="sha-ba0fd6d"
+docker pull andrewgaul/s3proxy:$S3PROXY_RELEASE
+docker rmi "$IMAGE" || true
+docker tag andrewgaul/s3proxy:$S3PROXY_RELEASE "$IMAGE"
