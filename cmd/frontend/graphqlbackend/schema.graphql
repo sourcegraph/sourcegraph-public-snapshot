@@ -474,6 +474,10 @@ type Mutation {
         """
         originalReferrer: String
         """
+        The session referrer for a user
+        """
+        sessionReferrer: String
+        """
         Device session ID to identify the user's session for analytics.
         """
         deviceSessionID: String
@@ -850,6 +854,10 @@ input Event {
     The original referrer for a user
     """
     originalReferrer: String
+    """
+    The session referrer for a user
+    """
+    sessionReferrer: String
     """
     Device session ID to identify the user's session for analytics.
     """

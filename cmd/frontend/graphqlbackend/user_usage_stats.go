@@ -88,6 +88,7 @@ type Event struct {
 	CohortID         *string
 	Referrer         *string
 	OriginalReferrer *string
+	SessionReferrer  *string
 	DeviceSessionID  *string
 	PublicArgument   *string
 	UserProperties   *string
@@ -178,6 +179,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			CohortID:         args.CohortID,
 			Referrer:         args.Referrer,
 			OriginalReferrer: args.OriginalReferrer,
+			SessionReferrer:  args.SessionReferrer,
 			PublicArgument:   publicArgumentPayload,
 			UserProperties:   userPropertiesPayload,
 			DeviceID:         args.DeviceID,
