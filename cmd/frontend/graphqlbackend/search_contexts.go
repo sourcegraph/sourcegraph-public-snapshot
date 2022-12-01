@@ -100,15 +100,18 @@ type DeleteSearchContextArgs struct {
 }
 
 type CreateSearchContextStarArgs struct {
-	ID graphql.ID
+	SearchContextID graphql.ID
+	UserID          graphql.ID
 }
 
 type DeleteSearchContextStarArgs struct {
-	ID graphql.ID
+	SearchContextID graphql.ID
+	UserID          graphql.ID
 }
 
 type SetDefaultSearchContextArgs struct {
-	ID graphql.ID
+	SearchContextID graphql.ID
+	UserID          graphql.ID
 }
 
 type SearchContextBySpecArgs struct {
