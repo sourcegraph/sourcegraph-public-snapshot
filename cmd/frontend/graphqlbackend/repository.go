@@ -631,7 +631,7 @@ func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
 	if err != nil {
-		return &EmptyResponse{}, nil
+		return &EmptyResponse{}, err
 	}
 
 	return &EmptyResponse{}, r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
@@ -653,7 +653,7 @@ func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
 	if err != nil {
-		return &EmptyResponse{}, nil
+		return &EmptyResponse{}, err
 	}
 
 	_, err = r.db.RepoKVPs().Update(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
@@ -675,7 +675,7 @@ func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
 	if err != nil {
-		return &EmptyResponse{}, nil
+		return &EmptyResponse{}, err
 	}
 
 	return &EmptyResponse{}, r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
