@@ -183,7 +183,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     // const afterTosAccepted = useCallback(() => {
     //     setTosAccepted(true)
     // }, [])
-    
+
     useEffect(() => {
         if (
             props.isSourcegraphDotCom &&
