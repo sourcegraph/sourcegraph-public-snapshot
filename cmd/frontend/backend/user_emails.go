@@ -250,9 +250,7 @@ func (userEmails) SetVerified(ctx context.Context, logger log.Logger, db databas
 // ResendVerificationEmail attempts to re-send the verification e-mail for the
 // given user and email combination. If an e-mail sent within the last minute we
 // do nothing.
-func (userEmails) ResendVerificationEmail(ctx context.Context, logger log.Logger, db database.DB, userID int32, email string, now time.Time) error {
-	logger = logger.Scoped("UserEmails.ResendVerificationEmail", "handles re-sending verification e-mails")
-
+func (userEmails) ResendVerificationEmail(ctx context.Context, db database.DB, userID int32, email string, now time.Time) error {
 	// 🚨 SECURITY: Only the authenticated user and site admins can resend
 	// verification email for their accounts.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {

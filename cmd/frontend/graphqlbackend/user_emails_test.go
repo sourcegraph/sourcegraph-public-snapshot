@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func init() {
@@ -138,7 +139,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 					})
 					userEmails.SetVerifiedFunc.SetDefaultHook(func(ctx context.Context, i int32, s string, b bool) error {
 						// We just care at this point that we passed user authorization
-						return fmt.Errorf("short circuit")
+						return errors.Errorf("short circuit")
 					})
 				},
 				wantErr: "short circuit",

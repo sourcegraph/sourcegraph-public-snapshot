@@ -373,22 +373,22 @@ func TestUserEmailsResendVerificationEmail(t *testing.T) {
 	assert.NoError(t, db.UserEmails().SetLastVerification(ctx, createdUser.ID, email, verificationCode, now))
 
 	// Unauthenticated user should fail
-	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, logger, db, createdUser.ID, email, now))
+	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, db, createdUser.ID, email, now))
 	// Different user should fail
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 99})
-	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, logger, db, createdUser.ID, email, now))
+	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, db, createdUser.ID, email, now))
 
 	// As site admin (or internal actor) should pass
 	ctx = actor.WithInternalActor(ctx)
 	// Set in the future so that we can resend
 	now = now.Add(5 * time.Minute)
-	assert.NoError(t, UserEmails.ResendVerificationEmail(ctx, logger, db, createdUser.ID, email, now))
+	assert.NoError(t, UserEmails.ResendVerificationEmail(ctx, db, createdUser.ID, email, now))
 
 	// Trying to send again too soon should fail
-	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, logger, db, createdUser.ID, email, now.Add(1*time.Second)))
+	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, db, createdUser.ID, email, now.Add(1*time.Second)))
 
 	// Invalid e-mail
-	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, logger, db, createdUser.ID, "another@example.com", now.Add(5*time.Minute)))
+	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, db, createdUser.ID, "another@example.com", now.Add(5*time.Minute)))
 
 	// TODO: Set as already verified
 	// TODO: Confirm Resend is a noop

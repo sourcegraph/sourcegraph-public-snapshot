@@ -155,7 +155,7 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *rese
 		return nil, err
 	}
 
-	if err := backend.UserEmails.ResendVerificationEmail(ctx, r.logger, r.db, userID, args.Email, timeNow()); err != nil {
+	if err := backend.UserEmails.ResendVerificationEmail(ctx, r.db, userID, args.Email, timeNow()); err != nil {
 		return nil, err
 	}
 
