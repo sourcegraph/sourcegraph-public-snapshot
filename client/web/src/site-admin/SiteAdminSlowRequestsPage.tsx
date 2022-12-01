@@ -1,14 +1,12 @@
 import React, { ReactNode, useCallback, useEffect, useState } from 'react'
 
-import { mdiChevronDown } from '@mdi/js'
+import { mdiChevronDown, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import { RouteComponentProps } from 'react-router'
-import { of } from 'rxjs'
 import { delay, map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { useQuery } from '@sourcegraph/http-client/src'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
@@ -35,7 +33,7 @@ import { PageTitle } from '../components/PageTitle'
 import { Timestamp } from '../components/time/Timestamp'
 import { SlowRequestsResult, SlowRequestsVariables } from '../graphql-operations'
 
-import { SLOW_REQUESTS, SLOW_REQUESTS_PAGE_POLL_INTERVAL } from './backend'
+import { SLOW_REQUESTS } from './backend'
 
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
 
@@ -84,13 +82,18 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
     }, [telemetryService])
 
     const querySlowRequests = useCallback(
-        (args: FilteredConnectionQueryArguments) =>
+        (args: FilteredConnectionQueryArguments & { failed?: boolean} ) =>
             requestGraphQL<SlowRequestsResult, SlowRequestsVariables>(SLOW_REQUESTS, {
                 after: args.after ?? null,
                 query: args.query ?? null,
             }).pipe(
                 map(dataOrThrowErrors),
-                map(data => data.slowRequests)
+                map(data => {
+                  data.slowRequests.nodes = data.slowRequests.nodes?.filter(request =>  
+                    (!args.query || matchesString(request, args.query)) && args.failed !== isSuccessful(request)
+                  )
+                  return data.slowRequests
+                })
             ),
         []
     )
@@ -105,7 +108,8 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
                     <>
                         This is the log of recent slow GraphQL requests received by the Sourcegraph instance. Handy for
                         seeing what's happening between clients and our API.{' '}
-                        <strong>The list updates every five seconds.</strong>
+
+                        <br /><br />The <Icon aria-label="Copy cURL command" svgPath={mdiContentCopy} /> button will copy the GraphQL request as a cURL command in your clipboard. You will need to have $ACCESS_TOKEN set in your environment or to replace it in the copied command.
                     </>
                 }
                 className="mb-3"
@@ -156,6 +160,14 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
         <React.Fragment key={node.id}>
             <span className={styles.separator} />
             <div className="flex-bounded">
+                <Timestamp date={node.start} noAbout={true} strict={true} />
+            </div>
+            <div>
+                <Tooltip content={'Repo Name: ' + node.repoName}>
+                    <code>{shortenRepoName(node.repoName)}</code>
+                </Tooltip>
+            </div>
+            <div>
                 <Tooltip content="Duration">
                     <span>
                         {roundedSecond.toFixed(2)} second{roundedSecond === 1 ? '' : 's'}
@@ -168,25 +180,17 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
                 </Tooltip>
             </div>
             <div>
-                <Tooltip content={'Repo Name: ' + node.repoName}>
-                    <span>{shortenRepoName(node.repoName)}</span>
-                </Tooltip>
-            </div>
-            <div>
                 <Tooltip content={'Filepath: ' + node.filepath}>
-                    <code>{ellipsis(node.filepath)}</code>
+                    <code>{ellipsis(node.filepath, 30)}</code>
                 </Tooltip>
-            </div>
-            <div>
-                <Timestamp date={node.start} noAbout={true} />
             </div>
             <div className={classNames('d-flex flex-row')}>
                 <div>
                     <Tooltip
-                        content={copied ? 'cURL command copied' : 'Copy cURL command (remember to edit ACCESS_TOKEN)'}
+                        content={copied ? 'cURL command copied' : 'Copy cURL command (remember to set $ACCESS_TOKEN)'}
                     >
                         <Button className="ml-2" onClick={() => copyToClipboard(buildCurlCommand(node))}>
-                            cURL
+                            <Icon aria-label="Copy cURL command" svgPath={mdiContentCopy} />
                         </Button>
                     </Tooltip>
                 </div>
@@ -256,11 +260,11 @@ function matchesString(request: SlowRequest, query: string): boolean {
     )
 }
 
-function ellipsis(str: string): string {
-    if (str.length <= 60) {
+function ellipsis(str: string, len: number): string {
+    if (str.length <= len) {
         return str
     } else {
-        return '...' + str.slice(str.length - 50, str.length)
+        return '...' + str.slice(str.length - len, str.length)
     }
 }
 
@@ -269,7 +273,7 @@ function shortenRepoName(repoName: string): string {
 }
 
 function buildCurlCommand(request: SlowRequest): string {
-    const headers = `-H 'Authorization: token YOUR_TOKEN'`
+    const headers = `-H 'Authorization: token'$ACCESS_TOKEN`
     const body = `{"query": "${request.query}", "variables": ${request.variables}}`.replaceAll('\n', '')
     return `curl -X POST ${headers} -d '${body}' '${window.location.protocol}//${window.location.host}/.api/graphql?${request.name}'`
 }

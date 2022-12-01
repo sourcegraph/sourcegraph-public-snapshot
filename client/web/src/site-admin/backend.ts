@@ -309,8 +309,6 @@ export const SLOW_REQUESTS = gql`
     }
 `
 
-export const SLOW_REQUESTS_PAGE_POLL_INTERVAL = 5000
-
 export const UPDATE_MIRROR_REPOSITORY = gql`
     mutation UpdateMirrorRepository($repository: ID!) {
         updateMirrorRepository(repository: $repository) {

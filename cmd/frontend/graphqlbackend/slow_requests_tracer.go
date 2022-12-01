@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -48,11 +47,10 @@ func captureSlowRequest(ctx context.Context, logger log.Logger, req *types.SlowR
 
 // getSlowRequestsAfter returns the last limit slow requests, starting at the request whose ID is set to after.
 func getSlowRequestsAfter(ctx context.Context, list *rcache.RecentList, after int, limit int) ([]*types.SlowRequest, error) {
-	raws, err := list.Slice(ctx, after, after+limit)
+	raws, err := list.Slice(ctx, after, after+limit-1)
 	if err != nil {
 		return nil, err
 	}
-	println(",,,,,,,", after, after+limit, len(raws))
 
 	reqs := make([]*types.SlowRequest, 0, len(raws))
 	for i, raw := range raws {
@@ -61,7 +59,6 @@ func getSlowRequestsAfter(ctx context.Context, list *rcache.RecentList, after in
 			return nil, err
 		}
 		req.ID = strconv.Itoa(i + after)
-		println(">>>>", req.ID, fmt.Sprintf("%v", req.Start))
 		reqs = append(reqs, &req)
 	}
 	return reqs, nil
@@ -79,9 +76,10 @@ type slowRequestResolver struct {
 type slowRequestConnectionResolver struct {
 	after string
 
-	err  error
-	once sync.Once
-	reqs []*types.SlowRequest
+	err     error
+	once    sync.Once
+	reqs    []*types.SlowRequest
+	perPage int
 }
 
 func (r *schemaResolver) SlowRequests(ctx context.Context, args *slowRequestsArgs) (*slowRequestConnectionResolver, error) {
@@ -99,7 +97,8 @@ func (r *schemaResolver) SlowRequests(ctx context.Context, args *slowRequestsArg
 		after = "0"
 	}
 	return &slowRequestConnectionResolver{
-		after: after,
+		after:   after,
+		perPage: 50,
 	}, nil
 }
 
@@ -109,7 +108,7 @@ func (r *slowRequestConnectionResolver) fetch(ctx context.Context) ([]*types.Slo
 		if err != nil {
 			r.err = err
 		}
-		r.reqs, r.err = getSlowRequestsAfter(ctx, slowRequestRedisRecentList, n, 5)
+		r.reqs, r.err = getSlowRequestsAfter(ctx, slowRequestRedisRecentList, n, r.perPage)
 		println("wfpwffeeeeee--------", len(r.reqs))
 	})
 	return r.reqs, r.err
@@ -147,8 +146,7 @@ func (r *slowRequestConnectionResolver) PageInfo(ctx context.Context) (*graphqlu
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf(">>>>> %v %v %v", r.after, n, total)
-	if int32(n+5) >= total {
+	if int32(n+r.perPage) >= total {
 		return graphqlutil.HasNextPage(false), nil
 	} else {
 		return graphqlutil.NextPageCursor(string(relay.MarshalID("SlowRequest", reqs[len(reqs)-1].ID))), nil
