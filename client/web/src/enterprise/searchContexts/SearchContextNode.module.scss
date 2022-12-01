@@ -2,12 +2,14 @@
 
 .row td {
     padding: 0.25rem 0;
-
-    &:not(:last-of-type) {
-        border-bottom: 1px solid var(--border-color-2);
-    }
+    border-bottom: 1px solid var(--border-color-2);
 
     .spec {
         font-weight: 500;
     }
+}
+
+.button {
+    color: var(--icon-color);
+    font-size: 1rem;
 }
