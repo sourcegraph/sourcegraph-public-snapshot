@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useRef, useState, useEffect } from 'react'
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { matchPath, Redirect, Route, RouteComponentProps, Switch } from 'react-router'
@@ -183,19 +183,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     // const afterTosAccepted = useCallback(() => {
     //     setTosAccepted(true)
     // }, [])
-
-    // Remove trailing slash (which is never valid in any of our URLs).
-    if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
-        return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
-    }
-
-    const context: LayoutRouteComponentProps<any> = {
-        ...props,
-        ...themeProps,
-        ...breadcrumbProps,
-        isMacPlatform: isMacPlatform(),
-    }
-
+    
     useEffect(() => {
         if (
             props.isSourcegraphDotCom &&
@@ -210,6 +198,18 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
             return
         }
     }, [props.authenticatedUser, props.isSourcegraphDotCom])
+
+    // Remove trailing slash (which is never valid in any of our URLs).
+    if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
+        return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
+    }
+
+    const context: LayoutRouteComponentProps<any> = {
+        ...props,
+        ...themeProps,
+        ...breadcrumbProps,
+        isMacPlatform: isMacPlatform(),
+    }
 
     return (
         <div
