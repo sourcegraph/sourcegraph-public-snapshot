@@ -24443,7 +24443,7 @@ Query: `rate(src_telemetry_job_total{op="SendEvents"}[1h]) / on() group_right() 
 
 To see this dashboard, visit `/-/debug/grafana/d/otel-collector/otel-collector` on your Sourcegraph instance.
 
-### Open Telemetry Collector: Export failures
+### Open Telemetry Collector: Receivers
 
 #### otel-collector: otel-span-receive-rate
 
@@ -24460,17 +24460,17 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(otelcol_receiver_accepted_spans[1m])) by (receiver)`
+Query: `sum(rate(otelcol_receiver_accepted_spans{receiver=~"^.*"}[1m])) by (receiver)`
 
 </details>
 
 <br />
 
-#### otel-collector: otel-span-export-rate
+#### otel-collector: otel-span-refused
 
-<p class="subtitle">Spans exported per second</p>
+<p class="subtitle">Spans that the receiver refused</p>
 
-								Shows the rate of spans being sent by the exporter
+								Shows the rate of spans accepted by the configured reveiver
 
 This panel has no related alerts.
 
@@ -24481,7 +24481,51 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(otelcol_exporter_sent_spans[1m])) by (exporter)`
+Query: `sum(rate(otelcol_receiver_refused_spans{receiver=~"^.*.*"}[1m])) by (receiver)`
+
+</details>
+
+<br />
+
+### Open Telemetry Collector: Exporters
+
+#### otel-collector: otel-span-export-rate
+
+<p class="subtitle">Spans exported per second</p>
+
+								Shows the rate of spans being sent by the exporter
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(otelcol_exporter_sent_spans{exporter=~"^.*"}[1m])) by (exporter)`
+
+</details>
+
+<br />
+
+#### otel-collector: otel-span-failed-send-size
+
+<p class="subtitle">Spans that the exporter failed to send</p>
+
+								Shows the rate of spans failed to be sent by the configured reveiver. A number higher than 0 for a long period can indicate a problem with the exporter configuration or with the service that is being exported too
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100101` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(otelcol_exporter_send_failed_spans{exporter=~"^.*"}[1m])) by (exporter)`
 
 </details>
 
@@ -24489,20 +24533,110 @@ Query: `sum(rate(otelcol_exporter_sent_spans[1m])) by (exporter)`
 
 #### otel-collector: otel-span-queue-size
 
-<p class="subtitle">Exporter queue size</p>
+<p class="subtitle">Spans pending to be sent</p>
 
-								Shows the rate of spans accepted by the configured reveiver
+								Indicates the amount of spans that are in the queue to be sent (exported). A high queue count might indicate a high volume of spans or a problem with the receiving service
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100002` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100102` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(otelcol_exporter_sent_spans[1m])) by (exporter)`
+Query: `sum(rate(otelcol_exporter_queue_size{exporter=~"^.*"}[1m])) by (exporter)`
+
+</details>
+
+<br />
+
+#### otel-collector: otel-span-queue-capacity
+
+<p class="subtitle">Spans max items that can be pending to be sent</p>
+
+								Indicates the amount of spans that are in the queue to be sent (exported). A high queue count might indicate a high volume of spans or a problem with the receiving service
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100103` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(otelcol_exporter_queue_capacity{exporter=~"^.*"}[1m])) by (exporter)`
+
+</details>
+
+<br />
+
+### Open Telemetry Collector: Collector resource usage
+
+#### otel-collector: otel-cpu-usage
+
+<p class="subtitle">Cpu usuge of the collector</p>
+
+								Shows the rate of spans accepted by the configured reveiver
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100200` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `otelcol_process_cpu_seconds`
+
+</details>
+
+<br />
+
+#### otel-collector: otel-memory-rss
+
+<p class="subtitle">Memory allocated to the otel collector</p>
+
+								Shows the rate of spans accepted by the configured reveiver
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100201` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `otelcol_process_cpu_seconds`
+
+</details>
+
+<br />
+
+#### otel-collector: otel-memory-usage
+
+<p class="subtitle">Total memory usage</p>
+
+								Shows how much memory is being used by the otel collector.
+
+								* High memory usage might indicate thad the configured pipeline is keeping a lot of spans in memory for processing
+								* Spans failing to be sent and the exporter is configured to retry
+								* A high bacth count by using a batch processor
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100202` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `otelcol_process_runtime_total_alloc_bytes`
 
 </details>
 
