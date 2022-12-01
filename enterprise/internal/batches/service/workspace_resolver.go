@@ -195,7 +195,7 @@ func findIgnoredRepositories(ctx context.Context, tx *store.Store, gitserverClie
 		go func(in chan *types.Repo, out chan result) {
 			defer wg.Done()
 			for repo := range in {
-				meta, err := GetRepoMetadata(ctx, tx, gitserverClient, repo)
+				meta, err := getRepoMetadata(ctx, tx, gitserverClient, repo)
 				if err != nil {
 					out <- result{repo, false, err}
 				} else {

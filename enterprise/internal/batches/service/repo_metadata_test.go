@@ -83,7 +83,7 @@ func TestGetRepoMetadata(t *testing.T) {
 
 		t.Run("successful, not ignored", func(t *testing.T) {
 			for _, repo := range []*types.Repo{rs[0], unsupported[0]} {
-				meta, err := GetRepoMetadata(ctx, s, client, repo)
+				meta, err := getRepoMetadata(ctx, s, client, repo)
 				assert.NoError(t, err)
 				assert.NotNil(t, meta)
 				assert.False(t, meta.Ignored)
@@ -91,7 +91,7 @@ func TestGetRepoMetadata(t *testing.T) {
 		})
 
 		t.Run("successful, ignored", func(t *testing.T) {
-			meta, err := GetRepoMetadata(ctx, s, client, rs[3])
+			meta, err := getRepoMetadata(ctx, s, client, rs[3])
 			assert.NoError(t, err)
 			assert.NotNil(t, meta)
 			assert.True(t, meta.Ignored)
@@ -99,7 +99,7 @@ func TestGetRepoMetadata(t *testing.T) {
 
 		t.Run("failures", func(t *testing.T) {
 			for _, repo := range []*types.Repo{rs[1], rs[2], rs[4]} {
-				meta, err := GetRepoMetadata(ctx, s, client, repo)
+				meta, err := getRepoMetadata(ctx, s, client, repo)
 				assert.Error(t, err)
 				assert.Nil(t, meta)
 			}
