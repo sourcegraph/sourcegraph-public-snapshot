@@ -27,10 +27,7 @@ type Databases struct {
 	CodeIntelDB codeintelshared.CodeIntelDB
 }
 
-// GetServices creates or returns an already-initialized codeintel service collection.
-// If the service collection is not yet initialized, a new one will be constructed using
-// the given database handles.
-func GetServices(deps Databases) (Services, error) {
+func NewServices(deps Databases) (Services, error) {
 	db, codeIntelDB := deps.DB, deps.CodeIntelDB
 	gitserverClient := gitserver.New(db, scopedContext("gitserver"))
 
