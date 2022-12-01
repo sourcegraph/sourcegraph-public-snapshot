@@ -2720,13 +2720,14 @@ Referenced by:
 
 # Table "public.repo_files"
 ```
-    Column    |  Type   | Collation | Nullable |                Default                 
---------------+---------+-----------+----------+----------------------------------------
- id           | integer |           | not null | nextval('repo_files_id_seq'::regclass)
- directory_id | integer |           | not null | 
- version_id   | integer |           | not null | 
- base_name    | text    |           | not null | 
- content_id   | integer |           | not null | 
+      Column       |  Type   | Collation | Nullable |                Default                 
+-------------------+---------+-----------+----------+----------------------------------------
+ id                | integer |           | not null | nextval('repo_files_id_seq'::regclass)
+ directory_id      | integer |           | not null | 
+ version_id        | integer |           | not null | 
+ topological_order | integer |           | not null | 
+ base_name         | text    |           | not null | 
+ content_id        | integer |           | not null | 
 Indexes:
     "repo_files_pkey" PRIMARY KEY, btree (id)
     "repo_files_directory" btree (directory_id)

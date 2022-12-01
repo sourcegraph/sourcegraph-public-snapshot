@@ -17479,7 +17479,7 @@
       "Columns": [
         {
           "Name": "base_name",
-          "Index": 4,
+          "Index": 5,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
@@ -17492,7 +17492,7 @@
         },
         {
           "Name": "content_id",
-          "Index": 5,
+          "Index": 6,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "",
@@ -17522,6 +17522,19 @@
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "nextval('repo_files_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "topological_order",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",

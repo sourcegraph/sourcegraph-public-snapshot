@@ -3321,6 +3321,7 @@ CREATE TABLE repo_files (
     id integer NOT NULL,
     directory_id integer NOT NULL,
     version_id integer NOT NULL,
+    topological_order integer NOT NULL,
     base_name text NOT NULL,
     content_id integer NOT NULL
 );

@@ -34,9 +34,28 @@ CREATE TABLE IF NOT EXISTS repo_files (
     id SERIAL PRIMARY KEY,
     directory_id integer NOT NULL REFERENCES repo_directories(id) ON DELETE CASCADE DEFERRABLE,
     version_id integer NOT NULL REFERENCES repo_versions(id) ON DELETE CASCADE DEFERRABLE,
+    topological_order integer NOT NULL,
     base_name text NOT NULL,
     content_id integer NOT NULL REFERENCES repo_file_contents(id) ON DELETE CASCADE DEFERRABLE
 );
 
 CREATE INDEX IF NOT EXISTS repo_files_directory ON repo_files USING btree (directory_id);
 CREATE INDEX IF NOT EXISTS repo_files_version ON repo_files USING btree (version_id);
+
+
+-- Example of how to find all files and their specific commits reachable from given version
+-- SELECT DISTINCT ON (f.directory_id, f.base_name)
+--   f.directory_id,
+--   f.base_name,
+--   fv.external_id
+-- FROM
+--   repo_files AS f
+--   INNER JOIN repo_versions AS fv ON f.version_id = fv.id
+--   INNER JOIN repo_versions AS v ON (v.path_cover_reachability ->> fv.path_cover_color)::integer >= fv.path_cover_index
+-- WHERE
+--   v.repo_id = 1
+--   AND v.external_id = 'foo'
+-- ORDER BY
+--   f.directory_id,
+--   f.base_name,
+--   f.topological_order DESC;
