@@ -376,12 +376,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                     >
                         Experimental
                     </Badge>
-                    <Button
-                        variant="icon"
-                        onClick={() => onClose()}
-                        aria-label="Close"
-                        className={classNames('ml-auto', styles.closeButton)}
-                    >
+                    <Button variant="icon" onClick={onClose} aria-label="Close" className={styles.closeButton}>
                         <Icon aria-hidden={true} svgPath={mdiClose} />
                     </Button>
                 </div>
