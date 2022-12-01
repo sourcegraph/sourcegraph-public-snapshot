@@ -4110,11 +4110,11 @@ Query: `round(sum(increase(src_search_ranking_result_clicked_sum{type="commit"}[
 
 <br />
 
-### Frontend: Emails
+### Frontend: Email delivery
 
 #### frontend: email_delivery_failures
 
-<p class="subtitle">Emails delivery failures every 30 minutes</p>
+<p class="subtitle">Email delivery failures every 30 minutes</p>
 
 Refer to the [alerts reference](./alerts.md#frontend-email-delivery-failures) for 2 alerts related to this panel.
 
@@ -4131,22 +4131,43 @@ Query: `sum(increase(src_email_send{success="false"}[30m]))`
 
 <br />
 
-#### frontend: email_deliveries
+#### frontend: email_deliveries_by_source
 
-<p class="subtitle">Emails delivered per minute</p>
+<p class="subtitle">Emails successfully delivered every 5 minutes by source</p>
 
 Emails successfully delivered by source.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103101` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103110` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (source) (increase(src_email_send{success="true"}[1m]))`
+Query: `sum by (email_source) (increase(src_email_send{success="true"}[5m]))`
+
+</details>
+
+<br />
+
+#### frontend: email_deliveries_total
+
+<p class="subtitle">Total emails successfully delivered every minute</p>
+
+Total emails successfully delivered.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=103111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum (increase(src_email_send{success="true"}[5m]))`
 
 </details>
 
