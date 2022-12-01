@@ -8,7 +8,6 @@ import {
     InsightsDashboardNode,
     InsightsDashboardsResult,
 } from '../../../../graphql-operations'
-import { ALL_INSIGHTS_DASHBOARD } from '../../constants'
 import {
     CustomInsightDashboard,
     InsightDashboard,
@@ -104,22 +103,10 @@ interface useInsightDashboardResult {
 export function useInsightDashboard(props: useInsightDashboardProps): useInsightDashboardResult {
     const { id } = props
 
-    // Backend GQL API doesn't support non ID like values for id input
-    // Skip any get insight dashboard request in case of virtual dashboard
-    // that has non-ID like id value (id='all')
-    const isVirtualDashboardId = id === ALL_INSIGHTS_DASHBOARD.id
-    const shouldRunQuery = id && !isVirtualDashboardId
     const { data, error, loading } = useQuery<InsightsDashboardsResult>(GET_INSIGHT_DASHBOARDS_GQL, {
-        skip: !shouldRunQuery,
         variables: { id },
         fetchPolicy: 'cache-first',
     })
-
-    // If query wasn't run return null value as a sign that we couldn't find any
-    // dashboard with the current id
-    if (!shouldRunQuery) {
-        return { dashboard: null, loading, error }
-    }
 
     if (data) {
         const { insightsDashboards, currentUser } = data

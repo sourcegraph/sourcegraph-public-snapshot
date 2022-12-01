@@ -21,6 +21,7 @@ import {
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { CodeInsightsPage } from '../components'
 import { useQueryParameters } from '../hooks'
+import { encodeDashboardIdQueryParam } from '../routers.constant';
 
 import { DashboardsView } from './dashboards/dashboard-view/DashboardsView'
 
@@ -53,9 +54,9 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = props => {
             case CodeInsightsRootPageTab.Dashboards:
                 return history.push(`/insights/dashboards/${queryParamDashboardId ?? ''}`)
             case CodeInsightsRootPageTab.AllInsights:
-                return history.push(`/insights/dashboards/all?dashboardId=${dashboardId}`)
+                return history.push(encodeDashboardIdQueryParam('/insights/dashboards/all', dashboardId))
             case CodeInsightsRootPageTab.GettingStarted:
-                return history.push(`/insights/about?dashboardId=${dashboardId}`)
+                return history.push(encodeDashboardIdQueryParam('/insights/about', dashboardId))
         }
     }
 
@@ -65,6 +66,9 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = props => {
                 path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
                 actions={
                     <CodeInsightHeaderActions
+                        // Set either active dashboard from the dashboard tab param (dashboard)
+                        // or dashboard id from URL query param in case if we're on the about tab or
+                        // the all insights tab.
                         dashboardId={dashboardId ?? queryParamDashboardId}
                         telemetryService={telemetryService}
                     />
@@ -119,7 +123,7 @@ const CodeInsightHeaderActions: FC<CodeInsightHeaderActionsProps> = props => {
             </Button>
             <Button
                 as={Link}
-                to={`/insights/create?dashboardId=${dashboardId}`}
+                to={encodeDashboardIdQueryParam('/insights/create', dashboardId)}
                 variant="primary"
                 onClick={() => telemetryService.log('InsightAddMoreClick')}
             >

@@ -21,6 +21,7 @@ import {
 import { useExperimentalFeatures } from '../../../../../../stores'
 import { Insight, InsightDashboard, InsightType, isVirtualDashboard } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks'
+import { encodeDashboardIdQueryParam } from '../../../../routers.constant';
 import { ConfirmDeleteModal } from '../../../modals/ConfirmDeleteModal'
 import { ShareLinkModal } from '../../../modals/ShareLinkModal/ShareLinkModal'
 
@@ -47,14 +48,9 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
     const [showShareModal, setShowShareModal] = useState(false)
 
     const { insight: insightPermissions } = useUiFeatures()
-    const menuPermissions = insightPermissions.getContextActionsPermissions(insight)
-
-    const insightID = insight.id
-    const editUrl = currentDashboard?.id
-        ? `/insights/edit/${insightID}?dashboardId=${currentDashboard.id}`
-        : `/insights/edit/${insightID}`
-
     const features = useExperimentalFeatures()
+
+    const menuPermissions = insightPermissions.getContextActionsPermissions(insight)
     const showQuickFix = insight.title.includes('[quickfix]') && features?.goCodeCheckerTemplates
 
     const quickFixUrl =
@@ -87,14 +83,14 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                         </MenuButton>
                         <MenuList
                             position={Position.bottomStart}
-                            data-testid={`context-menu.${insightID}`}
+                            data-testid={`context-menu.${insight.id}`}
                             onKeyDown={event => event.stopPropagation()}
                         >
                             <MenuLink
                                 as={Link}
                                 data-testid="InsightContextMenuEditLink"
                                 className={styles.item}
-                                to={editUrl}
+                                to={encodeDashboardIdQueryParam(`/insights/edit/${insight.id}`, currentDashboard?.id)}
                             >
                                 Edit
                             </MenuLink>

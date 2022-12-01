@@ -7,6 +7,7 @@ import { Button, Link, Card, Tooltip, Icon } from '@sourcegraph/wildcard'
 import { ALL_INSIGHTS_DASHBOARD } from '../../../../../../../constants'
 import { InsightDashboard } from '../../../../../../../core'
 import { useUiFeatures } from '../../../../../../../hooks'
+import { encodeDashboardIdQueryParam } from '../../../../../../../routers.constant';
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 
 import styles from './EmptyInsightDashboard.module.scss'
@@ -37,7 +38,7 @@ export const EmptyBuiltInDashboard: React.FunctionComponent<
     React.PropsWithChildren<{ dashboard: InsightDashboard }>
 > = props => (
     <section className={styles.emptySection}>
-        <Card as={Link} to={`/insights/create?dashboardId=${props.dashboard.id}`} className={styles.itemCard}>
+        <Card as={Link} to={encodeDashboardIdQueryParam('/insights/create', props.dashboard.id)} className={styles.itemCard}>
             <Icon svgPath={mdiPlus} inline={false} aria-hidden={true} height="2rem" width="2rem" />
             <span>Create an insight</span>
         </Card>
@@ -62,27 +63,30 @@ export const EmptySettingsBasedDashboard: React.FunctionComponent<
     const {
         dashboard: { getAddRemoveInsightsPermission },
     } = useUiFeatures()
-    const addRemoveInsightPermissions = getAddRemoveInsightsPermission(dashboard)
 
     return (
         <section className={styles.emptySection}>
-            <Button
-                type="button"
-                disabled={addRemoveInsightPermissions.disabled}
-                onClick={onAddInsight}
-                variant="secondary"
-                className="p-0 w-100 border-0"
-                data-testid="add-insights-button-card"
-            >
-                <Tooltip content={addRemoveInsightPermissions.tooltip} placement="right">
-                    <Card className={styles.itemCard}>
-                        <Icon svgPath={mdiPlus} inline={false} aria-hidden={true} height="2rem" width="2rem" />
-                        <span>Add insights</span>
-                    </Card>
-                </Tooltip>
-            </Button>
+            {
+                isDashboardConfigurable(dashboard) && (
+                    <Button
+                        type="button"
+                        disabled={getAddRemoveInsightsPermission(dashboard).disabled}
+                        onClick={onAddInsight}
+                        variant="secondary"
+                        className="p-0 w-100 border-0"
+                        data-testid="add-insights-button-card"
+                    >
+                        <Tooltip content={getAddRemoveInsightsPermission(dashboard).tooltip} placement="right">
+                            <Card className={styles.itemCard}>
+                                <Icon svgPath={mdiPlus} inline={false} aria-hidden={true} height="2rem" width="2rem" />
+                                <span>Add insights</span>
+                            </Card>
+                        </Tooltip>
+                    </Button>
+                )
+            }
             <span className="d-flex justify-content-center mt-3">
-                <Link to={`/insights/create?dashboardId=${dashboard.id}`}>or, create new insight</Link>
+                <Link to={encodeDashboardIdQueryParam('/insights/create', dashboard.id)}>or, create new insight</Link>
             </span>
         </section>
     )
