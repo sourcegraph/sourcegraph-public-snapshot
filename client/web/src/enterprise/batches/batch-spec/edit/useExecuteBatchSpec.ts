@@ -38,7 +38,7 @@ export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID'], noCache?: boole
         submitBatchSpec({
             variables: {
                 batchSpec: batchSpecID,
-                noCache: noCache ?? false,
+                noCache: noCache === undefined ? null : noCache,
             },
         })
             .then(({ data }) => {

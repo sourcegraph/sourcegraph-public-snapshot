@@ -509,7 +509,7 @@ var ErrBatchSpecResolutionIncomplete = errors.New("cannot execute batch spec, wo
 
 type ExecuteBatchSpecOpts struct {
 	BatchSpecRandID string
-	NoCache         bool
+	NoCache         *bool
 }
 
 // ExecuteBatchSpec creates BatchSpecWorkspaceExecutionJobs for every created
@@ -560,18 +560,17 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 		return nil, ErrBatchSpecResolutionIncomplete
 	}
 
-	// If the batch spec is not set to nocache yet and the option for it is true,
+	// If the batch spec nocache flag doesn't match what's been provided in the API,
 	// update the batch spec state in the db.
-	if !batchSpec.NoCache && opts.NoCache {
-		batchSpec.NoCache = true
+	if opts.NoCache != nil && batchSpec.NoCache != *opts.NoCache {
+		batchSpec.NoCache = *opts.NoCache
 		if err := tx.UpdateBatchSpec(ctx, batchSpec); err != nil {
 			return nil, err
 		}
 	}
 
+	// Disable caching if requested.
 	if batchSpec.NoCache {
-		// Disable caching if either the execution flag is set, or if the batch spec
-		// is tainted as no_cache.
 		err = tx.DisableBatchSpecWorkspaceExecutionCache(ctx, batchSpec.ID)
 		if err != nil {
 			return nil, err

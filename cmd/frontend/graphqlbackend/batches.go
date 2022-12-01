@@ -110,7 +110,7 @@ type DeleteBatchSpecArgs struct {
 
 type ExecuteBatchSpecArgs struct {
 	BatchSpec graphql.ID
-	NoCache   bool
+	NoCache   *bool
 	AutoApply bool
 }
 
