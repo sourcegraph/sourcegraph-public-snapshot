@@ -1,13 +1,13 @@
 import React, { useState } from 'react'
 
 import { mdiContentCopy } from '@mdi/js'
+import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './CopyPathAction.module.scss'
-import classNames from 'classnames'
 
 /**
  * A repository header action that copies the current page's repository or file path to the clipboard.
