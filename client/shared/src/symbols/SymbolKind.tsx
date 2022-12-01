@@ -1,9 +1,9 @@
 import * as React from 'react'
 
-import { lazyComponent } from 'src/util/lazyComponent'
-import { SymbolIcon } from 'src/symbols/SymbolIcon'
+import { SymbolKind as SymbolKindEnum } from '../graphql-operations'
+import { lazyComponent } from '../util/lazyComponent'
 
-import { SymbolKind as SymbolKindEnum } from '@sourcegraph/web/out/src/graphql-operations'
+import { SymbolIcon } from './SymbolIcon'
 
 const SymbolTag = lazyComponent(() => import('src/symbols/SymbolTag'), 'SymbolTag')
 
