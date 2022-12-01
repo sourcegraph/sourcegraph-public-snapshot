@@ -15,6 +15,7 @@ func maybeBlobstore(logger sglog.Logger) []string {
 
 	// Point at local blobstore endpoint.
 	SetDefaultEnv("PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://127.0.0.1:9000")
+	SetDefaultEnv("PRECISE_CODE_INTEL_UPLOAD_BACKEND", "blobstore")
 
 	// blobstore env vars copied from upstream Dockerfile:
 	// https://github.com/gaul/s3proxy/blob/master/Dockerfile
