@@ -13,6 +13,7 @@ import (
 
 func renderMultiInstanceDashboard(dashboards []*Dashboard, groupings []string) (*grafanasdk.Board, error) {
 	board := sdk.NewBoard("Multi-instance overviews")
+	board.AddTags("multi-instance", "generated")
 	board.UID = "multi-instance-overviews"
 	board.ID = 0
 	board.Timezone = "utc"
