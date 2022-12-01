@@ -155,6 +155,17 @@ type Mutation {
         repository: ID!
     ): EmptyResponse!
     """
+    Force Zoekt to reindex the repository right now. Reindexing occurs
+    automatically, so this should not normally be needed.
+    """
+    reindexRepository(
+        """
+        The repository to index
+        """
+        repository: ID!
+    ): EmptyResponse!
+
+    """
     Creates a new user account.
 
     Only site admins may perform this mutation.
