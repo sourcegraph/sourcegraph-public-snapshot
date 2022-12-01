@@ -44,8 +44,6 @@ func maybeBlobstore(logger sglog.Logger) []string {
 	SetDefaultEnv("JCLOUDS_KEYSTONE_SCOPE", "")
 	SetDefaultEnv("JCLOUDS_KEYSTONE_PROJECT_DOMAIN_NAME", "")
 
-
-
 	// Configure blobstore service
 	dataDir := filepath.Join(os.Getenv("DATA_DIR"), "blobstore")
 	SetDefaultEnv("JCLOUDS_FILESYSTEM_BASEDIR", dataDir)
