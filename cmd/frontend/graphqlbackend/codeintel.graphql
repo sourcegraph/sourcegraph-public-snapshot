@@ -783,6 +783,9 @@ type CodeIntelRepositorySummary {
     availableIndexers: [InferredAvailableIndexers!]!
 }
 
+"""
+The additionally available indexers that have been inferred from jobs and job hints that could be indexed but haven't been indexed.
+"""
 type InferredAvailableIndexers {
     """
     The indexer name.
