@@ -6,135 +6,121 @@ import (
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func Test_Cursor(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+func testCursor(t *testing.T, ctx context.Context, s *Store, _ bt.Clock) {
+	t.Run("without values", func(t *testing.T) {
+		for _, limit := range []int{0, 5} {
+			t.Run(strconv.Itoa(limit), func(t *testing.T) {
+				have, cursor, err := s.ListPaginationTests(ctx, ListPaginationTestOpts{
+					CursorOpts: CursorOpts{Limit: limit},
+				})
+				assert.NoError(t, err)
+				assert.Empty(t, have)
+				assert.Zero(t, cursor)
+			})
+		}
+	})
 
-	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	t.Run("with values", func(t *testing.T) {
+		tests := []*PaginationTest{}
+		for i := 0; i < 5; i++ {
+			pt := PaginationTest{}
+			require.NoError(t, s.CreatePaginationTest(ctx, &pt))
+			tests = append(tests, &pt)
+		}
 
-	_, err := db.ExecContext(context.Background(), paginationTestCreateQuery)
-	require.NoError(t, err)
+		reversed := make([]*PaginationTest, 0, len(tests))
+		for i := len(tests) - 1; i >= 0; i-- {
+			reversed = append(reversed, tests[i])
+		}
 
-	t.Run("cursor", storeTest(db, nil, func(t *testing.T, ctx context.Context, s *Store, c bt.Clock) {
-		t.Run("without values", func(t *testing.T) {
-			for _, limit := range []int{0, 5} {
+		t.Run("single page results", func(t *testing.T) {
+			for _, limit := range []int{0, 5, 10} {
 				t.Run(strconv.Itoa(limit), func(t *testing.T) {
 					have, cursor, err := s.ListPaginationTests(ctx, ListPaginationTestOpts{
 						CursorOpts: CursorOpts{Limit: limit},
+						// Default direction should be ascending.
 					})
 					assert.NoError(t, err)
-					assert.Empty(t, have)
+					assert.Equal(t, tests, have)
+					assert.Zero(t, cursor)
+
+					have, cursor, err = s.ListPaginationTests(ctx, ListPaginationTestOpts{
+						CursorOpts: CursorOpts{Limit: limit},
+						Direction:  CursorDirectionAscending, // Explicit direction.
+					})
+					assert.NoError(t, err)
+					assert.Equal(t, tests, have)
+					assert.Zero(t, cursor)
+
+					have, cursor, err = s.ListPaginationTests(ctx, ListPaginationTestOpts{
+						CursorOpts: CursorOpts{Limit: limit},
+						Direction:  CursorDirectionDescending,
+					})
+					assert.NoError(t, err)
+					assert.Equal(t, reversed, have)
 					assert.Zero(t, cursor)
 				})
 			}
 		})
 
-		t.Run("with values", func(t *testing.T) {
-			tests := []*PaginationTest{}
-			for i := 0; i < 5; i++ {
-				pt := PaginationTest{}
-				require.NoError(t, s.CreatePaginationTest(ctx, &pt))
-				tests = append(tests, &pt)
+		t.Run("paginated results", func(t *testing.T) {
+			for dir, have := range map[CursorDirection][]*PaginationTest{
+				CursorDirectionAscending:  tests,
+				CursorDirectionDescending: reversed,
+			} {
+				t.Run(dir.String()+", homogeneous", func(t *testing.T) {
+					page, cursor, err := s.ListPaginationTests(ctx, ListPaginationTestOpts{
+						CursorOpts: CursorOpts{Limit: 2},
+						Direction:  dir,
+					})
+					assert.NoError(t, err)
+					assert.Equal(t, have[0:2], page)
+					assert.EqualValues(t, have[2].ID, cursor)
+
+					page, cursor, err = s.ListPaginationTests(ctx, ListPaginationTestOpts{
+						CursorOpts: CursorOpts{Limit: 2, Cursor: cursor},
+						Direction:  dir,
+					})
+					assert.NoError(t, err)
+					assert.Equal(t, have[2:4], page)
+					assert.EqualValues(t, have[4].ID, cursor)
+
+					page, cursor, err = s.ListPaginationTests(ctx, ListPaginationTestOpts{
+						CursorOpts: CursorOpts{Limit: 2, Cursor: cursor},
+						Direction:  dir,
+					})
+					assert.NoError(t, err)
+					assert.Equal(t, have[4:], page)
+					assert.Zero(t, cursor)
+				})
+
+				t.Run(dir.String()+", heterogeneous", func(t *testing.T) {
+					page, cursor, err := s.ListPaginationTests(ctx, ListPaginationTestOpts{
+						CursorOpts: CursorOpts{Limit: 1},
+						Direction:  dir,
+					})
+					assert.NoError(t, err)
+					assert.Equal(t, have[0:1], page)
+					assert.EqualValues(t, have[1].ID, cursor)
+
+					page, cursor, err = s.ListPaginationTests(ctx, ListPaginationTestOpts{
+						CursorOpts: CursorOpts{Limit: 4, Cursor: cursor},
+						Direction:  dir,
+					})
+					assert.NoError(t, err)
+					assert.Equal(t, have[1:], page)
+					assert.Zero(t, cursor)
+				})
 			}
-
-			reversed := make([]*PaginationTest, 0, len(tests))
-			for i := len(tests) - 1; i >= 0; i-- {
-				reversed = append(reversed, tests[i])
-			}
-
-			t.Run("single page results", func(t *testing.T) {
-				for _, limit := range []int{0, 5, 10} {
-					t.Run(strconv.Itoa(limit), func(t *testing.T) {
-						have, cursor, err := s.ListPaginationTests(ctx, ListPaginationTestOpts{
-							CursorOpts: CursorOpts{Limit: limit},
-							// Default direction should be ascending.
-						})
-						assert.NoError(t, err)
-						assert.Equal(t, tests, have)
-						assert.Zero(t, cursor)
-
-						have, cursor, err = s.ListPaginationTests(ctx, ListPaginationTestOpts{
-							CursorOpts: CursorOpts{Limit: limit},
-							Direction:  CursorDirectionAscending, // Explicit direction.
-						})
-						assert.NoError(t, err)
-						assert.Equal(t, tests, have)
-						assert.Zero(t, cursor)
-
-						have, cursor, err = s.ListPaginationTests(ctx, ListPaginationTestOpts{
-							CursorOpts: CursorOpts{Limit: limit},
-							Direction:  CursorDirectionDescending,
-						})
-						assert.NoError(t, err)
-						assert.Equal(t, reversed, have)
-						assert.Zero(t, cursor)
-					})
-				}
-			})
-
-			t.Run("paginated results", func(t *testing.T) {
-				for dir, have := range map[CursorDirection][]*PaginationTest{
-					CursorDirectionAscending:  tests,
-					CursorDirectionDescending: reversed,
-				} {
-					t.Run(dir.String()+", homogeneous", func(t *testing.T) {
-						page, cursor, err := s.ListPaginationTests(ctx, ListPaginationTestOpts{
-							CursorOpts: CursorOpts{Limit: 2},
-							Direction:  dir,
-						})
-						assert.NoError(t, err)
-						assert.Equal(t, have[0:2], page)
-						assert.EqualValues(t, have[2].ID, cursor)
-
-						page, cursor, err = s.ListPaginationTests(ctx, ListPaginationTestOpts{
-							CursorOpts: CursorOpts{Limit: 2, Cursor: cursor},
-							Direction:  dir,
-						})
-						assert.NoError(t, err)
-						assert.Equal(t, have[2:4], page)
-						assert.EqualValues(t, have[4].ID, cursor)
-
-						page, cursor, err = s.ListPaginationTests(ctx, ListPaginationTestOpts{
-							CursorOpts: CursorOpts{Limit: 2, Cursor: cursor},
-							Direction:  dir,
-						})
-						assert.NoError(t, err)
-						assert.Equal(t, have[4:], page)
-						assert.Zero(t, cursor)
-					})
-
-					t.Run(dir.String()+", heterogeneous", func(t *testing.T) {
-						page, cursor, err := s.ListPaginationTests(ctx, ListPaginationTestOpts{
-							CursorOpts: CursorOpts{Limit: 1},
-							Direction:  dir,
-						})
-						assert.NoError(t, err)
-						assert.Equal(t, have[0:1], page)
-						assert.EqualValues(t, have[1].ID, cursor)
-
-						page, cursor, err = s.ListPaginationTests(ctx, ListPaginationTestOpts{
-							CursorOpts: CursorOpts{Limit: 4, Cursor: cursor},
-							Direction:  dir,
-						})
-						assert.NoError(t, err)
-						assert.Equal(t, have[1:], page)
-						assert.Zero(t, cursor)
-					})
-				}
-			})
 		})
-	}))
+	})
 }
 
 type PaginationTest struct {
