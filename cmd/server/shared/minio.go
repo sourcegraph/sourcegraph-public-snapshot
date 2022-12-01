@@ -5,13 +5,13 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/inconshreveable/log15"
+	sglog "github.com/sourcegraph/log"
 )
 
 // TODO(blobstore): remove minio support
-func maybeMinio() []string {
+func maybeMinio(logger sglog.Logger) []string {
 	if os.Getenv("DISABLE_MINIO") != "" {
-		log15.Info("WARNING: Running with minio disabled")
+		logger.Warn("Running with minio disabled")
 		return []string{""}
 	}
 
