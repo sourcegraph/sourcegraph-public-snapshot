@@ -777,15 +777,24 @@ type CodeIntelRepositorySummary {
     """
     lastIndexScan: DateTime
 
+    """
+    The additionally available indexers that could be indexed but haven't been indexed.
+    """
     availableIndexers: [InferredAvailableIndexers!]!
 }
 
 type InferredAvailableIndexers {
     """
-    The list of available indexers.
+    The indexer name.
     """
     index: String!
+    """
+    The list of roots that could be indexed.
+    """
     roots: [String!]!
+    """
+    The url of the index repository.
+    """
     url: String!
 }
 
