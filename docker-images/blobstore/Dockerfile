@@ -1,10 +1,15 @@
 # Build s3proxy from source
 # hadolint ignore=DL3022
 FROM maven:3.8.6-openjdk-11-slim AS builder
-RUN apt-get update -y && apt-get install -y git
+
+# hadolint ignore=DL3008,DL3009
+RUN add-apt-repository ppa:git-core/ppa && \
+  apt-get update && \
+  apt-get install -y --no-install-recommends git
+
 RUN git clone https://github.com/sourcegraph/s3proxy
-RUN cd s3proxy/ && \
-    mvn package -DskipTests && \
+WORKDIR s3proxy
+RUN mvn package -DskipTests && \
     mv target/ /opt/s3proxy && \
     cp src/main/resources/run-docker-container.sh /opt/s3proxy
 
