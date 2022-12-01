@@ -326,19 +326,22 @@ export const EmptyChangesets: Story = args => {
         <WebStory>
             {props => (
                 <MockedTestProvider link={mocks}>
-                    <BatchChangeDetailsPage
-                        {...props}
-                        authenticatedUser={authenticatedUser}
-                        namespaceID="namespace123"
-                        batchChangeName="awesome-batch-change"
-                        queryChangesetCountsOverTime={queryChangesetCountsOverTime}
-                        queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                        deleteBatchChange={deleteBatchChange}
-                        extensionsController={{} as any}
-                        platformContext={{} as any}
-                        settingsCascade={EMPTY_SETTINGS_CASCADE}
-                        {...args}
-                    />
+                    <>
+                        <span>Trigger build!</span>
+                        <BatchChangeDetailsPage
+                            {...props}
+                            authenticatedUser={authenticatedUser}
+                            namespaceID="namespace123"
+                            batchChangeName="awesome-batch-change"
+                            queryChangesetCountsOverTime={queryChangesetCountsOverTime}
+                            queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                            deleteBatchChange={deleteBatchChange}
+                            extensionsController={{} as any}
+                            platformContext={{} as any}
+                            settingsCascade={EMPTY_SETTINGS_CASCADE}
+                            {...args}
+                        />
+                    </>
                 </MockedTestProvider>
             )}
         </WebStory>
@@ -349,5 +352,3 @@ EmptyChangesets.parameters = {
 }
 
 EmptyChangesets.storyName = 'Empty changesets'
-
-// Trigger build
