@@ -72,7 +72,7 @@ function renderResultElementsForSymbolMatch(
                     <SymbolKind
                         kind={symbol.kind}
                         className="mr-1"
-                        asTag={
+                        enableSymbolTags={
                             isSettingsValid(settingsCascade) &&
                             settingsCascade.final.experimentalFeatures?.enableSymbolTags
                         }

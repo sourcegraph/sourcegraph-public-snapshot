@@ -47,7 +47,7 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
         <li className={styles.repoRevisionSidebarSymbolsNode}>
             {node.__typename === 'SymbolPlaceholder' ? (
                 <span className={styles.link}>
-                    <SymbolKind kind={SymbolKindEnum.UNKNOWN} className="mr-1" asTag={enableSymbolTags} />
+                    <SymbolKind kind={SymbolKindEnum.UNKNOWN} className="mr-1" enableSymbolTags={enableSymbolTags} />
                     {node.name}
                 </span>
             ) : (
@@ -58,7 +58,7 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
                     activeClassName={styles.linkActive}
                     onClick={onHandleClick}
                 >
-                    <SymbolKind kind={node.kind} className="mr-1" asTag={enableSymbolTags} />
+                    <SymbolKind kind={node.kind} className="mr-1" enableSymbolTags={enableSymbolTags} />
                     <span className={styles.name} data-testid="symbol-name">
                         {node.name}
                     </span>

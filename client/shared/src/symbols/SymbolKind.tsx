@@ -10,9 +10,9 @@ const SymbolTag = lazyComponent(() => import('./SymbolTag'), 'SymbolTag')
 export const SymbolKind: React.FC<{
     kind: SymbolKindEnum
     className?: string
-    asTag?: boolean
-}> = ({ asTag, ...props }) => {
-    const Component = asTag ? SymbolTag : SymbolIcon
+    enableSymbolTags?: boolean
+}> = ({ enableSymbolTags, ...props }) => {
+    const Component = enableSymbolTags ? SymbolTag : SymbolIcon
 
     return <Component {...props} />
 }

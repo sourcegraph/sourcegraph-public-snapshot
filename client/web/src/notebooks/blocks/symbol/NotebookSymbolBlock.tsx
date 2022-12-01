@@ -257,7 +257,7 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<React.PropsWithChildren
     const enableSymbolTags = useExperimentalFeatures(features => features.enableSymbolTags)
     return (
         <>
-            <SymbolKind kind={symbolKind} className={styles.symbolKind} asTag={enableSymbolTags} />
+            <SymbolKind kind={symbolKind} className={styles.symbolKind} enableSymbolTags={enableSymbolTags} />
             <div className={styles.separator} />
             <RepoFileSymbolLink
                 repoName={repositoryName}

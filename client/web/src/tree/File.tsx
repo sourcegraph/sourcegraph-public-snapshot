@@ -289,7 +289,7 @@ const Symbols: React.FunctionComponent<SymbolsProps> = ({ activePath, style }) =
                                 <SymbolKind
                                     kind={symbol.kind}
                                     className="mr-1 test-symbol-icon"
-                                    asTag={areSymbolTagsEnabled}
+                                    enableSymbolTags={areSymbolTagsEnabled}
                                 />
                                 <span className={classNames('test-symbol-name')}>{symbol.name}</span>
                             </NavLink>

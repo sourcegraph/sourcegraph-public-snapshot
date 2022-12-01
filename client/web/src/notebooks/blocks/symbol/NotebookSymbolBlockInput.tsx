@@ -131,7 +131,7 @@ const SymbolSuggestions: React.FunctionComponent<
                             }
                             data-testid="symbol-suggestion-button"
                         >
-                            <SymbolKind kind={symbol.kind} className="mr-1" asTag={enableSymbolTags} />
+                            <SymbolKind kind={symbol.kind} className="mr-1" enableSymbolTags={enableSymbolTags} />
                             <Code>
                                 {symbol.name}{' '}
                                 {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
