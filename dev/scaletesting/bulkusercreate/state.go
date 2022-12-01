@@ -430,19 +430,23 @@ func (s *state) insertOrgs(logins []string, admin string) error {
 	return tx.Commit()
 }
 
-func (s *state) insertRepos(repos []*github.Repository) error {
+func (s *state) insertRepos(repos []*github.Repository) ([]*repo, error) {
 	s.Lock()
 	defer s.Unlock()
 	tx, err := s.db.Begin()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, repo := range repos {
 		if _, err = tx.Exec(`INSERT OR IGNORE INTO repos(owner, name) VALUES (?, ?)`, *repo.Owner.Login, *repo.Name); err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+	return s.loadRepos()
 }
 
 var deleteUserStmt = `DELETE FROM users
