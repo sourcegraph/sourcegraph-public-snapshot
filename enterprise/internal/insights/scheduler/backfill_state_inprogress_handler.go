@@ -113,7 +113,7 @@ type handlerConfig struct {
 }
 
 func newHandlerConfig() handlerConfig {
-	return handlerConfig{interruptAfter: getInterruptAfter(), errorThresholdFloor: getErrorThresholdfloor()}
+	return handlerConfig{interruptAfter: getInterruptAfter(), errorThresholdFloor: getErrorThresholdFloor()}
 }
 
 var _ workerutil.Handler[*BaseJob] = &inProgressHandler{}
@@ -355,7 +355,7 @@ func getInterruptAfter() time.Duration {
 	return time.Duration(defaultInterruptSeconds) * time.Second
 }
 
-func getErrorThresholdfloor() int {
+func getErrorThresholdFloor() int {
 	return defaultErrorThresholdFloor
 }
 
