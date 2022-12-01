@@ -449,6 +449,11 @@
           "description": "Preload definitions for available tokens in the visible viewport.",
           "type": "boolean",
           "default": false
+        },
+        "enableSymbolTags": {
+          "description": "Use symbols tags instead of icons.",
+          "type": "boolean",
+          "default": false
         }
       },
       "group": "Experimental"
