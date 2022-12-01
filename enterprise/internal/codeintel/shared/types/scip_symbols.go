@@ -68,7 +68,7 @@ func collapseRanges(ranges []*scip.Range) []int32 {
 		return nil
 	}
 
-	rangeComponents := make([]int32, len(ranges)*4)
+	rangeComponents := make([]int32, 0, len(ranges)*4)
 	for _, r := range SortRanges(ranges) {
 		rangeComponents = append(rangeComponents, r.Start.Line, r.Start.Character, r.End.Line, r.End.Character)
 	}
