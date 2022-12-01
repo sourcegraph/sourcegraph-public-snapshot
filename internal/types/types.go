@@ -562,21 +562,19 @@ type GitserverRepo struct {
 
 // ExternalService is a connection to an external service.
 type ExternalService struct {
-	ID              int64
-	Kind            string
-	DisplayName     string
-	Config          *extsvc.EncryptableConfig
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       time.Time
-	LastSyncAt      time.Time
-	NextSyncAt      time.Time
-	NamespaceUserID int32
-	NamespaceOrgID  int32
-	Unrestricted    bool       // Whether access to repositories belong to this external service is unrestricted.
-	CloudDefault    bool       // Whether this external service is our default public service on Cloud
-	HasWebhooks     *bool      // Whether this external service has webhooks configured; calculated from Config
-	TokenExpiresAt  *time.Time // Whether the token in this external services expires, nil indicates never expires.
+	ID             int64
+	Kind           string
+	DisplayName    string
+	Config         *extsvc.EncryptableConfig
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      time.Time
+	LastSyncAt     time.Time
+	NextSyncAt     time.Time
+	Unrestricted   bool       // Whether access to repositories belong to this external service is unrestricted.
+	CloudDefault   bool       // Whether this external service is our default public service on Cloud
+	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
+	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
 }
 
 type ExternalServiceRepo struct {

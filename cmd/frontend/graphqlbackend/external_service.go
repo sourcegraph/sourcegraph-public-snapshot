@@ -96,18 +96,6 @@ func (r *externalServiceResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.externalService.UpdatedAt}
 }
 
-func (r *externalServiceResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
-	if r.externalService.NamespaceUserID == 0 {
-		return nil, nil
-	}
-	userID := MarshalUserID(r.externalService.NamespaceUserID)
-	n, err := NamespaceByID(ctx, r.db, userID)
-	if err != nil {
-		return nil, err
-	}
-	return &NamespaceResolver{n}, nil
-}
-
 func (r *externalServiceResolver) WebhookURL(ctx context.Context) (*string, error) {
 	r.webhookURLOnce.Do(func() {
 		parsed, err := extsvc.ParseEncryptableConfig(ctx, r.externalService.Kind, r.externalService.Config)
