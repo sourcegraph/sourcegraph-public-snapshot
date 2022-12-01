@@ -198,7 +198,7 @@ func main() {
 		if cfg.generateTokens {
 			bars = append(bars, output.ProgressBar{Label: "Generating OAuth tokens", Max: float64(cfg.userCount)})
 		}
-		//progress = out.Progress(bars, nil)
+		progress = out.Progress(bars, nil)
 		var usersDone int64
 		var orgsDone int64
 		var teamsDone int64
@@ -273,7 +273,7 @@ func main() {
 				tg.Go(func() userToken {
 					token := executeCreateUserImpersonationToken(ctx, currentU)
 					atomic.AddInt64(&tokensDone, 1)
-					//progress.SetValue(5, float64(tokensDone))
+					progress.SetValue(5, float64(tokensDone))
 					return userToken{
 						login: currentU.Login,
 						token: token,
@@ -477,9 +477,9 @@ func categorizeOrgRepos(cfg config, repos []*repo, orgs []*org) (*org, map[*org]
 	// rest assigned to main org
 	repoCategories[mainOrg] = repos[len(subOrgs)*reposPerSubOrg:]
 
-	for _, o := range orgs {
-		writeInfo(out, "Total repos in org %s: %d", o.Login, len(repoCategories[o]))
-	}
+	//for _, o := range orgs {
+	//	writeInfo(out, "Total repos in org %s: %d", o.Login, len(repoCategories[o]))
+	//}
 
 	return mainOrg, repoCategories
 }
@@ -495,9 +495,9 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, re
 			for _, r := range currentRepos {
 				if currentOrg.Login == r.Owner {
 					// already owned by this org
-					writeInfo(out, "Repository %s already owned by %s", r.Name, r.Owner)
+					//writeInfo(out, "Repository %s already owned by %s", r.Name, r.Owner)
 					atomic.AddInt64(reposDone, 1)
-					//progress.SetValue(4, float64(*reposDone))
+					progress.SetValue(4, float64(*reposDone))
 					continue
 				}
 
@@ -515,14 +515,14 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, re
 						}
 						if strings.Contains(string(body), "Repositories cannot be transferred to the original owner") {
 							// already processed
-							writeInfo(out, "Repository %s already owned by %s [not saved to state, current owner: %s]", r.Name, currentOrg.Login, r.Owner)
+							//writeInfo(out, "Repository %s already owned by %s [not saved to state, current owner: %s]", r.Name, currentOrg.Login, r.Owner)
 							goto DONE
 						}
 					}
 
 					if err != nil {
 						if _, ok := err.(*github.AcceptedError); ok {
-							writeInfo(out, "Repository %s scheduled for transfer as a background job", r.Name)
+							//writeInfo(out, "Repository %s scheduled for transfer as a background job", r.Name)
 							goto DONE
 						} else {
 							log.Fatalf("Failed to transfer repository %s from %s to %s: %s", r.Name, r.Owner, currentOrg.Login, err)
@@ -530,10 +530,10 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, re
 					}
 				}
 
-				writeInfo(out, "Repository %s transferred to %s", r.Name, r.Owner)
+				//writeInfo(out, "Repository %s transferred to %s", r.Name, r.Owner)
 			DONE:
 				atomic.AddInt64(reposDone, 1)
-				//progress.SetValue(4, float64(*reposDone))
+				progress.SetValue(4, float64(*reposDone))
 				r.Owner = currentOrg.Login
 				if err = store.saveRepo(r); err != nil {
 					log.Fatalf("Failed to save repository %s: %s", r.Name, err)
@@ -580,14 +580,14 @@ func categorizeTeamRepos(cfg config, mainOrgRepos []*repo, teams []*team) map[*t
 		teamCategories[currentTeam] = teamRepos
 	}
 
-	counts := make(map[int]int)
-	for _, t := range teams {
-		counts[len(teamCategories[t])]++
-	}
+	//counts := make(map[int]int)
+	//for _, t := range teams {
+	//	counts[len(teamCategories[t])]++
+	//}
 
-	for k, v := range counts {
-		writeInfo(out, "Categorised %d teams with %d repos", v, k)
-	}
+	//for k, v := range counts {
+	//	writeInfo(out, "Categorised %d teams with %d repos", v, k)
+	//}
 
 	return teamCategories
 }
@@ -609,7 +609,7 @@ func executeAssignTeamRepos(ctx context.Context, reposPerTeam map[*team][]*repo,
 			for _, r := range currentRepos {
 				if r.Owner == fmt.Sprintf("%s/%s", currentTeam.Org, currentTeam.Name) {
 					// team is already owner
-					writeInfo(out, "Repository %s already owned by %s", r.Name, currentTeam.Name)
+					//writeInfo(out, "Repository %s already owned by %s", r.Name, currentTeam.Name)
 					atomic.AddInt64(reposDone, 1)
 					progress.SetValue(4, float64(*reposDone))
 					continue
@@ -659,20 +659,19 @@ func categorizeUserRepos(mainOrgRepos []*repo, users []*user) map[*repo][]*user 
 		repoUsers[r] = usersForRepo
 	}
 
-	counts := make(map[int]int)
-	for _, r := range mainOrgRepos {
-		counts[len(repoUsers[r])]++
-	}
-
-	for k, v := range counts {
-		writeInfo(out, "Categorised %d repos with %d users", v, k)
-	}
+	//counts := make(map[int]int)
+	//for _, r := range mainOrgRepos {
+	//	counts[len(repoUsers[r])]++
+	//}
+	//
+	//for k, v := range counts {
+	//	writeInfo(out, "Categorised %d repos with %d users", v, k)
+	//}
 
 	return repoUsers
 }
 
 func executeAssignUserRepos(ctx context.Context, usersPerRepo map[*repo][]*user, reposDone *int64, g group.Group) {
-	// scrap this, needs to be added as meembers on the repo. not owner
 	for r, users := range usersPerRepo {
 		currentRepo := r
 		currentUsers := users
@@ -699,8 +698,8 @@ func executeAssignUserRepos(ctx context.Context, usersPerRepo map[*repo][]*user,
 				}
 			}
 			atomic.AddInt64(reposDone, 1)
-			//progress.SetValue(4, float64(*reposDone))
-			writeInfo(out, "Repository %s transferred to users", r.Name)
+			progress.SetValue(4, float64(*reposDone))
+			//writeInfo(out, "Repository %s transferred to users", r.Name)
 		})
 	}
 }
@@ -835,7 +834,7 @@ func executeCreateTeamMembershipsForUser(ctx context.Context, opts *teamMembersh
 
 		candidateTeam.TotalMembers += 1
 		atomic.AddInt64(membershipsDone, 1)
-		//progress.SetValue(3, float64(*membershipsDone))
+		progress.SetValue(3, float64(*membershipsDone))
 
 		if mErr = store.saveTeam(candidateTeam); mErr != nil {
 			log.Fatal(mErr)
@@ -890,7 +889,7 @@ func executeCreateTeamMembershipsForTeam(ctx context.Context, t *team, users []*
 
 		t.TotalMembers += 1
 		atomic.AddInt64(membershipsDone, 1)
-		//progress.SetValue(3, float64(*membershipsDone))
+		progress.SetValue(3, float64(*membershipsDone))
 
 		if err = store.saveTeam(t); err != nil {
 			log.Fatal(err)
@@ -902,7 +901,7 @@ func getGitHubOrgs(ctx context.Context) []*github.Organization {
 	var orgs []*github.Organization
 	var since int64
 	for true {
-		writeInfo(out, "Fetching org page, last ID seen is %d", since)
+		//writeInfo(out, "Fetching org page, last ID seen is %d", since)
 		orgsPage, _, err := gh.Organizations.ListAll(ctx, &github.OrganizationsListOptions{
 			Since:       since,
 			ListOptions: github.ListOptions{PerPage: 100},
@@ -926,7 +925,7 @@ func getGitHubTeams(ctx context.Context, orgs []*org) []*github.Team {
 	var currentPage int
 	for _, o := range orgs {
 		for true {
-			writeInfo(out, "Fetching team page %d for org %s", currentPage, o.Login)
+			//writeInfo(out, "Fetching team page %d for org %s", currentPage, o.Login)
 			teamsPage, _, err := gh.Teams.ListTeams(ctx, o.Login, &github.ListOptions{
 				Page:    currentPage,
 				PerPage: 100,
@@ -955,7 +954,7 @@ func getGitHubUsers(ctx context.Context) []*github.User {
 	var users []*github.User
 	var since int64
 	for true {
-		writeInfo(out, "Fetching user page, last ID seen is %d", since)
+		//writeInfo(out, "Fetching user page, last ID seen is %d", since)
 		usersPage, _, err := gh.Users.ListAll(ctx, &github.UserListOptions{
 			Since:       since,
 			ListOptions: github.ListOptions{PerPage: 100},
@@ -1013,7 +1012,7 @@ func getGitHubRepos(ctx context.Context) []*github.Repository {
 func executeCreateUser(ctx context.Context, u *user, usersDone *int64) {
 	if u.Created && u.Failed == "" {
 		atomic.AddInt64(usersDone, 1)
-		//progress.SetValue(2, float64(*usersDone))
+		progress.SetValue(2, float64(*usersDone))
 		return
 	}
 
@@ -1032,7 +1031,7 @@ func executeCreateUser(ctx context.Context, u *user, usersDone *int64) {
 		}
 		//writeInfo(out, "user with login %s already exists", u.Login)
 		atomic.AddInt64(usersDone, 1)
-		//progress.SetValue(2, float64(*usersDone))
+		progress.SetValue(2, float64(*usersDone))
 		return
 	}
 
@@ -1049,7 +1048,7 @@ func executeCreateUser(ctx context.Context, u *user, usersDone *int64) {
 	u.Created = true
 	u.Failed = ""
 	atomic.AddInt64(usersDone, 1)
-	//progress.SetValue(2, float64(*usersDone))
+	progress.SetValue(2, float64(*usersDone))
 	if uErr = store.saveUser(u); uErr != nil {
 		log.Fatal(uErr)
 	}
@@ -1069,7 +1068,7 @@ func executeCreateUserImpersonationToken(ctx context.Context, u *user) string {
 func executeCreateTeam(ctx context.Context, t *team, teamsDone *int64) {
 	if t.Created && t.Failed == "" {
 		atomic.AddInt64(teamsDone, 1)
-		//progress.SetValue(1, float64(*teamsDone))
+		progress.SetValue(1, float64(*teamsDone))
 		return
 	}
 
@@ -1085,7 +1084,7 @@ func executeCreateTeam(ctx context.Context, t *team, teamsDone *int64) {
 		t.Created = true
 		t.Failed = ""
 		atomic.AddInt64(teamsDone, 1)
-		//progress.SetValue(1, float64(*teamsDone))
+		progress.SetValue(1, float64(*teamsDone))
 
 		if tErr = store.saveTeam(t); tErr != nil {
 			log.Fatal(tErr)
@@ -1110,7 +1109,7 @@ func executeCreateTeam(ctx context.Context, t *team, teamsDone *int64) {
 		t.Created = true
 		t.Failed = ""
 		atomic.AddInt64(teamsDone, 1)
-		//progress.SetValue(1, float64(*teamsDone))
+		progress.SetValue(1, float64(*teamsDone))
 
 		if tErr = store.saveTeam(t); tErr != nil {
 			log.Fatal(tErr)
@@ -1121,7 +1120,7 @@ func executeCreateTeam(ctx context.Context, t *team, teamsDone *int64) {
 func executeCreateOrg(ctx context.Context, o *org, orgAdmin string, orgsDone *int64) {
 	if o.Created && o.Failed == "" {
 		atomic.AddInt64(orgsDone, 1)
-		//progress.SetValue(0, float64(*orgsDone))
+		progress.SetValue(0, float64(*orgsDone))
 		return
 	}
 
@@ -1136,7 +1135,7 @@ func executeCreateOrg(ctx context.Context, o *org, orgAdmin string, orgsDone *in
 		o.Created = true
 		o.Failed = ""
 		atomic.AddInt64(orgsDone, 1)
-		//progress.SetValue(0, float64(*orgsDone))
+		progress.SetValue(0, float64(*orgsDone))
 
 		if oErr = store.saveOrg(o); oErr != nil {
 			log.Fatal(oErr)
@@ -1156,7 +1155,7 @@ func executeCreateOrg(ctx context.Context, o *org, orgAdmin string, orgsDone *in
 	}
 
 	atomic.AddInt64(orgsDone, 1)
-	//progress.SetValue(0, float64(*orgsDone))
+	progress.SetValue(0, float64(*orgsDone))
 
 	o.Created = true
 	o.Failed = ""
