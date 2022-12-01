@@ -17,6 +17,11 @@ export const isModifierKeyHeld = StateField.define<boolean>({
         }
         return value
     },
+    provide: field => [
+        EditorView.contentAttributes.compute([field], state => ({
+            class: state.field(field) ? 'cm-token-selection-clickable' : '',
+        })),
+    ],
 })
 
 // View plugin that makes the cursor look like a pointer when holding down the
@@ -35,13 +40,11 @@ const cmdPointerCursor = ViewPlugin.fromClass(
         }
         public onKeyUp = (): void => {
             if (this.view.state.field(isModifierKeyHeld)) {
-                this.view.contentDOM.classList.remove('cm-token-selection-clickable')
                 this.view.dispatch({ effects: setModifierHeld.of(false) })
             }
         }
         public onKeyDown = (event: KeyboardEvent): void => {
             if (isModifierKey(event) && !this.view.state.field(isModifierKeyHeld)) {
-                this.view.contentDOM.classList.add('cm-token-selection-clickable')
                 this.view.dispatch({ effects: setModifierHeld.of(true) })
             }
         }
