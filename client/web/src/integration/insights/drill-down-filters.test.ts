@@ -133,7 +133,7 @@ describe('Backend insight drill down filters', () => {
 
     it('should create a new insight with predefined filters via drill-down flow insight creation', async () => {
         const insightWithFilters: InsightViewNode = {
-            ...createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated' , id: 'view_1'}),
+            ...createJITMigrationToGQLInsightMetadataFixture({ type: 'calculated', id: 'view_1' }),
             appliedFilters: {
                 __typename: 'InsightViewFilters',
                 searchContexts: [],
