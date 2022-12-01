@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -196,7 +197,17 @@ func (r *Resolver) DeleteSearchContext(ctx context.Context, args graphqlbackend.
 }
 
 func (r *Resolver) CreateSearchContextStar(ctx context.Context, args graphqlbackend.CreateSearchContextStarArgs) (*graphqlbackend.EmptyResponse, error) {
-	searchContextSpec, err := unmarshalSearchContextID(args.ID)
+	// 🚨 SECURITY: Make sure the current user has permission to star the search context.
+	userID, err := graphqlbackend.UnmarshalUserID(args.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+
+	searchContextSpec, err := unmarshalSearchContextID(args.SearchContextID)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +217,7 @@ func (r *Resolver) CreateSearchContextStar(ctx context.Context, args graphqlback
 		return nil, err
 	}
 
-	err = searchcontexts.CreateSearchContextStarForCurrentUser(ctx, r.db, searchContext)
+	err = searchcontexts.CreateSearchContextStarForUser(ctx, r.db, searchContext, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +226,17 @@ func (r *Resolver) CreateSearchContextStar(ctx context.Context, args graphqlback
 }
 
 func (r *Resolver) DeleteSearchContextStar(ctx context.Context, args graphqlbackend.DeleteSearchContextStarArgs) (*graphqlbackend.EmptyResponse, error) {
-	searchContextSpec, err := unmarshalSearchContextID(args.ID)
+	// 🚨 SECURITY: Make sure the current user has permission to star the search context.
+	userID, err := graphqlbackend.UnmarshalUserID(args.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+
+	searchContextSpec, err := unmarshalSearchContextID(args.SearchContextID)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +246,7 @@ func (r *Resolver) DeleteSearchContextStar(ctx context.Context, args graphqlback
 		return nil, err
 	}
 
-	err = searchcontexts.DeleteSearchContextStarForCurrentUser(ctx, r.db, searchContext)
+	err = searchcontexts.DeleteSearchContextStarForUser(ctx, r.db, searchContext, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +255,17 @@ func (r *Resolver) DeleteSearchContextStar(ctx context.Context, args graphqlback
 }
 
 func (r *Resolver) SetDefaultSearchContext(ctx context.Context, args graphqlbackend.SetDefaultSearchContextArgs) (*graphqlbackend.EmptyResponse, error) {
-	searchContextSpec, err := unmarshalSearchContextID(args.ID)
+	// 🚨 SECURITY: Make sure the current user has permission to set the search context as default.
+	userID, err := graphqlbackend.UnmarshalUserID(args.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		return nil, err
+	}
+
+	searchContextSpec, err := unmarshalSearchContextID(args.SearchContextID)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +275,7 @@ func (r *Resolver) SetDefaultSearchContext(ctx context.Context, args graphqlback
 		return nil, err
 	}
 
-	err = searchcontexts.SetDefaultSearchContextForCurrentUser(ctx, r.db, searchContext)
+	err = searchcontexts.SetDefaultSearchContextForUser(ctx, r.db, searchContext, userID)
 	if err != nil {
 		return nil, err
 	}

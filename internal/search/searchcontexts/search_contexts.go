@@ -596,38 +596,14 @@ func GetSearchContextSpec(searchContext *types.SearchContext) string {
 	}
 }
 
-func CreateSearchContextStarForCurrentUser(ctx context.Context, db database.DB, searchContext *types.SearchContext) error {
-	user, err := auth.CurrentUser(ctx, db)
-	if err != nil {
-		return err
-	}
-	if user == nil {
-		return errors.New("user not found")
-	}
-
-	return db.SearchContexts().CreateSearchContextStarForUser(ctx, user.ID, searchContext.ID)
+func CreateSearchContextStarForUser(ctx context.Context, db database.DB, searchContext *types.SearchContext, userID int32) error {
+	return db.SearchContexts().CreateSearchContextStarForUser(ctx, userID, searchContext.ID)
 }
 
-func DeleteSearchContextStarForCurrentUser(ctx context.Context, db database.DB, searchContext *types.SearchContext) error {
-	user, err := auth.CurrentUser(ctx, db)
-	if err != nil {
-		return err
-	}
-	if user == nil {
-		return errors.New("user not found")
-	}
-
-	return db.SearchContexts().DeleteSearchContextStarForUser(ctx, user.ID, searchContext.ID)
+func DeleteSearchContextStarForUser(ctx context.Context, db database.DB, searchContext *types.SearchContext, userID int32) error {
+	return db.SearchContexts().DeleteSearchContextStarForUser(ctx, userID, searchContext.ID)
 }
 
-func SetDefaultSearchContextForCurrentUser(ctx context.Context, db database.DB, searchContext *types.SearchContext) error {
-	user, err := auth.CurrentUser(ctx, db)
-	if err != nil {
-		return err
-	}
-	if user == nil {
-		return errors.New("user not found")
-	}
-
-	return db.SearchContexts().SetUserDefaultSearchContextID(ctx, user.ID, searchContext.ID)
+func SetDefaultSearchContextForUser(ctx context.Context, db database.DB, searchContext *types.SearchContext, userID int32) error {
+	return db.SearchContexts().SetUserDefaultSearchContextID(ctx, userID, searchContext.ID)
 }
