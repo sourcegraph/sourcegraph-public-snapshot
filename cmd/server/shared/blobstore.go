@@ -44,10 +44,13 @@ func maybeBlobstore(logger sglog.Logger) []string {
 	SetDefaultEnv("JCLOUDS_KEYSTONE_SCOPE", "")
 	SetDefaultEnv("JCLOUDS_KEYSTONE_PROJECT_DOMAIN_NAME", "")
 
+
+
 	// Configure blobstore service
 	dataDir := filepath.Join(os.Getenv("DATA_DIR"), "blobstore")
 	SetDefaultEnv("JCLOUDS_FILESYSTEM_BASEDIR", dataDir)
 	SetDefaultEnv("S3PROXY_AUTHORIZATION", "none")
+	SetDefaultEnv("S3PROXY_ENDPOINT", "http://0.0.0.0:9000")
 	procline := `blobstore: /opt/s3proxy/run-docker-container.sh >> /var/opt/sourcegraph/blobstore.log 2>&1`
 	return []string{procline}
 }
