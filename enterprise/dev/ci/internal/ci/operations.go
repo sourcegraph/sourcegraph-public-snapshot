@@ -391,7 +391,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		}
 
 		// Upload storybook to Chromatic
-		chromaticCommand := "yarn chromatic --exit-zero-on-changes --exit-once-uploaded --build-script-name=storybook:build"
+		chromaticCommand := "yarn chromatic --only-changed --exit-zero-on-changes --exit-once-uploaded --build-script-name=storybook:build"
 		if opts.ChromaticShouldAutoAccept {
 			chromaticCommand += " --auto-accept-changes"
 		} else {

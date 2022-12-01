@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
-import isChromaticDefault from 'chromatic/isChromatic'
+import isChromaticDefault from 'chromatic'
 
 /**
  * `chromatic/isChromatic` wrapper that takes into account `process.env.CHROMATIC` for local testing.
