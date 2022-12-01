@@ -47,10 +47,29 @@ func (q *RecentList) Insert(b []byte) {
 	}
 }
 
+func (q *RecentList) Size() int {
+	c := pool.Get()
+	defer c.Close()
+
+	key := q.globalPrefixKey()
+	n, err := redis.Int(c.Do("LLEN", key))
+	if err != nil {
+		log15.Warn("failed to execute redis command", "cmd", "LLEN", "error", err)
+	}
+	return n
+}
+
 // All return all items stored in the RecentCache.
 //
 // This a O(n) operation, where n is the list size.
 func (q *RecentList) All(ctx context.Context) ([][]byte, error) {
+	return q.Slice(ctx, 0, -1)
+}
+
+// Slice return all items stored in the RecentCache between indexes from and to.
+//
+// This a O(n) operation, where n is the list size.
+func (q *RecentList) Slice(ctx context.Context, from, to int) ([][]byte, error) {
 	c, err := pool.GetContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "get redis conn")
@@ -63,7 +82,7 @@ func (q *RecentList) All(ctx context.Context) ([][]byte, error) {
 	}
 
 	key := q.globalPrefixKey()
-	res, err := redis.Values(c.Do("LRANGE", key, 0, -1))
+	res, err := redis.Values(c.Do("LRANGE", key, from, to))
 	if err != nil {
 		return nil, err
 	}
