@@ -2196,6 +2196,8 @@ type SiteConfiguration struct {
 	ObservabilityClient *ObservabilityClient `json:"observability.client,omitempty"`
 	// ObservabilityLogSlowGraphQLRequests description: (debug) logs all GraphQL requests slower than the specified number of milliseconds.
 	ObservabilityLogSlowGraphQLRequests int `json:"observability.logSlowGraphQLRequests,omitempty"`
+  // ObservabilityCaptureSlowGraphQLRequestsLimit description: (debug) Configure the limit of captured slow graphql requests being stored. A zero value means nothing is captured. The threshold defining a slow request is defined by ObservabilityLogSlowGraphQLRequests.
+	ObservabilityCaptureSlowGraphQLRequestsLimit int `json:"observability.captureSlowGraphQLRequestsLimit,omitempty"`
 	// ObservabilityLogSlowSearches description: (debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.
 	ObservabilityLogSlowSearches int `json:"observability.logSlowSearches,omitempty"`
 	// ObservabilitySilenceAlerts description: Silence individual Sourcegraph alerts by identifier.

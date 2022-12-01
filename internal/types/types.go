@@ -1709,3 +1709,16 @@ type Webhook struct {
 	CreatedByUserID int32
 	UpdatedByUserID int32
 }
+
+type SlowRequest struct {
+	ID        string         `json:"id"`
+	Start     time.Time      `json:"start"`
+	Duration  time.Duration  `json:"duration"`
+	UserID    int32          `json:"userId"`
+	Name      string         `json:"name"`
+	Source    string         `json:"source"`
+	Variables map[string]any `json:"variables"`
+	Errors    []string       `json:"errors"`
+	Query     string         `json:"query"`
+	Filepath  string         `json:"filepath"`
+}

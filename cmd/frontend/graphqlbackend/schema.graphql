@@ -1639,6 +1639,16 @@ type Query {
         """
         kind: ExternalServiceKind
     ): WebhookConnection!
+
+    """
+    Foobar
+    """
+    slowRequests(
+      """
+      todo
+      """
+      after: ID
+    ): SlowRequestConnection!
 }
 
 """
@@ -8225,4 +8235,38 @@ enum ExecutorCompatibility {
     Executor version is more than one version ahead of the Sourcegraph instance.
     """
     VERSION_AHEAD
+}
+
+type SlowRequestConnection {
+    """
+    A list of webhook logs.
+    """
+    nodes: [SlowRequest!]!
+
+    """
+    The total number of webhook logs in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+TODO
+"""
+type SlowRequest {
+  id: ID!
+  start: DateTime!
+  duration: Float!  
+  userId: String!
+  name: String!
+  source: String!
+  repoName: String!
+  variables: String!
+  errors: [String!]!
+  query: String!
+  filepath: String!
 }
