@@ -2816,7 +2816,7 @@ Foreign-key constraints:
 
 ```
 
-When a user stars a search context, a row is inserted into this table. If the user unstars the search context, the row is deleted.
+When a user stars a search context, a row is inserted into this table. If the user unstars the search context, the row is deleted. The global context is not in the database, and therefore cannot be starred.
 
 # Table "public.search_contexts"
 ```
