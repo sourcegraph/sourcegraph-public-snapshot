@@ -137,6 +137,7 @@ const keybindings: readonly KeyBinding[] = [
     {
         key: 'Escape',
         run(view) {
+            closeHover(view)
             view.contentDOM.blur()
             return true
         },
