@@ -1,5 +1,8 @@
 .alert-container {
-    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 
     :global(.theme-dark) & {
         background: linear-gradient(180deg, rgba(25, 27, 37, 0.6) 0%, #191b25 51.56%, rgba(25, 27, 37, 0.6) 100%);
@@ -8,18 +11,6 @@
     :global(.theme-light) & {
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, #ffffff 51.04%, rgba(255, 255, 255, 0.8) 100%);
     }
-}
-
-.alert-content {
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
 }
 
 .icon {

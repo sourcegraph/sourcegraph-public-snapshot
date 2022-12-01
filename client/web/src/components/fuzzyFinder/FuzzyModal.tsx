@@ -32,6 +32,7 @@ import {
     TabPanels,
     TabPanel,
     TabList,
+    Badge,
 } from '@sourcegraph/wildcard'
 
 import { AggregateFuzzySearch } from '../../fuzzyFinder/AggregateFuzzySearch'
@@ -343,9 +344,6 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
         >
             <WrapperComponent className={styles.content} {...wrapperComponentProps}>
                 <div className={styles.header} data-testid="fuzzy-modal-header">
-                    <Button variant="icon" onClick={() => onClose()} aria-label="Close" className={styles.closeButton}>
-                        <Icon aria-hidden={true} svgPath={mdiClose} />
-                    </Button>
                     {showTabs ? (
                         <TabList className={styles.tabList}>
                             {tabs.entries().map(([key, tab]) => (
@@ -360,6 +358,17 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                     ) : (
                         <H3>Find files</H3>
                     )}
+                    <Badge
+                        variant="info"
+                        href="https://github.com/sourcegraph/sourcegraph/discussions/42874"
+                        tooltip="Provide feedback on this experimental feature"
+                        className={styles.experimentalBadge}
+                    >
+                        Experimental
+                    </Badge>
+                    <Button variant="icon" onClick={onClose} aria-label="Close" className={styles.closeButton}>
+                        <Icon aria-hidden={true} svgPath={mdiClose} />
+                    </Button>
                 </div>
                 <div className={styles.divider} />
                 <Input

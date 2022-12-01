@@ -198,26 +198,24 @@ func newGithubSource(
 		useGitHubApp = true
 	}
 
-	if svc.IsSiteOwned() {
-		for resource, monitor := range map[string]*ratelimit.Monitor{
-			"rest":    v3Client.RateLimitMonitor(),
-			"graphql": v4Client.RateLimitMonitor(),
-			"search":  searchClient.RateLimitMonitor(),
-		} {
-			// Copy the resource or funcs below will use the last one seen while iterating
-			// the map
-			resource := resource
-			// Copy displayName so that the funcs below don't capture the svc pointer
-			displayName := svc.DisplayName
-			monitor.SetCollector(&ratelimit.MetricsCollector{
-				Remaining: func(n float64) {
-					githubRemainingGauge.WithLabelValues(resource, displayName).Set(n)
-				},
-				WaitDuration: func(n time.Duration) {
-					githubRatelimitWaitCounter.WithLabelValues(resource, displayName).Add(n.Seconds())
-				},
-			})
-		}
+	for resource, monitor := range map[string]*ratelimit.Monitor{
+		"rest":    v3Client.RateLimitMonitor(),
+		"graphql": v4Client.RateLimitMonitor(),
+		"search":  searchClient.RateLimitMonitor(),
+	} {
+		// Copy the resource or funcs below will use the last one seen while iterating
+		// the map
+		resource := resource
+		// Copy displayName so that the funcs below don't capture the svc pointer
+		displayName := svc.DisplayName
+		monitor.SetCollector(&ratelimit.MetricsCollector{
+			Remaining: func(n float64) {
+				githubRemainingGauge.WithLabelValues(resource, displayName).Set(n)
+			},
+			WaitDuration: func(n time.Duration) {
+				githubRatelimitWaitCounter.WithLabelValues(resource, displayName).Add(n.Seconds())
+			},
+		})
 	}
 
 	return &GitHubSource{

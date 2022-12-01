@@ -1006,6 +1006,7 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
             break
         }
         case 'has.tag':
+        case 'has.key':
             return [
                 {
                     type: 'literal',

@@ -76,7 +76,7 @@ func NewResetters(db database.DB, observationContext *observation.Context) []gor
 	}
 }
 
-func NewJanitorJobs(autoindexingSvc *Service, gitserver GitserverClient) []goroutine.BackgroundRoutine {
+func NewJanitorJobs(autoindexingSvc *Service, gitserver GitserverClient, observationContext *observation.Context) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewJanitor(
 			ConfigCleanupInst.Interval,
@@ -88,6 +88,7 @@ func NewJanitorJobs(autoindexingSvc *Service, gitserver GitserverClient) []gorou
 				FailedIndexBatchSize:           ConfigCleanupInst.FailedIndexBatchSize,
 				FailedIndexMaxAge:              ConfigCleanupInst.FailedIndexMaxAge,
 			},
+			observationContext,
 		),
 	}
 }
@@ -109,7 +110,6 @@ func NewIndexSchedulers(
 				PolicyBatchSize:        ConfigIndexingInst.PolicyBatchSize,
 				InferenceConcurrency:   ConfigIndexingInst.InferenceConcurrency,
 			},
-
 			observationContext,
 		),
 

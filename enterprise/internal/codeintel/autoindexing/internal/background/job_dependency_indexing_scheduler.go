@@ -148,6 +148,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, logger 
 
 		pkg := precise.Package{
 			Scheme:  packageReference.Package.Scheme,
+			Manager: packageReference.Package.Manager,
 			Name:    packageReference.Package.Name,
 			Version: packageReference.Package.Version,
 		}

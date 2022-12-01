@@ -1,4 +1,4 @@
-package lucky
+package smartsearch
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
-func TestNewFeelingLuckySearchJob_Run(t *testing.T) {
+func TestNewSmartSearchJob_Run(t *testing.T) {
 	// Setup: A child job that sends the same result
 	mockJob := mockjob.NewMockJob()
 	mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
@@ -92,7 +92,7 @@ func TestGeneratedSearchJob(t *testing.T) {
 	autogold.Want("limit results", autogold.Raw("500+ results")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
 }
 
-func TestNewFeelingLuckySearchJob_ResultCount(t *testing.T) {
+func TestNewSmartSearchJob_ResultCount(t *testing.T) {
 	// This test ensures the invariant that generated queries do not run if
 	// at least RESULT_THRESHOLD results are emitted by the initial job. If
 	// less than RESULT_THRESHOLD results are seen, the logic will run a

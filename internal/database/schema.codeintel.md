@@ -91,13 +91,15 @@ A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegr
 
 # Table "public.codeintel_scip_metadata"
 ```
-     Column     |  Type   | Collation | Nullable |                       Default                       
-----------------+---------+-----------+----------+-----------------------------------------------------
- id             | bigint  |           | not null | nextval('codeintel_scip_metadata_id_seq'::regclass)
- upload_id      | integer |           | not null | 
- tool_name      | text    |           | not null | 
- tool_version   | text    |           | not null | 
- tool_arguments | text[]  |           | not null | 
+         Column         |  Type   | Collation | Nullable |                       Default                       
+------------------------+---------+-----------+----------+-----------------------------------------------------
+ id                     | bigint  |           | not null | nextval('codeintel_scip_metadata_id_seq'::regclass)
+ upload_id              | integer |           | not null | 
+ tool_name              | text    |           | not null | 
+ tool_version           | text    |           | not null | 
+ tool_arguments         | text[]  |           | not null | 
+ text_document_encoding | text    |           | not null | 
+ protocol_version       | integer |           | not null | 
 Indexes:
     "codeintel_scip_metadata_pkey" PRIMARY KEY, btree (id)
 
@@ -106,6 +108,10 @@ Indexes:
 Global metadatadata about a single processed upload.
 
 **id**: An auto-generated identifier.
+
+**protocol_version**: The version of the SCIP protocol used to encode this index.
+
+**text_document_encoding**: The encoding of the text documents within this index. May affect range boundaries.
 
 **tool_arguments**: Command-line arguments that were used to invoke this indexer.
 

@@ -10,6 +10,7 @@ import (
 	"context"
 	"io"
 	"sync"
+	"time"
 
 	uploadstore "github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
@@ -24,6 +25,9 @@ type MockStore struct {
 	// DeleteFunc is an instance of a mock function object controlling the
 	// behavior of the method Delete.
 	DeleteFunc *StoreDeleteFunc
+	// ExpireObjectsFunc is an instance of a mock function object
+	// controlling the behavior of the method ExpireObjects.
+	ExpireObjectsFunc *StoreExpireObjectsFunc
 	// GetFunc is an instance of a mock function object controlling the
 	// behavior of the method Get.
 	GetFunc *StoreGetFunc
@@ -46,6 +50,11 @@ func NewMockStore() *MockStore {
 		},
 		DeleteFunc: &StoreDeleteFunc{
 			defaultHook: func(context.Context, string) (r0 error) {
+				return
+			},
+		},
+		ExpireObjectsFunc: &StoreExpireObjectsFunc{
+			defaultHook: func(context.Context, string, time.Duration) (r0 error) {
 				return
 			},
 		},
@@ -81,6 +90,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.Delete")
 			},
 		},
+		ExpireObjectsFunc: &StoreExpireObjectsFunc{
+			defaultHook: func(context.Context, string, time.Duration) error {
+				panic("unexpected invocation of MockStore.ExpireObjects")
+			},
+		},
 		GetFunc: &StoreGetFunc{
 			defaultHook: func(context.Context, string) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockStore.Get")
@@ -108,6 +122,9 @@ func NewMockStoreFrom(i uploadstore.Store) *MockStore {
 		},
 		DeleteFunc: &StoreDeleteFunc{
 			defaultHook: i.Delete,
+		},
+		ExpireObjectsFunc: &StoreExpireObjectsFunc{
+			defaultHook: i.ExpireObjects,
 		},
 		GetFunc: &StoreGetFunc{
 			defaultHook: i.Get,
@@ -339,6 +356,113 @@ func (c StoreDeleteFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreDeleteFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreExpireObjectsFunc describes the behavior when the ExpireObjects
+// method of the parent MockStore instance is invoked.
+type StoreExpireObjectsFunc struct {
+	defaultHook func(context.Context, string, time.Duration) error
+	hooks       []func(context.Context, string, time.Duration) error
+	history     []StoreExpireObjectsFuncCall
+	mutex       sync.Mutex
+}
+
+// ExpireObjects delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStore) ExpireObjects(v0 context.Context, v1 string, v2 time.Duration) error {
+	r0 := m.ExpireObjectsFunc.nextHook()(v0, v1, v2)
+	m.ExpireObjectsFunc.appendCall(StoreExpireObjectsFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ExpireObjects method
+// of the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreExpireObjectsFunc) SetDefaultHook(hook func(context.Context, string, time.Duration) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ExpireObjects method of the parent MockStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreExpireObjectsFunc) PushHook(hook func(context.Context, string, time.Duration) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreExpireObjectsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, time.Duration) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreExpireObjectsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, time.Duration) error {
+		return r0
+	})
+}
+
+func (f *StoreExpireObjectsFunc) nextHook() func(context.Context, string, time.Duration) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreExpireObjectsFunc) appendCall(r0 StoreExpireObjectsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreExpireObjectsFuncCall objects
+// describing the invocations of this function.
+func (f *StoreExpireObjectsFunc) History() []StoreExpireObjectsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreExpireObjectsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreExpireObjectsFuncCall is an object that describes an invocation of
+// method ExpireObjects on an instance of MockStore.
+type StoreExpireObjectsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreExpireObjectsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreExpireObjectsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
