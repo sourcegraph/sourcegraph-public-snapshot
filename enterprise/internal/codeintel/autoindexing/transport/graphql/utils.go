@@ -43,7 +43,7 @@ type JobsOrHints interface {
 	GetRoot() string
 }
 
-func populateInferredAvailableIndexers[J JobsOrHints](jobsOrHints []J, blacklist map[string]struct{}, inferredAvailableIndexers map[string]availableIndexer) map[string]availableIndexer {
+func populateInferredAvailableIndexers[J JobsOrHints](jobsOrHints []J, blocklist map[string]struct{}, inferredAvailableIndexers map[string]availableIndexer) map[string]availableIndexer {
 	for _, job := range jobsOrHints {
 		indexer := job.GetIndexerName()
 		// If we have a job for this indexer (lsif-clang), don't show it in the inferred jobs
@@ -54,8 +54,8 @@ func populateInferredAvailableIndexers[J JobsOrHints](jobsOrHints []J, blacklist
 		}
 		key := getKeyForLookup(indexer, job.GetRoot())
 		// Only add them to the inferred jobs map if they're not already in the recent uploads
-		// blacklist. This is to avoid hinting at an available index if we've already indexed it.
-		if _, ok := blacklist[key]; !ok {
+		// blocklist. This is to avoid hinting at an available index if we've already indexed it.
+		if _, ok := blocklist[key]; !ok {
 			ai := inferredAvailableIndexers[key]
 			ai.Roots = append(ai.Roots, job.GetRoot())
 			if p, ok := types.PreferredIndexers[indexer]; ok {

@@ -416,11 +416,11 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 		return nil, err
 	}
 
-	// Create blacklist for indexes that have already been uploaded.
-	blacklist := map[string]struct{}{}
+	// Create blocklist for indexes that have already been uploaded.
+	blocklist := map[string]struct{}{}
 	for _, u := range recentUploads {
 		key := getKeyForLookup(u.Indexer, u.Root)
-		blacklist[key] = struct{}{}
+		blocklist[key] = struct{}{}
 	}
 
 	commit := "HEAD"
@@ -430,13 +430,13 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ 
 	}
 
 	availableIndexersMap := map[string]availableIndexer{}
-	inferredAvailableIndexers := populateInferredAvailableIndexers(indexJobs, blacklist, availableIndexersMap)
+	inferredAvailableIndexers := populateInferredAvailableIndexers(indexJobs, blocklist, availableIndexersMap)
 
 	indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
 	if err != nil {
 		return nil, err
 	}
-	inferredAvailableIndexers = populateInferredAvailableIndexers(indexJobHints, blacklist, inferredAvailableIndexers)
+	inferredAvailableIndexers = populateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 
 	inferredAvailableIndexersResolver := make([]sharedresolvers.InferredAvailableIndexers, 0, len(inferredAvailableIndexers))
 	for indexName, indexer := range inferredAvailableIndexers {
