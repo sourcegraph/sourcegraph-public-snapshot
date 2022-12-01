@@ -43,7 +43,7 @@ interface CodeInsightsRootPageProps extends TelemetryProps {
 }
 
 export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = props => {
-    const { dashboardId = ALL_INSIGHTS_DASHBOARD.id, activeView, telemetryService } = props
+    const { dashboardId, activeView, telemetryService } = props
 
     const history = useHistory()
     const { dashboardId: queryParamDashboardId = ALL_INSIGHTS_DASHBOARD.id } = useQueryParameters(['dashboardId'])
@@ -92,7 +92,7 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = props => {
 }
 
 interface CodeInsightHeaderActionsProps extends TelemetryProps {
-    dashboardId: string
+    dashboardId?: string
 }
 
 const CodeInsightHeaderActions: FC<CodeInsightHeaderActionsProps> = props => {
