@@ -11,11 +11,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -67,7 +69,37 @@ func (r *webhooksResolver) UpdateWebhook(ctx context.Context, args *graphqlbacke
 	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, auth.ErrMustBeSiteAdmin
 	}
-	_, err := unmarshalWebhookID(args.ID)
+
+	whID, err := unmarshalWebhookID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	webhooks := r.db.Webhooks(keyring.Default().WebhookKey)
+
+	webhook, err := webhooks.GetByID(ctx, whID)
+	if err != nil {
+		return nil, err
+	}
+
+	if args.Name != nil {
+		webhook.Name = *args.Name
+	}
+	if args.CodeHostKind != nil {
+		webhook.CodeHostKind = *args.CodeHostKind
+	}
+	if args.CodeHostURN != nil {
+		codeHostURN, err := extsvc.NewCodeHostBaseURL(*args.CodeHostURN)
+		if err != nil {
+			return nil, err
+		}
+		webhook.CodeHostURN = codeHostURN
+	}
+	if args.Secret != nil {
+		webhook.Secret = types.NewUnencryptedSecret(*args.Secret)
+	}
+
+	_, err = webhooks.Update(ctx, actor.FromContext(ctx).UID, webhook)
 	if err != nil {
 		return nil, err
 	}

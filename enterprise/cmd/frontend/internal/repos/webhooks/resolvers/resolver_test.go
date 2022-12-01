@@ -657,6 +657,97 @@ func TestDeleteWebhook(t *testing.T) {
 	})
 }
 
+func TestUpdateWebhook(t *testing.T) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	webhookStore := database.NewMockWebhookStore()
+	webhookStore.UpdateFunc.SetDefaultReturn(nil, sgerrors.New("update webhook: oops"))
+	webhookStore.GetByIDFunc.SetDefaultReturn(&types.Webhook{Name: "old name"}, nil)
+
+	db := database.NewMockDB()
+	db.WebhooksFunc.SetDefaultReturn(webhookStore)
+	db.UsersFunc.SetDefaultReturn(users)
+	id := marshalWebhookID(42)
+	mutateStr := `mutation UpdateWebhook($id: ID!, $name: String, $codeHostKind: String, $codeHostURN: String, $secret: String) {
+                updateWebhook(id: $id, name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
+					alwaysNil
+				}
+			}`
+	gqlSchema := createGqlSchema(t, db)
+
+	// validate error if not site admin
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Label:          "only site admin can update webhook",
+		Context:        ctx,
+		Schema:         gqlSchema,
+		Query:          mutateStr,
+		ExpectedResult: "null",
+		ExpectedErrors: []*errors.QueryError{
+			{
+				Message: "must be site admin",
+				Path:    []any{"updateWebhook"},
+			},
+		},
+		Variables: map[string]any{
+			"id":           string(id),
+			"name":         "new name",
+			"codeHostKind": nil,
+			"codeHostURN":  nil,
+			"secret":       nil,
+		},
+	})
+
+	// User is site admin
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Label:          "database error",
+		Context:        ctx,
+		Schema:         gqlSchema,
+		Query:          mutateStr,
+		ExpectedResult: "null",
+		ExpectedErrors: []*errors.QueryError{
+			{
+				Message: "update webhook: oops",
+				Path:    []any{"updateWebhook"},
+			},
+		},
+		Variables: map[string]any{
+			"id":           string(id),
+			"name":         "new name",
+			"codeHostKind": nil,
+			"codeHostURN":  nil,
+			"secret":       nil,
+		},
+	})
+
+	// database layer behaves
+	webhookStore.UpdateFunc.SetDefaultReturn(nil, nil)
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Label:   "webhook successfully updated",
+		Context: ctx,
+		Schema:  gqlSchema,
+		Query:   mutateStr,
+		ExpectedResult: `
+				{
+					"updateWebhook": {
+						"alwaysNil": null
+					}
+				}
+			`,
+		Variables: map[string]any{
+			"id":           string(id),
+			"name":         "new name",
+			"codeHostKind": nil,
+			"codeHostURN":  nil,
+			"secret":       nil,
+		},
+	})
+}
+
 func createGqlSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 	gqlSchema, err := graphqlbackend.NewSchemaWithWebhooksResolver(db, NewWebhooksResolver(db))
