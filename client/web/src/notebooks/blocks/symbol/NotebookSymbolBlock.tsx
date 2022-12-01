@@ -15,7 +15,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
-import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
@@ -23,6 +23,7 @@ import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
 import { Alert, Icon, LoadingSpinner, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
+import { useExperimentalFeatures } from '../../../stores'
 import { BlockProps, SymbolBlock, SymbolBlockInput, SymbolBlockOutput } from '../..'
 import { focusEditor } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
@@ -253,9 +254,10 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<React.PropsWithChildren
     symbolURL,
 }) => {
     const repoAtRevisionURL = getRepositoryUrl(repositoryName, [effectiveRevision])
+    const enableSymbolTags = useExperimentalFeatures(features => features.enableSymbolTags)
     return (
         <>
-            <SymbolIcon kind={symbolKind} inheritColor={true} />
+            <SymbolKind kind={symbolKind} className={styles.symbolKind} asTag={enableSymbolTags} />
             <div className={styles.separator} />
             <RepoFileSymbolLink
                 repoName={repositoryName}

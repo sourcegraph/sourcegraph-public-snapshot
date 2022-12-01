@@ -232,6 +232,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 onPreviewChange={onPreviewChange}
                 onPreviewClear={onPreviewClear}
                 onOpen={onOpen}
+                settingsCascade={settingsCascade}
             />
         ),
         [lastSearch, matches, onOpen, onPreviewChange, onPreviewClear]
