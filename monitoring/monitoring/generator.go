@@ -180,7 +180,7 @@ func generateAll(
 	opts GenerateOptions,
 ) (generatedAssets []string, err error) {
 	// Generate Garafana home dasboard "Overview"
-	data, err := grafana.Home(opts.InjectLabelMatchers)
+	data, err := grafana.Home(opts.GrafanaFolder, opts.InjectLabelMatchers)
 	if err != nil {
 		return generatedAssets, errors.Wrap(err, "failed to generate home dashboard")
 	}
