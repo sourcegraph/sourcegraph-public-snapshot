@@ -66,13 +66,13 @@ RUN apk add --no-cache --verbose \
     # We require libstdc++ for p4-fusion
     libstdc++
 
-# IMPORTANT: If you update the syntect_server version below, you MUST confirm
-# the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
+# IMPORTANT: If you update the syntax-highlighter version below, you MUST confirm
+# the ENV variables from its Dockerfile (https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/syntax-highlighter/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
 # hadolint ignore=DL3022
 COPY --from=comby/comby:alpine-3.14-1.8.1@sha256:a5e80d6bad6af008478679809dc8327ebde7aeff7b23505b11b20e36aa62a0b2 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
-COPY --from=docker.io/sourcegraph/syntect_server:21-08-31_c330964@sha256:759f331a474d2a67b811a1b374b0b24a4661446a2d8e9b211f51ea8ae95e1130 /syntect_server /usr/local/bin/
+COPY --from=docker.io/sourcegraph/syntax-highlighter:175652_2022-10-04_5ae1e4363e56 /syntect_server /usr/local/bin/
 
 
 # TODO(blobstore): remove minio support
