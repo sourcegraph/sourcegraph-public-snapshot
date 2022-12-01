@@ -6,8 +6,8 @@ FROM maven:3.8.6-openjdk-11-slim AS builder
 RUN apt-get update && \
   apt-get install -y --no-install-recommends git
 
-RUN git clone https://github.com/sourcegraph/s3proxy
-WORKDIR s3proxy
+RUN git clone https://github.com/sourcegraph/s3proxy /build
+WORKDIR /build
 RUN mvn package -DskipTests && \
     mv target/ /opt/s3proxy && \
     cp src/main/resources/run-docker-container.sh /opt/s3proxy
