@@ -12,7 +12,7 @@ import (
 type WebhooksResolver interface {
 	CreateWebhook(ctx context.Context, args *CreateWebhookArgs) (WebhookResolver, error)
 	DeleteWebhook(ctx context.Context, args *DeleteWebhookArgs) (*EmptyResponse, error)
-	UpdateWebhook(ctx context.Context, args *UpdateWebhookArgs) (*EmptyResponse, error)
+	UpdateWebhook(ctx context.Context, args *UpdateWebhookArgs) (WebhookResolver, error)
 	Webhooks(ctx context.Context, args *ListWebhookArgs) (WebhookConnectionResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc

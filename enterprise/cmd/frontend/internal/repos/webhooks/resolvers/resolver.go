@@ -65,7 +65,7 @@ func (r *webhooksResolver) DeleteWebhook(ctx context.Context, args *graphqlbacke
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *webhooksResolver) UpdateWebhook(ctx context.Context, args *graphqlbackend.UpdateWebhookArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *webhooksResolver) UpdateWebhook(ctx context.Context, args *graphqlbackend.UpdateWebhookArgs) (graphqlbackend.WebhookResolver, error) {
 	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, auth.ErrMustBeSiteAdmin
 	}
@@ -99,12 +99,12 @@ func (r *webhooksResolver) UpdateWebhook(ctx context.Context, args *graphqlbacke
 		webhook.Secret = types.NewUnencryptedSecret(*args.Secret)
 	}
 
-	_, err = webhooks.Update(ctx, actor.FromContext(ctx).UID, webhook)
+	newWebhook, err := webhooks.Update(ctx, actor.FromContext(ctx).UID, webhook)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "update webhook")
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &webhookResolver{hook: newWebhook, db: r.db}, nil
 }
 
 func (r *webhooksResolver) Webhooks(ctx context.Context, args *graphqlbackend.ListWebhookArgs) (graphqlbackend.WebhookConnectionResolver, error) {

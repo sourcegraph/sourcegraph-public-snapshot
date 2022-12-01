@@ -663,8 +663,13 @@ func TestUpdateWebhook(t *testing.T) {
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	webhookStore := database.NewMockWebhookStore()
-	webhookStore.UpdateFunc.SetDefaultReturn(nil, sgerrors.New("update webhook: oops"))
-	webhookStore.GetByIDFunc.SetDefaultReturn(&types.Webhook{Name: "old name"}, nil)
+	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, actorUID int32, webhook *types.Webhook) (*types.Webhook, error) {
+		return nil, sgerrors.New("oops")
+	})
+	whUUID := uuid.New()
+	ghURN, err := extsvc.NewCodeHostBaseURL("https://github.com")
+	require.NoError(t, err)
+	webhookStore.GetByIDFunc.SetDefaultReturn(&types.Webhook{Name: "old name", ID: 1, UUID: whUUID, CodeHostURN: ghURN}, nil)
 
 	db := database.NewMockDB()
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
@@ -672,7 +677,10 @@ func TestUpdateWebhook(t *testing.T) {
 	id := marshalWebhookID(42)
 	mutateStr := `mutation UpdateWebhook($id: ID!, $name: String, $codeHostKind: String, $codeHostURN: String, $secret: String) {
                 updateWebhook(id: $id, name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
-					alwaysNil
+                    name
+                    id
+                    uuid
+                    codeHostURN
 				}
 			}`
 	gqlSchema := createGqlSchema(t, db)
@@ -724,25 +732,54 @@ func TestUpdateWebhook(t *testing.T) {
 	})
 
 	// database layer behaves
-	webhookStore.UpdateFunc.SetDefaultReturn(nil, nil)
+	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, actorUID int32, webhook *types.Webhook) (*types.Webhook, error) {
+		return webhook, nil
+	})
 
 	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Label:   "webhook successfully updated",
+		Label:   "webhook successfully updated 1 field",
 		Context: ctx,
 		Schema:  gqlSchema,
 		Query:   mutateStr,
-		ExpectedResult: `
+		ExpectedResult: fmt.Sprintf(`
 				{
 					"updateWebhook": {
-						"alwaysNil": null
+						"name": "new name",
+						"id": "V2ViaG9vazox",
+						"uuid": "%s",
+                        "codeHostURN": "https://github.com/"
 					}
 				}
-			`,
+			`, whUUID),
 		Variables: map[string]any{
 			"id":           string(id),
 			"name":         "new name",
 			"codeHostKind": nil,
 			"codeHostURN":  nil,
+			"secret":       nil,
+		},
+	})
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Label:   "webhook successfully updated multiple fields",
+		Context: ctx,
+		Schema:  gqlSchema,
+		Query:   mutateStr,
+		ExpectedResult: fmt.Sprintf(`
+				{
+					"updateWebhook": {
+						"name": "new name",
+						"id": "V2ViaG9vazox",
+						"uuid": "%s",
+                        "codeHostURN": "https://example.github.com/"
+					}
+				}
+			`, whUUID),
+		Variables: map[string]any{
+			"id":           string(id),
+			"name":         "new name",
+			"codeHostKind": nil,
+			"codeHostURN":  "https://example.github.com",
 			"secret":       nil,
 		},
 	})
