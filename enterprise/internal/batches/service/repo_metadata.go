@@ -15,15 +15,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// getRepoMetadata returns the repo metadata for the given repo, recalculating
+// GetRepoMetadata returns the repo metadata for the given repo, recalculating
 // it if necessary.
 //
 // 🚨 SECURITY: calling code is responsible for validating that the given repo
-// can be seen by the current user; although GetRepoMetadata performs an authz
-// check as part of its query, a failed authz check will still results in the
-// gitserver being hit for the repo, which could expose a side channel of
+// can be seen by the current user; although tx.GetRepoMetadata performs an
+// authz check as part of its query, a failed authz check will still results in
+// the gitserver being hit for the repo, which could expose a side channel of
 // information about the existence or not of the given repo.
-func getRepoMetadata(ctx context.Context, tx *store.Store, client gitserver.Client, repo *types.Repo) (*btypes.RepoMetadata, error) {
+func GetRepoMetadata(ctx context.Context, tx *store.Store, client gitserver.Client, repo *types.Repo) (*btypes.RepoMetadata, error) {
 	meta, err := tx.GetRepoMetadata(ctx, repo.ID)
 	if err != nil && err != store.ErrNoResults {
 		return nil, errors.Wrap(err, "getting repo metadata")
