@@ -8,9 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// GetService creates or returns an already-initialized policies service.
-// If the service is not yet initialized, it will use the provided dependencies.
-func GetService(
+func NewService(
 	db database.DB,
 	uploadSvc UploadService,
 	gitserver GitserverClient,

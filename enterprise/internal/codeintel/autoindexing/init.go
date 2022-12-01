@@ -21,9 +21,7 @@ var (
 	DependencyIndexingJobWorkerStoreOptions = background.DependencyIndexingJobWorkerStoreOptions
 )
 
-// GetService creates or returns an already-initialized autoindexing service.
-// If the service is not yet initialized, it will use the provided dependencies.
-func GetService(
+func NewService(
 	db database.DB,
 	uploadSvc UploadService,
 	depsSvc DependenciesService,

@@ -8,9 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// GetService creates or returns an already-initialized dependencies service.
-// If the service is not yet initialized, it will use the provided dependencies.
-func GetService(db database.DB) *Service {
+func NewService(db database.DB) *Service {
 	return newService(store.New(db, scopedContext("store")), scopedContext("service"))
 }
 

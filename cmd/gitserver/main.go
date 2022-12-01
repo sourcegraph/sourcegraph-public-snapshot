@@ -124,7 +124,7 @@ func main() {
 	db := database.NewDB(logger, sqlDB)
 
 	repoStore := db.Repos()
-	dependenciesSvc := dependencies.GetService(db)
+	dependenciesSvc := dependencies.NewService(db)
 	externalServiceStore := db.ExternalServices()
 
 	err = keyring.Init(ctx)

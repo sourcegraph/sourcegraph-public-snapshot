@@ -8,9 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// GetService creates or returns an already-initialized symbols service.
-// If the service is not yet initialized, it will use the provided dependencies.
-func GetService(
+func NewService(
 	db database.DB,
 	codeIntelDB codeintelshared.CodeIntelDB,
 	uploadSvc UploadService,

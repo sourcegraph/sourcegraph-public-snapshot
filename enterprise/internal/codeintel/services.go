@@ -34,12 +34,12 @@ func GetServices(deps Databases) (Services, error) {
 	db, codeIntelDB := deps.DB, deps.CodeIntelDB
 	gitserverClient := gitserver.New(db, scopedContext("gitserver"))
 
-	uploadsSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
-	dependenciesSvc := dependencies.GetService(db)
-	policiesSvc := policies.GetService(db, uploadsSvc, gitserverClient)
-	autoIndexingSvc := autoindexing.GetService(db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient)
-	codenavSvc := codenav.GetService(db, codeIntelDB, uploadsSvc, gitserverClient)
-	rankingSvc := ranking.GetService(db, uploadsSvc, gitserverClient)
+	uploadsSvc := uploads.NewService(db, codeIntelDB, gitserverClient)
+	dependenciesSvc := dependencies.NewService(db)
+	policiesSvc := policies.NewService(db, uploadsSvc, gitserverClient)
+	autoIndexingSvc := autoindexing.NewService(db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient)
+	codenavSvc := codenav.NewService(db, codeIntelDB, uploadsSvc, gitserverClient)
+	rankingSvc := ranking.NewService(db, uploadsSvc, gitserverClient)
 
 	return Services{
 		AutoIndexingService: autoIndexingSvc,

@@ -29,9 +29,7 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// GetService creates or returns an already-initialized uploads service.
-// If the service is not yet initialized, it will use the provided dependencies.
-func GetService(
+func NewService(
 	db database.DB,
 	codeIntelDB codeintelshared.CodeIntelDB,
 	gsc GitserverClient,
@@ -72,7 +70,7 @@ func GetService(
 		locker,
 		scopedContext("service"),
 	)
-	svc.policySvc = policies.GetService(db, svc, gsc)
+	svc.policySvc = policies.NewService(db, svc, gsc)
 
 	return svc
 }

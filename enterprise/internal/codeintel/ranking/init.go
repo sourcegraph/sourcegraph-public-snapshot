@@ -19,9 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 )
 
-// GetService creates or returns an already-initialized ranking service.
-// If the service is not yet initialized, it will use the provided dependencies.
-func GetService(
+func NewService(
 	db database.DB,
 	uploadSvc *uploads.Service,
 	gitserverClient GitserverClient,
