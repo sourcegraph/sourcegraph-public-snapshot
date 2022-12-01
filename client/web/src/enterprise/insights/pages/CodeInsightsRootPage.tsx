@@ -20,10 +20,9 @@ import {
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { CodeInsightsPage } from '../components'
-import { ALL_INSIGHTS_DASHBOARD } from '../constants'
 import { useQueryParameters } from '../hooks'
 
-import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'
+import { DashboardsView } from './dashboards/dashboard-view/DashboardsView'
 
 import styles from './CodeInsightsRootPage.module.scss'
 
@@ -33,25 +32,28 @@ const LazyCodeInsightsGettingStartedPage = lazyComponent(
 )
 
 export enum CodeInsightsRootPageTab {
-    CodeInsights,
+    Dashboards,
+    AllInsights,
     GettingStarted,
 }
 
 interface CodeInsightsRootPageProps extends TelemetryProps {
     dashboardId?: string
-    activeView: CodeInsightsRootPageTab
+    activeTab: CodeInsightsRootPageTab
 }
 
 export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = props => {
-    const { dashboardId, activeView, telemetryService } = props
+    const { dashboardId, activeTab, telemetryService } = props
 
     const history = useHistory()
-    const { dashboardId: queryParamDashboardId = ALL_INSIGHTS_DASHBOARD.id } = useQueryParameters(['dashboardId'])
+    const { dashboardId: queryParamDashboardId } = useQueryParameters(['dashboardId'])
 
     const handleTabNavigationChange = (selectedTab: CodeInsightsRootPageTab): void => {
         switch (selectedTab) {
-            case CodeInsightsRootPageTab.CodeInsights:
-                return history.push(`/insights/dashboards/${queryParamDashboardId}`)
+            case CodeInsightsRootPageTab.Dashboards:
+                return history.push(`/insights/dashboards/${queryParamDashboardId ?? ''}`)
+            case CodeInsightsRootPageTab.AllInsights:
+                return history.push(`/insights/dashboards/all?dashboardId=${dashboardId}`)
             case CodeInsightsRootPageTab.GettingStarted:
                 return history.push(`/insights/about?dashboardId=${dashboardId}`)
         }
@@ -71,19 +73,20 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = props => {
             />
 
             <Tabs
-                index={activeView}
+                index={activeTab}
                 lazy={true}
                 size="medium"
                 className={styles.tabs}
                 onChange={handleTabNavigationChange}
             >
                 <TabList>
-                    <Tab index={CodeInsightsRootPageTab.CodeInsights}>Code Insights</Tab>
+                    <Tab index={CodeInsightsRootPageTab.Dashboards}>Dashboards</Tab>
+                    <Tab index={CodeInsightsRootPageTab.AllInsights}>All insights</Tab>
                     <Tab index={CodeInsightsRootPageTab.GettingStarted}>Getting started</Tab>
                 </TabList>
                 <TabPanels className={styles.tabPanels}>
                     <TabPanel tabIndex={-1}>
-                        <DashboardsContentPage telemetryService={telemetryService} dashboardID={dashboardId} />
+                        <DashboardsView dashboardId={dashboardId} telemetryService={telemetryService} />
                     </TabPanel>
                     <TabPanel tabIndex={-1}>
                         <Suspense fallback={<LoadingSpinner aria-label="Loading Code Insights Getting started page" />}>

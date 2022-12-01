@@ -9,7 +9,13 @@ import {
     InsightsDashboardsResult,
 } from '../../../../graphql-operations'
 import { ALL_INSIGHTS_DASHBOARD } from '../../constants'
-import { InsightDashboard, InsightsDashboardOwner, InsightsDashboardOwnerType, InsightsDashboardType } from '../index'
+import {
+    CustomInsightDashboard,
+    InsightDashboard,
+    InsightsDashboardOwner,
+    InsightsDashboardOwnerType,
+    InsightsDashboardType,
+} from '../index'
 
 export const GET_INSIGHT_DASHBOARDS_GQL = gql`
     query InsightsDashboards($id: ID) {
@@ -45,7 +51,7 @@ export const GET_INSIGHT_DASHBOARDS_GQL = gql`
 `
 
 interface useInsightDashboardsResult {
-    dashboards: InsightDashboard[] | undefined
+    dashboards: CustomInsightDashboard[] | undefined
     loading: boolean
     error: ApolloError | undefined
 }
@@ -62,19 +68,19 @@ export function useInsightDashboards(): useInsightDashboardsResult {
 
     if (data) {
         const { insightsDashboards, currentUser } = data
-        const improvedDashboards = [
-            ALL_INSIGHTS_DASHBOARD,
-            ...makeDashboardTitleUnique(insightsDashboards.nodes).map(
-                (dashboard): InsightDashboard => ({
+
+        return {
+            error,
+            loading,
+            dashboards: makeDashboardTitleUnique(insightsDashboards.nodes).map(
+                (dashboard): CustomInsightDashboard => ({
                     id: dashboard.id,
                     type: InsightsDashboardType.Custom,
                     title: dashboard.title,
                     owners: deserializeDashboardsOwners(dashboard, currentUser),
                 })
             ),
-        ]
-
-        return { dashboards: improvedDashboards, error, loading }
+        }
     }
 
     return { dashboards: undefined, error, loading }

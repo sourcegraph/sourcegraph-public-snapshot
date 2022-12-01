@@ -9,8 +9,7 @@ import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { LimitedAccessLabel } from '../../../../../components'
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../../constants'
-import { InsightDashboard, isVirtualDashboard } from '../../../../../core'
+import { CustomInsightDashboard } from '../../../../../core'
 import { useCopyURLHandler, useUiFeatures } from '../../../../../hooks'
 import { AddInsightModal } from '../add-insight-modal'
 import { DashboardMenu, DashboardMenuAction } from '../dashboard-menu/DashboardMenu'
@@ -30,8 +29,8 @@ export interface DashboardsContentProps extends TelemetryProps {
      * In case if id is undefined we get insights from the final
      * version of merged settings (all insights)
      */
-    currentDashboard?: InsightDashboard
-    dashboards: InsightDashboard[]
+    currentDashboard?: CustomInsightDashboard
+    dashboards: CustomInsightDashboard[]
 }
 
 export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<DashboardsContentProps>> = props => {
@@ -50,13 +49,13 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
         telemetryService.logViewEvent('Insights')
     }, [telemetryService])
 
-    const handleDashboardSelect = (dashboard: InsightDashboard): void =>
+    const handleDashboardSelect = (dashboard: CustomInsightDashboard): void =>
         history.push(`/insights/dashboards/${dashboard.id}`)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
             case DashboardMenuAction.Configure: {
-                if (currentDashboard && !isVirtualDashboard(currentDashboard)) {
+                if (currentDashboard) {
                     history.push(`/insights/dashboards/${currentDashboard.id}/edit`)
                 }
                 return
@@ -116,11 +115,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
             {!licensed && (
                 <LimitedAccessLabel
                     className={classNames(styles.limitedAccessLabel)}
-                    message={
-                        currentDashboard?.id === ALL_INSIGHTS_DASHBOARD.id
-                            ? 'Create up to 2 global insights'
-                            : 'Unlock Code Insights for full access to custom dashboards'
-                    }
+                    message="Unlock Code Insights for full access to custom dashboards"
                 />
             )}
 

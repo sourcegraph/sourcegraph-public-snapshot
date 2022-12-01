@@ -128,7 +128,7 @@ describe('CodeInsightsRootPage', () => {
     it('should redirect to "All insights" page if no dashboardId is provided', () => {
         const { testLocation } = renderWithBrandedContext(
             <CodeInsightsRootPage
-                activeView={CodeInsightsRootPageTab.CodeInsights}
+                activeView={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
             />,
             {
@@ -142,7 +142,7 @@ describe('CodeInsightsRootPage', () => {
     it('should render dashboard not found page when id is not found', () => {
         renderWithBrandedContext(
             <CodeInsightsRootPage
-                activeView={CodeInsightsRootPageTab.CodeInsights}
+                activeView={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
             />,
             {
@@ -156,7 +156,7 @@ describe('CodeInsightsRootPage', () => {
     it('should log events', () => {
         renderWithBrandedContext(
             <CodeInsightsRootPage
-                activeView={CodeInsightsRootPageTab.CodeInsights}
+                activeView={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
             />,
             {

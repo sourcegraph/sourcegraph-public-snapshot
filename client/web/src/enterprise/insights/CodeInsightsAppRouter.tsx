@@ -1,7 +1,7 @@
-import React, { useContext, useMemo, FC } from 'react'
+import { FC, useContext, useMemo } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { RouteComponentProps, Switch, Route, useRouteMatch } from 'react-router'
+import { Route, RouteComponentProps, Switch, useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -27,9 +27,7 @@ const EditInsightLazyPage = lazyComponent(
     'EditInsightPage'
 )
 
-const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
-)
+const NotFoundPage: FC = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 export interface CodeInsightsAppRouter extends TelemetryProps {
     authenticatedUser: AuthenticatedUser
@@ -57,7 +55,7 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
 
                 <Route
                     path={`${match.url}/insight/:id`}
-                    render={(props: RouteComponentProps<{ id: string }>) => (
+                    render={props => (
                         <CodeInsightIndependentPage
                             insightId={props.match.params.id}
                             telemetryService={telemetryService}
@@ -66,16 +64,16 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                 />
 
                 <Route
-                    path={`${match.url}/edit/:insightID`}
-                    render={(props: RouteComponentProps<{ insightID: string }>) => (
-                        <EditInsightLazyPage insightID={props.match.params.insightID} />
+                    path={`${match.url}/edit/:insightId`}
+                    render={props => (
+                        <EditInsightLazyPage insightID={props.match.params.insightId} />
                     )}
                 />
 
                 <Route
                     path={`${match.url}/dashboards/:dashboardId/edit`}
-                    render={(routeProps: RouteComponentProps<{ dashboardId: string }>) => (
-                        <EditDashboardPage dashboardId={routeProps.match.params.dashboardId} />
+                    render={props => (
+                        <EditDashboardPage dashboardId={props.match.params.dashboardId} />
                     )}
                 />
 
@@ -89,11 +87,7 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                     render={(props: RouteComponentProps<{ dashboardId?: string }>) => (
                         <CodeInsightsRootPage
                             dashboardId={props.match.params.dashboardId}
-                            activeView={
-                                props.match.path === `${match.url}/dashboards/:dashboardId?`
-                                    ? CodeInsightsRootPageTab.CodeInsights
-                                    : CodeInsightsRootPageTab.GettingStarted
-                            }
+                            activeTab={getActiveTabByURL(match.url, props)}
                             telemetryService={telemetryService}
                         />
                     )}
@@ -122,4 +116,29 @@ const CodeInsightsRedirect: FC = () => {
     ) : (
         <Redirect from={match.url} exact={true} to={`${match.url}/about`} />
     )
+}
+
+function getActiveTabByURL(
+    matchURL: string,
+    props: RouteComponentProps<{ dashboardId?: string }>
+): CodeInsightsRootPageTab {
+    const { match } = props
+
+    switch (match.path) {
+        case `${matchURL}/dashboards/:dashboardId?`: {
+            const dashboardId = match.params.dashboardId
+
+            if (dashboardId === 'all') {
+                return CodeInsightsRootPageTab.AllInsights
+            }
+
+            return CodeInsightsRootPageTab.Dashboards
+        }
+
+        case `${matchURL}/about`:
+            return CodeInsightsRootPageTab.GettingStarted
+
+        default:
+            return CodeInsightsRootPageTab.AllInsights
+    }
 }
