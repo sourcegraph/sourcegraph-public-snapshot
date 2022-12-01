@@ -18,6 +18,8 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 
 	// The set of recording times will be augmented with zeros for missing points in the expected leading set and the
 	// expected trailing set.
+	// i.e. for reference times [R1, R2, R3, R4, R5, R6, R7, R8] and existing times [E4, E6, E7],
+	// the calculated times will be [R1, R2, R3, E4, E6, E7, R8]
 
 	var calculatedRecordingTimes []time.Time
 
@@ -35,9 +37,12 @@ func calculateRecordingTimes(createdAt time.Time, lastRecordedAt time.Time, inte
 	newestReferencePoint := referenceTimes[len(referenceTimes)-1]
 	if !withinHalfAnInterval(newestReferencePoint, existingPoints[len(existingPoints)-1], interval) {
 		var backwardTrailingPoints []time.Time
+		// We have to walk backwards through the trailing reference times as we do not know how many extra reference
+		// times need to be added.
 		for i := len(referenceTimes) - 1; i >= 0 && !withinHalfAnInterval(referenceTimes[i], existingPoints[len(existingPoints)-1], interval); i-- {
 			backwardTrailingPoints = append(backwardTrailingPoints, referenceTimes[i])
 		}
+		// Once we've walked back through the reference times we append them in the correct order.
 		for i := len(backwardTrailingPoints) - 1; i >= 0; i-- {
 			calculatedRecordingTimes = append(calculatedRecordingTimes, backwardTrailingPoints[i])
 		}
