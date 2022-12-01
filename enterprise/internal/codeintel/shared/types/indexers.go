@@ -66,10 +66,6 @@ var (
 		Name: "scip-python",
 		URN:  "github.com/sourcegraph/scip-python",
 	}
-	lsifRust = CodeIntelIndexer{
-		Name: "lsif-rust",
-		URN:  "github.com/sourcegraph/lsif-rust",
-	}
 	rustAnalyzer = CodeIntelIndexer{
 		Name: "rust-analyzer",
 		URN:  "github.com/rust-analyzer/rust-analyzer",
@@ -163,7 +159,7 @@ var PreferredIndexers = map[string]CodeIntelIndexer{
 	"lsif-jsonnet":    lsifJsonnet,
 	"lsif-ocaml":      lsifOcaml,
 	"scip-python":     scipPython,
-	"lsif-rust":       lsifRust,
+	"lsif-rust":       rustAnalyzer,
 	"rust-analyzer":   rustAnalyzer,
 	"lsif-php":        lsifPHP,
 	"lsif-terraform":  lsifTerraform,

@@ -25,7 +25,17 @@ func (j IndexJob) GetRoot() string {
 // Example:
 // sourcegraph/lsif-go@sha256:... => lsif-go
 func (j IndexJob) GetIndexerName() string {
-	return j.Indexer[len("sourcegraph/"):strings.LastIndex(j.Indexer, "@")]
+	start := 0
+	if strings.HasPrefix(j.Indexer, "sourcegraph/") {
+		start = len("sourcegraph/")
+	}
+
+	end := len(j.Indexer)
+	if strings.Contains(j.Indexer, "@") {
+		end = strings.LastIndex(j.Indexer, "@")
+	}
+
+	return j.Indexer[start:end]
 }
 
 type DockerStep struct {
@@ -57,5 +67,15 @@ func (j IndexJobHint) GetRoot() string {
 // Example:
 // sourcegraph/lsif-go@sha256:... => lsif-go
 func (j IndexJobHint) GetIndexerName() string {
-	return j.Indexer[len("sourcegraph/"):strings.LastIndex(j.Indexer, "@")]
+	start := 0
+	if strings.HasPrefix(j.Indexer, "sourcegraph/") {
+		start = len("sourcegraph/")
+	}
+
+	end := len(j.Indexer)
+	if strings.Contains(j.Indexer, "@") {
+		end = strings.LastIndex(j.Indexer, "@")
+	}
+
+	return j.Indexer[start:end]
 }
