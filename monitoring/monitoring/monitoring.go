@@ -102,17 +102,8 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 	if folder != "" {
 		uid = fmt.Sprintf("%s-%s", folder, uid)
 	}
+	board := grafana.Board(uid, c.Title, []string{"builtin"})
 
-	board := sdk.NewBoard(c.Title)
-	board.UID = uid
-	board.ID = 0
-	board.Timezone = "utc"
-	board.Timepicker.RefreshIntervals = []string{"5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"}
-	board.Time.From = "now-6h"
-	board.Time.To = "now"
-	board.SharedCrosshair = true
-	board.Editable = false
-	board.AddTags("builtin")
 	if !c.noAlertsDefined() {
 		alertLevelVariable := ContainerVariable{
 			Label: "Alert level",
