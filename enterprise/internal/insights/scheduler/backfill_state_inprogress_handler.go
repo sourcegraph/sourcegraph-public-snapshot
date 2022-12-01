@@ -32,7 +32,7 @@ import (
 const (
 	defaultInterruptSeconds    = 60
 	inProgressPollingInterval  = time.Second * 5
-	defaultErrorThresholdFloor = 5
+	defaultErrorThresholdFloor = 50
 )
 
 func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker[*BaseJob], *dbworker.Resetter[*BaseJob], dbworkerstore.Store[*BaseJob]) {
@@ -198,7 +198,6 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 
 				execution.logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
 				runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: execution.series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, Frames: execution.frames})
-				runErr = errors.New("fake error to test terminal")
 				if runErr != nil {
 					execution.logger.Error("error during backfill execution", execution.logFields(log.Error(runErr))...)
 				}
