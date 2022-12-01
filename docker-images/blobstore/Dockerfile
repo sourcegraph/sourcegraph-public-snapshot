@@ -3,8 +3,7 @@
 FROM maven:3.8.6-openjdk-11-slim AS builder
 
 # hadolint ignore=DL3008,DL3009
-RUN add-apt-repository ppa:git-core/ppa && \
-  apt-get update && \
+RUN apt-get update && \
   apt-get install -y --no-install-recommends git
 
 RUN git clone https://github.com/sourcegraph/s3proxy
