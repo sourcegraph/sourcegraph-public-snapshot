@@ -1644,10 +1644,14 @@ type Query {
     Foobar
     """
     slowRequests(
-      """
-      todo
-      """
-      after: ID
+        """
+        todo
+        """
+        after: ID
+        """
+        todo
+        """
+        query: String
     ): SlowRequestConnection!
 }
 
@@ -8258,15 +8262,15 @@ type SlowRequestConnection {
 TODO
 """
 type SlowRequest {
-  id: ID!
-  start: DateTime!
-  duration: Float!  
-  userId: String!
-  name: String!
-  source: String!
-  repoName: String!
-  variables: String!
-  errors: [String!]!
-  query: String!
-  filepath: String!
+    id: ID!
+    start: DateTime!
+    duration: Float!
+    userId: String!
+    name: String!
+    source: String!
+    repoName: String!
+    variables: String!
+    errors: [String!]!
+    query: String!
+    filepath: String!
 }

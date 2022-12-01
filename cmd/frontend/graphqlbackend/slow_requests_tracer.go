@@ -12,6 +12,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -132,6 +133,11 @@ func (r *slowRequestConnectionResolver) TotalCount(ctx context.Context) (int32, 
 }
 
 func (r *slowRequestConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	reqs, err := r.fetch(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	n, err := strconv.Atoi(r.after)
 	if err != nil {
 		return nil, err
@@ -140,7 +146,12 @@ func (r *slowRequestConnectionResolver) PageInfo(ctx context.Context) (*graphqlu
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(int32(n+5) < total), nil
+	fmt.Printf(">>>>> %v %v %v", r.after, n, total)
+	if int32(n+5) >= total {
+		return graphqlutil.HasNextPage(false), nil
+	} else {
+		return graphqlutil.NextPageCursor(string(relay.MarshalID("SlowRequest", reqs[len(reqs)-1].ID))), nil
+	}
 }
 
 func (r *slowRequestResolver) ID() graphql.ID {

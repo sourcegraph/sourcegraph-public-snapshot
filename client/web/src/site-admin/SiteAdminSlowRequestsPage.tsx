@@ -37,7 +37,10 @@ import { SlowRequestsResult, SlowRequestsVariables } from '../graphql-operations
 
 import { SLOW_REQUESTS, SLOW_REQUESTS_PAGE_POLL_INTERVAL } from './backend'
 
+import { dataOrThrowErrors } from '@sourcegraph/http-client'
+
 import styles from './SiteAdminSlowRequestsPage.module.scss'
+import { requestGraphQL } from '../backend/graphql'
 
 export interface SiteAdminSlowRequestsPageProps extends RouteComponentProps, TelemetryProps {
     now?: () => Date
@@ -70,70 +73,26 @@ const filters: FilteredConnectionFilter[] = [
                 args: { failed: false },
             },
         ],
-    }
+    },
 ]
 
 export const SiteAdminSlowRequestsPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminSlowRequestsPageProps>
 > = ({ history, telemetryService }) => {
-    const [items, setItems] = useState<SlowRequest[]>([])
-
     useEffect(() => {
         telemetryService.logPageView('SiteAdminSlowRequests')
     }, [telemetryService])
 
-    var lastId = items[items.length - 1]?.id ?? null
-    const { data, loading, error, stopPolling, refetch, startPolling } = useQuery<
-        SlowRequestsResult,
-        SlowRequestsVariables
-    >(SLOW_REQUESTS, {
-        variables: { after: lastId },
-        pollInterval: SLOW_REQUESTS_PAGE_POLL_INTERVAL,
-    })
-
-    useEffect(() => {
-        if (data?.slowRequests?.nodes?.length && (!lastId || data?.slowRequests.nodes[0].id > lastId)) {
-            const newItems = items
-                .concat(...data.slowRequests.nodes)
-                .slice(
-                    Math.max(
-                        items.length +
-                            data.slowRequests.nodes.length -
-                            50,
-                        0
-                    )
-                )
-            console.log(newItems[newItems.length - 1]?.id)
-            console.log(lastId)
-            lastId = newItems[newItems.length - 1]?.id
-            // Workaround for https://github.com/apollographql/apollo-client/issues/3053 to update the variables.
-            // Weirdly enough, we don't need to wait for refetch() to complete before restarting polling.
-            // See http://www.petecorey.com/blog/2019/09/23/apollo-quirks-polling-after-refetching-with-new-variables/
-            stopPolling()
-            setItems(newItems)
-            refetch({ after: newItems[newItems.length - 1]?.id ?? null })
-                .then(() => {})
-                .catch(() => {})
-            startPolling(SLOW_REQUESTS_PAGE_POLL_INTERVAL)
-        }
-    }, [data, lastId, items, refetch, startPolling, stopPolling])
-
     const querySlowRequests = useCallback(
-        (args: FilteredConnectionQueryArguments & { failed?: boolean }) =>
-            of([...items].reverse()).pipe(
-                delay(200), // Without this, FilteredConnection will get into an infinite loop. :facepalm:
-                map(items => {
-                    const filtered = items?.filter(
-                        request =>
-                            (!args.query || matchesString(request, args.query)) && (args.failed !== !isSuccessful(request))
-                    )
-                    return {
-                        nodes: filtered ?? [],
-                        totalCount: (filtered ?? []).length,
-                    }
-                })
+        (args: FilteredConnectionQueryArguments) =>
+            requestGraphQL<SlowRequestsResult, SlowRequestsVariables>(SLOW_REQUESTS, {
+                after: args.after ?? null,
+                query: args.query ?? null,
+            }).pipe(
+                map(dataOrThrowErrors),
+                map(data => data.slowRequests)
             ),
-        [items]
+        []
     )
 
     return (
@@ -144,8 +103,8 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
                 headingElement="h2"
                 description={
                     <>
-                        This is the log of recent slow GraphQL requests received by the Sourcegraph instance. Handy for seeing
-                        what's happening between clients and our API.{' '}
+                        This is the log of recent slow GraphQL requests received by the Sourcegraph instance. Handy for
+                        seeing what's happening between clients and our API.{' '}
                         <strong>The list updates every five seconds.</strong>
                     </>
                 }
@@ -153,8 +112,8 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
             />
 
             <Container className="mb-3">
-                {error && !loading && <ErrorAlert error={error} />}
-                {loading && !error && <LoadingSpinner />}
+                {/* {error && !loading && <ErrorAlert error={error} />}
+                {loading && !error && <LoadingSpinner />} */}
                 {50 ? (
                     <FilteredConnection<SlowRequest>
                         className="mb-0"
@@ -167,6 +126,7 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
                         filters={filters}
                         history={history}
                         location={history.location}
+                        cursorPaging={true}
                     />
                 ) : (
                     <>
@@ -197,30 +157,34 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
             <span className={styles.separator} />
             <div className="flex-bounded">
                 <Tooltip content="Duration">
-                  <span>{roundedSecond.toFixed(2)} second{roundedSecond === 1 ? '' : 's'}</span>
+                    <span>
+                        {roundedSecond.toFixed(2)} second{roundedSecond === 1 ? '' : 's'}
+                    </span>
                 </Tooltip>
             </div>
             <div>
                 <Tooltip content="Request Name">
-                        <strong>{node.name}</strong>
+                    <strong>{node.name}</strong>
                 </Tooltip>
             </div>
             <div>
-                <Tooltip content={"Repo Name: " + node.repoName}>
-                        <span>{shortenRepoName(node.repoName)}</span>
+                <Tooltip content={'Repo Name: ' + node.repoName}>
+                    <span>{shortenRepoName(node.repoName)}</span>
                 </Tooltip>
             </div>
             <div>
-              <Tooltip content={'Filepath: ' + node.filepath}>
-                <code>{ellipsis(node.filepath)}</code>
-              </Tooltip>
+                <Tooltip content={'Filepath: ' + node.filepath}>
+                    <code>{ellipsis(node.filepath)}</code>
+                </Tooltip>
             </div>
             <div>
                 <Timestamp date={node.start} noAbout={true} />
             </div>
             <div className={classNames('d-flex flex-row')}>
                 <div>
-                    <Tooltip content={copied ? 'cURL command copied' : 'Copy cURL command (remember to edit ACCESS_TOKEN)'}>
+                    <Tooltip
+                        content={copied ? 'cURL command copied' : 'Copy cURL command (remember to edit ACCESS_TOKEN)'}
+                    >
                         <Button className="ml-2" onClick={() => copyToClipboard(buildCurlCommand(node))}>
                             cURL
                         </Button>
@@ -245,16 +209,16 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
                             {roundedSecond.toFixed(2)} second{roundedSecond === 1 ? '' : 's'}
                         </Text>
                         <Text>
-                          <strong>Errors: </strong> 
-                          {node.errors.length > 0 ? node.errors : 'none'}
+                            <strong>Errors: </strong>
+                            {node.errors.length > 0 ? node.errors : 'none'}
                         </Text>
                         <Text>
-                          <strong>Variables: </strong>
-                          <pre>{node.variables}</pre>
+                            <strong>Variables: </strong>
+                            <pre>{node.variables}</pre>
                         </Text>
-                        <Text> 
-                          <strong>Query: </strong>
-                          <pre>{node.query}</pre>
+                        <Text>
+                            <strong>Query: </strong>
+                            <pre>{node.query}</pre>
                         </Text>
                     </small>
                 </SimplePopover>
@@ -280,7 +244,7 @@ const SimplePopover: React.FunctionComponent<{ label: string; children: ReactNod
 }
 
 function isSuccessful(request: SlowRequest): boolean {
-  return request.errors.length == 0
+    return request.errors.length == 0
 }
 
 function matchesString(request: SlowRequest, query: string): boolean {
@@ -292,20 +256,20 @@ function matchesString(request: SlowRequest, query: string): boolean {
     )
 }
 
-function ellipsis(str: string): string { 
-  if (str.length <= 60) {
-    return str
-  } else {
-    return '...' + str.slice(str.length - 50, str.length)
-  }
+function ellipsis(str: string): string {
+    if (str.length <= 60) {
+        return str
+    } else {
+        return '...' + str.slice(str.length - 50, str.length)
+    }
 }
 
-function shortenRepoName(repoName: string): string { 
-  return repoName.split('/').at(-1) || "" // TODO
+function shortenRepoName(repoName: string): string {
+    return repoName.split('/').at(-1) || '' // TODO
 }
 
 function buildCurlCommand(request: SlowRequest): string {
-  const headers = `-H 'Authorization: token YOUR_TOKEN'`
-  const body = (`{"query": "${request.query}", "variables": ${request.variables}}`).replaceAll('\n', '')
-  return `curl -X POST ${headers} -d '${body}' '${window.location.protocol}//${window.location.host}/.api/graphql?${request.name}'`
+    const headers = `-H 'Authorization: token YOUR_TOKEN'`
+    const body = `{"query": "${request.query}", "variables": ${request.variables}}`.replaceAll('\n', '')
+    return `curl -X POST ${headers} -d '${body}' '${window.location.protocol}//${window.location.host}/.api/graphql?${request.name}'`
 }
