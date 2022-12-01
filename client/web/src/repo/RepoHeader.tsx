@@ -204,11 +204,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                 <Breadcrumbs
                     breadcrumbs={props.breadcrumbs}
                     location={props.location}
-                    className={classNames(
-                        'justify-content-start',
-                        styles.breadcrumb,
-                        !props.forceWrap ? styles.breadcrumbWrap : ''
-                    )}
+                    className={classNames('justify-content-start', !props.forceWrap ? styles.breadcrumbWrap : '')}
                 />
             </div>
             <ul className="navbar-nav">

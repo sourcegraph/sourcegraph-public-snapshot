@@ -36,10 +36,6 @@
     flex: 1 1 0;
 }
 
-.breadcrumb {
-    padding-right: 0 !important;
-}
-
 .breadcrumb-wrap {
     @media (--md-breakpoint-up) {
         flex-wrap: nowrap !important;
