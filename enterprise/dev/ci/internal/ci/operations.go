@@ -397,7 +397,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		} else {
 			// Unless we plan on automatically accepting these changes, we only run this
 			// step on ready-for-review pull requests.
-			stepOpts = append(stepOpts, bk.IfReadyForReview(opts.ForceReadyForReview))
+			// stepOpts = append(stepOpts, bk.IfReadyForReview(opts.ForceReadyForReview))
 			chromaticCommand += " | ./dev/ci/post-chromatic.sh"
 		}
 
