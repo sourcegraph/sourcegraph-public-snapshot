@@ -10,7 +10,7 @@ import { FuzzyModal } from './FuzzyModal'
 import { useFuzzyShortcuts } from './FuzzyShortcuts'
 import { fuzzyIsActive, FuzzyTabsProps, FuzzyState, useFuzzyState, FuzzyTabKey } from './FuzzyTabs'
 
-const DEFAULT_MAX_RESULTS = 100
+const DEFAULT_MAX_RESULTS = 50
 
 export interface FuzzyFinderContainerProps
     extends TelemetryProps,
@@ -103,9 +103,7 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
                         />
                     ))
                 )}
-            {isVisible && (
-                <FuzzyFinder {...state} setIsVisible={bool => setIsVisible(bool)} location={props.location} />
-            )}
+            {isVisible && <FuzzyFinder {...state} setIsVisible={setIsVisible} location={props.location} />}
         </>
     )
 }
