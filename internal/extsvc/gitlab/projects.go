@@ -258,8 +258,7 @@ func (c *Client) ForkProject(ctx context.Context, project *Project, namespace *s
 		return nil, errors.Wrap(err, "resolving namespace")
 	}
 
-	var path string
-	path = name
+	path := name
 
 	fork, err := c.getForkedProject(ctx, project, resolved, name)
 	if err != nil {
