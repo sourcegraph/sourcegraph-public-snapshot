@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS repo_files (
     content_id integer NOT NULL REFERENCES repo_file_contents(id) ON DELETE CASCADE DEFERRABLE
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS repo_files_uq ON repo_files USING btree (directory_id, version_id, base_name);
 CREATE INDEX IF NOT EXISTS repo_files_directory ON repo_files USING btree (directory_id);
 CREATE INDEX IF NOT EXISTS repo_files_version ON repo_files USING btree (version_id);
 

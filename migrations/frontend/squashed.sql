@@ -4660,6 +4660,8 @@ CREATE UNIQUE INDEX repo_external_unique_idx ON repo USING btree (external_servi
 
 CREATE INDEX repo_files_directory ON repo_files USING btree (directory_id);
 
+CREATE UNIQUE INDEX repo_files_uq ON repo_files USING btree (directory_id, version_id, base_name);
+
 CREATE INDEX repo_files_version ON repo_files USING btree (version_id);
 
 CREATE INDEX repo_fork ON repo USING btree (fork);

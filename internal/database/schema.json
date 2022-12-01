@@ -17568,6 +17568,16 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "repo_files_uq",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX repo_files_uq ON repo_files USING btree (directory_id, version_id, base_name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "repo_files_directory",
           "IsPrimaryKey": false,
           "IsUnique": false,

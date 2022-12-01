@@ -6946,7 +6946,12 @@ func (m *MockDB) RepoDirectories() RepoDirectoryStore {
 }
 
 // TODO
-func (m *MockDB) RepoFileContents() RepoFileContentStore {
+func (d *MockDB) RepoFileContents() RepoFileContentStore {
+	return nil
+}
+
+// TODO
+func (d *MockDB) RepoFiles() RepoFileStore {
 	return nil
 }
 

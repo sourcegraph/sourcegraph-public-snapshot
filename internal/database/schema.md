@@ -2730,6 +2730,7 @@ Referenced by:
  content_id        | integer |           | not null | 
 Indexes:
     "repo_files_pkey" PRIMARY KEY, btree (id)
+    "repo_files_uq" UNIQUE, btree (directory_id, version_id, base_name)
     "repo_files_directory" btree (directory_id)
     "repo_files_version" btree (version_id)
 Foreign-key constraints:

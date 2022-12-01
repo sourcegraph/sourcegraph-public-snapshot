@@ -41,6 +41,7 @@ type DB interface {
 	RepoVersions() RepoVersionsStore
 	RepoDirectories() RepoDirectoryStore
 	RepoFileContents() RepoFileContentStore
+	RepoFiles() RepoFileStore
 	RepoKVPs() RepoKVPStore
 	SavedSearches() SavedSearchStore
 	SearchContexts() SearchContextsStore
@@ -186,6 +187,10 @@ func (d *db) RepoDirectories() RepoDirectoryStore {
 
 func (d *db) RepoFileContents() RepoFileContentStore {
 	return RepoFileContentsWith(d.logger, d.Store)
+}
+
+func (d *db) RepoFiles() RepoFileStore {
+	return RepoFilesWith(d.logger, d.Store)
 }
 
 func (d *db) RepoKVPs() RepoKVPStore {

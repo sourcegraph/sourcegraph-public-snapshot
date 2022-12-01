@@ -102,6 +102,15 @@ type RepoDirectory struct {
 	ParentID     int // for now zero means no parent
 }
 
+type RepoFile struct {
+	ID               int
+	DirectoryID      int
+	VersionID        int
+	TopologicalOrder int
+	BaseName         string
+	ContentID        int
+}
+
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results
 type SearchedRepo struct {
 	// ID is the unique numeric ID for this repository.
