@@ -65,18 +65,22 @@ func TestNullIDResilience(t *testing.T) {
 		marshalBatchChangesCredentialID(0, true),
 		marshalBulkOperationID(""),
 		marshalBatchSpecWorkspaceID(0),
+		marshalWorkspaceFileRandID(""),
 	}
 
 	for _, id := range ids {
 		var response struct{ Node struct{ ID string } }
 
 		query := `query($id: ID!) { node(id: $id) { id } }`
-		if errs := apitest.Exec(ctx, t, s, map[string]any{"id": id}, &response, query); len(errs) > 0 {
-			t.Errorf("GraphQL request failed: %#+v", errs[0])
+		errs := apitest.Exec(ctx, t, s, map[string]any{"id": id}, &response, query)
+
+		if len(errs) != 1 {
+			t.Errorf("expected 1 error, got %d errors", len(errs))
 		}
 
-		if have, want := response.Node.ID, ""; have != want {
-			t.Errorf("node has wrong ID. have=%q, want=%q", have, want)
+		err := errs[0]
+		if !errors.Is(err, ErrIDIsZero{}) {
+			t.Errorf("expected=%#+v, got=%#+v", ErrIDIsZero{}, err)
 		}
 	}
 
