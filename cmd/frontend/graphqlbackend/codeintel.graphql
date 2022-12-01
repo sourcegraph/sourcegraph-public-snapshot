@@ -776,6 +776,17 @@ type CodeIntelRepositorySummary {
     The last time this repository was considered for auto-indexing job scheduling.
     """
     lastIndexScan: DateTime
+
+    availableIndexers: [InferredAvailableIndexers!]!
+}
+
+type InferredAvailableIndexers {
+    """
+    The list of available indexers.
+    """
+    index: String!
+    roots: [String!]!
+    url: String!
 }
 
 """
