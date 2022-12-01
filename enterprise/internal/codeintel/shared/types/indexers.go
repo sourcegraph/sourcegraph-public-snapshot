@@ -14,10 +14,6 @@ var (
 		Name: "msft/lsif-node",
 		URN:  "github.com/Microsoft/lsif-node",
 	}
-	lsifTypescript = CodeIntelIndexer{
-		Name: "scip-typescript",
-		URN:  "github.com/sourcegraph/scip-typescript",
-	}
 	scipTypescript = CodeIntelIndexer{
 		Name: "scip-typescript",
 		URN:  "github.com/sourcegraph/scip-typescript",
@@ -87,7 +83,6 @@ var (
 var AllIndexers = []CodeIntelIndexer{
 	lsifNode,
 	msftNode,
-	lsifTypescript,
 	scipTypescript,
 	scipJava,
 	msftJava,
@@ -113,10 +108,10 @@ var LanguageToIndexer = map[string][]CodeIntelIndexer{
 	".java":    {scipJava, msftJava},
 	".kt":      {scipJava},
 	".scala":   {scipJava},
-	".js":      {scipTypescript, lsifTypescript, lsifNode, msftNode},
-	".jsx":     {scipTypescript, lsifTypescript, lsifNode, msftNode},
-	".ts":      {scipTypescript, lsifTypescript, lsifNode, msftNode},
-	".tsx":     {scipTypescript, lsifTypescript, lsifNode, msftNode},
+	".js":      {scipTypescript, lsifNode, msftNode},
+	".jsx":     {scipTypescript, lsifNode, msftNode},
+	".ts":      {scipTypescript, lsifNode, msftNode},
+	".tsx":     {scipTypescript, lsifNode, msftNode},
 	".dart":    {workivaDart, lsifDart},
 	".c":       {lsifClang, lsifCPP},
 	".cc":      {lsifClang, lsifCPP},
@@ -137,7 +132,7 @@ var LanguageToIndexer = map[string][]CodeIntelIndexer{
 var ImageToIndexer = map[string]CodeIntelIndexer{
 	"sourcegraph/scip-java":       scipJava,
 	"sourcegraph/lsif-go":         lsifGo,
-	"sourcegraph/scip-typescript": lsifTypescript,
+	"sourcegraph/scip-typescript": scipTypescript,
 	"sourcegraph/lsif-node":       lsifNode,
 	"sourcegraph/lsif-clang":      lsifClang,
 	"davidrjenni/lsif-php":        lsifPHP,

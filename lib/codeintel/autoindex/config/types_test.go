@@ -2,7 +2,7 @@ package config
 
 import "testing"
 
-func TestGetIndexName(t *testing.T) {
+func TestExtractIndexerName(t *testing.T) {
 	tests := []struct {
 		explanation string
 		input       string
@@ -32,16 +32,7 @@ func TestGetIndexName(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.explanation, func(t *testing.T) {
-			actual := IndexJob{Indexer: test.input}.GetIndexerName()
-			if actual != test.expected {
-				t.Errorf("unexpected indexer name. want=%q have=%q", test.expected, actual)
-			}
-		})
-	}
-
-	for _, test := range tests {
-		t.Run(test.explanation, func(t *testing.T) {
-			actual := IndexJobHint{Indexer: test.input}.GetIndexerName()
+			actual := extractIndexerName(test.input)
 			if actual != test.expected {
 				t.Errorf("unexpected indexer name. want=%q have=%q", test.expected, actual)
 			}
