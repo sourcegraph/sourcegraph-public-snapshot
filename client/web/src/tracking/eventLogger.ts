@@ -313,8 +313,8 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         if (!deviceID || deviceID === '') {
             // If device ID does not exist, use the anonymous user ID value so these are consolidated.
             deviceID = anonymousUserID
+            cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
         }
-        cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
 
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
