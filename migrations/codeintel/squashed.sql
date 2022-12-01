@@ -57,6 +57,24 @@ CREATE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert() R
     RETURN NULL;
 END $$;
 
+CREATE FUNCTION update_codeintel_scip_documents_schema_versions_insert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    INSERT INTO codeintel_scip_documents_schema_versions
+    SELECT
+        upload_id,
+        MIN(documents.schema_version) as min_schema_version,
+        MAX(documents.schema_version) as max_schema_version
+    FROM newtab
+    JOIN codeintel_scip_documents ON codeintel_scip_documents.id = newtab.document_id
+    GROUP BY newtab.upload_id
+    ON CONFLICT (upload_id) DO UPDATE SET
+        -- Update with min(old_min, new_min) and max(old_max, new_max)
+        min_schema_version = LEAST(codeintel_scip_documents_schema_versions.min_schema_version, EXCLUDED.min_schema_version),
+        max_schema_version = GREATEST(codeintel_scip_documents_schema_versions.max_schema_version, EXCLUDED.max_schema_version);
+    RETURN NULL;
+END $$;
+
 CREATE FUNCTION update_codeintel_scip_symbols_schema_versions_insert() RETURNS trigger
     LANGUAGE plpgsql
     AS $$ BEGIN
@@ -180,7 +198,7 @@ COMMENT ON COLUMN codeintel_scip_document_lookup.upload_id IS 'The identifier of
 
 COMMENT ON COLUMN codeintel_scip_document_lookup.document_path IS 'The file path to the document relative to the root of the index.';
 
-COMMENT ON COLUMN codeintel_scip_document_lookup.document_id IS 'The foreign key to the shared document payload (see the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents)).';
+COMMENT ON COLUMN codeintel_scip_document_lookup.document_id IS 'The foreign key to the shared document payload (see the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup)).';
 
 CREATE SEQUENCE codeintel_scip_document_lookup_id_seq
     START WITH 1
@@ -197,13 +215,13 @@ CREATE TABLE codeintel_scip_document_lookup_schema_versions (
     max_schema_version integer
 );
 
-COMMENT ON TABLE codeintel_scip_document_lookup_schema_versions IS 'Tracks the range of `schema_versions` values associated with each SCIP index in the [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) table.';
+COMMENT ON TABLE codeintel_scip_document_lookup_schema_versions IS 'Tracks the range of `schema_versions` values associated with each SCIP index in the [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) table.';
 
 COMMENT ON COLUMN codeintel_scip_document_lookup_schema_versions.upload_id IS 'The identifier of the associated SCIP index.';
 
-COMMENT ON COLUMN codeintel_scip_document_lookup_schema_versions.min_schema_version IS 'A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `upload_id` column matches the associated SCIP index.';
+COMMENT ON COLUMN codeintel_scip_document_lookup_schema_versions.min_schema_version IS 'A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.';
 
-COMMENT ON COLUMN codeintel_scip_document_lookup_schema_versions.max_schema_version IS 'An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `upload_id` column matches the associated SCIP index.';
+COMMENT ON COLUMN codeintel_scip_document_lookup_schema_versions.max_schema_version IS 'An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.';
 
 CREATE TABLE codeintel_scip_documents (
     id bigint NOT NULL,
@@ -230,6 +248,20 @@ CREATE SEQUENCE codeintel_scip_documents_id_seq
     CACHE 1;
 
 ALTER SEQUENCE codeintel_scip_documents_id_seq OWNED BY codeintel_scip_documents.id;
+
+CREATE TABLE codeintel_scip_documents_schema_versions (
+    upload_id integer NOT NULL,
+    min_schema_version integer,
+    max_schema_version integer
+);
+
+COMMENT ON TABLE codeintel_scip_documents_schema_versions IS 'Tracks the range of `schema_versions` values associated with each SCIP index in the [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) table.';
+
+COMMENT ON COLUMN codeintel_scip_documents_schema_versions.upload_id IS 'The identifier of the associated SCIP index.';
+
+COMMENT ON COLUMN codeintel_scip_documents_schema_versions.min_schema_version IS 'A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `upload_id` column matches the associated SCIP index.';
+
+COMMENT ON COLUMN codeintel_scip_documents_schema_versions.max_schema_version IS 'An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `upload_id` column matches the associated SCIP index.';
 
 CREATE TABLE codeintel_scip_metadata (
     id bigint NOT NULL,
@@ -577,6 +609,9 @@ ALTER TABLE ONLY codeintel_scip_documents
 ALTER TABLE ONLY codeintel_scip_documents
     ADD CONSTRAINT codeintel_scip_documents_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY codeintel_scip_documents_schema_versions
+    ADD CONSTRAINT codeintel_scip_documents_schema_versions_pkey PRIMARY KEY (upload_id);
+
 ALTER TABLE ONLY codeintel_scip_metadata
     ADD CONSTRAINT codeintel_scip_metadata_pkey PRIMARY KEY (id);
 
@@ -662,6 +697,8 @@ CREATE INDEX rockskip_symbols_gin ON rockskip_symbols USING gin (singleton_integ
 CREATE INDEX rockskip_symbols_repo_id_path_name ON rockskip_symbols USING btree (repo_id, path, name);
 
 CREATE TRIGGER codeintel_scip_document_lookup_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup_schema_versions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert();
+
+CREATE TRIGGER codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents_schema_versions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert();
 
 CREATE TRIGGER codeintel_scip_symbols_schema_versions_insert AFTER INSERT ON codeintel_scip_symbols_schema_versions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_symbols_schema_versions_insert();
 
