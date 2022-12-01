@@ -2,6 +2,7 @@ package lsifstore
 
 import (
 	"context"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -37,7 +38,11 @@ func (s *store) ReconcileCandidates(ctx context.Context, batchSize int) (_ []int
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(reconcileQuery, batchSize)))
+	return s.reconcileCandidates(ctx, batchSize, time.Now().UTC())
+}
+
+func (s *store) reconcileCandidates(ctx context.Context, batchSize int, now time.Time) (_ []int, err error) {
+	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(reconcileQuery, batchSize, now, now)))
 }
 
 const reconcileQuery = `
@@ -49,8 +54,8 @@ WITH candidates AS (
 	LIMIT %s
 )
 INSERT INTO codeintel_last_reconcile
-SELECT dump_id, NOW() FROM candidates
+SELECT dump_id, %s FROM candidates
 ON CONFLICT (dump_id) DO UPDATE
-SET last_reconcile_at = NOW()
+SET last_reconcile_at = %s
 RETURNING dump_id
 `
