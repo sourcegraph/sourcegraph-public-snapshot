@@ -29,12 +29,28 @@ export function useSearchResultsKeyboardNavigation(
                 case 'ArrowDown':
                 case 'j':
                 case 'k': {
-                    const hasSelectedNextResult = selectNextResult(
+                    const direction = event.key === 'ArrowUp' || event.key === 'k' ? 'up' : 'down'
+
+                    const hasSelectedNextResult = isMetaKey(event, isMacPlatform())
+                        ? selectNextHeaderLink(selectableResults, selectedResult, direction)
+                        : selectNextResult(selectableResults, selectedResult, direction)
+
+                    if (hasSelectedNextResult) {
+                        event.stopPropagation()
+                        event.preventDefault()
+                    }
+                    break
+                }
+                case 'n':
+                case 'p': {
+                    const hasSelectedNextResult = selectNextHeaderLink(
                         selectableResults,
                         selectedResult,
-                        event.key === 'ArrowUp' || event.key === 'k' ? 'up' : 'down'
+                        event.key === 'p' ? 'up' : 'down'
                     )
+
                     if (hasSelectedNextResult) {
+                        event.stopPropagation()
                         event.preventDefault()
                     }
                     break
@@ -53,6 +69,14 @@ export function useSearchResultsKeyboardNavigation(
                     if (selectedResult) {
                         selectedResult.dispatchEvent(
                             new CustomEvent('expandSearchResultsGroup', { bubbles: true, cancelable: true })
+                        )
+                        event.preventDefault()
+                    }
+                    break
+                case 'e':
+                    if (selectedResult) {
+                        selectedResult.dispatchEvent(
+                            new CustomEvent('toggleSearchResultsGroup', { bubbles: true, cancelable: true })
                         )
                         event.preventDefault()
                     }
@@ -102,7 +126,7 @@ export function useSearchResultsKeyboardNavigation(
                 }
                 // Otherwise, find the last visible result in the group and select it.
                 const groupSelectables = group.querySelectorAll<HTMLElement>('[data-selectable-search-result="true"]')
-                selectResult(groupSelectables[groupSelectables.length - 1])
+                selectElement(groupSelectables[groupSelectables.length - 1])
             }, 0)
         }
 
@@ -120,10 +144,12 @@ export function useSearchResultsKeyboardNavigation(
         document.addEventListener('keydown', onDocumentKeyDown)
         root.addEventListener('keydown', onKeyDown)
         root.addEventListener('collapseSearchResultsGroup', onCollapse)
+        root.addEventListener('toggleSearchResultsGroup', onCollapse)
         return () => {
             document.removeEventListener('keydown', onDocumentKeyDown)
             root.removeEventListener('keydown', onKeyDown)
             root.removeEventListener('collapseSearchResultsGroup', onCollapse)
+            root.removeEventListener('toggleSearchResultsGroup', onCollapse)
         }
     }, [
         root,
@@ -146,7 +172,7 @@ export function useSearchResultsKeyboardNavigation(
 }
 
 function selectFirstResult(root: HTMLElement): void {
-    selectResult(root.querySelector<HTMLElement>('[data-selectable-search-result="true"]'))
+    selectElement(root.querySelector<HTMLElement>('[data-selectable-search-result="true"]'))
 }
 
 function selectNextResult(
@@ -160,17 +186,40 @@ function selectNextResult(
 
     const currentIndex = selectableResults.findIndex(selectable => selectable.isEqualNode(selectedResult))
     const nextIndex = direction === 'down' ? currentIndex + 1 : currentIndex - 1
+    const nextSelected = nextIndex >= 0 && nextIndex < selectableResults.length ? selectableResults[nextIndex] : null
 
-    if (nextIndex >= 0 && nextIndex < selectableResults.length) {
-        selectResult(selectableResults[nextIndex])
-        return true
-    }
-    return false
+    return selectElement(nextSelected)
 }
 
-function selectResult(resultElement: HTMLElement | null): void {
+function selectNextHeaderLink(
+    selectableResults: HTMLElement[],
+    selectedResult: HTMLElement | null,
+    direction: 'up' | 'down'
+): boolean {
+    if (!selectedResult || selectableResults.length === 0) {
+        return false
+    }
+
+    const currentIndex = selectableResults.findIndex(selectable => selectable.isEqualNode(selectedResult))
+    const selectableCandidates =
+        direction === 'down'
+            ? selectableResults.slice(currentIndex + 1)
+            : selectableResults.slice(0, currentIndex).reverse()
+
+    const nextSelected = selectableCandidates.find(
+        selectable => selectable.dataset.selectableSearchResultHeaderLink === 'true'
+    )
+
+    return selectElement(nextSelected)
+}
+
+function selectElement(resultElement: HTMLElement | undefined | null): boolean {
+    if (!resultElement) {
+        return false
+    }
     resultElement?.focus()
     resultElement?.scrollIntoView({ behavior: 'auto', block: 'nearest' })
+    return true
 }
 
 // The selected element is the currently focused element (activeElement) with

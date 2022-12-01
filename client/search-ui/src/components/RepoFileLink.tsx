@@ -43,6 +43,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
                     to={appendSubtreeQueryParameter(fileURL)}
                     ref={containerElement}
                     data-selectable-search-result={isSelectable}
+                    data-selectable-search-result-header-link={isSelectable}
                 >
                     {fileBase ? `${fileBase}/` : null}
                     <strong>{fileName}</strong>

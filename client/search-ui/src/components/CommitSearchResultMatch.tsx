@@ -81,13 +81,7 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
             {item.repoLastFetched && (
                 <LastSyncedIcon className={styles.lastSyncedIcon} lastSyncedTime={item.repoLastFetched} />
             )}
-            <Link
-                key={item.url}
-                to={item.url}
-                className={searchResultStyles.searchResultMatch}
-                data-selectable-search-result="true"
-                {...openInNewTabProps}
-            >
+            <Link key={item.url} to={item.url} className={searchResultStyles.searchResultMatch} {...openInNewTabProps}>
                 {highlightedCommitContent !== undefined ? (
                     <Code>
                         <Markdown
