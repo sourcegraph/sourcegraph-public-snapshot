@@ -17826,14 +17826,14 @@
       ],
       "Constraints": [
         {
-          "Name": "search_context_default_search_context_id_fk",
+          "Name": "search_context_default_search_context_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "search_contexts",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE"
         },
         {
-          "Name": "search_context_default_user_id_fk",
+          "Name": "search_context_default_user_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "users",
           "IsDeferrable": true,
@@ -17974,14 +17974,14 @@
       ],
       "Constraints": [
         {
-          "Name": "search_context_stars_search_context_id_fk",
+          "Name": "search_context_stars_search_context_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "search_contexts",
           "IsDeferrable": true,
           "ConstraintDefinition": "FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE DEFERRABLE"
         },
         {
-          "Name": "search_context_stars_user_id_fk",
+          "Name": "search_context_stars_user_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "users",
           "IsDeferrable": true,
