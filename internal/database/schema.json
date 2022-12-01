@@ -17389,6 +17389,16 @@
       ],
       "Indexes": [
         {
+          "Name": "repo_directories_index_absolute_path",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX repo_directories_index_absolute_path ON repo_directories USING btree (repo_id, absolute_path)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "repo_directories_pkey",
           "IsPrimaryKey": true,
           "IsUnique": true,
@@ -17397,16 +17407,6 @@
           "IndexDefinition": "CREATE UNIQUE INDEX repo_directories_pkey ON repo_directories USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "repo_directories_index_absolute_path",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX repo_directories_index_absolute_path ON repo_directories USING btree (repo_id, absolute_path)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [

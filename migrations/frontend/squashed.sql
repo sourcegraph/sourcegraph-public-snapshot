@@ -4652,7 +4652,7 @@ CREATE INDEX repo_created_at ON repo USING btree (created_at);
 
 CREATE INDEX repo_description_trgm_idx ON repo USING gin (lower(description) gin_trgm_ops);
 
-CREATE INDEX repo_directories_index_absolute_path ON repo_directories USING btree (repo_id, absolute_path);
+CREATE UNIQUE INDEX repo_directories_index_absolute_path ON repo_directories USING btree (repo_id, absolute_path);
 
 CREATE INDEX repo_dotcom_indexable_repos_idx ON repo USING btree (stars DESC NULLS LAST) INCLUDE (id, name) WHERE ((deleted_at IS NULL) AND (blocked IS NULL) AND (((stars >= 5) AND (NOT COALESCE(fork, false)) AND (NOT archived)) OR (lower((name)::text) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'::text)));
 

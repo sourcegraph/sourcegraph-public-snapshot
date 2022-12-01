@@ -95,6 +95,13 @@ type RepoVersion struct {
 	Reachability map[int]int
 }
 
+type RepoDirectory struct {
+	ID           int
+	RepoID       api.RepoID
+	AbsolutePath string
+	ParentID     int // for now zero means no parent
+}
+
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results
 type SearchedRepo struct {
 	// ID is the unique numeric ID for this repository.

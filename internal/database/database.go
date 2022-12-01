@@ -39,6 +39,7 @@ type DB interface {
 	Phabricator() PhabricatorStore
 	Repos() RepoStore
 	RepoVersions() RepoVersionsStore
+	RepoDirectories() RepoDirectoryStore
 	RepoKVPs() RepoKVPStore
 	SavedSearches() SavedSearchStore
 	SearchContexts() SearchContextsStore
@@ -176,6 +177,10 @@ func (d *db) Repos() RepoStore {
 
 func (d *db) RepoVersions() RepoVersionsStore {
 	return RepoVersionsWith(d.logger, d.Store)
+}
+
+func (d *db) RepoDirectories() RepoDirectoryStore {
+	return RepoDirectoryWith(d.logger, d.Store)
 }
 
 func (d *db) RepoKVPs() RepoKVPStore {

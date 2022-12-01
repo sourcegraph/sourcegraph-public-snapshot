@@ -16,12 +16,11 @@ type RepoVersionsStore interface {
 
 var _ RepoVersionsStore = (*repoVersionsStore)(nil)
 
-// repoStore handles access to the repo table
+// repoVersionsStore handles access to the repo_versions table
 type repoVersionsStore struct {
 	logger log.Logger
 	*basestore.Store
 }
-
 
 func RepoVersionsWith(logger log.Logger, other basestore.ShareableStore) RepoVersionsStore {
 	return &repoVersionsStore{

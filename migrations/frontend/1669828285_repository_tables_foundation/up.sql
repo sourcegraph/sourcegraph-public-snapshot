@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS repo_directories (
     parent_id integer NULL REFERENCES repo_directories(id)
 );
 
-CREATE INDEX IF NOT EXISTS repo_directories_index_absolute_path ON repo_directories USING btree (repo_id, absolute_path);
+CREATE UNIQUE INDEX IF NOT EXISTS repo_directories_index_absolute_path ON repo_directories USING btree (repo_id, absolute_path);
 
 CREATE TABLE IF NOT EXISTS repo_file_contents (
     id SERIAL PRIMARY KEY,

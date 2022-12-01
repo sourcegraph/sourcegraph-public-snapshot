@@ -6940,6 +6940,11 @@ func (m *MockDB) RepoVersions() RepoVersionsStore {
 	return nil
 }
 
+// TODO
+func (m *MockDB) RepoDirectories() RepoDirectoryStore {
+	return nil
+}
+
 // SetDefaultHook sets function that is called when the Repos method of the
 // parent MockDB instance is invoked and the hook queue is empty.
 func (f *DBReposFunc) SetDefaultHook(hook func() RepoStore) {

@@ -2695,7 +2695,7 @@ Triggers:
  parent_id     | integer |           |          | 
 Indexes:
     "repo_directories_pkey" PRIMARY KEY, btree (id)
-    "repo_directories_index_absolute_path" btree (repo_id, absolute_path)
+    "repo_directories_index_absolute_path" UNIQUE, btree (repo_id, absolute_path)
 Foreign-key constraints:
     "repo_directories_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES repo_directories(id)
     "repo_directories_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
