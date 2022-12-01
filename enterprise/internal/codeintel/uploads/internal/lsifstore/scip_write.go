@@ -234,5 +234,4 @@ SELECT
 	source.implementation_ranges,
 	source.type_definition_ranges
 FROM t_codeintel_scip_symbols source
-ON CONFLICT DO NOTHING
 `
