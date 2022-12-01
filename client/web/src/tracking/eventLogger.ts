@@ -316,9 +316,16 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
         }
 
+        let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY)
+        if (!deviceSessionID || deviceSessionID === '') {
+            deviceSessionID = uuid.v4()
+            cookies.set(DEVICE_SESSION_ID_KEY, deviceSessionID, this.deviceSessionCookieSettings)
+        }
+
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
         this.deviceID = deviceID
+        this.deviceSessionID = deviceSessionID
     }
 
     public addEventLogListener(callback: (eventName: string) => void): () => void {
