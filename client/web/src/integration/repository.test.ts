@@ -533,7 +533,7 @@ describe('Repository', () => {
             assert.deepStrictEqual(breadcrumbTexts, [
                 shortRepositoryName,
                 '@master',
-                "/Geoffrey's random queries.32r242442bf /% token.4288249258.sql",
+                "/Geoffrey's random queries.32r242442bf/% token.4288249258.sql",
             ])
 
             {

@@ -14,11 +14,7 @@ import { HeroPage } from '../../components/HeroPage'
 
 import { CodeInsightsBackendContext } from './core'
 import { GaConfirmationModal } from './modals/GaConfirmationModal'
-import {
-    CodeInsightsRootPage,
-    CodeInsightsRootPageTab,
-    CodeInsightsRootPageURLPaths,
-} from './pages/CodeInsightsRootPage'
+import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './pages/CodeInsightsRootPage'
 import { InsightsDashboardCreationPage } from './pages/dashboards/creation/InsightsDashboardCreationPage'
 import { EditDashboardPage } from './pages/dashboards/edit-dashboard/EditDashobardPage'
 import { CreationRoutes } from './pages/insights/creation/CreationRoutes'
@@ -102,14 +98,12 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                 />
 
                 <Route
-                    path={[
-                        `${match.url}${CodeInsightsRootPageURLPaths.CodeInsights}`,
-                        `${match.url}${CodeInsightsRootPageURLPaths.GettingStarted}`,
-                    ]}
-                    render={props => (
+                    path={[`${match.url}/dashboards/:dashboardId?`, `${match.url}/about`]}
+                    render={(props: RouteComponentProps<{ dashboardId?: string }>) => (
                         <CodeInsightsRootPage
+                            dashboardId={props.match.params.dashboardId}
                             activeView={
-                                props.match.path === `${match.url}${CodeInsightsRootPageURLPaths.CodeInsights}`
+                                props.match.params.dashboardId
                                     ? CodeInsightsRootPageTab.CodeInsights
                                     : CodeInsightsRootPageTab.GettingStarted
                             }

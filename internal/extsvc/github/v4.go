@@ -596,11 +596,11 @@ fragment RepositoryFields on Repository {
 // Fork forks the given repository. If org is given, then the repository will
 // be forked into that organisation, otherwise the repository is forked into
 // the authenticated user's account.
-func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string) (*Repository, error) {
+func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string, forkName string) (*Repository, error) {
 	// Unfortunately, the GraphQL API doesn't provide a mutation to fork as of
 	// December 2021, so we have to fall back to the REST API.
 	logger := c.log.Scoped("Fork", "temporary client for forking GitHub repository")
-	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org)
+	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org, forkName)
 }
 
 type RecentCommittersParams struct {
