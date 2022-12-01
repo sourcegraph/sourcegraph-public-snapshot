@@ -551,14 +551,16 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			p.groupsCache.setGroup(cachedGroup{
 				Org:          mockOrgRead.Login,
 				Users:        []extsvc.AccountID{"1234"},
-				Repositories: []extsvc.RepoID{}},
+				Repositories: []extsvc.RepoID{},
+			},
 			)
 			// cache populated from user-centric sync (should not add self)
 			p.groupsCache.setGroup(cachedGroup{
 				Org:          mockOrgNoRead.Login,
 				Team:         "ns-team-2",
 				Users:        []extsvc.AccountID{},
-				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="}},
+				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
+			},
 			)
 
 			// run a sync
@@ -1165,14 +1167,16 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 				Org:          "org",
 				Team:         "team1",
 				Users:        []extsvc.AccountID{},
-				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="}},
+				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
+			},
 			)
 			// cache populated from repo-centric sync (should not add self)
 			p.groupsCache.setGroup(cachedGroup{
 				Org:          "org",
 				Team:         "team2",
 				Users:        []extsvc.AccountID{"1234"},
-				Repositories: []extsvc.RepoID{}},
+				Repositories: []extsvc.RepoID{},
+			},
 			)
 
 			// run a sync

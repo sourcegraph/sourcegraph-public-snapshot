@@ -3,24 +3,25 @@ package github
 import (
 	"context"
 
+	gh "github.com/google/go-github/v41/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
 // 🚨 SECURITY: Call sites should take care to provide this valid values and use the return
 // value appropriately to ensure org repo access are only provided to valid users.
-func canViewOrgRepos(org *github.OrgDetailsAndMembership) bool {
-	if org == nil {
+func canViewOrgRepos(org *gh.Organization, orgMembership *gh.Membership) bool {
+	if org == nil && orgMembership == nil {
 		return false
 	}
 	// If user is active org admin, they can see all org repos
-	if org.OrgMembership != nil && org.OrgMembership.State == "active" && org.OrgMembership.Role == "admin" {
+	if orgMembership != nil && orgMembership.GetState() == "active" && orgMembership.GetRole() == "admin" {
 		return true
 	}
 	// https://github.com/organizations/$ORG/settings/member_privileges -> "Base permissions"
-	return org.OrgDetails != nil && (org.DefaultRepositoryPermission == "read" ||
-		org.DefaultRepositoryPermission == "write" ||
-		org.DefaultRepositoryPermission == "admin")
+	return (org.GetDefaultRepoPermission() == "read" ||
+		org.GetDefaultRepoPermission() == "write" ||
+		org.GetDefaultRepoPermission() == "admin")
 }
 
 // client defines the set of GitHub API client methods used by the authz provider.
@@ -35,7 +36,6 @@ type client interface {
 	ListOrganizationMembers(ctx context.Context, owner string, page int, adminsOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error)
 	ListTeamMembers(ctx context.Context, owner, team string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
 
-	GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error)
 	GetAuthenticatedUserTeams(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error)
 	GetOrganization(ctx context.Context, login string) (org *github.OrgDetails, err error)
 	GetRepository(ctx context.Context, owner, name string) (*github.Repository, error)

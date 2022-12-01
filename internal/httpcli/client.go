@@ -214,6 +214,19 @@ func (f Factory) Client(base ...Opt) (*http.Client, error) {
 	return &cli, err
 }
 
+func (f Factory) WrapClient(cli *http.Client) error {
+	opts := make([]Opt, 0, len(f.common))
+	opts = append(opts, f.common...)
+
+	var err error
+
+	for _, opt := range opts {
+		err = errors.Append(err, opt(cli))
+	}
+
+	return err
+}
+
 // NewFactory returns a Factory that applies the given common
 // Opts after the ones provided on each invocation of Client or Doer.
 //

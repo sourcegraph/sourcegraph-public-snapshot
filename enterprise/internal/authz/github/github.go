@@ -11,14 +11,17 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	gh "github.com/google/go-github/v41/github"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/oauth2"
 )
 
 // Provider implements authz.Provider for GitHub repository permissions.
@@ -28,6 +31,8 @@ type Provider struct {
 	codeHost *extsvc.CodeHost
 	// groupsCache may be nil if group caching is disabled (negative TTL)
 	groupsCache *cachedGroups
+
+	ghClient *gh.Client
 
 	// enableGithubInternalRepoVisibility is a feature flag to optionally enable a fix for
 	// internal repos on GithHub Enterprise. At the moment we do not handle internal repos
@@ -168,17 +173,17 @@ func (p *Provider) requiredAuthScopes() []requiredAuthScope {
 	return scopes
 }
 
+type wrappedTransport struct {
+	http.RoundTripper
+	Wrapped http.RoundTripper
+}
+
+func (wt *wrappedTransport) Unwrap() *http.RoundTripper { return &wt.Wrapped }
+
 // fetchUserPermsByToken fetches all the private repo ids that the token can access.
 //
 // This may return a partial result if an error is encountered, e.g. via rate limits.
-func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token *auth.OAuthBearerToken, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
-	client, err := p.client()
-	if err != nil {
-		return nil, errors.Wrap(err, "get client")
-	}
-	client = client.WithAuthenticator(token)
-
+func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, ghClient *gh.Client, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
 	const repoSetSize = 100
@@ -196,7 +201,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		addRepoToUserPerms func(repos ...extsvc.RepoID)
 		// Repository affiliations to list for - groupsCache only lists for a subset. Left
 		// unset indicates all affiliations should be sync'd.
-		affiliations []github.RepositoryAffiliation
+		affiliations []string
 	)
 
 	// If cache is disabled the code path is simpler, avoid allocating memory
@@ -219,22 +224,30 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		}
 		// We sync just a subset of direct affiliations - we let other permissions
 		// ('organization' affiliation) be sync'd by teams/orgs.
-		affiliations = []github.RepositoryAffiliation{github.AffiliationOwner, github.AffiliationCollaborator}
+		affiliations = []string{string(github.AffiliationOwner), string(github.AffiliationCollaborator)}
 	}
 
 	// Sync direct affiliations
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var err error
-		var repos []*github.Repository
-		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, affiliations...)
+	listOpts := &gh.RepositoryListOptions{
+		Visibility:  "private",
+		Affiliation: strings.Join(affiliations, ","),
+		ListOptions: gh.ListOptions{
+			PerPage: repoSetSize,
+		},
+	}
+	for {
+		ghRepos, resp, err := ghClient.Repositories.List(ctx, "", listOpts)
 		if err != nil {
 			return perms, errors.Wrap(err, "list repos for user")
 		}
 
-		for _, r := range repos {
-			addRepoToUserPerms(extsvc.RepoID(r.ID))
+		for _, r := range ghRepos {
+			addRepoToUserPerms(extsvc.RepoID(r.GetNodeID()))
 		}
+		if resp.NextPage == 0 {
+			break
+		}
+		listOpts.Page = resp.NextPage
 	}
 
 	// We're done if groups caching is disabled or no accountID is available.
@@ -244,7 +257,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 
 	// Now, we look for groups this user belongs to that give access to additional
 	// repositories.
-	groups, err := p.getUserAffiliatedGroups(ctx, client, opts)
+	groups, err := p.getUserAffiliatedGroups(ctx, ghClient, opts)
 	if err != nil {
 		return perms, errors.Wrap(err, "get groups affiliated with user")
 	}
@@ -281,13 +294,18 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		// Perform full sync. Start with instantiating the repos slice.
 		group.Repositories = make([]extsvc.RepoID, 0, repoSetSize)
 		isOrg := group.Team == ""
-		hasNextPage = true
-		for page := 1; hasNextPage; page++ {
-			var repos []*github.Repository
+
+		listOpts := &gh.ListOptions{
+			Page:    1,
+			PerPage: 100,
+		}
+		for {
+			var repos []*gh.Repository
+			var resp *gh.Response
 			if isOrg {
-				repos, hasNextPage, _, err = client.ListOrgRepositories(ctx, group.Org, page, "")
+				repos, resp, err = ghClient.Repositories.ListByOrg(ctx, group.Org, &gh.RepositoryListByOrgOptions{ListOptions: *listOpts})
 			} else {
-				repos, hasNextPage, _, err = client.ListTeamRepositories(ctx, group.Org, group.Team, page)
+				repos, resp, err = ghClient.Teams.ListTeamReposBySlug(ctx, group.Org, group.Team, listOpts)
 			}
 			if github.IsNotFound(err) || github.HTTPErrorCode(err) == http.StatusForbidden {
 				// If we get a 403/404 here, something funky is going on and this is very
@@ -304,16 +322,21 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 				// Add and return what we've found on this page but don't persist group
 				// to cache
 				for _, r := range repos {
-					addRepoToUserPerms(extsvc.RepoID(r.ID))
+					addRepoToUserPerms(extsvc.RepoID(r.GetNodeID()))
 				}
 				return perms, errors.Wrap(err, "list repos for group")
 			}
 			// Add results to both group (for persistence) and permissions for user
 			for _, r := range repos {
-				repoID := extsvc.RepoID(r.ID)
+				repoID := extsvc.RepoID(r.GetNodeID())
 				group.Repositories = append(group.Repositories, repoID)
 				addRepoToUserPerms(repoID)
 			}
+
+			if resp.NextPage == 0 {
+				break
+			}
+			listOpts.Page = resp.NextPage
 		}
 
 		// Persist repos affiliated with group to cache
@@ -360,7 +383,16 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		oauthToken.NeedsRefreshBuffer = 5
 	}
 
-	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), oauthToken, opts)
+	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: tok.AccessToken},
+	)
+
+	tc := oauth2.NewClient(context.WithValue(ctx, oauth2.HTTPClient, httpcli.ExternalClient), ts)
+
+	ghClient := gh.NewClient(tc)
+
+	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), ghClient, opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
@@ -521,7 +553,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 // with token. Returned groups are populated from cache if a valid value is available.
 //
 // 🚨 SECURITY: clientWithToken must be authenticated with a user token.
-func (p *Provider) getUserAffiliatedGroups(ctx context.Context, clientWithToken client, opts authz.FetchPermsOptions) ([]cachedGroup, error) {
+func (p *Provider) getUserAffiliatedGroups(ctx context.Context, clientWithToken *gh.Client, opts authz.FetchPermsOptions) ([]cachedGroup, error) {
 	groups := make([]cachedGroup, 0)
 	seenGroups := make(map[string]struct{})
 
@@ -544,38 +576,56 @@ func (p *Provider) getUserAffiliatedGroups(ctx context.Context, clientWithToken 
 		seenGroups[cachedPerms.key()] = struct{}{}
 		groups = append(groups, cachedPerms)
 	}
-	var err error
 
 	// Get orgs
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var orgs []github.OrgDetailsAndMembership
-		orgs, hasNextPage, _, err = clientWithToken.GetAuthenticatedUserOrgsDetailsAndMembership(ctx, page)
+	listOpts := &gh.ListOptions{
+		PerPage: 100,
+		Page:    1,
+	}
+	for {
+		orgs, resp, err := clientWithToken.Organizations.List(ctx, "", listOpts)
 		if err != nil {
 			return groups, err
 		}
+
 		for _, org := range orgs {
-			// 🚨 SECURITY: Iff THIS USER can view this org's repos, we add the entire org to the sync list
-			if canViewOrgRepos(&org) {
-				syncGroup(org.Login, "")
+			membership, _, err := clientWithToken.Organizations.GetOrgMembership(ctx, "", org.GetLogin())
+			if err != nil {
+				return groups, err
+			}
+
+			if canViewOrgRepos(org, membership) {
+				syncGroup(org.GetLogin(), "")
 			}
 		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+		listOpts.Page = resp.NextPage
 	}
 
 	// Get teams
-	hasNextPage = true
-	for page := 1; hasNextPage; page++ {
-		var teams []*github.Team
-		teams, hasNextPage, _, err = clientWithToken.GetAuthenticatedUserTeams(ctx, page)
+	listOpts = &gh.ListOptions{
+		PerPage: 100,
+		Page:    1,
+	}
+	for {
+		teams, resp, err := clientWithToken.Teams.ListUserTeams(ctx, listOpts)
 		if err != nil {
 			return groups, err
 		}
+
 		for _, team := range teams {
-			// only sync teams with repos
-			if team.ReposCount > 0 && team.Organization != nil {
-				syncGroup(team.Organization.Login, team.Slug)
+			if team.GetReposCount() > 0 && team.Organization != nil {
+				syncGroup(team.Organization.GetLogin(), team.GetSlug())
 			}
 		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+		listOpts.Page = resp.NextPage
 	}
 
 	return groups, nil
@@ -591,13 +641,10 @@ type repoAffiliatedGroup struct {
 // getRepoAffiliatedGroups retrieves affiliated organizations and teams for the given repository.
 // Returned groups are populated from cache if a valid value is available.
 func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name string, opts authz.FetchPermsOptions) (groups []repoAffiliatedGroup, err error) {
-	client, err := p.client()
-	if err != nil {
-		return nil, errors.Wrap(err, "get client")
-	}
+	ghClient := gh.NewClient(httpcli.ExternalClient)
 
 	// Check if repo belongs in an org
-	org, err := client.GetOrganization(ctx, owner)
+	org, _, err := ghClient.Organizations.Get(ctx, owner)
 	if err != nil {
 		if github.IsNotFound(err) {
 			// Owner is most likely not an org. User repos don't have teams or org permissions,
@@ -624,20 +671,20 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 	// The visibility field on a repo is only returned if this feature flag is set. As a result
 	// there's no point in making an extra API call if this feature flag is not set explicitly.
 	if p.enableGithubInternalRepoVisibility {
-		var r *github.Repository
-		r, err = client.GetRepository(ctx, owner, name)
+		var r *gh.Repository
+		r, _, err = ghClient.Repositories.Get(ctx, owner, name)
 		if err != nil {
 			// Maybe the repo doesn't belong to this org? Or Another error occurred in trying to get the
 			// repo. Either way, we are not going to syncGroup for this repo.
 			return
 		}
 
-		if org != nil && r.Visibility == github.VisibilityInternal {
+		if org != nil && r.GetVisibility() == string(github.VisibilityInternal) {
 			isRepoInternallyVisible = true
 		}
 	}
 
-	allOrgMembersCanRead := isRepoInternallyVisible || canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org})
+	allOrgMembersCanRead := isRepoInternallyVisible || canViewOrgRepos(org, nil)
 	if allOrgMembersCanRead {
 		// 🚨 SECURITY: Iff all members of this org can view this repo, indicate that all members should
 		// be sync'd.
@@ -647,16 +694,24 @@ func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name stri
 		syncGroup(owner, "", true)
 
 		// Also check for teams involved in repo, and indicate all groups should be sync'd.
-		hasNextPage := true
-		for page := 1; hasNextPage; page++ {
-			var teams []*github.Team
-			teams, hasNextPage, err = client.ListRepositoryTeams(ctx, owner, name, page)
+		listOpts := &gh.ListOptions{
+			PerPage: 100,
+			Page:    1,
+		}
+		for {
+			var teams []*gh.Team
+			var resp *gh.Response
+			teams, resp, err = ghClient.Repositories.ListTeams(ctx, owner, name, listOpts)
 			if err != nil {
 				return
 			}
 			for _, t := range teams {
-				syncGroup(owner, t.Slug, false)
+				syncGroup(owner, t.GetSlug(), false)
 			}
+			if resp.NextPage == 0 {
+				break
+			}
+			listOpts.Page = resp.NextPage
 		}
 	}
 
