@@ -8,6 +8,7 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
@@ -68,7 +69,6 @@ func NewDefaultBackfiller(config BackfillerConfig) Backfiller {
 	searchRunner := makeRunSearchFunc(logger, config.SearchHandlers, config.SearchRunnerWorkerLimit, config.SearchRateLimiter)
 	persister := makeSaveResultsFunc(logger, config.InsightStore)
 	return newBackfiller(searchJobGenerator, searchRunner, persister, glock.NewRealClock())
-
 }
 
 func newBackfiller(jobGenerator SearchJobGenerator, searchRunner SearchRunner, resultsPersister ResultsPersister, clock glock.Clock) Backfiller {
@@ -82,7 +82,7 @@ func newBackfiller(jobGenerator SearchJobGenerator, searchRunner SearchRunner, r
 }
 
 type backfiller struct {
-	//dependencies
+	// dependencies
 	searchJobGenerator SearchJobGenerator
 	searchRunner       SearchRunner
 	persister          ResultsPersister
@@ -90,11 +90,15 @@ type backfiller struct {
 	clock glock.Clock
 }
 
+func NewSearchJobGenerator() {
+
+}
+
 var backfillMetrics = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "insights_repo_backfill", metrics.WithLabels("step"))
 
 func (b *backfiller) Run(ctx context.Context, req BackfillRequest) error {
 
-	//setup
+	// setup
 	startingReqContext := requestContext{backfillRequest: &req}
 	start := b.clock.Now()
 
@@ -229,7 +233,7 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 		// at that point in time.)
 		repoName := string(bctx.repoName)
 		if bctx.execution.RecordingTime.Before(bctx.firstHEADCommit.Author.Date) {
-			//a.statistics[bctx.seriesID].Preempted += 1
+			// a.statistics[bctx.seriesID].Preempted += 1
 			return err, nil, nil
 
 			// return // success - nothing else to do
@@ -249,11 +253,11 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 			nearestCommit = recentCommits[0]
 		}
 		if nearestCommit == nil {
-			//a.statistics[bctx.seriesID].Errored += 1
+			// a.statistics[bctx.seriesID].Errored += 1
 			return // repository has no commits / is empty. Maybe not yet pushed to code host.
 		}
 		if nearestCommit.Committer == nil {
-			//a.statistics[bctx.seriesID].Errored += 1
+			// a.statistics[bctx.seriesID].Errored += 1
 			return
 		}
 		revision = string(nearestCommit.ID)

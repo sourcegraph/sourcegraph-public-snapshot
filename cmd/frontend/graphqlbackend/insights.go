@@ -40,6 +40,9 @@ type InsightsResolver interface {
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
 	InsightViewDebug(ctx context.Context, args InsightViewDebugArgs) (InsightViewDebugResolver, error)
+
+	// Debug
+	BackfillDebug(ctx context.Context) (InsightBackfillDebugResolver, error)
 }
 
 type SearchInsightLivePreviewArgs struct {
@@ -463,4 +466,23 @@ type TimeoutDatapointAlert interface {
 type GenericIncompleteDatapointAlert interface {
 	Time() gqlutil.DateTime
 	Reason() string
+}
+
+type InsightBackfillDebugArgs struct {
+	Input InsightBackfillInput
+}
+
+type InsightBackfillInput struct {
+	Query string
+}
+
+type InsightBackfillDebugResolver interface {
+	Plan(ctx context.Context, args InsightBackfillDebugArgs) ([]InsightBackfillPlanNodeResolver, error)
+}
+
+type InsightBackfillPlanNodeResolver interface {
+	Query() string
+	Time() gqlutil.DateTime
+	ChildTimes() []gqlutil.DateTime
+	GenerationMethod() string
 }

@@ -164,3 +164,7 @@ func newAggregationsOperations(observationContext *observation.Context) *aggrega
 		aggregations: op("Aggregations"),
 	}
 }
+
+func (r *Resolver) BackfillDebug(ctx context.Context) (graphqlbackend.InsightBackfillDebugResolver, error) {
+	return &insightsBackfillDebugResolver{}, nil
+}
