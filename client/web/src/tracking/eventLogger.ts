@@ -381,7 +381,6 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
         }
 
-
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
         this.deviceID = deviceID
