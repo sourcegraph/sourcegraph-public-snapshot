@@ -2,12 +2,14 @@ package backfillv2
 
 import (
 	"context"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -19,7 +21,7 @@ type backfillerv2Migrator struct {
 	batchSize int
 }
 
-func NewBackfillerV2Migrator(store *basestore.Store, clock glock.Clock, batchSize int) *backfillerv2Migrator {
+func NewMigrator(store *basestore.Store, clock glock.Clock, batchSize int) *backfillerv2Migrator {
 	return &backfillerv2Migrator{
 		store:     store,
 		batchSize: batchSize,
@@ -33,7 +35,7 @@ func (m *backfillerv2Migrator) ID() int                 { return 17 }
 func (m *backfillerv2Migrator) Interval() time.Duration { return time.Second * 10 }
 
 func (m *backfillerv2Migrator) Progress(ctx context.Context, _ bool) (float64, error) {
-	if !insights.IsEnabled() {
+	if !insightsIsEnabled() {
 		return 1, nil
 	}
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(`
@@ -59,7 +61,7 @@ type backfillSeries struct {
 }
 
 func (m *backfillerv2Migrator) Up(ctx context.Context) (err error) {
-	if !insights.IsEnabled() {
+	if !insightsIsEnabled() {
 		return nil
 	}
 	tx, err := m.store.Transact(ctx)
@@ -216,4 +218,25 @@ func selectBackfillMigrationSeries(ctx context.Context, tx *basestore.Store, bat
 
 func (m *backfillerv2Migrator) Down(ctx context.Context) error {
 	return nil
+}
+
+func insightsIsEnabled() bool {
+	if v, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
+		// Code insights can always be disabled. This can be a helpful escape hatch if e.g. there
+		// are issues with (or connecting to) the codeinsights-db deployment and it is preventing
+		// the Sourcegraph frontend or repo-updater from starting.
+		//
+		// It is also useful in dev environments if you do not wish to spend resources running Code
+		// Insights.
+		return false
+	}
+	if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
+		// Code insights is not supported in single-container Docker demo deployments unless
+		// explicity allowed, (for example by backend integration tests.)
+		if v, _ := strconv.ParseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
+			return true
+		}
+		return false
+	}
+	return true
 }

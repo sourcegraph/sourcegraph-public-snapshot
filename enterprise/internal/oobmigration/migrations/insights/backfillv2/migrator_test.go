@@ -260,7 +260,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 	db := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	clock := glock.NewMockClockAt(time.Date(2022, time.April, 15, 1, 0, 0, 0, time.UTC))
 	store := basestore.NewWithHandle(db.Handle())
-	migrator := NewBackfillerV2Migrator(store, clock, 1)
+	migrator := NewMigrator(store, clock, 1)
 
 	ms := makeNewSeries(t, ctx, store, clock)
 	mb := makeBackfill(t, ctx, store)
@@ -443,7 +443,7 @@ func TestBackfillV2MigratorNoInsights(t *testing.T) {
 	db := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	clock := glock.NewMockClockAt(time.Date(2022, time.April, 15, 1, 0, 0, 0, time.UTC))
 	store := basestore.NewWithHandle(db.Handle())
-	migrator := NewBackfillerV2Migrator(store, clock, 1)
+	migrator := NewMigrator(store, clock, 1)
 
 	assertProgress := func(expectedProgress float64, applyReverse bool) {
 		if progress, err := migrator.Progress(context.Background(), applyReverse); err != nil {
