@@ -32,6 +32,7 @@ func maybeBlobstore(logger sglog.Logger) []string {
 	SetDefaultEnv("S3PROXY_ENCRYPTED_BLOBSTORE", "")
 	SetDefaultEnv("S3PROXY_ENCRYPTED_BLOBSTORE_PASSWORD", "")
 	SetDefaultEnv("S3PROXY_ENCRYPTED_BLOBSTORE_SALT", "")
+	SetDefaultEnv("S3PROXY_V4_MAX_NON_CHUNKED_REQ_SIZE", "33554432")
 	SetDefaultEnv("JCLOUDS_PROVIDER", "filesystem")
 	SetDefaultEnv("JCLOUDS_ENDPOINT", "")
 	SetDefaultEnv("JCLOUDS_REGION", "")
