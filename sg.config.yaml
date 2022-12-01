@@ -559,7 +559,7 @@ commands:
         -p 0.0.0.0:9000:80 \
         -e 'S3PROXY_AUTHORIZATION=none' \
         -v "$BLOBSTORE_DISK":/data \
-        $IMAGE server /data >"$BLOBSTORE_LOG_FILE" 2>&1
+        $IMAGE >"$BLOBSTORE_LOG_FILE" 2>&1
     install: |
       mkdir -p $BLOBSTORE_LOGS
       mkdir -p $BLOBSTORE_DISK

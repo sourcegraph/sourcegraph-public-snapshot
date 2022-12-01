@@ -75,14 +75,6 @@ COPY --from=comby/comby:alpine-3.14-1.8.1@sha256:a5e80d6bad6af008478679809dc8327
 COPY --from=docker.io/sourcegraph/syntax-highlighter:186324_2022-12-01_02d3b4384446 /syntax_highlighter /usr/local/bin/
 
 
-# TODO(blobstore): remove minio support
-# install minio (keep this up to date with docker-images/minio/Dockerfile)
-ENV MINIO_VERSION=RELEASE.2022-09-17T00-09-45Z
-RUN wget "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.$MINIO_VERSION" && \
-    chmod +x "minio.$MINIO_VERSION" && \
-    mv "minio.$MINIO_VERSION" /usr/local/bin/minio
-
-
 # install blobstore (keep this up to date with the upstream Docker image
 # referenced in docker-images/)
 RUN apk add --no-cache --verbose openjdk11
