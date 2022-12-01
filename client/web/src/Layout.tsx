@@ -197,8 +197,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
             }; expires=${tomorrow}; domain=.sourcegraph.com`
             // eslint-disable-next-line unicorn/no-document-cookie
             document.cookie = `email=${props.authenticatedUser.email}; expires=${tomorrow}; domain=.sourcegraph.com`
-        } else {
-            return
         }
     }, [props.authenticatedUser, props.isSourcegraphDotCom])
 
