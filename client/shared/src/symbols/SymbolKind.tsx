@@ -3,9 +3,8 @@ import * as React from 'react'
 import { SymbolKind as SymbolKindEnum } from '../graphql-operations'
 import { lazyComponent } from '../util/lazyComponent'
 
-import { SymbolIcon } from './SymbolIcon'
-
 const SymbolTag = lazyComponent(() => import('./SymbolTag'), 'SymbolTag')
+const SymbolIcon = lazyComponent(() => import('./SymbolIcon'), 'SymbolIcon')
 
 export const SymbolKind: React.FC<{
     kind: SymbolKindEnum

@@ -3,7 +3,7 @@ import { FuzzyFinderSymbolsResult, FuzzyFinderSymbolsVariables } from 'src/graph
 import gql from 'tagged-template-noop'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
+import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
 import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -11,6 +11,7 @@ import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
 import { emptyFuzzyCache, PersistableQueryResult } from './FuzzyLocalCache'
 import { FuzzyQuery } from './FuzzyQuery'
 import { FuzzyRepoRevision, fuzzyRepoRevisionSearchFilter } from './FuzzyRepoRevision'
+import { isSettingsValid, SettingsCascadeOrError } from '@sourcegraph/shared/out/src/settings/settings'
 
 export const FUZZY_SYMBOLS_QUERY = gql`
     fragment FileMatchFields on FileMatch {
@@ -48,7 +49,8 @@ export class FuzzySymbols extends FuzzyQuery {
         private readonly client: ApolloClient<object> | undefined,
         onNamesChanged: () => void,
         private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>,
-        private readonly isGlobalSymbols: boolean
+        private readonly isGlobalSymbols: boolean,
+        private readonly settingsCascade: SettingsCascadeOrError
     ) {
         // Symbol results should not be cached because stale symbol data is complicated to evict/invalidate.
         super(onNamesChanged, emptyFuzzyCache)
@@ -63,10 +65,14 @@ export class FuzzySymbols extends FuzzyQuery {
         }
 
         const repositoryText = `${repositoryName}/`
+        const enableSymbolTags =
+            isSettingsValid(this.settingsCascade) && this.settingsCascade.final.experimentalFeatures?.enableSymbolTags
         return values.map(({ text, url, symbolKind }) => ({
             text: repositoryFilter ? text.replace(repositoryText, '') : text,
             url,
-            icon: symbolKind ? <SymbolTag className="fuzzy-repos-result-icon" kind={symbolKind} /> : undefined,
+            icon: symbolKind ? (
+                <SymbolKind className="fuzzy-repos-result-icon" kind={symbolKind} enableSymbolTags={enableSymbolTags} />
+            ) : undefined,
         }))
     }
 
