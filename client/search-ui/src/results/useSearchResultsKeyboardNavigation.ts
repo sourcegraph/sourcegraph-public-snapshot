@@ -135,7 +135,7 @@ export function useSearchResultsKeyboardNavigation(
                 return
             }
 
-            if (event.key === 'ArrowDown' && isMetaKey(event, isMacPlatform())) {
+            if ((event.key === 'ArrowDown' && isMetaKey(event, isMacPlatform())) || event.key === 'n') {
                 selectFirstResult(root)
                 event.preventDefault()
             }
