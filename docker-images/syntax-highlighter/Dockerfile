@@ -30,6 +30,7 @@ RUN go build -o /http-server-stabilizer .
 #######################
 FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e
 COPY --from=ss syntect_server /
+COPY --from=ss syntax_highlighter /
 COPY --from=hss http-server-stabilizer /
 
 EXPOSE 9238
