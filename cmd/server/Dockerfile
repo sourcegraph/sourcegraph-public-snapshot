@@ -72,7 +72,7 @@ RUN apk add --no-cache --verbose \
 # hadolint ignore=DL3022
 COPY --from=comby/comby:alpine-3.14-1.8.1@sha256:a5e80d6bad6af008478679809dc8327ebde7aeff7b23505b11b20e36aa62a0b2 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
-COPY --from=docker.io/sourcegraph/syntax-highlighter:175652_2022-10-04_5ae1e4363e56 /syntax_highlighter /usr/local/bin/
+COPY --from=docker.io/sourcegraph/syntax-highlighter:175652_2022-10-04_5ae1e4363e56 /syntect_server /usr/local/bin/
 
 
 # install minio (keep this up to date with docker-images/minio/Dockerfile)
