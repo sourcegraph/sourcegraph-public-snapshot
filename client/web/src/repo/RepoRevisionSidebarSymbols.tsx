@@ -23,10 +23,10 @@ import {
     ShowMoreButton,
 } from '../components/FilteredConnection/ui'
 import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
+import { useExperimentalFeatures } from '../stores'
 import { parseBrowserRepoURL } from '../util/url'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
-import { useExperimentalFeatures } from '../stores'
 
 interface SymbolNodeProps {
     node: SymbolWithChildren
