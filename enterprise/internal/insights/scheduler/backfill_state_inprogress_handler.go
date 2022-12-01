@@ -32,7 +32,7 @@ import (
 const (
 	defaultInterruptSeconds    = 60
 	inProgressPollingInterval  = time.Second * 5
-	defaultErrorThresholdFloor = 50
+	defaultErrorThresholdFloor = 5
 )
 
 func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker[*BaseJob], *dbworker.Resetter[*BaseJob], dbworkerstore.Store[*BaseJob]) {
@@ -198,12 +198,19 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 
 				execution.logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
 				runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: execution.series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, Frames: execution.frames})
+				runErr = errors.New("fake error to test terminal")
 				if runErr != nil {
 					execution.logger.Error("error during backfill execution", execution.logFields(log.Error(runErr))...)
 				}
 				err = finish(ctx, h.backfillStore.Store, runErr)
 				if err != nil {
 					return false, err
+				}
+				if execution.exceedsErrorThreshold() {
+					err = h.disableBackfill(ctx, execution)
+					if err != nil {
+						return false, errors.Wrap(err, "disableBackfill")
+					}
 				}
 			}
 		}
@@ -224,13 +231,6 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 	} else if interrupted {
 		execution.logger.Info("interrupted insight series backfill retry", execution.logFields(log.Duration("interruptAfter", h.config.interruptAfter))...)
 		return true, nil
-	}
-
-	if execution.exceedsErrorThreshold() {
-		err = h.disableBackfill(ctx, execution)
-		if err != nil {
-			return false, errors.Wrap(err, "disableBackfill")
-		}
 	}
 
 	if !execution.itr.HasMore() && !execution.itr.HasErrors() {
