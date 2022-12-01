@@ -15,20 +15,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// GetRepoMetadata returns the repo metadata for the given repo, recalculating
+// getRepoMetadata returns the repo metadata for the given repo, recalculating
 // it if necessary.
 //
-// Note that this may block while a gitserver request is made, and therefore
-// probably shouldn't be called from the hot path of GraphQL resolvers and the
-// like.
-func GetRepoMetadata(ctx context.Context, tx *store.Store, client gitserver.Client, repo *types.Repo) (*btypes.RepoMetadata, error) {
+// 🚨 SECURITY: calling code is responsible for validating that the given repo
+// can be seen by the current user; although GetRepoMetadata performs an authz
+// check as part of its query, a failed authz check will still results in the
+// gitserver being hit for the repo, which could expose a side channel of
+// information about the existence or not of the given repo.
+func getRepoMetadata(ctx context.Context, tx *store.Store, client gitserver.Client, repo *types.Repo) (*btypes.RepoMetadata, error) {
 	meta, err := tx.GetRepoMetadata(ctx, repo.ID)
 	if err != nil && err != store.ErrNoResults {
 		return nil, errors.Wrap(err, "getting repo metadata")
 	}
 
 	// Check if we need to refresh the metadata.
-	if err == store.ErrNoResults || meta.UpdatedAt.Before(repo.UpdatedAt) {
+	if (err == store.ErrNoResults) ||
+		(!meta.UpdatedAt.IsZero() && meta.UpdatedAt.Before(repo.UpdatedAt)) ||
+		meta.UpdatedAt.Before(repo.CreatedAt) {
 		meta, err = calculateRepoMetadata(ctx, client, repo)
 		if err != nil {
 			return nil, errors.Wrap(err, "refreshing repo metadata")
@@ -46,7 +50,7 @@ const batchIgnoreFilePath = ".batchignore"
 
 func calculateRepoMetadata(ctx context.Context, client gitserver.Client, repo *types.Repo) (meta *btypes.RepoMetadata, err error) {
 	traceTitle := fmt.Sprintf("RepoID: %q", repo.ID)
-	tr, ctx := trace.New(ctx, "hasBatchIgnoreFile", traceTitle)
+	tr, ctx := trace.New(ctx, "calculateRepoMetadata", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()

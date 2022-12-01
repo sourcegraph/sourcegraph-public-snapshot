@@ -6,10 +6,13 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (s *Store) GetRepoMetadata(ctx context.Context, repoID api.RepoID) (meta *btypes.RepoMetadata, err error) {
@@ -18,7 +21,12 @@ func (s *Store) GetRepoMetadata(ctx context.Context, repoID api.RepoID) (meta *b
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return getRecord(ctx, s, getRepoMetadataQuery(repoID), scanRepoMetadata)
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))
+	if err != nil {
+		return nil, errors.Wrap(err, "GetRepoMetadata generating authz query conds")
+	}
+
+	return getRecord(ctx, s, getRepoMetadataQuery(repoID, repoAuthzConds), scanRepoMetadata)
 }
 
 const getRepoMetadataQueryFmtstr = `
@@ -28,13 +36,22 @@ FROM
   batch_changes_repo_metadata
 WHERE
   repo_id = %s
+  AND EXISTS (
+    SELECT 1
+    FROM
+      repo
+    WHERE
+      repo.id = batch_changes_repo_metadata.repo_id
+      AND %s -- authz
+  )
 `
 
-func getRepoMetadataQuery(repoID api.RepoID) *sqlf.Query {
+func getRepoMetadataQuery(repoID api.RepoID, repoAuthzConds *sqlf.Query) *sqlf.Query {
 	return sqlf.Sprintf(
 		getRepoMetadataQueryFmtstr,
 		sqlf.Join(repoMetadataColumns, ","),
 		repoID,
+		repoAuthzConds,
 	)
 }
 
@@ -42,7 +59,12 @@ func (s *Store) ListRepoIDsMissingMetadata(ctx context.Context, opts CursorOpts)
 	ctx, _, endObservation := s.operations.listRepoIDsMissingMetadata.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	q := listRepoIDsMissingMetadataQuery(opts)
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "ListRepoIDsMissingMetadata generating authz query conds")
+	}
+
+	q := listRepoIDsMissingMetadataQuery(opts, repoAuthzConds)
 	ids := []api.RepoID{}
 	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var id api.RepoID
@@ -70,14 +92,16 @@ WHERE
       batch_changes_repo_metadata.repo_id = repo.id
   )
   AND %s -- cursor where clause
+  AND %s -- authz
 ORDER BY id ASC
 %s -- LIMIT
 `
 
-func listRepoIDsMissingMetadataQuery(opts CursorOpts) *sqlf.Query {
+func listRepoIDsMissingMetadataQuery(opts CursorOpts, repoAuthzConds *sqlf.Query) *sqlf.Query {
 	return sqlf.Sprintf(
 		listRepoIDsMissingMetadataQueryFmtstr,
 		opts.WhereDB("id", CursorDirectionAscending),
+		repoAuthzConds,
 		opts.LimitDB(),
 	)
 }
@@ -86,7 +110,12 @@ func (s *Store) ListReposWithOutdatedMetadata(ctx context.Context, opts CursorOp
 	ctx, _, endObservation := s.operations.listReposWithOutdatedMetadata.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return listRecords(ctx, s, listReposWithOutdatedMetadataQuery(opts), opts, scanRepoMetadata)
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "ListReposWithOutdatedMetadata generating authz query conds")
+	}
+
+	return listRecords(ctx, s, listReposWithOutdatedMetadataQuery(opts, repoAuthzConds), opts, scanRepoMetadata)
 }
 
 const listReposWithOutdatedMetadataQueryFmtstr = `
@@ -101,17 +130,23 @@ WHERE
       repo
     WHERE
       repo.id = batch_changes_repo_metadata.repo_id
-      AND repo.updated_at > batch_changes_repo_metadata.updated_at
+      AND (
+        (repo.updated_at IS NOT NULL AND repo.updated_at > batch_changes_repo_metadata.updated_at)
+        OR
+        (repo.created_at > batch_changes_repo_metadata.updated_at)
+      )
+      AND %s -- authz
   )
   AND %s -- cursor where clause
 ORDER BY repo_id ASC
 %s -- LIMIT
 `
 
-func listReposWithOutdatedMetadataQuery(opts CursorOpts) *sqlf.Query {
+func listReposWithOutdatedMetadataQuery(opts CursorOpts, repoAuthzConds *sqlf.Query) *sqlf.Query {
 	return sqlf.Sprintf(
 		listReposWithOutdatedMetadataQueryFmtstr,
 		sqlf.Join(repoMetadataColumns, ","),
+		repoAuthzConds,
 		opts.WhereDB("id", CursorDirectionAscending),
 		opts.LimitDB(),
 	)
