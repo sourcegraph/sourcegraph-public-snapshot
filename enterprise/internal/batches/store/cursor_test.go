@@ -14,6 +14,9 @@ import (
 )
 
 func testCursor(t *testing.T, ctx context.Context, s *Store, _ bt.Clock) {
+	_, err := s.DatabaseDB().ExecContext(context.Background(), paginationTestCreateQuery)
+	require.NoError(t, err)
+
 	t.Run("without values", func(t *testing.T) {
 		for _, limit := range []int{0, 5} {
 			t.Run(strconv.Itoa(limit), func(t *testing.T) {
