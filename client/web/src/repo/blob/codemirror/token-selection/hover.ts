@@ -33,7 +33,10 @@ const setHoverEffect = StateEffect.define<Tooltip | null>()
 export const hoverField = StateField.define<Tooltip | null>({
     create: () => null,
     update(tooltip, transactions) {
-        if (transactions.docChanged) {
+        if (transactions.docChanged || transactions.selection) {
+            // Close hover when the selection moves and when the document
+            // changes (although that should not happen because we only support
+            // read-only mode).
             return null
         }
         for (const effect of transactions.effects) {
