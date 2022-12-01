@@ -18,11 +18,17 @@ func (s *store) IDsWithMeta(ctx context.Context, ids []int) (_ []int, err error)
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(idsWithMetaQuery, pq.Array(ids))))
+	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(
+		idsWithMetaQuery,
+		pq.Array(ids),
+		pq.Array(ids),
+	)))
 }
 
 const idsWithMetaQuery = `
 SELECT m.dump_id FROM lsif_data_metadata m WHERE m.dump_id = ANY(%s)
+UNION
+SELECT m.upload_id FROM codeintel_scip_metadata m WHERE m.upload_id = ANY(%s)
 `
 
 func (s *store) ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error) {
@@ -37,7 +43,7 @@ func (s *store) ReconcileCandidates(ctx context.Context, batchSize int) (_ []int
 const reconcileQuery = `
 WITH candidates AS (
 	SELECT m.dump_id
-	FROM lsif_data_metadata m
+	FROM (SELECT dump_id FROM lsif_data_metadata UNION SELECT upload_id FROM codeintel_scip_metadata) m
 	LEFT JOIN codeintel_last_reconcile lr ON lr.dump_id = m.dump_id
 	ORDER BY lr.last_reconcile_at DESC NULLS FIRST, m.dump_id
 	LIMIT %s
