@@ -477,23 +477,21 @@ const ReferencesList: React.FunctionComponent<
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
-                    {(implementations.length > 0 || initialCollapseState.implementations) && (
-                        <CollapsibleLocationList
-                            {...props}
-                            name="implementations"
-                            locations={implementations}
-                            hasMore={implementationsHasNextPage}
-                            fetchMore={fetchMoreImplementations}
-                            loadingMore={fetchMoreImplementationsLoading}
-                            setActiveLocation={setActiveLocation}
-                            filter={debouncedFilter}
-                            isActiveLocation={isActiveLocation}
-                            activeURL={activeURL || ''}
-                            navigateToUrl={navigateToUrl}
-                            handleOpenChange={handleOpenChange}
-                            isOpen={isOpen}
-                        />
-                    )}
+                    <CollapsibleLocationList
+                        {...props}
+                        name="implementations"
+                        locations={implementations}
+                        hasMore={implementationsHasNextPage}
+                        fetchMore={fetchMoreImplementations}
+                        loadingMore={fetchMoreImplementationsLoading}
+                        setActiveLocation={setActiveLocation}
+                        filter={debouncedFilter}
+                        isActiveLocation={isActiveLocation}
+                        activeURL={activeURL || ''}
+                        navigateToUrl={navigateToUrl}
+                        handleOpenChange={handleOpenChange}
+                        isOpen={isOpen}
+                    />
                 </div>
             </div>
             {sideblob && (
