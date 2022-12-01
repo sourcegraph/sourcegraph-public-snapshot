@@ -81,10 +81,11 @@ type Position struct {
 	Character int
 }
 
-// Package pairs a package schem+name+version with the dump that provides it.
+// Package pairs a package scheme+manager+name+version with the dump that provides it.
 type Package struct {
 	DumpID  int
 	Scheme  string
+	Manager string
 	Name    string
 	Version string
 }
@@ -128,6 +129,7 @@ func (s *rowScanner) Next() (reference PackageReference, _ bool, _ error) {
 	if err := s.rows.Scan(
 		&reference.DumpID,
 		&reference.Scheme,
+		&reference.Manager,
 		&reference.Name,
 		&reference.Version,
 	); err != nil {

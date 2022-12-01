@@ -3,7 +3,7 @@ import React, { KeyboardEvent, MouseEvent, useCallback, useEffect, useLayoutEffe
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import { capitalize } from 'lodash'
+import { capitalize, uniqBy } from 'lodash'
 import { MemoryRouter, useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -389,7 +389,7 @@ const ReferencesList: React.FunctionComponent<
     // Manual management of the open/closed state of collapsible lists so they
     // stay open/closed across re-renders and re-mounts.
     const location = useLocation()
-    const initialCollapseState = useMemo((): Record<string, boolean> => {
+    const initialCollapseState = useMemo(() => {
         const { viewState } = parseQueryAndHash(location.search, location.hash)
         const state = {
             references: viewState === 'references',
@@ -477,23 +477,21 @@ const ReferencesList: React.FunctionComponent<
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
-                    {implementations.length > 0 && (
-                        <CollapsibleLocationList
-                            {...props}
-                            name="implementations"
-                            locations={implementations}
-                            hasMore={implementationsHasNextPage}
-                            fetchMore={fetchMoreImplementations}
-                            loadingMore={fetchMoreImplementationsLoading}
-                            setActiveLocation={setActiveLocation}
-                            filter={debouncedFilter}
-                            isActiveLocation={isActiveLocation}
-                            activeURL={activeURL || ''}
-                            navigateToUrl={navigateToUrl}
-                            handleOpenChange={handleOpenChange}
-                            isOpen={isOpen}
-                        />
-                    )}
+                    <CollapsibleLocationList
+                        {...props}
+                        name="implementations"
+                        locations={implementations}
+                        hasMore={implementationsHasNextPage}
+                        fetchMore={fetchMoreImplementations}
+                        loadingMore={fetchMoreImplementationsLoading}
+                        setActiveLocation={setActiveLocation}
+                        filter={debouncedFilter}
+                        isActiveLocation={isActiveLocation}
+                        activeURL={activeURL || ''}
+                        navigateToUrl={navigateToUrl}
+                        handleOpenChange={handleOpenChange}
+                        isOpen={isOpen}
+                    />
                 </div>
             </div>
             {sideblob && (
@@ -570,6 +568,12 @@ const CollapsibleLocationList: React.FunctionComponent<
     React.PropsWithChildren<CollapsibleLocationListProps>
 > = props => {
     const isOpen = props.isOpen(props.name) ?? true
+    const quantityLabel = useMemo(() => {
+        const repoNumber = uniqBy(props.locations, 'repo').length
+        return `(${props.locations.length} ${pluralize('item', props.locations.length)}${
+            repoNumber > 1 ? ` from ${repoNumber} repositories` : ''
+        } displayed${props.hasMore ? ', more available' : ''})`
+    }, [props.locations, props.hasMore])
 
     return (
         <Collapse isOpen={isOpen} onOpenChange={isOpen => props.handleOpenChange(props.name, isOpen)}>
@@ -588,7 +592,7 @@ const CollapsibleLocationList: React.FunctionComponent<
                         )}{' '}
                         <H4 className="mb-0">{capitalize(props.name)}</H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
-                            ({props.locations.length} displayed{props.hasMore ? ', more available)' : ')'}
+                            {quantityLabel}
                         </span>
                     </CollapseHeader>
                 </CardHeader>
@@ -782,17 +786,16 @@ const LocationsList: React.FunctionComponent<React.PropsWithChildren<LocationsLi
     activeURL,
 }) => {
     const repoLocationGroups = useMemo(() => buildRepoLocationGroups(locations), [locations])
-    const openByDefault = repoLocationGroups.length === 1
 
     return (
         <>
-            {repoLocationGroups.map(group => (
+            {repoLocationGroups.map((group, index) => (
                 <CollapsibleRepoLocationGroup
                     key={group.repoName}
                     activeURL={activeURL}
                     searchToken={searchToken}
                     repoLocationGroup={group}
-                    openByDefault={openByDefault}
+                    openByDefault={index === 0}
                     isActiveLocation={isActiveLocation}
                     setActiveLocation={setActiveLocation}
                     filter={filter}

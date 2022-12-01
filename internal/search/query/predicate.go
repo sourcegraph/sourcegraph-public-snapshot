@@ -37,6 +37,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"has.description":       func() Predicate { return &RepoHasDescriptionPredicate{} },
 		"has.tag":               func() Predicate { return &RepoHasTagPredicate{} },
 		"has":                   func() Predicate { return &RepoHasKVPPredicate{} },
+		"has.key":               func() Predicate { return &RepoHasKeyPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
@@ -299,6 +300,23 @@ func (p *RepoHasKVPPredicate) Unmarshal(params string, negated bool) (err error)
 
 func (p *RepoHasKVPPredicate) Field() string { return FieldRepo }
 func (p *RepoHasKVPPredicate) Name() string  { return "has" }
+
+type RepoHasKeyPredicate struct {
+	Key     string
+	Negated bool
+}
+
+func (p *RepoHasKeyPredicate) Unmarshal(params string, negated bool) (err error) {
+	if len(params) == 0 {
+		return errors.New("key must be non-empty")
+	}
+	p.Key = params
+	p.Negated = negated
+	return nil
+}
+
+func (p *RepoHasKeyPredicate) Field() string { return FieldRepo }
+func (p *RepoHasKeyPredicate) Name() string  { return "has.key" }
 
 /* file:contains.content(pattern) */
 
