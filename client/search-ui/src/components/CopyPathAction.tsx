@@ -7,6 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, Icon, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './CopyPathAction.module.scss'
+import classNames from 'classnames'
 
 /**
  * A repository header action that copies the current page's repository or file path to the clipboard.
@@ -38,7 +39,7 @@ export const CopyPathAction: React.FunctionComponent<
             <Button
                 aria-label="Copy path to clipboard"
                 variant="icon"
-                className={className}
+                className={classNames(styles.button, className)}
                 onClick={onClick}
                 size="sm"
             >
