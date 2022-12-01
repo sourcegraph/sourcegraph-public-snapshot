@@ -190,10 +190,11 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
             props.authenticatedUser &&
             !document.cookie.includes('displayName=' || 'email=')
         ) {
+            const tomorrow = (new Date(Date.now()+ 86400*1000)).toUTCString()
             // eslint-disable-next-line unicorn/no-document-cookie
-            document.cookie = `displayName=${props.authenticatedUser.displayName || ''}`
+            document.cookie = `displayName=${props.authenticatedUser.displayName || ''}; expires=${tomorrow}; domain=.sourcegraph.com`
             // eslint-disable-next-line unicorn/no-document-cookie
-            document.cookie = `email=${props.authenticatedUser.email}`
+            document.cookie = `email=${props.authenticatedUser.email}; expires=${tomorrow}; domain=.sourcegraph.com`
         } else {
             return
         }
