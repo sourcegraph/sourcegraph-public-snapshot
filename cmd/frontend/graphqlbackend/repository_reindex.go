@@ -53,7 +53,7 @@ func (r *schemaResolver) ReindexRepository(ctx context.Context, args *struct {
 	form := url.Values{}
 	form.Add("repo", strconv.Itoa(int(repo.IDInt32())))
 
-	// <host:port>/indexerver/?headless
+	// http://<host:port>/indexerver/?headless
 	u = u.ResolveReference(&url.URL{Path: "/indexserver/", RawQuery: "headless"})
 
 	req, err := http.NewRequest("POST", u.String(), strings.NewReader(form.Encode()))
