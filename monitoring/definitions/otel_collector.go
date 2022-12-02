@@ -21,7 +21,7 @@ func OtelCollector() *monitoring.Dashboard {
 					{
 						{
 							Name:        "otel_span_receive_rate",
-							Description: "spans received per second",
+							Description: "spans received per receiver per second",
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("receiver: {{receiver}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							Query:       "sum(rate(otelcol_receiver_accepted_spans{receiver=~\"^.*\"}[1m])) by (receiver)",
