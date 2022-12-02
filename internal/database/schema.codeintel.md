@@ -157,6 +157,7 @@ Global metadatadata about a single processed upload.
  type_definition_ranges | bytea   |           |          | 
 Indexes:
     "codeintel_scip_symbols_pkey" PRIMARY KEY, btree (upload_id, symbol_name, document_lookup_id)
+    "codeintel_scip_symbols_document_lookup_id" btree (document_lookup_id)
 Foreign-key constraints:
     "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
 
