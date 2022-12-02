@@ -14,7 +14,7 @@ import {
 
 import { Scalars, GetOrganizationsResult, GetOrganizationsVariables } from '../../../graphql-operations'
 
-import { GET_ORGANIZATIONS, } from './backend'
+import { GET_ORGANIZATIONS } from './backend'
 
 export interface UseNamespacesResult {
     userNamespace: SettingsUserSubject
@@ -56,18 +56,15 @@ export const useNamespaces = (
     }
 
     const { loading, data, error } = useQuery<GetOrganizationsResult, GetOrganizationsVariables>(GET_ORGANIZATIONS, {
-        fetchPolicy: 'cache-and-network'
+        fetchPolicy: 'cache-and-network',
     })
 
-    const organizationNamespaces: SettingsOrgSubject[] = useMemo(
-        () => {
-            if (!loading && data?.organizations) {
-                return data.organizations.nodes
-            }
-            return []
-        },
-        [data, loading]
-    )
+    const organizationNamespaces: SettingsOrgSubject[] = useMemo(() => {
+        if (!loading && data?.organizations) {
+            return data.organizations.nodes
+        }
+        return []
+    }, [data, loading])
 
     const namespaces: (SettingsUserSubject | SettingsOrgSubject)[] = useMemo(
         () => [userNamespace, ...organizationNamespaces],

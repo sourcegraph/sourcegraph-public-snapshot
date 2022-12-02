@@ -14,7 +14,7 @@ import {
     SettingsOrgSubject,
     SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
-import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip } from '@sourcegraph/wildcard'
+import { Alert, Button, Container, Icon, Input, LoadingSpinner, RadioButton, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     BatchChangeFields,
@@ -92,7 +92,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
         batchChange?.namespace.id || initialNamespaceID
     )
 
-    const loading = batchChangeLoading || batchSpecLoading || namespaceLoading
+    const loading = batchChangeLoading || batchSpecLoading
     const error = batchChangeError || batchSpecError || namespaceError
 
     // The namespace selected for creating the new batch change under.
@@ -155,6 +155,10 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
             )
             // We destructure and surface the error from `useMutation` instead.
             .catch(noop)
+    }
+
+    if (namespaceLoading) {
+        return <LoadingSpinner />
     }
 
     return (
