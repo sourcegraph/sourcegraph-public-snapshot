@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, useContext, useMemo } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
@@ -15,7 +15,7 @@ interface DashboardInsightsProps extends TelemetryProps {
     onAddInsightRequest: () => void
 }
 
-export const DashboardInsights: React.FunctionComponent<React.PropsWithChildren<DashboardInsightsProps>> = props => {
+export const DashboardInsights: FC<DashboardInsightsProps> = props => {
     const { telemetryService, currentDashboard, dashboards, className, onAddInsightRequest } = props
 
     const { getInsights } = useContext(CodeInsightsBackendContext)
@@ -43,7 +43,7 @@ export const DashboardInsights: React.FunctionComponent<React.PropsWithChildren<
             {insights.length > 0 ? (
                 <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} className={className} />
             ) : (
-                <EmptyInsightDashboard dashboard={currentDashboard} onAddInsight={onAddInsightRequest} />
+                <EmptyInsightDashboard dashboard={currentDashboard} onAddInsightRequest={onAddInsightRequest} />
             )}
         </InsightContext.Provider>
     )

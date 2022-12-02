@@ -1,8 +1,7 @@
-
 export enum CodeInsightsPageRoutes {
     InsightsDashboardTab = '/dashboards/:dashboardId?',
     InsightsAll = '/dashboards/all',
-    InsightsAboutTab = '/about'
+    InsightsAboutTab = '/about',
 }
 
 export function encodeDashboardIdQueryParam(url: string, dashboardId?: string): string {

@@ -21,7 +21,7 @@ import {
 import { useExperimentalFeatures } from '../../../../../../stores'
 import { Insight, InsightDashboard, InsightType, isVirtualDashboard } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks'
-import { encodeDashboardIdQueryParam } from '../../../../routers.constant';
+import { encodeDashboardIdQueryParam } from '../../../../routers.constant'
 import { ConfirmDeleteModal } from '../../../modals/ConfirmDeleteModal'
 import { ShareLinkModal } from '../../../modals/ShareLinkModal/ShareLinkModal'
 

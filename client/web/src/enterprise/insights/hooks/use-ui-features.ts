@@ -4,12 +4,7 @@ import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { useCodeInsightsState } from '../../../stores'
-import {
-    CodeInsightsBackendContext,
-    CustomInsightDashboard,
-    Insight,
-    isSearchBasedInsight
-} from '../core'
+import { CodeInsightsBackendContext, CustomInsightDashboard, Insight, isSearchBasedInsight } from '../core'
 import {
     getDashboardPermissions,
     getTooltipMessage,
@@ -32,7 +27,9 @@ export interface UseUiFeatures {
                 tooltip?: string
             }
         }
-        getContextActionsPermissions: (dashboard?: CustomInsightDashboard) => Record<DashboardMenuItemKey, DashboardMenuItem>
+        getContextActionsPermissions: (
+            dashboard?: CustomInsightDashboard
+        ) => Record<DashboardMenuItemKey, DashboardMenuItem>
         getAddRemoveInsightsPermission: (dashboard?: CustomInsightDashboard) => {
             disabled: boolean
             tooltip: string | undefined

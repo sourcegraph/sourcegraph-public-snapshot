@@ -42,7 +42,6 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
     // State to open/close add/remove insights modal UI
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
-
     const [copyURL, isCopied] = useCopyURLHandler()
 
     useEffect(() => {

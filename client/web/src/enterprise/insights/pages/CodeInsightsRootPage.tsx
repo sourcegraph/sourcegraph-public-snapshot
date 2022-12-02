@@ -21,7 +21,7 @@ import {
 import { CodeInsightsIcon } from '../../../insights/Icons'
 import { CodeInsightsPage } from '../components'
 import { useQueryParameters } from '../hooks'
-import { encodeDashboardIdQueryParam } from '../routers.constant';
+import { encodeDashboardIdQueryParam } from '../routers.constant'
 
 import { DashboardsView } from './dashboards/dashboard-view/DashboardsView'
 
