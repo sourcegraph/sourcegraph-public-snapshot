@@ -330,11 +330,6 @@ type ValidateExternalServiceConfigOptions struct {
 	NamespaceOrgID int32
 }
 
-// IsSiteOwned returns true if the external service is owned by the site.
-func (e *ValidateExternalServiceConfigOptions) IsSiteOwned() bool {
-	return e.NamespaceUserID == 0 && e.NamespaceOrgID == 0
-}
-
 type ValidateExternalServiceConfigFunc = func(ctx context.Context, e ExternalServiceStore, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error)
 
 // ValidateExternalServiceConfig is the default non-enterprise version of our validation function
@@ -374,29 +369,6 @@ func MakeValidateExternalServiceConfigFunc(gitHubValidators []func(*types.GitHub
 			return nil, errors.Errorf(
 				"unable to write external service config as it contains redacted fields, this is likely a bug rather than a problem with your config",
 			)
-		}
-
-		// For user-added and org-added external services, we need to prevent them from using disallowed fields.
-		if !opt.IsSiteOwned() {
-			// We do not allow users to add external service other than GitHub.com and GitLab.com
-			result := gjson.GetBytes(normalized, "url")
-			baseURL, err := url.Parse(result.String())
-			if err != nil {
-				return nil, errors.Wrap(err, "parse base URL")
-			}
-			normalizedURL := extsvc.NormalizeBaseURL(baseURL).String()
-			if normalizedURL != "https://github.com/" &&
-				normalizedURL != "https://gitlab.com/" {
-				return nil, errors.New("external service only allowed for https://github.com/ and https://gitlab.com/")
-			}
-
-			disallowedFields := []string{"repositoryPathPattern", "nameTransformations", "rateLimit"}
-			results := gjson.GetManyBytes(normalized, disallowedFields...)
-			for i, r := range results {
-				if r.Exists() {
-					return nil, errors.Errorf("field %q is not allowed in a user-added external service", disallowedFields[i])
-				}
-			}
 		}
 
 		res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))

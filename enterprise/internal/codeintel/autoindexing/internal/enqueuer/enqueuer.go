@@ -74,6 +74,7 @@ func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg precise.
 	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{
 		LogFields: []otlog.Field{
 			otlog.String("scheme", pkg.Scheme),
+			otlog.String("manager", pkg.Manager),
 			otlog.String("name", pkg.Name),
 			otlog.String("version", pkg.Version),
 		},

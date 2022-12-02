@@ -143,6 +143,11 @@ interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps, 
 
     location: H.Location
     history: H.History
+
+    // This is used for testing purposes only because we're using CSS media
+    // queries to determine the container height and in storybook we can't
+    // control these.
+    forceWrap?: boolean
 }
 
 /**
@@ -159,11 +164,12 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
         () => new RepoHeaderContributionStore(contributions => setRepoHeaderContributions(contributions)),
         [setRepoHeaderContributions]
     )
+    const isLargeHook = useBreakpoint('sm')
+    const isLarge = props.forceWrap ? false : isLargeHook
+
     useEffect(() => {
         onLifecyclePropsChange(repoHeaderContributionStore.props)
     }, [onLifecyclePropsChange, repoHeaderContributionStore.props])
-
-    const isLarge = useBreakpoint('lg')
 
     const context: Omit<RepoHeaderContext, 'actionType'> = useMemo(
         () => ({
@@ -195,7 +201,11 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
         <nav data-testid="repo-header" className={classNames('navbar navbar-expand', styles.repoHeader)}>
             <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
-                <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} />
+                <Breadcrumbs
+                    breadcrumbs={props.breadcrumbs}
+                    location={props.location}
+                    className={classNames('justify-content-start', !props.forceWrap ? styles.breadcrumbWrap : '')}
+                />
             </div>
             <ul className="navbar-nav">
                 {leftActions.map((a, index) => (

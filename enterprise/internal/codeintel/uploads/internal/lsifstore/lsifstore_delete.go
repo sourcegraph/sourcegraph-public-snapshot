@@ -12,18 +12,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-var tableNames = []string{
-	"lsif_data_metadata",
-	"lsif_data_documents",
-	"lsif_data_documents_schema_versions",
-	"lsif_data_result_chunks",
-	"lsif_data_definitions",
-	"lsif_data_definitions_schema_versions",
-	"lsif_data_references",
-	"lsif_data_references_schema_versions",
-	"lsif_data_implementations",
-	"lsif_data_implementations_schema_versions",
-	"codeintel_last_reconcile",
+var tableNames = map[string]string{
+	"lsif_data_metadata":                        "dump_id",
+	"lsif_data_documents":                       "dump_id",
+	"lsif_data_documents_schema_versions":       "dump_id",
+	"lsif_data_result_chunks":                   "dump_id",
+	"lsif_data_definitions":                     "dump_id",
+	"lsif_data_definitions_schema_versions":     "dump_id",
+	"lsif_data_references":                      "dump_id",
+	"lsif_data_references_schema_versions":      "dump_id",
+	"lsif_data_implementations":                 "dump_id",
+	"lsif_data_implementations_schema_versions": "dump_id",
+	"codeintel_last_reconcile":                  "dump_id",
+	"codeintel_scip_metadata":                   "upload_id",
+	"codeintel_scip_document_lookup":            "upload_id",
+	"codeintel_scip_symbols":                    "upload_id",
 }
 
 // DeleteLsifDataByUploadIds deletes LSIF data by UploadIds from the lsif database.
@@ -56,10 +59,10 @@ func (s *store) DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int)
 		err = tx.Done(err)
 	}()
 
-	for _, tableName := range tableNames {
+	for tableName, fieldName := range tableNames {
 		trace.Log(otlog.String("tableName", tableName))
 
-		query := sqlf.Sprintf(deleteQuery, sqlf.Sprintf(tableName), sqlf.Join(ids, ","))
+		query := sqlf.Sprintf(deleteQuery, sqlf.Sprintf(tableName), sqlf.Sprintf(fieldName), sqlf.Join(ids, ","))
 		if err := tx.Exec(ctx, query); err != nil {
 			return err
 		}
@@ -69,7 +72,7 @@ func (s *store) DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int)
 }
 
 const deleteQuery = `
-DELETE FROM %s WHERE dump_id IN (%s)
+DELETE FROM %s WHERE %s IN (%s)
 `
 
 func intsToString(vs []int) string {

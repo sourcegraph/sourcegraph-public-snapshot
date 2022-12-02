@@ -14,7 +14,7 @@ import { DashboardsContent } from './components/dashboards-content/DashboardsCon
 
 export interface DashboardsContentPageProps extends TelemetryProps {
     /**
-     * Possible dashboard id. All insights on the page will be get from
+     * Possible dashboard id. All insights on the page will be got from
      * dashboard's info from the user or org settings by the dashboard id.
      * In case if id is undefined we get insights from the final
      * version of merged settings (all insights)
