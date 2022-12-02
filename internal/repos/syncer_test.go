@@ -617,9 +617,9 @@ func TestSyncerSync(t *testing.T) {
 					repos.NewFakeSource(nil, nil, nil).Unavailable(),
 				),
 				store: store,
-				now: clock.Now,
-				svcs: []*types.ExternalService{tc.svc},
-				err:  "does not seem to be available",
+				now:   clock.Now,
+				svcs:  []*types.ExternalService{tc.svc},
+				err:   "does not seem to be available",
 			},
 		)
 	}
