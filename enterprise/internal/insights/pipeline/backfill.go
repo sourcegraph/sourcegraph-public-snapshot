@@ -33,9 +33,9 @@ type BackfillRequest struct {
 	Frames []types.Frame
 }
 
-type requestContext struct {
-	backfillRequest    *BackfillRequest
-	compressionSavings float64
+type RequestContext struct {
+	BackfillRequest    *BackfillRequest
+	CompressionSavings float64
 }
 
 type Backfiller interface {
@@ -47,9 +47,9 @@ type GitCommitClient interface {
 	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
 }
 
-type SearchJobGenerator func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error)
-type SearchRunner func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error)
-type ResultsPersister func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs) (*requestContext, error)
+type SearchJobGenerator func(ctx context.Context, req RequestContext) (*RequestContext, []*queryrunner.SearchJob, error)
+type SearchRunner func(ctx context.Context, reqContext *RequestContext, jobs []*queryrunner.SearchJob) (*RequestContext, []store.RecordSeriesPointArgs, error)
+type ResultsPersister func(ctx context.Context, reqContext *RequestContext, points []store.RecordSeriesPointArgs) (*RequestContext, error)
 
 type BackfillerConfig struct {
 	CommitClient    GitCommitClient
@@ -90,8 +90,8 @@ type backfiller struct {
 	clock glock.Clock
 }
 
-func NewSearchJobGenerator() {
-
+func NewSearchJobGenerator(logger log.Logger, config BackfillerConfig) SearchJobGenerator {
+	return makeSearchJobsFunc(logger, config.CommitClient, config.CompressionPlan, config.SearchPlanWorkerLimit, config.HistoricRateLimiter)
 }
 
 var backfillMetrics = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "insights_repo_backfill", metrics.WithLabels("step"))
@@ -99,7 +99,7 @@ var backfillMetrics = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "insig
 func (b *backfiller) Run(ctx context.Context, req BackfillRequest) error {
 
 	// setup
-	startingReqContext := requestContext{backfillRequest: &req}
+	startingReqContext := RequestContext{BackfillRequest: &req}
 	start := b.clock.Now()
 
 	step1ReqContext, searchJobs, jobErr := b.searchJobGenerator(ctx, startingReqContext)
@@ -130,13 +130,13 @@ var compressionSavingsMetric = promauto.NewHistogramVec(prometheus.HistogramOpts
 }, []string{"preempted"})
 
 func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int, rateLimit *ratelimit.InstrumentedLimiter) SearchJobGenerator {
-	return func(ctx context.Context, reqContext requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
-		numberOfFrames := len(reqContext.backfillRequest.Frames)
+	return func(ctx context.Context, reqContext RequestContext) (*RequestContext, []*queryrunner.SearchJob, error) {
+		numberOfFrames := len(reqContext.BackfillRequest.Frames)
 		jobs := make([]*queryrunner.SearchJob, 0, numberOfFrames)
-		if reqContext.backfillRequest == nil {
+		if reqContext.BackfillRequest == nil {
 			return &reqContext, jobs, errors.New("backfill request provided")
 		}
-		req := reqContext.backfillRequest
+		req := reqContext.BackfillRequest
 		buildJob := makeHistoricalSearchJobFunc(logger, commitClient)
 		logger.Debug("making search plan")
 		// Find the first commit made to the repository on the default branch.
@@ -291,9 +291,9 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 }
 
 func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMethod]queryrunner.InsightsHandler, searchWorkerLimit int, rateLimiter *ratelimit.InstrumentedLimiter) SearchRunner {
-	return func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error) {
+	return func(ctx context.Context, reqContext *RequestContext, jobs []*queryrunner.SearchJob) (*RequestContext, []store.RecordSeriesPointArgs, error) {
 		points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
-		series := reqContext.backfillRequest.Series
+		series := reqContext.BackfillRequest.Series
 		mu := &sync.Mutex{}
 		groupContext, groupCancel := context.WithCancel(ctx)
 		defer groupCancel()
@@ -326,7 +326,7 @@ func makeRunSearchFunc(logger log.Logger, searchHandlers map[types.GenerationMet
 }
 
 func makeSaveResultsFunc(logger log.Logger, insightStore store.Interface) ResultsPersister {
-	return func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs) (*requestContext, error) {
+	return func(ctx context.Context, reqContext *RequestContext, points []store.RecordSeriesPointArgs) (*RequestContext, error) {
 		if ctx.Err() != nil {
 			return reqContext, ctx.Err()
 		}

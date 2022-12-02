@@ -28,12 +28,12 @@ import (
 )
 
 func makeTestJobGenerator(numJobs int) SearchJobGenerator {
-	return func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
+	return func(ctx context.Context, req RequestContext) (*RequestContext, []*queryrunner.SearchJob, error) {
 		jobs := make([]*queryrunner.SearchJob, 0, numJobs)
 		recordDate := time.Date(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
 		for i := 0; i < numJobs; i++ {
 			jobs = append(jobs, &queryrunner.SearchJob{
-				SeriesID:    req.backfillRequest.Series.SeriesID,
+				SeriesID:    req.BackfillRequest.Series.SeriesID,
 				SearchQuery: "test search",
 				RecordTime:  &recordDate,
 			})
@@ -61,10 +61,10 @@ func makeTestSearchHandlerErr(err error, errorAfterNumReq int) func(ctx context.
 	}
 }
 
-func testSearchRunnerStep(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error) {
+func testSearchRunnerStep(ctx context.Context, reqContext *RequestContext, jobs []*queryrunner.SearchJob) (*RequestContext, []store.RecordSeriesPointArgs, error) {
 	points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
 	for _, job := range jobs {
-		newPoints, _ := testSearchHandlerConstValue(ctx, job, reqContext.backfillRequest.Series, *job.RecordTime)
+		newPoints, _ := testSearchHandlerConstValue(ctx, job, reqContext.BackfillRequest.Series, *job.RecordTime)
 		points = append(points, newPoints...)
 	}
 	return reqContext, points, nil
@@ -88,7 +88,7 @@ func TestBackfillStepsConnected(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			got := testRunCounts{}
-			countingPersister := func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs) (*requestContext, error) {
+			countingPersister := func(ctx context.Context, reqContext *RequestContext, points []store.RecordSeriesPointArgs) (*RequestContext, error) {
 				for _, p := range points {
 					got.resultCount++
 					got.totalCount += int(p.Point.Value)
@@ -280,7 +280,7 @@ func TestMakeSearchJobs(t *testing.T) {
 			}
 			unlimitedLimiter := ratelimit.NewInstrumentedLimiter("", rate.NewLimiter(rate.Inf, 100))
 			jobsFunc := makeSearchJobsFunc(logtest.NoOp(t), tc.commitClient, &compression.NoopFilter{}, tc.workers, unlimitedLimiter)
-			_, jobs, err := jobsFunc(testCtx, requestContext{backfillRequest: tc.backfillReq})
+			_, jobs, err := jobsFunc(testCtx, RequestContext{BackfillRequest: tc.backfillReq})
 			got := []string{}
 			// sorted jobs to make test stable
 			sort.SliceStable(jobs, func(i, j int) bool {
@@ -392,7 +392,7 @@ func TestMakeRunSearch(t *testing.T) {
 			unlimitedLimiter := ratelimit.NewInstrumentedLimiter("", rate.NewLimiter(rate.Inf, 100))
 			searchFunc := makeRunSearchFunc(logtest.NoOp(t), tc.handlers, tc.workers, unlimitedLimiter)
 
-			_, points, err := searchFunc(testCtx, &requestContext{backfillRequest: backfillReq}, tc.jobs)
+			_, points, err := searchFunc(testCtx, &RequestContext{BackfillRequest: backfillReq}, tc.jobs)
 
 			got := []string{}
 			// sorted points to make test stable

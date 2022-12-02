@@ -42,7 +42,7 @@ type InsightsResolver interface {
 	InsightViewDebug(ctx context.Context, args InsightViewDebugArgs) (InsightViewDebugResolver, error)
 
 	// Debug
-	BackfillDebug(ctx context.Context) (InsightBackfillDebugResolver, error)
+	BackfillDebug() (InsightBackfillDebugResponseResolver, error)
 }
 
 type SearchInsightLivePreviewArgs struct {
@@ -468,16 +468,23 @@ type GenericIncompleteDatapointAlert interface {
 	Reason() string
 }
 
-type InsightBackfillDebugArgs struct {
-	Input InsightBackfillInput
+type InsightBackfillDebugPlanArgs struct {
+	Input InsightBackfillDebugPlanInput
 }
 
-type InsightBackfillInput struct {
-	Query string
+type InsightBackfillDebugPlanInput struct {
+	Query     string
+	Repo      string
+	TimeScope TimeScopeInput
 }
 
-type InsightBackfillDebugResolver interface {
-	Plan(ctx context.Context, args InsightBackfillDebugArgs) ([]InsightBackfillPlanNodeResolver, error)
+type InsightBackfillDebugResponseResolver interface {
+	Plan(ctx context.Context, args InsightBackfillDebugPlanArgs) (InsightBackfillPlanResolver, error)
+}
+
+type InsightBackfillPlanResolver interface {
+	Nodes() []InsightBackfillPlanNodeResolver
+	CompressionPercent() float64
 }
 
 type InsightBackfillPlanNodeResolver interface {

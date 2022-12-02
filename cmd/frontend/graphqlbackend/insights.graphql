@@ -1198,3 +1198,33 @@ type SearchInsightLivePreviewSeries {
     """
     label: String!
 }
+
+type InsightBackfillPlan {
+    nodes: [InsightBackfillPlanNode!]!
+    compressionPercent: Float!
+}
+
+type InsightBackfillPlanNode {
+    query: String!
+    time: DateTime!
+    childTimes: [DateTime!]!
+    generationMethod: String!
+}
+
+type InsightBackfillDebugResponse {
+    plan(input: InsightBackfillDebugPlanInput!): InsightBackfillPlan!
+}
+
+"""
+Required input to generate a time series for a search insight using live preview.
+"""
+input InsightBackfillDebugPlanInput {
+    query: String!
+    repo: String!
+    timeScope: TimeScopeInput!
+}
+
+extend type Query {
+    backfillDebug: InsightBackfillDebugResponse!
+}
+

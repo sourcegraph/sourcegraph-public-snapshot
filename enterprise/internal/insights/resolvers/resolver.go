@@ -165,6 +165,7 @@ func newAggregationsOperations(observationContext *observation.Context) *aggrega
 	}
 }
 
-func (r *Resolver) BackfillDebug(ctx context.Context) (graphqlbackend.InsightBackfillDebugResolver, error) {
-	return &insightsBackfillDebugResolver{}, nil
+func (r *Resolver) BackfillDebug() (graphqlbackend.InsightBackfillDebugResponseResolver, error) {
+	logger := log.Scoped("BackfillDebug", "")
+	return newInsightsBackfillDebugResolver(logger, r.baseInsightResolver), nil
 }
