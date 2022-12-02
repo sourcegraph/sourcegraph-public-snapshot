@@ -13,6 +13,7 @@ import { WebStory } from '../../../components/WebStory'
 import { GET_LICENSE_AND_USAGE_INFO } from '../list/backend'
 import { getLicenseAndUsageInfoResult } from '../list/testData'
 
+import { GET_ORGANIZATIONS } from './backend'
 import { ConfigurationForm } from './ConfigurationForm'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
@@ -53,11 +54,29 @@ const SETTINGS_CASCADE = {
     ],
 }
 
+const MOCK_ORGANIZATION = {
+    __typename: 'Org',
+    name: 'acme-corp',
+    displayName: 'ACME Corporation',
+    id: 'acme-corp-id',
+    viewerCanAdminister: true,
+}
+
 const buildMocks = (isLicensed = true, hasBatchChanges = true) =>
     new WildcardMockLink([
         {
             request: { query: getDocumentNode(GET_LICENSE_AND_USAGE_INFO), variables: MATCH_ANY_PARAMETERS },
             result: { data: getLicenseAndUsageInfoResult(isLicensed, hasBatchChanges) },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+        {
+            request: { query: getDocumentNode(GET_ORGANIZATIONS), variables: MATCH_ANY_PARAMETERS },
+            result: { data: {
+                organizations: {
+                    totalCount: 1,
+                    nodes: [MOCK_ORGANIZATION]
+                }
+            } },
             nMatches: Number.POSITIVE_INFINITY,
         },
     ])
@@ -73,6 +92,18 @@ export const NewBatchChange: Story = () => (
 )
 
 NewBatchChange.storyName = 'New batch change'
+
+export const NewOrgBatchChange: Story = () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={buildMocks()}>
+                <ConfigurationForm {...props} settingsCascade={SETTINGS_CASCADE} initialNamespaceID={MOCK_ORGANIZATION.id} />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
+NewOrgBatchChange.storyName = 'New batch change with new Org'
 
 export const ExistingBatchChange: Story = () => (
     <WebStory>
