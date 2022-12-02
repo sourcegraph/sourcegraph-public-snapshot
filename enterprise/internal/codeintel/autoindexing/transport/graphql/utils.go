@@ -46,12 +46,6 @@ type JobsOrHints interface {
 func populateInferredAvailableIndexers[J JobsOrHints](jobsOrHints []J, blocklist map[string]struct{}, inferredAvailableIndexers map[string]availableIndexer) map[string]availableIndexer {
 	for _, job := range jobsOrHints {
 		indexer := job.GetIndexerName()
-		// If we have a job for this indexer (lsif-clang), don't show it in the inferred jobs
-		// list. There is a current bug where clang is not providing accurate data.
-		// This is a temporary workaround.
-		if indexer == "lsif-clang" {
-			continue
-		}
 		key := getKeyForLookup(indexer, job.GetRoot())
 		// Only add them to the inferred jobs map if they're not already in the recent uploads
 		// blocklist. This is to avoid hinting at an available index if we've already indexed it.
