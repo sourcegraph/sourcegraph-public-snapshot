@@ -8237,6 +8237,9 @@ enum ExecutorCompatibility {
     VERSION_AHEAD
 }
 
+"""
+The result for Query.slowRequests.
+"""
 type SlowRequestConnection {
     """
     A list of slow graphql requests logs.
