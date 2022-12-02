@@ -58,26 +58,27 @@ func (s *repoDirectoryStore) CreateIfNotExists(ctx context.Context, repoID api.R
 			return nil, errors.Wrapf(err, "parent directory ID")
 		}
 	}
-	var id int
+	var d types.RepoDirectory
 	// TODO Add created_at, updated_at
-	if err := s.Handle().QueryRowContext(
+	err := s.Handle().QueryRowContext(
 		ctx,
-		`INSERT INTO repo_directories(repo_id, absolute_path, parent_id)
-		VALUES($1, $2, $3)
-		ON CONFLICT ("repo_id", "absolute_path") DO NOTHING
-		RETURNING id`,
+		`WITH input_rows(repo_id, absolute_path, parent_id) AS (
+			VALUES ($1::integer, $2::text, $3::integer)
+		), ins AS (
+			INSERT INTO repo_directories(repo_id, absolute_path, parent_id)
+			SELECT * FROM input_rows
+			ON CONFLICT (repo_id, absolute_path) DO NOTHING
+			RETURNING id, repo_id, absolute_path, parent_id
+		)
+		SELECT id, repo_id, absolute_path, COALESCE(parent_id, 0) FROM ins
+		UNION ALL
+		SELECT d.id, d.repo_id, d.absolute_path, COALESCE(d.parent_id, 0)
+		FROM input_rows
+		JOIN repo_directories AS d USING(repo_id, absolute_path)`,
 		repoID, absolutePath, parentID,
-	).Scan(&id); err != nil {
+	).Scan(&d.ID, &d.RepoID, &d.AbsolutePath, &d.ParentID)
+	if err != nil {
 		return nil, err
 	}
-	pID := 0
-	if parentID != nil {
-		pID = *parentID
-	}
-	return &types.RepoDirectory{
-		ID:           id,
-		RepoID:       repoID,
-		AbsolutePath: absolutePath,
-		ParentID:     pID,
-	}, nil
+	return &d, nil
 }
