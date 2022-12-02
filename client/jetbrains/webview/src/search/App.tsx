@@ -235,7 +235,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 settingsCascade={settingsCascade}
             />
         ),
-        [lastSearch, matches, onOpen, onPreviewChange, onPreviewClear]
+        [lastSearch, matches, onOpen, onPreviewChange, onPreviewClear, settingsCascade]
     )
 
     return (
