@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"strings"
 
@@ -34,6 +35,7 @@ func RepoDirectoryWith(logger log.Logger, other basestore.ShareableStore) RepoDi
 
 // CreateIfNotExists
 func (s *repoDirectoryStore) CreateIfNotExists(ctx context.Context, repoID api.RepoID, absolutePath string) (*types.RepoDirectory, error) {
+	fmt.Println(absolutePath)
 	if strings.HasPrefix(absolutePath, "/") {
 		return nil, errors.New("absolute path does not start with /")
 	}
@@ -43,20 +45,12 @@ func (s *repoDirectoryStore) CreateIfNotExists(ctx context.Context, repoID api.R
 	var parentID *int
 	// Not root directory, so must have a parent.
 	if strings.Contains(absolutePath, "/") {
-		row := s.Handle().QueryRowContext(ctx, `
-			SELECT id
-			FROM repo_directories
-			WHERE repo_id = $1 AND absolute_path = $2`,
-			repoID, path.Dir(absolutePath),
-		)
-		// TODO later we will not assume that parent exists in the database.
-		if row == nil {
-			return nil, errors.New("parent directory does not exist")
+		parent, err := s.CreateIfNotExists(ctx, repoID, path.Dir(absolutePath))
+		if err != nil {
+			return nil, errors.Wrapf(err, "parent directory")
 		}
-		parentID = new(int)
-		if err := row.Scan(parentID); err != nil {
-			return nil, errors.Wrapf(err, "parent directory ID")
-		}
+		pID := parent.ID
+		parentID = &pID
 	}
 	var d types.RepoDirectory
 	// TODO Add created_at, updated_at
