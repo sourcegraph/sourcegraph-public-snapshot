@@ -721,7 +721,7 @@ func Frontend() *monitoring.Dashboard {
 					},
 					{
 						Name:        "email_deliveries_total",
-						Description: "total emails successfully delivered every minute",
+						Description: "total emails successfully delivered every 5 minutes",
 						Query:       `sum (increase(src_email_send{success="true"}[5m]))`,
 						Panel:       monitoring.Panel().LegendFormat("count"),
 						NoAlert:     true, // this is a purely informational panel

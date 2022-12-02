@@ -29,7 +29,7 @@ func Init() {
 		}
 
 		outboundRequestLogLimitBefore := httpcli.OutboundRequestLogLimit()
-		outboundRequestLogLimitAfter := Get().OutboundRequestLogLimit
+		outboundRequestLogLimitAfter := int32(Get().OutboundRequestLogLimit)
 		if outboundRequestLogLimitBefore != outboundRequestLogLimitAfter {
 			httpcli.SetOutboundRequestLogLimit(outboundRequestLogLimitAfter)
 		}
