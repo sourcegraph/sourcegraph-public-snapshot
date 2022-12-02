@@ -1641,17 +1641,13 @@ type Query {
     ): WebhookConnection!
 
     """
-    Foobar
+    List slow GraphQL requests that were recently captured.
     """
     slowRequests(
         """
-        todo
+        Opaque pagnination cursor.
         """
         after: ID
-        """
-        todo
-        """
-        query: String
     ): SlowRequestConnection!
 }
 
@@ -8243,12 +8239,12 @@ enum ExecutorCompatibility {
 
 type SlowRequestConnection {
     """
-    A list of webhook logs.
+    A list of slow graphql requests logs.
     """
     nodes: [SlowRequest!]!
 
     """
-    The total number of webhook logs in the connection.
+    The total number of slow graphql logs in the connection.
     """
     totalCount: Int!
 
@@ -8259,7 +8255,7 @@ type SlowRequestConnection {
 }
 
 """
-TODO
+A logged slow GraphQL request, captured by the backend.
 """
 type SlowRequest {
     id: ID!

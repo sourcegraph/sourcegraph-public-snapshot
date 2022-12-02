@@ -67,7 +67,6 @@ func getSlowRequestsAfter(ctx context.Context, list *rcache.RecentList, after in
 
 type slowRequestsArgs struct {
 	After *graphql.ID
-	Query *string
 }
 
 type slowRequestResolver struct {

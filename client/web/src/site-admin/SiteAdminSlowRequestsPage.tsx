@@ -82,7 +82,6 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
         (args: FilteredConnectionQueryArguments & { failed?: boolean }) =>
             requestGraphQL<SlowRequestsResult, SlowRequestsVariables>(SLOW_REQUESTS, {
                 after: args.after ?? null,
-                query: args.query ?? null,
             }).pipe(
                 map(dataOrThrowErrors),
                 map(data => {
