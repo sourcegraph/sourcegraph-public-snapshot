@@ -74,6 +74,11 @@ func upsertRepoStatusQuery(rs *btypes.RepoStatus) *sqlf.Query {
 	)
 }
 
+// EmptyRepoStatusCache empties the cache, and is provided for test use only.
+func (s *Store) EmptyRepoStatusCache(ctx context.Context) error {
+	return s.Exec(ctx, sqlf.Sprintf("TRUNCATE TABLE batch_repo_status"))
+}
+
 var repoStatusColumns = []*sqlf.Query{
 	sqlf.Sprintf("repo_id"),
 	sqlf.Sprintf("commit"),

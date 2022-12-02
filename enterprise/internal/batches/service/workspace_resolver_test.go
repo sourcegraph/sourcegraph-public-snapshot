@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -111,28 +112,55 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		return ws
 	}
 
-	newGitserverClient := func(commitMap map[api.CommitID]bool, branches map[string]api.CommitID) gitserver.Client {
+	type gitserverRepo struct {
+		Name          api.RepoName
+		BranchHeads   map[string]api.CommitID
+		DefaultBranch string
+		Ignored       bool
+	}
+	defaultGitserverRepo := func(repo *types.Repo, ignored bool) gitserverRepo {
+		branch := defaultBranches[repo.Name]
+		return gitserverRepo{
+			Name:          repo.Name,
+			BranchHeads:   map[string]api.CommitID{branch.branch: branch.commit},
+			DefaultBranch: branch.branch,
+			Ignored:       ignored,
+		}
+	}
+	newGitserverClient := func(t *testing.T, repos ...gitserverRepo) gitserver.Client {
+		require.NoError(t, s.EmptyRepoStatusCache(ctx))
+
+		reposByName := make(map[api.RepoName]gitserverRepo, len(repos))
+		for _, r := range repos {
+			reposByName[r.Name] = r
+		}
+
 		gitserverClient := gitserver.NewMockClient()
 		gitserverClient.GetDefaultBranchFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, short bool) (string, api.CommitID, error) {
-			if res, ok := defaultBranches[repo]; ok {
-				return res.branch, res.commit, nil
+			if res, ok := reposByName[repo]; ok {
+				return res.DefaultBranch, res.BranchHeads[res.DefaultBranch], nil
 			}
 			return "", "", &gitdomain.RepoNotExistError{Repo: repo}
 		})
 
+		gitserverClient.HeadFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, _ authz.SubRepoPermissionChecker) (string, bool, error) {
+			r, ok := reposByName[repo]
+			return string(r.BranchHeads[r.DefaultBranch]), ok, nil
+		})
+
 		gitserverClient.StatFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, s string) (fs.FileInfo, error) {
-			hasBatchIgnore, ok := commitMap[commit]
+			r, ok := reposByName[repo]
 			if !ok {
 				return nil, errors.Newf("unknown commit: %s", commit)
 			}
-			if hasBatchIgnore {
+			if r.Ignored {
 				return &fileutil.FileInfo{Name_: ".batchignore", Mode_: 0}, nil
 			}
 			return nil, os.ErrNotExist
 		})
 
 		gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, spec string, rro gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-			if commit, ok := branches[spec]; ok {
+			if commit, ok := reposByName[repo].BranchHeads[spec]; ok {
 				return commit, nil
 			}
 			return "", errors.Newf("unknown spec: %s", spec)
@@ -153,13 +181,14 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			Steps: steps,
 		}
 
-		gs := newGitserverClient(map[api.CommitID]bool{
-			defaultBranches[rs[0].Name].commit:          false,
-			defaultBranches[rs[1].Name].commit:          true,
-			defaultBranches[rs[2].Name].commit:          true,
-			defaultBranches[rs[3].Name].commit:          false,
-			defaultBranches[unsupported[0].Name].commit: false,
-		}, nil)
+		gs := newGitserverClient(
+			t,
+			defaultGitserverRepo(rs[0], false),
+			defaultGitserverRepo(rs[1], true),
+			defaultGitserverRepo(rs[2], true),
+			defaultGitserverRepo(rs[3], false),
+			defaultGitserverRepo(unsupported[0], false),
+		)
 
 		eventMatches := []streamhttp.EventMatch{
 			&streamhttp.EventContentMatch{
@@ -228,22 +257,29 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		}
 
 		gs := newGitserverClient(
-			map[api.CommitID]bool{
-				defaultBranches[rs[0].Name].commit:          false,
-				api.CommitID("d34db33f"):                    false,
-				api.CommitID("c0ff33"):                      false,
-				api.CommitID("b33a"):                        false,
-				defaultBranches[rs[3].Name].commit:          true,
-				defaultBranches[unsupported[0].Name].commit: false,
+			t,
+			defaultGitserverRepo(rs[0], false),
+			gitserverRepo{
+				Name: rs[1].Name,
+				BranchHeads: map[string]api.CommitID{
+					"main":               api.CommitID("abcdef"),
+					"non-default-branch": api.CommitID("d34db33f"),
+				},
+				DefaultBranch: "main",
+				Ignored:       false,
 			},
-			map[string]api.CommitID{
-				defaultBranches[rs[0].Name].branch:          defaultBranches[rs[0].Name].commit,
-				"non-default-branch":                        api.CommitID("d34db33f"),
-				"other-non-default-branch":                  api.CommitID("c0ff33"),
-				"yet-another-non-default-branch":            api.CommitID("b33a"),
-				defaultBranches[rs[3].Name].branch:          defaultBranches[rs[3].Name].commit,
-				defaultBranches[unsupported[0].Name].branch: defaultBranches[unsupported[0].Name].commit,
+			gitserverRepo{
+				Name: rs[2].Name,
+				BranchHeads: map[string]api.CommitID{
+					"main":                           api.CommitID("ghijkl"),
+					"other-non-default-branch":       api.CommitID("c0ff33"),
+					"yet-another-non-default-branch": api.CommitID("b33a"),
+				},
+				DefaultBranch: "main",
+				Ignored:       false,
 			},
+			defaultGitserverRepo(rs[3], true),
+			defaultGitserverRepo(unsupported[0], false),
 		)
 
 		want := []*RepoWorkspace{
@@ -275,24 +311,30 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		}
 
 		gs := newGitserverClient(
-			map[api.CommitID]bool{
-				defaultBranches[rs[0].Name].commit:          false,
-				api.CommitID("d34db33f"):                    false,
-				api.CommitID("c4a1"):                        false,
-				api.CommitID("c0ff33"):                      false,
-				api.CommitID("b33a"):                        false,
-				defaultBranches[rs[3].Name].commit:          true,
-				defaultBranches[unsupported[0].Name].commit: false,
+			t,
+			defaultGitserverRepo(rs[0], false),
+			gitserverRepo{
+				Name: rs[1].Name,
+				BranchHeads: map[string]api.CommitID{
+					"main":                           api.CommitID("abcdef"),
+					"non-default-branch":             api.CommitID("d34db33f"),
+					"a-different-non-default-branch": api.CommitID("c4a1"),
+				},
+				DefaultBranch: "main",
+				Ignored:       false,
 			},
-			map[string]api.CommitID{
-				defaultBranches[rs[0].Name].branch:          defaultBranches[rs[0].Name].commit,
-				"non-default-branch":                        api.CommitID("d34db33f"),
-				"a-different-non-default-branch":            api.CommitID("c4a1"),
-				"other-non-default-branch":                  api.CommitID("c0ff33"),
-				"yet-another-non-default-branch":            api.CommitID("b33a"),
-				defaultBranches[rs[3].Name].branch:          defaultBranches[rs[3].Name].commit,
-				defaultBranches[unsupported[0].Name].branch: defaultBranches[unsupported[0].Name].commit,
+			gitserverRepo{
+				Name: rs[2].Name,
+				BranchHeads: map[string]api.CommitID{
+					"main":                           api.CommitID("ghijkl"),
+					"other-non-default-branch":       api.CommitID("c0ff33"),
+					"yet-another-non-default-branch": api.CommitID("b33a"),
+				},
+				DefaultBranch: "main",
+				Ignored:       false,
 			},
+			defaultGitserverRepo(rs[3], true),
+			defaultGitserverRepo(unsupported[0], false),
 		)
 
 		searchMatches := map[string][]streamhttp.EventMatch{
@@ -331,17 +373,12 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		}
 
 		gs := newGitserverClient(
-			map[api.CommitID]bool{
-				defaultBranches[rs[0].Name].commit:          false,
-				defaultBranches[rs[1].Name].commit:          false,
-				defaultBranches[rs[2].Name].commit:          false,
-				defaultBranches[rs[3].Name].commit:          false,
-				defaultBranches[unsupported[0].Name].commit: false,
-			},
-			map[string]api.CommitID{
-				defaultBranches[rs[2].Name].branch: defaultBranches[rs[2].Name].commit,
-				defaultBranches[rs[3].Name].branch: defaultBranches[rs[3].Name].commit,
-			},
+			t,
+			defaultGitserverRepo(rs[0], false),
+			defaultGitserverRepo(rs[1], false),
+			defaultGitserverRepo(rs[2], false),
+			defaultGitserverRepo(rs[3], false),
+			defaultGitserverRepo(unsupported[0], false),
 		)
 
 		eventMatches := []streamhttp.EventMatch{
@@ -393,14 +430,9 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		}
 
 		gs := newGitserverClient(
-			map[api.CommitID]bool{
-				defaultBranches[rs[0].Name].commit: false,
-				defaultBranches[rs[1].Name].commit: false,
-			},
-			map[string]api.CommitID{
-				defaultBranches[rs[0].Name].branch: defaultBranches[rs[0].Name].commit,
-				defaultBranches[rs[1].Name].branch: defaultBranches[rs[1].Name].commit,
-			},
+			t,
+			defaultGitserverRepo(rs[0], false),
+			defaultGitserverRepo(rs[1], false),
 		)
 
 		ws1 := buildRepoWorkspace(rs[1], "", "", []string{})
@@ -415,6 +447,9 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 
 func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, gs gitserver.Client, u *types.User, matches map[string][]streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoWorkspace) {
 	t.Helper()
+
+	// Reset the cached repo metadata, since it may differ from test to test.
+	s.Exec(context.Background(), sqlf.Sprintf("DELETE FROM batch_changes_repo_metadata"))
 
 	wr := &workspaceResolver{
 		store:               s,
