@@ -1,11 +1,66 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
-.row td {
-    padding: 0.25rem 0;
-    border-bottom: 1px solid var(--border-color-2);
+.row {
+    td {
+        padding: 0.25rem 0;
+        border-bottom: 1px solid var(--border-color-2);
 
-    .spec {
-        font-weight: 500;
+        .spec {
+            font-weight: 500;
+        }
+    }
+
+    @media (--sm-breakpoint-down) {
+        margin-left: -1rem;
+        margin-right: -1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        border-bottom: 1px solid var(--border-color);
+
+        padding-bottom: 0.75rem;
+        margin-bottom: 0.75rem;
+
+        display: grid;
+        grid-template-columns: auto auto 1fr auto;
+        grid-template-rows: auto auto auto auto;
+        grid-template-areas:
+            'star name        name        actions'
+            'star tags        tags        actions'
+            'star description description description'
+            'star contents    updated     updated';
+
+        td {
+            padding: 0;
+            border-bottom: none;
+
+            &.star {
+                grid-area: star;
+            }
+
+            &.name {
+                grid-area: name;
+            }
+
+            &.description {
+                grid-area: description;
+            }
+
+            &.last-updated {
+                grid-area: updated;
+            }
+
+            &.contents {
+                grid-area: contents;
+            }
+
+            &.tags {
+                grid-area: tags;
+            }
+
+            &.actions {
+                grid-area: actions;
+            }
+        }
     }
 }
 

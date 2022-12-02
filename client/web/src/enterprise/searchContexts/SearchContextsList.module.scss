@@ -1,4 +1,5 @@
 @import 'wildcard/src/global-styles/breakpoints';
+@import 'client/branded/src/global-styles/utilities/screenreaders';
 
 .badge {
     cursor: default;
@@ -28,11 +29,25 @@
     border: 1px solid var(--border-color);
     background-color: var(--color-bg-1);
     border-radius: var(--border-radius);
-}
 
-.table-header th {
-    border-bottom: 2px solid var(--border-color-2);
-    padding-bottom: 0.75rem;
-    color: var(--text-muted);
-    font-weight: 500;
+    th {
+        border-bottom: 2px solid var(--border-color-2);
+        padding-bottom: 0.75rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    @media (--sm-breakpoint-down) {
+        table {
+            display: block;
+        }
+
+        thead {
+            @include sr-only; // Header should still be visible to screen readers, otherwise the table is not accessible
+        }
+
+        tbody {
+            display: block;
+        }
+    }
 }

@@ -200,7 +200,7 @@ const SearchContextsTableHeader: React.FunctionComponent = () => (
             <th>Contents</th>
             <th>Last updated</th>
             <th>
-                <span className="sr-only">Is default</span>
+                <span className="sr-only">Tags</span>
             </th>
             <th>
                 <span className="sr-only">Actions</span>
