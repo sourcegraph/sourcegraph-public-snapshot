@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiCheck, mdiAlert } from '@mdi/js'
+import { mdiCheck, mdiAlert, mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { isDefined } from '@sourcegraph/common'
@@ -31,6 +31,7 @@ export interface IndexerSummaryProps {
         uploads: LsifUploadFields[]
         indexes: LsifIndexFields[]
         indexer?: CodeIntelIndexerFields
+        additionalIndexer: string[]
     }
     className?: string
     now?: () => Date
@@ -99,17 +100,31 @@ export const IndexerSummary: React.FunctionComponent<React.PropsWithChildren<Ind
                         )
                     ) : (
                         <>
-                            {failedUploads.length === 0 && failedIndexes.length === 0 && (
+                            {failedUploads.length === 0 &&
+                                failedIndexes.length === 0 &&
+                                summary.additionalIndexer.length === 0 && (
+                                    <Text className="mb-1 text-muted">
+                                        <Icon
+                                            className="text-success"
+                                            svgPath={mdiCheck}
+                                            inline={false}
+                                            aria-hidden={true}
+                                            height={16}
+                                            width={16}
+                                        />{' '}
+                                        Looks good!
+                                    </Text>
+                                )}
+                            {summary.additionalIndexer.length > 0 && (
                                 <Text className="mb-1 text-muted">
                                     <Icon
-                                        className="text-success"
-                                        svgPath={mdiCheck}
+                                        svgPath={mdiInformationOutline}
                                         inline={false}
                                         aria-hidden={true}
                                         height={16}
                                         width={16}
                                     />{' '}
-                                    Looks good!
+                                    Additional coverage available
                                 </Text>
                             )}
                             {failedUploads.length > 0 && (
