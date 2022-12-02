@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -18,20 +17,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var slowRequestRedisTTL = int(24 * time.Hour / time.Second)
-var slowRequestRedisStore = rcache.NewWithTTL("slow-graphql-requests", slowRequestRedisTTL)
-var slowRequestRedisRecentList = rcache.NewRecentList("slow-graphql-requests-list", 5000)
-var myOnce sync.Once
+const slowRequestRedisRecentListDefaultSize = 5000
+const slowRequestRedisRecentListPerPage = 50
+
+var slowRequestRedisRecentList = rcache.NewRecentList("slow-graphql-requests-list", slowRequestRedisRecentListDefaultSize)
+var slowRequestConfWatchOnce sync.Once
 
 // captureSlowRequest stores in a redis cache slow GraphQL requests.
 func captureSlowRequest(ctx context.Context, logger log.Logger, req *types.SlowRequest) {
-	myOnce.Do(func() {
+	slowRequestConfWatchOnce.Do(func() {
 		conf.Watch(func() {
 			limit := conf.Get().ObservabilityCaptureSlowGraphQLRequestsLimit
 			if limit == 0 {
-				limit = 5000
+				limit = slowRequestRedisRecentListDefaultSize
 			}
 			slowRequestRedisRecentList = rcache.NewRecentList("slow-graphql-requests-list", limit)
 		})
@@ -83,6 +84,9 @@ type slowRequestConnectionResolver struct {
 }
 
 func (r *schemaResolver) SlowRequests(ctx context.Context, args *slowRequestsArgs) (*slowRequestConnectionResolver, error) {
+	if conf.Get().ObservabilityCaptureSlowGraphQLRequestsLimit == 0 {
+		return nil, errors.New("slow graphql requests capture is not enabled")
+	}
 	// 🚨 SECURITY: Only site admins may list outbound requests.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -98,7 +102,7 @@ func (r *schemaResolver) SlowRequests(ctx context.Context, args *slowRequestsArg
 	}
 	return &slowRequestConnectionResolver{
 		after:   after,
-		perPage: 50,
+		perPage: slowRequestRedisRecentListPerPage,
 	}, nil
 }
 
@@ -109,7 +113,6 @@ func (r *slowRequestConnectionResolver) fetch(ctx context.Context) ([]*types.Slo
 			r.err = err
 		}
 		r.reqs, r.err = getSlowRequestsAfter(ctx, slowRequestRedisRecentList, n, r.perPage)
-		println("wfpwffeeeeee--------", len(r.reqs))
 	})
 	return r.reqs, r.err
 }
