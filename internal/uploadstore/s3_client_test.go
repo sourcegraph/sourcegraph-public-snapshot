@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -54,7 +53,7 @@ func TestS3InitBucketExists(t *testing.T) {
 
 func TestS3UnmanagedInit(t *testing.T) {
 	s3Client := NewMockS3API()
-	client := newS3WithClients(s3Client, nil, "test-bucket", false, nil, true, NewOperations(&observation.TestContext, "test", "brittleStore"))
+	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(&observation.TestContext, "test", "brittleStore"))
 	if err := client.Init(context.Background()); err != nil {
 		t.Fatalf("unexpected error initializing client: %s", err)
 	}
@@ -70,7 +69,7 @@ func TestS3Get(t *testing.T) {
 		Body: io.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))),
 	}, nil)
 
-	client := newS3WithClients(s3Client, nil, "test-bucket", false, nil, true, NewOperations(&observation.TestContext, "test", "brittleStore"))
+	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(&observation.TestContext, "test", "brittleStore"))
 	rc, err := client.Get(context.Background(), "test-key")
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err)
@@ -122,7 +121,7 @@ func TestS3GetTransientErrors(t *testing.T) {
 	}
 
 	s3Client := fullContentsS3API()
-	client := newS3WithClients(s3Client, nil, "test-bucket", false, nil, true, NewOperations(&observation.TestContext, "test", "brittleStore"))
+	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(&observation.TestContext, "test", "brittleStore"))
 	rc, err := client.Get(context.Background(), "test-key")
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err)
@@ -151,7 +150,7 @@ func TestS3GetReadNothingLoop(t *testing.T) {
 	}
 
 	s3Client := fullContentsS3API()
-	client := newS3WithClients(s3Client, nil, "test-bucket", false, nil, true, NewOperations(&observation.TestContext, "test", "brittleStore"))
+	client := newS3WithClients(s3Client, nil, "test-bucket", false, NewOperations(&observation.TestContext, "test", "brittleStore"))
 	rc, err := client.Get(context.Background(), "test-key")
 	if err != nil {
 		t.Fatalf("unexpected error getting key: %s", err)
@@ -369,5 +368,5 @@ func testS3Client(client s3API, uploader s3Uploader) Store {
 }
 
 func rawS3Client(client s3API, uploader s3Uploader) *s3Store {
-	return newS3WithClients(client, uploader, "test-bucket", true, nil, true, NewOperations(&observation.TestContext, "test", "brittleStore"))
+	return newS3WithClients(client, uploader, "test-bucket", true, NewOperations(&observation.TestContext, "test", "brittleStore"))
 }
