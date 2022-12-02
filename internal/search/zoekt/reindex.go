@@ -14,22 +14,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Reindex forces a reindex of the repo with id by the indexserver that is
-// determined based on name.
+// Reindex forces indexserver to reindex the repo immediately.
 func Reindex(ctx context.Context, name api.RepoName, id api.RepoID) error {
-	// Find the Zoekt webserver hosting the index of the repo with "name"
+	// Find the Zoekt webserver hosting the index of the repo.
 	ep, err := search.Indexers().Map.Get(string(name))
 	if err != nil {
 		return err
 	}
 
-	// We add the scheme http:// on a best-effort basis.
-	//
-	// ep doesn't have to be a valid URL. For example, locally ep can just be
-	// localhost:<port>, which would be parsed by url.Parse without error, with
-	// localhost as scheme. The reason is that the Go 1.19 scheme parser parses
-	// all valid characters [a-zA-Z][a-zA-Z0-9+-.]*) before the first ':' as
-	// scheme.
+	// We add http:// on a best-effort basis, because it is not guaranteed that
+	// ep is a valid URL.
 	if !strings.HasPrefix(ep, "http://") {
 		ep = "http://" + ep
 	}
