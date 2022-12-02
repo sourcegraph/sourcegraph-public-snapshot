@@ -49,18 +49,18 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = memo(props =>
     const { dashboardId, activeTab, telemetryService } = props
 
     const history = useHistory()
-    const { dashboardId: queryParamDashboardId } = useQueryParameters(['dashboardId'])
+    const { dashboardId: queryParameterDashboardId } = useQueryParameters(['dashboardId'])
 
     // Set either active dashboard from the dashboard tab param (dashboard)
     // or dashboard id from URL query param in case if we're on the about tab or
     // the all insights tab.
-    const absoluteDashboardId = dashboardId ?? queryParamDashboardId
+    const absoluteDashboardId = dashboardId ?? queryParameterDashboardId
 
     const handleTabNavigationChange = (selectedTab: CodeInsightsRootPageTab): void => {
         switch (selectedTab) {
             case CodeInsightsRootPageTab.Dashboards: {
-                if (queryParamDashboardId) {
-                    return history.push(`/insights/dashboards/${queryParamDashboardId}`)
+                if (queryParameterDashboardId) {
+                    return history.push(`/insights/dashboards/${queryParameterDashboardId}`)
                 }
 
                 return history.push('/insights/dashboards')

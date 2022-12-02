@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { DecoratorFn, Story, Meta } from '@storybook/react'
 
 import { WebStory } from '../../../../../../../components/WebStory'
-import { InsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core'
+import { CustomInsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../core'
 
 import { DashboardSelect } from './DashboardSelect'
 
@@ -16,12 +16,7 @@ const config: Meta = {
 
 export default config
 
-const DASHBOARDS: InsightDashboard[] = [
-    {
-        type: InsightsDashboardType.Virtual,
-        id: 'ALL_INSIGHTS',
-        title: 'All Insights',
-    },
+const DASHBOARDS: CustomInsightDashboard[] = [
     {
         type: InsightsDashboardType.Custom,
         id: '101',
@@ -73,7 +68,7 @@ const DASHBOARDS: InsightDashboard[] = [
 ]
 
 export const DashboardSelectStory: Story = () => {
-    const [dashboard, setDashboard] = useState<InsightDashboard | undefined>()
+    const [dashboard, setDashboard] = useState<CustomInsightDashboard | undefined>()
 
     return (
         <section style={{ margin: '2rem' }}>

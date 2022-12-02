@@ -1,5 +1,4 @@
 import { DecoratorFn, Story, Meta } from '@storybook/react'
-import { noop } from 'lodash'
 
 import { WebStory } from '../../../../../../../../../components/WebStory'
 import { InsightDashboard, InsightsDashboardOwnerType, InsightsDashboardType } from '../../../../../../../core'
@@ -28,7 +27,7 @@ export const EmptyInsightDashboardStory: Story = () => {
         owners: [{ type: InsightsDashboardOwnerType.Personal, id: '101', title: 'Personal ' }],
     }
 
-    return <EmptyInsightDashboard dashboard={dashboard} onAddInsight={noop} />
+    return <EmptyInsightDashboard dashboard={dashboard} />
 }
 
 EmptyInsightDashboardStory.storyName = 'EmptyInsightDashboard'
