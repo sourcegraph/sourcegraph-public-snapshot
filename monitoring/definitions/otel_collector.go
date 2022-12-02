@@ -1,10 +1,9 @@
 package definitions
 
 import (
-	"time"
-
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"time"
 )
 
 func OtelCollector() *monitoring.Dashboard {
@@ -12,8 +11,8 @@ func OtelCollector() *monitoring.Dashboard {
 
 	return &monitoring.Dashboard{
 		Name:        containerName,
-		Title:       "Open Telemetry Collector",
-		Description: "Metrics about the operation of the open telemetry collector.",
+		Title:       "OpenTelemetry Collector",
+		Description: "The OpenTelemetry collector ingests OpenTelemetry data from Sourcegraph and exports it to the configured backends.",
 		Groups: []monitoring.Group{
 			{
 				Title:  "Receivers",
@@ -51,7 +50,7 @@ func OtelCollector() *monitoring.Dashboard {
 								Shows the amount of spans that have been refused by a receiver.
 								
 								A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
-							
+								
  								Spans can be rejected either due to a misconfigured receiver or receiving spans in the wrong format. The log of the collector will have more information on why a span was rejected.
 								For more information on tracing and configuration of a OpenTelemetry receiver see https://opentelemetry.io/docs/collector/configuration/#receivers.`,
 						},
@@ -72,7 +71,7 @@ func OtelCollector() *monitoring.Dashboard {
 							NoAlert:     true,
 							Interpretation: `
 								Shows the rate of spans being sent by the exporter
- 								
+								
 								A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
 								The rate of spans here indicates spans that have made it through the configured pipeline and have been sent to the configured export destination.
 								
