@@ -13,7 +13,6 @@ import {
     Scalars,
     AddExternalServiceVariables,
     AddExternalServiceResult,
-    ExternalServiceFields,
     DeleteExternalServiceVariables,
     DeleteExternalServiceResult,
     ExternalServicesVariables,
@@ -41,7 +40,6 @@ export const externalServiceFragment = gql`
         nextSyncAt
         updatedAt
         createdAt
-        grantedScopes
         namespace {
             id
             namespaceName
@@ -150,7 +148,6 @@ export const listExternalServiceFragment = gql`
             namespaceName
             url
         }
-        grantedScopes
     }
 `
 export const EXTERNAL_SERVICES = gql`
@@ -174,46 +171,6 @@ export function queryExternalServices(
     variables: ExternalServicesVariables
 ): Observable<ExternalServicesResult['externalServices']> {
     return requestGraphQL<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, variables).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.externalServices || errors) {
-                throw createAggregateError(errors)
-            }
-            return data.externalServices
-        })
-    )
-}
-
-interface ExternalServicesScopeVariables {
-    namespace: Scalars['ID']
-}
-
-interface ExternalServicesScopeResult {
-    externalServices: {
-        nodes: {
-            id: ExternalServiceFields['id']
-            kind: ExternalServiceFields['kind']
-            grantedScopes: string[]
-        }[]
-    }
-}
-
-export function queryExternalServicesScope(
-    variables: ExternalServicesScopeVariables
-): Observable<ExternalServicesScopeResult['externalServices']> {
-    return requestGraphQL<ExternalServicesScopeResult, ExternalServicesScopeVariables>(
-        gql`
-            query ExternalServicesScopes($namespace: ID!) {
-                externalServices(first: null, after: null, namespace: $namespace) {
-                    nodes {
-                        id
-                        kind
-                        grantedScopes
-                    }
-                }
-            }
-        `,
-        variables
-    ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.externalServices || errors) {
                 throw createAggregateError(errors)

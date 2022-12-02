@@ -144,7 +144,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
 					Name:            database.SecurityEventOIDCLoginFailed,
 					URL:             r.URL.Path,                                   // Don't log OIDC query params
-					AnonymousUserID: fmt.Sprintf("unknown OIDC @ %s", time.Now()), // we don't know have a reliable user identify at the time of the failure
+					AnonymousUserID: fmt.Sprintf("unknown OIDC @ %s", time.Now()), // we don't have a reliable user identifier at the time of the failure
 					Source:          "BACKEND",
 					Timestamp:       time.Now(),
 					Argument:        arg,

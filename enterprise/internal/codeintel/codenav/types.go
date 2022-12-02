@@ -34,6 +34,7 @@ func (s *qualifiedMonikerSet) add(qualifiedMoniker precise.QualifiedMonikerData)
 		qualifiedMoniker.PackageInformationData.Name,
 		qualifiedMoniker.PackageInformationData.Version,
 		qualifiedMoniker.MonikerData.Scheme,
+		qualifiedMoniker.PackageInformationData.Manager,
 		qualifiedMoniker.MonikerData.Identifier,
 	}, ":")
 

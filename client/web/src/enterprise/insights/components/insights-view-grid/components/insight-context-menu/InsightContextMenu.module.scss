@@ -1,5 +1,6 @@
 .button {
     cursor: pointer;
+    fill: var(--text-muted);
 
     &:hover,
     &[aria-expanded='true'] {

@@ -274,7 +274,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             />
 
             {itemsToShow >= resultsNumber && (
-                <StreamingSearchResultFooter results={results}>
+                <StreamingSearchResultFooter results={results} telemetryService={telemetryService}>
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage

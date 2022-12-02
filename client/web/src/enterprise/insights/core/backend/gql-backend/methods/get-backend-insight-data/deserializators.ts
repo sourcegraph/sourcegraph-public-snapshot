@@ -8,13 +8,12 @@ import { createLineChartContent } from '../../../utils/create-line-chart-content
 export const createBackendInsightData = (insight: BackendInsight, response: InsightDataNode): BackendInsightData => {
     const seriesData = response.dataSeries
     const isFetchingHistoricalData = seriesData.some(({ status: { isLoadingData } }) => isLoadingData)
+    const isAllSeriesErrored = seriesData.every(series => series.status.incompleteDatapoints.length > 0)
 
     if (isComputeInsight(insight)) {
         return {
-            // We have to tweak original logic around historical data since compute powered
-            // insights have problem with generated data series status info
-            // see https://github.com/sourcegraph/sourcegraph/issues/38893
             isFetchingHistoricalData,
+            isAllSeriesErrored,
             data: {
                 type: InsightContentType.Categorical,
                 content: createComputeCategoricalChart(insight, seriesData),
@@ -24,9 +23,10 @@ export const createBackendInsightData = (insight: BackendInsight, response: Insi
 
     return {
         isFetchingHistoricalData,
+        isAllSeriesErrored,
         data: {
             type: InsightContentType.Series,
-            content: createLineChartContent(insight, seriesData),
+            content: createLineChartContent(insight, seriesData, !isAllSeriesErrored),
         },
     }
 }
