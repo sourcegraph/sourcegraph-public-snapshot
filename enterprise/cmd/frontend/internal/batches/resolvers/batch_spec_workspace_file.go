@@ -112,7 +112,7 @@ func (r *batchSpecWorkspaceFileResolver) RichHTML(ctx context.Context) (string, 
 }
 
 func (r *batchSpecWorkspaceFileResolver) URL(ctx context.Context) (string, error) {
-	var u = fmt.Sprintf("%s-%s", r.file.RandID, r.batchSpecRandID)
+	var u = fmt.Sprintf("/files/batch-changes/%s/%s", r.file.RandID, r.batchSpecRandID)
 	url := marshalWorkspaceFileURL(u)
 	return string(url), nil
 }
