@@ -1,6 +1,8 @@
 package definitions
 
 import (
+	"time"
+
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -43,7 +45,8 @@ func OtelCollector() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("receiver: {{receiver}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							Query:       "sum(rate(otelcol_receiver_refused_spans{receiver=~\"^.*.*\"}[1m])) by (receiver)",
-							NoAlert:     true,
+							Warning:     monitoring.Alert().Greater(1).For(5 * time.Minute),
+							NextSteps:   "Check logs of the collector and configuration of the receiver",
 							Interpretation: `
 								Shows the amount of spans that have been refused by a receiver.
 								
@@ -81,7 +84,8 @@ func OtelCollector() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							Query:       "sum(rate(otelcol_exporter_send_failed_spans{exporter=~\"^.*\"}[1m])) by (exporter)",
-							NoAlert:     true,
+							Warning:     monitoring.Alert().Greater(1).For(5 * time.Minute),
+							NextSteps:   "Check the configuration of the exporter and if the service being exported is up",
 							Interpretation: `
 								Shows the rate of spans failed to be sent by the configured reveiver. A number higher than 0 for a long period can indicate a problem with the exporter configuration or with the service that is being exported too
 								
@@ -93,7 +97,8 @@ func OtelCollector() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							Query:       "sum(rate(otelcol_exporter_queue_size{exporter=~\"^.*\"}[1m])) by (exporter)",
-							NoAlert:     true,
+							Warning:     monitoring.Alert().Greater(10).For(5 * time.Minute),
+							NextSteps:   "Check configuration of exporter",
 							Interpretation: `
 								Indicates the amount of spans that are in the queue to be sent (exported). A high queue count might indicate a high volume of spans or a problem with the receiving service to which spans are being exported too
 								
