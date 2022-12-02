@@ -1,0 +1,11 @@
+load("@aspect_rules_js//js:defs.bzl", "js_run_binary")
+
+js_run_binary(
+    name = "graphql_schema",
+    outs = ["src/schema.ts"],
+    args = [
+        "src/schema.ts",
+    ],
+    chdir = package_name(),
+    tool = "//client/shared/dev:generate_graphql_schema",
+)
