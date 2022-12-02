@@ -13,6 +13,8 @@ interface SearchContextFields {
     autoDefined: boolean
     updatedAt: string
     viewerCanManage: boolean
+    viewerHasAsDefault: boolean
+    viewerHasStarred: boolean
     namespace: Maybe<
         | { __typename: 'User'; id: string; namespaceName: string }
         | { __typename: 'Org'; id: string; namespaceName: string }
@@ -23,8 +25,6 @@ interface SearchContextFields {
         revisions: string[]
         repository: { name: string }
     }[]
-    viewerHasAsDefault: boolean
-    viewerHasStarred: boolean
 }
 
 interface ListSearchContexts {
@@ -53,12 +53,12 @@ export function mockFetchSearchContexts({
                 public: true,
                 autoDefined: true,
                 viewerCanManage: false,
+                viewerHasAsDefault: false,
+                viewerHasStarred: false,
                 description: 'All code on Sourcegraph',
                 repositories: [],
                 query: '',
                 updatedAt: subDays(new Date(), 1).toISOString(),
-                viewerHasAsDefault: false,
-                viewerHasStarred: false,
             },
         ],
         pageInfo: {

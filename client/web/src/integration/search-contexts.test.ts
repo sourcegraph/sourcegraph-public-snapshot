@@ -142,6 +142,8 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: '',
                     viewerCanManage: true,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     query: searchContext.query,
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
@@ -215,6 +217,8 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: '',
                     viewerCanManage: true,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     query: searchContext.query,
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
@@ -291,6 +295,8 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     query: '',
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
@@ -315,6 +321,8 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     query: '',
                     repositories: [
                         {
@@ -386,6 +394,8 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: false,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     query: '',
                     repositories: [],
                 },
@@ -425,6 +435,8 @@ describe('Search contexts', () => {
                     autoDefined: false,
                     updatedAt: subDays(new Date(), 1).toISOString(),
                     viewerCanManage: true,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     query: '',
                     repositories: [
                         {
@@ -467,6 +479,8 @@ describe('Search contexts', () => {
                     public: true,
                     autoDefined: false,
                     viewerCanManage: false,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     description: '',
                     repositories: [],
                     query: '',
@@ -544,6 +558,8 @@ describe('Search contexts', () => {
                     public: true,
                     autoDefined: false,
                     viewerCanManage: false,
+                    viewerHasAsDefault: false,
+                    viewerHasStarred: false,
                     description: '',
                     repositories: [],
                     query: '',

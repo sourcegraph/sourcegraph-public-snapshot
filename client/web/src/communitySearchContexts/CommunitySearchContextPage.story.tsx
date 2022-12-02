@@ -109,6 +109,8 @@ const fetchCommunitySearchContext = (): Observable<SearchContextFields> =>
         repositories,
         updatedAt: subDays(new Date(), 1).toISOString(),
         viewerCanManage: true,
+        viewerHasAsDefault: false,
+        viewerHasStarred: false,
     })
 
 const commonProps = () =>
