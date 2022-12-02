@@ -40,7 +40,7 @@ func OtelCollector() *monitoring.Dashboard {
 						},
 						{
 							Name:        "otel_span_refused",
-							Description: "spans that the receiver refused",
+							Description: "spans refused per receiver",
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("receiver: {{receiver}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							Query:       "sum(rate(otelcol_receiver_refused_spans{receiver=~\"^.*.*\"}[1m])) by (receiver)",
