@@ -852,6 +852,12 @@ CREATE SEQUENCE batch_changes_site_credentials_id_seq
 
 ALTER SEQUENCE batch_changes_site_credentials_id_seq OWNED BY batch_changes_site_credentials.id;
 
+CREATE TABLE batch_repo_status (
+    repo_id integer NOT NULL,
+    commit text NOT NULL,
+    ignored boolean NOT NULL
+);
+
 CREATE TABLE batch_spec_execution_cache_entries (
     id bigint NOT NULL,
     key text NOT NULL,
@@ -3904,6 +3910,9 @@ ALTER TABLE ONLY batch_changes
 ALTER TABLE ONLY batch_changes_site_credentials
     ADD CONSTRAINT batch_changes_site_credentials_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY batch_repo_status
+    ADD CONSTRAINT batch_repo_status_pkey PRIMARY KEY (repo_id);
+
 ALTER TABLE ONLY batch_spec_execution_cache_entries
     ADD CONSTRAINT batch_spec_execution_cache_entries_pkey PRIMARY KEY (id);
 
@@ -4705,6 +4714,9 @@ ALTER TABLE ONLY batch_changes
 
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY batch_repo_status
+    ADD CONSTRAINT batch_repo_status_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE ONLY batch_spec_execution_cache_entries
     ADD CONSTRAINT batch_spec_execution_cache_entries_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;

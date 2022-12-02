@@ -96,6 +96,20 @@ Indexes:
 
 ```
 
+# Table "public.batch_repo_status"
+```
+ Column  |  Type   | Collation | Nullable | Default 
+---------+---------+-----------+----------+---------
+ repo_id | integer |           | not null | 
+ commit  | text    |           | not null | 
+ ignored | boolean |           | not null | 
+Indexes:
+    "batch_repo_status_pkey" PRIMARY KEY, btree (repo_id)
+Foreign-key constraints:
+    "batch_repo_status_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
 # Table "public.batch_spec_execution_cache_entries"
 ```
     Column    |           Type           | Collation | Nullable |                            Default                             
@@ -2659,6 +2673,7 @@ Check constraints:
     "check_name_nonempty" CHECK (name <> ''::citext)
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
 Referenced by:
+    TABLE "batch_repo_status" CONSTRAINT "batch_repo_status_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
