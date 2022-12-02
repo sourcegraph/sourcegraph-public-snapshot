@@ -73,6 +73,7 @@ importers:
       '@sourcegraph/eslint-plugin-sourcegraph': ^1.0.5
       '@sourcegraph/extension-api-classes': ^1.1.0
       '@sourcegraph/extension-api-stubs': ^1.6.1
+      '@sourcegraph/extension-api-types': workspace:*
       '@sourcegraph/prettierrc': ^3.0.3
       '@sourcegraph/stylelint-config': ^1.4.0
       '@sourcegraph/stylelint-plugin-sourcegraph': ^1.0.1
@@ -339,7 +340,7 @@ importers:
       sinon: ^9.0.2
       socket.io: ^4.5.2
       socket.io-client: ^4.5.2
-      sourcegraph: ''
+      sourcegraph: workspace:*
       speed-measure-webpack-plugin: ^1.5.0
       storybook-addon-designs: ^6.3.1
       storybook-dark-mode: ^2.0.4
@@ -413,6 +414,7 @@ importers:
       '@react-aria/live-announcer': 3.1.0
       '@sentry/browser': 7.8.1
       '@sourcegraph/extension-api-classes': 1.1.0_sohmsbidf4ixb2vnv3mpdkpiau
+      '@sourcegraph/extension-api-types': link:client/extension-api-types
       '@storybook/addon-controls': 6.5.14_smpyybnlvtyw7rfzzfdv7476bq
       '@storybook/addon-knobs': 6.4.0_d4bptrhgvdhxm3olgivncpgnqq
       '@visx/annotation': 2.10.0_ef5jwxihqo6n7gxfmzogljlgcm
@@ -494,6 +496,7 @@ importers:
       rxjs: 6.6.7
       sanitize-html: 2.3.3
       semver: 7.3.8
+      sourcegraph: link:client/extension-api
       stream-http: 3.2.0
       string-score: 1.0.1
       tabbable: 5.2.1
