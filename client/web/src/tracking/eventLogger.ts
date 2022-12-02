@@ -388,7 +388,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             sessionReferrer = this.getSessionReferrer()
         }
 
-        let SESSION_FIRST_URL_KEY = cookies.get(SESSION_FIRST_URL_KEY)
+        let sessionFirstURL = cookies.get(SESSION_FIRST_URL_KEY)
         if (!sessionFirstURL) {
             sessionFirstURL = this.getSessionFirstURL()
         }
