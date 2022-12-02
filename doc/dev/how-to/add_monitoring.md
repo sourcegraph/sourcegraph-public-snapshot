@@ -169,3 +169,20 @@ This will validate your Observable configuration and let you know of any changes
 If the generator runs successfully, you should now [run the monitoring stack locally](../how-to/monitoring_local_dev.md) to validate the output and results of your observable by hand.
 
 Once everything looks good, open a pull request with your observable to the main Sourcegraph codebase!
+
+## Centralized observability
+
+You can opt-in to [Sourcegraph Cloud centralized observability's](https://handbook.sourcegraph.com/departments/cloud/technical-docs/observability/) multi-instance overviews dashboard by setting `MultiInstance: true` on your Observable:
+
+```diff
+{
+    Name:        "some_metric_behaviour",
+    Description: "some behaviour of a metric over 5m",
+    Query:       `histogram_quantile(0.99, sum by (le)(rate(search_request_duration{status="success}[5m])))`,
+    Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
+
++   MultiInstance: true,
+}
+```
+
+Multi-instance panels are best used on panels with only 1 or very few time series, since each Cloud instance gets its own, separate time series for the Observable's `Query` - for hundreds of instances, panels with multiple time series can become unreadable or very slow to load.
