@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { mdiInformationOutline, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
@@ -87,18 +87,22 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
         CreateBatchSpecFromRawVariables
     >(CREATE_BATCH_SPEC_FROM_RAW)
 
-    const loading = batchChangeLoading || batchSpecLoading
-    const error = batchChangeError || batchSpecError
-
-    const { namespaces, defaultSelectedNamespace } = useNamespaces(
+    const { namespaces, defaultSelectedNamespace, loading: namespaceLoading, error: namespaceError } = useNamespaces(
         settingsCascade,
         batchChange?.namespace.id || initialNamespaceID
     )
+
+    const loading = batchChangeLoading || batchSpecLoading || namespaceLoading
+    const error = batchChangeError || batchSpecError || namespaceError
 
     // The namespace selected for creating the new batch change under.
     const [selectedNamespace, setSelectedNamespace] = useState<
         Pick<SettingsUserSubject, 'id'> | Pick<SettingsOrgSubject, 'id'>
     >(defaultSelectedNamespace)
+
+    useEffect(() => {
+        setSelectedNamespace(defaultSelectedNamespace)
+    }, [defaultSelectedNamespace])
 
     const [nameInput, setNameInput] = useState(batchChange?.name || '')
     const [isNameValid, setIsNameValid] = useState<boolean>()

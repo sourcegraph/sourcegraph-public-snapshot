@@ -2,6 +2,21 @@ import { gql } from '@sourcegraph/http-client'
 
 import { batchSpecExecutionFieldsFragment } from '../batch-spec/execute/backend'
 
+export const GET_ORGANIZATIONS = gql`
+    query GetOrganizations {
+        organizations {
+            totalCount
+            nodes {
+                id
+                __typename
+                viewerCanAdminister
+                displayName
+                name
+            }
+        }
+    }
+`
+
 export const GET_BATCH_CHANGE_TO_EDIT = gql`
     query GetBatchChangeToEdit($namespace: ID!, $name: String!) {
         batchChange(namespace: $namespace, name: $name) {

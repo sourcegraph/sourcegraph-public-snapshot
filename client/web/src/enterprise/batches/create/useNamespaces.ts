@@ -1,6 +1,9 @@
 import { useMemo } from 'react'
 
+import { ApolloError } from '@apollo/client'
+
 import { isErrorLike } from '@sourcegraph/common'
+import { useQuery } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SettingsOrgSubject,
@@ -9,12 +12,16 @@ import {
     SettingsCascadeOrError,
 } from '@sourcegraph/shared/src/settings/settings'
 
-import { Scalars } from '../../../graphql-operations'
+import { Scalars, GetOrganizationsResult, GetOrganizationsVariables } from '../../../graphql-operations'
+
+import { GET_ORGANIZATIONS, } from './backend'
 
 export interface UseNamespacesResult {
     userNamespace: SettingsUserSubject
     namespaces: (SettingsUserSubject | SettingsOrgSubject)[]
     defaultSelectedNamespace: SettingsUserSubject | SettingsOrgSubject
+    loading: boolean
+    error: ApolloError | undefined
 }
 
 /**
@@ -48,9 +55,18 @@ export const useNamespaces = (
         throw new Error('No user namespace found')
     }
 
-    const organizationNamespaces = useMemo(
-        () => rawNamespaces.filter((namespace): namespace is SettingsOrgSubject => namespace.__typename === 'Org'),
-        [rawNamespaces]
+    const { loading, data, error } = useQuery<GetOrganizationsResult, GetOrganizationsVariables>(GET_ORGANIZATIONS, {
+        fetchPolicy: 'cache-and-network'
+    })
+
+    const organizationNamespaces: SettingsOrgSubject[] = useMemo(
+        () => {
+            if (!loading && data?.organizations) {
+                return data.organizations.nodes
+            }
+            return []
+        },
+        [data, loading]
     )
 
     const namespaces: (SettingsUserSubject | SettingsOrgSubject)[] = useMemo(
@@ -71,5 +87,7 @@ export const useNamespaces = (
         userNamespace,
         namespaces,
         defaultSelectedNamespace,
+        loading,
+        error,
     }
 }
