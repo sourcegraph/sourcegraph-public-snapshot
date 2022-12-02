@@ -104,7 +104,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
 
     const showList = userHasCodeMonitors !== undefined && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 
-    const showLogsTab = useExperimentalFeatures(features => features.showCodeMonitoringLogs)
+    const showLogsTab = useExperimentalFeatures(features => features.showCodeMonitoringLogs) && authenticatedUser
 
     return (
         <div className="code-monitoring-page" data-testid="code-monitoring-page">

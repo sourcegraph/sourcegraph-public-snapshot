@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,7 +26,7 @@ type JanitorConfig struct {
 type janitorJob struct {
 	store           store.Store
 	gitserverClient GitserverClient
-	metrics         janitorMetrics
+	metrics         *janitorMetrics
 	logger          log.Logger
 	clock           glock.Clock
 }
@@ -36,12 +37,14 @@ func NewJanitor(
 	gitserverClient GitserverClient,
 	clock glock.Clock,
 	config JanitorConfig,
+	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
+	metrics := NewJanitorMetrics(observationContext)
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
 		job := janitorJob{
 			store:           store,
 			gitserverClient: gitserverClient,
-			metrics:         janitorMetrics{},
+			metrics:         metrics,
 			logger:          log.Scoped("codeintel.janitor.background", ""),
 			clock:           clock,
 		}

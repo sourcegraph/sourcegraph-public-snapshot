@@ -38,7 +38,7 @@ Line 9
 Line 10
 `
 
-	const testDiff = `diff --git INSTALL.md INSTALL.md
+	var testDiff = []byte(`diff --git INSTALL.md INSTALL.md
 index e5af166..d44c3fc 100644
 --- INSTALL.md
 +++ INSTALL.md
@@ -94,7 +94,8 @@ index 9bd8209..d2acfa9 100644
  Line 9
  Line 10
 +Another line
-`
+`)
+
 	wantBaseRef := "refs/heads/master"
 	wantHeadRevision := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
 	mockBackendCommits(t, api.CommitID(wantBaseRef), wantHeadRevision)

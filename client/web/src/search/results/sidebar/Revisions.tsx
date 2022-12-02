@@ -10,7 +10,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, LoadingSpinner, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from '@sourcegraph/wildcard'
 
-import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     SearchSidebarGitRefsResult,
     SearchSidebarGitRefsVariables,
@@ -64,7 +64,7 @@ const RevisionList: React.FunctionComponent<React.PropsWithChildren<RevisionList
     pluralNoun,
     query,
 }) => {
-    const { connection, fetchMore, hasNextPage, loading, error } = useConnection<
+    const { connection, fetchMore, hasNextPage, loading, error } = useShowMorePagination<
         SearchSidebarGitRefsResult,
         SearchSidebarGitRefsVariables,
         SearchSidebarGitRefFields

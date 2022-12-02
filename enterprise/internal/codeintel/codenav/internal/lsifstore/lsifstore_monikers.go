@@ -2,6 +2,7 @@ package lsifstore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -26,21 +27,28 @@ func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path st
 	}})
 	defer endObservation(1, observation.Args{})
 
-	query := sqlf.Sprintf(monikersDocumentQuery, uploadID, path)
-	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, query))
+	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
+		monikersDocumentQuery,
+		uploadID,
+		path,
+	)))
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	trace.Log(log.Int("numRanges", len(documentData.Document.Ranges)))
-	ranges := precise.FindRanges(documentData.Document.Ranges, line, character)
+	if documentData.SCIPData != nil {
+		return nil, errors.New("SCIP monikers unimplemented")
+	}
+
+	trace.Log(log.Int("numRanges", len(documentData.LSIFData.Ranges)))
+	ranges := precise.FindRanges(documentData.LSIFData.Ranges, line, character)
 	trace.Log(log.Int("numIntersectingRanges", len(ranges)))
 
 	monikerData := make([][]precise.MonikerData, 0, len(ranges))
 	for _, r := range ranges {
 		batch := make([]precise.MonikerData, 0, len(r.MonikerIDs))
 		for _, monikerID := range r.MonikerIDs {
-			if moniker, exists := documentData.Document.Monikers[monikerID]; exists {
+			if moniker, exists := documentData.LSIFData.Monikers[monikerID]; exists {
 				batch = append(batch, moniker)
 			}
 		}
@@ -62,7 +70,8 @@ SELECT
 	NULL AS hovers,
 	monikers,
 	NULL AS packages,
-	NULL AS diagnostics
+	NULL AS diagnostics,
+	NULL AS scip_document
 FROM
 	lsif_data_documents
 WHERE
@@ -151,7 +160,7 @@ outer:
 }
 
 const bulkMonikerResultsQuery = `
-SELECT dump_id, scheme, identifier, data
+SELECT dump_id, scheme, identifier, data, NULL AS scip_payload, '' AS scip_uri
 FROM %s
 WHERE dump_id IN (%s) AND (scheme, identifier) IN (%s)
 ORDER BY (dump_id, scheme, identifier)

@@ -559,6 +559,10 @@ func (s *Syncer) SyncExternalService(
 		return err
 	}
 
+	if err := src.CheckConnection(ctx); err != nil {
+		return err
+	}
+
 	results := make(chan SourceResult)
 	go func() {
 		src.ListRepos(ctx, results)
@@ -687,7 +691,7 @@ func (s *Syncer) SyncExternalService(
 		}
 	}
 
-	if !abortDeletion || (!svc.IsSiteOwned() && fatal(errs)) {
+	if !abortDeletion {
 		// Remove associations and any repos that are no longer associated with any
 		// external service.
 		//

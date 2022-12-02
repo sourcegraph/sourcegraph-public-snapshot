@@ -180,9 +180,9 @@ type MockGcsBucketHandle struct {
 	// ObjectFunc is an instance of a mock function object controlling the
 	// behavior of the method Object.
 	ObjectFunc *GcsBucketHandleObjectFunc
-	// UpdateFunc is an instance of a mock function object controlling the
-	// behavior of the method Update.
-	UpdateFunc *GcsBucketHandleUpdateFunc
+	// ObjectsFunc is an instance of a mock function object controlling the
+	// behavior of the method Objects.
+	ObjectsFunc *GcsBucketHandleObjectsFunc
 }
 
 // NewMockGcsBucketHandle creates a new mock of the gcsBucketHandle
@@ -205,8 +205,8 @@ func NewMockGcsBucketHandle() *MockGcsBucketHandle {
 				return
 			},
 		},
-		UpdateFunc: &GcsBucketHandleUpdateFunc{
-			defaultHook: func(context.Context, storage.BucketAttrsToUpdate) (r0 error) {
+		ObjectsFunc: &GcsBucketHandleObjectsFunc{
+			defaultHook: func(context.Context, *storage.Query) (r0 gcsObjectIterator) {
 				return
 			},
 		},
@@ -232,9 +232,9 @@ func NewStrictMockGcsBucketHandle() *MockGcsBucketHandle {
 				panic("unexpected invocation of MockGcsBucketHandle.Object")
 			},
 		},
-		UpdateFunc: &GcsBucketHandleUpdateFunc{
-			defaultHook: func(context.Context, storage.BucketAttrsToUpdate) error {
-				panic("unexpected invocation of MockGcsBucketHandle.Update")
+		ObjectsFunc: &GcsBucketHandleObjectsFunc{
+			defaultHook: func(context.Context, *storage.Query) gcsObjectIterator {
+				panic("unexpected invocation of MockGcsBucketHandle.Objects")
 			},
 		},
 	}
@@ -248,7 +248,7 @@ type surrogateMockGcsBucketHandle interface {
 	Attrs(context.Context) (*storage.BucketAttrs, error)
 	Create(context.Context, string, *storage.BucketAttrs) error
 	Object(string) gcsObjectHandle
-	Update(context.Context, storage.BucketAttrsToUpdate) error
+	Objects(context.Context, *storage.Query) gcsObjectIterator
 }
 
 // NewMockGcsBucketHandleFrom creates a new mock of the MockGcsBucketHandle
@@ -265,8 +265,8 @@ func NewMockGcsBucketHandleFrom(i surrogateMockGcsBucketHandle) *MockGcsBucketHa
 		ObjectFunc: &GcsBucketHandleObjectFunc{
 			defaultHook: i.Object,
 		},
-		UpdateFunc: &GcsBucketHandleUpdateFunc{
-			defaultHook: i.Update,
+		ObjectsFunc: &GcsBucketHandleObjectsFunc{
+			defaultHook: i.Objects,
 		},
 	}
 }
@@ -586,35 +586,35 @@ func (c GcsBucketHandleObjectFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// GcsBucketHandleUpdateFunc describes the behavior when the Update method
+// GcsBucketHandleObjectsFunc describes the behavior when the Objects method
 // of the parent MockGcsBucketHandle instance is invoked.
-type GcsBucketHandleUpdateFunc struct {
-	defaultHook func(context.Context, storage.BucketAttrsToUpdate) error
-	hooks       []func(context.Context, storage.BucketAttrsToUpdate) error
-	history     []GcsBucketHandleUpdateFuncCall
+type GcsBucketHandleObjectsFunc struct {
+	defaultHook func(context.Context, *storage.Query) gcsObjectIterator
+	hooks       []func(context.Context, *storage.Query) gcsObjectIterator
+	history     []GcsBucketHandleObjectsFuncCall
 	mutex       sync.Mutex
 }
 
-// Update delegates to the next hook function in the queue and stores the
+// Objects delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGcsBucketHandle) Update(v0 context.Context, v1 storage.BucketAttrsToUpdate) error {
-	r0 := m.UpdateFunc.nextHook()(v0, v1)
-	m.UpdateFunc.appendCall(GcsBucketHandleUpdateFuncCall{v0, v1, r0})
+func (m *MockGcsBucketHandle) Objects(v0 context.Context, v1 *storage.Query) gcsObjectIterator {
+	r0 := m.ObjectsFunc.nextHook()(v0, v1)
+	m.ObjectsFunc.appendCall(GcsBucketHandleObjectsFuncCall{v0, v1, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the Update method of the
-// parent MockGcsBucketHandle instance is invoked and the hook queue is
+// SetDefaultHook sets function that is called when the Objects method of
+// the parent MockGcsBucketHandle instance is invoked and the hook queue is
 // empty.
-func (f *GcsBucketHandleUpdateFunc) SetDefaultHook(hook func(context.Context, storage.BucketAttrsToUpdate) error) {
+func (f *GcsBucketHandleObjectsFunc) SetDefaultHook(hook func(context.Context, *storage.Query) gcsObjectIterator) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Update method of the parent MockGcsBucketHandle instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *GcsBucketHandleUpdateFunc) PushHook(hook func(context.Context, storage.BucketAttrsToUpdate) error) {
+// Objects method of the parent MockGcsBucketHandle instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GcsBucketHandleObjectsFunc) PushHook(hook func(context.Context, *storage.Query) gcsObjectIterator) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -622,20 +622,20 @@ func (f *GcsBucketHandleUpdateFunc) PushHook(hook func(context.Context, storage.
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GcsBucketHandleUpdateFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, storage.BucketAttrsToUpdate) error {
+func (f *GcsBucketHandleObjectsFunc) SetDefaultReturn(r0 gcsObjectIterator) {
+	f.SetDefaultHook(func(context.Context, *storage.Query) gcsObjectIterator {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GcsBucketHandleUpdateFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, storage.BucketAttrsToUpdate) error {
+func (f *GcsBucketHandleObjectsFunc) PushReturn(r0 gcsObjectIterator) {
+	f.PushHook(func(context.Context, *storage.Query) gcsObjectIterator {
 		return r0
 	})
 }
 
-func (f *GcsBucketHandleUpdateFunc) nextHook() func(context.Context, storage.BucketAttrsToUpdate) error {
+func (f *GcsBucketHandleObjectsFunc) nextHook() func(context.Context, *storage.Query) gcsObjectIterator {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -648,46 +648,46 @@ func (f *GcsBucketHandleUpdateFunc) nextHook() func(context.Context, storage.Buc
 	return hook
 }
 
-func (f *GcsBucketHandleUpdateFunc) appendCall(r0 GcsBucketHandleUpdateFuncCall) {
+func (f *GcsBucketHandleObjectsFunc) appendCall(r0 GcsBucketHandleObjectsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of GcsBucketHandleUpdateFuncCall objects
+// History returns a sequence of GcsBucketHandleObjectsFuncCall objects
 // describing the invocations of this function.
-func (f *GcsBucketHandleUpdateFunc) History() []GcsBucketHandleUpdateFuncCall {
+func (f *GcsBucketHandleObjectsFunc) History() []GcsBucketHandleObjectsFuncCall {
 	f.mutex.Lock()
-	history := make([]GcsBucketHandleUpdateFuncCall, len(f.history))
+	history := make([]GcsBucketHandleObjectsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GcsBucketHandleUpdateFuncCall is an object that describes an invocation
-// of method Update on an instance of MockGcsBucketHandle.
-type GcsBucketHandleUpdateFuncCall struct {
+// GcsBucketHandleObjectsFuncCall is an object that describes an invocation
+// of method Objects on an instance of MockGcsBucketHandle.
+type GcsBucketHandleObjectsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 storage.BucketAttrsToUpdate
+	Arg1 *storage.Query
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 gcsObjectIterator
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GcsBucketHandleUpdateFuncCall) Args() []interface{} {
+func (c GcsBucketHandleObjectsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GcsBucketHandleUpdateFuncCall) Results() []interface{} {
+func (c GcsBucketHandleObjectsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -1398,16 +1398,19 @@ type MockS3API struct {
 	// DeleteObjectFunc is an instance of a mock function object controlling
 	// the behavior of the method DeleteObject.
 	DeleteObjectFunc *S3APIDeleteObjectFunc
+	// DeleteObjectsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteObjects.
+	DeleteObjectsFunc *S3APIDeleteObjectsFunc
 	// GetObjectFunc is an instance of a mock function object controlling
 	// the behavior of the method GetObject.
 	GetObjectFunc *S3APIGetObjectFunc
 	// HeadObjectFunc is an instance of a mock function object controlling
 	// the behavior of the method HeadObject.
 	HeadObjectFunc *S3APIHeadObjectFunc
-	// PutBucketLifecycleConfigurationFunc is an instance of a mock function
+	// NewListObjectsV2PaginatorFunc is an instance of a mock function
 	// object controlling the behavior of the method
-	// PutBucketLifecycleConfiguration.
-	PutBucketLifecycleConfigurationFunc *S3APIPutBucketLifecycleConfigurationFunc
+	// NewListObjectsV2Paginator.
+	NewListObjectsV2PaginatorFunc *S3APINewListObjectsV2PaginatorFunc
 	// UploadPartCopyFunc is an instance of a mock function object
 	// controlling the behavior of the method UploadPartCopy.
 	UploadPartCopyFunc *S3APIUploadPartCopyFunc
@@ -1442,6 +1445,11 @@ func NewMockS3API() *MockS3API {
 				return
 			},
 		},
+		DeleteObjectsFunc: &S3APIDeleteObjectsFunc{
+			defaultHook: func(context.Context, *s3.DeleteObjectsInput, ...func(*s3.Options)) (r0 *s3.DeleteObjectsOutput, r1 error) {
+				return
+			},
+		},
 		GetObjectFunc: &S3APIGetObjectFunc{
 			defaultHook: func(context.Context, *s3.GetObjectInput) (r0 *s3.GetObjectOutput, r1 error) {
 				return
@@ -1452,8 +1460,8 @@ func NewMockS3API() *MockS3API {
 				return
 			},
 		},
-		PutBucketLifecycleConfigurationFunc: &S3APIPutBucketLifecycleConfigurationFunc{
-			defaultHook: func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (r0 *s3.PutBucketLifecycleConfigurationOutput, r1 error) {
+		NewListObjectsV2PaginatorFunc: &S3APINewListObjectsV2PaginatorFunc{
+			defaultHook: func(*s3.ListObjectsV2Input) (r0 *s3.ListObjectsV2Paginator) {
 				return
 			},
 		},
@@ -1494,6 +1502,11 @@ func NewStrictMockS3API() *MockS3API {
 				panic("unexpected invocation of MockS3API.DeleteObject")
 			},
 		},
+		DeleteObjectsFunc: &S3APIDeleteObjectsFunc{
+			defaultHook: func(context.Context, *s3.DeleteObjectsInput, ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error) {
+				panic("unexpected invocation of MockS3API.DeleteObjects")
+			},
+		},
 		GetObjectFunc: &S3APIGetObjectFunc{
 			defaultHook: func(context.Context, *s3.GetObjectInput) (*s3.GetObjectOutput, error) {
 				panic("unexpected invocation of MockS3API.GetObject")
@@ -1504,9 +1517,9 @@ func NewStrictMockS3API() *MockS3API {
 				panic("unexpected invocation of MockS3API.HeadObject")
 			},
 		},
-		PutBucketLifecycleConfigurationFunc: &S3APIPutBucketLifecycleConfigurationFunc{
-			defaultHook: func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error) {
-				panic("unexpected invocation of MockS3API.PutBucketLifecycleConfiguration")
+		NewListObjectsV2PaginatorFunc: &S3APINewListObjectsV2PaginatorFunc{
+			defaultHook: func(*s3.ListObjectsV2Input) *s3.ListObjectsV2Paginator {
+				panic("unexpected invocation of MockS3API.NewListObjectsV2Paginator")
 			},
 		},
 		UploadPartCopyFunc: &S3APIUploadPartCopyFunc{
@@ -1526,9 +1539,10 @@ type surrogateMockS3API interface {
 	CreateBucket(context.Context, *s3.CreateBucketInput) (*s3.CreateBucketOutput, error)
 	CreateMultipartUpload(context.Context, *s3.CreateMultipartUploadInput) (*s3.CreateMultipartUploadOutput, error)
 	DeleteObject(context.Context, *s3.DeleteObjectInput) (*s3.DeleteObjectOutput, error)
+	DeleteObjects(context.Context, *s3.DeleteObjectsInput, ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error)
 	GetObject(context.Context, *s3.GetObjectInput) (*s3.GetObjectOutput, error)
 	HeadObject(context.Context, *s3.HeadObjectInput) (*s3.HeadObjectOutput, error)
-	PutBucketLifecycleConfiguration(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error)
+	NewListObjectsV2Paginator(*s3.ListObjectsV2Input) *s3.ListObjectsV2Paginator
 	UploadPartCopy(context.Context, *s3.UploadPartCopyInput) (*s3.UploadPartCopyOutput, error)
 }
 
@@ -1551,14 +1565,17 @@ func NewMockS3APIFrom(i surrogateMockS3API) *MockS3API {
 		DeleteObjectFunc: &S3APIDeleteObjectFunc{
 			defaultHook: i.DeleteObject,
 		},
+		DeleteObjectsFunc: &S3APIDeleteObjectsFunc{
+			defaultHook: i.DeleteObjects,
+		},
 		GetObjectFunc: &S3APIGetObjectFunc{
 			defaultHook: i.GetObject,
 		},
 		HeadObjectFunc: &S3APIHeadObjectFunc{
 			defaultHook: i.HeadObject,
 		},
-		PutBucketLifecycleConfigurationFunc: &S3APIPutBucketLifecycleConfigurationFunc{
-			defaultHook: i.PutBucketLifecycleConfiguration,
+		NewListObjectsV2PaginatorFunc: &S3APINewListObjectsV2PaginatorFunc{
+			defaultHook: i.NewListObjectsV2Paginator,
 		},
 		UploadPartCopyFunc: &S3APIUploadPartCopyFunc{
 			defaultHook: i.UploadPartCopy,
@@ -2105,6 +2122,123 @@ func (c S3APIDeleteObjectFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// S3APIDeleteObjectsFunc describes the behavior when the DeleteObjects
+// method of the parent MockS3API instance is invoked.
+type S3APIDeleteObjectsFunc struct {
+	defaultHook func(context.Context, *s3.DeleteObjectsInput, ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error)
+	hooks       []func(context.Context, *s3.DeleteObjectsInput, ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error)
+	history     []S3APIDeleteObjectsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteObjects delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockS3API) DeleteObjects(v0 context.Context, v1 *s3.DeleteObjectsInput, v2 ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error) {
+	r0, r1 := m.DeleteObjectsFunc.nextHook()(v0, v1, v2...)
+	m.DeleteObjectsFunc.appendCall(S3APIDeleteObjectsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the DeleteObjects method
+// of the parent MockS3API instance is invoked and the hook queue is empty.
+func (f *S3APIDeleteObjectsFunc) SetDefaultHook(hook func(context.Context, *s3.DeleteObjectsInput, ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteObjects method of the parent MockS3API instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *S3APIDeleteObjectsFunc) PushHook(hook func(context.Context, *s3.DeleteObjectsInput, ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *S3APIDeleteObjectsFunc) SetDefaultReturn(r0 *s3.DeleteObjectsOutput, r1 error) {
+	f.SetDefaultHook(func(context.Context, *s3.DeleteObjectsInput, ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *S3APIDeleteObjectsFunc) PushReturn(r0 *s3.DeleteObjectsOutput, r1 error) {
+	f.PushHook(func(context.Context, *s3.DeleteObjectsInput, ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error) {
+		return r0, r1
+	})
+}
+
+func (f *S3APIDeleteObjectsFunc) nextHook() func(context.Context, *s3.DeleteObjectsInput, ...func(*s3.Options)) (*s3.DeleteObjectsOutput, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *S3APIDeleteObjectsFunc) appendCall(r0 S3APIDeleteObjectsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of S3APIDeleteObjectsFuncCall objects
+// describing the invocations of this function.
+func (f *S3APIDeleteObjectsFunc) History() []S3APIDeleteObjectsFuncCall {
+	f.mutex.Lock()
+	history := make([]S3APIDeleteObjectsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// S3APIDeleteObjectsFuncCall is an object that describes an invocation of
+// method DeleteObjects on an instance of MockS3API.
+type S3APIDeleteObjectsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *s3.DeleteObjectsInput
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []func(*s3.Options)
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *s3.DeleteObjectsOutput
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c S3APIDeleteObjectsFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c S3APIDeleteObjectsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // S3APIGetObjectFunc describes the behavior when the GetObject method of
 // the parent MockS3API instance is invoked.
 type S3APIGetObjectFunc struct {
@@ -2319,37 +2453,36 @@ func (c S3APIHeadObjectFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// S3APIPutBucketLifecycleConfigurationFunc describes the behavior when the
-// PutBucketLifecycleConfiguration method of the parent MockS3API instance
-// is invoked.
-type S3APIPutBucketLifecycleConfigurationFunc struct {
-	defaultHook func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error)
-	hooks       []func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error)
-	history     []S3APIPutBucketLifecycleConfigurationFuncCall
+// S3APINewListObjectsV2PaginatorFunc describes the behavior when the
+// NewListObjectsV2Paginator method of the parent MockS3API instance is
+// invoked.
+type S3APINewListObjectsV2PaginatorFunc struct {
+	defaultHook func(*s3.ListObjectsV2Input) *s3.ListObjectsV2Paginator
+	hooks       []func(*s3.ListObjectsV2Input) *s3.ListObjectsV2Paginator
+	history     []S3APINewListObjectsV2PaginatorFuncCall
 	mutex       sync.Mutex
 }
 
-// PutBucketLifecycleConfiguration delegates to the next hook function in
-// the queue and stores the parameter and result values of this invocation.
-func (m *MockS3API) PutBucketLifecycleConfiguration(v0 context.Context, v1 *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error) {
-	r0, r1 := m.PutBucketLifecycleConfigurationFunc.nextHook()(v0, v1)
-	m.PutBucketLifecycleConfigurationFunc.appendCall(S3APIPutBucketLifecycleConfigurationFuncCall{v0, v1, r0, r1})
-	return r0, r1
+// NewListObjectsV2Paginator delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockS3API) NewListObjectsV2Paginator(v0 *s3.ListObjectsV2Input) *s3.ListObjectsV2Paginator {
+	r0 := m.NewListObjectsV2PaginatorFunc.nextHook()(v0)
+	m.NewListObjectsV2PaginatorFunc.appendCall(S3APINewListObjectsV2PaginatorFuncCall{v0, r0})
+	return r0
 }
 
 // SetDefaultHook sets function that is called when the
-// PutBucketLifecycleConfiguration method of the parent MockS3API instance
-// is invoked and the hook queue is empty.
-func (f *S3APIPutBucketLifecycleConfigurationFunc) SetDefaultHook(hook func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error)) {
+// NewListObjectsV2Paginator method of the parent MockS3API instance is
+// invoked and the hook queue is empty.
+func (f *S3APINewListObjectsV2PaginatorFunc) SetDefaultHook(hook func(*s3.ListObjectsV2Input) *s3.ListObjectsV2Paginator) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// PutBucketLifecycleConfiguration method of the parent MockS3API instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *S3APIPutBucketLifecycleConfigurationFunc) PushHook(hook func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error)) {
+// NewListObjectsV2Paginator method of the parent MockS3API instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *S3APINewListObjectsV2PaginatorFunc) PushHook(hook func(*s3.ListObjectsV2Input) *s3.ListObjectsV2Paginator) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2357,20 +2490,20 @@ func (f *S3APIPutBucketLifecycleConfigurationFunc) PushHook(hook func(context.Co
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *S3APIPutBucketLifecycleConfigurationFunc) SetDefaultReturn(r0 *s3.PutBucketLifecycleConfigurationOutput, r1 error) {
-	f.SetDefaultHook(func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error) {
-		return r0, r1
+func (f *S3APINewListObjectsV2PaginatorFunc) SetDefaultReturn(r0 *s3.ListObjectsV2Paginator) {
+	f.SetDefaultHook(func(*s3.ListObjectsV2Input) *s3.ListObjectsV2Paginator {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *S3APIPutBucketLifecycleConfigurationFunc) PushReturn(r0 *s3.PutBucketLifecycleConfigurationOutput, r1 error) {
-	f.PushHook(func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error) {
-		return r0, r1
+func (f *S3APINewListObjectsV2PaginatorFunc) PushReturn(r0 *s3.ListObjectsV2Paginator) {
+	f.PushHook(func(*s3.ListObjectsV2Input) *s3.ListObjectsV2Paginator {
+		return r0
 	})
 }
 
-func (f *S3APIPutBucketLifecycleConfigurationFunc) nextHook() func(context.Context, *s3.PutBucketLifecycleConfigurationInput) (*s3.PutBucketLifecycleConfigurationOutput, error) {
+func (f *S3APINewListObjectsV2PaginatorFunc) nextHook() func(*s3.ListObjectsV2Input) *s3.ListObjectsV2Paginator {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2383,52 +2516,45 @@ func (f *S3APIPutBucketLifecycleConfigurationFunc) nextHook() func(context.Conte
 	return hook
 }
 
-func (f *S3APIPutBucketLifecycleConfigurationFunc) appendCall(r0 S3APIPutBucketLifecycleConfigurationFuncCall) {
+func (f *S3APINewListObjectsV2PaginatorFunc) appendCall(r0 S3APINewListObjectsV2PaginatorFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// S3APIPutBucketLifecycleConfigurationFuncCall objects describing the
-// invocations of this function.
-func (f *S3APIPutBucketLifecycleConfigurationFunc) History() []S3APIPutBucketLifecycleConfigurationFuncCall {
+// History returns a sequence of S3APINewListObjectsV2PaginatorFuncCall
+// objects describing the invocations of this function.
+func (f *S3APINewListObjectsV2PaginatorFunc) History() []S3APINewListObjectsV2PaginatorFuncCall {
 	f.mutex.Lock()
-	history := make([]S3APIPutBucketLifecycleConfigurationFuncCall, len(f.history))
+	history := make([]S3APINewListObjectsV2PaginatorFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// S3APIPutBucketLifecycleConfigurationFuncCall is an object that describes
-// an invocation of method PutBucketLifecycleConfiguration on an instance of
+// S3APINewListObjectsV2PaginatorFuncCall is an object that describes an
+// invocation of method NewListObjectsV2Paginator on an instance of
 // MockS3API.
-type S3APIPutBucketLifecycleConfigurationFuncCall struct {
+type S3APINewListObjectsV2PaginatorFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *s3.PutBucketLifecycleConfigurationInput
+	Arg0 *s3.ListObjectsV2Input
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *s3.PutBucketLifecycleConfigurationOutput
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
+	Result0 *s3.ListObjectsV2Paginator
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c S3APIPutBucketLifecycleConfigurationFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+func (c S3APINewListObjectsV2PaginatorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c S3APIPutBucketLifecycleConfigurationFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+func (c S3APINewListObjectsV2PaginatorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // S3APIUploadPartCopyFunc describes the behavior when the UploadPartCopy

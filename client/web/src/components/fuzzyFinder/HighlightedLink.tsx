@@ -1,5 +1,7 @@
 import React, { useCallback } from 'react'
 
+import classNames from 'classnames'
+
 import { Link } from '@sourcegraph/wildcard'
 
 import styles from './HighlightedLink.module.scss'
@@ -86,7 +88,11 @@ export const HighlightedLink: React.FunctionComponent<React.PropsWithChildren<Hi
     )
 
     return (
-        <Link className={styles.link} to={url || `/commands/${props.text}`} onClick={handleClick}>
+        <Link
+            className={classNames('d-inline-block w-100 h-100 text-decoration-none', styles.link)}
+            to={url || `/commands/${props.text}`}
+            onClick={handleClick}
+        >
             {props.icon && <span>{props.icon}</span>}
             {spans}
             {url ? props.textSuffix : null}

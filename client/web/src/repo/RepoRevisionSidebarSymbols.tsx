@@ -13,7 +13,7 @@ import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { Alert, useDebounce } from '@sourcegraph/wildcard'
 
-import { useConnection } from '../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionForm,
     ConnectionContainer,
@@ -132,7 +132,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
 
-    const { connection, error, loading, hasNextPage, fetchMore } = useConnection<
+    const { connection, error, loading, hasNextPage, fetchMore } = useShowMorePagination<
         SymbolsResult,
         SymbolsVariables,
         SymbolNodeFields

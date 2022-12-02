@@ -106,7 +106,7 @@ func customPrometheusRules(injectLabelMatchers []*labels.Matcher) (*promRulesFil
 
 	var injectErrors error
 	injectExpr := func(expr string) string {
-		injected, err := promql.Inject(expr, injectLabelMatchers, nil)
+		injected, err := promql.InjectMatchers(expr, injectLabelMatchers, nil)
 		if err != nil {
 			injectErrors = errors.Append(injectErrors, err)
 		}

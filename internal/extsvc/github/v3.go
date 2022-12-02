@@ -714,14 +714,15 @@ func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*
 // Fork forks the given repository. If org is given, then the repository will
 // be forked into that organisation, otherwise the repository is forked into
 // the authenticated user's account.
-func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string) (*Repository, error) {
+func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string, forkName string) (*Repository, error) {
 	// GitHub's fork endpoint will happily accept either a new or existing fork,
 	// and returns a valid repository either way. As such, we don't need to check
 	// if there's already an extant fork.
 
 	payload := struct {
-		Org *string `json:"organization,omitempty"`
-	}{Org: org}
+		Org  *string `json:"organization,omitempty"`
+		Name string  `json:"name"`
+	}{Org: org, Name: forkName}
 
 	var restRepo restRepository
 	if _, err := c.post(ctx, "repos/"+owner+"/"+repo+"/forks", payload, &restRepo); err != nil {

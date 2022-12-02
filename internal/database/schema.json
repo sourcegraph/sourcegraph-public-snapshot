@@ -13257,6 +13257,19 @@
           "Comment": ""
         },
         {
+          "Name": "manager",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The package manager name."
+        },
+        {
           "Name": "name",
           "Index": 3,
           "TypeName": "text",
@@ -13368,6 +13381,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "manager",
+          "Index": 7,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The package manager name."
         },
         {
           "Name": "name",

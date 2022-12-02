@@ -39,6 +39,9 @@ type MonikerData struct {
 
 // PackageInformationData indicates a globally unique namespace for a moniker.
 type PackageInformationData struct {
+	// Name of the package manager.
+	Manager string
+
 	// Name of the package that contains the moniker.
 	Name string
 

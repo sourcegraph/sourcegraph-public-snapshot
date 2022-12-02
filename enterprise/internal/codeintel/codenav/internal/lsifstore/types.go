@@ -22,7 +22,9 @@ type QualifiedMonikerLocations struct {
 
 type QualifiedDocumentData struct {
 	UploadID int
-	precise.KeyedDocumentData
+	Path     string
+	LSIFData *precise.DocumentData
+	SCIPData *scip.Document
 }
 
 func translateRange(r *scip.Range) types.Range {

@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -1040,7 +1041,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				HeadRef:    "refs/heads/my-branch",
 				Typ:        btypes.ChangesetSpecTypeBranch,
 				Published:  true,
-				CommitDiff: "testdiff",
+				CommitDiff: []byte("testdiff"),
 			})
 
 			fakeSource := &stesting.FakeChangesetSource{Svc: tt.extSvc, CurrentAuthenticator: tt.credential}

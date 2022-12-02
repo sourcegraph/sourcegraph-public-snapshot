@@ -19,7 +19,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, Heading, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../../backend/features'
-import { useConnection } from '../../components/FilteredConnection/hooks/useConnection'
+import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionList,
@@ -84,7 +84,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     const [showOlderCommits, setShowOlderCommits] = useState(false)
     const after = useMemo(() => (showOlderCommits ? null : formatISO(subYears(Date.now(), 1))), [showOlderCommits])
 
-    const { connection, error, loading, hasNextPage, fetchMore, refetchAll } = useConnection<
+    const { connection, error, loading, hasNextPage, fetchMore, refetchAll } = useShowMorePagination<
         TreeCommitsResult,
         TreeCommitsVariables,
         GitCommitFields

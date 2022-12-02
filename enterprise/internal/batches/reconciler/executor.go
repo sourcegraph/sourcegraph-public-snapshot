@@ -615,13 +615,15 @@ func handleArchivedRepo(
 }
 
 func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) (opts protocol.CreateCommitFromPatchRequest, err error) {
+	// IMPORTANT: We add a trailing newline here, otherwise `git apply`
+	// will fail with "corrupt patch at line <N>" where N is the last line.
+	patch := append([]byte{}, spec.Diff...)
+	patch = append(patch, []byte("\n")...)
 	opts = protocol.CreateCommitFromPatchRequest{
 		Repo:       repo.Name,
 		BaseCommit: api.CommitID(spec.BaseRev),
-		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
-		// will fail with "corrupt patch at line <N>" where N is the last line.
-		Patch:     string(spec.Diff) + "\n",
-		TargetRef: spec.HeadRef,
+		Patch:      patch,
+		TargetRef:  spec.HeadRef,
 
 		// CAUTION: `UniqueRef` means that we'll push to a generated branch if it
 		// already exists.
