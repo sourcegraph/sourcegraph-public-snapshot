@@ -797,6 +797,12 @@ func TestRepositories_Integration(t *testing.T) {
 			wantRepos:      []string{"repo8"},
 			wantTotalCount: 1,
 		},
+		// indexed and notIndexed
+		{
+			args:           "indexed: false, notIndexed: false",
+			wantRepos:      nil,
+			wantTotalCount: 0,
+		},
 		{
 			args:           "orderBy:SIZE, descending:false, first: 5",
 			wantRepos:      []string{"repo6", "repo1", "repo2", "repo3", "repo4"},
