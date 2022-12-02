@@ -619,7 +619,7 @@ func TestSyncerSync(t *testing.T) {
 				store: store,
 				now:   clock.Now,
 				svcs:  []*types.ExternalService{tc.svc},
-				err:   "does not seem to be available",
+				err:   "fake source unavailable",
 			},
 		)
 	}
