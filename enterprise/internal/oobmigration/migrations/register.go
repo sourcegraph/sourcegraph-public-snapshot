@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/iam"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights"
+	insightsrecordingtimes "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights/recording_times"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -93,5 +94,6 @@ func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps
 		codeintel.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000, 0),
 		codeintel.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100, 0),
 		insights.NewMigrator(deps.store, deps.insightsStore),
+		insightsrecordingtimes.NewRecordingTimesMigrator(deps.insightsStore, 500),
 	})
 }
