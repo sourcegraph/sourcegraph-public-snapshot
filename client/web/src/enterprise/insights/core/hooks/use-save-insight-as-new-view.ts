@@ -7,7 +7,7 @@ import { searchInsightCreationOptimisticUpdate } from '../backend/gql-backend/me
 import { BackendInsight, InsightDashboard, InsightFilters, isVirtualDashboard } from '../types'
 
 export const SAVE_INSIGHT_AS_NEW_VIEW_GQL = gql`
-    mutation SaveInsightAsNewView($input: InsightNewViewInput!) {
+    mutation SaveInsightAsNewView($input: SaveInsightAsNewViewInput!) {
         saveInsightAsNewView(input: $input) {
             view {
                 ...InsightViewNode

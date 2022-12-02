@@ -430,10 +430,10 @@ type LineChartOptionsInput struct {
 }
 
 type SaveInsightAsNewViewArgs struct {
-	Input InsightNewViewInput
+	Input SaveInsightAsNewViewInput
 }
 
-type InsightNewViewInput struct {
+type SaveInsightAsNewViewInput struct {
 	InsightViewID graphql.ID
 	Options       LineChartOptionsInput
 	Dashboard     *graphql.ID

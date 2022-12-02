@@ -335,7 +335,7 @@ func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any)
 
 func (c *Client) SaveInsightAsNewView(input map[string]any) ([]SearchInsight, error) {
 	const query = `
-		mutation saveAsNewView($new: InsightNewViewInput!) {
+		mutation saveAsNewView($new: SaveInsightAsNewViewInput!) {
 		  saveInsightAsNewView(input:$new) {
 			view {
 			  id 
