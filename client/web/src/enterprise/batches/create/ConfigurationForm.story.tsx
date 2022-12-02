@@ -71,12 +71,14 @@ const buildMocks = (isLicensed = true, hasBatchChanges = true) =>
         },
         {
             request: { query: getDocumentNode(GET_ORGANIZATIONS), variables: MATCH_ANY_PARAMETERS },
-            result: { data: {
-                organizations: {
-                    totalCount: 1,
-                    nodes: [MOCK_ORGANIZATION]
-                }
-            } },
+            result: {
+                data: {
+                    organizations: {
+                        totalCount: 1,
+                        nodes: [MOCK_ORGANIZATION],
+                    },
+                },
+            },
             nMatches: Number.POSITIVE_INFINITY,
         },
     ])
@@ -97,7 +99,11 @@ export const NewOrgBatchChange: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks()}>
-                <ConfigurationForm {...props} settingsCascade={SETTINGS_CASCADE} initialNamespaceID={MOCK_ORGANIZATION.id} />
+                <ConfigurationForm
+                    {...props}
+                    settingsCascade={SETTINGS_CASCADE}
+                    initialNamespaceID={MOCK_ORGANIZATION.id}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
