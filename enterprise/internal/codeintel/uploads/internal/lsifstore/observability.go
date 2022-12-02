@@ -15,8 +15,8 @@ type operations struct {
 	scanDocuments             *observation.Operation
 	scanResultChunks          *observation.Operation
 	scanLocations             *observation.Operation
+	insertMetadata            *observation.Operation
 	insertSCIPDocument        *observation.Operation
-	writeSCIPSymbols          *observation.Operation
 	writeMeta                 *observation.Operation
 	writeDocuments            *observation.Operation
 	writeResultChunks         *observation.Operation
@@ -25,13 +25,17 @@ type operations struct {
 	writeImplementations      *observation.Operation
 }
 
+var m = new(metrics.SingletonREDMetrics)
+
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
-		"codeintel_uploads_lsifstore",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
+	metrics := m.Get(func() *metrics.REDMetrics {
+		return metrics.NewREDMetrics(
+			observationContext.Registerer,
+			"codeintel_uploads_lsifstore",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+	})
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
@@ -49,8 +53,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		scanDocuments:             op("ScanDocuments"),
 		scanResultChunks:          op("ScanResultChunks"),
 		scanLocations:             op("ScanLocations"),
+		insertMetadata:            op("InsertMetadata"),
 		insertSCIPDocument:        op("InsertSCIPDocument"),
-		writeSCIPSymbols:          op("WriteSCIPSymbols"),
 		writeMeta:                 op("WriteMeta"),
 		writeDocuments:            op("WriteDocuments"),
 		writeResultChunks:         op("WriteResultChunks"),

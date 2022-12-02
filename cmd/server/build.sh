@@ -98,6 +98,9 @@ IMAGE=sourcegraph/grafana:server CACHE=true docker-images/grafana/build.sh
 echo "--- postgres exporter"
 IMAGE=sourcegraph/postgres_exporter:server CACHE=true docker-images/postgres_exporter/build.sh
 
+echo "--- blobstore"
+IMAGE=sourcegraph/blobstore:server docker-images/blobstore/build.sh
+
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \

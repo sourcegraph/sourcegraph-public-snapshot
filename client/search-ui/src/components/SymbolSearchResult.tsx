@@ -66,6 +66,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         : undefined
                 }
                 className={classNames(searchResultStyles.titleInner, searchResultStyles.mutedRepoFileLink)}
+                isKeyboardSelectable={true}
             />
             <CopyPathAction
                 filePath={result.path}
@@ -154,6 +155,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         onClick={navigateToFile}
                         onMouseUp={navigateToFileOnMiddleMouseButtonClick}
                         onKeyDown={navigateToFile}
+                        data-selectable-search-result="true"
                     >
                         <div className="mr-2 flex-shrink-0">
                             <SymbolTag kind={symbol.kind} />

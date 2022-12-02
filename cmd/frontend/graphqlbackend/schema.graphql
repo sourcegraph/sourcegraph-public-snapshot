@@ -1580,9 +1580,14 @@ type Query {
     """
     outboundRequests(
         """
-        An opaque cursor that is used for pagination.
+        Returns the first n log items. If omitted then it returns all of them.
         """
-        after: ID
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
     ): OutboundRequestConnection!
 
     """
@@ -2711,15 +2716,6 @@ type ExternalService implements Node {
     nextSyncAt: DateTime
 
     """
-    Returns a list of scopes granted by the code host. It is based on the token used
-    when configuring the external service.
-
-    NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
-    so it should be used sparingly.
-    """
-    grantedScopes: [String!]
-
-    """
     Returns recently received webhooks on this external service.
 
     Only site admins may access this field.
@@ -2750,20 +2746,6 @@ type ExternalService implements Node {
         """
         until: DateTime
     ): WebhookLogConnection!
-
-    """
-    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
-    repositories included by this external service, and is derived from commit history (because that
-    for example gives more accurate collaborator work email addresses than the contributors API which
-    often returns personal emails.
-
-    Importantly, this API works when repositories are not cloned on Sourcegraph yet so as to allow
-    inviting collaborators while repositories are cloning.
-
-    In general, this API should NOT be used once repositories are cloned on to Sourcegraph as it
-    reaches out to the code host directly which is wasteful if repositories are already cloned.
-    """
-    invitableCollaborators: [Person!]!
 
     """
     The list of recent sync jobs for this external service.
@@ -8065,16 +8047,16 @@ type WebhookLogResponse implements WebhookLogMessage {
 }
 
 """
-A list of outbound requests.
+A list of logged outbound requests.
 """
 type OutboundRequestConnection {
     """
-    A list of webhook logs.
+    A list of outbound requests.
     """
     nodes: [OutboundRequest!]!
 
     """
-    The total number of webhook logs in the connection.
+    The total number of outbound request log items in the connection.
     """
     totalCount: Int!
 
@@ -8083,12 +8065,13 @@ type OutboundRequestConnection {
     """
     pageInfo: PageInfo!
 }
+
 """
-A single logged webhook delivery.
+A single outbound request.
 """
-type OutboundRequest {
+type OutboundRequest implements Node {
     """
-    The request log item ID. Looks like "2021-01-01T00_00_00.000000" – Same as the Redis keys.
+    The request log item ID.
     """
     id: ID!
 
@@ -8128,9 +8111,9 @@ type OutboundRequest {
     responseHeaders: [HTTPHeader!]!
 
     """
-    The total time the request took to complete.
+    The total time the request took to complete, in milliseconds.
     """
-    duration: Float!
+    durationMs: Int!
 
     """
     Any error message got from the request Doer in case of an error, otherwise an empty string.

@@ -25,6 +25,7 @@ import { useDeepMemo } from '@sourcegraph/wildcard'
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { PageTitle } from '../../components/PageTitle'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { fetchBlob, usePrefetchBlobFormat } from '../../repo/blob/backend'
@@ -75,6 +76,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring ?? false)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const prefetchFileEnabled = useExperimentalFeatures(features => features.enableSearchFilePrefetch ?? false)
+    const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', false)
     const prefetchBlobFormat = usePrefetchBlobFormat()
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
@@ -421,6 +423,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                             executedQuery={location.search}
                             prefetchFileEnabled={prefetchFileEnabled}
                             prefetchFile={prefetchFile}
+                            enableKeyboardNavigation={enableSearchResultsKeyboardNavigation}
                         />
                     </div>
                 </>

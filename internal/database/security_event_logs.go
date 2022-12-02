@@ -44,10 +44,12 @@ const (
 
 	SecurityEventNameAccessGranted SecurityEventName = "AccessGranted"
 
-	SecurityEventAccessTokenCreated      SecurityEventName = "AccessTokenCreated"
-	SecurityEventAccessTokenDeleted      SecurityEventName = "AccessTokenDeleted"
-	SecurityEventAccessTokenHardDeleted  SecurityEventName = "AccessTokenHardDeleted"
-	SecurityEventAccessTokenImpersonated SecurityEventName = "AccessTokenImpersonated"
+	SecurityEventAccessTokenCreated             SecurityEventName = "AccessTokenCreated"
+	SecurityEventAccessTokenDeleted             SecurityEventName = "AccessTokenDeleted"
+	SecurityEventAccessTokenHardDeleted         SecurityEventName = "AccessTokenHardDeleted"
+	SecurityEventAccessTokenImpersonated        SecurityEventName = "AccessTokenImpersonated"
+	SecurityEventAccessTokenInvalid             SecurityEventName = "AccessTokenInvalid"
+	SecurityEventAccessTokenSubjectNotSiteAdmin SecurityEventName = "AccessTokenSubjectNotSiteAdmin"
 
 	SecurityEventGitHubAuthSucceeded SecurityEventName = "GitHubAuthSucceeded"
 	SecurityEventGitHubAuthFailed    SecurityEventName = "GitHubAuthFailed"
@@ -118,7 +120,7 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 			result, err := jsonc.Edit(
 				event.marshalArgumentAsJSON(),
 				true,
-				"sourcegraph_operator",
+				EventLogsSourcegraphOperatorKey,
 			)
 			event.Argument = json.RawMessage(result)
 			if err != nil {
