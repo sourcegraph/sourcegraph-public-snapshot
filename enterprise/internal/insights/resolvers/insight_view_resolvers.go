@@ -735,6 +735,14 @@ func (r *Resolver) SaveInsightAsNewView(ctx context.Context, args graphqlbackend
 	defer func() { err = insightTx.Done(err) }()
 	dashboardTx := r.dashboardStore.With(insightTx)
 
+	var insightViewId string
+	if err := relay.UnmarshalSpec(args.Input.InsightViewID, &insightViewId); err != nil {
+		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
+	}
+	if err := permissionsValidator.validateUserAccessForView(ctx, insightViewId); err != nil {
+		return nil, err
+	}
+
 	var dashboardIds []int
 	if args.Input.Dashboard != nil {
 		dashboardID, err := unmarshalDashboardID(*args.Input.Dashboard)
@@ -750,14 +758,6 @@ func (r *Resolver) SaveInsightAsNewView(ctx context.Context, args graphqlbackend
 	}
 	if lamDashboardId != 0 {
 		dashboardIds = append(dashboardIds, lamDashboardId)
-	}
-
-	var insightViewId string
-	if err := relay.UnmarshalSpec(args.Input.InsightViewID, &insightViewId); err != nil {
-		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
-	}
-	if err := permissionsValidator.validateUserAccessForView(ctx, insightViewId); err != nil {
-		return nil, err
 	}
 
 	views, err := insightTx.GetMapped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorization: true})
