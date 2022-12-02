@@ -4,17 +4,14 @@ import { mdiChevronDown, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 import { RouteComponentProps } from 'react-router'
-import { delay, map } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
-    Code,
     Container,
     Icon,
     Link,
-    LoadingSpinner,
     PageHeader,
     Popover,
     PopoverContent,
@@ -82,17 +79,18 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
     }, [telemetryService])
 
     const querySlowRequests = useCallback(
-        (args: FilteredConnectionQueryArguments & { failed?: boolean} ) =>
+        (args: FilteredConnectionQueryArguments & { failed?: boolean }) =>
             requestGraphQL<SlowRequestsResult, SlowRequestsVariables>(SLOW_REQUESTS, {
                 after: args.after ?? null,
                 query: args.query ?? null,
             }).pipe(
                 map(dataOrThrowErrors),
                 map(data => {
-                  data.slowRequests.nodes = data.slowRequests.nodes?.filter(request =>  
-                    (!args.query || matchesString(request, args.query)) && args.failed !== isSuccessful(request)
-                  )
-                  return data.slowRequests
+                    data.slowRequests.nodes = data.slowRequests.nodes?.filter(
+                        request =>
+                            (!args.query || matchesString(request, args.query)) && args.failed !== isSuccessful(request)
+                    )
+                    return data.slowRequests
                 })
             ),
         []
@@ -107,40 +105,45 @@ export const SiteAdminSlowRequestsPage: React.FunctionComponent<
                 description={
                     <>
                         This is the log of recent slow GraphQL requests received by the Sourcegraph instance. Handy for
-                        seeing what's happening between clients and our API.{' '}
-
-                        <br /><br />The <Icon aria-label="Copy cURL command" svgPath={mdiContentCopy} /> button will copy the GraphQL request as a cURL command in your clipboard. You will need to have $ACCESS_TOKEN set in your environment or to replace it in the copied command.
+                        seeing what's happening between clients and our API.
+                        <br />
+                        <br />
+                        The <Icon aria-label="Copy cURL command" svgPath={mdiContentCopy} /> button will copy the
+                        GraphQL request as a cURL command in your clipboard. You will need to have $ACCESS_TOKEN set in
+                        your environment or to replace it in the copied command.
+                        <br />
+                        <br />
+                        Slow requests capture is configured through{' '}
+                        <Link to="/site-admin/configuration">site config</Link>:
+                        <ul>
+                            <li>
+                                Minimum duration for a GraphQL request to be considered slow{' '}
+                                <strong>observability.logSlowGraphQLRequests</strong>
+                            </li>
+                            <li>
+                                Maximum count of captured requests to keep{' '}
+                                <strong>observability.captureSlowGraphQLRequestsLimit</strong>
+                            </li>
+                        </ul>
                     </>
                 }
                 className="mb-3"
             />
 
             <Container className="mb-3">
-                {/* {error && !loading && <ErrorAlert error={error} />}
-                {loading && !error && <LoadingSpinner />} */}
-                {50 ? (
-                    <FilteredConnection<SlowRequest>
-                        className="mb-0"
-                        listComponent="div"
-                        listClassName={classNames('list-group mb-3', styles.requestsGrid)}
-                        noun="request"
-                        pluralNoun="requests"
-                        queryConnection={querySlowRequests}
-                        nodeComponent={MigrationNode}
-                        filters={filters}
-                        history={history}
-                        location={history.location}
-                        cursorPaging={true}
-                    />
-                ) : (
-                    <>
-                        <Text>Slow request logging is currently disabled.</Text>
-                        <Text>
-                            Set `slowRequestLogLimit` to a non-zero value in your{' '}
-                            <Link to="/site-admin/configuration">site config</Link> to enable it.
-                        </Text>
-                    </>
-                )}
+                <FilteredConnection<SlowRequest>
+                    className="mb-0"
+                    listComponent="div"
+                    listClassName={classNames('list-group mb-3', styles.requestsGrid)}
+                    noun="request"
+                    pluralNoun="requests"
+                    queryConnection={querySlowRequests}
+                    nodeComponent={MigrationNode}
+                    filters={filters}
+                    history={history}
+                    location={history.location}
+                    cursorPaging={true}
+                />
             </Container>
         </div>
     )
