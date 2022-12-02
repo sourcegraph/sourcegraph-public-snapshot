@@ -66,20 +66,21 @@ RUN apk add --no-cache --verbose \
     # We require libstdc++ for p4-fusion
     libstdc++
 
-# IMPORTANT: If you update the syntect_server version below, you MUST confirm
-# the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
+# IMPORTANT: If you update the syntax-highlighter version below, you MUST confirm
+# the ENV variables from its Dockerfile (https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/syntax-highlighter/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
 # hadolint ignore=DL3022
 COPY --from=comby/comby:alpine-3.14-1.8.1@sha256:a5e80d6bad6af008478679809dc8327ebde7aeff7b23505b11b20e36aa62a0b2 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
-COPY --from=docker.io/sourcegraph/syntect_server:21-08-31_c330964@sha256:759f331a474d2a67b811a1b374b0b24a4661446a2d8e9b211f51ea8ae95e1130 /syntect_server /usr/local/bin/
+COPY --from=docker.io/sourcegraph/syntax-highlighter:186324_2022-12-01_02d3b4384446 /syntax_highlighter /usr/local/bin/
 
 
-# install minio (keep this up to date with docker-images/minio/Dockerfile)
-ENV MINIO_VERSION=RELEASE.2022-09-17T00-09-45Z
-RUN wget "https://dl.min.io/server/minio/release/linux-amd64/archive/minio.$MINIO_VERSION" && \
-    chmod +x "minio.$MINIO_VERSION" && \
-    mv "minio.$MINIO_VERSION" /usr/local/bin/minio
+# install blobstore (keep this up to date with the upstream Docker image
+# referenced in docker-images/)
+RUN apk add --no-cache --verbose openjdk11
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/blobstore:server /opt/s3proxy /opt/s3proxy
+
 
 COPY ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh

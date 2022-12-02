@@ -620,9 +620,6 @@ func (e *ExternalService) URN() string {
 // IsDeleted returns true if the external service is deleted.
 func (e *ExternalService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
 
-// IsSiteOwned returns true if the external service is owned by the site.
-func (e *ExternalService) IsSiteOwned() bool { return e.NamespaceUserID == 0 && e.NamespaceOrgID == 0 }
-
 // Update updates ExternalService e with the fields from the given newer ExternalService n,
 // returning true if modified.
 func (e *ExternalService) Update(ctx context.Context, n *ExternalService) (modified bool, _ error) {
@@ -1684,12 +1681,14 @@ func NewEncryptedSecret(cipher, keyID string, key encryption.Key) *EncryptableSe
 }
 
 // Webhook defines the information we need to handle incoming webhooks from a
-// code host
+// code host.
 type Webhook struct {
-	// The primary key, used for sorting and pagination
+	// The primary key, used for sorting and pagination.
 	ID int32
-	// UUID is the ID we display externally and will appear in the webhook URL
-	UUID         uuid.UUID
+	// UUID is the ID we display externally and will appear in the webhook URL.
+	UUID uuid.UUID
+	// Name is a descriptive webhook name which is shown on the UI for convenience.
+	Name         string
 	CodeHostKind string
 	CodeHostURN  extsvc.CodeHostBaseURL
 	// Secret can be in one of three states:
@@ -1706,4 +1705,19 @@ type Webhook struct {
 	UpdatedAt       time.Time
 	CreatedByUserID int32
 	UpdatedByUserID int32
+}
+
+type OutboundRequestLogItem struct {
+	ID                 string              `json:"id"`
+	StartedAt          time.Time           `json:"startedAt"`
+	Method             string              `json:"method"` // The request method (GET, POST, etc.)
+	URL                string              `json:"url"`
+	RequestHeaders     map[string][]string `json:"requestHeaders"`
+	RequestBody        string              `json:"requestBody"`
+	StatusCode         int32               `json:"statusCode"` // The response status code
+	ResponseHeaders    map[string][]string `json:"responseHeaders"`
+	Duration           float64             `json:"duration"`
+	ErrorMessage       string              `json:"errorMessage"`
+	CreationStackFrame string              `json:"creationStackFrame"`
+	CallStackFrame     string              `json:"callStackFrame"`
 }

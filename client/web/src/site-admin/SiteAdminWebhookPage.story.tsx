@@ -40,7 +40,7 @@ export const SiteAdminWebhookPageStory: Story = args => {
             },
             result: {
                 data: {
-                    node: createWebhookMock(ExternalServiceKind.GITHUB, 'github.com/repo1'),
+                    node: createWebhookMock(ExternalServiceKind.GITHUB, 'https://github.com/'),
                 },
             },
             nMatches: Number.POSITIVE_INFINITY,
@@ -137,6 +137,7 @@ function createWebhookMock(kind: ExternalServiceKind, urn: string): WebhookField
         __typename: 'Webhook',
         createdAt: formatRFC3339(TIMESTAMP_MOCK),
         id: '1',
+        name: 'GitHub.com commit push webhook',
         secret: 'secret-secret',
         updatedAt: formatRFC3339(TIMESTAMP_MOCK),
         url: 'sg.com/.api/webhooks/1aa2b42c-a14c-4aaa-b756-70c82e94d3e7',

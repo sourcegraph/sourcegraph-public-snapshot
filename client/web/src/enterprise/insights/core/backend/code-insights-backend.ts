@@ -9,14 +9,9 @@ import {
     DashboardDeleteInput,
     DashboardUpdateInput,
     DashboardUpdateResult,
-    FindInsightByNameInput,
-    GetBuiltInsightInput,
-    GetLangStatsInsightContentInput,
     InsightCreateInput,
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
-    CategoricalChartContent,
-    InsightContent,
 } from './code-insights-backend-types'
 
 /**
@@ -55,8 +50,6 @@ export interface CodeInsightsBackend {
      */
     getInsightById: (id: string) => Observable<Insight | null>
 
-    findInsightByName: (input: FindInsightByNameInput) => Observable<Insight | null>
-
     hasInsights: (insightsCount: number) => Observable<boolean>
 
     getActiveInsightsCount: (insightsCount: number) => Observable<number>
@@ -68,17 +61,6 @@ export interface CodeInsightsBackend {
     deleteInsight: (insightId: string) => Observable<unknown>
 
     removeInsightFromDashboard: (input: RemoveInsightFromDashboardInput) => Observable<unknown>
-
-    /**
-     * Returns extension like built-in insight that is fetched via frontend
-     * network utils to Sourcegraph search API.
-     */
-    getBuiltInInsightData: (input: GetBuiltInsightInput) => Observable<InsightContent<unknown>>
-
-    /**
-     * Returns content for the code stats insight live preview chart.
-     */
-    getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<CategoricalChartContent<unknown>>
 
     /**
      * Used for the dynamic insight example on the insights landing page.

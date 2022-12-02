@@ -1,4 +1,4 @@
-import { ComponentProps, MouseEvent, ReactElement, useMemo } from 'react'
+import { ComponentProps, MouseEvent, ReactElement, useMemo, useRef } from 'react'
 
 import { Group } from '@visx/group'
 import { scaleBand } from '@visx/scale'
@@ -23,7 +23,7 @@ interface GroupedBarsProps<Datum> extends ComponentProps<typeof Group> {
     getDatumColor: (datum: Datum) => string | undefined
     getDatumFadeColor?: (datum: Datum) => string
     getDatumLink: (datum: Datum) => string | undefined | null
-    onBarHover: (datum: Datum, category: Category<Datum>) => void
+    onBarHover: (datum: Datum, category: Category<Datum>, node: Element) => void
     onBarLeave: () => void
     onBarClick: (event: MouseEvent, datum: Datum, index: number) => void
     onBarFocus: (datum: Datum, category: Category<Datum>, node: Element) => void
@@ -51,6 +51,8 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
         ...attributes
     } = props
 
+    const rootRef = useRef<SVGGElement>(null)
+
     const xCategoriesScale = useMemo(
         () =>
             scaleBand<string>({
@@ -65,14 +67,21 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
         const [datum, category] = getActiveBar({ event, xScale, xCategoriesScale, categories })
 
         if (category && datum) {
+            const datumName = getDatumName(datum)
+            const element = rootRef.current?.querySelector<Element>(`[data-id="${getBarId(category.id, datumName)}"]`)
+
+            if (!element) {
+                return
+            }
+
             if (!activeSegment?.datum) {
-                onBarHover(datum, category)
+                onBarHover(datum, category, element)
                 return
             }
 
             // Do not call onBarHover every time we mouse move over the same datum
-            if (getDatumName(activeSegment.datum) !== getDatumName(datum)) {
-                onBarHover(datum, category)
+            if (getDatumName(activeSegment.datum) !== datumName) {
+                onBarHover(datum, category, element)
             }
         } else {
             onBarLeave()
@@ -88,7 +97,13 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
     }
 
     return (
-        <Group {...attributes} pointerEvents="bounding-rect" aria-label="Bar chart content" role="list">
+        <Group
+            {...attributes}
+            innerRef={rootRef}
+            pointerEvents="bounding-rect"
+            aria-label="Bar chart content"
+            role="list"
+        >
             {categories.map(category => (
                 <Group key={category.id} left={xScale(category.id)} height={height}>
                     {category.data.map((datum, index) => {
@@ -116,7 +131,8 @@ export function GroupedBars<Datum>(props: GroupedBarsProps<Datum>): ReactElement
 
                         return (
                             <MaybeLink
-                                key={`bar-group-bar-${category.id}-${name}`}
+                                key={`${category.id}-${name}`}
+                                data-id={getBarId(category.id, name)}
                                 to={getDatumLink(datum)}
                                 onFocus={event => onBarFocus(datum, category, event.target)}
                                 onClick={event => onBarClick(event, datum, index)}
@@ -199,4 +215,12 @@ function getActiveBar<Datum>(input: GetActiveBarInput<Datum>): ActiveBarTuple<Da
     }
 
     return [null, null, null]
+}
+
+function getBarId(categoryId: string, datumName: string): string {
+    if (categoryId === datumName) {
+        return categoryId
+    }
+
+    return `${categoryId}${datumName}`
 }

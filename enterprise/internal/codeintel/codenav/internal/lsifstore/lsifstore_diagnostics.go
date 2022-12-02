@@ -2,6 +2,7 @@ package lsifstore
 
 import (
 	"context"
+	"errors"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
@@ -21,8 +22,11 @@ func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix string,
 	}})
 	defer endObservation(1, observation.Args{})
 
-	query := sqlf.Sprintf(diagnosticsQuery, bundleID, prefix+"%")
-	documentData, err := s.scanDocumentData(s.db.Query(ctx, query))
+	documentData, err := s.scanDocumentData(s.db.Query(ctx, sqlf.Sprintf(
+		diagnosticsQuery,
+		bundleID,
+		prefix+"%",
+	)))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -30,21 +34,31 @@ func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix string,
 
 	totalCount := 0
 	for _, documentData := range documentData {
-		totalCount += len(documentData.Document.Diagnostics)
+		if documentData.SCIPData != nil {
+			return nil, 0, errors.New("SCIP diagnostics unimplemented")
+		} else {
+			totalCount += len(documentData.LSIFData.Diagnostics)
+		}
 	}
 	trace.Log(log.Int("totalCount", totalCount))
 
 	diagnostics := make([]shared.Diagnostic, 0, limit)
 	for _, documentData := range documentData {
-		for _, diagnostic := range documentData.Document.Diagnostics {
-			offset--
+		if documentData.SCIPData != nil {
+			return nil, 0, errors.New("SCIP diagnostics unimplemented")
+		} else {
+			for _, diagnostic := range documentData.LSIFData.Diagnostics {
+				offset--
 
-			if offset < 0 && len(diagnostics) < limit {
-				diagnostics = append(diagnostics, shared.Diagnostic{
-					DumpID:         bundleID,
-					Path:           documentData.Path,
-					DiagnosticData: diagnostic,
-				})
+				if offset < 0 && len(diagnostics) < limit {
+					diagnostics = append(diagnostics, shared.Diagnostic{
+						DumpID:         bundleID,
+						Path:           documentData.Path,
+						DiagnosticData: diagnostic,
+					})
+				} else {
+					break
+				}
 			}
 		}
 	}
@@ -61,7 +75,8 @@ SELECT
 	NULL AS hovers,
 	NULL AS monikers,
 	NULL AS packages,
-	diagnostics
+	diagnostics,
+	NULL AS scip_document
 FROM
 	lsif_data_documents
 WHERE

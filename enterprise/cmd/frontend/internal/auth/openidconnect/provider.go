@@ -158,7 +158,7 @@ func newOIDCProvider(issuerURL string) (*oidcProvider, error) {
 		return mockNewProvider(issuerURL)
 	}
 
-	bp, err := oidc.NewProvider(context.Background(), issuerURL)
+	bp, err := oidc.NewProvider(oidc.ClientContext(context.Background(), httpcli.ExternalClient), issuerURL)
 	if err != nil {
 		return nil, err
 	}

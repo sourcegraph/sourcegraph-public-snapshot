@@ -687,6 +687,59 @@ type Hunk struct {
 	Filename string
 }
 
+// StreamBlameFile returns Git blame information about a file.
+func (c *clientImplementor) StreamBlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (HunkReader, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: StreamBlameFile")
+	span.SetTag("repo", repo)
+	span.SetTag("path", path)
+	span.SetTag("opt", opt)
+	defer span.Finish()
+
+	return streamBlameFileCmd(ctx, checker, repo, path, opt, c.gitserverGitCommandFunc(repo))
+}
+
+type errUnauthorizedStreamBlame struct {
+	Repo api.RepoName
+}
+
+func (e errUnauthorizedStreamBlame) Unauthorized() bool {
+	return true
+}
+
+func (e errUnauthorizedStreamBlame) Error() string {
+	return fmt.Sprintf("not authorized (name=%s)", e.Repo)
+}
+
+func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions, command gitCommandFunc) (HunkReader, error) {
+	a := actor.FromContext(ctx)
+	hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path)
+	if err != nil {
+		return nil, err
+	}
+	if !hasAccess {
+		return nil, errUnauthorizedStreamBlame{Repo: repo}
+	}
+	if opt == nil {
+		opt = &BlameOptions{}
+	}
+	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
+		return nil, err
+	}
+
+	args := []string{"blame", "-w", "--porcelain", "--incremental"}
+	if opt.StartLine != 0 || opt.EndLine != 0 {
+		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
+	}
+	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
+
+	rc, err := command(args).StdoutReader(ctx)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed", args))
+	}
+
+	return newBlameHunkReader(ctx, rc), nil
+}
+
 // BlameFile returns Git blame information about a file.
 func (c *clientImplementor) BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: BlameFile")
@@ -723,10 +776,15 @@ func blameFileCmd(ctx context.Context, command gitCommandFunc, path string, opt 
 		return nil, nil
 	}
 
+	return parseGitBlameOutput(string(out))
+}
+
+// parseGitBlameOutput parses the output of `git blame -w --porcelain`
+func parseGitBlameOutput(out string) ([]*Hunk, error) {
 	commits := make(map[string]gitdomain.Commit)
 	filenames := make(map[string]string)
 	hunks := make([]*Hunk, 0)
-	remainingLines := strings.Split(string(out[:len(out)-1]), "\n")
+	remainingLines := strings.Split(out[:len(out)-1], "\n")
 	byteOffset := 0
 	for len(remainingLines) > 0 {
 		// Consume hunk

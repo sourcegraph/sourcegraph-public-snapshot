@@ -116,6 +116,8 @@ type JSContext struct {
 	EnableLegacyExtensions bool `json:"enableLegacyExtensions"`
 
 	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
+
+	OutboundRequestLogLimit int `json:"outboundRequestLogLimit"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -250,6 +252,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		EnableLegacyExtensions: conf.ExperimentalFeatures().EnableLegacyExtensions,
 
 		LicenseInfo: licenseInfo,
+
+		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
 	}
 }
 

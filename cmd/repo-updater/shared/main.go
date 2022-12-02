@@ -198,11 +198,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker", ""), store)
 
 	// git-server repos purging thread
-	var purgeTTL time.Duration
-	if envvar.SourcegraphDotComMode() {
-		purgeTTL = 14 * 24 * time.Hour // two weeks
-	}
-	go repos.RunRepositoryPurgeWorker(ctx, log.Scoped("RepositoryPurgeWorker", ""), db, purgeTTL)
+	go repos.RunRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker", "remove deleted repositories"),
+		db, conf.DefaultClient())
 
 	// Git fetches scheduler
 	go repos.RunScheduler(ctx, logger, updateScheduler)

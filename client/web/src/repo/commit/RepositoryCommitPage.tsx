@@ -174,7 +174,9 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
         (args: FilteredConnectionQueryArguments): Observable<RepositoryComparisonDiff['comparison']['fileDiffs']> =>
             // Non-null assertions here are safe because the query is only executed if the commit is defined.
             queryRepositoryComparisonFileDiffs({
-                ...args,
+                first: args.first ?? null,
+                after: args.after ?? null,
+                paths: [],
                 repo: props.repo.id,
                 base: commitParentOrEmpty(commit!),
                 head: commit!.oid,

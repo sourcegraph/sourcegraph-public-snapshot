@@ -3,6 +3,10 @@ package lsifstore
 import (
 	"database/sql"
 
+	"github.com/sourcegraph/scip/bindings/go/scip"
+	"google.golang.org/protobuf/proto"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -30,37 +34,52 @@ func (s *store) scanFirstDocumentData(rows *sql.Rows, queryErr error) (_ Qualifi
 // scanSingleDocumentDataObject populates a qualified document data value from the given cursor.
 func (s *store) scanSingleDocumentDataObject(rows *sql.Rows) (QualifiedDocumentData, error) {
 	var rawData []byte
+	var uploadID int
+	var path string
 	var encoded MarshalledDocumentData
-	var record QualifiedDocumentData
+	var scipPayload []byte
 
 	if err := rows.Scan(
-		&record.UploadID,
-		&record.Path,
+		&uploadID,
+		&path,
 		&rawData,
 		&encoded.Ranges,
 		&encoded.HoverResults,
 		&encoded.Monikers,
 		&encoded.PackageInformation,
 		&encoded.Diagnostics,
+		&scipPayload,
 	); err != nil {
 		return QualifiedDocumentData{}, err
 	}
 
-	if len(rawData) != 0 {
+	qualifiedData := QualifiedDocumentData{
+		UploadID: uploadID,
+		Path:     path,
+	}
+
+	if len(scipPayload) != 0 {
+		var data scip.Document
+		if err := proto.Unmarshal(scipPayload, &data); err != nil {
+			return QualifiedDocumentData{}, err
+		}
+
+		qualifiedData.SCIPData = &data
+	} else if len(rawData) != 0 {
 		data, err := s.serializer.UnmarshalLegacyDocumentData(rawData)
 		if err != nil {
 			return QualifiedDocumentData{}, err
 		}
-		record.Document = data
+		qualifiedData.LSIFData = &data
 	} else {
 		data, err := s.serializer.UnmarshalDocumentData(encoded)
 		if err != nil {
 			return QualifiedDocumentData{}, err
 		}
-		record.Document = data
+		qualifiedData.LSIFData = &data
 	}
 
-	return record, nil
+	return qualifiedData, nil
 }
 
 // makeResultChunkVisitor returns a function that accepts a mapping function, reads
@@ -107,7 +126,7 @@ func (s *store) makeDocumentVisitor(f func(string, precise.DocumentData)) func(r
 				return err
 			}
 
-			f(record.Path, record.Document)
+			f(record.Path, *record.LSIFData)
 		}
 
 		return nil
@@ -137,17 +156,40 @@ func (s *store) scanQualifiedMonikerLocations(rows *sql.Rows, queryErr error) (_
 // scanSingleQualifiedMonikerLocationsObject populates a qualified moniker locations value
 // from the given cursor.
 func (s *store) scanSingleQualifiedMonikerLocationsObject(rows *sql.Rows) (QualifiedMonikerLocations, error) {
+	var uri string
+	var scipPayload []byte
 	var rawData []byte
 	var record QualifiedMonikerLocations
-	if err := rows.Scan(&record.DumpID, &record.Scheme, &record.Identifier, &rawData); err != nil {
+
+	if err := rows.Scan(&record.DumpID, &record.Scheme, &record.Identifier, &rawData, &scipPayload, &uri); err != nil {
 		return QualifiedMonikerLocations{}, err
 	}
 
-	data, err := s.serializer.UnmarshalLocations(rawData)
-	if err != nil {
-		return QualifiedMonikerLocations{}, err
+	if len(scipPayload) != 0 {
+		ranges, err := types.DecodeRanges(scipPayload)
+		if err != nil {
+			return QualifiedMonikerLocations{}, err
+		}
+
+		locations := make([]precise.LocationData, 0, len(ranges))
+		for _, r := range ranges {
+			locations = append(locations, precise.LocationData{
+				URI:            uri,
+				StartLine:      int(r.Start.Line),
+				StartCharacter: int(r.Start.Character),
+				EndLine:        int(r.End.Line),
+				EndCharacter:   int(r.End.Character),
+			})
+		}
+
+		record.Locations = locations
+	} else {
+		data, err := s.serializer.UnmarshalLocations(rawData)
+		if err != nil {
+			return QualifiedMonikerLocations{}, err
+		}
+		record.Locations = data
 	}
-	record.Locations = data
 
 	return record, nil
 }
