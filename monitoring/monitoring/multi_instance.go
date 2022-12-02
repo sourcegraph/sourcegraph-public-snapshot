@@ -43,12 +43,13 @@ func renderMultiInstanceDashboard(dashboards []*Dashboard, groupings []string) (
 		variableMatchers = append(variableMatchers, m)
 	}
 
-	for _, d := range dashboards {
-		var row *sdk.Row
+	var offsetY int
+	for dashboardIndex, d := range dashboards {
+		var row *sdk.Panel
 		var addDashboardRow sync.Once
-		for _, g := range d.Groups {
+		for groupIndex, g := range d.Groups {
 			for _, r := range g.Rows {
-				for _, o := range r {
+				for observableIndex, o := range r {
 					if !o.MultiInstance {
 						continue
 					}
@@ -56,22 +57,37 @@ func renderMultiInstanceDashboard(dashboards []*Dashboard, groupings []string) (
 					// Only add row if this dashboard has a multi instance panel, and only
 					// do it once per dashboard
 					addDashboardRow.Do(func() {
-						row = board.AddRow(d.Title)
-						row.ShowTitle = true
-						row.Collapse = true // avoid crazy loading times
+						row = &sdk.Panel{RowPanel: &sdk.RowPanel{}}
+						row.OfType = sdk.RowType
+						row.Type = "row"
+						row.Title = d.Title
+						row.Collapsed = true // avoid crazy loading times
+						offsetY++
+						setPanelPos(row, 0, offsetY)
+						row.Panels = []sdk.Panel{} // cannot be null
+						board.Panels = append(board.Panels, row)
 					})
 
-					// TODO make this size correctly in this context and output a valid
-					// dashboard, right now it isn't quite right
+					// Generate the panel with groupings and variables
+					offsetY++
 					panel, err := o.renderPanel(d, panelManipulationOptions{
 						injectGroupings:     groupings,
 						injectLabelMatchers: variableMatchers,
-					}, nil)
+					}, &panelRenderOptions{
+						// these indexes are only used for identification
+						groupIndex: dashboardIndex,
+						rowIndex:   groupIndex,
+						panelIndex: observableIndex,
+
+						panelWidth:  24,      // max-width
+						panelHeight: 10,      // tall dashboards!
+						offsetY:     offsetY, // total index added
+					})
 					if err != nil {
 						return nil, errors.Wrapf(err, "render panel for %q", o.Name)
 					}
 
-					row.Add(panel)
+					row.RowPanel.Panels = append(row.RowPanel.Panels, *panel)
 				}
 			}
 		}
