@@ -43,7 +43,9 @@ func captureSlowRequest(ctx context.Context, logger log.Logger, req *types.SlowR
 		logger.Warn("failed to marshal slowRequest", log.Error(err))
 		return
 	}
-	slowRequestRedisRecentList.Insert(b)
+	if err := slowRequestRedisRecentList.Insert(b); err != nil {
+		logger.Warn("failed to capture slowRequest", log.Error(err))
+	}
 }
 
 // getSlowRequestsAfter returns the last limit slow requests, starting at the request whose ID is set to after.
@@ -130,7 +132,10 @@ func (r *slowRequestConnectionResolver) Nodes(ctx context.Context) ([]*slowReque
 }
 
 func (r *slowRequestConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	n := slowRequestRedisRecentList.Size()
+	n, err := slowRequestRedisRecentList.Size()
+	if err != nil {
+		return 0, err
+	}
 	return int32(n), nil
 }
 
