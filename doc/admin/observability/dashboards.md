@@ -24445,11 +24445,20 @@ To see this dashboard, visit `/-/debug/grafana/d/otel-collector/otel-collector` 
 
 ### Open Telemetry Collector: Receivers
 
-#### otel-collector: otel-span-receive-rate
+#### otel-collector: otel_span_receive_rate
 
 <p class="subtitle">Spans received per second</p>
 
 								Shows the rate of spans accepted by the configured reveiver
+								
+								A Trace is a collection of spans and a span represents a unit of work or operation. Spans are the building blocks of Traces.
+								The spans have only been accepted by the receiver, which means they still have to move through the configured pipeline to be exported.
+								For more information on tracing and configuration of a OpenTelemetry receiver see https://opentelemetry.io/docs/collector/configuration/#receivers.
+								
+								See the Exporters section see spans that have made it through the pipeline and are exported.
+								
+								Depending the configured processors, received spans might be dropped and not exported. For more information on configuring processors see
+								https://opentelemetry.io/docs/collector/configuration/#processors.
 
 This panel has no related alerts.
 
@@ -24466,11 +24475,16 @@ Query: `sum(rate(otelcol_receiver_accepted_spans{receiver=~"^.*"}[1m])) by (rece
 
 <br />
 
-#### otel-collector: otel-span-refused
+#### otel-collector: otel_span_refused
 
 <p class="subtitle">Spans that the receiver refused</p>
 
-								Shows the rate of spans accepted by the configured reveiver
+								Shows the amount of spans that have been refused by a receiver.
+								
+								A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
+							
+ 								Spans can be rejected either due to a misconfigured receiver or receiving spans in the wrong format. The log of the collector will have more information on why a span was rejected.
+								For more information on tracing and configuration of a OpenTelemetry receiver see https://opentelemetry.io/docs/collector/configuration/#receivers.
 
 This panel has no related alerts.
 
@@ -24489,11 +24503,16 @@ Query: `sum(rate(otelcol_receiver_refused_spans{receiver=~"^.*.*"}[1m])) by (rec
 
 ### Open Telemetry Collector: Exporters
 
-#### otel-collector: otel-span-export-rate
+#### otel-collector: otel_span_export_rate
 
 <p class="subtitle">Spans exported per second</p>
 
 								Shows the rate of spans being sent by the exporter
+ 								
+								A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
+								The rate of spans here indicates spans that have made it through the configured pipeline and have been sent to the configured export destination.
+								
+								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
 
 This panel has no related alerts.
 
@@ -24510,11 +24529,13 @@ Query: `sum(rate(otelcol_exporter_sent_spans{exporter=~"^.*"}[1m])) by (exporter
 
 <br />
 
-#### otel-collector: otel-span-failed-send-size
+#### otel-collector: otel_span_failed_send_size
 
 <p class="subtitle">Spans that the exporter failed to send</p>
 
 								Shows the rate of spans failed to be sent by the configured reveiver. A number higher than 0 for a long period can indicate a problem with the exporter configuration or with the service that is being exported too
+								
+								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
 
 This panel has no related alerts.
 
@@ -24531,11 +24552,13 @@ Query: `sum(rate(otelcol_exporter_send_failed_spans{exporter=~"^.*"}[1m])) by (e
 
 <br />
 
-#### otel-collector: otel-span-queue-size
+#### otel-collector: otel_span_queue_size
 
 <p class="subtitle">Spans pending to be sent</p>
 
-								Indicates the amount of spans that are in the queue to be sent (exported). A high queue count might indicate a high volume of spans or a problem with the receiving service
+								Indicates the amount of spans that are in the queue to be sent (exported). A high queue count might indicate a high volume of spans or a problem with the receiving service to which spans are being exported too
+								
+								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
 
 This panel has no related alerts.
 
@@ -24552,11 +24575,13 @@ Query: `sum(rate(otelcol_exporter_queue_size{exporter=~"^.*"}[1m])) by (exporter
 
 <br />
 
-#### otel-collector: otel-span-queue-capacity
+#### otel-collector: otel_span_queue_capacity
 
 <p class="subtitle">Spans max items that can be pending to be sent</p>
 
 								Indicates the amount of spans that are in the queue to be sent (exported). A high queue count might indicate a high volume of spans or a problem with the receiving service
+								
+								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
 
 This panel has no related alerts.
 
@@ -24575,11 +24600,11 @@ Query: `sum(rate(otelcol_exporter_queue_capacity{exporter=~"^.*"}[1m])) by (expo
 
 ### Open Telemetry Collector: Collector resource usage
 
-#### otel-collector: otel-cpu-usage
+#### otel-collector: otel_cpu_usage
 
 <p class="subtitle">Cpu usuge of the collector</p>
 
-								Shows the rate of spans accepted by the configured reveiver
+								Shows the cpu usage of the OpenTelemetry collector
 
 This panel has no related alerts.
 
@@ -24596,11 +24621,11 @@ Query: `sum(rate(otelcol_process_cpu_seconds{job=~"^.*"}[1m])) by (job)`
 
 <br />
 
-#### otel-collector: otel-memory-rss
+#### otel-collector: otel_memory_resident_set_size
 
 <p class="subtitle">Memory allocated to the otel collector</p>
 
-								Shows the rate of spans accepted by the configured reveiver
+								Shows the memory Resident Set Size (RSS) allocated to the OpenTelemetry collector
 
 This panel has no related alerts.
 
@@ -24617,15 +24642,17 @@ Query: `sum(rate(otelcol_process_memory_rss{job=~"^.*"}[1m])) by (job)`
 
 <br />
 
-#### otel-collector: otel-memory-usage
+#### otel-collector: otel_memory_usage
 
 <p class="subtitle">Total memory usage</p>
 
 								Shows how much memory is being used by the otel collector.
-
+								
 								* High memory usage might indicate thad the configured pipeline is keeping a lot of spans in memory for processing
 								* Spans failing to be sent and the exporter is configured to retry
 								* A high bacth count by using a batch processor
+								
+								For more information on configuring processors for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#processors.
 
 This panel has no related alerts.
 
@@ -24637,6 +24664,118 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <summary>Technical details</summary>
 
 Query: `sum(rate(otelcol_process_runtime_total_alloc_bytes{job=~"^.*"}[1m])) by (job)`
+
+</details>
+
+<br />
+
+### Open Telemetry Collector: Container monitoring (not available on server)
+
+#### otel-collector: container_missing
+
+<p class="subtitle">Container missing</p>
+
+This value is the number of times a container has not been seen for more than one minute. If you observe this
+value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
+
+- **Kubernetes:**
+	- Determine if the pod was OOM killed using `kubectl describe pod otel-collector` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p otel-collector`.
+- **Docker Compose:**
+	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' otel-collector` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the otel-collector container in `docker-compose.yml`.
+	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs otel-collector` (note this will include logs from the previous and currently running container).
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `count by(name) ((time() - container_last_seen{name=~"^otel-collector.*"}) > 60)`
+
+</details>
+
+<br />
+
+#### otel-collector: container_cpu_usage
+
+<p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
+
+Refer to the [alerts reference](./alerts.md#otel-collector-container-cpu-usage) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100301` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^otel-collector.*"}`
+
+</details>
+
+<br />
+
+#### otel-collector: container_memory_usage
+
+<p class="subtitle">Container memory usage by instance</p>
+
+Refer to the [alerts reference](./alerts.md#otel-collector-container-memory-usage) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100302` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `cadvisor_container_memory_usage_percentage_total{name=~"^otel-collector.*"}`
+
+</details>
+
+<br />
+
+#### otel-collector: fs_io_operations
+
+<p class="subtitle">Filesystem reads and writes rate by instance over 1h</p>
+
+This value indicates the number of filesystem read and write operations by containers of this service.
+When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100303` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(name) (rate(container_fs_reads_total{name=~"^otel-collector.*"}[1h]) + rate(container_fs_writes_total{name=~"^otel-collector.*"}[1h]))`
+
+</details>
+
+<br />
+
+### Open Telemetry Collector: Kubernetes monitoring (only available on Kubernetes)
+
+#### otel-collector: pods_available_percentage
+
+<p class="subtitle">Percentage pods available</p>
+
+Refer to the [alerts reference](./alerts.md#otel-collector-pods-available-percentage) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100400` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(app) (up{app=~".*otel-collector"}) / count by (app) (up{app=~".*otel-collector"}) * 100`
 
 </details>
 
