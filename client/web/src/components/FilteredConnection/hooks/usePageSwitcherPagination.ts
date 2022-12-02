@@ -91,7 +91,6 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
 
     const { data, error, loading, refetch } = useQuery<TResult, TVariables>(query, {
         variables: initialQueryVariables,
-        notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `refetch`
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
     })
