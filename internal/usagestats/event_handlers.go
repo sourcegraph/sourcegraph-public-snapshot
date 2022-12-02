@@ -43,7 +43,7 @@ type Event struct {
 	Referrer         *string
 	OriginalReferrer *string
 	SessionReferrer  *string
-	SessionFirstUrl  *string
+	SessionFirstURL  *string
 	Argument         json.RawMessage
 	PublicArgument   json.RawMessage
 	UserProperties   json.RawMessage
@@ -116,7 +116,7 @@ type bigQueryEvent struct {
 	Referrer         string  `json:"referrer,omitempty"`
 	OriginalReferrer string  `json:"original_referrer"`
 	SessionReferrer  string  `json:"session_referrer"`
-	SessionFirstUrl  string  `json:"session_first_url"`
+	SessionFirstURL  string  `json:"session_first_url"`
 	PublicArgument   string  `json:"public_argument"`
 	DeviceID         *string `json:"device_id,omitempty"`
 	InsertID         *string `json:"insert_id,omitempty"`
@@ -168,9 +168,9 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 		if event.SessionReferrer != nil {
 			sessionReferrer = *event.SessionReferrer
 		}
-		sessionFirstUrl := ""
-		if event.SessionFirstUrl != nil {
-			sessionFirstUrl = *event.SessionFirstUrl
+		sessionFirstURL := ""
+		if event.SessionFirstURL != nil {
+			sessionFirstURL = *event.SessionFirstURL
 		}
 		featureFlagJSON, err := json.Marshal(event.EvaluatedFlagSet)
 		if err != nil {
@@ -192,7 +192,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			Referrer:         referrer,
 			OriginalReferrer: originalReferrer,
 			SessionReferrer:  sessionReferrer,
-			SessionFirstUrl:  sessionFirstUrl,
+			SessionFirstURL:  sessionFirstURL,
 			Source:           event.Source,
 			Timestamp:        time.Now().UTC().Format(time.RFC3339),
 			Version:          version.Version(),

@@ -480,7 +480,7 @@ type Mutation {
         """
         The sessions first url for a user
         """
-        sessionFirstUrl: String
+        sessionFirstURL: String
         """
         Device session ID to identify the user's session for analytics.
         """
@@ -865,7 +865,7 @@ input Event {
     """
     The sessions first url for a user
     """
-    sessionFirstUrl: String
+    sessionFirstURL: String
     """
     Device session ID to identify the user's session for analytics.
     """
