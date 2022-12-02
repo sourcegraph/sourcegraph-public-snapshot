@@ -20,7 +20,7 @@ import (
 //
 // 🚨 SECURITY: calling code is responsible for validating that the given repo
 // can be seen by the current user; although GetRepoMetadata performs an authz
-// check as part of its query, a failed authz check will still results in the
+// check as part of its query, a failed authz check will still result in the
 // gitserver being hit for the repo, which could expose a side channel of
 // information about the existence or not of the given repo.
 func getRepoMetadata(ctx context.Context, tx *store.Store, client gitserver.Client, repo *types.Repo) (*btypes.RepoMetadata, error) {
@@ -33,7 +33,7 @@ func getRepoMetadata(ctx context.Context, tx *store.Store, client gitserver.Clie
 	if (err == store.ErrNoResults) ||
 		(!meta.UpdatedAt.IsZero() && meta.UpdatedAt.Before(repo.UpdatedAt)) ||
 		meta.UpdatedAt.Before(repo.CreatedAt) {
-		meta, err = calculateRepoMetadata(ctx, client, repo)
+		meta, err = CalculateRepoMetadata(ctx, client, repo)
 		if err != nil {
 			return nil, errors.Wrap(err, "refreshing repo metadata")
 		}
@@ -48,7 +48,12 @@ func getRepoMetadata(ctx context.Context, tx *store.Store, client gitserver.Clie
 
 const batchIgnoreFilePath = ".batchignore"
 
-func calculateRepoMetadata(ctx context.Context, client gitserver.Client, repo *types.Repo) (meta *btypes.RepoMetadata, err error) {
+// CalculateRepoMetadata calculates and persists the repo metadata for the given
+// repo.
+//
+// 🚨 SECURITY: calling code is responsible for validating that the given repo
+// can be updated by the given user.
+func CalculateRepoMetadata(ctx context.Context, client gitserver.Client, repo *types.Repo) (meta *btypes.RepoMetadata, err error) {
 	traceTitle := fmt.Sprintf("RepoID: %q", repo.ID)
 	tr, ctx := trace.New(ctx, "calculateRepoMetadata", traceTitle)
 	defer func() {
