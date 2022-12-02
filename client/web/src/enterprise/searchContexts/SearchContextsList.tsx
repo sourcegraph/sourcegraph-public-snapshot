@@ -190,7 +190,7 @@ const SearchContextsTableWrapper: React.FunctionComponent<PropsWithChildren<{}>>
 )
 
 const SearchContextsTableHeader: React.FunctionComponent = () => (
-    <thead className={styles.tableHeader}>
+    <thead>
         <tr>
             <th>
                 <span className="sr-only">Starred</span>
