@@ -156,7 +156,7 @@ func OtelCollector() *monitoring.Dashboard {
 								
 								* High memory usage might indicate thad the configured pipeline is keeping a lot of spans in memory for processing
 								* Spans failing to be sent and the exporter is configured to retry
-								* A high bacth count by using a batch processor
+								* A high batch count by using a batch processor
 								
 								For more information on configuring processors for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#processors.`,
 						},
