@@ -54,7 +54,7 @@ kubectl -n ns-sourcegraph exec -it pgsql -- psql -U sg -c 'ALTER TABLE external_
 
 Then check the database again with the `drift` command and proceed with your multiversion upgrade.
 
-> Note: It is possible for the drift command to detect diffs which will not prevent prevent upgrades.
+> Note: It is possible for the drift command to detect diffs which will not prevent upgrades.
 
 If migrator drift suggests SQL queries which don't make sense please report to support@sourcegraph.com or open an issue in the [`sourcegraph/sourcegraph`](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=) repo.
 
