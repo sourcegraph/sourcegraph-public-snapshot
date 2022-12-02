@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -14,6 +15,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func (s *Store) EnqueueRepoMetadataSyncs(ctx context.Context, ids []api.RepoID) error {
+	// TODO: observationContext
+
+	return s.Exec(ctx, enqueueRepoMetadataSyncsQuery(ids, s.now()))
+}
+
+const enqueueRepoMetadataSyncsQueryFmtstr = `
+UPDATE
+  batch_changes_repo_metadata
+SET
+  state = 'queued',
+  queued_at = %s
+WHERE
+  repo_id = ANY (%s)
+`
+
+func enqueueRepoMetadataSyncsQuery(ids []api.RepoID, now time.Time) *sqlf.Query {
+	return sqlf.Sprintf(
+		enqueueRepoMetadataSyncsQueryFmtstr,
+		now,
+		pq.Array(ids),
+	)
+}
 
 func (s *Store) GetRepoMetadata(ctx context.Context, repoID api.RepoID) (meta *btypes.RepoMetadata, err error) {
 	ctx, _, endObservation := s.operations.getRepoMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{

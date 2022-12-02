@@ -115,3 +115,24 @@ var initBatchSpecResolutionWorkerStore = memo.NewMemoizedConstructor(func() (dbw
 
 	return store.NewBatchSpecResolutionWorkerStore(db.Handle(), observationContext), nil
 })
+
+// InitRepoMetadataWorkerStore initializes and returns a dbworker.Store instance
+// for the repo metadata worker.
+func InitRepoMetadataWorkerStore() (dbworkerstore.Store[*types.RepoMetadataWithName], error) {
+	return initRepoMetadataWorkerStore.Init()
+}
+
+var initRepoMetadataWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store[*types.RepoMetadataWithName], error) {
+	observationContext := &observation.Context{
+		Logger:     log.Scoped("store.repo_metadata", "the repo metadata worker store"),
+		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	db, err := workerdb.InitDBWithLogger(observationContext.Logger)
+	if err != nil {
+		return nil, err
+	}
+
+	return store.NewRepoMetadataWorkerStore(db.Handle(), observationContext), nil
+})

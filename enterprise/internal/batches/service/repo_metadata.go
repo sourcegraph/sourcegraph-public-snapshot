@@ -33,7 +33,10 @@ func getRepoMetadata(ctx context.Context, tx *store.Store, client gitserver.Clie
 	if (err == store.ErrNoResults) ||
 		(!meta.UpdatedAt.IsZero() && meta.UpdatedAt.Before(repo.UpdatedAt)) ||
 		meta.UpdatedAt.Before(repo.CreatedAt) {
-		meta, err = CalculateRepoMetadata(ctx, client, repo)
+		meta, err = CalculateRepoMetadata(ctx, client, CalculateRepoMetadataOpts{
+			ID:   repo.ID,
+			Name: repo.Name,
+		})
 		if err != nil {
 			return nil, errors.Wrap(err, "refreshing repo metadata")
 		}
@@ -48,13 +51,18 @@ func getRepoMetadata(ctx context.Context, tx *store.Store, client gitserver.Clie
 
 const batchIgnoreFilePath = ".batchignore"
 
+type CalculateRepoMetadataOpts struct {
+	ID   api.RepoID
+	Name api.RepoName
+}
+
 // CalculateRepoMetadata calculates and persists the repo metadata for the given
 // repo.
 //
 // 🚨 SECURITY: calling code is responsible for validating that the given repo
 // can be updated by the given user.
-func CalculateRepoMetadata(ctx context.Context, client gitserver.Client, repo *types.Repo) (meta *btypes.RepoMetadata, err error) {
-	traceTitle := fmt.Sprintf("RepoID: %q", repo.ID)
+func CalculateRepoMetadata(ctx context.Context, client gitserver.Client, opts CalculateRepoMetadataOpts) (meta *btypes.RepoMetadata, err error) {
+	traceTitle := fmt.Sprintf("RepoID: %q", opts.ID)
 	tr, ctx := trace.New(ctx, "calculateRepoMetadata", traceTitle)
 	defer func() {
 		tr.SetError(err)
@@ -62,25 +70,25 @@ func CalculateRepoMetadata(ctx context.Context, client gitserver.Client, repo *t
 	}()
 
 	// Figure out the head commit, since we need it to stat the file.
-	commit, ok, err := client.Head(ctx, repo.Name, authz.DefaultSubRepoPermsChecker)
+	commit, ok, err := client.Head(ctx, opts.Name, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
-		return nil, errors.Wrapf(err, "resolving head commit in repo %q", string(repo.Name))
+		return nil, errors.Wrapf(err, "resolving head commit in repo %q", string(opts.Name))
 	}
 	if !ok {
-		return nil, errors.Newf("no head commit for repo %q", string(repo.Name))
+		return nil, errors.Newf("no head commit for repo %q", string(opts.Name))
 	}
 
-	meta = &btypes.RepoMetadata{RepoID: repo.ID, Ignored: false}
-	meta.Ignored, err = hasBatchIgnoreFile(ctx, client, repo, api.CommitID(commit))
+	meta = &btypes.RepoMetadata{RepoID: opts.ID, Ignored: false}
+	meta.Ignored, err = hasBatchIgnoreFile(ctx, client, opts.Name, api.CommitID(commit))
 	if err != nil {
-		return nil, errors.Wrapf(err, "looking for %s file in repo %q", batchIgnoreFilePath, string(repo.Name))
+		return nil, errors.Wrapf(err, "looking for %s file in repo %q", batchIgnoreFilePath, string(opts.Name))
 	}
 
 	return meta, nil
 }
 
-func hasBatchIgnoreFile(ctx context.Context, client gitserver.Client, repo *types.Repo, commit api.CommitID) (bool, error) {
-	stat, err := client.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commit, batchIgnoreFilePath)
+func hasBatchIgnoreFile(ctx context.Context, client gitserver.Client, repoName api.RepoName, commit api.CommitID) (bool, error) {
+	stat, err := client.Stat(ctx, authz.DefaultSubRepoPermsChecker, repoName, commit, batchIgnoreFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil

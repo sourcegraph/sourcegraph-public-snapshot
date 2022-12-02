@@ -21,3 +21,7 @@ type UnarchivedChangesetSyncRegistry interface {
 	// every given repo ASAP.
 	EnqueueChangesetSyncsForRepos(ctx context.Context, repoIDs []api.RepoID) error
 }
+
+type RepoMetadataSyncer interface {
+	EnqueueRepos(ctx context.Context, repoIDs []api.RepoID) error
+}
