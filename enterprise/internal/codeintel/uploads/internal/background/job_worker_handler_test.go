@@ -257,6 +257,8 @@ func TestHandleCloneInProgress(t *testing.T) {
 //
 //
 
+// TODO - need to pass in SCIP index instead
+
 func copyTestDump(ctx context.Context, key string) (io.ReadCloser, error) {
 	return os.Open("./testdata/dump1.lsif.gz")
 }

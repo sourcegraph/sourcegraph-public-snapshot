@@ -33,6 +33,6 @@ pushd "${REVDIR}" || exit 1
 git checkout "${REV}" 2>/dev/null
 
 # Index revision
-go mod vendor && lsif-go -o "${INDEXFILE}"
+go mod vendor && scip-go -o "${INDEXFILE}"
 V=$?
 exit $V

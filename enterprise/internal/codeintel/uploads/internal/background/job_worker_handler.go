@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -217,7 +216,7 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 	}
 
 	return false, withUploadData(ctx, logger, uploadStore, upload.ID, trace, func(r io.Reader) (err error) {
-		groupedBundleData, err := conversion.Correlate(ctx, r, upload.Root, getChildren)
+		correlatedSCIPData, err := correlate(ctx, r, upload.Root, getChildren)
 		if err != nil {
 			return errors.Wrap(err, "conversion.Correlate")
 		}
@@ -246,7 +245,7 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 
 		// Note: this is writing to a different database than the block below, so we need to use a
 		// different transaction context (managed by the writeData function).
-		if err := writeData(ctx, s.lsifstore, upload, repo, isDefaultBranch, groupedBundleData, trace); err != nil {
+		if err := writeSCIPData(ctx, s.lsifstore, upload, repo, isDefaultBranch, correlatedSCIPData, trace); err != nil {
 			if isUniqueConstraintViolation(err) {
 				// If this is a unique constraint violation, then we've previously processed this same
 				// upload record up to this point, but failed to perform the transaction below. We can
@@ -271,13 +270,18 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 				return errors.Wrap(err, "store.DeleteOverlappingDumps")
 			}
 
-			trace.Log(otlog.Int("packages", len(groupedBundleData.Packages)))
+			packages, packageReferences, err := readPackageAndPackageReferences(ctx, correlatedSCIPData)
+			if err != nil {
+				return err
+			}
+
+			trace.Log(otlog.Int("packages", len(packages)))
 			// Update package and package reference data to support cross-repo queries.
-			if err := tx.UpdatePackages(ctx, upload.ID, groupedBundleData.Packages); err != nil {
+			if err := tx.UpdatePackages(ctx, upload.ID, packages); err != nil {
 				return errors.Wrap(err, "store.UpdatePackages")
 			}
-			trace.Log(otlog.Int("packageReferences", len(groupedBundleData.Packages)))
-			if err := tx.UpdatePackageReferences(ctx, upload.ID, groupedBundleData.PackageReferences); err != nil {
+			trace.Log(otlog.Int("packageReferences", len(packages)))
+			if err := tx.UpdatePackageReferences(ctx, upload.ID, packageReferences); err != nil {
 				return errors.Wrap(err, "store.UpdatePackageReferences")
 			}
 
@@ -301,6 +305,47 @@ func (s *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			return nil
 		})
 	})
+}
+
+func readPackageAndPackageReferences(
+	ctx context.Context,
+	correlatedSCIPData lsifstore.ProcessedSCIPData,
+) (packages []precise.Package, packageReferences []precise.PackageReference, _ error) {
+
+	// Perform the following loop while both the package and package reference channels are
+	// open. Since the producer of both channels are from the same thread, we have to be able
+	// to read from either channel as values are being produced. Once one channel closes, we
+	// switch to reading from the still open channel until it is closed as well.
+
+loop:
+	for {
+		select {
+		case pkg, ok := <-correlatedSCIPData.Packages:
+			if !ok {
+				break loop
+			}
+			packages = append(packages, pkg)
+
+		case packageReference, ok := <-correlatedSCIPData.PackageReferences:
+			if !ok {
+				break loop
+			}
+			packageReferences = append(packageReferences, packageReference)
+
+		case <-ctx.Done():
+			return nil, nil, ctx.Err()
+		}
+	}
+
+	// Drain both channels in case anything is left
+	for pkg := range correlatedSCIPData.Packages {
+		packages = append(packages, pkg)
+	}
+	for packageReference := range correlatedSCIPData.PackageReferences {
+		packageReferences = append(packageReferences, packageReference)
+	}
+
+	return packages, packageReferences, nil
 }
 
 func inTransaction(ctx context.Context, dbStore store.Store, fn func(tx store.Store) error) (err error) {
