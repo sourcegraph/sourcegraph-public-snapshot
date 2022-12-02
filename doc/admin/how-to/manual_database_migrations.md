@@ -283,7 +283,7 @@ yq eval -i \
   configure/migrator/migrator.Job.yaml
 ```
 
-The corresponding changes the `configure/migrator/migrator.Job.yaml` file would look something like this:
+The above `yq` commands alter the `configure/migrator/migrator.Job.yaml` file. For example producing the following key pairs:
 ```yaml
 image: "index.docker.io/sourcegraph/migrator:4.1.3@sha256:0dc6543f0a755e46d962ba572d501559915716fa55beb3aa644a52f081fcd57e"
 ```
