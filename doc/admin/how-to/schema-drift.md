@@ -54,7 +54,34 @@ kubectl -n ns-sourcegraph exec -it pgsql -- psql -U sg -c 'ALTER TABLE external_
 
 Then check the database again with the `drift` command and proceed with your multiversion upgrade.
 
-> Note: It is possible for the drift command to detect diffs which will not prevent upgrades.
+> Note: It is possible for the drift command to detect diffs which will not prevent upgrades. For example the following drift output picked up formating differences `\n` vs `""`:
+```
+❌ Unexpected definition of function "lsif_data_docs_search_private_delete"
+strings.Join({
+    "CREATE OR REPLACE FUNCTION
+public.lsif_data_docs_search_private_",
+    "delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS
+$function$\nBEGIN\n",
+    "UPDATE lsif_data_apidocs_num_search_results_private SET
+count =",
+-   " ",
++   "\n",
+    "count - (select count(*) from oldtbl);\nRETURN NULL;\nEND
+$functio",
+    "n$\n",
+  }, "")
+💡 Suggested action: replace the function definition.
+CREATE OR REPLACE FUNCTION
+public.lsif_data_docs_search_private_delete()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+UPDATE lsif_data_apidocs_num_search_results_private SET count =
+count - (select count(*) from oldtbl);
+RETURN NULL;
+END $function$;
+```
 
-If migrator drift suggests SQL queries which don't make sense please report to support@sourcegraph.com or open an issue in the [`sourcegraph/sourcegraph`](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=) repo.
+If migrator drift suggests SQL queries which don't make sense please report to support@sourcegraph.com or open an issue in the [`sourcegraph/sourcegraph`](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=bug_report.md&title=) repo. You may proceed with a migrator `upgrade` command using the `-skip-drift-check=true` flag.
 
