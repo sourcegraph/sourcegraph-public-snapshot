@@ -32,7 +32,6 @@ import styles from './InsightContextMenu.module.scss'
 export interface InsightCardMenuProps {
     insight: Insight
     currentDashboard: InsightDashboard | null
-    dashboards: InsightDashboard[]
     zeroYAxisMin: boolean
     onToggleZeroYAxisMin?: () => void
 }
@@ -41,7 +40,7 @@ export interface InsightCardMenuProps {
  * Renders context menu (three dots menu) for particular insight card.
  */
 export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren<InsightCardMenuProps>> = props => {
-    const { insight, currentDashboard, dashboards, zeroYAxisMin, onToggleZeroYAxisMin = noop } = props
+    const { insight, currentDashboard, zeroYAxisMin, onToggleZeroYAxisMin = noop } = props
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
@@ -174,7 +173,6 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
             <ShareLinkModal
                 aria-label="Share insight"
                 insight={insight}
-                dashboards={dashboards}
                 isOpen={showShareModal}
                 onDismiss={() => setShowShareModal(false)}
             />

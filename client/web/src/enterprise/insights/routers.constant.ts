@@ -11,5 +11,5 @@ export function encodeDashboardIdQueryParam(url: string, dashboardId?: string): 
         return url
     }
 
-    return `${url}?dashboardId="${dashboardId}"`
+    return `${url}?dashboardId=${dashboardId}`
 }

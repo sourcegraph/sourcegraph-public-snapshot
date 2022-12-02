@@ -10,7 +10,6 @@ import {
 } from '../../../../graphql-operations'
 import {
     CustomInsightDashboard,
-    InsightDashboard,
     InsightsDashboardOwner,
     InsightsDashboardOwnerType,
     InsightsDashboardType,
@@ -90,7 +89,7 @@ interface useInsightDashboardProps {
 }
 
 interface useInsightDashboardResult {
-    dashboard: InsightDashboard | null | undefined
+    dashboard: CustomInsightDashboard | null | undefined
     loading: boolean
     error: ApolloError | undefined
 }
@@ -111,7 +110,7 @@ export function useInsightDashboard(props: useInsightDashboardProps): useInsight
     if (data) {
         const { insightsDashboards, currentUser } = data
         const rawDashboard = insightsDashboards.nodes.find(dashboard => dashboard.id === id)
-        const insightDashboard = rawDashboard
+        const insightDashboard: CustomInsightDashboard | null = rawDashboard
             ? {
                   id: rawDashboard.id,
                   type: InsightsDashboardType.Custom,
@@ -141,7 +140,7 @@ function makeDashboardTitleUnique(dashboards: InsightsDashboardNode[]): Insights
     })
 }
 
-function deserializeDashboardsOwners(
+export function deserializeDashboardsOwners(
     dashboardNode: InsightsDashboardNode,
     userNode: InsightsDashboardCurrentUser | null
 ): InsightsDashboardOwner[] {
