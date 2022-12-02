@@ -172,7 +172,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
                     <>
                         <Text>Outbound request logging is currently disabled.</Text>
                         <Text>
-                            Set `outboundRequestLogLimit` to a non-zero value in your{' '}
+                            Set <Code>outboundRequestLogLimit</Code> to a non-zero value in your{' '}
                             <Link to="/site-admin/configuration">site config</Link> to enable it.
                         </Text>
                     </>
