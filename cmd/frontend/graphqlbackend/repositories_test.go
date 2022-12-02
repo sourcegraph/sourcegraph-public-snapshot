@@ -312,7 +312,6 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 }
 
 func TestRepositoriesIndexingFiltering(t *testing.T) {
-
 	mockRepos := map[string]bool{
 		"repo-indexed-1":     true,
 		"repo-indexed-2":     true,
