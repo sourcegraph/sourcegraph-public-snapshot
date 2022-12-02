@@ -242,10 +242,24 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
     public getOriginalReferrer(): string {
         // Gets the original referrer from the cookie or if it doesn't exist, the mkto_referrer from the URL.
-        const referrer =
-            this.originalReferrer || cookies.get(ORIGINAL_REFERRER_KEY) || cookies.get(MKTO_ORIGINAL_REFERRER_KEY)
-        this.originalReferrer = referrer || ''
-        return this.originalReferrer
+        const originalReferrer = this.originalReferrer || cookies.get(ORIGINAL_REFERRER_KEY) || cookies.get(MKTO_ORIGINAL_REFERRER_KEY) || document.referrer
+        try {
+            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
+            // only send the hostname instead of the whole URL to avoid
+            // leaking private repository names and files into our data.
+            const url = new URL(originalReferrer)
+            if (url.hostname === 'sourcegraph.com') {
+                this.originalReferrer = ''
+                cookies.set(ORIGINAL_REFERRER_KEY, this.originalReferrer, this.cookieSettings)
+                return this.originalReferrer
+            }
+            cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
+            return originalReferrer
+        } catch {
+            this.originalReferrer = ''
+            cookies.set(ORIGINAL_REFERRER_KEY, this.originalReferrer, this.cookieSettings)
+            return this.originalReferrer
+        }
     }
 
     public getSessionReferrer(): string {
@@ -258,12 +272,15 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             const url = new URL(sessionReferrer)
             if (url.hostname === 'sourcegraph.com') {
                 this.sessionReferrer = ''
-                return sessionReferrer
+                cookies.set(SESSION_REFERRER_KEY, this.sessionReferrer, this.deviceSessionCookieSettings)
+                return this.sessionReferrer
             }
+            cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
             return sessionReferrer
         } catch {
             this.sessionReferrer = ''
-            return sessionReferrer
+            cookies.set(SESSION_REFERRER_KEY, this.sessionReferrer, this.deviceSessionCookieSettings)
+            return this.sessionReferrer
         }
     }
 
@@ -275,8 +292,8 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
         // Always set to renew expiry and migrate from localStorage
         cookies.set(SESSION_FIRST_URL_KEY, redactedURL, this.deviceSessionCookieSettings)
-
-        return sessionFirstUrl
+        this.sessionFirstUrl = redactedURL
+        return this.sessionFirstUrl
     }
 
     public getDeviceSessionID(): string {
