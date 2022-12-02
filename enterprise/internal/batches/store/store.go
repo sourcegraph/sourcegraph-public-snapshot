@@ -280,6 +280,9 @@ type operations struct {
 	markUsedBatchSpecExecutionCacheEntries *observation.Operation
 	createBatchSpecExecutionCacheEntry     *observation.Operation
 	cleanBatchSpecExecutionCacheEntries    *observation.Operation
+
+	getRepoStatus    *observation.Operation
+	upsertRepoStatus *observation.Operation
 }
 
 var (
@@ -424,6 +427,9 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecExecutionCacheEntry:     op("CreateBatchSpecExecutionCacheEntry"),
 
 			cleanBatchSpecExecutionCacheEntries: op("CleanBatchSpecExecutionCacheEntries"),
+
+			getRepoStatus:    op("GetRepoStatus"),
+			upsertRepoStatus: op("UpsertRepoStatus"),
 		}
 	})
 
