@@ -10,7 +10,7 @@ import { addLineRangeQueryParameter, formatSearchParameters } from '@sourcegraph
 export function navigateToLineOnAnyClickExtension(
     location: H.Location,
     history: H.History,
-    pushURL: (url: string) => void
+    pushURL?: (url: string) => void
 ): Extension {
     class LineLinkManager implements PluginValue {
         public decorations: DecorationSet = Decoration.none
@@ -54,7 +54,8 @@ export function navigateToLineOnAnyClickExtension(
                 // If it is, push the link to the history stack.
                 if (target.matches('[data-line-link]')) {
                     event.preventDefault()
-                    pushURL(target.getAttribute('href')!)
+                    const pushAction = pushURL ?? history.push
+                    pushAction(target.getAttribute('href')!)
                 }
             },
         }),

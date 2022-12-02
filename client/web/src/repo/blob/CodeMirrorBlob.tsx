@@ -208,7 +208,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             blameDecorationsCompartment.of(blameDecorations),
             blameVisibilityCompartment.of(blameVisibility),
             settingsCompartment.of(settings),
-            navigateToLineOnAnyClick && customHistoryAction
+            navigateToLineOnAnyClick
                 ? navigateToLineOnAnyClickExtension(location, historyRef.current, customHistoryAction)
                 : [],
             search({
