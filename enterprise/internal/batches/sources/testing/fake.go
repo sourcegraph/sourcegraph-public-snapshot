@@ -220,6 +220,11 @@ func (s *FakeChangesetSource) ListRepos(ctx context.Context, results chan repos.
 	results <- repos.SourceResult{Source: s, Err: fakeNotImplemented}
 }
 
+// CheckConnection fake impmentation is always available.
+func (s *FakeChangesetSource) CheckConnection(ctx context.Context) error {
+	return nil
+}
+
 func (s *FakeChangesetSource) ExternalServices() types.ExternalServices {
 	s.ExternalServicesCalled = true
 
