@@ -24,11 +24,11 @@ import (
 )
 
 type s3Store struct {
-	bucket                       string
-	manageBucket                 bool
-	client                       s3API
-	uploader                     s3Uploader
-	operations                   *Operations
+	bucket       string
+	manageBucket bool
+	client       s3API
+	uploader     s3Uploader
+	operations   *Operations
 }
 
 var _ Store = &s3Store{}
@@ -57,11 +57,11 @@ func newS3FromConfig(ctx context.Context, config Config, operations *Operations)
 
 func newS3WithClients(client s3API, uploader s3Uploader, bucket string, manageBucket bool, operations *Operations) *s3Store {
 	return &s3Store{
-		bucket:                       bucket,
-		manageBucket:                 manageBucket,
-		client:                       client,
-		uploader:                     uploader,
-		operations:                   operations,
+		bucket:       bucket,
+		manageBucket: manageBucket,
+		client:       client,
+		uploader:     uploader,
+		operations:   operations,
 	}
 }
 
