@@ -319,9 +319,9 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 		"repo-not-indexed-4": false,
 	}
 
-	repos := database.NewMockRepoStore()
-	repos.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
-		var repoNames []string
+	filterRepos := func(t *testing.T, opt database.ReposListOptions) []*types.Repo {
+		t.Helper()
+		var repos types.Repos
 		for n, idx := range mockRepos {
 			if opt.NoIndexed && idx {
 				continue
@@ -329,27 +329,18 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 			if opt.OnlyIndexed && !idx {
 				continue
 			}
-			repoNames = append(repoNames, n)
-		}
-		sort.Strings(repoNames)
-		var repos []*types.Repo
-		for _, n := range repoNames {
 			repos = append(repos, &types.Repo{Name: api.RepoName(n)})
 		}
-		return repos, nil
+		sort.Sort(repos)
+		return repos
+	}
+	repos := database.NewMockRepoStore()
+	repos.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
+		return filterRepos(t, opt), nil
 	})
-	repos.CountFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) (int, error) {
-		var count int
-		for _, idx := range mockRepos {
-			if opt.NoIndexed && idx {
-				continue
-			}
-			if opt.OnlyIndexed && !idx {
-				continue
-			}
-			count++
-		}
-		return count, nil
+	repos.CountFunc.SetDefaultHook(func(_ context.Context, opt database.ReposListOptions) (int, error) {
+		repos := filterRepos(t, opt)
+		return len(repos), nil
 	})
 
 	users := database.NewMockUserStore()
