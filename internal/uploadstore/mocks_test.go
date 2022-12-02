@@ -183,9 +183,6 @@ type MockGcsBucketHandle struct {
 	// ObjectsFunc is an instance of a mock function object controlling the
 	// behavior of the method Objects.
 	ObjectsFunc *GcsBucketHandleObjectsFunc
-	// UpdateFunc is an instance of a mock function object controlling the
-	// behavior of the method Update.
-	UpdateFunc *GcsBucketHandleUpdateFunc
 }
 
 // NewMockGcsBucketHandle creates a new mock of the gcsBucketHandle
@@ -210,11 +207,6 @@ func NewMockGcsBucketHandle() *MockGcsBucketHandle {
 		},
 		ObjectsFunc: &GcsBucketHandleObjectsFunc{
 			defaultHook: func(context.Context, *storage.Query) (r0 gcsObjectIterator) {
-				return
-			},
-		},
-		UpdateFunc: &GcsBucketHandleUpdateFunc{
-			defaultHook: func(context.Context, storage.BucketAttrsToUpdate) (r0 error) {
 				return
 			},
 		},
@@ -245,11 +237,6 @@ func NewStrictMockGcsBucketHandle() *MockGcsBucketHandle {
 				panic("unexpected invocation of MockGcsBucketHandle.Objects")
 			},
 		},
-		UpdateFunc: &GcsBucketHandleUpdateFunc{
-			defaultHook: func(context.Context, storage.BucketAttrsToUpdate) error {
-				panic("unexpected invocation of MockGcsBucketHandle.Update")
-			},
-		},
 	}
 }
 
@@ -262,7 +249,6 @@ type surrogateMockGcsBucketHandle interface {
 	Create(context.Context, string, *storage.BucketAttrs) error
 	Object(string) gcsObjectHandle
 	Objects(context.Context, *storage.Query) gcsObjectIterator
-	Update(context.Context, storage.BucketAttrsToUpdate) error
 }
 
 // NewMockGcsBucketHandleFrom creates a new mock of the MockGcsBucketHandle
@@ -281,9 +267,6 @@ func NewMockGcsBucketHandleFrom(i surrogateMockGcsBucketHandle) *MockGcsBucketHa
 		},
 		ObjectsFunc: &GcsBucketHandleObjectsFunc{
 			defaultHook: i.Objects,
-		},
-		UpdateFunc: &GcsBucketHandleUpdateFunc{
-			defaultHook: i.Update,
 		},
 	}
 }
@@ -705,111 +688,6 @@ func (c GcsBucketHandleObjectsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GcsBucketHandleObjectsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// GcsBucketHandleUpdateFunc describes the behavior when the Update method
-// of the parent MockGcsBucketHandle instance is invoked.
-type GcsBucketHandleUpdateFunc struct {
-	defaultHook func(context.Context, storage.BucketAttrsToUpdate) error
-	hooks       []func(context.Context, storage.BucketAttrsToUpdate) error
-	history     []GcsBucketHandleUpdateFuncCall
-	mutex       sync.Mutex
-}
-
-// Update delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGcsBucketHandle) Update(v0 context.Context, v1 storage.BucketAttrsToUpdate) error {
-	r0 := m.UpdateFunc.nextHook()(v0, v1)
-	m.UpdateFunc.appendCall(GcsBucketHandleUpdateFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Update method of the
-// parent MockGcsBucketHandle instance is invoked and the hook queue is
-// empty.
-func (f *GcsBucketHandleUpdateFunc) SetDefaultHook(hook func(context.Context, storage.BucketAttrsToUpdate) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Update method of the parent MockGcsBucketHandle instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *GcsBucketHandleUpdateFunc) PushHook(hook func(context.Context, storage.BucketAttrsToUpdate) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GcsBucketHandleUpdateFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, storage.BucketAttrsToUpdate) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GcsBucketHandleUpdateFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, storage.BucketAttrsToUpdate) error {
-		return r0
-	})
-}
-
-func (f *GcsBucketHandleUpdateFunc) nextHook() func(context.Context, storage.BucketAttrsToUpdate) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GcsBucketHandleUpdateFunc) appendCall(r0 GcsBucketHandleUpdateFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GcsBucketHandleUpdateFuncCall objects
-// describing the invocations of this function.
-func (f *GcsBucketHandleUpdateFunc) History() []GcsBucketHandleUpdateFuncCall {
-	f.mutex.Lock()
-	history := make([]GcsBucketHandleUpdateFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GcsBucketHandleUpdateFuncCall is an object that describes an invocation
-// of method Update on an instance of MockGcsBucketHandle.
-type GcsBucketHandleUpdateFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 storage.BucketAttrsToUpdate
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GcsBucketHandleUpdateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GcsBucketHandleUpdateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
