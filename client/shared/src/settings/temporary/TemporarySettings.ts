@@ -36,7 +36,6 @@ export interface TemporarySettingsSchema {
     'codeintel.badge.used': boolean
     'codeintel.referencePanel.redesign.ctaDismissed': boolean
     'onboarding.quickStartTour': TourListState
-    'onboarding.admin.hasDismissed': boolean
     'characterKeyShortcuts.enabled': boolean
     'search.homepage.queryExamplesContent': {
         lastCachedTimestamp: string
