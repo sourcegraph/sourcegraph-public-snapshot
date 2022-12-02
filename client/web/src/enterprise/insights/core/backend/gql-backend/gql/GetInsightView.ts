@@ -34,7 +34,7 @@ export const GET_INSIGHT_VIEW_GQL = gql`
             failedJobs
             isLoadingData
             incompleteDatapoints {
-                ... on IncompleteDatapointAlert {
+                ... on TimeoutDatapointAlert {
                     __typename
                     time
                 }

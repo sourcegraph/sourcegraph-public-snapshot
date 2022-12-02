@@ -99,7 +99,7 @@ func main() {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}
 
-	services, err := codeintel.GetServices(codeintel.Databases{
+	services, err := codeintel.NewServices(codeintel.Databases{
 		DB:          db,
 		CodeIntelDB: codeIntelDB,
 	})

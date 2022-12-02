@@ -611,6 +611,16 @@ func TestSyncerSync(t *testing.T) {
 				svcs: []*types.ExternalService{tc.svc},
 				err:  "<nil>",
 			},
+			testCase{
+				name: string(tc.repo.Name) + "/code host unavailable",
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(nil, nil, nil).Unavailable(),
+				),
+				store: store,
+				now:   clock.Now,
+				svcs:  []*types.ExternalService{tc.svc},
+				err:   "fake source unavailable",
+			},
 		)
 	}
 

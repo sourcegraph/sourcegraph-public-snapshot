@@ -245,9 +245,7 @@ JOIN repo ON repo.id = u.repository_id
 WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id = %s AND %s
 `
 
-// GetUploadsByIDs returns an upload for each of the given identifiers. Not all given ids will necessarily
-// have a corresponding element in the returned list.
-func (s *store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error) {
+func (s *store) getUploadsByIDs(ctx context.Context, allowDeleted bool, ids ...int) (_ []types.Upload, err error) {
 	ctx, _, endObservation := s.operations.getUploadsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("ids", intsToString(ids)),
 	}})
@@ -267,7 +265,22 @@ func (s *store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Uplo
 		queries = append(queries, sqlf.Sprintf("%d", id))
 	}
 
-	return scanUploadComplete(s.db.Query(ctx, sqlf.Sprintf(getUploadsByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+	cond := sqlf.Sprintf("TRUE")
+	if !allowDeleted {
+		cond = sqlf.Sprintf("u.state != 'deleted'")
+	}
+
+	return scanUploadComplete(s.db.Query(ctx, sqlf.Sprintf(getUploadsByIDsQuery, cond, sqlf.Join(queries, ", "), authzConds)))
+}
+
+// GetUploadsByIDs returns an upload for each of the given identifiers. Not all given ids will necessarily
+// have a corresponding element in the returned list.
+func (s *store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error) {
+	return s.getUploadsByIDs(ctx, false, ids...)
+}
+
+func (s *store) GetUploadsByIDsAllowDeleted(ctx context.Context, ids ...int) (_ []types.Upload, err error) {
+	return s.getUploadsByIDs(ctx, true, ids...)
 }
 
 const getUploadsByIDsQuery = `
@@ -298,7 +311,7 @@ FROM lsif_uploads u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id IN (%s) AND %s
+WHERE repo.deleted_at IS NULL AND %s AND u.id IN (%s) AND %s
 `
 
 // GetRecentUploadsSummary returns a set of "interesting" uploads for the repository with the given identifeir.

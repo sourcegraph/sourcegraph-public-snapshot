@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
-
-set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")"
+set -ex
 
-# Retag the release
-S3PROXY_RELEASE="sha-ba0fd6d"
-docker pull andrewgaul/s3proxy:$S3PROXY_RELEASE
-docker rmi "$IMAGE" || true
-docker tag andrewgaul/s3proxy:$S3PROXY_RELEASE "$IMAGE"
+# Enable image build caching via CACHE=true
+BUILD_CACHE="--no-cache"
+if [[ "$CACHE" == "true" ]]; then
+  BUILD_CACHE=""
+fi
+
+# shellcheck disable=SC2086
+docker build ${BUILD_CACHE} -t "${IMAGE:-"sourcegraph/blobstore"}" . \
+  --progress=plain \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION

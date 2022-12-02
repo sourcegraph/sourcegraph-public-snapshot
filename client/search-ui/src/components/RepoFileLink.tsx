@@ -14,6 +14,7 @@ interface Props {
     fileURL: string
     repoDisplayName?: string
     className?: string
+    isKeyboardSelectable?: boolean
 }
 
 /**
@@ -28,6 +29,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
     pathMatchRanges,
     fileURL,
     className,
+    isKeyboardSelectable,
 }) => {
     const [fileBase, fileName] = splitPath(filePath)
     const containerElement = useRef<HTMLAnchorElement>(null)
@@ -37,7 +39,12 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
             <span>
                 <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link>
                 <span aria-hidden={true}> ›</span>{' '}
-                <Link to={appendSubtreeQueryParameter(fileURL)} ref={containerElement}>
+                <Link
+                    to={appendSubtreeQueryParameter(fileURL)}
+                    ref={containerElement}
+                    data-selectable-search-result={isKeyboardSelectable}
+                    data-selectable-search-result-header-link={isKeyboardSelectable}
+                >
                     {fileBase ? `${fileBase}/` : null}
                     <strong>{fileName}</strong>
                 </Link>

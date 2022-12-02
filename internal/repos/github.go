@@ -281,6 +281,13 @@ func (s *GitHubSource) Version(ctx context.Context) (string, error) {
 	return s.v3Client.GetVersion(ctx)
 }
 
+// CheckConnection at this point assumes availability and relies on errors returned
+// from the subsequent calls. This is going to be expanded as part of issue #44683
+// to actually only return true if the source can serve requests.
+func (s *GitHubSource) CheckConnection(ctx context.Context) error {
+	return nil
+}
+
 // ListRepos returns all Github repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s *GitHubSource) ListRepos(ctx context.Context, results chan SourceResult) {

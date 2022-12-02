@@ -135,6 +135,15 @@ type SeriesReader interface {
 	GetDataSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error)
 }
 
+type SeriesBackfillComplete interface {
+	SetSeriesBackfillComplete(ctx context.Context, seriesId string, timestamp time.Time) error
+}
+
+type SeriesReadBackfillComplete interface {
+	SeriesReader
+	SeriesBackfillComplete
+}
+
 type Scheduler struct {
 	backfillStore *BackfillStore
 }

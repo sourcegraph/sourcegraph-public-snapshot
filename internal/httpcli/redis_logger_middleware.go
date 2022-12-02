@@ -89,7 +89,7 @@ func redisLoggerMiddleware() Middleware {
 			outboundRequestsRedisCache.Set(key, logItemJson)
 
 			// Delete excess items
-			if deleteErr := deleteExcessItems(outboundRequestsRedisCache, limit); deleteErr != nil {
+			if deleteErr := deleteExcessItems(outboundRequestsRedisCache, int(limit)); deleteErr != nil {
 				middlewareErrors = errors.Append(middlewareErrors,
 					errors.Wrap(deleteErr, "delete excess items"))
 			}
@@ -114,20 +114,22 @@ func deleteExcessItems(c *rcache.Cache, limit int) error {
 	return nil
 }
 
-// GetAllOutboundRequestLogItemsAfter returns all outbound request log items after the given key,
+// GetOutboundRequestLogItems returns all outbound request log items after the given key,
 // in ascending order, trimmed to maximum {limit} items. Example for `after`: "2021-01-01T00_00_00.000000".
-func GetAllOutboundRequestLogItemsAfter(ctx context.Context, after string) ([]*types.OutboundRequestLogItem, error) {
+func GetOutboundRequestLogItems(ctx context.Context, after string) ([]*types.OutboundRequestLogItem, error) {
 	var limit = OutboundRequestLogLimit()
 
 	if limit == 0 {
 		return []*types.OutboundRequestLogItem{}, nil
 	}
 
-	rawItems, err := getAllValuesAfter(ctx, outboundRequestsRedisCache, after, limit)
+	// Get values from Redis
+	rawItems, err := getAllValuesAfter(ctx, outboundRequestsRedisCache, after, int(limit))
 	if err != nil {
 		return nil, err
 	}
 
+	// Convert raw Redis store items to log items
 	items := make([]*types.OutboundRequestLogItem, 0, len(rawItems))
 	for _, rawItem := range rawItems {
 		var item types.OutboundRequestLogItem
