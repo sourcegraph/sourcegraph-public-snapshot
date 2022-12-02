@@ -6,7 +6,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,51 +24,52 @@ func NewRecentList(key string, size int) *RecentList {
 }
 
 // Insert b in the cache and drops the last recently inserted item if the size exceeds the configured limit.
-func (q *RecentList) Insert(b []byte) {
+func (l *RecentList) Insert(b []byte) error {
 	c := pool.Get()
 	defer c.Close()
 
 	if !utf8.Valid(b) {
-		log15.Error("rcache: keys must be valid utf8", "key", b)
+		errors.Newf("rcache: keys must be valid utf8", "key", b)
 	}
-	key := q.globalPrefixKey()
+	key := l.globalPrefixKey()
 
 	// O(1) because we're just adding a single element.
 	_, err := c.Do("LPUSH", key, b)
 	if err != nil {
-		log15.Warn("failed to execute redis command", "cmd", "LPUSH", "error", err)
+		return errors.Wrap(err, "failed to execute redis command LPUSH")
 	}
 
 	// O(1) because the average case if just about dropping the last element.
-	_, err = c.Do("LTRIM", key, 0, q.size-1)
+	_, err = c.Do("LTRIM", key, 0, l.size-1)
 	if err != nil {
-		log15.Warn("failed to execute redis command", "cmd", "LTRIM", "error", err)
+		return errors.Wrap(err, "failed to execute redis command LTRIM")
 	}
+	return nil
 }
 
-func (q *RecentList) Size() int {
+func (l *RecentList) Size() (int, error) {
 	c := pool.Get()
 	defer c.Close()
 
-	key := q.globalPrefixKey()
+	key := l.globalPrefixKey()
 	n, err := redis.Int(c.Do("LLEN", key))
 	if err != nil {
-		log15.Warn("failed to execute redis command", "cmd", "LLEN", "error", err)
+		return 0, errors.Wrap(err, "failed to execute redis command LLEN")
 	}
-	return n
+	return n, nil
 }
 
 // All return all items stored in the RecentCache.
 //
 // This a O(n) operation, where n is the list size.
-func (q *RecentList) All(ctx context.Context) ([][]byte, error) {
-	return q.Slice(ctx, 0, -1)
+func (l *RecentList) All(ctx context.Context) ([][]byte, error) {
+	return l.Slice(ctx, 0, -1)
 }
 
 // Slice return all items stored in the RecentCache between indexes from and to.
 //
 // This a O(n) operation, where n is the list size.
-func (q *RecentList) Slice(ctx context.Context, from, to int) ([][]byte, error) {
+func (l *RecentList) Slice(ctx context.Context, from, to int) ([][]byte, error) {
 	c, err := pool.GetContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "get redis conn")
@@ -81,7 +81,7 @@ func (q *RecentList) Slice(ctx context.Context, from, to int) ([][]byte, error) 
 	default:
 	}
 
-	key := q.globalPrefixKey()
+	key := l.globalPrefixKey()
 	res, err := redis.Values(c.Do("LRANGE", key, from, to))
 	if err != nil {
 		return nil, err
@@ -90,12 +90,12 @@ func (q *RecentList) Slice(ctx context.Context, from, to int) ([][]byte, error) 
 	if err != nil {
 		return nil, err
 	}
-	if len(bs) > q.size {
-		bs = bs[:q.size]
+	if len(bs) > l.size {
+		bs = bs[:l.size]
 	}
 	return bs, nil
 }
 
-func (q *RecentList) globalPrefixKey() string {
-	return fmt.Sprintf("%s:%s", globalPrefix, q.key)
+func (l *RecentList) globalPrefixKey() string {
+	return fmt.Sprintf("%s:%s", globalPrefix, l.key)
 }

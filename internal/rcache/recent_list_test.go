@@ -42,25 +42,38 @@ func TestRecentListOK(t *testing.T) {
 		r := NewRecentList(c.key, c.size)
 		t.Run(fmt.Sprintf("size %d with %d entries", c.size, len(c.inserts)), func(t *testing.T) {
 			for _, b := range c.inserts {
-				r.Insert(b)
+				if err := r.Insert(b); err != nil {
+					t.Errorf("expected no error, got %q", err)
+				}
 			}
 			got, err := r.All(context.Background())
 			if err != nil {
-				t.Fatalf("expected no error, got %q", err)
+				t.Errorf("expected no error, got %q", err)
+			}
+			s, err := r.Size()
+			if err != nil {
+				t.Errorf("expected no error, got %q", err)
+			}
+			if s != len(c.want) {
+				t.Errorf("expected %d items, got %d instead", s, len(c.want))
 			}
 			if !reflect.DeepEqual(c.want, got) {
 				t.Errorf("Expected %v, but got %v", _str(c.want...), _str(got...))
 			}
+
 		})
 	}
 }
 
 func TestRecentListContextCancellation(t *testing.T) {
 	r := NewRecentList("a", 3)
-	r.Insert([]byte("a"))
+	err := r.Insert([]byte("a"))
+	if err != nil {
+		t.Errorf("expected no error, got %q", err)
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err := r.All(ctx)
+	_, err = r.All(ctx)
 	if err == nil {
 		t.Fatal("expected error, got none")
 	}
