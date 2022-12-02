@@ -158,13 +158,14 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 				rq.Enqueue(endpoint, sr)
 				rq.FlushReady(streamer)
 			}))
-			mu.Lock()
-			rq.Done(endpoint)
-			mu.Unlock()
 
+			mu.Lock()
 			if canIgnoreError(ctx, err) {
+				rq.Enqueue(endpoint, crashEvent())
 				err = nil
 			}
+			rq.Done(endpoint)
+			mu.Unlock()
 
 			ch <- err
 		}(endpoint, c)
@@ -244,6 +245,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 			}))
 
 			if canIgnoreError(ctx, err) {
+				streamer.Send(crashEvent())
 				err = nil
 			}
 
@@ -568,6 +570,7 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 		r := <-results
 		if r.err != nil {
 			if canIgnoreError(ctx, r.err) {
+				aggregate.Crashes++
 				continue
 			}
 
@@ -785,4 +788,13 @@ func canIgnoreErrorReason(err error) string {
 	}
 
 	return ""
+}
+
+// crashEvent indicates a shard or backend failed to be searched due to a
+// panic or being unreachable. The most common reason for this is during zoekt
+// rollout.
+func crashEvent() *zoekt.SearchResult {
+	return &zoekt.SearchResult{Stats: zoekt.Stats{
+		Crashes: 1,
+	}}
 }
