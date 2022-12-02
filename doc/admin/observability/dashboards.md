@@ -4154,7 +4154,7 @@ Query: `sum by (email_source) (increase(src_email_send{success="true"}[5m]))`
 
 #### frontend: email_deliveries_total
 
-<p class="subtitle">Total emails successfully delivered every minute</p>
+<p class="subtitle">Total emails successfully delivered every 5 minutes</p>
 
 Total emails successfully delivered.
 
