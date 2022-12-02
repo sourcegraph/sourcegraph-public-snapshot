@@ -3,6 +3,7 @@ import { FuzzyFinderSymbolsResult, FuzzyFinderSymbolsVariables } from 'src/graph
 import gql from 'tagged-template-noop'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { isSettingsValid, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolKind } from '@sourcegraph/shared/src/symbols/SymbolKind'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
@@ -11,7 +12,6 @@ import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
 import { emptyFuzzyCache, PersistableQueryResult } from './FuzzyLocalCache'
 import { FuzzyQuery } from './FuzzyQuery'
 import { FuzzyRepoRevision, fuzzyRepoRevisionSearchFilter } from './FuzzyRepoRevision'
-import { isSettingsValid, SettingsCascadeOrError } from '@sourcegraph/shared/out/src/settings/settings'
 
 export const FUZZY_SYMBOLS_QUERY = gql`
     fragment FileMatchFields on FileMatch {
@@ -71,7 +71,7 @@ export class FuzzySymbols extends FuzzyQuery {
             text: repositoryFilter ? text.replace(repositoryText, '') : text,
             url,
             icon: symbolKind ? (
-                <SymbolKind className="fuzzy-repos-result-icon" kind={symbolKind} enableSymbolTags={enableSymbolTags} />
+                <SymbolKind kind={symbolKind} className="mr-1" enableSymbolTags={enableSymbolTags} />
             ) : undefined,
         }))
     }

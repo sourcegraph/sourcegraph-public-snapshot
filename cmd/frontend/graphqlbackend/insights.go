@@ -452,9 +452,15 @@ type SearchInsightLivePreviewSeriesResolver interface {
 
 type IncompleteDatapointAlert interface {
 	ToTimeoutDatapointAlert() (TimeoutDatapointAlert, bool)
+	ToGenericIncompleteDatapointAlert() (GenericIncompleteDatapointAlert, bool)
 	Time() gqlutil.DateTime
 }
 
 type TimeoutDatapointAlert interface {
 	Time() gqlutil.DateTime
+}
+
+type GenericIncompleteDatapointAlert interface {
+	Time() gqlutil.DateTime
+	Reason() string
 }

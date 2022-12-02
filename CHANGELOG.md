@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The number of commits listed in the History tab can now be customized for all users by site admins under Configuration -> Global Settings from the site admin page by using the config `history.defaultPageSize`. Individual users may also set `history.defaultPagesize` from their user settings page to override the value set under the Global Settings. [#44651](https://github.com/sourcegraph/sourcegraph/pull/44651)
 - Batch Changes: Mounted files can be accessed via the UI on the executions page. [#43180](https://github.com/sourcegraph/sourcegraph/pull/43180)
 - Added "Outbound request log" feature for site admins [#44286](https://github.com/sourcegraph/sourcegraph/pull/44286)
+- Code Insights: the data series API now provides information about incomplete datapoints during processing
 
 ### Changed
 
@@ -36,6 +37,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Unintended newline characters that could appear in diff view rendering have been fixed. [#44805](https://github.com/sourcegraph/sourcegraph/pull/44805)
 - Signing out doesn't immediately log the user back in when there's only one OAuth provider enabled. It now redirects the user to the Sourcegraph login page. [#44803](https://github.com/sourcegraph/sourcegraph/pull/44803)
 - An issue causing certain kinds of queries to behave inconsistently in Code Insights. [#44917](https://github.com/sourcegraph/sourcegraph/pull/44917)
+- When the setting `batchChanges.enforceForks` is enabled, Batch Changes will now prefix the name of the fork repo it creates with the original repo's namespace name in order to prevent repo name collisions. [#43681](https://github.com/sourcegraph/sourcegraph/pull/43681), [#44458](https://github.com/sourcegraph/sourcegraph/pull/44458), [#44548](https://github.com/sourcegraph/sourcegraph/pull/44548), [#44924](https://github.com/sourcegraph/sourcegraph/pull/44924)
 - Code Insights: fixed an issue where certain queries matching sequential whitespace characters would overcount. [#44969](https://github.com/sourcegraph/sourcegraph/pull/44969)
 
 ### Removed

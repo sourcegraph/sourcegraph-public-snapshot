@@ -389,7 +389,7 @@ const ReferencesList: React.FunctionComponent<
     // Manual management of the open/closed state of collapsible lists so they
     // stay open/closed across re-renders and re-mounts.
     const location = useLocation()
-    const initialCollapseState = useMemo((): Record<string, boolean> => {
+    const initialCollapseState = useMemo(() => {
         const { viewState } = parseQueryAndHash(location.search, location.hash)
         const state = {
             references: viewState === 'references',
@@ -477,23 +477,21 @@ const ReferencesList: React.FunctionComponent<
                         handleOpenChange={handleOpenChange}
                         isOpen={isOpen}
                     />
-                    {implementations.length > 0 && (
-                        <CollapsibleLocationList
-                            {...props}
-                            name="implementations"
-                            locations={implementations}
-                            hasMore={implementationsHasNextPage}
-                            fetchMore={fetchMoreImplementations}
-                            loadingMore={fetchMoreImplementationsLoading}
-                            setActiveLocation={setActiveLocation}
-                            filter={debouncedFilter}
-                            isActiveLocation={isActiveLocation}
-                            activeURL={activeURL || ''}
-                            navigateToUrl={navigateToUrl}
-                            handleOpenChange={handleOpenChange}
-                            isOpen={isOpen}
-                        />
-                    )}
+                    <CollapsibleLocationList
+                        {...props}
+                        name="implementations"
+                        locations={implementations}
+                        hasMore={implementationsHasNextPage}
+                        fetchMore={fetchMoreImplementations}
+                        loadingMore={fetchMoreImplementationsLoading}
+                        setActiveLocation={setActiveLocation}
+                        filter={debouncedFilter}
+                        isActiveLocation={isActiveLocation}
+                        activeURL={activeURL || ''}
+                        navigateToUrl={navigateToUrl}
+                        handleOpenChange={handleOpenChange}
+                        isOpen={isOpen}
+                    />
                 </div>
             </div>
             {sideblob && (
