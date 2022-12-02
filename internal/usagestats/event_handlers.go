@@ -43,6 +43,7 @@ type Event struct {
 	Referrer         *string
 	OriginalReferrer *string
 	SessionReferrer  *string
+	SessionFirstUrl  *string
 	Argument         json.RawMessage
 	PublicArgument   json.RawMessage
 	UserProperties   json.RawMessage
@@ -114,7 +115,8 @@ type bigQueryEvent struct {
 	CohortID         *string `json:"cohort_id,omitempty"`
 	Referrer         string  `json:"referrer,omitempty"`
 	OriginalReferrer string  `json:"original_referrer"`
-	SessionReferrer string  `json:"session_referrer"`
+	SessionReferrer  string  `json:"session_referrer"`
+	SessionFirstUrl  string  `json:"session_first_url"`
 	PublicArgument   string  `json:"public_argument"`
 	DeviceID         *string `json:"device_id,omitempty"`
 	InsertID         *string `json:"insert_id,omitempty"`
@@ -166,6 +168,10 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 		if event.SessionReferrer != nil {
 			sessionReferrer = *event.SessionReferrer
 		}
+		sessionFirstUrl := ""
+		if event.SessionFirstUrl != nil {
+			sessionFirstUrl = *event.SessionFirstUrl
+		}
 		featureFlagJSON, err := json.Marshal(event.EvaluatedFlagSet)
 		if err != nil {
 			return nil, err
@@ -186,6 +192,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			Referrer:         referrer,
 			OriginalReferrer: originalReferrer,
 			SessionReferrer:  sessionReferrer,
+			SessionFirstUrl:  sessionFirstUrl,
 			Source:           event.Source,
 			Timestamp:        time.Now().UTC().Format(time.RFC3339),
 			Version:          version.Version(),

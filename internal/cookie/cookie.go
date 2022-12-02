@@ -55,3 +55,16 @@ func SessionReferrer(r *http.Request) (string, bool) {
 	}
 	return cookie.Value, true
 }
+
+// SessionReferrer returns our sessionReferrer and bool indicating whether the
+// value exists.
+func SessionFirstUrl(r *http.Request) (string, bool) {
+	if r == nil {
+		return "", false
+	}
+	cookie, err := r.Cookie("sessionReferrer")
+	if err != nil {
+		return "", false
+	}
+	return cookie.Value, true
+}

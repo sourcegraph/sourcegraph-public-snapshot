@@ -89,6 +89,7 @@ type Event struct {
 	Referrer         *string
 	OriginalReferrer *string
 	SessionReferrer  *string
+	SessionFirstUrl  *string
 	DeviceSessionID  *string
 	PublicArgument   *string
 	UserProperties   *string
@@ -180,6 +181,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			Referrer:         args.Referrer,
 			OriginalReferrer: args.OriginalReferrer,
 			SessionReferrer:  args.SessionReferrer,
+			SessionFirstUrl:  args.SessionFirstUrl,
 			PublicArgument:   publicArgumentPayload,
 			UserProperties:   userPropertiesPayload,
 			DeviceID:         args.DeviceID,

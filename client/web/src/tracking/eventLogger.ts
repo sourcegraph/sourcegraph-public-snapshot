@@ -22,6 +22,7 @@ export const DEVICE_SESSION_ID_KEY = 'sourcegraphSessionId'
 export const ORIGINAL_REFERRER_KEY = 'originalReferrer'
 export const MKTO_ORIGINAL_REFERRER_KEY = '_mkto_referrer'
 export const SESSION_REFERRER_KEY = 'sessionReferrer'
+export const SESSION_FIRST_URL_KEY = 'sessionFirstUrl'
 
 const EXTENSION_MARKER_ID = '#sourcegraph-app-background'
 
@@ -82,6 +83,7 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     private listeners: Set<(eventName: string) => void> = new Set()
     private originalReferrer?: string
     private sessionReferrer?: string
+    private sessionFirstUrl?: string
 
     private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
@@ -265,6 +267,19 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         }
     }
 
+    public getSessionFirstUrl(): string {
+        const sessionFirstUrl = this.sessionFirstUrl || cookies.get(SESSION_FIRST_URL_KEY) || location.href
+
+        const redactedURL = redactSensitiveInfoFromAppURL(sessionFirstUrl)
+
+        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
+        // Always set to renew expiry and migrate from localStorage
+        cookies.set(SESSION_FIRST_URL_KEY, redactedURL, this.deviceSessionCookieSettings)
+
+        this.sessionFirstUrl = sessionFirstUrl
+        return sessionFirstUrl
+    }
+
     public getDeviceSessionID(): string {
         let deviceSessionID = cookies.get(DEVICE_SESSION_ID_KEY)
         if (!deviceSessionID || deviceSessionID === '') {
@@ -353,11 +368,17 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             sessionReferrer = this.getSessionReferrer()
         }
 
+        let sessionFirstUrl = cookies.get(SESSION_FIRST_URL_KEY)
+        if (!sessionFirstUrl) {
+            sessionFirstUrl = this.getSessionFirstUrl()
+        }
+
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
         this.deviceID = deviceID
         this.originalReferrer = originalReferrer
         this.sessionReferrer = sessionReferrer
+        this.sessionFirstUrl = sessionFirstUrl
     }
 
     public addEventLogListener(callback: (eventName: string) => void): () => void {
