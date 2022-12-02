@@ -35,7 +35,7 @@ func (j *cratesSyncerJob) Routines(startupCtx context.Context, logger log.Logger
 	}
 
 	gitserverClient := gitserver.NewClient(db)
-	dependenciesService := dependencies.GetService(db)
+	dependenciesService := dependencies.NewService(db)
 
 	return dependencies.CrateSyncerJob(
 		dependenciesService,

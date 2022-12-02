@@ -85,7 +85,7 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	codeIntelServices, err := codeintel.GetServices(codeintel.Databases{
+	codeIntelServices, err := codeintel.NewServices(codeintel.Databases{
 		DB:          db,
 		CodeIntelDB: mustInitializeCodeIntelDB(logger),
 	})

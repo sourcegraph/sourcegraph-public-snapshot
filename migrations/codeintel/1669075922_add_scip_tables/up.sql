@@ -44,7 +44,7 @@ COMMENT ON TABLE codeintel_scip_document_lookup IS 'A mapping from file paths to
 COMMENT ON COLUMN codeintel_scip_document_lookup.id IS 'An auto-generated identifier. This column is used as a foreign key target to reduce occurrences of the full document path value.';
 COMMENT ON COLUMN codeintel_scip_document_lookup.upload_id IS 'The identifier of the upload that provided this SCIP index.';
 COMMENT ON COLUMN codeintel_scip_document_lookup.document_path IS 'The file path to the document relative to the root of the index.';
-COMMENT ON COLUMN codeintel_scip_document_lookup.document_id IS 'The foreign key to the shared document payload (see the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents)).';
+COMMENT ON COLUMN codeintel_scip_document_lookup.document_id IS 'The foreign key to the shared document payload (see the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup)).';
 
 CREATE TABLE IF NOT EXISTS codeintel_scip_document_lookup_schema_versions (
     upload_id integer NOT NULL,
@@ -53,10 +53,10 @@ CREATE TABLE IF NOT EXISTS codeintel_scip_document_lookup_schema_versions (
     PRIMARY KEY(upload_id)
 );
 
-COMMENT ON TABLE codeintel_scip_document_lookup_schema_versions IS 'Tracks the range of `schema_versions` values associated with each SCIP index in the [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) table.';
+COMMENT ON TABLE codeintel_scip_document_lookup_schema_versions IS 'Tracks the range of `schema_versions` values associated with each SCIP index in the [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) table.';
 COMMENT ON COLUMN codeintel_scip_document_lookup_schema_versions.upload_id IS 'The identifier of the associated SCIP index.';
-COMMENT ON COLUMN codeintel_scip_document_lookup_schema_versions.min_schema_version IS 'A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `upload_id` column matches the associated SCIP index.';
-COMMENT ON COLUMN codeintel_scip_document_lookup_schema_versions.max_schema_version IS 'An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `upload_id` column matches the associated SCIP index.';
+COMMENT ON COLUMN codeintel_scip_document_lookup_schema_versions.min_schema_version IS 'A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.';
+COMMENT ON COLUMN codeintel_scip_document_lookup_schema_versions.max_schema_version IS 'An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.';
 
 CREATE OR REPLACE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert() RETURNS trigger
     LANGUAGE plpgsql
