@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -127,9 +126,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			Ignored:       ignored,
 		}
 	}
-	newGitserverClient := func(t *testing.T, repos ...gitserverRepo) gitserver.Client {
-		require.NoError(t, s.EmptyRepoStatusCache(ctx))
-
+	newGitserverClient := func(repos ...gitserverRepo) gitserver.Client {
 		reposByName := make(map[api.RepoName]gitserverRepo, len(repos))
 		for _, r := range repos {
 			reposByName[r.Name] = r
@@ -182,7 +179,6 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		}
 
 		gs := newGitserverClient(
-			t,
 			defaultGitserverRepo(rs[0], false),
 			defaultGitserverRepo(rs[1], true),
 			defaultGitserverRepo(rs[2], true),
@@ -257,7 +253,6 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		}
 
 		gs := newGitserverClient(
-			t,
 			defaultGitserverRepo(rs[0], false),
 			gitserverRepo{
 				Name: rs[1].Name,
@@ -311,7 +306,6 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		}
 
 		gs := newGitserverClient(
-			t,
 			defaultGitserverRepo(rs[0], false),
 			gitserverRepo{
 				Name: rs[1].Name,
@@ -373,7 +367,6 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		}
 
 		gs := newGitserverClient(
-			t,
 			defaultGitserverRepo(rs[0], false),
 			defaultGitserverRepo(rs[1], false),
 			defaultGitserverRepo(rs[2], false),
@@ -430,7 +423,6 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		}
 
 		gs := newGitserverClient(
-			t,
 			defaultGitserverRepo(rs[0], false),
 			defaultGitserverRepo(rs[1], false),
 		)
@@ -448,8 +440,8 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, gs gitserver.Client, u *types.User, matches map[string][]streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoWorkspace) {
 	t.Helper()
 
-	// Reset the cached repo metadata, since it may differ from test to test.
-	s.Exec(context.Background(), sqlf.Sprintf("DELETE FROM batch_changes_repo_metadata"))
+	// Reset the repo status cache, since it may differ from test to test.
+	require.NoError(t, s.EmptyRepoStatusCache(context.Background()))
 
 	wr := &workspaceResolver{
 		store:               s,
