@@ -47,6 +47,8 @@ const searchContextFragment = gql`
         autoDefined
         updatedAt
         viewerCanManage
+        viewerHasStarred
+        viewerHasAsDefault
         query
         repositories {
             ...SearchContextRepositoryRevisionsFields
