@@ -345,40 +345,12 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
         let originalReferrer = cookies.get(ORIGINAL_REFERRER_KEY)
         if (!originalReferrer) {
-            originalReferrer = cookies.get(MKTO_ORIGINAL_REFERRER_KEY) || ''
-            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
-            // only send the hostname instead of the whole URL to avoid
-            // leaking private repository names and files into our data.
-            try {
-                const url = new URL(originalReferrer)
-                // if the referrer is a sourcegraph domain we want to set it as ''
-                if (url.hostname === 'sourcegraph.com') {
-                    originalReferrer = ''
-                }
-            } catch {
-                // if the referrer is not a valid URL we want to set it as ''
-                originalReferrer = ''
-            }
-            cookies.set(ORIGINAL_REFERRER_KEY, originalReferrer, this.cookieSettings)
+            originalReferrer = this.getOriginalReferrer()
         }
 
         let sessionReferrer = cookies.get(SESSION_REFERRER_KEY)
         if (!sessionReferrer) {
-            sessionReferrer = cookies.get(SESSION_REFERRER_KEY) || document.referrer
-            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
-            // only send the hostname instead of the whole URL to avoid
-            // leaking private repository names and files into our data.
-            try {
-                const url = new URL(sessionReferrer)
-                // if the referrer is a sourcegraph domain we want to set it as ''
-                if (url.hostname === 'sourcegraph.com') {
-                    sessionReferrer = ''
-                }
-            } catch {
-                // if the referrer is not a valid URL we want to set it as ''
-                sessionReferrer = ''
-            }
-            cookies.set(SESSION_REFERRER_KEY, sessionReferrer, this.deviceSessionCookieSettings)
+            sessionReferrer = this.getSessionReferrer()
         }
 
         this.anonymousUserID = anonymousUserID
