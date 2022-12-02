@@ -242,7 +242,11 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
 
     public getOriginalReferrer(): string {
         // Gets the original referrer from the cookie or if it doesn't exist, the mkto_referrer from the URL.
-        const originalReferrer = this.originalReferrer || cookies.get(ORIGINAL_REFERRER_KEY) || cookies.get(MKTO_ORIGINAL_REFERRER_KEY) || document.referrer
+        const originalReferrer =
+            this.originalReferrer ||
+            cookies.get(ORIGINAL_REFERRER_KEY) ||
+            cookies.get(MKTO_ORIGINAL_REFERRER_KEY) ||
+            document.referrer
         try {
             // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
             // only send the hostname instead of the whole URL to avoid
