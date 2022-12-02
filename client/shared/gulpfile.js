@@ -3,12 +3,12 @@
 const path = require('path')
 
 const gulp = require('gulp')
-const { compile: compileJSONSchema } = require('json-schema-to-typescript')
-const { readFile, writeFile, mkdir } = require('mz/fs')
+const { readFile } = require('mz/fs')
 
 const { cssModulesTypings, watchCSSModulesTypings } = require('./dev/generateCssModulesTypes')
 const { generateGraphQlOperations, ALL_DOCUMENTS_GLOB } = require('./dev/generateGraphQlOperations')
 const { graphQlSchema: _graphQlSchema } = require('./dev/generateGraphQlSchema')
+const { generateSchema } = require('./dev/generateSchema')
 
 const GRAPHQL_SCHEMA_GLOB = path.join(__dirname, '../../cmd/frontend/graphqlbackend/*.graphql')
 
@@ -115,31 +115,9 @@ const draftV7resolver = {
  * @returns {Promise<void>}
  */
 async function schema() {
-  const outputDirectory = path.join(__dirname, 'src', 'schema')
-  await mkdir(outputDirectory, { recursive: true })
-  const schemaDirectory = path.join(__dirname, '..', '..', 'schema')
   await Promise.all(
-    ['json-schema-draft-07', 'settings', 'site', 'batch_spec'].map(async file => {
-      let schema = await readFile(path.join(schemaDirectory, `${file}.schema.json`), 'utf8')
-      // HACK: Rewrite absolute $refs to be relative. They need to be absolute for Monaco to resolve them
-      // when the schema is in a oneOf (to be merged with extension schemas).
-      schema = schema.replace(
-        /https:\/\/sourcegraph\.com\/v1\/settings\.schema\.json#\/definitions\//g,
-        '#/definitions/'
-      )
-
-      const types = await compileJSONSchema(JSON.parse(schema), 'settings.schema', {
-        cwd: schemaDirectory,
-        $refOptions: {
-          resolve: /** @type {import('json-schema-ref-parser').Options['resolve']} */ ({
-            draftV7resolver,
-            // there should be no reason to make network calls during this process,
-            // and if there are we've broken env for offline devs/increased dev startup time
-            http: false,
-          }),
-        },
-      })
-      await writeFile(path.join(outputDirectory, `${file}.schema.d.ts`), types)
+    ['json-schema-draft-07', 'settings', 'site', 'batch_spec'].map(async name => {
+      await generateSchema(name)
     })
   )
 }
