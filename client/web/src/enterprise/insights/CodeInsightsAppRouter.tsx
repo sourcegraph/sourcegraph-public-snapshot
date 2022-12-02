@@ -112,7 +112,7 @@ const CodeInsightsRedirect: FC = () => {
     }
 
     return isThereAvailableInsights ? (
-        <Redirect from={match.url} exact={true} to={`${match.url}/dashboards/all`} />
+        <Redirect from={match.url} exact={true} to={`${match.url}/all`} />
     ) : (
         <Redirect from={match.url} exact={true} to={`${match.url}/about`} />
     )
@@ -125,20 +125,16 @@ function getActiveTabByURL(
     const { match } = props
 
     switch (match.path) {
-        case `${matchURL}/dashboards/:dashboardId?`: {
-            const dashboardId = match.params.dashboardId
-
-            if (dashboardId === 'all') {
-                return CodeInsightsRootPageTab.AllInsights
-            }
-
+        case `${matchURL}/dashboards/:dashboardId?`:
             return CodeInsightsRootPageTab.Dashboards
-        }
+
+        case `${matchURL}/all`:
+            return CodeInsightsRootPageTab.AllInsights
 
         case `${matchURL}/about`:
             return CodeInsightsRootPageTab.GettingStarted
 
         default:
-            return CodeInsightsRootPageTab.AllInsights
+            return CodeInsightsRootPageTab.Dashboards
     }
 }

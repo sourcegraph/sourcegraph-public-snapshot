@@ -10,13 +10,12 @@ import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDa
 
 interface DashboardInsightsProps extends TelemetryProps {
     currentDashboard: InsightDashboard
-    dashboards: InsightDashboard[]
     className?: string
-    onAddInsightRequest: () => void
+    onAddInsightRequest?: () => void
 }
 
 export const DashboardInsights: FC<DashboardInsightsProps> = props => {
-    const { telemetryService, currentDashboard, dashboards, className, onAddInsightRequest } = props
+    const { telemetryService, currentDashboard, className, onAddInsightRequest } = props
 
     const { getInsights } = useContext(CodeInsightsBackendContext)
     const { codeInsightsCompute = false } = useExperimentalFeatures()
@@ -32,7 +31,7 @@ export const DashboardInsights: FC<DashboardInsightsProps> = props => {
         )
     )
 
-    const insightContextValue = useMemo(() => ({ currentDashboard, dashboards }), [currentDashboard, dashboards])
+    const insightContextValue = useMemo(() => ({ currentDashboard }), [currentDashboard])
 
     if (insights === undefined) {
         return <LoadingSpinner aria-hidden={true} inline={false} />

@@ -1,11 +1,26 @@
-.dashboard-select {
-    margin-right: 0.5rem;
-    flex: 1;
+.root {
+    padding-bottom: 2rem;
+}
+
+.header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 1rem;
 }
 
 .dashboard-select-label {
     font-weight: 500;
     margin-right: 1rem;
+}
+
+.dashboard-select {
+    margin-right: 0.5rem;
+    flex: 1;
+}
+
+.dashboard-menu {
+    margin-right: auto;
 }
 
 .limited-access-label {

@@ -76,7 +76,7 @@ describe('Code insights empty dashboard', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/dashboards/all')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/all')
         await driver.page.waitForSelector('[aria-label="Choose a dashboard, All Insights"]')
         await driver.page.click('[aria-label="Choose a dashboard, All Insights"]')
         await driver.page.click('[data-value="Empty Dashboard"]')

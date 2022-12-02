@@ -13,7 +13,7 @@ import styles from './EmptyInsightDashboard.module.scss'
 
 interface EmptyInsightDashboardProps {
     dashboard: InsightDashboard
-    onAddInsightRequest: () => void
+    onAddInsightRequest?: () => void
 }
 
 export const EmptyInsightDashboard: FC<EmptyInsightDashboardProps> = props => {
@@ -46,7 +46,7 @@ export const EmptyVirtualDashboard: FC<{ dashboardId: string }> = props => (
 
 interface EmptyCustomDashboardProps {
     dashboard: CustomInsightDashboard
-    onAddInsightRequest: () => void
+    onAddInsightRequest?: () => void
 }
 
 /**

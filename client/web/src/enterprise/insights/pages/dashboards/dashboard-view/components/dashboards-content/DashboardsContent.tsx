@@ -18,7 +18,6 @@ import { DeleteDashboardModal } from '../delete-dashboard-modal/DeleteDashboardM
 
 import { DashboardHeader } from './components/dashboard-header/DashboardHeader'
 import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsights'
-import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 import styles from './DashboardsContent.module.scss'
 
@@ -39,10 +38,9 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
     const history = useHistory()
     const { dashboard: dashboardPermission, licensed } = useUiFeatures()
 
-    // State to open/close add/remove insights modal UI
+    const [copyURL, isCopied] = useCopyURLHandler()
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
-    const [copyURL, isCopied] = useCopyURLHandler()
 
     useEffect(() => {
         telemetryService.logViewEvent('Insights')
@@ -59,10 +57,6 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                 }
                 return
             }
-            case DashboardMenuAction.AddRemoveInsights: {
-                setAddInsightsState(true)
-                return
-            }
             case DashboardMenuAction.Delete: {
                 setDeleteDashboardActive(true)
                 return
@@ -74,15 +68,11 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
         }
     }
 
-    const handleAddInsightRequest = (): void => {
-        setAddInsightsState(true)
-    }
-
     const addRemovePermissions = dashboardPermission.getAddRemoveInsightsPermission(currentDashboard)
 
     return (
-        <div className="pb-4">
-            <DashboardHeader className="d-flex flex-wrap align-items-center mb-3">
+        <div className={styles.root}>
+            <DashboardHeader className={styles.header}>
                 <span className={styles.dashboardSelectLabel}>Dashboard:</span>
 
                 <DashboardSelect
@@ -95,7 +85,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                 <DashboardMenu
                     dashboard={currentDashboard}
                     tooltipText={isCopied ? 'Copied!' : undefined}
-                    className="mr-auto"
+                    className={styles.dashboardMenu}
                     onSelect={handleSelect}
                 />
 
@@ -104,7 +94,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                         outline={true}
                         variant="secondary"
                         disabled={addRemovePermissions.disabled}
-                        onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
+                        onClick={() => setAddInsightsState(true)}
                     >
                         Add or remove insights
                     </Button>
@@ -121,20 +111,19 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
             {currentDashboard ? (
                 <DashboardInsights
                     currentDashboard={currentDashboard}
-                    dashboards={dashboards}
                     telemetryService={telemetryService}
                     className={styles.insights}
-                    onAddInsightRequest={handleAddInsightRequest}
+                    onAddInsightRequest={() => setAddInsightsState(true)}
                 />
             ) : (
                 <HeroPage icon={MapSearchIcon} title="Hmm, the dashboard wasn't found." />
             )}
 
-            {isAddInsightOpen && isDashboardConfigurable(currentDashboard) && (
+            {isAddInsightOpen && currentDashboard && (
                 <AddInsightModal dashboard={currentDashboard} onClose={() => setAddInsightsState(false)} />
             )}
 
-            {isDeleteDashboardActive && isDashboardConfigurable(currentDashboard) && (
+            {isDeleteDashboardActive && currentDashboard && (
                 <DeleteDashboardModal dashboard={currentDashboard} onClose={() => setDeleteDashboardActive(false)} />
             )}
         </div>
