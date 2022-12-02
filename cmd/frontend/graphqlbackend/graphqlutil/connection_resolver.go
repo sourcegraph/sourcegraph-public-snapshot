@@ -4,8 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -21,7 +19,6 @@ type ConnectionResolver[N ConnectionNode] struct {
 }
 
 type ConnectionNode interface {
-	ID() graphql.ID
 }
 
 type ConnectionResolverStore[N ConnectionNode] interface {

@@ -12,6 +12,9 @@ type repositoryContributorResolver struct {
 
 	repo *RepositoryResolver
 	args repositoryContributorsArgs
+
+	// For use with RepositoryResolver only
+	index int
 }
 
 func (r *repositoryContributorResolver) Person() *PersonResolver {
