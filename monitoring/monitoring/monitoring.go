@@ -281,11 +281,12 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 				panel, err := o.renderPanel(c, panelManipulationOptions{
 					injectLabelMatchers: injectLabelMatchers,
 				}, &panelRenderOptions{
-					groupIndex: groupIndex,
-					rowIndex:   rowIndex,
-					panelIndex: panelIndex,
-					panelWidth: panelWidth,
-					offsetY:    offsetY,
+					groupIndex:  groupIndex,
+					rowIndex:    rowIndex,
+					panelIndex:  panelIndex,
+					panelWidth:  panelWidth,
+					panelHeight: 5,
+					offsetY:     offsetY,
 				})
 				if err != nil {
 					return nil, errors.Wrapf(err, "render panel for %q", o.Name)
@@ -765,10 +766,11 @@ func (o Observable) alertsCount() (count int) {
 }
 
 type panelRenderOptions struct {
-	groupIndex int
-	rowIndex   int
-	panelIndex int
-	panelWidth int
+	groupIndex  int
+	rowIndex    int
+	panelIndex  int
+	panelWidth  int
+	panelHeight int
 
 	offsetY int
 }
@@ -795,7 +797,7 @@ func (o Observable) renderPanel(c *Dashboard, manipulations panelManipulationOpt
 		panel.ID = observablePanelID(opts.groupIndex, opts.rowIndex, opts.panelIndex)
 
 		// Set positioning
-		setPanelSize(panel, opts.panelWidth, 5)
+		setPanelSize(panel, opts.panelWidth, opts.panelHeight)
 		setPanelPos(panel, opts.panelIndex*opts.panelWidth, opts.offsetY)
 	}
 

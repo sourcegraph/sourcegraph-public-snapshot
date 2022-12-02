@@ -147,8 +147,9 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	var generatedAssets []string
 	var err error
 	if len(opts.MultiInstanceDashboardGroupings) > 0 {
-		logger.Info("generating multi-instance")
-		generatedAssets, err = generateMultiInstance(ctx, logger, grafanaClient, grafanaFolderID, dashboards, opts)
+		l := logger.Scoped("multi-instance", "multi-instance dashboards")
+		l.Info("generating multi-instance")
+		generatedAssets, err = generateMultiInstance(ctx, l, grafanaClient, grafanaFolderID, dashboards, opts)
 	} else {
 		logger.Info("generating all")
 		generatedAssets, err = generateAll(ctx, logger, grafanaClient, grafanaFolderID, dashboards, opts)
