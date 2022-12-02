@@ -247,7 +247,7 @@ interface TokensAsLinksConfiguration {
 
 export const tokensAsLinks = ({ history, blobInfo, preloadGoToDefinition }: TokensAsLinksConfiguration): Extension => {
     /**
-     * Prefer precise code intelligence ranges, fall back to making certain Occurences interactive.
+     * Prefer precise code intelligence ranges, fall back to making certain Occurrences interactive.
      */
     const ranges =
         blobInfo.stencil && blobInfo.stencil.length > 0
