@@ -45,7 +45,7 @@ export const FilePathSearchResult: React.FunctionComponent<FilePathSearchResult 
                         : undefined
                 }
                 className={classNames(styles.titleInner, styles.mutedRepoFileLink)}
-                isSelectable={true}
+                isKeyboardSelectable={true}
             />
             <CopyPathAction filePath={result.path} className={styles.copyButton} telemetryService={telemetryService} />
         </span>

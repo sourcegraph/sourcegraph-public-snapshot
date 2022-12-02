@@ -222,7 +222,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                             : undefined
                     }
                     className={classNames(styles.titleInner, styles.mutedRepoFileLink)}
-                    isSelectable={true}
+                    isKeyboardSelectable={true}
                 />
                 <CopyPathAction
                     className={styles.copyButton}
