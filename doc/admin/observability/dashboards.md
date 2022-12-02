@@ -24437,13 +24437,13 @@ Query: `rate(src_telemetry_job_total{op="SendEvents"}[1h]) / on() group_right() 
 
 <br />
 
-## Open Telemetry Collector
+## OpenTelemetry Collector
 
-<p class="subtitle">Metrics about the operation of the open telemetry collector.</p>
+<p class="subtitle">The OpenTelemetry collector ingests OpenTelemetry data from Sourcegraph and exports it to the configured backends.</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/otel-collector/otel-collector` on your Sourcegraph instance.
 
-### Open Telemetry Collector: Receivers
+### OpenTelemetry Collector: Receivers
 
 #### otel-collector: otel_span_receive_rate
 
@@ -24482,11 +24482,11 @@ Query: `sum(rate(otelcol_receiver_accepted_spans{receiver=~"^.*"}[1m])) by (rece
 								Shows the amount of spans that have been refused by a receiver.
 								
 								A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
-							
+								
  								Spans can be rejected either due to a misconfigured receiver or receiving spans in the wrong format. The log of the collector will have more information on why a span was rejected.
 								For more information on tracing and configuration of a OpenTelemetry receiver see https://opentelemetry.io/docs/collector/configuration/#receivers.
 
-This panel has no related alerts.
+Refer to the [alerts reference](./alerts.md#otel-collector-otel-span-refused) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100001` on your Sourcegraph instance.
 
@@ -24501,14 +24501,14 @@ Query: `sum(rate(otelcol_receiver_refused_spans{receiver=~"^.*.*"}[1m])) by (rec
 
 <br />
 
-### Open Telemetry Collector: Exporters
+### OpenTelemetry Collector: Exporters
 
 #### otel-collector: otel_span_export_rate
 
 <p class="subtitle">Spans exported per second</p>
 
 								Shows the rate of spans being sent by the exporter
- 								
+								
 								A Trace is a collection of spans. A Span represents a unit of work or operation. Spans are the building blocks of Traces.
 								The rate of spans here indicates spans that have made it through the configured pipeline and have been sent to the configured export destination.
 								
@@ -24537,7 +24537,7 @@ Query: `sum(rate(otelcol_exporter_sent_spans{exporter=~"^.*"}[1m])) by (exporter
 								
 								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
 
-This panel has no related alerts.
+Refer to the [alerts reference](./alerts.md#otel-collector-otel-span-failed-send-size) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100101` on your Sourcegraph instance.
 
@@ -24560,7 +24560,7 @@ Query: `sum(rate(otelcol_exporter_send_failed_spans{exporter=~"^.*"}[1m])) by (e
 								
 								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.
 
-This panel has no related alerts.
+Refer to the [alerts reference](./alerts.md#otel-collector-otel-span-queue-size) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewPanel=100102` on your Sourcegraph instance.
 
@@ -24598,11 +24598,11 @@ Query: `sum(rate(otelcol_exporter_queue_capacity{exporter=~"^.*"}[1m])) by (expo
 
 <br />
 
-### Open Telemetry Collector: Collector resource usage
+### OpenTelemetry Collector: Collector resource usage
 
 #### otel-collector: otel_cpu_usage
 
-<p class="subtitle">Cpu usuge of the collector</p>
+<p class="subtitle">Cpu usage of the collector</p>
 
 								Shows the cpu usage of the OpenTelemetry collector
 
@@ -24644,13 +24644,13 @@ Query: `sum(rate(otelcol_process_memory_rss{job=~"^.*"}[1m])) by (job)`
 
 #### otel-collector: otel_memory_usage
 
-<p class="subtitle">Total memory usage</p>
+<p class="subtitle">Memory used by the collector</p>
 
 								Shows how much memory is being used by the otel collector.
 								
 								* High memory usage might indicate thad the configured pipeline is keeping a lot of spans in memory for processing
 								* Spans failing to be sent and the exporter is configured to retry
-								* A high bacth count by using a batch processor
+								* A high batch count by using a batch processor
 								
 								For more information on configuring processors for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#processors.
 
@@ -24669,7 +24669,7 @@ Query: `sum(rate(otelcol_process_runtime_total_alloc_bytes{job=~"^.*"}[1m])) by 
 
 <br />
 
-### Open Telemetry Collector: Container monitoring (not available on server)
+### OpenTelemetry Collector: Container monitoring (not available on server)
 
 #### otel-collector: container_missing
 
@@ -24760,7 +24760,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^otel-collector.*"}[1
 
 <br />
 
-### Open Telemetry Collector: Kubernetes monitoring (only available on Kubernetes)
+### OpenTelemetry Collector: Kubernetes monitoring (only available on Kubernetes)
 
 #### otel-collector: pods_available_percentage
 

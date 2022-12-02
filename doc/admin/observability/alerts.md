@@ -7851,6 +7851,99 @@ Generated query for warning alert: `max((rate(src_telemetry_job_total{op="SendEv
 
 <br />
 
+## otel-collector: otel_span_refused
+
+<p class="subtitle">spans that the receiver refused</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> otel-collector: 1+ spans that the receiver refused for 5m0s
+
+**Next steps**
+
+- Check logs of the collector and configuration of the receiver
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#otel-collector-otel-span-refused).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_otel-collector_otel_span_refused"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum by(receiver) (rate(otelcol_receiver_refused_spans{receiver=~"^.*.*"}[1m]))) > 1)`
+
+</details>
+
+<br />
+
+## otel-collector: otel_span_failed_send_size
+
+<p class="subtitle">spans that the exporter failed to send</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> otel-collector: 1+ spans that the exporter failed to send for 5m0s
+
+**Next steps**
+
+- Check the configuration of the exporter and if the service being exported is up
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#otel-collector-otel-span-failed-send-size).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_otel-collector_otel_span_failed_send_size"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum by(exporter) (rate(otelcol_exporter_send_failed_spans{exporter=~"^.*"}[1m]))) > 1)`
+
+</details>
+
+<br />
+
+## otel-collector: otel_span_queue_size
+
+<p class="subtitle">spans pending to be sent</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> otel-collector: 10+ spans pending to be sent for 5m0s
+
+**Next steps**
+
+- Check configuration of exporter
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#otel-collector-otel-span-queue-size).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_otel-collector_otel_span_queue_size"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum by(exporter) (rate(otelcol_exporter_queue_size{exporter=~"^.*"}[1m]))) > 10)`
+
+</details>
+
+<br />
+
 ## otel-collector: container_cpu_usage
 
 <p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
