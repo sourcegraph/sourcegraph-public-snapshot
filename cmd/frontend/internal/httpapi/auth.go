@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -84,6 +86,22 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 						log.String("token", token),
 						log.Error(err),
 					)
+
+					anonymousId, anonCookieSet := cookie.AnonymousUID(r)
+					if !anonCookieSet {
+						anonymousId = fmt.Sprintf("unknown user @ %s", time.Now()) // we don't have a reliable user identifier at the time of the failure
+					}
+					db.SecurityEventLogs().LogEvent(
+						r.Context(),
+						&database.SecurityEvent{
+							Name:            database.SecurityEventAccessTokenInvalid,
+							URL:             r.URL.RequestURI(),
+							AnonymousUserID: anonymousId,
+							Source:          "BACKEND",
+							Timestamp:       time.Now(),
+						},
+					)
+
 					http.Error(w, "Invalid access token.", http.StatusUnauthorized)
 					return
 				}
@@ -129,8 +147,37 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 						log.Int32("subjectUserID", subjectUserID),
 						log.Error(err),
 					)
+
+					args, err := json.Marshal(map[string]any{
+						"subject_user_id": subjectUserID,
+					})
+					if err != nil {
+						logger.Error(
+							"failed to marshal JSON for security event log argument",
+							log.String("eventName", string(database.SecurityEventAccessTokenSubjectNotSiteAdmin)),
+							log.Error(err),
+						)
+						// OK to continue, we still want the security event log to be created
+					}
+					db.SecurityEventLogs().LogEvent(
+						r.Context(),
+						&database.SecurityEvent{
+							Name:      database.SecurityEventAccessTokenSubjectNotSiteAdmin,
+							URL:       r.URL.RequestURI(),
+							UserID:    uint32(subjectUserID),
+							Argument:  args,
+							Source:    "BACKEND",
+							Timestamp: time.Now(),
+						},
+					)
+
 					http.Error(w, "The subject user of a sudo access token must be a site admin.", http.StatusForbidden)
 					return
+				}
+
+				var tokenSubjectUserName string
+				if tokenSubjectUser, err := db.Users().GetByID(r.Context(), subjectUserID); err == nil {
+					tokenSubjectUserName = tokenSubjectUser.Username
 				}
 
 				// Sudo to the other user if this is a sudo token. We already checked that the token has
@@ -161,7 +208,10 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 				)
 
 				args, err := json.Marshal(map[string]any{
-					"sudo_user_id": actorUserID,
+					"sudo_user_id":            actorUserID,
+					"sudo_user":               user.Username,
+					"token_subject_user_id":   subjectUserID,
+					"token_subject_user_name": tokenSubjectUserName,
 				})
 				if err != nil {
 					logger.Error(
@@ -182,6 +232,7 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 					),
 					&database.SecurityEvent{
 						Name:      database.SecurityEventAccessTokenImpersonated,
+						URL:       r.URL.RequestURI(),
 						UserID:    uint32(subjectUserID),
 						Argument:  args,
 						Source:    "BACKEND",

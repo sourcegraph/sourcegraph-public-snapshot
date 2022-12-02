@@ -49,5 +49,10 @@
     "path": "internal/database",
     "prefix": "TestGetByUUID",
     "reason": "New NOT NULL `name` column is added. The test is trying to add an entry without populating this column."
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestIntegration",
+    "reason": "Added a UNIQUE constraint on batch_specs.rand_id and changeset_specs.rand_id, some tests fail because we had some duplicate Rand ID creation in tests."
   }
 ]

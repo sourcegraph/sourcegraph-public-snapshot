@@ -2,7 +2,6 @@ import React from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -35,7 +34,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     as,
     index,
 }) => {
-    const renderTitle = (): JSX.Element => (
+    const title = (
         <div className={styles.title}>
             <span
                 className={classNames(
@@ -47,7 +46,13 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
                 <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
                 <span aria-hidden={true}> ›</span> <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
                 <span aria-hidden={true}>{': '}</span>
-                <Link to={getCommitMatchUrl(result)}>{result.message.split('\n', 1)[0]}</Link>
+                <Link
+                    to={getCommitMatchUrl(result)}
+                    data-selectable-search-result="true"
+                    data-selectable-search-result-header-link="true"
+                >
+                    {result.message.split('\n', 1)[0]}
+                </Link>
             </span>
             {/*
                 Relative positioning needed needed to avoid VisuallyHidden creating a scrollable overflow in Chrome.
@@ -67,29 +72,23 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
         </div>
     )
 
-    const renderBody = (): JSX.Element => (
-        <CommitSearchResultMatch
-            key={result.url}
-            item={result}
-            platformContext={platformContext}
-            openInNewTab={openInNewTab}
-        />
-    )
-
     return (
         <ResultContainer
             index={index}
-            icon={SourceCommitIcon}
-            collapsible={false}
-            defaultExpanded={true}
-            title={renderTitle()}
+            title={title}
             resultType={result.type}
             onResultClicked={onSelect}
-            expandedChildren={renderBody()}
             repoName={result.repository}
             repoStars={result.repoStars}
             className={containerClassName}
             as={as}
-        />
+        >
+            <CommitSearchResultMatch
+                key={result.url}
+                item={result}
+                platformContext={platformContext}
+                openInNewTab={openInNewTab}
+            />
+        </ResultContainer>
     )
 }

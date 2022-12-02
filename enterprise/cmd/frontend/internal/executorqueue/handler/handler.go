@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -46,7 +47,7 @@ type QueueOptions[T workerutil.Record] struct {
 
 	// RecordTransformer is a required hook for each registered queue that transforms a generic
 	// record from that queue into the job to be given to an executor.
-	RecordTransformer func(ctx context.Context, record T, resourceMetadata ResourceMetadata) (apiclient.Job, error)
+	RecordTransformer func(ctx context.Context, version string, record T, resourceMetadata ResourceMetadata) (apiclient.Job, error)
 }
 
 func NewHandler[T workerutil.Record](executorStore database.ExecutorStore, metricsStore metricsstore.DistributedStore, queueOptions QueueOptions[T]) *handler[T] {
@@ -68,6 +69,7 @@ type ResourceMetadata struct {
 
 type executorMetadata struct {
 	Name      string
+	Version   string
 	Resources ResourceMetadata
 }
 
@@ -81,6 +83,15 @@ func (h *handler[T]) dequeue(ctx context.Context, metadata executorMetadata) (_ 
 		return apiclient.Job{}, false, err
 	}
 
+	version2Supported := false
+	if metadata.Version != "" {
+		var err error
+		version2Supported, err = api.CheckSourcegraphVersion(metadata.Version, "4.3.0-0", "2022-11-24")
+		if err != nil {
+			return apiclient.Job{}, false, err
+		}
+	}
+
 	// executorName is supposed to be unique.
 	record, dequeued, err := h.Store.Dequeue(ctx, metadata.Name, nil)
 	if err != nil {
@@ -91,7 +102,7 @@ func (h *handler[T]) dequeue(ctx context.Context, metadata executorMetadata) (_ 
 	}
 
 	logger := log.Scoped("dequeue", "Select a job record from the database.")
-	job, err := h.RecordTransformer(ctx, record, metadata.Resources)
+	job, err := h.RecordTransformer(ctx, metadata.Version, record, metadata.Resources)
 	if err != nil {
 		if _, err := h.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), store.MarkFinalOptions{}); err != nil {
 			logger.Error("Failed to mark record as failed",
@@ -100,6 +111,12 @@ func (h *handler[T]) dequeue(ctx context.Context, metadata executorMetadata) (_ 
 		}
 
 		return apiclient.Job{}, false, errors.Wrap(err, "RecordTransformer")
+	}
+
+	// If this executor supports v2, return a v2 payload. Based on this field,
+	// marshalling will be switched between old and new payload.
+	if version2Supported {
+		job.Version = 2
 	}
 
 	return job, true, nil

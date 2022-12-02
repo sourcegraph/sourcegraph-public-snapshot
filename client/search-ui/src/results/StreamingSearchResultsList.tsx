@@ -1,9 +1,6 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import FileIcon from 'mdi-react/FileIcon'
 import { useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -11,7 +8,13 @@ import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { SearchContextProps } from '@sourcegraph/search'
-import { CommitSearchResult, RepoSearchResult, FileSearchResult } from '@sourcegraph/search-ui'
+import {
+    CommitSearchResult,
+    RepoSearchResult,
+    FileContentSearchResult,
+    FilePathSearchResult,
+    SymbolSearchResult,
+} from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
@@ -22,9 +25,6 @@ import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import {
     AggregateStreamingSearchResults,
-    ContentMatch,
-    SymbolMatch,
-    PathMatch,
     SearchMatch,
     getMatchUrl,
     getRevision,
@@ -38,6 +38,7 @@ import { smartSearchClickedEvent } from '../util/events'
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 import { useItemsToShow } from './use-items-to-show'
+import { useSearchResultsKeyboardNavigation } from './useSearchResultsKeyboardNavigation'
 
 import resultContainerStyles from '../components/ResultContainer.module.scss'
 import styles from './StreamingSearchResultsList.module.scss'
@@ -78,6 +79,8 @@ export interface StreamingSearchResultsListProps
     prefetchFile?: FilePrefetcher
 
     prefetchFileEnabled?: boolean
+
+    enableKeyboardNavigation?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -101,10 +104,12 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     resultClassName,
     prefetchFile,
     prefetchFileEnabled,
+    enableKeyboardNavigation,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
     const location = useLocation()
+    const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
 
     const logSearchResultClicked = useCallback(
         (index: number, type: string) => {
@@ -146,8 +151,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             function renderResultContent(): JSX.Element {
                 switch (result.type) {
                     case 'content':
-                    case 'path':
                     case 'symbol':
+                    case 'path':
                         return (
                             <PrefetchableFile
                                 isPrefetchEnabled={prefetchFileEnabled}
@@ -161,24 +166,48 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 className={resultContainerStyles.resultContainer}
                                 as="li"
                             >
-                                <FileSearchResult
-                                    index={index}
-                                    location={location}
-                                    telemetryService={telemetryService}
-                                    icon={getFileMatchIcon(result)}
-                                    result={result}
-                                    onSelect={() => logSearchResultClicked(index, 'fileMatch')}
-                                    expanded={false}
-                                    showAllMatches={false}
-                                    allExpanded={allExpanded}
-                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                    repoDisplayName={displayRepoName(result.repository)}
-                                    settingsCascade={settingsCascade}
-                                    extensionsController={extensionsController}
-                                    hoverifier={hoverifier}
-                                    openInNewTab={openMatchesInNewTab}
-                                    containerClassName={resultClassName}
-                                />
+                                {result.type === 'content' && (
+                                    <FileContentSearchResult
+                                        index={index}
+                                        location={location}
+                                        telemetryService={telemetryService}
+                                        result={result}
+                                        onSelect={() => logSearchResultClicked(index, 'fileMatch')}
+                                        defaultExpanded={false}
+                                        showAllMatches={false}
+                                        allExpanded={allExpanded}
+                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                        repoDisplayName={displayRepoName(result.repository)}
+                                        settingsCascade={settingsCascade}
+                                        extensionsController={extensionsController}
+                                        hoverifier={hoverifier}
+                                        openInNewTab={openMatchesInNewTab}
+                                        containerClassName={resultClassName}
+                                    />
+                                )}
+                                {result.type === 'symbol' && (
+                                    <SymbolSearchResult
+                                        index={index}
+                                        telemetryService={telemetryService}
+                                        result={result}
+                                        onSelect={() => logSearchResultClicked(index, 'symbolMatch')}
+                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                        repoDisplayName={displayRepoName(result.repository)}
+                                        settingsCascade={settingsCascade}
+                                        openInNewTab={openMatchesInNewTab}
+                                        containerClassName={resultClassName}
+                                    />
+                                )}
+                                {result.type === 'path' && (
+                                    <FilePathSearchResult
+                                        index={index}
+                                        result={result}
+                                        onSelect={() => logSearchResultClicked(index, 'filePathMatch')}
+                                        repoDisplayName={displayRepoName(result.repository)}
+                                        containerClassName={resultClassName}
+                                        telemetryService={telemetryService}
+                                    />
+                                )}
                             </PrefetchableFile>
                         )
                     case 'commit':
@@ -235,6 +264,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<
         ]
     )
 
+    const [showFocusInputMessage, onVisibilityChange] = useSearchResultsKeyboardNavigation(
+        rootRef,
+        enableKeyboardNavigation
+    )
+
     return (
         <>
             <VirtualList<SearchMatch>
@@ -247,10 +281,18 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 itemProps={undefined}
                 itemKey={itemKey}
                 renderItem={renderResult}
+                onRef={setRootRef}
+                onVisibilityChange={onVisibilityChange}
             />
 
+            <div
+                className={classNames(styles.focusInputMessage, showFocusInputMessage && styles.focusInputMessageShow)}
+            >
+                Press <span className={styles.focusInputMessageSlash}>/</span> to focus the search input
+            </div>
+
             {itemsToShow >= resultsNumber && (
-                <StreamingSearchResultFooter results={results}>
+                <StreamingSearchResultFooter results={results} telemetryService={telemetryService}>
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage
@@ -282,15 +324,4 @@ function itemKey(item: SearchMatch): string {
         return `file:${getMatchUrl(item)}`
     }
     return getMatchUrl(item)
-}
-
-function getFileMatchIcon(result: ContentMatch | SymbolMatch | PathMatch): React.ComponentType<{ className?: string }> {
-    switch (result.type) {
-        case 'content':
-            return FileDocumentIcon
-        case 'symbol':
-            return AlphaSBoxIcon
-        case 'path':
-            return FileIcon
-    }
 }

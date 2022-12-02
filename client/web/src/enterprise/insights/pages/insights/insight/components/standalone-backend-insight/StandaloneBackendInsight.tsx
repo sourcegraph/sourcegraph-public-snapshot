@@ -22,6 +22,7 @@ import {
     DrillDownFiltersStep,
     BackendInsightChart,
     BackendInsightErrorAlert,
+    BackendInsightTimeoutIcon,
     DrillDownFiltersFormValues,
     DrillDownInsightCreationFormValues,
     parseSeriesLimit,
@@ -161,6 +162,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                 onMouseLeave={trackMouseLeave}
             >
                 <InsightCardHeader title={insight.title}>
+                    {insightData?.isAllSeriesErrored && <BackendInsightTimeoutIcon timeoutLevel="insight" />}
                     <StandaloneInsightContextMenu
                         insight={insight}
                         zeroYAxisMin={zeroYAxisMin}

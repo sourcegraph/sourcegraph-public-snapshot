@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -176,6 +177,10 @@ func (userEmails) Remove(ctx context.Context, logger log.Logger, db database.DB,
 		return errors.Wrap(err, "deleting reset codes")
 	}
 
+	if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
+		return errors.Wrap(err, "removing stale perforce external account")
+	}
+
 	if conf.CanSendEmail() {
 		if err := UserEmails.SendUserEmailOnFieldUpdate(ctx, logger, tx, userID, "removed an email"); err != nil {
 			logger.Warn("Failed to send email to inform user of email removal", log.Error(err))
@@ -183,6 +188,16 @@ func (userEmails) Remove(ctx context.Context, logger log.Logger, db database.DB,
 	}
 
 	return nil
+}
+
+// deleteStalePerforceExternalAccounts will remove any Perforce external accounts associated with the given user
+// and e-mail combination.
+func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, userID int32, email string) error {
+	return db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
+		UserID:      userID,
+		AccountID:   email,
+		ServiceType: extsvc.TypePerforce,
+	})
 }
 
 // MakeEmailVerificationCode returns a random string that can be used as an email verification

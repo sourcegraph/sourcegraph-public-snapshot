@@ -192,7 +192,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 			if err := json.Unmarshal([]byte(entry.Value), &cachedExecutionResult); err != nil {
 				t.Fatal(err)
 			}
-			if cachedExecutionResult.Diff == "" {
+			if len(cachedExecutionResult.Diff) == 0 {
 				t.Fatalf("wrong diff extracted")
 			}
 		}
@@ -341,7 +341,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 			if err := json.Unmarshal([]byte(entry.Value), &cachedExecutionResult); err != nil {
 				t.Fatal(err)
 			}
-			if cachedExecutionResult.Diff == "" {
+			if len(cachedExecutionResult.Diff) == 0 {
 				t.Fatalf("wrong diff extracted")
 			}
 		}

@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	github "github.com/google/go-github/v41/github"
 	uuid "github.com/google/uuid"
 	sqlf "github.com/keegancsmith/sqlf"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
@@ -44168,10 +44167,6 @@ type MockUserExternalAccountsStore struct {
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *UserExternalAccountsStoreTransactFunc
-	// UpdateGitHubAppInstallationsFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// UpdateGitHubAppInstallations.
-	UpdateGitHubAppInstallationsFunc *UserExternalAccountsStoreUpdateGitHubAppInstallationsFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *UserExternalAccountsStoreWithFunc
@@ -44201,7 +44196,7 @@ func NewMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 			},
 		},
 		DeleteFunc: &UserExternalAccountsStoreDeleteFunc{
-			defaultHook: func(context.Context, ...int32) (r0 error) {
+			defaultHook: func(context.Context, ExternalAccountsDeleteOptions) (r0 error) {
 				return
 			},
 		},
@@ -44265,11 +44260,6 @@ func NewMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 				return
 			},
 		},
-		UpdateGitHubAppInstallationsFunc: &UserExternalAccountsStoreUpdateGitHubAppInstallationsFunc{
-			defaultHook: func(context.Context, *extsvc.Account, []github.Installation) (r0 error) {
-				return
-			},
-		},
 		WithFunc: &UserExternalAccountsStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) (r0 UserExternalAccountsStore) {
 				return
@@ -44304,7 +44294,7 @@ func NewStrictMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 			},
 		},
 		DeleteFunc: &UserExternalAccountsStoreDeleteFunc{
-			defaultHook: func(context.Context, ...int32) error {
+			defaultHook: func(context.Context, ExternalAccountsDeleteOptions) error {
 				panic("unexpected invocation of MockUserExternalAccountsStore.Delete")
 			},
 		},
@@ -44366,11 +44356,6 @@ func NewStrictMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 		TransactFunc: &UserExternalAccountsStoreTransactFunc{
 			defaultHook: func(context.Context) (UserExternalAccountsStore, error) {
 				panic("unexpected invocation of MockUserExternalAccountsStore.Transact")
-			},
-		},
-		UpdateGitHubAppInstallationsFunc: &UserExternalAccountsStoreUpdateGitHubAppInstallationsFunc{
-			defaultHook: func(context.Context, *extsvc.Account, []github.Installation) error {
-				panic("unexpected invocation of MockUserExternalAccountsStore.UpdateGitHubAppInstallations")
 			},
 		},
 		WithFunc: &UserExternalAccountsStoreWithFunc{
@@ -44438,9 +44423,6 @@ func NewMockUserExternalAccountsStoreFrom(i UserExternalAccountsStore) *MockUser
 		},
 		TransactFunc: &UserExternalAccountsStoreTransactFunc{
 			defaultHook: i.Transact,
-		},
-		UpdateGitHubAppInstallationsFunc: &UserExternalAccountsStoreUpdateGitHubAppInstallationsFunc{
-			defaultHook: i.UpdateGitHubAppInstallations,
 		},
 		WithFunc: &UserExternalAccountsStoreWithFunc{
 			defaultHook: i.With,
@@ -44797,16 +44779,16 @@ func (c UserExternalAccountsStoreCreateUserAndSaveFuncCall) Results() []interfac
 // Delete method of the parent MockUserExternalAccountsStore instance is
 // invoked.
 type UserExternalAccountsStoreDeleteFunc struct {
-	defaultHook func(context.Context, ...int32) error
-	hooks       []func(context.Context, ...int32) error
+	defaultHook func(context.Context, ExternalAccountsDeleteOptions) error
+	hooks       []func(context.Context, ExternalAccountsDeleteOptions) error
 	history     []UserExternalAccountsStoreDeleteFuncCall
 	mutex       sync.Mutex
 }
 
 // Delete delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockUserExternalAccountsStore) Delete(v0 context.Context, v1 ...int32) error {
-	r0 := m.DeleteFunc.nextHook()(v0, v1...)
+func (m *MockUserExternalAccountsStore) Delete(v0 context.Context, v1 ExternalAccountsDeleteOptions) error {
+	r0 := m.DeleteFunc.nextHook()(v0, v1)
 	m.DeleteFunc.appendCall(UserExternalAccountsStoreDeleteFuncCall{v0, v1, r0})
 	return r0
 }
@@ -44814,7 +44796,7 @@ func (m *MockUserExternalAccountsStore) Delete(v0 context.Context, v1 ...int32) 
 // SetDefaultHook sets function that is called when the Delete method of the
 // parent MockUserExternalAccountsStore instance is invoked and the hook
 // queue is empty.
-func (f *UserExternalAccountsStoreDeleteFunc) SetDefaultHook(hook func(context.Context, ...int32) error) {
+func (f *UserExternalAccountsStoreDeleteFunc) SetDefaultHook(hook func(context.Context, ExternalAccountsDeleteOptions) error) {
 	f.defaultHook = hook
 }
 
@@ -44823,7 +44805,7 @@ func (f *UserExternalAccountsStoreDeleteFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UserExternalAccountsStoreDeleteFunc) PushHook(hook func(context.Context, ...int32) error) {
+func (f *UserExternalAccountsStoreDeleteFunc) PushHook(hook func(context.Context, ExternalAccountsDeleteOptions) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -44832,19 +44814,19 @@ func (f *UserExternalAccountsStoreDeleteFunc) PushHook(hook func(context.Context
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *UserExternalAccountsStoreDeleteFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, ...int32) error {
+	f.SetDefaultHook(func(context.Context, ExternalAccountsDeleteOptions) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *UserExternalAccountsStoreDeleteFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, ...int32) error {
+	f.PushHook(func(context.Context, ExternalAccountsDeleteOptions) error {
 		return r0
 	})
 }
 
-func (f *UserExternalAccountsStoreDeleteFunc) nextHook() func(context.Context, ...int32) error {
+func (f *UserExternalAccountsStoreDeleteFunc) nextHook() func(context.Context, ExternalAccountsDeleteOptions) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -44881,25 +44863,18 @@ type UserExternalAccountsStoreDeleteFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []int32
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ExternalAccountsDeleteOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
 }
 
 // Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
+// invocation.
 func (c UserExternalAccountsStoreDeleteFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -46220,120 +46195,6 @@ func (c UserExternalAccountsStoreTransactFuncCall) Args() []interface{} {
 // invocation.
 func (c UserExternalAccountsStoreTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// UserExternalAccountsStoreUpdateGitHubAppInstallationsFunc describes the
-// behavior when the UpdateGitHubAppInstallations method of the parent
-// MockUserExternalAccountsStore instance is invoked.
-type UserExternalAccountsStoreUpdateGitHubAppInstallationsFunc struct {
-	defaultHook func(context.Context, *extsvc.Account, []github.Installation) error
-	hooks       []func(context.Context, *extsvc.Account, []github.Installation) error
-	history     []UserExternalAccountsStoreUpdateGitHubAppInstallationsFuncCall
-	mutex       sync.Mutex
-}
-
-// UpdateGitHubAppInstallations delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockUserExternalAccountsStore) UpdateGitHubAppInstallations(v0 context.Context, v1 *extsvc.Account, v2 []github.Installation) error {
-	r0 := m.UpdateGitHubAppInstallationsFunc.nextHook()(v0, v1, v2)
-	m.UpdateGitHubAppInstallationsFunc.appendCall(UserExternalAccountsStoreUpdateGitHubAppInstallationsFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// UpdateGitHubAppInstallations method of the parent
-// MockUserExternalAccountsStore instance is invoked and the hook queue is
-// empty.
-func (f *UserExternalAccountsStoreUpdateGitHubAppInstallationsFunc) SetDefaultHook(hook func(context.Context, *extsvc.Account, []github.Installation) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UpdateGitHubAppInstallations method of the parent
-// MockUserExternalAccountsStore instance invokes the hook at the front of
-// the queue and discards it. After the queue is empty, the default hook
-// function is invoked for any future action.
-func (f *UserExternalAccountsStoreUpdateGitHubAppInstallationsFunc) PushHook(hook func(context.Context, *extsvc.Account, []github.Installation) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserExternalAccountsStoreUpdateGitHubAppInstallationsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *extsvc.Account, []github.Installation) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserExternalAccountsStoreUpdateGitHubAppInstallationsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *extsvc.Account, []github.Installation) error {
-		return r0
-	})
-}
-
-func (f *UserExternalAccountsStoreUpdateGitHubAppInstallationsFunc) nextHook() func(context.Context, *extsvc.Account, []github.Installation) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserExternalAccountsStoreUpdateGitHubAppInstallationsFunc) appendCall(r0 UserExternalAccountsStoreUpdateGitHubAppInstallationsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// UserExternalAccountsStoreUpdateGitHubAppInstallationsFuncCall objects
-// describing the invocations of this function.
-func (f *UserExternalAccountsStoreUpdateGitHubAppInstallationsFunc) History() []UserExternalAccountsStoreUpdateGitHubAppInstallationsFuncCall {
-	f.mutex.Lock()
-	history := make([]UserExternalAccountsStoreUpdateGitHubAppInstallationsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserExternalAccountsStoreUpdateGitHubAppInstallationsFuncCall is an
-// object that describes an invocation of method
-// UpdateGitHubAppInstallations on an instance of
-// MockUserExternalAccountsStore.
-type UserExternalAccountsStoreUpdateGitHubAppInstallationsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *extsvc.Account
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 []github.Installation
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserExternalAccountsStoreUpdateGitHubAppInstallationsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserExternalAccountsStoreUpdateGitHubAppInstallationsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // UserExternalAccountsStoreWithFunc describes the behavior when the With

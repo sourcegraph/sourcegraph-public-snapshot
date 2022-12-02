@@ -393,6 +393,8 @@ func RepoUpdater() *monitoring.Dashboard {
 							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Seconds),
 							Owner:       monitoring.ObservableOwnerIAM,
 							NextSteps:   "Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).",
+
+							MultiInstance: true,
 						},
 						{
 							Name:        "perms_syncer_stale_perms",

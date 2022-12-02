@@ -1282,28 +1282,41 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 }
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
-	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
+	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		c.logger.Warn("reading gitserver create-commit-from-patch response", sglog.Error(err))
-		return "", &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "CreateCommitFromPatch",
-			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.Status, readResponseBody(resp.Body)),
+	// If gitserver doesn't speak the binary endpoint yet, we fall back to the old one.
+	if resp.StatusCode == http.StatusNotFound {
+		resp.Body.Close()
+		resp, err = c.httpPost(ctx, req.Repo, "create-commit-from-patch", protocol.V1CreateCommitFromPatchRequest{
+			Repo:         req.Repo,
+			BaseCommit:   req.BaseCommit,
+			Patch:        string(req.Patch),
+			TargetRef:    req.TargetRef,
+			UniqueRef:    req.UniqueRef,
+			CommitInfo:   req.CommitInfo,
+			Push:         req.Push,
+			GitApplyArgs: req.GitApplyArgs,
+		})
+		if err != nil {
+			return "", err
 		}
+		defer resp.Body.Close()
 	}
 
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to read response body")
+	}
 	var res protocol.CreateCommitFromPatchResponse
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+	if err := json.Unmarshal(body, &res); err != nil {
 		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
 		return "", &url.Error{
 			URL: resp.Request.URL.String(),
 			Op:  "CreateCommitFromPatch",
-			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %v", resp.StatusCode, err),
+			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
 		}
 	}
 

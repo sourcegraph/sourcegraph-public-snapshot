@@ -3,6 +3,7 @@ package webhookhandlers
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	gh "github.com/google/go-github/v43/github"
 	"github.com/inconshreveable/log15"
@@ -62,7 +63,7 @@ func scheduleUserUpdate(ctx context.Context, db database.DB, githubUser *gh.User
 	}
 	accs, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		ServiceType: "github",
-		AccountID:   githubUser.GetID(),
+		AccountID:   strconv.FormatInt(githubUser.GetID(), 10),
 	})
 	if err != nil {
 		return err

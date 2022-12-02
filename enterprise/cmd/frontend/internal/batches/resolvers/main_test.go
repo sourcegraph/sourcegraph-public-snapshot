@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -39,7 +40,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-const testDiff = `diff README.md README.md
+var testDiff = []byte(`diff README.md README.md
 index 671e50a..851b23a 100644
 --- README.md
 +++ README.md
@@ -56,12 +57,12 @@ index 6f8b5d9..17400bc 100644
 -example.com
 +sourcegraph.com
  never-touch-the-mouse.com
-`
+`)
 
 // testDiffGraphQL is the parsed representation of testDiff.
 var testDiffGraphQL = apitest.FileDiffs{
 	TotalCount: 2,
-	RawDiff:    testDiff,
+	RawDiff:    string(testDiff),
 	DiffStat:   apitest.DiffStat{Added: 2, Deleted: 2},
 	PageInfo:   apitest.PageInfo{},
 	Nodes: []apitest.FileDiff{
@@ -180,7 +181,7 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
 }
 
-func mockRepoComparison(t *testing.T, gitserverClient *gitserver.MockClient, baseRev, headRev, diff string) {
+func mockRepoComparison(t *testing.T, gitserverClient *gitserver.MockClient, baseRev, headRev string, diff []byte) {
 	t.Helper()
 
 	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
@@ -192,7 +193,7 @@ func mockRepoComparison(t *testing.T, gitserverClient *gitserver.MockClient, bas
 		if have, want := args[len(args)-2], spec; have != want {
 			t.Fatalf("gitserver.ExecReader received wrong spec: %q, want %q", have, want)
 		}
-		return io.NopCloser(strings.NewReader(diff)), nil
+		return io.NopCloser(bytes.NewReader(diff)), nil
 	})
 
 	gitserverClientWithExecReader.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {

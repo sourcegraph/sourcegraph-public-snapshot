@@ -398,6 +398,8 @@ type BranchChangesetSpec struct {
 	Published interface{} `json:"published,omitempty"`
 	// Title description: The title of the changeset on the code host.
 	Title string `json:"title"`
+	// Version description: A field for versioning the payload.
+	Version int `json:"version,omitempty"`
 }
 type BrandAssets struct {
 	// Logo description: The URL to the image used on the homepage. This will replace the Sourcegraph logo on the homepage. Maximum width: 320px. We recommend using the following file formats: SVG, PNG
@@ -593,6 +595,8 @@ type ExistingChangesetSpec struct {
 	BaseRepository string `json:"baseRepository"`
 	// ExternalID description: The ID that uniquely identifies the existing changeset on the code host
 	ExternalID string `json:"externalID"`
+	// Version description: A field for versioning the payload.
+	Version int `json:"version,omitempty"`
 }
 
 // ExpandedGitCommitDescription description: The Git commit to create with the changes.
@@ -767,6 +771,8 @@ type GitCommitDescription struct {
 	Diff string `json:"diff"`
 	// Message description: The Git commit message.
 	Message string `json:"message"`
+	// Version description: A field for versioning the payload.
+	Version int `json:"version,omitempty"`
 }
 
 // GitHubApp description: The config options for Sourcegraph GitHub App.
@@ -1795,6 +1801,8 @@ type Settings struct {
 	ExtensionsActiveLoggers []string `json:"extensions.activeLoggers,omitempty"`
 	// FileSidebarVisibleByDefault description: Whether the sidebar on the repo view should be open by default.
 	FileSidebarVisibleByDefault bool `json:"fileSidebarVisibleByDefault,omitempty"`
+	// HistoryDefaultPageSize description: Custom page size for the history tab. If set, the history tab will populate that number of commits the first time the history tab is opened and then double the number of commits progressively.
+	HistoryDefaultPageSize int `json:"history.defaultPageSize,omitempty"`
 	// HistoryPreferAbsoluteTimestamps description: Show absolute timestamps in the history panel and only show relative timestamps (e.g.: "5 days ago") in tooltip when hovering.
 	HistoryPreferAbsoluteTimestamps bool `json:"history.preferAbsoluteTimestamps,omitempty"`
 	// Insights description: EXPERIMENTAL: Code Insights
@@ -2202,6 +2210,8 @@ type SiteConfiguration struct {
 	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
 	// OrganizationInvitations description: Configuration for organization invitations.
 	OrganizationInvitations *OrganizationInvitations `json:"organizationInvitations,omitempty"`
+	// OutboundRequestLogLimit description: The maximum number of outbound requests to retain. This is a global limit across all outbound requests. If the limit is exceeded, older items will be deleted. If the limit is 0, no outbound requests are logged.
+	OutboundRequestLogLimit int `json:"outboundRequestLogLimit,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
 	// PermissionsSyncOldestRepos description: Number of repo permissions to schedule for syncing in single scheduler iteration.
