@@ -48,10 +48,5 @@
     "path": "enterprise/internal/batches/store",
     "prefix": "TestIntegration",
     "reason": "Added a UNIQUE constraint on batch_specs.rand_id and changeset_specs.rand_id, some tests fail because we had some duplicate Rand ID creation in tests."
-  },
-  {
-    "path": "enterprise/internal/batches/syncer",
-    "prefix": "SyncerRun/Sync_due_but_reenqueued_when_namespace_deleted",
-    "reason": "Test expectation is too narrow and is broken by new logging code"
   }
 ]
