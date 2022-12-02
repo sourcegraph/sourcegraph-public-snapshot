@@ -20,8 +20,6 @@ func maybeBlobstore(logger sglog.Logger) []string {
 	// blobstore env vars copied from upstream Dockerfile:
 	// https://github.com/gaul/s3proxy/blob/master/Dockerfile
 	SetDefaultEnv("LOG_LEVEL", "info")
-	SetDefaultEnv("S3PROXY_AUTHORIZATION", "aws-v2-or-v4")
-	SetDefaultEnv("S3PROXY_ENDPOINT", "http://0.0.0.0:80")
 	SetDefaultEnv("S3PROXY_IDENTITY", "local-identity")
 	SetDefaultEnv("S3PROXY_CREDENTIAL", "local-credential")
 	SetDefaultEnv("S3PROXY_VIRTUALHOST", "")
