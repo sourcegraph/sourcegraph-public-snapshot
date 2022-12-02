@@ -671,12 +671,8 @@ func TestRepositories_Integration(t *testing.T) {
 		}
 
 		if rsc.indexed {
-			repo, err := db.Repos().GetByName(ctx, rsc.repo.Name)
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = db.ZoektRepos().UpdateIndexStatuses(ctx, map[uint32]*zoekt.MinimalRepoListEntry{
-				uint32(repo.ID): {},
+			err := db.ZoektRepos().UpdateIndexStatuses(ctx, map[uint32]*zoekt.MinimalRepoListEntry{
+				uint32(rsc.repo.ID): {},
 			})
 			if err != nil {
 				t.Fatal(err)
