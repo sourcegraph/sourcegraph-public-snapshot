@@ -8258,15 +8258,48 @@ type SlowRequestConnection {
 A logged slow GraphQL request, captured by the backend.
 """
 type SlowRequest {
+    """
+    The unique resource identifier for this request.
+    """
     id: ID!
+    """
+    The date at which this request was started.
+    """
     start: DateTime!
+    """
+    The duration of the request.
+    """
     duration: Float!
+    """
+    The user identifier associated if that request.
+    """
     userId: String!
+    """
+    The name of the GraphQL request.
+    """
     name: String!
+    """
+    The source from which the request originated.
+    """
     source: String!
+    """
+    The repository name referenced by the request, if applicable.
+    """
     repoName: String!
+    """
+    The variables used to build the GraphQL request.
+    """
     variables: String!
+    """
+    The errors returned if the request failed.
+    """
     errors: [String!]!
+    """
+    The query used to build the GraphQL request.
+    """
     query: String!
+    """
+    The file path referenced by the request, if applicable.
+    """
     filepath: String!
 }
