@@ -713,6 +713,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_symbols_pkey ON codeintel_scip_symbols USING btree (upload_id, symbol_name, document_lookup_id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (upload_id, symbol_name, document_lookup_id)"
+        },
+        {
+          "Name": "codeintel_scip_symbols_document_lookup_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_document_lookup_id ON codeintel_scip_symbols USING btree (document_lookup_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
