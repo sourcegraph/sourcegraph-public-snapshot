@@ -559,6 +559,10 @@ func (s *Syncer) SyncExternalService(
 		return err
 	}
 
+	if err := src.CheckConnection(ctx); err != nil {
+		return err
+	}
+
 	results := make(chan SourceResult)
 	go func() {
 		src.ListRepos(ctx, results)
