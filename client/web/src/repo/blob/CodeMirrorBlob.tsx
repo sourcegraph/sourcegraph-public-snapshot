@@ -202,7 +202,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             enableSelectionDrivenCodeNavigation && codeintel
                 ? tokenSelectionExtension(codeintel, blobInfo, history)
                 : [],
-            !enableLinkDrivenCodeNavigation ? [] : tokensAsLinks({ history, blobInfo, preloadGoToDefinition }),
+            enableLinkDrivenCodeNavigation ? tokensAsLinks({ history, blobInfo, preloadGoToDefinition }) : [],
             syntaxHighlight.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick

@@ -27,12 +27,12 @@ const INTERACTIVE_OCCURRENCE_KINDS = new Set([
     SyntaxKind.IdentifierAttribute,
 ])
 
-export const isInteractiveOccurrence = (occurence: Occurrence): boolean => {
-    if (!occurence.kind) {
+export const isInteractiveOccurrence = (occurrence: Occurrence): boolean => {
+    if (!occurrence.kind) {
         return false
     }
 
-    return INTERACTIVE_OCCURRENCE_KINDS.has(occurence.kind)
+    return INTERACTIVE_OCCURRENCE_KINDS.has(occurrence.kind)
 }
 
 export function occurrenceAtMouseEvent(

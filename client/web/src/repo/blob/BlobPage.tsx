@@ -300,10 +300,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         )
     )
 
-    /**
-     * Fetches stencil ranges for the current document.
-     * Used to provide keyboard navigation within the blob view.
-     */
+    // Fetches stencil ranges for the current document.  Only used for
+    // link-driven keyboard navigatio.
     const stencil = useObservable(
         useMemo(() => {
             if (!enableLinkDrivenCodeNavigation) {

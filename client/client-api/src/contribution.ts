@@ -83,7 +83,7 @@ export interface ActionContribution {
 
     /** The title that succinctly describes what this action does. The question
      * mark '?' renders the MDI HelpCircleOutline icon. */
-    title?: TemplateExpression
+    title?: TemplateExpression | '?'
 
     /** The title that succinctly describes what this action is even though it's disabled. */
     disabledTitle?: TemplateExpression

@@ -155,7 +155,7 @@ const remappedKeyBindings: Record<string, string> = {
 }
 
 export const tokenSelectionKeyBindings = keybindings.flatMap(keybinding => {
-    const remappedKey = remappedKeyBindings?.[keybinding.key ?? '']
+    const remappedKey = remappedKeyBindings[keybinding.key ?? '']
     if (remappedKey) {
         return [keybinding, { ...keybinding, key: remappedKey }]
     }
