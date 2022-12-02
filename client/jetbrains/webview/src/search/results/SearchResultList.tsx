@@ -196,6 +196,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 selectedResult={selectedResultId}
                                 selectResult={selectResult}
                                 openResult={openResult}
+                                settingsCascade={settingsCascade}
                             />
                         )
                     case 'symbol':
@@ -206,6 +207,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 selectedResult={selectedResultId}
                                 selectResult={selectResult}
                                 openResult={openResult}
+                                settingsCascade={settingsCascade}
                             />
                         )
                     case 'repo':
