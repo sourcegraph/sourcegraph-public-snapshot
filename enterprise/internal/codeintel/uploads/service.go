@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -54,9 +53,6 @@ func newService(
 	observationContext *observation.Context,
 ) *Service {
 	workerutilStore := store.WorkerutilStore(observationContext)
-
-	// TODO - move this to metric reporter?
-	dbworker.InitPrometheusMetric(observationContext, workerutilStore, "codeintel", "upload", nil)
 
 	return &Service{
 		store:           store,

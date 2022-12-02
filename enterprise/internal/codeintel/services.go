@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -28,23 +27,16 @@ type Databases struct {
 	CodeIntelDB codeintelshared.CodeIntelDB
 }
 
-// GetServices creates or returns an already-initialized codeintel service collection.
-// If the service collection is not yet initialized, a new one will be constructed using
-// the given database handles.
-func GetServices(dbs Databases) (Services, error) {
-	return initServicesMemo.Init(dbs)
-}
-
-var initServicesMemo = memo.NewMemoizedConstructorWithArg(func(dbs Databases) (Services, error) {
-	db, codeIntelDB := dbs.DB, dbs.CodeIntelDB
+func NewServices(deps Databases) (Services, error) {
+	db, codeIntelDB := deps.DB, deps.CodeIntelDB
 	gitserverClient := gitserver.New(db, scopedContext("gitserver"))
 
-	uploadsSvc := uploads.GetService(db, codeIntelDB, gitserverClient)
-	dependenciesSvc := dependencies.GetService(db)
-	policiesSvc := policies.GetService(db, uploadsSvc, gitserverClient)
-	autoIndexingSvc := autoindexing.GetService(db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient)
-	codenavSvc := codenav.GetService(db, codeIntelDB, uploadsSvc, gitserverClient)
-	rankingSvc := ranking.GetService(db, uploadsSvc, gitserverClient)
+	uploadsSvc := uploads.NewService(db, codeIntelDB, gitserverClient)
+	dependenciesSvc := dependencies.NewService(db)
+	policiesSvc := policies.NewService(db, uploadsSvc, gitserverClient)
+	autoIndexingSvc := autoindexing.NewService(db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient)
+	codenavSvc := codenav.NewService(db, codeIntelDB, uploadsSvc, gitserverClient)
+	rankingSvc := ranking.NewService(db, uploadsSvc, gitserverClient)
 
 	return Services{
 		AutoIndexingService: autoIndexingSvc,
@@ -54,7 +46,7 @@ var initServicesMemo = memo.NewMemoizedConstructorWithArg(func(dbs Databases) (S
 		RankingService:      rankingSvc,
 		UploadsService:      uploadsSvc,
 	}, nil
-})
+}
 
 func scopedContext(component string) *observation.Context {
 	return observation.ScopedContext("codeintel", "worker", component)

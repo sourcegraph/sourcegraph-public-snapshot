@@ -139,7 +139,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.GetService(db)), repos.ObservedSource(sourcerLogger, m))
+		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(db)), repos.ObservedSource(sourcerLogger, m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
@@ -343,7 +343,7 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 			http.Error(w, "limit must be less than 10000", http.StatusBadRequest)
 			return
 		}
-		var perSecond = 1.0 // Default value
+		perSecond := 1.0 // Default value
 		perSecondParam := r.FormValue("perSecond")
 		if perSecondParam != "" {
 			perSecond, err = strconv.ParseFloat(perSecondParam, 64)

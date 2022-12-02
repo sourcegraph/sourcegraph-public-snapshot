@@ -46,13 +46,13 @@ func TLSExternalConfig() *schema.TlsExternal {
 
 // SetOutboundRequestLogLimit is called by the conf package whenever OutboundRequestLogLimit changes.
 // This is needed to avoid circular imports.
-func SetOutboundRequestLogLimit(i int) {
-	outboundRequestLogLimit.Store(int32(i))
+func SetOutboundRequestLogLimit(i int32) {
+	outboundRequestLogLimit.Store(i)
 }
 
 // OutboundRequestLogLimit returns the current value of the global OutboundRequestLogLimit value.
-func OutboundRequestLogLimit() int {
-	return int(outboundRequestLogLimit.Load())
+func OutboundRequestLogLimit() int32 {
+	return outboundRequestLogLimit.Load()
 }
 
 func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {

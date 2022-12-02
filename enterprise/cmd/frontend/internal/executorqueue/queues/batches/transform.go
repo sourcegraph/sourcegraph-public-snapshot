@@ -296,13 +296,15 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			"-tmp", srcTempDir,
 		}
 
-		ok, err := api.CheckSourcegraphVersion(version, ">= 4.3.0-0", "2022-11-29")
-		if err != nil {
-			return apiclient.Job{}, err
-		}
-		if ok {
-			// Enable binary diffs.
-			commands = append(commands, "-binaryDiffs")
+		if version != "" {
+			canUseBinaryDiffs, err := api.CheckSourcegraphVersion(version, ">= 4.3.0-0", "2022-11-29")
+			if err != nil {
+				return apiclient.Job{}, err
+			}
+			if canUseBinaryDiffs {
+				// Enable binary diffs.
+				commands = append(commands, "-binaryDiffs")
+			}
 		}
 
 		// Only add the workspaceFiles flag if there are files to mount. This helps with backwards compatibility.

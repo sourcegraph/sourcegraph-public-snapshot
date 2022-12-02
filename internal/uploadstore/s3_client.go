@@ -24,13 +24,11 @@ import (
 )
 
 type s3Store struct {
-	bucket                       string
-	manageBucket                 bool
-	client                       s3API
-	uploader                     s3Uploader
-	bucketLifecycleConfiguration *s3types.BucketLifecycleConfiguration
-	canConfigureLifecycle        bool
-	operations                   *Operations
+	bucket       string
+	manageBucket bool
+	client       s3API
+	uploader     s3Uploader
+	operations   *Operations
 }
 
 var _ Store = &s3Store{}
@@ -54,19 +52,16 @@ func newS3FromConfig(ctx context.Context, config Config, operations *Operations)
 	s3Client := s3.NewFromConfig(cfg, s3ClientOptions(config.S3))
 	api := &s3APIShim{s3Client}
 	uploader := &s3UploaderShim{manager.NewUploader(s3Client)}
-	lifecycleConfiguration, canConfigureLifecycle := s3BucketLifecycleConfiguration(config.Backend, config.TTL)
-	return newS3WithClients(api, uploader, config.Bucket, config.ManageBucket, lifecycleConfiguration, canConfigureLifecycle, operations), nil
+	return newS3WithClients(api, uploader, config.Bucket, config.ManageBucket, operations), nil
 }
 
-func newS3WithClients(client s3API, uploader s3Uploader, bucket string, manageBucket bool, lifecycleConfiguration *s3types.BucketLifecycleConfiguration, canConfigureLifecycle bool, operations *Operations) *s3Store {
+func newS3WithClients(client s3API, uploader s3Uploader, bucket string, manageBucket bool, operations *Operations) *s3Store {
 	return &s3Store{
-		bucket:                       bucket,
-		manageBucket:                 manageBucket,
-		client:                       client,
-		uploader:                     uploader,
-		operations:                   operations,
-		bucketLifecycleConfiguration: lifecycleConfiguration,
-		canConfigureLifecycle:        canConfigureLifecycle,
+		bucket:       bucket,
+		manageBucket: manageBucket,
+		client:       client,
+		uploader:     uploader,
+		operations:   operations,
 	}
 }
 
@@ -77,10 +72,6 @@ func (s *s3Store) Init(ctx context.Context) error {
 
 	if err := s.create(ctx); err != nil {
 		return errors.Wrap(err, "failed to create bucket")
-	}
-
-	if err := s.update(ctx); err != nil {
-		return errors.Wrap(err, "failed to update bucket attributes")
 	}
 
 	return nil
@@ -340,20 +331,6 @@ func (s *s3Store) create(ctx context.Context) error {
 	return err
 }
 
-func (s *s3Store) update(ctx context.Context) error {
-	// TODO(blobstore): remove lifecycle configuration entirely and rely just on our
-	// built-in expiration. See https://github.com/sourcegraph/sourcegraph/pull/44255#discussion_r1036336557
-	if !s.canConfigureLifecycle {
-		return nil
-	}
-	configureRequest := &s3.PutBucketLifecycleConfigurationInput{
-		Bucket:                 aws.String(s.bucket),
-		LifecycleConfiguration: s.bucketLifecycleConfiguration,
-	}
-	_, err := s.client.PutBucketLifecycleConfiguration(ctx, configureRequest)
-	return err
-}
-
 func (s *s3Store) deleteSources(ctx context.Context, bucket string, sources []string) error {
 	return goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
 		if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
@@ -416,33 +393,4 @@ func writeToPipe(fn func(w io.Writer) error) io.Reader {
 
 func isConnectionResetError(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "read: connection reset by peer")
-}
-
-func s3BucketLifecycleConfiguration(backend string, ttl time.Duration) (*s3types.BucketLifecycleConfiguration, bool) {
-	if backend == "blobstore" {
-		// blobstore backend does not support configuration of lifecycle rules.
-		return nil, false
-	}
-	days := int32(ttl / (time.Hour * 24))
-
-	rules := []s3types.LifecycleRule{
-		{
-			ID:         aws.String("Expiration Rule"),
-			Status:     s3types.ExpirationStatusEnabled,
-			Filter:     &s3types.LifecycleRuleFilterMemberPrefix{Value: ""},
-			Expiration: &s3types.LifecycleExpiration{Days: days},
-		},
-	}
-
-	// TODO(blobstore): remove minio support
-	// This rule doesn't work on minio, so we have to skip it there.
-	if backend != "minio" {
-		rules = append(rules, s3types.LifecycleRule{
-			ID:                             aws.String("Abort Incomplete Multipart Upload Rule"),
-			Status:                         s3types.ExpirationStatusEnabled,
-			Filter:                         &s3types.LifecycleRuleFilterMemberPrefix{Value: ""},
-			AbortIncompleteMultipartUpload: &s3types.AbortIncompleteMultipartUpload{DaysAfterInitiation: days},
-		})
-	}
-	return &s3types.BucketLifecycleConfiguration{Rules: rules}, true
 }
