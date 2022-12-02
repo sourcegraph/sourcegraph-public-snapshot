@@ -33,7 +33,7 @@ Referenced by:
 
 A mapping from file paths to document references within a particular SCIP index.
 
-**document_id**: The foreign key to the shared document payload (see the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents)).
+**document_id**: The foreign key to the shared document payload (see the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup)).
 
 **document_path**: The file path to the document relative to the root of the index.
 
@@ -55,11 +55,11 @@ Triggers:
 
 ```
 
-Tracks the range of `schema_versions` values associated with each SCIP index in the [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) table.
+Tracks the range of `schema_versions` values associated with each SCIP index in the [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) table.
 
-**max_schema_version**: An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `upload_id` column matches the associated SCIP index.
+**max_schema_version**: An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.
 
-**min_schema_version**: A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `upload_id` column matches the associated SCIP index.
+**min_schema_version**: A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_document_lookup`](#table-publiccodeintel_scip_document_lookup) where the `upload_id` column matches the associated SCIP index.
 
 **upload_id**: The identifier of the associated SCIP index.
 
@@ -88,6 +88,28 @@ A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegr
 **raw_scip_payload**: The raw, canonicalized SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Document&amp;patternType=standard) payload.
 
 **schema_version**: The schema version of this row - used to determine presence and encoding of (future) denormalized data.
+
+# Table "public.codeintel_scip_documents_schema_versions"
+```
+       Column       |  Type   | Collation | Nullable | Default 
+--------------------+---------+-----------+----------+---------
+ upload_id          | integer |           | not null | 
+ min_schema_version | integer |           |          | 
+ max_schema_version | integer |           |          | 
+Indexes:
+    "codeintel_scip_documents_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
+Triggers:
+    codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents_schema_versions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert()
+
+```
+
+Tracks the range of `schema_versions` values associated with each SCIP index in the [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) table.
+
+**max_schema_version**: An upper-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `upload_id` column matches the associated SCIP index.
+
+**min_schema_version**: A lower-bound on the `schema_version` values of the records in the table [`codeintel_scip_documents`](#table-publiccodeintel_scip_documents) where the `upload_id` column matches the associated SCIP index.
+
+**upload_id**: The identifier of the associated SCIP index.
 
 # Table "public.codeintel_scip_metadata"
 ```
