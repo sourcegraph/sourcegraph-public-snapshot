@@ -257,13 +257,13 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
             // leaking private repository names and files into our data.
             const url = new URL(sessionReferrer)
             if (url.hostname === 'sourcegraph.com') {
-                return ''
+                this.sessionReferrer = ''
+                return sessionReferrer
             }
-            this.sessionReferrer = ''
             return sessionReferrer
         } catch {
             this.sessionReferrer = ''
-            return ''
+            return sessionReferrer
         }
     }
 
@@ -276,7 +276,6 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         // Always set to renew expiry and migrate from localStorage
         cookies.set(SESSION_FIRST_URL_KEY, redactedURL, this.deviceSessionCookieSettings)
 
-        this.sessionFirstUrl = sessionFirstUrl
         return sessionFirstUrl
     }
 
