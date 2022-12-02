@@ -27,6 +27,7 @@ import { showBlameGutter, showGitBlameDecorations } from './codemirror/blame-dec
 import { syntaxHighlight } from './codemirror/highlight'
 import { pin, updatePin } from './codemirror/hovercard'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
+import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
@@ -207,6 +208,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             blameDecorationsCompartment.of(blameDecorations),
             blameVisibilityCompartment.of(blameVisibility),
             settingsCompartment.of(settings),
+            navigateToLineOnAnyClick && customHistoryAction
+                ? navigateToLineOnAnyClickExtension(location, historyRef.current, customHistoryAction)
+                : [],
             search({
                 // useFileSearch is not a dependency because the search
                 // extension manages its own state. This is just the initial
@@ -220,7 +224,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations]
+        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations, customHistoryAction]
     )
 
     const editorRef = useRef<EditorView>()
