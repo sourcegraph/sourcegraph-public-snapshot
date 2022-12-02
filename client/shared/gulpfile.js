@@ -2,17 +2,13 @@
 
 const path = require('path')
 
-const { generateNamespace } = require('@gql2ts/from-schema')
-const { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } = require('@gql2ts/language-typescript')
-const glob = require('glob')
-const { buildSchema, introspectionFromSchema } = require('graphql')
 const gulp = require('gulp')
 const { compile: compileJSONSchema } = require('json-schema-to-typescript')
 const { readFile, writeFile, mkdir } = require('mz/fs')
-const { format, resolveConfig } = require('prettier')
 
 const { cssModulesTypings, watchCSSModulesTypings } = require('./dev/generateCssModulesTypes')
 const { generateGraphQlOperations, ALL_DOCUMENTS_GLOB } = require('./dev/generateGraphQlOperations')
+const { graphQlSchema: _graphQlSchema } = require('./dev/generateGraphQlSchema')
 
 const GRAPHQL_SCHEMA_GLOB = path.join(__dirname, '../../cmd/frontend/graphqlbackend/*.graphql')
 
@@ -23,46 +19,7 @@ const GRAPHQL_SCHEMA_GLOB = path.join(__dirname, '../../cmd/frontend/graphqlback
  * @returns {Promise<void>}
  */
 async function graphQlSchema() {
-  const schemaFiles = glob.sync(GRAPHQL_SCHEMA_GLOB)
-  let combinedSchema = ''
-  for (const schemaPath of schemaFiles) {
-    const schemaString = await readFile(schemaPath, 'utf8')
-    combinedSchema += `\n${schemaString}`
-  }
-  const schema = buildSchema(combinedSchema)
-
-  const result = introspectionFromSchema(schema)
-
-  const formatOptions = await resolveConfig(__dirname, { config: __dirname + '/../../prettier.config.js' })
-  const typings =
-    'export type ID = string\n' +
-    'export type GitObjectID = string\n' +
-    'export type DateTime = string\n' +
-    'export type JSONCString = string\n' +
-    '\n' +
-    generateNamespace(
-      '',
-      result,
-      {
-        typeMap: {
-          ...DEFAULT_TYPE_MAP,
-          ID: 'ID',
-          GitObjectID: 'GitObjectID',
-          DateTime: 'DateTime',
-          JSONCString: 'JSONCString',
-        },
-      },
-      {
-        generateNamespace: (name, interfaces) => interfaces,
-        interfaceBuilder: (name, body) => `export ${DEFAULT_OPTIONS.interfaceBuilder(name, body)}`,
-        enumTypeBuilder: (name, values) =>
-          `export ${DEFAULT_OPTIONS.enumTypeBuilder(name, values).replace(/^const enum/, 'enum')}`,
-        typeBuilder: (name, body) => `export ${DEFAULT_OPTIONS.typeBuilder(name, body)}`,
-        wrapList: type => `${type}[]`,
-        postProcessor: code => format(code, { ...formatOptions, parser: 'typescript' }),
-      }
-    )
-  await writeFile(__dirname + '/src/schema.ts', typings)
+  await _graphQlSchema(__dirname + '/src/schema.ts')
 }
 
 /**
