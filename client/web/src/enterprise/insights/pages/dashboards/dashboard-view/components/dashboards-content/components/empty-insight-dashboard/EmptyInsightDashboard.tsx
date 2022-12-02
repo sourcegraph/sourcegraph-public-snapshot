@@ -1,90 +1,82 @@
-import React from 'react'
+import { FC } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 
 import { Button, Link, Card, Tooltip, Icon } from '@sourcegraph/wildcard'
 
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../../../../constants'
-import { InsightDashboard } from '../../../../../../../core'
+import { InsightDashboard, CustomInsightDashboard } from '../../../../../../../core'
 import { useUiFeatures } from '../../../../../../../hooks'
-import { encodeDashboardIdQueryParam } from '../../../../../../../routers.constant';
+import { encodeDashboardIdQueryParam } from '../../../../../../../routers.constant'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 
 import styles from './EmptyInsightDashboard.module.scss'
 
 interface EmptyInsightDashboardProps {
     dashboard: InsightDashboard
-    onAddInsight: () => void
+    onAddInsightRequest: () => void
 }
 
-export const EmptyInsightDashboard: React.FunctionComponent<
-    React.PropsWithChildren<EmptyInsightDashboardProps>
-> = props => {
-    const { onAddInsight, dashboard } = props
+export const EmptyInsightDashboard: FC<EmptyInsightDashboardProps> = props => {
+    const { dashboard, onAddInsightRequest } = props
 
     return isDashboardConfigurable(dashboard) ? (
-        <EmptySettingsBasedDashboard dashboard={dashboard} onAddInsight={onAddInsight} />
+        <EmptyCustomDashboard dashboard={dashboard} onAddInsightRequest={onAddInsightRequest} />
     ) : (
-        <EmptyBuiltInDashboard dashboard={dashboard} />
+        <EmptyVirtualDashboard dashboardId={dashboard.id} />
     )
 }
 
 /**
- * Built-in empty dashboard state provides link to create a new code insight via creation UI.
- * Since all insights within built-in dashboards are calculated there's no ability to add insight to
- * this type of dashboard.
+ * Virtual empty dashboard state provides link to create a new code insight via creation UI.
+ * Since all insights within virtual dashboards are calculated there's no ability to add insight to
+ * this type of dashboard manually.
  */
-export const EmptyBuiltInDashboard: React.FunctionComponent<
-    React.PropsWithChildren<{ dashboard: InsightDashboard }>
-> = props => (
+export const EmptyVirtualDashboard: FC<{ dashboardId: string }> = props => (
     <section className={styles.emptySection}>
-        <Card as={Link} to={encodeDashboardIdQueryParam('/insights/create', props.dashboard.id)} className={styles.itemCard}>
+        <Card
+            as={Link}
+            to={encodeDashboardIdQueryParam('/insights/create', props.dashboardId)}
+            className={styles.itemCard}
+        >
             <Icon svgPath={mdiPlus} inline={false} aria-hidden={true} height="2rem" width="2rem" />
             <span>Create an insight</span>
         </Card>
-        {props.dashboard.id !== ALL_INSIGHTS_DASHBOARD.id && (
-            <span className="d-flex justify-content-center mt-3">
-                <span>
-                    or, add existing insights from <Link to="/insights/dashboards/all">All Insights</Link>
-                </span>
-            </span>
-        )}
     </section>
 )
 
+interface EmptyCustomDashboardProps {
+    dashboard: CustomInsightDashboard
+    onAddInsightRequest: () => void
+}
+
 /**
- * Settings based empty dashboard state provides button for adding existing insights to the dashboard.
- * Since it is possible with settings based dashboard to add existing insights to it.
+ * Custom empty dashboard state provides ability to add existing insights to the dashboard.
  */
-export const EmptySettingsBasedDashboard: React.FunctionComponent<
-    React.PropsWithChildren<EmptyInsightDashboardProps>
-> = props => {
-    const { onAddInsight, dashboard } = props
+export const EmptyCustomDashboard: FC<EmptyCustomDashboardProps> = props => {
+    const { dashboard, onAddInsightRequest } = props
+
     const {
         dashboard: { getAddRemoveInsightsPermission },
     } = useUiFeatures()
+    const permissions = getAddRemoveInsightsPermission(dashboard)
 
     return (
         <section className={styles.emptySection}>
-            {
-                isDashboardConfigurable(dashboard) && (
-                    <Button
-                        type="button"
-                        disabled={getAddRemoveInsightsPermission(dashboard).disabled}
-                        onClick={onAddInsight}
-                        variant="secondary"
-                        className="p-0 w-100 border-0"
-                        data-testid="add-insights-button-card"
-                    >
-                        <Tooltip content={getAddRemoveInsightsPermission(dashboard).tooltip} placement="right">
-                            <Card className={styles.itemCard}>
-                                <Icon svgPath={mdiPlus} inline={false} aria-hidden={true} height="2rem" width="2rem" />
-                                <span>Add insights</span>
-                            </Card>
-                        </Tooltip>
-                    </Button>
-                )
-            }
+            <Button
+                type="button"
+                disabled={permissions.disabled}
+                variant="secondary"
+                className="p-0 w-100 border-0"
+                data-testid="add-insights-button-card"
+                onClick={onAddInsightRequest}
+            >
+                <Tooltip content={permissions.tooltip} placement="right">
+                    <Card className={styles.itemCard}>
+                        <Icon svgPath={mdiPlus} inline={false} aria-hidden={true} height="2rem" width="2rem" />
+                        <span>Add insights</span>
+                    </Card>
+                </Tooltip>
+            </Button>
             <span className="d-flex justify-content-center mt-3">
                 <Link to={encodeDashboardIdQueryParam('/insights/create', dashboard.id)}>or, create new insight</Link>
             </span>
