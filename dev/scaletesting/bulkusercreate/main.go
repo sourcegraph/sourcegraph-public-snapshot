@@ -203,7 +203,7 @@ func main() {
 		var orgsDone int64
 		var teamsDone int64
 		var tokensDone int64
-		//var membershipsDone int64
+		var membershipsDone int64
 		var reposDone int64
 
 		for _, o := range orgs {
@@ -212,6 +212,16 @@ func main() {
 				executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, &orgsDone)
 			})
 		}
+
+		// Default permission is "read"; we need members to not have access by default on the main organisation.
+		defaultRepoPermission := "none"
+		var res *github.Response
+		_, res, err = gh.Organizations.Edit(ctx, "main-org", &github.Organization{DefaultRepoPermission: &defaultRepoPermission})
+		if err != nil && res.StatusCode != 409 {
+			// 409 means the base repo permissions are currently being updated already due to a previous run
+			log.Fatalf("Failed to make main-org private by default: %s", err)
+		}
+
 		g.Wait()
 
 		for _, t := range teams {
@@ -230,27 +240,28 @@ func main() {
 		}
 		g.Wait()
 
-		//membershipsPerTeam := int(math.Ceil(float64(cfg.userCount) / float64(cfg.teamCount)))
+		membershipsPerTeam := int(math.Ceil(float64(cfg.userCount) / float64(cfg.teamCount)))
 		g2 := group.New().WithMaxConcurrency(100)
 
-		//for i, t := range teams {
-		//	currentTeam := t
-		//	currentIter := i
-		//	var usersToAssign []*user
-		//
-		//	for j := currentIter * membershipsPerTeam; j < ((currentIter + 1) * membershipsPerTeam); j++ {
-		//		usersToAssign = append(usersToAssign, users[j])
-		//	}
-		//
-		//	g2.Go(func() {
-		//		executeCreateTeamMembershipsForTeam(ctx, currentTeam, usersToAssign, &membershipsDone)
-		//	})
-		//}
-		//g2.Wait()
+		for i, t := range teams {
+			currentTeam := t
+			currentIter := i
+			var usersToAssign []*user
+
+			for j := currentIter * membershipsPerTeam; j < ((currentIter + 1) * membershipsPerTeam); j++ {
+				usersToAssign = append(usersToAssign, users[j])
+			}
+
+			g2.Go(func() {
+				executeCreateTeamMembershipsForTeam(ctx, currentTeam, usersToAssign, &membershipsDone)
+			})
+		}
+		g2.Wait()
 
 		mainOrg, orgRepos := categorizeOrgRepos(cfg, repos, orgs)
 		executeAssignOrgRepos(ctx, orgRepos, &reposDone, g2)
 		g2.Wait()
+
 		// 0.5% repos with only users attached
 		amountReposWithOnlyUsers := int(math.Ceil(float64(len(repos)) * 0.005))
 		reposWithOnlyUsers := orgRepos[mainOrg][:amountReposWithOnlyUsers]
@@ -477,10 +488,6 @@ func categorizeOrgRepos(cfg config, repos []*repo, orgs []*org) (*org, map[*org]
 	// rest assigned to main org
 	repoCategories[mainOrg] = repos[len(subOrgs)*reposPerSubOrg:]
 
-	//for _, o := range orgs {
-	//	writeInfo(out, "Total repos in org %s: %d", o.Login, len(repoCategories[o]))
-	//}
-
 	return mainOrg, repoCategories
 }
 
@@ -494,8 +501,8 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, re
 			var err error
 			for _, r := range currentRepos {
 				if currentOrg.Login == r.Owner {
-					// already owned by this org
 					//writeInfo(out, "Repository %s already owned by %s", r.Name, r.Owner)
+					// The repository is already transferred
 					atomic.AddInt64(reposDone, 1)
 					progress.SetValue(4, float64(*reposDone))
 					continue
@@ -514,16 +521,17 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, re
 							log.Fatalf("Failed reading response body: %s", err)
 						}
 						if strings.Contains(string(body), "Repositories cannot be transferred to the original owner") {
-							// already processed
 							//writeInfo(out, "Repository %s already owned by %s [not saved to state, current owner: %s]", r.Name, currentOrg.Login, r.Owner)
-							goto DONE
+							// The repository is already transferred but not yet saved in the state
+							break
 						}
 					}
 
 					if err != nil {
 						if _, ok := err.(*github.AcceptedError); ok {
 							//writeInfo(out, "Repository %s scheduled for transfer as a background job", r.Name)
-							goto DONE
+							// AcceptedError means the transfer is scheduled as a background job
+							break
 						} else {
 							log.Fatalf("Failed to transfer repository %s from %s to %s: %s", r.Name, r.Owner, currentOrg.Login, err)
 						}
@@ -531,7 +539,6 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, re
 				}
 
 				//writeInfo(out, "Repository %s transferred to %s", r.Name, r.Owner)
-			DONE:
 				atomic.AddInt64(reposDone, 1)
 				progress.SetValue(4, float64(*reposDone))
 				r.Owner = currentOrg.Login
@@ -544,17 +551,20 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, re
 }
 
 func categorizeTeamRepos(cfg config, mainOrgRepos []*repo, teams []*team) map[*team][]*repo {
-	// 95% of teams
-	teamsSmall := int(math.Ceil(float64(cfg.teamCount) * 0.95))
-	reposSmall := int(math.Ceil(float64(len(mainOrgRepos)) * 0.00015))
+	// 1% of teams
+	teamsLarge := int(math.Ceil(float64(cfg.teamCount) * 0.01))
+	// 0.5% of repos per team
+	reposLarge := int(math.Floor(float64(len(mainOrgRepos)) * 0.005))
 
 	// 4% of teams
 	teamsMedium := int(math.Ceil(float64(cfg.teamCount) * 0.04))
-	reposMedium := int(math.Ceil(float64(len(mainOrgRepos)) * 0.00037))
+	// 0.04% of repos per team
+	reposMedium := int(math.Floor(float64(len(mainOrgRepos)) * 0.0004))
 
-	// 1% of teams
-	teamsLarge := int(math.Ceil(float64(cfg.teamCount) * 0.01))
-	reposLarge := int(math.Ceil(float64(len(mainOrgRepos)) * 0.0043))
+	// 95% of teams
+	teamsSmall := int(math.Ceil(float64(cfg.teamCount) * 0.95))
+	// remainder of repos divided over remainder of teams
+	reposSmall := int(math.Floor(float64(len(mainOrgRepos)-(reposMedium*teamsMedium)-(reposLarge*teamsLarge)) / float64(teamsSmall)))
 
 	teamCategories := make(map[*team][]*repo)
 
@@ -580,14 +590,22 @@ func categorizeTeamRepos(cfg config, mainOrgRepos []*repo, teams []*team) map[*t
 		teamCategories[currentTeam] = teamRepos
 	}
 
-	//counts := make(map[int]int)
-	//for _, t := range teams {
-	//	counts[len(teamCategories[t])]++
-	//}
+	remainderIndex := (teamsSmall * reposSmall) + (teamsMedium * reposMedium) + (teamsLarge * reposLarge)
+	remainingRepos := mainOrgRepos[remainderIndex:]
+	for i, r := range remainingRepos {
+		t := teams[i%teamsSmall]
+		teamCategories[t] = append(teamCategories[t], r)
+	}
 
-	//for k, v := range counts {
-	//	writeInfo(out, "Categorised %d teams with %d repos", v, k)
-	//}
+	teamsWithNils := make(map[*team][]*repo)
+	for t, rr := range teamCategories {
+		for _, r := range rr {
+			if r == nil {
+				teamsWithNils[t] = rr
+				break
+			}
+		}
+	}
 
 	return teamCategories
 }
@@ -598,15 +616,8 @@ func executeAssignTeamRepos(ctx context.Context, reposPerTeam map[*team][]*repo,
 		currentRepos := repos
 
 		g.Go(func() {
-			var res *github.Response
-			var err error
-
-			//ghTeam, _, err := gh.Teams.GetTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
-			//if err != nil {
-			//	log.Fatal(err)
-			//}
-
 			for _, r := range currentRepos {
+				currentRepo := r
 				if r.Owner == fmt.Sprintf("%s/%s", currentTeam.Org, currentTeam.Name) {
 					// team is already owner
 					//writeInfo(out, "Repository %s already owned by %s", r.Name, currentTeam.Name)
@@ -615,35 +626,33 @@ func executeAssignTeamRepos(ctx context.Context, reposPerTeam map[*team][]*repo,
 					continue
 				}
 
+				var res *github.Response
+				var err error
 				for res == nil || res.StatusCode == 502 || res.StatusCode == 504 {
 					if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
 						time.Sleep(30 * time.Second)
 					}
 
-					res, err = gh.Teams.AddTeamRepoBySlug(ctx, currentTeam.Org, currentTeam.Name, currentTeam.Org, r.Name, &github.TeamAddTeamRepoOptions{Permission: "push"})
-					//_, res, err = gh.Repositories.Transfer(ctx, r.Owner, r.Name, github.TransferRequest{
-					//	NewOwner: currentTeam.Org,
-					//	TeamID:   []int64{*ghTeam.ID},
-					//})
+					res, err = gh.Teams.AddTeamRepoBySlug(ctx, currentTeam.Org, currentTeam.Name, currentTeam.Org, currentRepo.Name, &github.TeamAddTeamRepoOptions{Permission: "push"})
 
 					if res.StatusCode == 422 {
 						body, err := io.ReadAll(res.Body)
 						if err != nil {
 							log.Fatalf("Failed reading response body: %s", err)
 						}
-						log.Fatalf("Failed to assign repo %s to team %s: %s", r.Name, currentTeam.Name, string(body))
+						log.Fatalf("Failed to assign repo %s to team %s: %s", currentRepo.Name, currentTeam.Name, string(body))
 					}
 
 					if err != nil {
-						log.Fatalf("Failed to transfer repository %s from %s to %s: %s", r.Name, r.Owner, currentTeam.Name, err)
+						log.Fatalf("Failed to transfer repository %s from %s to %s: %s", currentRepo.Name, currentRepo.Owner, currentTeam.Name, err)
 					}
 				}
 
 				atomic.AddInt64(reposDone, 1)
 				progress.SetValue(4, float64(*reposDone))
-				r.Owner = fmt.Sprintf("%s/%s", currentTeam.Org, currentTeam.Name)
+				currentRepo.Owner = fmt.Sprintf("%s/%s", currentTeam.Org, currentTeam.Name)
 				if err = store.saveRepo(r); err != nil {
-					log.Fatalf("Failed to save repository %s: %s", r.Name, err)
+					log.Fatalf("Failed to save repository %s: %s", currentRepo.Name, err)
 				}
 				//writeInfo(out, "Repository %s transferred to %s", r.Name, currentTeam.Name)
 			}
@@ -658,15 +667,6 @@ func categorizeUserRepos(mainOrgRepos []*repo, users []*user) map[*repo][]*user 
 		usersForRepo := users[i*usersPerRepo : (i+1)*usersPerRepo]
 		repoUsers[r] = usersForRepo
 	}
-
-	//counts := make(map[int]int)
-	//for _, r := range mainOrgRepos {
-	//	counts[len(repoUsers[r])]++
-	//}
-	//
-	//for k, v := range counts {
-	//	writeInfo(out, "Categorised %d repos with %d users", v, k)
-	//}
 
 	return repoUsers
 }
@@ -691,9 +691,17 @@ func executeAssignUserRepos(ctx context.Context, usersPerRepo map[*repo][]*user,
 						log.Fatalf("Failed to add user %s as a collaborator to repo %s: %s", u.Login, currentRepo.Name, err)
 					}
 
-					res, err = gh.Users.AcceptInvitation(ctx, invitation.GetID())
-					if err != nil {
-						log.Fatalf("Failed to accept collaborator invitation for user %s on repo %s: %s", u.Login, currentRepo.Name, err)
+					// AddCollaborator returns a 201 when an invitation is created.
+					//
+					// A 204 is returned when:
+					// * an existing collaborator is added as a collaborator
+					// * an organization member is added as an individual collaborator
+					// * an existing team member (whose team is also a repository collaborator) is added as an individual collaborator
+					if res.StatusCode == 201 {
+						res, err = gh.Users.AcceptInvitation(ctx, invitation.GetID())
+						if err != nil {
+							log.Fatalf("Failed to accept collaborator invitation for user %s on repo %s: %s", u.Login, currentRepo.Name, err)
+						}
 					}
 				}
 			}
@@ -778,69 +786,6 @@ func executeDeleteTeamMembershipsForTeam(ctx context.Context, org string, team s
 		if err != nil {
 			log.Printf("Failed to remove membership from team %s for user %s: %s", team, *member.Login, err)
 		}
-	}
-}
-
-type teamMembershipOpts struct {
-	currentUser *user
-	teams       []*team
-
-	membershipsPerUser int
-	userIndex          int
-	//teamIncrement      int
-}
-
-func executeCreateTeamMembershipsForUser(ctx context.Context, opts *teamMembershipOpts, membershipsDone *int64) {
-	// users need to be member of the team's parent org to join the team
-	userState := "active"
-	userRole := "member"
-
-	index := opts.userIndex % len(opts.teams)
-	for j := 0; j < opts.membershipsPerUser; j++ {
-		candidateTeam := opts.teams[index+j]
-
-		if candidateTeam.TotalMembers >= 8 {
-			continue
-		}
-
-		// add user to team's parent org first
-		_, _, mErr := gh.Organizations.EditOrgMembership(ctx, opts.currentUser.Login, candidateTeam.Org, &github.Membership{
-			State:        &userState,
-			Role:         &userRole,
-			Organization: &github.Organization{Login: &candidateTeam.Org},
-			User:         &github.User{Login: &opts.currentUser.Login},
-		})
-
-		if mErr != nil {
-			writeFailure(out, "Failed to add user %s to organization %s, reason: %s\n", opts.currentUser.Login, candidateTeam.Org, mErr)
-			candidateTeam.Failed = mErr.Error()
-			if mErr = store.saveTeam(candidateTeam); mErr != nil {
-				log.Fatal(mErr)
-			}
-			continue
-		}
-
-		// this is an idempotent operation so no need to check existing membership
-		_, _, mErr = gh.Teams.AddTeamMembershipBySlug(ctx, candidateTeam.Org, candidateTeam.Name, opts.currentUser.Login, nil)
-
-		if mErr != nil {
-			writeFailure(out, "Failed to add user %s to team %s, reason: %s\n", opts.currentUser, candidateTeam.Name, mErr)
-			candidateTeam.Failed = mErr.Error()
-			if mErr = store.saveTeam(candidateTeam); mErr != nil {
-				log.Fatal(mErr)
-			}
-			continue
-		}
-
-		candidateTeam.TotalMembers += 1
-		atomic.AddInt64(membershipsDone, 1)
-		progress.SetValue(3, float64(*membershipsDone))
-
-		if mErr = store.saveTeam(candidateTeam); mErr != nil {
-			log.Fatal(mErr)
-		}
-
-		//writeSuccess(out, "Added member %s to team %s", currentUser.Login, candidateTeam.Name)
 	}
 }
 
