@@ -34,7 +34,7 @@ COPY --from=builder /opt/s3proxy /opt/s3proxy
 
 ENV \
     LOG_LEVEL="info" \
-    S3PROXY_AUTHORIZATION="aws-v2-or-v4" \
+    S3PROXY_AUTHORIZATION="none" \
     S3PROXY_ENDPOINT="http://0.0.0.0:80" \
     S3PROXY_IDENTITY="local-identity" \
     S3PROXY_CREDENTIAL="local-credential" \

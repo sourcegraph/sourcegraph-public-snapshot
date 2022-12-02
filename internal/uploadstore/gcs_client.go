@@ -75,10 +75,6 @@ func (s *gcsStore) Init(ctx context.Context) error {
 		return errors.Wrap(err, "failed to get bucket attributes")
 	}
 
-	if err := s.update(ctx, bucket); err != nil {
-		return errors.Wrap(err, "failed to update bucket attributes")
-	}
-
 	return nil
 }
 
@@ -195,32 +191,7 @@ func (s *gcsStore) ExpireObjects(ctx context.Context, prefix string, maxAge time
 }
 
 func (s *gcsStore) create(ctx context.Context, bucket gcsBucketHandle) error {
-	return bucket.Create(ctx, s.config.ProjectID, &storage.BucketAttrs{
-		Lifecycle: s.lifecycle(),
-	})
-}
-
-func (s *gcsStore) update(ctx context.Context, bucket gcsBucketHandle) error {
-	lifecycle := s.lifecycle()
-
-	return bucket.Update(ctx, storage.BucketAttrsToUpdate{
-		Lifecycle: &lifecycle,
-	})
-}
-
-func (s *gcsStore) lifecycle() storage.Lifecycle {
-	return storage.Lifecycle{
-		Rules: []storage.LifecycleRule{
-			{
-				Action: storage.LifecycleAction{
-					Type: "Delete",
-				},
-				Condition: storage.LifecycleCondition{
-					AgeInDays: int64(s.ttl / (time.Hour * 24)),
-				},
-			},
-		},
-	}
+	return bucket.Create(ctx, s.config.ProjectID, nil)
 }
 
 func (s *gcsStore) deleteSources(ctx context.Context, bucket gcsBucketHandle, sources []string) error {
