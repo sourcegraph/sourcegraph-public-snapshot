@@ -18,10 +18,10 @@ export interface PageSwitcherProps {
     totalCount: null | number
     hasNextPage: null | boolean
     hasPreviousPage: null | boolean
-    goToNextPage: () => void
-    goToPreviousPage: () => void
-    goToFirstPage: () => void
-    goToLastPage: () => void
+    goToNextPage: () => Promise<void>
+    goToPreviousPage: () => Promise<void>
+    goToFirstPage: () => Promise<void>
+    goToLastPage: () => Promise<void>
     className?: string
 }
 
