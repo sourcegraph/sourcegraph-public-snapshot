@@ -354,6 +354,21 @@ func TestUserEmailsResendVerificationEmail(t *testing.T) {
 	ctx := context.Background()
 	txemail.DisableSilently()
 
+	oldSend := txemail.MockSend
+	t.Cleanup(func() {
+		txemail.MockSend = oldSend
+	})
+	var sendCalled bool
+	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
+		sendCalled = true
+		return nil
+	}
+	assertSendCalled := func(want bool) {
+		assert.Equal(t, want, sendCalled)
+		// Reset to false
+		sendCalled = false
+	}
+
 	const email = "user@example.com"
 	const username = "test-user"
 	const verificationCode = "code"
@@ -374,25 +389,35 @@ func TestUserEmailsResendVerificationEmail(t *testing.T) {
 
 	// Unauthenticated user should fail
 	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, db, createdUser.ID, email, now))
+	assertSendCalled(false)
+
 	// Different user should fail
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 99})
 	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, db, createdUser.ID, email, now))
+	assertSendCalled(false)
 
 	// As site admin (or internal actor) should pass
 	ctx = actor.WithInternalActor(ctx)
 	// Set in the future so that we can resend
 	now = now.Add(5 * time.Minute)
 	assert.NoError(t, UserEmails.ResendVerificationEmail(ctx, db, createdUser.ID, email, now))
+	assertSendCalled(true)
 
 	// Trying to send again too soon should fail
 	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, db, createdUser.ID, email, now.Add(1*time.Second)))
+	assertSendCalled(false)
 
 	// Invalid e-mail
 	assert.Error(t, UserEmails.ResendVerificationEmail(ctx, db, createdUser.ID, "another@example.com", now.Add(5*time.Minute)))
+	assertSendCalled(false)
 
-	// TODO: Set as already verified
-	// TODO: Confirm Resend is a noop
-	t.Fatalf("TODOS")
+	// Manually mark as verified
+	assert.NoError(t, db.UserEmails().SetVerified(ctx, createdUser.ID, email, true))
+
+	// Trying to send verification e-mail now should be a noop since we are already
+	// verified
+	assert.NoError(t, UserEmails.ResendVerificationEmail(ctx, db, createdUser.ID, email, now.Add(10*time.Minute)))
+	assertSendCalled(false)
 }
 
 func TestDeleteStaleExternalAccount(t *testing.T) {

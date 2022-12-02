@@ -294,8 +294,8 @@ func (userEmails) ResendVerificationEmail(ctx context.Context, db database.DB, u
 	return SendUserEmailVerificationEmail(ctx, user.Username, email, code)
 }
 
-// deleteStalePerforceExternalAccounts will remove any Perforce external accounts associated with the given user
-// and e-mail combination.
+// deleteStalePerforceExternalAccounts will remove any Perforce external accounts
+// associated with the given user and e-mail combination.
 func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, userID int32, email string) error {
 	return db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
 		UserID:      userID,
