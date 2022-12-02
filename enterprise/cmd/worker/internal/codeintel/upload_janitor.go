@@ -35,7 +35,7 @@ func (j *uploadJanitorJob) Routines(startupCtx context.Context, observationCtx *
 		return nil, err
 	}
 
-	db, err := workerdb.InitDBWithLogger(observationCtx)
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}

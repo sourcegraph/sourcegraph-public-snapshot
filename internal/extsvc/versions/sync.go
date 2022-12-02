@@ -41,7 +41,7 @@ func (j *syncingJob) Routines(_ context.Context, observationCtx *observation.Con
 		return nil, nil
 	}
 
-	db, err := workerdb.InitDBWithLogger(observationCtx)
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}

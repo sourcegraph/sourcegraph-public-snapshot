@@ -8,7 +8,7 @@ import (
 
 // InitServices initializes and returns code intelligence services.
 func InitServices(observationContext *observation.Context) (codeintel.Services, error) {
-	db, err := workerdb.InitDBWithLogger(observationContext)
+	db, err := workerdb.InitDB(observationContext)
 	if err != nil {
 		return codeintel.Services{}, err
 	}

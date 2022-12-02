@@ -63,7 +63,9 @@ var AdditionalJobs = map[string]job.Job{
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
 func SetAuthzProviders(observationContext *observation.Context) {
-	db, err := workerdb.InitDBWithLogger(observationContext)
+	observationContext = observation.ContextWithLogger(observationContext.Logger.Scoped("authz-provider", ""), observationContext)
+
+	db, err := workerdb.InitDB(observationContext)
 	if err != nil {
 		return
 	}

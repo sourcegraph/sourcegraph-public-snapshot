@@ -15,13 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Init initializes and returns a connection to the frontend database.
-func Init(observationContext *observation.Context) (*sql.DB, error) {
-	return initDatabaseMemo.Init(observationContext)
-}
-
-func InitDBWithLogger(observationContext *observation.Context) (database.DB, error) {
-	rawDB, err := Init(observationContext)
+func InitDB(observationContext *observation.Context) (database.DB, error) {
+	rawDB, err := initDatabaseMemo.Init(observationContext)
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +33,7 @@ var initDatabaseMemo = memo.NewMemoizedConstructorWithArg(func(observationContex
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
+	// ideally we could memoize the LRU cache only for this, and then create new clients on-demand with a passed-in observationCtx
 	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.NewDB(log.Scoped("initDatabaseMemo", ""), db).SubRepoPerms())
 	if err != nil {
 		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)

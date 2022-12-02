@@ -36,7 +36,7 @@ func (j *autoindexingScheduler) Routines(startupCtx context.Context, observation
 		return nil, err
 	}
 
-	db, err := workerdb.InitDBWithLogger(observationCtx)
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}

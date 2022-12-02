@@ -61,7 +61,7 @@ func (j *bitbucketProjectPermissionsJob) Config() []env.Config {
 // Routines is called by the worker service to start the worker.
 // It returns a list of goroutines that the worker service should start and manage.
 func (j *bitbucketProjectPermissionsJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	wdb, err := workerdb.InitDBWithLogger(observationCtx)
+	wdb, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
