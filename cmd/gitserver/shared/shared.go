@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/tidwall/gjson"
 	"go.opentelemetry.io/otel"
-	"go.uber.org/zap"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
@@ -109,17 +108,17 @@ func Main() {
 		logger.Fatal("SRC_REPOS_DIR is required")
 	}
 	if err := os.MkdirAll(reposDir, os.ModePerm); err != nil {
-		logger.Fatal("failed to create SRC_REPOS_DIR", zap.Error(err))
+		logger.Fatal("failed to create SRC_REPOS_DIR", log.Error(err))
 	}
 
 	wantPctFree2, err := getPercent(wantPctFree)
 	if err != nil {
-		logger.Fatal("SRC_REPOS_DESIRED_PERCENT_FREE is out of range", zap.Error(err))
+		logger.Fatal("SRC_REPOS_DESIRED_PERCENT_FREE is out of range", log.Error(err))
 	}
 
 	sqlDB, err := getDB()
 	if err != nil {
-		logger.Fatal("failed to initialize database stores", zap.Error(err))
+		logger.Fatal("failed to initialize database stores", log.Error(err))
 	}
 	db := database.NewDB(logger, sqlDB)
 
@@ -129,12 +128,12 @@ func Main() {
 
 	err = keyring.Init(ctx)
 	if err != nil {
-		logger.Fatal("failed to initialise keyring", zap.Error(err))
+		logger.Fatal("failed to initialise keyring", log.Error(err))
 	}
 
 	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
-		logger.Fatal("Failed to create sub-repo client", zap.Error(err))
+		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}
 
 	gitserver := server.Server{
