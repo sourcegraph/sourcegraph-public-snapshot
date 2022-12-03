@@ -5,7 +5,6 @@ import { batchSpecExecutionFieldsFragment } from '../batch-spec/execute/backend'
 export const GET_ORGANIZATIONS = gql`
     query GetOrganizations {
         organizations {
-            totalCount
             nodes {
                 id
                 __typename
