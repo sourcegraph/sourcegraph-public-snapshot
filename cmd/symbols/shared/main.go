@@ -40,6 +40,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
+var sanityCheck, _ = strconv.ParseBool(env.Get("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not"))
+
 const addr = ":3184"
 
 type SetupFunc func(observationContext *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error)
@@ -79,11 +81,6 @@ func Main(setup SetupFunc) {
 	}
 
 	// Allow to do a sanity check of sqlite.
-	sanityCheck, err := strconv.ParseBool(env.Get("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not"))
-	if err != nil {
-		fmt.Printf("Invalid SANITY_CHECK value: %s\n", err.Error())
-		os.Exit(1)
-	}
 	if sanityCheck {
 		// Ensure we register our database driver before calling
 		// anything that tries to open a SQLite database.
