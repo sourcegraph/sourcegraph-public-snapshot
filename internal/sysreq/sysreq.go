@@ -39,6 +39,9 @@ func (s *Status) Failed() bool { return s.Problem != "" || s.Err != nil }
 func Check(ctx context.Context, skip []string) []Status {
 	shouldSkip := func(name string) bool {
 		for _, v := range skip {
+			if v == "all" {
+				return true
+			}
 			if strings.EqualFold(name, v) {
 				return true
 			}
