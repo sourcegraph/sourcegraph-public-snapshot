@@ -42,6 +42,10 @@ import (
 
 var sanityCheck, _ = strconv.ParseBool(env.Get("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not"))
 
+var baseConfig = env.BaseConfig{}
+var RepositoryFetcherConfig = types.LoadRepositoryFetcherConfig(baseConfig)
+var CtagsConfig = types.LoadCtagsConfig(baseConfig)
+
 const addr = ":3184"
 
 type SetupFunc func(observationContext *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error)
@@ -102,8 +106,7 @@ func Main(setup SetupFunc) {
 
 	// Run setup
 	gitserverClient := gitserver.NewClient(db, observationContext)
-	repositoryFetcherConfig := types.LoadRepositoryFetcherConfig(env.BaseConfig{})
-	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, repositoryFetcherConfig.MaxTotalPathsLength, int64(repositoryFetcherConfig.MaxFileSizeKb)*1000, observationContext)
+	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, RepositoryFetcherConfig.MaxTotalPathsLength, int64(RepositoryFetcherConfig.MaxFileSizeKb)*1000, observationContext)
 	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationContext, db, gitserverClient, repositoryFetcher)
 	if err != nil {
 		logger.Fatal("Failed to set up", log.Error(err))
