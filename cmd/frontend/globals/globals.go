@@ -79,34 +79,31 @@ var permissionsUserMapping = func() atomic.Value {
 	return v
 }()
 
-var permissionsUserMappingWatchers uint32
+var watchPermissionsUserMappingOnce sync.Once
 
 // WatchPermissionsUserMapping watches for changes in the `permissions.userMapping` site configuration
 // so that changes are reflected in what is returned by the PermissionsUserMapping function.
-// This should only be called once and will panic otherwise.
 func WatchPermissionsUserMapping() {
-	if atomic.AddUint32(&permissionsUserMappingWatchers, 1) != 1 {
-		panic("WatchPermissionsUserMapping called more than once")
-	}
+	watchPermissionsUserMappingOnce.Do(func() {
+		conf.Watch(func() {
+			after := conf.Get().PermissionsUserMapping
+			if after == nil {
+				after = defaultPermissionsUserMapping
+			} else if after.BindID != "email" && after.BindID != "username" {
+				log15.Error("globals.PermissionsUserMapping", "BindID", after.BindID, "error", "not a valid value")
+				return
+			}
 
-	conf.Watch(func() {
-		after := conf.Get().PermissionsUserMapping
-		if after == nil {
-			after = defaultPermissionsUserMapping
-		} else if after.BindID != "email" && after.BindID != "username" {
-			log15.Error("globals.PermissionsUserMapping", "BindID", after.BindID, "error", "not a valid value")
-			return
-		}
-
-		if before := PermissionsUserMapping(); !reflect.DeepEqual(before, after) {
-			SetPermissionsUserMapping(after)
-			log15.Info(
-				"globals.PermissionsUserMapping",
-				"updated", true,
-				"before", before,
-				"after", after,
-			)
-		}
+			if before := PermissionsUserMapping(); !reflect.DeepEqual(before, after) {
+				SetPermissionsUserMapping(after)
+				log15.Info(
+					"globals.PermissionsUserMapping",
+					"updated", true,
+					"before", before,
+					"after", after,
+				)
+			}
+		})
 	})
 }
 
