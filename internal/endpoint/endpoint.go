@@ -26,6 +26,8 @@ type Map struct {
 	hm  *rendezvous.Rendezvous
 	err error
 
+	alwaysEmpty bool // for Map created with Empty only
+
 	init      sync.Once
 	discofunk func(chan endpoints) // I like to know who is in my party!
 }
@@ -82,10 +84,16 @@ func Static(endpoints ...string) *Map {
 // Empty returns an Endpoint map which always fails with err.
 func Empty(err error) *Map {
 	return &Map{
-		urlspec: "error: " + err.Error(),
-		err:     err,
+		urlspec:     "error: " + err.Error(),
+		err:         err,
+		alwaysEmpty: true,
 	}
 }
+
+// IntentionallyEmpty can be used in Empty to indicate that a service is intentionally configured to
+// have no endpoints and should not be used. Callers should only treat this as an error if the
+// service is necessary.
+var IntentionallyEmpty = errors.New("endpoint is intentionally empty")
 
 func (m *Map) String() string {
 	return fmt.Sprintf("endpoint.Map(%s)", m.urlspec)
@@ -161,6 +169,9 @@ func (m *Map) Endpoints() ([]string, error) {
 
 // discover updates the Map with discovered endpoints
 func (m *Map) discover() {
+	if m.alwaysEmpty {
+		return
+	}
 	if m.discofunk == nil {
 		return
 	}
@@ -178,7 +189,7 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 	logger := log.Scoped("endpoint", "A kubernetes endpoint that represents a service")
 	for eps := range ch {
 
-		logger.Info(
+		logger.Debug(
 			"endpoints k8s discovered",
 			log.String("urlspec", m.urlspec),
 			log.String("service", eps.Service),
@@ -217,7 +228,7 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 	}
 }
 
-type connsGetter func(conns conftypes.ServiceConnections) []string
+type connsGetter func(conns conftypes.ServiceConnections) (endpoints []string, intentionallyEmpty bool)
 
 // ConfBased returns a Map that watches the global conf and calls the provided
 // getter to extract endpoints.
@@ -228,8 +239,12 @@ func ConfBased(getter connsGetter) *Map {
 			conf.Watch(func() {
 				serviceConnections := conf.Get().ServiceConnections()
 
-				eps := getter(serviceConnections)
-				disco <- endpoints{Endpoints: eps}
+				eps, intentionallyEmpty := getter(serviceConnections)
+				resp := endpoints{Endpoints: eps}
+				if intentionallyEmpty {
+					resp.Error = IntentionallyEmpty
+				}
+				disco <- resp
 			})
 		},
 	}

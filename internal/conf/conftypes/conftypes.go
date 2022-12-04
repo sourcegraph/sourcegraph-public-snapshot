@@ -32,6 +32,11 @@ type ServiceConnections struct {
 	Searchers []string `json:"searchers"`
 	// Zoekts is the addresses of Zoekt instances to talk to.
 	Zoekts []string `json:"zoekts"`
+
+	// ZoektsIntentionallyEmpty indicates that it is intentional that there are no Zoekt instances,
+	// and this should not be treated as an error. Search should fall back to unindexed.
+	ZoektsIntentionallyEmpty bool `json:"zoektsIntentionallyEmpty"`
+
 	// ZoektListTTL is the TTL of the internal cache that Zoekt clients use to
 	// cache the list of indexed repository. After TTL is over, new list will
 	// get requested from Zoekt shards.
