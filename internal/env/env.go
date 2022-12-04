@@ -178,8 +178,12 @@ func Lock() {
 	sort.Slice(env, func(i, j int) bool { return env[i].name < env[j].name })
 
 	for i := 1; i < len(env); i++ {
-		if env[i-1].name == env[i].name {
-			panic(fmt.Sprintf("%q already registered", env[i].name))
+		// TODO(sqs): in single-program mode, we might run env var Gets multiple times. that's
+		// harmless, as long as it's the same init line. check that it's ok to NOT panic when it's
+		// the same init (name, description, default, etc.) and think of how to redesign this API to
+		// make that less weird?
+		if a, b := env[i-1], env[i]; a.name == b.name && (a.description != b.description || a.value != b.value) {
+			panic(fmt.Sprintf("%q already registered with a different description or value", env[i].name))
 		}
 	}
 
