@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -191,8 +192,7 @@ func main() {
 			{Label: "Creating orgs", Max: float64(cfg.subOrgCount + 1)},
 			{Label: "Creating teams", Max: float64(cfg.teamCount)},
 			{Label: "Creating users", Max: float64(cfg.userCount)},
-			//{Label: "Adding users to teams", Max: float64(cfg.userCount)},
-			{Label: "Adding users to teams", Max: float64(0)},
+			{Label: "Adding users to teams", Max: float64(cfg.userCount)},
 			{Label: "Assigning repos", Max: float64(len(repos))},
 		}
 		if cfg.generateTokens {
@@ -259,7 +259,7 @@ func main() {
 		g2.Wait()
 
 		mainOrg, orgRepos := categorizeOrgRepos(cfg, repos, orgs)
-		executeAssignOrgRepos(ctx, orgRepos, &reposDone, g2)
+		executeAssignOrgRepos(ctx, orgRepos, users, &reposDone, g2)
 		g2.Wait()
 
 		// 0.5% repos with only users attached
@@ -491,21 +491,22 @@ func categorizeOrgRepos(cfg config, repos []*repo, orgs []*org) (*org, map[*org]
 	return mainOrg, repoCategories
 }
 
-func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, reposDone *int64, g group.Group) {
+func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, users []*user, reposDone *int64, g group.Group) {
 	for o, repos := range reposPerOrg {
 		currentOrg := o
 		currentRepos := repos
 
-		g.Go(func() {
-			var res *github.Response
-			var err error
-			for _, r := range currentRepos {
-				if currentOrg.Login == r.Owner {
+		var res *github.Response
+		var err error
+		for _, r := range currentRepos {
+			currentRepo := r
+			g.Go(func() {
+				if currentOrg.Login == currentRepo.Owner {
 					//writeInfo(out, "Repository %s already owned by %s", r.Name, r.Owner)
 					// The repository is already transferred
 					atomic.AddInt64(reposDone, 1)
 					progress.SetValue(4, float64(*reposDone))
-					continue
+					return
 				}
 
 				for res == nil || res.StatusCode == 502 || res.StatusCode == 504 {
@@ -513,7 +514,7 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, re
 						time.Sleep(30 * time.Second)
 					}
 
-					_, res, err := gh.Repositories.Transfer(ctx, "blank200k", r.Name, github.TransferRequest{NewOwner: currentOrg.Login})
+					_, res, err = gh.Repositories.Transfer(ctx, "blank200k", currentRepo.Name, github.TransferRequest{NewOwner: currentOrg.Login})
 
 					if res.StatusCode == 422 {
 						body, err := io.ReadAll(res.Body)
@@ -533,7 +534,7 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, re
 							// AcceptedError means the transfer is scheduled as a background job
 							break
 						} else {
-							log.Fatalf("Failed to transfer repository %s from %s to %s: %s", r.Name, r.Owner, currentOrg.Login, err)
+							log.Fatalf("Failed to transfer repository %s from %s to %s: %s", currentRepo.Name, currentRepo.Owner, currentOrg.Login, err)
 						}
 					}
 				}
@@ -541,12 +542,46 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, re
 				//writeInfo(out, "Repository %s transferred to %s", r.Name, r.Owner)
 				atomic.AddInt64(reposDone, 1)
 				progress.SetValue(4, float64(*reposDone))
-				r.Owner = currentOrg.Login
-				if err = store.saveRepo(r); err != nil {
-					log.Fatalf("Failed to save repository %s: %s", r.Name, err)
+				currentRepo.Owner = currentOrg.Login
+				if err = store.saveRepo(currentRepo); err != nil {
+					log.Fatalf("Failed to save repository %s: %s", currentRepo.Name, err)
 				}
+			})
+		}
+
+		g.Wait()
+
+		if strings.HasPrefix(currentOrg.Login, "sub-org") {
+			// add 2000 users to sub-orgs
+			index, err := strconv.ParseInt(strings.TrimPrefix(currentOrg.Login, "sub-org-"), 10, 32)
+			if err != nil {
+				log.Fatalf("Failed to parse index from sub-org id: %s", err)
 			}
-		})
+			usersToAdd := users[index*2000 : (index+1)*2000]
+
+			for _, u := range usersToAdd {
+				currentUser := u
+				var uRes *github.Response
+				var uErr error
+				g.Go(func() {
+					for uRes == nil || uRes.StatusCode == 502 || uRes.StatusCode == 504 {
+						if uRes != nil && (uRes.StatusCode == 502 || uRes.StatusCode == 504) {
+							time.Sleep(30 * time.Second)
+						}
+
+						memberState := "active"
+						memberRole := "member"
+						_, uRes, uErr = gh.Organizations.EditOrgMembership(ctx, currentUser.Login, currentOrg.Login, &github.Membership{
+							State: &memberState,
+							Role:  &memberRole,
+						})
+						if uErr != nil {
+							log.Fatalf("Failed edit membership of user %s in org %s: %s", currentUser.Login, currentOrg.Login, uErr)
+						}
+					}
+				})
+			}
+		}
 	}
 }
 
