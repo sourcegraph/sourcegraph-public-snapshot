@@ -535,6 +535,10 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 
 	zoektMap := computeIndexedEndpoints()
 	zoektAddrs, err := zoektMap.Endpoints()
+	zoektsIntentionallyEmpty := errors.Is(err, endpoint.IntentionallyEmpty)
+	if zoektsIntentionallyEmpty {
+		err = nil
+	}
 	if err != nil {
 		logger.Error("failed to get zoekt endpoints for service connections", log.Error(err))
 	}
@@ -547,6 +551,8 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		Searchers:            searcherAddrs,
 		Zoekts:               zoektAddrs,
 		ZoektListTTL:         indexedListTTL,
+
+		ZoektsIntentionallyEmpty: zoektsIntentionallyEmpty,
 	}
 }
 
@@ -587,6 +593,9 @@ func computeIndexedEndpoints() *endpoint.Map {
 	indexedEndpointsOnce.Do(func() {
 		if addr := zoektAddr(os.Environ()); addr != "" {
 			indexedEndpoints = endpoint.New(addr)
+		} else {
+			// It is OK to have no indexed search endpoints.
+			indexedEndpoints = endpoint.Empty(endpoint.IntentionallyEmpty)
 		}
 	})
 	return indexedEndpoints

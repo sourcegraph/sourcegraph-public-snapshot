@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -84,6 +85,11 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 		indexed, ok, err := zoektIndexedCommit(ctx, client, p.Repo)
 		if err != nil {
 			recordHybridFinalState("zoekt-list-error")
+			if err == endpoint.IntentionallyEmpty {
+				// If it's intentional that no Zoekt instances are configured, then just treat it as
+				// no repos are indexed, not an error.
+				err = nil
+			}
 			return nil, false, err
 		}
 		if !ok {
