@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/zoekt"
 
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -44,11 +45,14 @@ func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed map
 	}
 
 	eps, err := c.Map.Endpoints()
+	if errors.Is(err, endpoint.IntentionallyEmpty) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	endpoint, err := findEndpoint(eps, hostname)
+	ep, err := findEndpoint(eps, hostname)
 	if err != nil {
 		return nil, err
 	}
@@ -62,11 +66,14 @@ func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed map
 	subset := repos[:0]
 	for _, r := range repos {
 		assigned, err := c.Map.Get(string(r.Name))
+		if errors.Is(err, endpoint.IntentionallyEmpty) {
+			continue
+		}
 		if err != nil {
 			return nil, err
 		}
 
-		if assigned == endpoint {
+		if assigned == ep {
 			subset = append(subset, r)
 		} else if _, ok := indexed[uint32(r.ID)]; ok {
 			other[assigned] = append(other[assigned], r)
