@@ -1,17 +1,15 @@
 import { countColumn, StateEffect, StateField } from '@codemirror/state'
 import { closeHoverTooltips, EditorView, showTooltip, Tooltip } from '@codemirror/view'
-import { Remote } from 'comlink'
 
 import { HoverMerged, TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { Occurrence, Position } from '@sourcegraph/shared/src/codeintel/scip'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { isInteractiveOccurrence, occurrenceAtPosition } from '../occurrence-utils'
-import { CodeIntelTooltip, HoverResult } from '../tooltips/CodeIntelTooltip'
+import { CodeIntelTooltip, emptyHoverResult, HoverResult } from '../tooltips/CodeIntelTooltip'
 
-import { blobInfoFacet, codeintelFacet } from './facets'
+import { blobPropsFacet } from '..'
 
 export const hoverCache = StateField.define<Map<Occurrence, Promise<HoverResult>>>({
     create: () => new Map(),
@@ -82,8 +80,8 @@ export function hoverAtOccurrence(view: EditorView, occurrence: Occurrence): Pro
     if (fromCache) {
         return fromCache
     }
-    const uri = toURIWithPath(view.state.facet(blobInfoFacet))
-    const contents = hoverRequest(view.state.facet(codeintelFacet), occurrence, {
+    const uri = toURIWithPath(view.state.facet(blobPropsFacet).blobInfo)
+    const contents = hoverRequest(view, occurrence, {
         position: { line: occurrence.range.start.line, character: occurrence.range.start.character + 1 },
         textDocument: { uri },
     })
@@ -92,11 +90,15 @@ export function hoverAtOccurrence(view: EditorView, occurrence: Occurrence): Pro
 }
 
 async function hoverRequest(
-    codeintel: Remote<FlatExtensionHostAPI>,
+    view: EditorView,
     occurrence: Occurrence,
     params: TextDocumentPositionParameters
 ): Promise<HoverResult> {
-    const hover = await codeintel.getHover(params)
+    const api = await view.state.facet(blobPropsFacet).extensionsController?.extHostAPI
+    if (!api) {
+        return emptyHoverResult
+    }
+    const hover = await api.getHover(params)
     const result = await wrapRemoteObservable(hover).toPromise()
     let markdownContents =
         result === undefined || result.isLoading || result.result === null || result.result.contents.length === 0

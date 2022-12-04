@@ -141,6 +141,8 @@ export interface BlobProps
     role?: string
     ariaLabel?: string
 
+    supportsFindImplementations?: boolean
+
     isBlameVisible?: boolean
     blameHunks?: { current: BlameHunk[] | undefined }
 }

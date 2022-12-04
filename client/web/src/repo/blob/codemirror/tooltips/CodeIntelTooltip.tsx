@@ -9,14 +9,16 @@ import { BlobViewState, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url
 
 import { HovercardView, HoverData } from '../hovercard'
 import { rangeToCmSelection } from '../occurrence-utils'
-import { blobInfoFacet, textDocumentImplemenationSupport } from '../token-selection/facets'
 import { modifierClickDescription } from '../token-selection/modifier-click'
+import { blobPropsFacet } from '..'
+import { hasFindImplementationsSupport } from '@sourcegraph/shared/src/codeintel/api'
 
 export interface HoverResult {
     markdownContents: string
     hoverMerged?: HoverMerged | null
     isPrecise?: boolean
 }
+export const emptyHoverResult: HoverResult = { markdownContents: '' }
 
 // CodeMirror tooltip wrapper around the "code intel" popover.  Implemented as a
 // class so that we can detect it with instanceof checks. This class
@@ -34,7 +36,7 @@ export class CodeIntelTooltip implements Tooltip {
         this.pos = range.from
         this.end = range.to
         this.create = () => {
-            const blobInfo = view.state.facet(blobInfoFacet)
+            const blobInfo = view.state.facet(blobPropsFacet).blobInfo
             const referencesURL = toPrettyBlobURL({
                 ...blobInfo,
                 range: occurrence.range.withIncrementedValues(),
@@ -51,7 +53,7 @@ export class CodeIntelTooltip implements Tooltip {
                     },
                 },
             ]
-            if (hover.isPrecise && view.state.facet(textDocumentImplemenationSupport)) {
+            if (hover.isPrecise && hasFindImplementationsSupport(view.state.facet(blobPropsFacet).blobInfo.mode)) {
                 const implementationsURL = toPrettyBlobURL({
                     ...blobInfo,
                     range: occurrence.range.withIncrementedValues(),

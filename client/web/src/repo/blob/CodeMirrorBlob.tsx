@@ -8,7 +8,6 @@ import { openSearchPanel } from '@codemirror/search'
 import { Compartment, EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
-import { from } from 'rxjs'
 
 import {
     addLineRangeQueryParameter,
@@ -18,7 +17,7 @@ import {
 import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { useLocalStorage, useObservable } from '@sourcegraph/wildcard'
+import { useLocalStorage } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../stores'
 
@@ -115,9 +114,6 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const [useFileSearch, setUseFileSearch] = useLocalStorage('blob.overrideBrowserFindOnPage', true)
 
-    const extHostAPI = enableSelectionDrivenCodeNavigation ? extensionsController?.extHostAPI : undefined
-    const codeintel = useObservable(from(extHostAPI || Promise.resolve(undefined)))
-
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
     // This is used to avoid reinitializing the editor when new locations in the
     // same file are opened inside the reference panel.
@@ -199,9 +195,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
                 enableSelectionDrivenCodeNavigation,
             }),
-            enableSelectionDrivenCodeNavigation && codeintel
-                ? tokenSelectionExtension(codeintel, blobInfo, history)
-                : [],
+            enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
             enableLinkDrivenCodeNavigation ? tokensAsLinks({ history, blobInfo, preloadGoToDefinition }) : [],
             syntaxHighlight.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
@@ -232,7 +226,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations, codeintel]
+        [onSelection, blobInfo, extensionsController, disableStatusBar, disableDecorations]
     )
 
     const editorRef = useRef<EditorView>()

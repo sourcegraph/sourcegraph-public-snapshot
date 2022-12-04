@@ -1,4 +1,5 @@
 import { KeyBinding } from '@codemirror/view'
+import { blobPropsFacet } from '..'
 
 import { syntaxHighlight } from '../highlight'
 import { occurrenceAtPosition, positionAtCmPosition, closestOccurrenceByCharacter } from '../occurrence-utils'
@@ -6,7 +7,6 @@ import { CodeIntelTooltip } from '../tooltips/CodeIntelTooltip'
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 
 import { goToDefinitionAtOccurrence } from './definition'
-import { historyFacet } from './facets'
 import { closeHover, getHoverTooltip, hoverField, showHover } from './hover'
 import { isModifierKeyHeld } from './modifier-click'
 import { selectOccurrence } from './selections'
@@ -63,14 +63,14 @@ const keybindings: readonly KeyBinding[] = [
     {
         key: 'Mod-ArrowRight',
         run(view) {
-            view.state.facet(historyFacet).goForward()
+            view.state.facet(blobPropsFacet).history.goForward()
             return true
         },
     },
     {
         key: 'Mod-ArrowLeft',
         run(view) {
-            view.state.facet(historyFacet).goBack()
+            view.state.facet(blobPropsFacet).history.goBack()
             return true
         },
     },

@@ -1,3 +1,4 @@
+import * as H from 'history'
 import { Facet, RangeSet, StateEffect, StateField } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
 
@@ -6,13 +7,13 @@ import { Location } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Occurrence, Position, Range } from '@sourcegraph/shared/src/codeintel/scip'
 import { BlobViewState, parseRepoURI, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
+import { blobPropsFacet } from '..'
 
 import { isInteractiveOccurrence, occurrenceAtMouseEvent, OccurrenceMap, rangeToCmSelection } from '../occurrence-utils'
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 import { showTemporaryTooltip } from '../tooltips/TemporaryTooltip'
 import { preciseOffsetAtCoords } from '../utils'
 
-import { blobInfoFacet, codeintelFacet, historyFacet } from './facets'
 import { hoveredOccurrenceField } from './hover'
 import { isModifierKey, isModifierKeyHeld } from './modifier-click'
 import { selectOccurrence, selectRange } from './selections'
@@ -103,7 +104,7 @@ export function goToDefinitionAtOccurrence(view: EditorView, occurrence: Occurre
     if (fromCache) {
         return fromCache
     }
-    const uri = toURIWithPath(view.state.facet(blobInfoFacet))
+    const uri = toURIWithPath(view.state.facet(blobPropsFacet).blobInfo)
     const params: TextDocumentPositionParameters = {
         position: occurrence.range.start,
         textDocument: { uri },
@@ -127,8 +128,11 @@ async function goToDefinition(
     occurrence: Occurrence,
     params: TextDocumentPositionParameters
 ): Promise<DefinitionResult> {
-    const codeintel = view.state.facet(codeintelFacet)
-    const definition = await codeintel.getDefinition(params)
+    const api = await view.state.facet(blobPropsFacet).extensionsController?.extHostAPI
+    if (!api) {
+        return emptyDefinitionResult
+    }
+    const definition = await api.getDefinition(params)
 
     const result = await wrapRemoteObservable(definition).toPromise()
     if (!result || result.isLoading) {
@@ -155,7 +159,7 @@ async function goToDefinition(
                     url: refPanelURL,
                     handler: position => {
                         showTemporaryTooltip(view, 'You are at the definition', position, 2000, { arrow: true })
-                        const history = view.state.facet(historyFacet)
+                        const history = view.state.facet(blobPropsFacet).history
                         if (refPanelURL) {
                             history.replace(refPanelURL)
                         }
@@ -174,7 +178,13 @@ async function goToDefinition(
                 locations: result.result,
                 url: hrefTo,
                 handler: () => {
-                    const history = view.state.facet(historyFacet)
+                    interface DefinitionState {
+                        // The destination URL if we trigger `history.goBack()`.  We use this state
+                        // to avoid inserting redundant 'A->B->A->B' entries when the user triggers
+                        // "go to definition" twice in a row from the same location.
+                        previousURL?: string
+                    }
+                    const history = view.state.facet(blobPropsFacet).history as H.History<DefinitionState>
                     const selectionRange = Range.fromNumbers(
                         range.start.line,
                         range.start.character,
@@ -210,7 +220,7 @@ async function goToDefinition(
         url: refPanelURL,
         handler: () => {
             if (refPanelURL) {
-                const history = view.state.facet(historyFacet)
+                const history = view.state.facet(blobPropsFacet).history
                 history.push(refPanelURL)
             } else {
                 // Should not happen but we handle this case because

@@ -1,18 +1,10 @@
 import { Extension } from '@codemirror/state'
 import { EditorView, hoverTooltip, keymap } from '@codemirror/view'
-import { Remote } from 'comlink'
-import * as H from 'history'
 
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { hasFindImplementationsSupport } from '@sourcegraph/shared/src/codeintel/api'
-import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
-
-import { BlobInfo } from '../../Blob'
 import { occurrenceAtMouseEvent } from '../occurrence-utils'
 import { MOUSE_MAIN_BUTTON } from '../utils'
 
 import { definitionCache, goToDefinitionOnMouseEvent, underlinedDefinitionFacet } from './definition'
-import { blobInfoFacet, codeintelFacet, historyFacet, textDocumentImplemenationSupport, uriFacet } from './facets'
 import { getHoverTooltip, hoverCache, hoveredOccurrenceField, hoverField, setHoveredOccurrenceEffect } from './hover'
 import { tokenSelectionKeyBindings } from './keybindings'
 import { modifierClickFacet } from './modifier-click'
@@ -20,11 +12,7 @@ import { selectedOccurrence, syncSelectionWithURL, tokenSelectionTheme, touchOcc
 
 const LONGPRESS_DURATION = 500
 
-export function tokenSelectionExtension(
-    codeintel: Remote<FlatExtensionHostAPI>,
-    blobInfo: BlobInfo,
-    history: H.History
-): Extension {
+export function tokenSelectionExtension(): Extension {
     let clientY = 0
     let clientX = 0
     let longPressTimeout: NodeJS.Timeout | undefined
@@ -33,17 +21,12 @@ export function tokenSelectionExtension(
         modifierClickFacet.of(false),
         tokenSelectionTheme,
         selectedOccurrence.of(null),
-        historyFacet.of(history),
-        codeintelFacet.of(codeintel),
         definitionCache,
         underlinedDefinitionFacet.of(null),
         hoveredOccurrenceField,
         hoverCache,
         hoverTooltip((view, position) => getHoverTooltip(view, position), { hoverTime: 200, hideOnChange: true }),
         hoverField,
-        uriFacet.of(toURIWithPath(blobInfo)),
-        textDocumentImplemenationSupport.of(hasFindImplementationsSupport(blobInfo.mode)),
-        blobInfoFacet.of(blobInfo),
         keymap.of(tokenSelectionKeyBindings),
         syncSelectionWithURL,
         EditorView.domEventHandlers({

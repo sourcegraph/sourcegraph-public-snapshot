@@ -10,8 +10,8 @@ import { cmSelectionToRange, occurrenceAtPosition, rangeToCmSelection } from '..
 import { isSelectionInsideDocument } from '../utils'
 
 import { definitionCache, goToDefinitionAtOccurrence } from './definition'
-import { historyFacet } from './facets'
 import { hoverAtOccurrence, hoverCache, setHoveredOccurrenceEffect } from './hover'
+import { blobPropsFacet } from '..'
 
 export const tokenSelectionTheme = EditorView.theme({
     '.cm-token-selection-definition-ready': {
@@ -113,7 +113,7 @@ export const syncSelectionWithURL: Extension = ViewPlugin.fromClass(
     class implements PluginValue {
         private onDestroy: H.UnregisterCallback
         constructor(public view: EditorView) {
-            const history = view.state.facet(historyFacet)
+            const history = view.state.facet(blobPropsFacet).history
             this.onDestroy = history.listen(location => this.onLocation(location))
         }
         public onLocation(location: H.Location): void {
