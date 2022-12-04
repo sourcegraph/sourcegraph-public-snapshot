@@ -41,7 +41,7 @@ func TestPush(t *testing.T) {
     "unique_key"
   ],
   "properties": {
-    "unique_key":"preprod,34159,frontend,github-proxy,precise-code-intel,searcher,symbols,syntect-server,worker",
+    "unique_key":"preprod,34159,frontend,precise-code-intel,searcher,symbols,syntect-server,worker",
     "okay.url": "https://github.com/sourcegraph/sourcegraph/pull/34159",
     "environment": "preprod",
     "pull_request.url": "https://github.com/sourcegraph/sourcegraph/pull/34159",
@@ -52,7 +52,6 @@ func TestPush(t *testing.T) {
   "customEventName": "qa.deployment",
   "labels": [
       "frontend",
-      "github-proxy",
       "precise-code-intel",
       "searcher",
       "symbols",
@@ -80,7 +79,7 @@ func TestPush(t *testing.T) {
 			OkayURL:     "https://github.com/sourcegraph/sourcegraph/pull/34159",
 			UniqueKey:   []string{"unique_key"},
 			Properties: map[string]string{
-				"unique_key":            "preprod,34159,frontend,github-proxy,precise-code-intel,searcher,symbols,syntect-server,worker",
+				"unique_key":            "preprod,34159,frontend,precise-code-intel,searcher,symbols,syntect-server,worker",
 				"environment":           "preprod",
 				"pull_request.url":      "https://github.com/sourcegraph/sourcegraph/pull/34159",
 				"pull_request.title":    "httptestutil: delete all VCR headers that look risky",
@@ -89,7 +88,6 @@ func TestPush(t *testing.T) {
 			},
 			Labels: []string{
 				"frontend",
-				"github-proxy",
 				"precise-code-intel",
 				"searcher",
 				"symbols",

@@ -164,7 +164,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
       - zoekt-webserver-0

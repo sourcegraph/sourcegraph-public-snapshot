@@ -107,7 +107,7 @@ func TestGetRemoteURLFunc_GitHubApp(t *testing.T) {
 
 	doer := &mockDoer{
 		do: func(r *http.Request) (*http.Response, error) {
-			want := "http://github-proxy/app/installations/21994992/access_tokens"
+			want := "https://api.github.com/app/installations/21994992/access_tokens"
 			if r.URL.String() != want {
 				return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
 			}

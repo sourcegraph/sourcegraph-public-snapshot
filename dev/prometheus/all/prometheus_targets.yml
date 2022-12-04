@@ -58,8 +58,3 @@
   targets:
     # postgres exporter
     - host.docker.internal:9187
-- labels:
-    job: github-proxy
-  targets:
-    # github proxy
-    - host.docker.internal:6090

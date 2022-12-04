@@ -49,6 +49,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Removed legacy GraphQL field `dirtyMetadata` on an insight series. `insightViewDebug` can be used as an alternative. [#44416](https://github.com/sourcegraph/sourcegraph/pull/44416)
 - Removed `search.index.enabled` site configuration setting. Search indexing is now always enabled.
+- Removed the `github-proxy` service and all dependencies on it. Site admins should remove the `github-proxy` service in cluster deployments.
 
 ## 4.2.0
 

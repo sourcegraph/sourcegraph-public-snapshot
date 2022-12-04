@@ -660,7 +660,7 @@ func newClientFactoryWithOpt(t testing.TB, name string, opt httpcli.Opt) (*httpc
 func testClientFactorySetup(t testing.TB, name string, mws ...httpcli.Middleware) (httpcli.Middleware, *recorder.Recorder) {
 	cassete := filepath.Join("testdata", "sources", strings.ReplaceAll(name, " ", "-"))
 	rec := newRecorder(t, cassete, update(name))
-	mws = append(mws, httpcli.GitHubProxyRedirectMiddleware, gitserverRedirectMiddleware)
+	mws = append(mws, gitserverRedirectMiddleware)
 	mw := httpcli.NewMiddleware(mws...)
 	return mw, rec
 }

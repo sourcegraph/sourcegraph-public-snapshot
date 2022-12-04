@@ -6669,287 +6669,6 @@ Query: `sum by(app) (up{app=~".*gitserver"}) / count by (app) (up{app=~".*gitser
 
 <br />
 
-## GitHub Proxy
-
-<p class="subtitle">Proxies all requests to github.com, keeping track of and managing rate limits.</p>
-
-To see this dashboard, visit `/-/debug/grafana/d/github-proxy/github-proxy` on your Sourcegraph instance.
-
-### GitHub Proxy: GitHub API monitoring
-
-#### github-proxy: github_proxy_waiting_requests
-
-<p class="subtitle">Number of requests waiting on the global mutex</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-github-proxy-waiting-requests) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100000` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max(github_proxy_waiting_requests)`
-
-</details>
-
-<br />
-
-### GitHub Proxy: Container monitoring (not available on server)
-
-#### github-proxy: container_missing
-
-<p class="subtitle">Container missing</p>
-
-This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod github-proxy` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p github-proxy`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' github-proxy` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the github-proxy container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs github-proxy` (note this will include logs from the previous and currently running container).
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100100` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `count by(name) ((time() - container_last_seen{name=~"^github-proxy.*"}) > 60)`
-
-</details>
-
-<br />
-
-#### github-proxy: container_cpu_usage
-
-<p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-container-cpu-usage) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100101` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}`
-
-</details>
-
-<br />
-
-#### github-proxy: container_memory_usage
-
-<p class="subtitle">Container memory usage by instance</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-container-memory-usage) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100102` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}`
-
-</details>
-
-<br />
-
-#### github-proxy: fs_io_operations
-
-<p class="subtitle">Filesystem reads and writes rate by instance over 1h</p>
-
-This value indicates the number of filesystem read and write operations by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100103` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^github-proxy.*"}[1h]) + rate(container_fs_writes_total{name=~"^github-proxy.*"}[1h]))`
-
-</details>
-
-<br />
-
-### GitHub Proxy: Provisioning indicators (not available on server)
-
-#### github-proxy: provisioning_container_cpu_usage_long_term
-
-<p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100200` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}[1d])`
-
-</details>
-
-<br />
-
-#### github-proxy: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">Container memory usage (1d maximum) by instance</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100201` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}[1d])`
-
-</details>
-
-<br />
-
-#### github-proxy: provisioning_container_cpu_usage_short_term
-
-<p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100210` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}[5m])`
-
-</details>
-
-<br />
-
-#### github-proxy: provisioning_container_memory_usage_short_term
-
-<p class="subtitle">Container memory usage (5m maximum) by instance</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100211` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}[5m])`
-
-</details>
-
-<br />
-
-#### github-proxy: container_oomkill_events_total
-
-<p class="subtitle">Container OOMKILL events total by instance</p>
-
-This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
-When it occurs frequently, it is an indicator of underprovisioning.
-
-Refer to the [alerts reference](./alerts.md#github-proxy-container-oomkill-events-total) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100212` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max by (name) (container_oom_events_total{name=~"^github-proxy.*"})`
-
-</details>
-
-<br />
-
-### GitHub Proxy: Golang runtime monitoring
-
-#### github-proxy: go_goroutines
-
-<p class="subtitle">Maximum active goroutines</p>
-
-A high value here indicates a possible goroutine leak.
-
-Refer to the [alerts reference](./alerts.md#github-proxy-go-goroutines) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100300` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max by(instance) (go_goroutines{job=~".*github-proxy"})`
-
-</details>
-
-<br />
-
-#### github-proxy: go_gc_duration_seconds
-
-<p class="subtitle">Maximum go garbage collection duration</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-go-gc-duration-seconds) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100301` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `max by(instance) (go_gc_duration_seconds{job=~".*github-proxy"})`
-
-</details>
-
-<br />
-
-### GitHub Proxy: Kubernetes monitoring (only available on Kubernetes)
-
-#### github-proxy: pods_available_percentage
-
-<p class="subtitle">Percentage pods available</p>
-
-Refer to the [alerts reference](./alerts.md#github-proxy-pods-available-percentage) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/github-proxy/github-proxy?viewPanel=100400` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by(app) (up{app=~".*github-proxy"}) / count by (app) (up{app=~".*github-proxy"}) * 100`
-
-</details>
-
-<br />
-
 ## Postgres
 
 <p class="subtitle">Postgres metrics, exported from postgres_exporter (not available on server).</p>
@@ -20431,7 +20150,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}`
+Query: `cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}`
 
 </details>
 
@@ -20452,7 +20171,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}`
+Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}`
 
 </details>
 
@@ -20475,7 +20194,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}[5m]) >= 80`
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}[5m]) >= 80`
 
 </details>
 
@@ -20496,7 +20215,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}[5m]) >= 80`
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(frontend|sourcegraph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}[5m]) >= 80`
 
 </details>
 
@@ -20518,7 +20237,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `max by (name) (container_oom_events_total{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}) >= 1`
+Query: `max by (name) (container_oom_events_total{name=~"^(frontend|sourcegraph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}) >= 1`
 
 </details>
 
@@ -20540,7 +20259,7 @@ To see this panel, visit `/-/debug/grafana/d/containers/containers?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}) > 60)`
+Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegraph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger).*"}) > 60)`
 
 </details>
 

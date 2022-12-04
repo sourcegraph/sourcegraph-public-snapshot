@@ -98,7 +98,6 @@ Available commands in `sg.config.yaml`:
 * docsite: Docsite instance serving the docs
 * executor-template
 * frontend: Enterprise frontend
-* github-proxy
 * gitserver
 * gitserver-0
 * gitserver-1

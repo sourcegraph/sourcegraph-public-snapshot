@@ -53,8 +53,7 @@ func NewRecorderOpt(rec *recorder.Recorder) httpcli.Opt {
 	}
 }
 
-// NewGitHubRecorderFactory returns a *http.Factory that rewrites HTTP requests
-// to github-proxy to github.com and records all HTTP requests in
+// NewGitHubRecorderFactory returns a *http.Factory that records HTTP requests to GitHub in
 // "testdata/vcr/{name}" with {name} being the name that's passed in.
 //
 // If update is true, the HTTP requests are recorded, otherwise they're replayed
@@ -70,7 +69,7 @@ func NewGitHubRecorderFactory(t testing.TB, update bool, name string) (*httpcli.
 		t.Fatal(err)
 	}
 
-	mw := httpcli.NewMiddleware(httpcli.GitHubProxyRedirectMiddleware)
+	mw := httpcli.NewMiddleware()
 
 	hc := httpcli.NewFactory(mw, httpcli.CachedTransportOpt, NewRecorderOpt(rec))
 

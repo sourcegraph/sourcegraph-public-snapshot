@@ -107,7 +107,6 @@ If you are on **Linux**, an URL will then be displayed in the service list if th
 | ns-sourcegraph | backend                       | No node port |
 | ns-sourcegraph | codeinsights-db               | No node port |
 | ns-sourcegraph | codeintel-db                  | No node port |
-| ns-sourcegraph | github-proxy                  | No node port |
 | ns-sourcegraph | gitserver                     | No node port |
 | ns-sourcegraph | grafana                       | No node port |
 | ns-sourcegraph | indexed-search                | No node port |

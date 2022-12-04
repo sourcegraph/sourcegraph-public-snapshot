@@ -58,8 +58,3 @@
   targets:
     # postgres exporter
     - 127.0.0.1:9187
-- labels:
-    job: github-proxy
-  targets:
-    # github proxy
-    - 127.0.0.1:6090

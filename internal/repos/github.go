@@ -76,7 +76,7 @@ func NewGithubSource(ctx context.Context, logger log.Logger, externalServicesSto
 }
 
 var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
-	// _v2 since we have an older metric defined in github-proxy
+	// _v2 since we had an older metric defined
 	Name: "src_github_rate_limit_remaining_v2",
 	Help: "Number of calls to GitHub's API remaining before hitting the rate limit.",
 }, []string{"resource", "name"})

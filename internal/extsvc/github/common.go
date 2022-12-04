@@ -1468,18 +1468,7 @@ var (
 
 	// The metric generated here will be named as "src_github_requests_total".
 	requestCounter = metrics.NewRequestMeter("github", "Total number of requests sent to the GitHub API.")
-
-	// Get raw proxy URL at service startup, but only get parsed URL at runtime with getGithubProxyURL
-	githubProxyRawURL = env.Get("GITHUB_BASE_URL", "http://github-proxy", "base URL for GitHub.com API (used for github-proxy)")
 )
-
-func getGithubProxyURL() *url.URL {
-	url, err := url.Parse(githubProxyRawURL)
-	if err != nil {
-		log.Scoped("extsvc.github", "github package").Fatal("Error parsing GITHUB_BASE_URL", log.Error(err))
-	}
-	return url
-}
 
 // APIRoot returns the root URL of the API using the base URL of the GitHub instance.
 func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
@@ -1588,18 +1577,9 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 	return newHttpResponseState(resp.StatusCode, resp.Header), err
 }
 
-func canonicalizedURL(apiURL *url.URL) *url.URL {
-	if urlIsGitHubDotCom(apiURL) {
-		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
-		// rate limit).
-		return getGithubProxyURL()
-	}
-	return apiURL
-}
-
 func urlIsGitHubDotCom(apiURL *url.URL) bool {
 	hostname := strings.ToLower(apiURL.Hostname())
-	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" || apiURL.String() == getGithubProxyURL().String()
+	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com"
 }
 
 var ErrRepoNotFound = &RepoNotFoundError{}

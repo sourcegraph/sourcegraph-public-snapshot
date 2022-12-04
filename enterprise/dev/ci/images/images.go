@@ -62,7 +62,6 @@ var DeploySourcegraphDockerImages = []string{
 	"codeinsights-db",
 	"codeintel-db",
 	"frontend",
-	"github-proxy",
 	"gitserver",
 	"grafana",
 	"indexed-searcher",

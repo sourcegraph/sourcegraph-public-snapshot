@@ -58,7 +58,6 @@ env:
       { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
       { "Name": "codeintel-worker", "Host": "127.0.0.1:6088" },
       { "Name": "oss-worker", "Host": "127.0.0.1:6089" },
-      { "Name": "github-proxy", "Host": "127.0.0.1:6090" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
       { "Name": "worker-executors", "Host": "127.0.0.1:6996" },
       { "Name": "zoekt-index-0", "Host": "127.0.0.1:6072" },
@@ -220,19 +219,6 @@ commands:
       GITSERVER_ADDR: 127.0.0.1:3502
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_2
       SRC_PROF_HTTP: 127.0.0.1:3552
-
-  github-proxy:
-    cmd: .bin/github-proxy
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='all=-N -l'
-      fi
-      go build -gcflags="$GCFLAGS" -o .bin/github-proxy github.com/sourcegraph/sourcegraph/cmd/github-proxy
-    checkBinary: .bin/github-proxy
-    watch:
-      - lib
-      - internal
-      - cmd/github-proxy
 
   oss-worker:
     cmd: .bin/oss-worker
@@ -800,7 +786,6 @@ commandsets:
       - caddy
       - docsite
       - syntax-highlighter
-      - github-proxy
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -825,7 +810,6 @@ commandsets:
       - caddy
       - docsite
       - syntax-highlighter
-      - github-proxy
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -862,7 +846,6 @@ commandsets:
       - caddy
       - docsite
       - syntax-highlighter
-      - github-proxy
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -897,7 +880,6 @@ commandsets:
       - caddy
       - docsite
       - syntax-highlighter
-      - github-proxy
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -921,7 +903,6 @@ commandsets:
       - gitserver-1
       - searcher
       - symbols
-      - github-proxy
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -946,7 +927,6 @@ commandsets:
       - caddy
       - docsite
       - syntax-highlighter
-      - github-proxy
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -968,7 +948,6 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - caddy
-      - github-proxy
 
   monitoring:
     checks:

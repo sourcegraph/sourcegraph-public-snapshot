@@ -58,7 +58,6 @@ export -f go_build
 echo "--- go build"
 
 PACKAGES=(
-  github.com/sourcegraph/sourcegraph/cmd/github-proxy
   github.com/sourcegraph/sourcegraph/cmd/gitserver
   github.com/sourcegraph/sourcegraph/cmd/searcher
   github.com/sourcegraph/zoekt/cmd/zoekt-archive-index

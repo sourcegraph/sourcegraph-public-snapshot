@@ -261,18 +261,6 @@ func ContextErrorMiddleware(cli Doer) Doer {
 	})
 }
 
-// GitHubProxyRedirectMiddleware rewrites requests to the "github-proxy" host
-// to "https://api.github.com".
-func GitHubProxyRedirectMiddleware(cli Doer) Doer {
-	return DoerFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.Hostname() == "github-proxy" {
-			req.URL.Host = "api.github.com"
-			req.URL.Scheme = "https"
-		}
-		return cli.Do(req)
-	})
-}
-
 // GerritUnauthenticateMiddleware rewrites requests to Gerrit code host to
 // make them unauthenticated, used for testing against a non-Authed gerrit instance
 func GerritUnauthenticateMiddleware(cli Doer) Doer {

@@ -929,9 +929,8 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 		//
 		// It is also worth noting that naively increasing the max concurrency of
 		// repo-centric syncing for GitHub may not work as intended because all sync jobs
-		// derived from the same code host connection is sharing the same personal access
-		// token and its concurrency throttled to 1 by the github-proxy in the current
-		// architecture.
+		// derived from the same code host connection share the same personal access
+		// token amd rate limit bucket.
 		requestTypeRepo: group.New().WithContext(ctx).WithMaxConcurrency(1),
 	}
 
