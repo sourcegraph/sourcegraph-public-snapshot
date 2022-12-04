@@ -65,12 +65,7 @@ var (
 
 	printLogo, _ = strconv.ParseBool(env.Get("LOGO", "false", "print Sourcegraph logo upon startup"))
 
-	httpAddr = env.Get("SRC_HTTP_ADDR", func() string {
-		if env.InsecureDev {
-			return "127.0.0.1:3080"
-		}
-		return ":3080"
-	}(), "HTTP listen address for app and HTTP API")
+	httpAddr         = env.Get("SRC_HTTP_ADDR", ":3080", "HTTP listen address for app and HTTP API")
 	httpAddrInternal = envvar.HTTPAddrInternal
 
 	nginxAddr = env.Get("SRC_NGINX_HTTP_ADDR", "", "HTTP listen address for nginx reverse proxy to SRC_HTTP_ADDR. Has preference over SRC_HTTP_ADDR for ExternalURL.")
