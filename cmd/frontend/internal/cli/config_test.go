@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -18,8 +19,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
+func resetSearchServiceConnections() {
+	// The searcherURLs and indexedEndpoints package vars are computed in a sync.Once block, which
+	// makes it impossible for a test to check the behavior given various environment variable
+	// values. We work around this by resetting the sync.Once here.
+	searcherURLsOnce = sync.Once{}
+	indexedEndpointsOnce = sync.Once{}
+}
+
 func TestServiceConnections(t *testing.T) {
 	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
+	resetSearchServiceConnections()
 
 	// We override the URLs so service discovery doesn't try and talk to k8s
 	oldSearcherURL := searcherURL
@@ -35,6 +45,35 @@ func TestServiceConnections(t *testing.T) {
 	sc := serviceConnections(logtest.Scoped(t))
 	if reflect.DeepEqual(sc, conftypes.ServiceConnections{}) {
 		t.Fatal("expected non-empty service connections")
+	}
+	if sc.Zoekts == nil {
+		t.Error("Expected non-nil Zoekt service connections")
+	}
+	if sc.ZoektsIntentionallyEmpty {
+		t.Error("Expected ZoektsIntentionallyEmpty == false")
+	}
+}
+
+func TestServiceConnectionsZoektsIntentionallyEmpty(t *testing.T) {
+	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
+	resetSearchServiceConnections()
+
+	// We override the URLs so service discovery doesn't try and talk to k8s
+	oldSearcherURL := searcherURL
+	t.Cleanup(func() { searcherURL = oldSearcherURL })
+	searcherURL = "http://searcher:3181"
+
+	indexedKey := "INDEXED_SEARCH_SERVERS"
+	oldIndexedSearchServers := os.Getenv(indexedKey)
+	t.Cleanup(func() { os.Setenv(indexedKey, oldIndexedSearchServers) })
+	os.Setenv(indexedKey, "")
+
+	sc := serviceConnections(logtest.Scoped(t))
+	if sc.Zoekts != nil {
+		t.Errorf("Expected zero Zoekt service connections but identified %v", len(sc.Zoekts))
+	}
+	if !sc.ZoektsIntentionallyEmpty {
+		t.Error("Expected ZoektsIntentionallyEmpty")
 	}
 }
 
