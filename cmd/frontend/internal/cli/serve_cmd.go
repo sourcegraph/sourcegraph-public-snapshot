@@ -95,9 +95,6 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) enterprise.Services) error {
 	ctx := context.Background()
 
-	log.SetFlags(0)
-	log.SetPrefix("")
-
 	liblog := sglog.Init(sglog.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),

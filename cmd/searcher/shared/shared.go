@@ -5,7 +5,6 @@ package shared
 import (
 	"context"
 	"io"
-	stdlog "log"
 	"net"
 	"net/http"
 	"os"
@@ -243,7 +242,6 @@ func run(logger log.Logger) error {
 }
 
 func Main() {
-	stdlog.SetFlags(0)
 	logging.Init()
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
