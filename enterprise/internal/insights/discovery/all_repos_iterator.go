@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -113,13 +112,9 @@ func (a *AllReposIterator) cachedRepoStoreList(ctx context.Context, page databas
 		return cacheEntry.results, nil
 	}
 
-	var repos []*types.Repo
-	if conf.SearchIndexEnabled() {
-		var err error
-		repos, err = a.RepoStore.List(ctx, database.ReposListOptions{LimitOffset: &page})
-		if err != nil {
-			return nil, err
-		}
+	repos, err := a.RepoStore.List(ctx, database.ReposListOptions{LimitOffset: &page})
+	if err != nil {
+		return nil, err
 	}
 
 	a.cachedPageRequests[page] = cachedPageRequest{
