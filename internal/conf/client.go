@@ -324,8 +324,13 @@ func (c *client) fetchAndUpdate(logger log.Logger) error {
 	}
 
 	if configChange.Changed {
-		logger.Info("config changed, notifying watchers",
-			log.Int("watchers", len(c.watchers)))
+		if configChange.Old == nil {
+			logger.Debug("config initialized",
+				log.Int("watchers", len(c.watchers)))
+		} else {
+			logger.Info("config changed, notifying watchers",
+				log.Int("watchers", len(c.watchers)))
+		}
 		c.notifyWatchers()
 	} else {
 		logger.Debug("no config changes detected")
