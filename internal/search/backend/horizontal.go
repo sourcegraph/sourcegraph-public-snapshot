@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/zoekt/stream"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -615,6 +616,9 @@ func (s *HorizontalSearcher) String() string {
 // searchers returns the list of clients to aggregate over.
 func (s *HorizontalSearcher) searchers() (map[string]zoekt.Streamer, error) {
 	eps, err := s.Map.Endpoints()
+	if err == endpoint.IntentionallyEmpty {
+		return map[string]zoekt.Streamer{}, nil
+	}
 	if err != nil {
 		return nil, err
 	}

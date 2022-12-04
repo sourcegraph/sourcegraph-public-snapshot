@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -209,6 +210,12 @@ func PartitionRepos(
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	list, err := zoektStreamer.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
+	if err == endpoint.IntentionallyEmpty {
+		// If it's intentional that no Zoekt instances are configured, just treat it as no repos are
+		// indexed, not an error.
+		err = nil
+		list = &zoekt.RepoList{Minimal: map[uint32]*zoekt.MinimalRepoListEntry{}}
+	}
 	if err != nil {
 		if ctx.Err() == nil {
 			// Only hard fail if the user specified index:only
@@ -216,7 +223,7 @@ func PartitionRepos(
 				return nil, nil, errors.New("index:only failed since indexed search is not available yet")
 			}
 
-			logger.Warn("zoektIndexedRepos failed", log.Error(err))
+			logger.Warn("zoektStreamer.List failed", log.Error(err))
 		}
 
 		return nil, repos, ctx.Err()

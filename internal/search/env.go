@@ -30,8 +30,8 @@ var (
 
 func SearcherURLs() *endpoint.Map {
 	searcherURLsOnce.Do(func() {
-		searcherURLs = endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
-			return conns.Searchers
+		searcherURLs = endpoint.ConfBased(func(conns conftypes.ServiceConnections) ([]string, bool) {
+			return conns.Searchers, false
 		})
 	})
 	return searcherURLs
@@ -42,8 +42,8 @@ func Indexed() zoekt.Streamer {
 		indexedSearch = backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.NewMeteredSearcher(
 			"", // no hostname means its the aggregator
 			&backend.HorizontalSearcher{
-				Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
-					return conns.Zoekts
+				Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) (endpoints []string, intentionallyEmpty bool) {
+					return conns.Zoekts, conns.ZoektsIntentionallyEmpty
 				}),
 				Dial: getIndexedDialer(),
 			}))
@@ -72,8 +72,8 @@ func ListAllIndexed(ctx context.Context) (*zoekt.RepoList, error) {
 func Indexers() *backend.Indexers {
 	indexersOnce.Do(func() {
 		indexers = &backend.Indexers{
-			Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
-				return conns.Zoekts
+			Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) (endpoints []string, intentionallyEmpty bool) {
+				return conns.Zoekts, conns.ZoektsIntentionallyEmpty
 			}),
 			Indexed: reposAtEndpoint(getIndexedDialer()),
 		}
