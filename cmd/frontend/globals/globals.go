@@ -14,14 +14,14 @@ import (
 
 var externalURLWatchers uint32
 
-var defaultexternalURL = &url.URL{
+var defaultExternalURL = &url.URL{
 	Scheme: "http",
 	Host:   "example.com",
 }
 
 var externalURL = func() atomic.Value {
 	var v atomic.Value
-	v.Store(defaultexternalURL)
+	v.Store(defaultExternalURL)
 	return v
 }()
 
@@ -35,7 +35,7 @@ func WatchExternalURL(defaultURL *url.URL) {
 	}
 
 	if defaultURL == nil {
-		defaultURL = defaultexternalURL
+		defaultURL = defaultExternalURL
 	}
 
 	conf.Watch(func() {
