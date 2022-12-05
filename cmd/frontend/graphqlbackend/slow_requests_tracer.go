@@ -20,10 +20,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const slowRequestRedisRecentListDefaultSize = 5000
-const slowRequestRedisRecentListPerPage = 50
+const slowRequestRedisFIFOListDefaultSize = 5000
+const slowRequestRedisFIFOListPerPage = 50
 
-var slowRequestRedisRecentList = rcache.NewRecentList("slow-graphql-requests-list", slowRequestRedisRecentListDefaultSize)
+var slowRequestRedisRecentList = rcache.NewFIFOList("slow-graphql-requests-list", slowRequestRedisFIFOListDefaultSize)
 var slowRequestConfWatchOnce sync.Once
 
 // captureSlowRequest stores in a redis cache slow GraphQL requests.
@@ -32,9 +32,9 @@ func captureSlowRequest(ctx context.Context, logger log.Logger, req *types.SlowR
 		conf.Watch(func() {
 			limit := conf.Get().ObservabilityCaptureSlowGraphQLRequestsLimit
 			if limit == 0 {
-				limit = slowRequestRedisRecentListDefaultSize
+				limit = slowRequestRedisFIFOListDefaultSize
 			}
-			slowRequestRedisRecentList = rcache.NewRecentList("slow-graphql-requests-list", limit)
+			slowRequestRedisRecentList = rcache.NewFIFOList("slow-graphql-requests-list", limit)
 		})
 	})
 
@@ -49,7 +49,7 @@ func captureSlowRequest(ctx context.Context, logger log.Logger, req *types.SlowR
 }
 
 // getSlowRequestsAfter returns the last limit slow requests, starting at the request whose ID is set to after.
-func getSlowRequestsAfter(ctx context.Context, list *rcache.RecentList, after int, limit int) ([]*types.SlowRequest, error) {
+func getSlowRequestsAfter(ctx context.Context, list *rcache.FIFOList, after int, limit int) ([]*types.SlowRequest, error) {
 	raws, err := list.Slice(ctx, after, after+limit-1)
 	if err != nil {
 		return nil, err
@@ -103,7 +103,7 @@ func (r *schemaResolver) SlowRequests(ctx context.Context, args *slowRequestsArg
 	}
 	return &slowRequestConnectionResolver{
 		after:   after,
-		perPage: slowRequestRedisRecentListPerPage,
+		perPage: slowRequestRedisFIFOListPerPage,
 	}, nil
 }
 
