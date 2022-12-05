@@ -75,6 +75,6 @@ func TestIterator_Current(t *testing.T) {
 	assert.PanicsWithValue(
 		"*iterator.Iterator[int].Current() called after Next() returned false",
 		func() { it.Current() },
-		"Current before Next should panic",
+		"Current after Next is false should panic",
 	)
 }
