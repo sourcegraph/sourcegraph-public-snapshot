@@ -27,6 +27,8 @@ const mockFetchSearchContexts = ({ query }: { first: number; query?: string; aft
             updatedAt: '2021-03-15T19:39:11Z',
             repositories: [],
             viewerCanManage: false,
+            viewerHasAsDefault: true,
+            viewerHasStarred: false,
         },
         {
             __typename: 'SearchContext',
@@ -45,6 +47,8 @@ const mockFetchSearchContexts = ({ query }: { first: number; query?: string; aft
             updatedAt: '2021-03-15T19:39:11Z',
             repositories: [],
             viewerCanManage: true,
+            viewerHasAsDefault: false,
+            viewerHasStarred: false,
         },
         {
             __typename: 'SearchContext',
@@ -63,6 +67,8 @@ const mockFetchSearchContexts = ({ query }: { first: number; query?: string; aft
             updatedAt: '2021-03-15T19:39:11Z',
             repositories: [],
             viewerCanManage: true,
+            viewerHasAsDefault: false,
+            viewerHasStarred: false,
         },
     ].filter(
         context => !query || context.spec.toLowerCase().includes(query.toLowerCase())

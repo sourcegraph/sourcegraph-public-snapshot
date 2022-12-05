@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { PropsWithChildren, useCallback, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { useHistory, useLocation } from 'react-router'
@@ -158,6 +158,9 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
             Omit<SearchContextNodeProps, 'node'>,
             ListSearchContextsResult['searchContexts']
         >
+            listComponent="table"
+            contentWrapperComponent={SearchContextsTableWrapper}
+            headComponent={SearchContextsTableHeader}
             history={history}
             location={location}
             defaultFirst={10}
@@ -173,7 +176,6 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
             }}
             noun="search context"
             pluralNoun="search contexts"
-            noSummaryIfAllNodesVisible={true}
             cursorPaging={true}
             inputClassName={classNames(styles.filterInput)}
             inputPlaceholder="Find a context"
@@ -182,3 +184,27 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
         />
     )
 }
+
+const SearchContextsTableWrapper: React.FunctionComponent<PropsWithChildren<{}>> = ({ children }) => (
+    <div className={styles.tableWrapper}>{children}</div>
+)
+
+const SearchContextsTableHeader: React.FunctionComponent = () => (
+    <thead>
+        <tr>
+            <th>
+                <span className="sr-only">Starred</span>
+            </th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Contents</th>
+            <th>Last updated</th>
+            <th>
+                <span className="sr-only">Tags</span>
+            </th>
+            <th>
+                <span className="sr-only">Actions</span>
+            </th>
+        </tr>
+    </thead>
+)

@@ -47,6 +47,8 @@ const searchContextFragment = gql`
         autoDefined
         updatedAt
         viewerCanManage
+        viewerHasStarred
+        viewerHasAsDefault
         query
         repositories {
             ...SearchContextRepositoryRevisionsFields
@@ -73,6 +75,8 @@ const searchContextWithSkippableFieldsFragment = gql`
         autoDefined
         updatedAt
         viewerCanManage
+        viewerHasStarred
+        viewerHasAsDefault
         namespace @skip(if: $useMinimalFields) {
             __typename
             id
