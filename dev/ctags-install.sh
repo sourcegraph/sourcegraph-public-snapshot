@@ -11,9 +11,11 @@ CTAGS_VERSION=f95bb3497f53748c2b6afc7f298cff218103ab90
 NAME="ctags-${CTAGS_VERSION}"
 TARGET="$PWD/.bin/${NAME}"
 
-if [ $1 == "which" ]; then
-  echo $TARGET
-  exit 0
+if [ $# -ne 0 ]; then
+  if [ $1 == "which" ]; then
+    echo $TARGET
+    exit 0
+  fi
 fi
 
 tmpdir=$(mktemp -d -t sg.ctags-install.XXXXXX)
