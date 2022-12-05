@@ -244,12 +244,12 @@ const OutboundRequestNode: React.FunctionComponent<{ node: React.PropsWithChildr
                         </Text>
                         <Text>
                             <strong>Client created at: </strong>
-                            <Code>{node.creationStackFrame}</Code>
+                            <Code>{formatStackFrameLine(node.creationStackFrame)}</Code>
                         </Text>
                         <Text>
                             <strong>Request made at: </strong>
-                            <Code>{node.callStackFrame}</Code>
                         </Text>
+                        {formatStackFrame(node.callStack)}
                         <Text>
                             <strong>Error: </strong>
                             {node.errorMessage ? node.errorMessage : 'No error'}
@@ -303,6 +303,35 @@ const OutboundRequestNode: React.FunctionComponent<{ node: React.PropsWithChildr
     )
 }
 
+function formatStackFrame(callStack: string): React.ReactNode {
+    const lines = callStack.split('\n')
+
+    return (
+        <>
+            <ul>{...lines.map(formatStackFrameLine)}</ul>
+        </>
+    )
+}
+
+function formatStackFrameLine(line: string): React.ReactNode {
+    const match = line.match(/(.*):(\d+) \(Function: (.*)\)/)
+    if (!match) {
+        return line
+    }
+    const [, fileName, lineIndex, functionName] = match
+    const url = `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/${fileName}?L${lineIndex}`
+    return (
+        <li key={`${fileName}:${lineIndex}`}>
+            <Code>
+                <Link to={url} target="_blank" rel="noopener">
+                    {fileName}:{lineIndex}
+                </Link>{' '}
+                (Function: {functionName})
+            </Code>
+        </li>
+    )
+}
+
 const SimplePopover: React.FunctionComponent<{ label: string; children: ReactNode }> = ({ label, children }) => {
     const [isOpen, setIsOpen] = useState(false)
     const handleOpenChange = useCallback(({ isOpen }: { isOpen: boolean }) => setIsOpen(isOpen), [setIsOpen])
@@ -332,7 +361,7 @@ function matchesString(request: OutboundRequest, query: string): boolean {
         request.statusCode.toString().includes(lQuery) ||
         request.errorMessage.toLowerCase().includes(lQuery) ||
         request.creationStackFrame.toLowerCase().includes(lQuery) ||
-        request.callStackFrame.toLowerCase().includes(lQuery) ||
+        request.callStack.toLowerCase().includes(lQuery) ||
         request.requestHeaders?.some(
             header =>
                 header.name.toLowerCase().includes(lQuery) ||
