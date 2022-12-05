@@ -1,20 +1,32 @@
 package iterator
 
+// New returns an Iterator for next.
+//
+// next is a function which is repeatedly called until no items are returned
+// or there is a non-nil error. These items are returned one by one via Next
+// and Current.
 func New[T any](next func() ([]T, error)) *Iterator[T] {
 	return &Iterator[T]{next: next}
 }
 
+// Iterator provides a convenient interface for iterating over items which are
+// fetched in batches and can error. In particular this is designed for
+// pagination.
+//
+// Iterating stops as soon as the underlying next function returns an error or
+// no items. If an error is returned, Err will return a non-nil error.
 type Iterator[T any] struct {
 	items []T
 	err   error
 	done  bool
 
-	// next is a function which is repeatedly called until no items are
-	// returned or there is a non-nil error. These items are returned one by
-	// one via Next and Current.
 	next func() ([]T, error)
 }
 
+// Next advances the iterator to the next item, which will then be available
+// from Current. It returns false when the iterator stops, either due to the
+// end of the input or an error occurred. After Next returns false Err() will
+// return the error occurred or nil if none.
 func (it *Iterator[T]) Next() bool {
 	if it.done {
 		return false
@@ -33,10 +45,13 @@ func (it *Iterator[T]) Next() bool {
 	return !it.done
 }
 
+// Current returns the latest item advanced by Next. Note: this will panic if
+// Next returned false or if Next was never called.
 func (it *Iterator[T]) Current() T {
 	return it.items[0]
 }
 
+// Err returns the first non-nil error encountered by Next.
 func (it *Iterator[T]) Err() error {
 	return it.err
 }
