@@ -1,75 +1,65 @@
 package types
 
-import (
-	"sort"
-
-	"github.com/sourcegraph/scip/bindings/go/scip"
-)
+import "github.com/sourcegraph/scip/bindings/go/scip"
 
 // CanonicalizeDocument deterministically re-orders the fields of the given document.
-// The input is modified in-place but returned for convenience.
 func CanonicalizeDocument(document *scip.Document) *scip.Document {
-	_ = CanonicalizeOccurrences(document.Occurrences)
-	_ = CanonicalizeSymbols(document.Symbols)
-
+	document.Occurrences = CanonicalizeOccurrences(document.Occurrences)
+	document.Symbols = CanonicalizeSymbols(document.Symbols)
 	return document
 }
 
 // CanonicalizeOccurrences deterministically re-orders the fields of the given occurrence slice.
-// The input is modified in-place but returned for convenience.
 func CanonicalizeOccurrences(occurrences []*scip.Occurrence) []*scip.Occurrence {
-	for _, occurrence := range occurrences {
-		_ = CanonicalizeOccurrence(occurrence)
+	canonicalized := make([]*scip.Occurrence, 0, len(occurrences))
+	for _, occurrence := range FlattenOccurrences(occurrences) {
+		canonicalized = append(canonicalized, CanonicalizeOccurrence(occurrence))
 	}
 
-	return SortOccurrences(occurrences)
+	return SortOccurrences(canonicalized)
 }
 
 // CanonicalizeOccurrence deterministically re-orders the fields of the given occurrence.
-// The input is modified in-place but returned for convenience.
 func CanonicalizeOccurrence(occurrence *scip.Occurrence) *scip.Occurrence {
 	// Express ranges as three-components if possible
 	occurrence.Range = scip.NewRange(occurrence.Range).SCIPRange()
-	_ = CanonicalizeDiagnostics(occurrence.Diagnostics)
+	occurrence.Diagnostics = CanonicalizeDiagnostics(occurrence.Diagnostics)
 	return occurrence
 }
 
 // CanonicalizeDiagnostics deterministically re-orders the fields of the given diagnostic slice.
-// The input is modified in-place but returned for convenience.
 func CanonicalizeDiagnostics(diagnostics []*scip.Diagnostic) []*scip.Diagnostic {
+	canonicalized := make([]*scip.Diagnostic, 0, len(diagnostics))
 	for _, diagnostic := range diagnostics {
-		_ = CanonicalizeDiagnostic(diagnostic)
+		canonicalized = append(canonicalized, CanonicalizeDiagnostic(diagnostic))
 	}
 
-	return SortDiagnostics(diagnostics)
+	return SortDiagnostics(canonicalized)
 }
 
 // CanonicalizeDiagnostic deterministically re-orders the fields of the given diagnostic.
-// The input is modified in-place but returned for convenience.
 func CanonicalizeDiagnostic(diagnostic *scip.Diagnostic) *scip.Diagnostic {
-	sort.Slice(diagnostic.Tags, func(i, j int) bool {
-		return diagnostic.Tags[i] < diagnostic.Tags[j]
-	})
-
+	diagnostic.Tags = SortDiagnosticTags(diagnostic.Tags)
 	return diagnostic
 }
 
 // CanonicalizeSymbols deterministically re-orders the fields of the given symbols slice.
-// The input is modified in-place but returned for convenience.
 func CanonicalizeSymbols(symbols []*scip.SymbolInformation) []*scip.SymbolInformation {
-	for _, symbol := range symbols {
-		_ = CanonicalizeSymbol(symbol)
+	canonicalized := make([]*scip.SymbolInformation, 0, len(symbols))
+	for _, symbol := range FlattenSymbols(symbols) {
+		canonicalized = append(canonicalized, CanonicalizeSymbol(symbol))
 	}
 
-	return SortSymbols(symbols)
+	return SortSymbols(canonicalized)
 }
 
 // CanonicalizeSymbol deterministically re-orders the fields of the given symbol.
-// The input is modified in-place but returned for convenience.
 func CanonicalizeSymbol(symbol *scip.SymbolInformation) *scip.SymbolInformation {
-	sort.Slice(symbol.Relationships, func(i, j int) bool {
-		return symbol.Relationships[i].Symbol < symbol.Relationships[j].Symbol
-	})
-
+	symbol.Relationships = CanonicalizeRelationships(symbol.Relationships)
 	return symbol
+}
+
+// CanonicalizeRelationships deterministically re-orders the fields of the given relationship slice.
+func CanonicalizeRelationships(relationships []*scip.Relationship) []*scip.Relationship {
+	return SortRelationships(FlattenRelationship(relationships))
 }
