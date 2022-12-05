@@ -49,6 +49,7 @@ func main() {
 		"batches-reconciler":            batches.NewReconcilerJob(),
 		"batches-bulk-processor":        batches.NewBulkOperationProcessorJob(),
 		"batches-workspace-resolver":    batches.NewWorkspaceResolverJob(),
+		"batches-repo-metadata":         batches.NewRepoMetadataJob(),
 		"executors-janitor":             executors.NewJanitorJob(),
 		"executors-metricsserver":       executors.NewMetricsServerJob(),
 		"codemonitors-job":              codemonitors.NewCodeMonitorJob(),

@@ -173,7 +173,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer, server.ChangesetSyncRegistry)
+	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer, server.ChangesetSyncRegistry, server.RepoMetadataSyncer)
 	go func() {
 		err := syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
@@ -468,6 +468,7 @@ func watchSyncer(
 	sched *repos.UpdateScheduler,
 	permsSyncer permsSyncer,
 	changesetSyncer batches.UnarchivedChangesetSyncRegistry,
+	repoMetadataSyncer batches.RepoMetadataSyncer,
 ) {
 	logger.Debug("started new repo syncer updates scheduler relay thread")
 
@@ -494,6 +495,14 @@ func watchSyncer(
 					if err := changesetSyncer.EnqueueChangesetSyncsForRepos(ctx, repos.IDs()); err != nil {
 						logger.Warn("error enqueuing changeset syncs for archived and unarchived repos", log.Error(err))
 					}
+				}
+			}
+
+			if repoMetadataSyncer != nil {
+				ids := append(diff.Added.IDs(), diff.Modified.Repos().IDs()...)
+				ids = append(ids, diff.Unmodified.IDs()...)
+				if err := repoMetadataSyncer.EnqueueRepos(ctx, ids); err != nil {
+					logger.Warn("error enqueuing repo metadata syncs", log.Error(err))
 				}
 			}
 		}

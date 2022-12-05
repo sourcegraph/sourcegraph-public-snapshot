@@ -55,9 +55,10 @@ func enterpriseInit(
 	// No Batch Changes on dotcom, so we don't need to spawn the
 	// background jobs for this feature.
 	if !envvar.SourcegraphDotComMode() {
-		syncRegistry := batches.InitBackgroundJobs(ctx, db, keyring.BatchChangesCredentialKey, cf)
+		syncRegistry, repoMetadataSyncer := batches.InitBackgroundJobs(ctx, db, keyring.BatchChangesCredentialKey, cf)
 		if server != nil {
 			server.ChangesetSyncRegistry = syncRegistry
+			server.RepoMetadataSyncer = repoMetadataSyncer
 		}
 	}
 

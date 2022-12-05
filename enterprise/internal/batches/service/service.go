@@ -90,6 +90,7 @@ type operations struct {
 	applyBatchChange                     *observation.Operation
 	reconcileBatchChange                 *observation.Operation
 	validateChangesetSpecs               *observation.Operation
+	getRepoMetadata                      *observation.Operation
 }
 
 var (
@@ -140,6 +141,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			applyBatchChange:                     op("ApplyBatchChange"),
 			reconcileBatchChange:                 op("ReconcileBatchChange"),
 			validateChangesetSpecs:               op("ValidateChangesetSpecs"),
+			getRepoMetadata:                      op("GetRepoMetadata"),
 		}
 	})
 

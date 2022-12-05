@@ -37,6 +37,7 @@ type Server struct {
 		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
 	ChangesetSyncRegistry batches.ChangesetSyncRegistry
+	RepoMetadataSyncer    batches.RepoMetadataSyncer
 	RateLimitSyncer       interface {
 		// SyncRateLimiters should be called when an external service changes so that
 		// our internal rate limiters are kept in sync
