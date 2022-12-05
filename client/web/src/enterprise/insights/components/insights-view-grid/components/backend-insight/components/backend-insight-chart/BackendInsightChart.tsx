@@ -1,13 +1,26 @@
-import React, { FC, MouseEvent, useMemo } from 'react'
+import React, { FC, MouseEvent, useCallback, useMemo, useState } from 'react'
 
+import { mdiAlertCircle } from '@mdi/js'
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
 import useResizeObserver from 'use-resize-observer'
 
-import { BarChart, ScrollBox, LegendList, LegendItem, Button, Series, LegendItemPoint } from '@sourcegraph/wildcard'
+import {
+    Link,
+    Button,
+    Icon,
+    BarChart,
+    LegendItem,
+    LegendList,
+    LegendItemPoint,
+    ScrollBox,
+    Tooltip,
+    TooltipOpenEvent,
+    TooltipOpenChangeReason,
+} from '@sourcegraph/wildcard'
 
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
-import { BackendInsightData, InsightContent } from '../../../../../../core'
+import { BackendInsightData, BackendInsightSeries, InsightContent } from '../../../../../../core'
 import { InsightContentType } from '../../../../../../core/types/insight/common'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
@@ -91,7 +104,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                         onDatumClick={onDatumClick}
                                         zeroYAxisMin={zeroYAxisMin}
                                         seriesToggleState={seriesToggleState}
-                                        {...data.content}
+                                        series={data.content.series}
                                     />
                                 ) : (
                                     <BarChart
@@ -137,7 +150,7 @@ const hasNoData = (data: InsightContent<any>): boolean => {
 }
 
 interface SeriesLegendsProps {
-    series: Series<any>[]
+    series: BackendInsightSeries<any>[]
     seriesToggleState: UseSeriesToggleReturn
 }
 
@@ -149,7 +162,11 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
         return (
             <LegendList className={styles.legendList}>
                 {series.map(item => (
-                    <LegendItem key={item.id as string} name={item.name} color={item.color} />
+                    <LegendItem key={item.id as string} color={item.color}>
+                        <LegendItemPoint color={item.color} />
+                        {item.name}
+                        {item.errored && <BackendInsightTimeoutIcon />}
+                    </LegendItem>
                 ))}
             </LegendList>
         )
@@ -187,8 +204,64 @@ const SeriesLegends: FC<SeriesLegendsProps> = props => {
                         <LegendItemPoint color={item.color} />
                         {item.name}
                     </Button>
+                    {item.errored && <BackendInsightTimeoutIcon />}
                 </LegendItem>
             ))}
         </LegendList>
+    )
+}
+
+interface BackendInsightTimeoutIconProps {
+    timeoutLevel?: 'series' | 'insight'
+}
+
+/**
+ * Renders timeout icon and interactive tooltip with addition info about timeout
+ * error. Note: It's exported because it's also used in the backend insight card.
+ */
+export const BackendInsightTimeoutIcon: FC<BackendInsightTimeoutIconProps> = props => {
+    const { timeoutLevel = 'series' } = props
+    const [open, setOpen] = useState(false)
+
+    const handleIconClick = (event: MouseEvent<HTMLButtonElement>): void => {
+        // Catch event and prevent bubbling in order to prevent series toggle on/off
+        // series action.
+        event.stopPropagation()
+        setOpen(!open)
+    }
+
+    const handleOpenChange = useCallback((event: TooltipOpenEvent): void => {
+        switch (event.reason) {
+            case TooltipOpenChangeReason.Esc:
+            case TooltipOpenChangeReason.ClickOutside: {
+                setOpen(event.isOpen)
+            }
+        }
+    }, [])
+
+    return (
+        <Tooltip
+            open={open}
+            content={
+                <>
+                    {timeoutLevel === 'series'
+                        ? 'Some points of this data series exceeded the time limit. Results may be incomplete.'
+                        : 'Calculating some points on this insight exceeded the timeout limit. Results may be incomplete.'}{' '}
+                    <Link
+                        to="/help/code_insights/how-tos/Troubleshooting"
+                        target="_blank"
+                        rel="noopener"
+                        className={styles.troubleshootLink}
+                    >
+                        Troubleshoot
+                    </Link>
+                </>
+            }
+            onOpenChange={handleOpenChange}
+        >
+            <Button variant="icon" className={styles.timeoutIcon} onClick={handleIconClick}>
+                <Icon aria-label="Insight is timeout" svgPath={mdiAlertCircle} color="var(--icon-color)" />
+            </Button>
+        </Tooltip>
     )
 }

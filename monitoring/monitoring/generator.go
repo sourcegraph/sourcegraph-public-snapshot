@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/sourcegraph/log"
 
@@ -56,6 +55,8 @@ type GenerateOptions struct {
 
 	// MultiInstanceDashboardGroupings, if non-empty, indicates whether or not a
 	// multi-instance dashboard should be generated with the provided labels to group on.
+	//
+	// If provided, ONLY multi-instance assets are generated.
 	MultiInstanceDashboardGroupings []string
 }
 
@@ -64,8 +65,6 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	ctx := context.TODO()
 
 	logger.Info("Regenerating monitoring", log.String("options", fmt.Sprintf("%+v", opts)))
-
-	var generatedAssets []string
 
 	// Verify dashboard configuration
 	var validationErrors error
@@ -77,17 +76,6 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	}
 	if validationErrors != nil {
 		return errors.Wrap(validationErrors, "Validation failed")
-	}
-
-	// Set up disk directories
-	if opts.GrafanaDir != "" {
-		os.MkdirAll(opts.GrafanaDir, os.ModePerm)
-	}
-	if opts.PrometheusDir != "" {
-		os.MkdirAll(opts.PrometheusDir, os.ModePerm)
-	}
-	if opts.DocsDir != "" {
-		os.MkdirAll(opts.DocsDir, os.ModePerm)
 	}
 
 	// Generate Grafana content for all dashboards. If grafanaClient is not nil, Grafana
@@ -144,184 +132,30 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 		}
 	}
 
-	// Generate Garafana home dasboard "Overview"
-	{
-		data, err := grafana.Home(opts.InjectLabelMatchers)
-		if err != nil {
-			return errors.Wrap(err, "failed to generate home dashboard")
-		}
-		if opts.GrafanaDir != "" {
-			generatedDashboard := "home.json"
-			generatedAssets = append(generatedAssets, generatedDashboard)
-			if err = os.WriteFile(filepath.Join(opts.GrafanaDir, generatedDashboard), data, os.ModePerm); err != nil {
-				return errors.Wrap(err, "failed to generate home dashboard")
-			}
-		}
-		if grafanaClient != nil {
-			logger.Debug("Reloading Grafana dashboard",
-				log.Int("folder.id", grafanaFolderID))
-			if _, err := grafanaClient.SetRawDashboardWithParam(ctx, grafanasdk.RawBoardRequest{
-				Dashboard: data,
-				Parameters: grafanasdk.SetDashboardParams{
-					Overwrite: true,
-					FolderID:  grafanaFolderID,
-				},
-			}); err != nil {
-				return errors.Wrapf(err, "Could not reload Grafana dashboard 'Overview'")
-			} else {
-				logger.Info("Reloaded Grafana dashboard")
-			}
-		}
+	// Set up disk directories
+	if opts.GrafanaDir != "" {
+		os.MkdirAll(opts.GrafanaDir, os.ModePerm)
 	}
-
-	// Generate per-dashboard assets
-	for _, dashboard := range dashboards {
-		// Logger for dashboard
-		dlog := logger.With(log.String("dashboard", dashboard.Name))
-
-		glog := dlog.Scoped("grafana", "grafana dashboard generation").
-			With(log.String("instance", opts.GrafanaURL))
-
-		glog.Debug("Rendering Grafana assets")
-		board, err := dashboard.renderDashboard(opts.InjectLabelMatchers, opts.GrafanaFolder)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to render dashboard %q", dashboard.Name)
-		}
-
-		// Prepare Grafana assets
-		if opts.GrafanaDir != "" {
-			data, err := json.MarshalIndent(board, "", "  ")
-			if err != nil {
-				return errors.Wrapf(err, "Invalid dashboard %q", dashboard.Name)
-			}
-			// #nosec G306  prometheus runs as nobody
-			generatedDashboard := dashboard.Name + ".json"
-			err = os.WriteFile(filepath.Join(opts.GrafanaDir, generatedDashboard), data, os.ModePerm)
-			if err != nil {
-				return errors.Wrapf(err, "Could not write dashboard %q to output", dashboard.Name)
-			}
-			generatedAssets = append(generatedAssets, generatedDashboard)
-		}
-		// Reload specific dashboard
-		if grafanaClient != nil {
-			glog.Debug("Reloading Grafana dashboard",
-				log.Int("folder.id", grafanaFolderID))
-			if _, err := grafanaClient.SetDashboard(ctx, *board, grafanasdk.SetDashboardParams{
-				Overwrite: true,
-				FolderID:  grafanaFolderID,
-			}); err != nil {
-				return errors.Wrapf(err, "Could not reload Grafana dashboard %q", dashboard.Title)
-			} else {
-				glog.Info("Reloaded Grafana dashboard")
-			}
-		}
-
-		// Prepare Prometheus assets
-		if opts.PrometheusDir != "" {
-			plog := dlog.Scoped("prometheus", "prometheus rules generation")
-
-			plog.Debug("Rendering Prometheus assets")
-			promAlertsFile, err := dashboard.renderRules(opts.InjectLabelMatchers)
-			if err != nil {
-				return errors.Wrapf(err, "Unable to generate alerts for dashboard %q", dashboard.Title)
-			}
-			data, err := yaml.Marshal(promAlertsFile)
-			if err != nil {
-				return errors.Wrapf(err, "Invalid rules for dashboard %q", dashboard.Title)
-			}
-			fileName := strings.ReplaceAll(dashboard.Name, "-", "_") + alertRulesFileSuffix
-			generatedAssets = append(generatedAssets, fileName)
-			err = os.WriteFile(filepath.Join(opts.PrometheusDir, fileName), data, os.ModePerm)
-			if err != nil {
-				return errors.Wrapf(err, "Could not write rules to output for dashboard %q", dashboard.Title)
-			}
-		}
-	}
-	if len(opts.MultiInstanceDashboardGroupings) > 0 {
-		board, err := renderMultiInstanceDashboard(dashboards, opts.MultiInstanceDashboardGroupings)
-		if err != nil {
-			return errors.Wrap(err, "Failed to render multi-instance dashboard")
-		}
-		if grafanaClient != nil {
-			if _, err := grafanaClient.SetDashboard(ctx, *board, grafanasdk.SetDashboardParams{
-				Overwrite: true,
-			}); err != nil {
-				return errors.Wrapf(err, "Could not reload Grafana dashboard %q", board.Title)
-			} else {
-				logger.Info("Reloaded Grafana dashboard", log.String("title", board.Title))
-			}
-		}
-		if opts.GrafanaDir != "" {
-			data, err := json.MarshalIndent(board, "", "  ")
-			if err != nil {
-				return errors.Wrapf(err, "Invalid dashboard %q", board.Title)
-			}
-			// #nosec G306  prometheus runs as nobody
-			generatedDashboard := "multi-instance-dashboard.json"
-			err = os.WriteFile(filepath.Join(opts.GrafanaDir, generatedDashboard), data, os.ModePerm)
-			if err != nil {
-				return errors.Wrapf(err, "Could not write dashboard %q to output", board.Title)
-			}
-			generatedAssets = append(generatedAssets, generatedDashboard)
-		}
-	}
-
-	// Generate additional Prometheus assets
 	if opts.PrometheusDir != "" {
-		customRules, err := customPrometheusRules(opts.InjectLabelMatchers)
-		if err != nil {
-			return errors.Wrap(err, "failed to generate custom rules")
-		}
-		data, err := yaml.Marshal(customRules)
-		if err != nil {
-			return errors.Wrapf(err, "Invalid custom rules")
-		}
-		fileName := "src_custom_rules.yml"
-		generatedAssets = append(generatedAssets, fileName)
-		err = os.WriteFile(filepath.Join(opts.PrometheusDir, fileName), data, os.ModePerm)
-		if err != nil {
-			return errors.Wrap(err, "Could not write custom rules")
-		}
+		os.MkdirAll(opts.PrometheusDir, os.ModePerm)
 	}
-
-	// Reload all Prometheus rules
-	if opts.PrometheusDir != "" && opts.Reload {
-		rlog := logger.Scoped("prometheus", "prometheus alerts generation").
-			With(log.String("instance", opts.PrometheusURL))
-		// Reload all Prometheus rules
-		rlog.Debug("Reloading Prometheus instance")
-		resp, err := http.Post(opts.PrometheusURL+"/-/reload", "", nil)
-		if err != nil {
-			return errors.Wrapf(err, "Could not reload Prometheus at %q", opts.PrometheusURL)
-		} else {
-			defer resp.Body.Close()
-			if resp.StatusCode != 200 {
-				return errors.Newf("Unexpected status code %d while reloading Prometheus rules", resp.StatusCode)
-			}
-			rlog.Info("Reloaded Prometheus instance")
-		}
-	}
-
-	// Generate documentation
 	if opts.DocsDir != "" {
-		logger.Debug("Rendering docs")
-		docs, err := renderDocumentation(dashboards)
-		if err != nil {
-			return errors.Wrap(err, "Failed to generate docs")
-		}
-		for _, docOut := range []struct {
-			path string
-			data []byte
-		}{
-			{path: filepath.Join(opts.DocsDir, alertsDocsFile), data: docs.alertDocs.Bytes()},
-			{path: filepath.Join(opts.DocsDir, dashboardsDocsFile), data: docs.dashboards.Bytes()},
-		} {
-			err = os.WriteFile(docOut.path, docOut.data, os.ModePerm)
-			if err != nil {
-				return errors.Wrapf(err, "Could not write docs to path %q", docOut.path)
-			}
-			generatedAssets = append(generatedAssets, docOut.path)
-		}
+		os.MkdirAll(opts.DocsDir, os.ModePerm)
+	}
+
+	// Generate the goods
+	var generatedAssets []string
+	var err error
+	if len(opts.MultiInstanceDashboardGroupings) > 0 {
+		l := logger.Scoped("multi-instance", "multi-instance dashboards")
+		l.Info("generating multi-instance")
+		generatedAssets, err = generateMultiInstance(ctx, l, grafanaClient, grafanaFolderID, dashboards, opts)
+	} else {
+		logger.Info("generating all")
+		generatedAssets, err = generateAll(ctx, logger, grafanaClient, grafanaFolderID, dashboards, opts)
+	}
+	if err != nil {
+		return errors.Wrap(err, "generate")
 	}
 
 	// Clean up dangling assets
@@ -336,75 +170,204 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 	return nil
 }
 
-func renderMultiInstanceDashboard(dashboards []*Dashboard, groupings []string) (*grafanasdk.Board, error) {
-	board := sdk.NewBoard("Multi-instance overviews")
-	board.AddTags("builtin")
-
-	board.Timezone = "utc"
-	board.Timepicker.RefreshIntervals = []string{"5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"}
-	board.Time.From = "now-6h"
-	board.Time.To = "now"
-	board.SharedCrosshair = true
-	board.Editable = false
-
-	var variableMatchers []*labels.Matcher
-	for _, g := range groupings {
-		containerVar := ContainerVariable{
-			Name:  g,
-			Label: g,
-			OptionsLabelValues: ContainerVariableOptionsLabelValues{
-				// For now we don't support any labels that aren't present on this metric.
-				Query:     "src_service_metadata",
-				LabelName: g,
+// generateAll is the standard behaviour of the monitoring generator, and should create
+// all monitoring-related assets pertaining to a single Sourcegraph instance.
+func generateAll(
+	ctx context.Context,
+	logger log.Logger,
+	grafanaClient *sdk.Client,
+	grafanaFolderID int,
+	dashboards []*Dashboard,
+	opts GenerateOptions,
+) (generatedAssets []string, err error) {
+	// Generate Garafana home dasboard "Overview"
+	data, err := grafana.Home(opts.GrafanaFolder, opts.InjectLabelMatchers)
+	if err != nil {
+		return generatedAssets, errors.Wrap(err, "failed to generate home dashboard")
+	}
+	if opts.GrafanaDir != "" {
+		generatedDashboard := "home.json"
+		generatedAssets = append(generatedAssets, generatedDashboard)
+		if err = os.WriteFile(filepath.Join(opts.GrafanaDir, generatedDashboard), data, os.ModePerm); err != nil {
+			return generatedAssets, errors.Wrap(err, "failed to generate home dashboard")
+		}
+	}
+	if grafanaClient != nil {
+		logger.Debug("Reloading Grafana dashboard")
+		if _, err := grafanaClient.SetRawDashboardWithParam(ctx, grafanasdk.RawBoardRequest{
+			Dashboard: data,
+			Parameters: grafanasdk.SetDashboardParams{
+				Overwrite: true,
+				FolderID:  grafanaFolderID,
 			},
-			WildcardAllValue: true,
-			Multi:            true,
+		}); err != nil {
+			return generatedAssets, errors.Wrapf(err, "Could not reload Grafana dashboard 'Overview'")
+		} else {
+			logger.Info("Reloaded Grafana dashboard")
 		}
-		grafanaVar, err := containerVar.toGrafanaTemplateVar(nil)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to generate template var for grouping %q", g)
-		}
-		board.Templating.List = append(board.Templating.List, grafanaVar)
-
-		// generate the matcher to inject
-		m, err := labels.NewMatcher(labels.MatchRegexp, g, fmt.Sprintf("${%s:regex}", g))
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to generate template var matcher for grouping %q", g)
-		}
-		variableMatchers = append(variableMatchers, m)
 	}
 
-	for _, d := range dashboards {
-		var row *sdk.Row
-		var addDashboardRow sync.Once
-		for _, g := range d.Groups {
-			for _, r := range g.Rows {
-				for _, o := range r {
-					if !o.MultiInstance {
-						continue
-					}
+	// Generate per-dashboard assets
+	for _, dashboard := range dashboards {
+		// Logger for dashboard
+		dlog := logger.With(log.String("dashboard", dashboard.Name))
 
-					// Only add row if this dashboard has a multi instance panel, and only
-					// do it once per dashboard
-					addDashboardRow.Do(func() {
-						row = board.AddRow(d.Title)
-						row.ShowTitle = true
-					})
+		glog := dlog.Scoped("grafana", "grafana dashboard generation").
+			With(log.String("instance", opts.GrafanaURL))
 
-					// TODO make this size correctly in this context and output a valid
-					// dashboard, right now it isn't quite right
-					panel, err := o.renderPanel(d, panelManipulationOptions{
-						injectGroupings:     groupings,
-						injectLabelMatchers: variableMatchers,
-					}, nil)
-					if err != nil {
-						return nil, errors.Wrapf(err, "render panel for %q", o.Name)
-					}
+		glog.Debug("Rendering Grafana assets")
+		board, err := dashboard.renderDashboard(opts.InjectLabelMatchers, opts.GrafanaFolder)
+		if err != nil {
+			return generatedAssets, errors.Wrapf(err, "Failed to render dashboard %q", dashboard.Name)
+		}
 
-					row.Add(panel)
-				}
+		// Prepare Grafana assets
+		if opts.GrafanaDir != "" {
+			data, err := json.MarshalIndent(board, "", "  ")
+			if err != nil {
+				return generatedAssets, errors.Wrapf(err, "Invalid dashboard %q", dashboard.Name)
+			}
+			// #nosec G306  prometheus runs as nobody
+			generatedDashboard := dashboard.Name + ".json"
+			err = os.WriteFile(filepath.Join(opts.GrafanaDir, generatedDashboard), data, os.ModePerm)
+			if err != nil {
+				return generatedAssets, errors.Wrapf(err, "Could not write dashboard %q to output", dashboard.Name)
+			}
+			generatedAssets = append(generatedAssets, generatedDashboard)
+		}
+		// Reload specific dashboard
+		if grafanaClient != nil {
+			glog.Debug("Reloading Grafana dashboard",
+				log.Int("folder.id", grafanaFolderID))
+			if _, err := grafanaClient.SetDashboard(ctx, *board, grafanasdk.SetDashboardParams{
+				Overwrite: true,
+				FolderID:  grafanaFolderID,
+			}); err != nil {
+				return generatedAssets, errors.Wrapf(err, "Could not reload Grafana dashboard %q", dashboard.Title)
+			} else {
+				glog.Info("Reloaded Grafana dashboard")
+			}
+		}
+
+		// Prepare Prometheus assets
+		if opts.PrometheusDir != "" {
+			plog := dlog.Scoped("prometheus", "prometheus rules generation")
+
+			plog.Debug("Rendering Prometheus assets")
+			promAlertsFile, err := dashboard.renderRules(opts.InjectLabelMatchers)
+			if err != nil {
+				return generatedAssets, errors.Wrapf(err, "Unable to generate alerts for dashboard %q", dashboard.Title)
+			}
+			data, err := yaml.Marshal(promAlertsFile)
+			if err != nil {
+				return generatedAssets, errors.Wrapf(err, "Invalid rules for dashboard %q", dashboard.Title)
+			}
+			fileName := strings.ReplaceAll(dashboard.Name, "-", "_") + alertRulesFileSuffix
+			generatedAssets = append(generatedAssets, fileName)
+			err = os.WriteFile(filepath.Join(opts.PrometheusDir, fileName), data, os.ModePerm)
+			if err != nil {
+				return generatedAssets, errors.Wrapf(err, "Could not write rules to output for dashboard %q", dashboard.Title)
 			}
 		}
 	}
-	return board, nil
+
+	// Generate additional Prometheus assets
+	if opts.PrometheusDir != "" {
+		customRules, err := customPrometheusRules(opts.InjectLabelMatchers)
+		if err != nil {
+			return generatedAssets, errors.Wrap(err, "failed to generate custom rules")
+		}
+		data, err := yaml.Marshal(customRules)
+		if err != nil {
+			return generatedAssets, errors.Wrapf(err, "Invalid custom rules")
+		}
+		fileName := "src_custom_rules.yml"
+		generatedAssets = append(generatedAssets, fileName)
+		err = os.WriteFile(filepath.Join(opts.PrometheusDir, fileName), data, os.ModePerm)
+		if err != nil {
+			return generatedAssets, errors.Wrap(err, "Could not write custom rules")
+		}
+	}
+
+	// Reload all Prometheus rules
+	if opts.PrometheusDir != "" && opts.Reload {
+		rlog := logger.Scoped("prometheus", "prometheus alerts generation").
+			With(log.String("instance", opts.PrometheusURL))
+		// Reload all Prometheus rules
+		rlog.Debug("Reloading Prometheus instance")
+		resp, err := http.Post(opts.PrometheusURL+"/-/reload", "", nil)
+		if err != nil {
+			return generatedAssets, errors.Wrapf(err, "Could not reload Prometheus at %q", opts.PrometheusURL)
+		} else {
+			defer resp.Body.Close()
+			if resp.StatusCode != 200 {
+				return generatedAssets, errors.Newf("Unexpected status code %d while reloading Prometheus rules", resp.StatusCode)
+			}
+			rlog.Info("Reloaded Prometheus instance")
+		}
+	}
+
+	// Generate documentation
+	if opts.DocsDir != "" {
+		logger.Debug("Rendering docs")
+		docs, err := renderDocumentation(dashboards)
+		if err != nil {
+			return generatedAssets, errors.Wrap(err, "Failed to generate docs")
+		}
+		for _, docOut := range []struct {
+			path string
+			data []byte
+		}{
+			{path: filepath.Join(opts.DocsDir, alertsDocsFile), data: docs.alertDocs.Bytes()},
+			{path: filepath.Join(opts.DocsDir, dashboardsDocsFile), data: docs.dashboards.Bytes()},
+		} {
+			err = os.WriteFile(docOut.path, docOut.data, os.ModePerm)
+			if err != nil {
+				return generatedAssets, errors.Wrapf(err, "Could not write docs to path %q", docOut.path)
+			}
+			generatedAssets = append(generatedAssets, docOut.path)
+		}
+	}
+
+	return generatedAssets, nil
+}
+
+// generateMultiInstance should generate only assets for multi-instance overviews.
+func generateMultiInstance(
+	ctx context.Context,
+	logger log.Logger,
+	grafanaClient *sdk.Client,
+	grafanaFolderID int,
+	dashboards []*Dashboard,
+	opts GenerateOptions,
+) (generatedAssets []string, err error) {
+	board, err := renderMultiInstanceDashboard(dashboards, opts.MultiInstanceDashboardGroupings)
+	if err != nil {
+		return generatedAssets, errors.Wrap(err, "Failed to render multi-instance dashboard")
+	}
+	if grafanaClient != nil {
+		if _, err := grafanaClient.SetDashboard(ctx, *board, grafanasdk.SetDashboardParams{
+			Overwrite: true,
+			FolderID:  grafanaFolderID,
+		}); err != nil {
+			return generatedAssets, errors.Wrapf(err, "Could not reload Grafana dashboard %q", board.Title)
+		} else {
+			logger.Info("Reloaded Grafana dashboard", log.String("title", board.Title))
+		}
+	}
+	if opts.GrafanaDir != "" {
+		data, err := json.MarshalIndent(board, "", "  ")
+		if err != nil {
+			return generatedAssets, errors.Wrapf(err, "Invalid dashboard %q", board.Title)
+		}
+		// #nosec G306  prometheus runs as nobody
+		generatedDashboard := "multi-instance-dashboard.json"
+		err = os.WriteFile(filepath.Join(opts.GrafanaDir, generatedDashboard), data, os.ModePerm)
+		if err != nil {
+			return generatedAssets, errors.Wrapf(err, "Could not write dashboard %q to output", board.Title)
+		}
+		generatedAssets = append(generatedAssets, generatedDashboard)
+	}
+
+	return generatedAssets, nil
 }

@@ -16,6 +16,7 @@
 * [`repos`](repos/index.md)
 * [`search`](search.md)
 * [`serve-git`](serve-git.md)
+* [`snapshot`](snapshot.md)
 * [`users`](users/index.md)
 * [`validate`](validate.md)
 * [`version`](version.md)

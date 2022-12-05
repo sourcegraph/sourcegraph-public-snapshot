@@ -174,11 +174,12 @@ func Test_GetAuthenticatedOAuthScopes(t *testing.T) {
 // for GITHUB_TOKEN, which can be found in 1Password.
 func TestListRepositoryCollaborators(t *testing.T) {
 	tests := []struct {
-		name        string
-		owner       string
-		repo        string
-		affiliation CollaboratorAffiliation
-		wantUsers   []*Collaborator
+		name            string
+		owner           string
+		repo            string
+		affiliation     CollaboratorAffiliation
+		wantUsers       []*Collaborator
+		wantHasNextPage bool
 	}{
 		{
 			name:  "public repo",
@@ -190,6 +191,7 @@ func TestListRepositoryCollaborators(t *testing.T) {
 					DatabaseID: 63290851,
 				},
 			},
+			wantHasNextPage: false,
 		},
 		{
 			name:  "private repo",
@@ -210,6 +212,7 @@ func TestListRepositoryCollaborators(t *testing.T) {
 					DatabaseID: 89494884,
 				},
 			},
+			wantHasNextPage: false,
 		},
 		{
 			name:        "direct collaborator outside collaborator",
@@ -222,6 +225,7 @@ func TestListRepositoryCollaborators(t *testing.T) {
 					DatabaseID: 66464926,
 				},
 			},
+			wantHasNextPage: false,
 		},
 		{
 			name:        "direct collaborator repo owner",
@@ -234,6 +238,15 @@ func TestListRepositoryCollaborators(t *testing.T) {
 					DatabaseID: 63290851,
 				},
 			},
+			wantHasNextPage: false,
+		},
+		{
+			name:            "has next page is true",
+			owner:           "sourcegraph-vcr",
+			repo:            "private-repo-1",
+			affiliation:     AffiliationDirect,
+			wantUsers:       nil,
+			wantHasNextPage: true,
 		},
 	}
 	for _, test := range tests {
@@ -241,13 +254,19 @@ func TestListRepositoryCollaborators(t *testing.T) {
 			client, save := newV3TestClient(t, "ListRepositoryCollaborators_"+test.name)
 			defer save()
 
-			users, _, err := client.ListRepositoryCollaborators(context.Background(), test.owner, test.repo, 1, test.affiliation)
+			users, hasNextPage, err := client.ListRepositoryCollaborators(context.Background(), test.owner, test.repo, 1, test.affiliation)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(test.wantUsers, users); diff != "" {
-				t.Fatalf("Users mismatch (-want +got):\n%s", diff)
+			if test.wantUsers != nil {
+				if diff := cmp.Diff(test.wantUsers, users); diff != "" {
+					t.Fatalf("Users mismatch (-want +got):\n%s", diff)
+				}
+			}
+
+			if diff := cmp.Diff(test.wantHasNextPage, hasNextPage); diff != "" {
+				t.Fatalf("HasNextPage mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -481,7 +500,6 @@ func TestGetRepository(t *testing.T) {
 			if remaining2 < remaining {
 				t.Fatalf("expected cached repsonse, but API quota used")
 			}
-
 		})
 	})
 
@@ -497,7 +515,6 @@ func TestGetRepository(t *testing.T) {
 			t.Error("repo != nil")
 		}
 	})
-
 }
 
 // ListOrganizations is primarily used for GitHub Enterprise clients. As a result we test against
@@ -721,7 +738,7 @@ func TestV3Client_Fork(t *testing.T) {
 				client, save := newV3TestClient(t, testName)
 				defer save()
 
-				fork, err := client.Fork(ctx, "sourcegraph", "automation-testing", org)
+				fork, err := client.Fork(ctx, "sourcegraph", "automation-testing", org, "sourcegraph-automation-testing")
 				assert.Nil(t, err)
 				assert.NotNil(t, fork)
 				if org != nil {
@@ -742,7 +759,7 @@ func TestV3Client_Fork(t *testing.T) {
 		client, save := newV3TestClient(t, testName)
 		defer save()
 
-		fork, err := client.Fork(ctx, "sourcegraph-testing", "unforkable", nil)
+		fork, err := client.Fork(ctx, "sourcegraph-testing", "unforkable", nil, "sourcegraph-testing-unforkable")
 		assert.NotNil(t, err)
 		assert.Nil(t, fork)
 
@@ -792,7 +809,6 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 
 	rcache.SetupForTest(t)
 	reposPage, err := cli.ListRepositoriesForSearch(context.Background(), "org:sourcegraph-vcr-repos", 1)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -806,7 +822,6 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 		update("ListRepositoriesForSearch"),
 		reposPage.Repos,
 	)
-
 }
 
 func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
@@ -941,4 +956,44 @@ func TestSyncWebhook_webhookURLBuilderWithID(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestResponseHasNextPage(t *testing.T) {
+	t.Run("has next page", func(t *testing.T) {
+		headers := http.Header{}
+		headers.Add("Link", `<https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=2&per_page=100&affiliation=direct>; rel="next", <https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=8&per_page=100&affiliation=direct>; rel="last"`)
+		responseState := &httpResponseState{
+			statusCode: 200,
+			headers:    headers,
+		}
+
+		if responseState.hasNextPage() != true {
+			t.Fatal("expected true, got false")
+		}
+	})
+
+	t.Run("does not have next page", func(t *testing.T) {
+		headers := http.Header{}
+		headers.Add("Link", `<https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=2&per_page=100&affiliation=direct>; rel="prev", <https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=1&per_page=100&affiliation=direct>; rel="first"`)
+		responseState := &httpResponseState{
+			statusCode: 200,
+			headers:    headers,
+		}
+
+		if responseState.hasNextPage() != false {
+			t.Fatal("expected false, got true")
+		}
+	})
+
+	t.Run("no header returns false", func(t *testing.T) {
+		headers := http.Header{}
+		responseState := &httpResponseState{
+			statusCode: 200,
+			headers:    headers,
+		}
+
+		if responseState.hasNextPage() != false {
+			t.Fatal("expected false, got true")
+		}
+	})
 }

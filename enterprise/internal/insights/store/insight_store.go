@@ -512,7 +512,8 @@ SELECT * FROM insight_view WHERE %s ORDER BY unique_id %s
 func (s *InsightStore) AttachSeriesToView(ctx context.Context,
 	series types.InsightSeries,
 	view types.InsightView,
-	metadata types.InsightViewSeriesMetadata) error {
+	metadata types.InsightViewSeriesMetadata,
+) error {
 	if series.ID == 0 || view.ID == 0 {
 		return errors.New("input series or view not found")
 	}

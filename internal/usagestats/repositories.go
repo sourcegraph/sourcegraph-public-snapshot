@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -47,10 +46,6 @@ func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error)
 		// In the rare case we haven't yet computed the stat (UpdatedAt ==
 		// 0), we undercount the size.
 		total.GitDirBytes += uint64(stat.GitDirBytes)
-	}
-
-	if !conf.SearchIndexEnabled() {
-		return &total, nil
 	}
 
 	repos, err := search.ListAllIndexed(ctx)

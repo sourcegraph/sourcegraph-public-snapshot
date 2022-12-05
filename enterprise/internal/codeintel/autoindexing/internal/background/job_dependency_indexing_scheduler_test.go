@@ -99,6 +99,7 @@ func TestDependencyIndexingSchedulerHandler(t *testing.T) {
 		sort.Slice(packages, func(i, j int) bool {
 			for _, pair := range [][2]string{
 				{packages[i].Scheme, packages[j].Scheme},
+				{packages[i].Manager, packages[j].Manager},
 				{packages[i].Name, packages[j].Name},
 				{packages[i].Version, packages[j].Version},
 			} {
@@ -204,6 +205,7 @@ func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
 		sort.Slice(packages, func(i, j int) bool {
 			for _, pair := range [][2]string{
 				{packages[i].Scheme, packages[j].Scheme},
+				{packages[i].Manager, packages[j].Manager},
 				{packages[i].Name, packages[j].Name},
 				{packages[i].Version, packages[j].Version},
 			} {

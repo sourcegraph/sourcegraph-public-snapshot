@@ -12,6 +12,8 @@ Some migrations are difficult to do in a single step or idempotently. For instan
 
 The remainder of this document is formatted as a recipe book of common types of migrations. We encourage any developer to add a recipe here when a specific type of migration is under-documented.
 
+To learn the process of file changes necessary to implement a migration please refer to [the README file](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/migrations/README.md).
+
 ### Adding a non-nullable column (without a default)
 
 _On the `3.X` branch:_

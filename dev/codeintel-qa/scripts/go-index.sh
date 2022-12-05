@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 set -eux
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
-DATADIR=$(realpath './testdata')
+cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
+DATADIR=$(realpath './dev/codeintel-qa/testdata')
 REPODIR="${DATADIR}/repos"
 INDEXDIR="${DATADIR}/indexes"
 
