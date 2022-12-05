@@ -555,6 +555,7 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 		return nil, ErrBatchSpecResolutionErrored{resolutionJob.FailureMessage}
 
 	case btypes.BatchSpecResolutionJobStateCompleted:
+		// Continue below the switch statement.
 
 	default:
 		return nil, ErrBatchSpecResolutionIncomplete
@@ -581,6 +582,7 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 	if err != nil {
 		return nil, err
 	}
+
 	err = tx.MarkSkippedBatchSpecWorkspaces(ctx, batchSpec.ID)
 	if err != nil {
 		return nil, err
