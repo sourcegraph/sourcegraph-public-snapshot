@@ -91,6 +91,10 @@ and then, in another terminal window, start the monitoring stack:
 sg start monitoring
 ```
 
+### Running PRs
+
+Git checkout the PR you want to test and run `sg start` as usual. The PR will be built and the local instance will be updated.
+
 ## Additional resources
 
 Here are some additional resources to help you go further:
