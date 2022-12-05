@@ -224,7 +224,7 @@
         position: relative;
 
         .spacer {
-            margin: 0.5rem;
+            margin: 12px;
         }
     }
 
@@ -233,7 +233,7 @@
         left: 0;
         right: 0;
         top: 0;
-        border-radius: var(--border-radius);
+        border-radius: 8px;
         z-index: 100;
 
         &:focus-within {
@@ -249,11 +249,17 @@
     .focus-container {
         display: flex;
         background-color: var(--color-bg-1);
-        border-radius: var(--border-radius);
-        margin: 0.5rem;
+        border-radius: 4px;
+        margin: 12px 12px 0 12px;
+        border: 1px solid var(--border-color-2);
+        padding: 0 4px;
+        min-height: 32px;
+        align-items: center;
 
         &:focus-within {
-            outline: 2px solid var(--primary-2);
+            outline: 2px solid rgba(163, 208, 255, 1);
+            outline-offset: 0px;
+            border-color: var(--border-active-color);
         }
     }
 
