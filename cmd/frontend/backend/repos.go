@@ -210,10 +210,6 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 		return s.cache.List(ctx)
 	}
 
-	if !conf.SearchIndexEnabled() {
-		return []types.MinimalRepo{}, nil
-	}
-
 	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{
 		OnlyCloned: true,
 	})

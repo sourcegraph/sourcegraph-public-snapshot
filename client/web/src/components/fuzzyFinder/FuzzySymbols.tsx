@@ -3,7 +3,7 @@ import { FuzzyFinderSymbolsResult, FuzzyFinderSymbolsVariables } from 'src/graph
 import gql from 'tagged-template-noop'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
+import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
 import { SearchValue } from '../../fuzzyFinder/FuzzySearch'
@@ -66,7 +66,7 @@ export class FuzzySymbols extends FuzzyQuery {
         return values.map(({ text, url, symbolKind }) => ({
             text: repositoryFilter ? text.replace(repositoryText, '') : text,
             url,
-            icon: symbolKind ? <SymbolTag className="fuzzy-repos-result-icon" kind={symbolKind} /> : undefined,
+            icon: symbolKind ? <SymbolIcon kind={symbolKind} className="mr-1" /> : undefined,
         }))
     }
 

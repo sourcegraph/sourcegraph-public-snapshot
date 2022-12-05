@@ -104,7 +104,7 @@ func Generate(cmdRoot string, sgRoot string) *cli.Command {
 			&cli.StringSliceFlag{
 				Name:    "multi-instance-groupings",
 				EnvVars: []string{"MULTI_INSTANCE_GROUPINGS"},
-				Usage:   "[WIP] If non-empty, indicates whether or not a multi-instance dashboard should be generated with the provided labels to group on.",
+				Usage:   "If non-empty, indicates whether or not to generate multi-instance assets with the provided labels to group on. The standard per-instance monitoring assets will NOT be generated.",
 			},
 		},
 		BashComplete: cliutil.CompleteOptions(func() (options []string) {

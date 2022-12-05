@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -89,23 +88,13 @@ func (r *repositoryStatsResolver) IndexedLinesCount(ctx context.Context) (BigInt
 
 func (r *repositoryStatsResolver) computeIndexedStats(ctx context.Context) (int32, int64, error) {
 	r.indexedStatsOnce.Do(func() {
-		var (
-			indexedRepos     int32
-			indexedLineCount int64
-		)
-
-		if conf.SearchIndexEnabled() {
-			repos, err := search.ListAllIndexed(ctx)
-			if err != nil {
-				r.indexedStatsErr = err
-				return
-			}
-			indexedRepos = int32(len(repos.Minimal))
-			indexedLineCount = int64(repos.Stats.DefaultBranchNewLinesCount) + int64(repos.Stats.OtherBranchesNewLinesCount)
+		repos, err := search.ListAllIndexed(ctx)
+		if err != nil {
+			r.indexedStatsErr = err
+			return
 		}
-
-		r.indexedRepos = indexedRepos
-		r.indexedLinesCount = indexedLineCount
+		r.indexedRepos = int32(len(repos.Minimal))
+		r.indexedLinesCount = int64(repos.Stats.DefaultBranchNewLinesCount) + int64(repos.Stats.OtherBranchesNewLinesCount)
 	})
 
 	return r.indexedRepos, r.indexedLinesCount, r.indexedStatsErr

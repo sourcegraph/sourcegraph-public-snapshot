@@ -36,7 +36,12 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     const title = (
         <div className={styles.title}>
             <span className={classNames('test-search-result-label', styles.titleInner, styles.mutedRepoFileLink)}>
-                <Link to={getRepoMatchUrl(result)} ref={repoNameElement}>
+                <Link
+                    to={getRepoMatchUrl(result)}
+                    ref={repoNameElement}
+                    data-selectable-search-result="true"
+                    data-selectable-search-result-header-link="true"
+                >
                     {displayRepoName(getRepoMatchLabel(result))}
                 </Link>
             </span>

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router'
@@ -38,6 +38,7 @@ import { smartSearchClickedEvent } from '../util/events'
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 import { useItemsToShow } from './use-items-to-show'
+import { useSearchResultsKeyboardNavigation } from './useSearchResultsKeyboardNavigation'
 
 import resultContainerStyles from '../components/ResultContainer.module.scss'
 import styles from './StreamingSearchResultsList.module.scss'
@@ -78,6 +79,8 @@ export interface StreamingSearchResultsListProps
     prefetchFile?: FilePrefetcher
 
     prefetchFileEnabled?: boolean
+
+    enableKeyboardNavigation?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -101,10 +104,12 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     resultClassName,
     prefetchFile,
     prefetchFileEnabled,
+    enableKeyboardNavigation,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
     const location = useLocation()
+    const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
 
     const logSearchResultClicked = useCallback(
         (index: number, type: string) => {
@@ -259,6 +264,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<
         ]
     )
 
+    const [showFocusInputMessage, onVisibilityChange] = useSearchResultsKeyboardNavigation(
+        rootRef,
+        enableKeyboardNavigation
+    )
+
     return (
         <>
             <VirtualList<SearchMatch>
@@ -271,10 +281,18 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 itemProps={undefined}
                 itemKey={itemKey}
                 renderItem={renderResult}
+                onRef={setRootRef}
+                onVisibilityChange={onVisibilityChange}
             />
 
+            <div
+                className={classNames(styles.focusInputMessage, showFocusInputMessage && styles.focusInputMessageShow)}
+            >
+                Press <span className={styles.focusInputMessageSlash}>/</span> to focus the search input
+            </div>
+
             {itemsToShow >= resultsNumber && (
-                <StreamingSearchResultFooter results={results}>
+                <StreamingSearchResultFooter results={results} telemetryService={telemetryService}>
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage

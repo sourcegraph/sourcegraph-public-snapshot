@@ -61,7 +61,12 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = props => {
         <CodeInsightsPage>
             <PageHeader
                 path={[{ icon: CodeInsightsIcon, text: 'Insights' }]}
-                actions={<CodeInsightHeaderActions dashboardId={dashboardId} telemetryService={telemetryService} />}
+                actions={
+                    <CodeInsightHeaderActions
+                        dashboardId={dashboardId ?? queryParamDashboardId}
+                        telemetryService={telemetryService}
+                    />
+                }
                 className={styles.header}
             />
 
