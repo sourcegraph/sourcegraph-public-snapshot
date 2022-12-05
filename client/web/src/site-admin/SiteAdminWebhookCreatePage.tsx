@@ -82,6 +82,8 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                 const kindsArray = Array.from(extSvcKinds)
                 setKinds(kindsArray)
                 const currentKind = kindsArray[0]
+                // we always generate a secret once and assign it to the webhook. Bitbucket Cloud special case
+                // is handled is an Input and during GraphQL query creation.
                 setWebhook(webhook => ({
                     ...webhook,
                     secret: generateSecret(),
@@ -192,13 +194,28 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                             </Select>
                             <Input
                                 className={classNames(styles.first, 'flex-1 mb-0')}
-                                message={<small>Randomly generated. Alter as required. </small>}
+                                message={
+                                    webhook.codeHostKind &&
+                                    webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD ? (
+                                        <small>Bitbucket Cloud doesn't support secrets.</small>
+                                    ) : (
+                                        <small>Randomly generated. Alter as required.</small>
+                                    )
+                                }
                                 label={<span className="small">Secret</span>}
+                                disabled={
+                                    webhook.codeHostKind !== null &&
+                                    webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
+                                }
                                 pattern="^[a-zA-Z0-9]+$"
                                 onChange={event => {
                                     onSecretChange(event.target.value)
                                 }}
-                                value={webhook.secret || ''}
+                                value={
+                                    webhook.codeHostKind && webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
+                                        ? ''
+                                        : webhook.secret || ''
+                                }
                                 maxLength={100}
                             />
                         </div>
@@ -264,11 +281,15 @@ function prettyPrintExternalServiceKind(kind: ExternalServiceKind): string {
 }
 
 function convertWebhookToCreateWebhookVariables(webhook: Webhook): CreateWebhookVariables {
+    const secret =
+        webhook.codeHostKind !== null && webhook.codeHostKind === ExternalServiceKind.BITBUCKETCLOUD
+            ? null
+            : webhook.secret
     return {
         name: webhook.name,
         codeHostKind: webhook.codeHostKind || ExternalServiceKind.OTHER,
         codeHostURN: webhook.codeHostURN,
-        secret: webhook.secret,
+        secret,
     }
 }
 
