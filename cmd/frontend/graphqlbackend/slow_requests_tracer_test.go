@@ -29,7 +29,7 @@ func Test_captureSlowRequest(t *testing.T) {
 
 		captureSlowRequest(ctx, logger, &req)
 
-		raws, err := slowRequestRedisRecentList.All(ctx)
+		raws, err := slowRequestRedisFIFOList.All(ctx)
 		if err != nil {
 			t.Errorf("expected no error, got %q", err)
 		}

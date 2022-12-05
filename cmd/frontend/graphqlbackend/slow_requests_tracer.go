@@ -20,10 +20,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// slowRequestRedisFIFOListDefaultSize sets a default value for the FIFO list.
 const slowRequestRedisFIFOListDefaultSize = 5000
+
+// slowRequestRedisFIFOListPerPage sets the default count of returned request.
 const slowRequestRedisFIFOListPerPage = 50
 
-var slowRequestRedisRecentList = rcache.NewFIFOList("slow-graphql-requests-list", slowRequestRedisFIFOListDefaultSize)
+// slowRequestRedisFIFOList is a FIFO redis cache to store the slow requests.
+var slowRequestRedisFIFOList = rcache.NewFIFOList("slow-graphql-requests-list", slowRequestRedisFIFOListDefaultSize)
+
+// slowRequestConfWatchOnce  enables to ensure we're not watching for conf updates more than once.
 var slowRequestConfWatchOnce sync.Once
 
 // captureSlowRequest stores in a redis cache slow GraphQL requests.
@@ -34,7 +40,7 @@ func captureSlowRequest(ctx context.Context, logger log.Logger, req *types.SlowR
 			if limit == 0 {
 				limit = slowRequestRedisFIFOListDefaultSize
 			}
-			slowRequestRedisRecentList = rcache.NewFIFOList("slow-graphql-requests-list", limit)
+			slowRequestRedisFIFOList = rcache.NewFIFOList("slow-graphql-requests-list", limit)
 		})
 	})
 
@@ -43,7 +49,7 @@ func captureSlowRequest(ctx context.Context, logger log.Logger, req *types.SlowR
 		logger.Warn("failed to marshal slowRequest", log.Error(err))
 		return
 	}
-	if err := slowRequestRedisRecentList.Insert(b); err != nil {
+	if err := slowRequestRedisFIFOList.Insert(b); err != nil {
 		logger.Warn("failed to capture slowRequest", log.Error(err))
 	}
 }
@@ -67,23 +73,7 @@ func getSlowRequestsAfter(ctx context.Context, list *rcache.FIFOList, after int,
 	return reqs, nil
 }
 
-type slowRequestsArgs struct {
-	After *graphql.ID
-}
-
-type slowRequestResolver struct {
-	req *types.SlowRequest
-}
-
-type slowRequestConnectionResolver struct {
-	after string
-
-	err     error
-	once    sync.Once
-	reqs    []*types.SlowRequest
-	perPage int
-}
-
+// SlowRequests returns a connection so fetch slow requests.
 func (r *schemaResolver) SlowRequests(ctx context.Context, args *slowRequestsArgs) (*slowRequestConnectionResolver, error) {
 	if conf.Get().ObservabilityCaptureSlowGraphQLRequestsLimit == 0 {
 		return nil, errors.New("slow graphql requests capture is not enabled")
@@ -107,13 +97,30 @@ func (r *schemaResolver) SlowRequests(ctx context.Context, args *slowRequestsArg
 	}, nil
 }
 
+type slowRequestConnectionResolver struct {
+	after string
+
+	err     error
+	once    sync.Once
+	reqs    []*types.SlowRequest
+	perPage int
+}
+
+type slowRequestsArgs struct {
+	After *graphql.ID
+}
+
+type slowRequestResolver struct {
+	req *types.SlowRequest
+}
+
 func (r *slowRequestConnectionResolver) fetch(ctx context.Context) ([]*types.SlowRequest, error) {
 	r.once.Do(func() {
 		n, err := strconv.Atoi(r.after)
 		if err != nil {
 			r.err = err
 		}
-		r.reqs, r.err = getSlowRequestsAfter(ctx, slowRequestRedisRecentList, n, r.perPage)
+		r.reqs, r.err = getSlowRequestsAfter(ctx, slowRequestRedisFIFOList, n, r.perPage)
 	})
 	return r.reqs, r.err
 }
@@ -132,7 +139,7 @@ func (r *slowRequestConnectionResolver) Nodes(ctx context.Context) ([]*slowReque
 }
 
 func (r *slowRequestConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	n, err := slowRequestRedisRecentList.Size()
+	n, err := slowRequestRedisFIFOList.Size()
 	if err != nil {
 		return 0, err
 	}
@@ -160,26 +167,34 @@ func (r *slowRequestConnectionResolver) PageInfo(ctx context.Context) (*graphqlu
 	}
 }
 
+// ID returns an opaque ID for that node.
 func (r *slowRequestResolver) ID() graphql.ID {
 	return relay.MarshalID("SlowRequest", r.req.ID)
 }
 
+// Start returns the start time of the slow request.
 func (r *slowRequestResolver) Start() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.req.Start}
 }
 
+// Duration returns the recorded duration of the slow request.
 func (r *slowRequestResolver) Duration() float64 {
 	return r.req.Duration.Seconds()
 }
 
+// UserId returns the user identifier if there is one associated with the
+// slow request. Blank if none.
 func (r *slowRequestResolver) UserId() string {
 	return strconv.Itoa(int(r.req.UserID))
 }
 
+// Name returns the GraqhQL request name, if any. Blank if none.
 func (r *slowRequestResolver) Name() string {
 	return r.req.Name
 }
 
+// RepoName guesses the name of the associated repository if possible.
+// Blank if none.
 func (r *slowRequestResolver) RepoName() string {
 	if repoName, ok := r.req.Variables["repoName"]; ok {
 		if str, ok := repoName.(string); ok {
@@ -194,6 +209,8 @@ func (r *slowRequestResolver) RepoName() string {
 	return ""
 }
 
+// Filepath guesses the name of the associated filepath if possible.
+// Blank if none.
 func (r *slowRequestResolver) Filepath() string {
 	if filepath, ok := r.req.Variables["filePath"]; ok {
 		if str, ok := filepath.(string); ok {
@@ -208,19 +225,25 @@ func (r *slowRequestResolver) Filepath() string {
 	return ""
 }
 
+// Query returns the GraphQL query performed by the slow request.
 func (r *slowRequestResolver) Query() string {
 	return r.req.Query
 }
 
+// Variables returns the GraphQL variables associated with the query
+// performed by the request.
 func (r *slowRequestResolver) Variables() string {
 	raw, _ := json.Marshal(r.req.Variables)
 	return string(raw)
 }
 
+// Errors returns a list of errors encountered when handling
+// the slow request.
 func (r *slowRequestResolver) Errors() []string {
 	return r.req.Errors
 }
 
+// Source returns from where the GraphQL originated.
 func (r *slowRequestResolver) Source() string {
 	return r.req.Source
 }
