@@ -265,9 +265,8 @@ function matchesString(request: SlowRequest, query: string): boolean {
 function ellipsis(str: string, len: number): string {
     if (str.length <= len) {
         return str
-    } 
-        return '...' + str.slice(str.length - len, str.length)
-    
+    }
+    return '...' + str.slice(str.length - len, str.length)
 }
 
 function shortenRepoName(repoName: string): string {
@@ -275,7 +274,7 @@ function shortenRepoName(repoName: string): string {
 }
 
 function buildCurlCommand(request: SlowRequest): string {
-    const headers = '-H \'Authorization: token\'$ACCESS_TOKEN'
+    const headers = "-H 'Authorization: token'$ACCESS_TOKEN"
     const body = `{"query": "${request.query}", "variables": ${request.variables}}`.replaceAll('\n', '')
     return `curl -X POST ${headers} -d '${body}' '${window.location.protocol}//${window.location.host}/.api/graphql?${request.name}'`
 }
