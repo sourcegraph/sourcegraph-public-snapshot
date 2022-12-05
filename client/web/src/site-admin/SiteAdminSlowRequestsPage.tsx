@@ -6,9 +6,11 @@ import copy from 'copy-to-clipboard'
 import { RouteComponentProps } from 'react-router'
 import { map } from 'rxjs/operators'
 
+import { dataOrThrowErrors } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
+    Code,
     Container,
     Icon,
     Link,
@@ -21,6 +23,7 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
+import { requestGraphQL } from '../backend/graphql'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -32,10 +35,7 @@ import { SlowRequestsResult, SlowRequestsVariables } from '../graphql-operations
 
 import { SLOW_REQUESTS } from './backend'
 
-import { dataOrThrowErrors } from '@sourcegraph/http-client'
-
 import styles from './SiteAdminSlowRequestsPage.module.scss'
-import { requestGraphQL } from '../backend/graphql'
 
 export interface SiteAdminSlowRequestsPageProps extends RouteComponentProps, TelemetryProps {
     now?: () => Date
@@ -166,7 +166,7 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
             </div>
             <div>
                 <Tooltip content={'Repo Name: ' + node.repoName}>
-                    <code>{shortenRepoName(node.repoName)}</code>
+                    <Code>{shortenRepoName(node.repoName)}</Code>
                 </Tooltip>
             </div>
             <div>
@@ -183,7 +183,7 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Slo
             </div>
             <div>
                 <Tooltip content={'Filepath: ' + node.filepath}>
-                    <code>{ellipsis(node.filepath, 30)}</code>
+                    <Code>{ellipsis(node.filepath, 30)}</Code>
                 </Tooltip>
             </div>
             <div className={classNames('d-flex flex-row')}>
@@ -250,7 +250,7 @@ const SimplePopover: React.FunctionComponent<{ label: string; children: ReactNod
 }
 
 function isSuccessful(request: SlowRequest): boolean {
-    return request.errors.length == 0
+    return request.errors.length === 0
 }
 
 function matchesString(request: SlowRequest, query: string): boolean {
@@ -265,9 +265,9 @@ function matchesString(request: SlowRequest, query: string): boolean {
 function ellipsis(str: string, len: number): string {
     if (str.length <= len) {
         return str
-    } else {
+    } 
         return '...' + str.slice(str.length - len, str.length)
-    }
+    
 }
 
 function shortenRepoName(repoName: string): string {
@@ -275,7 +275,7 @@ function shortenRepoName(repoName: string): string {
 }
 
 function buildCurlCommand(request: SlowRequest): string {
-    const headers = `-H 'Authorization: token'$ACCESS_TOKEN`
+    const headers = '-H \'Authorization: token\'$ACCESS_TOKEN'
     const body = `{"query": "${request.query}", "variables": ${request.variables}}`.replaceAll('\n', '')
     return `curl -X POST ${headers} -d '${body}' '${window.location.protocol}//${window.location.host}/.api/graphql?${request.name}'`
 }
