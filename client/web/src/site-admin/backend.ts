@@ -308,7 +308,7 @@ export const OUTBOUND_REQUESTS = gql`
                 durationMs
                 errorMessage
                 creationStackFrame
-                callStackFrame
+                callStack
             }
         }
     }

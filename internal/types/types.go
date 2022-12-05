@@ -1719,5 +1719,5 @@ type OutboundRequestLogItem struct {
 	Duration           float64             `json:"duration"`
 	ErrorMessage       string              `json:"errorMessage"`
 	CreationStackFrame string              `json:"creationStackFrame"`
-	CallStackFrame     string              `json:"callStackFrame"`
+	CallStackFrame     string              `json:"callStackFrame"` // Should be "CallStack" once this is final
 }

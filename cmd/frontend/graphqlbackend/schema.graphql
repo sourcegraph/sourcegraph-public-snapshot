@@ -8139,7 +8139,7 @@ type OutboundRequest implements Node {
     """
     Stack information to figure out where in the code base the request was initiated.
     """
-    callStackFrame: String!
+    callStack: String!
 }
 
 """
