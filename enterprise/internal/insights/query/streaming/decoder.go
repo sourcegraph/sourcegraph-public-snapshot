@@ -64,13 +64,20 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 			// Skipped elements are built progressively for a Progress update until it is Done, so
 			// we want to register its contents only once it is done.
 			for _, skipped := range progress.Skipped {
-				// ShardTimeout is a specific skipped event that we want to retry on. Currently
-				// we only retry on Alert events so this is why we add it there. This behaviour will
-				// be uniformised eventually.
-				if skipped.Reason == streamapi.ShardTimeout {
+				switch skipped.Reason {
+				case streamapi.ShardTimeout:
+					// ShardTimeout is a specific skipped event that we want to retry on. Currently
+					// we only retry on Alert events so this is why we add it there. This behaviour will
+					// be uniformised eventually.
 					tr.Alerts = append(tr.Alerts, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
 					tr.DidTimeout = true
-				} else {
+
+				case streamapi.BackendMissing:
+					// BackendMissing means we may be missing results due to
+					// Zoekt rolling out. We add an alert to cause a retry.
+					tr.Alerts = append(tr.Alerts, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+
+				default:
 					tr.SkippedReasons = append(tr.SkippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
 				}
 			}
