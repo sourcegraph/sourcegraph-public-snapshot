@@ -81,8 +81,6 @@ var (
 func Main() {
 	ctx := context.Background()
 
-	env.Lock()
-	env.HandleHelpFlag()
 	logging.Init()
 
 	liblog := log.Init(log.Resource{

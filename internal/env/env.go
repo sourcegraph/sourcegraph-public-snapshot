@@ -159,6 +159,10 @@ func environMap(environ []string) map[string]string {
 
 // Lock makes later calls to Get fail with a panic. Call this at the beginning of the main function.
 func Lock() {
+	if locked {
+		panic("env.Lock must be called at most once")
+	}
+
 	locked = true
 
 	sort.Slice(env, func(i, j int) bool { return env[i].name < env[j].name })
