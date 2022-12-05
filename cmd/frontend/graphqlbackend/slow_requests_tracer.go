@@ -29,7 +29,7 @@ const slowRequestRedisFIFOListPerPage = 50
 // slowRequestRedisFIFOList is a FIFO redis cache to store the slow requests.
 var slowRequestRedisFIFOList = rcache.NewFIFOList("slow-graphql-requests-list", slowRequestRedisFIFOListDefaultSize)
 
-// slowRequestConfWatchOnce  enables to ensure we're not watching for conf updates more than once.
+// slowRequestConfWatchOnce enables to ensure we're not watching for conf updates more than once.
 var slowRequestConfWatchOnce sync.Once
 
 // captureSlowRequest stores in a redis cache slow GraphQL requests.
