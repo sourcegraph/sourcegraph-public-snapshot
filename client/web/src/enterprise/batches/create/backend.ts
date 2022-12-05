@@ -2,12 +2,24 @@ import { gql } from '@sourcegraph/http-client'
 
 import { batchSpecExecutionFieldsFragment } from '../batch-spec/execute/backend'
 
-export const GET_ORGANIZATIONS = gql`
-    query GetOrganizations {
+export const GET_USER_ORGANIZATIONS = gql`
+    query GetUserOrganizations($userId: ID!) {
+        node(id: $userId) {
+            ...GetUserOrganizationsFields
+        }
+    }
+
+    fragment GetUserOrganizationsFields on User {
+        __typename
+        id
+        displayName
+        username
+        viewerCanAdminister
+
         organizations {
             nodes {
-                id
                 __typename
+                id
                 viewerCanAdminister
                 displayName
                 name

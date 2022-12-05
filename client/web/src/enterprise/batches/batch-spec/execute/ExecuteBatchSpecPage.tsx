@@ -223,11 +223,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     render={() => (
                         <>
                             <TabBar activeTabKey="configuration" tabsConfig={tabsConfig} matchURL={executionURL} />
-                            <ConfigurationForm
-                                isReadOnly={true}
-                                batchChange={batchChange}
-                                settingsCascade={settingsCascade}
-                            />
+                            <ConfigurationForm isReadOnly={true} batchChange={batchChange} />
                         </>
                     )}
                     exact={true}

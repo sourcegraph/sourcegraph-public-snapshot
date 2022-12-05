@@ -79,7 +79,6 @@ const NewBatchChangePageContent: React.FunctionComponent<
                 // the insight render template takes precendence over the search query render
                 renderTemplate={insightRenderTemplate || searchRenderTemplate}
                 insightTitle={insightTitle}
-                settingsCascade={settingsCascade}
                 initialNamespaceID={initialNamespaceID}
             />
         </div>

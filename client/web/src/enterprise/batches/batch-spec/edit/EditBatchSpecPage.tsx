@@ -257,7 +257,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
             <TabBar activeTabKey={activeTabKey} tabsConfig={tabsConfig} />
 
             {activeTabKey === 'configuration' ? (
-                <ConfigurationForm isReadOnly={true} batchChange={batchChange} settingsCascade={settingsCascade} />
+                <ConfigurationForm isReadOnly={true} batchChange={batchChange} />
             ) : (
                 <div className={styles.form}>
                     <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />

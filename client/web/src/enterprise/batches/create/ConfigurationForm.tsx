@@ -8,9 +8,7 @@ import { useHistory, useLocation } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
-    SettingsCascadeProps,
     SettingsOrgSubject,
     SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
@@ -35,7 +33,7 @@ import styles from './ConfigurationForm.module.scss'
 /* Regex pattern for a valid batch change name. Needs to match what's defined in the BatchSpec JSON schema. */
 const NAME_PATTERN = /^[\w.-]+$/
 
-type ConfigurationFormProps = SettingsCascadeProps<Settings> & {
+type ConfigurationFormProps = {
     /**
      * When set, apply a template to the batch spec before redirecting to the edit page.
      */
@@ -48,30 +46,29 @@ type ConfigurationFormProps = SettingsCascadeProps<Settings> & {
      */
     initialNamespaceID?: Scalars['ID']
 } & (
-        | // Either the form is editable and we may not have a batch change yet, or the form is
-        // read-only and we definitely already have a batch change.
-        {
-              /**
-               * Whether or not to display the configuration form in read-only mode, i.e. to view
-               * for an existing batch change.
-               */
-              isReadOnly?: false
-              /** The existing batch change to use to pre-populate the form. */
-              batchChange?: Pick<BatchChangeFields, 'name' | 'namespace'>
-          }
-        | {
-              /**
-               * Whether or not to display the configuration form in read-only mode, i.e. to view
-               * for an existing batch change.
-               */
-              isReadOnly: true
-              /** The existing batch change to use to pre-populate the form. */
-              batchChange: Pick<BatchChangeFields, 'name' | 'namespace'>
-          }
-    )
+    | // Either the form is editable and we may not have a batch change yet, or the form is
+    // read-only and we definitely already have a batch change.
+    {
+          /**
+           * Whether or not to display the configuration form in read-only mode, i.e. to view
+           * for an existing batch change.
+           */
+          isReadOnly?: false
+          /** The existing batch change to use to pre-populate the form. */
+          batchChange?: Pick<BatchChangeFields, 'name' | 'namespace'>
+      }
+    | {
+          /**
+           * Whether or not to display the configuration form in read-only mode, i.e. to view
+           * for an existing batch change.
+           */
+          isReadOnly: true
+          /** The existing batch change to use to pre-populate the form. */
+          batchChange: Pick<BatchChangeFields, 'name' | 'namespace'>
+      }
+)
 
 export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<ConfigurationFormProps>> = ({
-    settingsCascade,
     isReadOnly,
     batchChange,
     renderTemplate,
@@ -88,7 +85,6 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     >(CREATE_BATCH_SPEC_FROM_RAW)
 
     const { namespaces, defaultSelectedNamespace, loading: namespaceLoading, error: namespaceError } = useNamespaces(
-        settingsCascade,
         batchChange?.namespace.id || initialNamespaceID
     )
 

@@ -87,7 +87,7 @@ export const NewBatchChange: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks()}>
-                <ConfigurationForm {...props} settingsCascade={SETTINGS_CASCADE} />
+                <ConfigurationForm {...props} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -99,11 +99,7 @@ export const NewOrgBatchChange: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks()}>
-                <ConfigurationForm
-                    {...props}
-                    settingsCascade={SETTINGS_CASCADE}
-                    initialNamespaceID={MOCK_ORGANIZATION.id}
-                />
+                <ConfigurationForm {...props} initialNamespaceID={MOCK_ORGANIZATION.id} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -117,7 +113,6 @@ export const ExistingBatchChange: Story = () => (
             <MockedTestProvider link={buildMocks()}>
                 <ConfigurationForm
                     {...props}
-                    settingsCascade={SETTINGS_CASCADE}
                     isReadOnly={true}
                     batchChange={{
                         name: 'My existing batch change',
@@ -144,7 +139,6 @@ export const LicenseAlert: Story = () => (
             <MockedTestProvider link={buildMocks(false)}>
                 <ConfigurationForm
                     {...props}
-                    settingsCascade={SETTINGS_CASCADE}
                     isReadOnly={true}
                     batchChange={{
                         name: 'My existing batch change',

@@ -2,19 +2,14 @@ import { useMemo } from 'react'
 
 import { ApolloError } from '@apollo/client'
 
-import { isErrorLike } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import {
-    SettingsOrgSubject,
-    SettingsUserSubject,
-    SettingsSubject,
-    SettingsCascadeOrError,
-} from '@sourcegraph/shared/src/settings/settings'
+import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
+import { useObservable } from '@sourcegraph/wildcard'
 
-import { Scalars, GetOrganizationsResult, GetOrganizationsVariables } from '../../../graphql-operations'
+import { authenticatedUser } from '../../../auth'
+import { Scalars, GetUserOrganizationsResult, GetUserOrganizationsVariables } from '../../../graphql-operations'
 
-import { GET_ORGANIZATIONS } from './backend'
+import { GET_USER_ORGANIZATIONS } from './backend'
 
 export interface UseNamespacesResult {
     userNamespace: SettingsUserSubject
@@ -28,40 +23,49 @@ export interface UseNamespacesResult {
  * Custom hook to extract namespaces from the provided `settingsCascade` and determine the
  * appropriate default namespace to select for the user.
  *
- * @param settingsCascade The current user's `Settings`.
  * @param initialNamespaceID The id of the initial namespace to select.
  */
-export const useNamespaces = (
-    settingsCascade: SettingsCascadeOrError<Settings>,
-    initialNamespaceID?: Scalars['ID']
-): UseNamespacesResult => {
-    // Gather all the available namespaces from the settings subjects.
-    const rawNamespaces: SettingsSubject[] = useMemo(
-        () =>
-            (settingsCascade !== null &&
-                !isErrorLike(settingsCascade) &&
-                settingsCascade.subjects !== null &&
-                settingsCascade.subjects.map(({ subject }) => subject).filter(subject => !isErrorLike(subject))) ||
-            [],
-        [settingsCascade]
-    )
+export const useNamespaces = (initialNamespaceID?: Scalars['ID']): UseNamespacesResult => {
+    const user = useObservable(authenticatedUser)
 
-    const userNamespace = useMemo(
-        () => rawNamespaces.find((namespace): namespace is SettingsUserSubject => namespace.__typename === 'User'),
-        [rawNamespaces]
-    )
-
-    if (!userNamespace) {
-        throw new Error('No user namespace found')
+    if (!user) {
+        throw new Error('No user found')
     }
 
-    const { loading, data, error } = useQuery<GetOrganizationsResult, GetOrganizationsVariables>(GET_ORGANIZATIONS, {
-        fetchPolicy: 'cache-and-network',
-    })
+    const localUserNamespace = useMemo(() => ({
+        __typename: user.__typename,
+        id: user.id,
+        username: user?.username,
+        displayName: user.displayName,
+        viewerCanAdminister: user.viewerCanAdminister
+    }), [user])
+
+    const { loading, data, error } = useQuery<GetUserOrganizationsResult, GetUserOrganizationsVariables>(
+        GET_USER_ORGANIZATIONS,
+        {
+            variables: {
+                userId: user.id,
+            },
+            fetchPolicy: 'cache-and-network',
+        }
+    )
+
+    if (data?.node?.__typename !== 'User') {
+        throw new Error('No user found')
+    }
+
+    const userNamespace: SettingsUserSubject = useMemo(() => {
+        const userData = data?.node
+        if (!loading && userData?.__typename === 'User') {
+            return userData
+        }
+        return localUserNamespace
+    }, [data, loading, localUserNamespace])
 
     const organizationNamespaces: SettingsOrgSubject[] = useMemo(() => {
-        if (!loading && data?.organizations) {
-            return data.organizations.nodes
+        const userData = data?.node
+        if (!loading && userData?.__typename === 'User') {
+            return userData.organizations.nodes
         }
         return []
     }, [data, loading])
