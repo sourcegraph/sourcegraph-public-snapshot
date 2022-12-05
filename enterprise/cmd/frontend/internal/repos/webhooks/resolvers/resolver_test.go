@@ -675,7 +675,7 @@ func TestUpdateWebhook(t *testing.T) {
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
 	db.UsersFunc.SetDefaultReturn(users)
 	id := marshalWebhookID(42)
-	mutateStr := `mutation UpdateWebhook($id: ID!, $name: String, $codeHostKind: String, $codeHostURN: String, $secret: String) {
+	mutateStr := `mutation UpdateWebhook($id: ID!, $name: String!, $codeHostKind: String!, $codeHostURN: String!, $secret: String) {
                 updateWebhook(id: $id, name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
                     name
                     id
