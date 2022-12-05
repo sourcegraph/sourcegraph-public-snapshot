@@ -252,7 +252,7 @@ func (h *inProgressHandler) finish(ctx context.Context, ex *backfillExecution) (
 	if err != nil {
 		return errors.Wrap(err, "iterator.MarkComplete")
 	}
-	err = h.seriesReadComplete.SetSeriesBackfillComplete(ctx, series.SeriesID, itr.CompletedAt)
+	err = h.seriesReadComplete.SetSeriesBackfillComplete(ctx, ex.series.SeriesID, ex.itr.CompletedAt)
 	if err != nil {
 		return err
 	}
@@ -298,7 +298,7 @@ func (h *inProgressHandler) load(ctx context.Context, logger log.Logger, backfil
 	if err != nil {
 		return nil, errors.Wrap(err, "loadBackfill")
 	}
-	series, err := h.seriesReader.GetDataSeriesByID(ctx, backfillJob.SeriesId)
+	series, err := h.seriesReadComplete.GetDataSeriesByID(ctx, backfillJob.SeriesId)
 	if err != nil {
 		return nil, errors.Wrap(err, "GetDataSeriesByID")
 	}
