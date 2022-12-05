@@ -6,10 +6,9 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { Occurrence, Position } from '@sourcegraph/shared/src/codeintel/scip'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
+import { blobPropsFacet } from '..'
 import { isInteractiveOccurrence, occurrenceAtPosition } from '../occurrence-utils'
 import { CodeIntelTooltip, emptyHoverResult, HoverResult } from '../tooltips/CodeIntelTooltip'
-
-import { blobPropsFacet } from '..'
 
 export const hoverCache = StateField.define<Map<Occurrence, Promise<HoverResult>>>({
     create: () => new Map(),

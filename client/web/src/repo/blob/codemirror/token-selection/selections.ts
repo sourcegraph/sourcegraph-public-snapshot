@@ -5,13 +5,13 @@ import * as H from 'history'
 import { Occurrence, Range } from '@sourcegraph/shared/src/codeintel/scip'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
+import { blobPropsFacet } from '..'
 import { shouldScrollIntoView } from '../linenumbers'
 import { cmSelectionToRange, occurrenceAtPosition, rangeToCmSelection } from '../occurrence-utils'
 import { isSelectionInsideDocument } from '../utils'
 
 import { definitionCache, goToDefinitionAtOccurrence } from './definition'
 import { hoverAtOccurrence, hoverCache, setHoveredOccurrenceEffect } from './hover'
-import { blobPropsFacet } from '..'
 
 export const tokenSelectionTheme = EditorView.theme({
     '.cm-token-selection-definition-ready': {

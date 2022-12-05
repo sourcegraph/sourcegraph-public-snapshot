@@ -4,14 +4,14 @@ import { of } from 'rxjs'
 import { HoverMerged } from '@sourcegraph/client-api'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { hasFindImplementationsSupport } from '@sourcegraph/shared/src/codeintel/api'
 import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 import { BlobViewState, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
+import { blobPropsFacet } from '..'
 import { HovercardView, HoverData } from '../hovercard'
 import { rangeToCmSelection } from '../occurrence-utils'
 import { modifierClickDescription } from '../token-selection/modifier-click'
-import { blobPropsFacet } from '..'
-import { hasFindImplementationsSupport } from '@sourcegraph/shared/src/codeintel/api'
 
 export interface HoverResult {
     markdownContents: string

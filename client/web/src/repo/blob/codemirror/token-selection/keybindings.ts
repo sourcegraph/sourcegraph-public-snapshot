@@ -1,6 +1,6 @@
 import { KeyBinding } from '@codemirror/view'
-import { blobPropsFacet } from '..'
 
+import { blobPropsFacet } from '..'
 import { syntaxHighlight } from '../highlight'
 import { occurrenceAtPosition, positionAtCmPosition, closestOccurrenceByCharacter } from '../occurrence-utils'
 import { CodeIntelTooltip } from '../tooltips/CodeIntelTooltip'

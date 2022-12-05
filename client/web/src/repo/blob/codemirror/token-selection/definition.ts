@@ -1,14 +1,14 @@
-import * as H from 'history'
 import { Facet, RangeSet, StateEffect, StateField } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
+import * as H from 'history'
 
 import { TextDocumentPositionParameters } from '@sourcegraph/client-api'
 import { Location } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Occurrence, Position, Range } from '@sourcegraph/shared/src/codeintel/scip'
 import { BlobViewState, parseRepoURI, toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
-import { blobPropsFacet } from '..'
 
+import { blobPropsFacet } from '..'
 import { isInteractiveOccurrence, occurrenceAtMouseEvent, OccurrenceMap, rangeToCmSelection } from '../occurrence-utils'
 import { LoadingTooltip } from '../tooltips/LoadingTooltip'
 import { showTemporaryTooltip } from '../tooltips/TemporaryTooltip'
