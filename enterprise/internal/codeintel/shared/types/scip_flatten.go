@@ -4,7 +4,7 @@ import "github.com/sourcegraph/scip/bindings/go/scip"
 
 // FlattenDocuments merges elements of the given slice with the same relative path. This allows us to make
 // the assumption post-canonicalization that each index has one representation of a given document path in
-// the database.
+// the database. This function returns a new slice.
 func FlattenDocuments(documents []*scip.Document) []*scip.Document {
 	documentMap := make(map[string]*scip.Document, len(documents))
 	for _, document := range documents {
@@ -31,6 +31,7 @@ func FlattenDocuments(documents []*scip.Document) []*scip.Document {
 
 // FlattenSymbol merges elements of the given slice with the same symbol name. This allows us to make the
 // assumption post-canonicalization that each index and document refer to one symbol metadata object uniquely.
+// This function returns a new slice.
 func FlattenSymbols(symbols []*scip.SymbolInformation) []*scip.SymbolInformation {
 	symbolMap := make(map[string]*scip.SymbolInformation, len(symbols))
 	for _, symbol := range symbols {
@@ -52,14 +53,13 @@ func FlattenSymbols(symbols []*scip.SymbolInformation) []*scip.SymbolInformation
 	return flattened
 }
 
-// FlattenOccurrences merges elements of the given slice with equivalent bounds.
+// FlattenOccurrences merges elements of the given slice with equivalent bounds. This function returns a new slice.
 func FlattenOccurrences(occurrences []*scip.Occurrence) []*scip.Occurrence {
 	if len(occurrences) == 0 {
 		return occurrences
 	}
 
-	occurrences = SortOccurrences(occurrences)
-
+	_ = SortOccurrences(occurrences)
 	flattened := make([]*scip.Occurrence, 0, len(occurrences))
 	flattened = append(flattened, occurrences[0])
 
@@ -82,7 +82,8 @@ func FlattenOccurrences(occurrences []*scip.Occurrence) []*scip.Occurrence {
 	return flattened
 }
 
-// TODO - document
+// FlattenRelationship merges elements of the given slice with equivalent symbol names. This function returns a new
+// slice.
 func FlattenRelationship(relationships []*scip.Relationship) []*scip.Relationship {
 	relationshipMap := make(map[string][]*scip.Relationship, len(relationships))
 	for _, relationship := range relationships {
