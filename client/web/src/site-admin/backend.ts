@@ -1029,3 +1029,11 @@ export const useWebhookLogsConnection = (
             return webhookLogs
         },
     })
+
+export const CREATE_WEBHOOK_QUERY = gql`
+    mutation CreateWebhook($name: String!, $codeHostKind: String!, $codeHostURN: String!, $secret: String) {
+        createWebhook(name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
+            id
+        }
+    }
+`
