@@ -410,7 +410,10 @@ type FileDiffResolver struct {
 
 	db              database.DB
 	gitserverClient gitserver.Client
-	newFile         NewFileFunc
+
+	newFile  NewFileFunc
+	file     FileResolver
+	fileOnce sync.Once
 }
 
 func (r *FileDiffResolver) OldPath() *string { return diffPathOrNull(r.FileDiff.OrigName) }
@@ -444,7 +447,7 @@ func (r *FileDiffResolver) NewFile() FileResolver {
 	if diffPathOrNull(r.FileDiff.NewName) == nil {
 		return nil
 	}
-	return r.newFile(r.db, r)
+	return r.computeNewFile()
 }
 
 func (r *FileDiffResolver) MostRelevantFile() FileResolver {
@@ -452,6 +455,14 @@ func (r *FileDiffResolver) MostRelevantFile() FileResolver {
 		return newFile
 	}
 	return r.OldFile()
+}
+
+func (r *FileDiffResolver) computeNewFile() FileResolver {
+	r.fileOnce.Do(func() {
+		r.file = r.newFile(r.db, r)
+	})
+
+	return r.file
 }
 
 func (r *FileDiffResolver) InternalID() string {

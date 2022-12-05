@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"bytes"
 	"context"
+	"encoding/ascii85"
 	"io"
 	"strconv"
 	"strings"
@@ -151,6 +152,86 @@ func applyPatch(fileContent string, fileDiff *diff.FileDiff) (string, error) {
 	if diffPathOrNull(fileDiff.NewName) == nil {
 		// the file was deleted, no need to do costly computation.
 		return "", nil
+	}
+
+	var binary = false
+	for _, l := range fileDiff.Extended {
+		if strings.HasPrefix(l, "GIT binary patch") {
+			binary = true
+			break
+		}
+	}
+
+	if binary {
+		var startLine = 0
+		for i, l := range fileDiff.Extended {
+			if strings.HasPrefix(l, "GIT binary patch") {
+				startLine = i + 1
+				break
+			}
+		}
+		var newDiff = 0
+		for i, l := range fileDiff.Extended[startLine:] {
+			if l == "" {
+				newDiff = startLine + i + 1
+				break
+			}
+		}
+
+		var mode string
+		if strings.HasPrefix(fileDiff.Extended[newDiff], "literal") {
+			mode = "literal"
+		} else if strings.HasPrefix(fileDiff.Extended[newDiff], "delta") {
+			mode = "delta"
+		} else {
+			return "", errors.Newf("invalid patch mode %q", fileDiff.Extended[newDiff])
+		}
+
+		if mode == "delta" {
+			deltaOffset, err := strconv.Atoi(strings.TrimPrefix(fileDiff.Extended[newDiff], "delta "))
+			if err != nil {
+				return "", err
+			}
+			var literalContent bytes.Buffer
+			literalContent.Write([]byte(fileContent)[:deltaOffset])
+			deltaWritten := 0
+
+			for _, l := range fileDiff.Extended[newDiff+1:] {
+				if l == "" {
+					return literalContent.String(), nil
+				}
+
+				var c []byte
+				wr, _, err := ascii85.Decode(c, []byte(l[1:]), false)
+				if err != nil {
+					return "", err
+				}
+				deltaWritten += wr
+				if _, err := literalContent.Write(c); err != nil {
+					return "", err
+				}
+			}
+
+			literalContent.Write([]byte(fileContent)[deltaOffset+deltaWritten:])
+		}
+
+		if mode == "literal" {
+			var literalContent bytes.Buffer
+			for _, l := range fileDiff.Extended[newDiff+1:] {
+				if l == "" {
+					return literalContent.String(), nil
+				}
+
+				var c []byte
+				_, _, err := ascii85.Decode(c, []byte(l[1:]), false)
+				if err != nil {
+					return "", err
+				}
+				if _, err := literalContent.Write(c); err != nil {
+					return "", err
+				}
+			}
+		}
 	}
 
 	// Capture if the original file content had a final newline.
