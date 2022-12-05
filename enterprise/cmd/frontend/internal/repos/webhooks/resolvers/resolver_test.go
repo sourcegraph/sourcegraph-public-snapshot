@@ -783,6 +783,29 @@ func TestUpdateWebhook(t *testing.T) {
 			"secret":       nil,
 		},
 	})
+
+	webhookStore.GetByIDFunc.SetDefaultReturn(nil, &database.WebhookNotFoundError{ID: 2})
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Label:          "error for non-existent webhook",
+		Context:        ctx,
+		Schema:         gqlSchema,
+		Query:          mutateStr,
+		ExpectedResult: "null",
+		ExpectedErrors: []*errors.QueryError{
+			{
+				Message: "webhook with ID 2 not found",
+				Path:    []any{"updateWebhook"},
+			},
+		},
+		Variables: map[string]any{
+			"id":           string(id),
+			"name":         "new name",
+			"codeHostKind": nil,
+			"codeHostURN":  "https://example.github.com",
+			"secret":       nil,
+		},
+	})
 }
 
 func createGqlSchema(t *testing.T, db database.DB) *graphql.Schema {
