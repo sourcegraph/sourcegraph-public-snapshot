@@ -1,15 +1,31 @@
-import React from 'react'
+import { FunctionComponent, ReactNode } from 'react'
 
 import { mdiArrowRight } from '@mdi/js'
+import classNames from 'classnames'
 
 import { Icon, Text } from '@sourcegraph/wildcard'
 
-export const CloudCtaBanner: React.FunctionComponent<React.PropsWithChildren<{ children: React.ReactNode }>> = ({
-    children,
-}) => (
-    <section className="my-3 p-2 d-flex justify-content-center bg-primary-4">
-        <Icon className="mr-2 text-merged" size="md" aria-hidden={true} svgPath={mdiArrowRight} />
+import styles from './CloudCtaBanner.module.scss'
 
-        <Text className="mb-0">{children}</Text>
+export interface CloudCtaBanner {
+    variant?: 'filled' | 'outlined' | 'underlined' | string | undefined
+    small?: boolean
+    className?: string
+    children: ReactNode
+}
+
+export const CloudCtaBanner: FunctionComponent<CloudCtaBanner> = ({ variant, small, className, children }) => (
+    <section
+        className={classNames(className, 'd-flex justify-content-center', {
+            [styles.filled]: variant === 'filled',
+            [styles.outlined]: variant === 'outlined',
+            [styles.underlined]: variant === 'underlined',
+        })}
+    >
+        <Icon className="mr-2 text-merged" size={small ? 'sm' : 'md'} aria-hidden={true} svgPath={mdiArrowRight} />
+
+        <Text size={small ? 'small' : 'base'} className="my-auto">
+            {children}
+        </Text>
     </section>
 )

@@ -26,11 +26,9 @@ import {
     DashboardDeleteInput,
     DashboardUpdateInput,
     DashboardUpdateResult,
-    GetLangStatsInsightContentInput,
     InsightCreateInput,
     InsightUpdateInput,
     RemoveInsightFromDashboardInput,
-    CategoricalChartContent,
     DashboardCreateResult,
 } from '../code-insights-backend-types'
 
@@ -41,8 +39,6 @@ import { GET_INSIGHTS_GQL } from './gql/GetInsights'
 import { REMOVE_INSIGHT_FROM_DASHBOARD_GQL } from './gql/RemoveInsightFromDashboard'
 import { createDashboard } from './methods/create-dashboard/create-dashboard'
 import { createInsight } from './methods/create-insight/create-insight'
-import { getBuiltInInsight } from './methods/get-built-in-insight-data'
-import { getLangStatsInsightContent } from './methods/get-built-in-insight-data/get-lang-stats-insight-content'
 import { getDashboardOwners } from './methods/get-dashboard-owners'
 import { updateDashboard } from './methods/update-dashboard'
 import { updateInsight } from './methods/update-insight/update-insight'
@@ -141,13 +137,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         ).pipe(map(({ data }) => data.insightViews.nodes.length))
 
-    // TODO: This method is used only for insight title validation but since we don't have
-    // limitations about title field in gql api remove this method and async validation for
-    // title field as soon as setting-based api will be deprecated
-    public findInsightByName = (): Observable<Insight | null> => of(null)
-
-    public getBuiltInInsightData = getBuiltInInsight
-
     public createInsight = (input: InsightCreateInput): Observable<unknown> => createInsight(this.apolloClient, input)
 
     public updateInsight = (input: InsightUpdateInput): Observable<unknown> => updateInsight(this.apolloClient, input)
@@ -219,12 +208,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public updateDashboard = (input: DashboardUpdateInput): Observable<DashboardUpdateResult> =>
         updateDashboard(this.apolloClient, input)
-
-    // Live preview fetchers
-
-    public getLangStatsInsightContent = (
-        input: GetLangStatsInsightContentInput
-    ): Promise<CategoricalChartContent<any>> => getLangStatsInsightContent(input).then(data => data.content)
 
     public assignInsightsToDashboard = ({
         id,

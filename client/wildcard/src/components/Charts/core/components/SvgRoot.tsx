@@ -44,15 +44,17 @@ interface SVGRootLayout {
     yScale: AxisScale
     xScale: AxisScale
     content: Rectangle
+    svgElement: SVGSVGElement | null
     setPadding: Dispatch<SetStateAction<Padding>>
 }
 
-const SVGRootContext = createContext<SVGRootLayout>({
+export const SVGRootContext = createContext<SVGRootLayout>({
     width: 0,
     height: 0,
     xScale: scaleLinear(),
     yScale: scaleLinear(),
     content: EMPTY_RECTANGLE,
+    svgElement: null,
     setPadding: noop,
 })
 
@@ -70,9 +72,18 @@ interface SvgRootProps extends SVGProps<SVGSVGElement> {
  * content and other chart elements.
  */
 export const SvgRoot: FC<PropsWithChildren<SvgRootProps>> = props => {
-    const { width, height, yScale: yOriginalScale, xScale: xOriginalScale, children, ...attributes } = props
+    const {
+        width,
+        height,
+        yScale: yOriginalScale,
+        xScale: xOriginalScale,
+        children,
+        padding: propPadding = DEFAULT_PADDING,
+        ...attributes
+    } = props
 
-    const [padding, setPadding] = useState<Padding>(DEFAULT_PADDING)
+    const rootRef = useRef<SVGSVGElement>(null)
+    const [padding, setPadding] = useState<Padding>(propPadding)
 
     const contentRectangle = useMemo(
         () =>
@@ -102,6 +113,7 @@ export const SvgRoot: FC<PropsWithChildren<SvgRootProps>> = props => {
             xScale,
             yScale,
             content: contentRectangle,
+            svgElement: rootRef.current,
             setPadding,
         }),
         [width, height, contentRectangle, xScale, yScale]
@@ -109,7 +121,7 @@ export const SvgRoot: FC<PropsWithChildren<SvgRootProps>> = props => {
 
     return (
         <SVGRootContext.Provider value={context}>
-            <svg {...attributes} width={width} height={height}>
+            <svg {...attributes} ref={rootRef} width={width} height={height} tabIndex={-1}>
                 {children}
             </svg>
         </SVGRootContext.Provider>
@@ -160,6 +172,7 @@ interface SvgAxisBottomProps<Tick> {
     getTruncatedTick?: (formattedTick: string) => string
     getScaleTicks?: <T>(options: GetScaleTicksOptions) => T[]
 }
+
 export function SvgAxisBottom<Tick = string>(props: SvgAxisBottomProps<Tick>): ReactElement {
     const {
         pixelsPerTick = 0,

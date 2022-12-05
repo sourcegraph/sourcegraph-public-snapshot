@@ -62,7 +62,6 @@
     - UserCredentialsStore
     - UserEmailsStore
     - UserExternalAccountsStore
-    - UserPublicRepoStore
     - UserStore
     - WebhookStore
     - WebhookLogStore

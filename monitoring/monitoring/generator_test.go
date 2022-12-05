@@ -43,4 +43,19 @@ func TestGenerate(t *testing.T) {
 			definitions.Default()...)
 		assert.NoError(t, err)
 	})
+
+	t.Run("with inject groupings", func(t *testing.T) {
+		td := t.TempDir()
+		err := monitoring.Generate(logtest.Scoped(t),
+			monitoring.GenerateOptions{
+				DisablePrune:  true,
+				GrafanaDir:    filepath.Join(td, "grafana"),
+				PrometheusDir: filepath.Join(td, "prometheus"),
+				DocsDir:       filepath.Join(td, "docs"),
+
+				MultiInstanceDashboardGroupings: []string{"project_id"},
+			},
+			definitions.Default()...)
+		assert.NoError(t, err)
+	})
 }

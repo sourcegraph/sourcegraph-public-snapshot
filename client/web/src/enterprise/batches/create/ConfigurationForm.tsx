@@ -113,7 +113,8 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     const history = useHistory()
     const location = useLocation()
     const handleCancel = (): void => history.goBack()
-    const handleCreate = (): void => {
+    const handleCreate: React.FormEventHandler = (event): void => {
+        event.preventDefault()
         const redirectSearchParameters = new URLSearchParams(location.search)
         if (insightTitle) {
             redirectSearchParameters.set('title', insightTitle)
@@ -179,7 +180,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     label="Batch change name"
                     value={nameInput}
                     onChange={onNameChange}
-                    pattern={String(NAME_PATTERN)}
+                    pattern="^[\w.-]+$"
                     required={true}
                     status={isNameValid === undefined ? undefined : isNameValid ? 'valid' : 'error'}
                     disabled={isReadOnly}

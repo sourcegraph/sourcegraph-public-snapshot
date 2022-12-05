@@ -8,7 +8,6 @@
     width: 80vw !important;
     background-color: var(--body-bg);
     padding: 0;
-    border-radius: 4px;
 }
 
 .content {
@@ -21,8 +20,6 @@
 
 .header {
     display: flex;
-    flex-direction: row-reverse;
-    justify-content: space-between;
     align-items: center;
     padding: 0.5rem 1rem 0; // stylelint-disable-next-line declaration-property-unit-allowed-list
     margin-bottom: -1px;
@@ -105,8 +102,7 @@
     display: flex;
     align-items: center;
     width: 100%;
-    justify-content: space-between;
-    padding: 0 1rem 0.75rem;
+    padding: 0 1.5rem 0.75rem 1rem;
 }
 
 .keyboard-explanation {
@@ -140,6 +136,11 @@
     color: var(--text-muted);
 }
 
+.experimental-badge {
+    margin: -0.5rem 0.75rem 0 auto;
+    text-transform: uppercase;
+}
+
 .close-button {
     width: 1.5rem;
     height: 1.5rem;
@@ -168,9 +169,6 @@
     gap: 0.5rem;
 }
 
-.right-aligned {
-    text-align: right;
-}
 .tab-centered-text {
     text-align: center;
 }

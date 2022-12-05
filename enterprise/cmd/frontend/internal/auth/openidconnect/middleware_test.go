@@ -196,7 +196,6 @@ func TestMiddleware(t *testing.T) {
 		authedHandler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
-
 	state := func(t *testing.T, urlStr string) (state AuthnState) {
 		u, _ := url.Parse(urlStr)
 		if err := state.Decode(u.Query().Get("nonce")); err != nil {
@@ -204,7 +203,16 @@ func TestMiddleware(t *testing.T) {
 		}
 		return state
 	}
-	t.Run("unauthenticated homepage visit -> oidc auth flow", func(t *testing.T) {
+
+	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg sign-in", func(t *testing.T) {
+		cookie := &http.Cookie{Name: auth.SignoutCookie, Value: "true"}
+
+		resp := doRequest("GET", "http://example.com/", "", []*http.Cookie{cookie}, false)
+		if want := http.StatusOK; resp.StatusCode != want {
+			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+		}
+	})
+	t.Run("unauthenticated homepage visit, no sign-out cookie -> oidc auth flow", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, false)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)

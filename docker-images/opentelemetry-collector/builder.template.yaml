@@ -6,12 +6,9 @@ dist:
 
 exporters:
   # OpenTelemetry exporters - https://go.opentelemetry.io/collector/exporter
-  - import: go.opentelemetry.io/collector/exporter/otlpexporter
-    gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
-  - import: go.opentelemetry.io/collector/exporter/otlphttpexporter
-    gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
-  - import: go.opentelemetry.io/collector/exporter/loggingexporter
-    gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
+  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v$OTEL_COLLECTOR_VERSION
+  - gomod: go.opentelemetry.io/collector/exporter/otlphttpexporter v$OTEL_COLLECTOR_VERSION
+  - gomod: go.opentelemetry.io/collector/exporter/loggingexporter v$OTEL_COLLECTOR_VERSION
 
   # Contrib exporters - https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter
   - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/jaegerexporter v$OTEL_COLLECTOR_VERSION"
@@ -19,8 +16,7 @@ exporters:
 
 receivers:
   # OpenTelemetry receivers - https://go.opentelemetry.io/collector/receiver
-  - import: go.opentelemetry.io/collector/receiver/otlpreceiver
-    gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
+  - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v$OTEL_COLLECTOR_VERSION
 
   # Contrib receivers - https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver
   - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/fluentforwardreceiver v$OTEL_COLLECTOR_VERSION"
@@ -28,8 +24,7 @@ receivers:
 
 extensions:
   # OpenTelemetry extensions - https://go.opentelemetry.io/collector/extension
-  - import: go.opentelemetry.io/collector/extension/zpagesextension
-    gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
+  - gomod: go.opentelemetry.io/collector/extension/zpagesextension v$OTEL_COLLECTOR_VERSION
 
   # Contrib extensions - https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v$OTEL_COLLECTOR_VERSION

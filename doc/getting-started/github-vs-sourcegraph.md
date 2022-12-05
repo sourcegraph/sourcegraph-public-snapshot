@@ -1,4 +1,3 @@
-Please note: this page was last updated 2022-11-09, and we will continue to make updates as offerings from both GitHub and Sourcegraph evolve.
 
 # GitHub code search vs. Sourcegraph
 
@@ -25,6 +24,8 @@ As your codebase grows in complexity, the value of code search quickly increases
 If you frequently rely on your editor’s “go to definition” and “find references” features, you’ll also be able to take advantage of Sourcegraph's precise code navigation. Only Sourcegraph's offering features IDE-level accuracy and works across repositories.
 
 If you're brand new to code search and you want to try it, visit [Sourcegraph.com](https://sourcegraph.com/search) to search across open source repositories. 
+
+For a high-level overview of how Sourcegraph compares to GitHub code search, see this [documennt](https://storage.googleapis.com/sourcegraph-assets/docs/PDFs/Sourcegraph%20vs.%20GitHub%20code%20search%20chart.pdf).  
 
 ## Searching code
 
@@ -289,6 +290,8 @@ C#, Python, Go, Java, JavaScript, TypeScript, PHP, Protocol Buffers, Ruby, and R
 GitHub only returns the first 10 pages of search results. You cannot currently go past the 10th page or retrieve all search results.
 
 Sourcegraph can retrieve all search results. By default, Sourcegraph returns 500 search results, but this number can be increased by increasing the ‘count’ value. Sourcegraph can display a maximum of 1,500 results, but all matches can be fetched using the [src CLI](https://docs.sourcegraph.com/cli/quickstart), the [Stream API](https://docs.sourcegraph.com/api/stream_api), or [GraphQL API](https://docs.sourcegraph.com/api/graphql). You can also export the results via CSV. 
+
+Souregraph's Smart Search is a query assistant that activates when a search returns no results. It helps you find search results by trying slight variations of your original query when a search shows "no results," and the alternative results are shown automatically once Smart Search is enabled. 
 
 GitHub code search includes suggestions, completions, and the ability to save your searches. Sourcegraph offers suggestions through search query examples and [saved searches](https://docs.sourcegraph.com/code_search/how-to/saved_searches#creating-saved-searches). 
 
@@ -567,7 +570,7 @@ GitHub does not offer comprehensive insights that account for the content of the
 
 With [insights for Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects/viewing-insights-from-your-project/about-insights-for-projects) in GitHub, you can view, create, and customize charts that are built from the project’s data. [Organization activity insights](https://docs.github.com/en/enterprise-cloud@latest/organizations/collaborating-with-groups-in-organizations/viewing-insights-for-your-organization) help you understand how members of the organization are using GitHub, e.g. issue and pull request activity, top languages used, and cumulative information about where members spend their time. 
 
-Sourcegraph offers [in-product analytics](https://docs.sourcegraph.com/admin/analytics) to help Sourcegraph administrators understand user engagement across the various Sourcegraph features, identify power users, and convey value to engineering leaders. 
+Sourcegraph offers [in-product analytics](https://docs.sourcegraph.com/admin/analytics) to help Sourcegraph administrators understand user engagement across the various Sourcegraph features, identify power users, and convey value to engineering leaders.
 
 
 <table>
@@ -644,7 +647,7 @@ With Sourcegraph’s [Batch Changes](https://docs.sourcegraph.com/batch_changes/
 
 Both GitHub and Sourcegraph offer integrations to help optimize your workflow. GitHub’s owned integrations are built and managed by GitHub, and they have a marketplace with nearly a thousand third-party applications spanning across categories such as code quality, code review, IDEs, monitoring, security, and more. These integrations are available for GitHub overall, but there aren’t any integrations related to GitHub code search. For example, the [VS Code integration](https://marketplace.visualstudio.com/items?itemName=GitHub.vscode-pull-request-github) allows you to review and manage pull requests, but it does not let you use GitHub code search in VS Code. 
 
-Sourcegraph’s [editor integrations](https://docs.sourcegraph.com/integration/editor) let you search and navigate across all of your repositories from all your code hosts and across all GitHub instances and organizations without leaving your IDE. Sourcegraph currently integrates with VS Code, JetBrains IDEs, Sublime Text, Atom, and Gitpod. You can also add Sourcegraph to your preferred [browser](https://docs.sourcegraph.com/integration/browser_extension/how-tos/browser_search_engine) to quickly search across your entire codebase from within your browser. 
+Sourcegraph’s [editor integrations](../integration/editor.md) let you search and navigate across all of your repositories from all your code hosts and across all GitHub instances and organizations without leaving your IDE. Sourcegraph currently integrates with VS Code, JetBrains IDEs, and Gitpod. You can also add Sourcegraph to your preferred [browser](../integration/browser_extension/how-tos/browser_search_engine.md) to quickly search across your entire codebase from within your browser. 
 
 
 ### API
@@ -719,7 +722,7 @@ GitHub is closed source, while Sourcegraph’s code is publicly available.
 
 Sourcegraph offers two versions of its product: Sourcegraph OSS (just universal code search) and Sourcegraph Enterprise (full code intelligence platform). 
 
-Sourceraph OSS is Apache 2 licensed and allows any developer to use, modify, and redistribute.
+Sourcegraph OSS is Apache 2 licensed and allows any developer to use, modify, and redistribute.
 
 
 ## Availability

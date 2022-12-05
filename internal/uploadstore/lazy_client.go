@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"sync"
+	"time"
 )
 
 type lazyStore struct {
@@ -52,6 +53,14 @@ func (s *lazyStore) Delete(ctx context.Context, key string) error {
 	}
 
 	return s.store.Delete(ctx, key)
+}
+
+func (s *lazyStore) ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) error {
+	if err := s.initOnce(ctx); err != nil {
+		return err
+	}
+
+	return s.store.ExpireObjects(ctx, prefix, maxAge)
 }
 
 // initOnce serializes access to the underlying store's Init method. If the

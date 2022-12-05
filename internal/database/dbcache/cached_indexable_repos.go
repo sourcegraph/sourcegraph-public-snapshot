@@ -57,9 +57,7 @@ type IndexableReposLister struct {
 	*reposCache
 }
 
-// List lists ALL indexable repos. These include all repos with a minimum number of stars,
-// user added repos (both public and private) as well as any repos added
-// to the user_public_repos table.
+// List lists ALL indexable repos. These include all repos with a minimum number of stars.
 //
 // The values are cached for up to indexableReposMaxAge. If the cache has expired, we return
 // stale data and start a background refresh.

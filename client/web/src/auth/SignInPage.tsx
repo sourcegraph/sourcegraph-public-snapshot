@@ -42,12 +42,6 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
     const isOperatorHidingEnabled = props.context.experimentalFeatures.hideSourcegraphOperatorLogin ?? false
 
-    const showSourcegraphOperatorLogin =
-        !isOperatorHidingEnabled || new URLSearchParams(location.search).has('sourcegraph-operator')
-
-    const isSourcegraphOperatorProvider = (provider: AuthProvider): boolean =>
-        provider.serviceType === 'openidconnect' && provider.displayName === 'Sourcegraph Employee'
-
     if (props.authenticatedUser) {
         const returnTo = getReturnTo(location)
         return <Navigate to={returnTo} replace={true} />
@@ -58,9 +52,21 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
         provider => provider.isBuiltin
     )
 
-    const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(
-        provider => showSourcegraphOperatorLogin || !isSourcegraphOperatorProvider(provider)
-    )
+    const shouldShowProvider = function (provider: AuthProvider): boolean {
+        // Hide the legacy OIDC sign-in by default if the hiding feature flag is turned on.
+        if (provider.serviceType === 'openidconnect' && provider.displayName === 'Sourcegraph Employee') {
+            return !isOperatorHidingEnabled || new URLSearchParams(location.search).has('sourcegraph-operator')
+        }
+
+        // Hide the Sourcegraph Operator authentication provider by default because it is
+        // not useful to customer users and may even cause confusion.
+        if (provider.serviceType === 'sourcegraph-operator') {
+            return new URLSearchParams(location.search).has('sourcegraph-operator')
+        }
+        return true
+    }
+
+    const thirdPartyAuthProviders = nonBuiltinAuthProviders.filter(provider => shouldShowProvider(provider))
 
     const body =
         !builtInAuthProvider && thirdPartyAuthProviders.length === 0 ? (

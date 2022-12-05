@@ -254,18 +254,6 @@ func (p *precalculatedInsightSeriesResolver) Status(ctx context.Context) (graphq
 	return p.statusResolver, nil
 }
 
-func (p *precalculatedInsightSeriesResolver) DirtyMetadata(ctx context.Context) ([]graphqlbackend.InsightDirtyQueryResolver, error) {
-	data, err := p.metadataStore.GetDirtyQueriesAggregated(ctx, p.series.SeriesID)
-	if err != nil {
-		return nil, err
-	}
-	resolvers := make([]graphqlbackend.InsightDirtyQueryResolver, 0, len(data))
-	for _, dqa := range data {
-		resolvers = append(resolvers, &insightDirtyQueryResolver{dqa})
-	}
-	return resolvers, nil
-}
-
 type insightSeriesResolverGenerator interface {
 	Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error)
 	handles(series types.InsightViewSeries) bool
@@ -530,13 +518,10 @@ func streamingSeriesJustInTime(ctx context.Context, definition types.InsightView
 }
 
 var _ graphqlbackend.TimeoutDatapointAlert = &timeoutDatapointAlertResolver{}
-
-// var _ graphqlbackend.IncompleteDatapointAlert = &timeoutDatapointAlertResolver{}
+var _ graphqlbackend.GenericIncompleteDatapointAlert = &genericIncompleteDatapointAlertResolver{}
 var _ graphqlbackend.IncompleteDatapointAlert = &IncompleteDataPointAlertResolver{}
 
 type IncompleteDataPointAlertResolver struct {
-	// resolver any
-	// graphqlbackend.IncompleteDatapointAlert
 	point store.IncompleteDatapoint
 }
 
@@ -544,10 +529,15 @@ func (i *IncompleteDataPointAlertResolver) ToTimeoutDatapointAlert() (graphqlbac
 	if i.point.Reason == store.ReasonTimeout {
 		return &timeoutDatapointAlertResolver{point: i.point}, true
 	}
-
-	// t, ok := i.resolver.(graphqlbackend.TimeoutDatapointAlert)
-	// return t, ok
 	return nil, false
+}
+
+func (i *IncompleteDataPointAlertResolver) ToGenericIncompleteDatapointAlert() (graphqlbackend.GenericIncompleteDatapointAlert, bool) {
+	switch i.point.Reason {
+	case store.ReasonTimeout:
+		return nil, false
+	}
+	return &genericIncompleteDatapointAlertResolver{point: i.point}, true
 }
 
 func (i *IncompleteDataPointAlertResolver) Time() gqlutil.DateTime {
@@ -556,11 +546,25 @@ func (i *IncompleteDataPointAlertResolver) Time() gqlutil.DateTime {
 
 type timeoutDatapointAlertResolver struct {
 	point store.IncompleteDatapoint
-	baseInsightResolver
 }
 
 func (t *timeoutDatapointAlertResolver) Time() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: t.point.Time}
+}
+
+type genericIncompleteDatapointAlertResolver struct {
+	point store.IncompleteDatapoint
+}
+
+func (g *genericIncompleteDatapointAlertResolver) Time() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: g.point.Time}
+}
+
+func (g *genericIncompleteDatapointAlertResolver) Reason() string {
+	switch g.point.Reason {
+	default:
+		return "There was an issue during data processing that caused this point to be incomplete."
+	}
 }
 
 func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context) (resolvers []graphqlbackend.IncompleteDatapointAlert, err error) {

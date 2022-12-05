@@ -662,8 +662,8 @@ func Zoekt() *monitoring.Dashboard {
 							Panel: monitoring.Panel().LegendFormat("{{instance}}").
 								Unit(monitoring.Percentage).
 								With(monitoring.PanelOptions.LegendOnRight()),
-							Warning:  monitoring.Alert().GreaterOrEqual(70),
-							Critical: monitoring.Alert().GreaterOrEqual(90),
+							Warning:  monitoring.Alert().GreaterOrEqual(60),
+							Critical: monitoring.Alert().GreaterOrEqual(80),
 							Owner:    monitoring.ObservableOwnerSearchCore,
 
 							Interpretation: `
@@ -682,7 +682,7 @@ func Zoekt() *monitoring.Dashboard {
 								    - Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
 								means that each _individual_ replica will have fewer shards. This, in turn, decreases the
 								amount of memory map areas that a _single_ replica can create (in order to load the shards into memory).
-								    - Increase the virtual memory subsystem's 'max_map_count' parameter which defines the upper limit of memory areas
+								    - Increase the virtual memory subsystem's "max_map_count" parameter which defines the upper limit of memory areas
 								a process can use. The exact instructions for tuning this parameter can differ depending on your environment.
 								See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
 							`,

@@ -30,7 +30,7 @@ func TestDequeue(t *testing.T) {
 
 	store := workerstoremocks.NewMockStore[testRecord]()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42, Payload: "secret"}, true, nil)
-	recordTransformer := func(ctx context.Context, tr testRecord, _ ResourceMetadata) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, _ string, tr testRecord, _ ResourceMetadata) (apiclient.Job, error) {
 		if tr.Payload != "secret" {
 			t.Errorf("unexpected payload. want=%q have=%q", "secret", tr.Payload)
 		}
@@ -76,7 +76,7 @@ func TestDequeueNoRecord(t *testing.T) {
 func TestAddExecutionLogEntry(t *testing.T) {
 	store := workerstoremocks.NewMockStore[testRecord]()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
-	recordTransformer := func(ctx context.Context, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, _ string, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
 	fakeEntryID := 99
@@ -138,7 +138,7 @@ func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
 func TestUpdateExecutionLogEntry(t *testing.T) {
 	store := workerstoremocks.NewMockStore[testRecord]()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
-	recordTransformer := func(ctx context.Context, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, _ string, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
@@ -199,7 +199,7 @@ func TestMarkComplete(t *testing.T) {
 	store := workerstoremocks.NewMockStore[testRecord]()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	store.MarkCompleteFunc.SetDefaultReturn(true, nil)
-	recordTransformer := func(ctx context.Context, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, _ string, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
@@ -258,7 +258,7 @@ func TestMarkErrored(t *testing.T) {
 	store := workerstoremocks.NewMockStore[testRecord]()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	store.MarkErroredFunc.SetDefaultReturn(true, nil)
-	recordTransformer := func(ctx context.Context, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, _ string, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
@@ -320,7 +320,7 @@ func TestMarkFailed(t *testing.T) {
 	store := workerstoremocks.NewMockStore[testRecord]()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
 	store.MarkFailedFunc.SetDefaultReturn(true, nil)
-	recordTransformer := func(ctx context.Context, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, _ string, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: 42}, nil
 	}
 
@@ -380,7 +380,7 @@ func TestMarkFailedStoreError(t *testing.T) {
 
 func TestHeartbeat(t *testing.T) {
 	s := workerstoremocks.NewMockStore[testRecord]()
-	recordTransformer := func(ctx context.Context, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, _ string, record testRecord, _ ResourceMetadata) (apiclient.Job, error) {
 		return apiclient.Job{ID: record.RecordID()}, nil
 	}
 	testKnownID := 10

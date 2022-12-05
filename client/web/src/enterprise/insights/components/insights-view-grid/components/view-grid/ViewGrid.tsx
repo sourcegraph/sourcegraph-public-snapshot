@@ -2,6 +2,7 @@ import React, {
     createContext,
     FC,
     forwardRef,
+    HTMLAttributes,
     PropsWithChildren,
     ReactElement,
     useCallback,
@@ -206,13 +207,13 @@ const KEY_NAVIGATION_DIRECTIONS: Partial<Record<Key, Direction>> = {
     [Key.ArrowLeft]: 'left',
 }
 
-interface ViewGridItemProps {
+interface ViewGridItemProps extends HTMLAttributes<HTMLElement> {
     id: string
     children: React.ReactElement
 }
 
 export const ViewGridItem = forwardRef<HTMLElement, ViewGridItemProps>((props, ref) => {
-    const { children, id, ...attributes } = props
+    const { children, id, className, ...attributes } = props
 
     const { gridElements, activeLayout } = useContext(GridViewContext)
     const mergedRef = useMergeRefs<HTMLElement>([ref, (children as any).ref])
@@ -242,7 +243,13 @@ export const ViewGridItem = forwardRef<HTMLElement, ViewGridItemProps>((props, r
             const nextLayoutElement = nextLayout ? gridElements.get(nextLayout.i) : null
 
             if (nextLayoutElement) {
-                nextLayoutElement.focus()
+                // Schedule focus and scroll call into the next rendering frame since
+                // in order to ensure that Safari focus and scrollIntoView will work
+                // as expected
+                requestAnimationFrame(() => {
+                    nextLayoutElement.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+                    nextLayoutElement.focus()
+                })
             }
         },
         [activeLayout, gridElements, id]
@@ -252,6 +259,7 @@ export const ViewGridItem = forwardRef<HTMLElement, ViewGridItemProps>((props, r
         return React.cloneElement(children as ReactElement, {
             ...attributes,
             ref: mergedRef,
+            className: classNames(className, styles.item),
             onKeyDown: handleKeydown,
         })
     }

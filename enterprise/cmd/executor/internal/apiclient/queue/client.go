@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -81,6 +82,7 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Jo
 	defer endObservation(1, observation.Args{})
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/dequeue", queueName), executor.DequeueRequest{
+		Version:      version.Version(),
 		ExecutorName: c.options.ExecutorName,
 		NumCPUs:      c.options.ResourceOptions.NumCPUs,
 		Memory:       c.options.ResourceOptions.Memory,

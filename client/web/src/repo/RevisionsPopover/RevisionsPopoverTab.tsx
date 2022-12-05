@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { UseConnectionResult } from '../../components/FilteredConnection/hooks/useConnection'
+import { UseShowMorePaginationResult } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionError,
     ConnectionLoading,
@@ -10,7 +10,7 @@ import {
 
 import { ConnectionPopoverContainer, ConnectionPopoverForm, ConnectionPopoverList } from './components'
 
-interface RevisionsPopoverTabProps extends UseConnectionResult<unknown> {
+interface RevisionsPopoverTabProps extends UseShowMorePaginationResult<unknown> {
     inputValue: string
     onInputChange: (value: string) => void
     query: string

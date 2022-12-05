@@ -2,7 +2,10 @@ import { MutationTuple } from '@apollo/client'
 
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 
-import { useConnection, UseConnectionResult } from '../../../components/FilteredConnection/hooks/useConnection'
+import {
+    useShowMorePagination,
+    UseShowMorePaginationResult,
+} from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ExecutorSecretFields,
     Scalars,
@@ -116,10 +119,10 @@ export const USER_EXECUTOR_SECRETS = gql`
 export const userExecutorSecretsConnectionFactory = (
     user: Scalars['ID'],
     scope: ExecutorSecretScope
-): UseConnectionResult<ExecutorSecretFields> =>
+): UseShowMorePaginationResult<ExecutorSecretFields> =>
     // Scope has to be injected dynamically.
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useConnection<UserExecutorSecretsResult, UserExecutorSecretsVariables, ExecutorSecretFields>({
+    useShowMorePagination<UserExecutorSecretsResult, UserExecutorSecretsVariables, ExecutorSecretFields>({
         query: USER_EXECUTOR_SECRETS,
         variables: {
             user,
@@ -162,10 +165,10 @@ export const ORG_EXECUTOR_SECRETS = gql`
 export const orgExecutorSecretsConnectionFactory = (
     org: Scalars['ID'],
     scope: ExecutorSecretScope
-): UseConnectionResult<ExecutorSecretFields> =>
+): UseShowMorePaginationResult<ExecutorSecretFields> =>
     // Scope has to be injected dynamically.
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useConnection<OrgExecutorSecretsResult, OrgExecutorSecretsVariables, ExecutorSecretFields>({
+    useShowMorePagination<OrgExecutorSecretsResult, OrgExecutorSecretsVariables, ExecutorSecretFields>({
         query: ORG_EXECUTOR_SECRETS,
         variables: {
             org,
@@ -202,10 +205,10 @@ export const GLOBAL_EXECUTOR_SECRETS = gql`
 
 export const globalExecutorSecretsConnectionFactory = (
     scope: ExecutorSecretScope
-): UseConnectionResult<ExecutorSecretFields> =>
+): UseShowMorePaginationResult<ExecutorSecretFields> =>
     // Scope has to be injected dynamically.
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useConnection<GlobalExecutorSecretsResult, GlobalExecutorSecretsVariables, ExecutorSecretFields>({
+    useShowMorePagination<GlobalExecutorSecretsResult, GlobalExecutorSecretsVariables, ExecutorSecretFields>({
         query: GLOBAL_EXECUTOR_SECRETS,
         variables: {
             after: null,
@@ -261,8 +264,12 @@ export const EXECUTOR_SECRET_ACCESS_LOGS = gql`
 
 export const useExecutorSecretAccessLogsConnection = (
     secret: Scalars['ID']
-): UseConnectionResult<ExecutorSecretAccessLogFields> =>
-    useConnection<ExecutorSecretAccessLogsResult, ExecutorSecretAccessLogsVariables, ExecutorSecretAccessLogFields>({
+): UseShowMorePaginationResult<ExecutorSecretAccessLogFields> =>
+    useShowMorePagination<
+        ExecutorSecretAccessLogsResult,
+        ExecutorSecretAccessLogsVariables,
+        ExecutorSecretAccessLogFields
+    >({
         query: EXECUTOR_SECRET_ACCESS_LOGS,
         variables: {
             secret,

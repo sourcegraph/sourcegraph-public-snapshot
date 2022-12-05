@@ -43,7 +43,7 @@ func prepareScripts(
 		}
 		// Either write raw content that has already been provided or retrieve it from the store.
 		workspaceFilesByPath[path] = workspaceFile{
-			content:    []byte(machineFile.Content),
+			content:    machineFile.Content,
 			bucket:     machineFile.Bucket,
 			key:        machineFile.Key,
 			modifiedAt: machineFile.ModifiedAt,

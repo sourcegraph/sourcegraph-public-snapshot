@@ -2737,7 +2737,8 @@ CREATE TABLE lsif_packages (
     scheme text NOT NULL,
     name text NOT NULL,
     version text,
-    dump_id integer NOT NULL
+    dump_id integer NOT NULL,
+    manager text DEFAULT ''::text NOT NULL
 );
 
 COMMENT ON TABLE lsif_packages IS 'Associates an upload with the set of packages they provide within a given packages management scheme.';
@@ -2749,6 +2750,8 @@ COMMENT ON COLUMN lsif_packages.name IS 'The package name.';
 COMMENT ON COLUMN lsif_packages.version IS 'The package version.';
 
 COMMENT ON COLUMN lsif_packages.dump_id IS 'The identifier of the upload that provides the package.';
+
+COMMENT ON COLUMN lsif_packages.manager IS 'The package manager name.';
 
 CREATE SEQUENCE lsif_packages_id_seq
     START WITH 1
@@ -2764,7 +2767,8 @@ CREATE TABLE lsif_references (
     scheme text NOT NULL,
     name text NOT NULL,
     version text,
-    dump_id integer NOT NULL
+    dump_id integer NOT NULL,
+    manager text DEFAULT ''::text NOT NULL
 );
 
 COMMENT ON TABLE lsif_references IS 'Associates an upload with the set of packages they require within a given packages management scheme.';
@@ -2776,6 +2780,8 @@ COMMENT ON COLUMN lsif_references.name IS 'The package name.';
 COMMENT ON COLUMN lsif_references.version IS 'The package version.';
 
 COMMENT ON COLUMN lsif_references.dump_id IS 'The identifier of the upload that references the package.';
+
+COMMENT ON COLUMN lsif_references.manager IS 'The package manager name.';
 
 CREATE SEQUENCE lsif_references_id_seq
     START WITH 1
@@ -3693,7 +3699,8 @@ CREATE TABLE webhooks (
     encryption_key_id text,
     uuid uuid DEFAULT gen_random_uuid() NOT NULL,
     created_by_user_id integer,
-    updated_by_user_id integer
+    updated_by_user_id integer,
+    name text NOT NULL
 );
 
 COMMENT ON TABLE webhooks IS 'Webhooks registered in Sourcegraph instance.';
@@ -3707,6 +3714,8 @@ COMMENT ON COLUMN webhooks.secret IS 'Secret used to decrypt webhook payload (if
 COMMENT ON COLUMN webhooks.created_by_user_id IS 'ID of a user, who created the webhook. If NULL, then the user does not exist (never existed or was deleted).';
 
 COMMENT ON COLUMN webhooks.updated_by_user_id IS 'ID of a user, who updated the webhook. If NULL, then the user does not exist (never existed or was deleted).';
+
+COMMENT ON COLUMN webhooks.name IS 'Descriptive name of a webhook.';
 
 CREATE SEQUENCE webhooks_id_seq
     AS integer
@@ -4283,6 +4292,8 @@ CREATE INDEX batch_spec_workspaces_id_batch_spec_id ON batch_spec_workspaces USI
 
 CREATE INDEX batch_specs_rand_id ON batch_specs USING btree (rand_id);
 
+CREATE UNIQUE INDEX batch_specs_unique_rand_id ON batch_specs USING btree (rand_id);
+
 CREATE INDEX changeset_jobs_bulk_group_idx ON changeset_jobs USING btree (bulk_group);
 
 CREATE INDEX changeset_jobs_state_idx ON changeset_jobs USING btree (state);
@@ -4298,6 +4309,8 @@ CREATE INDEX changeset_specs_head_ref ON changeset_specs USING btree (head_ref);
 CREATE INDEX changeset_specs_rand_id ON changeset_specs USING btree (rand_id);
 
 CREATE INDEX changeset_specs_title ON changeset_specs USING btree (title);
+
+CREATE UNIQUE INDEX changeset_specs_unique_rand_id ON changeset_specs USING btree (rand_id);
 
 CREATE INDEX changesets_batch_change_ids ON changesets USING gin (batch_change_ids);
 

@@ -13,7 +13,7 @@ import (
 )
 
 func QueueOptions(db database.DB, accessToken func() string, observationContext *observation.Context) handler.QueueOptions[types.Index] {
-	recordTransformer := func(ctx context.Context, record types.Index, resourceMetadata handler.ResourceMetadata) (apiclient.Job, error) {
+	recordTransformer := func(ctx context.Context, _ string, record types.Index, resourceMetadata handler.ResourceMetadata) (apiclient.Job, error) {
 		return transformRecord(record, resourceMetadata, accessToken())
 	}
 

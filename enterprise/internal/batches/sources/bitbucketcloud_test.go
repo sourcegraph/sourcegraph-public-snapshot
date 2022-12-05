@@ -593,7 +593,7 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 			want := errors.New("error")
 			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
 				assert.Equal(t, "fork", namespace)
-				assert.Equal(t, "repo", slug)
+				assert.Equal(t, "upstream-repo", slug)
 				return nil, want
 			})
 
@@ -608,7 +608,7 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 
 			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
 				assert.Equal(t, "fork", namespace)
-				assert.Equal(t, "repo", slug)
+				assert.Equal(t, "upstream-repo", slug)
 				return fork, nil
 			})
 
@@ -625,7 +625,7 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 
 			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
 				assert.Equal(t, "fork", namespace)
-				assert.Equal(t, "repo", slug)
+				assert.Equal(t, "upstream-repo", slug)
 				return nil, &notFoundError{}
 			})
 
@@ -647,7 +647,7 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 
 			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
 				assert.Equal(t, "fork", namespace)
-				assert.Equal(t, "repo", slug)
+				assert.Equal(t, "upstream-repo", slug)
 				return nil, &notFoundError{}
 			})
 
@@ -691,7 +691,7 @@ func TestBitbucketCloudSource_Fork(t *testing.T) {
 
 			client.RepoFunc.SetDefaultHook(func(ctx context.Context, namespace, slug string) (*bitbucketcloud.Repo, error) {
 				assert.Equal(t, "user", namespace)
-				assert.Equal(t, "repo", slug)
+				assert.Equal(t, "upstream-repo", slug)
 				return fork, nil
 			})
 
