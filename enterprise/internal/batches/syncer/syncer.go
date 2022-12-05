@@ -409,7 +409,7 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 			s.metrics.syncs.WithLabelValues(labelValues...).Inc()
 
 			if err != nil {
-				s.logger.Error("Syncing changeset", log.Int64("changesetID", next.changesetID), log.Error(err))
+				s.logger.Warn("Syncing changeset", log.Int64("changesetID", next.changesetID), log.Error(err))
 				// We'll continue and remove it as it'll get retried on next schedule
 			}
 

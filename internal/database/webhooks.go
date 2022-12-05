@@ -265,7 +265,7 @@ func (s *webhookStore) Update(ctx context.Context, actorUID int32, newWebhook *t
 	}
 
 	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
-		newWebhook.Name, newWebhook.CodeHostURN.String(), encryptedSecret, keyID, dbutil.NullInt32Column(actorUID), newWebhook.ID,
+		newWebhook.Name, newWebhook.CodeHostURN.String(), newWebhook.CodeHostKind, encryptedSecret, keyID, dbutil.NullInt32Column(actorUID), newWebhook.ID,
 		sqlf.Join(webhookColumns, ", "))
 
 	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
@@ -284,6 +284,7 @@ UPDATE webhooks
 SET
     name = %s,
 	code_host_urn = %s,
+    code_host_kind = %s,
 	secret = %s,
 	encryption_key_id = %s,
 	updated_at = NOW(),

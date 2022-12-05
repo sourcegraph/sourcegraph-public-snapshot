@@ -110,6 +110,7 @@ var (
 	_ sources.ChangesetSource           = &FakeChangesetSource{}
 	_ sources.ArchivableChangesetSource = &FakeChangesetSource{}
 	_ sources.DraftChangesetSource      = &FakeChangesetSource{}
+	_ repos.Source                      = &FakeChangesetSource{}
 )
 
 func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *sources.Changeset) (bool, error) {
@@ -218,6 +219,11 @@ func (s *FakeChangesetSource) ListRepos(ctx context.Context, results chan repos.
 	s.ListReposCalled = true
 
 	results <- repos.SourceResult{Source: s, Err: fakeNotImplemented}
+}
+
+// CheckConnection fake impmentation is always available.
+func (s *FakeChangesetSource) CheckConnection(context.Context) error {
+	return nil
 }
 
 func (s *FakeChangesetSource) ExternalServices() types.ExternalServices {

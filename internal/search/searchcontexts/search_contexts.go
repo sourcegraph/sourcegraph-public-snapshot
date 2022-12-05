@@ -390,14 +390,6 @@ func GetAutoDefinedSearchContexts(ctx context.Context, db database.DB) ([]*types
 	}
 	searchContexts = append(searchContexts, GetUserSearchContext(a.UID, user.Username))
 
-	organizations, err := db.Orgs().GetOrgsWithRepositoriesByUserID(ctx, a.UID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, org := range organizations {
-		searchContexts = append(searchContexts, GetOrganizationSearchContext(org.ID, org.Name, *org.DisplayName))
-	}
 	return searchContexts, nil
 }
 

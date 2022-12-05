@@ -71,6 +71,7 @@ type CodeIntelRepositorySummaryResolver interface {
 	RecentIndexes() []LSIFIndexesWithRepositoryNamespaceResolver
 	LastUploadRetentionScan() *gqlutil.DateTime
 	LastIndexScan() *gqlutil.DateTime
+	AvailableIndexers() []InferredAvailableIndexersResolver
 }
 
 type LSIFIndexConnectionResolver interface {
@@ -655,4 +656,36 @@ type PreviewRepositoryFilterArgs struct {
 	graphqlutil.ConnectionArgs
 	Patterns []string
 	After    *string
+}
+
+type InferredAvailableIndexersResolver interface {
+	Roots() []string
+	Index() string
+	URL() string
+}
+
+type inferredAvailableIndexersResolver struct {
+	roots []string
+	index string
+	url   string
+}
+
+func NewInferredAvailableIndexersResolver(index string, roots []string, url string) InferredAvailableIndexersResolver {
+	return &inferredAvailableIndexersResolver{
+		index: index,
+		roots: roots,
+		url:   url,
+	}
+}
+
+func (r *inferredAvailableIndexersResolver) Roots() []string {
+	return r.roots
+}
+
+func (r *inferredAvailableIndexersResolver) Index() string {
+	return r.index
+}
+
+func (r *inferredAvailableIndexersResolver) URL() string {
+	return r.url
 }

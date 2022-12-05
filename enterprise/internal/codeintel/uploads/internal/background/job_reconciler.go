@@ -91,13 +91,13 @@ func (j reconcilerJob) handleReconcileFromCodeintelDB(ctx context.Context, batch
 
 	j.operations.numReconcileScansFromCodeIntelDB.Add(float64(len(ids)))
 
-	dumps, err := j.store.GetDumpsByIDs(ctx, ids)
+	uploads, err := j.store.GetUploadsByIDsAllowDeleted(ctx, ids...)
 	if err != nil {
 		return err
 	}
 
 	found := map[int]struct{}{}
-	for _, dump := range dumps {
+	for _, dump := range uploads {
 		found[dump.ID] = struct{}{}
 	}
 

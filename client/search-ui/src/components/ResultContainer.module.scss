@@ -12,7 +12,7 @@
 }
 
 .header {
-    padding: 0.5rem 0.5rem 0.5rem 0;
+    padding: 0.5rem 0.5rem 0.25rem 0;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -49,8 +49,14 @@
 
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
+    margin-top: 0.25rem;
 
     &:hover {
         border-color: var(--border-color-2);
     }
+}
+
+.header:focus-within + .highlight-result.result,
+.highlight-result.result:focus-within {
+    box-shadow: 0 0 0 2px var(--border-color-2);
 }

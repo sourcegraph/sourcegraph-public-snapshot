@@ -2,9 +2,9 @@ DROP TRIGGER IF EXISTS codeintel_scip_symbols_schema_versions_insert ON codeinte
 DROP FUNCTION IF EXISTS update_codeintel_scip_symbols_schema_versions_insert();
 DROP TABLE IF EXISTS codeintel_scip_symbols_schema_versions;
 
-DROP TRIGGER IF EXISTS update_codeintel_scip_index_documents_schema_versions_insert ON codeintel_scip_index_documents_schema_versions;
-DROP FUNCTION IF EXISTS update_codeintel_scip_index_documents_schema_versions_insert();
-DROP TABLE IF EXISTS codeintel_scip_index_documents_schema_versions;
+DROP TRIGGER IF EXISTS codeintel_scip_document_lookup_schema_versions_insert ON codeintel_scip_document_lookup_schema_versions;
+DROP FUNCTION IF EXISTS update_codeintel_scip_document_lookup_schema_versions_insert();
+DROP TABLE IF EXISTS codeintel_scip_document_lookup_schema_versions;
 
 DROP TABLE IF EXISTS codeintel_scip_symbols;
 DROP TABLE IF EXISTS codeintel_scip_document_lookup;

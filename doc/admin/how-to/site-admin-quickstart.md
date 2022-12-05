@@ -37,6 +37,9 @@ At the heart of managing your Sourcegraph instance is Site configuration. Site c
 
 To access site config, go to **User menu > Site admin > Site configuration**.
 
+### Admin users configuration 
+If you need to add additional site admins, you can do so on the `/site-admin/users` page, under the actions for an individual user account. Any admin can revoke a user's admin privileges later using the same actions menu. 
+
 ### Connecting to code hosts
 Sourcegraph supports connections to and repository syncing from any Git code host. Once connected, Sourcegraph will clone and index your repos so that users can search and navigate across them. To get started, go to **User menu > Site Admin > Manage code hosts > Add code host**.
 

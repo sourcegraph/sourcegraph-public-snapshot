@@ -145,10 +145,7 @@ function renderFuzzyResults(
                 // decision to place the number here, as long as the number is
                 // recorded as a dependency to `renderFuzzyResults` then it
                 // should work OK.
-                <Text
-                    data-fsm-generation={props.fsmGeneration}
-                    className={classNames(styles.emptyResults, 'text-muted')}
-                >
+                <Text data-fsm-generation={props.fsmGeneration} className="p-3 text-center text-muted">
                     No matches
                 </Text>
             ),
@@ -157,14 +154,18 @@ function renderFuzzyResults(
 
     const linksToRender = props.result.links.slice(0, props.resultCount)
     const element = (
-        <ul id={FUZZY_MODAL_RESULTS} role="listbox" aria-label="Fuzzy finder results">
+        <ul id={FUZZY_MODAL_RESULTS} role="listbox" aria-label="Fuzzy finder results" className="py-1 px-0 mb-0">
             {linksToRender.map((file, fileIndex) => (
                 <li
                     id={fuzzyResultId(fileIndex)}
                     key={file.url || file.text}
                     role="option"
                     aria-selected={fileIndex === focusIndex}
-                    className={classNames(fileIndex === focusIndex && styles.focused)}
+                    className={classNames(
+                        'd-flex align-items-center py-1 px-3 rounded-0',
+                        styles.resultItem,
+                        fileIndex === focusIndex && styles.focused
+                    )}
                 >
                     <HighlightedLink {...file} onClick={mergedHandler(file.onClick, onClickItem)} />
                 </li>
@@ -342,8 +343,17 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
             onDismiss={() => onClose()}
             aria-label={tabs.underlying[activeTab].title}
         >
-            <WrapperComponent className={styles.content} {...wrapperComponentProps}>
-                <div className={styles.header} data-testid="fuzzy-modal-header">
+            <WrapperComponent
+                className="d-flex align-items-stretch flex-column h-100 bg-transparent"
+                {...wrapperComponentProps}
+            >
+                <div
+                    className={classNames(
+                        'd-flex justify-space-between align-items-center pt-2 pb-0 px-3',
+                        styles.header
+                    )}
+                    data-testid="fuzzy-modal-header"
+                >
                     {showTabs ? (
                         <TabList className={styles.tabList}>
                             {tabs.entries().map(([key, tab]) => (
@@ -370,7 +380,7 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                         <Icon aria-hidden={true} svgPath={mdiClose} />
                     </Button>
                 </div>
-                <div className={styles.divider} />
+                <hr className="mt-0 mb-2 w-100" />
                 <Input
                     id="fuzzy-modal-input"
                     autoComplete="off"
@@ -405,22 +415,20 @@ export const FuzzyModal: React.FunctionComponent<React.PropsWithChildren<FuzzyMo
                         </span>
                     )}
                 </div>
-                <div className={classNames(styles.divider, 'mb-0')} />
+                <hr className="my-0 w-100" />
                 {showTabs ? (
                     <TabPanels className="flex-1 overflow-auto">
                         {tabs.entries().map(([key]) => (
-                            <TabPanel key={key} className={styles.results}>
-                                {activeTab === key && queryResult.jsxElement}
-                            </TabPanel>
+                            <TabPanel key={key}>{activeTab === key && queryResult.jsxElement}</TabPanel>
                         ))}
                     </TabPanels>
                 ) : (
-                    <div className={classNames(styles.results, 'overflow-auto')}>{queryResult.jsxElement}</div>
+                    <div className="flex-1 overflow-auto">{queryResult.jsxElement}</div>
                 )}
-                <div className={styles.divider} />
-                <div className={styles.footer}>
+                <hr className="my-0 w-100" />
+                <div className="d-flex align-items-center w-100 p-3">
                     <SearchQueryLink {...props} />
-                    <span className="ml-auto">
+                    <span className="ml-auto mr-2">
                         <ArrowKeyExplanation />
                     </span>
                 </div>

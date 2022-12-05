@@ -14,14 +14,14 @@ type ExpirationMetrics struct {
 	NumCommitsScanned      prometheus.Counter
 }
 
-var expirationMetrics = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*ExpirationMetrics, error) {
+var expirationMetrics = memo.NewMemoizedConstructorWithArg(func(r prometheus.Registerer) (*ExpirationMetrics, error) {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
 			Help: help,
 		})
 
-		observationContext.Registerer.MustRegister(counter)
+		r.MustRegister(counter)
 		return counter
 	}
 
@@ -51,6 +51,6 @@ var expirationMetrics = memo.NewMemoizedConstructorWithArg(func(observationConte
 })
 
 func NewExpirationMetrics(observationContext *observation.Context) *ExpirationMetrics {
-	metrics, _ := expirationMetrics.Init(observationContext)
+	metrics, _ := expirationMetrics.Init(observationContext.Registerer)
 	return metrics
 }

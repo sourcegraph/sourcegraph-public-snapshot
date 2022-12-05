@@ -199,6 +199,7 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 func newPackage(pkg uploadsshared.Package) (*precise.Package, error) {
 	p := precise.Package{
 		Scheme:  pkg.Scheme,
+		Manager: pkg.Manager,
 		Name:    pkg.Name,
 		Version: pkg.Version,
 	}

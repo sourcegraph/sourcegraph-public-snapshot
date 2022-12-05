@@ -63,8 +63,8 @@ export const FUZZY_FILES_QUERY = gql`
 
 function fileIcon(filename: string): JSX.Element {
     return (
-        <span className="fuzzy-repos-result-icon">
-            <Icon aria-label={filename} svgPath={mdiFileDocumentOutline} className="fuzzy-repos-result-icon" />
+        <span className="mr-1">
+            <Icon aria-label={filename} svgPath={mdiFileDocumentOutline} className="mr-1" />
         </span>
     )
 }

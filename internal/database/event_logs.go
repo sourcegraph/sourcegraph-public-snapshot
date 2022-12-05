@@ -200,6 +200,8 @@ func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
 	return l.BulkInsert(ctx, []*Event{e})
 }
 
+const EventLogsSourcegraphOperatorKey = "sourcegraph_operator"
+
 func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	coalesce := func(v json.RawMessage) json.RawMessage {
 		if v != nil {
@@ -231,7 +233,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			result, err := jsonc.Edit(
 				string(publicArgument),
 				true,
-				"sourcegraph_operator",
+				EventLogsSourcegraphOperatorKey,
 			)
 			publicArgument = json.RawMessage(result)
 			if err != nil {
@@ -475,7 +477,13 @@ type CommonUsageOptions struct {
 	// are mostly actions taken by signed-out users.
 	ExcludeNonActiveUsers bool
 	// Exclude Sourcegraph (employee) admins.
+	//
+	// Deprecated: Use ExcludeSourcegraphOperators instead. If you have to use this,
+	// then set both fields with the same value at the same time.
 	ExcludeSourcegraphAdmins bool
+	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
+	// user accounts.
+	ExcludeSourcegraphOperators bool
 }
 
 // CountUniqueUsersOptions provides options for counting unique users.
@@ -574,6 +582,8 @@ func buildCommonUsageConds(opt *CommonUsageOptions, conds []*sqlf.Query) []*sqlf
 		// This method of filtering is imperfect and may still incur false positives, but
 		// the two together should help prevent that in the majority of cases, and we
 		// acknowledge this risk as we would prefer to undercount rather than overcount.
+		//
+		// TODO(jchen): This hack will be removed as part of https://github.com/sourcegraph/customer/issues/1531
 		if opt.ExcludeSourcegraphAdmins {
 			conds = append(conds, sqlf.Sprintf(`
 -- No matching user exists
@@ -593,6 +603,10 @@ OR NOT(
 			AND user_emails.email ILIKE '%%@sourcegraph.com')
 )
 `))
+		}
+
+		if opt.ExcludeSourcegraphOperators {
+			conds = append(conds, sqlf.Sprintf(fmt.Sprintf(`NOT event_logs.public_argument @> '{"%s": true}'`, EventLogsSourcegraphOperatorKey)))
 		}
 	}
 	return conds
@@ -848,9 +862,10 @@ type SiteUsageOptions struct {
 func (l *eventLogStore) SiteUsageCurrentPeriods(ctx context.Context) (types.SiteUsageSummary, error) {
 	return l.siteUsageCurrentPeriods(ctx, time.Now().UTC(), &SiteUsageOptions{
 		CommonUsageOptions{
-			ExcludeSystemUsers:       true,
-			ExcludeNonActiveUsers:    true,
-			ExcludeSourcegraphAdmins: true,
+			ExcludeSystemUsers:          true,
+			ExcludeNonActiveUsers:       true,
+			ExcludeSourcegraphAdmins:    true,
+			ExcludeSourcegraphOperators: true,
 		},
 	})
 }

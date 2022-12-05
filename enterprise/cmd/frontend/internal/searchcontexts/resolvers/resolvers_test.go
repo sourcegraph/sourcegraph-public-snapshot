@@ -33,7 +33,6 @@ func TestAutoDefinedSearchContexts(t *testing.T) {
 		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username}, nil)
 
 		orgs := database.NewMockOrgStore()
-		orgs.GetOrgsWithRepositoriesByUserIDFunc.SetDefaultReturn([]*types.Org{}, nil)
 
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
@@ -61,51 +60,7 @@ func TestAutoDefinedSearchContexts(t *testing.T) {
 			}
 		}
 
-		mockrequire.Called(t, orgs.GetOrgsWithRepositoriesByUserIDFunc)
 		mockrequire.Called(t, users.GetByIDFunc)
-	})
-
-	t.Run("Auto defined search contexts for user where 1 organization has repository connected", func(t *testing.T) {
-		key := int32(1)
-		username := "alice"
-		orgID := int32(42)
-		orgName := "acme"
-		orgDisplayName := "ACME Company"
-		ctx := context.Background()
-		ctx = actor.WithActor(ctx, &actor.Actor{UID: key})
-
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
-
-		users := database.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username}, nil)
-		orgs := database.NewMockOrgStore()
-		orgs.GetOrgsWithRepositoriesByUserIDFunc.SetDefaultReturn([]*types.Org{{
-			ID:          orgID,
-			Name:        orgName,
-			DisplayName: &orgDisplayName,
-		}}, nil)
-
-		db := database.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-		db.OrgsFunc.SetDefaultReturn(orgs)
-
-		searchContexts, err := (&Resolver{db: db}).AutoDefinedSearchContexts(ctx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		want := []graphqlbackend.SearchContextResolver{
-			&searchContextResolver{sc: searchcontexts.GetGlobalSearchContext(), db: db},
-			&searchContextResolver{sc: searchcontexts.GetUserSearchContext(key, username), db: db},
-			&searchContextResolver{sc: searchcontexts.GetOrganizationSearchContext(orgID, orgName, orgDisplayName), db: db},
-		}
-		if !reflect.DeepEqual(searchContexts, want) {
-			t.Fatalf("got %+v, want %+v", searchContexts, want)
-		}
-
-		mockrequire.Called(t, users.GetByIDFunc)
-		mockrequire.Called(t, orgs.GetOrgsWithRepositoriesByUserIDFunc)
 	})
 }
 
