@@ -383,7 +383,6 @@ func testBitbucketCloudWebhook(db *sql.DB) func(*testing.T) {
 						assertChangesetEventForChangeset(t, ctx, store, changeset, tc.want)
 					})
 				}
-
 			})
 		})
 	}

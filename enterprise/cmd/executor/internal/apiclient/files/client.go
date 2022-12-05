@@ -22,7 +22,7 @@ type Client struct {
 }
 
 // New creates a new Client based on the provided Options.
-func New(options apiclient.BaseClientOptions, observationContext *observation.Context) (*Client, error) {
+func New(observationCtx *observation.Context, options apiclient.BaseClientOptions) (*Client, error) {
 	client, err := apiclient.NewBaseClient(options)
 	if err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func New(options apiclient.BaseClientOptions, observationContext *observation.Co
 	return &Client{
 		client:     client,
 		logger:     log.Scoped("executor-api-files-client", "The API client adapter for executors to interact with the Files over HTTP"),
-		operations: newOperations(observationContext),
+		operations: newOperations(observationCtx),
 	}, nil
 }
 

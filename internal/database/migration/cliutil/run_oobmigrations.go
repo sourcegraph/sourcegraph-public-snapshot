@@ -246,5 +246,5 @@ func (r basestoreExtractor) Store(ctx context.Context, schemaName string) (*base
 		return nil, err
 	}
 
-	return basestore.NewWithHandle(basestore.NewHandleWithDB(shareableStore, sql.TxOptions{})), nil
+	return basestore.NewWithHandle(basestore.NewHandleWithDB(log.NoOp(), shareableStore, sql.TxOptions{})), nil
 }

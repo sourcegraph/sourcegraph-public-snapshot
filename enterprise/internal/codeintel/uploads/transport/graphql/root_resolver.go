@@ -19,12 +19,12 @@ type rootResolver struct {
 	operations   *operations
 }
 
-func NewRootResolver(uploadSvc UploadService, autoindexSvc AutoIndexingService, policySvc PolicyService, observationContext *observation.Context) resolverstubs.UploadsServiceResolver {
+func NewRootResolver(observationCtx *observation.Context, uploadSvc UploadService, autoindexSvc AutoIndexingService, policySvc PolicyService) resolverstubs.UploadsServiceResolver {
 	return &rootResolver{
 		uploadSvc:    uploadSvc,
 		autoindexSvc: autoindexSvc,
 		policySvc:    policySvc,
-		operations:   newOperations(observationContext),
+		operations:   newOperations(observationCtx),
 	}
 }
 

@@ -30,13 +30,13 @@ type Service struct {
 }
 
 func newService(
+	observationCtx *observation.Context,
 	store store.Store,
 	uploadSvc *uploads.Service,
 	gitserverClient GitserverClient,
 	symbolsClient SymbolsClient,
 	getConf conftypes.SiteConfigQuerier,
 	resultsBucket *storage.BucketHandle,
-	observationContext *observation.Context,
 ) *Service {
 	return &Service{
 		store:           store,
@@ -45,8 +45,8 @@ func newService(
 		symbolsClient:   symbolsClient,
 		getConf:         getConf,
 		resultsBucket:   resultsBucket,
-		operations:      newOperations(observationContext),
-		logger:          observationContext.Logger,
+		operations:      newOperations(observationCtx),
+		logger:          observationCtx.Logger,
 	}
 }
 

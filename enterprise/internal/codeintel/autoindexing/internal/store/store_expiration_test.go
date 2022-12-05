@@ -18,7 +18,7 @@ import (
 func TestExpireFailedRecords(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	ctx := context.Background()
 	now := time.Unix(1587396557, 0).UTC()

@@ -13,16 +13,16 @@ type Operations struct {
 	upload *observation.Operation
 }
 
-func NewOperations(observationContext *observation.Context) *Operations {
+func NewOperations(observationCtx *observation.Context) *Operations {
 	m := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"batches_httpapi",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("batches.httpapi.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           m,

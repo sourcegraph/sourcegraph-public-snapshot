@@ -281,7 +281,7 @@ func TestSelectRepositoriesForIndexScanInDifferentTable(t *testing.T) {
 func TestSetRepositoryAsDirty(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	for _, id := range []int{50, 51, 52} {
 		insertRepo(t, db, id, "")
@@ -312,7 +312,7 @@ func TestSetRepositoryAsDirty(t *testing.T) {
 func TestGetRepositoriesMaxStaleAge(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	for _, id := range []int{50, 51, 52} {
 		insertRepo(t, db, id, "")
@@ -346,7 +346,7 @@ func TestGetRepositoriesMaxStaleAge(t *testing.T) {
 func TestHasRepository(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	testCases := []struct {
 		repositoryID int
@@ -378,7 +378,7 @@ func TestHasRepository(t *testing.T) {
 func TestSetRepositoriesForRetentionScan(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
 		types.Upload{ID: 1, RepositoryID: 50, State: "completed"},
@@ -447,7 +447,7 @@ func TestSetRepositoriesForRetentionScan(t *testing.T) {
 func TestSkipsDeletedRepositories(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "should not be dirty")
 	deleteRepo(t, db, 50, time.Now())
@@ -495,6 +495,6 @@ func testStoreWithoutConfigurationPolicies(t *testing.T, db database.DB) Store {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 	return store
 }
