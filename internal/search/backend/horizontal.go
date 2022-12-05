@@ -160,7 +160,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 			}))
 
 			mu.Lock()
-			if canIgnoreError(ctx, err) {
+			if isZoektRolloutError(ctx, err) {
 				rq.Enqueue(endpoint, crashEvent())
 				err = nil
 			}
@@ -244,7 +244,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 				streamer.Send(sr)
 			}))
 
-			if canIgnoreError(ctx, err) {
+			if isZoektRolloutError(ctx, err) {
 				streamer.Send(crashEvent())
 				err = nil
 			}
@@ -569,7 +569,7 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 	for range clients {
 		r := <-results
 		if r.err != nil {
-			if canIgnoreError(ctx, r.err) {
+			if isZoektRolloutError(ctx, r.err) {
 				aggregate.Crashes++
 				continue
 			}
@@ -736,7 +736,7 @@ func (repoEndpoint dedupper) Dedup(endpoint string, fms []zoekt.FileMatch) []zoe
 	return dedup
 }
 
-// canIgnoreError returns true if the error we received from zoekt can be
+// isZoektRolloutError returns true if the error we received from zoekt can be
 // ignored.
 //
 // Note: ctx is passed in so we can log to the trace when we ignore an
@@ -746,7 +746,7 @@ func (repoEndpoint dedupper) Dedup(endpoint string, fms []zoekt.FileMatch) []zoe
 // during rollouts of Zoekt, we may still have endpoints of zoekt which are
 // not available in our endpoint map. In particular, this happens when using
 // Kubernetes and the (default) stateful set watcher.
-func canIgnoreError(ctx context.Context, err error) bool {
+func isZoektRolloutError(ctx context.Context, err error) bool {
 	reason := canIgnoreErrorReason(err)
 	if reason == "" {
 		return false
