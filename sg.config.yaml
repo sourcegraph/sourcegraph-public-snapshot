@@ -405,8 +405,11 @@ commands:
       # Remove containers by the old name, too.
       docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
       docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
-      # Pull syntax-highlighter latest insider image, only during install
-      docker pull -q sourcegraph/syntax-highlighter:insiders
+      # Pull syntax-highlighter latest insider image, only during install, but
+      # skip if OFFLINE=true is set.
+      if [[ "$OFFLINE" != "true" ]]; then
+          docker pull -q sourcegraph/syntax-highlighter:insiders
+      fi
 
   zoekt-indexserver-template: &zoekt_indexserver_template
     cmd: |
