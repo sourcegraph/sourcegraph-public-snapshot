@@ -5,10 +5,10 @@ import classNames from 'classnames'
 
 import { Button, Icon, Input } from '@sourcegraph/wildcard'
 
+import { CopyableText } from '../components/CopyableText'
 import { WebhookFields } from '../graphql-operations'
 
 import styles from './WebhookInformation.module.scss'
-import { CopyableText } from '../components/CopyableText'
 
 export interface WebhookInformationProps {
     webhook: WebhookFields
