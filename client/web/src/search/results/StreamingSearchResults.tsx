@@ -190,7 +190,9 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             if (results.results.length > 0) {
                 telemetryService.log('SearchResultsNonEmpty')
             }
-            addRecentSearch(submittedURLQuery, results.progress.matchCount)
+
+            // setTimeout avoids a "Cannot update a component while rendering a different component" React error
+            setTimeout(() => addRecentSearch(submittedURLQuery, results.progress.matchCount), 0)
         } else if (results?.state === 'error') {
             telemetryService.log('SearchResultsFetchFailed', {
                 code_search: { error_message: asError(results.error).message },
