@@ -486,6 +486,18 @@ type Mutation {
         """
         referrer: String
         """
+        The original referrer for a user
+        """
+        originalReferrer: String
+        """
+        The session referrer for a user
+        """
+        sessionReferrer: String
+        """
+        The sessions first url for a user
+        """
+        sessionFirstURL: String
+        """
         Device session ID to identify the user's session for analytics.
         """
         deviceSessionID: String
@@ -858,6 +870,18 @@ input Event {
     Only captured and stored on Sourcegraph Cloud.
     """
     referrer: String
+    """
+    The original referrer for a user
+    """
+    originalReferrer: String
+    """
+    The session referrer for a user
+    """
+    sessionReferrer: String
+    """
+    The sessions first url for a user
+    """
+    sessionFirstURL: String
     """
     Device session ID to identify the user's session for analytics.
     """
