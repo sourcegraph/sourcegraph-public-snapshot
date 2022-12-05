@@ -40,28 +40,29 @@ func (s *store) UpdatePackageReferences(ctx context.Context, dumpID int, referen
 		tx.Handle(),
 		"t_lsif_references",
 		batch.MaxNumPostgresParameters,
-		[]string{"scheme", "name", "version"},
+		[]string{"scheme", "manager", "name", "version"},
 		loadReferencesChannel(references),
 	); err != nil {
 		return err
 	}
 
 	// Insert the values from the temporary table into the target table. We select a
-	// parameterized idump id here since it is the same for all rows in this operation.
+	// parameterized dump id here since it is the same for all rows in this operation.
 	return tx.Exec(ctx, sqlf.Sprintf(updateReferencesInsertQuery, dumpID))
 }
 
 const updateReferencesTemporaryTableQuery = `
 CREATE TEMPORARY TABLE t_lsif_references (
 	scheme text NOT NULL,
+	manager text NOT NULL,
 	name text NOT NULL,
 	version text NOT NULL
 ) ON COMMIT DROP
 `
 
 const updateReferencesInsertQuery = `
-INSERT INTO lsif_references (dump_id, scheme, name, version)
-SELECT %s, source.scheme, source.name, source.version
+INSERT INTO lsif_references (dump_id, scheme, manager, name, version)
+SELECT %s, source.scheme, source.manager, source.name, source.version
 FROM t_lsif_references source
 `
 
@@ -72,7 +73,7 @@ func loadReferencesChannel(references []precise.PackageReference) <-chan []any {
 		defer close(ch)
 
 		for _, r := range references {
-			ch <- []any{r.Scheme, r.Name, r.Version}
+			ch <- []any{r.Scheme, r.Manager, r.Name, r.Version}
 		}
 	}()
 
@@ -95,8 +96,8 @@ func (s *store) ReferencesForUpload(ctx context.Context, uploadID int) (_ shared
 }
 
 const referencesForUploadQuery = `
-SELECT r.dump_id, r.scheme, r.name, r.version
+SELECT r.dump_id, r.scheme, r.manager, r.name, r.version
 FROM lsif_references r
 WHERE dump_id = %s
-ORDER BY r.scheme, r.name, r.version
+ORDER BY r.scheme, r.manager, r.name, r.version
 `

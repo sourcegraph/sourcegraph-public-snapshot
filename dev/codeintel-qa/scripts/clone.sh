@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 set -eu
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
-DATADIR=$(realpath './testdata')
+cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
+DATADIR=$(realpath './dev/codeintel-qa/testdata')
 REPODIR="${DATADIR}/repos"
 
 NAME="$1"

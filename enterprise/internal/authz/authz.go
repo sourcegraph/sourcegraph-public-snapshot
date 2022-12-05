@@ -58,7 +58,6 @@ func ProvidersFromConfig(
 	}()
 
 	opt := database.ExternalServicesListOptions{
-		ExcludeNamespaceUser: true,
 		Kinds: []string{
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
@@ -190,102 +189,6 @@ func ProvidersFromConfig(
 	}
 
 	return allowAccessByDefault, providers, seriousProblems, warnings, invalidConnections
-}
-
-var MockProviderFromExternalService func(siteConfig schema.SiteConfiguration, svc *types.ExternalService) (authz.Provider, error)
-
-// ProviderFromExternalService returns the parsed authz.Provider derived from the site config
-// and the given external service based on `NewAuthzProviders` constructors provided by each
-// provider type's package.
-//
-// It returns `(nil, nil)` if no authz.Provider can be derived and no error had occurred.
-//
-// This constructor does not and should not directly check connectivity to external services - if
-// desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
-// to connection issues.
-func ProviderFromExternalService(
-	ctx context.Context,
-	externalServicesStore database.ExternalServiceStore,
-	siteConfig schema.SiteConfiguration,
-	svc *types.ExternalService,
-	db database.DB,
-) (authz.Provider, error) {
-	if MockProviderFromExternalService != nil {
-		return MockProviderFromExternalService(siteConfig, svc)
-	}
-
-	cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
-	if err != nil {
-		return nil, errors.Wrap(err, "parse config")
-	}
-
-	var providers []authz.Provider
-	var problems []string
-
-	enableGithubInternalRepoVisibility := false
-	ex := siteConfig.ExperimentalFeatures
-	if ex != nil {
-		enableGithubInternalRepoVisibility = ex.EnableGithubInternalRepoVisibility
-	}
-
-	switch c := cfg.(type) {
-	case *schema.GitHubConnection:
-		providers, problems, _, _ = github.NewAuthzProviders(
-			db,
-			[]*github.ExternalConnection{
-				{
-					ExternalService: svc,
-					GitHubConnection: &types.GitHubConnection{
-						URN:              svc.URN(),
-						GitHubConnection: c,
-					},
-				},
-			},
-			siteConfig.AuthProviders,
-			enableGithubInternalRepoVisibility,
-		)
-	case *schema.GitLabConnection:
-		providers, problems, _, _ = gitlab.NewAuthzProviders(
-			db,
-			siteConfig,
-			[]*types.GitLabConnection{
-				{
-					URN:              svc.URN(),
-					GitLabConnection: c,
-				},
-			},
-		)
-	case *schema.BitbucketServerConnection:
-		providers, problems, _, _ = bitbucketserver.NewAuthzProviders(
-			[]*types.BitbucketServerConnection{
-				{
-					URN:                       svc.URN(),
-					BitbucketServerConnection: c,
-				},
-			},
-		)
-	case *schema.PerforceConnection:
-		providers, problems, _, _ = perforce.NewAuthzProviders(
-			[]*types.PerforceConnection{
-				{
-					URN:                svc.URN(),
-					PerforceConnection: c,
-				},
-			},
-			db,
-		)
-	default:
-		return nil, errors.Errorf("unsupported connection type %T", cfg)
-	}
-
-	if len(problems) > 0 {
-		return nil, errors.New(problems[0])
-	}
-
-	if len(providers) == 0 {
-		return nil, nil
-	}
-	return providers[0], nil
 }
 
 func RefreshInterval() time.Duration {

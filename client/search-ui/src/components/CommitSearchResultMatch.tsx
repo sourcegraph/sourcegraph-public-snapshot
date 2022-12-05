@@ -81,13 +81,8 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
             {item.repoLastFetched && (
                 <LastSyncedIcon className={styles.lastSyncedIcon} lastSyncedTime={item.repoLastFetched} />
             )}
-            {highlightedCommitContent !== undefined ? (
-                <Link
-                    key={item.url}
-                    to={item.url}
-                    className={searchResultStyles.searchResultMatch}
-                    {...openInNewTabProps}
-                >
+            <Link key={item.url} to={item.url} className={searchResultStyles.searchResultMatch} {...openInNewTabProps}>
+                {highlightedCommitContent !== undefined ? (
                     <Code>
                         <Markdown
                             ref={containerElement}
@@ -96,25 +91,25 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
                             dangerousInnerHTML={highlightedCommitContent}
                         />
                     </Code>
-                </Link>
-            ) : (
-                <>
-                    <LoadingSpinner className={styles.loader} />
-                    <table>
-                        <tbody>
-                            {range(numLines).map(index => (
-                                <tr key={`${item.url}#${index}`}>
-                                    {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
-                                    <td className={styles.lineHidden}>
-                                        <Code>{index}</Code>
-                                    </td>
-                                    <td className="code"> </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </>
-            )}
+                ) : (
+                    <>
+                        <LoadingSpinner className={styles.loader} />
+                        <table>
+                            <tbody>
+                                {range(numLines).map(index => (
+                                    <tr key={`${item.url}#${index}`}>
+                                        {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
+                                        <td className={styles.lineHidden}>
+                                            <Code>{index}</Code>
+                                        </td>
+                                        <td className="code"> </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </>
+                )}
+            </Link>
         </div>
     )
 }

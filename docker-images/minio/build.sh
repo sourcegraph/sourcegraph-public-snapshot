@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# TODO(blobstore): remove minio images entirely
 
 set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")"

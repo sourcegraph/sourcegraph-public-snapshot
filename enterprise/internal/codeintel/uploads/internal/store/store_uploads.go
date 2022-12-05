@@ -151,10 +151,12 @@ SELECT
 	` + packageRankingQueryFragment + ` AS rank
 FROM lsif_uploads u
 JOIN lsif_packages p ON p.dump_id = u.id
-JOIN lsif_references r ON r.scheme = p.scheme
-	AND r.name = p.name
-	AND r.version = p.version
-	AND r.dump_id != p.dump_id
+JOIN lsif_references r ON
+	r.scheme = p.scheme AND
+	r.manager = p.manager AND
+	r.name = p.name AND
+	r.version = p.version AND
+	r.dump_id != p.dump_id
 WHERE
 	-- Don't match deleted uploads
 	u.state = 'completed' AND
@@ -168,7 +170,7 @@ const packageRankingQueryFragment = `
 rank() OVER (
 	PARTITION BY
 		-- Group providers of the same package together
-		p.scheme, p.name, p.version,
+		p.scheme, p.manager, p.name, p.version,
 		-- Defined by the same directory within a repository
 		u.repository_id, u.indexer, u.root
 	ORDER BY
@@ -181,10 +183,11 @@ rank() OVER (
 
 const rankedDependentCandidateCTEQuery = `
 SELECT
-	p.dump_id as pkg_id,
-	p.scheme as scheme,
-	p.name as name,
-	p.version as version,
+	p.dump_id AS pkg_id,
+	p.scheme AS scheme,
+	p.manager AS manager,
+	p.name AS name,
+	p.version AS version,
 	-- Rank each upload providing the same package from the same directory
 	-- within a repository by commit date. We'll choose the oldest commit
 	-- date as the canonical choice and ignore the uploads for younger
@@ -242,9 +245,7 @@ JOIN repo ON repo.id = u.repository_id
 WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id = %s AND %s
 `
 
-// GetUploadsByIDs returns an upload for each of the given identifiers. Not all given ids will necessarily
-// have a corresponding element in the returned list.
-func (s *store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error) {
+func (s *store) getUploadsByIDs(ctx context.Context, allowDeleted bool, ids ...int) (_ []types.Upload, err error) {
 	ctx, _, endObservation := s.operations.getUploadsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("ids", intsToString(ids)),
 	}})
@@ -264,7 +265,22 @@ func (s *store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Uplo
 		queries = append(queries, sqlf.Sprintf("%d", id))
 	}
 
-	return scanUploadComplete(s.db.Query(ctx, sqlf.Sprintf(getUploadsByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+	cond := sqlf.Sprintf("TRUE")
+	if !allowDeleted {
+		cond = sqlf.Sprintf("u.state != 'deleted'")
+	}
+
+	return scanUploadComplete(s.db.Query(ctx, sqlf.Sprintf(getUploadsByIDsQuery, cond, sqlf.Join(queries, ", "), authzConds)))
+}
+
+// GetUploadsByIDs returns an upload for each of the given identifiers. Not all given ids will necessarily
+// have a corresponding element in the returned list.
+func (s *store) GetUploadsByIDs(ctx context.Context, ids ...int) (_ []types.Upload, err error) {
+	return s.getUploadsByIDs(ctx, false, ids...)
+}
+
+func (s *store) GetUploadsByIDsAllowDeleted(ctx context.Context, ids ...int) (_ []types.Upload, err error) {
+	return s.getUploadsByIDs(ctx, true, ids...)
 }
 
 const getUploadsByIDsQuery = `
@@ -295,7 +311,7 @@ FROM lsif_uploads u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE repo.deleted_at IS NULL AND u.state != 'deleted' AND u.id IN (%s) AND %s
+WHERE repo.deleted_at IS NULL AND %s AND u.id IN (%s) AND %s
 `
 
 // GetRecentUploadsSummary returns a set of "interesting" uploads for the repository with the given identifeir.
@@ -587,7 +603,7 @@ expired_uploads AS (
 
 -- From the set of unprotected uploads, find the set of packages they provide.
 packages_defined_by_target_uploads AS (
-	SELECT p.scheme, p.name, p.version
+	SELECT p.scheme, p.manager, p.name, p.version
 	FROM lsif_packages p
 	WHERE p.dump_id IN (SELECT id FROM expired_uploads)
 ),
@@ -602,6 +618,7 @@ ranked_uploads_providing_packages AS (
 	SELECT
 		u.id,
 		p.scheme,
+		p.manager,
 		p.name,
 		p.version,
 		-- Rank each upload providing the same package from the same directory
@@ -617,8 +634,8 @@ ranked_uploads_providing_packages AS (
 			u.id = ANY (SELECT id FROM expired_uploads) OR
 
 			-- Also select uploads that provide the same package as a target upload.
-			(p.scheme, p.name, p.version) IN (
-				SELECT p.scheme, p.name, p.version
+			(p.scheme, p.manager, p.name, p.version) IN (
+				SELECT p.scheme, p.manager, p.name, p.version
 				FROM packages_defined_by_target_uploads p
 			)
 		) AND
@@ -646,15 +663,16 @@ referenced_uploads_providing_package_canonically AS (
 			FROM lsif_references r
 			WHERE
 				r.scheme = ru.scheme AND
+				r.manager = ru.manager AND
 				r.name = ru.name AND
 				r.version = ru.version AND
 				r.dump_id != ru.id
 			)
 ),
 
--- Filter the set of our original candidate uploads to exlude the "safe" uploads found
+-- Filter the set of our original candidate uploads to exclude the "safe" uploads found
 -- above. This should include uploads that are expired and either not a canonical provider
--- of their package, or their package is unreferenced by any other uplaod. We can then lock
+-- of their package, or their package is unreferenced by any other upload. We can then lock
 -- the uploads in a deterministic order and update the state of each upload to 'deleting'.
 -- Before hard-deletion, we will clear all associated data for this upload in the codeintel-db.
 candidates AS (
@@ -757,6 +775,7 @@ root_upload_and_packages AS (
 			u.last_traversal_scan_at,
 			u.finished_at,
 			p.scheme,
+			p.manager,
 			p.name,
 			p.version,
 			` + packageRankingQueryFragment + ` AS rank
@@ -770,6 +789,7 @@ root_upload_and_packages AS (
 		FROM lsif_references r
 		WHERE
 			r.scheme = s.scheme AND
+			r.manager = s.manager AND
 			r.name = s.name AND
 			r.version = s.version AND
 			r.dump_id != s.id
@@ -781,28 +801,30 @@ root_upload_and_packages AS (
 -- Traverse the dependency graph backwards starting from our chosen root upload. The result
 -- set will include all (canonical) id and expiration status of uploads that transitively
 -- depend on chosen our root.
-transitive_dependents(id, expired, scheme, name, version) AS MATERIALIZED (
+transitive_dependents(id, expired, scheme, manager, name, version) AS MATERIALIZED (
 	(
 		-- Base case: select our root upload and its canonical packages
-		SELECT up.id, up.expired, up.scheme, up.name, up.version FROM root_upload_and_packages up
+		SELECT up.id, up.expired, up.scheme, up.manager, up.name, up.version FROM root_upload_and_packages up
 	) UNION (
 		-- Iterative case: select new (canonical) uploads that have a direct dependency of
 		-- some upload in our working set. This condition will continue to be evaluated until
 		-- it reaches a fixed point, giving us the complete connected component containing our
 		-- root upload.
 
-		SELECT s.id, s.expired, s.scheme, s.name, s.version
+		SELECT s.id, s.expired, s.scheme, s.manager, s.name, s.version
 		FROM (
 			SELECT
 				u.id,
 				u.expired,
 				p.scheme,
+				p.manager,
 				p.name,
 				p.version,
 				` + packageRankingQueryFragment + ` AS rank
 			FROM transitive_dependents d
 			JOIN lsif_references r ON
 				r.scheme = d.scheme AND
+				r.manager = d.manager AND
 				r.name = d.name AND
 				r.version = d.version AND
 				r.dump_id != d.id
@@ -1319,7 +1341,7 @@ func (s *store) GetVisibleUploadsMatchingMonikers(ctx context.Context, repositor
 
 	qs := make([]*sqlf.Query, 0, len(monikers))
 	for _, moniker := range monikers {
-		qs = append(qs, sqlf.Sprintf("(%s, %s, %s)", moniker.Scheme, moniker.Name, moniker.Version))
+		qs = append(qs, sqlf.Sprintf("(%s, %s, %s, %s)", moniker.Scheme, moniker.Manager, moniker.Name, moniker.Version))
 	}
 
 	visibleUploadsQuery := makeVisibleUploadsQuery(repositoryID, commit)
@@ -1359,13 +1381,13 @@ FROM lsif_references r
 LEFT JOIN lsif_dumps u ON u.id = r.dump_id
 JOIN repo ON repo.id = u.repository_id
 WHERE
-	(r.scheme, r.name, r.version) IN (%s) AND
+	(r.scheme, r.manager, r.name, r.version) IN (%s) AND
 	r.dump_id IN (SELECT * FROM visible_uploads) AND
 	%s -- authz conds
 `
 
 const referenceIDsQuery = referenceIDsCTEDefinitions + `
-SELECT r.dump_id, r.scheme, r.name, r.version
+SELECT r.dump_id, r.scheme, r.manager, r.name, r.version
 ` + referenceIDsBaseQuery + `
 ORDER BY dump_id
 LIMIT %s OFFSET %s
@@ -1981,8 +2003,8 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 		conds = append(conds, sqlf.Sprintf(`u.id IN (SELECT rd.pkg_id FROM ranked_dependencies rd WHERE rd.rank = 1)`))
 	}
 	if opts.DependentOf != 0 {
-		cteCondition := sqlf.Sprintf(`(p.scheme, p.name, p.version) IN (
-			SELECT p.scheme, p.name, p.version
+		cteCondition := sqlf.Sprintf(`(p.scheme, p.manager, p.name, p.version) IN (
+			SELECT p.scheme, p.manager, p.name, p.version
 			FROM lsif_packages p
 			WHERE p.dump_id = %s
 		)`, opts.DependentOf)
@@ -1998,10 +2020,12 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 		conds = append(conds, sqlf.Sprintf(`u.id IN (
 			SELECT r.dump_id
 			FROM ranked_dependents rd
-			JOIN lsif_references r ON r.scheme = rd.scheme
-				AND r.name = rd.name
-				AND r.version = rd.version
-				AND r.dump_id != rd.pkg_id
+			JOIN lsif_references r ON
+				r.scheme = rd.scheme AND
+				r.manager = rd.manager AND
+				r.name = rd.name AND
+				r.version = rd.version AND
+				r.dump_id != rd.pkg_id
 			WHERE rd.pkg_id = %s AND rd.rank = 1
 		)`, opts.DependentOf))
 	}

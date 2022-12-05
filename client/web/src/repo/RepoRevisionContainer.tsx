@@ -121,7 +121,7 @@ interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, '
     resolvedRevision: ResolvedRevision | undefined
 }
 
-const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
+export const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
     React.PropsWithChildren<RepoRevisionBreadcrumbProps>
 > = ({ revision, resolvedRevision, repoName, repo }) => {
     const [popoverOpen, setPopoverOpen] = useState(false)

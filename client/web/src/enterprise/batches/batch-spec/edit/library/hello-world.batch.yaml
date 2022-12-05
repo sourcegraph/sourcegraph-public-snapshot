@@ -15,6 +15,7 @@ steps:
 changesetTemplate:
   title: Hello World
   body: My first batch change!
-  branch: hello-world # Push the commit to this branch.
   commit:
     message: Append Hello World to all README.md files
+  # Optional: Push the commit to a branch named after this batch change by default.
+  branch: ${{ batch_change.name }}

@@ -23,48 +23,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-// GetService creates or returns an already-initialized uploads service.
-// If the service is not yet initialized, it will use the provided dependencies.
-func GetService(
+func NewService(
 	db database.DB,
 	codeIntelDB codeintelshared.CodeIntelDB,
 	gsc GitserverClient,
 ) *Service {
-	svc, _ := initServiceMemo.Init(serviceDependencies{
-		db,
-		codeIntelDB,
-		gsc,
-	})
-
-	return svc
-}
-
-type serviceDependencies struct {
-	db          database.DB
-	codeIntelDB codeintelshared.CodeIntelDB
-	gsc         GitserverClient
-}
-
-var (
-	bucketName                   = env.Get("CODEINTEL_UPLOADS_RANKING_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")
-	rankingGraphKey              = env.Get("CODEINTEL_UPLOADS_RANKING_GRAPH_KEY", "dev", "An identifier of the graph export. Change to start a new export in the configured bucket.")
-	rankingGraphBatchSize        = env.MustGetInt("CODEINTEL_UPLOADS_RANKING_GRAPH_BATCH_SIZE", 16, "How many uploads to process at once.")
-	rankingGraphDeleteBatchSize  = env.MustGetInt("CODEINTEL_UPLOADS_RANKING_GRAPH_DELETE_BATCH_SIZE", 32, "How many stale uploads to delete at once.")
-	rankingBucketCredentialsFile = env.Get("CODEINTEL_UPLOADS_RANKING_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")
-)
-
-var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
-	store := store.New(deps.db, scopedContext("store"))
-	repoStore := backend.NewRepos(scopedContext("repos").Logger, deps.db, gitserver.NewClient(deps.db))
-	lsifStore := lsifstore.New(deps.codeIntelDB, scopedContext("lsifstore"))
-	policyMatcher := policiesEnterprise.NewMatcher(deps.gsc, policiesEnterprise.RetentionExtractor, true, false)
-	locker := locker.NewWith(deps.db, "codeintel")
+	store := store.New(db, scopedContext("store"))
+	repoStore := backend.NewRepos(scopedContext("repos").Logger, db, gitserver.NewClient(db))
+	lsifStore := lsifstore.New(codeIntelDB, scopedContext("lsifstore"))
+	policyMatcher := policiesEnterprise.NewMatcher(gsc, policiesEnterprise.RetentionExtractor, true, false)
+	locker := locker.NewWith(db, "codeintel")
 
 	rankingBucket := func() *storage.BucketHandle {
 		if rankingBucketCredentialsFile == "" && os.Getenv("ENABLE_EXPERIMENTAL_RANKING") == "" {
@@ -89,17 +63,32 @@ var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDepend
 		store,
 		repoStore,
 		lsifStore,
-		deps.gsc,
+		gsc,
 		rankingBucket,
 		nil, // written in circular fashion
 		policyMatcher,
 		locker,
 		scopedContext("service"),
 	)
-	svc.policySvc = policies.GetService(deps.db, svc, deps.gsc)
+	svc.policySvc = policies.NewService(db, svc, gsc)
 
-	return svc, nil
-})
+	return svc
+}
+
+type serviceDependencies struct {
+	db                 database.DB
+	codeIntelDB        codeintelshared.CodeIntelDB
+	gsc                GitserverClient
+	observationContext *observation.Context
+}
+
+var (
+	bucketName                   = env.Get("CODEINTEL_UPLOADS_RANKING_BUCKET", "lsif-pagerank-experiments", "The GCS bucket.")
+	rankingGraphKey              = env.Get("CODEINTEL_UPLOADS_RANKING_GRAPH_KEY", "dev", "An identifier of the graph export. Change to start a new export in the configured bucket.")
+	rankingGraphBatchSize        = env.MustGetInt("CODEINTEL_UPLOADS_RANKING_GRAPH_BATCH_SIZE", 16, "How many uploads to process at once.")
+	rankingGraphDeleteBatchSize  = env.MustGetInt("CODEINTEL_UPLOADS_RANKING_GRAPH_DELETE_BATCH_SIZE", 32, "How many stale uploads to delete at once.")
+	rankingBucketCredentialsFile = env.Get("CODEINTEL_UPLOADS_RANKING_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")
+)
 
 func scopedContext(component string) *observation.Context {
 	return observation.ScopedContext("codeintel", "uploads", component)
@@ -116,6 +105,9 @@ func NewUploadProcessorJob(
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	uploadsProcessorStore := dbworkerstore.NewWithMetrics(db.Handle(), store.UploadWorkerStoreOptions, observationContext)
+
+	dbworker.InitPrometheusMetric(observationContext, uploadsProcessorStore, "codeintel", "upload", nil)
+
 	return background.NewUploadProcessorWorker(
 		uploadSvc.store,
 		uploadSvc.lsifstore,

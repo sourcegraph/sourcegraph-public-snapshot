@@ -1,0 +1,14 @@
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+
+package(default_visibility = ["//visibility:public"])
+
+npm_link_all_packages(name = "node_modules")
+
+js_library(
+    name = "prettier_config_js",
+    srcs = ["prettier.config.js"],
+    data = [
+        "//:node_modules/@sourcegraph/prettierrc",
+    ],
+)

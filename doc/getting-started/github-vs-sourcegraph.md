@@ -25,6 +25,8 @@ If you frequently rely on your editor’s “go to definition” and “find ref
 
 If you're brand new to code search and you want to try it, visit [Sourcegraph.com](https://sourcegraph.com/search) to search across open source repositories. 
 
+For a high-level overview of how Sourcegraph compares to GitHub code search, see this [documennt](https://storage.googleapis.com/sourcegraph-assets/docs/PDFs/Sourcegraph%20vs.%20GitHub%20code%20search%20chart.pdf).  
+
 ## Searching code
 
 
@@ -288,6 +290,8 @@ C#, Python, Go, Java, JavaScript, TypeScript, PHP, Protocol Buffers, Ruby, and R
 GitHub only returns the first 10 pages of search results. You cannot currently go past the 10th page or retrieve all search results.
 
 Sourcegraph can retrieve all search results. By default, Sourcegraph returns 500 search results, but this number can be increased by increasing the ‘count’ value. Sourcegraph can display a maximum of 1,500 results, but all matches can be fetched using the [src CLI](https://docs.sourcegraph.com/cli/quickstart), the [Stream API](https://docs.sourcegraph.com/api/stream_api), or [GraphQL API](https://docs.sourcegraph.com/api/graphql). You can also export the results via CSV. 
+
+Souregraph's Smart Search is a query assistant that activates when a search returns no results. It helps you find search results by trying slight variations of your original query when a search shows "no results," and the alternative results are shown automatically once Smart Search is enabled. 
 
 GitHub code search includes suggestions, completions, and the ability to save your searches. Sourcegraph offers suggestions through search query examples and [saved searches](https://docs.sourcegraph.com/code_search/how-to/saved_searches#creating-saved-searches). 
 
@@ -566,7 +570,7 @@ GitHub does not offer comprehensive insights that account for the content of the
 
 With [insights for Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects/viewing-insights-from-your-project/about-insights-for-projects) in GitHub, you can view, create, and customize charts that are built from the project’s data. [Organization activity insights](https://docs.github.com/en/enterprise-cloud@latest/organizations/collaborating-with-groups-in-organizations/viewing-insights-for-your-organization) help you understand how members of the organization are using GitHub, e.g. issue and pull request activity, top languages used, and cumulative information about where members spend their time. 
 
-Sourcegraph offers [in-product analytics](https://docs.sourcegraph.com/admin/analytics) to help Sourcegraph administrators understand user engagement across the various Sourcegraph features, identify power users, and convey value to engineering leaders. 
+Sourcegraph offers [in-product analytics](https://docs.sourcegraph.com/admin/analytics) to help Sourcegraph administrators understand user engagement across the various Sourcegraph features, identify power users, and convey value to engineering leaders.
 
 
 <table>

@@ -17,6 +17,9 @@ This document assumes that you are a [site administrator](https://docs.sourcegra
 3. If clicking on the `Refresh Now` button has triggered the repository to be updated instantly for you then congratulations! You can now move on from this troubleshooting guide!
 4. If clicking on the `Refresh Now` button does not work for you, try using webhooks following the instructions detailed in our [Repository Webhooks Docs](https://docs.sourcegraph.com/admin/repo/webhooks#webhook-for-manually-telling-sourcegraph-to-update-a-repository)
 5. Look for errors related to this repository in gitserver logs, which should help you to determine the next best course of action.
+6. Check the size of the repository. If it's a large repository, it may take a long time to sync and update. To find the size of your .git directory where the repository resides, you may use our [`git-stats` script](https://docs.sourcegraph.com/admin/monorepo#statistics). 
+7. Check the allocated resources to see if the instance has enough resources to process the repository sync using our [Resource Estimator](https://docs.sourcegraph.com/admin/deploy/resource_estimator)
+8. Check the code host connection from your Sourcegraph instance. If there is any issue, it needs to be resolved for the repository to sync and update.
 
 ## FAQs:
 
