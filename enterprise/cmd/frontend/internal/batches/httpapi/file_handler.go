@@ -138,17 +138,39 @@ func (h *FileHandler) exists(r *http.Request) (statusCode int, err error) {
 }
 
 func getPathParts(r *http.Request) (string, string, error) {
-	batchSpecRandID := mux.Vars(r)["spec"]
-	if batchSpecRandID == "" {
+	rawBatchSpecRandID := mux.Vars(r)["spec"]
+	if rawBatchSpecRandID == "" {
 		return "", "", errors.New("spec ID not provided")
 	}
+	batchSpecRandID, err := unmarshalBatchSpecRandID(graphql.ID(rawBatchSpecRandID))
+	if err != nil {
+		// If there's an error while unmarshalling the ID, we assume that the id is already unmarshalled
+		// and it's not a valid graphql.ID.
+		batchSpecRandID = rawBatchSpecRandID
+	}
 
-	batchSpecWorkspaceFileRandID := mux.Vars(r)["file"]
-	if batchSpecWorkspaceFileRandID == "" {
+	rawBatchSpecWorkspaceFileRandID := mux.Vars(r)["file"]
+	if rawBatchSpecWorkspaceFileRandID == "" {
 		return "", "", errors.New("file ID not provided")
+	}
+	batchSpecWorkspaceFileRandID, err := unmarshalWorkspaceFileRandID(graphql.ID(rawBatchSpecWorkspaceFileRandID))
+	if err != nil {
+		// If there's an error while unmarshalling the ID, we assume that the id is already unmarshalled
+		// and it's not a valid graphl.ID.
+		batchSpecWorkspaceFileRandID = rawBatchSpecWorkspaceFileRandID
 	}
 
 	return batchSpecRandID, batchSpecWorkspaceFileRandID, nil
+}
+
+func unmarshalWorkspaceFileRandID(id graphql.ID) (batchWorkspaceFileRandID string, err error) {
+	err = relay.UnmarshalSpec(id, &batchWorkspaceFileRandID)
+	return
+}
+
+func unmarshalBatchSpecRandID(id graphql.ID) (batchSpecRandID string, err error) {
+	err = relay.UnmarshalSpec(id, &batchSpecRandID)
+	return
 }
 
 const maxUploadSize = 10 << 20 // 10MB
@@ -220,7 +242,7 @@ func (h *FileHandler) upload(r *http.Request) (resp uploadResponse, statusCode i
 	// stored in temporary files on disk. The reason for parsing the whole request in one go is because data cannot be
 	// "streamed" or "appended" to the bytea type column. Data for the bytea column must be inserted in one go.
 	//
-	// When we move to using a blob store (MinIO/S3/GCS), we can stream the parts instead. This means we won't need to
+	// When we move to using a blob store (Blobstore/S3/GCS), we can stream the parts instead. This means we won't need to
 	// parse the entire request body up front. We will be able to iterate over and write the parts/chunks one at a time
 	// - thus avoiding putting everything into memory.
 	// See example: https://sourcegraph.com/github.com/rfielding/uploader@master/-/blob/uploader.go?L167

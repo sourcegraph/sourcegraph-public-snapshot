@@ -19,6 +19,7 @@ import (
 
 func Test_Gitolite_listRepos(t *testing.T) {
 	tests := []struct {
+		name            string
 		listRepos       map[string][]*gitolite.Repo
 		configs         []*schema.GitoliteConnection
 		gitoliteHost    string
@@ -26,6 +27,41 @@ func Test_Gitolite_listRepos(t *testing.T) {
 		expResponseBody string
 	}{
 		{
+			name: "Simple case (git@sourcegraph.com)",
+			listRepos: map[string][]*gitolite.Repo{
+				"git@sourcegraph.com": {
+					{Name: "myrepo", URL: "git@sourcegraph.com:myrepo"},
+				},
+			},
+			configs: []*schema.GitoliteConnection{
+				{
+					Host:   "git@sourcegraph.com",
+					Prefix: "sourcegraph.com/",
+				},
+			},
+			gitoliteHost:    "git@sourcegraph.com",
+			expResponseCode: 200,
+			expResponseBody: `[{"Name":"myrepo","URL":"git@sourcegraph.com:myrepo"}]` + "\n",
+		},
+		{
+			name: "Invalid gitoliteHost (--invalidhostnexample.com)",
+			listRepos: map[string][]*gitolite.Repo{
+				"git@sourcegraph.com": {
+					{Name: "myrepo", URL: "git@sourcegraph.com:myrepo"},
+				},
+			},
+			configs: []*schema.GitoliteConnection{
+				{
+					Host:   "git@sourcegraph.com",
+					Prefix: "sourcegraph.com/",
+				},
+			},
+			gitoliteHost:    "--invalidhostnexample.com",
+			expResponseCode: 500,
+			expResponseBody: `invalid hostname` + "\n",
+		},
+		{
+			name: "Empty (but valid) gitoliteHost",
 			listRepos: map[string][]*gitolite.Repo{
 				"git@gitolite.example.com": {
 					{Name: "myrepo", URL: "git@gitolite.example.com:myrepo"},
@@ -37,14 +73,14 @@ func Test_Gitolite_listRepos(t *testing.T) {
 					Prefix: "gitolite.example.com/",
 				},
 			},
-			gitoliteHost:    "git@gitolite.example.com",
+			gitoliteHost:    "",
 			expResponseCode: 200,
-			expResponseBody: `[{"Name":"myrepo","URL":"git@gitolite.example.com:myrepo"}]` + "\n",
+			expResponseBody: `null` + "\n",
 		},
 	}
 
 	for _, test := range tests {
-		t.Run("", func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			g := gitoliteFetcher{
 				client: stubGitoliteClient{
 					ListRepos_: func(ctx context.Context, host string) ([]*gitolite.Repo, error) {
@@ -101,7 +137,7 @@ func TestCheckSSRFHeader(t *testing.T) {
 
 	t.Run("header missing", func(t *testing.T) {
 		rw := httptest.NewRecorder()
-		r, err := http.NewRequest("GET", "/list-gitolite?gitolite=host", nil)
+		r, err := http.NewRequest("GET", "/list-gitolite?gitolite=127.0.0.1", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -112,7 +148,7 @@ func TestCheckSSRFHeader(t *testing.T) {
 
 	t.Run("header supplied", func(t *testing.T) {
 		rw := httptest.NewRecorder()
-		r, err := http.NewRequest("GET", "/list-gitolite?gitolite=host", nil)
+		r, err := http.NewRequest("GET", "/list-gitolite?gitolite=127.0.0.1", nil)
 		if err != nil {
 			t.Fatal(err)
 		}

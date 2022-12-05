@@ -231,6 +231,13 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
+        ...createQueryExampleFromString('has.key({any string})'),
+        field: FilterType.repo,
+        description: 'Search inside repositories that are associated with the given key, regardless of its value.',
+        examples: ['repo:has.key(owner)', '-repo:has.key(wip)'],
+        showSuggestions: false,
+    },
+    {
         ...createQueryExampleFromString('{revision}'),
         field: FilterType.rev,
         commonRank: 20,

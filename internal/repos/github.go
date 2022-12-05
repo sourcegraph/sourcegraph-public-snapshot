@@ -198,26 +198,24 @@ func newGithubSource(
 		useGitHubApp = true
 	}
 
-	if svc.IsSiteOwned() {
-		for resource, monitor := range map[string]*ratelimit.Monitor{
-			"rest":    v3Client.RateLimitMonitor(),
-			"graphql": v4Client.RateLimitMonitor(),
-			"search":  searchClient.RateLimitMonitor(),
-		} {
-			// Copy the resource or funcs below will use the last one seen while iterating
-			// the map
-			resource := resource
-			// Copy displayName so that the funcs below don't capture the svc pointer
-			displayName := svc.DisplayName
-			monitor.SetCollector(&ratelimit.MetricsCollector{
-				Remaining: func(n float64) {
-					githubRemainingGauge.WithLabelValues(resource, displayName).Set(n)
-				},
-				WaitDuration: func(n time.Duration) {
-					githubRatelimitWaitCounter.WithLabelValues(resource, displayName).Add(n.Seconds())
-				},
-			})
-		}
+	for resource, monitor := range map[string]*ratelimit.Monitor{
+		"rest":    v3Client.RateLimitMonitor(),
+		"graphql": v4Client.RateLimitMonitor(),
+		"search":  searchClient.RateLimitMonitor(),
+	} {
+		// Copy the resource or funcs below will use the last one seen while iterating
+		// the map
+		resource := resource
+		// Copy displayName so that the funcs below don't capture the svc pointer
+		displayName := svc.DisplayName
+		monitor.SetCollector(&ratelimit.MetricsCollector{
+			Remaining: func(n float64) {
+				githubRemainingGauge.WithLabelValues(resource, displayName).Set(n)
+			},
+			WaitDuration: func(n time.Duration) {
+				githubRatelimitWaitCounter.WithLabelValues(resource, displayName).Add(n.Seconds())
+			},
+		})
 	}
 
 	return &GitHubSource{
@@ -281,6 +279,13 @@ func (s *GitHubSource) ValidateAuthenticator(ctx context.Context) error {
 
 func (s *GitHubSource) Version(ctx context.Context) (string, error) {
 	return s.v3Client.GetVersion(ctx)
+}
+
+// CheckConnection at this point assumes availability and relies on errors returned
+// from the subsequent calls. This is going to be expanded as part of issue #44683
+// to actually only return true if the source can serve requests.
+func (s *GitHubSource) CheckConnection(ctx context.Context) error {
+	return nil
 }
 
 // ListRepos returns all Github repositories accessible to all connections configured

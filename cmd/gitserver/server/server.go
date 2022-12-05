@@ -497,6 +497,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))
 	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
 	mux.HandleFunc("/repo-clone", trace.WithRouteName("repo-clone", s.handleRepoClone))
+	mux.HandleFunc("/create-commit-from-patch-binary", trace.WithRouteName("create-commit-from-patch-binary", s.handleCreateCommitFromPatchBinary))
 	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", s.handleCreateCommitFromPatch))
 	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -719,7 +720,7 @@ var (
 )
 
 func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
-	s.Logger.Info("starting syncRepoState", log.Bool("fullSync", fullSync))
+	s.Logger.Debug("starting syncRepoState", log.Bool("fullSync", fullSync))
 	addrs := gitServerAddrs.Addresses
 
 	// When fullSync is true we'll scan all repos in the database and ensure we set

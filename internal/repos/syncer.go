@@ -546,16 +546,12 @@ func (s *Syncer) SyncExternalService(
 		return ErrCloudDefaultSync
 	}
 
-	// Disable external service syncing for user or organisation owned services
-	if svc.NamespaceUserID != 0 {
-		return errors.New("syncing user owned external service not allowed")
-	}
-	if svc.NamespaceOrgID != 0 {
-		return errors.New("syncing organisation owned external service not allowed")
-	}
-
 	src, err := s.Sourcer(ctx, svc)
 	if err != nil {
+		return err
+	}
+
+	if err := src.CheckConnection(ctx); err != nil {
 		return err
 	}
 
@@ -687,7 +683,7 @@ func (s *Syncer) SyncExternalService(
 		}
 	}
 
-	if !abortDeletion || (!svc.IsSiteOwned() && fatal(errs)) {
+	if !abortDeletion {
 		// Remove associations and any repos that are no longer associated with any
 		// external service.
 		//
@@ -877,10 +873,6 @@ func (s *Syncer) observeSync(
 		var owner string
 		if svc == nil {
 			owner = ownerUndefined
-		} else if svc.NamespaceUserID > 0 {
-			owner = ownerUser
-		} else if svc.NamespaceOrgID > 0 {
-			owner = ownerOrg
 		} else {
 			owner = ownerSite
 		}

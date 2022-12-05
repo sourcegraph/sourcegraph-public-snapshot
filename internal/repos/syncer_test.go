@@ -213,15 +213,10 @@ func TestSyncerSync(t *testing.T) {
 		)
 
 		var diff repos.Diff
-		if tc.svc.NamespaceUserID > 0 {
-			diff.Deleted = append(diff.Deleted, tc.repo.With(
-				typestest.Opt.RepoSources(tc.svc.URN()),
-			))
-		} else {
-			diff.Unmodified = append(diff.Unmodified, tc.repo.With(
-				typestest.Opt.RepoSources(tc.svc.URN()),
-			))
-		}
+
+		diff.Unmodified = append(diff.Unmodified, tc.repo.With(
+			typestest.Opt.RepoSources(tc.svc.URN()),
+		))
 
 		testCases = append(testCases,
 			testCase{
@@ -610,6 +605,16 @@ func TestSyncerSync(t *testing.T) {
 				},
 				svcs: []*types.ExternalService{tc.svc},
 				err:  "<nil>",
+			},
+			testCase{
+				name: string(tc.repo.Name) + "/code host unavailable",
+				sourcer: repos.NewFakeSourcer(nil,
+					repos.NewFakeSource(nil, nil, nil).Unavailable(),
+				),
+				store: store,
+				now:   clock.Now,
+				svcs:  []*types.ExternalService{tc.svc},
+				err:   "fake source unavailable",
 			},
 		)
 	}

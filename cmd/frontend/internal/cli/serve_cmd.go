@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -81,24 +80,6 @@ var (
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
 	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
 )
-
-// defaultExternalURL returns the default external URL of the application.
-func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
-	addr := nginxAddr
-	if addr == "" {
-		addr = httpAddr
-	}
-
-	var hostPort string
-	if strings.HasPrefix(addr, ":") {
-		// Prepend localhost if HTTP listen addr is just a port.
-		hostPort = "127.0.0.1" + addr
-	} else {
-		hostPort = addr
-	}
-
-	return &url.URL{Scheme: "http", Host: hostPort}
-}
 
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
@@ -253,7 +234,7 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 	siteid.Init(db)
 
 	globals.WatchBranding()
-	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
+	globals.WatchExternalURL()
 	globals.WatchPermissionsUserMapping()
 
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })

@@ -5,7 +5,7 @@ import { mdiImport } from '@mdi/js'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { Icon, H3, H4 } from '@sourcegraph/wildcard'
 
-import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
+import { UseShowMorePaginationResult } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionList,
@@ -20,7 +20,7 @@ import { ImportingChangesetFields } from './useImportingChangesets'
 import styles from './ImportingChangesetsPreviewList.module.scss'
 
 interface ImportingChangesetsPreviewListProps {
-    importingChangesetsConnection: UseConnectionResult<ImportingChangesetFields>
+    importingChangesetsConnection: UseShowMorePaginationResult<ImportingChangesetFields>
     /**
      * Whether or not the changesets in this list are up-to-date with the current batch
      * spec input YAML in the editor.

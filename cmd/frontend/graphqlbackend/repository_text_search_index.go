@@ -12,17 +12,12 @@ import (
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"github.com/sourcegraph/zoekt/stream"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
-	if !conf.SearchIndexEnabled() {
-		return nil
-	}
-
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
 		client: search.Indexed(),

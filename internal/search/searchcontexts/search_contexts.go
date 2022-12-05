@@ -207,8 +207,12 @@ func validateSearchContextQuery(contextQuery string) error {
 		switch field {
 		case query.FieldRepo:
 			if a.Labels.IsSet(query.IsPredicate) {
-				errs = errors.Append(errs,
-					errors.Errorf("unsupported repo field predicate in search context query: %q", value))
+				predName, _ := query.ParseAsPredicate(value)
+				if predName != "has" && predName != "has.tag" && predName != "has.key" {
+					errs = errors.Append(errs,
+						errors.Errorf("unsupported repo field predicate in search context query: %q", value))
+					return
+				}
 				return
 			}
 
@@ -386,14 +390,6 @@ func GetAutoDefinedSearchContexts(ctx context.Context, db database.DB) ([]*types
 	}
 	searchContexts = append(searchContexts, GetUserSearchContext(a.UID, user.Username))
 
-	organizations, err := db.Orgs().GetOrgsWithRepositoriesByUserID(ctx, a.UID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, org := range organizations {
-		searchContexts = append(searchContexts, GetOrganizationSearchContext(org.ID, org.Name, *org.DisplayName))
-	}
 	return searchContexts, nil
 }
 

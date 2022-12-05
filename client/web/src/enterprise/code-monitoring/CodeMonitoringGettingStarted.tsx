@@ -102,7 +102,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
             </Card>
 
             {isSourcegraphDotCom && (
-                <CloudCtaBanner>
+                <CloudCtaBanner variant="filled">
                     To monitor changes across your team's private repositories,{' '}
                     <Link
                         to="https://signup.sourcegraph.com/?p=monitoring"

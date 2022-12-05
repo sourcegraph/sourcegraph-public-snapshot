@@ -161,8 +161,8 @@ func (r *batchSpecWorkspaceStepV1Resolver) Diff(ctx context.Context) (graphqlbac
 	if r.CachedResultFound() {
 		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repo, r.baseRev, r.cachedResult.Diff)
 	}
-	if r.stepInfo.Diff != nil {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repo, r.baseRev, *r.stepInfo.Diff)
+	if r.stepInfo.DiffFound {
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(r.store.DatabaseDB()), r.repo, r.baseRev, r.stepInfo.Diff)
 	}
 	return nil, nil
 }

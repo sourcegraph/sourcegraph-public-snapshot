@@ -267,7 +267,7 @@ func TestMiddleware(t *testing.T) {
 		authnCookies    []*http.Cookie
 		authnRequestURL string
 	)
-	t.Run("unauthenticated homepage visit -> IDP SSO URL", func(t *testing.T) {
+	t.Run("unauthenticated homepage visit, no sign-out cookie -> IDP SSO URL", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/", "", nil, false, nil)
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
@@ -289,6 +289,14 @@ func TestMiddleware(t *testing.T) {
 		}
 		if err := xml.NewDecoder(flate.NewReader(bytes.NewBuffer(deflatedSAMLRequest))).Decode(&authnRequest); err != nil {
 			t.Fatal(err)
+		}
+	})
+	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg login", func(t *testing.T) {
+		cookie := &http.Cookie{Name: auth.SignoutCookie, Value: "true"}
+
+		resp := doRequest("GET", "http://example.com/", "", []*http.Cookie{cookie}, false, nil)
+		if want := http.StatusOK; resp.StatusCode != want {
+			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
 		}
 	})
 	t.Run("unauthenticated API visit -> pass through", func(t *testing.T) {
@@ -323,6 +331,7 @@ func TestMiddleware(t *testing.T) {
 			t.Errorf("got HTTP %d, want %d", resp.StatusCode, want)
 		}
 	})
+
 	t.Run("get SAML assertion from IDP and post the assertion to the SP ACS URL", func(t *testing.T) {
 		authnReq, err := http.NewRequest("GET", authnRequestURL, nil)
 		if err != nil {

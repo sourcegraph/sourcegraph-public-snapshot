@@ -142,7 +142,6 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
                 setExternalService({
                     ...externalService,
                     ...input,
-                    namespace: externalService.namespace,
                 })
             }
         },
@@ -201,12 +200,12 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
                 <Container className="mb-3">
                     {externalServiceCategory && (
                         <div className="mb-3">
-                            <ExternalServiceCard {...externalServiceCategory} namespace={externalService?.namespace} />
+                            <ExternalServiceCard {...externalServiceCategory} />
                         </div>
                     )}
                     {externalServiceCategory && (
                         <ExternalServiceForm
-                            input={{ ...externalService, namespace: externalService.namespace?.id ?? null }}
+                            input={{ ...externalService }}
                             editorActions={externalServiceCategory.editorActions}
                             jsonSchema={externalServiceCategory.jsonSchema}
                             error={updateExternalServiceError}

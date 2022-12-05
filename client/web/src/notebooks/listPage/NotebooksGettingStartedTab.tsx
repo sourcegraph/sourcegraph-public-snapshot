@@ -121,7 +121,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
             </Container>
 
             {isSourcegraphDotCom && (
-                <CloudCtaBanner>
+                <CloudCtaBanner variant="filled">
                     To create Notebooks across your team's private repositories,{' '}
                     <Link
                         to="https://signup.sourcegraph.com/?p=notebooks"

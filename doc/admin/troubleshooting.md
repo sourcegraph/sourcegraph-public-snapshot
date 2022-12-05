@@ -133,7 +133,6 @@ If you can get repository results when you explicitly include `repo:{your reposi
 
 - The repository is a fork repository (excluded from search results by default) and `fork:yes` is not specified in the search query.
 - The repository is an archived repository (excluded from search results by default) and `archived:yes` is not specified in the search query.
-- Your site config file does not include `"search.index.enabled": true`. It should be included, and you should set it to true; if it's false, it means Sourcegraph won't index anything and will only search in real-time.
 - There is an issue indexing the repository: check the logs of repo-updater and/or search-indexer.
 - The search index is unavailable for some reason: try the search query `repo:<the_repository> index:only`. If it returns no results, the repository has not been indexed.
 

@@ -28,6 +28,7 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     caseSensitive: false,
     setSidebarCollapsed: noop,
     sidebarCollapsed: false,
+    isSourcegraphDotCom: true,
 }
 
 const renderSearchResultsInfoBar = (

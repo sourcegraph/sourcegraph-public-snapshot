@@ -398,6 +398,8 @@ type BranchChangesetSpec struct {
 	Published interface{} `json:"published,omitempty"`
 	// Title description: The title of the changeset on the code host.
 	Title string `json:"title"`
+	// Version description: A field for versioning the payload.
+	Version int `json:"version,omitempty"`
 }
 type BrandAssets struct {
 	// Logo description: The URL to the image used on the homepage. This will replace the Sourcegraph logo on the homepage. Maximum width: 320px. We recommend using the following file formats: SVG, PNG
@@ -593,6 +595,8 @@ type ExistingChangesetSpec struct {
 	BaseRepository string `json:"baseRepository"`
 	// ExternalID description: The ID that uniquely identifies the existing changeset on the code host
 	ExternalID string `json:"externalID"`
+	// Version description: A field for versioning the payload.
+	Version int `json:"version,omitempty"`
 }
 
 // ExpandedGitCommitDescription description: The Git commit to create with the changes.
@@ -767,6 +771,8 @@ type GitCommitDescription struct {
 	Diff string `json:"diff"`
 	// Message description: The Git commit message.
 	Message string `json:"message"`
+	// Version description: A field for versioning the payload.
+	Version int `json:"version,omitempty"`
 }
 
 // GitHubApp description: The config options for Sourcegraph GitHub App.
@@ -1767,7 +1773,7 @@ type Settings struct {
 	BasicCodeIntelUnindexedSearchTimeout float64 `json:"basicCodeIntel.unindexedSearchTimeout,omitempty"`
 	// CodeHostUseNativeTooltips description: Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).
 	CodeHostUseNativeTooltips bool `json:"codeHost.useNativeTooltips,omitempty"`
-	// CodeIntelBlobKeyboardNavigation description: Supported methods of keyboard navigation within the file blob. Note: `token` navigation is only supported when precise code intelligence is available
+	// CodeIntelBlobKeyboardNavigation description: DEPRECATED. Use 'experimentalFeatures.codeNavigation':'link-driven' instead.
 	CodeIntelBlobKeyboardNavigation string `json:"codeIntel.blobKeyboardNavigation,omitempty"`
 	// CodeIntelDisableRangeQueries description: Whether to fetch multiple precise definitions and references on hover.
 	CodeIntelDisableRangeQueries bool `json:"codeIntel.disableRangeQueries,omitempty"`
@@ -1885,6 +1891,8 @@ type SettingsExperimentalFeatures struct {
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CodeMonitoringWebHooks description: Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.
 	CodeMonitoringWebHooks *bool `json:"codeMonitoringWebHooks,omitempty"`
+	// CodeNavigation description: What kind of experimental code navigation UX to enable. The most recommended option is 'selection-driven'.
+	CodeNavigation *string `json:"codeNavigation,omitempty"`
 	// CoolCodeIntel description: Use the (cool) experimental reference panel for code intelligence.
 	CoolCodeIntel *bool `json:"coolCodeIntel,omitempty"`
 	// CopyQueryButton description: DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
@@ -2206,6 +2214,8 @@ type SiteConfiguration struct {
 	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
 	// OrganizationInvitations description: Configuration for organization invitations.
 	OrganizationInvitations *OrganizationInvitations `json:"organizationInvitations,omitempty"`
+	// OutboundRequestLogLimit description: The maximum number of outbound requests to retain. This is a global limit across all outbound requests. If the limit is exceeded, older items will be deleted. If the limit is 0, no outbound requests are logged.
+	OutboundRequestLogLimit int `json:"outboundRequestLogLimit,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
 	// PermissionsSyncOldestRepos description: Number of repo permissions to schedule for syncing in single scheduler iteration.
@@ -2230,8 +2240,6 @@ type SiteConfiguration struct {
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
 	// RepoPurgeWorker description: Configuration for repository purge worker.
 	RepoPurgeWorker *RepoPurgeWorker `json:"repoPurgeWorker,omitempty"`
-	// SearchIndexEnabled description: Whether indexed search is enabled. If : unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.
-	SearchIndexEnabled *bool `json:"search.index.enabled,omitempty"`
 	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
 	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.

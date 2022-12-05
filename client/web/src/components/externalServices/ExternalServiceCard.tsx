@@ -1,11 +1,11 @@
 import React from 'react'
 
-import { mdiAccount, mdiChevronRight } from '@mdi/js'
+import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Icon, Link, H3, Text, Tooltip, Badge } from '@sourcegraph/wildcard'
 
-import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
+import { ExternalServiceKind } from '../../graphql-operations'
 
 import styles from './ExternalServiceCard.module.scss'
 
@@ -27,8 +27,6 @@ interface ExternalServiceCardProps {
 
     kind: ExternalServiceKind
 
-    namespace?: ExternalServiceFields['namespace']
-
     to?: string
     className?: string
     enabled?: boolean
@@ -42,25 +40,12 @@ export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildre
     shortDescription,
     to,
     kind,
-    namespace,
     className = '',
     enabled = true,
     badge = '',
     tooltip = '',
 }) => {
-    let cardTitle = (
-        <H3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>
-            {title}
-            {namespace && (
-                <small>
-                    {' '}
-                    by
-                    <Icon aria-hidden={true} svgPath={mdiAccount} />
-                    <Link to={namespace.url}>{namespace.namespaceName}</Link>
-                </small>
-            )}
-        </H3>
-    )
+    let cardTitle = <H3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>{title}</H3>
     cardTitle = tooltip ? <Tooltip content={tooltip}>{cardTitle}</Tooltip> : cardTitle
     const children = (
         <div className={classNames('p-3 d-flex align-items-start border' + (enabled ? '' : ' text-muted'), className)}>

@@ -743,6 +743,9 @@ type RepoKVPFilter struct {
 	// If negated is true, this filter will select only repos
 	// that do _not_ have the associated key and value
 	Negated bool
+	// If IgnoreValue is true, this filter will select only repos that
+	// have the given key, regardless of its value
+	KeyOnly bool
 }
 
 type RepoListOrderBy []RepoListSort
@@ -1105,7 +1108,13 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	if len(opt.KVPFilters) > 0 {
 		var ands []*sqlf.Query
 		for _, filter := range opt.KVPFilters {
-			if filter.Value != nil {
+			if filter.KeyOnly {
+				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s)"
+				if filter.Negated {
+					q = "NOT " + q
+				}
+				ands = append(ands, sqlf.Sprintf(q, filter.Key))
+			} else if filter.Value != nil {
 				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value = %s)"
 				if filter.Negated {
 					q = "NOT " + q

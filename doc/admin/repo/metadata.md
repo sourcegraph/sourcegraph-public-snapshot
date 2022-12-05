@@ -6,7 +6,7 @@
 
 Repositories tracked by Sourcegraph can be associated with user-provided key-value pairs. Once this metadata is added, it can be used to filter searches to the subset of matching repositories.
 
-Metadata can be added either as key-value pairs or as tags. Key-value pairs can be searched with the filter `repo:has(mykey:myvalue)`. Tags are just key-value pairs with a `null` value and can be searched with the filter `repo:has.tag(mytag)`.
+Metadata can be added either as key-value pairs or as tags. Key-value pairs can be searched with the filter `repo:has(mykey:myvalue)`. `repo:has.key(mykey)` can be used to search over repositories with a given key irrespective of its value. Tags are just key-value pairs with a `null` value and can be searched with the filter `repo:has.tag(mytag)`.
 
 ## Examples
 ### Repository owners
