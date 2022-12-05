@@ -9,22 +9,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// RecentList holds the most recently inserted items, discarding older ones if the total item count goes over the configured size.
-type RecentList struct {
+// FIFOList holds the most recently inserted items, discarding older ones if the total item count goes over the configured size.
+type FIFOList struct {
 	key  string
 	size int
 }
 
-// NewRecentList returns a RecentCache, storing only a fixed amount of elements, discarding old ones if needed.
-func NewRecentList(key string, size int) *RecentList {
-	return &RecentList{
+// NewFIFOList returns a FIFOList, storing only a fixed amount of elements, discarding old ones if needed.
+func NewFIFOList(key string, size int) *FIFOList {
+	return &FIFOList{
 		key:  key,
 		size: size,
 	}
 }
 
-// Insert b in the cache and drops the last recently inserted item if the size exceeds the configured limit.
-func (l *RecentList) Insert(b []byte) error {
+// Insert b in the cache and drops the oldest inserted item if the size exceeds the configured limit.
+func (l *FIFOList) Insert(b []byte) error {
 	c := pool.Get()
 	defer c.Close()
 
@@ -47,7 +47,7 @@ func (l *RecentList) Insert(b []byte) error {
 	return nil
 }
 
-func (l *RecentList) Size() (int, error) {
+func (l *FIFOList) Size() (int, error) {
 	c := pool.Get()
 	defer c.Close()
 
@@ -59,17 +59,17 @@ func (l *RecentList) Size() (int, error) {
 	return n, nil
 }
 
-// All return all items stored in the RecentCache.
+// All return all items stored in the FIFOList.
 //
 // This a O(n) operation, where n is the list size.
-func (l *RecentList) All(ctx context.Context) ([][]byte, error) {
+func (l *FIFOList) All(ctx context.Context) ([][]byte, error) {
 	return l.Slice(ctx, 0, -1)
 }
 
-// Slice return all items stored in the RecentCache between indexes from and to.
+// Slice return all items stored in the FIFOlist between indexes from and to.
 //
 // This a O(n) operation, where n is the list size.
-func (l *RecentList) Slice(ctx context.Context, from, to int) ([][]byte, error) {
+func (l *FIFOList) Slice(ctx context.Context, from, to int) ([][]byte, error) {
 	c, err := pool.GetContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "get redis conn")
@@ -96,6 +96,6 @@ func (l *RecentList) Slice(ctx context.Context, from, to int) ([][]byte, error) 
 	return bs, nil
 }
 
-func (l *RecentList) globalPrefixKey() string {
+func (l *FIFOList) globalPrefixKey() string {
 	return fmt.Sprintf("%s:%s", globalPrefix, l.key)
 }
