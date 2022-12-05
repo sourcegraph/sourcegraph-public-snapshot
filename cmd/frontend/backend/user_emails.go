@@ -23,8 +23,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// NewUserEmailsService creates an instance of userEmails that contains backend methods related to user email addresses.
-func NewUserEmailsService(db database.DB, logger log.Logger) *userEmails {
+// UserEmailsService contains backend methods related to user email addresses.
+type UserEmailsService interface {
+	Add(ctx context.Context, userID int32, email string) error
+	Remove(ctx context.Context, userID int32, email string) error
+	SetPrimaryEmail(ctx context.Context, userID int32, email string) error
+	SetVerified(ctx context.Context, userID int32, email string, verified bool) error
+	ResendVerificationEmail(ctx context.Context, userID int32, email string, now time.Time) error
+	SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error
+}
+
+// NewUserEmailsService creates an instance of UserEmailsService that contains
+// backend methods related to user email addresses.
+func NewUserEmailsService(db database.DB, logger log.Logger) UserEmailsService {
 	return &userEmails{
 		db:     db,
 		logger: logger,
