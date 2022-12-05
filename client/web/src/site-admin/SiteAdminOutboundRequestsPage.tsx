@@ -308,7 +308,7 @@ function formatStackFrame(callStack: string): React.ReactNode {
 
     return (
         <>
-            <ul>{...lines.map(formatStackFrameLine)}</ul>
+            <ul>{lines.map(formatStackFrameLine)}</ul>
         </>
     )
 }
