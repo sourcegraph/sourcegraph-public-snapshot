@@ -31,15 +31,11 @@ export const DashboardsView: FC<DashboardsViewProps> = props => {
         return <LoadingSpinner aria-live="off" inline={false} />
     }
 
-    // User doesn't have any dashboard, render empty (zero dashboard state) screen
-    if (dashboards.length === 0) {
-        // TODO: Improve dashboards empty state UI
-        return <span>You don't have any code insight dashboard.</span>
-    }
-
     // URL doesn't have any concrete dashboard id, render first dashboard and add
     // first dashboard ID to match URL (/dashboards/ -> /dashboards/<first dashboard id>)
-    if (!dashboardId) {
+    // If we have an empty dashboard list than fallback on the DashboardsContent that will
+    // handle empty screen UI.
+    if (!dashboardId && dashboards.length > 0) {
         const currentDashboard = dashboards.find(isPersonalDashboard) ?? dashboards[0]
 
         return <Redirect push={false} to={`${url}/${currentDashboard.id}`} />

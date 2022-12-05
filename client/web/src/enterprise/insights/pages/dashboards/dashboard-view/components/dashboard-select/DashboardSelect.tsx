@@ -56,13 +56,17 @@ export const DashboardSelect: FC<DashboardSelectProps> = props => {
         onSelect(dashboard)
     }
 
+    const hasDashboards = dashboards.length > 0
+    const dashboardTitle = hasDashboards ? dashboard?.title : 'No dashboards to select'
+
     return (
         <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
             <PopoverTrigger
                 {...attributes}
                 as={DashboardSelectButton}
-                title={dashboard?.title}
+                title={dashboardTitle}
                 badge={getDashboardOwnerName(dashboard)}
+                disabled={!hasDashboards}
             />
 
             <PopoverContent

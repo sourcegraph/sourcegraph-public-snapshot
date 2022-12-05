@@ -1,4 +1,6 @@
 .root {
+    // To compensate visual top margin from wildcard tab container
+    margin-top: -0.5rem;
     padding-bottom: 2rem;
 }
 
@@ -7,6 +9,7 @@
     flex-wrap: wrap;
     align-items: center;
     margin-bottom: 1rem;
+    row-gap: 0.5rem;
 }
 
 .dashboard-select-label {

@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import ViewDashboardOutlineIcon from 'mdi-react/ViewDashboardOutlineIcon'
 import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { LimitedAccessLabel } from '../../../../../components'
@@ -22,17 +23,11 @@ import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsi
 import styles from './DashboardsContent.module.scss'
 
 export interface DashboardsContentProps extends TelemetryProps {
-    /**
-     * Possible dashboard id. All insights on the page will be get from
-     * dashboard's info from the user or org settings by the dashboard id.
-     * In case if id is undefined we get insights from the final
-     * version of merged settings (all insights)
-     */
-    currentDashboard?: CustomInsightDashboard
+    currentDashboard: CustomInsightDashboard | undefined
     dashboards: CustomInsightDashboard[]
 }
 
-export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<DashboardsContentProps>> = props => {
+export const DashboardsContent: FC<DashboardsContentProps> = props => {
     const { currentDashboard, dashboards, telemetryService } = props
 
     const history = useHistory()
@@ -116,7 +111,7 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                     onAddInsightRequest={() => setAddInsightsState(true)}
                 />
             ) : (
-                <HeroPage icon={MapSearchIcon} title="Hmm, the dashboard wasn't found." />
+                <DashboardEmptyContent dashboards={dashboards} />
             )}
 
             {isAddInsightOpen && currentDashboard && (
@@ -128,4 +123,30 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
             )}
         </div>
     )
+}
+
+interface DashboardEmptyContentProps {
+    dashboards: CustomInsightDashboard[]
+}
+
+const DashboardEmptyContent: FC<DashboardEmptyContentProps> = props => {
+    const { dashboards } = props
+
+    if (dashboards.length === 0) {
+        return (
+            <HeroPage
+                lessPadding={true}
+                icon={ViewDashboardOutlineIcon}
+                title="Your dashboard will appear here"
+                subtitle="Your instance does not have any dashboards or you may not have permissions to view them."
+                body={
+                    <Button as={Link} to="/insights/add-dashboard" variant="primary" className="mt-4">
+                        Create your first dashboard
+                    </Button>
+                }
+            />
+        )
+    }
+
+    return <HeroPage icon={MapSearchIcon} title="Hmm, the dashboard wasn't found." />
 }
