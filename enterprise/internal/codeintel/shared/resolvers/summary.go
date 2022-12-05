@@ -7,26 +7,42 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type repositorySummaryResolver struct {
-	autoindexingSvc  AutoIndexingService
-	uploadsSvc       UploadsService
-	policySvc        PolicyService
-	summary          RepositorySummary
-	prefetcher       *Prefetcher
-	locationResolver *CachedLocationResolver
-	errTracer        *observation.ErrCollector
+type InferredAvailableIndexers struct {
+	Index string
+	Roots []string
+	URL   string
 }
 
-func NewRepositorySummaryResolver(autoindexingSvc AutoIndexingService, uploadsSvc UploadsService, policySvc PolicyService, summary RepositorySummary, prefetcher *Prefetcher, errTracer *observation.ErrCollector) resolverstubs.CodeIntelRepositorySummaryResolver {
+type repositorySummaryResolver struct {
+	autoindexingSvc   AutoIndexingService
+	uploadsSvc        UploadsService
+	policySvc         PolicyService
+	summary           RepositorySummary
+	availableIndexers []InferredAvailableIndexers
+	prefetcher        *Prefetcher
+	locationResolver  *CachedLocationResolver
+	errTracer         *observation.ErrCollector
+}
+
+func NewRepositorySummaryResolver(
+	autoindexingSvc AutoIndexingService,
+	uploadsSvc UploadsService,
+	policySvc PolicyService,
+	summary RepositorySummary,
+	availableIndexers []InferredAvailableIndexers,
+	prefetcher *Prefetcher,
+	errTracer *observation.ErrCollector,
+) resolverstubs.CodeIntelRepositorySummaryResolver {
 	db := autoindexingSvc.GetUnsafeDB()
 	return &repositorySummaryResolver{
-		autoindexingSvc:  autoindexingSvc,
-		uploadsSvc:       uploadsSvc,
-		policySvc:        policySvc,
-		summary:          summary,
-		prefetcher:       prefetcher,
-		locationResolver: NewCachedLocationResolver(db, gitserver.NewClient(db)),
-		errTracer:        errTracer,
+		autoindexingSvc:   autoindexingSvc,
+		uploadsSvc:        uploadsSvc,
+		policySvc:         policySvc,
+		summary:           summary,
+		availableIndexers: availableIndexers,
+		prefetcher:        prefetcher,
+		locationResolver:  NewCachedLocationResolver(db, gitserver.NewClient(db)),
+		errTracer:         errTracer,
 	}
 }
 
@@ -41,6 +57,14 @@ func (r *repositorySummaryResolver) RecentUploads() []resolverstubs.LSIFUploadsW
 		resolvers = append(resolvers, NewLSIFUploadsWithRepositoryNamespaceResolver(upload, uploadResolvers))
 	}
 
+	return resolvers
+}
+
+func (r *repositorySummaryResolver) AvailableIndexers() []resolverstubs.InferredAvailableIndexersResolver {
+	resolvers := make([]resolverstubs.InferredAvailableIndexersResolver, 0, len(r.availableIndexers))
+	for _, indexer := range r.availableIndexers {
+		resolvers = append(resolvers, resolverstubs.NewInferredAvailableIndexersResolver(indexer.Index, indexer.Roots, indexer.URL))
+	}
 	return resolvers
 }
 

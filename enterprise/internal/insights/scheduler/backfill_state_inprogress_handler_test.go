@@ -85,13 +85,13 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 
 	dequeue, _, _ := monitor.inProgressStore.Dequeue(ctx, "test", nil)
 	handler := inProgressHandler{
-		workerStore:    monitor.newBackfillStore,
-		backfillStore:  bfs,
-		seriesReader:   insightsStore,
-		repoStore:      repos,
-		insightsStore:  seriesStore,
-		backfillRunner: &noopBackfillRunner{},
-		config:         newHandlerConfig(),
+		workerStore:        monitor.newBackfillStore,
+		backfillStore:      bfs,
+		seriesReadComplete: insightsStore,
+		repoStore:          repos,
+		insightsStore:      seriesStore,
+		backfillRunner:     &noopBackfillRunner{},
+		config:             newHandlerConfig(),
 
 		clock: clock,
 	}
@@ -240,14 +240,14 @@ func Test_BackfillWithRetry(t *testing.T) {
 
 	dequeue, _, _ := monitor.inProgressStore.Dequeue(ctx, "test", nil)
 	handler := inProgressHandler{
-		workerStore:    monitor.newBackfillStore,
-		backfillStore:  bfs,
-		seriesReader:   insightsStore,
-		repoStore:      repos,
-		insightsStore:  seriesStore,
-		backfillRunner: runner,
-		config:         newHandlerConfig(),
-		clock:          clock,
+		workerStore:        monitor.newBackfillStore,
+		backfillStore:      bfs,
+		seriesReadComplete: insightsStore,
+		repoStore:          repos,
+		insightsStore:      seriesStore,
+		backfillRunner:     runner,
+		config:             newHandlerConfig(),
+		clock:              clock,
 	}
 
 	err = handler.Handle(ctx, logger, dequeue)
@@ -318,14 +318,14 @@ func Test_BackfillWithRetryAndComplete(t *testing.T) {
 
 	dequeue, _, _ := monitor.inProgressStore.Dequeue(ctx, "test", nil)
 	handler := inProgressHandler{
-		workerStore:    monitor.newBackfillStore,
-		backfillStore:  bfs,
-		seriesReader:   insightsStore,
-		repoStore:      repos,
-		insightsStore:  seriesStore,
-		backfillRunner: runner,
-		config:         newHandlerConfig(),
-		clock:          clock,
+		workerStore:        monitor.newBackfillStore,
+		backfillStore:      bfs,
+		seriesReadComplete: insightsStore,
+		repoStore:          repos,
+		insightsStore:      seriesStore,
+		backfillRunner:     runner,
+		config:             newHandlerConfig(),
+		clock:              clock,
 	}
 
 	// we should get an errored record here that will be retried by the overall queue
@@ -394,14 +394,14 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 
 	dequeue, _, _ := monitor.inProgressStore.Dequeue(ctx, "test", nil)
 	handler := inProgressHandler{
-		workerStore:    monitor.newBackfillStore,
-		backfillStore:  bfs,
-		seriesReader:   insightsStore,
-		repoStore:      repos,
-		insightsStore:  seriesStore,
-		backfillRunner: &runner,
-		config:         newHandlerConfig(),
-		clock:          clock,
+		workerStore:        monitor.newBackfillStore,
+		backfillStore:      bfs,
+		seriesReadComplete: insightsStore,
+		repoStore:          repos,
+		insightsStore:      seriesStore,
+		backfillRunner:     &runner,
+		config:             newHandlerConfig(),
+		clock:              clock,
 	}
 	handler.config.interruptAfter = time.Second * 5
 

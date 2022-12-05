@@ -59,6 +59,13 @@ func NewPagureSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 	}, nil
 }
 
+// CheckConnection at this point assumes availability and relies on errors returned
+// from the subsequent calls. This is going to be expanded as part of issue #44683
+// to actually only return true if the source can serve requests.
+func (s *PagureSource) CheckConnection(ctx context.Context) error {
+	return nil
+}
+
 // ListRepos returns all Pagure repositories configured with this PagureSource's config.
 func (s *PagureSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	args := pagure.ListProjectsArgs{

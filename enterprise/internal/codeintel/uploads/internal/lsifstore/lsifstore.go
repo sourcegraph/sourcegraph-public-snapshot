@@ -49,6 +49,10 @@ type store struct {
 }
 
 func New(db codeintelshared.CodeIntelDB, observationContext *observation.Context) LsifStore {
+	return newStore(db, observationContext)
+}
+
+func newStore(db codeintelshared.CodeIntelDB, observationContext *observation.Context) *store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
 		serializer: NewSerializer(),

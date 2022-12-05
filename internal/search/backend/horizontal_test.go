@@ -268,6 +268,9 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 	if len(sr.Files) == 0 {
 		t.Fatal("Search: expected results")
 	}
+	if sr.Crashes != 3 {
+		t.Fatalf("Search: expected 3 crashes to be recorded, got %d", sr.Crashes)
+	}
 
 	rle, err := searcher.List(context.Background(), nil, nil)
 	if err != nil {
@@ -275,6 +278,9 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 	}
 	if len(rle.Repos) == 0 {
 		t.Fatal("List: expected results")
+	}
+	if rle.Crashes != 3 {
+		t.Fatalf("List: expected 3 crashes to be recorded, got %d", rle.Crashes)
 	}
 
 	// now test we do return errors if they occur

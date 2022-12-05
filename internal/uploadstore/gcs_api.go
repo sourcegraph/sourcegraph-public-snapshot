@@ -15,7 +15,6 @@ type gcsAPI interface {
 type gcsBucketHandle interface {
 	Attrs(ctx context.Context) (*storage.BucketAttrs, error)
 	Create(ctx context.Context, projectID string, attrs *storage.BucketAttrs) error
-	Update(ctx context.Context, attrs storage.BucketAttrsToUpdate) error
 	Object(name string) gcsObjectHandle
 	Objects(ctx context.Context, q *storage.Query) gcsObjectIterator
 }
@@ -62,11 +61,6 @@ func (s *bucketHandleShim) Attrs(ctx context.Context) (*storage.BucketAttrs, err
 
 func (s *bucketHandleShim) Create(ctx context.Context, projectID string, attrs *storage.BucketAttrs) error {
 	return s.handle.Create(ctx, projectID, attrs)
-}
-
-func (s *bucketHandleShim) Update(ctx context.Context, attrs storage.BucketAttrsToUpdate) error {
-	_, err := s.handle.Update(ctx, attrs)
-	return err
 }
 
 func (s *bucketHandleShim) Object(name string) gcsObjectHandle {
