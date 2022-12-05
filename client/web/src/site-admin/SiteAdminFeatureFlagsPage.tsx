@@ -59,7 +59,7 @@ export function parseProductReference(productVersion: string): string {
         return parts.pop() || 'main'
     }
     // Special case for dev tag
-    if (productVersion === '0.0.0') {
+    if (productVersion.startsWith('0.0.0')) {
         return 'main'
     }
     // Otherwise assume product version is probably a tag

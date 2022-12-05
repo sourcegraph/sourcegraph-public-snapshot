@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -54,11 +53,6 @@ var _ goroutine.Handler = &handler{}
 var _ goroutine.ErrorHandler = &handler{}
 
 func (h *handler) Handle(ctx context.Context) error {
-	if !conf.SearchIndexEnabled() {
-		h.logger.Debug("Search indexing is disabled. Skipping update of index statuses.")
-		return nil
-	}
-
 	indexed, err := search.ListAllIndexed(ctx)
 	if err != nil {
 		return err

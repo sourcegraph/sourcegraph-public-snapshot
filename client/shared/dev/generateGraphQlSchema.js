@@ -1,5 +1,3 @@
-/* eslint no-console: 0 */
-
 /**
  * Generates the TypeScript types for the GraphQL schema.
  * These are used by older code, new code should rely on the new query-specific generated types.
@@ -24,7 +22,10 @@ async function main(args) {
   }
 
   const outputFile = args[0]
+  await graphQlSchema(outputFile)
+}
 
+async function graphQlSchema(outputFile) {
   const schemaFiles = glob.sync(GRAPHQL_SCHEMA_GLOB)
   let combinedSchema = ''
   for (const schemaPath of schemaFiles) {
@@ -68,7 +69,14 @@ async function main(args) {
   await writeFile(outputFile, typings)
 }
 
-main(process.argv.slice(2)).catch(error => {
-  console.error(error)
-  process.exit(1)
-})
+// Entry point used by Bazel binary
+if (require.main === module) {
+  main(process.argv.slice(2)).catch(error => {
+    console.error(error)
+    process.exit(1)
+  })
+}
+
+module.exports = {
+  graphQlSchema,
+}

@@ -21,14 +21,13 @@ func maybeBlobstore(logger sglog.Logger) []string {
 	// Note: SetDefaultEnv should be called only once for the same env var, so
 	// ensure these do not conflict with the default list set below.
 	dataDir := filepath.Join(os.Getenv("DATA_DIR"), "blobstore")
-	SetDefaultEnv("S3PROXY_ENDPOINT", "http://0.0.0.0:9000")
 	SetDefaultEnv("JCLOUDS_FILESYSTEM_BASEDIR", dataDir)
 
 	// Default blobstore env vars copied from the Dockerfile
 	// https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/blobstore/Dockerfile
 	SetDefaultEnv("LOG_LEVEL", "info")
 	SetDefaultEnv("S3PROXY_AUTHORIZATION", "none")
-	// SetDefaultEnv("S3PROXY_ENDPOINT", "http://0.0.0.0:80") // overridden above; here for equality with Dockerfile
+	SetDefaultEnv("S3PROXY_ENDPOINT", "http://0.0.0.0:9000")
 	SetDefaultEnv("S3PROXY_IDENTITY", "local-identity")
 	SetDefaultEnv("S3PROXY_CREDENTIAL", "local-credential")
 	SetDefaultEnv("S3PROXY_VIRTUALHOST", "")

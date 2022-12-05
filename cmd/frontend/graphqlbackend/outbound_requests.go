@@ -161,7 +161,7 @@ func (r *OutboundRequestResolver) ErrorMessage() string { return r.req.ErrorMess
 
 func (r *OutboundRequestResolver) CreationStackFrame() string { return r.req.CreationStackFrame }
 
-func (r *OutboundRequestResolver) CallStackFrame() string { return r.req.CallStackFrame }
+func (r *OutboundRequestResolver) CallStack() string { return r.req.CallStackFrame }
 
 func newHttpHeaders(headers map[string][]string) ([]*HttpHeaders, error) {
 	result := make([]*HttpHeaders, 0, len(headers))

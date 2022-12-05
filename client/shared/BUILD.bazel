@@ -1,0 +1,22 @@
+load("@aspect_rules_js//js:defs.bzl", "js_run_binary")
+load("//client/shared/dev:generate_schema.bzl", "generate_schema")
+
+js_run_binary(
+    name = "graphql_schema",
+    outs = ["src/schema.ts"],
+    args = [
+        "src/schema.ts",
+    ],
+    chdir = package_name(),
+    tool = "//client/shared/dev:generate_graphql_schema",
+)
+
+[generate_schema(
+    name = name,
+    out = "src/schema/%s.schema.d.ts" % name,
+) for name in [
+    "json-schema-draft-07",
+    "site",
+    "settings",
+    "batch_spec",
+]]

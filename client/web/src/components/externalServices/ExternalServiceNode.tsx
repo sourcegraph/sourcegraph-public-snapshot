@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiAccount, mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
+import { mdiCircle, mdiCog, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -84,12 +84,6 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     <div>
                         <Icon as={IconComponent} aria-label="Code host logo" className="mr-2" />
                         <strong>
-                            {node.namespace && (
-                                <>
-                                    <Icon aria-hidden={true} svgPath={mdiAccount} />
-                                    <Link to={node.namespace.url}>{node.namespace.namespaceName}</Link>{' '}
-                                </>
-                            )}
                             {node.displayName}{' '}
                             <small className="text-muted">
                                 ({node.repoCount} {pluralize('repository', node.repoCount, 'repositories')})

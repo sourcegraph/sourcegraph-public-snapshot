@@ -87,7 +87,7 @@ func TestReconcileCandidates(t *testing.T) {
 	}
 
 	// Initial batch of records
-	ids, err := store.reconcileCandidates(ctx, 8, now)
+	ids, err := store.reconcileCandidates(ctx, 4, now)
 	if err != nil {
 		t.Fatalf("failed to get candidate IDs for reconciliation: %s", err)
 	}
@@ -96,28 +96,28 @@ func TestReconcileCandidates(t *testing.T) {
 		101,
 		102,
 		103,
-		104,
-		105,
 		200,
 		201,
+		202,
+		203,
 	}
 	sort.Ints(ids)
 	if diff := cmp.Diff(expectedIDs, ids); diff != "" {
 		t.Fatalf("unexpected IDs (-want +got):\n%s", diff)
 	}
 
-	// Remaining records, wrap around
-	ids, err = store.reconcileCandidates(ctx, 8, now.Add(time.Minute*1))
+	// Wraps around after exhausting first records
+	ids, err = store.reconcileCandidates(ctx, 4, now.Add(time.Minute*1))
 	if err != nil {
 		t.Fatalf("failed to get candidate IDs for reconciliation: %s", err)
 	}
 	expectedIDs = []int{
 		100,
 		101,
-		102,
-		103,
-		202,
-		203,
+		104,
+		105,
+		200,
+		201,
 		204,
 		205,
 	}
@@ -126,16 +126,16 @@ func TestReconcileCandidates(t *testing.T) {
 		t.Fatalf("unexpected IDs (-want +got):\n%s", diff)
 	}
 
-	// ...and continues to wrap
-	ids, err = store.reconcileCandidates(ctx, 4, now.Add(time.Minute*2))
+	// Continues to wrap around
+	ids, err = store.reconcileCandidates(ctx, 2, now.Add(time.Minute*2))
 	if err != nil {
 		t.Fatalf("failed to get candidate IDs for reconciliation: %s", err)
 	}
 	expectedIDs = []int{
-		104,
-		105,
-		200,
-		201,
+		102,
+		103,
+		202,
+		203,
 	}
 	sort.Ints(ids)
 	if diff := cmp.Diff(expectedIDs, ids); diff != "" {

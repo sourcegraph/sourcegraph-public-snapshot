@@ -70,8 +70,6 @@ func Main(enterpriseInit EnterpriseInit) {
 	// NOTE: Internal actor is required to have full visibility of the repo table
 	// 	(i.e. bypass repository authorization).
 	ctx := actor.WithInternalActor(context.Background())
-	env.Lock()
-	env.HandleHelpFlag()
 
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
@@ -222,7 +220,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		otel.GetTracerProvider(),
 	)(server.Handler())
 
-	globals.WatchExternalURL(nil)
+	globals.WatchExternalURL()
 
 	debugDumpers["repos"] = updateScheduler
 	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(debugDumpers)
