@@ -2,6 +2,8 @@ package backend
 
 import (
 	"context"
+	"encoding/json"
+	"os"
 	"sync"
 	"time"
 
@@ -13,6 +15,7 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
+	"go.uber.org/zap"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -26,6 +29,19 @@ var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Help:    "Time (in seconds) spent on request.",
 	Buckets: prometheus.DefBuckets,
 }, []string{"hostname", "category", "code"})
+
+const tempSearchCoreMetricsLogPathEnv = "SEARCH_CORE_TEMP_SEARCH_METRICS_LOG_PATH"
+
+var (
+	tempSearchCoreMetricsLoggingEnabled = os.Getenv(tempSearchCoreMetricsLogPathEnv) != ""
+
+	// tempSearchMetricsLogger is a zap.Logger that logs writes metrics data to the log file specified
+	// in the SEARCH_CORE_TEMP_SEARCH_METRICS_LOG_PATH environment variable.
+	//
+	// Note: tempSearchMetricsLogger must be shared across all metered searcher instances in order to have all
+	// writes to the log file protected by the same lock.
+	tempSearchMetricsLogger = mustInitializeTempSearchCoreMetricsLogger()
+)
 
 type meteredSearcher struct {
 	zoekt.Streamer
@@ -212,6 +228,17 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	// Record total duration of stream
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
 
+	if tempSearchCoreMetricsLoggingEnabled {
+		if fields := event.Fields(); len(fields) > 0 {
+			data, marshalErr := json.Marshal(fields)
+			if marshalErr != nil {
+				tempSearchMetricsLogger.Error("failed to marshal search metrics event data", zap.Error(marshalErr))
+			} else {
+				tempSearchMetricsLogger.Info("search metrics", zap.Any("data", json.RawMessage(data)))
+			}
+		}
+	}
+
 	return err
 }
 
@@ -293,4 +320,22 @@ func queryString(q query.Q) string {
 		return "<nil>"
 	}
 	return q.String()
+}
+
+// mustInitializeTempSearchCoreMetricsLogger returns a zap.Logger that's suitable for logging search metrics
+// to the log file specified in the "SEARCH_CORE_TEMP_SEARCH_METRICS_LOG_PATH" environment variable.
+// If "SEARCH_CORE_TEMP_SEARCH_METRICS_LOG_PATH" is empty, a no-op logger is returned instead.
+//
+// This function panics if an error occurs while initializing the logger.
+func mustInitializeTempSearchCoreMetricsLogger() *zap.Logger {
+	logPath := os.Getenv(tempSearchCoreMetricsLogPathEnv)
+	if logPath == "" {
+		return zap.NewNop()
+	}
+
+	c := zap.NewProductionConfig()
+	c.Sampling = nil                  // completely disable log sampling since we need exact performance data for our analysis
+	c.OutputPaths = []string{logPath} // write to the log file specified in the given environment variable
+
+	return zap.Must(c.Build())
 }
