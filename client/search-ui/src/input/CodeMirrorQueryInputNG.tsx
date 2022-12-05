@@ -1,14 +1,19 @@
 import { QueryState, SearchPatternType } from '@sourcegraph/search'
 import { useEffect, useState } from 'react'
+import { Source } from './codemirror/suggestions'
 import CodeMirrorQueryInput from './CodeMirrorQueryInput.svelte'
+import { History } from 'history'
 
 interface CodeMirrorQueryInputNGProps {
     queryState: QueryState
     onChange: (queryState: QueryState) => void
+    onSubmit: () => void
     isLightTheme: boolean
     interpretComments: boolean
     patternType: SearchPatternType
     placeholder: string
+    suggestionSource: Source
+    history: History
 }
 
 export const CodeMirrorQueryInputNG: React.FunctionComponent<CodeMirrorQueryInputNGProps> = props => {

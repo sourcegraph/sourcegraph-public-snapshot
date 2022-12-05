@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
@@ -36,6 +36,7 @@ import { submitSearch } from '../helpers'
 import { useRecentSearches } from '../input/useRecentSearches'
 
 import styles from './SearchPageInput.module.scss'
+import { suggestions } from '../input/suggestions'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -126,8 +127,11 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             interpretComments={false}
             queryState={props.queryState}
             onChange={props.setQueryState}
+            onSubmit={onSubmit}
             isLightTheme={props.isLightTheme}
             placeholder="Search for code or files"
+            suggestionSource={suggestions}
+            history={props.history}
         />
     )
     /*
