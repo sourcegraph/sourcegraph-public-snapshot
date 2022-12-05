@@ -484,14 +484,14 @@ func Test_BackfillCrossingErrorThreshold(t *testing.T) {
 
 	dequeue, _, _ := monitor.inProgressStore.Dequeue(ctx, "test", nil)
 	handler := inProgressHandler{
-		workerStore:    monitor.newBackfillStore,
-		backfillStore:  bfs,
-		seriesReader:   insightsStore,
-		repoStore:      repos,
-		insightsStore:  seriesStore,
-		backfillRunner: &runner,
-		config:         handlerConfig,
-		clock:          clock,
+		workerStore:        monitor.newBackfillStore,
+		backfillStore:      bfs,
+		seriesReadComplete: insightsStore,
+		repoStore:          repos,
+		insightsStore:      seriesStore,
+		backfillRunner:     &runner,
+		config:             handlerConfig,
+		clock:              clock,
 	}
 
 	err = handler.Handle(ctx, logger, dequeue)
