@@ -18,6 +18,7 @@ import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, Insight
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
+import { useSaveInsightAsNewView } from '../../../../core/hooks/use-save-insight-as-new-view'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
 import { useVisibility } from '../../hooks/use-insight-data'
@@ -44,7 +45,8 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
     const { telemetryService, insight, resizing, children, className, ...attributes } = props
 
     const { currentDashboard, dashboards } = useContext(InsightContext)
-    const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+    const { updateInsight } = useContext(CodeInsightsBackendContext)
+    const [saveNewView] = useSaveInsightAsNewView({ dashboard: currentDashboard })
 
     const cardElementRef = useMergeRefs([ref])
     const { wasEverVisible, isVisible } = useVisibility(cardElementRef)
@@ -127,14 +129,12 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
             return
         }
 
-        await createInsight({
-            insight: {
-                ...insight,
-                title: insightName,
-                filters,
-            },
+        await saveNewView({
+            insight,
+            filters,
+            title: insightName,
             dashboard: currentDashboard,
-        }).toPromise()
+        })
 
         telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
         setOriginalInsightFilters(filters)
