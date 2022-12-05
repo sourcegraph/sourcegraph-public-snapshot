@@ -30,6 +30,14 @@ type gitCommitConnectionResolver struct {
 	err     error
 }
 
+func toValue(s *string) string {
+	if s != nil {
+		return *s
+	}
+
+	return ""
+}
+
 func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain.Commit, error) {
 	do := func() ([]*gitdomain.Commit, error) {
 		var n int32
@@ -37,29 +45,14 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 			n = *r.first
 			n++ // fetch +1 additional result so we can determine if a next page exists
 		}
-		var query string
-		if r.query != nil {
-			query = *r.query
-		}
-		var path string
-		if r.path != nil {
-			path = *r.path
-		}
-		var author string
-		if r.author != nil {
-			author = *r.author
-		}
-		var after string
-		if r.after != nil {
-			after = *r.after
-		}
+
 		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
 			Range:        r.revisionRange,
 			N:            uint(n),
-			MessageQuery: query,
-			Author:       author,
-			After:        after,
-			Path:         path,
+			MessageQuery: toValue(r.query),
+			Author:       toValue(r.author),
+			After:        toValue(r.after),
+			Path:         toValue(r.path),
 		}, authz.DefaultSubRepoPermsChecker)
 	}
 
