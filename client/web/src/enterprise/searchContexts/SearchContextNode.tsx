@@ -2,25 +2,35 @@ import React from 'react'
 
 import { mdiDotsHorizontal } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
 
 import { pluralize } from '@sourcegraph/common'
 import { SearchContextMinimalFields } from '@sourcegraph/search'
 import { Badge, Icon, Link, Menu, MenuButton, MenuLink, MenuList, Tooltip } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../auth'
 import { Timestamp } from '../../components/time/Timestamp'
+
+import { useToggleSearchContextStar } from './hooks/useToggleSearchContextStar'
+import { SearchContextStarButton } from './SearchContextStarButton'
 
 import styles from './SearchContextNode.module.scss'
 
 export interface SearchContextNodeProps {
     node: SearchContextMinimalFields
-    location: H.Location
-    history: H.History
+    authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
 }
 
 export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<SearchContextNodeProps>> = ({
     node,
+    authenticatedUser,
 }: SearchContextNodeProps) => {
+    const { starred, toggleStar } = useToggleSearchContextStar(node.viewerHasStarred, node.id, authenticatedUser?.id)
+
+    const starButton =
+        !node.autoDefined && authenticatedUser ? (
+            <SearchContextStarButton starred={starred} onClick={toggleStar} />
+        ) : null
+
     const contents =
         node.repositories && node.repositories.length > 0 ? (
             <>
@@ -57,7 +67,7 @@ export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<
 
     return (
         <tr className={styles.row}>
-            <td className={styles.star} />
+            <td className={styles.star}>{starButton}</td>
             <td className={styles.name}>
                 <Link to={`/contexts/${node.spec}`}>{node.spec}</Link>{' '}
                 <span className="d-none d-md-inline-block">{tags}</span>

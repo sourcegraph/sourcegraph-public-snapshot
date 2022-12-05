@@ -171,8 +171,7 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
             showSearchFirst={true}
             nodeComponent={SearchContextNode}
             nodeComponentProps={{
-                location,
-                history,
+                authenticatedUser,
             }}
             noun="search context"
             pluralNoun="search contexts"
