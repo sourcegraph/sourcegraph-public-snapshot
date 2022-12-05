@@ -91,8 +91,8 @@ func OtelCollector() *monitoring.Dashboard {
 								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.`,
 						},
 						{
-							Name:        "otel_span_queue_size",
-							Description: "spans pending to be sent",
+							Name:        "otel_span_export_queue_size",
+							Description: "spans pending to be exported by exporter",
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							Query:       "sum(rate(otelcol_exporter_queue_size{exporter=~\"^.*\"}[1m])) by (exporter)",
