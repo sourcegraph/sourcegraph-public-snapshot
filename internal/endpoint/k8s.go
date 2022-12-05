@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	appsv1 "k8s.io/api/apps/v1"
@@ -17,15 +16,19 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // K8S returns a Map for the given k8s urlspec (e.g. k8s+http://searcher), starting
 // service discovery in the background.
-func K8S(urlspec string) *Map {
+func K8S(logger log.Logger, urlspec string) *Map {
+
 	return &Map{
 		urlspec:   urlspec,
 		discofunk: k8sDiscovery(urlspec, namespace(), loadClient),
+		logger:    log.Scoped("endpointsk8s", "service discovery via k8s"),
 	}
 }
 
@@ -63,13 +66,12 @@ func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientse
 
 		handle := func(obj any) {
 			eps := k8sEndpoints(u, obj)
-
-			log15.Info(
+			u.Logger.Info(
 				"endpoints k8s discovered",
-				"urlspec", urlspec,
-				"service", u.Service,
-				"count", len(eps),
-				"endpoints", eps,
+				log.String("urlspec", urlspec),
+				log.String("service", u.Service),
+				log.Int("count", len(eps)),
+				log.Strings("endpoints", eps),
 			)
 
 			disco <- endpoints{Service: u.Service, Endpoints: eps}
@@ -138,6 +140,7 @@ type k8sURL struct {
 	Service   string
 	Namespace string
 	Kind      string
+	Logger    log.Logger
 }
 
 func (u *k8sURL) endpointURL(endpoint string) string {
@@ -175,6 +178,7 @@ func parseURL(rawurl string) (*k8sURL, error) {
 		Service:   svc,
 		Namespace: ns,
 		Kind:      strings.ToLower(u.Query().Get("kind")),
+		Logger:    log.Scoped("k8sendpoint", "A kubernetes endpoint that represents a service"),
 	}, nil
 }
 
@@ -182,16 +186,17 @@ func parseURL(rawurl string) (*k8sURL, error) {
 // this is done because the k8s client we previously used set the namespace
 // when the client was created, the official k8s client does not
 func namespace() string {
+	logger := log.Scoped("namespace", "A kubernetes namespace")
 	const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		log15.Warn("endpoint: falling back to kubernetes default namespace", "error", filename+" is empty")
+		logger.Warn("endpoint: falling back to kubernetes default namespace", log.String("error", filename+" is empty"))
 		return "default"
 	}
 
 	ns := strings.TrimSpace(string(data))
 	if ns == "" {
-		log15.Warn("file: ", filename, " empty using \"default\" ns")
+		logger.Warn("file: ", log.String(filename, " empty using \"default\" ns"))
 		return "default"
 	}
 	return ns
