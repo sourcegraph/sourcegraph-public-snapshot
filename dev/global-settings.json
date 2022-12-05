@@ -14,23 +14,6 @@
     "enableSidebarFilePrefetch": true
   },
   "codeIntel.referencesPanel": "tree-view",
-  "insights": [
-    {
-      "title": "fmt usage",
-      "description": "fmt.Errorf/fmt.Printf usage",
-      "series": [
-        {
-          "label": "fmt.Errorf",
-          "search": "errorf"
-        },
-        {
-          "label": "printf",
-          "search": "fmt.Printf"
-        }
-      ],
-      "id": "1"
-    }
-  ],
   "search.repositoryGroups": {
     "test": ["github.com/gorilla/mux", "github.com/gorilla/pat"]
   }
