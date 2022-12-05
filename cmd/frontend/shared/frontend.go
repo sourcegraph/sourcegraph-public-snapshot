@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 )
@@ -20,7 +19,6 @@ import (
 // main package implementations such as Sourcegraph Enterprise, which import
 // proprietary/private code.
 func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) enterprise.Services) {
-	env.Lock()
 	err := cli.Main(enterpriseSetupHook)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "fatal:", err)

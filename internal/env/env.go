@@ -95,8 +95,7 @@ func init() {
 // HelpString. Calling Get with the same name twice causes a panic. Get should only be called on
 // package initialization. Calls at a later point will cause a panic if Lock was called before.
 //
-// This should be used for only *internal* environment values. User-visible configuration should be
-// added to the Config struct in the github.com/sourcegraph/sourcegraph/config package.
+// This should be used for only *internal* environment values.
 func Get(name, defaultValue, description string) string {
 	if locked {
 		panic("env.Get has to be called on package initialization")
@@ -160,6 +159,10 @@ func environMap(environ []string) map[string]string {
 
 // Lock makes later calls to Get fail with a panic. Call this at the beginning of the main function.
 func Lock() {
+	if locked {
+		panic("env.Lock must be called at most once")
+	}
+
 	locked = true
 
 	sort.Slice(env, func(i, j int) bool { return env[i].name < env[j].name })

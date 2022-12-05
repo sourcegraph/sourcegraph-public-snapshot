@@ -5426,7 +5426,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sourcegraph/eslint-plugin-wildcard@1.0.0, @sourcegraph/eslint-plugin-wildcard@workspace:client/eslint-plugin-wildcard":
+"@sourcegraph/eslint-plugin-wildcard@workspace:client/eslint-plugin-wildcard":
   version: 0.0.0-use.local
   resolution: "@sourcegraph/eslint-plugin-wildcard@workspace:client/eslint-plugin-wildcard"
   peerDependencies:
@@ -28620,7 +28620,6 @@ pvutils@latest:
     "@slack/web-api": ^5.15.0
     "@sourcegraph/eslint-config": 0.32.0
     "@sourcegraph/eslint-plugin-sourcegraph": ^1.0.5
-    "@sourcegraph/eslint-plugin-wildcard": 1.0.0
     "@sourcegraph/extension-api-classes": ^1.1.0
     "@sourcegraph/extension-api-stubs": ^1.6.1
     "@sourcegraph/prettierrc": ^3.0.3

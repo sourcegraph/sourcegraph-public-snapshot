@@ -22,6 +22,7 @@ import (
 	ossDB "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -29,6 +30,9 @@ import (
 )
 
 func main() {
+	env.Lock()
+	env.HandleHelpFlag()
+
 	shared.Main(enterpriseInit)
 }
 

@@ -1,7 +1,8 @@
 .container {
     display: flex;
     flex-direction: column;
-    max-width: 31rem;
+    width: 31rem;
+    max-width: 100%;
 }
 
 .header {

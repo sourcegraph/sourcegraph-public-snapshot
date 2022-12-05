@@ -3,6 +3,7 @@ package uploads
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -66,13 +67,21 @@ type operations struct {
 	numBytesDeleted        prometheus.Counter
 }
 
+var (
+	metricsMap = make(map[string]prometheus.Counter)
+	m          = new(metrics.SingletonREDMetrics)
+	metricsMu  sync.Mutex
+)
+
 func newOperations(observationContext *observation.Context) *operations {
-	m := metrics.NewREDMetrics(
-		observationContext.Registerer,
-		"codeintel_uploads",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
+	m := m.Get(func() *metrics.REDMetrics {
+		return metrics.NewREDMetrics(
+			observationContext.Registerer,
+			"codeintel_uploads",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+	})
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
@@ -83,12 +92,21 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	counter := func(name, help string) prometheus.Counter {
+		metricsMu.Lock()
+		defer metricsMu.Unlock()
+
+		if c, ok := metricsMap[name]; ok {
+			return c
+		}
+
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
 			Help: help,
 		})
-
 		observationContext.Registerer.MustRegister(counter)
+
+		metricsMap[name] = counter
+
 		return counter
 	}
 
