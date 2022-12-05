@@ -100,6 +100,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
         Pick<SettingsUserSubject, 'id'> | Pick<SettingsOrgSubject, 'id'>
     >(defaultSelectedNamespace)
 
+    // This updates the defaultSelectedNamespace after the graphql query in the `useNamespace` hook is done.
     useEffect(() => {
         setSelectedNamespace(defaultSelectedNamespace)
     }, [defaultSelectedNamespace])
