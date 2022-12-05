@@ -39,37 +39,33 @@ func (ws *webhookService) DeleteWebhook(ctx context.Context, id int32) error {
 	return ws.db.Webhooks(ws.keyRing.WebhookKey).Delete(ctx, database.DeleteWebhookOpts{ID: id})
 }
 
-func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, codeHostKind, codeHostURN, secretStr *string) (*types.Webhook, error) {
-	u := actor.FromContext(ctx)
-	if u == nil {
-		return nil, errors.New("no actor found in context")
-	}
+func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, codeHostKind, codeHostURN string, secretStr *string) (*types.Webhook, error) {
 	webhooksStore := ws.db.Webhooks(ws.keyRing.WebhookKey)
 	webhook, err := webhooksStore.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	if name != nil {
-		webhook.Name = *name
+	if name != "" {
+		webhook.Name = name
 	}
-	if codeHostKind != nil {
-		if err := validateCodeHostKindAndSecret(*codeHostKind, secretStr); err != nil {
+	if codeHostKind != "" {
+		if err := validateCodeHostKindAndSecret(codeHostKind, secretStr); err != nil {
 			return nil, err
 		}
 
-		webhook.CodeHostKind = *codeHostKind
+		webhook.CodeHostKind = codeHostKind
 	}
-	if codeHostURN != nil {
-		codeHostURN, err := extsvc.NewCodeHostBaseURL(*codeHostURN)
+	if codeHostURN != "" {
+		codeHostURN, err := extsvc.NewCodeHostBaseURL(codeHostURN)
 		if err != nil {
 			return nil, err
 		}
 		webhook.CodeHostURN = codeHostURN
 	}
 	if secretStr != nil {
-		if codeHostKind != nil {
-			if err := validateCodeHostKindAndSecret(*codeHostKind, secretStr); err != nil {
+		if codeHostKind != "" {
+			if err := validateCodeHostKindAndSecret(codeHostKind, secretStr); err != nil {
 				return nil, err
 			}
 		} else {
@@ -81,7 +77,7 @@ func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, cod
 		webhook.Secret = types.NewUnencryptedSecret(*secretStr)
 	}
 
-	newWebhook, err := webhooksStore.Update(ctx, actor.FromContext(ctx).UID, webhook)
+	newWebhook, err := webhooksStore.Update(ctx, webhook)
 	if err != nil {
 		return nil, err
 	}

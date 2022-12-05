@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 
@@ -128,7 +129,8 @@ func TestWebhookCreate(t *testing.T) {
 		assert.Equal(t, int32(0), webhook2.UpdatedByUserID)
 
 		// Updating webhook1 by user2 and checking that updated_by_user_id is updated
-		webhook1, err = webhooksStore.Update(ctx, UID2, webhook1)
+		ctx = actor.WithActor(ctx, &actor.Actor{UID: UID2})
+		webhook1, err = webhooksStore.Update(ctx, webhook1)
 		assert.NoError(t, err)
 		assert.Equal(t, UID2, webhook1.UpdatedByUserID)
 	})
@@ -202,7 +204,7 @@ func TestWebhookUpdate(t *testing.T) {
 
 		created.CodeHostURN = newCodeHostURN
 		created.Secret = types.NewUnencryptedSecret(updatedSecret)
-		updated, err := store.Update(ctx, 0, created)
+		updated, err := store.Update(ctx, created)
 		if err != nil {
 			t.Fatalf("error updating webhook: %s", err)
 		}
@@ -221,7 +223,7 @@ func TestWebhookUpdate(t *testing.T) {
 
 		created.CodeHostURN = newCodeHostURN
 		created.Secret = types.NewUnencryptedSecret(updatedSecret)
-		updated, err := store.Update(ctx, 0, created)
+		updated, err := store.Update(ctx, created)
 		if err != nil {
 			t.Fatalf("error updating webhook: %s", err)
 		}
@@ -248,7 +250,7 @@ func TestWebhookUpdate(t *testing.T) {
 		store := db.Webhooks(nil)
 		created := createWebhook(ctx, t, store)
 		created.Secret = nil
-		updated, err := store.Update(ctx, 0, created)
+		updated, err := store.Update(ctx, created)
 		if err != nil {
 			t.Fatalf("unexpected error updating webhook: %s", err)
 		}
@@ -272,7 +274,7 @@ func TestWebhookUpdate(t *testing.T) {
 		db := NewDB(logger, dbtest.NewDB(logger, t))
 
 		store := db.Webhooks(nil)
-		_, err := store.Update(ctx, 0, &webhook)
+		_, err := store.Update(ctx, &webhook)
 		if err == nil {
 			t.Fatal("attempting to update a non-existent webhook should return an error")
 		}

@@ -53,9 +53,9 @@ type DeleteWebhookArgs struct {
 
 type UpdateWebhookArgs struct {
 	ID           graphql.ID
-	Name         *string
-	CodeHostKind *string
-	CodeHostURN  *string
+	Name         string
+	CodeHostKind string
+	CodeHostURN  string
 	Secret       *string
 }
 
