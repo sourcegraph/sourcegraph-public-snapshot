@@ -260,11 +260,13 @@ const OutboundRequestNode: React.FunctionComponent<{ node: React.PropsWithChildr
                                     <strong>Request headers:</strong>{' '}
                                 </Text>
                                 <ul>
-                                    {node.requestHeaders.map(header => (
-                                        <li key={header.name}>
-                                            <strong>{header.name}</strong>: {header.values.join(', ')}
-                                        </li>
-                                    ))}
+                                    {[...node.requestHeaders]
+                                        .sort((a, b) => a.name.localeCompare(b.name))
+                                        .map(header => (
+                                            <li key={header.name}>
+                                                <strong>{header.name}</strong>: {header.values.join(', ')}
+                                            </li>
+                                        ))}
                                 </ul>
                             </>
                         ) : (
@@ -276,11 +278,13 @@ const OutboundRequestNode: React.FunctionComponent<{ node: React.PropsWithChildr
                                     <strong>Response headers:</strong>{' '}
                                 </Text>
                                 <ul>
-                                    {node.responseHeaders.map(header => (
-                                        <li key={header.name}>
-                                            <strong>{header.name}</strong>: {header.values.join(', ')}
-                                        </li>
-                                    ))}
+                                    {[...node.responseHeaders]
+                                        .sort((a, b) => a.name.localeCompare(b.name))
+                                        .map(header => (
+                                            <li key={header.name}>
+                                                <strong>{header.name}</strong>: {header.values.join(', ')}
+                                            </li>
+                                        ))}
                                 </ul>
                             </>
                         ) : (
