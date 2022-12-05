@@ -1,5 +1,3 @@
-/* eslint no-console: 0 */
-
 /**
  * Generates the TypeScript types for the JSON schemas.
  *
@@ -13,8 +11,8 @@ const path = require('path')
 const { compile: compileJSONSchema } = require('json-schema-to-typescript')
 const { mkdir, readFile, writeFile } = require('mz/fs')
 
-const schemaDirectory = path.join(__dirname, '..', '..', '..', '..', 'schema')
-const outputDirectory = __dirname
+const schemaDirectory = path.join(__dirname, '..', '..', '..', 'schema')
+const outputDirectory = path.join(__dirname, '..', 'src', 'schema')
 
 /**
  * Allow json-schema-ref-parser to resolve the v7 draft of JSON Schema
@@ -26,13 +24,7 @@ const draftV7resolver = {
   canRead: file => file.url === 'http://json-schema.org/draft-07/schema',
 }
 
-async function main(args) {
-  if (args.length !== 1) {
-    throw new Error('Usage: <schemaName>')
-  }
-
-  const schemaName = args[0]
-
+async function generateSchema(schemaName) {
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   let schema = await readFile(path.join(schemaDirectory, `${schemaName}.schema.json`), 'utf8')
 
@@ -57,7 +49,23 @@ async function main(args) {
   await writeFile(path.join(outputDirectory, `${schemaName}.schema.d.ts`), types)
 }
 
-main(process.argv.slice(2)).catch(error => {
-  console.error(error)
-  process.exit(1)
-})
+// Entry point for Bazel binary
+async function main(args) {
+  if (args.length !== 1) {
+    throw new Error('Usage: <schemaName>')
+  }
+
+  const schemaName = args[0]
+  await generateSchema(schemaName)
+}
+
+if (require.main === module) {
+  main(process.argv.slice(2)).catch(error => {
+    console.error(error)
+    process.exit(1)
+  })
+}
+
+module.exports = {
+  generateSchema,
+}

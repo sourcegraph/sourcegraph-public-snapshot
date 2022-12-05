@@ -1,15 +1,12 @@
 load("@aspect_rules_js//js:defs.bzl", "js_run_binary")
 load("@bazel_skylib//lib:collections.bzl", "collections")
 
-def generate_schema(name, tool):
-    """Generate TypeScript types for a schema.
-
-    Converts the schema with target name //schema:<name> and outputs
-    <name>.schema.d.ts.
+def generate_schema(name, out):
+    """Generate TypeScript types for a JSON schema with target name //schema:<name>.
 
     Args:
         name: name of the schema file under schemas/ minus the extension
-        tool: js_binary that performs the schema generation
+        out: output schema file
     """
     js_run_binary(
         name = name,
@@ -20,9 +17,9 @@ def generate_schema(name, tool):
                 "//schema:json-schema-draft-07",
             ],
         ),
-        outs = ["%s.schema.d.ts" % name],
+        outs = [out],
         args = [
             name,
         ],
-        tool = tool,
+        tool = "//client/shared/dev:generate_schema",
     )

@@ -62,7 +62,7 @@ func redisLoggerMiddleware() Middleware {
 				errorMessage = err.Error()
 			}
 			key := time.Now().UTC().Format("2006-01-02T15_04_05.999999999")
-			callerStackFrame, _ := getFrames(4).Next() // Caller of the caller of redisLoggerMiddleware
+			callerStackFrames := getFrames(4) // Starts at the caller of the caller of redisLoggerMiddleware
 			logItem := types.OutboundRequestLogItem{
 				ID:                 key,
 				StartedAt:          start,
@@ -75,7 +75,7 @@ func redisLoggerMiddleware() Middleware {
 				Duration:           duration.Seconds(),
 				ErrorMessage:       errorMessage,
 				CreationStackFrame: formatStackFrame(creatorStackFrame),
-				CallStackFrame:     formatStackFrame(callerStackFrame),
+				CallStackFrame:     formatStackFrames(callerStackFrames),
 			}
 
 			// Serialize log item
@@ -195,6 +195,19 @@ func removeSensitiveHeaders(headers http.Header) http.Header {
 		}
 	}
 	return cleanHeaders
+}
+
+func formatStackFrames(frames *runtime.Frames) string {
+	var sb strings.Builder
+	for {
+		frame, more := frames.Next()
+		if !more {
+			break
+		}
+		sb.WriteString(formatStackFrame(frame))
+		sb.WriteString("\n")
+	}
+	return strings.TrimRight(sb.String(), "\n")
 }
 
 func formatStackFrame(frame runtime.Frame) string {

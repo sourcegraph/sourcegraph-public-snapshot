@@ -80,7 +80,7 @@ export const scrollRangeIntoView = (view: EditorView, range: Range): void => {
     scrollLineIntoView(view, lineBelow)
 }
 
-export const touchOccurrence = (view: EditorView, occurrence: Occurrence): void => {
+export const warmupOccurrence = (view: EditorView, occurrence: Occurrence): void => {
     if (!view.state.field(hoverCache).has(occurrence)) {
         hoverAtOccurrence(view, occurrence).then(
             () => {},
@@ -96,7 +96,7 @@ export const touchOccurrence = (view: EditorView, occurrence: Occurrence): void 
 }
 
 export const selectOccurrence = (view: EditorView, occurrence: Occurrence): void => {
-    touchOccurrence(view, occurrence)
+    warmupOccurrence(view, occurrence)
     selectRange(view, occurrence.range)
     view.dispatch({ effects: setHoveredOccurrenceEffect.of(occurrence) })
 }

@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added "Outbound request log" feature for site admins [#44286](https://github.com/sourcegraph/sourcegraph/pull/44286)
 - Code Insights: the data series API now provides information about incomplete datapoints during processing
 - Added a best-effort migration such that existing Code Insights will display zero results instead of missing points at the start and end of a graph. [#44928](https://github.com/sourcegraph/sourcegraph/pull/44928)
+- More complete stack traces for Outbound request log [#45151](https://github.com/sourcegraph/sourcegraph/pull/45151)
 
 ### Changed
 
