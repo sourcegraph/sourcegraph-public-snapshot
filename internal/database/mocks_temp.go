@@ -28929,10 +28929,6 @@ type MockOrgStore struct {
 	// GetByUserIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByUserID.
 	GetByUserIDFunc *OrgStoreGetByUserIDFunc
-	// GetOrgsWithRepositoriesByUserIDFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// GetOrgsWithRepositoriesByUserID.
-	GetOrgsWithRepositoriesByUserIDFunc *OrgStoreGetOrgsWithRepositoriesByUserIDFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *OrgStoreHandleFunc
@@ -28996,11 +28992,6 @@ func NewMockOrgStore() *MockOrgStore {
 			},
 		},
 		GetByUserIDFunc: &OrgStoreGetByUserIDFunc{
-			defaultHook: func(context.Context, int32) (r0 []*types.Org, r1 error) {
-				return
-			},
-		},
-		GetOrgsWithRepositoriesByUserIDFunc: &OrgStoreGetOrgsWithRepositoriesByUserIDFunc{
 			defaultHook: func(context.Context, int32) (r0 []*types.Org, r1 error) {
 				return
 			},
@@ -29087,11 +29078,6 @@ func NewStrictMockOrgStore() *MockOrgStore {
 				panic("unexpected invocation of MockOrgStore.GetByUserID")
 			},
 		},
-		GetOrgsWithRepositoriesByUserIDFunc: &OrgStoreGetOrgsWithRepositoriesByUserIDFunc{
-			defaultHook: func(context.Context, int32) ([]*types.Org, error) {
-				panic("unexpected invocation of MockOrgStore.GetOrgsWithRepositoriesByUserID")
-			},
-		},
 		HandleFunc: &OrgStoreHandleFunc{
 			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockOrgStore.Handle")
@@ -29157,9 +29143,6 @@ func NewMockOrgStoreFrom(i OrgStore) *MockOrgStore {
 		},
 		GetByUserIDFunc: &OrgStoreGetByUserIDFunc{
 			defaultHook: i.GetByUserID,
-		},
-		GetOrgsWithRepositoriesByUserIDFunc: &OrgStoreGetOrgsWithRepositoriesByUserIDFunc{
-			defaultHook: i.GetOrgsWithRepositoriesByUserID,
 		},
 		HandleFunc: &OrgStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -30038,118 +30021,6 @@ func (c OrgStoreGetByUserIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c OrgStoreGetByUserIDFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// OrgStoreGetOrgsWithRepositoriesByUserIDFunc describes the behavior when
-// the GetOrgsWithRepositoriesByUserID method of the parent MockOrgStore
-// instance is invoked.
-type OrgStoreGetOrgsWithRepositoriesByUserIDFunc struct {
-	defaultHook func(context.Context, int32) ([]*types.Org, error)
-	hooks       []func(context.Context, int32) ([]*types.Org, error)
-	history     []OrgStoreGetOrgsWithRepositoriesByUserIDFuncCall
-	mutex       sync.Mutex
-}
-
-// GetOrgsWithRepositoriesByUserID delegates to the next hook function in
-// the queue and stores the parameter and result values of this invocation.
-func (m *MockOrgStore) GetOrgsWithRepositoriesByUserID(v0 context.Context, v1 int32) ([]*types.Org, error) {
-	r0, r1 := m.GetOrgsWithRepositoriesByUserIDFunc.nextHook()(v0, v1)
-	m.GetOrgsWithRepositoriesByUserIDFunc.appendCall(OrgStoreGetOrgsWithRepositoriesByUserIDFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetOrgsWithRepositoriesByUserID method of the parent MockOrgStore
-// instance is invoked and the hook queue is empty.
-func (f *OrgStoreGetOrgsWithRepositoriesByUserIDFunc) SetDefaultHook(hook func(context.Context, int32) ([]*types.Org, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetOrgsWithRepositoriesByUserID method of the parent MockOrgStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *OrgStoreGetOrgsWithRepositoriesByUserIDFunc) PushHook(hook func(context.Context, int32) ([]*types.Org, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *OrgStoreGetOrgsWithRepositoriesByUserIDFunc) SetDefaultReturn(r0 []*types.Org, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32) ([]*types.Org, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *OrgStoreGetOrgsWithRepositoriesByUserIDFunc) PushReturn(r0 []*types.Org, r1 error) {
-	f.PushHook(func(context.Context, int32) ([]*types.Org, error) {
-		return r0, r1
-	})
-}
-
-func (f *OrgStoreGetOrgsWithRepositoriesByUserIDFunc) nextHook() func(context.Context, int32) ([]*types.Org, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *OrgStoreGetOrgsWithRepositoriesByUserIDFunc) appendCall(r0 OrgStoreGetOrgsWithRepositoriesByUserIDFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// OrgStoreGetOrgsWithRepositoriesByUserIDFuncCall objects describing the
-// invocations of this function.
-func (f *OrgStoreGetOrgsWithRepositoriesByUserIDFunc) History() []OrgStoreGetOrgsWithRepositoriesByUserIDFuncCall {
-	f.mutex.Lock()
-	history := make([]OrgStoreGetOrgsWithRepositoriesByUserIDFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// OrgStoreGetOrgsWithRepositoriesByUserIDFuncCall is an object that
-// describes an invocation of method GetOrgsWithRepositoriesByUserID on an
-// instance of MockOrgStore.
-type OrgStoreGetOrgsWithRepositoriesByUserIDFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*types.Org
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c OrgStoreGetOrgsWithRepositoriesByUserIDFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c OrgStoreGetOrgsWithRepositoriesByUserIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

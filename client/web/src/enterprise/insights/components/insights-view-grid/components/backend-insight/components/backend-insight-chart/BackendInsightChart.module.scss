@@ -2,6 +2,8 @@
     flex: 1;
     min-height: 0;
     position: relative;
+    isolation: isolate;
+
     display: grid;
     grid-template-areas: 'chart';
 
@@ -86,4 +88,14 @@
     width: 100%;
     height: 100%;
     z-index: 1;
+}
+
+.timeout-icon {
+    display: flex;
+    padding: 0 0.25rem;
+}
+
+.troubleshoot-link {
+    // A special link color override for the link within the tooltip UI case
+    --link-color: #4393e7;
 }

@@ -205,6 +205,14 @@
             "pointer": true
           }
         },
+        "codeNavigation": {
+          "description": "What kind of experimental code navigation UX to enable. The most recommended option is 'selection-driven'.",
+          "type": "string",
+          "enum": ["selection-driven", "link-driven"],
+          "!go": {
+            "pointer": true
+          }
+        },
         "fuzzyFinder": {
           "description": "Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.",
           "type": "boolean",
@@ -617,7 +625,7 @@
       "type": "boolean"
     },
     "codeIntel.blobKeyboardNavigation": {
-      "description": "Supported methods of keyboard navigation within the file blob. Note: `token` navigation is only supported when precise code intelligence is available",
+      "description": "DEPRECATED. Use 'experimentalFeatures.codeNavigation':'link-driven' instead.",
       "type": "string",
       "enum": ["none", "token"]
     },

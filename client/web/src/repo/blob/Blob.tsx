@@ -130,14 +130,18 @@ export interface BlobProps
     // and clicking on any line should navigate to that specific line.
     navigateToLineOnAnyClick?: boolean
 
-    // Enables keyboard navigation across precise code intelligence
-    tokenKeyboardNavigation?: boolean
+    // Enables experimental navigation by rendering links for all interactive tokens.
+    enableLinkDrivenCodeNavigation?: boolean
+    // Enables experimental navigation by making interactive tokens selectable on click.
+    enableSelectionDrivenCodeNavigation?: boolean
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
     nav?: (url: string) => void
     role?: string
     ariaLabel?: string
+
+    supportsFindImplementations?: boolean
 
     isBlameVisible?: boolean
     blameHunks?: { current: BlameHunk[] | undefined }

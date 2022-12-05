@@ -29,7 +29,7 @@ export interface SearchContextsListProps
     authenticatedUser: AuthenticatedUser | null
 }
 
-export const SearchContextsList: React.FunctionComponent<React.PropsWithChildren<SearchContextsListProps>> = ({
+export const SearchContextsList: React.FunctionComponent<SearchContextsListProps> = ({
     authenticatedUser,
     getUserSearchContextNamespaces,
     fetchSearchContexts,

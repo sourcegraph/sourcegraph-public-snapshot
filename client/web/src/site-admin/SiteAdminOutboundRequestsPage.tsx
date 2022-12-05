@@ -37,6 +37,7 @@ import { Timestamp } from '../components/time/Timestamp'
 import { OutboundRequestsResult, OutboundRequestsVariables } from '../graphql-operations'
 
 import { OUTBOUND_REQUESTS, OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL } from './backend'
+import { parseProductReference } from './SiteAdminFeatureFlagsPage'
 
 import styles from './SiteAdminOutboundRequestsPage.module.scss'
 
@@ -137,7 +138,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     )
 
     return (
-        <div className="site-admin-migrations-page">
+        <div className="site-admin-outbound-requests-page">
             <PageTitle title="Outbound requests - Admin" />
             <PageHeader
                 path={[{ text: 'Outbound requests' }]}
@@ -163,7 +164,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
                         noun="request"
                         pluralNoun="requests"
                         queryConnection={queryOutboundRequests}
-                        nodeComponent={MigrationNode}
+                        nodeComponent={OutboundRequestNode}
                         filters={filters}
                         history={history}
                         location={history.location}
@@ -172,7 +173,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
                     <>
                         <Text>Outbound request logging is currently disabled.</Text>
                         <Text>
-                            Set `outboundRequestLogLimit` to a non-zero value in your{' '}
+                            Set <Code>outboundRequestLogLimit</Code> to a non-zero value in your{' '}
                             <Link to="/site-admin/configuration">site config</Link> to enable it.
                         </Text>
                     </>
@@ -182,8 +183,7 @@ export const SiteAdminOutboundRequestsPage: React.FunctionComponent<
     )
 }
 
-const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<OutboundRequest> }> = ({ node }) => {
-    const roundedSecond = Math.round((node.duration + Number.EPSILON) * 100) / 100
+const OutboundRequestNode: React.FunctionComponent<{ node: React.PropsWithChildren<OutboundRequest> }> = ({ node }) => {
     const [copied, setCopied] = useState(false)
 
     const copyToClipboard = (text: string): void => {
@@ -241,16 +241,16 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
                         </Text>
                         <Text>
                             <strong>Duration: </strong>
-                            {roundedSecond.toFixed(2)} second{roundedSecond === 1 ? '' : 's'}
+                            {(node.durationMs / 1000).toFixed(2)} second{node.durationMs === 1000 ? '' : 's'}
                         </Text>
                         <Text>
                             <strong>Client created at: </strong>
-                            <Code>{node.creationStackFrame}</Code>
+                            <Code>{formatStackFrameLine(node.creationStackFrame)}</Code>
                         </Text>
                         <Text>
                             <strong>Request made at: </strong>
-                            <Code>{node.callStackFrame}</Code>
                         </Text>
+                        {formatStackFrame(node.callStack)}
                         <Text>
                             <strong>Error: </strong>
                             {node.errorMessage ? node.errorMessage : 'No error'}
@@ -261,11 +261,13 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
                                     <strong>Request headers:</strong>{' '}
                                 </Text>
                                 <ul>
-                                    {node.requestHeaders.map(header => (
-                                        <li key={header.name}>
-                                            <strong>{header.name}</strong>: {header.values.join(', ')}
-                                        </li>
-                                    ))}
+                                    {[...node.requestHeaders]
+                                        .sort((a, b) => a.name.localeCompare(b.name))
+                                        .map(header => (
+                                            <li key={header.name}>
+                                                <strong>{header.name}</strong>: {header.values.join(', ')}
+                                            </li>
+                                        ))}
                                 </ul>
                             </>
                         ) : (
@@ -277,11 +279,13 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
                                     <strong>Response headers:</strong>{' '}
                                 </Text>
                                 <ul>
-                                    {node.responseHeaders.map(header => (
-                                        <li key={header.name}>
-                                            <strong>{header.name}</strong>: {header.values.join(', ')}
-                                        </li>
-                                    ))}
+                                    {[...node.responseHeaders]
+                                        .sort((a, b) => a.name.localeCompare(b.name))
+                                        .map(header => (
+                                            <li key={header.name}>
+                                                <strong>{header.name}</strong>: {header.values.join(', ')}
+                                            </li>
+                                        ))}
                                 </ul>
                             </>
                         ) : (
@@ -302,6 +306,39 @@ const MigrationNode: React.FunctionComponent<{ node: React.PropsWithChildren<Out
             </div>
         </React.Fragment>
     )
+}
+
+function formatStackFrame(callStack: string): React.ReactNode {
+    const lines = callStack.split('\n')
+
+    return (
+        <>
+            <ul>{lines.map(formatStackFrameLine)}</ul>
+        </>
+    )
+}
+
+function formatStackFrameLine(line: string): React.ReactNode {
+    const match = line.match(/(.*):(\d+) \(Function: (.*)\)/)
+    if (!match) {
+        return line
+    }
+    const [, fileName, lineIndex, functionName] = match
+    return (
+        <li key={`${fileName}:${lineIndex}`}>
+            <Code>
+                <Link to={buildSourcegraphUrl(fileName, parseInt(lineIndex, 10))} target="_blank" rel="noopener">
+                    {fileName}:{lineIndex}
+                </Link>{' '}
+                (Function: {functionName})
+            </Code>
+        </li>
+    )
+}
+
+function buildSourcegraphUrl(fileName: string, lineIndex: number): string {
+    const revision = parseProductReference(window.context.version)
+    return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph@${revision}/-/blob/${fileName}?L${lineIndex}`
 }
 
 const SimplePopover: React.FunctionComponent<{ label: string; children: ReactNode }> = ({ label, children }) => {
@@ -333,7 +370,7 @@ function matchesString(request: OutboundRequest, query: string): boolean {
         request.statusCode.toString().includes(lQuery) ||
         request.errorMessage.toLowerCase().includes(lQuery) ||
         request.creationStackFrame.toLowerCase().includes(lQuery) ||
-        request.callStackFrame.toLowerCase().includes(lQuery) ||
+        request.callStack.toLowerCase().includes(lQuery) ||
         request.requestHeaders?.some(
             header =>
                 header.name.toLowerCase().includes(lQuery) ||

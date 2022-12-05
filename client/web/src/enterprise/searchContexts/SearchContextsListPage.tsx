@@ -1,7 +1,6 @@
 import React from 'react'
 
 import { mdiMagnify, mdiPlus } from '@mdi/js'
-import * as H from 'history'
 
 import { SearchContextProps } from '@sourcegraph/search'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -13,31 +12,35 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import { SearchContextsList } from './SearchContextsList'
 
+import styles from './SearchContextsListPage.module.scss'
+
 export interface SearchContextsListPageProps
     extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'>,
         PlatformContextProps<'requestGraphQL'> {
-    location: H.Location
-    history: H.History
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
 }
 
-export const SearchContextsListPage: React.FunctionComponent<
-    React.PropsWithChildren<SearchContextsListPageProps>
-> = props => (
+export const SearchContextsListPage: React.FunctionComponent<SearchContextsListPageProps> = ({
+    authenticatedUser,
+    getUserSearchContextNamespaces,
+    fetchSearchContexts,
+    platformContext,
+    isSourcegraphDotCom,
+}) => (
     <div data-testid="search-contexts-list-page" className="w-100">
         <Page>
             <PageHeader
                 actions={
-                    <>
+                    <div className={styles.actions}>
                         <Button to="/contexts/new" variant="primary" as={Link}>
                             <Icon aria-hidden={true} svgPath={mdiPlus} />
                             Create search context
                         </Button>
-                        {props.isSourcegraphDotCom && (
+                        {isSourcegraphDotCom && (
                             <Button
                                 to="https://signup.sourcegraph.com/?p=context"
-                                className="d-block mt-2"
+                                className="mt-2"
                                 as={Link}
                                 variant="secondary"
                                 onClick={() => eventLogger.log('ClickedOnCloudCTA')}
@@ -45,7 +48,7 @@ export const SearchContextsListPage: React.FunctionComponent<
                                 Search private code
                             </Button>
                         )}
-                    </>
+                    </div>
                 }
                 description={
                     <span className="text-muted">
@@ -66,7 +69,29 @@ export const SearchContextsListPage: React.FunctionComponent<
                     <PageHeader.Breadcrumb>Contexts</PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
-            <SearchContextsList {...props} />
+            <div id="search-context-tabs-list" className="nav nav-tabs">
+                <div className="nav-item" role="tablist">
+                    <Link
+                        to="/contexts"
+                        role="tab"
+                        aria-selected={true}
+                        aria-controls="search-context-list"
+                        className="nav-link active"
+                    >
+                        <span className="text-content" data-tab-content="Your search contexts">
+                            Available contexts
+                        </span>
+                    </Link>
+                </div>
+            </div>
+            <div role="tabpanel" id="search-context-list">
+                <SearchContextsList
+                    authenticatedUser={authenticatedUser}
+                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                    fetchSearchContexts={fetchSearchContexts}
+                    platformContext={platformContext}
+                />
+            </div>
         </Page>
     </div>
 )

@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/snabb/sitemap"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,10 +29,10 @@ func main() {
 		progressUpdates: 10 * time.Second,
 	}
 	if err := gen.generate(context.Background()); err != nil {
-		log15.Error("failed to generate", "error", err)
+		gen.logger.Warn("failed to generate", log.Error(err))
 		os.Exit(-1)
 	}
-	log15.Info("generated sitemap", "out", gen.outDir)
+	gen.logger.Info("generated sitemap", log.String("out", gen.outDir))
 }
 
 type generator struct {
@@ -41,6 +41,7 @@ type generator struct {
 	outDir          string
 	queryDatabase   string
 	progressUpdates time.Duration
+	logger          log.Logger
 
 	db        *queryDatabase
 	gqlClient *graphQLClient
@@ -74,9 +75,9 @@ func (g *generator) generate(ctx context.Context) error {
 	clearCacheKeys := strings.Fields(os.Getenv("CLEAR_CACHE_KEYS"))
 	if len(clearCacheKeys) > 0 {
 		for _, key := range clearCacheKeys {
-			log15.Info("clearing cache key", "key", key)
+			g.logger.Info("clearing cache key", log.String("key", key))
 			if err := g.db.delete(key); err != nil {
-				log15.Info("failed to clear cache key", "key", key, "error", err)
+				g.logger.Info("failed to clear cache key", log.String("key", key), log.Error(err))
 			}
 		}
 	}
@@ -84,10 +85,10 @@ func (g *generator) generate(ctx context.Context) error {
 	if listCacheKeys {
 		keys, err := g.db.keys()
 		if err != nil {
-			log15.Info("failed to list cache keys", "error", err)
+			g.logger.Warn("failed to list cache keys", log.Error(err))
 		}
 		for _, key := range keys {
-			log15.Info("listing cache keys", "key", key)
+			g.logger.Info("listing cache keys", log.String("key", key))
 		}
 	}
 
@@ -98,7 +99,7 @@ func (g *generator) generate(ctx context.Context) error {
 	if err := g.eachLsifIndex(ctx, func(each gqlLSIFIndex, total uint64) error {
 		if time.Since(lastUpdate) >= g.progressUpdates {
 			lastUpdate = time.Now()
-			log15.Info("progress: discovered LSIF indexes", "n", queried, "of", total)
+			g.logger.Info("progress: discovered LSIF indexes", log.Int("n", queried), log.Uint64("of", (total)))
 		}
 		queried++
 		if strings.Contains(each.InputIndexer, "lsif-go") {
@@ -122,13 +123,12 @@ func (g *generator) generate(ctx context.Context) error {
 	for repoName, indexes := range indexedGoRepos {
 		if time.Since(lastUpdate) >= g.progressUpdates {
 			lastUpdate = time.Now()
-			log15.Info("progress: discovered API docs pages for repo", "n", queried, "of", len(indexedGoRepos))
+			g.logger.Info("progress: discovered API docs pages for repo", log.Int("n", queried), log.Int("of", len(indexedGoRepos)))
 		}
 		totalStars += indexes[0].ProjectRoot.Repository.Stars
 		pathInfo, err := g.fetchDocPathInfo(ctx, gqlDocPathInfoVars{RepoName: repoName})
 		queried++
 		if pathInfo == nil || (err != nil && strings.Contains(err.Error(), "page not found")) {
-			//log15.Error("no API docs pages found", "repo", repoName, "pathInfo==nil", pathInfo == nil, "error", err)
 			if err != nil {
 				missingAPIDocs++
 			}
@@ -156,7 +156,7 @@ func (g *generator) generate(ctx context.Context) error {
 		for _, pathID := range pagePathIDs {
 			page, err := g.fetchDocPage(ctx, gqlDocPageVars{RepoName: repoName, PathID: pathID})
 			if page == nil || (err != nil && strings.Contains(err.Error(), "page not found")) {
-				log15.Error("unexpected: API docs page missing after reportedly existing", "repo", repoName, "pathID", pathID, "error", err)
+				g.logger.Warn("unexpected: API docs page missing after reportedly existing", log.String("repo", repoName), log.String("pathID", pathID), log.Error(err))
 				unexpectedMissingPages++
 				continue
 			}
@@ -166,7 +166,7 @@ func (g *generator) generate(ctx context.Context) error {
 			queried++
 			if time.Since(lastUpdate) >= g.progressUpdates {
 				lastUpdate = time.Now()
-				log15.Info("progress: got API docs page", "n", queried, "of", totalPages)
+				g.logger.Info("progress: got API docs page", log.Int("n", queried), log.Int("of", totalPages))
 			}
 
 			var walk func(node *DocumentationNode)
@@ -210,7 +210,7 @@ func (g *generator) generate(ctx context.Context) error {
 
 				if time.Since(lastUpdate) >= g.progressUpdates {
 					lastUpdate = time.Now()
-					log15.Info("progress: got API docs usage examples", "n", index, "of", len(docsSubPagesByRepo))
+					g.logger.Info("progress: got API docs usage examples", log.Int("n", index), log.Int("of", len(docsSubPagesByRepo)))
 				}
 				mu.Unlock()
 
@@ -220,7 +220,7 @@ func (g *generator) generate(ctx context.Context) error {
 					First:    intPtr(3),
 				})
 				if err != nil {
-					log15.Error("unexpected: error getting references", "repo", repoName, "pathID", pathID, "error", err)
+					g.logger.Warn("unexpected: error getting references", log.String("repo", repoName), log.String("pathID", pathID), log.Error(err))
 				} else {
 					refs := references.Data.Repository.Commit.Tree.LSIF.DocumentationReferences.Nodes
 					if len(refs) >= 1 {
@@ -264,12 +264,12 @@ func (g *generator) generate(ctx context.Context) error {
 		mu.Unlock()
 	}
 
-	log15.Info("found Go API docs pages", "count", totalPages)
-	log15.Info("found Go API docs sub-pages", "count", len(docsSubPages))
-	log15.Info("Go API docs sub-pages with 1+ external reference", "count", subPagesWithOneOrMoreExternalReference)
-	log15.Info("Go API docs sub-pages with 0 references", "count", subPagesWithZeroReferences)
-	log15.Info("spanning", "repositories", len(indexedGoRepos), "stars", totalStars)
-	log15.Info("Go repos missing API docs", "count", missingAPIDocs)
+	g.logger.Info("found Go API docs pages", log.Int("count", totalPages))
+	g.logger.Info("found Go API docs sub-pages", log.Int("count", len(docsSubPages)))
+	g.logger.Info("Go API docs sub-pages with 1+ external reference", log.Int("count", subPagesWithOneOrMoreExternalReference))
+	g.logger.Info("Go API docs sub-pages with 0 references", log.Int("count", subPagesWithZeroReferences))
+	g.logger.Info("spanning", log.Int("repositories", len(indexedGoRepos)), log.Uint64("stars", totalStars))
+	g.logger.Info("Go repos missing API docs", log.Int("count", missingAPIDocs))
 
 	sort.Strings(docsSubPages)
 	var (
@@ -322,7 +322,7 @@ func (g *generator) generate(ctx context.Context) error {
 		}
 	}
 
-	log15.Info("you may now upload the generated sitemap/")
+	g.logger.Info("you may now upload the generated sitemap/")
 
 	return nil
 }
@@ -343,7 +343,7 @@ func (g *generator) eachLsifIndex(ctx context.Context, each func(index gqlLSIFIn
 		if err != nil {
 			retries++
 			if maxRetries := 10; retries < maxRetries {
-				log15.Error("error listing LSIF indexes", "retry", retries, "of", maxRetries)
+				g.logger.Warn("error listing LSIF indexes", log.Int("retry", retries), log.Int("of", maxRetries))
 				goto retry
 			}
 			return err

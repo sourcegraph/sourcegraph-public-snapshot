@@ -35,6 +35,7 @@ type InsightsResolver interface {
 	UpdatePieChartSearchInsight(ctx context.Context, args *UpdatePieChartSearchInsightArgs) (InsightViewPayloadResolver, error)
 
 	DeleteInsightView(ctx context.Context, args *DeleteInsightViewArgs) (*EmptyResponse, error)
+	SaveInsightAsNewView(ctx context.Context, args SaveInsightAsNewViewArgs) (InsightViewPayloadResolver, error)
 
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
@@ -428,6 +429,17 @@ type LineChartOptionsInput struct {
 	Title *string
 }
 
+type SaveInsightAsNewViewArgs struct {
+	Input SaveInsightAsNewViewInput
+}
+
+type SaveInsightAsNewViewInput struct {
+	InsightViewID graphql.ID
+	Options       LineChartOptionsInput
+	Dashboard     *graphql.ID
+	ViewControls  *InsightViewControlsInput
+}
+
 type InsightViewPayloadResolver interface {
 	View(ctx context.Context) (InsightViewResolver, error)
 }
@@ -452,9 +464,15 @@ type SearchInsightLivePreviewSeriesResolver interface {
 
 type IncompleteDatapointAlert interface {
 	ToTimeoutDatapointAlert() (TimeoutDatapointAlert, bool)
+	ToGenericIncompleteDatapointAlert() (GenericIncompleteDatapointAlert, bool)
 	Time() gqlutil.DateTime
 }
 
 type TimeoutDatapointAlert interface {
 	Time() gqlutil.DateTime
+}
+
+type GenericIncompleteDatapointAlert interface {
+	Time() gqlutil.DateTime
+	Reason() string
 }
