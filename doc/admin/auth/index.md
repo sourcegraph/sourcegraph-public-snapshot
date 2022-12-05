@@ -261,6 +261,8 @@ configuration.
 Once you've configured GitLab as a sign-on provider, you may also want to [add GitLab repositories
 to Sourcegraph](../external_service/gitlab.md#repository-syncing).
 
+> NOTE: Administrators on the GitLab instance who then sign in to Sourcegraph will not have access to all of the repositories on Sourcegraph as well. Administrators will only have access to repositories on GitLab for which they are assigned the Reporter role and above.
+
 ### How to control user sign-up and sign-in with GitLab auth provider
 
 You can use the following filters to control how users can create accounts and sign in to your Sourcegraph instance via the GitLab auth provider.
