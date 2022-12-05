@@ -222,7 +222,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		otel.GetTracerProvider(),
 	)(server.Handler())
 
-	globals.WatchExternalURL(nil)
+	globals.WatchExternalURL()
 
 	debugDumpers["repos"] = updateScheduler
 	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(debugDumpers)
