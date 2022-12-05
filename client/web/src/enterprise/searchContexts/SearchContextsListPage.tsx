@@ -67,21 +67,19 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                     <PageHeader.Breadcrumb>Contexts</PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
-            <div className="mb-4">
-                <div id="search-context-tabs-list" className="nav nav-tabs">
-                    <div className="nav-item" role="tablist">
-                        <Link
-                            to="/contexts"
-                            role="tab"
-                            aria-selected={true}
-                            aria-controls="search-context-list"
-                            className="nav-link active"
-                        >
-                            <span className="text-content" data-tab-content="Your search contexts">
-                                Available contexts
-                            </span>
-                        </Link>
-                    </div>
+            <div id="search-context-tabs-list" className="nav nav-tabs">
+                <div className="nav-item" role="tablist">
+                    <Link
+                        to="/contexts"
+                        role="tab"
+                        aria-selected={true}
+                        aria-controls="search-context-list"
+                        className="nav-link active"
+                    >
+                        <span className="text-content" data-tab-content="Your search contexts">
+                            Available contexts
+                        </span>
+                    </Link>
                 </div>
             </div>
             <div role="tabpanel" id="search-context-list">

@@ -86,7 +86,7 @@ export const FilterControl: React.FunctionComponent<React.PropsWithChildren<Filt
                     return (
                         <div key={filter.id} className="d-inline-flex flex-row align-center flex-wrap">
                             <div className="d-inline-flex flex-row align-items-baseline">
-                                <Text className="text-xl-center text-nowrap mr-2" id={filterLabelId}>
+                                <Text className="text-xl-center text-nowrap mr-2 mb-0" id={filterLabelId}>
                                     {filter.label}:
                                 </Text>
                                 <Select
