@@ -328,8 +328,9 @@ func insertUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 				num_parts,
 				uploaded_parts,
 				upload_size,
-				associated_index_id
-			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+				associated_index_id,
+				content_type
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			upload.ID,
 			upload.Commit,
@@ -349,6 +350,7 @@ func insertUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
 			upload.AssociatedIndexID,
+			upload.ContentType,
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
@@ -378,7 +380,8 @@ func updateUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 				num_parts = COALESCE(NULLIF(%s, 0), num_parts),
 				uploaded_parts = COALESCE(NULLIF(%s, '{}'::integer[]), uploaded_parts),
 				upload_size = COALESCE(%s, upload_size),
-				associated_index_id = COALESCE(%s, associated_index_id)
+				associated_index_id = COALESCE(%s, associated_index_id),
+				content_type = COALESCE(NULLIF(%s, ''), content_type)
 			WHERE id = %s
 		`,
 			upload.Commit,
@@ -398,7 +401,9 @@ func updateUploads(t testing.TB, db database.DB, uploads ...types.Upload) {
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
 			upload.AssociatedIndexID,
-			upload.ID)
+			upload.ContentType,
+			upload.ID,
+		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			t.Fatalf("unexpected error while updating upload: %s", err)

@@ -2068,6 +2068,7 @@ Stores the retention policy of code intellience data for a repository.
  last_referenced_scan_at | timestamp with time zone |           |          | 
  last_traversal_scan_at  | timestamp with time zone |           |          | 
  last_reconcile_at       | timestamp with time zone |           |          | 
+ content_type            | text                     |           | not null | 'application/x-ndjson+lsif'::text
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -2097,6 +2098,8 @@ Triggers:
 Stores metadata about an LSIF index uploaded by a user.
 
 **commit**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**content_type**: The content type of the upload record. For now, the default value is `application/x-ndjson+lsif` to backfill existing records. This will change as we remove LSIF support.
 
 **expired**: Whether or not this upload data is no longer protected by any data retention policy.
 
@@ -2143,6 +2146,7 @@ Stores metadata about an LSIF index uploaded by a user.
  reason              | text                     |           |          | ''::text
  sequence            | bigint                   |           | not null | nextval('lsif_uploads_audit_logs_seq'::regclass)
  operation           | audit_log_operation      |           | not null | 
+ content_type        | text                     |           | not null | 'application/x-ndjson+lsif'::text
 Indexes:
     "lsif_uploads_audit_logs_timestamp" brin (log_timestamp)
     "lsif_uploads_audit_logs_upload_id" btree (upload_id)
@@ -3528,6 +3532,7 @@ Foreign-key constraints:
     u.upload_size,
     u.num_failures,
     u.associated_index_id,
+    u.content_type,
     u.expired,
     u.last_retention_scan_at,
     r.name AS repository_name,

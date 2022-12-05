@@ -862,7 +862,7 @@ commandsets:
       - blobstore
       - codeintel-worker
       - codeintel-executor
-      - otel-collector
+      # - otel-collector
       - jaeger
       - grafana
       - prometheus
