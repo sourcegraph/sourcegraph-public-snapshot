@@ -30,6 +30,7 @@ func FindOccurrences(occurrences []*scip.Occurrence, targetLine, targetCharacter
 // come before the enclosed.
 func SortOccurrences(occurrences []*scip.Occurrence) []*scip.Occurrence {
 	sort.Slice(occurrences, func(i, j int) bool {
+		// TODO - ranges can be equivalent; check other attributes as well
 		return compareRanges(occurrences[i].Range, occurrences[j].Range...) <= 0
 	})
 

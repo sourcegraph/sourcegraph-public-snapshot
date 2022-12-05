@@ -9,7 +9,9 @@ import (
 // CanonicalizeDocument deterministically re-orders the fields of the given document.
 // The input is modified in-place but returned for convenience.
 func CanonicalizeDocument(document *scip.Document) *scip.Document {
+	// TODO - collapse occurrences
 	_ = CanonicalizeOccurrences(document.Occurrences)
+	// TODO - collapse symbols
 	_ = CanonicalizeSymbols(document.Symbols)
 
 	return document
