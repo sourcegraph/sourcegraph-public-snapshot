@@ -7,6 +7,7 @@ import * as H from 'history'
 import { isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -39,7 +40,8 @@ interface RepoRevisionSidebarProps
         ExtensionsControllerProps,
         ThemeProps,
         TelemetryProps,
-        SettingsCascadeProps {
+        SettingsCascadeProps,
+        PlatformContextProps<'requestGraphQL'> {
     repoID?: Scalars['ID']
     isDir: boolean
     defaultBranch: string
@@ -171,6 +173,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<
                                         isLightTheme={props.isLightTheme}
                                         telemetryService={props.telemetryService}
                                         enableMergedFileSymbolSidebar={!!enableMergedFileSymbolSidebar}
+                                        platformContext={props.platformContext}
                                     />
                                 </TabPanel>
                                 {!enableMergedFileSymbolSidebar && (

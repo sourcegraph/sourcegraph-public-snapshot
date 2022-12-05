@@ -85,6 +85,7 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                 authenticatedUser={context.authenticatedUser}
                 isSourcegraphDotCom={context.isSourcegraphDotCom}
                 extensionsController={context.extensionsController}
+                platformContext={context.platformContext}
                 commitID={resolvedRevision?.commitID}
                 filePath={filePath}
                 repoID={repo?.id}

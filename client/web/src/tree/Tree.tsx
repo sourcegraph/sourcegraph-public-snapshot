@@ -3,17 +3,20 @@ import * as React from 'react'
 
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import { Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, startWith } from 'rxjs/operators'
+import { combineLatest, Subject, Subscription } from 'rxjs'
+import { debounceTime, distinctUntilChanged, distinct, map, startWith, filter, mergeMap } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
 import { formatSearchParameters } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
 
+import { ConnectionForm } from '../components/FilteredConnection/ui'
 import { dirname } from '../util/path'
 
 import { TreeRoot } from './TreeRoot'
@@ -21,7 +24,12 @@ import { getDomElement, scrollIntoView } from './util'
 
 import styles from './Tree.module.scss'
 
-interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
+interface Props
+    extends AbsoluteRepo,
+        ExtensionsControllerProps,
+        ThemeProps,
+        TelemetryProps,
+        PlatformContextProps<'requestGraphQL'> {
     history: H.History
     scrollRootSelector?: string
 
@@ -50,6 +58,10 @@ interface State {
     selectedNode: TreeNode
     /** The tree node of the file or directory currently being viewed */
     activeNode: TreeNode
+
+    searchTerm: string
+
+    results: any[]
 }
 
 export interface TreeNode {
@@ -82,7 +94,7 @@ const nextChild = (node: TreeNode, index: number): TreeNode => {
  * Helper for prevChild, this gets the deepest available descendant of a given node.
  * For a given node, a sibling node can have an arbitrary number of expanded directories.
  * In order to get the previous item in the tree, we need the absolute last
- * available descendent of a the previous sibling node.
+ * available descendent of the previous sibling node.
  */
 const getDeepestDescendant = (node: TreeNode): TreeNode => {
     while (node && node.childNodes.length > 0) {
@@ -124,8 +136,27 @@ const previousChild = (node: TreeNode, index: number): TreeNode => {
     return getDeepestDescendant(node.parent)
 }
 
+const QUERY = gql`
+    query Files($query: String!) {
+        search(patternType: regexp, query: $query) {
+            results {
+                results {
+                    ... on FileMatch {
+                        __typename
+                        file {
+                            name
+                            path
+                        }
+                    }
+                }
+            }
+        }
+    }
+`
+
 export class Tree extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
+    private searhTermUpdates = new Subject<string>()
     // This fires whenever a directory is expanded or collapsed.
     private expandDirectoryChanges = new Subject<{ path: string; expanded: boolean; node: TreeNode }>()
     private subscriptions = new Subscription()
@@ -228,6 +259,8 @@ export class Tree extends React.PureComponent<Props, State> {
             resolveTo: [],
             selectedNode: this.node,
             activeNode: this.node,
+            searchTerm: '',
+            results: [],
         }
 
         this.treeElement = null
@@ -292,10 +325,53 @@ export class Tree extends React.PureComponent<Props, State> {
                     }
                 })
         )
+
+        this.subscriptions.add(
+            combineLatest([
+                this.componentUpdates.pipe(
+                    // startWith(this.props),
+                    // distinctUntilChanged(isEqual),
+                    map(props => ({
+                        repoName: props.repoName,
+                        revision: props.revision,
+                        requestGraphQL: props.platformContext.requestGraphQL,
+                    })),
+                    distinctUntilChanged(isEqual)
+                ),
+                this.searhTermUpdates.pipe(
+                    // map(state => state.searchTerm),
+                    debounceTime(500),
+                    filter(Boolean),
+                    distinct()
+                ),
+            ])
+                .pipe(
+                    mergeMap(([{ repoName, revision, requestGraphQL }, searchTerm]) =>
+                        requestGraphQL({
+                            request: QUERY,
+                            variables: {
+                                query: `repo:${repoName} revision:${revision} type:path count:100 ${searchTerm}`,
+                            },
+                        }).pipe(
+                            map(dataOrThrowErrors),
+                            map(({ search }) => search.results.results)
+                        )
+                    )
+                )
+                .subscribe(results => this.setState(state => ({ ...state, results })))
+        )
     }
 
-    public componentDidUpdate(): void {
+    public componentDidUpdate(prevProps: Readonly<Props>, prevState: Readonly<State>): void {
         this.componentUpdates.next(this.props)
+
+        if (prevState.searchTerm !== this.state.searchTerm) {
+            if (this.state.searchTerm) {
+                this.searhTermUpdates.next(this.state.searchTerm)
+            } else {
+                this.setState(state => ({ ...state, results: [] }))
+            }
+        }
     }
 
     public componentWillUnmount(): void {
@@ -316,37 +392,62 @@ export class Tree extends React.PureComponent<Props, State> {
                 onKeyDown={this.onKeyDown}
                 ref={this.setTreeElement}
             >
-                <TreeRoot
-                    ref={reference => {
-                        if (reference) {
-                            this.node = reference.node
-                        }
-                    }}
-                    activeNode={this.state.activeNode}
-                    activePath={this.props.activePath}
-                    depth={0}
-                    repoID={this.props.repoID}
-                    repoName={this.props.repoName}
-                    revision={this.props.revision}
-                    commitID={this.props.commitID}
-                    index={0}
-                    // The root is always expanded so it loads the top level
-                    isExpanded={true}
-                    // A node with parent null tells us we're at the root of the tree
-                    parent={null}
-                    parentPath={this.state.parentPath}
-                    expandedTrees={this.state.resolveTo}
-                    onSelect={this.selectNode}
-                    onToggleExpand={this.toggleExpandDirectory}
-                    selectedNode={this.state.selectedNode}
-                    setChildNodes={this.setChildNode}
-                    setActiveNode={this.setActiveNode}
-                    sizeKey={this.props.sizeKey}
-                    extensionsController={this.props.extensionsController}
-                    isLightTheme={this.props.isLightTheme}
-                    telemetryService={this.props.telemetryService}
-                    enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
-                />
+                <div className={styles.formContainer}>
+                    <ConnectionForm
+                        inputValue={this.state.searchTerm}
+                        onInputChange={this.setSearchTerm}
+                        inputPlaceholder="Search files..."
+                        compact={true}
+                        // formClassName={styles.form}
+                    />
+                    {/* <SummaryContainer compact={true} className={styles.summaryContainer}>*/}
+                    {/*    {query && summary}*/}
+                    {/* </SummaryContainer>*/}
+                </div>
+                {this.state.searchTerm ? (
+                    <ul>
+                        {this.state.results.map(({ file }) => {
+                            return (
+                                <li key={file.path}>
+                                    <div>{file.name}</div>
+                                    <div>{file.path.replace(new RegExp(`${file.name}$`), '')}</div>
+                                </li>
+                            )
+                        })}
+                    </ul>
+                ) : (
+                    <TreeRoot
+                        ref={reference => {
+                            if (reference) {
+                                this.node = reference.node
+                            }
+                        }}
+                        activeNode={this.state.activeNode}
+                        activePath={this.props.activePath}
+                        depth={0}
+                        repoID={this.props.repoID}
+                        repoName={this.props.repoName}
+                        revision={this.props.revision}
+                        commitID={this.props.commitID}
+                        index={0}
+                        // The root is always expanded so it loads the top level
+                        isExpanded={true}
+                        // A node with parent null tells us we're at the root of the tree
+                        parent={null}
+                        parentPath={this.state.parentPath}
+                        expandedTrees={this.state.resolveTo}
+                        onSelect={this.selectNode}
+                        onToggleExpand={this.toggleExpandDirectory}
+                        selectedNode={this.state.selectedNode}
+                        setChildNodes={this.setChildNode}
+                        setActiveNode={this.setActiveNode}
+                        sizeKey={this.props.sizeKey}
+                        extensionsController={this.props.extensionsController}
+                        isLightTheme={this.props.isLightTheme}
+                        telemetryService={this.props.telemetryService}
+                        enableMergedFileSymbolSidebar={this.props.enableMergedFileSymbolSidebar}
+                    />
+                )}
             </div>
         )
     }
@@ -396,6 +497,9 @@ export class Tree extends React.PureComponent<Props, State> {
             this.treeElement = element
         }
     }
+
+    private setSearchTerm = (event: React.ChangeEvent<HTMLInputElement>): void =>
+        this.setState(state => ({ ...state, searchTerm: event.target.value }))
 }
 
 function dotPathAsUndefined(path: string | undefined): string | undefined {
