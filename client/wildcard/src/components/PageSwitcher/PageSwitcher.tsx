@@ -46,10 +46,14 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
     } = props
 
     const [isLoadingPage, setIsLoadingPage] = React.useState(false)
-    function withLoadingPage<T>(func: () => Promise<T>): () => void {
-        return () => {
-            setIsLoadingPage(true)
-            func().finally(() => setIsLoadingPage(false))
+    function withLoadingPage<T>(func: () => Promise<T>): () => Promise<void> {
+        return async () => {
+            try {
+                setIsLoadingPage(true)
+                await func()
+            } finally {
+                setIsLoadingPage(false)
+            }
         }
     }
 
