@@ -101,7 +101,23 @@ func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 		return nil, err
 	}
 
-	// If we have a limit, so we rely on having fetched +1 additional result in our limit to
-	// indicate whether or not a next page exists.
-	return graphqlutil.HasNextPage(r.first != nil && len(commits) > 0 && len(commits) > int(*r.first)), nil
+	totalCommits := len(commits)
+	// If no limit is set, we have retrieved all the commits and there is no next page.
+	if r.first == nil {
+		return graphqlutil.HasNextPage(false), nil
+	}
+
+	limit := int(*r.first)
+
+	// If a limit is set, we attempt to fetch N+1 commits to know if there is a next page or not. If
+	// we have more than N commits then we have a next page.
+	if totalCommits > limit {
+		// Get the limit'th commit ID from the array. This is the commit that starts the next page.
+		nextCommit := commits[limit]
+		commitGraphqlID := marshalGitCommitID(r.repo.ID(), GitObjectID(nextCommit.ID))
+
+		return graphqlutil.NextPageCursor(string(commitGraphqlID)), nil
+	}
+
+	return graphqlutil.HasNextPage(false), nil
 }

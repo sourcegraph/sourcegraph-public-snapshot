@@ -24,6 +24,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const gitCommitKind = "GitCommit"
+
 func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, error) {
 	repoID, commitID, err := unmarshalGitCommitID(id)
 	if err != nil {
@@ -104,7 +106,7 @@ type gitCommitGQLID struct {
 }
 
 func marshalGitCommitID(repo graphql.ID, commitID GitObjectID) graphql.ID {
-	return relay.MarshalID("GitCommit", gitCommitGQLID{Repository: repo, CommitID: commitID})
+	return relay.MarshalID(gitCommitKind, gitCommitGQLID{Repository: repo, CommitID: commitID})
 }
 
 func unmarshalGitCommitID(id graphql.ID) (repoID graphql.ID, commitID GitObjectID, err error) {
