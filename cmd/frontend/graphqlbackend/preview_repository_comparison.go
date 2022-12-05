@@ -10,8 +10,10 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,6 +27,12 @@ func NewPreviewRepositoryComparisonResolver(ctx context.Context, db database.DB,
 	commit, err := repo.Commit(ctx, args)
 	if err != nil {
 		return nil, err
+	}
+	if commit == nil {
+		return nil, &gitdomain.RevisionNotFoundError{
+			Repo: api.RepoName(repo.Name()),
+			Spec: baseRev,
+		}
 	}
 	return &previewRepositoryComparisonResolver{
 		db:     db,
