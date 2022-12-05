@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const MAX_PAGE_SIZE int32 = 100
@@ -219,11 +220,15 @@ func (p *ConnectionPageInfo[N]) StartCursor() (cursor *string, err error) {
 	return
 }
 
-func NewConnectionResolver[N ConnectionNode](store ConnectionResolverStore[N], connectionArgs *ConnectionResolverArgs) *ConnectionResolver[N] {
+func NewConnectionResolver[N ConnectionNode](store ConnectionResolverStore[N], connectionArgs *ConnectionResolverArgs) (*ConnectionResolver[N], error) {
+	if connectionArgs == nil || (connectionArgs.First == nil && connectionArgs.Last == nil) {
+		return nil, errors.New("you must provide a `first` or `last` value to properly paginate")
+	}
+
 	return &ConnectionResolver[N]{
 		store,
 		connectionArgs,
 		connectionData[N]{},
 		resolveOnce{sync.Once{}, sync.Once{}},
-	}
+	}, nil
 }

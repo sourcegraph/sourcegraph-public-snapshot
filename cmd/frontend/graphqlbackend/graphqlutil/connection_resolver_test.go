@@ -65,7 +65,10 @@ func (*TestConnectionStore) UnMarshalCursor(cursor string) (*int32, error) {
 func TestConnectionTotalCount(t *testing.T) {
 	ctx := context.Background()
 	store := &TestConnectionStore{t, func(context.Context, *database.PaginationArgs) { return }, 0, 0}
-	resolver := NewConnectionResolver[TestConnectionNode](store, nil)
+	resolver, err := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{First: toInt32(20), Last: nil, After: nil, Before: nil})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	count, err := resolver.TotalCount(ctx)
 	if err != nil {
@@ -101,13 +104,16 @@ func TestConnectionNodesDefaultArgs(t *testing.T) {
 			}
 		}, 0, 0}
 
-	resolver := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{
+	resolver, err := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{
 		First:  toInt32(5),
 		Last:   nil,
 		After:  nil,
 		Before: nil,
 	},
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ctx := context.Background()
 	nodes, err := resolver.Nodes(ctx)
@@ -138,13 +144,16 @@ func TestConnectionNodesLastArg(t *testing.T) {
 			}
 		}, 0, 0}
 
-	resolver := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{
+	resolver, err := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{
 		First:  nil,
 		Last:   toInt32(5),
 		After:  nil,
 		Before: nil,
 	},
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ctx := context.Background()
 	nodes, err := resolver.Nodes(ctx)
@@ -176,13 +185,16 @@ func TestConnectionNodesAfterArgs(t *testing.T) {
 		}, 0, 0}
 
 	afterCursor := "0"
-	resolver := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{
+	resolver, err := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{
 		First:  toInt32(5),
 		Last:   nil,
 		After:  &afterCursor,
 		Before: nil,
 	},
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ctx := context.Background()
 	nodes, err := resolver.Nodes(ctx)
@@ -214,13 +226,16 @@ func TestConnectionNodesBeforeArgs(t *testing.T) {
 		}, 0, 0}
 
 	beforeCursor := "0"
-	resolver := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{
+	resolver, err := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{
 		First:  toInt32(5),
 		Last:   nil,
 		After:  nil,
 		Before: &beforeCursor,
 	},
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ctx := context.Background()
 	nodes, err := resolver.Nodes(ctx)
@@ -252,13 +267,16 @@ func TestConnectionNodesWithLimit(t *testing.T) {
 		}, 0, 0}
 
 	beforeCursor := "0"
-	resolver := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{
+	resolver, err := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{
 		First:  toInt32(1),
 		Last:   nil,
 		After:  nil,
 		Before: &beforeCursor,
 	},
 	)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ctx := context.Background()
 	nodes, err := resolver.Nodes(ctx)
@@ -278,7 +296,10 @@ func TestConnectionNodesWithLimit(t *testing.T) {
 func TestConnectionPageInfoDefault(t *testing.T) {
 	ctx := context.Background()
 	store := &TestConnectionStore{t, func(context.Context, *database.PaginationArgs) { return }, 0, 0}
-	resolver := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{First: nil, Last: nil, After: nil, Before: nil})
+	resolver, err := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{First: toInt32(20), Last: nil, After: nil, Before: nil})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	pageInfo, err := resolver.PageInfo(ctx)
 	if err != nil {
@@ -318,7 +339,10 @@ func TestConnectionPageInfoDefault(t *testing.T) {
 func TestConnectionPageInfoFirstPage(t *testing.T) {
 	ctx := context.Background()
 	store := &TestConnectionStore{t, func(context.Context, *database.PaginationArgs) { return }, 0, 0}
-	resolver := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{First: toInt32(1), Last: nil, After: nil, Before: nil})
+	resolver, err := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{First: toInt32(1), Last: nil, After: nil, Before: nil})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	pageInfo, err := resolver.PageInfo(ctx)
 	if err != nil {
@@ -359,7 +383,10 @@ func TestConnectionPageInfoSecondPage(t *testing.T) {
 	ctx := context.Background()
 	store := &TestConnectionStore{t, func(context.Context, *database.PaginationArgs) { return }, 0, 0}
 	afterCursor := "0"
-	resolver := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{First: toInt32(1), Last: nil, After: &afterCursor, Before: nil})
+	resolver, err := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{First: toInt32(1), Last: nil, After: &afterCursor, Before: nil})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	pageInfo, err := resolver.PageInfo(ctx)
 	if err != nil {
@@ -400,7 +427,10 @@ func TestConnectionPageInfoBackwardFirstPage(t *testing.T) {
 	ctx := context.Background()
 	store := &TestConnectionStore{t, func(context.Context, *database.PaginationArgs) { return }, 0, 0}
 	beforeCursor := "0"
-	resolver := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{First: nil, Last: toInt32(1), Before: &beforeCursor, After: nil})
+	resolver, err := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{First: nil, Last: toInt32(1), Before: &beforeCursor, After: nil})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	pageInfo, err := resolver.PageInfo(ctx)
 	if err != nil {
@@ -440,7 +470,10 @@ func TestConnectionPageInfoBackwardFirstPage(t *testing.T) {
 func TestConnectionPageInfoBackwardFirstPageWithoutCursor(t *testing.T) {
 	ctx := context.Background()
 	store := &TestConnectionStore{t, func(context.Context, *database.PaginationArgs) { return }, 0, 0}
-	resolver := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{First: nil, Last: toInt32(1), Before: nil, After: nil})
+	resolver, err := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{First: nil, Last: toInt32(1), Before: nil, After: nil})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	pageInfo, err := resolver.PageInfo(ctx)
 	if err != nil {
@@ -481,7 +514,10 @@ func TestConnectionPageInfoBackwardLastPage(t *testing.T) {
 	ctx := context.Background()
 	store := &TestConnectionStore{t, func(context.Context, *database.PaginationArgs) { return }, 0, 0}
 	afterCursor := "0"
-	resolver := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{First: nil, Last: nil, Before: &afterCursor, After: nil})
+	resolver, err := NewConnectionResolver[TestConnectionNode](store, &ConnectionResolverArgs{First: nil, Last: toInt32(20), Before: &afterCursor, After: nil})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	pageInfo, err := resolver.PageInfo(ctx)
 	if err != nil {
@@ -492,7 +528,7 @@ func TestConnectionPageInfoBackwardLastPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff("0", *startCursor); diff != "" {
+	if diff := cmp.Diff("1", *startCursor); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -500,7 +536,7 @@ func TestConnectionPageInfoBackwardLastPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff("1", *endCursor); diff != "" {
+	if diff := cmp.Diff("0", *endCursor); diff != "" {
 		t.Fatal(diff)
 	}
 
