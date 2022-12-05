@@ -272,32 +272,37 @@ type JobsStatus struct {
 }
 
 // QueryJobsStatus queries the current status of jobs for the specified series.
-func QueryJobsStatus(ctx context.Context, workerBaseStore *basestore.Store, seriesID string) (*JobsStatus, error) {
+func QueryJobsStatus(ctx context.Context, workerBaseStore *basestore.Store, seriesID string) (_ *JobsStatus, err error) {
 	var status JobsStatus
-	for _, work := range []struct {
-		stateName string
-		result    *uint64
-	}{
-		{"queued", &status.Queued},
-		{"processing", &status.Processing},
-		{"completed", &status.Completed},
-		{"errored", &status.Errored},
-		{"failed", &status.Failed},
-	} {
-		value, _, err := basestore.ScanFirstInt(workerBaseStore.Query(
-			ctx,
-			sqlf.Sprintf(queryJobsStatusFmtStr, seriesID, work.stateName)),
-		)
-		if err != nil {
+
+	rows, err := workerBaseStore.Query(ctx, sqlf.Sprintf(queryJobsStatusSql, seriesID))
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	states := map[string]*uint64{
+		"queued":     &status.Queued,
+		"processing": &status.Processing,
+		"completed":  &status.Completed,
+		"errored":    &status.Errored,
+		"failed":     &status.Failed,
+	}
+	for rows.Next() {
+		var state string
+		var value int
+		if err := rows.Scan(&state, &value); err != nil {
 			return nil, err
 		}
-		*work.result = uint64(value)
+		if result, ok := states[state]; ok {
+			*result = uint64(value)
+		}
 	}
 	return &status, nil
 }
 
-const queryJobsStatusFmtStr = `
-SELECT COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s AND state=%s
+const queryJobsStatusSql = `
+SELECT state, count(*) from insights_query_runner_jobs WHERE series_id=%s GROUP BY state 
 `
 
 func QueryAllSeriesStatus(ctx context.Context, workerBaseStore *basestore.Store) (_ []types.InsightSeriesStatus, err error) {
