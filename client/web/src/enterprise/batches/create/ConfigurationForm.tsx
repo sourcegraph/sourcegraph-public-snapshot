@@ -92,7 +92,9 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
         batchChange?.namespace.id || initialNamespaceID
     )
 
-    const loading = batchChangeLoading || batchSpecLoading
+    // When creating a batch change we want to disable the `Create` button, to avoid user's clicking
+    // on it again.
+    const isButtonDisabled = batchChangeLoading || batchSpecLoading
     const error = batchChangeError || batchSpecError || namespaceError
 
     // The namespace selected for creating the new batch change under.
@@ -250,7 +252,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                         type="submit"
                         onClick={handleCreate}
                         aria-label={isNameValid ? undefined : 'Batch change name is invalid'}
-                        disabled={loading || nameInput === '' || !isNameValid}
+                        disabled={isButtonDisabled || nameInput === '' || !isNameValid}
                     >
                         Create
                     </Button>
