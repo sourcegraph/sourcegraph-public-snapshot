@@ -28,11 +28,36 @@
     border: 1px solid var(--border-color);
     background-color: var(--color-bg-1);
     border-radius: var(--border-radius);
-}
 
-.table-header th {
-    border-bottom: 2px solid var(--border-color-2);
-    padding-bottom: 0.75rem;
-    color: var(--text-muted);
-    font-weight: 500;
+    th {
+        border-bottom: 2px solid var(--border-color-2);
+        padding-bottom: 0.75rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    @media (--sm-breakpoint-down) {
+        table {
+            display: block;
+        }
+
+        thead {
+            // Header should still be visible to screen readers, otherwise the table is not accessible.
+            // Because this style is conditional, we can't simply use "sr-only" class.
+            // So this is the same as the "sr-only" class, but copied here to work with the media query.
+            position: absolute;
+            width: 0.0625rem;
+            height: 0.0625rem;
+            padding: 0;
+            margin: -0.0625rem; // Fix for https://github.com/twbs/bootstrap/issues/25686
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        tbody {
+            display: block;
+        }
+    }
 }
