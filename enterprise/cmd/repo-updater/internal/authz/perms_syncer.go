@@ -3,6 +3,7 @@ package authz
 import (
 	"container/heap"
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"sync"
@@ -324,6 +325,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	}
 
 	byServiceID := s.providersByServiceID()
+    fmt.Println(byServiceID)
 	accounts := s.db.UserExternalAccounts()
 	logger := s.logger.Scoped("fetchUserPermsViaExternalAccounts", "sync permissions using external accounts (logging connections)").With(log.Int32("userID", user.ID))
 
@@ -366,6 +368,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	for _, acct := range accts {
 		acctLogger := logger.With(log.Int32("acct.ID", acct.ID))
 
+        fmt.Println(acct.ServiceID)
 		provider := byServiceID[acct.ServiceID]
 		if provider == nil {
 			// We have no authz provider configured for this external account
@@ -382,6 +385,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		// expiration and try to refresh it when necessary. If the client fails to update
 		// the token, or if the token is revoked, the "401 Unauthorized" error will be
 		// handled here.
+        fmt.Println(provider.ServiceID())
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 		results.providerStates = append(results.providerStates, newProviderState(provider, err, "FetchUserPerms"))
 		if err != nil {

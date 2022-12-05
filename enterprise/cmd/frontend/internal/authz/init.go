@@ -192,6 +192,7 @@ func Init(
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _, _ :=
 				eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
+            fmt.Println(authzProviders)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

@@ -2,10 +2,13 @@ package gitlab
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -14,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/oauth2"
 )
 
 var _ authz.Provider = (*OAuthProvider)(nil)
@@ -115,7 +119,44 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 		RefreshFunc:        database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, gitlab.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))),
 		NeedsRefreshBuffer: 5,
 	}
-	client := p.clientProvider.NewClient(token)
+
+    fmt.Println("GitLab Here")
+    oauth2Config := oauth2.Config{}
+
+    o2token := github.MyToken{Token: &oauth2.Token{
+		AccessToken:  tok.AccessToken,
+		RefreshToken: tok.RefreshToken,
+		Expiry:       tok.Expiry,
+	}}
+
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Gitlab != nil {
+			p2 := authProvider.Gitlab
+			glURL := strings.TrimSuffix(p2.Url, "/")
+			if !strings.HasPrefix(p.codeHost.BaseURL.String(), glURL) {
+				continue
+			}
+            oauth2Config.ClientID = p2.ClientID
+            oauth2Config.ClientSecret = p2.ClientSecret
+            oauth2Config.Endpoint = oauth2.Endpoint{
+                AuthURL: glURL + "/oauth/authorize",
+                TokenURL: glURL + "/oauth/token",
+            }
+		}
+	}
+
+    o2TokenSrc := github.MyTokenSource{
+        MyTok: o2token,
+        MyTokSrc: oauth2Config.TokenSource(ctx, o2token.Token),
+        DB: p.db,
+        ExternalAccountID: account.ID,
+    }
+    fmt.Println("But not here")
+
+    cli := oauth2.NewClient(context.WithValue(ctx, oauth2.HTTPClient, httpcli.ExternalClient), &o2TokenSrc)
+
+	client := p.clientProvider.NewClient(token, cli)
+
 	return listProjects(ctx, client)
 }
 

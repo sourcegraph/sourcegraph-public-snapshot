@@ -10,12 +10,15 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -171,13 +174,13 @@ func (p *Provider) requiredAuthScopes() []requiredAuthScope {
 // fetchUserPermsByToken fetches all the private repo ids that the token can access.
 //
 // This may return a partial result if an error is encountered, e.g. via rate limits.
-func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token *auth.OAuthBearerToken, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, cli *http.Client, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
 	client, err := p.client()
 	if err != nil {
 		return nil, errors.Wrap(err, "get client")
 	}
-	client = client.WithAuthenticator(token)
+    ghCli := github.NewV3Client(log.NoOp(), "GitHub", p.codeHost.BaseURL, nil, cli)
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
@@ -227,7 +230,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 	for page := 1; hasNextPage; page++ {
 		var err error
 		var repos []*github.Repository
-		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, affiliations...)
+		repos, hasNextPage, _, err = ghCli.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, affiliations...)
 		if err != nil {
 			return perms, errors.Wrap(err, "list repos for user")
 		}
@@ -237,6 +240,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		}
 	}
 
+    fmt.Println(perms)
 	// We're done if groups caching is disabled or no accountID is available.
 	if p.groupsCache == nil || accountID == "" {
 		return perms, nil
@@ -244,7 +248,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 
 	// Now, we look for groups this user belongs to that give access to additional
 	// repositories.
-	groups, err := p.getUserAffiliatedGroups(ctx, client, opts)
+	groups, err := p.getUserAffiliatedGroups(ctx, ghCli, opts)
 	if err != nil {
 		return perms, errors.Wrap(err, "get groups affiliated with user")
 	}
@@ -325,6 +329,50 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 	return perms, nil
 }
 
+type MyToken struct {
+	*oauth2.Token
+}
+
+type MyTokenSource struct {
+	MyTok    MyToken
+	MyTokSrc oauth2.TokenSource
+	DB       database.DB
+    ExternalAccountID int32
+}
+
+func (t *MyTokenSource) Token() (*oauth2.Token, error) {
+    fmt.Println(1)
+	newTok, err := t.MyTokSrc.Token()
+	if err != nil {
+		return nil, err
+	}
+    fmt.Println(2)
+    t.MyTok.AccessToken = newTok.AccessToken
+    t.MyTok.Token = newTok
+    fmt.Println(2.5)
+    if t.DB != nil {
+        acct, err := t.DB.UserExternalAccounts().Get(context.Background(), t.ExternalAccountID)
+        if err != nil {
+            fmt.Println(err)
+            return nil, err
+        }
+        fmt.Println(3)
+        err = acct.AuthData.Set(newTok)
+        if err != nil {
+            fmt.Println(err)
+        }
+        fmt.Println(4)
+        _, err = t.DB.UserExternalAccounts().LookupUserAndSave(context.Background(), acct.AccountSpec, acct.AccountData)
+        fmt.Println(5)
+        if err != nil {
+            fmt.Println(err)
+            return nil, err
+        }
+        fmt.Println(6)
+    }
+    return newTok, nil
+}
+
 // FetchUserPerms returns a list of repository IDs (on code host) that the given account
 // has read access on the code host. The repository ID has the same value as it would be
 // used as api.ExternalRepoSpec.ID. The returned list only includes private repository IDs.
@@ -348,19 +396,40 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		return nil, errors.New("no token found in the external account data")
 	}
 
-	oauthToken := &auth.OAuthBearerToken{
-		Token:        tok.AccessToken,
+    oauth2Config := oauth2.Config{}
+
+    o2token := MyToken{Token: &oauth2.Token{
+		AccessToken:  tok.AccessToken,
 		RefreshToken: tok.RefreshToken,
 		Expiry:       tok.Expiry,
+	}}
+
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Github != nil {
+			p2 := authProvider.Github
+			ghURL := strings.TrimSuffix(p2.Url, "/")
+			if !strings.HasPrefix(p.codeHost.BaseURL.String(), ghURL) {
+				continue
+			}
+            oauth2Config.ClientID = p2.ClientID
+            oauth2Config.ClientSecret = p2.ClientSecret
+            oauth2Config.Endpoint = oauth2.Endpoint{
+                AuthURL: ghURL + "/login/oauth/authorize",
+                TokenURL: ghURL + "/login/oauth/access_token",
+            }
+		}
 	}
 
-	if p.InstallationID != nil && p.db != nil {
-		// Only used if created by newAppProvider
-		oauthToken.RefreshFunc = database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, github.GetOAuthContext(p.codeHost.BaseURL.String()))
-		oauthToken.NeedsRefreshBuffer = 5
-	}
+    o2TokenSrc := MyTokenSource{
+        MyTok: o2token,
+        MyTokSrc: oauth2Config.TokenSource(ctx, o2token.Token),
+        DB: p.db,
+        ExternalAccountID: account.ID,
+    }
 
-	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), oauthToken, opts)
+    cli := oauth2.NewClient(context.WithValue(ctx, oauth2.HTTPClient, httpcli.ExternalClient), &o2TokenSrc)
+
+	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), cli, opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
@@ -521,7 +590,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 // with token. Returned groups are populated from cache if a valid value is available.
 //
 // 🚨 SECURITY: clientWithToken must be authenticated with a user token.
-func (p *Provider) getUserAffiliatedGroups(ctx context.Context, clientWithToken client, opts authz.FetchPermsOptions) ([]cachedGroup, error) {
+func (p *Provider) getUserAffiliatedGroups(ctx context.Context, clientWithToken *github.V3Client, opts authz.FetchPermsOptions) ([]cachedGroup, error) {
 	groups := make([]cachedGroup, 0)
 	seenGroups := make(map[string]struct{})
 

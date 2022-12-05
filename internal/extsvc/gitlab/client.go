@@ -121,7 +121,10 @@ func (p *ClientProvider) GetPATClient(personalAccessToken, sudo string) *Client 
 	if personalAccessToken == "" {
 		return p.getClient(nil)
 	}
-	return p.getClient(&SudoableToken{Token: personalAccessToken, Sudo: sudo})
+    ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: personalAccessToken})
+    oc := oauth2.NewClient(context.WithValue(context.Background(), oauth2.HTTPClient, httpcli.ExternalClient), ts)
+    return p.NewClient(nil, oc)
+	// return p.getClient(&SudoableToken{Token: personalAccessToken, Sudo: sudo})
 }
 
 // GetOAuthClient returns a client authenticated by the OAuth token.
@@ -129,7 +132,11 @@ func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
 	if oauthToken == "" {
 		return p.getClient(nil)
 	}
-	return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
+    fmt.Println("GET OAUTH CLIENT", oauthToken)
+    ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: oauthToken})
+    oc := oauth2.NewClient(context.WithValue(context.Background(), oauth2.HTTPClient, httpcli.ExternalClient), ts)
+    return p.NewClient(nil, oc)
+	// return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
 }
 
 // GetClient returns an unauthenticated client.
@@ -188,10 +195,10 @@ type Client struct {
 //
 // See the docstring of Client for the meaning of the parameters.
 func (p *ClientProvider) newClient(a auth.Authenticator) *Client {
-	return p.NewClient(a)
+	return p.NewClient(a, nil)
 }
 
-func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
+func (p *ClientProvider) NewClient(a auth.Authenticator, cli *http.Client) *Client {
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
 	if isGitLabDotComURL(p.baseURL) && a == nil {
@@ -209,11 +216,12 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 
 	rl := ratelimit.DefaultRegistry.Get(p.urn)
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
+    fmt.Println("Returning client")
 
 	return &Client{
 		urn:              p.urn,
 		baseURL:          p.baseURL,
-		httpClient:       p.httpClient,
+		httpClient:       cli,
 		projCache:        projCache,
 		Auth:             a,
 		rateLimiter:      rl,
@@ -268,48 +276,20 @@ func (c *Client) doWithBaseURL(ctx context.Context, oauthContext *oauthutil.OAut
 	var header http.Header
 	var body []byte
 
-	oauthAuther, ok := c.Auth.(auth.AuthenticatorWithRefresh)
-	if ok {
-		// Pre-emptively check for refresh
-		if oauthAuther.NeedsRefresh() {
-			// NOTE: This is a best-effort attempt, so we do not care about the returned error.
-			_ = oauthAuther.Refresh(ctx, c.httpClient)
-		}
-		resp, err := oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther)
-		if err != nil {
-			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
-			return nil, 0, errors.Wrap(err, "do request with retry and refresh")
-		}
-		code = resp.StatusCode
-		header = resp.Header
+    resp, err := c.httpClient.Do(req.WithContext(ctx))
+    if err != nil {
+        trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
+        return nil, 0, errors.Wrap(err, "do request")
+    }
+    defer func() { _ = resp.Body.Close() }()
 
-		body, err = io.ReadAll(resp.Body)
-		_ = resp.Body.Close()
-		if err != nil {
-			return nil, code, errors.Wrap(err, "read response body")
-		}
-	} else {
-		if c.Auth != nil {
-			if err := c.Auth.Authenticate(req); err != nil {
-				return nil, 0, errors.Wrap(err, "authenticating request")
-			}
-		}
+    code = resp.StatusCode
+    header = resp.Header
 
-		resp, err := c.httpClient.Do(req.WithContext(ctx))
-		if err != nil {
-			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
-			return nil, 0, errors.Wrap(err, "do request")
-		}
-		defer func() { _ = resp.Body.Close() }()
-
-		code = resp.StatusCode
-		header = resp.Header
-
-		body, err = io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, code, errors.Wrap(err, "read response body")
-		}
-	}
+    body, err = io.ReadAll(resp.Body)
+    if err != nil {
+        return nil, code, errors.Wrap(err, "read response body")
+    }
 	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", code)
 
 	if code < 200 || code >= 400 {

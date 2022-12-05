@@ -104,6 +104,7 @@ func (p *SudoProvider) ServiceType() string {
 // linked external accounts, find the one (if it exists) that matches the authn provider specified
 // in the SudoProvider struct, and fetches the user account from the GitLab API using that identity.
 func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, _ []string) (mine *extsvc.Account, err error) {
+    fmt.Println("Here????")
 	if user == nil {
 		return nil, nil
 	}
@@ -197,6 +198,7 @@ func (p *SudoProvider) fetchAccountByUsername(ctx context.Context, username stri
 //
 // API docs: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
 func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+    fmt.Println("Sudo provider")
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -218,6 +220,7 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 // It may return partial but valid results in case of error, and it is up to callers to decide
 // whether to discard.
 func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUserPermissions, error) {
+    fmt.Println("Listing projects for user")
 	q := make(url.Values)
 	q.Add("min_access_level", "20") // 20 => Reporter access (i.e. have access to project code)
 	q.Add("per_page", "100")        // 100 is the maximum page size
