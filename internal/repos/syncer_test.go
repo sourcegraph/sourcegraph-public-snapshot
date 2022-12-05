@@ -213,15 +213,10 @@ func TestSyncerSync(t *testing.T) {
 		)
 
 		var diff repos.Diff
-		if tc.svc.NamespaceUserID > 0 {
-			diff.Deleted = append(diff.Deleted, tc.repo.With(
-				typestest.Opt.RepoSources(tc.svc.URN()),
-			))
-		} else {
-			diff.Unmodified = append(diff.Unmodified, tc.repo.With(
-				typestest.Opt.RepoSources(tc.svc.URN()),
-			))
-		}
+
+		diff.Unmodified = append(diff.Unmodified, tc.repo.With(
+			typestest.Opt.RepoSources(tc.svc.URN()),
+		))
 
 		testCases = append(testCases,
 			testCase{

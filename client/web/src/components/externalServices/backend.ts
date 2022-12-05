@@ -40,11 +40,6 @@ export const externalServiceFragment = gql`
         nextSyncAt
         updatedAt
         createdAt
-        namespace {
-            id
-            namespaceName
-            url
-        }
     }
 `
 
@@ -143,16 +138,11 @@ export const listExternalServiceFragment = gql`
         updatedAt
         createdAt
         webhookURL
-        namespace {
-            id
-            namespaceName
-            url
-        }
     }
 `
 export const EXTERNAL_SERVICES = gql`
-    query ExternalServices($first: Int, $after: String, $namespace: ID) {
-        externalServices(first: $first, after: $after, namespace: $namespace) {
+    query ExternalServices($first: Int, $after: String) {
+        externalServices(first: $first, after: $after) {
             nodes {
                 ...ListExternalServiceFields
             }

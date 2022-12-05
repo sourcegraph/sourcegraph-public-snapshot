@@ -1231,11 +1231,6 @@ type Query {
     """
     externalServices(
         """
-        The namespace to scope returned external services.
-        Currently, this can only be used for a user.
-        """
-        namespace: ID
-        """
         Returns the first n external services from the list.
         """
         first: Int
@@ -2684,11 +2679,6 @@ type ExternalService implements Node {
     When the external service was last updated.
     """
     updatedAt: DateTime!
-
-    """
-    The namespace this external service belongs to.
-    """
-    namespace: Namespace
 
     """
     The number of repos synced by the external service.
