@@ -281,28 +281,30 @@ func QueryJobsStatus(ctx context.Context, workerBaseStore *basestore.Store, seri
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	states := map[string]*uint64{
-		"queued":     &status.Queued,
-		"processing": &status.Processing,
-		"completed":  &status.Completed,
-		"errored":    &status.Errored,
-		"failed":     &status.Failed,
-	}
 	for rows.Next() {
 		var state string
 		var value int
 		if err := rows.Scan(&state, &value); err != nil {
 			return nil, err
 		}
-		if result, ok := states[state]; ok {
-			*result = uint64(value)
+		switch state {
+		case "queued":
+			status.Queued = uint64(value)
+		case "processing":
+			status.Processing = uint64(value)
+		case "completed":
+			status.Completed = uint64(value)
+		case "errored":
+			status.Errored = uint64(value)
+		case "failed":
+			status.Failed = uint64(value)
 		}
 	}
 	return &status, nil
 }
 
 const queryJobsStatusSql = `
-SELECT state, COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s GROUP BY state 
+SELECT state, count(*) from insights_query_runner_jobs WHERE series_id=%s GROUP BY state 
 `
 
 func QueryAllSeriesStatus(ctx context.Context, workerBaseStore *basestore.Store) (_ []types.InsightSeriesStatus, err error) {
