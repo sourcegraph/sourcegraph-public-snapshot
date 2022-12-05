@@ -8,10 +8,7 @@ import { useHistory, useLocation } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
-import {
-    SettingsOrgSubject,
-    SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
+import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
 import { Alert, Button, Container, Icon, Input, LoadingSpinner, RadioButton, Tooltip } from '@sourcegraph/wildcard'
 
 import {

@@ -32,13 +32,16 @@ export const useNamespaces = (initialNamespaceID?: Scalars['ID']): UseNamespaces
         throw new Error('No user found')
     }
 
-    const localUserNamespace = useMemo(() => ({
-        __typename: user.__typename,
-        id: user.id,
-        username: user?.username,
-        displayName: user.displayName,
-        viewerCanAdminister: user.viewerCanAdminister
-    }), [user])
+    const localUserNamespace = useMemo(
+        () => ({
+            __typename: user.__typename,
+            id: user.id,
+            username: user?.username,
+            displayName: user.displayName,
+            viewerCanAdminister: user.viewerCanAdminister,
+        }),
+        [user]
+    )
 
     const { loading, data, error } = useQuery<GetUserOrganizationsResult, GetUserOrganizationsVariables>(
         GET_USER_ORGANIZATIONS,
