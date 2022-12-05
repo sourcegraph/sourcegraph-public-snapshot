@@ -1,5 +1,7 @@
 package iterator
 
+import "fmt"
+
 // New returns an Iterator for next.
 //
 // next is a function which is repeatedly called until no items are returned
@@ -39,6 +41,7 @@ func (it *Iterator[T]) Next() bool {
 
 	it.items, it.err = it.next()
 	if len(it.items) == 0 || it.err != nil {
+		it.items = nil // clear out so Current fails with err.
 		it.done = true
 	}
 
@@ -48,6 +51,13 @@ func (it *Iterator[T]) Next() bool {
 // Current returns the latest item advanced by Next. Note: this will panic if
 // Next returned false or if Next was never called.
 func (it *Iterator[T]) Current() T {
+	if len(it.items) == 0 {
+		if it.done {
+			panic(fmt.Sprintf("%T.Current() called after Next() returned false", it))
+		} else {
+			panic(fmt.Sprintf("%T.Current() called before first call to Next()", it))
+		}
+	}
 	return it.items[0]
 }
 
