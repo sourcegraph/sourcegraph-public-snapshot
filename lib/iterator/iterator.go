@@ -5,9 +5,9 @@ func New[T any](next func() ([]T, error)) *Iterator[T] {
 }
 
 type Iterator[T any] struct {
-	current []T
-	err     error
-	done    bool
+	items []T
+	err   error
+	done  bool
 
 	// next is a function which is repeatedly called until no items are
 	// returned or there is a non-nil error. These items are returned one by
@@ -20,13 +20,13 @@ func (it *Iterator[T]) Next() bool {
 		return false
 	}
 
-	if len(it.current) > 1 {
-		it.current = it.current[1:]
+	if len(it.items) > 1 {
+		it.items = it.items[1:]
 		return true
 	}
 
-	it.current, it.err = it.next()
-	if len(it.current) == 0 || it.err != nil {
+	it.items, it.err = it.next()
+	if len(it.items) == 0 || it.err != nil {
 		it.done = true
 	}
 
@@ -34,7 +34,7 @@ func (it *Iterator[T]) Next() bool {
 }
 
 func (it *Iterator[T]) Current() T {
-	return it.current[0]
+	return it.items[0]
 }
 
 func (it *Iterator[T]) Err() error {
