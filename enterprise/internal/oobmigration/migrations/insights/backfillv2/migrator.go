@@ -31,7 +31,7 @@ func NewMigrator(store *basestore.Store, clock glock.Clock, batchSize int) *back
 
 var _ oobmigration.Migrator = &backfillerv2Migrator{}
 
-func (m *backfillerv2Migrator) ID() int                 { return 17 }
+func (m *backfillerv2Migrator) ID() int                 { return 18 }
 func (m *backfillerv2Migrator) Interval() time.Duration { return time.Second * 10 }
 
 func (m *backfillerv2Migrator) Progress(ctx context.Context, _ bool) (float64, error) {
