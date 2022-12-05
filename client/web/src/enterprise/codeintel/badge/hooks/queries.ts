@@ -15,6 +15,9 @@ export const codeIntelStatusQuery = gql`
                 recentIndexes {
                     ...LSIFIndexesWithRepositoryNamespaceFields
                 }
+                availableIndexers {
+                    ...InferredAvailableIndexersFields
+                }
             }
             commit(rev: $commit) {
                 path(path: $path) {
@@ -101,6 +104,12 @@ export const codeIntelStatusQuery = gql`
         indexes {
             ...LsifIndexFields
         }
+    }
+
+    fragment InferredAvailableIndexersFields on InferredAvailableIndexers {
+        roots
+        index
+        url
     }
 
     ${lsifUploadFieldsFragment}

@@ -103,7 +103,7 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                         <CodeInsightsRootPage
                             dashboardId={props.match.params.dashboardId}
                             activeView={
-                                props.match.params.dashboardId
+                                props.match.path === `${match.url}/dashboards/:dashboardId?`
                                     ? CodeInsightsRootPageTab.CodeInsights
                                     : CodeInsightsRootPageTab.GettingStarted
                             }

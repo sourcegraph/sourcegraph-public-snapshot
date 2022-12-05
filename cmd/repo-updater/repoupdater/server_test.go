@@ -864,6 +864,10 @@ func (t testSource) ExternalServices() types.ExternalServices {
 	return nil
 }
 
+func (t testSource) CheckConnection(ctx context.Context) error {
+	return nil
+}
+
 func (t testSource) WithAuthenticator(a auth.Authenticator) (repos.Source, error) {
 	return t, nil
 }

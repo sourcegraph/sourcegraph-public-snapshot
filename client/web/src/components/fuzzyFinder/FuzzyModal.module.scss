@@ -2,40 +2,19 @@
 
 .modal {
     height: 80vh;
+    max-height: 426px;
     // `!important` is required to ensure that this rule is applied in the production bundle.
     // It can be removed after addressing the following issue:
     // https://github.com/sourcegraph/sourcegraph/issues/42217
     width: 80vw !important;
+    max-width: 900px;
     background-color: var(--body-bg);
     padding: 0;
 }
 
-.content {
-    display: flex;
-    align-items: stretch;
-    flex-direction: column;
-    height: 100%;
-    background: transparent;
-}
-
 .header {
-    display: flex;
-    align-items: center;
-    padding: 0.5rem 1rem 0; // stylelint-disable-next-line declaration-property-unit-allowed-list
-    margin-bottom: -1px;
+    margin-bottom: -1px; // stylelint-disable-line declaration-property-unit-allowed-list
     z-index: 1;
-}
-
-.divider {
-    width: 100%; // stylelint-disable-next-line declaration-property-unit-allowed-list
-    height: 1px;
-    background-color: var(--border-color);
-    margin-bottom: 0.5rem;
-    z-index: 0;
-
-    &.mb-0 {
-        margin-bottom: 0;
-    }
 }
 
 .shortcut {
@@ -49,60 +28,15 @@
     box-shadow: var(--search-input-shadow);
 }
 
-.empty-results {
-    text-align: center;
-}
-
-.results {
-    flex: 1;
-
-    // stylelint-disable-next-line scss/selector-no-redundant-nesting-selector
-    & p {
-        padding: 1rem;
-    }
-
-    ul {
-        padding: 0.25rem 0;
-        margin-bottom: 0;
-    }
-
-    li {
-        padding: 0.325rem 1rem;
-        border-radius: 0;
-        display: flex;
-        align-items: center;
-
-        a {
-            max-height: initial;
-
-            span:global(.fuzzy-repos-result-icon) {
-                margin-right: 0.25rem;
-            }
-            span:global(.fuzzy-repos-star) {
-                margin-left: 0.25rem;
-            }
-
-            &:hover {
-                text-decoration: none;
-            }
-        }
-
-        &:hover {
-            background-color: var(--color-bg-2);
-        }
+.result-item {
+    &:hover {
+        background-color: var(--color-bg-2);
     }
 }
 
 .focused {
     border-radius: var(--border-radius);
     background-color: var(--color-bg-3);
-}
-
-.footer {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    padding: 0 1.5rem 0.75rem 1rem;
 }
 
 .keyboard-explanation {

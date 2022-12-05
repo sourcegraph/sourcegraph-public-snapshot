@@ -22,9 +22,10 @@ func NewFakeSourcer(err error, src Source) Sourcer {
 
 // FakeSource is a fake implementation of Source to be used in tests.
 type FakeSource struct {
-	svc   *types.ExternalService
-	repos []*types.Repo
-	err   error
+	svc           *types.ExternalService
+	repos         []*types.Repo
+	err           error
+	connectionErr error
 
 	// ListRepos will send on this channel if it's not nil and wait on the channel
 	// again before quitting. This can help with testing certain concurrent situation
@@ -42,6 +43,15 @@ func NewFakeSource(svc *types.ExternalService, err error, rs ...*types.Repo) *Fa
 func (s *FakeSource) InitLockChan() chan struct{} {
 	s.lockChan = make(chan struct{})
 	return s.lockChan
+}
+
+func (s *FakeSource) Unavailable() *FakeSource {
+	s.connectionErr = errors.New("fake source unavailable")
+	return s
+}
+
+func (s *FakeSource) CheckConnection(ctx context.Context) error {
+	return s.connectionErr
 }
 
 // ListRepos returns the Repos that FakeSource was instantiated with

@@ -1,7 +1,6 @@
 package conf
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -9,74 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-func TestSearchIndexEnabled(t *testing.T) {
-	tests := []struct {
-		name string
-		sc   *Unified
-		env  []string
-		want any
-	}{{
-		name: "SearchIndex defaults to true in docker",
-		sc:   &Unified{},
-		env:  []string{"DEPLOY_TYPE=docker-container"},
-		want: true,
-	}, {
-		name: "SearchIndex defaults to true in k8s",
-		sc:   &Unified{},
-		env:  []string{"DEPLOY_TYPE=k8s"},
-		want: true,
-	}, {
-		name: "SearchIndex enabled",
-		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{SearchIndexEnabled: boolPtr(true)}},
-		env:  []string{"DEPLOY_TYPE=docker-container"},
-		want: true,
-	}, {
-		name: "SearchIndex disabled",
-		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{SearchIndexEnabled: boolPtr(false)}},
-		env:  []string{"DEPLOY_TYPE=docker-container"},
-		want: false,
-	}}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			for _, e := range test.env {
-				cleanup := setenv(t, e)
-				defer cleanup()
-			}
-			Mock(test.sc)
-			got := SearchIndexEnabled()
-			if got != test.want {
-				t.Fatalf("SearchIndexEnabled() = %v, want %v", got, test.want)
-			}
-		})
-	}
-
-	defaults := map[string]conftypes.RawUnified{
-		"Kubernetes":      confdefaults.KubernetesOrDockerComposeOrPureDocker,
-		"Default":         confdefaults.Default,
-		"DevAndTesting":   confdefaults.DevAndTesting,
-		"DockerContainer": confdefaults.DockerContainer,
-	}
-	for dStr, d := range defaults {
-		test := fmt.Sprintf("for %s defaults", dStr)
-		t.Run(test, func(t *testing.T) {
-			cfg, err := ParseConfig(d)
-			if err != nil {
-				t.Fatal(err)
-			}
-			Mock(cfg)
-			defer Mock(nil)
-			if !SearchIndexEnabled() {
-				t.Errorf("search indexing should be enabled by default for Docker deployments")
-			}
-		})
-	}
-}
 
 func TestAuthPasswordResetLinkDuration(t *testing.T) {
 	tests := []struct {

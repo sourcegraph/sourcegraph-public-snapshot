@@ -86,7 +86,7 @@ func newClient(urn string, config *schema.BitbucketCloudConnection, httpClient h
 		return category
 	})
 
-	apiURL, err := urlFromConfig(config)
+	apiURL, err := UrlFromConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +278,7 @@ func (e *httpError) NotFound() bool {
 	return e.StatusCode == http.StatusNotFound
 }
 
-func urlFromConfig(config *schema.BitbucketCloudConnection) (*url.URL, error) {
+func UrlFromConfig(config *schema.BitbucketCloudConnection) (*url.URL, error) {
 	if config.ApiURL == "" {
 		return url.Parse("https://api.bitbucket.org")
 	}

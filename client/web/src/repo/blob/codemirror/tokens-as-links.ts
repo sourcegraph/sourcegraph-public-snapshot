@@ -6,13 +6,14 @@ import { concatMap, debounceTime, map } from 'rxjs/operators'
 import { DeepNonNullable } from 'utility-types'
 
 import { logger, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 import { toPrettyBlobURL, UIRange } from '@sourcegraph/shared/src/util/url'
 
 import { BlobInfo } from '../Blob'
 import { DefinitionResponse, fetchDefinitionsFromRanges } from '../definitions'
 
 import { SelectedLineRange, selectedLines } from './linenumbers'
+import { isInteractiveOccurrence } from './occurrence-utils'
 
 interface TokenLink {
     range: UIRange
@@ -244,38 +245,9 @@ interface TokensAsLinksConfiguration {
     preloadGoToDefinition: boolean
 }
 
-/**
- * Occurrences that are possibly interactive (i.e. they can have code intelligence).
- */
-const INTERACTIVE_OCCURRENCE_KINDS = new Set([
-    SyntaxKind.Identifier,
-    SyntaxKind.IdentifierBuiltin,
-    SyntaxKind.IdentifierConstant,
-    SyntaxKind.IdentifierMutableGlobal,
-    SyntaxKind.IdentifierParameter,
-    SyntaxKind.IdentifierLocal,
-    SyntaxKind.IdentifierShadowed,
-    SyntaxKind.IdentifierModule,
-    SyntaxKind.IdentifierFunction,
-    SyntaxKind.IdentifierFunctionDefinition,
-    SyntaxKind.IdentifierMacro,
-    SyntaxKind.IdentifierMacroDefinition,
-    SyntaxKind.IdentifierType,
-    SyntaxKind.IdentifierBuiltinType,
-    SyntaxKind.IdentifierAttribute,
-])
-
-const isInteractiveOccurrence = (occurence: Occurrence): boolean => {
-    if (!occurence.kind) {
-        return false
-    }
-
-    return INTERACTIVE_OCCURRENCE_KINDS.has(occurence.kind)
-}
-
 export const tokensAsLinks = ({ history, blobInfo, preloadGoToDefinition }: TokensAsLinksConfiguration): Extension => {
     /**
-     * Prefer precise code intelligence ranges, fall back to making certain Occurences interactive.
+     * Prefer precise code intelligence ranges, fall back to making certain Occurrences interactive.
      */
     const ranges =
         blobInfo.stencil && blobInfo.stencil.length > 0

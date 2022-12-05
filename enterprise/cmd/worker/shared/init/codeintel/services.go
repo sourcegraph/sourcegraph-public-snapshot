@@ -21,7 +21,7 @@ func InitServices() (codeintel.Services, error) {
 		return codeintel.Services{}, err
 	}
 
-	return codeintel.GetServices(codeintel.Databases{
+	return codeintel.NewServices(codeintel.Databases{
 		DB:          db,
 		CodeIntelDB: codeIntelDB,
 	})

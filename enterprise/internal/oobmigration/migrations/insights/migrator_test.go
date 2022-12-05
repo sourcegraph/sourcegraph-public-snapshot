@@ -26,7 +26,7 @@ func TestInsightsMigrator(t *testing.T) {
 	}
 
 	// We can still run this test even if a dev has disabled code insights in
-	// there env.
+	// their env.
 	t.Setenv("DISABLE_CODE_INSIGHTS", "")
 
 	ctx := context.Background()

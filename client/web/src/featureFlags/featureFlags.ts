@@ -15,6 +15,7 @@ export type FeatureFlagName =
     | 'admin-analytics-cache-disabled'
     | 'search-input-show-history'
     | 'user-management-disabled'
+    | 'search-results-keyboard-navigation'
     | 'enable-streaming-git-blame'
 
 interface OrgFlagOverride {

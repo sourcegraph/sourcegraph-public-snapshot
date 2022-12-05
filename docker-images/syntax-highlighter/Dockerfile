@@ -9,10 +9,7 @@ WORKDIR /repo
 RUN cargo test --release --workspace
 RUN cargo rustc --release
 RUN ls ./target
-# TODO: the syntect_server binary is kept around for backwards compatibility
-# reasons and will be removed in the future. The `syntax-highlighter` binary
-# should be used instead.
-RUN cp ./target/release/syntect_server /syntect_server
+
 RUN cp ./target/release/syntect_server /syntax_highlighter
 
 ################################
@@ -29,7 +26,6 @@ RUN go build -o /http-server-stabilizer .
 # Compile final image #
 #######################
 FROM sourcegraph/alpine-3.14:180512_2022-10-31_84d1e240bb40@sha256:179ad53ab463ebc804f93de967113739fa73efc2cea6d9c53a9106be45f79d5e
-COPY --from=ss syntect_server /
 COPY --from=ss syntax_highlighter /
 COPY --from=hss http-server-stabilizer /
 

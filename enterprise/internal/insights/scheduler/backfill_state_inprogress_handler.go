@@ -57,14 +57,14 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 	handlerConfig := newHandlerConfig()
 
 	task := &inProgressHandler{
-		workerStore:    workerStore,
-		backfillStore:  backfillStore,
-		seriesReader:   store.NewInsightStore(db),
-		insightsStore:  config.InsightStore,
-		backfillRunner: config.BackfillRunner,
-		repoStore:      config.RepoStore,
-		clock:          glock.NewRealClock(),
-		config:         handlerConfig,
+		workerStore:        workerStore,
+		backfillStore:      backfillStore,
+		seriesReadComplete: store.NewInsightStore(db),
+		insightsStore:      config.InsightStore,
+		backfillRunner:     config.BackfillRunner,
+		repoStore:          config.RepoStore,
+		clock:              glock.NewRealClock(),
+		config:             handlerConfig,
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*BaseJob](task), workerutil.WorkerOptions{
@@ -96,13 +96,13 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 }
 
 type inProgressHandler struct {
-	workerStore    dbworkerstore.Store[*BaseJob]
-	backfillStore  *BackfillStore
-	seriesReader   SeriesReader
-	repoStore      database.RepoStore
-	insightsStore  store.Interface
-	backfillRunner pipeline.Backfiller
-	config         handlerConfig
+	workerStore        dbworkerstore.Store[*BaseJob]
+	backfillStore      *BackfillStore
+	seriesReadComplete SeriesReadBackfillComplete
+	repoStore          database.RepoStore
+	insightsStore      store.Interface
+	backfillRunner     pipeline.Backfiller
+	config             handlerConfig
 
 	clock glock.Clock
 }
@@ -124,7 +124,7 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, job *
 	if err != nil {
 		return errors.Wrap(err, "loadBackfill")
 	}
-	series, err := h.seriesReader.GetDataSeriesByID(ctx, backfillJob.SeriesId)
+	series, err := h.seriesReadComplete.GetDataSeriesByID(ctx, backfillJob.SeriesId)
 	if err != nil {
 		return errors.Wrap(err, "GetDataSeriesByID")
 	}
@@ -235,6 +235,12 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, job *
 		if err != nil {
 			return err
 		}
+
+		err = h.seriesReadComplete.SetSeriesBackfillComplete(ctx, series.SeriesID, itr.CompletedAt)
+		if err != nil {
+			return err
+		}
+
 		err = backfillJob.setState(ctx, h.backfillStore, BackfillStateCompleted)
 		if err != nil {
 			return err
