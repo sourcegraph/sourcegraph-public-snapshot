@@ -16,7 +16,7 @@ import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../../insights/types'
-import { SiteAdminOnboarding, useShouldShowAdminOnboarding } from '../../onboarding/site-admin/SiteAdminOnboarding'
+import { AddCodeHostWidget, useShouldShowAddCodeHostWidget } from '../../onboarding/AddCodeHostWidget'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -56,7 +56,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
     const homepageUserInvitation = useExperimentalFeatures(features => features.homepageUserInvitation) ?? false
     const showCollaborators = window.context.allowSignup && homepageUserInvitation && props.isSourcegraphDotCom
     const { width } = useWindowSize()
-    const shouldShowAdminOnboarding = useShouldShowAdminOnboarding(props.authenticatedUser)
+    const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -82,10 +82,13 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
             )}
 
             <div className={styles.searchContainer}>
-                {shouldShowAdminOnboarding ? (
+                {shouldShowAddCodeHostWidget ? (
                     <>
-                        <Tooltip content="Sourcegraph is not fully functional until a code-host is set up" placement="top">
-                            <div className={styles.searchContainerInner}>
+                        <Tooltip
+                            content="Sourcegraph is not fully functional until a code-host is set up"
+                            placement="top"
+                        >
+                            <div className={styles.translucent}>
                                 <SearchPageInput
                                     {...props}
                                     queryState={queryState}
@@ -94,7 +97,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                                 />
                             </div>
                         </Tooltip>
-                        <SiteAdminOnboarding className="mb-4" telemetryService={props.telemetryService} />
+                        <AddCodeHostWidget className="mb-4" telemetryService={props.telemetryService} />
                     </>
                 ) : (
                     <SearchPageInput {...props} queryState={queryState} setQueryState={setQueryState} source="home" />

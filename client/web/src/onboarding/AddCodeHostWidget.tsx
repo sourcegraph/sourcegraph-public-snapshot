@@ -10,30 +10,32 @@ import { H3, Text, Link, Icon } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import { SiteAdminOnboardingResult, SiteAdminOnboardingVariables } from '../../graphql-operations'
+import { ExternalServicesResult, ExternalServicesVariables } from '../../graphql-operations'
 
-import styles from './SiteAdminOnboarding.module.scss'
+import styles from './AddCodeHostWidget.module.scss'
 
-const SITE_ADMIN_ONBOARDING = gql`
-    query SiteAdminOnboarding {
+const EXTERNAL_SERVICES = gql`
+    query ExternalServices {
         externalServices {
             totalCount
         }
     }
 `
 
-export function useShouldShowAdminOnboarding(authenticatedUser: AuthenticatedUser | null): boolean | undefined {
-    const [isAdminOnboardingEnabled] = useFeatureFlag('enable-admin-onboarding', true) // TODO: change default to false
-    const { data } = useQuery<SiteAdminOnboardingResult, SiteAdminOnboardingVariables>(SITE_ADMIN_ONBOARDING, {})
+export function useShouldShowAddCodeHostWidget(authenticatedUser: AuthenticatedUser | null): boolean | undefined {
+    const [isAddCodeHostWidgetEnabled] = useFeatureFlag('enable-add-codehost-widget', true) // TODO: change default to false
+    const { data } = useQuery<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, {})
 
-    return isAdminOnboardingEnabled && authenticatedUser?.siteAdmin && !!data && data.externalServices.totalCount === 0
+    return (
+        isAddCodeHostWidgetEnabled && authenticatedUser?.siteAdmin && !!data && data.externalServices.totalCount === 0
+    )
 }
 
-interface SiteAdminOnboardingProps extends TelemetryProps {
+interface AddCodeHostWidgetProps extends TelemetryProps {
     className?: string
 }
 
-export const SiteAdminOnboarding: React.FunctionComponent<SiteAdminOnboardingProps> = ({ className, telemetryService }) => (
+export const AddCodeHostWidget: React.FunctionComponent<AddCodeHostWidgetProps> = ({ className, telemetryService }) => (
     <MarketingBlock
         wrapperClassName={classNames('mt-3 mx-auto', className, styles.container)}
         contentClassName={classNames(styles.innerContainer, 'p-4 d-flex flex-column align-items-baseline')}
