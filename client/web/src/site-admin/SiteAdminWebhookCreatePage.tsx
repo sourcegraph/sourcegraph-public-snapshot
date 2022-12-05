@@ -4,10 +4,10 @@ import { mdiCog } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import { RouteComponentProps } from 'react-router'
-import {catchError} from 'rxjs/operators';
+import { catchError } from 'rxjs/operators'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import {asError, ErrorLike, isErrorLike} from '@sourcegraph/common'
+import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, Container, H2, Input, PageHeader, Select, useObservable } from '@sourcegraph/wildcard'
@@ -58,11 +58,14 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
     const [kindsToUrls, setKindsToUrls] = useState<Map<ExternalServiceKind, string[]>>(new Map())
 
     const extSvcKindsOrError: ExternalServicesResult['externalServices'] | undefined | ErrorLike = useObservable(
-        useMemo(() => queryExternalServices({
+        useMemo(
+            () =>
+                queryExternalServices({
                     first: null,
                     after: null,
-                    namespace: null,
-                }).pipe(catchError(error => [asError(error)])), [queryExternalServices])
+                }).pipe(catchError(error => [asError(error)])),
+            [queryExternalServices]
+        )
     )
 
     useMemo(() => {

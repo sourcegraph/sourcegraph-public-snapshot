@@ -63,8 +63,7 @@ function createExternalService(kind: ExternalServiceKind, url: string): ListExte
         nextSyncAt: null,
         updatedAt: '2021-03-15T19:39:11Z',
         createdAt: '2021-03-15T19:39:11Z',
-        namespace: null,
-        webhookURL: null
+        webhookURL: null,
     }
 }
 
