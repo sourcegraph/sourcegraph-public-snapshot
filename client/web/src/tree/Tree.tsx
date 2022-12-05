@@ -3,12 +3,12 @@ import * as React from 'react'
 
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import { combineLatest, Subject, Subscription } from 'rxjs'
-import { debounceTime, distinctUntilChanged, distinct, map, startWith, filter, mergeMap } from 'rxjs/operators'
+import { Subject, Subscription } from 'rxjs'
+import { distinctUntilChanged, startWith } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
 import { formatSearchParameters } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
+import { gql } from '@sourcegraph/http-client'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -20,6 +20,7 @@ import { ConnectionForm } from '../components/FilteredConnection/ui'
 import { dirname } from '../util/path'
 
 import { TreeRoot } from './TreeRoot'
+import { TreeSearchResults } from './TreeSearchResults'
 import { getDomElement, scrollIntoView } from './util'
 
 import styles from './Tree.module.scss'
@@ -59,9 +60,8 @@ interface State {
     /** The tree node of the file or directory currently being viewed */
     activeNode: TreeNode
 
+    /** Files filter query */
     searchTerm: string
-
-    results: any[]
 }
 
 export interface TreeNode {
@@ -156,7 +156,6 @@ const QUERY = gql`
 
 export class Tree extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
-    private searhTermUpdates = new Subject<string>()
     // This fires whenever a directory is expanded or collapsed.
     private expandDirectoryChanges = new Subject<{ path: string; expanded: boolean; node: TreeNode }>()
     private subscriptions = new Subscription()
@@ -260,7 +259,6 @@ export class Tree extends React.PureComponent<Props, State> {
             selectedNode: this.node,
             activeNode: this.node,
             searchTerm: '',
-            results: [],
         }
 
         this.treeElement = null
@@ -325,53 +323,10 @@ export class Tree extends React.PureComponent<Props, State> {
                     }
                 })
         )
-
-        this.subscriptions.add(
-            combineLatest([
-                this.componentUpdates.pipe(
-                    // startWith(this.props),
-                    // distinctUntilChanged(isEqual),
-                    map(props => ({
-                        repoName: props.repoName,
-                        revision: props.revision,
-                        requestGraphQL: props.platformContext.requestGraphQL,
-                    })),
-                    distinctUntilChanged(isEqual)
-                ),
-                this.searhTermUpdates.pipe(
-                    // map(state => state.searchTerm),
-                    debounceTime(500),
-                    filter(Boolean),
-                    distinct()
-                ),
-            ])
-                .pipe(
-                    mergeMap(([{ repoName, revision, requestGraphQL }, searchTerm]) =>
-                        requestGraphQL({
-                            request: QUERY,
-                            variables: {
-                                query: `repo:${repoName} revision:${revision} type:path count:100 ${searchTerm}`,
-                            },
-                        }).pipe(
-                            map(dataOrThrowErrors),
-                            map(({ search }) => search.results.results)
-                        )
-                    )
-                )
-                .subscribe(results => this.setState(state => ({ ...state, results })))
-        )
     }
 
     public componentDidUpdate(prevProps: Readonly<Props>, prevState: Readonly<State>): void {
         this.componentUpdates.next(this.props)
-
-        if (prevState.searchTerm !== this.state.searchTerm) {
-            if (this.state.searchTerm) {
-                this.searhTermUpdates.next(this.state.searchTerm)
-            } else {
-                this.setState(state => ({ ...state, results: [] }))
-            }
-        }
     }
 
     public componentWillUnmount(): void {
@@ -405,16 +360,12 @@ export class Tree extends React.PureComponent<Props, State> {
                     {/* </SummaryContainer>*/}
                 </div>
                 {this.state.searchTerm ? (
-                    <ul>
-                        {this.state.results.map(({ file }) => {
-                            return (
-                                <li key={file.path}>
-                                    <div>{file.name}</div>
-                                    <div>{file.path.replace(new RegExp(`${file.name}$`), '')}</div>
-                                </li>
-                            )
-                        })}
-                    </ul>
+                    <TreeSearchResults
+                        searchTerm={this.state.searchTerm}
+                        repoName={this.props.repoName}
+                        commitID={this.props.commitID}
+                        requestGraphQL={this.props.platformContext.requestGraphQL}
+                    />
                 ) : (
                     <TreeRoot
                         ref={reference => {
