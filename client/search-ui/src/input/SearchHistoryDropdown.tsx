@@ -11,7 +11,7 @@ import React, {
 import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
 
-import { pluralize } from '@sourcegraph/common/out/src'
+import { pluralize } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -171,7 +171,9 @@ const SearchHistoryEntry: React.FunctionComponent<{
         <SyntaxHighlightedSearchQuery query={search.query} tabIndex={-1} />
         <span className="ml-1 text-nowrap text-muted">
             <span className="sr-only">,</span>
-            {search.resultCount !== undefined && <span>{`${search.resultCount} results`} • </span>}
+            {search.resultCount !== undefined && (
+                <span>{`${search.resultCount} ${pluralize('result', search.resultCount)}`} • </span>
+            )}
             <Timestamp date={search.timestamp} />
         </span>
     </li>
