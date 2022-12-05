@@ -52650,7 +52650,7 @@ type WebhookStoreUpdateFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
-	// Arg2 is the value of the 3rd argument passed to this method
+	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 *types.Webhook
 	// Result0 is the value of the 1st result returned from this method

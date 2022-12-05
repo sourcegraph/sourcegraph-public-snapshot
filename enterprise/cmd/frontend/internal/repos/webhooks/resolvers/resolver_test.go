@@ -701,8 +701,8 @@ func TestUpdateWebhook(t *testing.T) {
 		Variables: map[string]any{
 			"id":           string(id),
 			"name":         "new name",
-			"codeHostKind": nil,
-			"codeHostURN":  nil,
+			"codeHostKind": "",
+			"codeHostURN":  "",
 			"secret":       nil,
 		},
 	})
@@ -725,8 +725,8 @@ func TestUpdateWebhook(t *testing.T) {
 		Variables: map[string]any{
 			"id":           string(id),
 			"name":         "new name",
-			"codeHostKind": nil,
-			"codeHostURN":  nil,
+			"codeHostKind": "",
+			"codeHostURN":  "",
 			"secret":       nil,
 		},
 	})
@@ -754,8 +754,8 @@ func TestUpdateWebhook(t *testing.T) {
 		Variables: map[string]any{
 			"id":           string(id),
 			"name":         "new name",
-			"codeHostKind": nil,
-			"codeHostURN":  nil,
+			"codeHostKind": "",
+			"codeHostURN":  "",
 			"secret":       nil,
 		},
 	})
@@ -778,7 +778,7 @@ func TestUpdateWebhook(t *testing.T) {
 		Variables: map[string]any{
 			"id":           string(id),
 			"name":         "new name",
-			"codeHostKind": nil,
+			"codeHostKind": "",
 			"codeHostURN":  "https://example.github.com",
 			"secret":       nil,
 		},
@@ -801,7 +801,7 @@ func TestUpdateWebhook(t *testing.T) {
 		Variables: map[string]any{
 			"id":           string(id),
 			"name":         "new name",
-			"codeHostKind": nil,
+			"codeHostKind": "",
 			"codeHostURN":  "https://example.github.com",
 			"secret":       nil,
 		},
