@@ -6,7 +6,6 @@ import * as H from 'history'
 
 import { pluralize } from '@sourcegraph/common'
 import { SearchContextMinimalFields } from '@sourcegraph/search'
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Badge, Icon, Link, Menu, MenuButton, MenuLink, MenuList, Tooltip } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
@@ -60,16 +59,11 @@ export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<
         <tr className={styles.row}>
             <td className={styles.star} />
             <td className={styles.name}>
-                {node.spec} <span className="d-none d-md-inline-block">{tags}</span>
+                <Link to={`/contexts/${node.spec}`}>{node.spec}</Link>{' '}
+                <span className="d-none d-md-inline-block">{tags}</span>
             </td>
             <td className={styles.description}>
-                {node.description ? (
-                    <div className="text-muted">{node.description}</div>
-                ) : node.query ? (
-                    <small>
-                        <SyntaxHighlightedSearchQuery query={node.query} key={node.name} />
-                    </small>
-                ) : null}
+                {node.description ? <div className="text-muted">{node.description}</div> : null}
             </td>
             <td className={classNames(styles.contents, 'text-muted')}>{contents}</td>
             <td className={classNames(styles.lastUpdated, 'text-muted')}>
