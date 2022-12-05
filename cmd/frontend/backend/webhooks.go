@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -37,18 +36,10 @@ func (ws *webhookService) CreateWebhook(ctx context.Context, name, codeHostKind,
 }
 
 func (ws *webhookService) DeleteWebhook(ctx context.Context, id int32) error {
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, ws.db) != nil {
-		return auth.ErrMustBeSiteAdmin
-	}
-
 	return ws.db.Webhooks(ws.keyRing.WebhookKey).Delete(ctx, database.DeleteWebhookOpts{ID: id})
 }
 
 func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, codeHostKind, codeHostURN, secretStr *string) (*types.Webhook, error) {
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, ws.db) != nil {
-		return nil, auth.ErrMustBeSiteAdmin
-	}
-
 	webhooksStore := ws.db.Webhooks(ws.keyRing.WebhookKey)
 	webhook, err := webhooksStore.GetByID(ctx, id)
 	if err != nil {
@@ -59,6 +50,10 @@ func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, cod
 		webhook.Name = *name
 	}
 	if codeHostKind != nil {
+		if err := validateCodeHostKindAndSecret(*codeHostKind, secretStr); err != nil {
+			return nil, err
+		}
+
 		webhook.CodeHostKind = *codeHostKind
 	}
 	if codeHostURN != nil {

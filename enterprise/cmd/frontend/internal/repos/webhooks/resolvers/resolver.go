@@ -49,6 +49,10 @@ func (r *webhooksResolver) CreateWebhook(ctx context.Context, args *graphqlbacke
 }
 
 func (r *webhooksResolver) DeleteWebhook(ctx context.Context, args *graphqlbackend.DeleteWebhookArgs) (*graphqlbackend.EmptyResponse, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+
 	id, err := unmarshalWebhookID(args.ID)
 	if err != nil {
 		return nil, err
@@ -62,6 +66,10 @@ func (r *webhooksResolver) DeleteWebhook(ctx context.Context, args *graphqlbacke
 }
 
 func (r *webhooksResolver) UpdateWebhook(ctx context.Context, args *graphqlbackend.UpdateWebhookArgs) (graphqlbackend.WebhookResolver, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+
 	whID, err := unmarshalWebhookID(args.ID)
 	if err != nil {
 		return nil, err

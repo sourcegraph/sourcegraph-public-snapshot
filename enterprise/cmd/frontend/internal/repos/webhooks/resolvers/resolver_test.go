@@ -794,7 +794,7 @@ func TestUpdateWebhook(t *testing.T) {
 		ExpectedResult: "null",
 		ExpectedErrors: []*errors.QueryError{
 			{
-                Message: "update webhook: webhook with ID 2 not found",
+				Message: "update webhook: webhook with ID 2 not found",
 				Path:    []any{"updateWebhook"},
 			},
 		},
