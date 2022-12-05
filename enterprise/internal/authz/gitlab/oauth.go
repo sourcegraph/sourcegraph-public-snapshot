@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
@@ -111,14 +110,6 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 		return nil, errors.New("no token found in the external account data")
 	}
 
-	token := &auth.OAuthBearerToken{
-		Token:              tok.AccessToken,
-		RefreshToken:       tok.RefreshToken,
-		Expiry:             tok.Expiry,
-		RefreshFunc:        database.GetAccountRefreshAndStoreOAuthTokenFunc(p.db, account.ID, gitlab.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))),
-		NeedsRefreshBuffer: 5,
-	}
-
 	oauth2Config := oauth2.Config{}
 
 	o2token := github.MyToken{Token: &oauth2.Token{
@@ -152,7 +143,7 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 
 	cli := oauth2.NewClient(context.WithValue(ctx, oauth2.HTTPClient, httpcli.ExternalClient), &o2TokenSrc)
 
-	client := p.clientProvider.NewClient(token, cli)
+	client := p.clientProvider.NewClient(nil, cli)
 
 	return listProjects(ctx, client)
 }

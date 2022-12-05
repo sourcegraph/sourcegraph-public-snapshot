@@ -197,20 +197,16 @@ func (p *ClientProvider) newClient(a auth.Authenticator) *Client {
 	return p.NewClient(a, nil)
 }
 
-func (p *ClientProvider) NewClient(a auth.Authenticator, cli *http.Client) *Client {
+func (p *ClientProvider) NewClient(_ auth.Authenticator, cli *http.Client) *Client {
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
-	if isGitLabDotComURL(p.baseURL) && a == nil {
+	if isGitLabDotComURL(p.baseURL) {
 		cacheTTL = 10 * time.Minute // cache for longer when unauthenticated
 	} else {
 		cacheTTL = 30 * time.Second
 	}
 	key := "gl_proj:"
 	var tokenHash string
-	if a != nil {
-		tokenHash = a.Hash()
-		key += tokenHash
-	}
 	projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
 
 	rl := ratelimit.DefaultRegistry.Get(p.urn)
@@ -221,7 +217,6 @@ func (p *ClientProvider) NewClient(a auth.Authenticator, cli *http.Client) *Clie
 		baseURL:          p.baseURL,
 		httpClient:       cli,
 		projCache:        projCache,
-		Auth:             a,
 		rateLimiter:      rl,
 		rateLimitMonitor: rlm,
 	}

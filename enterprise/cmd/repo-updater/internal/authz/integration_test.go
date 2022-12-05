@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -39,6 +41,17 @@ func update(name string) bool {
 		return false
 	}
 	return regexp.MustCompile(*updateRegex).MatchString(name)
+}
+
+func getGitHubTestClient(t *testing.T, token string, svcURN string, uri *url.URL, cf *httpcli.Factory) *extsvcGitHub.V3Client {
+	doer, err := cf.Client()
+	if err != nil {
+		t.Fatal(err)
+	}
+	oauth2Conf := oauth2.Config{}
+	o2cli := oauth2Conf.Client(context.WithValue(context.Background(), oauth2.HTTPClient, doer), &oauth2.Token{AccessToken: token})
+	cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svcURN, uri, &auth.OAuthBearerToken{Token: token}, o2cli)
+	return cli
 }
 
 // NOTE: To update VCR for these tests, please use the token of "sourcegraph-vcr"
@@ -85,11 +98,12 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
 			defer save()
 
-			doer, err := cf.Doer()
+			doer, err := cf.Client()
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			o2cli := oauth2.NewClient(context.WithValue(context.Background(), oauth2.HTTPClient, doer), oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}))
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, o2cli)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
@@ -376,11 +390,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 
 			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
 			defer save()
-			doer, err := cf.Doer()
-			if err != nil {
-				t.Fatal(err)
-			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := getGitHubTestClient(t, token, svc.URN(), uri, cf)
 
 			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())

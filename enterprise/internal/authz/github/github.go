@@ -57,10 +57,37 @@ type ProviderOptions struct {
 }
 
 func NewProvider(urn string, opts ProviderOptions) *Provider {
+	oauth2Config := oauth2.Config{}
+
+	o2token := MyToken{Token: &oauth2.Token{
+		AccessToken: opts.BaseToken,
+	}}
+
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Github != nil {
+			p2 := authProvider.Github
+			ghURL := strings.TrimSuffix(p2.Url, "/")
+			oauth2Config.ClientID = p2.ClientID
+			oauth2Config.ClientSecret = p2.ClientSecret
+			oauth2Config.Endpoint = oauth2.Endpoint{
+				AuthURL:  ghURL + "/login/oauth/authorize",
+				TokenURL: ghURL + "/login/oauth/access_token",
+			}
+		}
+	}
+
+	o2TokenSrc := MyTokenSource{
+		MyTok:    o2token,
+		MyTokSrc: oauth2Config.TokenSource(context.Background(), o2token.Token),
+		DB:       opts.DB,
+	}
+
+	cli := oauth2.NewClient(context.WithValue(context.Background(), oauth2.HTTPClient, httpcli.ExternalClient), &o2TokenSrc)
+
 	if opts.GitHubClient == nil {
 		apiURL, _ := github.APIRoot(opts.GitHubURL)
 		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
-			urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, nil)
+			urn, apiURL, &auth.OAuthBearerToken{Token: opts.BaseToken}, cli)
 	}
 
 	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)
@@ -372,6 +399,7 @@ func (t *MyTokenSource) Token() (*oauth2.Token, error) {
 //
 // API docs: https://developer.github.com/v3/repos/#list-repositories-for-the-authenticated-user
 func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	fmt.Println("Fetching for user", account.ID)
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -416,6 +444,8 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		DB:                p.db,
 		ExternalAccountID: account.ID,
 	}
+
+	fmt.Println(tok.AccessToken)
 
 	cli := oauth2.NewClient(context.WithValue(ctx, oauth2.HTTPClient, httpcli.ExternalClient), &o2TokenSrc)
 
