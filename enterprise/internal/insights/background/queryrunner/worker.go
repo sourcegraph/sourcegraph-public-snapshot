@@ -91,8 +91,8 @@ func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkersto
 // CreateDBWorkerStore creates the dbworker store for the query runner worker.
 //
 // See internal/workerutil/dbworker for more information about dbworkers.
-func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Context) dbworkerstore.Store[*Job] {
-	return dbworkerstore.New(s.Handle(), dbworkerstore.Options[*Job]{
+func CreateDBWorkerStore(observationCtx *observation.Context, s *basestore.Store) dbworkerstore.Store[*Job] {
+	return dbworkerstore.New(observationCtx, s.Handle(), dbworkerstore.Options[*Job]{
 		Name:              "insights_query_runner_jobs_store",
 		TableName:         "insights_query_runner_jobs",
 		ColumnExpressions: jobsColumns,
@@ -105,7 +105,7 @@ func CreateDBWorkerStore(s *basestore.Store, observationContext *observation.Con
 		MaxNumRetries:     10,
 		MaxNumResets:      10,
 		OrderByExpression: sqlf.Sprintf("priority, id"),
-	}, observationContext)
+	})
 }
 
 func getDependencies(ctx context.Context, workerBaseStore *basestore.Store, jobID int) (_ []time.Time, err error) {

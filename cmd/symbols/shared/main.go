@@ -40,13 +40,15 @@ import (
 
 var sanityCheck, _ = strconv.ParseBool(env.Get("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not"))
 
-var baseConfig = env.BaseConfig{}
-var RepositoryFetcherConfig = types.LoadRepositoryFetcherConfig(baseConfig)
-var CtagsConfig = types.LoadCtagsConfig(baseConfig)
+var (
+	baseConfig              = env.BaseConfig{}
+	RepositoryFetcherConfig = types.LoadRepositoryFetcherConfig(baseConfig)
+	CtagsConfig             = types.LoadCtagsConfig(baseConfig)
+)
 
 const addr = ":3184"
 
-type SetupFunc func(observationContext *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error)
+type SetupFunc func(observationCtx *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error)
 
 func Main(setup SetupFunc) {
 	// Initialization
@@ -72,7 +74,7 @@ func Main(setup SetupFunc) {
 
 	// Initialize tracing/metrics
 	logger := log.Scoped("service", "the symbols service")
-	observationContext := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
+	observationCtx := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
 		Name:       "codeintel-symbols",
 		SampleRate: 20,
 	}))
@@ -94,13 +96,13 @@ func Main(setup SetupFunc) {
 	}
 
 	// Initialize main DB connection.
-	sqlDB := mustInitializeFrontendDB(logger, observationContext)
+	sqlDB := mustInitializeFrontendDB(observationCtx)
 	db := database.NewDB(logger, sqlDB)
 
 	// Run setup
-	gitserverClient := gitserver.NewClient(db, observationContext)
-	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, RepositoryFetcherConfig.MaxTotalPathsLength, int64(RepositoryFetcherConfig.MaxFileSizeKb)*1000, observationContext)
-	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationContext, db, gitserverClient, repositoryFetcher)
+	gitserverClient := gitserver.NewClient(observationCtx, db)
+	repositoryFetcher := fetcher.NewRepositoryFetcher(observationCtx, gitserverClient, RepositoryFetcherConfig.MaxTotalPathsLength, int64(RepositoryFetcherConfig.MaxFileSizeKb)*1000)
+	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationCtx, db, gitserverClient, repositoryFetcher)
 	if err != nil {
 		logger.Fatal("Failed to set up", log.Error(err))
 	}
@@ -128,14 +130,14 @@ func Main(setup SetupFunc) {
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
 
-func mustInitializeFrontendDB(logger log.Logger, observationContext *observation.Context) *sql.DB {
+func mustInitializeFrontendDB(observationCtx *observation.Context) *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
 
-	db, err := connections.EnsureNewFrontendDB(dsn, "symbols", observationContext)
+	db, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "symbols")
 	if err != nil {
-		logger.Fatal("failed to connect to database", log.Error(err))
+		observationCtx.Logger.Fatal("failed to connect to database", log.Error(err))
 	}
 
 	return db

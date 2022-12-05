@@ -23,7 +23,7 @@ import (
 func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
 	rs := database.ReposWith(logger, s.Store)
-	es := database.ExternalServicesWith(s.observationContext.Logger, s.Store)
+	es := database.ExternalServicesWith(s.observationCtx.Logger, s.Store)
 
 	repo := bt.TestRepo(t, es, extsvc.KindGitHub)
 	otherRepo := bt.TestRepo(t, es, extsvc.KindGitHub)

@@ -36,7 +36,7 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	require.NotZero(t, jobID)
 
-	store := createBitbucketProjectPermissionsStore(db, &config{}, observation.ContextWithLogger(logger, &observation.TestContext))
+	store := createBitbucketProjectPermissionsStore(observation.TestContextTB(t), db, &config{})
 	count, err := store.QueuedCount(ctx, true)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)

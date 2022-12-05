@@ -7,20 +7,20 @@ import (
 )
 
 // InitServices initializes and returns code intelligence services.
-func InitServices(observationContext *observation.Context) (codeintel.Services, error) {
-	db, err := workerdb.InitDB(observationContext)
+func InitServices(observationCtx *observation.Context) (codeintel.Services, error) {
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return codeintel.Services{}, err
 	}
 
-	codeIntelDB, err := InitDBWithLogger(observationContext.Logger, observationContext)
+	codeIntelDB, err := InitDB(observationCtx)
 	if err != nil {
 		return codeintel.Services{}, err
 	}
 
 	return codeintel.NewServices(codeintel.ServiceDependencies{
-		DB:                 db,
-		CodeIntelDB:        codeIntelDB,
-		ObservationContext: observationContext,
+		DB:             db,
+		CodeIntelDB:    codeIntelDB,
+		ObservationCtx: observationCtx,
 	})
 }

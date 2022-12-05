@@ -40,13 +40,13 @@ func (j *uploadJanitorJob) Routines(startupCtx context.Context, observationCtx *
 		return nil, err
 	}
 
-	gitserverClient := gitserver.New(db, observationCtx)
+	gitserverClient := gitserver.New(observationCtx, db)
 
 	return append(
-		uploads.NewJanitor(services.UploadsService, gitserverClient, observationCtx),
+		uploads.NewJanitor(observationCtx, services.UploadsService, gitserverClient),
 		append(
-			uploads.NewReconciler(services.UploadsService, observationCtx),
-			uploads.NewResetters(db, observationCtx)...,
+			uploads.NewReconciler(observationCtx, services.UploadsService),
+			uploads.NewResetters(observationCtx, db)...,
 		)...,
 	), nil
 }

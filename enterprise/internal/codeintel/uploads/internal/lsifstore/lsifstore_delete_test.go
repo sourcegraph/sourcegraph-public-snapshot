@@ -19,8 +19,8 @@ func TestDeleteLsifDataByUploadIds(t *testing.T) {
 	logger := logtest.ScopedWith(t, logtest.LoggerOptions{
 		Level: log.LevelError,
 	})
-	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t), logger)
-	store := New(codeIntelDB, &observation.TestContext)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, codeIntelDB)
 
 	t.Run("lsif", func(t *testing.T) {
 		for i := 0; i < 5; i++ {

@@ -17,16 +17,16 @@ type reconcilerJob struct {
 }
 
 func NewReconciler(
+	observationCtx *observation.Context,
 	store store.Store,
 	lsifstore lsifstore.LsifStore,
 	interval time.Duration,
 	batchSize int,
-	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	job := reconcilerJob{
 		store:      store,
 		lsifstore:  lsifstore,
-		operations: newOperations(observationContext),
+		operations: newOperations(observationCtx),
 	}
 
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {

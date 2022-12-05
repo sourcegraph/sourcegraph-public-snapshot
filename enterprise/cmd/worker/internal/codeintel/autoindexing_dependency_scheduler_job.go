@@ -42,11 +42,11 @@ func (j *autoindexingDependencyScheduler) Routines(startupCtx context.Context, o
 	}
 
 	return autoindexing.NewDependencyIndexSchedulers(
+		observationCtx,
 		db,
 		services.UploadsService,
 		services.DependenciesService,
 		services.AutoIndexingService,
 		repoupdater.DefaultClient,
-		observationCtx,
 	), nil
 }

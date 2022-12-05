@@ -20,7 +20,7 @@ import (
 )
 
 func testStore[T workerutil.Record](db *sql.DB, options Options[T]) *store[T] {
-	return newStore(basestore.NewHandleWithDB(db, sql.TxOptions{}, log.NoOp()), options, &observation.TestContext)
+	return newStore(&observation.TestContext, basestore.NewHandleWithDB(log.NoOp(), db, sql.TxOptions{}), options)
 }
 
 type TestRecord struct {

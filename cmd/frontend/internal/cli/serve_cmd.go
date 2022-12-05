@@ -81,9 +81,7 @@ var (
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB(logger sglog.Logger) (*sql.DB, error) {
-	obsCtx := observation.TestContext
-	obsCtx.Logger = logger
-	sqlDB, err := connections.EnsureNewFrontendDB("", "frontend", &obsCtx)
+	sqlDB, err := connections.EnsureNewFrontendDB(observation.ContextWithLogger(logger, &observation.TestContext), "", "frontend")
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
@@ -123,12 +121,12 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 	}
 	db := database.NewDB(logger, sqlDB)
 
-	observationContext := observation.NewContext(logger)
+	observationCtx := observation.NewContext(logger)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
 		log15.Warn("Skipping out-of-band migrations check")
 	} else {
-		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, observationContext)
+		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(observationCtx, db, oobmigration.RefreshInterval)
 
 		if err := outOfBandMigrationRunner.SynchronizeMetadata(ctx); err != nil {
 			return errors.Wrap(err, "failed to synchronized out of band migration metadata")

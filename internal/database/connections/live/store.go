@@ -19,9 +19,9 @@ type Store interface {
 
 type StoreFactory func(db *sql.DB, migrationsTable string) Store
 
-func newStoreFactory(observationContext *observation.Context) func(db *sql.DB, migrationsTable string) Store {
+func newStoreFactory(observationCtx *observation.Context) func(db *sql.DB, migrationsTable string) Store {
 	return func(db *sql.DB, migrationsTable string) Store {
-		return NewStoreShim(store.NewWithDB(db, migrationsTable, observationContext))
+		return NewStoreShim(store.NewWithDB(observationCtx, db, migrationsTable))
 	}
 }
 

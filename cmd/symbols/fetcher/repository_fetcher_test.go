@@ -32,7 +32,7 @@ func TestRepositoryFetcher(t *testing.T) {
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(tarContents))
 
-	repositoryFetcher := NewRepositoryFetcher(gitserverClient, 1000, 1_000_000, observation.TestContextTB(t))
+	repositoryFetcher := NewRepositoryFetcher(observation.TestContextTB(t), gitserverClient, 1000, 1_000_000)
 	args := search.SymbolsParameters{Repo: api.RepoName("foo"), CommitID: api.CommitID("deadbeef")}
 
 	t.Run("all paths", func(t *testing.T) {

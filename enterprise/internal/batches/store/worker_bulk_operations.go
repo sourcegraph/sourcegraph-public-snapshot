@@ -35,6 +35,6 @@ var bulkOperationWorkerStoreOpts = dbworkerstore.Options[*types.ChangesetJob]{
 	MaxNumRetries: bulkProcessorMaxNumRetries,
 }
 
-func NewBulkOperationWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store[*types.ChangesetJob] {
-	return dbworkerstore.New(handle, bulkOperationWorkerStoreOpts, observationContext)
+func NewBulkOperationWorkerStore(observationCtx *observation.Context, handle basestore.TransactableHandle) dbworkerstore.Store[*types.ChangesetJob] {
+	return dbworkerstore.New(observationCtx, handle, bulkOperationWorkerStoreOpts)
 }

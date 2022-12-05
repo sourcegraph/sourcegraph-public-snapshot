@@ -62,10 +62,10 @@ var AdditionalJobs = map[string]job.Job{
 // current actor stored in an operation's context, which is likely an internal actor for many of
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
-func SetAuthzProviders(observationContext *observation.Context) {
-	observationContext = observation.ContextWithLogger(observationContext.Logger.Scoped("authz-provider", ""), observationContext)
+func SetAuthzProviders(observationCtx *observation.Context) {
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("authz-provider", ""), observationCtx)
 
-	db, err := workerdb.InitDB(observationContext)
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return
 	}

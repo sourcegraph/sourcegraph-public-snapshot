@@ -26,10 +26,10 @@ type Store struct {
 	operations *Operations
 }
 
-func NewWithDB(db *sql.DB, migrationsTable string, observationCtx *observation.Context) *Store {
+func NewWithDB(observationCtx *observation.Context, db *sql.DB, migrationsTable string) *Store {
 	operations := NewOperations(observationCtx)
 	return &Store{
-		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{}, observationCtx.Logger)),
+		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(observationCtx.Logger, db, sql.TxOptions{})),
 		schemaName: migrationsTable,
 		operations: operations,
 	}

@@ -17,16 +17,16 @@ type operations struct {
 	runCommand   *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
+func newOperations(observationCtx *observation.Context) *operations {
 	redMetrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"codeintel_npm",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.npm.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           redMetrics,
@@ -53,9 +53,9 @@ var (
 
 func getOperations() *operations {
 	opsOnce.Do(func() {
-		observationContext := observation.NewContext(log.Scoped("npm", ""))
+		observationCtx := observation.NewContext(log.Scoped("npm", ""))
 
-		ops = newOperations(observationContext)
+		ops = newOperations(observationCtx)
 	})
 
 	return ops

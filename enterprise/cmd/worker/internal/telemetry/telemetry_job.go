@@ -112,23 +112,23 @@ func (j *queueSizeJob) Handle(ctx context.Context) error {
 }
 
 func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.BackgroundRoutine {
-	observationContext := observation.NewContext(log.NoOp())
-	handlerMetrics := newHandlerMetrics(observationContext)
+	observationCtx := observation.NewContext(log.NoOp())
+	handlerMetrics := newHandlerMetrics(observationCtx)
 	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents, handlerMetrics)
 	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), JobCooldownDuration, th, handlerMetrics.handler)
 }
 
 type sendEventsCallbackFunc func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error
 
-func newHandlerMetrics(observationContext *observation.Context) *handlerMetrics {
+func newHandlerMetrics(observationCtx *observation.Context) *handlerMetrics {
 	redM := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"telemetry_job",
 		metrics.WithLabels("op"),
 	)
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("telemetry_job.telemetry_handler.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           redM,

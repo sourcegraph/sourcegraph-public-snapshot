@@ -71,7 +71,7 @@ func getInsightSeriesIDsAction(cmd *cli.Context) error {
 	}
 
 	// Connect to the database.
-	conn, err := connections.EnsureNewCodeInsightsDB(postgresdsn.New("", "", conf.GetEnv), "insights", &observation.TestContext)
+	conn, err := connections.EnsureNewCodeInsightsDB(&observation.TestContext, postgresdsn.New("", "", conf.GetEnv), "insights")
 	if err != nil {
 		return err
 	}

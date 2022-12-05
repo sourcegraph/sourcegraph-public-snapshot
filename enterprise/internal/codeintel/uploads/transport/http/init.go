@@ -29,10 +29,10 @@ func GetHandler(svc *uploads.Service, db database.DB, uploadStore uploadstore.St
 			"codeintel uploads http handler",
 		)
 
-		observationContext := observation.NewContext(logger)
+		observationCtx := observation.NewContext(logger)
 
-		operations := newOperations(observationContext)
-		uploadHandlerOperations := uploadhandler.NewOperations("codeintel", observationContext)
+		operations := newOperations(observationCtx)
+		uploadHandlerOperations := uploadhandler.NewOperations(observationCtx, "codeintel")
 
 		userStore := db.Users()
 		repoStore := backend.NewRepos(logger, db, gitserver.NewClient(db))

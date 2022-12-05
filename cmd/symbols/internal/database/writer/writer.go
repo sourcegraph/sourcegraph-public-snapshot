@@ -30,11 +30,11 @@ type databaseWriter struct {
 }
 
 func NewDatabaseWriter(
+	observationCtx *observation.Context,
 	path string,
 	gitserverClient gitserver.GitserverClient,
 	parser parser.Parser,
 	sem *semaphore.Weighted,
-	observationCtx *observation.Context,
 ) DatabaseWriter {
 	return &databaseWriter{
 		path:            path,
@@ -73,13 +73,13 @@ func (w *databaseWriter) getNewestCommit(ctx context.Context, args search.Symbol
 		return "", "", false, err
 	}
 
-	err = store.WithSQLiteStore(newest, func(db store.Store) (err error) {
+	err = store.WithSQLiteStore(w.observationCtx, newest, func(db store.Store) (err error) {
 		if commit, ok, err = db.GetCommit(ctx); err != nil {
 			return errors.Wrap(err, "store.GetCommit")
 		}
 
 		return nil
-	}, w.observationCtx)
+	})
 
 	return newest, commit, ok, err
 }
@@ -156,7 +156,7 @@ func (w *databaseWriter) parseAndWriteInTransaction(ctx context.Context, args se
 		}
 	}()
 
-	return store.WithSQLiteStoreTransaction(ctx, dbFile, func(tx store.Store) error {
+	return store.WithSQLiteStoreTransaction(ctx, w.observationCtx, dbFile, func(tx store.Store) error {
 		return callback(tx, symbolOrErrors)
-	}, w.observationCtx)
+	})
 }

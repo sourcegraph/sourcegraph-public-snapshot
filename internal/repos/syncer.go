@@ -71,15 +71,18 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter := NewSyncWorker(ctx, store.Handle(), &syncHandler{
-		syncer:          s,
-		store:           store,
-		minSyncInterval: opts.MinSyncInterval,
-	}, SyncWorkerOptions{
-		WorkerInterval: opts.DequeueInterval,
-		NumHandlers:    ConfRepoConcurrentExternalServiceSyncers(),
-		CleanupOldJobs: true,
-	}, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx))
+	worker, resetter := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx),
+		store.Handle(),
+		&syncHandler{
+			syncer:          s,
+			store:           store,
+			minSyncInterval: opts.MinSyncInterval,
+		}, SyncWorkerOptions{
+			WorkerInterval: opts.DequeueInterval,
+			NumHandlers:    ConfRepoConcurrentExternalServiceSyncers(),
+			CleanupOldJobs: true,
+		},
+	)
 
 	go worker.Start()
 	defer worker.Stop()

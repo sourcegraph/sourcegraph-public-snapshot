@@ -51,7 +51,11 @@ func Main() {
 	})
 	defer liblog.Sync()
 
+	// Initialize tracing/metrics
 	logger := log.Scoped("codeintel-worker", "The precise-code-intel-worker service converts LSIF upload file into Postgres data.")
+	observationCtx := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
+		Name: "codeintel-worker",
+	}))
 
 	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
@@ -62,11 +66,6 @@ func Main() {
 		logger.Error("Failed for load config", log.Error(err))
 	}
 
-	// Initialize tracing/metrics
-	observationContext := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
-		Name: "codeintel-worker",
-	}))
-
 	// Start debug server
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
@@ -76,8 +75,8 @@ func Main() {
 	}
 
 	// Connect to databases
-	db := database.NewDB(logger, mustInitializeDB(observationContext))
-	codeIntelDB := mustInitializeCodeIntelDB(observationContext)
+	db := database.NewDB(logger, mustInitializeDB(observationCtx))
+	codeIntelDB := mustInitializeCodeIntelDB(observationCtx)
 
 	// Migrations may take a while, but after they're done we'll immediately
 	// spin up a server and can accept traffic. Inform external clients we'll
@@ -92,16 +91,16 @@ func Main() {
 	}
 
 	services, err := codeintel.NewServices(codeintel.ServiceDependencies{
-		DB:                 db,
-		CodeIntelDB:        codeIntelDB,
-		ObservationContext: observationContext,
+		DB:             db,
+		CodeIntelDB:    codeIntelDB,
+		ObservationCtx: observationCtx,
 	})
 	if err != nil {
 		logger.Fatal("Failed to create codeintel services", log.Error(err))
 	}
 
 	// Initialize stores
-	uploadStore, err := lsifuploadstore.New(context.Background(), config.LSIFUploadStoreConfig, observationContext)
+	uploadStore, err := lsifuploadstore.New(context.Background(), observationCtx, config.LSIFUploadStoreConfig)
 	if err != nil {
 		logger.Fatal("Failed to create upload store", log.Error(err))
 	}
@@ -111,6 +110,7 @@ func Main() {
 
 	// Initialize worker
 	worker := uploads.NewUploadProcessorJob(
+		observationCtx,
 		services.UploadsService,
 		db,
 		uploadStore,
@@ -118,7 +118,6 @@ func Main() {
 		config.WorkerBudget,
 		config.WorkerPollInterval,
 		config.MaximumRuntimePerJob,
-		observationContext,
 	)
 
 	// Initialize health server
@@ -132,11 +131,11 @@ func Main() {
 	goroutine.MonitorBackgroundRoutines(context.Background(), worker, server)
 }
 
-func mustInitializeDB(observationContext *observation.Context) *sql.DB {
+func mustInitializeDB(observationCtx *observation.Context) *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "precise-code-intel-worker", observationContext)
+	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "precise-code-intel-worker")
 	if err != nil {
 		log.Scoped("init db", "Initialize fontend database").Fatal("Failed to connect to frontend database", log.Error(err))
 	}
@@ -145,7 +144,7 @@ func mustInitializeDB(observationContext *observation.Context) *sql.DB {
 	// START FLAILING
 
 	ctx := context.Background()
-	db := database.NewDB(observationContext.Logger, sqlDB)
+	db := database.NewDB(observationCtx.Logger, sqlDB)
 	go func() {
 		for range time.NewTicker(eiauthz.RefreshInterval()).C {
 			allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
@@ -159,16 +158,16 @@ func mustInitializeDB(observationContext *observation.Context) *sql.DB {
 	return sqlDB
 }
 
-func mustInitializeCodeIntelDB(observationContext *observation.Context) codeintelshared.CodeIntelDB {
+func mustInitializeCodeIntelDB(observationCtx *observation.Context) codeintelshared.CodeIntelDB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	db, err := connections.EnsureNewCodeIntelDB(dsn, "precise-code-intel-worker", observationContext)
+	db, err := connections.EnsureNewCodeIntelDB(observationCtx, dsn, "precise-code-intel-worker")
 	if err != nil {
 		log.Scoped("init db", "Initialize codeintel database.").Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
 
-	return codeintelshared.NewCodeIntelDB(db, observationContext.Logger)
+	return codeintelshared.NewCodeIntelDB(observationCtx.Logger, db)
 }
 
 func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) error {

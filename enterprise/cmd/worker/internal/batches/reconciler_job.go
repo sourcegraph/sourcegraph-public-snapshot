@@ -29,7 +29,7 @@ func (j *reconcilerJob) Config() []env.Config {
 }
 
 func (j *reconcilerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := observation.NewContext(observationCtx.Logger.Scoped("routines", "reconciler job routines"))
+	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines", "reconciler job routines"))
 	workCtx := actor.WithInternalActor(context.Background())
 
 	bstore, err := InitStore()
@@ -44,13 +44,13 @@ func (j *reconcilerJob) Routines(_ context.Context, observationCtx *observation.
 
 	reconcilerWorker := workers.NewReconcilerWorker(
 		workCtx,
+		observationCtx,
 		bstore,
 		reconcilerStore,
 		gitserver.NewClient(bstore.DatabaseDB()),
 		sources.NewSourcer(httpcli.NewExternalClientFactory(
 			httpcli.NewLoggingMiddleware(observationCtx.Logger.Scoped("sourcer", "batches sourcer")),
 		)),
-		observationContext,
 	)
 
 	routines := []goroutine.BackgroundRoutine{

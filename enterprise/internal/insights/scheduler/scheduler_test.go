@@ -27,10 +27,10 @@ func Test_MonitorStartsAndStops(t *testing.T) {
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	repos := database.NewMockRepoStore()
 	config := JobMonitorConfig{
-		InsightsDB:   insightsDB,
-		RepoStore:    repos,
-		ObsContext:   &observation.TestContext,
-		CostAnalyzer: priority.NewQueryAnalyzer(),
+		InsightsDB:     insightsDB,
+		RepoStore:      repos,
+		ObservationCtx: &observation.TestContext,
+		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
 	routines := NewBackgroundJobMonitor(ctx, config).Routines()
 	goroutine.MonitorBackgroundRoutines(ctx, routines...)
@@ -43,10 +43,10 @@ func TestScheduler_InitialBackfill(t *testing.T) {
 	repos := database.NewMockRepoStore()
 	insightsStore := store.NewInsightStore(insightsDB)
 	config := JobMonitorConfig{
-		InsightsDB:   insightsDB,
-		RepoStore:    repos,
-		ObsContext:   &observation.TestContext,
-		CostAnalyzer: priority.NewQueryAnalyzer(),
+		InsightsDB:     insightsDB,
+		RepoStore:      repos,
+		ObservationCtx: &observation.TestContext,
+		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
 	monitor := NewBackgroundJobMonitor(ctx, config)
 

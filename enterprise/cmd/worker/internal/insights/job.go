@@ -34,7 +34,7 @@ func (s *insightsJob) Routines(startupCtx context.Context, observationCtx *obser
 		return nil, err
 	}
 
-	insightsDB, err := insights.InitializeCodeInsightsDB("worker", observationCtx)
+	insightsDB, err := insights.InitializeCodeInsightsDB(observationCtx, "worker")
 	if err != nil {
 		return nil, err
 	}

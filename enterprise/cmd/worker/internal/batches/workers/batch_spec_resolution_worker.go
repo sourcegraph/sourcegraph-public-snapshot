@@ -18,9 +18,9 @@ import (
 // specs and passes them to the batchSpecWorkspaceCreator.
 func NewBatchSpecResolutionWorker(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	s *store.Store,
 	workerStore dbworkerstore.Store[*btypes.BatchSpecResolutionJob],
-	observationContext *observation.Context,
 ) *workerutil.Worker[*btypes.BatchSpecResolutionJob] {
 	e := &batchSpecWorkspaceCreator{
 		store:  s,
@@ -32,7 +32,7 @@ func NewBatchSpecResolutionWorker(
 		NumHandlers:       5,
 		Interval:          1 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
-		Metrics:           workerutil.NewMetrics(observationContext, "batch_changes_batch_spec_resolution_worker"),
+		Metrics:           workerutil.NewMetrics(observationCtx, "batch_changes_batch_spec_resolution_worker"),
 	}
 
 	worker := dbworker.NewWorker[*btypes.BatchSpecResolutionJob](ctx, workerStore, e.HandlerFunc(), options)

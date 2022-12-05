@@ -32,7 +32,7 @@ type Server struct {
 	repos.Store
 	*repos.Syncer
 	Logger                log.Logger
-	ObservationContext    *observation.Context
+	ObservationCtx        *observation.Context
 	SourcegraphDotComMode bool
 	Scheduler             interface {
 		UpdateOnce(id api.RepoID, name api.RepoName)
@@ -168,7 +168,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	var genericSourcer repos.Sourcer
 	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
 	db := database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), s)
-	dependenciesService := dependencies.NewService(db, s.ObservationContext)
+	dependenciesService := dependencies.NewService(s.ObservationCtx, db)
 	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
 	genericSourcer = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependenciesService))
 

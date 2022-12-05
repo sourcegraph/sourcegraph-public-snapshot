@@ -27,7 +27,7 @@ func TestGetStaleSourcedCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	now := time.Unix(1587396557, 0).UTC()
 
@@ -81,7 +81,7 @@ func TestUpdateSourcedCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	now := time.Unix(1587396557, 0).UTC()
 
@@ -123,7 +123,7 @@ func TestDeleteSourcedCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	now := time.Unix(1587396557, 0).UTC()
 
@@ -169,7 +169,7 @@ func TestDeleteSourcedCommits(t *testing.T) {
 func TestGetOldestCommitDate(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(time.Minute)
@@ -254,7 +254,7 @@ func TestHasCommit(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	testCases := []struct {
 		repositoryID int

@@ -27,7 +27,7 @@ func (j *janitorJob) Config() []env.Config {
 }
 
 func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := observation.NewContext(observationCtx.Logger.Scoped("routines", "janitor job routines"))
+	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines", "janitor job routines"))
 	workCtx := actor.WithInternalActor(context.Background())
 
 	bstore, err := InitStore()
@@ -35,7 +35,7 @@ func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Con
 		return nil, err
 	}
 
-	janitorMetrics := janitor.NewMetrics(observationContext)
+	janitorMetrics := janitor.NewMetrics(observationCtx)
 
 	reconcilerStore, err := InitReconcilerWorkerStore()
 	if err != nil {
@@ -54,7 +54,7 @@ func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Con
 		return nil, err
 	}
 
-	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "batches", workspaceExecutionStore, janitorConfigInst.MetricsConfig)
+	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationCtx, "batches", workspaceExecutionStore, janitorConfigInst.MetricsConfig)
 	if err != nil {
 		return nil, err
 	}

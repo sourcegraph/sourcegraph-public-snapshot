@@ -31,7 +31,7 @@ var (
 	metricsMu  sync.Mutex
 )
 
-func newOperations(storeName string, observationContext *observation.Context) *operations {
+func newOperations(observationCtx *observation.Context, storeName string) *operations {
 	metricsMu.Lock()
 
 	var red *metrics.REDMetrics
@@ -39,7 +39,7 @@ func newOperations(storeName string, observationContext *observation.Context) *o
 		red = m
 	} else {
 		red = metrics.NewREDMetrics(
-			observationContext.Registerer,
+			observationCtx.Registerer,
 			fmt.Sprintf("workerutil_dbworker_store_%s", storeName),
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of method invocations."),
@@ -50,7 +50,7 @@ func newOperations(storeName string, observationContext *observation.Context) *o
 	metricsMu.Unlock()
 
 	op := func(opName string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("workerutil.dbworker.store.%s.%s", storeName, opName),
 			MetricLabelValues: []string{opName},
 			Metrics:           red,

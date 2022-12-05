@@ -34,5 +34,5 @@ func (j *uploadExpirerJob) Routines(startupCtx context.Context, observationCtx *
 		return nil, err
 	}
 
-	return uploads.NewExpirationTasks(services.UploadsService, observationCtx), nil
+	return uploads.NewExpirationTasks(observationCtx, services.UploadsService), nil
 }

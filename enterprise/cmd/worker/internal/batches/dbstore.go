@@ -18,14 +18,14 @@ func InitStore() (*store.Store, error) {
 }
 
 var initStore = memo.NewMemoizedConstructor(func() (*store.Store, error) {
-	observationContext := observation.NewContext(log.Scoped("store.batches", "batches store"))
+	observationCtx := observation.NewContext(log.Scoped("store.batches", "batches store"))
 
-	db, err := workerdb.InitDB(observationContext)
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey), nil
+	return store.New(db, observationCtx, keyring.Default().BatchChangesCredentialKey), nil
 })
 
 // InitReconcilerWorkerStore initializes and returns a dbworker.Store instance for the reconciler worker.
@@ -34,14 +34,14 @@ func InitReconcilerWorkerStore() (dbworkerstore.Store[*types.Changeset], error) 
 }
 
 var initReconcilerWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store[*types.Changeset], error) {
-	observationContext := observation.NewContext(log.Scoped("store.reconciler", "reconciler worker store"))
+	observationCtx := observation.NewContext(log.Scoped("store.reconciler", "reconciler worker store"))
 
-	db, err := workerdb.InitDB(observationContext)
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return store.NewReconcilerWorkerStore(db.Handle(), observationContext), nil
+	return store.NewReconcilerWorkerStore(observationCtx, db.Handle()), nil
 })
 
 // InitBulkOperationWorkerStore initializes and returns a dbworker.Store instance for the bulk operation processor worker.
@@ -50,14 +50,14 @@ func InitBulkOperationWorkerStore() (dbworkerstore.Store[*types.ChangesetJob], e
 }
 
 var initBulkOperationWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store[*types.ChangesetJob], error) {
-	observationContext := observation.NewContext(log.Scoped("store.bulk_ops", "bulk operation worker store"))
+	observationCtx := observation.NewContext(log.Scoped("store.bulk_ops", "bulk operation worker store"))
 
-	db, err := workerdb.InitDB(observationContext)
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return store.NewBulkOperationWorkerStore(db.Handle(), observationContext), nil
+	return store.NewBulkOperationWorkerStore(observationCtx, db.Handle()), nil
 })
 
 // InitBatchSpecWorkspaceExecutionWorkerStore initializes and returns a dbworkerstore.Store instance for the batch spec workspace execution worker.
@@ -66,14 +66,14 @@ func InitBatchSpecWorkspaceExecutionWorkerStore() (dbworkerstore.Store[*types.Ba
 }
 
 var initBatchSpecWorkspaceExecutionWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store[*types.BatchSpecWorkspaceExecutionJob], error) {
-	observationContext := observation.NewContext(log.Scoped("store.execution", "the batch spec workspace execution worker store"))
+	observationCtx := observation.NewContext(log.Scoped("store.execution", "the batch spec workspace execution worker store"))
 
-	db, err := workerdb.InitDB(observationContext)
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return store.NewBatchSpecWorkspaceExecutionWorkerStore(db.Handle(), observationContext), nil
+	return store.NewBatchSpecWorkspaceExecutionWorkerStore(observationCtx, db.Handle()), nil
 })
 
 // InitBatchSpecResolutionWorkerStore initializes and returns a dbworker.Store instance for the batch spec workspace resolution worker.
@@ -82,12 +82,12 @@ func InitBatchSpecResolutionWorkerStore() (dbworkerstore.Store[*types.BatchSpecR
 }
 
 var initBatchSpecResolutionWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store[*types.BatchSpecResolutionJob], error) {
-	observationContext := observation.NewContext(log.Scoped("store.batch_spec_resolution", "the batch spec resolution worker store"))
+	observationCtx := observation.NewContext(log.Scoped("store.batch_spec_resolution", "the batch spec resolution worker store"))
 
-	db, err := workerdb.InitDB(observationContext)
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return store.NewBatchSpecResolutionWorkerStore(db.Handle(), observationContext), nil
+	return store.NewBatchSpecResolutionWorkerStore(observationCtx, db.Handle()), nil
 })

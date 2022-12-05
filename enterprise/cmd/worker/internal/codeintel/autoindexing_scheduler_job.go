@@ -41,13 +41,13 @@ func (j *autoindexingScheduler) Routines(startupCtx context.Context, observation
 		return nil, err
 	}
 
-	gitserverClient := gitserver.New(db, observationCtx)
+	gitserverClient := gitserver.New(observationCtx, db)
 
 	return autoindexing.NewIndexSchedulers(
+		observationCtx,
 		services.UploadsService,
 		services.PoliciesService,
 		policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true),
 		services.AutoIndexingService,
-		observationCtx,
 	), nil
 }

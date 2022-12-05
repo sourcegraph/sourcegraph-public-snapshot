@@ -24,22 +24,22 @@ type Services struct {
 }
 
 type ServiceDependencies struct {
-	DB                 database.DB
-	CodeIntelDB        codeintelshared.CodeIntelDB
-	GitserverClient    *gitserver.Client
-	ObservationContext *observation.Context
+	DB              database.DB
+	CodeIntelDB     codeintelshared.CodeIntelDB
+	GitserverClient *gitserver.Client
+	ObservationCtx  *observation.Context
 }
 
 func NewServices(deps ServiceDependencies) (Services, error) {
 	db, codeIntelDB := deps.DB, deps.CodeIntelDB
-	gitserverClient := gitserver.New(db, scopedContext("gitserver", deps.ObservationContext))
+	gitserverClient := gitserver.New(scopedContext("gitserver", deps.ObservationCtx), db)
 
-	uploadsSvc := uploads.NewService(db, codeIntelDB, gitserverClient, deps.ObservationContext)
-	dependenciesSvc := dependencies.NewService(db, deps.ObservationContext)
-	policiesSvc := policies.NewService(db, uploadsSvc, gitserverClient, deps.ObservationContext)
-	autoIndexingSvc := autoindexing.NewService(db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient, deps.ObservationContext)
-	codenavSvc := codenav.NewService(db, codeIntelDB, uploadsSvc, gitserverClient, deps.ObservationContext)
-	rankingSvc := ranking.NewService(db, uploadsSvc, gitserverClient, deps.ObservationContext)
+	uploadsSvc := uploads.NewService(deps.ObservationCtx, db, codeIntelDB, gitserverClient)
+	dependenciesSvc := dependencies.NewService(deps.ObservationCtx, db)
+	policiesSvc := policies.NewService(deps.ObservationCtx, db, uploadsSvc, gitserverClient)
+	autoIndexingSvc := autoindexing.NewService(deps.ObservationCtx, db, uploadsSvc, dependenciesSvc, policiesSvc, gitserverClient)
+	codenavSvc := codenav.NewService(deps.ObservationCtx, db, codeIntelDB, uploadsSvc, gitserverClient)
+	rankingSvc := ranking.NewService(deps.ObservationCtx, db, uploadsSvc, gitserverClient)
 
 	return Services{
 		AutoIndexingService: autoIndexingSvc,

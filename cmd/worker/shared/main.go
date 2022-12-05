@@ -38,7 +38,7 @@ import (
 const addr = ":3189"
 
 // Start runs the worker.
-func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc, logger log.Logger, observationContext *observation.Context) error {
+func Start(observationCtx *observation.Context, additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) error {
 	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(migrations.RegisterOSSMigrators, registerEnterpriseMigrators)
 
 	builtins := map[string]job.Job{
@@ -89,7 +89,7 @@ func Start(additionalJobs map[string]job.Job, registerEnterpriseMigrators oobmig
 	// Create the background routines that the worker will monitor for its
 	// lifetime. There may be a non-trivial startup time on this step as we
 	// connect to external databases, wait for migrations, etc.
-	allRoutines, err := createBackgroundRoutines(logger, jobs)
+	allRoutines, err := createBackgroundRoutines(observationCtx, jobs)
 	if err != nil {
 		return err
 	}
@@ -193,13 +193,13 @@ func emitJobCountMetrics(jobs map[string]job.Job) {
 // createBackgroundRoutines runs the Routines function of each of the given jobs concurrently.
 // If an error occurs from any of them, a fatal log message will be emitted. Otherwise, the set
 // of background routines from each job will be returned.
-func createBackgroundRoutines(logger log.Logger, jobs map[string]job.Job) ([]goroutine.BackgroundRoutine, error) {
+func createBackgroundRoutines(observationCtx *observation.Context, jobs map[string]job.Job) ([]goroutine.BackgroundRoutine, error) {
 	var (
 		allRoutines  []goroutine.BackgroundRoutine
 		descriptions []string
 	)
 
-	for result := range runRoutinesConcurrently(logger, jobs) {
+	for result := range runRoutinesConcurrently(observationCtx, jobs) {
 		if result.err == nil {
 			allRoutines = append(allRoutines, result.routines...)
 		} else {
@@ -224,7 +224,7 @@ type routinesResult struct {
 // runRoutinesConcurrently returns a channel that will be populated with the return value of
 // the Routines function from each given job. Each function is called concurrently. If an
 // error occurs in one function, the context passed to all its siblings will be canceled.
-func runRoutinesConcurrently(logger log.Logger, jobs map[string]job.Job) chan routinesResult {
+func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[string]job.Job) chan routinesResult {
 	results := make(chan routinesResult, len(jobs))
 	defer close(results)
 
@@ -233,8 +233,8 @@ func runRoutinesConcurrently(logger log.Logger, jobs map[string]job.Job) chan ro
 	defer cancel()
 
 	for _, name := range jobNames(jobs) {
-		jobLogger := logger.Scoped(name, jobs[name].Description())
-		observationCtx := observation.NewContext(jobLogger)
+		jobLogger := observationCtx.Logger.Scoped(name, jobs[name].Description())
+		observationCtx := observation.ContextWithLogger(jobLogger, observationCtx)
 
 		if !shouldRunJob(name) {
 			jobLogger.Info("Skipping job")

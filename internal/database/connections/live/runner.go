@@ -33,10 +33,10 @@ func RunnerFromDSNsWithSchemas(logger log.Logger, dsns map[string]string, appNam
 	makeFactory := func(
 		name string,
 		schema *schemas.Schema,
-		factory func(dsn, appName string, observationContext *observation.Context) (*sql.DB, error),
+		factory func(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error),
 	) runner.StoreFactory {
 		return func(ctx context.Context) (runner.Store, error) {
-			db, err := factory(dsns[name], appName, observation.NewContext(logger))
+			db, err := factory(observation.NewContext(logger), dsns[name], appName)
 			if err != nil {
 				return nil, err
 			}

@@ -24,8 +24,8 @@ import (
 
 const searchTimeout = 60 * time.Second
 
-func MakeSqliteSearchFunc(observationContext *observation.Context, cachedDatabaseWriter writer.CachedDatabaseWriter, db database.DB) types.SearchFunc {
-	operations := sharedobservability.NewOperations(observationContext)
+func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWriter writer.CachedDatabaseWriter, db database.DB) types.SearchFunc {
+	operations := sharedobservability.NewOperations(observationCtx)
 
 	return func(ctx context.Context, args search.SymbolsParameters) (results []result.Symbol, err error) {
 		ctx, trace, endObservation := operations.Search.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -87,13 +87,13 @@ func MakeSqliteSearchFunc(observationContext *observation.Context, cachedDatabas
 		trace.Log(log.String("dbFile", dbFile))
 
 		var res result.Symbols
-		err = store.WithSQLiteStore(dbFile, func(db store.Store) (err error) {
+		err = store.WithSQLiteStore(observationCtx, dbFile, func(db store.Store) (err error) {
 			if res, err = db.Search(ctx, args); err != nil {
 				return errors.Wrap(err, "store.Search")
 			}
 
 			return nil
-		}, observationContext)
+		})
 
 		return res, err
 	}

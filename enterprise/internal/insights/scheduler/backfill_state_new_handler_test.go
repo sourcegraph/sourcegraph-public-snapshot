@@ -36,11 +36,11 @@ func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
 	seriesStore := store.New(insightsDB, permStore)
 
 	config := JobMonitorConfig{
-		InsightsDB:   insightsDB,
-		RepoStore:    repos,
-		ObsContext:   &observation.TestContext,
-		CostAnalyzer: priority.NewQueryAnalyzer(),
-		InsightStore: seriesStore,
+		InsightsDB:     insightsDB,
+		RepoStore:      repos,
+		ObservationCtx: &observation.TestContext,
+		CostAnalyzer:   priority.NewQueryAnalyzer(),
+		InsightStore:   seriesStore,
 	}
 	var err error
 	monitor := NewBackgroundJobMonitor(ctx, config)

@@ -77,20 +77,21 @@ type Options struct {
 }
 
 // NewWorker creates a worker that polls a remote job queue API for work.
-func NewWorker(logger log.Logger, nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (goroutine.WaitableBackgroundRoutine, error) {
-	logger = logger.Scoped("worker", "background worker task periodically fetching jobs")
+func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, options Options) (goroutine.WaitableBackgroundRoutine, error) {
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("worker", "background worker task periodically fetching jobs"), observationCtx)
+
 	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
-	queueStore, err := queue.New(options.QueueOptions, gatherer, observationContext)
+	queueStore, err := queue.New(observationCtx, options.QueueOptions, gatherer)
 	if err != nil {
 		return nil, errors.Wrap(err, "building queue store")
 	}
-	filesStore, err := files.New(options.FilesOptions, observationContext)
+	filesStore, err := files.New(observationCtx, options.FilesOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "building files store")
 	}
 	shim := &store.QueueShim{Name: options.QueueName, Store: queueStore}
 
-	if !connectToFrontend(logger, queueStore, options) {
+	if !connectToFrontend(observationCtx.Logger, queueStore, options) {
 		os.Exit(1)
 	}
 
@@ -99,7 +100,7 @@ func NewWorker(logger log.Logger, nameSet *janitor.NameSet, options Options, obs
 		store:         shim,
 		filesStore:    filesStore,
 		options:       options,
-		operations:    command.NewOperations(observationContext),
+		operations:    command.NewOperations(observationCtx),
 		runnerFactory: command.NewRunner,
 	}
 

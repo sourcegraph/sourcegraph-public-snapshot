@@ -17,7 +17,7 @@ func TestGetRepoRank(t *testing.T) {
 	ctx := context.Background()
 	mockStore := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(mockStore, nil, gitserverClient, nil, conf.DefaultClient(), nil, &observation.TestContext)
+	svc := newService(&observation.TestContext, mockStore, nil, gitserverClient, nil, conf.DefaultClient(), nil)
 
 	mockStore.GetStarRankFunc.SetDefaultReturn(0.6, nil)
 
@@ -39,7 +39,7 @@ func TestGetRepoRankWithUserBoostedScores(t *testing.T) {
 	mockStore := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
 	mockConfigQuerier := NewMockSiteConfigQuerier()
-	svc := newService(mockStore, nil, gitserverClient, nil, mockConfigQuerier, nil, &observation.TestContext)
+	svc := newService(&observation.TestContext, mockStore, nil, gitserverClient, nil, mockConfigQuerier, nil)
 
 	mockStore.GetStarRankFunc.SetDefaultReturn(0.6, nil)
 	mockConfigQuerier.SiteConfigFunc.SetDefaultReturn(schema.SiteConfiguration{
@@ -71,7 +71,7 @@ func TestGetDocumentRanks(t *testing.T) {
 	ctx := context.Background()
 	mockStore := NewMockStore()
 	gitserverClient := NewMockGitserverClient()
-	svc := newService(mockStore, nil, gitserverClient, nil, conf.DefaultClient(), nil, &observation.TestContext)
+	svc := newService(&observation.TestContext, mockStore, nil, gitserverClient, nil, conf.DefaultClient(), nil)
 
 	mockStore.GetDocumentRanksFunc.SetDefaultReturn(map[string][2]float64{
 		"rust/main.rs": {1.00, 0.84},

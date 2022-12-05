@@ -15,20 +15,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func InitDB(observationContext *observation.Context) (database.DB, error) {
-	rawDB, err := initDatabaseMemo.Init(observationContext)
+func InitDB(observationCtx *observation.Context) (database.DB, error) {
+	rawDB, err := initDatabaseMemo.Init(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return database.NewDB(observationContext.Logger, rawDB), nil
+	return database.NewDB(observationCtx.Logger, rawDB), nil
 }
 
-var initDatabaseMemo = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*sql.DB, error) {
+var initDatabaseMemo = memo.NewMemoizedConstructorWithArg(func(observationCtx *observation.Context) (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	db, err := connections.EnsureNewFrontendDB(dsn, "worker", observationContext)
+	db, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "worker")
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}

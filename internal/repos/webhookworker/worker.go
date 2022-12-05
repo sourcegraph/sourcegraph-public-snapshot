@@ -41,10 +41,10 @@ func NewResetter(ctx context.Context, logger log.Logger, workerStore workerstore
 	return dbworker.NewResetter(logger, workerStore, options)
 }
 
-func CreateWorkerStore(dbHandle basestore.TransactableHandle, observationCtx *observation.Context) workerstore.Store[*Job] {
+func CreateWorkerStore(observationCtx *observation.Context, dbHandle basestore.TransactableHandle) workerstore.Store[*Job] {
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("webhookworker.WorkerStore", ""), observationCtx)
 
-	return workerstore.New(dbHandle, workerstore.Options[*Job]{
+	return workerstore.New(observationCtx, dbHandle, workerstore.Options[*Job]{
 		Name:              "webhook_build_worker_store",
 		TableName:         "webhook_build_jobs",
 		Scan:              workerstore.BuildWorkerScan(scanWebhookBuildJob),
@@ -53,7 +53,7 @@ func CreateWorkerStore(dbHandle basestore.TransactableHandle, observationCtx *ob
 		StalledMaxAge:     30 * time.Second,
 		MaxNumResets:      5,
 		MaxNumRetries:     5,
-	}, observationCtx)
+	})
 }
 
 func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Job) (id int, err error) {

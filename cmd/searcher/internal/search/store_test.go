@@ -283,7 +283,7 @@ func tmpStore(t *testing.T) *Store {
 		Path: d,
 		Log:  logtest.Scoped(t),
 
-		ObservationContext: observation.TestContextTB(t),
+		ObservationCtx: observation.TestContextTB(t),
 	}
 }
 

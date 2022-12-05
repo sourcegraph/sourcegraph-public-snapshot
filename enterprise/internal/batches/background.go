@@ -31,10 +31,10 @@ func InitBackgroundJobs(
 	// host, we manually check for BatchChangesCredentials.
 	ctx = actor.WithInternalActor(ctx)
 
-	observationContext := observation.NewContext(log.Scoped("batches.background", "batches background jobs"))
-	bstore := store.New(db, observationContext, key)
+	observationCtx := observation.NewContext(log.Scoped("batches.background", "batches background jobs"))
+	bstore := store.New(db, observationCtx, key)
 
-	syncRegistry := syncer.NewSyncRegistry(ctx, bstore, cf, observationContext)
+	syncRegistry := syncer.NewSyncRegistry(ctx, observationCtx, bstore, cf)
 
 	go goroutine.MonitorBackgroundRoutines(ctx, syncRegistry)
 

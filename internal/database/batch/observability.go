@@ -15,16 +15,16 @@ type operations struct {
 	flush *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
+func newOperations(observationCtx *observation.Context) *operations {
 	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"database_batch",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("database.batch.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
@@ -43,12 +43,12 @@ var (
 
 func getOperations(logger log.Logger) *operations {
 	opsOnce.Do(func() {
-		observationContext := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
+		observationCtx := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
 			Name:       "database-batch",
 			SampleRate: 5,
 		}))
 
-		ops = newOperations(observationContext)
+		ops = newOperations(observationCtx)
 	})
 
 	return ops

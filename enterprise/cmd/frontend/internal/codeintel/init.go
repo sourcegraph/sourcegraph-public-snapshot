@@ -26,34 +26,35 @@ func init() {
 
 func Init(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	db database.DB,
 	codeIntelServices codeintel.Services,
 	conf conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
-	observationContext *observation.Context,
 ) error {
 	if err := ConfigInst.Validate(); err != nil {
 		return err
 	}
 
-	uploadStore, err := lsifuploadstore.New(context.Background(), ConfigInst.LSIFUploadStoreConfig, observationContext)
+	uploadStore, err := lsifuploadstore.New(context.Background(), observationCtx, ConfigInst.LSIFUploadStoreConfig)
 	if err != nil {
 		return err
 	}
 
-	gitserverClient := gitserver.New(db, &observation.TestContext)
+	gitserverClient := gitserver.New(&observation.TestContext, db)
 	newUploadHandler := func(withCodeHostAuth bool) http.Handler {
 		return uploadshttp.GetHandler(codeIntelServices.UploadsService, db, uploadStore, withCodeHostAuth)
 	}
 
 	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
+		scopedContext("autoindexing"),
 		codeIntelServices.AutoIndexingService,
 		codeIntelServices.UploadsService,
 		codeIntelServices.PoliciesService,
-		scopedContext("autoindexing"),
 	)
 
 	codenavRootResolver, err := codenavgraphql.NewRootResolver(
+		scopedContext("codenav"),
 		codeIntelServices.CodenavService,
 		codeIntelServices.AutoIndexingService,
 		codeIntelServices.UploadsService,
@@ -61,22 +62,21 @@ func Init(
 		gitserverClient,
 		ConfigInst.MaximumIndexesPerMonikerSearch,
 		ConfigInst.HunkCacheSize,
-		scopedContext("codenav"),
 	)
 	if err != nil {
 		return err
 	}
 
 	policyRootResolver := policiesgraphql.NewRootResolver(
-		codeIntelServices.PoliciesService,
 		scopedContext("policies"),
+		codeIntelServices.PoliciesService,
 	)
 
 	uploadRootResolver := uploadgraphql.NewRootResolver(
+		scopedContext("upload"),
 		codeIntelServices.UploadsService,
 		codeIntelServices.AutoIndexingService,
 		codeIntelServices.PoliciesService,
-		scopedContext("upload"),
 	)
 
 	enterpriseServices.CodeIntelResolver = newResolver(

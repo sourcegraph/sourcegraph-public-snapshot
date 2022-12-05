@@ -90,7 +90,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	logger := log.Scoped("service", "repo-updater service")
 	// TODO: remove NoOp
-	observationContext := observation.NewContext(log.NoOp())
+	observationCtx := observation.NewContext(log.NoOp())
 
 	// Signals health of startup
 	ready := make(chan struct{})
@@ -108,7 +108,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "repo-updater", observationContext)
+	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "repo-updater")
 	if err != nil {
 		logger.Fatal("failed to initialize database store", log.Error(err))
 	}
@@ -139,13 +139,13 @@ func Main(enterpriseInit EnterpriseInit) {
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(db, observationContext)), repos.ObservedSource(sourcerLogger, m))
+		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(observationCtx, db)), repos.ObservedSource(sourcerLogger, m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
 	server := &repoupdater.Server{
 		Logger:                logger,
-		ObservationContext:    observationContext,
+		ObservationCtx:        observationCtx,
 		Store:                 store,
 		Scheduler:             updateScheduler,
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
@@ -172,7 +172,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		// happens on both Cloud and non Cloud instances.
 		Synced:  make(chan repos.Diff),
 		Now:     clock,
-		ObsvCtx: observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationContext),
+		ObsvCtx: observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationCtx),
 	}
 
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer, server.ChangesetSyncRegistry)

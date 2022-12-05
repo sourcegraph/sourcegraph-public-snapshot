@@ -54,12 +54,12 @@ var (
 
 const port = "3181"
 
-func frontendDB(observationContext *observation.Context) (database.DB, error) {
+func frontendDB(observationCtx *observation.Context) (database.DB, error) {
 	logger := log.Scoped("frontendDB", "")
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "searcher", observationContext)
+	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "searcher")
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func run(logger log.Logger) error {
 	}
 
 	// Explicitly don't scope Store logger under the parent logger
-	storeObservationContext := observation.NewContext(log.Scoped("Store", "searcher archives store"))
+	storeObservationCtx := observation.NewContext(log.Scoped("Store", "searcher archives store"))
 
 	db, err := frontendDB(observation.NewContext(log.Scoped("db", "server frontend db")))
 	if err != nil {
@@ -172,12 +172,12 @@ func run(logger log.Logger) error {
 					Pathspecs: pathspecs,
 				})
 			},
-			FilterTar:          search.NewFilter,
-			Path:               filepath.Join(cacheDir, "searcher-archives"),
-			MaxCacheSizeBytes:  cacheSizeBytes,
-			Log:                storeObservationContext.Logger,
-			ObservationContext: storeObservationContext,
-			DB:                 db,
+			FilterTar:         search.NewFilter,
+			Path:              filepath.Join(cacheDir, "searcher-archives"),
+			MaxCacheSizeBytes: cacheSizeBytes,
+			Log:               storeObservationCtx.Logger,
+			ObservationCtx:    storeObservationCtx,
+			DB:                db,
 		},
 
 		Indexed: sharedsearch.Indexed(),

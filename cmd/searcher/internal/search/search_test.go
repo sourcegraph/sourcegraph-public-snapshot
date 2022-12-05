@@ -517,7 +517,8 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 func newStore(t *testing.T, files map[string]struct {
 	body string
 	typ  fileType
-}) *search.Store {
+},
+) *search.Store {
 	writeTar := func(w io.Writer, paths []string) error {
 		if paths == nil {
 			for name := range files {
@@ -534,7 +535,7 @@ func newStore(t *testing.T, files map[string]struct {
 			case typeFile:
 				hdr = &tar.Header{
 					Name: name,
-					Mode: 0600,
+					Mode: 0o600,
 					Size: int64(len(file.body)),
 				}
 				if err := tarW.WriteHeader(hdr); err != nil {
@@ -585,7 +586,7 @@ func newStore(t *testing.T, files map[string]struct {
 		Path: t.TempDir(),
 		Log:  logtest.Scoped(t),
 
-		ObservationContext: observation.TestContextTB(t),
+		ObservationCtx: observation.TestContextTB(t),
 	}
 }
 

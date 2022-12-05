@@ -57,7 +57,7 @@ func Test_MovesBackfillFromProcessingToComplete(t *testing.T) {
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
 		InsightStore:   seriesStore,
-		ObsContext:     &observation.TestContext,
+		ObservationCtx: &observation.TestContext,
 		BackfillRunner: &noopBackfillRunner{},
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
@@ -134,7 +134,7 @@ func Test_PullsByPriorityGroupAge(t *testing.T) {
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
 		InsightStore:   seriesStore,
-		ObsContext:     &observation.TestContext,
+		ObservationCtx: &observation.TestContext,
 		BackfillRunner: &noopBackfillRunner{},
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
@@ -200,7 +200,7 @@ func Test_BackfillWithRetry(t *testing.T) {
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
 		InsightStore:   seriesStore,
-		ObsContext:     &observation.TestContext,
+		ObservationCtx: &observation.TestContext,
 		BackfillRunner: &noopBackfillRunner{},
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
@@ -278,7 +278,7 @@ func Test_BackfillWithRetryAndComplete(t *testing.T) {
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
 		InsightStore:   seriesStore,
-		ObsContext:     &observation.TestContext,
+		ObservationCtx: &observation.TestContext,
 		BackfillRunner: &noopBackfillRunner{},
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}
@@ -361,7 +361,7 @@ func Test_BackfillWithInterrupt(t *testing.T) {
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
 		InsightStore:   seriesStore,
-		ObsContext:     &observation.TestContext,
+		ObservationCtx: &observation.TestContext,
 		BackfillRunner: &noopBackfillRunner{},
 		CostAnalyzer:   priority.NewQueryAnalyzer(),
 	}

@@ -52,10 +52,10 @@ func TestSyncWorkerPlumbing(t *testing.T) {
 	h := &fakeRepoSyncHandler{
 		jobChan: jobChan,
 	}
-	worker, resetter := repos.NewSyncWorker(ctx, store.Handle(), h, repos.SyncWorkerOptions{
+	worker, resetter := repos.NewSyncWorker(ctx, observation.TestContextTB(t), store.Handle(), h, repos.SyncWorkerOptions{
 		NumHandlers:    1,
 		WorkerInterval: 1 * time.Millisecond,
-	}, observation.TestContextTB(t))
+	})
 	go worker.Start()
 	go resetter.Start()
 

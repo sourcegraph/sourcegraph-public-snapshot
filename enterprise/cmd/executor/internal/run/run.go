@@ -27,7 +27,7 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 	logger = log.Scoped("service", "executor service")
 
 	// Initialize tracing/metrics
-	observationContext := observation.NewContext(logger)
+	observationCtx := observation.NewContext(logger)
 
 	// Determine telemetry data.
 	queueTelemetryOptions := func() queue.TelemetryOptions {
@@ -82,7 +82,7 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 
 	nameSet := janitor.NewNameSet()
 	ctx, cancel := context.WithCancel(cliCtx.Context)
-	worker, err := worker.NewWorker(logger, nameSet, opts, observationContext)
+	worker, err := worker.NewWorker(observationCtx, nameSet, opts)
 	if err != nil {
 		cancel()
 		return err
@@ -97,10 +97,10 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 			cfg.VMPrefix,
 			nameSet,
 			cfg.CleanupTaskInterval,
-			janitor.NewMetrics(observationContext),
+			janitor.NewMetrics(observationCtx),
 		))
 
-		mustRegisterVMCountMetric(logger, observationContext, cfg.VMPrefix)
+		mustRegisterVMCountMetric(logger, observationCtx, cfg.VMPrefix)
 	}
 
 	go func() {
@@ -120,8 +120,8 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 	return nil
 }
 
-func mustRegisterVMCountMetric(logger log.Logger, observationContext *observation.Context, prefix string) {
-	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+func mustRegisterVMCountMetric(logger log.Logger, observationCtx *observation.Context, prefix string) {
+	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_executor_vms_total",
 		Help: "Total number of running VMs.",
 	}, func() float64 {

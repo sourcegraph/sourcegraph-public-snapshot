@@ -45,17 +45,17 @@ func (j *metricsReporterJob) Routines(startupCtx context.Context, observationCtx
 	}
 
 	// TODO: move this and dependency {sync,index} metrics back to their respective jobs and keep for executor reporting only
-	uploads.MetricReporters(services.UploadsService, observationCtx)
+	uploads.MetricReporters(observationCtx, services.UploadsService)
 
-	dependencySyncStore := dbworkerstore.New(db.Handle(), autoindexing.DependencySyncingJobWorkerStoreOptions, observationCtx)
-	dependencyIndexingStore := dbworkerstore.New(db.Handle(), autoindexing.DependencyIndexingJobWorkerStoreOptions, observationCtx)
+	dependencySyncStore := dbworkerstore.New(observationCtx, db.Handle(), autoindexing.DependencySyncingJobWorkerStoreOptions)
+	dependencyIndexingStore := dbworkerstore.New(observationCtx, db.Handle(), autoindexing.DependencyIndexingJobWorkerStoreOptions)
 	dbworker.InitPrometheusMetric(observationCtx, dependencySyncStore, "codeintel", "dependency_sync", nil)
 	dbworker.InitPrometheusMetric(observationCtx, dependencyIndexingStore, "codeintel", "dependency_index", nil)
 
 	executorMetricsReporter, err := executorqueue.NewMetricReporter(
 		observationCtx,
 		"codeintel",
-		dbworkerstore.New(db.Handle(), autoindexing.IndexWorkerStoreOptions, observationCtx),
+		dbworkerstore.New(observationCtx, db.Handle(), autoindexing.IndexWorkerStoreOptions),
 		configInst.MetricsConfig,
 	)
 	if err != nil {

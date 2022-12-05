@@ -34,5 +34,5 @@ func (j *policiesRepositoryMatcherJob) Routines(startupCtx context.Context, obse
 	}
 
 	// TODO(nsc): https://github.com/sourcegraph/sourcegraph/pull/42765
-	return policies.PolicyMatcherJobs(services.PoliciesService, observation.ScopedContext("codeintel", "policies", "repoMatcherJob", observationCtx)), nil
+	return policies.PolicyMatcherJobs(observation.ScopedContext("codeintel", "policies", "repoMatcherJob", observationCtx), services.PoliciesService), nil
 }

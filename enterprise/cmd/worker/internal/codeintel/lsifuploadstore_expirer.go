@@ -32,7 +32,7 @@ func (j *lsifuploadstoreExpirer) Config() []env.Config {
 }
 
 func (j *lsifuploadstoreExpirer) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	uploadStore, err := lsifuploadstore.New(context.Background(), lsifuploadstoreExpirerConfigInst.LSIFUploadStoreConfig, observationCtx)
+	uploadStore, err := lsifuploadstore.New(context.Background(), observationCtx, lsifuploadstoreExpirerConfigInst.LSIFUploadStoreConfig)
 	if err != nil {
 		observationCtx.Logger.Fatal("Failed to create upload store", log.Error(err))
 	}

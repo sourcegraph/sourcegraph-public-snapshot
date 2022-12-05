@@ -20,12 +20,11 @@ func main() {
 	defer liblog.Sync()
 
 	logger := log.Scoped("worker", "worker enterprise edition")
+	observationCtx := observation.NewContext(logger)
 
-	observationContext := observation.NewContext(logger)
+	go enterprise_shared.SetAuthzProviders(observationCtx)
 
-	go enterprise_shared.SetAuthzProviders(observationContext)
-
-	if err := shared.Start(enterprise_shared.AdditionalJobs, migrations.RegisterEnterpriseMigrators, logger, observationContext); err != nil {
+	if err := shared.Start(observationCtx, enterprise_shared.AdditionalJobs, migrations.RegisterEnterpriseMigrators); err != nil {
 		logger.Fatal(err.Error())
 	}
 }

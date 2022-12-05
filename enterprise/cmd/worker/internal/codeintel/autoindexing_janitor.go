@@ -38,10 +38,10 @@ func (j *autoindexingJanitorJob) Routines(startupCtx context.Context, observatio
 		return nil, err
 	}
 
-	gitserverClient := gitserver.New(db, observationCtx)
+	gitserverClient := gitserver.New(observationCtx, db)
 
 	return append(
-		autoindexing.NewJanitorJobs(services.AutoIndexingService, gitserverClient, observationCtx),
-		autoindexing.NewResetters(db, observationCtx)...,
+		autoindexing.NewJanitorJobs(observationCtx, services.AutoIndexingService, gitserverClient),
+		autoindexing.NewResetters(observationCtx, db)...,
 	), nil
 }

@@ -36,7 +36,7 @@ type store struct {
 	*basestore.Store
 }
 
-func NewStore(dbFile string, observationCtx *observation.Context) (Store, error) {
+func NewStore(observationCtx *observation.Context, dbFile string) (Store, error) {
 	db, err := sql.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func NewStore(dbFile string, observationCtx *observation.Context) (Store, error)
 
 	return &store{
 		db:    db,
-		Store: basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{}, observationCtx.Logger)),
+		Store: basestore.NewWithHandle(basestore.NewHandleWithDB(observationCtx.Logger, db, sql.TxOptions{})),
 	}, nil
 }
 
@@ -61,8 +61,8 @@ func (s *store) Transact(ctx context.Context) (Store, error) {
 	return &store{db: s.db, Store: tx}, nil
 }
 
-func WithSQLiteStore(dbFile string, callback func(db Store) error, observationCtx *observation.Context) error {
-	db, err := NewStore(dbFile, observationCtx)
+func WithSQLiteStore(observationCtx *observation.Context, dbFile string, callback func(db Store) error) error {
+	db, err := NewStore(observationCtx, dbFile)
 	if err != nil {
 		return err
 	}
@@ -75,8 +75,8 @@ func WithSQLiteStore(dbFile string, callback func(db Store) error, observationCt
 	return callback(db)
 }
 
-func WithSQLiteStoreTransaction(ctx context.Context, dbFile string, callback func(db Store) error, observationCtx *observation.Context) error {
-	return WithSQLiteStore(dbFile, func(db Store) (err error) {
+func WithSQLiteStoreTransaction(ctx context.Context, observationCtx *observation.Context, dbFile string, callback func(db Store) error) error {
+	return WithSQLiteStore(observationCtx, dbFile, func(db Store) (err error) {
 		tx, err := db.Transact(ctx)
 		if err != nil {
 			return err
@@ -84,5 +84,5 @@ func WithSQLiteStoreTransaction(ctx context.Context, dbFile string, callback fun
 		defer func() { err = tx.Done(err) }()
 
 		return callback(tx)
-	}, observationCtx)
+	})
 }

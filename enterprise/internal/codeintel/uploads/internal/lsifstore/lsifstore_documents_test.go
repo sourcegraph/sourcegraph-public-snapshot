@@ -43,8 +43,8 @@ const testBundleID = 1
 
 func populateTestStore(t testing.TB) LsifStore {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t), logger)
-	store := New(codeIntelDB, &observation.TestContext)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, codeIntelDB)
 
 	contents, err := os.ReadFile("./testdata/lsif-go@ad3507cb.sql")
 	if err != nil {

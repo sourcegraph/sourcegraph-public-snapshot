@@ -28,7 +28,7 @@ func (j *bulkOperationProcessorJob) Config() []env.Config {
 }
 
 func (j *bulkOperationProcessorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := observation.NewContext(observationCtx.Logger.Scoped("routines", "bulk operation processor job routines"))
+	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines", "bulk operation processor job routines"))
 	workCtx := actor.WithInternalActor(context.Background())
 
 	bstore, err := InitStore()
@@ -43,12 +43,12 @@ func (j *bulkOperationProcessorJob) Routines(_ context.Context, observationCtx *
 
 	bulkProcessorWorker := workers.NewBulkOperationWorker(
 		workCtx,
+		observationCtx,
 		bstore,
 		resStore,
 		sources.NewSourcer(httpcli.NewExternalClientFactory(
 			httpcli.NewLoggingMiddleware(observationCtx.Logger.Scoped("sourcer", "batches sourcer")),
 		)),
-		observationContext,
 	)
 
 	routines := []goroutine.BackgroundRoutine{

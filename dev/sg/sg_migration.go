@@ -225,7 +225,7 @@ func makeRunnerWithSchemas(ctx context.Context, schemaNames []string, schemas []
 	}
 
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, &observation.TestContext))
+		return connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTable))
 	}
 	r, err := connections.RunnerFromDSNsWithSchemas(logger, postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
 	if err != nil {

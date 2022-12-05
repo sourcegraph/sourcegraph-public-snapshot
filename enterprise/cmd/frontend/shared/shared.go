@@ -37,7 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-type EnterpriseInitializer = func(context.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services, *observation.Context) error
+type EnterpriseInitializer = func(context.Context, *observation.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services) error
 
 var initFunctions = map[string]EnterpriseInitializer{
 	"app":            app.Init,
@@ -66,26 +66,26 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 	ctx := context.Background()
 	enterpriseServices := enterprise.DefaultServices()
 
-	observationContext := observation.NewContext(logger)
+	observationCtx := observation.NewContext(logger)
 
 	codeIntelServices, err := codeintel.NewServices(codeintel.ServiceDependencies{
-		DB:                 db,
-		CodeIntelDB:        mustInitializeCodeIntelDB(logger),
-		ObservationContext: observationContext,
+		DB:             db,
+		CodeIntelDB:    mustInitializeCodeIntelDB(logger),
+		ObservationCtx: observationCtx,
 	})
 	if err != nil {
 		logger.Fatal("failed to initialize code intelligence", log.Error(err))
 	}
 
 	for name, fn := range initFunctions {
-		if err := fn(ctx, db, codeIntelServices, conf, &enterpriseServices, observationContext); err != nil {
+		if err := fn(ctx, observationCtx, db, codeIntelServices, conf, &enterpriseServices); err != nil {
 			logger.Fatal("failed to initialize", log.String("name", name), log.Error(err))
 		}
 	}
 
 	// Inititalize executor last, as we require code intel and batch changes services to be
 	// already populated on the enterpriseServices object.
-	if err := executor.Init(ctx, db, conf, &enterpriseServices, observationContext); err != nil {
+	if err := executor.Init(ctx, observationCtx, db, conf, &enterpriseServices); err != nil {
 		logger.Fatal("failed to initialize executor", log.Error(err))
 	}
 
@@ -97,10 +97,10 @@ func mustInitializeCodeIntelDB(logger log.Logger) codeintelshared.CodeIntelDB {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
 
-	db, err := connections.EnsureNewCodeIntelDB(dsn, "frontend", observation.NewContext(logger))
+	db, err := connections.EnsureNewCodeIntelDB(observation.NewContext(logger), dsn, "frontend")
 	if err != nil {
 		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
 	}
 
-	return codeintelshared.NewCodeIntelDB(db, logger)
+	return codeintelshared.NewCodeIntelDB(logger, db)
 }

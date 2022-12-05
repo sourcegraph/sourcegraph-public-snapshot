@@ -62,6 +62,6 @@ var UploadWorkerStoreOptions = dbworkerstore.Options[types.Upload]{
 	MaxNumResets:  UploadMaxNumResets,
 }
 
-func (s *store) WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store[types.Upload] {
-	return dbworkerstore.New(s.db.Handle(), UploadWorkerStoreOptions, observationContext)
+func (s *store) WorkerutilStore(observationCtx *observation.Context) dbworkerstore.Store[types.Upload] {
+	return dbworkerstore.New(observationCtx, s.db.Handle(), UploadWorkerStoreOptions, )
 }

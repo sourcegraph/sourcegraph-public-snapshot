@@ -33,5 +33,5 @@ func (j *graphExporterJob) Routines(startupCtx context.Context, observationCtx *
 		return nil, err
 	}
 
-	return uploads.NewGraphExporters(services.UploadsService, observationCtx), nil
+	return uploads.NewGraphExporters(observationCtx, services.UploadsService), nil
 }

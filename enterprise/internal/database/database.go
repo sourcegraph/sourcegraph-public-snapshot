@@ -51,7 +51,7 @@ type InsightsDB interface {
 }
 
 func NewInsightsDB(inner *sql.DB, logger log.Logger) InsightsDB {
-	return &insightsDB{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}, logger))}
+	return &insightsDB{basestore.NewWithHandle(basestore.NewHandleWithDB(logger, inner, sql.TxOptions{}))}
 }
 
 func NewInsightsDBWith(other basestore.ShareableStore) InsightsDB {

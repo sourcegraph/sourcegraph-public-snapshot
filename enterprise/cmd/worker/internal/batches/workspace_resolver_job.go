@@ -26,7 +26,7 @@ func (j *workspaceResolverJob) Config() []env.Config {
 }
 
 func (j *workspaceResolverJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	observationContext := observation.NewContext(observationCtx.Logger.Scoped("routines", "workspace resolver job routines"))
+	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines", "workspace resolver job routines"))
 	workCtx := actor.WithInternalActor(context.Background())
 
 	bstore, err := InitStore()
@@ -41,9 +41,9 @@ func (j *workspaceResolverJob) Routines(_ context.Context, observationCtx *obser
 
 	resolverWorker := workers.NewBatchSpecResolutionWorker(
 		workCtx,
+		observationCtx,
 		bstore,
 		resStore,
-		observationContext,
 	)
 
 	routines := []goroutine.BackgroundRoutine{

@@ -25,14 +25,14 @@ import (
 )
 
 func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
-	codeIntelDB, err := workerCodeIntel.InitDB(&observation.TestContext)
+	codeIntelDB, err := workerCodeIntel.InitRawDB(&observation.TestContext)
 	if err != nil {
 		return err
 	}
 
 	var insightsStore *basestore.Store
 	if internalInsights.IsEnabled() {
-		codeInsightsDB, err := internalInsights.InitializeCodeInsightsDB("worker-oobmigrator", &observation.TestContext)
+		codeInsightsDB, err := internalInsights.InitializeCodeInsightsDB(&observation.TestContext, "worker-oobmigrator")
 		if err != nil {
 			return err
 		}
@@ -44,7 +44,7 @@ func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oo
 
 	return registerEnterpriseMigrators(runner, false, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
-		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{}, log.NoOp())),
+		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(log.NoOp(), codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
 		keyring:        &keyring,
 	})

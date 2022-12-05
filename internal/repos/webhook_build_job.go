@@ -42,7 +42,7 @@ func (w *webhookBuildJob) Routines(_ context.Context, observationCtx *observatio
 
 	store := NewStore(observationCtx.Logger, db)
 	baseStore := basestore.NewWithHandle(store.Handle())
-	workerStore := webhookworker.CreateWorkerStore(store.Handle(), observationCtx)
+	workerStore := webhookworker.CreateWorkerStore(observationCtx, store.Handle())
 
 	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(observationCtx.Logger))
 	doer, err := cf.Doer()
@@ -53,12 +53,12 @@ func (w *webhookBuildJob) Routines(_ context.Context, observationCtx *observatio
 	return []goroutine.BackgroundRoutine{
 		webhookworker.NewWorker(context.Background(), newWebhookBuildHandler(store, doer), workerStore, webhookBuildWorkerMetrics),
 		webhookworker.NewResetter(context.Background(), observationCtx.Logger, workerStore, webhookBuildResetterMetrics),
-		webhookworker.NewCleaner(context.Background(), baseStore, observationCtx),
+		webhookworker.NewCleaner(context.Background(), observationCtx, baseStore),
 	}, nil
 }
 
-func newWebhookBuildWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerObservability, dbworker.ResetterMetrics) {
-	workerMetrics := workerutil.NewMetrics(observationContext, fmt.Sprintf("%s_processor", workerName))
-	resetterMetrics := dbworker.NewMetrics(observationContext, workerName)
+func newWebhookBuildWorkerMetrics(observationCtx *observation.Context, workerName string) (workerutil.WorkerObservability, dbworker.ResetterMetrics) {
+	workerMetrics := workerutil.NewMetrics(observationCtx, fmt.Sprintf("%s_processor", workerName))
+	resetterMetrics := dbworker.NewMetrics(observationCtx, workerName)
 	return workerMetrics, *resetterMetrics
 }

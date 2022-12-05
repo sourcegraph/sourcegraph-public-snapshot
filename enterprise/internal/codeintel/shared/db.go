@@ -18,8 +18,8 @@ type CodeIntelDB interface {
 	Done(error) error
 }
 
-func NewCodeIntelDB(inner *sql.DB, logger log.Logger) CodeIntelDB {
-	return &codeIntelDB{basestore.NewWithHandle(basestore.NewHandleWithDB(inner, sql.TxOptions{}, logger))}
+func NewCodeIntelDB(logger log.Logger, inner *sql.DB) CodeIntelDB {
+	return &codeIntelDB{basestore.NewWithHandle(basestore.NewHandleWithDB(logger, inner, sql.TxOptions{}))}
 }
 
 func NewCodeIntelDBWith(other basestore.ShareableStore) CodeIntelDB {

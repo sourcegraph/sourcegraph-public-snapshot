@@ -38,13 +38,13 @@ type Service struct {
 }
 
 func newService(
+	observationCtx *observation.Context,
 	store store.Store,
 	uploadSvc UploadService,
 	inferenceSvc InferenceService,
 	repoUpdater RepoUpdaterClient,
 	gitserver GitserverClient,
 	symbolsClient *symbols.Client,
-	observationContext *observation.Context,
 ) *Service {
 	// NOTE - this should go up a level in init.go.
 	// Not going to do this now so that we don't blow up all of the
@@ -62,11 +62,11 @@ func newService(
 	)
 
 	indexEnqueuer := enqueuer.NewIndexEnqueuer(
+		observationCtx,
 		store,
 		repoUpdater,
 		gitserver,
 		jobSelector,
-		observationContext,
 	)
 
 	return &Service{
@@ -78,8 +78,8 @@ func newService(
 		symbolsClient:   symbolsClient,
 		indexEnqueuer:   indexEnqueuer,
 		jobSelector:     jobSelector,
-		logger:          observationContext.Logger,
-		operations:      newOperations(observationContext),
+		logger:          observationCtx.Logger,
+		operations:      newOperations(observationCtx),
 	}
 }
 

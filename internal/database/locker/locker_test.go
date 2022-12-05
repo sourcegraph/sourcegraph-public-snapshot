@@ -20,7 +20,7 @@ func TestLock(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	db := dbtest.NewDB(logger, t)
-	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{}, logger))
+	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(logger, db, sql.TxOptions{}))
 	locker := NewWith(handle, "test")
 
 	key := rand.Int31n(1000)
@@ -64,7 +64,7 @@ func TestLockBlockingAcquire(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := dbtest.NewDB(logger, t)
-	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{}, logger))
+	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(logger, db, sql.TxOptions{}))
 	locker := NewWith(handle, "test")
 
 	key := rand.Int31n(1000)
@@ -122,7 +122,7 @@ func TestLockBadTransactionState(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := dbtest.NewDB(logger, t)
-	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(db, sql.TxOptions{}, logger))
+	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(logger, db, sql.TxOptions{}))
 	locker := NewWith(handle, "test")
 
 	key := rand.Int31n(1000)

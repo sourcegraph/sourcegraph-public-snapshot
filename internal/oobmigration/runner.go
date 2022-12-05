@@ -40,15 +40,15 @@ type migratorAndOption struct {
 
 var _ goroutine.BackgroundRoutine = &Runner{}
 
-func NewRunnerWithDB(db database.DB, refreshInterval time.Duration, observationContext *observation.Context) *Runner {
-	return NewRunner(NewStoreWithDB(db), refreshInterval, observationContext)
+func NewRunnerWithDB(observationCtx *observation.Context, db database.DB, refreshInterval time.Duration) *Runner {
+	return NewRunner(observationCtx, NewStoreWithDB(db), refreshInterval)
 }
 
-func NewRunner(store *Store, refreshInterval time.Duration, observationContext *observation.Context) *Runner {
-	return newRunner(&storeShim{store}, glock.NewRealTicker(refreshInterval), observationContext)
+func NewRunner(observationCtx *observation.Context, store *Store, refreshInterval time.Duration) *Runner {
+	return newRunner(observationCtx, &storeShim{store}, glock.NewRealTicker(refreshInterval))
 }
 
-func newRunner(store storeIface, refreshTicker glock.Ticker, observationContext *observation.Context) *Runner {
+func newRunner(observationCtx *observation.Context, store storeIface, refreshTicker glock.Ticker) *Runner {
 	// IMPORTANT: actor.WithInternalActor prevents issues caused by
 	// database-level authz checks: migration tasks should always be
 	// privileged.
@@ -56,9 +56,9 @@ func newRunner(store storeIface, refreshTicker glock.Ticker, observationContext 
 
 	return &Runner{
 		store:         store,
-		logger:        observationContext.Logger.Scoped("oobmigration", ""),
+		logger:        observationCtx.Logger.Scoped("oobmigration", ""),
 		refreshTicker: refreshTicker,
-		operations:    newOperations(observationContext),
+		operations:    newOperations(observationCtx),
 		migrators:     map[int]migratorAndOption{},
 		ctx:           ctx,
 		cancel:        cancel,

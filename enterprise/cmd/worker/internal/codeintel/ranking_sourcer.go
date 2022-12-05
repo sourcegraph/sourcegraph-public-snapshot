@@ -36,7 +36,7 @@ func (j *rankingSourcerJob) Routines(startupCtx context.Context, observationCtx 
 	}
 
 	return append(
-		ranking.NewIndexer(services.RankingService, observationCtx),
-		ranking.NewPageRankLoader(services.RankingService, observationCtx)...,
+		ranking.NewIndexer(observationCtx, services.RankingService),
+		ranking.NewPageRankLoader(observationCtx, services.RankingService)...,
 	), nil
 }

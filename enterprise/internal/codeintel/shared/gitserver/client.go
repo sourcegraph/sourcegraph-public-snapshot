@@ -29,9 +29,9 @@ type Client struct {
 	operations      *operations
 }
 
-func New(db database.DB, observationContext *observation.Context) *Client {
-	observationContext = observation.ContextWithLogger(log.NoOp(), observationContext)
-	operations := newOperations(observationContext)
+func New(observationCtx *observation.Context, db database.DB) *Client {
+	observationCtx = observation.ContextWithLogger(log.NoOp(), observationCtx)
+	operations := newOperations(observationCtx)
 
 	return &Client{
 		gitserverClient: gitserver.NewClient(db),
@@ -40,11 +40,11 @@ func New(db database.DB, observationContext *observation.Context) *Client {
 	}
 }
 
-func NewWithGitserverClient(db database.DB, gitserverClient gitserver.Client, observationContext *observation.Context) *Client {
+func NewWithGitserverClient(observationCtx *observation.Context, db database.DB, gitserverClient gitserver.Client) *Client {
 	return &Client{
 		gitserverClient: gitserverClient,
 		dbStore:         newWithDB(db),
-		operations:      newOperations(observationContext),
+		operations:      newOperations(observationCtx),
 	}
 }
 

@@ -20,16 +20,16 @@ type operations struct {
 	runCommand    *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
+func newOperations(observationCtx *observation.Context) *operations {
 	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"codeintel_coursier",
 		metrics.WithLabels("op"),
 		metrics.WithCountHelp("Total number of method invocations."),
 	)
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.coursier.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
@@ -48,7 +48,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		fetchByteCode: op("FetchByteCode"),
 		runCommand:    op("RunCommand"),
 
-		Logger: observationContext.Logger,
+		Logger: observationCtx.Logger,
 	}
 }
 
@@ -59,9 +59,9 @@ var (
 
 func getOperations() *operations {
 	opsOnce.Do(func() {
-		observationContext := observation.NewContext(log.Scoped("jvmpackages.coursier", ""))
+		observationCtx := observation.NewContext(log.Scoped("jvmpackages.coursier", ""))
 
-		ops = newOperations(observationContext)
+		ops = newOperations(observationCtx)
 	})
 
 	return ops

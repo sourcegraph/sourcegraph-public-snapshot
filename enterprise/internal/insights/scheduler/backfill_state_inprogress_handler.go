@@ -41,7 +41,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 
 	name := "backfill_in_progress_worker"
 
-	workerStore := dbworkerstore.New(db.Handle(), dbworkerstore.Options[*BaseJob]{
+	workerStore := dbworkerstore.New(config.ObservationCtx, db.Handle(), dbworkerstore.Options[*BaseJob]{
 		Name:              fmt.Sprintf("%s_store", name),
 		TableName:         "insights_background_jobs",
 		ViewName:          "insights_jobs_backfill_in_progress",
@@ -52,7 +52,7 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		StalledMaxAge:     time.Second * 30,
 		RetryAfter:        time.Second * 30,
 		MaxNumRetries:     3,
-	}, config.ObsContext)
+	})
 
 	handlerConfig := newHandlerConfig()
 
@@ -72,13 +72,13 @@ func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*worker
 		NumHandlers:       1,
 		Interval:          inProgressPollingInterval,
 		HeartbeatInterval: 15 * time.Second,
-		Metrics:           workerutil.NewMetrics(config.ObsContext, name),
+		Metrics:           workerutil.NewMetrics(config.ObservationCtx, name),
 	})
 
 	resetter := dbworker.NewResetter(log.Scoped("", ""), workerStore, dbworker.ResetterOptions{
 		Name:     fmt.Sprintf("%s_resetter", name),
 		Interval: time.Second * 20,
-		Metrics:  *dbworker.NewMetrics(config.ObsContext, name),
+		Metrics:  *dbworker.NewMetrics(config.ObservationCtx, name),
 	})
 
 	configLogger := log.Scoped("insightsInProgressConfigWatcher", "")

@@ -48,7 +48,7 @@ func (s *insightsQueryRunnerJob) Routines(startupCtx context.Context, observatio
 		return nil, err
 	}
 
-	insightsDB, err := insights.InitializeCodeInsightsDB("query-runner-worker", observationCtx)
+	insightsDB, err := insights.InitializeCodeInsightsDB(observationCtx, "query-runner-worker")
 	if err != nil {
 		return nil, err
 	}
