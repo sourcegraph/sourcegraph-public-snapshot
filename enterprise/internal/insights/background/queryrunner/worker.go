@@ -302,7 +302,7 @@ func QueryJobsStatus(ctx context.Context, workerBaseStore *basestore.Store, seri
 }
 
 const queryJobsStatusSql = `
-SELECT state, count(*) from insights_query_runner_jobs WHERE series_id=%s GROUP BY state 
+SELECT state, COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s GROUP BY state 
 `
 
 func QueryAllSeriesStatus(ctx context.Context, workerBaseStore *basestore.Store) (_ []types.InsightSeriesStatus, err error) {
