@@ -14,7 +14,7 @@ func FlattenDocuments(documents []*scip.Document) []*scip.Document {
 			continue
 		}
 		if existing.Language != document.Language {
-			// TODO - warn?
+			_ = 0 // TODO - warn?
 		}
 
 		existing.Symbols = append(existing.Symbols, document.Symbols...)
@@ -71,7 +71,7 @@ func FlattenOccurrences(occurrences []*scip.Occurrence) []*scip.Occurrence {
 			continue
 		}
 		if top.SyntaxKind != occurrence.SyntaxKind {
-			// TODO - warn?
+			_ = 0 // TODO - warn?
 		}
 
 		top.SymbolRoles |= occurrence.SymbolRoles
