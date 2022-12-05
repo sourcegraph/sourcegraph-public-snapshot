@@ -78,8 +78,8 @@ func OtelCollector() *monitoring.Dashboard {
 								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.`,
 						},
 						{
-							Name:        "otel_span_failed_send_size",
-							Description: "spans that the exporter failed to send",
+							Name:        "otel_span_export_failures",
+							Description: "span export failures by exporter",
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							Query:       "sum(rate(otelcol_exporter_send_failed_spans{exporter=~\"^.*\"}[1m])) by (exporter)",
