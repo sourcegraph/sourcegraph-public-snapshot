@@ -607,7 +607,7 @@ func TestDeleteWebhook(t *testing.T) {
 		ExpectedResult: "null",
 		ExpectedErrors: []*errors.QueryError{
 			{
-				Message: "must be site admin",
+				Message: "delete webhook: must be site admin",
 				Path:    []any{"deleteWebhook"},
 			},
 		},
@@ -694,7 +694,7 @@ func TestUpdateWebhook(t *testing.T) {
 		ExpectedResult: "null",
 		ExpectedErrors: []*errors.QueryError{
 			{
-				Message: "must be site admin",
+				Message: "update webhook: must be site admin",
 				Path:    []any{"updateWebhook"},
 			},
 		},
@@ -794,7 +794,7 @@ func TestUpdateWebhook(t *testing.T) {
 		ExpectedResult: "null",
 		ExpectedErrors: []*errors.QueryError{
 			{
-				Message: "webhook with ID 2 not found",
+                Message: "update webhook: webhook with ID 2 not found",
 				Path:    []any{"updateWebhook"},
 			},
 		},

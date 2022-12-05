@@ -11,13 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -51,14 +49,12 @@ func (r *webhooksResolver) CreateWebhook(ctx context.Context, args *graphqlbacke
 }
 
 func (r *webhooksResolver) DeleteWebhook(ctx context.Context, args *graphqlbackend.DeleteWebhookArgs) (*graphqlbackend.EmptyResponse, error) {
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-		return nil, auth.ErrMustBeSiteAdmin
-	}
 	id, err := unmarshalWebhookID(args.ID)
 	if err != nil {
 		return nil, err
 	}
-	err = r.db.Webhooks(keyring.Default().WebhookKey).Delete(ctx, database.DeleteWebhookOpts{ID: id})
+	ws := backend.NewWebhookService(r.db, keyring.Default())
+	err = ws.DeleteWebhook(ctx, id)
 	if err != nil {
 		return nil, errors.Wrap(err, "delete webhook")
 	}
@@ -66,40 +62,13 @@ func (r *webhooksResolver) DeleteWebhook(ctx context.Context, args *graphqlbacke
 }
 
 func (r *webhooksResolver) UpdateWebhook(ctx context.Context, args *graphqlbackend.UpdateWebhookArgs) (graphqlbackend.WebhookResolver, error) {
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-		return nil, auth.ErrMustBeSiteAdmin
-	}
-
 	whID, err := unmarshalWebhookID(args.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	webhooks := r.db.Webhooks(keyring.Default().WebhookKey)
-
-	webhook, err := webhooks.GetByID(ctx, whID)
-	if err != nil {
-		return nil, err
-	}
-
-	if args.Name != nil {
-		webhook.Name = *args.Name
-	}
-	if args.CodeHostKind != nil {
-		webhook.CodeHostKind = *args.CodeHostKind
-	}
-	if args.CodeHostURN != nil {
-		codeHostURN, err := extsvc.NewCodeHostBaseURL(*args.CodeHostURN)
-		if err != nil {
-			return nil, err
-		}
-		webhook.CodeHostURN = codeHostURN
-	}
-	if args.Secret != nil {
-		webhook.Secret = types.NewUnencryptedSecret(*args.Secret)
-	}
-
-	newWebhook, err := webhooks.Update(ctx, actor.FromContext(ctx).UID, webhook)
+	ws := backend.NewWebhookService(r.db, keyring.Default())
+	newWebhook, err := ws.UpdateWebhook(ctx, whID, args.Name, args.CodeHostKind, args.CodeHostURN, args.Secret)
 	if err != nil {
 		return nil, errors.Wrap(err, "update webhook")
 	}
