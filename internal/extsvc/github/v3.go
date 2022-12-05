@@ -576,7 +576,6 @@ func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Vi
 	rateLimitCost int,
 	err error,
 ) {
-    fmt.Println("Here la2r")
 	path := fmt.Sprintf("user/repos?sort=created&visibility=%s&page=%d&per_page=100", visibility, page)
 	if len(affiliations) > 0 {
 		affilationsStrings := make([]string, 0, len(affiliations))
@@ -586,8 +585,6 @@ func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Vi
 		path = fmt.Sprintf("%s&affiliation=%s", path, strings.Join(affilationsStrings, ","))
 	}
 	repos, err = c.listRepositories(ctx, path)
-    fmt.Println(repos)
-    fmt.Println(err)
 
 	return repos, len(repos) > 0, 1, err
 }

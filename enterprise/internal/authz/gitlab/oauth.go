@@ -2,7 +2,6 @@ package gitlab
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strings"
 
@@ -120,10 +119,9 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 		NeedsRefreshBuffer: 5,
 	}
 
-    fmt.Println("GitLab Here")
-    oauth2Config := oauth2.Config{}
+	oauth2Config := oauth2.Config{}
 
-    o2token := github.MyToken{Token: &oauth2.Token{
+	o2token := github.MyToken{Token: &oauth2.Token{
 		AccessToken:  tok.AccessToken,
 		RefreshToken: tok.RefreshToken,
 		Expiry:       tok.Expiry,
@@ -136,24 +134,23 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Acco
 			if !strings.HasPrefix(p.codeHost.BaseURL.String(), glURL) {
 				continue
 			}
-            oauth2Config.ClientID = p2.ClientID
-            oauth2Config.ClientSecret = p2.ClientSecret
-            oauth2Config.Endpoint = oauth2.Endpoint{
-                AuthURL: glURL + "/oauth/authorize",
-                TokenURL: glURL + "/oauth/token",
-            }
+			oauth2Config.ClientID = p2.ClientID
+			oauth2Config.ClientSecret = p2.ClientSecret
+			oauth2Config.Endpoint = oauth2.Endpoint{
+				AuthURL:  glURL + "/oauth/authorize",
+				TokenURL: glURL + "/oauth/token",
+			}
 		}
 	}
 
-    o2TokenSrc := github.MyTokenSource{
-        MyTok: o2token,
-        MyTokSrc: oauth2Config.TokenSource(ctx, o2token.Token),
-        DB: p.db,
-        ExternalAccountID: account.ID,
-    }
-    fmt.Println("But not here")
+	o2TokenSrc := github.MyTokenSource{
+		MyTok:             o2token,
+		MyTokSrc:          oauth2Config.TokenSource(ctx, o2token.Token),
+		DB:                p.db,
+		ExternalAccountID: account.ID,
+	}
 
-    cli := oauth2.NewClient(context.WithValue(ctx, oauth2.HTTPClient, httpcli.ExternalClient), &o2TokenSrc)
+	cli := oauth2.NewClient(context.WithValue(ctx, oauth2.HTTPClient, httpcli.ExternalClient), &o2TokenSrc)
 
 	client := p.clientProvider.NewClient(token, cli)
 

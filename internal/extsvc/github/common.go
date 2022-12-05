@@ -1525,10 +1525,10 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 		span.Finish()
 	}()
 
-    resp, err = httpClient.Do(req.WithContext(ctx))
-    if err != nil {
-        return nil, errors.Wrap(err, "http request failed")
-    }
+	resp, err = httpClient.Do(req.WithContext(ctx))
+	if err != nil {
+		return nil, errors.Wrap(err, "http request failed")
+	}
 	defer resp.Body.Close()
 
 	logger.Debug("doRequest",

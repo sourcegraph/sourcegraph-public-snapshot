@@ -180,7 +180,7 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 	if err != nil {
 		return nil, errors.Wrap(err, "get client")
 	}
-    ghCli := github.NewV3Client(log.NoOp(), "GitHub", p.codeHost.BaseURL, nil, cli)
+	ghCli := github.NewV3Client(log.NoOp(), "GitHub", p.codeHost.BaseURL, nil, cli)
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
@@ -240,7 +240,6 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		}
 	}
 
-    fmt.Println(perms)
 	// We're done if groups caching is disabled or no accountID is available.
 	if p.groupsCache == nil || accountID == "" {
 		return perms, nil
@@ -334,43 +333,34 @@ type MyToken struct {
 }
 
 type MyTokenSource struct {
-	MyTok    MyToken
-	MyTokSrc oauth2.TokenSource
-	DB       database.DB
-    ExternalAccountID int32
+	MyTok             MyToken
+	MyTokSrc          oauth2.TokenSource
+	DB                database.DB
+	ExternalAccountID int32
 }
 
 func (t *MyTokenSource) Token() (*oauth2.Token, error) {
-    fmt.Println(1)
 	newTok, err := t.MyTokSrc.Token()
 	if err != nil {
 		return nil, err
 	}
-    fmt.Println(2)
-    t.MyTok.AccessToken = newTok.AccessToken
-    t.MyTok.Token = newTok
-    fmt.Println(2.5)
-    if t.DB != nil {
-        acct, err := t.DB.UserExternalAccounts().Get(context.Background(), t.ExternalAccountID)
-        if err != nil {
-            fmt.Println(err)
-            return nil, err
-        }
-        fmt.Println(3)
-        err = acct.AuthData.Set(newTok)
-        if err != nil {
-            fmt.Println(err)
-        }
-        fmt.Println(4)
-        _, err = t.DB.UserExternalAccounts().LookupUserAndSave(context.Background(), acct.AccountSpec, acct.AccountData)
-        fmt.Println(5)
-        if err != nil {
-            fmt.Println(err)
-            return nil, err
-        }
-        fmt.Println(6)
-    }
-    return newTok, nil
+	t.MyTok.AccessToken = newTok.AccessToken
+	t.MyTok.Token = newTok
+	if t.DB != nil {
+		acct, err := t.DB.UserExternalAccounts().Get(context.Background(), t.ExternalAccountID)
+		if err != nil {
+			return nil, err
+		}
+		err = acct.AuthData.Set(newTok)
+		if err != nil {
+			return nil, err
+		}
+		_, err = t.DB.UserExternalAccounts().LookupUserAndSave(context.Background(), acct.AccountSpec, acct.AccountData)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return newTok, nil
 }
 
 // FetchUserPerms returns a list of repository IDs (on code host) that the given account
@@ -396,9 +386,9 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		return nil, errors.New("no token found in the external account data")
 	}
 
-    oauth2Config := oauth2.Config{}
+	oauth2Config := oauth2.Config{}
 
-    o2token := MyToken{Token: &oauth2.Token{
+	o2token := MyToken{Token: &oauth2.Token{
 		AccessToken:  tok.AccessToken,
 		RefreshToken: tok.RefreshToken,
 		Expiry:       tok.Expiry,
@@ -411,23 +401,23 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 			if !strings.HasPrefix(p.codeHost.BaseURL.String(), ghURL) {
 				continue
 			}
-            oauth2Config.ClientID = p2.ClientID
-            oauth2Config.ClientSecret = p2.ClientSecret
-            oauth2Config.Endpoint = oauth2.Endpoint{
-                AuthURL: ghURL + "/login/oauth/authorize",
-                TokenURL: ghURL + "/login/oauth/access_token",
-            }
+			oauth2Config.ClientID = p2.ClientID
+			oauth2Config.ClientSecret = p2.ClientSecret
+			oauth2Config.Endpoint = oauth2.Endpoint{
+				AuthURL:  ghURL + "/login/oauth/authorize",
+				TokenURL: ghURL + "/login/oauth/access_token",
+			}
 		}
 	}
 
-    o2TokenSrc := MyTokenSource{
-        MyTok: o2token,
-        MyTokSrc: oauth2Config.TokenSource(ctx, o2token.Token),
-        DB: p.db,
-        ExternalAccountID: account.ID,
-    }
+	o2TokenSrc := MyTokenSource{
+		MyTok:             o2token,
+		MyTokSrc:          oauth2Config.TokenSource(ctx, o2token.Token),
+		DB:                p.db,
+		ExternalAccountID: account.ID,
+	}
 
-    cli := oauth2.NewClient(context.WithValue(ctx, oauth2.HTTPClient, httpcli.ExternalClient), &o2TokenSrc)
+	cli := oauth2.NewClient(context.WithValue(ctx, oauth2.HTTPClient, httpcli.ExternalClient), &o2TokenSrc)
 
 	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), cli, opts)
 }
