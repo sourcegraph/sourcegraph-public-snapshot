@@ -45,6 +45,17 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
         hasNextPage,
     } = props
 
+    const [isLoadingPage, setIsLoadingPage] = React.useState(false)
+    function withLoadingPage<T>(func: () => Promise<T>): () => void {
+        return () => {
+            setIsLoadingPage(true)
+            func().finally(() => setIsLoadingPage(false))
+        }
+    }
+
+    const isPreviousPageDisabled = isLoadingPage || (hasPreviousPage !== null ? !hasPreviousPage : true)
+    const isNextPageDisabled = isLoadingPage || (hasNextPage !== null ? !hasNextPage : true)
+
     return (
         <nav className={className}>
             <ul className={styles.list}>
@@ -55,8 +66,8 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
                             className={classNames(styles.button, 'mx-3')}
                             variant="secondary"
                             outline={true}
-                            disabled={hasPreviousPage !== null ? !hasPreviousPage : true}
-                            onClick={goToFirstPage}
+                            disabled={isPreviousPageDisabled}
+                            onClick={withLoadingPage(goToFirstPage)}
                         >
                             <Icon aria-hidden={true} as={PageFirstIcon} className={styles.firstPageButton} />
                         </Button>
@@ -68,8 +79,8 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
                         aria-label="Go to previous page"
                         variant="secondary"
                         outline={true}
-                        disabled={hasPreviousPage !== null ? !hasPreviousPage : true}
-                        onClick={goToPreviousPage}
+                        disabled={isPreviousPageDisabled}
+                        onClick={withLoadingPage(goToPreviousPage)}
                     >
                         <Icon
                             aria-hidden={true}
@@ -85,8 +96,8 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
                         aria-label="Go to next page"
                         variant="secondary"
                         outline={true}
-                        disabled={hasNextPage !== null ? !hasNextPage : true}
-                        onClick={goToNextPage}
+                        disabled={isNextPageDisabled}
+                        onClick={withLoadingPage(goToNextPage)}
                     >
                         <span className={styles.nextButtonLabel}>Next</span>
                         <Icon
@@ -103,8 +114,8 @@ export const PageSwitcher: React.FunctionComponent<React.PropsWithChildren<PageS
                             className={classNames(styles.button, 'mx-3')}
                             variant="secondary"
                             outline={true}
-                            disabled={hasNextPage !== null ? !hasNextPage : true}
-                            onClick={goToLastPage}
+                            disabled={isNextPageDisabled}
+                            onClick={withLoadingPage(goToLastPage)}
                         >
                             <Icon aria-hidden={true} as={PageLastIcon} className={styles.lastPageButton} />
                         </Button>
