@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestGitCommitResolver(t *testing.T) {
@@ -179,4 +180,184 @@ func TestGitCommitFileNames(t *testing.T) {
 			`,
 		},
 	})
+}
+
+func TestGitCommitAncestors(t *testing.T) {
+	externalServices := database.NewMockExternalServiceStore()
+	externalServices.ListFunc.SetDefaultReturn(nil, nil)
+
+	repos := database.NewMockRepoStore()
+	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+
+	db := database.NewMockDB()
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		return api.CommitID(rev), nil
+	}
+
+	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
+
+	client := gitserver.NewMockClient()
+	client.LsFilesFunc.SetDefaultReturn([]string{"a", "b"}, nil)
+
+	// A linear commit tree:
+	// * -> c1 -> c2 -> c3 -> c4 -> c5 (HEAD)
+	c1 := gitdomain.Commit{
+		ID: api.CommitID("aabbc12345"),
+	}
+	c2 := gitdomain.Commit{
+		ID: api.CommitID("ccdde12345"),
+		Parents: []api.CommitID{
+			c1.ID,
+		},
+	}
+	c3 := gitdomain.Commit{
+		ID:      api.CommitID("eeffg12345"),
+		Parents: []api.CommitID{c2.ID},
+	}
+	c4 := gitdomain.Commit{
+		ID:      api.CommitID("gghhi12345"),
+		Parents: []api.CommitID{c3.ID},
+	}
+	c5 := gitdomain.Commit{
+		ID:      api.CommitID("ijklm12345"),
+		Parents: []api.CommitID{c4.ID},
+	}
+
+	commits := []*gitdomain.Commit{
+		&c1, &c2, &c3, &c4, &c5,
+	}
+
+	client.CommitsFunc.SetDefaultHook(func(
+		ctx context.Context,
+		repo api.RepoName,
+		opt gitserver.CommitsOptions,
+		authz authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
+
+		switch api.CommitID(opt.Range) {
+		case c1.ID:
+			return commits, nil
+
+		case c3.ID:
+			return commits[2:], nil
+		default:
+			return []*gitdomain.Commit{}, errors.New("mock not implemented for this test case")
+		}
+
+	})
+
+	defer func() {
+		backend.Mocks = backend.MockServices{}
+	}()
+
+	// Start at commit c1.
+	// Expect c1 and c2 in the nodes. c3 in the endCursor.
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+		Query: `
+{
+  repository(name: "github.com/gorilla/mux") {
+    commit(rev: "aabbc12345") {
+      ancestors(first: 2, path: "bill-of-materials.json") {
+        nodes {
+          id
+		  oid
+          abbreviatedOID
+        }
+        pageInfo {
+          endCursor
+          hasNextPage
+        }
+      }
+    }
+  }
+}
+        `,
+		ExpectedResult: `
+{
+  "repository": {
+	"commit": {
+	  "ancestors": {
+		"nodes": [
+		  {
+			"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiYWFiYmMxMjM0NSJ9",
+            "oid": "aabbc12345",
+            "abbreviatedOID": "aabbc12"
+		  },
+		  {
+			"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiY2NkZGUxMjM0NSJ9",
+            "oid": "ccdde12345",
+
+		    "abbreviatedOID": "ccdde12"
+          }
+		],
+		"pageInfo": {
+		  "endCursor": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiZWVmZmcxMjM0NSJ9",
+		  "hasNextPage": true
+		}
+	  }
+	}
+  }
+}
+        `,
+	})
+
+	// Start at commit c3.
+	// Expect c3, c4, c5 in the nodes. No endCursor because there will be no new commits.
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+		Query: `
+{
+  repository(name: "github.com/gorilla/mux") {
+    commit(rev: "eeffg12345") {
+      ancestors(first: 3, path: "bill-of-materials.json") {
+        nodes {
+          id
+		  oid
+          abbreviatedOID
+        }
+        pageInfo {
+          endCursor
+          hasNextPage
+        }
+      }
+    }
+  }
+}
+        `,
+		ExpectedResult: `
+{
+  "repository": {
+	"commit": {
+	  "ancestors": {
+		"nodes": [
+		  {
+			"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiZWVmZmcxMjM0NSJ9",
+            "oid": "eeffg12345",
+            "abbreviatedOID": "eeffg12"
+		  },
+		  {
+			"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiZ2doaGkxMjM0NSJ9",
+            "oid": "gghhi12345",
+		    "abbreviatedOID": "gghhi12"
+          },
+		  {
+			"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiaWprbG0xMjM0NSJ9",
+            "oid": "ijklm12345",
+		    "abbreviatedOID": "ijklm12"
+          }
+		],
+		"pageInfo": {
+          "endCursor": null,
+		  "hasNextPage": false
+		}
+	  }
+	}
+  }
+}
+        `,
+	})
+
 }
