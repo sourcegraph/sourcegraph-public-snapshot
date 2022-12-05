@@ -69,9 +69,6 @@ const mockedGQL: MockedResponse[] = [
                             __typename: 'InsightsDashboard',
                             id: 'foo',
                             title: 'Global Dashboard',
-                            views: {
-                                nodes: [],
-                            },
                             grants: {
                                 __typename: 'InsightsPermissionGrants',
                                 users: [],
