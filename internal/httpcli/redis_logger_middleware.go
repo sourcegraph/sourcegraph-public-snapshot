@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -27,6 +28,7 @@ func redisLoggerMiddleware() Middleware {
 			resp, err := cli.Do(req)
 			duration := time.Since(start)
 			limit := OutboundRequestLogLimit()
+			shouldRedactSensitiveHeaders := !deploy.IsDev(deploy.Type()) || RedactOutboundRequestHeaders()
 
 			// Feature is turned off, do not log
 			if limit == 0 {
@@ -56,6 +58,14 @@ func redisLoggerMiddleware() Middleware {
 				}
 			}
 
+			// Redact sensitive headers
+			requestHeaders := req.Header
+			responseHeaders := resp.Header
+			if shouldRedactSensitiveHeaders {
+				requestHeaders = redactSensitiveHeaders(requestHeaders)
+				responseHeaders = redactSensitiveHeaders(responseHeaders)
+			}
+
 			// Create log item
 			var errorMessage string
 			if err != nil {
@@ -68,10 +78,10 @@ func redisLoggerMiddleware() Middleware {
 				StartedAt:          start,
 				Method:             req.Method,
 				URL:                req.URL.String(),
-				RequestHeaders:     removeSensitiveHeaders(req.Header),
+				RequestHeaders:     requestHeaders,
 				RequestBody:        string(requestBody),
 				StatusCode:         int32(resp.StatusCode),
-				ResponseHeaders:    removeSensitiveHeaders(resp.Header),
+				ResponseHeaders:    responseHeaders,
 				Duration:           duration.Seconds(),
 				ErrorMessage:       errorMessage,
 				CreationStackFrame: formatStackFrame(creatorStackFrame),
@@ -185,7 +195,7 @@ func getAllValuesAfter(ctx context.Context, c *rcache.Cache, after string, limit
 	return c.GetMulti(keys...), nil
 }
 
-func removeSensitiveHeaders(headers http.Header) http.Header {
+func redactSensitiveHeaders(headers http.Header) http.Header {
 	var cleanHeaders = make(http.Header)
 	for name, values := range headers {
 		if IsRiskyHeader(name, values) {
