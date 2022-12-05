@@ -10,15 +10,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-// TODO - document
+// ConvertLSIF converts the given raw LSIF reader into a SCIP index.
 func ConvertLSIF(ctx context.Context, uploadID int, r io.Reader, root, indexerName string) (*scip.Index, error) {
-	chans, err := conversion.Correlate(ctx, r, root, nil)
+	groupedBundleData, err := conversion.Correlate(ctx, r, root, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	resultChunks := map[int]precise.ResultChunkData{}
-	for resultChunk := range chans.ResultChunks {
+	for resultChunk := range groupedBundleData.ResultChunks {
 		resultChunks[resultChunk.Index] = resultChunk.ResultChunk
 	}
 
@@ -27,13 +27,13 @@ func ConvertLSIF(ctx context.Context, uploadID int, r io.Reader, root, indexerNa
 		targetRangeID precise.ID,
 		definitionResultID precise.ID,
 	) bool {
-		definitionResultChunk, ok := resultChunks[precise.HashKey(precise.ID(definitionResultID), chans.Meta.NumResultChunks)]
+		definitionResultChunk, ok := resultChunks[precise.HashKey(definitionResultID, groupedBundleData.Meta.NumResultChunks)]
 		if !ok {
 			return false
 		}
 
-		for _, pair := range definitionResultChunk.DocumentIDRangeIDs[precise.ID(definitionResultID)] {
-			if targetPath == definitionResultChunk.DocumentPaths[pair.DocumentID] && pair.RangeID == precise.ID(targetRangeID) {
+		for _, pair := range definitionResultChunk.DocumentIDRangeIDs[definitionResultID] {
+			if targetPath == definitionResultChunk.DocumentPaths[pair.DocumentID] && pair.RangeID == targetRangeID {
 				return true
 			}
 		}
@@ -42,7 +42,7 @@ func ConvertLSIF(ctx context.Context, uploadID int, r io.Reader, root, indexerNa
 	}
 
 	var documents []*scip.Document
-	for document := range chans.Documents {
+	for document := range groupedBundleData.Documents {
 		documents = append(documents, ConvertLSIFDocument(
 			uploadID,
 			definitionMatcher,
@@ -53,8 +53,8 @@ func ConvertLSIF(ctx context.Context, uploadID int, r io.Reader, root, indexerNa
 	}
 
 	metadata := &scip.Metadata{
-		Version:              0,   // TODO
-		ToolInfo:             nil, // TODO
+		Version:              0,
+		ToolInfo:             &scip.ToolInfo{Name: indexerName},
 		ProjectRoot:          root,
 		TextDocumentEncoding: scip.TextEncoding_UnspecifiedTextEncoding,
 	}
