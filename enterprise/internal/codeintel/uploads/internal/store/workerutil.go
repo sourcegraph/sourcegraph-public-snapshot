@@ -63,5 +63,5 @@ var UploadWorkerStoreOptions = dbworkerstore.Options[types.Upload]{
 }
 
 func (s *store) WorkerutilStore(observationCtx *observation.Context) dbworkerstore.Store[types.Upload] {
-	return dbworkerstore.New(observationCtx, s.db.Handle(), UploadWorkerStoreOptions, )
+	return dbworkerstore.New(observationCtx, s.db.Handle(), UploadWorkerStoreOptions)
 }
