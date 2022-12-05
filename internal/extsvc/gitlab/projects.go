@@ -258,8 +258,6 @@ func (c *Client) ForkProject(ctx context.Context, project *Project, namespace *s
 		return nil, errors.Wrap(err, "resolving namespace")
 	}
 
-	path := name
-
 	fork, err := c.getForkedProject(ctx, project, resolved, name)
 	if err != nil {
 		// An error that _isn't_ a not found error needs to be reported.
@@ -280,7 +278,7 @@ func (c *Client) ForkProject(ctx context.Context, project *Project, namespace *s
 	}{
 		NamespacePath: namespace,
 		Name:          name,
-		Path:          &path,
+		Path:          &name,
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
