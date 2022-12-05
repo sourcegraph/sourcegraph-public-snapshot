@@ -83,7 +83,7 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                 />
 
                 <Route
-                    path={[`${match.url}/dashboards/:dashboardId?`, `${match.url}/about`]}
+                    path={[`${match.url}/dashboards/:dashboardId?`, `${match.url}/all`, `${match.url}/about`]}
                     render={(props: RouteComponentProps<{ dashboardId?: string }>) => (
                         <CodeInsightsRootPage
                             dashboardId={props.match.params.dashboardId}

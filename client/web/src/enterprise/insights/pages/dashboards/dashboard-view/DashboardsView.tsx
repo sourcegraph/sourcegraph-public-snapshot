@@ -7,7 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../components/PageTitle'
-import { useInsightDashboards } from '../../../core'
+import { isPersonalDashboard, useInsightDashboards } from '../../../core'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 
@@ -40,7 +40,7 @@ export const DashboardsView: FC<DashboardsViewProps> = props => {
     // URL doesn't have any concrete dashboard id, render first dashboard and add
     // first dashboard ID to match URL (/dashboards/ -> /dashboards/<first dashboard id>)
     if (!dashboardId) {
-        const currentDashboard = dashboards[0]
+        const currentDashboard = dashboards.find(isPersonalDashboard) ?? dashboards[0]
 
         return <Redirect push={false} to={`${url}/${currentDashboard.id}`} />
     }
