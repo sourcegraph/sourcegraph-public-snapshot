@@ -318,7 +318,7 @@ func (c *V3Client) GetAuthenticatedUserOrgsForPage(ctx context.Context, page int
 	if err != nil {
 		return
 	}
-	return orgs, respState.hasNextPage(respState), 1, err
+	return orgs, respState.hasNextPage(), 1, err
 }
 
 // OrgDetailsAndMembership is a results container for the results from the API calls made
@@ -403,7 +403,7 @@ func (c *V3Client) GetAuthenticatedUserTeams(ctx context.Context, page int) (
 		teams[i] = t.convert()
 	}
 
-	return teams, respState.hasNextPage(respState), 1, err
+	return teams, respState.hasNextPage(), 1, err
 }
 
 var MockGetAuthenticatedOAuthScopes func(ctx context.Context) ([]string, error)
@@ -440,7 +440,7 @@ func (c *V3Client) ListRepositoryCollaborators(ctx context.Context, owner, repo 
 	if err != nil {
 		return nil, false, err
 	}
-	return users, respState.hasNextPage(respState), nil
+	return users, respState.hasNextPage(), nil
 }
 
 // ListRepositoryTeams lists GitHub teams that has access to the repository.
@@ -458,7 +458,7 @@ func (c *V3Client) ListRepositoryTeams(ctx context.Context, owner, repo string, 
 	for i, t := range restTeams {
 		teams[i] = t.convert()
 	}
-	return teams, respState.hasNextPage(respState), nil
+	return teams, respState.hasNextPage(), nil
 }
 
 // GetRepository gets a repository from GitHub by owner and repository name.
@@ -527,7 +527,7 @@ func (c *V3Client) ListOrganizationMembers(ctx context.Context, owner string, pa
 	if err != nil {
 		return nil, false, err
 	}
-	return users, respState.hasNextPage(respState), nil
+	return users, respState.hasNextPage(), nil
 }
 
 // ListTeamMembers retrieves collaborators in the given team.
@@ -541,7 +541,7 @@ func (c *V3Client) ListTeamMembers(ctx context.Context, owner, team string, page
 	if err != nil {
 		return nil, false, err
 	}
-	return users, respState.hasNextPage(respState), nil
+	return users, respState.hasNextPage(), nil
 }
 
 // getPublicRepositories returns a page of public repositories that were created
@@ -677,7 +677,7 @@ func (c *V3Client) ListInstallationRepositories(ctx context.Context, page int) (
 	for _, restRepo := range resp.Repositories {
 		repos = append(repos, convertRestRepo(restRepo))
 	}
-	return repos, respState.hasNextPage(respState), 1, nil
+	return repos, respState.hasNextPage(), 1, nil
 }
 
 // listRepositories is a generic method that unmarshalls the given JSON HTTP
@@ -697,7 +697,7 @@ func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*
 	for _, restRepo := range restRepos {
 		repos = append(repos, convertRestRepo(restRepo))
 	}
-	return repos, respState.hasNextPage(respState), nil
+	return repos, respState.hasNextPage(), nil
 }
 
 // Fork forks the given repository. If org is given, then the repository will
@@ -907,6 +907,6 @@ func webhookURLBuilderWithID(repoName string, hookID int) (string, error) {
 // responseHasNextPage checks if the Link header of the response contains a
 // URL tagged with rel="next".
 // If this header is not present, it also means there is only one page.
-func (r *httpResponseState) hasNextPage(responseState *httpResponseState) bool {
-	return strings.Contains(responseState.headers.Get("Link"), "rel=\"next\"")
+func (r *httpResponseState) hasNextPage() bool {
+	return strings.Contains(r.headers.Get("Link"), "rel=\"next\"")
 }
