@@ -40,6 +40,10 @@ func (ws *webhookService) DeleteWebhook(ctx context.Context, id int32) error {
 }
 
 func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, codeHostKind, codeHostURN, secretStr *string) (*types.Webhook, error) {
+	u := actor.FromContext(ctx)
+	if u == nil {
+		return nil, errors.New("no actor found in context")
+	}
 	webhooksStore := ws.db.Webhooks(ws.keyRing.WebhookKey)
 	webhook, err := webhooksStore.GetByID(ctx, id)
 	if err != nil {
@@ -64,6 +68,16 @@ func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, cod
 		webhook.CodeHostURN = codeHostURN
 	}
 	if secretStr != nil {
+		if codeHostKind != nil {
+			if err := validateCodeHostKindAndSecret(*codeHostKind, secretStr); err != nil {
+				return nil, err
+			}
+		} else {
+			if err := validateCodeHostKindAndSecret(webhook.CodeHostKind, secretStr); err != nil {
+				return nil, err
+			}
+		}
+
 		webhook.Secret = types.NewUnencryptedSecret(*secretStr)
 	}
 
