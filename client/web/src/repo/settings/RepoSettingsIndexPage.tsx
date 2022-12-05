@@ -11,12 +11,18 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { createAggregateError, pluralize } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3 } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader, LoadingSpinner, Link, Alert, Icon, Code, H3 } from '@sourcegraph/wildcard'
 
-import { queryGraphQL } from '../../backend/graphql'
+import { queryGraphQL, requestGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { RepositoryTextSearchIndexRepository, Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
+import {
+    reindexResult,
+    reindexVariables,
+    RepositoryTextSearchIndexRepository,
+    Scalars,
+    SettingsAreaRepositoryFields,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { prettyBytesBigint } from '../../util/prettyBytesBigint'
 
@@ -78,6 +84,21 @@ function fetchRepositoryTextSearchIndex(id: Scalars['ID']): Observable<Repositor
             return (data.node as RepositoryTextSearchIndexRepository).textSearchIndex
         })
     )
+}
+
+export function forceReindex(id: Scalars['ID']): Subscription {
+    return requestGraphQL<reindexResult, reindexVariables>(
+        gql`
+            mutation reindex($id: ID!) {
+                reindexRepository(repository: $id) {
+                    alwaysNil
+                }
+            }
+        `,
+        {
+            id,
+        }
+    ).subscribe()
 }
 
 const TextSearchIndexedReference: React.FunctionComponent<
@@ -182,6 +203,11 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                         ) : undefined
                     }
                 />
+                <div className="mb-3">
+                    <Button variant="primary" onClick={() => forceReindex(this.props.repo.id)}>
+                        Reindex now
+                    </Button>
+                </div>
                 <Container>
                     {this.state.loading && <LoadingSpinner />}
                     {this.state.error && (
