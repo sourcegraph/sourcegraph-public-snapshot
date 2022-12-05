@@ -31,21 +31,32 @@ func FindOccurrences(occurrences []*scip.Occurrence, targetLine, targetCharacter
 // occurrences are sorted by symbol name.
 func SortOccurrences(occurrences []*scip.Occurrence) []*scip.Occurrence {
 	sort.Slice(occurrences, func(i, j int) bool {
-		if cmp := compareRanges(occurrences[i].Range, occurrences[j].Range...); cmp != 0 {
-			return cmp < 0
-		}
-
-		ri := scip.NewRange(occurrences[i].Range)
-		rj := scip.NewRange(occurrences[j].Range)
-
-		if ri.Start.Line == rj.Start.Line && ri.Start.Character == rj.Start.Character && ri.End.Line == rj.End.Line && ri.End.Character == rj.End.Character {
+		if rawRangesEqual(occurrences[i].Range, occurrences[j].Range) {
 			return occurrences[i].Symbol < occurrences[j].Symbol
 		}
 
-		return true
+		return compareRanges(occurrences[i].Range, occurrences[j].Range...) <= 0
 	})
 
 	return occurrences
+}
+
+// rawRangesEqual compares the given SCIP-encoded raw ranges for equality.
+func rawRangesEqual(a, b []int32) bool {
+	if len(a) == len(b) {
+		for i, v := range a {
+			if v != b[i] {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	ra := scip.NewRange(a)
+	rb := scip.NewRange(b)
+
+	return ra.Start.Line == rb.Start.Line && ra.Start.Character == rb.Start.Character && ra.End.Line == rb.End.Line && ra.End.Character == rb.End.Character
 }
 
 // SortRanges sorts the given range slice (in-place) and returns it (for convenience). Ranges are

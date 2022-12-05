@@ -2,7 +2,9 @@ package types
 
 import "github.com/sourcegraph/scip/bindings/go/scip"
 
-// TODO - document
+// FlattenDocuments merges elements of the given slice with the same relative path. This allows us to make
+// the assumption post-canonicalization that each index has one representation of a given document path in
+// the database.
 func FlattenDocuments(documents []*scip.Document) []*scip.Document {
 	documentMap := make(map[string]*scip.Document, len(documents))
 	for _, document := range documents {
@@ -27,7 +29,8 @@ func FlattenDocuments(documents []*scip.Document) []*scip.Document {
 	return flattened
 }
 
-// TODO - document
+// FlattenSymbol merges elements of the given slice with the same symbol name. This allows us to make the
+// assumption post-canonicalization that each index and document refer to one symbol metadata object uniquely.
 func FlattenSymbols(symbols []*scip.SymbolInformation) []*scip.SymbolInformation {
 	symbolMap := make(map[string]*scip.SymbolInformation, len(symbols))
 	for _, symbol := range symbols {
@@ -49,24 +52,31 @@ func FlattenSymbols(symbols []*scip.SymbolInformation) []*scip.SymbolInformation
 	return flattened
 }
 
-// TODO - document
+// FlattenOccurrences merges elements of the given slice with equivalent bounds.
 func FlattenOccurrences(occurrences []*scip.Occurrence) []*scip.Occurrence {
-	_ = SortOccurrences(occurrences)
+	if len(occurrences) == 0 {
+		return occurrences
+	}
+
+	occurrences = SortOccurrences(occurrences)
 
 	flattened := make([]*scip.Occurrence, 0, len(occurrences))
-	for _, occurrence := range occurrences {
-		if len(flattened) == 0 || flattened[len(flattened)-1].Symbol != occurrence.Symbol {
+	flattened = append(flattened, occurrences[0])
+
+	for _, occurrence := range occurrences[1:] {
+		top := flattened[len(flattened)-1]
+
+		if !rawRangesEqual(top.Range, occurrence.Range) {
 			flattened = append(flattened, occurrence)
 			continue
 		}
-		existing := flattened[len(flattened)-1]
-		if existing.SyntaxKind != occurrence.SyntaxKind {
+		if top.SyntaxKind != occurrence.SyntaxKind {
 			// TODO - warn?
 		}
 
-		existing.SymbolRoles |= occurrence.SymbolRoles
-		existing.OverrideDocumentation = append(existing.OverrideDocumentation, occurrence.OverrideDocumentation...)
-		existing.Diagnostics = append(existing.Diagnostics, occurrence.Diagnostics...)
+		top.SymbolRoles |= occurrence.SymbolRoles
+		top.OverrideDocumentation = append(top.OverrideDocumentation, occurrence.OverrideDocumentation...)
+		top.Diagnostics = append(top.Diagnostics, occurrence.Diagnostics...)
 	}
 
 	return flattened
