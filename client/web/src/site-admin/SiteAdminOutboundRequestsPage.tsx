@@ -37,6 +37,7 @@ import { Timestamp } from '../components/time/Timestamp'
 import { OutboundRequestsResult, OutboundRequestsVariables } from '../graphql-operations'
 
 import { OUTBOUND_REQUESTS, OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL } from './backend'
+import { parseProductReference } from './SiteAdminFeatureFlagsPage'
 
 import styles from './SiteAdminOutboundRequestsPage.module.scss'
 
@@ -323,17 +324,21 @@ function formatStackFrameLine(line: string): React.ReactNode {
         return line
     }
     const [, fileName, lineIndex, functionName] = match
-    const url = `https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/${fileName}?L${lineIndex}`
     return (
         <li key={`${fileName}:${lineIndex}`}>
             <Code>
-                <Link to={url} target="_blank" rel="noopener">
+                <Link to={buildSourcegraphUrl(fileName, parseInt(lineIndex, 10))} target="_blank" rel="noopener">
                     {fileName}:{lineIndex}
                 </Link>{' '}
                 (Function: {functionName})
             </Code>
         </li>
     )
+}
+
+function buildSourcegraphUrl(fileName: string, lineIndex: number): string {
+    const revision = parseProductReference(window.context.version)
+    return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph@${revision}/-/blob/${fileName}?L${lineIndex}`
 }
 
 const SimplePopover: React.FunctionComponent<{ label: string; children: ReactNode }> = ({ label, children }) => {
