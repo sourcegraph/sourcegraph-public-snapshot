@@ -8,7 +8,7 @@ import { Button, Icon, Input } from '@sourcegraph/wildcard'
 import { WebhookFields } from '../graphql-operations'
 
 import styles from './WebhookInformation.module.scss'
-import {CopyableText} from "../components/CopyableText";
+import { CopyableText } from '../components/CopyableText'
 
 export interface WebhookInformationProps {
     webhook: WebhookFields
@@ -32,7 +32,7 @@ export const WebhookInformation: FC<WebhookInformationProps> = props => {
                 <tr>
                     <th className={styles.tableHeader}>Webhook endpoint</th>
                     <td className={styles.contentCell}>
-                        <CopyableText text={webhook.url} size={webhook.url.length}/>
+                        <CopyableText text={webhook.url} size={webhook.url.length} />
                     </td>
                 </tr>
                 <tr>
