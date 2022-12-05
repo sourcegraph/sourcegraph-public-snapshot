@@ -20,16 +20,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+var config = types.LoadSqliteConfig(baseConfig, CtagsConfig, RepositoryFetcherConfig)
+
 func SetupSqlite(observationContext *observation.Context, db database.DB, gitserverClient gitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
 	logger := log.Scoped("sqlite.setup", "SQLite setup")
 
-	baseConfig := env.BaseConfig{}
-	config := types.LoadSqliteConfig(baseConfig)
 	if err := baseConfig.Validate(); err != nil {
 		logger.Fatal("failed to load configuration", log.Error(err))
 	}

@@ -148,6 +148,16 @@ func MustGetInt(name string, defaultValue int, description string) int {
 	return i
 }
 
+// MustGetBool is similar to Get but ensures that the value is a valid bool.
+func MustGetBool(name string, defaultValue bool, description string) bool {
+	s := Get(name, strconv.FormatBool(defaultValue), description)
+	b, err := strconv.ParseBool(s)
+	if err != nil {
+		panic(fmt.Sprintf("parsing environment variable %q. Expected valid bool, got %q", name, s))
+	}
+	return b
+}
+
 func environMap(environ []string) map[string]string {
 	m := make(map[string]string, len(environ))
 	for _, e := range environ {
