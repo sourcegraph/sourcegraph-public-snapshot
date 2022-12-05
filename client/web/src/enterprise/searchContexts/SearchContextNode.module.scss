@@ -12,4 +12,8 @@
 .button {
     color: var(--icon-color);
     font-size: 1rem;
+
+    &:hover {
+        background-color: var(--color-bg-2);
+    }
 }
