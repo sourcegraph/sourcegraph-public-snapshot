@@ -1,13 +1,18 @@
 <svelte:options immutable={true} />
 
 <script context="module" lang="ts">
+    import { History } from 'history'
+
     interface Config {
         patternType: SearchPatternType
         interpretComments: boolean
         isLightTheme: boolean
         placeholder: string
         onChange: (querySate: QueryState) => void
+        onSubmit?: () => void
         suggestionsContainer: HTMLDivElement | null
+        suggestionSource?: Source
+        history: History
     }
 
     function resizeObserver(node: HTMLElement) {
@@ -26,7 +31,7 @@
 </script>
 
 <script lang="ts">
-    import { defaultKeymap, historyKeymap, history } from '@codemirror/commands'
+    import { defaultKeymap, historyKeymap, history as codemirrorHistory } from '@codemirror/commands'
 
     import { Compartment, EditorState, Prec } from '@codemirror/state'
     import { EditorView, keymap, placeholder as placeholderExtension } from '@codemirror/view'
@@ -34,28 +39,46 @@
     import { QueryChangeSource, QueryState, SearchPatternType } from '@sourcegraph/search'
     import { onDestroy } from 'svelte'
     import { parseInputAsQuery } from './codemirror/parsedQuery'
-    import { suggestions } from './codemirror/suggestions'
-    import { querySyntaxHighlighting } from './codemirror/syntax-highlighting'
+    import { Source, suggestions } from './codemirror/suggestions'
+    import { filterHighlight, querySyntaxHighlighting } from './codemirror/syntax-highlighting'
+    import { singleLine } from './codemirror'
+    import { mdiClose } from '@mdi/js'
+    import Icon from './codemirror/Icon.svelte'
 
     export let isLightTheme: boolean
     export let patternType: SearchPatternType
     export let interpretComments: boolean
     export let queryState: QueryState
     export let onChange: (queryState: QueryState) => void
+    export let onSubmit: (() => void) | undefined = undefined
     export let placeholder = ''
+    export let suggestionSource: Source | undefined = undefined
+    export let history: History
 
     let editor: EditorView | null = null
     let container: HTMLDivElement | null = null
     let suggestionsContainer: HTMLDivElement | null = null
+
+    const popoverID = `searchinput-popover-${Math.floor(Math.random() * 2 ** 50)}`
 
     // For simplicity we will recompute all extensions when input changes.
     const extensionsCompartment = new Compartment()
 
     function configureEditor(
         parent: HTMLDivElement,
-        { patternType, interpretComments, isLightTheme, placeholder, onChange, suggestionsContainer }: Config
+        {
+            patternType,
+            interpretComments,
+            isLightTheme,
+            placeholder,
+            onChange,
+            suggestionsContainer,
+            suggestionSource,
+            history,
+        }: Config
     ) {
         const extensions = [
+            singleLine,
             EditorView.darkTheme.of(isLightTheme === false),
             parseInputAsQuery({ patternType, interpretComments }),
             EditorView.updateListener.of(update => {
@@ -77,8 +100,24 @@
             extensions.push(placeholderExtension(element))
         }
 
-        if (suggestionsContainer) {
-            extensions.push(suggestions(suggestionsContainer, []))
+        if (onSubmit) {
+            extensions.push(
+                Prec.high(
+                    keymap.of([
+                        {
+                            key: 'Enter',
+                            run() {
+                                onSubmit?.()
+                                return true
+                            },
+                        },
+                    ])
+                )
+            )
+        }
+
+        if (suggestionSource && suggestionsContainer) {
+            extensions.push(suggestions(popoverID, suggestionsContainer, suggestionSource, history))
         }
 
         if (!editor) {
@@ -86,10 +125,16 @@
                 state: EditorState.create({
                     doc: queryState.query,
                     extensions: [
+                        EditorView.contentAttributes.of({
+                            role: 'combobox',
+                            'aria-controls': popoverID,
+                            'aria-owns': popoverID,
+                            'aria-haspopup': 'grid',
+                        }),
                         keymap.of(historyKeymap),
                         keymap.of(defaultKeymap),
-                        history(),
-                        Prec.low([querySyntaxHighlighting]),
+                        codemirrorHistory(),
+                        Prec.low([querySyntaxHighlighting, filterHighlight]),
                         extensionsCompartment.of(extensions),
                         EditorView.theme({
                             '&': {
@@ -136,7 +181,10 @@
             isLightTheme,
             placeholder,
             onChange,
+            onSubmit,
             suggestionsContainer,
+            suggestionSource,
+            history,
         })
     }
 
@@ -149,6 +197,8 @@
     }
 
     $: hasValue = queryState.query.length > 0
+
+    // Used to set placeholder height to the same height as the input.
     let height: number
     function onResize(event: Event) {
         height = (event.target as HTMLElement).clientHeight
@@ -161,7 +211,7 @@
         <div class="focus-container" use:resizeObserver on:resize={onResize}>
             <div bind:this={container} style="display: contents" />
             {#if hasValue}
-                <button type="button" on:click={() => onChange({ query: '' })}>X</button>
+                <button type="button" on:click={() => onChange({ query: '' })}><Icon path={mdiClose} /></button>
             {/if}
         </div>
         <div bind:this={suggestionsContainer} class="suggestions" />
@@ -183,21 +233,24 @@
         left: 0;
         right: 0;
         top: 0;
-        padding: 0.5rem;
         border-radius: var(--border-radius);
         z-index: 100;
 
         &:focus-within {
             background-color: var(--color-bg-1);
             box-shadow: var(--box-shadow);
+
+            .suggestions {
+                display: block;
+            }
         }
     }
 
     .focus-container {
-        width: 100%;
         display: flex;
         background-color: var(--color-bg-1);
         border-radius: var(--border-radius);
+        margin: 0.5rem;
 
         &:focus-within {
             outline: 2px solid var(--primary-2);
@@ -213,5 +266,6 @@
 
     .suggestions {
         position: relative;
+        display: none;
     }
 </style>
