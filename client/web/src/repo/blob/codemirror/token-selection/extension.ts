@@ -1,14 +1,14 @@
 import { Extension } from '@codemirror/state'
 import { EditorView, hoverTooltip, keymap } from '@codemirror/view'
 
-import { occurrenceAtMouseEvent } from '../occurrence-utils'
+import { isInteractiveOccurrence, occurrenceAtMouseEvent } from '../occurrence-utils'
 import { MOUSE_MAIN_BUTTON } from '../utils'
 
 import { definitionCache, goToDefinitionOnMouseEvent, underlinedDefinitionFacet } from './definition'
 import { getHoverTooltip, hoverCache, hoveredOccurrenceField, hoverField, setHoveredOccurrenceEffect } from './hover'
 import { tokenSelectionKeyBindings } from './keybindings'
 import { modifierClickFacet } from './modifier-click'
-import { selectedOccurrence, syncSelectionWithURL, tokenSelectionTheme, touchOccurrence } from './selections'
+import { selectedOccurrence, syncSelectionWithURL, tokenSelectionTheme, warmupOccurrence } from './selections'
 
 const LONGPRESS_DURATION = 500
 
@@ -78,8 +78,12 @@ export function tokenSelectionExtension(): Extension {
                 const hoveredOccurrence = atEvent ? atEvent.occurrence : null
                 if (hoveredOccurrence !== view.state.field(hoveredOccurrenceField)) {
                     view.dispatch({ effects: setHoveredOccurrenceEffect.of(hoveredOccurrence) })
-                    if (hoveredOccurrence) {
-                        touchOccurrence(view, hoveredOccurrence)
+                    // Only pre-fetch/warmup codeintel for interactive tokens.
+                    // Users can still trigger code intel actions for
+                    // non-interactive tokens, the result just won't be
+                    // pre-fetched.
+                    if (hoveredOccurrence && isInteractiveOccurrence(hoveredOccurrence)) {
+                        warmupOccurrence(view, hoveredOccurrence)
                     }
                 }
             },

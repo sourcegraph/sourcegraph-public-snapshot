@@ -37,6 +37,7 @@ import { Timestamp } from '../components/time/Timestamp'
 import { OutboundRequestsResult, OutboundRequestsVariables } from '../graphql-operations'
 
 import { OUTBOUND_REQUESTS, OUTBOUND_REQUESTS_PAGE_POLL_INTERVAL } from './backend'
+import { parseProductReference } from './SiteAdminFeatureFlagsPage'
 
 import styles from './SiteAdminOutboundRequestsPage.module.scss'
 
@@ -244,12 +245,12 @@ const OutboundRequestNode: React.FunctionComponent<{ node: React.PropsWithChildr
                         </Text>
                         <Text>
                             <strong>Client created at: </strong>
-                            <Code>{node.creationStackFrame}</Code>
+                            <Code>{formatStackFrameLine(node.creationStackFrame)}</Code>
                         </Text>
                         <Text>
                             <strong>Request made at: </strong>
-                            <Code>{node.callStackFrame}</Code>
                         </Text>
+                        {formatStackFrame(node.callStack)}
                         <Text>
                             <strong>Error: </strong>
                             {node.errorMessage ? node.errorMessage : 'No error'}
@@ -260,11 +261,13 @@ const OutboundRequestNode: React.FunctionComponent<{ node: React.PropsWithChildr
                                     <strong>Request headers:</strong>{' '}
                                 </Text>
                                 <ul>
-                                    {node.requestHeaders.map(header => (
-                                        <li key={header.name}>
-                                            <strong>{header.name}</strong>: {header.values.join(', ')}
-                                        </li>
-                                    ))}
+                                    {[...node.requestHeaders]
+                                        .sort((a, b) => a.name.localeCompare(b.name))
+                                        .map(header => (
+                                            <li key={header.name}>
+                                                <strong>{header.name}</strong>: {header.values.join(', ')}
+                                            </li>
+                                        ))}
                                 </ul>
                             </>
                         ) : (
@@ -276,11 +279,13 @@ const OutboundRequestNode: React.FunctionComponent<{ node: React.PropsWithChildr
                                     <strong>Response headers:</strong>{' '}
                                 </Text>
                                 <ul>
-                                    {node.responseHeaders.map(header => (
-                                        <li key={header.name}>
-                                            <strong>{header.name}</strong>: {header.values.join(', ')}
-                                        </li>
-                                    ))}
+                                    {[...node.responseHeaders]
+                                        .sort((a, b) => a.name.localeCompare(b.name))
+                                        .map(header => (
+                                            <li key={header.name}>
+                                                <strong>{header.name}</strong>: {header.values.join(', ')}
+                                            </li>
+                                        ))}
                                 </ul>
                             </>
                         ) : (
@@ -301,6 +306,39 @@ const OutboundRequestNode: React.FunctionComponent<{ node: React.PropsWithChildr
             </div>
         </React.Fragment>
     )
+}
+
+function formatStackFrame(callStack: string): React.ReactNode {
+    const lines = callStack.split('\n')
+
+    return (
+        <>
+            <ul>{lines.map(formatStackFrameLine)}</ul>
+        </>
+    )
+}
+
+function formatStackFrameLine(line: string): React.ReactNode {
+    const match = line.match(/(.*):(\d+) \(Function: (.*)\)/)
+    if (!match) {
+        return line
+    }
+    const [, fileName, lineIndex, functionName] = match
+    return (
+        <li key={`${fileName}:${lineIndex}`}>
+            <Code>
+                <Link to={buildSourcegraphUrl(fileName, parseInt(lineIndex, 10))} target="_blank" rel="noopener">
+                    {fileName}:{lineIndex}
+                </Link>{' '}
+                (Function: {functionName})
+            </Code>
+        </li>
+    )
+}
+
+function buildSourcegraphUrl(fileName: string, lineIndex: number): string {
+    const revision = parseProductReference(window.context.version)
+    return `https://sourcegraph.com/github.com/sourcegraph/sourcegraph@${revision}/-/blob/${fileName}?L${lineIndex}`
 }
 
 const SimplePopover: React.FunctionComponent<{ label: string; children: ReactNode }> = ({ label, children }) => {
@@ -332,7 +370,7 @@ function matchesString(request: OutboundRequest, query: string): boolean {
         request.statusCode.toString().includes(lQuery) ||
         request.errorMessage.toLowerCase().includes(lQuery) ||
         request.creationStackFrame.toLowerCase().includes(lQuery) ||
-        request.callStackFrame.toLowerCase().includes(lQuery) ||
+        request.callStack.toLowerCase().includes(lQuery) ||
         request.requestHeaders?.some(
             header =>
                 header.name.toLowerCase().includes(lQuery) ||
