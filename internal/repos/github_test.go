@@ -137,15 +137,6 @@ func setUpRcache(t *testing.T) {
 	rcache.SetupForTest(t)
 }
 
-func prepareGheToken(t *testing.T, fixtureName string) string {
-	gheToken := os.Getenv("GHE_TOKEN")
-
-	if update(fixtureName) && gheToken == "" {
-		t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
-	}
-	return gheToken
-}
-
 func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 	testCases := []struct {
 		name          string
