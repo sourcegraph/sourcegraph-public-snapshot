@@ -17,6 +17,7 @@ export function buildMockTempSettings(items: number): RecentSearch[] {
     return Array.from({ length: items }, (_item, index) => ({
         query: `test${index}`,
         resultCount: 555,
+        limitHit: false,
         timestamp: '2021-01-01T00:00:00Z',
     }))
 }
@@ -77,7 +78,7 @@ const InnerWrapper: React.FunctionComponent<{}> = () => {
                 value={searchToAdd}
                 onInput={event => setSearchToAdd(event.currentTarget.value)}
             />
-            <button type="button" data-testid="button" onClick={() => addRecentSearch(searchToAdd, 555)} />
+            <button type="button" data-testid="button" onClick={() => addRecentSearch(searchToAdd, 555, false)} />
         </>
     )
 }

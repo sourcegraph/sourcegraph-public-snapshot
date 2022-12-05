@@ -172,7 +172,9 @@ const SearchHistoryEntry: React.FunctionComponent<{
         <span className="ml-1 text-nowrap text-muted">
             <span className="sr-only">,</span>
             {search.resultCount !== undefined && (
-                <span>{`${search.resultCount} ${pluralize('result', search.resultCount)}`} • </span>
+                <span>
+                    {`${search.resultCount}${search.limitHit ? '+' : ''} ${pluralize('result', search.resultCount)}`} •{' '}
+                </span>
             )}
             <Timestamp date={search.timestamp} />
         </span>

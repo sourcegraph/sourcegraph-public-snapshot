@@ -30,7 +30,7 @@ export const SEARCH_HISTORY_EVENT_LOGS_QUERY = gql`
 // the user's recent searches from the event log.
 export function useRecentSearches(): {
     recentSearches: RecentSearch[] | undefined
-    addRecentSearch: (query: string, resultCount: number) => void
+    addRecentSearch: (query: string, resultCount: number, limitHit: boolean) => void
     state: 'loading' | 'success'
 } {
     const [recentSearches, setRecentSearches] = useTemporarySetting('search.input.recentSearches', [])
@@ -98,10 +98,10 @@ export function useRecentSearches(): {
     // If the search is being added before the list is finished loading,
     // queue it to be added after loading is complete.
     const addRecentSearch = useCallback(
-        (query: string, resultCount: number) => {
+        (query: string, resultCount: number, limitHit: boolean) => {
             const searchContext = getGlobalSearchContextFilter(query)
             if (!searchContext || omitFilter(query, searchContext.filter).trim() !== '') {
-                const recentSearch = { query, resultCount, timestamp: new Date().toISOString() }
+                const recentSearch = { query, resultCount, limitHit, timestamp: new Date().toISOString() }
 
                 if (state === 'success') {
                     addOrMoveRecentSearchToTop(recentSearch)
@@ -133,16 +133,19 @@ function processEventLogs(data: SearchHistoryEventLogsQueryResult): RecentSearch
     const searches = data.currentUser.recentSearchLogs.nodes
         .filter(node => node.argument && node.timestamp)
         .map(node => {
-            // This JSON.parse is safe, silence any TS linting warnings.
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-non-null-assertion
-            const argument = JSON.parse(node.argument!)
+            const argument = node.argument
+                ? (JSON.parse(node.argument) as {
+                      code_search?: {
+                          results?: { results_count?: number; limit_hit?: boolean }
+                          query_data?: { combined?: string }
+                      }
+                  })
+                : {}
 
             return {
-                // Similarly, these are safe
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-                query: argument?.code_search?.query_data?.combined,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access
-                resultCount: argument?.code_search?.results?.results_count,
+                query: argument.code_search?.query_data?.combined || '',
+                resultCount: argument.code_search?.results?.results_count || 0,
+                limitHit: argument.code_search?.results?.limit_hit || false,
                 timestamp: node.timestamp,
             }
         })

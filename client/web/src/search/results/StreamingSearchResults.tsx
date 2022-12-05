@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, FC } from 'react'
+import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -7,7 +7,7 @@ import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
 import { QueryUpdate, SearchContextProps } from '@sourcegraph/search'
-import { StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import { limitHit, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
 import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -182,6 +182,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
                     },
                     results: {
                         results_count: results.progress.matchCount,
+                        limit_hit: limitHit(results.progress),
                         any_cloning: results.progress.skipped.some(skipped => skipped.reason === 'repository-cloning'),
                         alert: results.alert ? results.alert.title : null,
                     },
@@ -192,7 +193,10 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
             }
 
             // setTimeout avoids a "Cannot update a component while rendering a different component" React error
-            setTimeout(() => addRecentSearch(submittedURLQuery, results.progress.matchCount), 0)
+            setTimeout(
+                () => addRecentSearch(submittedURLQuery, results.progress.matchCount, limitHit(results.progress)),
+                0
+            )
         } else if (results?.state === 'error') {
             telemetryService.log('SearchResultsFetchFailed', {
                 code_search: { error_message: asError(results.error).message },
