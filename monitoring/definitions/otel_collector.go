@@ -24,7 +24,7 @@ func OtelCollector() *monitoring.Dashboard {
 							Description: "spans received per receiver per minute",
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("receiver: {{receiver}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum(rate(otelcol_receiver_accepted_spans{receiver=~\"^.*\"}[1m])) by (receiver)",
+							Query:       "sum by (receiver) (rate(otelcol_receiver_accepted_spans{}[1m]))",
 							NoAlert:     true,
 							Interpretation: `
 								Shows the rate of spans accepted by the configured reveiver
@@ -43,7 +43,7 @@ func OtelCollector() *monitoring.Dashboard {
 							Description: "spans refused per receiver",
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("receiver: {{receiver}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum(rate(otelcol_receiver_refused_spans{receiver=~\"^.*.*\"}[1m])) by (receiver)",
+							Query:       "sum by (receiver) (rate(otelcol_receiver_refused_spans{}[1m]))",
 							Warning:     monitoring.Alert().Greater(1).For(5 * time.Minute),
 							NextSteps:   "Check logs of the collector and configuration of the receiver",
 							Interpretation: `
@@ -67,7 +67,7 @@ func OtelCollector() *monitoring.Dashboard {
 							Description: "spans exported per exporter per minute",
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum(rate(otelcol_exporter_sent_spans{exporter=~\"^.*\"}[1m])) by (exporter)",
+							Query:       "sum by (exporter) (rate(otelcol_exporter_sent_spans{}[1m]))",
 							NoAlert:     true,
 							Interpretation: `
 								Shows the rate of spans being sent by the exporter
@@ -82,36 +82,11 @@ func OtelCollector() *monitoring.Dashboard {
 							Description: "span export failures by exporter",
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum(rate(otelcol_exporter_send_failed_spans{exporter=~\"^.*\"}[1m])) by (exporter)",
+							Query:       "sum by (exporter) (rate(otelcol_exporter_send_failed_spans{}[1m]))",
 							Warning:     monitoring.Alert().Greater(1).For(5 * time.Minute),
 							NextSteps:   "Check the configuration of the exporter and if the service being exported is up",
 							Interpretation: `
 								Shows the rate of spans failed to be sent by the configured reveiver. A number higher than 0 for a long period can indicate a problem with the exporter configuration or with the service that is being exported too
-								
-								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.`,
-						},
-						{
-							Name:        "otel_span_export_queue_size",
-							Description: "spans pending to be exported by exporter",
-							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum(rate(otelcol_exporter_queue_size{exporter=~\"^.*\"}[1m])) by (exporter)",
-							Warning:     monitoring.Alert().Greater(10).For(5 * time.Minute),
-							NextSteps:   "Check configuration of exporter",
-							Interpretation: `
-								Indicates the amount of spans that are in the queue to be sent (exported). A high queue count might indicate a high volume of spans or a problem with the receiving service to which spans are being exported too
-								
-								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.`,
-						},
-						{
-							Name:        "otel_span_queue_capacity",
-							Description: "spans max items that can be pending to be sent",
-							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum(rate(otelcol_exporter_queue_capacity{exporter=~\"^.*\"}[1m])) by (exporter)",
-							NoAlert:     true,
-							Interpretation: `
-								Indicates the amount of spans that are in the queue to be sent (exported). A high queue count might indicate a high volume of spans or a problem with the receiving service
 								
 								For more information on configuring a exporter for the OpenTelemetry collector see https://opentelemetry.io/docs/collector/configuration/#exporters.`,
 						},
@@ -128,7 +103,7 @@ func OtelCollector() *monitoring.Dashboard {
 							Description: "cpu usage of the collector",
 							Panel:       monitoring.Panel().Unit(monitoring.Seconds).LegendFormat("{{job}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum(rate(otelcol_process_cpu_seconds{job=~\"^.*\"}[1m])) by (job)",
+							Query:       "sum by (job) (rate(otelcol_process_cpu_seconds{job=~\"^.*\"}[1m]))",
 							NoAlert:     true,
 							Interpretation: `
 								Shows the cpu usage of the OpenTelemetry collector`,
@@ -138,7 +113,7 @@ func OtelCollector() *monitoring.Dashboard {
 							Description: "memory allocated to the otel collector",
 							Panel:       monitoring.Panel().Unit(monitoring.Bytes).LegendFormat("{{job}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum(rate(otelcol_process_memory_rss{job=~\"^.*\"}[1m])) by (job)",
+							Query:       "sum by (job) (rate(otelcol_process_memory_rss{job=~\"^.*\"}[1m]))",
 							NoAlert:     true,
 							Interpretation: `
 								Shows the memory Resident Set Size (RSS) allocated to the OpenTelemetry collector`,
