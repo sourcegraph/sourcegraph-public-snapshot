@@ -4,12 +4,15 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/derision-test/glock"
+
 	workerCodeIntel "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 	internalInsights "github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/iam"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights"
+	insightsBackfiller "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights/backfillv2"
 	insightsrecordingtimes "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights/recording_times"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -95,5 +98,6 @@ func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps
 		codeintel.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100, 0),
 		insights.NewMigrator(deps.store, deps.insightsStore),
 		insightsrecordingtimes.NewRecordingTimesMigrator(deps.insightsStore, 500),
+		insightsBackfiller.NewMigrator(deps.insightsStore, glock.NewRealClock(), 10),
 	})
 }
