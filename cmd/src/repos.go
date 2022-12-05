@@ -23,6 +23,9 @@ The commands are:
 	get        gets a repository
 	list       lists repositories
 	delete 	   deletes repositories
+	add-kvp	   adds a key-value pair to a repository
+	update-kvp updates a key-value pair on a repository
+	delete-kvp deletes a key-value pair from a repository
 
 Use "src repos [command] -h" for more information about a command.
 `
@@ -63,6 +66,10 @@ fragment RepositoryFields on Repository {
 		displayName
 	}
 	viewerCanAdminister
+	keyValuePairs {
+		key
+		value
+	}
 }
 `
 
@@ -77,6 +84,12 @@ type Repository struct {
 	ExternalRepository  ExternalRepository `json:"externalRepository"`
 	DefaultBranch       GitRef             `json:"defaultBranch"`
 	ViewerCanAdminister bool               `json:"viewerCanAdminister"`
+	KeyValuePairs       []KeyValuePair     `json:"keyValuePairs"`
+}
+
+type KeyValuePair struct {
+	Key   string  `json:"key"`
+	Value *string `json:"value"`
 }
 
 type ExternalRepository struct {
