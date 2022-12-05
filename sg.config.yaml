@@ -556,7 +556,7 @@ commands:
         --name=$CONTAINER \
         --cpus=1 \
         --memory=1g \
-        -p 0.0.0.0:9000:80 \
+        -p 0.0.0.0:9000:9000 \
         -e 'S3PROXY_AUTHORIZATION=none' \
         -v "$BLOBSTORE_DISK":/data \
         $IMAGE >"$BLOBSTORE_LOG_FILE" 2>&1
