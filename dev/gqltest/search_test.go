@@ -1585,7 +1585,7 @@ func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
 	if len(resultSecondPage.Nodes) != 5 {
 		t.Fatalf("expected 5 search contexts, got %d", len(resultSecondPage.Nodes))
 	}
-	if resultSecondPage.Nodes[0].Spec != "SearchContext4" {
-		t.Fatalf("expected second page search context spec to be SearchContext4, got %s", resultSecondPage.Nodes[0].Spec)
+	if resultSecondPage.Nodes[0].Spec != "SearchContext5" {
+		t.Fatalf("expected second page search context spec to be SearchContext5, got %s", resultSecondPage.Nodes[0].Spec)
 	}
 }
