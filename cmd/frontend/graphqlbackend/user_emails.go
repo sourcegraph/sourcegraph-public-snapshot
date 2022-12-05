@@ -76,12 +76,13 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *addUserEmailArg
 		return nil, err
 	}
 
-	if err := backend.UserEmails.Add(ctx, r.logger, r.db, userID, args.Email); err != nil {
+	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	if err := userEmails.Add(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.logger, r.db, userID, "added an email"); err != nil {
+		if err := userEmails.SendUserEmailOnFieldUpdate(ctx, userID, "added an email"); err != nil {
 			log15.Warn("Failed to send email to inform user of email addition", "error", err)
 		}
 	}
@@ -100,7 +101,8 @@ func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *removeUserEm
 		return nil, err
 	}
 
-	if err := backend.UserEmails.Remove(ctx, r.logger, r.db, userID, args.Email); err != nil {
+	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	if err := userEmails.Remove(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
 
@@ -118,7 +120,8 @@ func (r *schemaResolver) SetUserEmailPrimary(ctx context.Context, args *setUserE
 		return nil, err
 	}
 
-	if err := backend.UserEmails.SetPrimaryEmail(ctx, r.logger, r.db, userID, args.Email); err != nil {
+	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	if err := userEmails.SetPrimaryEmail(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
 
@@ -137,7 +140,8 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *setUser
 		return nil, err
 	}
 
-	if err := backend.UserEmails.SetVerified(ctx, r.logger, r.db, userID, args.Email, args.Verified); err != nil {
+	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	if err := userEmails.SetVerified(ctx, userID, args.Email, args.Verified); err != nil {
 		return nil, err
 	}
 
@@ -155,7 +159,8 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *rese
 		return nil, err
 	}
 
-	if err := backend.UserEmails.ResendVerificationEmail(ctx, r.db, userID, args.Email, timeNow()); err != nil {
+	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	if err := userEmails.ResendVerificationEmail(ctx, userID, args.Email, timeNow()); err != nil {
 		return nil, err
 	}
 
