@@ -89,6 +89,7 @@ SELECT
 	u.uploaded_parts,
 	u.upload_size,
 	u.associated_index_id,
+	u.content_type,
 	s.rank,
 	u.uncompressed_size,
 	COUNT(*) OVER() AS count
@@ -128,7 +129,7 @@ SELECT
 	au.indexer, au.indexer_version,
 	COALESCE((snapshot->'num_parts')::integer, -1) AS num_parts,
 	NULL::integer[] as uploaded_parts,
-	au.upload_size, au.associated_index_id,
+	au.upload_size, au.associated_index_id, au.content_type,
 	COALESCE((snapshot->'expired')::boolean, false) AS expired,
 	NULL::bigint AS uncompressed_size
 FROM (
@@ -236,6 +237,7 @@ SELECT
 	u.uploaded_parts,
 	u.upload_size,
 	u.associated_index_id,
+	u.content_type,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads u
@@ -305,6 +307,7 @@ SELECT
 	u.uploaded_parts,
 	u.upload_size,
 	u.associated_index_id,
+	u.content_type,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads u
@@ -407,6 +410,7 @@ SELECT
 	u.uploaded_parts,
 	u.upload_size,
 	u.associated_index_id,
+	u.content_type,
 	s.rank,
 	u.uncompressed_size
 FROM lsif_uploads_with_repository_name u
@@ -1858,6 +1862,7 @@ func (s *store) InsertUpload(ctx context.Context, upload types.Upload) (id int, 
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
 			upload.AssociatedIndexID,
+			upload.ContentType,
 			upload.UncompressedSize,
 		),
 	))
@@ -1877,8 +1882,9 @@ INSERT INTO lsif_uploads (
 	uploaded_parts,
 	upload_size,
 	associated_index_id,
+	content_type,
 	uncompressed_size
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -2057,6 +2063,7 @@ func buildGetConditionsAndCte(opts shared.GetUploadsOptions) (*sqlf.Query, []*sq
 				uploaded_parts,
 				upload_size,
 				associated_index_id,
+				content_type,
 				expired,
 				uncompressed_size
 			FROM lsif_uploads

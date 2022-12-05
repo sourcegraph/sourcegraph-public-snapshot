@@ -37,6 +37,7 @@ func scanCompleteUpload(s dbutil.Scanner) (upload types.Upload, _ error) {
 		pq.Array(&rawUploadedParts),
 		&upload.UploadSize,
 		&upload.AssociatedIndexID,
+		&upload.ContentType,
 		&upload.Rank,
 		&upload.UncompressedSize,
 	); err != nil {
@@ -81,6 +82,7 @@ func scanUploadWithCount(s dbutil.Scanner) (upload types.Upload, count int, err 
 		pq.Array(&rawUploadedParts),
 		&upload.UploadSize,
 		&upload.AssociatedIndexID,
+		&upload.ContentType,
 		&upload.Rank,
 		&upload.UncompressedSize,
 		&count,
