@@ -55,11 +55,16 @@ WITH
 	-- external service has one or more webhooks configured.
     esr_with_webhooks AS (
         SELECT
-            *
+            external_service_repos.external_service_id as external_service_id,
+            repo_id
         FROM
             external_service_repos
+		JOIN
+			repo
+		ON
+			external_service_repos.repo_id = repo.id
         WHERE
-            external_service_id IN (
+           external_service_repos.external_service_id IN (
                 SELECT
                     id
                 FROM
@@ -72,7 +77,13 @@ WITH
                     -- alternative.
                     has_webhooks IS NULL OR
                     has_webhooks = TRUE
-            )
+            ) OR
+			repo.external_service_id IN (
+				SELECT
+					code_host_urn
+				FROM
+					webhooks
+			)
     ),
 	aggregated_repos AS (
 		SELECT
