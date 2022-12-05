@@ -47,12 +47,12 @@ const fileStoreBucket = "batch-changes"
 func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, version string) (apiclient.Job, error) {
 	workspace, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
 	if err != nil {
-		return apiclient.Job{}, errors.Wrapf(err, "fetching workspace %d", job.BatchSpecWorkspaceID)
+		return nil, errors.Wrapf(err, "fetching workspace %d", job.BatchSpecWorkspaceID)
 	}
 
 	batchSpec, err := s.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: workspace.BatchSpecID})
 	if err != nil {
-		return apiclient.Job{}, errors.Wrap(err, "fetching batch spec")
+		return nil, errors.Wrap(err, "fetching batch spec")
 	}
 
 	// This should never happen. To get some easier debugging when a user sees strange
@@ -76,7 +76,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 			Keys:            rk,
 		})
 		if err != nil {
-			return apiclient.Job{}, err
+			return nil, err
 		}
 	}
 
@@ -89,7 +89,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 		// name of the user.
 		val, err := secret.Value(ctx, esalStore)
 		if err != nil {
-			return apiclient.Job{}, err
+			return nil, err
 		}
 
 		secretEnvVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
@@ -99,7 +99,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 
 	repo, err := s.DatabaseDB().Repos().Get(ctx, workspace.RepoID)
 	if err != nil {
-		return apiclient.Job{}, errors.Wrap(err, "fetching repo")
+		return nil, errors.Wrap(err, "fetching repo")
 	}
 
 	executionInput := batcheslib.WorkspacesExecutionInput{
@@ -146,9 +146,9 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	// the VM.
 	marshaledInput, err := json.Marshal(executionInput)
 	if err != nil {
-		return apiclient.Job{}, err
+		return nil, err
 	}
-	files := map[string]apiclient.VirtualMachineFile{
+	files := map[string]apiclient.V2VirtualMachineFile{
 		srcInputPath: {
 			Content: marshaledInput,
 		},
@@ -156,44 +156,85 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 
 	workspaceFiles, _, err := s.ListBatchSpecWorkspaceFiles(ctx, store.ListBatchSpecWorkspaceFileOpts{BatchSpecRandID: batchSpec.RandID})
 	if err != nil {
-		return apiclient.Job{}, errors.Wrap(err, "fetching workspace files")
+		return nil, errors.Wrap(err, "fetching workspace files")
 	}
 	for _, workspaceFile := range workspaceFiles {
-		files[filepath.Join(srcWorkspaceFilesDir, workspaceFile.Path, workspaceFile.FileName)] = apiclient.VirtualMachineFile{
-			Bucket:     fileStoreBucket,
-			Key:        filepath.Join(batchSpec.RandID, workspaceFile.RandID),
-			ModifiedAt: workspaceFile.ModifiedAt,
+		files[filepath.Join(srcWorkspaceFilesDir, workspaceFile.Path, workspaceFile.FileName)] = apiclient.V2VirtualMachineFile{
+			BaseVirtualMachineFile: apiclient.BaseVirtualMachineFile{
+				Bucket:     fileStoreBucket,
+				Key:        filepath.Join(batchSpec.RandID, workspaceFile.RandID),
+				ModifiedAt: workspaceFile.ModifiedAt,
+			},
 		}
 	}
 
 	// If we only want to fetch the workspace, we add a sparse checkout pattern.
-	sparseCheckout := []string{}
+	var sparseCheckout []string
 	if workspace.OnlyFetchWorkspace {
 		sparseCheckout = []string{
 			fmt.Sprintf("%s/*", workspace.Path),
 		}
 	}
 
-	aj := apiclient.Job{
-		ID:                  int(job.ID),
-		VirtualMachineFiles: files,
-		RepositoryName:      string(repo.Name),
-		RepositoryDirectory: srcRepoDir,
-		Commit:              workspace.Commit,
-		// We only care about the current repos content, so a shallow clone is good enough.
-		// Later we might allow to tweak more git parameters, like submodules and LFS.
-		ShallowClone:   true,
-		SparseCheckout: sparseCheckout,
-		RedactedValues: redactedEnvVars,
-	}
+	switch job.Version {
+	case 0:
+		fallthrough
+	case 1:
+		commands := []string{
+			"batch",
+			"exec",
+			"-f", srcInputPath,
+			"-repo", srcRepoDir,
+			// Tell src to store tmp files inside the workspace. Src currently
+			// runs on the host and we don't want pollution outside of the workspace.
+			"-tmp", srcTempDir,
+		}
 
-	if job.Version == 2 {
+		if version != "" {
+			canUseBinaryDiffs, err := api.CheckSourcegraphVersion(version, ">= 4.3.0-0", "2022-11-29")
+			if err != nil {
+				return nil, err
+			}
+			if canUseBinaryDiffs {
+				// Enable binary diffs.
+				commands = append(commands, "-binaryDiffs")
+			}
+		}
+
+		// Only add the workspaceFiles flag if there are files to mount. This helps with backwards compatibility.
+		if len(workspaceFiles) > 0 {
+			commands = append(commands, "-workspaceFiles", srcWorkspaceFilesDir)
+		}
+
+		return apiclient.V1Job{
+			BaseJob: apiclient.BaseJob{
+				ID:                  int(job.ID),
+				RepositoryName:      string(repo.Name),
+				RepositoryDirectory: srcRepoDir,
+				Commit:              workspace.Commit,
+				// We only care about the current repos content, so a shallow clone is good enough.
+				// Later we might allow to tweak more git parameters, like submodules and LFS.
+				ShallowClone:   true,
+				SparseCheckout: sparseCheckout,
+				RedactedValues: redactedEnvVars,
+				CliSteps: []apiclient.CliStep{
+					{
+						Key:      "batch-exec",
+						Commands: commands,
+						Dir:      ".",
+						Env:      secretEnvVars,
+					},
+				},
+			},
+			VirtualMachineFiles: files,
+		}, nil
+	case 2:
 		helperImage := fmt.Sprintf("%s:%s", conf.ExecutorsBatcheshelperImage(), conf.ExecutorsBatcheshelperImageTag())
 
 		// Find the step to start with.
 		startStep := 0
 
-		dockerSteps := []apiclient.DockerStep{}
+		var dockerSteps []apiclient.DockerStep
 
 		if executionInput.CachedStepResultFound {
 			cacheEntry := executionInput.CachedStepResult
@@ -209,24 +250,24 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 					},
 					Image: helperImage,
 				})
-				files[srcPatchFile] = apiclient.VirtualMachineFile{
+				files[srcPatchFile] = apiclient.V2VirtualMachineFile{
 					Content: cacheEntry.Diff,
 				}
 			}
 			startStep = cacheEntry.StepIndex + 1
 			val, err := json.Marshal(cacheEntry)
 			if err != nil {
-				return apiclient.Job{}, err
+				return nil, err
 			}
 			// Write the step result for the last cached step.
-			files[fmt.Sprintf("step%d.json", cacheEntry.StepIndex)] = apiclient.VirtualMachineFile{
+			files[fmt.Sprintf("step%d.json", cacheEntry.StepIndex)] = apiclient.V2VirtualMachineFile{
 				Content: val,
 			}
 		}
 
 		skipped, err := batcheslib.SkippedStepsForRepo(batchSpec.Spec, string(repo.Name), workspace.FileMatches)
 		if err != nil {
-			return apiclient.Job{}, err
+			return nil, err
 		}
 
 		for i := startStep; i < len(batchSpec.Spec.Steps); i++ {
@@ -244,7 +285,7 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 
 			runDirToScriptDir, err := filepath.Rel("/"+runDir, "/")
 			if err != nil {
-				return apiclient.Job{}, err
+				return nil, err
 			}
 
 			dockerSteps = append(dockerSteps, apiclient.DockerStep{
@@ -283,43 +324,24 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 				},
 			})
 
-			aj.DockerSteps = dockerSteps
-		}
-	} else {
-		commands := []string{
-			"batch",
-			"exec",
-			"-f", srcInputPath,
-			"-repo", srcRepoDir,
-			// Tell src to store tmp files inside the workspace. Src currently
-			// runs on the host and we don't want pollution outside of the workspace.
-			"-tmp", srcTempDir,
 		}
 
-		if version != "" {
-			canUseBinaryDiffs, err := api.CheckSourcegraphVersion(version, ">= 4.3.0-0", "2022-11-29")
-			if err != nil {
-				return apiclient.Job{}, err
-			}
-			if canUseBinaryDiffs {
-				// Enable binary diffs.
-				commands = append(commands, "-binaryDiffs")
-			}
-		}
-
-		// Only add the workspaceFiles flag if there are files to mount. This helps with backwards compatibility.
-		if len(workspaceFiles) > 0 {
-			commands = append(commands, "-workspaceFiles", srcWorkspaceFilesDir)
-		}
-		aj.CliSteps = []apiclient.CliStep{
-			{
-				Key:      "batch-exec",
-				Commands: commands,
-				Dir:      ".",
-				Env:      secretEnvVars,
+		return apiclient.V2Job{
+			BaseJob: apiclient.BaseJob{
+				ID:                  int(job.ID),
+				RepositoryName:      string(repo.Name),
+				RepositoryDirectory: srcRepoDir,
+				Commit:              workspace.Commit,
+				// We only care about the current repos content, so a shallow clone is good enough.
+				// Later we might allow to tweak more git parameters, like submodules and LFS.
+				ShallowClone:   true,
+				SparseCheckout: sparseCheckout,
+				RedactedValues: redactedEnvVars,
+				DockerSteps:    dockerSteps,
 			},
-		}
-	}
+			VirtualMachineFiles: files,
+		}, nil
+	default:
 
-	return aj, nil
+	}
 }

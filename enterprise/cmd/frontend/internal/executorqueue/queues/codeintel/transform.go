@@ -87,23 +87,25 @@ func transformRecord(index types.Index, resourceMetadata handler.ResourceMetadat
 		},
 	})
 
-	return apiclient.Job{
-		ID:             index.ID,
-		Commit:         index.Commit,
-		RepositoryName: index.RepositoryName,
-		ShallowClone:   true,
-		FetchTags:      fetchTags,
-		DockerSteps:    dockerSteps,
-		RedactedValues: map[string]string{
-			// 🚨 SECURITY: Catch leak of authorization header.
-			authorizationHeader: redactedAuthorizationHeader,
+	return apiclient.V1Job{
+		BaseJob: apiclient.BaseJob{
+			ID:             index.ID,
+			Commit:         index.Commit,
+			RepositoryName: index.RepositoryName,
+			ShallowClone:   true,
+			FetchTags:      fetchTags,
+			DockerSteps:    dockerSteps,
+			RedactedValues: map[string]string{
+				// 🚨 SECURITY: Catch leak of authorization header.
+				authorizationHeader: redactedAuthorizationHeader,
 
-			// 🚨 SECURITY: Catch uses of fragments pulled from auth header to
-			// construct another target (in src-cli). We only pass the
-			// Authorization header to src-cli, which we trust not to ship the
-			// values to a third party, but not to trust to ensure the values
-			// are absent from the command's stdout or stderr streams.
-			accessToken: "PASSWORD_REMOVED",
+				// 🚨 SECURITY: Catch uses of fragments pulled from auth header to
+				// construct another target (in src-cli). We only pass the
+				// Authorization header to src-cli, which we trust not to ship the
+				// values to a third party, but not to trust to ensure the values
+				// are absent from the command's stdout or stderr streams.
+				accessToken: "PASSWORD_REMOVED",
+			},
 		},
 	}, nil
 }
