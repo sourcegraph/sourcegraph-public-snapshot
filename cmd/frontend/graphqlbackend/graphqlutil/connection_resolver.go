@@ -180,23 +180,19 @@ type ConnectionPageInfo[N ConnectionNode] struct {
 }
 
 func (p *ConnectionPageInfo[N]) HasNextPage() bool {
-	if p.args.Before != nil {
-		return true
-	}
-
-	return p.fetchedNodesCount > p.args.Limit()
-}
-
-func (p *ConnectionPageInfo[N]) HasPreviousPage() bool {
-	if p.args.After != nil {
-		return true
-	}
-
-	if p.args.Before != nil {
+	if p.args.First != nil {
 		return p.fetchedNodesCount > p.args.Limit()
 	}
 
-	return false
+	return p.args.Before != nil
+}
+
+func (p *ConnectionPageInfo[N]) HasPreviousPage() bool {
+	if p.args.Last != nil {
+		return p.fetchedNodesCount > p.args.Limit()
+	}
+
+	return p.args.After != nil
 }
 
 func (p *ConnectionPageInfo[N]) EndCursor() (cursor *string, err error) {
