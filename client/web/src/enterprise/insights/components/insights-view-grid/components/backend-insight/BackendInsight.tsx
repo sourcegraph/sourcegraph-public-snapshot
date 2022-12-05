@@ -51,7 +51,6 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
 
     const { currentDashboard } = useContext(InsightContext)
     const { updateInsight } = useContext(CodeInsightsBackendContext)
-
     const [saveNewView] = useSaveInsightAsNewView({ dashboard: currentDashboard })
 
     const cardElementRef = useMergeRefs([ref])
