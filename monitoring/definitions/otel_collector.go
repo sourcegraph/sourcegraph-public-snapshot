@@ -64,7 +64,7 @@ func OtelCollector() *monitoring.Dashboard {
 					{
 						{
 							Name:        "otel_span_export_rate",
-							Description: "spans exported per second",
+							Description: "spans exported per exporter per minute",
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
 							Query:       "sum(rate(otelcol_exporter_sent_spans{exporter=~\"^.*\"}[1m])) by (exporter)",
