@@ -84,6 +84,12 @@ interface FilteredConnectionDisplayProps extends ConnectionNodesDisplayProps, Co
      * the list to screen reader users (e.g. reading out nodes after they have finished loading).
      */
     ariaLive?: 'polite' | 'off'
+
+    /**
+     * A component that wraps around everything after the connection form. This is useful
+     * for adding additional padding/background to the list, errors, or loading indicators.
+     */
+    contentWrapperComponent?: React.ComponentType<{ children: React.ReactNode }>
 }
 
 /**
@@ -524,6 +530,8 @@ export class FilteredConnection<
 
         const inputPlaceholder = this.props.inputPlaceholder || `Search ${this.props.pluralNoun}...`
 
+        const ContentWrapperComponent = this.props.contentWrapperComponent || React.Fragment
+
         return (
             <ConnectionContainer
                 compact={this.props.compact}
@@ -534,6 +542,7 @@ export class FilteredConnection<
                     <ConnectionForm
                         ref={this.setFilterRef}
                         hideSearch={this.props.hideSearch}
+                        showSearchFirst={this.props.showSearchFirst}
                         inputClassName={this.props.inputClassName}
                         inputPlaceholder={inputPlaceholder}
                         inputAriaLabel={this.props.inputAriaLabel || inputPlaceholder}
@@ -547,40 +556,43 @@ export class FilteredConnection<
                         formClassName={this.props.formClassName}
                     />
                 )}
-                {errors.length > 0 && <ConnectionError errors={errors} compact={this.props.compact} />}
 
-                {this.state.connectionOrError && !isErrorLike(this.state.connectionOrError) && (
-                    <ConnectionNodes
-                        connection={this.state.connectionOrError}
-                        loading={this.state.loading}
-                        connectionQuery={this.state.connectionQuery}
-                        first={this.state.first}
-                        query={this.state.query}
-                        noun={this.props.noun}
-                        pluralNoun={this.props.pluralNoun}
-                        listComponent={this.props.listComponent}
-                        listClassName={this.props.listClassName}
-                        summaryClassName={this.props.summaryClassName}
-                        headComponent={this.props.headComponent}
-                        headComponentProps={this.props.headComponentProps}
-                        footComponent={this.props.footComponent}
-                        showMoreClassName={this.props.showMoreClassName}
-                        nodeComponent={this.props.nodeComponent}
-                        nodeComponentProps={this.props.nodeComponentProps}
-                        noShowMore={this.props.noShowMore}
-                        noSummaryIfAllNodesVisible={this.props.noSummaryIfAllNodesVisible}
-                        onShowMore={this.onClickShowMore}
-                        location={this.props.location}
-                        emptyElement={this.props.emptyElement}
-                        totalCountSummaryComponent={this.props.totalCountSummaryComponent}
-                        withCenteredSummary={this.props.withCenteredSummary}
-                        ariaLabelFunction={this.props.ariaLabelFunction}
-                    />
-                )}
+                <ContentWrapperComponent>
+                    {errors.length > 0 && <ConnectionError errors={errors} compact={this.props.compact} />}
 
-                {this.state.loading && (
-                    <ConnectionLoading compact={this.props.compact} className={this.props.loaderClassName} />
-                )}
+                    {this.state.connectionOrError && !isErrorLike(this.state.connectionOrError) && (
+                        <ConnectionNodes
+                            connection={this.state.connectionOrError}
+                            loading={this.state.loading}
+                            connectionQuery={this.state.connectionQuery}
+                            first={this.state.first}
+                            query={this.state.query}
+                            noun={this.props.noun}
+                            pluralNoun={this.props.pluralNoun}
+                            listComponent={this.props.listComponent}
+                            listClassName={this.props.listClassName}
+                            summaryClassName={this.props.summaryClassName}
+                            headComponent={this.props.headComponent}
+                            headComponentProps={this.props.headComponentProps}
+                            footComponent={this.props.footComponent}
+                            showMoreClassName={this.props.showMoreClassName}
+                            nodeComponent={this.props.nodeComponent}
+                            nodeComponentProps={this.props.nodeComponentProps}
+                            noShowMore={this.props.noShowMore}
+                            noSummaryIfAllNodesVisible={this.props.noSummaryIfAllNodesVisible}
+                            onShowMore={this.onClickShowMore}
+                            location={this.props.location}
+                            emptyElement={this.props.emptyElement}
+                            totalCountSummaryComponent={this.props.totalCountSummaryComponent}
+                            withCenteredSummary={this.props.withCenteredSummary}
+                            ariaLabelFunction={this.props.ariaLabelFunction}
+                        />
+                    )}
+
+                    {this.state.loading && (
+                        <ConnectionLoading compact={this.props.compact} className={this.props.loaderClassName} />
+                    )}
+                </ContentWrapperComponent>
             </ConnectionContainer>
         )
     }
