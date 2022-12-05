@@ -12,6 +12,8 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import { SearchContextsList } from './SearchContextsList'
 
+import styles from './SearchContextsListPage.module.scss'
+
 export interface SearchContextsListPageProps
     extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'>,
         PlatformContextProps<'requestGraphQL'> {
@@ -30,7 +32,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
         <Page>
             <PageHeader
                 actions={
-                    <>
+                    <div className={styles.actions}>
                         <Button to="/contexts/new" variant="primary" as={Link}>
                             <Icon aria-hidden={true} svgPath={mdiPlus} />
                             Create search context
@@ -38,7 +40,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                         {isSourcegraphDotCom && (
                             <Button
                                 to="https://signup.sourcegraph.com/?p=context"
-                                className="d-block mt-2"
+                                className="mt-2"
                                 as={Link}
                                 variant="secondary"
                                 onClick={() => eventLogger.log('ClickedOnCloudCTA')}
@@ -46,7 +48,7 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                 Search private code
                             </Button>
                         )}
-                    </>
+                    </div>
                 }
                 description={
                     <span className="text-muted">
