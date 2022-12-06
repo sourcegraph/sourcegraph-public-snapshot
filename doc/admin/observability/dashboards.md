@@ -14306,9 +14306,9 @@ Query: `sum by (state)(increase(searcher_hybrid_final_state_total[10m]))`
 <p class="subtitle">Hybrid search retrying over 10m</p>
 
 Expectation is that this graph should mostly be 0. It will trigger if a user
-manages to do a search and the underlying index changes while searching. So
-occasional bursts can be expected, but if this graph is regularly above 0 it
-is a sign for further investigation.
+manages to do a search and the underlying index changes while searching or
+Zoekt goes down. So occasional bursts can be expected, but if this graph is
+regularly above 0 it is a sign for further investigation.
 
 This panel has no related alerts.
 
