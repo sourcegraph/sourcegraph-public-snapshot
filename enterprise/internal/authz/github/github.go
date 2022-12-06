@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	gh "github.com/google/go-github/v41/github"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -40,6 +41,8 @@ type Provider struct {
 	InstallationID *int64
 
 	db database.DB
+
+	baseHTTPClient *http.Client
 }
 
 type ProviderOptions struct {
@@ -51,6 +54,7 @@ type ProviderOptions struct {
 	GroupsCacheTTL time.Duration
 	IsApp          bool
 	DB             database.DB
+	BaseHTTPClient *http.Client
 }
 
 func NewProvider(urn string, opts ProviderOptions) *Provider {
@@ -78,7 +82,8 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 		client: func() (client, error) {
 			return &ClientAdapter{V3Client: opts.GitHubClient}, nil
 		},
-		db: opts.DB,
+		db:             opts.DB,
+		baseHTTPClient: opts.BaseHTTPClient,
 	}
 }
 
@@ -171,14 +176,7 @@ func (p *Provider) requiredAuthScopes() []requiredAuthScope {
 // fetchUserPermsByToken fetches all the private repo ids that the token can access.
 //
 // This may return a partial result if an error is encountered, e.g. via rate limits.
-func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token *auth.OAuthBearerToken, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
-	client, err := p.client()
-	if err != nil {
-		return nil, errors.Wrap(err, "get client")
-	}
-	client = client.WithAuthenticator(token)
-
+func (p *Provider) fetchUserPermsByToken(ctx context.Context, cli *gh.Client, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
 	const repoSetSize = 100
@@ -360,7 +358,12 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		oauthToken.NeedsRefreshBuffer = 5
 	}
 
-	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), oauthToken, opts)
+	cli, err := github.NewGitHubClientForUserExternalAccount(ctx, account, p.baseHTTPClient)
+	if err != nil {
+		return nil, err
+	}
+
+	return p.fetchUserPermsByToken(ctx, cli, opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
