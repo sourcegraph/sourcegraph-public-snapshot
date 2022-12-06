@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"fmt"
+	"database/sql"
 	"path"
 	"strings"
 
@@ -16,6 +16,7 @@ import (
 
 type RepoDirectoryStore interface {
 	CreateIfNotExists(ctx context.Context, repoID api.RepoID, absolutePath string) (*types.RepoDirectory, error)
+	LookupDirectory(ctx context.Context, repoID api.RepoID, absolutePath string) (*types.RepoDirectory, error)
 }
 
 var _ RepoDirectoryStore = (*repoDirectoryStore)(nil)
@@ -35,7 +36,6 @@ func RepoDirectoryWith(logger log.Logger, other basestore.ShareableStore) RepoDi
 
 // CreateIfNotExists
 func (s *repoDirectoryStore) CreateIfNotExists(ctx context.Context, repoID api.RepoID, absolutePath string) (*types.RepoDirectory, error) {
-	fmt.Println(absolutePath)
 	if strings.HasPrefix(absolutePath, "/") {
 		return nil, errors.New("absolute path does not start with /")
 	}
@@ -71,6 +71,30 @@ func (s *repoDirectoryStore) CreateIfNotExists(ctx context.Context, repoID api.R
 		JOIN repo_directories AS d USING(repo_id, absolute_path)`,
 		repoID, absolutePath, parentID,
 	).Scan(&d.ID, &d.RepoID, &d.AbsolutePath, &d.ParentID)
+	if err != nil {
+		return nil, err
+	}
+	return &d, nil
+}
+func (s *repoDirectoryStore) LookupDirectory(ctx context.Context, repoID api.RepoID, absolutePath string) (*types.RepoDirectory, error) {
+	if strings.HasPrefix(absolutePath, "/") {
+		return nil, errors.New("absolute path does not start with /")
+	}
+	if strings.HasSuffix(absolutePath, "/") {
+		return nil, errors.New("absolute path does not end with /")
+	}
+	var d types.RepoDirectory
+	err := s.Handle().QueryRowContext(
+		ctx,
+		`SELECT d.id, d.repo_id, d.absolute_path, COALESCE(d.parent_id, 0)
+		FROM repo_directories AS d
+		WHERE d.repo_id = $1
+		AND d.absolute_path = $2`,
+		repoID, absolutePath,
+	).Scan(&d.ID, &d.RepoID, &d.AbsolutePath, &d.ParentID)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}

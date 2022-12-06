@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -13,6 +14,7 @@ import (
 
 type RepoFileStore interface {
 	CreateIfNotExists(ctx context.Context, f types.RepoFile) (*types.RepoFile, error)
+	FindLatestFile(ctx context.Context, repo api.RepoID, version string, dir string, baseName string) (*types.RepoFile, error)
 }
 
 var _ RepoFileStore = (*repoFileStore)(nil)
@@ -56,6 +58,41 @@ func (s *repoFileStore) CreateIfNotExists(ctx context.Context, f types.RepoFile)
 		return nil, err
 	}
 	f.ID = id
+	return &f, nil
+}
+
+func (s *repoFileStore) FindLatestFile(ctx context.Context, repo api.RepoID, version string, dir string, baseName string) (*types.RepoFile, error) {
+	var f types.RepoFile
+	row := s.Handle().QueryRowContext(ctx,
+		`SELECT DISTINCT ON (f.directory_id, f.base_name)
+			f.id,
+			f.directory_id,
+			f.version_id,
+			f.topological_order,
+			f.base_name,
+			f.content_id
+		FROM
+			repo_files AS f
+			INNER JOIN repo_versions AS fv ON f.version_id = fv.id
+			INNER JOIN repo_versions AS v ON (v.path_cover_reachability ->> (fv.path_cover_color::text))::integer >= fv.path_cover_index
+			INNER JOIN repo_directories AS d ON d.id = f.directory_id
+		WHERE
+			v.repo_id = $1
+			AND v.external_id = $2
+			AND d.absolute_path = $3
+			AND f.base_name = $4
+		ORDER BY
+			f.directory_id,
+			f.base_name,
+			f.topological_order DESC;`,
+		repo, version, dir, baseName)
+	err := row.Scan(&f.ID, &f.DirectoryID, &f.VersionID, &f.TopologicalOrder, &f.BaseName, &f.ContentID)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
 	return &f, nil
 }
 
