@@ -59,7 +59,7 @@ func New(logger log.Logger, urlspec string) *Map {
 	if !strings.HasPrefix(urlspec, "k8s+") {
 		return Static(strings.Fields(urlspec)...)
 	}
-	return K8S(urlspec)
+	return K8S(logger, urlspec)
 }
 
 // Static returns an Endpoint map which consistently hashes over endpoints.

@@ -23,13 +23,13 @@ import (
 
 // K8S returns a Map for the given k8s urlspec (e.g. k8s+http://searcher), starting
 // service discovery in the background.
-func K8S(urlspec string) *Map {
+func K8S(logger log.Logger, urlspec string) *Map {
 
-	logger := log.Scoped("k8s", "service discovery via k8s")
+	logger = log.Scoped("k8s", "service discovery via k8s")
 
 	return &Map{
 		urlspec:   urlspec,
-		discofunk: k8sDiscovery(logger, urlspec, namespace(), loadClient),
+		discofunk: k8sDiscovery(logger, urlspec, namespace(logger), loadClient),
 	}
 }
 
@@ -184,8 +184,8 @@ func parseURL(rawurl string) (*k8sURL, error) {
 // namespace returns the namespace the pod is currently running in
 // this is done because the k8s client we previously used set the namespace
 // when the client was created, the official k8s client does not
-func namespace() string {
-	logger := log.Scoped("namespace", "A kubernetes namespace")
+func namespace(logger log.Logger) string {
+	logger = log.Scoped("namespace", "A kubernetes namespace")
 	const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
 	data, err := os.ReadFile(filename)
 	if err != nil {
