@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights: the data series API now provides information about incomplete datapoints during processing
 - Added a best-effort migration such that existing Code Insights will display zero results instead of missing points at the start and end of a graph. [#44928](https://github.com/sourcegraph/sourcegraph/pull/44928)
 - More complete stack traces for Outbound request log [#45151](https://github.com/sourcegraph/sourcegraph/pull/45151)
+- A new status message now reports how many repositories have already been indexed for search. [#45246](https://github.com/sourcegraph/sourcegraph/pull/45246)
 
 ### Changed
 
