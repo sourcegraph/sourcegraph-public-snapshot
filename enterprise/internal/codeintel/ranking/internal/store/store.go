@@ -45,11 +45,11 @@ type store struct {
 }
 
 // New returns a new ranking store.
-func New(db database.DB, observationContext *observation.Context) Store {
+func New(observationCtx *observation.Context, db database.DB) Store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
 		logger:     logger.Scoped("ranking.store", ""),
-		operations: newOperations(observationContext),
+		operations: newOperations(observationCtx),
 	}
 }
 

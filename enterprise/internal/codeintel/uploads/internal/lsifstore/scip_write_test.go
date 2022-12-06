@@ -15,8 +15,8 @@ import (
 
 func TestInsertMetadata(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
-	store := New(codeIntelDB, &observation.TestContext)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 
 	if err := store.InsertMetadata(ctx, 42, ProcessedMetadata{
@@ -32,8 +32,8 @@ func TestInsertMetadata(t *testing.T) {
 
 func TestInsertSCIPDocument(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
-	store := New(codeIntelDB, &observation.TestContext)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 
 	if _, err := store.InsertSCIPDocument(
@@ -76,8 +76,8 @@ func TestInsertSCIPDocument(t *testing.T) {
 
 func TestWriteSCIPSymbols(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
-	store := New(codeIntelDB, &observation.TestContext)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 
 	uploadID := 24

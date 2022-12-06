@@ -130,7 +130,7 @@ func TestCompareLoadMethods(t *testing.T) {
 			logger := logtest.Scoped(t)
 			ctx := context.Background()
 			clock := timeutil.Now
-			insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+			insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 			postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 			permStore := NewInsightPermissionStore(postgres)
 			store := NewWithClock(insightsDB, permStore, clock)
@@ -210,7 +210,7 @@ func BenchmarkLoadTimes(b *testing.B) {
 		logger := logtest.Scoped(b)
 		ctx := context.Background()
 		clock := timeutil.Now
-		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, b))
+		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, b), logger)
 		postgres := database.NewDB(logger, dbtest.NewDB(logger, b))
 		permStore := NewInsightPermissionStore(postgres)
 		store := NewWithClock(insightsDB, permStore, clock)

@@ -73,10 +73,10 @@ var (
 	metricsMu  sync.Mutex
 )
 
-func newOperations(observationContext *observation.Context) *operations {
+func newOperations(observationCtx *observation.Context) *operations {
 	m := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationContext.Registerer,
+			observationCtx.Registerer,
 			"codeintel_uploads",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of method invocations."),
@@ -84,7 +84,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	})
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.uploads.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           m,
@@ -103,7 +103,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			Name: name,
 			Help: help,
 		})
-		observationContext.Registerer.MustRegister(counter)
+		observationCtx.Registerer.MustRegister(counter)
 
 		metricsMap[name] = counter
 
@@ -181,26 +181,26 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 }
 
-func MetricReporters(uploadSvc UploadService, observationContext *observation.Context) {
-	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+func MetricReporters(observationCtx *observation.Context, uploadSvc UploadService) {
+	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_codeintel_commit_graph_total",
 		Help: "Total number of repositories with stale commit graphs.",
 	}, func() float64 {
 		dirtyRepositories, err := uploadSvc.GetDirtyRepositories(context.Background())
 		if err != nil {
-			observationContext.Logger.Error("Failed to determine number of dirty repositories", log.Error(err))
+			observationCtx.Logger.Error("Failed to determine number of dirty repositories", log.Error(err))
 		}
 
 		return float64(len(dirtyRepositories))
 	}))
 
-	observationContext.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_codeintel_commit_graph_queued_duration_seconds_total",
 		Help: "The maximum amount of time a repository has had a stale commit graph.",
 	}, func() float64 {
 		age, err := uploadSvc.GetRepositoriesMaxStaleAge(context.Background())
 		if err != nil {
-			observationContext.Logger.Error("Failed to determine stale commit graph age", log.Error(err))
+			observationCtx.Logger.Error("Failed to determine stale commit graph age", log.Error(err))
 			return 0
 		}
 

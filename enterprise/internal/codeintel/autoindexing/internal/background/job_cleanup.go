@@ -32,14 +32,14 @@ type janitorJob struct {
 }
 
 func NewJanitor(
+	observationCtx *observation.Context,
 	interval time.Duration,
 	store store.Store,
 	gitserverClient GitserverClient,
 	clock glock.Clock,
 	config JanitorConfig,
-	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
-	metrics := NewJanitorMetrics(observationContext)
+	metrics := NewJanitorMetrics(observationCtx)
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
 		job := janitorJob{
 			store:           store,

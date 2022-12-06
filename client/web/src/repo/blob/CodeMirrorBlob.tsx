@@ -29,6 +29,8 @@ import { pin, updatePin } from './codemirror/hovercard'
 import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
+import { tokenSelectionExtension } from './codemirror/token-selection/extension'
+import { selectionFromLocation, selectRange } from './codemirror/token-selection/selections'
 import { tokensAsLinks } from './codemirror/tokens-as-links'
 import { isValidLineRange } from './codemirror/utils'
 
@@ -98,7 +100,8 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
         history,
         isBlameVisible,
         blameHunks,
-        tokenKeyboardNavigation,
+        enableLinkDrivenCodeNavigation,
+        enableSelectionDrivenCodeNavigation,
 
         // Reference panel specific props
         disableStatusBar,
@@ -179,19 +182,21 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     const extensions = useMemo(
         () => [
+            // Log uncaught errors that happen in callbacks that we pass to
+            // CodeMirror. Without this exception sink, exceptions get silently
+            // ignored making it difficult to debug issues caused by uncaught
+            // exceptions.
+            // eslint-disable-next-line no-console
+            EditorView.exceptionSink.of(exception => console.log(exception)),
             staticExtensions,
             selectableLineNumbers({
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
                 navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
+                enableSelectionDrivenCodeNavigation,
             }),
-            tokenKeyboardNavigation
-                ? tokensAsLinks({
-                      history,
-                      blobInfo,
-                      preloadGoToDefinition,
-                  })
-                : [],
+            enableSelectionDrivenCodeNavigation ? tokenSelectionExtension() : [],
+            enableLinkDrivenCodeNavigation ? tokensAsLinks({ history, blobInfo, preloadGoToDefinition }) : [],
             syntaxHighlight.of(blobInfo),
             pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
@@ -201,6 +206,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                       extensionsController,
                       disableStatusBar,
                       disableDecorations,
+                      enableSelectionDrivenCodeNavigation,
                   })
                 : [],
             blobPropsCompartment.of(blobProps),
@@ -236,12 +242,26 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
             // We use setState here instead of dispatching a transaction because
             // the new document has nothing to do with the previous one and so
             // any existing state should be discarded.
-            editor.setState(
-                EditorState.create({
-                    doc: blobInfo.content,
-                    extensions,
-                })
-            )
+            const state = EditorState.create({ doc: blobInfo.content, extensions })
+            editor.setState(state)
+
+            if (!enableSelectionDrivenCodeNavigation) {
+                return
+            }
+
+            // Sync editor selection with the URL so that triggering
+            // `history.goBack/goForward()` works similar to the "Go back"
+            // command in VS Code.
+            const { range } = selectionFromLocation(editor, historyRef.current.location)
+            if (range) {
+                selectRange(editor, range)
+                // Automatically focus the content DOM to enable keyboard
+                // navigation. Without this automatic focus, users need to click
+                // on the blob view with the mouse.
+                // NOTE: this focus statment does not seem to have an effect
+                // when using macOS VoiceOver.
+                editor.contentDOM.focus({ preventScroll: true })
+            }
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)

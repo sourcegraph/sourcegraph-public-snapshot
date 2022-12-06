@@ -48,6 +48,7 @@ func newHandler(
 			Indexer:           getQuery(r, "indexerName"),
 			IndexerVersion:    getQuery(r, "indexerVersion"),
 			AssociatedIndexID: getQueryInt(r, "associatedIndexId"),
+			ContentType:       r.Header.Get("Content-Type"),
 		}, 0, nil
 	}
 

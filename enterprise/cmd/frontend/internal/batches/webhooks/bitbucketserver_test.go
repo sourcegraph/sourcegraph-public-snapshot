@@ -226,7 +226,7 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 					if err != nil {
 						t.Fatal(err)
 					}
-					err = os.WriteFile(fixtureFile, data, 0666)
+					err = os.WriteFile(fixtureFile, data, 0o666)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -239,7 +239,6 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
 					t.Error(diff)
 				}
-
 			})
 		}
 	}

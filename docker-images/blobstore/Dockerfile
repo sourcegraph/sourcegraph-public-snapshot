@@ -35,7 +35,7 @@ COPY --from=builder /opt/s3proxy /opt/s3proxy
 ENV \
     LOG_LEVEL="info" \
     S3PROXY_AUTHORIZATION="none" \
-    S3PROXY_ENDPOINT="http://0.0.0.0:80" \
+    S3PROXY_ENDPOINT="http://0.0.0.0:9000" \
     S3PROXY_IDENTITY="local-identity" \
     S3PROXY_CREDENTIAL="local-credential" \
     S3PROXY_VIRTUALHOST="" \
@@ -59,7 +59,9 @@ ENV \
     JCLOUDS_KEYSTONE_PROJECT_DOMAIN_NAME="" \
     JCLOUDS_FILESYSTEM_BASEDIR="/data"
 
-EXPOSE 80
+RUN mkdir -p /data && chown -R sourcegraph:sourcegraph /data
 USER sourcegraph
+
+EXPOSE 9000
 WORKDIR /opt/s3proxy
 ENTRYPOINT ["/sbin/tini", "--", "/opt/s3proxy/run-docker-container.sh"]

@@ -42,6 +42,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.uploaded_parts"),
 	sqlf.Sprintf("u.upload_size"),
 	sqlf.Sprintf("u.associated_index_id"),
+	sqlf.Sprintf("u.content_type"),
 	sqlf.Sprintf("NULL"),
 	sqlf.Sprintf("u.uncompressed_size"),
 }
@@ -61,6 +62,6 @@ var UploadWorkerStoreOptions = dbworkerstore.Options[types.Upload]{
 	MaxNumResets:  UploadMaxNumResets,
 }
 
-func (s *store) WorkerutilStore(observationContext *observation.Context) dbworkerstore.Store[types.Upload] {
-	return dbworkerstore.NewWithMetrics(s.db.Handle(), UploadWorkerStoreOptions, observationContext)
+func (s *store) WorkerutilStore(observationCtx *observation.Context) dbworkerstore.Store[types.Upload] {
+	return dbworkerstore.New(observationCtx, s.db.Handle(), UploadWorkerStoreOptions)
 }

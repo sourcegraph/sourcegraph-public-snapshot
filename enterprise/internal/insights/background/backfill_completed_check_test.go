@@ -23,7 +23,7 @@ func TestCheckBackfillCompleted(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 

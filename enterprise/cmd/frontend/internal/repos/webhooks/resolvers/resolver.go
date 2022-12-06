@@ -52,15 +52,36 @@ func (r *webhooksResolver) DeleteWebhook(ctx context.Context, args *graphqlbacke
 	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, auth.ErrMustBeSiteAdmin
 	}
+
 	id, err := unmarshalWebhookID(args.ID)
 	if err != nil {
 		return nil, err
 	}
-	err = r.db.Webhooks(keyring.Default().WebhookKey).Delete(ctx, database.DeleteWebhookOpts{ID: id})
+	ws := backend.NewWebhookService(r.db, keyring.Default())
+	err = ws.DeleteWebhook(ctx, id)
 	if err != nil {
 		return nil, errors.Wrap(err, "delete webhook")
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *webhooksResolver) UpdateWebhook(ctx context.Context, args *graphqlbackend.UpdateWebhookArgs) (graphqlbackend.WebhookResolver, error) {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, auth.ErrMustBeSiteAdmin
+	}
+
+	whID, err := unmarshalWebhookID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	ws := backend.NewWebhookService(r.db, keyring.Default())
+	newWebhook, err := ws.UpdateWebhook(ctx, whID, args.Name, args.CodeHostKind, args.CodeHostURN, args.Secret)
+	if err != nil {
+		return nil, errors.Wrap(err, "update webhook")
+	}
+
+	return &webhookResolver{hook: newWebhook, db: r.db}, nil
 }
 
 func (r *webhooksResolver) Webhooks(ctx context.Context, args *graphqlbackend.ListWebhookArgs) (graphqlbackend.WebhookConnectionResolver, error) {

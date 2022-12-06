@@ -8,13 +8,13 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type metricsServerJob struct{}
@@ -31,7 +31,7 @@ func (j *metricsServerJob) Config() []env.Config {
 	return []env.Config{metricsServerConfigInst}
 }
 
-func (j *metricsServerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *metricsServerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"

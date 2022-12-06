@@ -15,29 +15,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Init initializes and returns a connection to the frontend database.
-func Init() (*sql.DB, error) {
-	return initDatabaseMemo.Init()
-}
-
-func InitDBWithLogger(logger log.Logger) (database.DB, error) {
-	rawDB, err := Init()
+func InitDB(observationCtx *observation.Context) (database.DB, error) {
+	rawDB, err := initDatabaseMemo.Init(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return database.NewDB(logger, rawDB), nil
+	return database.NewDB(observationCtx.Logger, rawDB), nil
 }
 
-var initDatabaseMemo = memo.NewMemoizedConstructor(func() (*sql.DB, error) {
+var initDatabaseMemo = memo.NewMemoizedConstructorWithArg(func(observationCtx *observation.Context) (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	db, err := connections.EnsureNewFrontendDB(dsn, "worker", &observation.TestContext)
+	db, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "worker")
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
+	// ideally we could memoize the LRU cache only for this, and then create new clients on-demand with a passed-in observationCtx
 	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(database.NewDB(log.Scoped("initDatabaseMemo", ""), db).SubRepoPerms())
 	if err != nil {
 		return nil, errors.Errorf("Failed to create sub-repo client: %v", err)

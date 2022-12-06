@@ -27,13 +27,36 @@ func FindOccurrences(occurrences []*scip.Occurrence, targetLine, targetCharacter
 
 // SortOccurrences sorts the given occurrence slice (in-place) and returns it (for convenience).
 // Occurrences sorted in ascending order of their range's starting position, where enclosing ranges
-// come before the enclosed.
+// come before the enclosed. If there are multiple occurrences with the exact same range, then the
+// occurrences are sorted by symbol name.
 func SortOccurrences(occurrences []*scip.Occurrence) []*scip.Occurrence {
 	sort.Slice(occurrences, func(i, j int) bool {
+		if rawRangesEqual(occurrences[i].Range, occurrences[j].Range) {
+			return occurrences[i].Symbol < occurrences[j].Symbol
+		}
+
 		return compareRanges(occurrences[i].Range, occurrences[j].Range...) <= 0
 	})
 
 	return occurrences
+}
+
+// rawRangesEqual compares the given SCIP-encoded raw ranges for equality.
+func rawRangesEqual(a, b []int32) bool {
+	if len(a) == len(b) {
+		for i, v := range a {
+			if v != b[i] {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	ra := scip.NewRange(a)
+	rb := scip.NewRange(b)
+
+	return ra.Start.Line == rb.Start.Line && ra.Start.Character == rb.Start.Character && ra.End.Line == rb.End.Line && ra.End.Character == rb.End.Character
 }
 
 // SortRanges sorts the given range slice (in-place) and returns it (for convenience). Ranges are
@@ -64,7 +87,7 @@ func SortSymbols(symbols []*scip.SymbolInformation) []*scip.SymbolInformation {
 }
 
 // SortDiagnostics sorts the given diagnostics slice (in-place) and returns it (for convenience).
-// Diagnostics are sorted firs tyb severity (more severe earlier in the slice) and then by the
+// Diagnostics are sorted first by severity (more severe earlier in the slice) and then by the
 // diagnostic message.
 func SortDiagnostics(diagnostics []*scip.Diagnostic) []*scip.Diagnostic {
 	sort.Slice(diagnostics, func(i, j int) bool {
@@ -78,6 +101,24 @@ func SortDiagnostics(diagnostics []*scip.Diagnostic) []*scip.Diagnostic {
 	})
 
 	return diagnostics
+}
+
+// SortDiagnosticTags sorts the given diagnostic tags slice (in-place) and returns it (for convenience).
+func SortDiagnosticTags(tags []scip.DiagnosticTag) []scip.DiagnosticTag {
+	sort.Slice(tags, func(i, j int) bool {
+		return tags[i] < tags[j]
+	})
+
+	return tags
+}
+
+// SortRelationships sorts the given symbol relationships slice (in-place) and returns it (for convenience).
+func SortRelationships(relationships []*scip.Relationship) []*scip.Relationship {
+	sort.Slice(relationships, func(i, j int) bool {
+		return relationships[i].Symbol < relationships[j].Symbol
+	})
+
+	return relationships
 }
 
 // compareRanges compares the order of the leading edge of the two ranges. This method returns

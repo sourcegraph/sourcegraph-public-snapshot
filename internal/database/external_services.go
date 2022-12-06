@@ -50,9 +50,7 @@ type ExternalServiceStore interface {
 	// otherwise a panic would occur once pkg/conf's deadlock detector determines a
 	// deadlock occurred.
 	//
-	// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner
-	// of the external service. Otherwise, `es.NamespaceUserID` must be specified
-	// (i.e. non-nil) for a user-added external service.
+	// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 	//
 	// 🚨 SECURITY: The value of `es.Unrestricted` is disregarded and will always be
 	// recalculated based on whether "authorization" field is presented in
@@ -101,12 +99,9 @@ type ExternalServiceStore interface {
 	// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
 	UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error
 
-	// List returns external services under given namespace.
-	// If no namespace is given, it returns all external services.
+	// List returns external services.
 	//
-	// 🚨 SECURITY: The caller must ensure one of the following:
-	// 	- The actor is a site admin
-	// 	- The opt.NamespaceUserID is same as authenticated user ID (i.e. actor.UID)
+	// 🚨 SECURITY: The caller must be a site admin
 	List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error)
 
 	// ListRepos returns external service repos for given externalServiceID.
@@ -244,17 +239,6 @@ type ExternalServicesGetSyncJobsOptions struct {
 type ExternalServicesListOptions struct {
 	// When specified, only include external services with the given IDs.
 	IDs []int64
-	// When true, only include external services not under any namespace (i.e. owned
-	// by all site admins), and values of ExcludeNamespaceUser, NamespaceUserID and
-	// NamespaceOrgID are ignored.
-	NoNamespace bool
-	// When true, will exclude external services under any user namespace, and the
-	// value of NamespaceUserID is ignored.
-	ExcludeNamespaceUser bool
-	// When specified, only include external services under given user namespace.
-	NamespaceUserID int32
-	// When specified, only include external services under given organization namespace.
-	NamespaceOrgID int32
 	// When specified, only include external services with given list of kinds.
 	Kinds []string
 	// When specified, only include external services with ID below this number
@@ -283,20 +267,6 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	if len(o.IDs) > 0 {
 		conds = append(conds, sqlf.Sprintf("id = ANY(%s)", pq.Array(o.IDs)))
 	}
-
-	if o.NoNamespace {
-		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL AND namespace_org_id IS NULL`))
-	} else {
-		if o.ExcludeNamespaceUser {
-			conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
-		} else if o.NamespaceUserID > 0 {
-			conds = append(conds, sqlf.Sprintf(`namespace_user_id = %d`, o.NamespaceUserID))
-		}
-
-		if o.NamespaceOrgID > 0 {
-			conds = append(conds, sqlf.Sprintf(`namespace_org_id = %d`, o.NamespaceOrgID))
-		}
-	}
 	if len(o.Kinds) > 0 {
 		conds = append(conds, sqlf.Sprintf("kind = ANY(%s)", pq.Array(o.Kinds)))
 	}
@@ -324,10 +294,6 @@ type ValidateExternalServiceConfigOptions struct {
 	Config string
 	// The list of authN providers configured on the instance.
 	AuthProviders []schema.AuthProviders
-	// If non zero, indicates the user that owns the external service.
-	NamespaceUserID int32
-	// If non zero, indicates the organization that owns the codehost connection.
-	NamespaceOrgID int32
 }
 
 type ValidateExternalServiceConfigFunc = func(ctx context.Context, e ExternalServiceStore, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error)
@@ -547,11 +513,9 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	}
 
 	normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
-		Kind:            es.Kind,
-		Config:          rawConfig,
-		AuthProviders:   confGet().AuthProviders,
-		NamespaceUserID: es.NamespaceUserID,
-		NamespaceOrgID:  es.NamespaceOrgID,
+		Kind:          es.Kind,
+		Config:        rawConfig,
+		AuthProviders: confGet().AuthProviders,
 	})
 	if err != nil {
 		return err
@@ -599,8 +563,6 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 			keyID,
 			es.CreatedAt,
 			es.UpdatedAt,
-			dbutil.NullInt32Column(es.NamespaceUserID),
-			dbutil.NullInt32Column(es.NamespaceOrgID),
 			es.Unrestricted,
 			es.CloudDefault,
 			es.HasWebhooks,
@@ -610,8 +572,8 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 const createExternalServiceQueryFmtstr = `
 INSERT INTO external_services
-	(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default, has_webhooks)
-	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	(kind, display_name, config, encryption_key_id, created_at, updated_at, unrestricted, cloud_default, has_webhooks)
+	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -636,11 +598,9 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		}
 
 		normalized, err := ValidateExternalServiceConfig(ctx, e, ValidateExternalServiceConfigOptions{
-			Kind:            s.Kind,
-			Config:          rawConfig,
-			AuthProviders:   authProviders,
-			NamespaceUserID: s.NamespaceUserID,
-			NamespaceOrgID:  s.NamespaceOrgID,
+			Kind:          s.Kind,
+			Config:        rawConfig,
+			AuthProviders: authProviders,
 		})
 		if err != nil {
 			return errors.Wrapf(err, "validating service of kind %q", s.Kind)
@@ -717,8 +677,6 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullTime{Time: &svcs[i].DeletedAt},
 			&dbutil.NullTime{Time: &svcs[i].LastSyncAt},
 			&dbutil.NullTime{Time: &svcs[i].NextSyncAt},
-			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
-			&dbutil.NullInt32{N: &svcs[i].NamespaceOrgID},
 			&svcs[i].Unrestricted,
 			&svcs[i].CloudDefault,
 			&keyID,
@@ -754,8 +712,6 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			dbutil.NullTimeColumn(s.DeletedAt),
 			dbutil.NullTimeColumn(s.LastSyncAt),
 			dbutil.NullTimeColumn(s.NextSyncAt),
-			dbutil.NullInt32Column(s.NamespaceUserID),
-			dbutil.NullInt32Column(s.NamespaceOrgID),
 			s.Unrestricted,
 			s.CloudDefault,
 			s.HasWebhooks,
@@ -769,7 +725,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -784,8 +740,6 @@ INSERT INTO external_services (
   deleted_at,
   last_sync_at,
   next_sync_at,
-  namespace_user_id,
-  namespace_org_id,
   unrestricted,
   cloud_default,
   has_webhooks
@@ -802,8 +756,6 @@ SET
   deleted_at         = excluded.deleted_at,
   last_sync_at       = excluded.last_sync_at,
   next_sync_at       = excluded.next_sync_at,
-  namespace_user_id  = excluded.namespace_user_id,
-  namespace_org_id   = excluded.namespace_org_id,
   unrestricted       = excluded.unrestricted,
   cloud_default      = excluded.cloud_default,
   has_webhooks       = excluded.has_webhooks
@@ -817,8 +769,6 @@ RETURNING
 	deleted_at,
 	last_sync_at,
 	next_sync_at,
-	namespace_user_id,
-	namespace_org_id,
 	unrestricted,
 	cloud_default,
 	encryption_key_id,
@@ -877,8 +827,6 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			Kind:              externalService.Kind,
 			Config:            unredactedConfig,
 			AuthProviders:     ps,
-			NamespaceUserID:   externalService.NamespaceUserID,
-			NamespaceOrgID:    externalService.NamespaceOrgID,
 		})
 		if err != nil {
 			return err
@@ -1411,8 +1359,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			deleted_at,
 			last_sync_at,
 			next_sync_at,
-			namespace_user_id,
-			namespace_org_id,
 			unrestricted,
 			cloud_default,
 			has_webhooks,
@@ -1438,8 +1384,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			deletedAt       sql.NullTime
 			lastSyncAt      sql.NullTime
 			nextSyncAt      sql.NullTime
-			namespaceUserID sql.NullInt32
-			namespaceOrgID  sql.NullInt32
 			encryptedConfig string
 			keyID           string
 			hasWebhooks     sql.NullBool
@@ -1456,8 +1400,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 			&deletedAt,
 			&lastSyncAt,
 			&nextSyncAt,
-			&namespaceUserID,
-			&namespaceOrgID,
 			&h.Unrestricted,
 			&h.CloudDefault,
 			&hasWebhooks,
@@ -1474,12 +1416,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		}
 		if nextSyncAt.Valid {
 			h.NextSyncAt = nextSyncAt.Time
-		}
-		if namespaceUserID.Valid {
-			h.NamespaceUserID = namespaceUserID.Int32
-		}
-		if namespaceOrgID.Valid {
-			h.NamespaceOrgID = namespaceOrgID.Int32
 		}
 		if hasWebhooks.Valid {
 			h.HasWebhooks = &hasWebhooks.Bool

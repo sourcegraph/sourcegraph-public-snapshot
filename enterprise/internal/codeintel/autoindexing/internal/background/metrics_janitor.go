@@ -12,14 +12,14 @@ type janitorMetrics struct {
 	numIndexRecordsRemoved prometheus.Counter
 }
 
-func NewJanitorMetrics(observationContext *observation.Context) *janitorMetrics {
+func NewJanitorMetrics(observationCtx *observation.Context) *janitorMetrics {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
 			Help: help,
 		})
 
-		observationContext.Registerer.MustRegister(counter)
+		observationCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 

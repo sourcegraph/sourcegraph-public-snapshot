@@ -646,12 +646,12 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 			return
 		}
 
-		repos, err := s.v3Client.ListPublicRepositories(ctx, sinceRepoID)
+		repos, hasNextPage, err := s.v3Client.ListPublicRepositories(ctx, sinceRepoID)
 		if err != nil {
 			results <- &githubResult{err: errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID)}
 			return
 		}
-		if len(repos) == 0 {
+		if !hasNextPage {
 			return
 		}
 		s.logger.Debug("github sync public", log.Int("repos", len(repos)), log.Error(err))

@@ -4,7 +4,6 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { SearchMode, SearchPatternType } from '@sourcegraph/search'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -47,7 +46,6 @@ const defaultProps: SearchBoxProps = {
     defaultSearchContextSpec: 'global',
     onChange: () => {},
     onSubmit: () => {},
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     authenticatedUser: null,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,

@@ -833,6 +833,7 @@ type IncompleteDatapoint struct {
 type IncompleteReason string
 
 const (
-	ReasonTimeout IncompleteReason = "timeout"
-	ReasonGeneric IncompleteReason = "generic"
+	ReasonTimeout           IncompleteReason = "timeout"
+	ReasonGeneric           IncompleteReason = "generic"
+	ReasonExceedsErrorLimit IncompleteReason = "exceeds-error-limit"
 )

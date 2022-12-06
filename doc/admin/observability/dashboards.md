@@ -14301,14 +14301,14 @@ Query: `sum by (state)(increase(searcher_hybrid_final_state_total[10m]))`
 
 <br />
 
-#### searcher: searcher_hybrid_index_changed_total
+#### searcher: searcher_hybrid_retry_total
 
-<p class="subtitle">Hybrid search retrying due to index updates over 10m</p>
+<p class="subtitle">Hybrid search retrying over 10m</p>
 
-Expectation is that this graph should mostly be 0. It should only trigger if a
-user manages to do a search and the underlying index changes while searching.
-So occasional bursts can be expected, but if this graph is regularly above 0
-it is a sign for further investigation.
+Expectation is that this graph should mostly be 0. It will trigger if a user
+manages to do a search and the underlying index changes while searching. So
+occasional bursts can be expected, but if this graph is regularly above 0 it
+is a sign for further investigation.
 
 This panel has no related alerts.
 
@@ -14319,7 +14319,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100101`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(searcher_hybrid_index_changed_total[10m]))`
+Query: `sum by (reason)(increase(searcher_hybrid_retry_total[10m]))`
 
 </details>
 
