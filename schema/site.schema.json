@@ -1892,6 +1892,13 @@
       "default": 50,
       "maximum": 500
     },
+    "redactOutboundRequestHeaders": {
+      "description": "Enables redacting sensitive information from outbound requests. Important: We only respect this setting in development environments. In production, we always redact outbound requests.",
+      "type": "boolean",
+      "!go": {
+        "pointer": true
+      }
+    },
     "organizationInvitations": {
       "description": "Configuration for organization invitations.",
       "type": "object",

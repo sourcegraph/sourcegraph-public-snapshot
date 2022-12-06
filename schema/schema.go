@@ -2232,6 +2232,8 @@ type SiteConfiguration struct {
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// ProductResearchPageEnabled description: Enables users access to the product research page in their settings.
 	ProductResearchPageEnabled *bool `json:"productResearchPage.enabled,omitempty"`
+	// RedactOutboundRequestHeaders description: Enables redacting sensitive information from outbound requests. Important: We only respect this setting in development environments. In production, we always redact outbound requests.
+	RedactOutboundRequestHeaders *bool `json:"redactOutboundRequestHeaders,omitempty"`
 	// RepoConcurrentExternalServiceSyncers description: The number of concurrent external service syncers that can run.
 	RepoConcurrentExternalServiceSyncers int `json:"repoConcurrentExternalServiceSyncers,omitempty"`
 	// RepoListUpdateInterval description: Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.
