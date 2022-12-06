@@ -43,7 +43,7 @@
                                 <Icon path={option.icon} />
                             </div>
                         {/if}
-                        <div role="gridcell">
+                        <div role="gridcell" class="content">
                             {#if option.render}
                                 <svelte:component this={option.render} {option} />
                             {:else if option.matches}
@@ -82,7 +82,7 @@
 
     [role='rowgroup'] {
         border-bottom: 1px solid var(--border-color);
-        padding: 0.5rem;
+        padding: 12px;
 
         &:last-of-type {
             border: none;
@@ -91,35 +91,45 @@
         // group header
         [role='presentation'] {
             color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 500;
             margin-bottom: 0.25rem;
+            padding: 0 8px;
         }
 
         [role='row'] {
             display: flex;
             align-items: center;
-            padding: 0.25rem 0.5rem;
+            padding: 6px 8px;
             border-radius: var(--border-radius);
+            font-family: var(--code-font-family);
+            font-size: 12px;
+            min-height: 24px;
 
             &[aria-selected='true'] {
                 background-color: var(--subtle-bg);
+                border-radius: 4px;
             }
 
             &:hover {
                 background-color: var(--color-bg-2);
+                cursor: pointer;
             }
 
             .match {
-                font-weight: bold;
+                font-weight: 500;
             }
 
             .description {
-                margin-left: 0.5rem;
+                margin-left: 8px;
                 color: var(--input-placeholder-color);
             }
 
             .note {
+                font-size: 12px;
                 margin-left: auto;
                 color: var(--text-muted);
+                font-family: var(--font-family-base);
             }
         }
     }

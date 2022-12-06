@@ -23,21 +23,22 @@
 <style lang="scss">
     .box {
         // Used to make sure that there is no gap between text and colon
-        // (svelte seems to insert a space betwen those no matter what we do)
+        // (svelte seems to insert a space between those no matter what we do)
         display: flex;
         font-family: var(--code-font-family);
-        font-size: var(--code-font-size);
+        font-size: 12px;
         color: var(--search-filter-keyword-color);
         background-color: var(--oc-blue-0);
-        border: 1px solid var(--oc-blue-1);
+        //border: 1px solid var(--oc-blue-1); only when row is selected
         border-radius: 3px;
-        padding: 0.125rem 0;
+        padding: 0px;
     }
 
     .match {
         font-weight: bold;
     }
+
     .separator {
-        color: var(--search-filter-separator-color);
+        color: var(--search-filter-keyword-color);
     }
 </style>

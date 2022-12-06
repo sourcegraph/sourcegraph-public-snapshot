@@ -129,7 +129,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             onChange={props.setQueryState}
             onSubmit={onSubmit}
             isLightTheme={props.isLightTheme}
-            placeholder="Search for code or files"
+            placeholder="Search for code or files..."
             suggestionSource={suggestions}
             history={props.history}
         />
