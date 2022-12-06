@@ -56,7 +56,7 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 
 	opts := httpClientCertificateOptions(nil, c.Certificate)
 
-	cli, err := cf.Doer(opts...)
+	cli, err := cf.Client(opts...)
 	if err != nil {
 		return nil, err
 	}

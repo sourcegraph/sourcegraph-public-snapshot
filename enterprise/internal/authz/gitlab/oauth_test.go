@@ -18,15 +18,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type mockDoer struct {
-	do func(*http.Request) (*http.Response, error)
+// RoundTripFunc .
+type RoundTripFunc func(req *http.Request) *http.Response
+
+// RoundTrip .
+func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req), nil
 }
 
-func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
-	return c.do(r)
+func NewTestClient(fn RoundTripFunc) *http.Client {
+	return &http.Client{
+		Transport: RoundTripFunc(fn),
+	}
 }
 
 func TestOAuthProvider_FetchUserPerms(t *testing.T) {
@@ -72,34 +77,32 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 			BaseURL: mustURL(t, "https://gitlab.com"),
 			Token:   "admin_token",
 		},
-		&mockDoer{
-			do: func(r *http.Request) (*http.Response, error) {
-				visibility := r.URL.Query().Get("visibility")
-				if visibility != "private" && visibility != "internal" {
-					return nil, errors.Errorf("URL visibility: want private or internal, got %s", visibility)
-				}
-				want := fmt.Sprintf("https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=%s", visibility)
-				if r.URL.String() != want {
-					return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
-				}
+		NewTestClient(func(r *http.Request) *http.Response {
+			visibility := r.URL.Query().Get("visibility")
+			if visibility != "private" && visibility != "internal" {
+				return nil
+			}
+			want := fmt.Sprintf("https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=%s", visibility)
+			if r.URL.String() != want {
+				return nil
+			}
 
-				want = "Bearer my_access_token"
-				got := r.Header.Get("Authorization")
-				if got != want {
-					return nil, errors.Errorf("HTTP Authorization: want %q but got %q", want, got)
-				}
+			want = "Bearer my_access_token"
+			got := r.Header.Get("Authorization")
+			if got != want {
+				return nil
+			}
 
-				body := `[{"id": 1}, {"id": 2}]`
-				if visibility == "internal" {
-					body = `[{"id": 3}]`
-				}
-				return &http.Response{
-					Status:     http.StatusText(http.StatusOK),
-					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewReader([]byte(body))),
-				}, nil
-			},
-		},
+			body := `[{"id": 1}, {"id": 2}]`
+			if visibility == "internal" {
+				body = `[{"id": 3}]`
+			}
+			return &http.Response{
+				Status:     http.StatusText(http.StatusOK),
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+			}
+		}),
 		nil,
 	)
 
@@ -185,32 +188,30 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 				Token:     "admin_token",
 				TokenType: gitlab.TokenTypePAT,
 			},
-			&mockDoer{
-				do: func(r *http.Request) (*http.Response, error) {
-					want := "https://gitlab.com/api/v4/projects/gitlab_project_id/members/all?per_page=100"
-					if r.URL.String() != want {
-						return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
-					}
+			NewTestClient(func(r *http.Request) *http.Response {
+				want := "https://gitlab.com/api/v4/projects/gitlab_project_id/members/all?per_page=100"
+				if r.URL.String() != want {
+					return nil
+				}
 
-					want = "admin_token"
-					got := r.Header.Get("Private-Token")
-					if got != want {
-						return nil, errors.Errorf("HTTP Private-Token: want %q but got %q", want, got)
-					}
+				want = "admin_token"
+				got := r.Header.Get("Private-Token")
+				if got != want {
+					return nil
+				}
 
-					body := `
+				body := `
 [
 	{"id": 1, "access_level": 10},
 	{"id": 2, "access_level": 20},
 	{"id": 3, "access_level": 30}
 ]`
-					return &http.Response{
-						Status:     http.StatusText(http.StatusOK),
-						StatusCode: http.StatusOK,
-						Body:       io.NopCloser(bytes.NewReader([]byte(body))),
-					}, nil
-				},
-			},
+				return &http.Response{
+					Status:     http.StatusText(http.StatusOK),
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+				}
+			}),
 			nil,
 		)
 
@@ -243,32 +244,30 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 				Token:     "admin_token",
 				TokenType: gitlab.TokenTypeOAuth,
 			},
-			&mockDoer{
-				do: func(r *http.Request) (*http.Response, error) {
-					want := "https://gitlab.com/api/v4/projects/gitlab_project_id/members/all?per_page=100"
-					if r.URL.String() != want {
-						return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
-					}
+			NewTestClient(func(r *http.Request) *http.Response {
+				want := "https://gitlab.com/api/v4/projects/gitlab_project_id/members/all?per_page=100"
+				if r.URL.String() != want {
+					return nil
+				}
 
-					want = "Bearer admin_token"
-					got := r.Header.Get("Authorization")
-					if got != want {
-						return nil, errors.Errorf("HTTP Private-Token: want %q but got %q", want, got)
-					}
+				want = "Bearer admin_token"
+				got := r.Header.Get("Authorization")
+				if got != want {
+					return nil
+				}
 
-					body := `
+				body := `
 [
 	{"id": 1, "access_level": 10},
 	{"id": 2, "access_level": 20},
 	{"id": 3, "access_level": 30}
 ]`
-					return &http.Response{
-						Status:     http.StatusText(http.StatusOK),
-						StatusCode: http.StatusOK,
-						Body:       io.NopCloser(bytes.NewReader([]byte(body))),
-					}, nil
-				},
-			},
+				return &http.Response{
+					Status:     http.StatusText(http.StatusOK),
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+				}
+			}),
 			nil,
 		)
 

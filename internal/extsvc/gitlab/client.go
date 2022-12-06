@@ -77,7 +77,7 @@ type ClientProvider struct {
 	baseURL *url.URL
 
 	// httpClient is the underlying the HTTP client to use.
-	httpClient httpcli.Doer
+	httpClient *http.Client
 
 	gitlabClients   map[string]*Client
 	gitlabClientsMu sync.Mutex
@@ -88,11 +88,11 @@ type CommonOp struct {
 	NoCache bool
 }
 
-func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
+func NewClientProvider(urn string, baseURL *url.URL, cli *http.Client) *ClientProvider {
 	if cli == nil {
-		cli = httpcli.ExternalDoer
+		cli = httpcli.ExternalClient
 	}
-	cli = requestCounter.Doer(cli, func(u *url.URL) string {
+	_ = requestCounter.Doer(cli, func(u *url.URL) string {
 		// The 3rd component of the Path (/api/v4/XYZ) mostly maps to the type of API
 		// request we are making.
 		var category string
@@ -113,37 +113,44 @@ func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer) *ClientPr
 // GetAuthenticatorClient returns a client authenticated by the given
 // authenticator.
 func (p *ClientProvider) GetAuthenticatorClient(a auth.Authenticator) *Client {
-	return p.getClient(a)
+	return p.getClient(a, p.httpClient)
 }
 
 // GetPATClient returns a client authenticated by the personal access token.
 func (p *ClientProvider) GetPATClient(personalAccessToken, sudo string) *Client {
 	if personalAccessToken == "" {
-		return p.getClient(nil)
+		return p.getClient(nil, p.httpClient)
 	}
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: personalAccessToken})
-	oc := oauth2.NewClient(context.WithValue(context.Background(), oauth2.HTTPClient, httpcli.ExternalClient), ts)
-	return p.NewClient(nil, oc)
+	p.httpClient.Transport = &oauth2.Transport{
+		Base:   p.httpClient.Transport,
+		Source: ts,
+	}
+	return p.NewClient(nil, p.httpClient)
 	// return p.getClient(&SudoableToken{Token: personalAccessToken, Sudo: sudo})
 }
 
 // GetOAuthClient returns a client authenticated by the OAuth token.
 func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
 	if oauthToken == "" {
-		return p.getClient(nil)
+		return p.getClient(nil, p.httpClient)
 	}
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: oauthToken})
-	oc := oauth2.NewClient(context.WithValue(context.Background(), oauth2.HTTPClient, httpcli.ExternalClient), ts)
-	return p.NewClient(nil, oc)
+	p.httpClient.Transport = &oauth2.Transport{
+		Base:   p.httpClient.Transport,
+		Source: ts,
+	}
+	fmt.Println(p.httpClient)
+	return p.NewClient(nil, p.httpClient)
 	// return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
 }
 
 // GetClient returns an unauthenticated client.
 func (p *ClientProvider) GetClient() *Client {
-	return p.getClient(nil)
+	return p.getClient(nil, nil)
 }
 
-func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
+func (p *ClientProvider) getClient(a auth.Authenticator, cli *http.Client) *Client {
 	p.gitlabClientsMu.Lock()
 	defer p.gitlabClientsMu.Unlock()
 
@@ -155,7 +162,7 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 		return c
 	}
 
-	c := p.newClient(a)
+	c := p.newClient(a, cli)
 	p.gitlabClients[key] = c
 	return c
 }
@@ -193,11 +200,14 @@ type Client struct {
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
 //
 // See the docstring of Client for the meaning of the parameters.
-func (p *ClientProvider) newClient(a auth.Authenticator) *Client {
-	return p.NewClient(a, nil)
+func (p *ClientProvider) newClient(a auth.Authenticator, cli *http.Client) *Client {
+	return p.NewClient(a, cli)
 }
 
 func (p *ClientProvider) NewClient(_ auth.Authenticator, cli *http.Client) *Client {
+	if cli == nil {
+		cli = httpcli.ExternalClient
+	}
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
 	if isGitLabDotComURL(p.baseURL) {

@@ -976,7 +976,9 @@ type gitLabChangesetSourceTestProvider struct {
 // objects, along with a handful of methods to mock underlying
 // internal/extsvc/gitlab functions.
 func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTestProvider {
-	prov := gitlab.NewClientProvider("Test", &url.URL{}, &panicDoer{})
+	prov := gitlab.NewClientProvider("Test", &url.URL{}, NewTestClient(func(req *http.Request) *http.Response {
+		panic("this function should not be called")
+	}))
 	repo := &types.Repo{Metadata: &gitlab.Project{}}
 	p := &gitLabChangesetSourceTestProvider{
 		changeset: &Changeset{
@@ -1174,13 +1176,18 @@ func (p *gitLabChangesetSourceTestProvider) unmock() {
 	versions.MockGetVersions = nil
 }
 
-// panicDoer provides a httpcli.Doer implementation that panics if any attempt
-// is made to issue a HTTP request; thereby ensuring that our unit tests don't
-// actually try to talk to GitLab.
-type panicDoer struct{}
+// RoundTripFunc .
+type RoundTripFunc func(req *http.Request) *http.Response
 
-func (d *panicDoer) Do(r *http.Request) (*http.Response, error) {
-	panic("this function should not be called; a mock must be missing")
+// RoundTrip .
+func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req), nil
+}
+
+func NewTestClient(fn RoundTripFunc) *http.Client {
+	return &http.Client{
+		Transport: RoundTripFunc(fn),
+	}
 }
 
 // paginatedNoteIterator essentially fakes the pagination behaviour implemented

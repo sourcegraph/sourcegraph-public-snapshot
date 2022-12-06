@@ -1,6 +1,7 @@
 package httptestutil
 
 import (
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -41,6 +42,7 @@ func NewRecorder(file string, record bool, filters ...cassette.Filter) (*recorde
 // of an http.Client with the given recorder.
 func NewRecorderOpt(rec *recorder.Recorder) httpcli.Opt {
 	return func(c *http.Client) error {
+		fmt.Println("Here")
 		tr := c.Transport
 		if tr == nil {
 			tr = http.DefaultTransport

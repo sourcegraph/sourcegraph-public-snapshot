@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"context"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -51,7 +52,7 @@ type OAuthProviderOp struct {
 	DB database.DB
 }
 
-func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer, tokenRefresher oauthutil.TokenRefresher) *OAuthProvider {
+func newOAuthProvider(op OAuthProviderOp, cli *http.Client, tokenRefresher oauthutil.TokenRefresher) *OAuthProvider {
 	return &OAuthProvider{
 		token:     op.Token,
 		tokenType: op.TokenType,

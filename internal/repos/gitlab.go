@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -84,7 +85,7 @@ func newGitLabSource(ctx context.Context, logger log.Logger, db database.DB, svc
 		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
 	}
 
-	cli, err := cf.Doer(opts...)
+	cli, err := cf.Client(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -114,6 +115,7 @@ func newGitLabSource(ctx context.Context, logger log.Logger, db database.DB, svc
 	default:
 		client = provider.GetPATClient(c.Token, "")
 	}
+	fmt.Println(client)
 
 	if !envvar.SourcegraphDotComMode() || svc.CloudDefault {
 		client.RateLimitMonitor().SetCollector(&ratelimit.MetricsCollector{

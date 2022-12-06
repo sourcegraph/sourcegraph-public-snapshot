@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func Test_GitLab_FetchAccount(t *testing.T) {
@@ -268,40 +267,38 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 			BaseURL:   mustURL(t, "https://gitlab.com"),
 			SudoToken: "admin_token",
 		},
-		&mockDoer{
-			do: func(r *http.Request) (*http.Response, error) {
-				visibility := r.URL.Query().Get("visibility")
-				if visibility != "private" && visibility != "internal" {
-					return nil, errors.Errorf("URL visibility: want private or internal, got %s", visibility)
-				}
-				want := fmt.Sprintf("https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=%s", visibility)
-				if r.URL.String() != want {
-					return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
-				}
+		NewTestClient(func(r *http.Request) *http.Response {
+			visibility := r.URL.Query().Get("visibility")
+			if visibility != "private" && visibility != "internal" {
+				return nil
+			}
+			want := fmt.Sprintf("https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=%s", visibility)
+			if r.URL.String() != want {
+				return nil
+			}
 
-				want = "admin_token"
-				got := r.Header.Get("Private-Token")
-				if got != want {
-					return nil, errors.Errorf("HTTP Private-Token: want %q but got %q", want, got)
-				}
+			want = "admin_token"
+			got := r.Header.Get("Private-Token")
+			if got != want {
+				return nil
+			}
 
-				want = "999"
-				got = r.Header.Get("Sudo")
-				if got != want {
-					return nil, errors.Errorf("HTTP Sudo: want %q but got %q", want, got)
-				}
+			want = "999"
+			got = r.Header.Get("Sudo")
+			if got != want {
+				return nil
+			}
 
-				body := `[{"id": 1}, {"id": 2}]`
-				if visibility == "internal" {
-					body = `[{"id": 3}]`
-				}
-				return &http.Response{
-					Status:     http.StatusText(http.StatusOK),
-					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewReader([]byte(body))),
-				}, nil
-			},
-		},
+			body := `[{"id": 1}, {"id": 2}]`
+			if visibility == "internal" {
+				body = `[{"id": 3}]`
+			}
+			return &http.Response{
+				Status:     http.StatusText(http.StatusOK),
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+			}
+		}),
 	)
 
 	accountData := json.RawMessage(`{"id": 999}`)
@@ -371,32 +368,30 @@ func TestSudoProvider_FetchRepoPerms(t *testing.T) {
 			BaseURL: mustURL(t, "https://gitlab.com"),
 			Token:   "admin_token",
 		},
-		&mockDoer{
-			do: func(r *http.Request) (*http.Response, error) {
-				want := "https://gitlab.com/api/v4/projects/gitlab_project_id/members/all?per_page=100"
-				if r.URL.String() != want {
-					return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
-				}
+		NewTestClient(func(r *http.Request) *http.Response {
+			want := "https://gitlab.com/api/v4/projects/gitlab_project_id/members/all?per_page=100"
+			if r.URL.String() != want {
+				return nil
+			}
 
-				want = "admin_token"
-				got := r.Header.Get("Private-Token")
-				if got != want {
-					return nil, errors.Errorf("HTTP Private-Token: want %q but got %q", want, got)
-				}
+			want = "admin_token"
+			got := r.Header.Get("Private-Token")
+			if got != want {
+				return nil
+			}
 
-				body := `
+			body := `
 [
 	{"id": 1, "access_level": 10},
 	{"id": 2, "access_level": 20},
 	{"id": 3, "access_level": 30}
 ]`
-				return &http.Response{
-					Status:     http.StatusText(http.StatusOK),
-					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewReader([]byte(body))),
-				}, nil
-			},
-		},
+			return &http.Response{
+				Status:     http.StatusText(http.StatusOK),
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+			}
+		}),
 		nil,
 	)
 

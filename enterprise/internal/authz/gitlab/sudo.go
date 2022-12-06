@@ -3,6 +3,7 @@ package gitlab
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
 	"time"
@@ -11,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -61,7 +61,7 @@ type SudoProviderOp struct {
 	UseNativeUsername bool
 }
 
-func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
+func newSudoProvider(op SudoProviderOp, cli *http.Client) *SudoProvider {
 	return &SudoProvider{
 		sudoToken: op.SudoToken,
 

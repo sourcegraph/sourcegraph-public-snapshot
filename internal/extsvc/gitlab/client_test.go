@@ -44,7 +44,7 @@ func createTestProvider(t *testing.T) *ClientProvider {
 	t.Helper()
 	fac, cleanup := httptestutil.NewRecorderFactory(t, update(t.Name()), t.Name())
 	t.Cleanup(cleanup)
-	doer, err := fac.Doer()
+	doer, err := fac.Client()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,37 +68,40 @@ func update(name string) bool {
 	return regexp.MustCompile(*updateRegex).MatchString(name)
 }
 
-type mockDoer struct {
-	do func(*http.Request) (*http.Response, error)
+// RoundTripFunc .
+type RoundTripFunc func(req *http.Request) *http.Response
+
+// RoundTrip .
+func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req), nil
 }
 
-func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
-	return c.do(r)
+func NewTestClient(fn RoundTripFunc) *http.Client {
+	return &http.Client{
+		Transport: RoundTripFunc(fn),
+	}
 }
 
 func TestClient_doWithBaseURL(t *testing.T) {
 	baseURL, err := url.Parse("https://gitlab.com/")
 	require.NoError(t, err)
 
-	doer := &mockDoer{
-		do: func(r *http.Request) (*http.Response, error) {
-			if r.Header.Get("Authorization") == "Bearer bad token" {
-				return &http.Response{
-					Status:     http.StatusText(http.StatusUnauthorized),
-					StatusCode: http.StatusUnauthorized,
-					Body:       io.NopCloser(bytes.NewReader([]byte(`{"error":"invalid_token","error_description":"Token is expired. You can either do re-authorization or token refresh."}`))),
-				}, nil
-			}
-
-			body := `{"access_token": "refreshed-token", "token_type": "Bearer", "expires_in":3600, "refresh_token":"refresh-now", "scope":"create"}`
+	doer := NewTestClient(func(req *http.Request) *http.Response {
+		if req.Header.Get("Authorization") == "Bearer bad token" {
 			return &http.Response{
-				Status:     http.StatusText(http.StatusOK),
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
-			}, nil
+				Status:     http.StatusText(http.StatusUnauthorized),
+				StatusCode: http.StatusUnauthorized,
+				Body:       io.NopCloser(bytes.NewReader([]byte(`{"error":"invalid_token","error_description":"Token is expired. You can either do re-authorization or token refresh."}`))),
+			}
+		}
 
-		},
-	}
+		body := `{"access_token": "refreshed-token", "token_type": "Bearer", "expires_in":3600, "refresh_token":"refresh-now", "scope":"create"}`
+		return &http.Response{
+			Status:     http.StatusText(http.StatusOK),
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+		}
+	})
 
 	ctx := context.Background()
 
@@ -119,7 +122,7 @@ func TestClient_doWithBaseURL(t *testing.T) {
 		obt.RefreshToken = "refresh-now"
 
 		return "refreshed-token", "refresh-now", time.Now().Add(1 * time.Hour), nil
-	}})
+	}}, doer)
 
 	req, err := http.NewRequest(http.MethodGet, "url", nil)
 	require.NoError(t, err)
