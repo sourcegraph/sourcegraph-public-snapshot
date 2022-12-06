@@ -33,13 +33,13 @@
 <script lang="ts">
     import { defaultKeymap, historyKeymap, history as codemirrorHistory } from '@codemirror/commands'
 
-    import { Compartment, EditorState, Prec } from '@codemirror/state'
+    import { Compartment, EditorState, Extension, Prec } from '@codemirror/state'
     import { EditorView, keymap, placeholder as placeholderExtension } from '@codemirror/view'
 
     import { QueryChangeSource, QueryState, SearchPatternType } from '@sourcegraph/search'
     import { onDestroy } from 'svelte'
     import { parseInputAsQuery } from './codemirror/parsedQuery'
-    import { Source, suggestions } from './codemirror/suggestions'
+    import { editorConfigFacet, Source, suggestions } from './codemirror/suggestions'
     import { filterHighlight, querySyntaxHighlighting } from './codemirror/syntax-highlighting'
     import { singleLine } from './codemirror'
     import { mdiClose } from '@mdi/js'
@@ -61,22 +61,17 @@
 
     const popoverID = `searchinput-popover-${Math.floor(Math.random() * 2 ** 50)}`
 
-    // For simplicity we will recompute all extensions when input changes.
-    const extensionsCompartment = new Compartment()
-
-    function configureEditor(
-        parent: HTMLDivElement,
-        {
-            patternType,
-            interpretComments,
-            isLightTheme,
-            placeholder,
-            onChange,
-            suggestionsContainer,
-            suggestionSource,
-            history,
-        }: Config
-    ) {
+    function configureExtensions({
+        patternType,
+        interpretComments,
+        isLightTheme,
+        placeholder,
+        onChange,
+        onSubmit,
+        suggestionsContainer,
+        suggestionSource,
+        history,
+    }: Config): Extension {
         const extensions = [
             singleLine,
             EditorView.darkTheme.of(isLightTheme === false),
@@ -102,10 +97,18 @@
 
         if (onSubmit) {
             extensions.push(
+                editorConfigFacet.of({ onSubmit }),
                 Prec.high(
                     keymap.of([
                         {
                             key: 'Enter',
+                            run() {
+                                onSubmit?.()
+                                return true
+                            },
+                        },
+                        {
+                            key: 'Mod-Enter',
                             run() {
                                 onSubmit?.()
                                 return true
@@ -120,62 +123,77 @@
             extensions.push(suggestions(popoverID, suggestionsContainer, suggestionSource, history))
         }
 
-        if (!editor) {
-            editor = new EditorView({
-                state: EditorState.create({
-                    doc: queryState.query,
-                    extensions: [
-                        EditorView.contentAttributes.of({
-                            role: 'combobox',
-                            'aria-controls': popoverID,
-                            'aria-owns': popoverID,
-                            'aria-haspopup': 'grid',
-                        }),
-                        keymap.of(historyKeymap),
-                        keymap.of(defaultKeymap),
-                        codemirrorHistory(),
-                        Prec.low([querySyntaxHighlighting, filterHighlight]),
-                        extensionsCompartment.of(extensions),
-                        EditorView.theme({
-                            '&': {
-                                flex: 1,
-                                backgroundColor: 'var(--input-bg)',
-                                borderRadius: 'var(--border-radius)',
-                                borderColor: 'var(--border-color)',
-                            },
-                            '&.cm-editor.cm-focused': {
-                                outline: 'none',
-                            },
-                            '.cm-content': {
-                                caretColor: 'var(--search-query-text-color)',
-                                fontFamily: 'var(--code-font-family)',
-                                fontSize: 'var(--code-font-size)',
-                                color: 'var(--search-query-text-color)',
-                            },
-                        }),
-                    ],
-                }),
-                parent,
-            })
-        } else {
+        return extensions
+    }
+
+    // For simplicity we will recompute all extensions when input changes.
+    const extensionsCompartment = new Compartment()
+
+    function createEditor(parent: HTMLDivElement, extensions: Extension) {
+        if (editor) {
+            return
+        }
+        editor = new EditorView({
+            state: EditorState.create({
+                doc: queryState.query,
+                extensions: [
+                    EditorView.lineWrapping,
+                    EditorView.contentAttributes.of({
+                        role: 'combobox',
+                        'aria-controls': popoverID,
+                        'aria-owns': popoverID,
+                        'aria-haspopup': 'grid',
+                    }),
+                    keymap.of(historyKeymap),
+                    keymap.of(defaultKeymap),
+                    codemirrorHistory(),
+                    Prec.low([querySyntaxHighlighting, filterHighlight]),
+                    EditorView.theme({
+                        '&': {
+                            flex: 1,
+                            backgroundColor: 'var(--input-bg)',
+                            borderRadius: 'var(--border-radius)',
+                            borderColor: 'var(--border-color)',
+                        },
+                        '&.cm-editor.cm-focused': {
+                            outline: 'none',
+                        },
+                        '.cm-content': {
+                            caretColor: 'var(--search-query-text-color)',
+                            fontFamily: 'var(--code-font-family)',
+                            fontSize: 'var(--code-font-size)',
+                            color: 'var(--search-query-text-color)',
+                        },
+                    }),
+                    extensionsCompartment.of(extensions),
+                ],
+            }),
+            parent,
+        })
+    }
+
+    function updateEditor(extensions: Extension) {
+        if (editor) {
             editor.dispatch({ effects: extensionsCompartment.reconfigure(extensions) })
         }
     }
 
-    // Helper function to create reactive statements without referencing editor
-    // directly so that those blocks are only executed when non-editor
-    // dependencies change
-    function getEditor() {
-        return editor
+    function updateValueIfNecessary(queryState: QueryState) {
+        if (editor && queryState.changeSource !== QueryChangeSource.userInput) {
+            editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: queryState.query } })
+        }
     }
 
     onDestroy(() => {
         editor?.destroy()
     })
 
-    // Update editor configuration whenever one of these props changes
-    $: if (container) {
-        configureEditor(container, {
+    // Update editor content whenever query state changes
+    $: updateValueIfNecessary(queryState)
+
+    // Update extension configuration
+    $: updateEditor(
+        configureExtensions({
             patternType,
             interpretComments,
             isLightTheme,
@@ -186,14 +204,24 @@
             suggestionSource,
             history,
         })
-    }
+    )
 
-    // Update editor content whenever query state changes
-    $: {
-        const editor = getEditor()
-        if (editor && queryState.changeSource !== QueryChangeSource.userInput) {
-            editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: queryState.query } })
-        }
+    // Update editor configuration whenever one of these props changes
+    $: if (container) {
+        createEditor(
+            container,
+            configureExtensions({
+                patternType,
+                interpretComments,
+                isLightTheme,
+                placeholder,
+                onChange,
+                onSubmit,
+                suggestionsContainer,
+                suggestionSource,
+                history,
+            })
+        )
     }
 
     $: hasValue = queryState.query.length > 0
@@ -210,6 +238,7 @@
     <div class="root">
         <div class="focus-container" use:resizeObserver on:resize={onResize}>
             <div bind:this={container} style="display: contents" />
+            <!-- TODO: Consider making this a CodeMirror extension -->
             {#if hasValue}
                 <button type="button" on:click={() => onChange({ query: '' })}><Icon path={mdiClose} /></button>
             {/if}
@@ -224,7 +253,7 @@
         position: relative;
 
         .spacer {
-            margin: 0.5rem;
+            margin: 12px;
         }
     }
 
@@ -233,7 +262,7 @@
         left: 0;
         right: 0;
         top: 0;
-        border-radius: var(--border-radius);
+        border-radius: 8px;
         z-index: 100;
 
         &:focus-within {
@@ -249,19 +278,33 @@
     .focus-container {
         display: flex;
         background-color: var(--color-bg-1);
-        border-radius: var(--border-radius);
-        margin: 0.5rem;
+        border-radius: 4px;
+        margin: 12px 12px 0 12px;
+        border: 1px solid var(--border-color-2);
+        padding: 0 4px;
+        min-height: 32px;
+        align-items: center;
 
         &:focus-within {
-            outline: 2px solid var(--primary-2);
+            outline: 2px solid rgba(163, 208, 255, 1);
+            outline-offset: 0px;
+            border-color: var(--border-active-color);
         }
     }
 
     button {
+        align-self: flex-start;
         padding: 0.125rem 0.25rem;
-        margin: 0;
+        margin: 2px;
         border: 0;
         background-color: transparent;
+        border: 1px solid transparent;
+        border-radius: 4px;
+
+        &:focus {
+            outline: 2px solid rgba(163, 208, 255, 1);
+            outline-offset: 0px;
+        }
     }
 
     .suggestions {

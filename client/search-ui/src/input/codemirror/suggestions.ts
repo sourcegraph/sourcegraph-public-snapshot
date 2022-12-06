@@ -13,10 +13,24 @@ import { History } from 'history'
 import { SvelteComponentTyped } from 'svelte'
 import Suggestions from './Suggestions.svelte'
 export { default as FilterSuggestion } from './FilterSuggestion.svelte'
+export { default as SearchQueryOption } from './SearchQueryOption.svelte'
+
+// Temporary solution to make some editor settings available to other extensions
+interface EditorConfig {
+    onSubmit: () => void
+}
+export const editorConfigFacet = Facet.define<EditorConfig, EditorConfig>({
+    combine(configs) {
+        return configs[0] ?? { onSubmit: () => {} }
+    },
+})
+export function getEditorConfig(state: EditorState): EditorConfig {
+    return state.facet(editorConfigFacet)
+}
 
 export interface SuggestionResult {
     result: Group[]
-    asyncResult?: Promise<{ result: Group[] }>
+    next?: () => Promise<SuggestionResult>
     valid?: (state: EditorState, position: number) => boolean
 }
 
@@ -24,13 +38,12 @@ export interface SuggestionResult {
  * A source for completion/suggestion results
  */
 export interface Source {
-    (state: EditorState, position: number): Promise<SuggestionResult> | SuggestionResult
+    (state: EditorState, position: number): SuggestionResult
 }
 
 enum RegisteredSourceState {
     Inactive,
     Pending,
-    Fetching,
     Complete,
 }
 
@@ -46,6 +59,7 @@ export type Option =
           icon?: string
           render?: CustomRenderer
           description?: string
+          note?: string
       }
     | {
           type: 'completion'
@@ -92,6 +106,9 @@ class SuggestionView {
                 activeRowIndex: state.selectedOption,
             },
         })
+        this.instance.$on('select', event => {
+            applyOption(this.view, event.detail)
+        })
         this.view.dom.appendChild(this.root)
     }
 
@@ -128,16 +145,13 @@ const completionPlugin = ViewPlugin.fromClass(
         }
 
         async startQuery(source: RegisteredSource) {
-            const { state } = this.view
             if (
                 source.state === RegisteredSourceState.Pending &&
-                (!this.running || this.running.timestamp !== source.timestamp)
+                (!this.running || this.running.timestamp !== source.updateTimestamp)
             ) {
-                const query = new RunningQuery(source)
-                this.running = query
-                Promise.resolve(source.run(state, state.selection.main.anchor)).then(result => {
+                const query = (this.running = new RunningQuery(source))
+                query.source.run()?.then(result => {
                     if (this.running === query) {
-                        this.running = null
                         this.view.dispatch({ effects: updateResultEffect.of({ source, result }) })
                     }
                 })
@@ -188,11 +202,12 @@ const emptyResult = new Result([])
  */
 class RegisteredSource {
     public timestamp: number
+
     constructor(
         public readonly source: Source,
         public readonly state: RegisteredSourceState,
         public readonly result: Result,
-        private readonly nextResults?: Promise<SuggestionResult>
+        private readonly next?: () => Promise<SuggestionResult>
     ) {
         switch (state) {
             case RegisteredSourceState.Pending:
@@ -205,13 +220,13 @@ class RegisteredSource {
 
     update(transaction: Transaction): RegisteredSource {
         if (isUserInput(transaction)) {
-            return new RegisteredSource(this.source, RegisteredSourceState.Pending, emptyResult)
+            return this.query(transaction.state)
         }
         if (transaction.selection) {
             if (this.result.valid(transaction.state, transaction.newSelection.main.head)) {
                 return this
             }
-            return new RegisteredSource(this.source, RegisteredSourceState.Pending, emptyResult)
+            return this.query(transaction.state)
         }
         if (transaction.docChanged) {
             return new RegisteredSource(this.source, RegisteredSourceState.Inactive, emptyResult)
@@ -222,25 +237,29 @@ class RegisteredSource {
                 effect.value.source.source === this.source &&
                 this.state === RegisteredSourceState.Pending
             ) {
-                const nextState = effect.value.result.asyncResult
-                    ? RegisteredSourceState.Pending
-                    : RegisteredSourceState.Complete
+                const { result } = effect.value
                 return new RegisteredSource(
                     this.source,
-                    nextState,
-                    new Result(effect.value.result.result, effect.value.result.valid),
-                    effect.value.result.asyncResult
+                    result.next ? RegisteredSourceState.Pending : RegisteredSourceState.Complete,
+                    new Result(result.result, result.valid),
+                    result.next
                 )
             }
             if (effect.is(startCompletion)) {
-                return new RegisteredSource(this.source, RegisteredSourceState.Pending, emptyResult)
+                return this.query(transaction.state)
             }
         }
         return this
     }
 
-    run(...args: Parameters<Source>): ReturnType<Source> {
-        return this.nextResults ?? this.source(...args)
+    private query(state: EditorState): RegisteredSource {
+        const result = this.source(state, state.selection.main.head)
+        const nextState = result.next ? RegisteredSourceState.Pending : RegisteredSourceState.Complete
+        return new RegisteredSource(this.source, nextState, new Result(result.result, result.valid), result.next)
+    }
+
+    run(): Promise<SuggestionResult> | null {
+        return this.next?.() ?? null
     }
 }
 
@@ -252,20 +271,23 @@ class SuggestionsState {
 
         const source = transaction.state.facet(suggestionSource)
         let registeredSource =
-            source === this.source.source
-                ? this.source
+            source === state.source.source
+                ? state.source
                 : new RegisteredSource(source, RegisteredSourceState.Inactive, emptyResult)
         registeredSource = registeredSource.update(transaction)
-        if (registeredSource !== this.source) {
+        if (registeredSource !== state.source) {
             state = new SuggestionsState(
                 state.id,
                 registeredSource,
-                registeredSource.timestamp === this.source.timestamp
-                    ? this.selectedOption
-                    : this.selectedOption === 0
-                    ? this.selectedOption
-                    : -1
+                state.source.state === RegisteredSourceState.Inactive ||
+                state.source.state === RegisteredSourceState.Complete
+                    ? 0
+                    : state.selectedOption
             )
+        }
+
+        if (state.selectedOption > -1 && transaction.newDoc.length === 0) {
+            state = new SuggestionsState(state.id, state.source, -1)
         }
 
         for (const effect of transaction.effects) {
@@ -343,9 +365,19 @@ function applyOption(view: EditorView, option: Option): void {
             {
                 const text = option.insertValue ?? option.value
                 view.dispatch({
-                    changes: { from: option.from, to: option.to ?? view.state.selection.main.head, insert: text },
-                    // Move cursor to the end of the inserted text
-                    selection: EditorSelection.cursor(option.from + text.length),
+                    ...view.state.changeByRange(range => {
+                        if (range === view.state.selection.main) {
+                            return {
+                                changes: {
+                                    from: option.from,
+                                    to: option.to ?? view.state.selection.main.head,
+                                    insert: text,
+                                },
+                                range: EditorSelection.cursor(option.from + text.length),
+                            }
+                        }
+                        return { range }
+                    }),
                 })
             }
             break

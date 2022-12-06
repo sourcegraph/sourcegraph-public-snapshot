@@ -3,36 +3,47 @@
 <script lang="ts">
     import { Group, Option } from './suggestions'
     import Icon from './Icon.svelte'
+    import { createEventDispatcher } from 'svelte'
 
     export let id: string
     export let results: Group[]
     export let activeRowIndex = -1
 
+    let dispatch = createEventDispatcher<{ select: Option }>()
+    let container: HTMLElement
+    let windowHeight: number
+
+    $: maxHeight = container ? windowHeight - container.getBoundingClientRect().top - 20 : 'auto'
+
     $: flattenedRows = results.flatMap(group => group.entries)
     $: focusedItem = flattenedRows[activeRowIndex]
     $: hasResults = results.length > 0
 
-    function handleClick(event: MouseEvent) {
-        // TODO: Handle application on click
-        console.log(event.target)
-        event.preventDefault()
+    function handleSelection(event: MouseEvent) {
+        console.log(event)
+        const match = (event.target as HTMLElement).closest('li[role="row"]')?.id.match(/\d+x\d+/)
+        if (match) {
+            const [group, option] = match[0].split('x')
+            dispatch('select', results[+group].entries[+option])
+        }
     }
 
     function getNote(option: Option): string {
         switch (option.type) {
+            case 'completion':
+                return 'Add'
             case 'target':
                 return 'Jump to'
             case 'command':
-                return ''
-            case 'completion':
-                return 'Add'
+                return option.note ?? ''
         }
     }
 </script>
 
+<svelte:window bind:innerHeight={windowHeight} />
 {#if hasResults}
     <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <div {id} role="grid" on:click={handleClick}>
+    <div {id} role="grid" style="max-height: {maxHeight}px" on:mousedown={handleSelection} bind:this={container}>
         {#each results as group, groupIndex (group.title)}
             <ul role="rowgroup" aria-labelledby="{id}-{groupIndex}-label">
                 <li id="{id}-{groupIndex}-label" role="presentation">{group.title}</li>
@@ -43,7 +54,7 @@
                                 <Icon path={option.icon} />
                             </div>
                         {/if}
-                        <div role="gridcell">
+                        <div role="gridcell" class="content">
                             {#if option.render}
                                 <svelte:component this={option.render} {option} />
                             {:else if option.matches}
@@ -74,6 +85,10 @@
 {/if}
 
 <style lang="scss">
+    [role='grid'] {
+        overflow-y: auto;
+    }
+
     ul {
         margin: 0;
         padding: 0;
@@ -82,7 +97,7 @@
 
     [role='rowgroup'] {
         border-bottom: 1px solid var(--border-color);
-        padding: 0.5rem;
+        padding: 12px;
 
         &:last-of-type {
             border: none;
@@ -91,21 +106,29 @@
         // group header
         [role='presentation'] {
             color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 500;
             margin-bottom: 0.25rem;
+            padding: 0 8px;
         }
 
         [role='row'] {
             display: flex;
             align-items: center;
-            padding: 0.25rem 0.5rem;
+            padding: 4px 8px;
             border-radius: var(--border-radius);
+            font-family: var(--code-font-family);
+            font-size: 12px;
+            min-height: 24px;
 
             &[aria-selected='true'] {
                 background-color: var(--subtle-bg);
+                border-radius: 4px;
             }
 
             &:hover {
                 background-color: var(--color-bg-2);
+                cursor: pointer;
             }
 
             .match {
@@ -113,13 +136,15 @@
             }
 
             .description {
-                margin-left: 0.5rem;
+                margin-left: 8px;
                 color: var(--input-placeholder-color);
             }
 
             .note {
+                font-size: 12px;
                 margin-left: auto;
                 color: var(--text-muted);
+                font-family: var(--font-family-base);
             }
         }
     }

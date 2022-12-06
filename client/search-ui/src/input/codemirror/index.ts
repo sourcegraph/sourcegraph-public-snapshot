@@ -13,7 +13,7 @@ import {
     StandardSuggestionSource,
 } from './completion'
 import { loadingIndicator } from './loading-indicator'
-export { tokenAt } from './parsedQuery'
+export { tokenAt, tokens } from './parsedQuery'
 
 export { createDefaultSuggestionSources, searchQueryAutocompletion }
 export type { StandardSuggestionSource }

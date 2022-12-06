@@ -58,6 +58,13 @@ export function tokenAt(state: EditorState, position: number): Token | undefined
     )
 }
 
+/**
+ * Returns the current query tokens
+ */
+export function tokens(state: EditorState): Token[] {
+    return state.facet(queryTokens).tokens
+}
+
 interface ParseOptions {
     patternType: SearchPatternType
     interpretComments?: boolean
