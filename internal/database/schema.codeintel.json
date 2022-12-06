@@ -430,7 +430,12 @@
         }
       ],
       "Constraints": null,
-      "Triggers": []
+      "Triggers": [
+        {
+          "Name": "codeintel_scip_documents_schema_versions_insert",
+          "Definition": "CREATE TRIGGER codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert()"
+        }
+      ]
     },
     {
       "Name": "codeintel_scip_documents_schema_versions",
@@ -489,12 +494,7 @@
         }
       ],
       "Constraints": null,
-      "Triggers": [
-        {
-          "Name": "codeintel_scip_documents_schema_versions_insert",
-          "Definition": "CREATE TRIGGER codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents_schema_versions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert()"
-        }
-      ]
+      "Triggers": []
     },
     {
       "Name": "codeintel_scip_metadata",
