@@ -27,6 +27,7 @@ export interface SearchContextsListProps
     extends Pick<SearchContextProps, 'fetchSearchContexts' | 'getUserSearchContextNamespaces'>,
         PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
+    setAlert: (message: string) => void
 }
 
 export const SearchContextsList: React.FunctionComponent<SearchContextsListProps> = ({
@@ -34,6 +35,7 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
     getUserSearchContextNamespaces,
     fetchSearchContexts,
     platformContext,
+    setAlert,
 }) => {
     const queryConnection = useCallback(
         (args: Partial<ListSearchContextsVariables>) => {
@@ -172,6 +174,7 @@ export const SearchContextsList: React.FunctionComponent<SearchContextsListProps
             nodeComponent={SearchContextNode}
             nodeComponentProps={{
                 authenticatedUser,
+                setAlert,
             }}
             noun="search context"
             pluralNoun="search contexts"

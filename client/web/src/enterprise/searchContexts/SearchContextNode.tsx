@@ -1,9 +1,9 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
 import { mdiDotsHorizontal } from '@mdi/js'
 import classNames from 'classnames'
 
-import { pluralize } from '@sourcegraph/common'
+import { isErrorLike, pluralize } from '@sourcegraph/common'
 import { SearchContextMinimalFields } from '@sourcegraph/search'
 import { Badge, Icon, Link, Menu, MenuButton, MenuLink, MenuList, Tooltip } from '@sourcegraph/wildcard'
 
@@ -18,17 +18,26 @@ import styles from './SearchContextNode.module.scss'
 export interface SearchContextNodeProps {
     node: SearchContextMinimalFields
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
+    setAlert: (message: string) => void
 }
 
 export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<SearchContextNodeProps>> = ({
     node,
     authenticatedUser,
+    setAlert,
 }: SearchContextNodeProps) => {
     const { starred, toggleStar } = useToggleSearchContextStar(node.viewerHasStarred, node.id, authenticatedUser?.id)
+    const toggleStarWithErrorHandling = useCallback(() => {
+        setAlert('') // Clear previous alerts
+        toggleStar().catch(error => {
+            setAlert(`Error starring search context: ${isErrorLike(error) ? error.message : 'Unknown error'}`)
+        })
+    }, [setAlert, toggleStar])
 
     const starButton =
-        !node.autoDefined && authenticatedUser ? (
-            <SearchContextStarButton starred={starred} onClick={toggleStar} />
+        !node.autoDefined && // Auto-defined search contexts cannot be starred
+        authenticatedUser ? (
+            <SearchContextStarButton starred={starred} onClick={toggleStarWithErrorHandling} />
         ) : null
 
     const contents =

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
+import { isErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
 
 export function useToggleSearchContextStar(
@@ -49,8 +50,12 @@ export function useToggleSearchContextStar(
             // If the mutation fails, revert the optimistic update
             setStarred(previousStarred)
 
-            // Rethrow the error
-            throw error
+            if (isErrorLike(error) && error.message.includes('Failed to fetch')) {
+                throw new Error('Network error, check your internet connection.')
+            } else {
+                // Rethrow the original error
+                throw error
+            }
         }
     }, [createStarMutation, deleteStarMutation, searchContextId, starred, userId])
 
