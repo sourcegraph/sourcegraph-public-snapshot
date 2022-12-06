@@ -191,8 +191,10 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 	// we searched the correct commit if we had a result since that contains
 	// the commit searched.
 	var wrongCommit, foundResults bool
+	var crashes int
 
 	err = client.StreamSearch(ctx, q, opts, senderFunc(func(res *zoekt.SearchResult) {
+		crashes += res.Crashes
 		for _, fm := range res.Files {
 			// Unexpected commit searched, signal to retry.
 			if fm.Version != string(indexed) {
@@ -222,6 +224,12 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 	// streamed back is correct.
 	if foundResults {
 		return "", nil
+	}
+
+	// The zoekt containing the repo may have been unreachable, so we are
+	// conservative and treat any backend being down as a reason to retry.
+	if crashes > 0 {
+		return "index-search-missing", nil
 	}
 
 	// we have no matches, so we don't know if we searched the correct commit
