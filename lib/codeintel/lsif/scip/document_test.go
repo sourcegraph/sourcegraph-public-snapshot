@@ -87,8 +87,8 @@ func TestConvertLSIFDocument(t *testing.T) {
 	}
 
 	expectedOccurrences := []*scip.Occurrence{
-		{Range: []int32{50, 25, 50, 35}, Symbol: "lsif . 42 . `d0`.", SymbolRoles: 1},
-		{Range: []int32{50, 25, 50, 35}, Symbol: "node npm left-pad 0.1.0 `padItUp`.", SymbolRoles: 1},
+		{Range: []int32{50, 25, 50, 35}, Symbol: "lsif . 42 . `d0`.", SymbolRoles: int32(scip.SymbolRole_Definition)},
+		{Range: []int32{50, 25, 50, 35}, Symbol: "node npm left-pad 0.1.0 `padItUp`.", SymbolRoles: int32(scip.SymbolRole_Definition)},
 		{Range: []int32{51, 25, 51, 35}, Symbol: "lsif . 42 . `d0`."},
 		{Range: []int32{51, 25, 51, 35}, Symbol: "node npm left-pad 0.1.0 `padItUp`."},
 		{Range: []int32{52, 25, 52, 35}, Symbol: "lsif . 42 . `d0`."},
@@ -104,7 +104,6 @@ func TestConvertLSIFDocument(t *testing.T) {
 
 		return oi.Range[0] < oj.Range[0]
 	})
-
 	if diff := cmp.Diff(expectedOccurrences, scipDocument.Occurrences, cmpopts.IgnoreUnexported(scip.Occurrence{})); diff != "" {
 		t.Errorf("unexpected occurrences (-want +got):\n%s", diff)
 	}
@@ -113,6 +112,9 @@ func TestConvertLSIFDocument(t *testing.T) {
 		{Symbol: "lsif . 42 . `d0`.", Documentation: []string{"hello world"}, Relationships: nil},
 		{Symbol: "node npm left-pad 0.1.0 `padItUp`.", Documentation: []string{"hello world"}, Relationships: nil},
 	}
+	sort.Slice(scipDocument.Symbols, func(i, j int) bool {
+		return scipDocument.Symbols[i].Symbol < scipDocument.Symbols[j].Symbol
+	})
 	if diff := cmp.Diff(expectedSymbols, scipDocument.Symbols, cmpopts.IgnoreUnexported(scip.SymbolInformation{})); diff != "" {
 		t.Errorf("unexpected symbols (-want +got):\n%s", diff)
 	}
