@@ -45,10 +45,7 @@ import { ExecutionWorkspaces } from './workspaces/ExecutionWorkspaces'
 import layoutStyles from '../Layout.module.scss'
 import styles from './ExecuteBatchSpecPage.module.scss'
 
-export interface AuthenticatedExecuteBatchSpecPageProps
-    extends ThemeProps,
-        TelemetryProps,
-        RouteComponentProps<{}> {
+export interface AuthenticatedExecuteBatchSpecPageProps extends ThemeProps, TelemetryProps, RouteComponentProps<{}> {
     batchChange: { name: string; namespace: Scalars['ID'] }
     batchSpecID: Scalars['ID']
     authenticatedUser: AuthenticatedUser
@@ -109,10 +106,7 @@ export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
     )
 }
 
-interface ExecuteBatchSpecPageContentProps
-    extends ThemeProps,
-        TelemetryProps,
-        RouteComponentProps<{}> {
+interface ExecuteBatchSpecPageContentProps extends ThemeProps, TelemetryProps, RouteComponentProps<{}> {
     authenticatedUser: AuthenticatedUser
     queryWorkspacesList?: typeof _queryWorkspacesList
 }
@@ -219,7 +213,11 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     render={() => (
                         <>
                             <TabBar activeTabKey="configuration" tabsConfig={tabsConfig} matchURL={executionURL} />
-                            <ConfigurationForm isReadOnly={true} batchChange={batchChange} authenticatedUser={authenticatedUser} />
+                            <ConfigurationForm
+                                isReadOnly={true}
+                                batchChange={batchChange}
+                                authenticatedUser={authenticatedUser}
+                            />
                         </>
                     )}
                     exact={true}

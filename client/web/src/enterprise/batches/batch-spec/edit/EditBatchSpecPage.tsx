@@ -128,7 +128,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
     batchSpec,
     editor,
     errors,
-    authenticatedUser
+    authenticatedUser,
 }) {
     const history = useHistory()
 

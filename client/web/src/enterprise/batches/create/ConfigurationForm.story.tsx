@@ -67,7 +67,11 @@ export const NewOrgBatchChange: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks()}>
-                <ConfigurationForm {...props} initialNamespaceID={MOCK_ORGANIZATION.id} authenticatedUser={mockAuthenticatedUser} />
+                <ConfigurationForm
+                    {...props}
+                    initialNamespaceID={MOCK_ORGANIZATION.id}
+                    authenticatedUser={mockAuthenticatedUser}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
