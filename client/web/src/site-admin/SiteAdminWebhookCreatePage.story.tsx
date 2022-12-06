@@ -1,13 +1,14 @@
+import { MockedResponse } from '@apollo/client/testing'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
-import { of, throwError } from 'rxjs'
+import { WildcardMockLink } from 'wildcard-mock-link'
 
-import { asError } from '@sourcegraph/common'
+import { getDocumentNode } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { queryExternalServices as _queryExternalServices } from '../components/externalServices/backend'
+import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { WebStory } from '../components/WebStory'
 import { ListExternalServiceFields } from '../graphql-operations'
 
@@ -22,37 +23,58 @@ const config: Meta = {
 
 export default config
 
-const queryExternalServices: typeof _queryExternalServices = () =>
-    of({
-        totalCount: 17,
-        pageInfo: {
-            endCursor: null,
-            hasNextPage: false,
+export const WebhookCreatePage: Story = () => {
+    const mocks = new WildcardMockLink([
+        {
+            request: {
+                query: getDocumentNode(EXTERNAL_SERVICES),
+                variables: { first: null, after: null },
+            },
+            result: {
+                data: {
+                    externalServices: {
+                        __typename: 'ExternalServiceConnection',
+                        totalCount: 17,
+                        pageInfo: {
+                            endCursor: null,
+                            hasNextPage: false,
+                        },
+                        nodes: [
+                            createExternalService(ExternalServiceKind.GITHUB, 'https://github.com'),
+                            createExternalService(ExternalServiceKind.BITBUCKETCLOUD, 'https://bitbucket.org'),
+                            createExternalService(ExternalServiceKind.BITBUCKETSERVER, 'https://sgdev.bitbucket.org'),
+                            createExternalService(ExternalServiceKind.BITBUCKETSERVER, 'https://sgprod.bitbucket.org'),
+                            createExternalService(ExternalServiceKind.GITLAB, 'https://gitlab.com'),
+                            createExternalService(ExternalServiceKind.PERFORCE, 'https://perforce.com'),
+                        ],
+                    },
+                },
+            },
+            nMatches: Number.POSITIVE_INFINITY,
         },
-        nodes: [
-            createExternalService(ExternalServiceKind.GITHUB, 'https://github.com'),
-            createExternalService(ExternalServiceKind.BITBUCKETCLOUD, 'https://bitbucket.org'),
-            createExternalService(ExternalServiceKind.BITBUCKETSERVER, 'https://sgdev.bitbucket.org'),
-            createExternalService(ExternalServiceKind.BITBUCKETSERVER, 'https://sgprod.bitbucket.org'),
-            createExternalService(ExternalServiceKind.GERRIT, 'https://gerrit.com'),
-            createExternalService(ExternalServiceKind.GITLAB, 'https://gitlab.com'),
-            createExternalService(ExternalServiceKind.GITOLITE, 'https://gitolite.com'),
-            createExternalService(ExternalServiceKind.GOMODULES, 'https://gomodules.com'),
-            createExternalService(ExternalServiceKind.JVMPACKAGES, 'https://jvmpackages.com'),
-            createExternalService(ExternalServiceKind.NPMPACKAGES, 'https://npmpackages.com'),
-            createExternalService(ExternalServiceKind.OTHER, 'https://other.com'),
-            createExternalService(ExternalServiceKind.PAGURE, 'https://pagure.com'),
-            createExternalService(ExternalServiceKind.PERFORCE, 'https://perforce.com'),
-            createExternalService(ExternalServiceKind.PHABRICATOR, 'https://phabricator.com'),
-            createExternalService(ExternalServiceKind.PYTHONPACKAGES, 'https://pythonpackages.com'),
-            createExternalService(ExternalServiceKind.RUSTPACKAGES, 'https://rustpackages.com'),
-            createExternalService(ExternalServiceKind.RUBYPACKAGES, 'https://rubypackages.com'),
-        ],
-    })
+    ])
+    return (
+        <WebStory>
+            {() => (
+                <MockedTestProvider link={mocks}>
+                    <SiteAdminWebhookCreatePage
+                        match={{} as any}
+                        history={H.createMemoryHistory()}
+                        location={{} as any}
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+}
+
+WebhookCreatePage.storyName = 'Create webhook'
 
 function createExternalService(kind: ExternalServiceKind, url: string): ListExternalServiceFields {
     return {
-        id: 'service1',
+        __typename: 'ExternalService',
+        id: `service-${url}`,
         kind,
         displayName: `${kind}-123`,
         config: `{"url": "${url}"}`,
@@ -67,40 +89,30 @@ function createExternalService(kind: ExternalServiceKind, url: string): ListExte
     }
 }
 
-export const WebhookCreatePage: Story = () => (
-    <WebStory>
-        {() => (
-            <MockedTestProvider>
-                <SiteAdminWebhookCreatePage
-                    match={{} as any}
-                    history={H.createMemoryHistory()}
-                    location={{} as any}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    queryExternalServices={queryExternalServices}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
-
-WebhookCreatePage.storyName = 'Create webhook'
-
-const queryExternalServicesError: typeof _queryExternalServices = () => throwError(asError('oops'))
-
-export const WebhookCreatePageWithError: Story = () => (
-    <WebStory>
-        {() => (
-            <MockedTestProvider>
-                <SiteAdminWebhookCreatePage
-                    match={{} as any}
-                    history={H.createMemoryHistory()}
-                    location={{} as any}
-                    telemetryService={NOOP_TELEMETRY_SERVICE}
-                    queryExternalServices={queryExternalServicesError}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
+export const WebhookCreatePageWithError: Story = () => {
+    const mockedResponse: MockedResponse[] = [
+        {
+            request: {
+                query: getDocumentNode(EXTERNAL_SERVICES),
+                variables: { first: null, after: null },
+            },
+            error: new Error('oops'),
+        },
+    ]
+    return (
+        <WebStory>
+            {() => (
+                <MockedTestProvider mocks={mockedResponse}>
+                    <SiteAdminWebhookCreatePage
+                        match={{} as any}
+                        history={H.createMemoryHistory()}
+                        location={{} as any}
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+}
 
 WebhookCreatePageWithError.storyName = 'Error during external services fetch'

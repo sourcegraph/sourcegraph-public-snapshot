@@ -5,32 +5,29 @@ import classNames from 'classnames'
 import { parse as parseJSONC } from 'jsonc-parser'
 import { noop } from 'lodash'
 import { RouteComponentProps } from 'react-router'
-import { catchError } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
-import { useMutation } from '@sourcegraph/http-client'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Button, Container, H2, Input, PageHeader, Select, useObservable } from '@sourcegraph/wildcard'
+import { Alert, Button, Container, H2, Input, PageHeader, Select } from '@sourcegraph/wildcard'
 
-import { queryExternalServices as _queryExternalServices } from '../components/externalServices/backend'
+import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
+import { ConnectionLoading } from '../components/FilteredConnection/ui'
 import { PageTitle } from '../components/PageTitle'
 import {
     CreateWebhookResult,
     CreateWebhookVariables,
     ExternalServiceKind,
     ExternalServicesResult,
+    ExternalServicesVariables,
 } from '../graphql-operations'
 
 import { CREATE_WEBHOOK_QUERY } from './backend'
 
 import styles from './SiteAdminWebhookCreatePage.module.scss'
 
-export interface SiteAdminWebhookCreatePageProps extends TelemetryProps, RouteComponentProps<{}> {
-    /** For testing only. */
-    queryExternalServices?: typeof _queryExternalServices
-}
+export interface SiteAdminWebhookCreatePageProps extends TelemetryProps, RouteComponentProps<{}> {}
 
 interface Webhook {
     name: string
@@ -39,13 +36,7 @@ interface Webhook {
     secret: string | null
 }
 
-export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = ({
-    telemetryService,
-    history,
-    queryExternalServices = _queryExternalServices,
-}) => {
-    const [loading, setLoading] = useState(true)
-
+export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = ({ telemetryService, history }) => {
     useEffect(() => {
         telemetryService.logPageView('SiteAdminWebhookCreatePage')
     }, [telemetryService])
@@ -58,22 +49,17 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
     })
     const [kindsToUrls, setKindsToUrls] = useState<Map<ExternalServiceKind, string[]>>(new Map())
 
-    const extSvcKindsOrError: ExternalServicesResult['externalServices'] | undefined | ErrorLike = useObservable(
-        useMemo(
-            () =>
-                queryExternalServices({
-                    first: null,
-                    after: null,
-                }).pipe(catchError(error => [asError(error)])),
-            [queryExternalServices]
-        )
-    )
-
+    const { loading, data, error } = useQuery<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, {
+        variables: {
+            first: null,
+            after: null,
+        },
+    })
     useMemo(() => {
-        if (extSvcKindsOrError && !isErrorLike(extSvcKindsOrError)) {
+        if (data?.externalServices && data?.externalServices?.__typename === 'ExternalServiceConnection') {
             const kindToUrlMap = new Map<ExternalServiceKind, string[]>()
 
-            for (const extSvc of extSvcKindsOrError.nodes) {
+            for (const extSvc of data.externalServices.nodes) {
                 if (!supportedExternalServiceKind(extSvc.kind)) {
                     continue
                 }
@@ -83,31 +69,42 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                 }
             }
 
-            setKindsToUrls(kindToUrlMap)
-            // If there are no external services, then the warning is shown and webhook creation is blocked
-            if (kindToUrlMap.size > 0) {
-                const kindsArray = Array.from(kindToUrlMap.keys())
-                const currentKind = kindsArray[0]
+            // If there are no external services or there are external services without URL,
+            // then the warning is shown and webhook creation is blocked
+            if (validateKindsAndUrls(kindToUrlMap)) {
+                setKindsToUrls(kindToUrlMap)
+                const [currentKind] = kindToUrlMap.keys()
+                const [currentUrls] = kindToUrlMap.values()
                 // we always generate a secret once and assign it to the webhook. Bitbucket Cloud special case
                 // is handled is an Input and during GraphQL query creation.
                 setWebhook(webhook => ({
                     ...webhook,
                     secret: generateSecret(),
-                    codeHostURN: kindToUrlMap.get(currentKind)?.[0] || '',
+                    codeHostURN: currentUrls[0],
                     codeHostKind: currentKind,
                 }))
             }
-            setLoading(false)
         }
-    }, [extSvcKindsOrError])
+    }, [data])
 
     const onCodeHostTypeChange = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(
         event => {
             const selected = event.target.value as ExternalServiceKind
+            if (!kindsToUrls.has(selected)) {
+                throw new Error(
+                    `${prettyPrintExternalServiceKind(
+                        selected
+                    )} code host connection has no URL. Please check related code host configuration.`
+                )
+            }
+            // `kindsToUrls.get(selected)` cannot be undefined because of the check above
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            const selectedUrn = kindsToUrls.get(selected)[0]
             setWebhook(webhook => ({
                 ...webhook,
                 codeHostKind: selected,
-                codeHostURN: kindsToUrls.get(selected)?.[0] || '',
+                codeHostURN: selectedUrn,
             }))
         },
         [kindsToUrls]
@@ -121,7 +118,6 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
     const onSecretChange = useCallback((secret: string): void => {
         setWebhook(webhook => ({ ...webhook, secret: secret.length === 0 ? null : secret }))
     }, [])
-
     const [createWebhook, { error: createWebhookError, loading: creationLoading }] = useMutation<
         CreateWebhookResult,
         CreateWebhookVariables
@@ -136,11 +132,17 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                 headingElement="h2"
             />
 
-            {isErrorLike(extSvcKindsOrError) && <ErrorAlert error={extSvcKindsOrError} />}
-            {!isErrorLike(extSvcKindsOrError) &&
+            {error && <ErrorAlert error={error} />}
+            {loading && <ConnectionLoading />}
+            {!loading &&
+                !error &&
                 (kindsToUrls.size === 0 ? (
                     <Alert variant="warning" className="mt-2">
                         Please add a code host connection in order to create a webhook.
+                    </Alert>
+                ) : !validateKindsAndUrls(kindsToUrls) ? (
+                    <Alert variant="warning" className="mt-2">
+                        Please ensure that code host connections have corresponding URLs.
                     </Alert>
                 ) : (
                     <div>
@@ -149,6 +151,7 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                             onSubmit={event => {
                                 event.preventDefault()
                                 createWebhook({ variables: convertWebhookToCreateWebhookVariables(webhook) }).catch(
+                                    // noop here is used because creation error is handled directly when useMutation is called
                                     noop
                                 )
                             }}
@@ -170,14 +173,13 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                                     label={<span className="small">Code host type</span>}
                                     required={true}
                                     onChange={onCodeHostTypeChange}
-                                    disabled={loading || kindsToUrls.size === 0}
+                                    disabled={loading}
                                 >
-                                    {kindsToUrls.size > 0 &&
-                                        Array.from(kindsToUrls.keys()).map(kind => (
-                                            <option value={kind} key={kind}>
-                                                {prettyPrintExternalServiceKind(kind)}
-                                            </option>
-                                        ))}
+                                    {Array.from(kindsToUrls.keys()).map(kind => (
+                                        <option value={kind} key={kind}>
+                                            {prettyPrintExternalServiceKind(kind)}
+                                        </option>
+                                    ))}
                                 </Select>
                                 <Select
                                     id="code-host-urn-select"
@@ -241,6 +243,18 @@ export const SiteAdminWebhookCreatePage: FC<SiteAdminWebhookCreatePageProps> = (
                 ))}
         </Container>
     )
+}
+
+function validateKindsAndUrls(map: Map<ExternalServiceKind, string[]>): boolean {
+    if (map.size === 0) {
+        return false
+    }
+    for (const urls in map.values()) {
+        if (urls.length === 0) {
+            return false
+        }
+    }
+    return true
 }
 
 function supportedExternalServiceKind(kind: ExternalServiceKind): boolean {
