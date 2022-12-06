@@ -1,20 +1,17 @@
 import { MockedResponse } from '@apollo/client/testing'
 import { fireEvent } from '@testing-library/react'
 
-import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, getDocumentNode } from '@sourcegraph/http-client'
 import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourcegraph/shared/src/testing'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { Text } from '@sourcegraph/wildcard'
 
-import {
-    TestPageSwitcherPaginationQueryFields,
-    TestPageSwitcherPaginationQueryResult,
-    TestPageSwitcherPaginationQueryVariables,
-} from '../../../graphql-operations'
-
 import { usePageSwitcherPagination } from './usePageSwitcherPagination'
 
-const TEST_PAGINATED_CONNECTION_QUERY = gql`
+type TestPageSwitcherPaginationQueryFields = any
+type TestPageSwitcherPaginationQueryResult = any
+type TestPageSwitcherPaginationQueryVariables = any
+const TEST_PAGINATED_CONNECTION_QUERY = `
     query TestPageSwitcherPaginationQuery($first: Int, $last: Int, $after: String, $before: String) {
         savedSearchesByNamespace(
             namespaceType: "Org"
