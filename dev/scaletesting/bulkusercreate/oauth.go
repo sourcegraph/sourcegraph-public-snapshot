@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
+// generateUserOAuthCsv creates user impersonation OAuth tokens and writes them to a CSV file together with the usernames.
 func generateUserOAuthCsv(ctx context.Context, users []*user, tokensDone int64) {
 	tg := group.NewWithResults[userToken]().WithMaxConcurrency(1000)
 	for _, u := range users {
@@ -54,6 +55,7 @@ func generateUserOAuthCsv(ctx context.Context, users []*user, tokensDone int64) 
 	}
 }
 
+// executeCreateUserImpersonationToken creates a user impersonation OAuth token for the given user.
 func executeCreateUserImpersonationToken(ctx context.Context, u *user) string {
 	auth, _, err := gh.Admin.CreateUserImpersonation(ctx, u.Login, &github.ImpersonateUserOptions{Scopes: []string{"repo", "read:org", "read:user_email"}})
 	if err != nil {
