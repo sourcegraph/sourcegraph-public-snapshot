@@ -20,22 +20,22 @@ func getGitHubRepos(ctx context.Context) []*github.Repository {
 			var resp *github.Response
 			var reposPage []*github.Repository
 			var err error
-			for resp == nil || resp.StatusCode == 502 || resp.StatusCode == 504 {
-				if resp != nil && (resp.StatusCode == 502 || resp.StatusCode == 504) {
-					writeInfo(out, "Response status %d, retrying in a minute", resp.StatusCode)
-					time.Sleep(time.Minute)
-				}
-				reposPage, resp, err = gh.Repositories.ListByOrg(ctx, "blank200k", &github.RepositoryListByOrgOptions{
-					Type: "private",
-					ListOptions: github.ListOptions{
-						Page:    page,
-						PerPage: 100,
-					},
-				})
-				if err != nil {
-					log.Print(err)
-				}
+
+		retryListByOrg:
+			if reposPage, resp, err = gh.Repositories.ListByOrg(ctx, "blank200k", &github.RepositoryListByOrgOptions{
+				Type: "private",
+				ListOptions: github.ListOptions{
+					Page:    page,
+					PerPage: 100,
+				},
+			}); err != nil {
+				log.Printf("Failed getting repo page %d for org %s: %s", page, "blank200k", err)
 			}
+			if resp != nil && (resp.StatusCode == 502 || resp.StatusCode == 504) {
+				time.Sleep(30 * time.Second)
+				goto retryListByOrg
+			}
+
 			return reposPage
 		})
 	}
