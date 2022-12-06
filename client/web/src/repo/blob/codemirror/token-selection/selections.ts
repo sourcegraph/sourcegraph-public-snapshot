@@ -11,8 +11,8 @@ import { cmSelectionToRange, occurrenceAtPosition, rangeToCmSelection } from '..
 import { isSelectionInsideDocument } from '../utils'
 
 import { definitionCache, goToDefinitionAtOccurrence } from './definition'
-import { hoverAtOccurrence, hoverCache, setHoveredOccurrenceEffect } from './hover'
 import { showDocumentHighlightsForOccurrence } from './document-highlights'
+import { hoverAtOccurrence, hoverCache, setHoveredOccurrenceEffect } from './hover'
 
 export const tokenSelectionTheme = EditorView.theme({
     '.cm-token-selection-definition-ready': {
