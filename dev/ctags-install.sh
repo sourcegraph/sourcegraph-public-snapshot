@@ -12,8 +12,8 @@ NAME="ctags-${CTAGS_VERSION}"
 TARGET="$PWD/.bin/${NAME}"
 
 if [ $# -ne 0 ]; then
-  if [ $1 == "which" ]; then
-    echo $TARGET
+  if [ "$1" == "which" ]; then
+    echo "$TARGET"
     exit 0
   fi
 fi
@@ -27,7 +27,7 @@ function ctrl_c() {
 }
 
 trap ctrl_c INT
-trap "rm -Rf \"$tmpdir\" &>/dev/null" EXIT
+trap 'rm -Rf \"$tmpdir\" &>/dev/null' EXIT
 
 function build_ctags {
   case "$OSTYPE" in
@@ -37,7 +37,7 @@ function build_ctags {
     *)        NUMCPUS="4" ;;
   esac
 
-  curl --retry 5 "https://codeload.github.com/universal-ctags/ctags/tar.gz/$CTAGS_VERSION" | tar xz -C $tmpdir
+  curl --retry 5 "https://codeload.github.com/universal-ctags/ctags/tar.gz/$CTAGS_VERSION" | tar xz -C "$tmpdir"
   cd "${tmpdir}/ctags-${CTAGS_VERSION}"
   ./autogen.sh
   ./configure --program-prefix=universal- --enable-json

@@ -8,7 +8,7 @@
 # `CTAGS_COMMAND=path/to/ctags sg start`.
 
 root="$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
-TARGET=$($root/dev/ctags-install.sh which)
+TARGET=$("$root/dev/ctags-install.sh" which)
 
 if [ ! -f "${TARGET}" ]; then 
   exec docker run --rm -i \
