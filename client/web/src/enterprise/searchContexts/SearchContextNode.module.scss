@@ -14,7 +14,16 @@
         }
 
         &.description {
-            max-width: 40%;
+            // Table cell content is not truncated with just the normal CSS.
+            // We need this width hack to get the description to truncate with ellipsis,
+            // while keeping the automatic table layout.
+            // Tested on Chrome, Firefox, and Safari.
+            // See https://stackoverflow.com/a/61382039/176059
+            max-width: 0;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         &.contents,
