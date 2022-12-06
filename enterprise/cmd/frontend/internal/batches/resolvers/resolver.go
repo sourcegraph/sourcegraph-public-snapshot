@@ -10,13 +10,16 @@ import (
 	"github.com/kballard/go-shellquote"
 	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
+	stores "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	stores "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -24,11 +27,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	codeintelgitserver "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -2090,10 +2093,15 @@ func (r *Resolver) RenameField(ctx context.Context, args *graphqlbackend.RenameF
 		return "", err
 	}
 
-	cs, err := codeintel.GetServices(codeintel.Databases{
+	observationCtx := observation.NewContext(log.Scoped("", ""), observation.Honeycomb(&honey.Dataset{
+		Name: "codeintel-worker",
+	}))
+
+	cs, err := codeintel.NewServices(codeintel.ServiceDependencies{
 		DB: r.store.DatabaseDB(),
 		// TODO: This doesn't work when the codeintel db is a separate DB.
-		CodeIntelDB: stores.NewCodeIntelDBWith(r.store.DatabaseDB()),
+		CodeIntelDB:    stores.NewCodeIntelDBWith(r.store.DatabaseDB()),
+		ObservationCtx: observationCtx,
 	})
 	if err != nil {
 		return "", err
@@ -2109,7 +2117,11 @@ func (r *Resolver) RenameField(ctx context.Context, args *graphqlbackend.RenameF
 		Client: r.gitserverClient,
 		store:  r.store,
 	}
-	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, gs, repo, string(args.Commit), args.File, 500, 1000)
+	hunkCache, err := codenav.NewHunkCache(1000)
+	if err != nil {
+		return "", errors.Wrap(err, "creating hunk cache")
+	}
+	reqState := codenav.NewRequestState(uploads, authz.DefaultSubRepoPermsChecker, gs, repo, string(args.Commit), args.File, 500, hunkCache)
 
 	ra := shared.RequestArgs{
 		RepositoryID: int(repo.ID),
