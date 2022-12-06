@@ -39,7 +39,7 @@ func (ws *webhookService) DeleteWebhook(ctx context.Context, id int32) error {
 	return ws.db.Webhooks(ws.keyRing.WebhookKey).Delete(ctx, database.DeleteWebhookOpts{ID: id})
 }
 
-func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, codeHostKind, codeHostURN string, secretStr *string) (*types.Webhook, error) {
+func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, codeHostKind, codeHostURN, secret string) (*types.Webhook, error) {
 	webhooksStore := ws.db.Webhooks(ws.keyRing.WebhookKey)
 	webhook, err := webhooksStore.GetByID(ctx, id)
 	if err != nil {
@@ -50,7 +50,7 @@ func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, cod
 		webhook.Name = name
 	}
 	if codeHostKind != "" {
-		if err := validateCodeHostKindAndSecret(codeHostKind, secretStr); err != nil {
+		if err := validateCodeHostKindAndSecret(codeHostKind, &secret); err != nil {
 			return nil, err
 		}
 
@@ -63,18 +63,18 @@ func (ws *webhookService) UpdateWebhook(ctx context.Context, id int32, name, cod
 		}
 		webhook.CodeHostURN = codeHostURN
 	}
-	if secretStr != nil {
+	if secret != "" {
 		if codeHostKind != "" {
-			if err := validateCodeHostKindAndSecret(codeHostKind, secretStr); err != nil {
+			if err := validateCodeHostKindAndSecret(codeHostKind, &secret); err != nil {
 				return nil, err
 			}
 		} else {
-			if err := validateCodeHostKindAndSecret(webhook.CodeHostKind, secretStr); err != nil {
+			if err := validateCodeHostKindAndSecret(webhook.CodeHostKind, &secret); err != nil {
 				return nil, err
 			}
 		}
 
-		webhook.Secret = types.NewUnencryptedSecret(*secretStr)
+		webhook.Secret = types.NewUnencryptedSecret(secret)
 	}
 
 	newWebhook, err := webhooksStore.Update(ctx, webhook)

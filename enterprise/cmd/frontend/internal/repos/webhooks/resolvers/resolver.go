@@ -88,8 +88,12 @@ func (r *webhooksResolver) UpdateWebhook(ctx context.Context, args *graphqlbacke
 	if args.CodeHostURN != nil {
 		codeHostURN = *args.CodeHostURN
 	}
+	var secret string
+	if args.Secret != nil {
+		secret = *args.Secret
+	}
 
-	webhook, err := ws.UpdateWebhook(ctx, whID, name, codeHostKind, codeHostURN, args.Secret)
+	webhook, err := ws.UpdateWebhook(ctx, whID, name, codeHostKind, codeHostURN, secret)
 	if err != nil {
 		return nil, errors.Wrap(err, "update webhook")
 	}
