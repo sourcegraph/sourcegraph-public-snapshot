@@ -9,6 +9,7 @@ package backend
 import (
 	"context"
 	"sync"
+	"time"
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
@@ -1291,4 +1292,798 @@ func (c ReposServiceResolveRevFuncCall) Args() []interface{} {
 // invocation.
 func (c ReposServiceResolveRevFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockUserEmailsService is a mock implementation of the UserEmailsService
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/cmd/frontend/backend) used for unit
+// testing.
+type MockUserEmailsService struct {
+	// AddFunc is an instance of a mock function object controlling the
+	// behavior of the method Add.
+	AddFunc *UserEmailsServiceAddFunc
+	// RemoveFunc is an instance of a mock function object controlling the
+	// behavior of the method Remove.
+	RemoveFunc *UserEmailsServiceRemoveFunc
+	// ResendVerificationEmailFunc is an instance of a mock function object
+	// controlling the behavior of the method ResendVerificationEmail.
+	ResendVerificationEmailFunc *UserEmailsServiceResendVerificationEmailFunc
+	// SendUserEmailOnFieldUpdateFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// SendUserEmailOnFieldUpdate.
+	SendUserEmailOnFieldUpdateFunc *UserEmailsServiceSendUserEmailOnFieldUpdateFunc
+	// SetPrimaryEmailFunc is an instance of a mock function object
+	// controlling the behavior of the method SetPrimaryEmail.
+	SetPrimaryEmailFunc *UserEmailsServiceSetPrimaryEmailFunc
+	// SetVerifiedFunc is an instance of a mock function object controlling
+	// the behavior of the method SetVerified.
+	SetVerifiedFunc *UserEmailsServiceSetVerifiedFunc
+}
+
+// NewMockUserEmailsService creates a new mock of the UserEmailsService
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockUserEmailsService() *MockUserEmailsService {
+	return &MockUserEmailsService{
+		AddFunc: &UserEmailsServiceAddFunc{
+			defaultHook: func(context.Context, int32, string) (r0 error) {
+				return
+			},
+		},
+		RemoveFunc: &UserEmailsServiceRemoveFunc{
+			defaultHook: func(context.Context, int32, string) (r0 error) {
+				return
+			},
+		},
+		ResendVerificationEmailFunc: &UserEmailsServiceResendVerificationEmailFunc{
+			defaultHook: func(context.Context, int32, string, time.Time) (r0 error) {
+				return
+			},
+		},
+		SendUserEmailOnFieldUpdateFunc: &UserEmailsServiceSendUserEmailOnFieldUpdateFunc{
+			defaultHook: func(context.Context, int32, string) (r0 error) {
+				return
+			},
+		},
+		SetPrimaryEmailFunc: &UserEmailsServiceSetPrimaryEmailFunc{
+			defaultHook: func(context.Context, int32, string) (r0 error) {
+				return
+			},
+		},
+		SetVerifiedFunc: &UserEmailsServiceSetVerifiedFunc{
+			defaultHook: func(context.Context, int32, string, bool) (r0 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockUserEmailsService creates a new mock of the
+// UserEmailsService interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockUserEmailsService() *MockUserEmailsService {
+	return &MockUserEmailsService{
+		AddFunc: &UserEmailsServiceAddFunc{
+			defaultHook: func(context.Context, int32, string) error {
+				panic("unexpected invocation of MockUserEmailsService.Add")
+			},
+		},
+		RemoveFunc: &UserEmailsServiceRemoveFunc{
+			defaultHook: func(context.Context, int32, string) error {
+				panic("unexpected invocation of MockUserEmailsService.Remove")
+			},
+		},
+		ResendVerificationEmailFunc: &UserEmailsServiceResendVerificationEmailFunc{
+			defaultHook: func(context.Context, int32, string, time.Time) error {
+				panic("unexpected invocation of MockUserEmailsService.ResendVerificationEmail")
+			},
+		},
+		SendUserEmailOnFieldUpdateFunc: &UserEmailsServiceSendUserEmailOnFieldUpdateFunc{
+			defaultHook: func(context.Context, int32, string) error {
+				panic("unexpected invocation of MockUserEmailsService.SendUserEmailOnFieldUpdate")
+			},
+		},
+		SetPrimaryEmailFunc: &UserEmailsServiceSetPrimaryEmailFunc{
+			defaultHook: func(context.Context, int32, string) error {
+				panic("unexpected invocation of MockUserEmailsService.SetPrimaryEmail")
+			},
+		},
+		SetVerifiedFunc: &UserEmailsServiceSetVerifiedFunc{
+			defaultHook: func(context.Context, int32, string, bool) error {
+				panic("unexpected invocation of MockUserEmailsService.SetVerified")
+			},
+		},
+	}
+}
+
+// NewMockUserEmailsServiceFrom creates a new mock of the
+// MockUserEmailsService interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockUserEmailsServiceFrom(i UserEmailsService) *MockUserEmailsService {
+	return &MockUserEmailsService{
+		AddFunc: &UserEmailsServiceAddFunc{
+			defaultHook: i.Add,
+		},
+		RemoveFunc: &UserEmailsServiceRemoveFunc{
+			defaultHook: i.Remove,
+		},
+		ResendVerificationEmailFunc: &UserEmailsServiceResendVerificationEmailFunc{
+			defaultHook: i.ResendVerificationEmail,
+		},
+		SendUserEmailOnFieldUpdateFunc: &UserEmailsServiceSendUserEmailOnFieldUpdateFunc{
+			defaultHook: i.SendUserEmailOnFieldUpdate,
+		},
+		SetPrimaryEmailFunc: &UserEmailsServiceSetPrimaryEmailFunc{
+			defaultHook: i.SetPrimaryEmail,
+		},
+		SetVerifiedFunc: &UserEmailsServiceSetVerifiedFunc{
+			defaultHook: i.SetVerified,
+		},
+	}
+}
+
+// UserEmailsServiceAddFunc describes the behavior when the Add method of
+// the parent MockUserEmailsService instance is invoked.
+type UserEmailsServiceAddFunc struct {
+	defaultHook func(context.Context, int32, string) error
+	hooks       []func(context.Context, int32, string) error
+	history     []UserEmailsServiceAddFuncCall
+	mutex       sync.Mutex
+}
+
+// Add delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockUserEmailsService) Add(v0 context.Context, v1 int32, v2 string) error {
+	r0 := m.AddFunc.nextHook()(v0, v1, v2)
+	m.AddFunc.appendCall(UserEmailsServiceAddFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Add method of the
+// parent MockUserEmailsService instance is invoked and the hook queue is
+// empty.
+func (f *UserEmailsServiceAddFunc) SetDefaultHook(hook func(context.Context, int32, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Add method of the parent MockUserEmailsService instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *UserEmailsServiceAddFunc) PushHook(hook func(context.Context, int32, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserEmailsServiceAddFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserEmailsServiceAddFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, string) error {
+		return r0
+	})
+}
+
+func (f *UserEmailsServiceAddFunc) nextHook() func(context.Context, int32, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserEmailsServiceAddFunc) appendCall(r0 UserEmailsServiceAddFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserEmailsServiceAddFuncCall objects
+// describing the invocations of this function.
+func (f *UserEmailsServiceAddFunc) History() []UserEmailsServiceAddFuncCall {
+	f.mutex.Lock()
+	history := make([]UserEmailsServiceAddFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserEmailsServiceAddFuncCall is an object that describes an invocation of
+// method Add on an instance of MockUserEmailsService.
+type UserEmailsServiceAddFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserEmailsServiceAddFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserEmailsServiceAddFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UserEmailsServiceRemoveFunc describes the behavior when the Remove method
+// of the parent MockUserEmailsService instance is invoked.
+type UserEmailsServiceRemoveFunc struct {
+	defaultHook func(context.Context, int32, string) error
+	hooks       []func(context.Context, int32, string) error
+	history     []UserEmailsServiceRemoveFuncCall
+	mutex       sync.Mutex
+}
+
+// Remove delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockUserEmailsService) Remove(v0 context.Context, v1 int32, v2 string) error {
+	r0 := m.RemoveFunc.nextHook()(v0, v1, v2)
+	m.RemoveFunc.appendCall(UserEmailsServiceRemoveFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Remove method of the
+// parent MockUserEmailsService instance is invoked and the hook queue is
+// empty.
+func (f *UserEmailsServiceRemoveFunc) SetDefaultHook(hook func(context.Context, int32, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Remove method of the parent MockUserEmailsService instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *UserEmailsServiceRemoveFunc) PushHook(hook func(context.Context, int32, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserEmailsServiceRemoveFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserEmailsServiceRemoveFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, string) error {
+		return r0
+	})
+}
+
+func (f *UserEmailsServiceRemoveFunc) nextHook() func(context.Context, int32, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserEmailsServiceRemoveFunc) appendCall(r0 UserEmailsServiceRemoveFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserEmailsServiceRemoveFuncCall objects
+// describing the invocations of this function.
+func (f *UserEmailsServiceRemoveFunc) History() []UserEmailsServiceRemoveFuncCall {
+	f.mutex.Lock()
+	history := make([]UserEmailsServiceRemoveFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserEmailsServiceRemoveFuncCall is an object that describes an invocation
+// of method Remove on an instance of MockUserEmailsService.
+type UserEmailsServiceRemoveFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserEmailsServiceRemoveFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserEmailsServiceRemoveFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UserEmailsServiceResendVerificationEmailFunc describes the behavior when
+// the ResendVerificationEmail method of the parent MockUserEmailsService
+// instance is invoked.
+type UserEmailsServiceResendVerificationEmailFunc struct {
+	defaultHook func(context.Context, int32, string, time.Time) error
+	hooks       []func(context.Context, int32, string, time.Time) error
+	history     []UserEmailsServiceResendVerificationEmailFuncCall
+	mutex       sync.Mutex
+}
+
+// ResendVerificationEmail delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUserEmailsService) ResendVerificationEmail(v0 context.Context, v1 int32, v2 string, v3 time.Time) error {
+	r0 := m.ResendVerificationEmailFunc.nextHook()(v0, v1, v2, v3)
+	m.ResendVerificationEmailFunc.appendCall(UserEmailsServiceResendVerificationEmailFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// ResendVerificationEmail method of the parent MockUserEmailsService
+// instance is invoked and the hook queue is empty.
+func (f *UserEmailsServiceResendVerificationEmailFunc) SetDefaultHook(hook func(context.Context, int32, string, time.Time) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ResendVerificationEmail method of the parent MockUserEmailsService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *UserEmailsServiceResendVerificationEmailFunc) PushHook(hook func(context.Context, int32, string, time.Time) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserEmailsServiceResendVerificationEmailFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, string, time.Time) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserEmailsServiceResendVerificationEmailFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, string, time.Time) error {
+		return r0
+	})
+}
+
+func (f *UserEmailsServiceResendVerificationEmailFunc) nextHook() func(context.Context, int32, string, time.Time) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserEmailsServiceResendVerificationEmailFunc) appendCall(r0 UserEmailsServiceResendVerificationEmailFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UserEmailsServiceResendVerificationEmailFuncCall objects describing the
+// invocations of this function.
+func (f *UserEmailsServiceResendVerificationEmailFunc) History() []UserEmailsServiceResendVerificationEmailFuncCall {
+	f.mutex.Lock()
+	history := make([]UserEmailsServiceResendVerificationEmailFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserEmailsServiceResendVerificationEmailFuncCall is an object that
+// describes an invocation of method ResendVerificationEmail on an instance
+// of MockUserEmailsService.
+type UserEmailsServiceResendVerificationEmailFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserEmailsServiceResendVerificationEmailFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserEmailsServiceResendVerificationEmailFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UserEmailsServiceSendUserEmailOnFieldUpdateFunc describes the behavior
+// when the SendUserEmailOnFieldUpdate method of the parent
+// MockUserEmailsService instance is invoked.
+type UserEmailsServiceSendUserEmailOnFieldUpdateFunc struct {
+	defaultHook func(context.Context, int32, string) error
+	hooks       []func(context.Context, int32, string) error
+	history     []UserEmailsServiceSendUserEmailOnFieldUpdateFuncCall
+	mutex       sync.Mutex
+}
+
+// SendUserEmailOnFieldUpdate delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockUserEmailsService) SendUserEmailOnFieldUpdate(v0 context.Context, v1 int32, v2 string) error {
+	r0 := m.SendUserEmailOnFieldUpdateFunc.nextHook()(v0, v1, v2)
+	m.SendUserEmailOnFieldUpdateFunc.appendCall(UserEmailsServiceSendUserEmailOnFieldUpdateFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// SendUserEmailOnFieldUpdate method of the parent MockUserEmailsService
+// instance is invoked and the hook queue is empty.
+func (f *UserEmailsServiceSendUserEmailOnFieldUpdateFunc) SetDefaultHook(hook func(context.Context, int32, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SendUserEmailOnFieldUpdate method of the parent MockUserEmailsService
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *UserEmailsServiceSendUserEmailOnFieldUpdateFunc) PushHook(hook func(context.Context, int32, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserEmailsServiceSendUserEmailOnFieldUpdateFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserEmailsServiceSendUserEmailOnFieldUpdateFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, string) error {
+		return r0
+	})
+}
+
+func (f *UserEmailsServiceSendUserEmailOnFieldUpdateFunc) nextHook() func(context.Context, int32, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserEmailsServiceSendUserEmailOnFieldUpdateFunc) appendCall(r0 UserEmailsServiceSendUserEmailOnFieldUpdateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UserEmailsServiceSendUserEmailOnFieldUpdateFuncCall objects describing
+// the invocations of this function.
+func (f *UserEmailsServiceSendUserEmailOnFieldUpdateFunc) History() []UserEmailsServiceSendUserEmailOnFieldUpdateFuncCall {
+	f.mutex.Lock()
+	history := make([]UserEmailsServiceSendUserEmailOnFieldUpdateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserEmailsServiceSendUserEmailOnFieldUpdateFuncCall is an object that
+// describes an invocation of method SendUserEmailOnFieldUpdate on an
+// instance of MockUserEmailsService.
+type UserEmailsServiceSendUserEmailOnFieldUpdateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserEmailsServiceSendUserEmailOnFieldUpdateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserEmailsServiceSendUserEmailOnFieldUpdateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UserEmailsServiceSetPrimaryEmailFunc describes the behavior when the
+// SetPrimaryEmail method of the parent MockUserEmailsService instance is
+// invoked.
+type UserEmailsServiceSetPrimaryEmailFunc struct {
+	defaultHook func(context.Context, int32, string) error
+	hooks       []func(context.Context, int32, string) error
+	history     []UserEmailsServiceSetPrimaryEmailFuncCall
+	mutex       sync.Mutex
+}
+
+// SetPrimaryEmail delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUserEmailsService) SetPrimaryEmail(v0 context.Context, v1 int32, v2 string) error {
+	r0 := m.SetPrimaryEmailFunc.nextHook()(v0, v1, v2)
+	m.SetPrimaryEmailFunc.appendCall(UserEmailsServiceSetPrimaryEmailFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetPrimaryEmail
+// method of the parent MockUserEmailsService instance is invoked and the
+// hook queue is empty.
+func (f *UserEmailsServiceSetPrimaryEmailFunc) SetDefaultHook(hook func(context.Context, int32, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetPrimaryEmail method of the parent MockUserEmailsService instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UserEmailsServiceSetPrimaryEmailFunc) PushHook(hook func(context.Context, int32, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserEmailsServiceSetPrimaryEmailFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserEmailsServiceSetPrimaryEmailFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, string) error {
+		return r0
+	})
+}
+
+func (f *UserEmailsServiceSetPrimaryEmailFunc) nextHook() func(context.Context, int32, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserEmailsServiceSetPrimaryEmailFunc) appendCall(r0 UserEmailsServiceSetPrimaryEmailFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserEmailsServiceSetPrimaryEmailFuncCall
+// objects describing the invocations of this function.
+func (f *UserEmailsServiceSetPrimaryEmailFunc) History() []UserEmailsServiceSetPrimaryEmailFuncCall {
+	f.mutex.Lock()
+	history := make([]UserEmailsServiceSetPrimaryEmailFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserEmailsServiceSetPrimaryEmailFuncCall is an object that describes an
+// invocation of method SetPrimaryEmail on an instance of
+// MockUserEmailsService.
+type UserEmailsServiceSetPrimaryEmailFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserEmailsServiceSetPrimaryEmailFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserEmailsServiceSetPrimaryEmailFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UserEmailsServiceSetVerifiedFunc describes the behavior when the
+// SetVerified method of the parent MockUserEmailsService instance is
+// invoked.
+type UserEmailsServiceSetVerifiedFunc struct {
+	defaultHook func(context.Context, int32, string, bool) error
+	hooks       []func(context.Context, int32, string, bool) error
+	history     []UserEmailsServiceSetVerifiedFuncCall
+	mutex       sync.Mutex
+}
+
+// SetVerified delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUserEmailsService) SetVerified(v0 context.Context, v1 int32, v2 string, v3 bool) error {
+	r0 := m.SetVerifiedFunc.nextHook()(v0, v1, v2, v3)
+	m.SetVerifiedFunc.appendCall(UserEmailsServiceSetVerifiedFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetVerified method
+// of the parent MockUserEmailsService instance is invoked and the hook
+// queue is empty.
+func (f *UserEmailsServiceSetVerifiedFunc) SetDefaultHook(hook func(context.Context, int32, string, bool) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetVerified method of the parent MockUserEmailsService instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UserEmailsServiceSetVerifiedFunc) PushHook(hook func(context.Context, int32, string, bool) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserEmailsServiceSetVerifiedFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, string, bool) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserEmailsServiceSetVerifiedFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, string, bool) error {
+		return r0
+	})
+}
+
+func (f *UserEmailsServiceSetVerifiedFunc) nextHook() func(context.Context, int32, string, bool) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserEmailsServiceSetVerifiedFunc) appendCall(r0 UserEmailsServiceSetVerifiedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserEmailsServiceSetVerifiedFuncCall
+// objects describing the invocations of this function.
+func (f *UserEmailsServiceSetVerifiedFunc) History() []UserEmailsServiceSetVerifiedFuncCall {
+	f.mutex.Lock()
+	history := make([]UserEmailsServiceSetVerifiedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserEmailsServiceSetVerifiedFuncCall is an object that describes an
+// invocation of method SetVerified on an instance of MockUserEmailsService.
+type UserEmailsServiceSetVerifiedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserEmailsServiceSetVerifiedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserEmailsServiceSetVerifiedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
