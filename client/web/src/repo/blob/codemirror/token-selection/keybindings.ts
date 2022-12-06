@@ -1,4 +1,5 @@
-import { KeyBinding } from '@codemirror/view'
+import { defaultKeymap } from '@codemirror/commands'
+import { KeyBinding, keymap } from '@codemirror/view'
 
 import { blobPropsFacet } from '..'
 import { syntaxHighlight } from '../highlight'
@@ -154,10 +155,14 @@ const remappedKeyBindings: Record<string, string> = {
     ArrowRight: 'l',
 }
 
-export const tokenSelectionKeyBindings = keybindings.flatMap(keybinding => {
-    const remappedKey = remappedKeyBindings[keybinding.key ?? '']
-    if (remappedKey) {
-        return [keybinding, { ...keybinding, key: remappedKey }]
-    }
-    return [keybinding]
-})
+export const tokenSelectionKeyBindings = [
+    ...keybindings.flatMap(keybinding => {
+        const remappedKey = remappedKeyBindings[keybinding.key ?? '']
+        if (remappedKey) {
+            return [keybinding, { ...keybinding, key: remappedKey }]
+        }
+        return [keybinding]
+    }),
+    // Fallback to the default arrow keys to allow, for example, Shift-ArrowLeft
+    ...defaultKeymap.filter(({ key }) => key?.includes('Arrow')),
+]
