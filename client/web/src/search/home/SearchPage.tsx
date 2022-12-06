@@ -85,7 +85,7 @@ export const SearchPage: React.FunctionComponent<React.PropsWithChildren<SearchP
                 {shouldShowAddCodeHostWidget ? (
                     <>
                         <Tooltip
-                            content="Sourcegraph is not fully functional until a code-host is set up"
+                            content="Sourcegraph is not fully functional until a code host is set up"
                             placement="top"
                         >
                             <div className={styles.translucent}>
