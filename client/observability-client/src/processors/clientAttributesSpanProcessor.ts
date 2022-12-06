@@ -14,12 +14,27 @@ import {
 } from '../sdk'
 
 export enum ClientAttributes {
+    /**
+     * window.location information.
+     */
     LocationHref = 'window.location.href',
     LocationPathname = 'window.location.pathname',
     LocationSearch = 'window.location.search',
     PreviousLocationHref = 'window.prev_location.href',
+
+    /**
+     * Application specific information.
+     */
     AppVersion = 'app.version',
+
+    /**
+     * Browser information.
+     */
     BrowserName = 'browser.name',
+
+    /**
+     * Precomputed attributes used to build Honeycomb dashboards.
+     */
     TimeSinceWindowLoad = 'time.since_window_load',
     TimeSincePageView = 'time.since_page_view',
     TimeSinceAppMount = 'time.since_app_mount',
