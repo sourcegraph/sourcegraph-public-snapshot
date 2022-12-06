@@ -2,8 +2,8 @@ package exporters
 
 import (
 	"context"
-	"regexp"
 
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"

@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GetRepositoriesForIndexScan returns a set of repository identifiers that should be considered
