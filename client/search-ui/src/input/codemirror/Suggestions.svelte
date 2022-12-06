@@ -100,7 +100,7 @@
         [role='row'] {
             display: flex;
             align-items: center;
-            padding: 4px 8px;
+            padding: 6px 8px;
             border-radius: var(--border-radius);
             font-family: var(--code-font-family);
             font-size: 12px;
