@@ -17,7 +17,7 @@ export type FeatureFlagName =
     | 'user-management-disabled'
     | 'search-results-keyboard-navigation'
     | 'enable-streaming-git-blame'
-    | 'enable-add-codehost-widget'
+    | 'plg-enable-add-codehost-widget'
 
 interface OrgFlagOverride {
     orgID: string

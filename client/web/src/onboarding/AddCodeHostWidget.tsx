@@ -23,7 +23,7 @@ const EXTERNAL_SERVICES = gql`
 `
 
 export function useShouldShowAddCodeHostWidget(authenticatedUser: AuthenticatedUser | null): boolean | undefined {
-    const [isAddCodeHostWidgetEnabled] = useFeatureFlag('enable-add-codehost-widget', true) // TODO: change default to false
+    const [isAddCodeHostWidgetEnabled] = useFeatureFlag('plg-enable-add-codehost-widget', true) // TODO: change default to false
     const { data } = useQuery<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, {})
 
     return (
