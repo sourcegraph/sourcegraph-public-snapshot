@@ -31690,6 +31690,9 @@ type MockRepoStore struct {
 	// GetByNameFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByName.
 	GetByNameFunc *RepoStoreGetByNameFunc
+	// GetFirstRepoByCloneURLFunc is an instance of a mock function object
+	// controlling the behavior of the method GetFirstRepoByCloneURL.
+	GetFirstRepoByCloneURLFunc *RepoStoreGetFirstRepoByCloneURLFunc
 	// GetFirstRepoNameByCloneURLFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetFirstRepoNameByCloneURL.
@@ -31771,6 +31774,11 @@ func NewMockRepoStore() *MockRepoStore {
 		},
 		GetByNameFunc: &RepoStoreGetByNameFunc{
 			defaultHook: func(context.Context, api.RepoName) (r0 *types.Repo, r1 error) {
+				return
+			},
+		},
+		GetFirstRepoByCloneURLFunc: &RepoStoreGetFirstRepoByCloneURLFunc{
+			defaultHook: func(context.Context, string) (r0 *types.Repo, r1 error) {
 				return
 			},
 		},
@@ -31881,6 +31889,11 @@ func NewStrictMockRepoStore() *MockRepoStore {
 				panic("unexpected invocation of MockRepoStore.GetByName")
 			},
 		},
+		GetFirstRepoByCloneURLFunc: &RepoStoreGetFirstRepoByCloneURLFunc{
+			defaultHook: func(context.Context, string) (*types.Repo, error) {
+				panic("unexpected invocation of MockRepoStore.GetFirstRepoByCloneURL")
+			},
+		},
 		GetFirstRepoNameByCloneURLFunc: &RepoStoreGetFirstRepoNameByCloneURLFunc{
 			defaultHook: func(context.Context, string) (api.RepoName, error) {
 				panic("unexpected invocation of MockRepoStore.GetFirstRepoNameByCloneURL")
@@ -31971,6 +31984,9 @@ func NewMockRepoStoreFrom(i RepoStore) *MockRepoStore {
 		},
 		GetByNameFunc: &RepoStoreGetByNameFunc{
 			defaultHook: i.GetByName,
+		},
+		GetFirstRepoByCloneURLFunc: &RepoStoreGetFirstRepoByCloneURLFunc{
+			defaultHook: i.GetFirstRepoByCloneURL,
 		},
 		GetFirstRepoNameByCloneURLFunc: &RepoStoreGetFirstRepoNameByCloneURLFunc{
 			defaultHook: i.GetFirstRepoNameByCloneURL,
@@ -32874,6 +32890,117 @@ func (c RepoStoreGetByNameFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoStoreGetByNameFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// RepoStoreGetFirstRepoByCloneURLFunc describes the behavior when the
+// GetFirstRepoByCloneURL method of the parent MockRepoStore instance is
+// invoked.
+type RepoStoreGetFirstRepoByCloneURLFunc struct {
+	defaultHook func(context.Context, string) (*types.Repo, error)
+	hooks       []func(context.Context, string) (*types.Repo, error)
+	history     []RepoStoreGetFirstRepoByCloneURLFuncCall
+	mutex       sync.Mutex
+}
+
+// GetFirstRepoByCloneURL delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockRepoStore) GetFirstRepoByCloneURL(v0 context.Context, v1 string) (*types.Repo, error) {
+	r0, r1 := m.GetFirstRepoByCloneURLFunc.nextHook()(v0, v1)
+	m.GetFirstRepoByCloneURLFunc.appendCall(RepoStoreGetFirstRepoByCloneURLFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetFirstRepoByCloneURL method of the parent MockRepoStore instance is
+// invoked and the hook queue is empty.
+func (f *RepoStoreGetFirstRepoByCloneURLFunc) SetDefaultHook(hook func(context.Context, string) (*types.Repo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetFirstRepoByCloneURL method of the parent MockRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *RepoStoreGetFirstRepoByCloneURLFunc) PushHook(hook func(context.Context, string) (*types.Repo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoStoreGetFirstRepoByCloneURLFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*types.Repo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoStoreGetFirstRepoByCloneURLFunc) PushReturn(r0 *types.Repo, r1 error) {
+	f.PushHook(func(context.Context, string) (*types.Repo, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoStoreGetFirstRepoByCloneURLFunc) nextHook() func(context.Context, string) (*types.Repo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoStoreGetFirstRepoByCloneURLFunc) appendCall(r0 RepoStoreGetFirstRepoByCloneURLFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoStoreGetFirstRepoByCloneURLFuncCall
+// objects describing the invocations of this function.
+func (f *RepoStoreGetFirstRepoByCloneURLFunc) History() []RepoStoreGetFirstRepoByCloneURLFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoStoreGetFirstRepoByCloneURLFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoStoreGetFirstRepoByCloneURLFuncCall is an object that describes an
+// invocation of method GetFirstRepoByCloneURL on an instance of
+// MockRepoStore.
+type RepoStoreGetFirstRepoByCloneURLFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Repo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoStoreGetFirstRepoByCloneURLFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoStoreGetFirstRepoByCloneURLFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
