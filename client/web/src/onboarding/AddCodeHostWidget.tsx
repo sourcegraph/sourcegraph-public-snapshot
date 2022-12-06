@@ -7,15 +7,15 @@ import { gql, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H3, Text, Link, Icon } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { MarketingBlock } from '../../components/MarketingBlock'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import { ExternalServicesResult, ExternalServicesVariables } from '../../graphql-operations'
+import { AuthenticatedUser } from '../auth'
+import { MarketingBlock } from '../components/MarketingBlock'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
+import { ExternalServicesTotalCountResult } from '../graphql-operations'
 
 import styles from './AddCodeHostWidget.module.scss'
 
-const EXTERNAL_SERVICES = gql`
-    query ExternalServices {
+const EXTERNAL_SERVICES_TOTAL_COUNT = gql`
+    query ExternalServicesTotalCount {
         externalServices {
             totalCount
         }
@@ -24,7 +24,7 @@ const EXTERNAL_SERVICES = gql`
 
 export function useShouldShowAddCodeHostWidget(authenticatedUser: AuthenticatedUser | null): boolean | undefined {
     const [isAddCodeHostWidgetEnabled] = useFeatureFlag('plg-enable-add-codehost-widget', true) // TODO: change default to false
-    const { data } = useQuery<ExternalServicesResult, ExternalServicesVariables>(EXTERNAL_SERVICES, {})
+    const { data } = useQuery<ExternalServicesTotalCountResult>(EXTERNAL_SERVICES_TOTAL_COUNT, {})
 
     return (
         isAddCodeHostWidgetEnabled && authenticatedUser?.siteAdmin && !!data && data.externalServices.totalCount === 0
