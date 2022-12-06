@@ -37,7 +37,7 @@ func RunRun(cliCtx *cli.Context, logger log.Logger, cfg *config.Config) error {
 
 		return newQueueTelemetryOptions(ctx, cfg.UseFirecracker, logger)
 	}()
-	logger.Info("Telemetry information gathered", log.String("info", fmt.Sprintf("%+v", queueTelemetryOptions)))
+	logger.Debug("Telemetry information gathered", log.String("info", fmt.Sprintf("%+v", queueTelemetryOptions)))
 
 	opts := apiWorkerOptions(cfg, queueTelemetryOptions)
 

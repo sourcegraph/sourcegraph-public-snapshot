@@ -237,12 +237,12 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 		observationCtx := observation.ContextWithLogger(jobLogger, observationCtx)
 
 		if !shouldRunJob(name) {
-			jobLogger.Info("Skipping job")
+			jobLogger.Debug("Skipping job")
 			continue
 		}
 
 		wg.Add(1)
-		jobLogger.Info("Running job")
+		jobLogger.Debug("Running job")
 
 		go func(name string) {
 			defer wg.Done()
@@ -251,7 +251,7 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 			results <- routinesResult{name, routines, err}
 
 			if err == nil {
-				jobLogger.Info("Finished initializing job")
+				jobLogger.Debug("Finished initializing job")
 			} else {
 				cancel()
 			}
