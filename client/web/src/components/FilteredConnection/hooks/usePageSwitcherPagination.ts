@@ -79,18 +79,14 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
     const pageSize = options?.pageSize ?? DEFAULT_PAGE_SIZE
     const [initialPaginationArgs, setPaginationArgs] = useSyncPaginationArgsWithUrl(!!options?.useURL, pageSize)
 
-    // TODO(philipp-spiess): Find out why Omit<TVariables, "first" | ...> & { first: number, ... } does not work
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const initialQueryVariables: TVariables = useMemo(
-        () => ({ ...variables, ...initialPaginationArgs } as any),
-        // The variables object can be different every time the hook is called but we only need to react
-        // to a change in the individual variable values.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [pageSize, initialPaginationArgs, ...Object.values(variables)]
-    )
-
     const { data, error, loading, refetch } = useQuery<TResult, TVariables>(query, {
-        variables: initialQueryVariables,
+        // TODO(philipp-spiess): Find out why Omit<TVariables, "first" | ...> & { first: number, ... }
+        // does not work here and get rid of the any cast.
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        variables: {
+            ...variables,
+            ...initialPaginationArgs,
+        } as any,
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
     })
