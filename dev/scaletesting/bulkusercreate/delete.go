@@ -11,6 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
+// delete removes users and teams (and team memberships as a side effect) from the GitHub instance.
+// Organisations and repositories are left intact.
+// The provided CLI flags define how many users and teams have to be deleted, enabling partial deletions.
 func delete(ctx context.Context, cfg config) {
 	localOrgs, err := store.loadOrgs()
 	if err != nil {
@@ -117,15 +120,16 @@ func delete(ctx context.Context, cfg config) {
 	}
 	g.Wait()
 
-	for _, t := range localTeams {
-		currentTeam := t
-		g.Go(func() {
-			executeDeleteTeamMembershipsForTeam(ctx, currentTeam.Org, currentTeam.Name)
-		})
-	}
-	g.Wait()
+	//for _, t := range localTeams {
+	//	currentTeam := t
+	//	g.Go(func() {
+	//		executeDeleteTeamMembershipsForTeam(ctx, currentTeam.Org, currentTeam.Name)
+	//	})
+	//}
+	//g.Wait()
 }
 
+// executeDeleteTeam deletes the team from the GitHub instance.
 func executeDeleteTeam(ctx context.Context, currentTeam *team) {
 	existingTeam, resp, grErr := gh.Teams.GetTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
 
@@ -153,6 +157,7 @@ func executeDeleteTeam(ctx context.Context, currentTeam *team) {
 	writeSuccess(out, "Deleted team %s", currentTeam.Name)
 }
 
+// executeDeleteUser deletes the user from the instance.
 func executeDeleteUser(ctx context.Context, currentUser *user) {
 	existingUser, resp, grErr := gh.Users.Get(ctx, currentUser.Login)
 
@@ -184,6 +189,7 @@ func executeDeleteUser(ctx context.Context, currentUser *user) {
 	writeSuccess(out, "Deleted user %s", currentUser.Login)
 }
 
+// executeDeleteTeamMembershipsForTeam deletes the memberships for a given team.
 func executeDeleteTeamMembershipsForTeam(ctx context.Context, org string, team string) {
 	teamMembers, _, err := gh.Teams.ListTeamMembersBySlug(ctx, org, team, &github.TeamListTeamMembersOptions{
 		Role:        "member",
