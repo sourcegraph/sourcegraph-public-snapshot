@@ -28,6 +28,8 @@ Foreign-key constraints:
     "codeintel_scip_document_lookup_document_id_fk" FOREIGN KEY (document_id) REFERENCES codeintel_scip_documents(id)
 Referenced by:
     TABLE "codeintel_scip_symbols" CONSTRAINT "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
+Triggers:
+    codeintel_scip_document_lookup_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert()
 
 ```
 
@@ -50,8 +52,6 @@ A mapping from file paths to document references within a particular SCIP index.
  max_schema_version | integer |           |          | 
 Indexes:
     "codeintel_scip_document_lookup_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
-Triggers:
-    codeintel_scip_document_lookup_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup_schema_versions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert()
 
 ```
 
@@ -76,6 +76,8 @@ Indexes:
     "codeintel_scip_documents_payload_hash_key" UNIQUE CONSTRAINT, btree (payload_hash)
 Referenced by:
     TABLE "codeintel_scip_document_lookup" CONSTRAINT "codeintel_scip_document_lookup_document_id_fk" FOREIGN KEY (document_id) REFERENCES codeintel_scip_documents(id)
+Triggers:
+    codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert()
 
 ```
 
@@ -98,8 +100,6 @@ A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegr
  max_schema_version | integer |           |          | 
 Indexes:
     "codeintel_scip_documents_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
-Triggers:
-    codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents_schema_versions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert()
 
 ```
 
@@ -160,6 +160,8 @@ Indexes:
     "codeintel_scip_symbols_document_lookup_id" btree (document_lookup_id)
 Foreign-key constraints:
     "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
+Triggers:
+    codeintel_scip_symbols_schema_versions_insert AFTER INSERT ON codeintel_scip_symbols REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_symbols_schema_versions_insert()
 
 ```
 
@@ -190,8 +192,6 @@ A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40s
  max_schema_version | integer |           |          | 
 Indexes:
     "codeintel_scip_symbols_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
-Triggers:
-    codeintel_scip_symbols_schema_versions_insert AFTER INSERT ON codeintel_scip_symbols_schema_versions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_symbols_schema_versions_insert()
 
 ```
 

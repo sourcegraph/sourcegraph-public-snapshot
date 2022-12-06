@@ -271,7 +271,12 @@
           "ConstraintDefinition": "FOREIGN KEY (document_id) REFERENCES codeintel_scip_documents(id)"
         }
       ],
-      "Triggers": []
+      "Triggers": [
+        {
+          "Name": "codeintel_scip_document_lookup_schema_versions_insert",
+          "Definition": "CREATE TRIGGER codeintel_scip_document_lookup_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert()"
+        }
+      ]
     },
     {
       "Name": "codeintel_scip_document_lookup_schema_versions",
@@ -330,12 +335,7 @@
         }
       ],
       "Constraints": null,
-      "Triggers": [
-        {
-          "Name": "codeintel_scip_document_lookup_schema_versions_insert",
-          "Definition": "CREATE TRIGGER codeintel_scip_document_lookup_schema_versions_insert AFTER INSERT ON codeintel_scip_document_lookup_schema_versions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_document_lookup_schema_versions_insert()"
-        }
-      ]
+      "Triggers": []
     },
     {
       "Name": "codeintel_scip_documents",
@@ -417,7 +417,12 @@
         }
       ],
       "Constraints": null,
-      "Triggers": []
+      "Triggers": [
+        {
+          "Name": "codeintel_scip_documents_schema_versions_insert",
+          "Definition": "CREATE TRIGGER codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert()"
+        }
+      ]
     },
     {
       "Name": "codeintel_scip_documents_schema_versions",
@@ -476,12 +481,7 @@
         }
       ],
       "Constraints": null,
-      "Triggers": [
-        {
-          "Name": "codeintel_scip_documents_schema_versions_insert",
-          "Definition": "CREATE TRIGGER codeintel_scip_documents_schema_versions_insert AFTER INSERT ON codeintel_scip_documents_schema_versions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_documents_schema_versions_insert()"
-        }
-      ]
+      "Triggers": []
     },
     {
       "Name": "codeintel_scip_metadata",
@@ -734,7 +734,12 @@
           "ConstraintDefinition": "FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE"
         }
       ],
-      "Triggers": []
+      "Triggers": [
+        {
+          "Name": "codeintel_scip_symbols_schema_versions_insert",
+          "Definition": "CREATE TRIGGER codeintel_scip_symbols_schema_versions_insert AFTER INSERT ON codeintel_scip_symbols REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_symbols_schema_versions_insert()"
+        }
+      ]
     },
     {
       "Name": "codeintel_scip_symbols_schema_versions",
@@ -793,12 +798,7 @@
         }
       ],
       "Constraints": null,
-      "Triggers": [
-        {
-          "Name": "codeintel_scip_symbols_schema_versions_insert",
-          "Definition": "CREATE TRIGGER codeintel_scip_symbols_schema_versions_insert AFTER INSERT ON codeintel_scip_symbols_schema_versions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_symbols_schema_versions_insert()"
-        }
-      ]
+      "Triggers": []
     },
     {
       "Name": "lsif_data_definitions",
