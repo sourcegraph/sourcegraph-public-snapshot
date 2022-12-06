@@ -1,8 +1,7 @@
 package casetransform
 
 import (
-	// nolint:depguard using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
-	"regexp/syntax"
+	"regexp/syntax" // nolint:depguard using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"unicode"
 	"unicode/utf8"
 )
