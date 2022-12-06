@@ -3,11 +3,11 @@ package smartsearch
 import (
 	"fmt"
 	"net/url"
-	"regexp"
-	"regexp/syntax"
+	"regexp/syntax" // nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
