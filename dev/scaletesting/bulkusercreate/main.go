@@ -17,6 +17,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/alecthomas/chroma/lexers/g"
 	github "github.com/google/go-github/v41/github"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/oauth2"
@@ -138,180 +139,9 @@ func main() {
 
 	start := time.Now()
 
-	g := group.New().WithMaxConcurrency(1000)
-
 	switch cfg.action {
 	case "create":
-		// load or generate users
-		var users []*user
-		if users, err = store.loadUsers(); err != nil {
-			log.Fatal(err)
-		}
-
-		if len(users) == 0 {
-			if users, err = store.generateUsers(cfg); err != nil {
-				log.Fatal(err)
-			}
-			writeSuccess(out, "generated user jobs in %s", cfg.resume)
-		} else {
-			writeSuccess(out, "resuming user jobs from %s", cfg.resume)
-		}
-
-		// load or generate teams
-		var teams []*team
-		if teams, err = store.loadTeams(); err != nil {
-			log.Fatal(err)
-		}
-
-		if len(teams) == 0 {
-			if teams, err = store.generateTeams(cfg); err != nil {
-				log.Fatal(err)
-			}
-			writeSuccess(out, "generated team jobs in %s", cfg.resume)
-		} else {
-			writeSuccess(out, "resuming team jobs from %s", cfg.resume)
-		}
-
-		var repos []*repo
-		if repos, err = store.loadRepos(); err != nil {
-			log.Fatal(err)
-		}
-
-		if len(repos) == 0 {
-			remoteRepos := getGitHubRepos(ctx)
-
-			if repos, err = store.insertRepos(remoteRepos); err != nil {
-				log.Fatal(err)
-			}
-			writeSuccess(out, "Fetched %d private repos and stored in state", len(remoteRepos))
-		} else {
-			writeSuccess(out, "resuming repo jobs from %s", cfg.resume)
-		}
-
-		bars := []output.ProgressBar{
-			{Label: "Creating orgs", Max: float64(cfg.subOrgCount + 1)},
-			{Label: "Creating teams", Max: float64(cfg.teamCount)},
-			{Label: "Creating users", Max: float64(cfg.userCount)},
-			{Label: "Adding users to teams", Max: float64(cfg.userCount)},
-			{Label: "Assigning repos", Max: float64(len(repos))},
-		}
-		if cfg.generateTokens {
-			bars = append(bars, output.ProgressBar{Label: "Generating OAuth tokens", Max: float64(cfg.userCount)})
-		}
-		progress = out.Progress(bars, nil)
-		var usersDone int64
-		var orgsDone int64
-		var teamsDone int64
-		var tokensDone int64
-		var membershipsDone int64
-		var reposDone int64
-
-		for _, o := range orgs {
-			currentOrg := o
-			g.Go(func() {
-				executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, &orgsDone)
-			})
-		}
-
-		// Default permission is "read"; we need members to not have access by default on the main organisation.
-		defaultRepoPermission := "none"
-		var res *github.Response
-		_, res, err = gh.Organizations.Edit(ctx, "main-org", &github.Organization{DefaultRepoPermission: &defaultRepoPermission})
-		if err != nil && res.StatusCode != 409 {
-			// 409 means the base repo permissions are currently being updated already due to a previous run
-			log.Fatalf("Failed to make main-org private by default: %s", err)
-		}
-
-		g.Wait()
-
-		for _, t := range teams {
-			currentTeam := t
-			g.Go(func() {
-				executeCreateTeam(ctx, currentTeam, &teamsDone)
-			})
-		}
-		g.Wait()
-
-		for _, u := range users {
-			currentUser := u
-			g.Go(func() {
-				executeCreateUser(ctx, currentUser, &usersDone)
-			})
-		}
-		g.Wait()
-
-		membershipsPerTeam := int(math.Ceil(float64(cfg.userCount) / float64(cfg.teamCount)))
-		g2 := group.New().WithMaxConcurrency(100)
-
-		for i, t := range teams {
-			currentTeam := t
-			currentIter := i
-			var usersToAssign []*user
-
-			for j := currentIter * membershipsPerTeam; j < ((currentIter + 1) * membershipsPerTeam); j++ {
-				usersToAssign = append(usersToAssign, users[j])
-			}
-
-			g2.Go(func() {
-				executeCreateTeamMembershipsForTeam(ctx, currentTeam, usersToAssign, &membershipsDone)
-			})
-		}
-		g2.Wait()
-
-		mainOrg, orgRepos := categorizeOrgRepos(cfg, repos, orgs)
-		executeAssignOrgRepos(ctx, orgRepos, users, &reposDone, g2)
-		g2.Wait()
-
-		// 0.5% repos with only users attached
-		amountReposWithOnlyUsers := int(math.Ceil(float64(len(repos)) * 0.005))
-		reposWithOnlyUsers := orgRepos[mainOrg][:amountReposWithOnlyUsers]
-		// slice out the user repos
-		orgRepos[mainOrg] = orgRepos[mainOrg][amountReposWithOnlyUsers:]
-
-		teamRepos := categorizeTeamRepos(cfg, orgRepos[mainOrg], teams)
-		userRepos := categorizeUserRepos(reposWithOnlyUsers, users)
-
-		executeAssignTeamRepos(ctx, teamRepos, &reposDone, g2)
-		g2.Wait()
-
-		executeAssignUserRepos(ctx, userRepos, &reposDone, g2)
-		g2.Wait()
-
-		if cfg.generateTokens {
-			tg := group.NewWithResults[userToken]().WithMaxConcurrency(1000)
-			for _, u := range users {
-				currentU := u
-				tg.Go(func() userToken {
-					token := executeCreateUserImpersonationToken(ctx, currentU)
-					atomic.AddInt64(&tokensDone, 1)
-					progress.SetValue(5, float64(tokensDone))
-					return userToken{
-						login: currentU.Login,
-						token: token,
-					}
-				})
-			}
-
-			csvFile, err := os.Create("users.csv")
-			if err != nil {
-				log.Fatalf("Failed creating csv: %s", err)
-			}
-			defer csvFile.Close()
-			csvwriter := csv.NewWriter(csvFile)
-			defer csvwriter.Flush()
-			_ = csvwriter.Write([]string{"login", "token"})
-			pairs := tg.Wait()
-			sort.Slice(pairs, func(i, j int) bool {
-				comp := strings.Compare(pairs[i].login, pairs[j].login)
-				return comp == -1
-			})
-			for _, pair := range pairs {
-				if err = csvwriter.Write([]string{pair.login, pair.token}); err != nil {
-					log.Fatalln("error writing pair to file", err)
-				}
-			}
-		}
-		g.Wait()
+		create(ctx, orgs, cfg)
 
 	case "delete":
 		localOrgs, err := store.loadOrgs()
@@ -516,6 +346,45 @@ func main() {
 
 	end := time.Now()
 	writeInfo(out, "Started at %s, finished at %s", start.String(), end.String())
+}
+
+func generateUserOAuthCsv(ctx context.Context, users []*user, tokensDone int64) {
+	tg := group.NewWithResults[userToken]().WithMaxConcurrency(1000)
+	for _, u := range users {
+		currentU := u
+		tg.Go(func() userToken {
+			token := executeCreateUserImpersonationToken(ctx, currentU)
+			atomic.AddInt64(&tokensDone, 1)
+			progress.SetValue(5, float64(tokensDone))
+			return userToken{
+				login: currentU.Login,
+				token: token,
+			}
+		})
+	}
+	pairs := tg.Wait()
+
+	csvFile, err := os.Create("users.csv")
+	defer csvFile.Close()
+	if err != nil {
+		log.Fatalf("Failed creating csv: %s", err)
+	}
+
+	csvwriter := csv.NewWriter(csvFile)
+	defer csvwriter.Flush()
+
+	_ = csvwriter.Write([]string{"login", "token"})
+
+	sort.Slice(pairs, func(i, j int) bool {
+		comp := strings.Compare(pairs[i].login, pairs[j].login)
+		return comp == -1
+	})
+
+	for _, pair := range pairs {
+		if err = csvwriter.Write([]string{pair.login, pair.token}); err != nil {
+			log.Fatalln("error writing pair to file", err)
+		}
+	}
 }
 
 func categorizeOrgRepos(cfg config, repos []*repo, orgs []*org) (*org, map[*org][]*repo) {
