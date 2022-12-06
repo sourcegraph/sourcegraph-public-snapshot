@@ -2,10 +2,8 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"flag"
 	"log"
-	"net/http"
 	"os"
 	"time"
 
@@ -68,13 +66,10 @@ func main() {
 	ctx := context.Background()
 	out = output.NewOutput(os.Stdout, output.OutputOpts{})
 
-	// GHE cert has validity issues so hack around it for now
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	var err error
 	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: cfg.githubToken},
 	))
-
-	var err error
 	gh, err = github.NewEnterpriseClient(cfg.githubURL, cfg.githubURL, tc)
 	if err != nil {
 		writeFailure(out, "Failed to sign-in to GHE")
