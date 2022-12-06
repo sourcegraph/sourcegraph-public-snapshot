@@ -10,7 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
-func getGitHubRepos(ctx context.Context) []*github.Repository {
+// getGitHubRepos fetches the current repos on the GitHub instance for the given org name.
+func getGitHubRepos(ctx context.Context, orgName string) []*github.Repository {
 	g := group.NewWithResults[[]*github.Repository]().WithMaxConcurrency(250)
 	// 200k repos + some buffer space returning empty pages
 	for i := 0; i < 2050; i++ {
@@ -22,14 +23,14 @@ func getGitHubRepos(ctx context.Context) []*github.Repository {
 			var err error
 
 		retryListByOrg:
-			if reposPage, resp, err = gh.Repositories.ListByOrg(ctx, "blank200k", &github.RepositoryListByOrgOptions{
+			if reposPage, resp, err = gh.Repositories.ListByOrg(ctx, orgName, &github.RepositoryListByOrgOptions{
 				Type: "private",
 				ListOptions: github.ListOptions{
 					Page:    page,
 					PerPage: 100,
 				},
 			}); err != nil {
-				log.Printf("Failed getting repo page %d for org %s: %s", page, "blank200k", err)
+				log.Printf("Failed getting repo page %d for org %s: %s", page, orgName, err)
 			}
 			if resp != nil && (resp.StatusCode == 502 || resp.StatusCode == 504) {
 				time.Sleep(30 * time.Second)
@@ -40,12 +41,13 @@ func getGitHubRepos(ctx context.Context) []*github.Repository {
 		})
 	}
 	var repos []*github.Repository
-	for _, repo := range g.Wait() {
-		repos = append(repos, repo...)
+	for _, rr := range g.Wait() {
+		repos = append(repos, rr...)
 	}
 	return repos
 }
 
+// getGitHubUsers fetches the existing users on the GitHub instance.
 func getGitHubUsers(ctx context.Context) []*github.User {
 	var users []*github.User
 	var since int64
@@ -69,6 +71,7 @@ func getGitHubUsers(ctx context.Context) []*github.User {
 	return users
 }
 
+// getGitHubTeams fetches the current teams on the GitHub instance for the given orgs.
 func getGitHubTeams(ctx context.Context, orgs []*org) []*github.Team {
 	var teams []*github.Team
 	var currentPage int
@@ -99,6 +102,7 @@ func getGitHubTeams(ctx context.Context, orgs []*org) []*github.Team {
 	return teams
 }
 
+// getGitHubOrgs fetches the current orgs on the GitHub instance.
 func getGitHubOrgs(ctx context.Context) []*github.Organization {
 	var orgs []*github.Organization
 	var since int64
