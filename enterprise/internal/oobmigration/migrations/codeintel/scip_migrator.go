@@ -127,7 +127,7 @@ LIMIT 1
 
 const scipMigratorMarkUploadAsReindexableQuery = `
 UPDATE lsif_uploads
-SET reindexable = true
+SET should_reindex = true
 WHERE id = %s
 `
 
