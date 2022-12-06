@@ -6,6 +6,18 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 )
 
+// FindSymbol returns the symbol with the given name in the given document. If there is no symbol by
+// that name, this function returns nil.
+func FindSymbol(document *scip.Document, symbolName string) *scip.SymbolInformation {
+	for _, symbol := range document.Symbols {
+		if symbol.Symbol == symbolName {
+			return symbol
+		}
+	}
+
+	return nil
+}
+
 // FindOccurrences filters the given slice of occurrences and returns those that contain the position
 // represented by line and character. The order of the output slice is "inside-out", so that earlier
 // occurrences are properly enclosed by later occurrences.
