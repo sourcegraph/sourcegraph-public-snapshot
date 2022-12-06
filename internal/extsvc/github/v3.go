@@ -12,15 +12,58 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v41/github"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+func NewGitHubClientForUserExternalAccount(ctx context.Context, acct *extsvc.Account, cli *http.Client) (*github.Client, error) {
+	_, tok, err := GetExternalAccountData(ctx, &acct.AccountData)
+	if err != nil {
+		return nil, err
+	}
+
+	oauth2Config := oauth2.Config{}
+
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Github != nil {
+			p := authProvider.Github
+			if p.ClientID != acct.AccountSpec.ClientID {
+				continue
+			}
+
+			oauth2Config.ClientID = p.ClientID
+			oauth2Config.ClientSecret = p.ClientSecret
+			oauth2Config.Endpoint = oauth2.Endpoint{
+				AuthURL:  p.Url + "/login/oauth/authorize",
+				TokenURL: p.Url + "/login/oauth/access_token",
+			}
+			break
+		}
+	}
+
+	tokenSource := auth.CacheableTokenSource{
+		TokenSource: oauth2Config.TokenSource(ctx, tok),
+	}
+
+	if cli == nil {
+		cli, _ = httpcli.ExternalClientFactory.Client()
+	}
+
+	cli.Transport = &oauth2.Transport{
+		Source: tokenSource,
+		Base:   cli.Transport,
+	}
+
+	return github.NewClient(cli), nil
+}
 
 // V3Client is a caching GitHub API client for GitHub's REST API v3.
 //
