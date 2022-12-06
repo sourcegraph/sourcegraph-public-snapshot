@@ -1896,9 +1896,7 @@
     "organizationInvitations": {
       "description": "Configuration for organization invitations.",
       "type": "object",
-      "required": [
-        "signingKey"
-      ],
+      "required": ["signingKey"],
       "properties": {
         "expiryTime": {
           "description": "Time before the invitation expires, in hours (experimental, not enforced at the moment).",
