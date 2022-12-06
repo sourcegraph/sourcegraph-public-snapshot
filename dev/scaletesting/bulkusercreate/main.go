@@ -23,6 +23,7 @@ type config struct {
 	userCount      int
 	teamCount      int
 	subOrgCount    int
+	reposSourceOrg string
 	orgAdmin       string
 	action         string
 	resume         string
@@ -55,6 +56,7 @@ func main() {
 	flag.IntVar(&cfg.teamCount, "team.count", 20, "Amount of teams to create or delete")
 	flag.IntVar(&cfg.subOrgCount, "suborg.count", 10, "Amount of sub-orgs to create or delete")
 	flag.StringVar(&cfg.orgAdmin, "org.admin", "", "Login of admin of orgs")
+	flag.StringVar(&cfg.reposSourceOrg, "repos.sourceOrgName", "blank200k", "The org that contains the imported repositories to transfer")
 
 	flag.IntVar(&cfg.retry, "retry", 5, "Retries count")
 	flag.StringVar(&cfg.action, "action", "create", "Whether to 'create' or 'delete' users")

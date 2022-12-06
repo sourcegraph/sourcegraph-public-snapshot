@@ -60,7 +60,7 @@ func create(ctx context.Context, orgs []*org, cfg config) {
 	}
 
 	if len(repos) == 0 {
-		remoteRepos := getGitHubRepos(ctx)
+		remoteRepos := getGitHubRepos(ctx, cfg.reposSourceOrg)
 
 		if repos, err = store.insertRepos(remoteRepos); err != nil {
 			log.Fatalf("Failed to insert repos in state: %s", err)
