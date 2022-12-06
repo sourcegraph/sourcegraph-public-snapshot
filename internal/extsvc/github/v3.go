@@ -25,6 +25,10 @@ import (
 )
 
 func NewGitHubClientForUserExternalAccount(ctx context.Context, acct *extsvc.Account, cli *http.Client) (*github.Client, error) {
+	if acct == nil {
+		return github.NewClient(cli), nil
+	}
+
 	_, tok, err := GetExternalAccountData(ctx, &acct.AccountData)
 	if err != nil {
 		return nil, err
