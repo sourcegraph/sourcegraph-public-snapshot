@@ -24,9 +24,7 @@ import (
 // K8S returns a Map for the given k8s urlspec (e.g. k8s+http://searcher), starting
 // service discovery in the background.
 func K8S(logger log.Logger, urlspec string) *Map {
-
 	logger = log.Scoped("k8s", "service discovery via k8s")
-
 	return &Map{
 		urlspec:   urlspec,
 		discofunk: k8sDiscovery(logger, urlspec, namespace(logger), loadClient),
