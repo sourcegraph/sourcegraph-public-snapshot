@@ -23,7 +23,7 @@ const EXTERNAL_SERVICES_TOTAL_COUNT = gql`
 `
 
 export function useShouldShowAddCodeHostWidget(authenticatedUser: AuthenticatedUser | null): boolean | undefined {
-    const [isAddCodeHostWidgetEnabled] = useFeatureFlag('plg-enable-add-codehost-widget', true) // TODO: change default to false
+    const [isAddCodeHostWidgetEnabled] = useFeatureFlag('plg-enable-add-codehost-widget', false)
     const { data } = useQuery<ExternalServicesTotalCountResult>(EXTERNAL_SERVICES_TOTAL_COUNT, {})
 
     return (
