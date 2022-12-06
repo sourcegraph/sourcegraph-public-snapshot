@@ -1,5 +1,9 @@
 package codeintel
 
+import (
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+)
+
 type ID string
 
 // DocumentData represents a single document within an index. The data here can answer
@@ -96,4 +100,76 @@ type LocationData struct {
 	StartCharacter int
 	EndLine        int
 	EndCharacter   int
+}
+
+func toPreciseTypes(document DocumentData) precise.DocumentData {
+	ranges := map[precise.ID]precise.RangeData{}
+	for k, v := range document.Ranges {
+		ranges[precise.ID(k)] = precise.RangeData{
+			StartLine:              v.StartLine,
+			StartCharacter:         v.StartCharacter,
+			EndLine:                v.EndLine,
+			EndCharacter:           v.EndCharacter,
+			DefinitionResultID:     precise.ID(v.DefinitionResultID),
+			ReferenceResultID:      precise.ID(v.ReferenceResultID),
+			ImplementationResultID: precise.ID(v.ImplementationResultID),
+			HoverResultID:          precise.ID(v.HoverResultID),
+			MonikerIDs:             toPreciseIDSlice(v.MonikerIDs),
+		}
+	}
+
+	hoverResults := map[precise.ID]string{}
+	for k, v := range document.HoverResults {
+		hoverResults[precise.ID(k)] = v
+	}
+
+	monikers := map[precise.ID]precise.MonikerData{}
+	for k, v := range document.Monikers {
+		monikers[precise.ID(k)] = precise.MonikerData{
+			Kind:                 v.Kind,
+			Scheme:               v.Scheme,
+			Identifier:           v.Identifier,
+			PackageInformationID: precise.ID(v.PackageInformationID),
+		}
+	}
+
+	packageInformation := map[precise.ID]precise.PackageInformationData{}
+	for k, v := range document.PackageInformation {
+		packageInformation[precise.ID(k)] = precise.PackageInformationData{
+			Manager: v.Manager,
+			Name:    v.Name,
+			Version: v.Version,
+		}
+	}
+
+	diagnostics := []precise.DiagnosticData{}
+	for _, v := range document.Diagnostics {
+		diagnostics = append(diagnostics, precise.DiagnosticData{
+			Severity:       v.Severity,
+			Code:           v.Code,
+			Message:        v.Message,
+			Source:         v.Source,
+			StartLine:      v.StartLine,
+			StartCharacter: v.StartCharacter,
+			EndLine:        v.EndLine,
+			EndCharacter:   v.EndCharacter,
+		})
+	}
+
+	return precise.DocumentData{
+		Ranges:             ranges,
+		HoverResults:       hoverResults,
+		Monikers:           monikers,
+		PackageInformation: packageInformation,
+		Diagnostics:        diagnostics,
+	}
+}
+
+func toPreciseIDSlice(ids []ID) []precise.ID {
+	var libIDs []precise.ID
+	for _, id := range ids {
+		libIDs = append(libIDs, precise.ID(id))
+	}
+
+	return libIDs
 }
