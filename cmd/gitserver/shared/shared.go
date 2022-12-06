@@ -5,7 +5,6 @@ import (
 	"container/list"
 	"context"
 	"database/sql"
-	"encoding/base64"
 	"net"
 	"net/http"
 	"net/url"
@@ -338,20 +337,24 @@ func getRemoteURLFunc(
 			continue
 		}
 
-		gitHubAppConfig := conf.SiteConfig().GitHubApp
-		if repos.IsGitHubAppEnabled(gitHubAppConfig) &&
-			svc.Kind == extsvc.KindGitHub {
-			rawConfig, err := svc.Config.Decrypt(ctx)
+		if svc.Kind == extsvc.KindGitHub {
+			config, err := conf.GitHubAppConfig()
 			if err != nil {
 				return "", err
 			}
-			installationID := gjson.Get(rawConfig, "githubAppInstallationID").Int()
-			if installationID > 0 {
-				rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, gitHubAppConfig, installationID, cli)
+			if config.Configured() {
+				rawConfig, err := svc.Config.Decrypt(ctx)
 				if err != nil {
-					return "", errors.Wrap(err, "edit GitHub App external service config token")
+					return "", err
 				}
-				svc.Config.Set(rawConfig)
+				installationID := gjson.Get(rawConfig, "githubAppInstallationID").Int()
+				if installationID > 0 {
+					rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, config.PrivateKey, config.AppID, installationID, cli)
+					if err != nil {
+						return "", errors.Wrap(err, "edit GitHub App external service config token")
+					}
+					svc.Config.Set(rawConfig)
+				}
 			}
 		}
 		return repos.EncryptableCloneURL(ctx, log.Scoped("repos.CloneURL", ""), svc.Kind, svc.Config, r)
@@ -367,7 +370,8 @@ func editGitHubAppExternalServiceConfigToken(
 	externalServiceStore database.ExternalServiceStore,
 	svc *types.ExternalService,
 	rawConfig string,
-	gitHubAppConfig *schema.GitHubApp,
+	privateKey []byte,
+	appID string,
 	installationID int64,
 	cli httpcli.Doer,
 ) (string, error) {
@@ -383,26 +387,12 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Errorf("only GitHub App on GitHub.com is supported, but got %q", baseURL)
 	}
 
-	var pkey []byte
-	var appID string
-
-	if gitHubAppConfig != nil {
-		pkey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
-		if err != nil {
-			return "", errors.Wrap(err, "decode private key")
-		}
-
-		appID = gitHubAppConfig.AppID
-	} else {
-		return "", errors.Wrap(err, "no site-level GitHub App config found")
-	}
-
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return "", nil
 	}
 
-	appAuther, err := github.NewGitHubAppAuthenticator(appID, pkey)
+	appAuther, err := github.NewGitHubAppAuthenticator(appID, privateKey)
 	if err != nil {
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}

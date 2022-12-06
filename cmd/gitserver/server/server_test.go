@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -1641,7 +1640,7 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 	)
 
 	assertBody := func(result *http.Response, want string) {
-		b, err := ioutil.ReadAll(result.Body)
+		b, err := io.ReadAll(result.Body)
 		if err != nil {
 			t.Fatalf("failed to read body: %v", err)
 		}

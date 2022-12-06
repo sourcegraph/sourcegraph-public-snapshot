@@ -3,7 +3,7 @@ package oneclickexport
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"path"
 	"time"
 
@@ -50,7 +50,7 @@ func (d ExtSvcQueryProcessor) Process(ctx context.Context, payload Limit, dir st
 	}
 
 	outputFile := path.Join(dir, "db-external-services.txt")
-	err = ioutil.WriteFile(outputFile, bytes, 0644)
+	err = os.WriteFile(outputFile, bytes, 0644)
 	if err != nil {
 		d.logger.Error("error writing to file", log.Error(err), log.String("filePath", outputFile))
 	}
@@ -125,7 +125,7 @@ func (e ExtSvcReposQueryProcessor) Process(ctx context.Context, payload Limit, d
 	}
 
 	outputFile := path.Join(dir, "db-external-service-repos.txt")
-	err = ioutil.WriteFile(outputFile, bytes, 0644)
+	err = os.WriteFile(outputFile, bytes, 0644)
 	if err != nil {
 		e.logger.Error("error writing to file", log.Error(err), log.String("filePath", outputFile))
 	}
