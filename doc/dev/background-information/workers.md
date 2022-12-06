@@ -291,12 +291,12 @@ Given our table definition and new scanning function, we can configure a databas
 
 ```go
 import (
-  "github.com/sourcegraph/log"
   "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+  "github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func makeStore(logger log.Logger, dbHandle basestore.TransactableHandle) dbworkerstore.Store[*ExampleJob] {
-  return dbworkerstore.New(logger, dbHandle, dbworkerstore.Options[*ExampleJob]{
+func makeStore(observationCtx *observation.Context, dbHandle basestore.TransactableHandle) dbworkerstore.Store[*ExampleJob] {
+  return dbworkerstore.New(observationCtx, dbHandle, dbworkerstore.Options[*ExampleJob]{
     Name:              "example_job_worker_store",
     TableName:         "example_jobs",
     ViewName:          "example_jobs_with_repository_name example_jobs",
