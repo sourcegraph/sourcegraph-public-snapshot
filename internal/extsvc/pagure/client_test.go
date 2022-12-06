@@ -37,7 +37,7 @@ func TestClient_ListProjects(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// TODO We wrap the golden to make the diff were we only return projects
+	// TODO We wrap the golden to make the diff where we only return projects
 	// cleaner to review. Can be removed in future.
 	resp := map[string]any{
 		"projects": projects,
