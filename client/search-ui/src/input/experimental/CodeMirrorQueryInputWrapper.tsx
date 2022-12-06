@@ -1,10 +1,10 @@
 import { QueryState, SearchPatternType } from '@sourcegraph/search'
 import { useEffect, useState } from 'react'
-import { Source } from './codemirror/suggestions'
+import { Source } from './suggestions'
 import CodeMirrorQueryInput from './CodeMirrorQueryInput.svelte'
 import { History } from 'history'
 
-interface CodeMirrorQueryInputNGProps {
+export interface CodeMirrorQueryInputWrapperProps {
     queryState: QueryState
     onChange: (queryState: QueryState) => void
     onSubmit: () => void
@@ -16,7 +16,7 @@ interface CodeMirrorQueryInputNGProps {
     history: History
 }
 
-export const CodeMirrorQueryInputNG: React.FunctionComponent<CodeMirrorQueryInputNGProps> = props => {
+export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQueryInputWrapperProps> = props => {
     const [parent, setParent] = useState<HTMLDivElement | null>(null)
     const [instance, setInstance] = useState<CodeMirrorQueryInput | null>(null)
 

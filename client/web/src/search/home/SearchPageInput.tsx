@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback } from 'react'
 
 import * as H from 'history'
 import { NavbarQueryState } from 'src/stores/navbarSearchQueryState'
@@ -15,7 +15,8 @@ import {
     QueryState,
     SearchModeProps,
 } from '@sourcegraph/search'
-import { CodeMirrorQueryInputNG, SearchBox } from '@sourcegraph/search-ui'
+import { SearchBox } from '@sourcegraph/search-ui'
+import { LazyCodeMirrorQueryInput } from '@sourcegraph/search-ui/src/input/experimental'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -68,6 +69,7 @@ const queryStateSelector = (
 export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Props>> = (props: Props) => {
     const { caseSensitive, patternType, searchMode } = useNavbarQueryState(queryStateSelector, shallow)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
+    const experimentalQueryInput = true
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const applySuggestionsOnEnter =
         useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
@@ -109,8 +111,8 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const isTouchOnlyDevice =
         !window.matchMedia('(any-pointer:fine)').matches && window.matchMedia('(any-hover:none)').matches
 
-    const input = (
-        <CodeMirrorQueryInputNG
+    const input = experimentalQueryInput ? (
+        <LazyCodeMirrorQueryInput
             patternType={patternType}
             interpretComments={false}
             queryState={props.queryState}
@@ -121,33 +123,29 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
             suggestionSource={suggestions}
             history={props.history}
         />
+    ) : (
+        <SearchBox
+            {...props}
+            editorComponent={editorComponent}
+            showSearchContext={showSearchContext}
+            showSearchContextManagement={true}
+            caseSensitive={caseSensitive}
+            patternType={patternType}
+            setPatternType={setSearchPatternType}
+            setCaseSensitivity={setSearchCaseSensitivity}
+            searchMode={searchMode}
+            setSearchMode={setSearchMode}
+            queryState={props.queryState}
+            onChange={props.setQueryState}
+            onSubmit={onSubmit}
+            autoFocus={!isTouchOnlyDevice && props.autoFocus !== false}
+            isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
+            structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+            applySuggestionsOnEnter={applySuggestionsOnEnter}
+            showSearchHistory={true}
+            recentSearches={recentSearches}
+        />
     )
-    /*
-                        <SearchBox
-                            {...props}
-                            editorComponent={editorComponent}
-                            showSearchContext={showSearchContext}
-                            showSearchContextManagement={true}
-                            caseSensitive={caseSensitive}
-                            patternType={patternType}
-                            setPatternType={setSearchPatternType}
-                            setCaseSensitivity={setSearchCaseSensitivity}
-                            searchMode={searchMode}
-                            setSearchMode={setSearchMode}
-                            queryState={props.queryState}
-                            onChange={props.setQueryState}
-                            onSubmit={onSubmit}
-                            autoFocus={!isTouchOnlyDevice && props.autoFocus !== false}
-                            isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
-                            structuralSearchDisabled={
-                                window.context?.experimentalFeatures?.structuralSearch === 'disabled'
-                            }
-                            applySuggestionsOnEnter={applySuggestionsOnEnter}
-                            showSearchHistory={true}
-                            recentSearches={recentSearches}
-                        />
-         */
-
     return (
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>

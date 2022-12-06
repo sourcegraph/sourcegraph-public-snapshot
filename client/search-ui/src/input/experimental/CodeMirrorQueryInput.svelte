@@ -8,12 +8,12 @@
 
     import { QueryChangeSource, QueryState, SearchPatternType } from '@sourcegraph/search'
     import { onDestroy } from 'svelte'
-    import { parseInputAsQuery } from './codemirror/parsedQuery'
-    import { editorConfigFacet, Source, suggestions } from './codemirror/suggestions'
-    import { filterHighlight, querySyntaxHighlighting } from './codemirror/syntax-highlighting'
-    import { singleLine } from './codemirror'
+    import { parseInputAsQuery } from '../codemirror/parsedQuery'
+    import { editorConfigFacet, Source, suggestions } from './suggestions'
+    import { filterHighlight, querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
+    import { singleLine } from '../codemirror'
     import { mdiClose } from '@mdi/js'
-    import Icon from './codemirror/Icon.svelte'
+    import Icon from './Icon.svelte'
     import { History } from 'history'
 
     export let isLightTheme: boolean
@@ -329,6 +329,7 @@
 
         .global-shortcut {
             display: block;
+            align-self: center;
             border: 1px solid var(--border-color-2);
             width: 24px;
         }

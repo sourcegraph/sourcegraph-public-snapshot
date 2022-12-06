@@ -1,14 +1,14 @@
 import { extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
-import { FilterDefinition, FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import {
     Group,
     Option,
     EntryOf,
     Source,
-    FilterSuggestion,
+    FilterOption,
     SearchQueryOption,
     getEditorConfig,
-} from '@sourcegraph/search-ui/src/input/codemirror/suggestions'
+} from '@sourcegraph/search-ui/src/input/experimental'
 import { getDocumentNode, gql } from '@sourcegraph/http-client'
 import { getWebGraphQLClient } from '../../backend/graphql'
 import { SuggestionsRepoResult, SuggestionsRepoVariables } from 'src/graphql-operations'
@@ -20,12 +20,7 @@ import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion
 
 const none: any[] = []
 
-const FILTER_SUGGESTIONS = new Fzf(
-    Object.entries(FILTERS).map(
-        ([name, definition]) => ({ name, definition } as { name: string; definition: FilterDefinition })
-    ),
-    { selector: item => item.name, match: extendedMatch }
-)
+const FILTER_SUGGESTIONS = new Fzf(Object.keys(FILTERS) as FilterType[], { match: extendedMatch })
 const DEFAULT_FILTERS: FilterType[] = [FilterType.repo, FilterType.type]
 const RELATED_FILTERS: Partial<Record<FilterType, (filter: Filter) => FilterType[]>> = {
     [FilterType.type]: filter => {
@@ -36,6 +31,22 @@ const RELATED_FILTERS: Partial<Record<FilterType, (filter: Filter) => FilterType
         }
         return []
     },
+}
+
+function toFilterCompletion(filter: FilterType, from: number, to?: number): EntryOf<'completion'> {
+    const definition = FILTERS[filter]
+    const description =
+        typeof definition.description === 'function' ? definition.description(false) : definition.description
+    return {
+        type: 'completion',
+        icon: mdiFilterOutline,
+        render: FilterOption,
+        value: filter,
+        insertValue: filter + ':',
+        description,
+        from,
+        to,
+    }
 }
 
 export const filterSuggestions = (tokens: Token[], token: Token | undefined, position: number): Option[] => {
@@ -50,42 +61,15 @@ export const filterSuggestions = (tokens: Token[], token: Token | undefined, pos
             // Remove existing filters
             .filter(filter => !tokens.some(token => token.type === 'filter' && token.field.value === filter))
 
-        return filters.map(filter => {
-            const definition = FILTERS[filter]
-            const description =
-                typeof definition.description === 'function' ? definition.description(false) : definition.description
-
-            return {
-                type: 'completion',
-                icon: mdiFilterOutline,
-                render: FilterSuggestion,
-                value: filter,
-                insertValue: filter + ':',
-                description,
-                from: position,
-            }
-        })
+        return filters.map(filter => toFilterCompletion(filter, position))
     }
 
     if (token?.type === 'pattern') {
-        return FILTER_SUGGESTIONS.find('^' + token.value).map(entry => {
-            const description =
-                typeof entry.item.definition.description === 'function'
-                    ? entry.item.definition.description(false)
-                    : entry.item.definition.description
-
-            return {
-                type: 'completion',
-                icon: mdiFilterOutline,
-                render: FilterSuggestion,
-                value: entry.item.name,
-                insertValue: entry.item.name + ':',
-                description,
-                from: token.range.start,
-                to: token.range.end,
-                matches: entry.positions,
-            }
-        })
+        // ^ triggers a prefix match
+        return FILTER_SUGGESTIONS.find('^' + token.value).map(entry => ({
+            ...toFilterCompletion(entry.item, token.range.start, token.range.end),
+            matches: entry.positions,
+        }))
     }
     return []
 }

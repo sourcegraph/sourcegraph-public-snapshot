@@ -487,6 +487,13 @@ export const suggestionSource = Facet.define<Source, Source>({
                     run: moveSelection('backward'),
                 },
                 {
+                    key: 'Mod-Space',
+                    run(view) {
+                        view.dispatch({effects: startCompletion.of()})
+                        return true
+                    },
+                },
+                {
                     key: 'Enter',
                     run(view) {
                         const state = view.state.field(suggestionsStateField)
