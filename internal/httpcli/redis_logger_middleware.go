@@ -230,7 +230,7 @@ func formatStackFrame(function string, file string, line int) string {
 	funcName := strings.Join(dotPieces[1:], ".")  // (*requestTracer).TraceQuery
 
 	tree := strings.Join(treeAndFunc[:len(treeAndFunc)-1], "/") + "/" + pckName // github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
-	strings.TrimPrefix(tree, sourcegraphPrefix)
+	tree = strings.TrimPrefix(tree, sourcegraphPrefix)
 
 	// Reconstruct the frame file path so that we don't include the local path on the machine that built this instance
 	fileName := strings.TrimPrefix(filepath.Join(tree, filepath.Base(file)), sourcegraphPrefix) // cmd/frontend/graphqlbackend/trace.go
