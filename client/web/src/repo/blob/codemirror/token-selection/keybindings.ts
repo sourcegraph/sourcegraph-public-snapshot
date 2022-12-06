@@ -1,5 +1,5 @@
 import { defaultKeymap } from '@codemirror/commands'
-import { KeyBinding, keymap } from '@codemirror/view'
+import { KeyBinding } from '@codemirror/view'
 
 import { blobPropsFacet } from '..'
 import { syntaxHighlight } from '../highlight'
