@@ -47,9 +47,6 @@ See [GitHub API token and access](#github-api-token-and-access) for more details
 The GitHub service requires a `token` in order to access their API. There are two different types of tokens you can supply:
 
 - **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of access to repositories as the account that created the token. If you're not wanting to mix your personal repositories with your organizations repositories, you could add an entry to the `exclude` array, or you can use a machine user token.
-  - If using fine-grained personal access tokens, read-only access on the Administration and Content permissions are required for repositories.
-    - The Administration permission is used to fetch repository collaborators and ensure that users have access to the correct repositories.
-    - The Content permission is used to clone the repository so that it can be searched via Sourcegraph.  
 - **[Machine user token](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users)**:<br>Generates a token for a machine user that is affiliated with an organization instead of a user account.
 
 No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes) are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required for specific features:
@@ -75,6 +72,14 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 > - If write access to organizations is required, the token must have `write:org` scope *and* the token's account must have write access for all organizations. This can happen by being an admin in all relevant organizations.
 >
 > Learn more about how the GitHub API is used and what level of access is required in the corresponding feature documentation.
+
+### Fine-grained personal access tokens
+
+> NOTE: Fine-grained personal access token suport is still experimental. Some functionality may not yet work.
+
+To sync repositories using fine-grained personal access tokens read-only access on the Content permission is required for repositories.
+
+It should also be noted that fine-grained personal access tokens work a bit different than normal personal access tokens. For example, a classic personal access token can access all repositories of the owner, as well as repositories of organizations that the owner belongs to. However, for fine-grained personal access tokens, access is restricted to the owner of the token. If access to a GitHub organization's repositories is required, the GitHub organization has to be the owner of the fine-grained personal access token.
 
 ## GitHub.com rate limits
 
