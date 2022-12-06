@@ -93,7 +93,7 @@ func create(ctx context.Context, orgs []*org, cfg config) {
 	for _, o := range orgs {
 		currentOrg := o
 		g.Go(func() {
-			executeCreateOrg(ctx, currentOrg, cfg.orgAdmin, &orgsDone)
+			currentOrg.executeCreate(ctx, cfg.orgAdmin, &orgsDone)
 		})
 	}
 	g.Wait()
@@ -110,7 +110,7 @@ func create(ctx context.Context, orgs []*org, cfg config) {
 	for _, t := range teams {
 		currentTeam := t
 		g.Go(func() {
-			executeCreateTeam(ctx, currentTeam, &teamsDone)
+			currentTeam.executeCreate(ctx, &teamsDone)
 		})
 	}
 	g.Wait()
@@ -118,7 +118,7 @@ func create(ctx context.Context, orgs []*org, cfg config) {
 	for _, u := range users {
 		currentUser := u
 		g.Go(func() {
-			executeCreateUser(ctx, currentUser, &usersDone)
+			currentUser.executeCreate(ctx, &usersDone)
 		})
 	}
 	g.Wait()
@@ -136,7 +136,7 @@ func create(ctx context.Context, orgs []*org, cfg config) {
 		}
 
 		g2.Go(func() {
-			executeCreateTeamMembershipsForTeam(ctx, currentTeam, usersToAssign, &membershipsDone)
+			currentTeam.executeCreateMemberships(ctx, usersToAssign, &membershipsDone)
 		})
 	}
 	g2.Wait()
@@ -165,9 +165,9 @@ func create(ctx context.Context, orgs []*org, cfg config) {
 	}
 }
 
-// executeCreateOrg checks whether the org already exists. If it does not, it is created.
+// executeCreate checks whether the org already exists. If it does not, it is created.
 // The result is stored in the local state.
-func executeCreateOrg(ctx context.Context, o *org, orgAdmin string, orgsDone *int64) {
+func (o *org) executeCreate(ctx context.Context, orgAdmin string, orgsDone *int64) {
 	if o.Created && o.Failed == "" {
 		atomic.AddInt64(orgsDone, 1)
 		progress.SetValue(0, float64(*orgsDone))
@@ -216,9 +216,9 @@ func executeCreateOrg(ctx context.Context, o *org, orgAdmin string, orgsDone *in
 	//writeSuccess(out, "Created org with login %s", o.Login)
 }
 
-// executeCreateTeam checks whether the team already exists. If it does not, it is created.
+// executeCreate checks whether the team already exists. If it does not, it is created.
 // The result is stored in the local state.
-func executeCreateTeam(ctx context.Context, t *team, teamsDone *int64) {
+func (t *team) executeCreate(ctx context.Context, teamsDone *int64) {
 	if t.Created && t.Failed == "" {
 		atomic.AddInt64(teamsDone, 1)
 		progress.SetValue(1, float64(*teamsDone))
@@ -269,9 +269,9 @@ func executeCreateTeam(ctx context.Context, t *team, teamsDone *int64) {
 	}
 }
 
-// executeCreateUser checks whether the user already exists. If it does not, it is created.
+// executeCreate checks whether the user already exists. If it does not, it is created.
 // The result is stored in the local state.
-func executeCreateUser(ctx context.Context, u *user, usersDone *int64) {
+func (u *user) executeCreate(ctx context.Context, usersDone *int64) {
 	if u.Created && u.Failed == "" {
 		atomic.AddInt64(usersDone, 1)
 		progress.SetValue(2, float64(*usersDone))
@@ -318,11 +318,11 @@ func executeCreateUser(ctx context.Context, u *user, usersDone *int64) {
 	//writeSuccess(out, "Created user with login %s", u.Login)
 }
 
-// executeCreateTeamMembershipsForTeam does the following per user:
+// executeCreateMemberships does the following per user:
 // 1. It sets the user as a member of the team's parent org. This is an idempotent operation.
 // 2. It adds the user to the team. This is an idempotent operation.
 // 3. The result is stored in the local state.
-func executeCreateTeamMembershipsForTeam(ctx context.Context, t *team, users []*user, membershipsDone *int64) {
+func (t *team) executeCreateMemberships(ctx context.Context, users []*user, membershipsDone *int64) {
 	// users need to be member of the team's parent org to join the team
 	userState := "active"
 	userRole := "member"
