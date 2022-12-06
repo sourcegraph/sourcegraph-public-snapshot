@@ -34,11 +34,8 @@ export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<
         })
     }, [setAlert, toggleStar])
 
-    const starButton =
-        !node.autoDefined && // Auto-defined search contexts cannot be starred
-        authenticatedUser ? (
-            <SearchContextStarButton starred={starred} onClick={toggleStarWithErrorHandling} />
-        ) : null
+    // Auto-defined search contexts cannot be starred
+    const showStarButton = !node.autoDefined && authenticatedUser
 
     const contents =
         node.repositories && node.repositories.length > 0 ? (
@@ -76,7 +73,13 @@ export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<
 
     return (
         <tr className={styles.row}>
-            <td className={styles.star}>{starButton}</td>
+            <td className={styles.star}>
+                <SearchContextStarButton
+                    starred={starred}
+                    onClick={toggleStarWithErrorHandling}
+                    className={classNames(!showStarButton && 'invisible')} // Render invisible button to keep table layout consistent
+                />
+            </td>
             <td className={styles.name}>
                 <Link to={`/contexts/${node.spec}`}>{node.spec}</Link>{' '}
                 <span className="d-none d-md-inline-block">{tags}</span>
