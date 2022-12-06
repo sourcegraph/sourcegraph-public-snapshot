@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -53,13 +54,13 @@ type Finalizer interface {
 type handlerFunc func(ctx context.Context) error
 
 type simpleHandler struct {
-	name    string
-	handler handlerFunc
+	name, description string
+	handler           handlerFunc
 }
 
 // NewHandlerWithErrorMessage wraps the given function to be used as a handler, and
 // prints a canned failure message containing the given name.
-func NewHandlerWithErrorMessage(name string, handler func(ctx context.Context) error) Handler {
+func NewHandlerWithErrorMessage(name, description string, handler handlerFunc) Handler {
 	return &simpleHandler{handler: handler, name: name}
 }
 
@@ -68,7 +69,7 @@ func (h *simpleHandler) Handle(ctx context.Context) error {
 }
 
 func (h *simpleHandler) HandleError(err error) {
-	log15.Error("An error occurred in a background task", "handler", h.name, "error", err)
+	log.Scoped(h.name, h.description).Error("An error occurred in a background task", log.String("handler", h.name), log.Error(err))
 }
 
 // NewPeriodicGoroutine creates a new PeriodicGoroutine with the given handler. The context provided will propagate into

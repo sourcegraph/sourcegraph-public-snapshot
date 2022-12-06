@@ -40,17 +40,21 @@ func NewJanitor(
 	config JanitorConfig,
 ) goroutine.BackgroundRoutine {
 	metrics := NewJanitorMetrics(observationCtx)
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("autoindexing-janitor", func(ctx context.Context) error {
-		job := janitorJob{
-			store:           store,
-			gitserverClient: gitserverClient,
-			metrics:         metrics,
-			logger:          log.Scoped("codeintel.janitor.background", ""),
-			clock:           clock,
-		}
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		interval,
+		goroutine.NewHandlerWithErrorMessage("codeintel.autoindexing-janitor", "cleanup autoindexing jobs for unknown repos, commits etc ", func(ctx context.Context) error {
+			job := janitorJob{
+				store:           store,
+				gitserverClient: gitserverClient,
+				metrics:         metrics,
+				logger:          log.Scoped("codeintel.janitor.background", ""),
+				clock:           clock,
+			}
 
-		return job.handleCleanup(ctx, config)
-	}))
+			return job.handleCleanup(ctx, config)
+		}),
+	)
 }
 
 func (j janitorJob) handleCleanup(ctx context.Context, cfg JanitorConfig) (errs error) {

@@ -21,7 +21,7 @@ func NewInsightsDataPrunerJob(ctx context.Context, postgres database.DB, insight
 	logger := log.Scoped("InsightsDataPrunerJob", "")
 
 	return goroutine.NewPeriodicGoroutine(ctx, interval,
-		goroutine.NewHandlerWithErrorMessage("insights_data_prune", func(ctx context.Context) (err error) {
+		goroutine.NewHandlerWithErrorMessage("insights.data_prune", "deletes series that have been marked as 'deleted'", func(ctx context.Context) (err error) {
 			return performPurge(ctx, postgres, insightsdb, logger, time.Now().Add(interval))
 		}))
 }

@@ -23,7 +23,7 @@ func NewCacheEntryCleaner(ctx context.Context, s *store.Store) goroutine.Backgro
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
 		cacheCleanInterval,
-		goroutine.NewHandlerWithErrorMessage("cleaning up LRU batch spec execution cache entries", func(ctx context.Context) error {
+		goroutine.NewHandlerWithErrorMessage("batchchanges.cache-cleaner", "cleaning up LRU batch spec execution cache entries", func(ctx context.Context) error {
 			return s.CleanBatchSpecExecutionCacheEntries(ctx, maxSizeByte)
 		}),
 	)

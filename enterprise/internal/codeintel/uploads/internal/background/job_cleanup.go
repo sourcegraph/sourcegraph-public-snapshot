@@ -52,9 +52,13 @@ func NewJanitor(
 		clock:           clock,
 		gitserverClient: gitserverClient,
 	}
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("upload-janitor", func(ctx context.Context) error {
-		return j.handleCleanup(ctx, config)
-	}))
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		interval,
+		goroutine.NewHandlerWithErrorMessage("codeintel.upload-janitor", "cleans up various code intel upload and metadata", func(ctx context.Context) error {
+			return j.handleCleanup(ctx, config)
+		}),
+	)
 }
 
 func (b janitorJob) handleCleanup(ctx context.Context, cfg JanitorConfig) (errs error) {

@@ -47,7 +47,7 @@ func newTriggerQueryRunner(ctx context.Context, observationCtx *observation.Cont
 
 func newTriggerQueryEnqueuer(ctx context.Context, store edb.CodeMonitorStore) goroutine.BackgroundRoutine {
 	enqueueActive := goroutine.NewHandlerWithErrorMessage(
-		"code_monitors_trigger_query_enqueuer",
+		"code_monitors.trigger_query_enqueuer", "enqueues code monitor trigger query jobs",
 		func(ctx context.Context) error {
 			_, err := store.EnqueueQueryTriggerJobs(ctx)
 			return err
@@ -72,7 +72,7 @@ func newTriggerQueryResetter(_ context.Context, observationCtx *observation.Cont
 
 func newTriggerJobsLogDeleter(ctx context.Context, store edb.CodeMonitorStore) goroutine.BackgroundRoutine {
 	deleteLogs := goroutine.NewHandlerWithErrorMessage(
-		"code_monitors_trigger_jobs_log_deleter",
+		"code_monitors.trigger_jobs_log_deleter", "deletes code job logs from code monitor triggers",
 		func(ctx context.Context) error {
 			return store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
 		})

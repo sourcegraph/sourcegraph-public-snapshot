@@ -25,9 +25,13 @@ func NewCommitGraphUpdater(
 		gitserverClient: gitserverClient,
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("commitgraph-updater", func(ctx context.Context) error {
-		return updater.UpdateAllDirtyCommitGraphs(ctx, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
-	}))
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		interval,
+		goroutine.NewHandlerWithErrorMessage("codeintel.commitgraph-updater", "", func(ctx context.Context) error {
+			return updater.UpdateAllDirtyCommitGraphs(ctx, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
+		}),
+	)
 }
 
 type commitGraphUpdater struct {

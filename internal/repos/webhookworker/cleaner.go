@@ -24,7 +24,7 @@ func NewCleaner(ctx context.Context, observationCtx *observation.Context, worker
 	})
 
 	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 1*time.Hour, goroutine.NewHandlerWithErrorMessage(
-		"webhook_build_worker_cleaner",
+		"webhook.build_worker_cleaner", "deletes completed and failed sync webhooks",
 		func(ctx context.Context) error {
 			_, err := cleanJobs(ctx, workerBaseStore)
 			return err

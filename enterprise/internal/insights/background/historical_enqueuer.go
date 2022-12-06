@@ -104,7 +104,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, observationCtx *observati
 
 	// We specify 30s here, so insights are queued regularly for processing. The queue itself is rate limited.
 	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 30*time.Second, goroutine.NewHandlerWithErrorMessage(
-		"insights_historical_enqueuer",
+		"insights.historical_enqueuer", "enqueues jobs to build series on historical data",
 		enq.Handler,
 	), operation)
 }

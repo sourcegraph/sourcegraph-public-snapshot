@@ -16,9 +16,13 @@ func NewRepositoryMatcher(store store.Store, observationCtx *observation.Context
 	}
 	metrics := newMetrics(observationCtx)
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("codeintel-policies-matcher", func(ctx context.Context) error {
-		return repoMatcher.handleRepositoryMatcherBatch(ctx, configurationPolicyMembershipBatchSize, metrics)
-	}))
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		interval,
+		goroutine.NewHandlerWithErrorMessage("codeintel.policies-matcher", "match repositories to autoindexing+retention policies", func(ctx context.Context) error {
+			return repoMatcher.handleRepositoryMatcherBatch(ctx, configurationPolicyMembershipBatchSize, metrics)
+		}),
+	)
 }
 
 type repoMatcher struct {

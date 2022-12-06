@@ -31,7 +31,7 @@ func NewCleaner(ctx context.Context, observationCtx *observation.Context, worker
 
 	// We look for jobs to cleanup every hour.
 	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 1*time.Hour, goroutine.NewHandlerWithErrorMessage(
-		"insights_query_runner_cleaner",
+		"insights.query_runner_cleaner", "removes completed or failed query runner jobs",
 		func(ctx context.Context) error {
 			// TODO(slimsag): future: recording the number of jobs cleaned up in a metric would be nice.
 			_, err := cleanJobs(ctx, workerBaseStore)

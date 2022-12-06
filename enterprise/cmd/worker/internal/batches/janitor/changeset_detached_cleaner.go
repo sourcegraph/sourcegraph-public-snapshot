@@ -18,7 +18,7 @@ func NewChangesetDetachedCleaner(ctx context.Context, s *store.Store) goroutine.
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
 		changesetCleanInterval,
-		goroutine.NewHandlerWithErrorMessage("cleaning detached changeset entries", func(ctx context.Context) error {
+		goroutine.NewHandlerWithErrorMessage("batchchanges.detached-cleaner", "cleaning detached changeset entries", func(ctx context.Context) error {
 			// get the configuration value when the handler runs to get the latest value
 			retention := conf.Get().BatchChangesChangesetsRetention
 			if len(retention) > 0 {

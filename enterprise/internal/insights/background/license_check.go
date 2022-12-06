@@ -20,9 +20,12 @@ func NewLicenseCheckJob(ctx context.Context, postgres database.DB, insightsdb ed
 	logger := log.Scoped("CodeInsightsLicenseCheckJob", "")
 
 	return goroutine.NewPeriodicGoroutine(ctx, interval,
-		goroutine.NewHandlerWithErrorMessage("insights_license_check", func(ctx context.Context) (err error) {
-			return checkAndEnforceLicense(ctx, insightsdb, logger)
-		}))
+		goroutine.NewHandlerWithErrorMessage("insights.license_check", "checks for code insights license and freezes insights when missing",
+			func(ctx context.Context) (err error) {
+				return checkAndEnforceLicense(ctx, insightsdb, logger)
+			},
+		),
+	)
 }
 
 func checkAndEnforceLicense(ctx context.Context, insightsdb edb.InsightsDB, logger log.Logger) (err error) {

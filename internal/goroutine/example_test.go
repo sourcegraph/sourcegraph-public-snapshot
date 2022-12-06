@@ -43,7 +43,7 @@ func ExampleBackgroundRoutine() {
 }
 
 func ExamplePeriodicGoroutine() {
-	h := NewHandlerWithErrorMessage("example background routine", func(ctx context.Context) error {
+	h := NewHandlerWithErrorMessage("example.background", "example background routine", func(ctx context.Context) error {
 		fmt.Println("Hello from the background!")
 		return nil
 	})

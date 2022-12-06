@@ -61,9 +61,13 @@ func NewCrateSyncer(
 		operations:      newOperations(observationCtx),
 	}
 
-	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.NewHandlerWithErrorMessage("crates-syncer", func(ctx context.Context) error {
-		return job.handleCrateSyncer(ctx, interval)
-	}))
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		interval,
+		goroutine.NewHandlerWithErrorMessage("codeintel.crates-syncer", "syncs the crates list from the index to dependency repos table", func(ctx context.Context) error {
+			return job.handleCrateSyncer(ctx, interval)
+		}),
+	)
 }
 
 func (b *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Duration) (err error) {
