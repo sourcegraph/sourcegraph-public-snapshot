@@ -9,7 +9,6 @@ import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operator
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Button, ButtonLink, Link, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
@@ -17,7 +16,7 @@ import { FilteredConnection, FilteredConnectionFilter } from '../../components/F
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { registryExtensionFragment } from '../../extensions/extension/ExtensionArea'
-import { RegistryExtensionFields } from '../../graphql-operations'
+import { RegistryExtensionFields, SiteAdminRegistryExtensionsResult } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { deleteRegistryExtensionWithConfirmation } from '../extensions/registry/backend'
 import { RegistryExtensionSourceBadge } from '../extensions/registry/RegistryExtensionSourceBadge'
@@ -227,7 +226,7 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
         first?: number
         local?: boolean
         remote?: boolean
-    }): Observable<GQL.IRegistryExtensionConnection> =>
+    }): Observable<SiteAdminRegistryExtensionsResult['extensionRegistry']['extensions']> =>
         queryGraphQL(
             gql`
                 query SiteAdminRegistryExtensions(

@@ -5,26 +5,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type repositoryArgs struct {
 	graphqlutil.ConnectionArgs
-	Query *string
+	Query *string // Search query
 	Names *[]string
 
 	Cloned     bool
@@ -89,6 +83,13 @@ func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, err
 		opt.OnlyCloned = true
 	}
 
+	if !args.Indexed {
+		opt.NoIndexed = true
+	}
+	if !args.NotIndexed {
+		opt.OnlyIndexed = true
+	}
+
 	return opt, nil
 }
 
@@ -146,30 +147,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 		}
 
-		var indexed *zoekt.RepoList
-		searchIndexEnabled := conf.SearchIndexEnabled()
-		isIndexed := func(id api.RepoID) bool {
-			if !searchIndexEnabled {
-				return true // do not need index
-			}
-			_, ok := indexed.Minimal[uint32(id)]
-			return ok
-		}
-		if searchIndexEnabled && (!r.indexed || !r.notIndexed) {
-			listCtx, cancel := context.WithTimeout(ctx, time.Minute)
-			defer cancel()
-			var err error
-			indexed, err = search.Indexed().List(listCtx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
-			if err != nil {
-				r.err = err
-				return
-			}
-			// ensure we fetch at least as many repos as we have indexed
-			if opt2.LimitOffset != nil && opt2.LimitOffset.Limit < len(indexed.Minimal) {
-				opt2.LimitOffset.Limit = len(indexed.Minimal) * 2
-			}
-		}
-
+		reposClient := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db))
 		for {
 			// Cursor-based pagination requires that we fetch limit+1 records, so
 			// that we know whether or not there's an additional page (or more)
@@ -178,7 +156,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if opt2.LimitOffset != nil {
 				opt2.LimitOffset.Limit++
 			}
-			repos, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).List(ctx, opt2)
+			repos, err := reposClient.List(ctx, opt2)
 			if err != nil {
 				r.err = err
 				return
@@ -187,17 +165,6 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 				opt2.LimitOffset.Limit--
 			}
 			reposFromDB := len(repos)
-
-			if !r.indexed || !r.notIndexed {
-				keepRepos := repos[:0]
-				for _, repo := range repos {
-					indexed := isIndexed(repo.ID)
-					if (r.indexed && indexed) || (r.notIndexed && !indexed) {
-						keepRepos = append(keepRepos, repo)
-					}
-				}
-				repos = keepRepos
-			}
 
 			r.repos = append(r.repos, repos...)
 
@@ -222,12 +189,13 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 		return nil, err
 	}
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
+	client := gitserver.NewClient(r.db)
 	for i, repo := range repos {
 		if r.opt.LimitOffset != nil && i == r.opt.Limit {
 			break
 		}
 
-		resolvers = append(resolvers, NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repo))
+		resolvers = append(resolvers, NewRepositoryResolver(r.db, client, repo))
 	}
 	return resolvers, nil
 }
@@ -248,11 +216,6 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, err
 		}
-	}
-
-	if !r.indexed || !r.notIndexed {
-		// Don't support counting if filtering by index status.
-		return nil, nil
 	}
 
 	// Counting repositories is slow on Sourcegraph.com. Don't wait very long for an exact count.
@@ -310,6 +273,8 @@ func ToDBRepoListColumn(ob string) database.RepoListColumn {
 		return database.RepoListName
 	case "REPO_CREATED_AT", "REPOSITORY_CREATED_AT":
 		return database.RepoListCreatedAt
+	case "SIZE":
+		return database.RepoListSize
 	default:
 		return ""
 	}

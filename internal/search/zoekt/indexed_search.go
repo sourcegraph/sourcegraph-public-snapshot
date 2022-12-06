@@ -244,6 +244,7 @@ func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *searc
 	searchOpts := (&Options{
 		Selector:       args.Select,
 		FileMatchLimit: args.FileMatchLimit,
+		Features:       args.Features,
 		GlobalSearch:   true,
 	}).ToSearch(ctx)
 
@@ -276,7 +277,7 @@ func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *searc
 }
 
 // zoektSearch searches repositories using zoekt.
-func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pathRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, since func(t time.Time) time.Duration, c streaming.Sender) error {
+func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pathRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, feat search.Features, since func(t time.Time) time.Duration, c streaming.Sender) error {
 	if len(repos.RepoRevs) == 0 {
 		return nil
 	}
@@ -292,6 +293,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pa
 		Selector:       selector,
 		NumRepos:       len(repos.RepoRevs),
 		FileMatchLimit: fileMatchLimit,
+		Features:       feat,
 	}).ToSearch(ctx)
 
 	// Start event stream.
@@ -339,7 +341,12 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pa
 
 func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRepoInputRev repoRevFunc, typ search.IndexedRequestType, selector filter.SelectPath, c streaming.Sender) {
 	files := event.Files
-	limitHit := event.FilesSkipped+event.ShardsSkipped > 0
+	stats := streaming.Stats{
+		// In the case of Zoekt the only time we get non-zero Crashes in
+		// practice is when a backend is missing.
+		BackendsMissing: event.Crashes,
+		IsLimitHit:      event.FilesSkipped+event.ShardsSkipped > 0,
+	}
 
 	if selector.Root() == filter.Repository {
 		// By default we stream up to "all" repository results per
@@ -351,12 +358,12 @@ func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRep
 		// `count` results. I.e., from the webapp, this is
 		// `max(defaultMaxSearchResultsStreaming,count)` which comes to
 		// `max(500,count)`.
-		limitHit = false
+		stats.IsLimitHit = false
 	}
 
 	if len(files) == 0 {
 		c.Send(streaming.SearchEvent{
-			Stats: streaming.Stats{IsLimitHit: limitHit},
+			Stats: stats,
 		})
 		return
 	}
@@ -398,15 +405,16 @@ func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRep
 					Path:     file.FileName,
 				},
 			}
+			if debug := file.Debug; debug != "" {
+				fm.Debug = &debug
+			}
 			matches = append(matches, &fm)
 		}
 	}
 
 	c.Send(streaming.SearchEvent{
 		Results: matches,
-		Stats: streaming.Stats{
-			IsLimitHit: limitHit,
-		},
+		Stats:   stats,
 	})
 }
 
@@ -630,6 +638,7 @@ type RepoSubsetTextSearchJob struct {
 	Typ               search.IndexedRequestType
 	FileMatchLimit    int32
 	Select            filter.SelectPath
+	Features          search.Features
 	Since             func(time.Time) time.Duration `json:"-"` // since if non-nil will be used instead of time.Since. For tests
 }
 
@@ -650,7 +659,7 @@ func (z *RepoSubsetTextSearchJob) Run(ctx context.Context, clients job.RuntimeCl
 		since = z.Since
 	}
 
-	return nil, zoektSearch(ctx, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, since, stream)
+	return nil, zoektSearch(ctx, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, z.Features, since, stream)
 }
 
 func (*RepoSubsetTextSearchJob) Name() string {

@@ -226,6 +226,13 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.GitS
 		// Record the number and disk usage used of repos that should
 		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
 		addr, err := s.addrForRepo(bCtx, name, gitServerAddrs)
+		if err != nil {
+			s.Logger.Error("failed to get server address for repo", log.String("repoName", string(name)))
+			// We bail out here because it would mean that the hostname doesn't match below and
+			// it would remove repos if the DB is down for example
+			return
+		}
+
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++
 			wrongShardRepoSize += size

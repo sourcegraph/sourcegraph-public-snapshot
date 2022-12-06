@@ -12,7 +12,7 @@ A Sourcegraph service's log level is configured via the environment variable `SR
 * `eror`: Error.
 * `crit`: Critical.
 
-Learn more about how to apply these environment variables in [docker-compose](../deploy/docker-compose/index.md#set-environment-variables) and [server](../deploy/docker-single-container/index.md#environment-variables) deployments. 
+Learn more about how to apply these environment variables in [docker-compose](../deploy/docker-compose/index.md#set-environment-variables) and [server](../deploy/docker-single-container/index.md#environment-variables) deployments.
 
 ## Log format
 
@@ -53,6 +53,18 @@ We also include the following non-OpenTelemetry fields:
   "Function": "string",
 }
 ```
+
+## Log level overrides
+
+A Sourcegraph service's log level can be configured for a specific `InstrumentationScope` and it's children. For example you can keep your log level at error, but turn on debug logs for a specific component. This is only used to increase verbosity. IE it can't be used to mute a scope.
+
+This is configured by the environment variable `SRC_LOG_SCOPE_LEVEL`. It has the format `SCOPE_0=LEVEL_0,SCOPE_1=LEVEL_1,...`. For example to turn on debug logs for `service.UpdateScheduler` and `repoPurgeWorker` you would set the following on the `repo-updater` service:
+
+```
+SRC_LOG_SCOPE_LEVEL=service.UpdateScheduler=debug,repoPurgeWorker=debug
+```
+
+Note that this will also affect child scopes. So in the example you will also receive debug logs from `service.UpdateScheduler.RunUpdateLoop`.
 
 ## Log sampling
 

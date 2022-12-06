@@ -212,7 +212,7 @@ type alertKind string
 
 const (
 	smartSearchAdditionalResults alertKind = "smart-search-additional-results"
-	smartSearchPureResults                 = "smart-search-pure-results"
+	smartSearchPureResults       alertKind = "smart-search-pure-results"
 )
 
 func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, error) {
@@ -256,8 +256,7 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	}
 
 	if errors.As(err, &mErr) {
-		var a *search.Alert
-		a = AlertForMissingRepoRevs(mErr.Missing)
+		a := AlertForMissingRepoRevs(mErr.Missing)
 		a.Priority = 6
 		return a, nil
 	}

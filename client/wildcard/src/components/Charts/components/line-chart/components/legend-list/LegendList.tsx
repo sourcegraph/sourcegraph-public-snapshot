@@ -1,46 +1,83 @@
-import React, { LiHTMLAttributes } from 'react'
+import { createContext, FC, forwardRef, ReactNode, useContext } from 'react'
 
 import classNames from 'classnames'
 
+import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
+
 import styles from './LegendList.module.scss'
 
-interface LegendListProps extends React.HTMLAttributes<HTMLUListElement> {
-    className?: string
-}
-
-export const LegendList: React.FunctionComponent<React.PropsWithChildren<LegendListProps>> = props => {
-    const { className, ...attributes } = props
+export const LegendList = forwardRef(function LegendList(props, ref) {
+    const { as: Component = 'ul', 'aria-label': ariaLabel = 'Chart legend', className, ...attributes } = props
 
     return (
-        <ul {...attributes} className={classNames(styles.legendList, className)}>
-            {props.children}
-        </ul>
+        <Component
+            {...attributes}
+            ref={ref}
+            aria-label={ariaLabel}
+            className={classNames(styles.legendList, className)}
+        />
     )
+}) as ForwardReferenceComponent<'ul'>
+
+interface LegendItemContextData {
+    active: boolean
 }
 
-interface LegendItemProps extends LiHTMLAttributes<HTMLLIElement> {
-    name: string
+const LegendItemContext = createContext<LegendItemContextData>({ active: true })
+
+type LegendItemNameProps = { name: string; children?: undefined } | { name?: undefined; children: ReactNode }
+type LegendItemProps = LegendItemNameProps & {
+    active?: boolean
+}
+
+export const LegendItem = forwardRef(function LegendItem(props, ref) {
+    const {
+        name,
+        children,
+        active = true,
+        as: Component = 'li',
+        color = 'var(--gray-07)',
+        className,
+        ...attributes
+    } = props
+
+    return (
+        <LegendItemContext.Provider value={{ active }}>
+            <Component
+                ref={ref}
+                {...attributes}
+                className={classNames(styles.legendItem, className, { 'text-muted': !active })}
+            >
+                {name ? (
+                    <>
+                        <LegendItemPoint color={color} active={active} />
+                        {name}
+                    </>
+                ) : (
+                    children
+                )}
+            </Component>
+        </LegendItemContext.Provider>
+    )
+}) as ForwardReferenceComponent<'li', LegendItemProps>
+
+interface LegendItemPointProps {
     color?: string
-    selected?: boolean
-    hovered?: boolean
+    active?: boolean
 }
 
-export const LegendItem: React.FunctionComponent<React.PropsWithChildren<LegendItemProps>> = ({
-    color = 'var(--gray-07)',
-    name,
-    selected = true,
-    hovered,
-    className,
-    children,
-    ...attributes
-}) => (
-    <li {...attributes} className={classNames({ 'text-muted': !selected && !hovered }, styles.legendItem, className)}>
+export const LegendItemPoint: FC<LegendItemPointProps> = props => {
+    const { color = 'var(--gray-07)', active: propActive } = props
+    const { active: contextActive } = useContext(LegendItemContext)
+
+    const active = propActive ?? contextActive
+
+    return (
         <span
             aria-hidden={true}
             /* eslint-disable-next-line react/forbid-dom-props */
-            style={{ backgroundColor: selected || hovered ? color : undefined }}
-            className={classNames([styles.legendMark, { [styles.unselected]: !selected }])}
+            style={{ backgroundColor: active ? color : 'var(--icon-muted)' }}
+            className={styles.legendMark}
         />
-        {children || name}
-    </li>
-)
+    )
+}

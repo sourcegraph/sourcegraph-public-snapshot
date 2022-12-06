@@ -110,7 +110,7 @@ type DeleteBatchSpecArgs struct {
 
 type ExecuteBatchSpecArgs struct {
 	BatchSpec graphql.ID
-	NoCache   bool
+	NoCache   *bool
 	AutoApply bool
 }
 
@@ -374,6 +374,7 @@ type BatchSpecResolver interface {
 
 	AllowIgnored() *bool
 	AllowUnsupported() *bool
+	NoCache() *bool
 
 	ViewerCanRetry(context.Context) (bool, error)
 
@@ -907,7 +908,7 @@ type ResolvedBatchSpecWorkspaceResolver interface {
 
 type BatchSpecWorkspaceStagesResolver interface {
 	Setup() []ExecutionLogEntryResolver
-	SrcExec() ExecutionLogEntryResolver
+	SrcExec() []ExecutionLogEntryResolver
 	Teardown() []ExecutionLogEntryResolver
 }
 
@@ -933,7 +934,7 @@ type BatchSpecWorkspaceStepResolver interface {
 
 type BatchSpecWorkspaceEnvironmentVariableResolver interface {
 	Name() string
-	Value() string
+	Value() *string
 }
 
 type BatchSpecWorkspaceOutputVariableResolver interface {

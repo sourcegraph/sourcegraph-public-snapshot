@@ -5,14 +5,11 @@ package observation
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -27,36 +24,6 @@ import (
 // which is useful in environments like Datadog that don't support OpenTrace/OpenTelemetry
 // trace log events.
 var enableTraceLog = os.Getenv("SRC_TRACE_LOG") == "true"
-
-// Context carries context about where to send logs, trace spans, and register
-// metrics. It should be created once on service startup, and passed around to
-// any location that wants to use it for observing operations.
-type Context struct {
-	Logger       log.Logger
-	Tracer       *trace.Tracer
-	Registerer   prometheus.Registerer
-	HoneyDataset *honey.Dataset
-}
-
-// TestContext is a behaviorless Context usable for unit tests.
-var TestContext = Context{Logger: log.NoOp(), Registerer: metrics.TestRegisterer}
-
-// ContextWithLogger creates a live Context with the given logger instance.
-func ContextWithLogger(logger log.Logger) *Context {
-	return &Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-}
-
-// ScopedContext creates a live Context with a logger configured with the given values.
-func ScopedContext(team, domain, component string) *Context {
-	return ContextWithLogger(log.Scoped(
-		fmt.Sprintf("%s.%s.%s", team, domain, component),
-		fmt.Sprintf("%s %s %s", team, domain, component),
-	))
-}
 
 type ErrorFilterBehaviour uint8
 
@@ -98,30 +65,6 @@ type Op struct {
 	// an unexpected value in metrics and traces but should be handled higher up in
 	// the stack.
 	ErrorFilter func(err error) ErrorFilterBehaviour
-}
-
-// Operation combines the state of the parent context to create a new operation. This value
-// should be owned and used by the code that performs the operation it represents.
-func (c *Context) Operation(args Op) *Operation {
-	var logger log.Logger
-	if c.Logger != nil {
-		// Create a child logger, if a parent is provided.
-		logger = c.Logger.Scoped(args.Name, args.Description)
-	} else {
-		// Create a new logger.
-		logger = log.Scoped(args.Name, args.Description)
-	}
-	return &Operation{
-		context:      c,
-		metrics:      args.Metrics,
-		name:         args.Name,
-		kebabName:    kebabCase(args.Name),
-		metricLabels: args.MetricLabelValues,
-		logFields:    args.LogFields,
-		errorFilter:  args.ErrorFilter,
-
-		Logger: logger.With(toLogFields(args.LogFields)...),
-	}
 }
 
 // Operation represents an interesting section of code that can be invoked. It has an
@@ -175,9 +118,10 @@ func TestTraceLogger(logger log.Logger) TraceLogger {
 }
 
 type traceLogger struct {
-	opName string
-	event  honey.Event
-	trace  *trace.Trace
+	opName  string
+	event   honey.Event
+	trace   *trace.Trace
+	context *Context
 
 	log.Logger
 }
@@ -196,10 +140,19 @@ func (t *traceLogger) initWithTags(fields ...otlog.Field) {
 }
 
 func (t *traceLogger) AddEvent(name string, attributes ...attribute.KeyValue) {
-	if honey.Enabled() {
+	if honey.Enabled() && t.context.HoneyDataset != nil {
+		event := t.context.HoneyDataset.EventWithFields(map[string]any{
+			"operation":            toSnakeCase(name),
+			"meta.annotation_type": "span_event",
+			"trace.trace_id":       t.event.Fields()["trace.trace_id"],
+			"trace.parent_id":      t.event.Fields()["trace.span_id"],
+		})
 		for _, attr := range attributes {
-			t.event.AddField(t.opName+"."+toSnakeCase(string(attr.Key)), attr.Value)
+			event.AddField(t.opName+"."+toSnakeCase(string(attr.Key)), attr.Value.AsInterface())
 		}
+		// if sample rate > 1 for this dataset, then theres a possibility that this event
+		// won't be sent but the "parent" may be sent.
+		event.Send()
 	}
 	if t.trace != nil {
 		t.trace.AddEvent(name, attributes...)
@@ -356,10 +309,11 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 	}
 
 	trLogger := &traceLogger{
-		opName: snakecaseOpName,
-		event:  event,
-		trace:  tr,
-		Logger: logger,
+		context: op.context,
+		opName:  snakecaseOpName,
+		event:   event,
+		trace:   tr,
+		Logger:  logger,
 	}
 
 	if mergedFields := mergeLogFields(op.logFields, args.LogFields); len(mergedFields) > 0 {
@@ -474,34 +428,4 @@ func (op *Operation) applyErrorFilter(err *error, behaviour ErrorFilterBehaviour
 	}
 
 	return err
-}
-
-// mergeLabels flattens slices of slices of strings.
-func mergeLabels(groups ...[]string) []string {
-	size := 0
-	for _, group := range groups {
-		size += len(group)
-	}
-
-	labels := make([]string, 0, size)
-	for _, group := range groups {
-		labels = append(labels, group...)
-	}
-
-	return labels
-}
-
-// mergeLogFields flattens slices of slices of log fields.
-func mergeLogFields(groups ...[]otlog.Field) []otlog.Field {
-	size := 0
-	for _, group := range groups {
-		size += len(group)
-	}
-
-	logFields := make([]otlog.Field, 0, size)
-	for _, group := range groups {
-		logFields = append(logFields, group...)
-	}
-
-	return logFields
 }

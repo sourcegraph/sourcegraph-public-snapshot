@@ -15,12 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -34,15 +34,15 @@ var clock = timeutil.Now
 
 func Init(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	db database.DB,
 	_ codeintel.Services,
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
-	observationContext *observation.Context,
 ) error {
 	database.ValidateExternalServiceConfig = edb.ValidateExternalServiceConfig
 	database.AuthzWith = func(other basestore.ShareableStore) database.AuthzStore {
-		return edb.NewAuthzStore(observationContext.Logger, db, clock)
+		return edb.NewAuthzStore(observationCtx.Logger, db, clock)
 	}
 
 	extsvcStore := db.ExternalServices()
@@ -50,9 +50,12 @@ func Init(
 	// TODO(nsc): use c
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		_, providers, seriousProblems, warnings, _ :=
-			eiauthz.ProvidersFromConfig(ctx, cfg, extsvcStore, db)
+		_, providers, seriousProblems, warnings, _ := eiauthz.ProvidersFromConfig(ctx, cfg, extsvcStore, db)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
+
+		// Validating the connection may make a cross service call, so we should use an
+		// internal actor.
+		ctx := actor.WithInternalActor(ctx)
 
 		// Add connection validation issue
 		for _, p := range providers {
@@ -186,8 +189,7 @@ func Init(
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
-			allowAccessByDefault, authzProviders, _, _, _ :=
-				eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
+			allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

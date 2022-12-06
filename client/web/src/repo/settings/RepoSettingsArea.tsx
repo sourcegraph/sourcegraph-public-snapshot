@@ -93,7 +93,7 @@ export const RepoSettingsArea: React.FunctionComponent<React.PropsWithChildren<P
     }
 
     return (
-        <div className={classNames('container d-flex mt-3', styles.repoSettingsArea)}>
+        <div className={classNames('container d-flex mt-3 px-3 flex-column flex-sm-row', styles.repoSettingsArea)}>
             <RepoSettingsSidebar className="flex-0 mr-3" {...props} {...context} />
             <div className="flex-bounded">
                 <Switch>

@@ -85,11 +85,12 @@ func (c *SearchResultsResolver) repositoryResolvers(ctx context.Context, ids []a
 		return nil, nil
 	}
 
+	gsClient := gitserver.NewClient(c.db)
 	resolvers := make([]*RepositoryResolver, 0, len(ids))
 	err := c.db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
 		IDs: ids,
 	}, func(repo *types.MinimalRepo) {
-		resolvers = append(resolvers, NewRepositoryResolver(c.db, gitserver.NewClient(c.db), repo.ToRepo()))
+		resolvers = append(resolvers, NewRepositoryResolver(c.db, gsClient, repo.ToRepo()))
 	})
 	if err != nil {
 		return nil, err
@@ -139,11 +140,12 @@ func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultRe
 		Rev  string
 	}
 	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
+	gsClient := gitserver.NewClient(db)
 	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := NewRepositoryResolver(db, gitserver.NewClient(db), repoName.ToRepo())
+		resolver := NewRepositoryResolver(db, gsClient, repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver

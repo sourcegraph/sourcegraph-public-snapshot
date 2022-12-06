@@ -260,85 +260,6 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 	return results
 }
 
-func (s *InsightStore) InsertDirtyQuery(ctx context.Context, series *types.InsightSeries, query *types.DirtyQuery) error {
-	q := sqlf.Sprintf(insertDirtyQuerySql, series.ID, query.Query, query.Reason, query.ForTime, s.Now())
-	return s.Exec(ctx, q)
-}
-
-// GetDirtyQueries returns up to 100 dirty queries for a given insight series.
-func (s *InsightStore) GetDirtyQueries(ctx context.Context, series *types.InsightSeries) ([]*types.DirtyQuery, error) {
-	// We are going to limit this for now to some fixed value, and in the future if necessary add pagination.
-	limit := 100
-	q := sqlf.Sprintf(getDirtyQueriesSql, series.ID, limit)
-	return scanDirtyQueries(s.Query(ctx, q))
-}
-
-func scanDirtyQueries(rows *sql.Rows, queryErr error) (_ []*types.DirtyQuery, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	results := make([]*types.DirtyQuery, 0)
-	for rows.Next() {
-		var temp types.DirtyQuery
-		if err := rows.Scan(
-			&temp.ID,
-			&temp.Query,
-			&temp.Reason,
-			&temp.ForTime,
-			&temp.DirtyAt,
-		); err != nil {
-			return nil, err
-		}
-		results = append(results, &temp)
-	}
-	return results, nil
-}
-
-// GetDirtyQueriesAggregated returns aggregated information about dirty queries for a given series.
-func (s *InsightStore) GetDirtyQueriesAggregated(ctx context.Context, seriesID string) ([]*types.DirtyQueryAggregate, error) {
-	q := sqlf.Sprintf(getDirtyQueriesAggregatedSql, seriesID)
-	return scanDirtyQueriesAggregated(s.Query(ctx, q))
-}
-
-func scanDirtyQueriesAggregated(rows *sql.Rows, queryErr error) (_ []*types.DirtyQueryAggregate, err error) {
-	if queryErr != nil {
-		return nil, queryErr
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	results := make([]*types.DirtyQueryAggregate, 0)
-	for rows.Next() {
-		var temp types.DirtyQueryAggregate
-		if err := rows.Scan(
-			&temp.Count,
-			&temp.ForTime,
-			&temp.Reason,
-		); err != nil {
-			return nil, err
-		}
-		results = append(results, &temp)
-	}
-	return results, nil
-}
-
-const insertDirtyQuerySql = `
-INSERT INTO insight_dirty_queries (insight_series_id, query, reason, for_time, dirty_at)
-VALUES (%s, %s, %s, %s, %s);
-`
-
-const getDirtyQueriesSql = `
-select id, query, reason, for_time, dirty_at from insight_dirty_queries
-where insight_series_id = %s
-limit %s;`
-
-const getDirtyQueriesAggregatedSql = `
-select count(*) as count, for_time, reason from insight_dirty_queries
-where insight_dirty_queries.insight_series_id = (select id from insight_series where series_id = %s)
-group by for_time, reason;
-`
-
 type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
 	ID                  int
@@ -591,7 +512,8 @@ SELECT * FROM insight_view WHERE %s ORDER BY unique_id %s
 func (s *InsightStore) AttachSeriesToView(ctx context.Context,
 	series types.InsightSeries,
 	view types.InsightView,
-	metadata types.InsightViewSeriesMetadata) error {
+	metadata types.InsightViewSeriesMetadata,
+) error {
 	if series.ID == 0 || view.ID == 0 {
 		return errors.New("input series or view not found")
 	}
@@ -820,8 +742,6 @@ type DataSeriesStore interface {
 
 type InsightMetadataStore interface {
 	GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error)
-	GetDirtyQueries(ctx context.Context, series *types.InsightSeries) ([]*types.DirtyQuery, error)
-	GetDirtyQueriesAggregated(ctx context.Context, seriesID string) ([]*types.DirtyQueryAggregate, error)
 }
 
 // StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.

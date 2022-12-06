@@ -27,6 +27,7 @@ describe('SearchSidebarSection', () => {
             </SearchFilterSection>
         )
 
+        expect(screen.getByRole('article')).toBeInTheDocument()
         expect(screen.getAllByTestId('filter-link')).toHaveLength(9)
         expect(screen.getByTestId('sidebar-section-search-box')).toBeInTheDocument()
     })
@@ -85,6 +86,18 @@ describe('SearchSidebarSection', () => {
         )
 
         expect(screen.getAllByTestId('filter-link')).toHaveLength(9)
+        expect(screen.queryByTestId('sidebar-section-search-box')).not.toBeInTheDocument()
+    })
+
+    it('should not render based on minItems', () => {
+        render(
+            <SearchFilterSection sectionId="id" header="Dynamic filters" minItems={2}>
+                {getDynamicFilterLinks([filters[2]], ['file', 'lang', 'utility'], onFilterChosen)}
+            </SearchFilterSection>
+        )
+
+        expect(screen.queryByRole('article')).not.toBeInTheDocument()
+        expect(screen.queryByTestId('filter-link')).not.toBeInTheDocument()
         expect(screen.queryByTestId('sidebar-section-search-box')).not.toBeInTheDocument()
     })
 })

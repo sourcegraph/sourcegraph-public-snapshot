@@ -176,17 +176,6 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     ...commonWebGraphQlResults,
     ...highlightFileResult,
     ...viewerSettings,
-    GetTemporarySettings: () => ({
-        temporarySettings: {
-            __typename: 'TemporarySettings',
-            contents: JSON.stringify({
-                'user.daysActiveCount': 1,
-                'user.lastDayActive': new Date().toDateString(),
-                'search.usedNonGlobalContext': true,
-                'search.notebooks.gettingStartedTabSeen': true,
-            }),
-        },
-    }),
     ResolveRepoRev: () => createResolveRepoRevisionResult('/github.com/sourcegraph/sourcegraph'),
     FetchNotebook: ({ id }) => ({
         node: notebookFixture(id, 'Notebook Title', [
@@ -221,6 +210,9 @@ describe('Search Notebook', () => {
         })
         testContext.overrideGraphQL(commonSearchGraphQLResults)
         testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
+        testContext.overrideInitialTemporarySettings({
+            'search.notebooks.gettingStartedTabSeen': true,
+        })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())

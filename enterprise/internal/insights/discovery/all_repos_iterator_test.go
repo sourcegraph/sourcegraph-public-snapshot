@@ -18,7 +18,6 @@ import (
 // TestAllReposIterator tests the AllReposIterator in the common use cases.
 func TestAllReposIterator(t *testing.T) {
 	ctx := context.Background()
-	indexableReposLister := NewMockIndexableReposLister()
 	repoStore := NewMockRepoStore()
 	var timeOffset time.Duration
 	clock := func() time.Time { return time.Now().Add(timeOffset) }
@@ -41,7 +40,7 @@ func TestAllReposIterator(t *testing.T) {
 		return result, nil
 	})
 
-	iter := NewAllReposIterator(indexableReposLister, repoStore, clock, false, 15*time.Minute, &prometheus.CounterOpts{Name: "fake_name123"})
+	iter := NewAllReposIterator(repoStore, clock, false, 15*time.Minute, &prometheus.CounterOpts{Name: "fake_name123"})
 	{
 		// Do we get all 9 repositories?
 		var each []string

@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import * as H from 'history'
 
+import { pluralize } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageHeader, H2, useObservable, Text } from '@sourcegraph/wildcard'
+import { PageHeader, H2, useObservable, Text, H4 } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { DiffStat } from '../../../components/diff/DiffStat'
@@ -94,9 +96,37 @@ const StatsBar: React.FunctionComponent<React.PropsWithChildren<StatsBarProps>> 
 }) => (
     <div className="d-flex flex-wrap align-items-center">
         <BatchChangeStatsTotalAction count={total} />
-        <ChangesetStatusOpen className={ACTION_CLASSNAMES} label={`${(draft + open).toString()} Open`} />
-        <ChangesetStatusUnpublished className={ACTION_CLASSNAMES} label={`${unpublished} Unpublished`} />
-        <ChangesetStatusClosed className={ACTION_CLASSNAMES} label={`${closed} Closed`} />
-        <ChangesetStatusMerged className={ACTION_CLASSNAMES} label={`${merged} Merged`} />
+        <ChangesetStatusOpen
+            className={ACTION_CLASSNAMES}
+            label={
+                <H4 className="font-weight-normal text-muted m-0">
+                    {draft + open} <VisuallyHidden>{pluralize('changeset', draft + open)}</VisuallyHidden> open
+                </H4>
+            }
+        />
+        <ChangesetStatusUnpublished
+            className={ACTION_CLASSNAMES}
+            label={
+                <H4 className="font-weight-normal text-muted m-0">
+                    {unpublished} <VisuallyHidden>{pluralize('changeset', unpublished)}</VisuallyHidden> unpublished
+                </H4>
+            }
+        />
+        <ChangesetStatusClosed
+            className={ACTION_CLASSNAMES}
+            label={
+                <H4 className="font-weight-normal text-muted m-0">
+                    {closed} <VisuallyHidden>{pluralize('changeset', closed)}</VisuallyHidden> closed
+                </H4>
+            }
+        />
+        <ChangesetStatusMerged
+            className={ACTION_CLASSNAMES}
+            label={
+                <H4 className="font-weight-normal text-muted m-0">
+                    {merged} <VisuallyHidden>{pluralize('changeset', merged)}</VisuallyHidden> merged
+                </H4>
+            }
+        />
     </div>
 )

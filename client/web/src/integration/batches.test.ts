@@ -270,6 +270,7 @@ const BatchChangeBatchSpecs: (variables: BatchChangeBatchSpecsVariables) => Batc
                     finishedAt: '2022-07-06T23:21:45Z',
                     createdAt: '2022-07-06T23:21:45Z',
                     description: {
+                        __typename: 'BatchChangeDescription',
                         name: 'test-batch-change',
                     },
                     source: BatchSpecSource.REMOTE,
@@ -282,6 +283,7 @@ const BatchChangeBatchSpecs: (variables: BatchChangeBatchSpecsVariables) => Batc
                         username: 'alice',
                     },
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
+                    files: null,
                 },
             ],
         },
@@ -306,7 +308,6 @@ function mockCommonGraphQLResponses(
                 viewerCanAdminister: true,
                 viewerIsMember: false,
                 viewerPendingInvitation: null,
-                viewerNeedsCodeHostUpdate: false,
             },
         }),
         UserAreaUserProfile: () => ({
@@ -410,6 +411,11 @@ function mockCommonGraphQLResponses(
                         nodes: [],
                         totalCount: 0,
                     },
+                    files: null,
+                    description: {
+                        __typename: 'BatchChangeDescription',
+                        name: 'awesome batch spec',
+                    },
                 },
                 batchSpecs: {
                     nodes: [{ state: BatchSpecState.COMPLETED }],
@@ -459,11 +465,6 @@ function mockCommonGraphQLResponses(
                           },
                       },
                   },
-        GetStartedInfo: () => ({
-            membersSummary: { membersCount: 1, invitesCount: 1, __typename: 'OrgMembersSummary' },
-            repoCount: { total: { totalCount: 1, __typename: 'RepositoryConnection' }, __typename: 'Org' },
-            extServices: { totalCount: 1, __typename: 'ExternalServiceConnection' },
-        }),
     }
 }
 

@@ -11,8 +11,6 @@ import {
     EventLogsDataVariables,
     ListSearchContextsResult,
     ListSearchContextsVariables,
-    AutoDefinedSearchContextsResult,
-    AutoDefinedSearchContextsVariables,
     IsSearchContextAvailableResult,
     IsSearchContextAvailableVariables,
     Scalars,
@@ -49,13 +47,15 @@ const searchContextFragment = gql`
         autoDefined
         updatedAt
         viewerCanManage
+        viewerHasStarred
+        viewerHasAsDefault
         query
         repositories {
-            ...SearchContextRepositoryRevisisonsFields
+            ...SearchContextRepositoryRevisionsFields
         }
     }
 
-    fragment SearchContextRepositoryRevisisonsFields on SearchContextRepositoryRevisions {
+    fragment SearchContextRepositoryRevisionsFields on SearchContextRepositoryRevisions {
         repository {
             name
         }
@@ -75,6 +75,8 @@ const searchContextWithSkippableFieldsFragment = gql`
         autoDefined
         updatedAt
         viewerCanManage
+        viewerHasStarred
+        viewerHasAsDefault
         namespace @skip(if: $useMinimalFields) {
             __typename
             id
@@ -89,34 +91,6 @@ const searchContextWithSkippableFieldsFragment = gql`
         }
     }
 `
-
-export function fetchAutoDefinedSearchContexts({
-    platformContext,
-    useMinimalFields,
-}: {
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
-    useMinimalFields?: boolean
-}): Observable<AutoDefinedSearchContextsResult['autoDefinedSearchContexts']> {
-    return platformContext
-        .requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>({
-            request: gql`
-                query AutoDefinedSearchContexts($useMinimalFields: Boolean!) {
-                    autoDefinedSearchContexts {
-                        ...SearchContextMinimalFields
-                    }
-                }
-                ${searchContextWithSkippableFieldsFragment}
-            `,
-            variables: {
-                useMinimalFields: useMinimalFields ?? false,
-            },
-            mightContainPrivateInfo: false,
-        })
-        .pipe(
-            map(dataOrThrowErrors),
-            map(({ autoDefinedSearchContexts }) => autoDefinedSearchContexts)
-        )
-}
 
 export function getUserSearchContextNamespaces(
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations'> | null

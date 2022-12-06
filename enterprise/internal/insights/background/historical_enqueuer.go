@@ -11,12 +11,12 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/segmentio/ksuid"
-	"golang.org/x/time/rate"
 
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -28,10 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -74,21 +72,20 @@ import (
 // insights across all user settings, and determine for which dates they do not have data and attempt
 // to backfill them by enqueueing work for executing searches with `before:` and `after:` filter
 // ranges.
-func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store, ffs database.FeatureFlagStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func newInsightHistoricalEnqueuer(ctx context.Context, observationCtx *observation.Context, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store, ffs database.FeatureFlagStore) goroutine.BackgroundRoutine {
 	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"insights_historical_enqueuer",
 		metrics.WithCountHelp("Total number of insights historical enqueuer executions"),
 	)
-	operation := observationContext.Operation(observation.Op{
+	operation := observationCtx.Operation(observation.Op{
 		Name:    "HistoricalEnqueuer.Run",
 		Metrics: metrics,
 	})
 
-	repoStore := database.NewDBWith(observationContext.Logger, workerBaseStore).Repos()
+	repoStore := database.NewDBWith(observationCtx.Logger, workerBaseStore).Repos()
 
 	iterator := discovery.NewAllReposIterator(
-		dbcache.NewIndexableReposLister(observationContext.Logger, repoStore),
 		repoStore,
 		time.Now,
 		envvar.SourcegraphDotComMode(),
@@ -99,19 +96,11 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 			Help:      "Counter of the number of repositories analyzed and queued for processing for insights.",
 		})
 
-	enq := globalBackfiller(observationContext.Logger, workerBaseStore, dataSeriesStore, insightsStore)
+	enq := globalBackfiller(observationCtx.Logger, workerBaseStore, dataSeriesStore, insightsStore)
 	maxTime := time.Now().Add(-1 * 365 * 24 * time.Hour)
 	enq.analyzer.frameFilter = compression.NewHistoricalFilter(true, maxTime, edb.NewInsightsDBWith(insightsStore))
 	enq.repoIterator = iterator.ForEach
 	enq.featureFlagStore = ffs
-
-	defaultRateLimit := rate.Limit(20.0)
-	getRateLimit := getRateLimit(defaultRateLimit)
-	go conf.Watch(func() {
-		val := getRateLimit()
-		observationContext.Logger.Info("Updating insights/historical-worker rate limit", sglog.Int("value", int(val)))
-		enq.analyzer.limiter.SetLimit(val)
-	})
 
 	// We specify 30s here, so insights are queued regularly for processing. The queue itself is rate limited.
 	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 30*time.Second, goroutine.NewHandlerWithErrorMessage(
@@ -154,7 +143,6 @@ func NewScopedBackfiller(workerBaseStore *basestore.Store, insightsStore *store.
 			return err
 		},
 	}
-
 }
 
 func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []itypes.InsightSeries) error {
@@ -178,7 +166,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 		}, definition.CreatedAt.Truncate(time.Hour*24))
 		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
 			InsightSeriesID: definition.ID,
-			RecordingTimes:  makeRecordings(timeseries.GetRecordingTimesFromFrames(frames), false),
+			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
 		})
 	}
 
@@ -230,9 +218,7 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 }
 
 func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer {
-	defaultRateLimit := rate.Limit(20.0)
-	getRateLimit := getRateLimit(defaultRateLimit)
-	limiter := ratelimit.NewInstrumentedLimiter("HistoricalEnqueuer", rate.NewLimiter(getRateLimit(), 1))
+	limiter := limiter.HistoricalWorkRate()
 
 	return backfillAnalyzer{
 		statistics:         statistics,
@@ -265,21 +251,6 @@ func globalBackfiller(logger sglog.Logger, workerBaseStore *basestore.Store, dat
 	}
 
 	return historicalEnqueuer
-}
-
-func getRateLimit(defaultValue rate.Limit) func() rate.Limit {
-	return func() rate.Limit {
-		val := conf.Get().InsightsHistoricalWorkerRateLimit
-
-		var result rate.Limit
-		if val == nil {
-			result = defaultValue
-		} else {
-			result = rate.Limit(*val)
-		}
-
-		return result
-	}
 }
 
 type statistics map[string]*repoBackfillStatistics
@@ -462,8 +433,6 @@ func (h *historicalEnqueuer) convertJustInTimeInsights(ctx context.Context) {
 			h.logger.Warn("unable to purge jobs for old seriesID", sglog.String("seriesId", oldSeriesId), sglog.Error(err))
 		}
 	}
-
-	return
 }
 
 func markInsightsComplete(ctx context.Context, completed []itypes.InsightSeries, dataSeriesStore store.DataSeriesStore) {
@@ -514,7 +483,7 @@ func (h *historicalEnqueuer) buildFrames(ctx context.Context, definitions []ityp
 		}, series.CreatedAt.Truncate(time.Hour*24))
 		seriesRecordingTimes = append(seriesRecordingTimes, itypes.InsightSeriesRecordingTimes{
 			InsightSeriesID: series.ID,
-			RecordingTimes:  makeRecordings(timeseries.GetRecordingTimesFromFrames(frames), false),
+			RecordingTimes:  timeseries.MakeRecordingsFromFrames(frames, false),
 		})
 	}
 	if err := h.insightsStore.SetInsightSeriesRecordingTimes(ctx, seriesRecordingTimes); err != nil {
@@ -755,12 +724,4 @@ func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, db da
 	}
 	c.cache[repoName] = entry
 	return entry, nil
-}
-
-func makeRecordings(times []time.Time, snapshot bool) []itypes.RecordingTime {
-	recordings := make([]itypes.RecordingTime, 0, len(times))
-	for _, t := range times {
-		recordings = append(recordings, itypes.RecordingTime{Snapshot: snapshot, Timestamp: t})
-	}
-	return recordings
 }

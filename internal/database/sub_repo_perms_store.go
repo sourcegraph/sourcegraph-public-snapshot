@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -39,7 +40,7 @@ type SubRepoPermsStore interface {
 	// GetByUserAndService gets the sub repo permissions for a user, but filters down
 	// to only repos that come from a specific external service.
 	GetByUserAndService(ctx context.Context, userID int32, serviceType string, serviceID string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error)
-	RepoIdSupported(ctx context.Context, repoId api.RepoID) (bool, error)
+	RepoIDSupported(ctx context.Context, repoID api.RepoID) (bool, error)
 	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
 }
 
@@ -142,13 +143,20 @@ WHERE repo_id = %s
 
 // GetByUser fetches all sub repo perms for a user keyed by repo.
 func (s *subRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
+	enforceForSiteAdmins := conf.Get().AuthzEnforceForSiteAdmins
+
 	q := sqlf.Sprintf(`
-SELECT r.name, paths
-FROM sub_repo_permissions
-JOIN repo r on r.id = repo_id
-WHERE user_id = %s
-  AND version = %s
-`, userID, SubRepoPermsVersion)
+	SELECT r.name, paths
+	FROM sub_repo_permissions
+	JOIN repo r on r.id = repo_id
+	JOIN users u on u.id = user_id
+	WHERE user_id = %s
+	AND version = %s
+	-- When user is a site admin and AuthzEnforceForSiteAdmins is FALSE
+	-- we want to return zero results. This causes us to fall back to
+	-- repo level checks and allows access to all paths in all repos.
+	AND NOT (u.site_admin AND NOT %t)
+	`, userID, SubRepoPermsVersion, enforceForSiteAdmins)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -208,9 +216,9 @@ WHERE user_id = %s
 	return result, nil
 }
 
-// RepoIdSupported returns true if repo with the given ID has sub-repo permissions
+// RepoIDSupported returns true if repo with the given ID has sub-repo permissions
 // (i.e. it is private and its type is one of the SubRepoSupportedCodeHostTypes)
-func (s *subRepoPermsStore) RepoIdSupported(ctx context.Context, repoId api.RepoID) (bool, error) {
+func (s *subRepoPermsStore) RepoIDSupported(ctx context.Context, repoID api.RepoID) (bool, error) {
 	q := sqlf.Sprintf(`
 SELECT EXISTS(
 SELECT
@@ -219,7 +227,7 @@ WHERE id = %s
 AND private = TRUE
 AND external_service_type IN (%s)
 )
-`, repoId, sqlf.Join(supportedTypesQuery, ","))
+`, repoID, sqlf.Join(supportedTypesQuery, ","))
 
 	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
 	if err != nil {

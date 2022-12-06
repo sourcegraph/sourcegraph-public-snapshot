@@ -11,6 +11,8 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -66,12 +68,11 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
-	if len(files) != 1 {
-		t.Fatalf("expected only one file to be returned, got %d", len(files))
-	}
-	if files[0].Name() != "file1" {
-		t.Errorf("unexpected file returned from ReadDir: %s", files[0].Name())
-	}
+
+	// Because we have a wildcard matcher we still allow directory visibility
+	assert.Len(t, files, 1)
+	assert.Equal(t, "file1", files[0].Name())
+	assert.False(t, files[0].IsDir())
 }
 
 func TestRepository_FileSystem(t *testing.T) {

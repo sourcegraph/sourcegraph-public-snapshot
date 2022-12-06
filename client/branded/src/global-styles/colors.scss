@@ -73,8 +73,6 @@ $theme-colors: (
     --blue: #{$blue};
     --indigo: #0864c6;
     --purple: #{$purple};
-    --purple-01: #e8d1ff;
-    --purple-03: #820dde;
     --pink: #d68cf3;
     --red: #{$red};
     --orange: #{$orange};
@@ -82,6 +80,16 @@ $theme-colors: (
     --green: #{$green};
     --teal: #{$teal};
     --cyan: #{$cyan};
+
+    // Brand secondary colors.
+    // https://handbook.sourcegraph.com/departments/engineering/design/brand_guidelines/color/#secondary-colors
+    --violet-01: #eedfff;
+    --violet-02: #e8d1ff;
+    --violet-03: #ce9cff;
+    --violet-04: #a112ff;
+    --violet-05: #820dde;
+    --violet-06: #6112a3;
+    --violet-07: #270741;
 
     // Logo colors
     --logo-orange: #ff5543;
@@ -208,6 +216,7 @@ $theme-colors: (
     --modal-bg: #{rgba($gray-04, 0.5)};
     --sidebar-bg: var(--color-bg-1);
     --sidebar-border-color: var(--border-color-2);
+    --collapse-results-color: var(--gray-08);
 }
 
 .theme-dark {
@@ -300,6 +309,7 @@ $theme-colors: (
     --modal-bg: #{rgba($gray-08, 0.5)};
     --sidebar-bg: var(--black);
     --sidebar-border-color: var(--color-bg-2);
+    --collapse-results-color: var(--gray-05);
 }
 
 // Additional colors global colors.

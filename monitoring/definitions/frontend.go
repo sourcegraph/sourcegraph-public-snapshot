@@ -84,6 +84,8 @@ func Frontend() *monitoring.Dashboard {
 								- **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the 'indexed-search.Deployment.yaml' if regularly hitting max CPU utilization.
 								- **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing 'cpus:' of the zoekt-webserver container in 'docker-compose.yml' if regularly hitting max CPU utilization.
 							`,
+
+							MultiInstance: true,
 						},
 					},
 					{
@@ -687,7 +689,51 @@ func Frontend() *monitoring.Dashboard {
 					},
 				},
 			},
+			{
+				Title:  "Email delivery",
+				Hidden: true,
+				Rows: []monitoring.Row{{
+					{
+						Name:        "email_delivery_failures",
+						Description: "email delivery failures every 30 minutes",
+						Query:       `sum(increase(src_email_send{success="false"}[30m]))`,
+						Panel:       monitoring.Panel().LegendFormat("failures"),
+						Warning:     monitoring.Alert().GreaterOrEqual(1),
+						Critical:    monitoring.Alert().GreaterOrEqual(2),
 
+						Owner: monitoring.ObservableOwnerDevOps,
+						NextSteps: `
+							- Check your SMTP configuration in site configuration.
+							- Check frontend logs for more detailed error messages.
+							- Check your SMTP provider for more detailed error messages.
+						`,
+					},
+				}, {
+					{
+						Name:        "email_deliveries_by_source",
+						Description: "emails successfully delivered every 5 minutes by source",
+						Query:       `sum by (email_source) (increase(src_email_send{success="true"}[5m]))`,
+						Panel:       monitoring.Panel().LegendFormat("{{email_source}}"),
+						NoAlert:     true, // this is a purely informational panel
+
+						Owner:          monitoring.ObservableOwnerDevOps,
+						Interpretation: "Emails successfully delivered by source.",
+					},
+					{
+						Name:        "email_deliveries_total",
+						Description: "total emails successfully delivered every 5 minutes",
+						Query:       `sum (increase(src_email_send{success="true"}[5m]))`,
+						Panel:       monitoring.Panel().LegendFormat("count"),
+						NoAlert:     true, // this is a purely informational panel
+
+						Owner:          monitoring.ObservableOwnerDevOps,
+						Interpretation: "Total emails successfully delivered.",
+
+						// use to observe behaviour of email usage across instances
+						MultiInstance: true,
+					},
+				}},
+			},
 			{
 				Title:  "Sentinel queries (only on sourcegraph.com)",
 				Hidden: true,

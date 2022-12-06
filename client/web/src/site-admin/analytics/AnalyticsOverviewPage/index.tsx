@@ -1,15 +1,13 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
 
-import { mdiCheck, mdiClose, mdiAccount, mdiSourceRepository, mdiCommentOutline, mdiArrowRight } from '@mdi/js'
+import { mdiAccount, mdiSourceRepository, mdiCommentOutline } from '@mdi/js'
 import classNames from 'classnames'
 import format from 'date-fns/format'
 import * as H from 'history'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { Card, H2, H3, H4, Text, LoadingSpinner, AnchorLink, Icon } from '@sourcegraph/wildcard'
+import { Card, H2, Text, LoadingSpinner, AnchorLink } from '@sourcegraph/wildcard'
 
-import { dismissAlert, isAlertDismissed } from '../../../components/DismissibleAlert'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { OverviewStatisticsResult, OverviewStatisticsVariables } from '../../../graphql-operations'
 import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../../productSubscription/helpers'
@@ -24,15 +22,12 @@ import { Sidebar } from './Sidebar'
 
 import styles from './index.module.scss'
 
-const GET_STARTED_ALERT_KEY = 'get_started_admin_analytics_overview'
-
-interface IProps extends ActivationProps {
+interface IProps {
     history: H.History
 }
 
-export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ activation, history }) => {
+export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ history }) => {
     const { dateRange } = useChartFilters({ name: 'Overview' })
-    const [showGetStarted, setShowGetStarted] = useState(!isAlertDismissed(GET_STARTED_ALERT_KEY))
     const { data, error, loading } = useQuery<OverviewStatisticsResult, OverviewStatisticsVariables>(
         OVERVIEW_STATISTICS,
         {}
@@ -98,60 +93,6 @@ export const AnalyticsOverviewPage: React.FunctionComponent<IProps> = ({ activat
                     </div>
                     <HorizontalSelect<typeof dateRange.value> {...dateRange} />
                 </div>
-                {showGetStarted && activation && (
-                    <div className={classNames('my-3', styles.padded)} data-testid="site-admin-overview-menu">
-                        <div className={styles.getStartedBox}>
-                            <div className="d-flex justify-content-between align-items-center">
-                                <H3>Get started with Sourcegraph</H3>
-                                <Icon
-                                    svgPath={mdiClose}
-                                    aria-label="Close Get started alert"
-                                    className="cursor-pointer"
-                                    onClick={() => {
-                                        dismissAlert(GET_STARTED_ALERT_KEY)
-                                        setShowGetStarted(false)
-                                    }}
-                                />
-                            </div>
-
-                            {activation.steps.map((step, index) => (
-                                <div
-                                    key={step.id}
-                                    onClick={event => step.onClick?.(event, history)}
-                                    onKeyDown={() => undefined}
-                                    role="button"
-                                    tabIndex={0}
-                                    className={classNames('d-flex py-3 align-items-center', {
-                                        [styles.borderTop]: index > 0,
-                                        'cursor-pointer': !!step.onClick,
-                                    })}
-                                >
-                                    <div
-                                        className={classNames(styles.getStartedTick, {
-                                            [styles.completed]: activation?.completed?.[step.id],
-                                        })}
-                                    >
-                                        <Icon
-                                            svgPath={mdiCheck}
-                                            size="md"
-                                            aria-label="Get started item completed status"
-                                        />
-                                    </div>
-                                    <div className="mx-3 flex-1">
-                                        <H4 className={classNames(styles.link, 'mb-0')}>{step.title}</H4>
-                                        <Text className="mb-0">{step.detail}</Text>
-                                    </div>
-                                    <Icon
-                                        svgPath={mdiArrowRight}
-                                        size="md"
-                                        aria-label="Get started item link"
-                                        className={styles.getStartedLink}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
                 <div className={classNames('d-flex mt-3', styles.padded)}>
                     <div className={styles.main}>
                         <ErrorBoundary location={null}>

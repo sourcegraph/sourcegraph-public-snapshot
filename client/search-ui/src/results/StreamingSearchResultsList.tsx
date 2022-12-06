@@ -1,17 +1,22 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import AlphaSBoxIcon from 'mdi-react/AlphaSBoxIcon'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import FileIcon from 'mdi-react/FileIcon'
 import { useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { HoverMerged } from '@sourcegraph/client-api'
 import { Hoverifier } from '@sourcegraph/codeintellify'
+import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { SearchContextProps } from '@sourcegraph/search'
-import { CommitSearchResult, RepoSearchResult, FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
+import {
+    CommitSearchResult,
+    RepoSearchResult,
+    FileContentSearchResult,
+    FilePathSearchResult,
+    SymbolSearchResult,
+} from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
@@ -20,9 +25,6 @@ import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import {
     AggregateStreamingSearchResults,
-    ContentMatch,
-    SymbolMatch,
-    PathMatch,
     SearchMatch,
     getMatchUrl,
     getRevision,
@@ -36,6 +38,7 @@ import { smartSearchClickedEvent } from '../util/events'
 import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 import { useItemsToShow } from './use-items-to-show'
+import { useSearchResultsKeyboardNavigation } from './useSearchResultsKeyboardNavigation'
 
 import resultContainerStyles from '../components/ResultContainer.module.scss'
 import styles from './StreamingSearchResultsList.module.scss'
@@ -76,6 +79,8 @@ export interface StreamingSearchResultsListProps
     prefetchFile?: FilePrefetcher
 
     prefetchFileEnabled?: boolean
+
+    enableKeyboardNavigation?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -97,13 +102,14 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     openMatchesInNewTab,
     executedQuery,
     resultClassName,
-    smartSearchEnabled: smartSearchEnabled,
     prefetchFile,
     prefetchFileEnabled,
+    enableKeyboardNavigation,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
     const location = useLocation()
+    const [rootRef, setRootRef] = useState<HTMLElement | null>(null)
 
     const logSearchResultClicked = useCallback(
         (index: number, type: string) => {
@@ -114,7 +120,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
 
             // Lucky search A/B test events on Sourcegraph.com. To be removed at latest by 12/2022.
             if (
-                smartSearchEnabled &&
                 !(
                     results?.alert?.kind === 'smart-search-additional-results' ||
                     results?.alert?.kind === 'smart-search-pure-results'
@@ -124,7 +129,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             }
 
             if (
-                smartSearchEnabled &&
                 (results?.alert?.kind === 'smart-search-additional-results' ||
                     results?.alert?.kind === 'smart-search-pure-results') &&
                 results?.alert?.title &&
@@ -139,71 +143,109 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 telemetryService.log(event)
             }
         },
-        [telemetryService, results, smartSearchEnabled]
+        [telemetryService, results]
     )
 
     const renderResult = useCallback(
         (result: SearchMatch, index: number): JSX.Element => {
-            switch (result.type) {
-                case 'content':
-                case 'path':
-                case 'symbol':
-                    return (
-                        <PrefetchableFile
-                            isPrefetchEnabled={prefetchFileEnabled}
-                            prefetch={prefetchFile}
-                            filePath={result.path}
-                            revision={getRevision(result.branches, result.commit)}
-                            repoName={result.repository}
-                            // PrefetchableFile adds an extra wrapper, so we lift the <li> up and match the ResultContainer styles.
-                            // Better approach would be to use `as` to avoid wrapping, but that requires a larger refactor of the
-                            // child components than is worth doing right now for this experimental feature
-                            className={resultContainerStyles.resultContainer}
-                            as="li"
-                        >
-                            <FileSearchResult
+            function renderResultContent(): JSX.Element {
+                switch (result.type) {
+                    case 'content':
+                    case 'symbol':
+                    case 'path':
+                        return (
+                            <PrefetchableFile
+                                isPrefetchEnabled={prefetchFileEnabled}
+                                prefetch={prefetchFile}
+                                filePath={result.path}
+                                revision={getRevision(result.branches, result.commit)}
+                                repoName={result.repository}
+                                // PrefetchableFile adds an extra wrapper, so we lift the <li> up and match the ResultContainer styles.
+                                // Better approach would be to use `as` to avoid wrapping, but that requires a larger refactor of the
+                                // child components than is worth doing right now for this experimental feature
+                                className={resultContainerStyles.resultContainer}
+                                as="li"
+                            >
+                                {result.type === 'content' && (
+                                    <FileContentSearchResult
+                                        index={index}
+                                        location={location}
+                                        telemetryService={telemetryService}
+                                        result={result}
+                                        onSelect={() => logSearchResultClicked(index, 'fileMatch')}
+                                        defaultExpanded={false}
+                                        showAllMatches={false}
+                                        allExpanded={allExpanded}
+                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                        repoDisplayName={displayRepoName(result.repository)}
+                                        settingsCascade={settingsCascade}
+                                        extensionsController={extensionsController}
+                                        hoverifier={hoverifier}
+                                        openInNewTab={openMatchesInNewTab}
+                                        containerClassName={resultClassName}
+                                    />
+                                )}
+                                {result.type === 'symbol' && (
+                                    <SymbolSearchResult
+                                        index={index}
+                                        telemetryService={telemetryService}
+                                        result={result}
+                                        onSelect={() => logSearchResultClicked(index, 'symbolMatch')}
+                                        fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                        repoDisplayName={displayRepoName(result.repository)}
+                                        settingsCascade={settingsCascade}
+                                        openInNewTab={openMatchesInNewTab}
+                                        containerClassName={resultClassName}
+                                    />
+                                )}
+                                {result.type === 'path' && (
+                                    <FilePathSearchResult
+                                        index={index}
+                                        result={result}
+                                        onSelect={() => logSearchResultClicked(index, 'filePathMatch')}
+                                        repoDisplayName={displayRepoName(result.repository)}
+                                        containerClassName={resultClassName}
+                                        telemetryService={telemetryService}
+                                    />
+                                )}
+                            </PrefetchableFile>
+                        )
+                    case 'commit':
+                        return (
+                            <CommitSearchResult
                                 index={index}
-                                location={location}
-                                telemetryService={telemetryService}
-                                icon={getFileMatchIcon(result)}
                                 result={result}
-                                onSelect={() => logSearchResultClicked(index, 'fileMatch')}
-                                expanded={false}
-                                showAllMatches={false}
-                                allExpanded={allExpanded}
-                                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                repoDisplayName={displayRepoName(result.repository)}
-                                settingsCascade={settingsCascade}
-                                extensionsController={extensionsController}
-                                hoverifier={hoverifier}
+                                platformContext={platformContext}
+                                onSelect={() => logSearchResultClicked(index, 'commit')}
                                 openInNewTab={openMatchesInNewTab}
                                 containerClassName={resultClassName}
+                                as="li"
                             />
-                        </PrefetchableFile>
-                    )
-                case 'commit':
-                    return (
-                        <CommitSearchResult
-                            index={index}
-                            result={result}
-                            platformContext={platformContext}
-                            onSelect={() => logSearchResultClicked(index, 'commit')}
-                            openInNewTab={openMatchesInNewTab}
-                            containerClassName={resultClassName}
-                            as="li"
-                        />
-                    )
-                case 'repo':
-                    return (
-                        <RepoSearchResult
-                            index={index}
-                            result={result}
-                            onSelect={() => logSearchResultClicked(index, 'repo')}
-                            containerClassName={resultClassName}
-                            as="li"
-                        />
-                    )
+                        )
+                    case 'repo':
+                        return (
+                            <RepoSearchResult
+                                index={index}
+                                result={result}
+                                onSelect={() => logSearchResultClicked(index, 'repo')}
+                                containerClassName={resultClassName}
+                                as="li"
+                            />
+                        )
+                }
             }
+
+            return (
+                <TraceSpanProvider
+                    name="StreamingSearchResultsListItem"
+                    attributes={{
+                        type: result.type,
+                        index,
+                    }}
+                >
+                    {renderResultContent()}
+                </TraceSpanProvider>
+            )
         },
         [
             prefetchFileEnabled,
@@ -222,6 +264,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<
         ]
     )
 
+    const [showFocusInputMessage, onVisibilityChange] = useSearchResultsKeyboardNavigation(
+        rootRef,
+        enableKeyboardNavigation
+    )
+
     return (
         <>
             <VirtualList<SearchMatch>
@@ -234,10 +281,18 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 itemProps={undefined}
                 itemKey={itemKey}
                 renderItem={renderResult}
+                onRef={setRootRef}
+                onVisibilityChange={onVisibilityChange}
             />
 
+            <div
+                className={classNames(styles.focusInputMessage, showFocusInputMessage && styles.focusInputMessageShow)}
+            >
+                Press <span className={styles.focusInputMessageSlash}>/</span> to focus the search input
+            </div>
+
             {itemsToShow >= resultsNumber && (
-                <StreamingSearchResultFooter results={results}>
+                <StreamingSearchResultFooter results={results} telemetryService={telemetryService}>
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage
@@ -269,15 +324,4 @@ function itemKey(item: SearchMatch): string {
         return `file:${getMatchUrl(item)}`
     }
     return getMatchUrl(item)
-}
-
-function getFileMatchIcon(result: ContentMatch | SymbolMatch | PathMatch): React.ComponentType<{ className?: string }> {
-    switch (result.type) {
-        case 'content':
-            return FileDocumentIcon
-        case 'symbol':
-            return AlphaSBoxIcon
-        case 'path':
-            return FileIcon
-    }
 }

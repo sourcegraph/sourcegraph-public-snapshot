@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/automaxprocs/maxprocs"
 
@@ -132,12 +131,14 @@ func newTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.
 	case Jaeger:
 		exporter, err = exporters.NewJaegerExporter()
 
+	case None:
+
 	default:
 		err = errors.Newf("unknown tracer type %q", opts.TracerType)
 	}
 
 	if err != nil || exporter == nil {
-		return opentracing.NoopTracer{}, trace.NewNoopTracerProvider(), nil, err
+		return opentracing.NoopTracer{}, oteltrace.NewNoopTracerProvider(), nil, err
 	}
 	return newOTelBridgeTracer(logger, exporter, opts.resource, opts.debug)
 }

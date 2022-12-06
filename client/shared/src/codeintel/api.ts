@@ -30,9 +30,7 @@ import { languageSpecs } from './legacy-extensions/language-specs/languages'
 import { RedactingLogger } from './legacy-extensions/logging'
 import { createProviders, emptySourcegraphProviders, SourcegraphProviders } from './legacy-extensions/providers'
 
-export type QueryGraphQLFn<T> = () => Promise<T>
-
-export interface CodeIntelAPI {
+interface CodeIntelAPI {
     hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Observable<boolean>
     getDefinition(textParameters: TextDocumentPositionParameters): Observable<clientType.Location[]>
     getReferences(
@@ -44,7 +42,7 @@ export interface CodeIntelAPI {
     getDocumentHighlights(textParameters: TextDocumentPositionParameters): Observable<sglegacy.DocumentHighlight[]>
 }
 
-export function newCodeIntelAPI(context: sourcegraph.CodeIntelContext): CodeIntelAPI {
+function newCodeIntelAPI(context: sourcegraph.CodeIntelContext): CodeIntelAPI {
     sourcegraph.updateCodeIntelContext(context)
     return new DefaultCodeIntelAPI()
 }
@@ -152,6 +150,16 @@ const languages: Language[] = languageSpecs.map(spec => ({
     selector: selectorForSpec(spec),
     providers: createProviders(spec, hasImplementationsField, new RedactingLogger(console)),
 }))
+
+// Returns true if the provided language supports "Find implementations"
+export function hasFindImplementationsSupport(language: string): boolean {
+    for (const spec of languageSpecs) {
+        if (spec.languageID === language) {
+            return spec.textDocumentImplemenationSupport ?? false
+        }
+    }
+    return false
+}
 
 function selectorForSpec(languageSpec: LanguageSpec): DocumentSelector {
     return [

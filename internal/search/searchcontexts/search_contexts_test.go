@@ -196,8 +196,8 @@ func TestConstructingSearchContextSpecs(t *testing.T) {
 		wantSearchContextSpec string
 	}{
 		{name: "global search context", searchContext: GetGlobalSearchContext(), wantSearchContextSpec: "global"},
-		{name: "user auto-defined search context", searchContext: &types.SearchContext{Name: "user", NamespaceUserID: 1}, wantSearchContextSpec: "@user"},
-		{name: "org auto-defined search context", searchContext: &types.SearchContext{Name: "org", NamespaceOrgID: 1}, wantSearchContextSpec: "@org"},
+		{name: "user auto-defined search context", searchContext: &types.SearchContext{Name: "user", NamespaceUserID: 1, Autodefined: true}, wantSearchContextSpec: "@user"},
+		{name: "org auto-defined search context", searchContext: &types.SearchContext{Name: "org", NamespaceOrgID: 1, Autodefined: true}, wantSearchContextSpec: "@org"},
 		{name: "user namespaced search context", searchContext: &types.SearchContext{ID: 1, Name: "context", NamespaceUserID: 1, NamespaceUserName: "user"}, wantSearchContextSpec: "@user/context"},
 		{name: "org namespaced search context", searchContext: &types.SearchContext{ID: 1, Name: "context", NamespaceOrgID: 1, NamespaceOrgName: "org"}, wantSearchContextSpec: "@org/context"},
 		{name: "instance-level search context", searchContext: &types.SearchContext{ID: 1, Name: "instance-level-context"}, wantSearchContextSpec: "instance-level-context"},
@@ -469,6 +469,27 @@ func TestCreatingSearchContexts(t *testing.T) {
 				{Repo: repos[0], Revisions: []string{tooLongRevision}},
 			},
 			wantErr: fmt.Sprintf("revision %q exceeds maximum allowed length (255)", tooLongRevision),
+		},
+		{
+			name:          "can create search context with repo:has query",
+			searchContext: &types.SearchContext{Name: "repo_has_kvp", Query: "repo:has(key:value)"},
+			userID:        user1.ID,
+		},
+		{
+			name:          "can create search context with repo:has.tag query",
+			searchContext: &types.SearchContext{Name: "repo_has_tag", Query: "repo:has.tag(tag)"},
+			userID:        user1.ID,
+		},
+		{
+			name:          "can create search context with repo:has.key query",
+			searchContext: &types.SearchContext{Name: "repo_has_key", Query: "repo:has.key(key)"},
+			userID:        user1.ID,
+		},
+		{
+			name:          "cannot create search context with unsupported repo field predicate in query",
+			searchContext: &types.SearchContext{Name: "unsupported_repo_predicate", Query: "repo:has.content(foo)"},
+			userID:        user1.ID,
+			wantErr:       fmt.Sprintf("unsupported repo field predicate in search context query: %q", "has.content(foo)"),
 		},
 	}
 

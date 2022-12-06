@@ -48,6 +48,12 @@ type FileMatch struct {
 	PathMatches  []Range
 
 	LimitHit bool
+
+	// Debug is optionally set with a debug message explaining the result.
+	//
+	// Note: this is a pointer since usually this is unset. Pointer is 8 bytes
+	// vs an empty string which is 16 bytes.
+	Debug *string `json:"-"`
 }
 
 func (fm *FileMatch) RepoName() types.MinimalRepo {
@@ -102,6 +108,7 @@ func (fm *FileMatch) Select(selectPath filter.SelectPath) Match {
 		// Only return file match if line matches exist
 		if len(fm.ChunkMatches) > 0 {
 			fm.Symbols = nil
+			fm.PathMatches = nil
 			return fm
 		}
 		return nil

@@ -68,12 +68,17 @@ type GitCommitResolver struct {
 // commit will be loaded lazily as needed by the resolver. Pass in a commit when
 // you have batch-loaded a bunch of them and already have them at hand.
 func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
+	repoName := repo.RepoName()
+
 	return &GitCommitResolver{
+		logger: log.Scoped("gitCommitResolver", "resolve a specific commit").
+			With(log.String("repo", string(repoName)),
+				log.String("commitID", string(id))),
 		db:              db,
 		gitserverClient: gsClient,
 		repoResolver:    repo,
 		includeUserInfo: true,
-		gitRepo:         repo.RepoName(),
+		gitRepo:         repoName,
 		oid:             GitObjectID(id),
 		commit:          commit,
 	}
@@ -283,7 +288,7 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +306,7 @@ func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*language
 		return nil, err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db)).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -340,8 +345,7 @@ func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {
 	if args.Base != nil {
 		base = *args.Base
 	}
-	client := gitserver.NewClient(r.db)
-	return NewRepositoryComparison(ctx, r.db, client, r.repoResolver, &RepositoryComparisonInput{
+	return NewRepositoryComparison(ctx, r.db, r.gitserverClient, r.repoResolver, &RepositoryComparisonInput{
 		Base:         &base,
 		Head:         &oidString,
 		FetchMissing: false,

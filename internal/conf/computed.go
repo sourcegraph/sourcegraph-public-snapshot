@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -127,15 +128,6 @@ func UpdateChannel() string {
 	return channel
 }
 
-// SearchIndexEnabled returns true if sourcegraph should index all
-// repositories for text search.
-func SearchIndexEnabled() bool {
-	if v := Get().SearchIndexEnabled; v != nil {
-		return *v
-	}
-	return true // always on by default in all deployment types, see confdefaults.go
-}
-
 func BatchChangesEnabled() bool {
 	if enabled := Get().BatchChangesEnabled; enabled != nil {
 		return *enabled
@@ -179,6 +171,28 @@ func ExecutorsSrcCLIImageTag() string {
 	}
 
 	return srccli.MinimumVersion
+}
+
+func ExecutorsBatcheshelperImage() string {
+	current := Get()
+	if current.ExecutorsBatcheshelperImage != "" {
+		return current.ExecutorsBatcheshelperImage
+	}
+
+	return "sourcegraph/batcheshelper"
+}
+
+func ExecutorsBatcheshelperImageTag() string {
+	current := Get()
+	if current.ExecutorsBatcheshelperImageTag != "" {
+		return current.ExecutorsBatcheshelperImageTag
+	}
+
+	if version.IsDev(version.Version()) {
+		return "insiders"
+	}
+
+	return version.Version()
 }
 
 func CodeIntelAutoIndexingEnabled() bool {

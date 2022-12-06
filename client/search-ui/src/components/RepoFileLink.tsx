@@ -1,8 +1,6 @@
 import * as React from 'react'
 import { useEffect, useRef } from 'react'
 
-import classNames from 'classnames'
-
 import { appendSubtreeQueryParameter, highlightNode } from '@sourcegraph/common'
 import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoLink'
 import { Range } from '@sourcegraph/shared/src/search/stream'
@@ -16,6 +14,7 @@ interface Props {
     fileURL: string
     repoDisplayName?: string
     className?: string
+    isKeyboardSelectable?: boolean
 }
 
 /**
@@ -30,19 +29,27 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
     pathMatchRanges,
     fileURL,
     className,
+    isKeyboardSelectable,
 }) => {
     const [fileBase, fileName] = splitPath(filePath)
     const containerElement = useRef<HTMLAnchorElement>(null)
 
     const repoFileLink = (): JSX.Element => (
-        <div className={classNames(className)}>
-            <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link>
-            <span aria-hidden={true}> ›</span>{' '}
-            <Link to={appendSubtreeQueryParameter(fileURL)} ref={containerElement}>
-                {fileBase ? `${fileBase}/` : null}
-                <strong>{fileName}</strong>
-            </Link>
-        </div>
+        <span className={className}>
+            <span>
+                <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link>
+                <span aria-hidden={true}> ›</span>{' '}
+                <Link
+                    to={appendSubtreeQueryParameter(fileURL)}
+                    ref={containerElement}
+                    data-selectable-search-result={isKeyboardSelectable}
+                    data-selectable-search-result-header-link={isKeyboardSelectable}
+                >
+                    {fileBase ? `${fileBase}/` : null}
+                    <strong>{fileName}</strong>
+                </Link>
+            </span>
+        </span>
     )
 
     useEffect((): void => {

@@ -22,6 +22,11 @@ export const enterpriseUserSettingsSideBarItems: UserSettingsSidebarItems = [
         condition: ({ batchChangesEnabled, user: { viewerCanAdminister } }) =>
             batchChangesEnabled && viewerCanAdminister,
     },
+    {
+        to: '/executors/secrets',
+        label: 'Executor secrets',
+        condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
+    },
     ...userSettingsSideBarItems.slice(2),
     {
         label: 'Permissions',

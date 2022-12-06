@@ -6,12 +6,14 @@ import { concatMap, debounceTime, map } from 'rxjs/operators'
 import { DeepNonNullable } from 'utility-types'
 
 import { logger, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
+import { Occurrence } from '@sourcegraph/shared/src/codeintel/scip'
 import { toPrettyBlobURL, UIRange } from '@sourcegraph/shared/src/util/url'
 
 import { BlobInfo } from '../Blob'
 import { DefinitionResponse, fetchDefinitionsFromRanges } from '../definitions'
 
 import { SelectedLineRange, selectedLines } from './linenumbers'
+import { isInteractiveOccurrence } from './occurrence-utils'
 
 interface TokenLink {
     range: UIRange
@@ -40,8 +42,22 @@ const focusSelectedLine = ViewPlugin.fromClass(
 
                 if (line) {
                     window.requestAnimationFrame(() => {
-                        const element = this.view.domAtPos(line.from).node as HTMLElement
-                        element.focus()
+                        // Start from the line number of the current position, adding the additional count to get
+                        // to a single character (if the character is present in the position)
+                        const closestNode = this.view.domAtPos(line.from + (selection.character ?? 0)).node
+
+                        const closestElement =
+                            closestNode instanceof HTMLElement ? closestNode : closestNode.parentElement
+
+                        // We will be trying to focus a data-token-link element in the event we were given a character position,
+                        // otherwise we still want to default to focusing the entire line
+                        const target =
+                            closestElement?.hasAttribute('data-token-link') ||
+                            closestElement?.hasAttribute('data-line-focusable')
+                                ? closestElement
+                                : closestElement?.closest<HTMLElement>('[data-token-link],[data-line-focusable]')
+
+                        target?.focus()
                     })
                 }
             }
@@ -230,8 +246,18 @@ interface TokensAsLinksConfiguration {
 }
 
 export const tokensAsLinks = ({ history, blobInfo, preloadGoToDefinition }: TokensAsLinksConfiguration): Extension => {
+    /**
+     * Prefer precise code intelligence ranges, fall back to making certain Occurrences interactive.
+     */
+    const ranges =
+        blobInfo.stencil && blobInfo.stencil.length > 0
+            ? blobInfo.stencil.map(range => range)
+            : Occurrence.fromInfo(blobInfo)
+                  .filter(isInteractiveOccurrence)
+                  .map(({ range }) => range)
+
     const referencesLinks =
-        blobInfo.stencil?.map(range => ({
+        ranges.map(range => ({
             range,
             url: `?${toPositionOrRangeQueryParameter({
                 position: { line: range.start.line + 1, character: range.start.character + 1 },

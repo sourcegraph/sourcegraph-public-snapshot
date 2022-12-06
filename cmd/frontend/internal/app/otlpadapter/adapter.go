@@ -90,7 +90,7 @@ func (sig *adaptedSignal) Register(ctx context.Context, logger log.Logger, r *mu
 		ErrorLog: std.NewLogger(adapterLogger, log.LevelWarn),
 	})
 
-	adapterLogger.Info("signal adapter registered")
+	adapterLogger.Debug("signal adapter registered")
 }
 
 type roundTripper struct {

@@ -7,9 +7,8 @@ import { Observable } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, pluralize, encodeURIPathComponent } from '@sourcegraph/common'
-import { gql, useQuery } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { asError, ErrorLike, pluralize, encodeURIPathComponent, memoizeObservable } from '@sourcegraph/common'
+import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import {
     Button,
@@ -23,6 +22,7 @@ import {
     ButtonLink,
 } from '@sourcegraph/wildcard'
 
+import { queryGraphQL } from '../../backend/graphql'
 import { BatchChangesProps } from '../../batches'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -30,16 +30,69 @@ import {
     GetRepoBatchChangesSummaryResult,
     GetRepoBatchChangesSummaryVariables,
     GitCommitFields,
+    Scalars,
+    TreeCommits2Result,
     TreePageRepositoryFields,
 } from '../../graphql-operations'
 import { fetchBlob } from '../blob/backend'
 import { BlobInfo } from '../blob/Blob'
 import { RenderedFile } from '../blob/RenderedFile'
-import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
-
-import { fetchTreeCommits } from './TreePageContent'
+import { GitCommitNodeProps, GitCommitNode } from '../commits/GitCommitNode'
+import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 
 import styles from './HomeTab.module.scss'
+
+type TreeCommitsRepositoryCommit = NonNullable<
+    Extract<TreeCommits2Result['node'], { __typename: 'Repository' }>['commit']
+>
+
+const fetchTreeCommits = memoizeObservable(
+    (args: {
+        repo: Scalars['ID']
+        revspec: string
+        first?: number
+        filePath?: string
+        after?: string
+    }): Observable<TreeCommitsRepositoryCommit['ancestors']> =>
+        queryGraphQL(
+            gql`
+                query TreeCommits2($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
+                    node(id: $repo) {
+                        __typename
+                        ... on Repository {
+                            commit(rev: $revspec) {
+                                ancestors(first: $first, path: $filePath, after: $after) {
+                                    nodes {
+                                        ...GitCommitFields
+                                    }
+                                    pageInfo {
+                                        hasNextPage
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                ${gitCommitFragment}
+            `,
+            args
+        ).pipe(
+            map(dataOrThrowErrors),
+            map(data => {
+                if (!data.node) {
+                    throw new Error('Repository not found')
+                }
+                if (data.node.__typename !== 'Repository') {
+                    throw new Error('Node is not a Repository')
+                }
+                if (!data.node.commit) {
+                    throw new Error('Commit not found')
+                }
+                return data.node.commit.ancestors
+            })
+        ),
+    args => `${args.repo}:${args.revspec}:${String(args.first)}:${String(args.filePath)}:${String(args.after)}`
+)
 
 interface Props extends SettingsCascadeProps, CodeIntelligenceProps, BatchChangesProps {
     repo: TreePageRepositoryFields
@@ -143,7 +196,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
     )
 
     const queryCommits = useCallback(
-        (args: { first?: number }): Observable<GQL.IGitCommitConnection> => {
+        (args: { first?: number }): Observable<TreeCommitsRepositoryCommit['ancestors']> => {
             const after: string | undefined = showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
             return fetchTreeCommits({
                 ...args,

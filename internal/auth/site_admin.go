@@ -75,11 +75,7 @@ func CheckSiteAdminOrSameUser(ctx context.Context, db database.DB, subjectUserID
 	if isSiteAdminErr == nil {
 		return nil
 	}
-	_, err := db.Users().GetByID(ctx, subjectUserID)
-	if err != nil {
-		return &InsufficientAuthorizationError{fmt.Sprintf("must be authenticated as an admin (%s)", isSiteAdminErr.Error())}
-	}
-	return &InsufficientAuthorizationError{fmt.Sprintf("must be authenticated as the authorized user or as an admin (%s)", isSiteAdminErr.Error())}
+	return &InsufficientAuthorizationError{"must be authenticated as the authorized user or site admin"}
 }
 
 // CheckSameUser returns an error if the user is not the user specified by

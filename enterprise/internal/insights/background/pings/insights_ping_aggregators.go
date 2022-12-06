@@ -290,9 +290,9 @@ const backfillTimeQuery = `
 SELECT
 	COALESCE(CARDINALITY(repositories),0) = 0 AS allRepos,
 	COUNT(*),
-	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP( ORDER BY backfill_completed_at - backfill_queued_at), '0'))) AS p99_seconds,
-	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY backfill_completed_at - backfill_queued_at), '0'))) AS p90_seconds,
-	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY backfill_completed_at - backfill_queued_at), '0'))) AS p50_seconds
+	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP( ORDER BY backfill_completed_at - backfill_queued_at), '0')))::INT AS p99_seconds,
+	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY backfill_completed_at - backfill_queued_at), '0')))::INT AS p90_seconds,
+	ROUND(EXTRACT(EPOCH FROM COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY backfill_completed_at - backfill_queued_at), '0')))::INT AS p50_seconds
 FROM insight_series
 WHERE backfill_completed_at > ($1::timestamp - interval '7 days')
 GROUP BY allRepos;

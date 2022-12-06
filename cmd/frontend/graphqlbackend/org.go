@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -15,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -140,28 +140,48 @@ func (o *OrgResolver) SettingsURL() *string { return strptr(o.URL() + "/settings
 
 func (o *OrgResolver) CreatedAt() gqlutil.DateTime { return gqlutil.DateTime{Time: o.org.CreatedAt} }
 
-func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
+type MembersConnectionArgs struct {
+	First *int32
+	After *string
+	Query *string
+}
+
+func (o *OrgResolver) Members(ctx context.Context, args *MembersConnectionArgs) (*userConnectionResolver, error) {
 	// 🚨 SECURITY: Only org members can list other org members.
-	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
-		if err == auth.ErrNotAnOrgMember {
-			return nil, errors.New("must be a member of this organization to view members")
-		}
+	if err := checkMembersAccess(ctx, o.db, o.org.ID); err != nil {
 		return nil, err
 	}
 
-	memberships, err := o.db.OrgMembers().GetByOrgID(ctx, o.org.ID)
-	if err != nil {
-		return nil, err
+	// For backward compatibility, the query needs to work with no pagination
+	limitOffset := &database.LimitOffset{
+		Limit: 1000,
 	}
-	users := make([]*types.User, len(memberships))
-	for i, membership := range memberships {
-		user, err := o.db.Users().GetByID(ctx, membership.UserID)
+
+	if args.First != nil {
+		limitOffset.Limit = int(*args.First)
+	}
+
+	if args.After != nil {
+		cursor, err := strconv.ParseInt(*args.After, 10, 32)
 		if err != nil {
 			return nil, err
 		}
-		users[i] = user
+		limitOffset.Offset = int(cursor)
 	}
-	return &staticUserConnectionResolver{db: o.db, users: users}, nil
+
+	query := ""
+	if args.Query != nil {
+		query = *args.Query
+	}
+
+	return &userConnectionResolver{
+		db: o.db,
+		opt: database.UsersListOptions{
+			Query:       query,
+			OrgID:       o.org.ID,
+			LimitOffset: limitOffset,
+		},
+	}, nil
 }
 
 func (o *OrgResolver) settingsSubject() api.SettingsSubject {
@@ -231,48 +251,6 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 		return false, err
 	}
 	return true, nil
-}
-
-func (o *OrgResolver) ViewerNeedsCodeHostUpdate(ctx context.Context) (bool, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return false, nil
-	}
-	enabled, err := o.db.FeatureFlags().GetOrgFeatureFlag(ctx, o.OrgID(), "github-app-cloud")
-	if err != nil {
-		return false, err
-	} else if !enabled {
-		return false, nil
-	}
-	if _, err := o.db.OrgMembers().GetByOrgIDAndUserID(ctx, o.org.ID, actor.UID); err != nil {
-		return false, nil
-	}
-	orgServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceOrgID: o.OrgID()})
-	if err != nil {
-		return false, err
-	}
-	if len(orgServices) == 0 {
-		// no need to update
-		return false, nil
-	}
-	userServices, err := o.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{Kinds: []string{extsvc.KindGitHub}, NamespaceUserID: actor.UID})
-	if err != nil {
-		return false, err
-	}
-	if len(userServices) == 0 {
-		// no need to update
-		return false, nil
-	}
-	for _, os := range orgServices {
-		for _, us := range userServices {
-			if os.Kind == extsvc.KindGitHub && us.Kind == extsvc.KindGitHub {
-				if os.CreatedAt.After(us.UpdatedAt) {
-					return true, nil
-				}
-			}
-		}
-	}
-	return false, nil
 }
 
 func (o *OrgResolver) NamespaceName() string { return o.org.Name }

@@ -33,6 +33,7 @@ import {
     ensureDocker,
     changelogURL,
     ensureReleaseBranchUpToDate,
+    ensureSrcCliEndpoint,
     ensureSrcCliUpToDate,
     getLatestTag,
 } from './util'
@@ -415,6 +416,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 console.log('Docker required for batch changes')
                 process.exit(1)
             }
+            // ensure $SRC_ENDPOINT is set
+            ensureSrcCliEndpoint()
             // ensure src-cli is up to date
             await ensureSrcCliUpToDate()
             // set up batch change config
@@ -876,6 +879,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         id: '_test:srccliensure',
         description: 'test srccli version',
         run: async () => {
+            ensureSrcCliEndpoint()
             await ensureSrcCliUpToDate()
         },
     },

@@ -1,7 +1,7 @@
 // Theme
 const currentThemePreference = () => localStorage.getItem('theme-preference') || 'auto'
 const themePreferenceButtons = () => document.querySelectorAll('body > #sidebar #theme button[data-theme-preference]')
-const currentTheme = (pref=currentThemePreference()) => pref === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' : pref
+const currentTheme = (pref = currentThemePreference()) => pref === 'auto' ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light' : pref
 const applyThemePreference = (pref) => {
   localStorage.setItem('theme-preference', pref)
   applyTheme()
@@ -103,4 +103,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (startSourcegraphCommand) {
     startSourcegraphCommand.addEventListener('click', gaConversionOnStartSourcegraphCommands)
   }
+})
+
+// Cloud CTA clicks
+document.addEventListener('DOMContentLoaded', () => {
+  const cloudCTAs = document.querySelectorAll('.cloud-cta')
+
+  cloudCTAs.forEach(cloudCTA => {
+    cloudCTA.addEventListener('click', () => {
+      if (window && window.plausible) {
+        window.plausible('ClickedOnFreeTrialCTA')
+      }
+    })
+  })
 })

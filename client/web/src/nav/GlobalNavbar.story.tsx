@@ -3,7 +3,6 @@ import { createMemoryHistory } from 'history'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -12,7 +11,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Grid, H3 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
-import { baseActivation } from '../components/ActivationDropdown/ActivationDropdown.fixtures'
 import { WebStory } from '../components/WebStory'
 import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../theme'
@@ -43,15 +41,16 @@ const getDefaultProps = (props: ThemeProps): GlobalNavbarProps => ({
     batchChangesEnabled: false,
     batchChangesExecutionEnabled: false,
     batchChangesWebhookLogsEnabled: false,
-    activation: undefined,
     routes: [],
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     showKeyboardShortcutsHelp: () => undefined,
     showSearchBox: false,
     authenticatedUser: null,
     setFuzzyFinderIsVisible: () => {},
+    notebooksEnabled: true,
+    codeMonitoringEnabled: true,
+    showFeedbackModal: () => undefined,
 })
 
 const allNavItemsProps: Partial<GlobalNavbarProps> = {
@@ -64,7 +63,6 @@ const allNavItemsProps: Partial<GlobalNavbarProps> = {
 }
 
 const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
-    activation: { ...baseActivation(), completed: { ConnectedCodeHost: true, DidSearch: false } },
     authenticatedUser: {
         username: 'alice',
         organizations: { nodes: [{ id: 'acme', name: 'acme' }] },

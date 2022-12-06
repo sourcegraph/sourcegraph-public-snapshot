@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"math"
 	"net"
-	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -68,12 +66,11 @@ type HorizontalSearcher struct {
 	clients map[string]zoekt.Streamer // addr -> client
 }
 
-var rankingEnabled, _ = strconv.ParseBool(os.Getenv("ENABLE_EXPERIMENTAL_RANKING"))
-
 // StreamSearch does a search which merges the stream from every endpoint in Map, reordering results to produce a sorted stream.
 func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
-
-	if rankingEnabled {
+	// We check for nil opts for convenience in tests. Must fix once we rely
+	// on this.
+	if opts != nil && opts.FlushWallTime > 0 {
 		return s.streamSearchExperimentalRanking(ctx, q, opts, streamer)
 	}
 
@@ -161,13 +158,14 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 				rq.Enqueue(endpoint, sr)
 				rq.FlushReady(streamer)
 			}))
-			mu.Lock()
-			rq.Done(endpoint)
-			mu.Unlock()
 
-			if canIgnoreError(ctx, err) {
+			mu.Lock()
+			if isZoektRolloutError(ctx, err) {
+				rq.Enqueue(endpoint, crashEvent())
 				err = nil
 			}
+			rq.Done(endpoint)
+			mu.Unlock()
 
 			ch <- err
 		}(endpoint, c)
@@ -208,29 +206,18 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 
 	endpoints := make([]string, 0, len(clients))
 	for endpoint := range clients {
-		endpoints = append(endpoints, endpoint)
+		endpoints = append(endpoints, endpoint) //nolint:staticcheck
 	}
 
 	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
 
-	// Hack: 500ms is a better default for this function. The original default of 0
-	// disables the flushCollectSender and offers no ranking at all. For now
-	// StreamSearch and streamSearchExperimentalRanking share newRankingSiteConfig.
-	// Once this function is not behind a feature flag anymore, we should update the
-	// default.
-	if siteConfig.maxReorderDuration == 0 {
-		siteConfig.maxReorderDuration = 500 * time.Millisecond
-	}
-
-	streamer, flushAll := newFlushCollectSender(
-		&collectOpts{
-			maxDocDisplayCount: opts.MaxDocDisplayCount,
-			flushWallTime:      siteConfig.maxReorderDuration,
-			maxSizeBytes:       siteConfig.maxSizeBytes,
-		},
-		streamer,
-	)
+	streamer, flushAll := newFlushCollectSender(opts, siteConfig.maxSizeBytes, streamer)
 	defer flushAll()
+
+	// We give each zoekt a little less time to flush so the frontend has a
+	// chance to collect them before flushing.
+	childOpts := *opts
+	childOpts.FlushWallTime -= childOpts.FlushWallTime / 5
 
 	// During re-balancing a repository can appear on more than one replica.
 	var mu sync.Mutex
@@ -244,7 +231,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 	ch := make(chan error, len(clients))
 	for endpoint, c := range clients {
 		go func(endpoint string, c zoekt.Streamer) {
-			err := c.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
+			err := c.StreamSearch(ctx, q, &childOpts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
 				// This shouldn't happen, but skip event if sr is nil.
 				if sr == nil {
 					return
@@ -257,7 +244,8 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 				streamer.Send(sr)
 			}))
 
-			if canIgnoreError(ctx, err) {
+			if isZoektRolloutError(ctx, err) {
+				streamer.Send(crashEvent())
 				err = nil
 			}
 
@@ -581,7 +569,8 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.Li
 	for range clients {
 		r := <-results
 		if r.err != nil {
-			if canIgnoreError(ctx, r.err) {
+			if isZoektRolloutError(ctx, r.err) {
+				aggregate.Crashes++
 				continue
 			}
 
@@ -747,7 +736,7 @@ func (repoEndpoint dedupper) Dedup(endpoint string, fms []zoekt.FileMatch) []zoe
 	return dedup
 }
 
-// canIgnoreError returns true if the error we received from zoekt can be
+// isZoektRolloutError returns true if the error we received from zoekt can be
 // ignored.
 //
 // Note: ctx is passed in so we can log to the trace when we ignore an
@@ -757,7 +746,7 @@ func (repoEndpoint dedupper) Dedup(endpoint string, fms []zoekt.FileMatch) []zoe
 // during rollouts of Zoekt, we may still have endpoints of zoekt which are
 // not available in our endpoint map. In particular, this happens when using
 // Kubernetes and the (default) stateful set watcher.
-func canIgnoreError(ctx context.Context, err error) bool {
+func isZoektRolloutError(ctx context.Context, err error) bool {
 	reason := canIgnoreErrorReason(err)
 	if reason == "" {
 		return false
@@ -799,4 +788,13 @@ func canIgnoreErrorReason(err error) string {
 	}
 
 	return ""
+}
+
+// crashEvent indicates a shard or backend failed to be searched due to a
+// panic or being unreachable. The most common reason for this is during zoekt
+// rollout.
+func crashEvent() *zoekt.SearchResult {
+	return &zoekt.SearchResult{Stats: zoekt.Stats{
+		Crashes: 1,
+	}}
 }

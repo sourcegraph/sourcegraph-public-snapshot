@@ -4,11 +4,9 @@ import { subDays } from 'date-fns'
 import { EMPTY, NEVER, Observable, of } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
+import { SearchContextFields } from '@sourcegraph/search'
 import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
-import * as GQL from '@sourcegraph/shared/src/schema'
-import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/schema'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -68,7 +66,7 @@ const authUser: AuthenticatedUser = {
         nodes: [
             { id: '0', settingsURL: '#', displayName: 'Acme Corp' },
             { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
-        ] as GQL.IOrg[],
+        ] as AuthenticatedUser['organizations']['nodes'],
     },
     tags: [],
     viewerCanAdminister: true,
@@ -78,13 +76,13 @@ const authUser: AuthenticatedUser = {
     emails: [],
 }
 
-const repositories: ISearchContextRepositoryRevisions[] = [
+const repositories: SearchContextFields['repositories'] = [
     {
         __typename: 'SearchContextRepositoryRevisions',
         repository: {
             __typename: 'Repository',
             name: 'github.com/example/example2',
-        } as IRepository,
+        },
         revisions: ['main'],
     },
     {
@@ -92,12 +90,12 @@ const repositories: ISearchContextRepositoryRevisions[] = [
         repository: {
             __typename: 'Repository',
             name: 'github.com/example/example1',
-        } as IRepository,
+        },
         revisions: ['main'],
     },
 ]
 
-const fetchCommunitySearchContext = (): Observable<ISearchContext> =>
+const fetchCommunitySearchContext = (): Observable<SearchContextFields> =>
     of({
         __typename: 'SearchContext',
         id: '1',
@@ -111,6 +109,8 @@ const fetchCommunitySearchContext = (): Observable<ISearchContext> =>
         repositories,
         updatedAt: subDays(new Date(), 1).toISOString(),
         viewerCanManage: true,
+        viewerHasAsDefault: false,
+        viewerHasStarred: false,
     })
 
 const commonProps = () =>
@@ -135,7 +135,6 @@ const commonProps = () =>
         authenticatedUser: authUser,
         communitySearchContextMetadata: temporal,
         globbing: false,
-        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
         fetchSearchContextBySpec: fetchCommunitySearchContext,

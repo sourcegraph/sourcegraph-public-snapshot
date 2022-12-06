@@ -64,6 +64,10 @@ import (
 // tempDirName is the name used for the temporary directory under ReposDir.
 const tempDirName = ".tmp"
 
+// P4HomeName is the name used for the directory that git p4 will use as $HOME
+// and where it will store cache data.
+const P4HomeName = ".p4home"
+
 // traceLogs is controlled via the env SRC_GITSERVER_TRACE. If true we trace
 // logs to stderr
 var traceLogs bool
@@ -271,6 +275,10 @@ func NewCloneQueue(jobs *list.List) *cloneQueue {
 type Server struct {
 	// Logger should be used for all logging and logger creation.
 	Logger log.Logger
+
+	// ObservationCtx is used to initialize an operations struct
+	// with the appropriate metrics register etc.
+	ObservationCtx *observation.Context
 
 	// ReposDir is the path to the base directory for gitserver storage.
 	ReposDir string
@@ -493,6 +501,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))
 	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
 	mux.HandleFunc("/repo-clone", trace.WithRouteName("repo-clone", s.handleRepoClone))
+	mux.HandleFunc("/create-commit-from-patch-binary", trace.WithRouteName("create-commit-from-patch-binary", s.handleCreateCommitFromPatchBinary))
 	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", s.handleCreateCommitFromPatch))
 	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -715,7 +724,7 @@ var (
 )
 
 func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batchSize, perSecond int, fullSync bool) error {
-	s.Logger.Info("starting syncRepoState", log.Bool("fullSync", fullSync))
+	s.Logger.Debug("starting syncRepoState", log.Bool("fullSync", fullSync))
 	addrs := gitServerAddrs.Addresses
 
 	// When fullSync is true we'll scan all repos in the database and ensure we set
@@ -777,64 +786,83 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
 	}
 
+	// Make sure we fetch at least a good chunk of records, assuming that most
+	// would not need an update anyways. Don't fetch too many though to keep the
+	// DB load at a reasonable level and constrain memory usage.
+	iteratePageSize := batchSize * 2
+	if iteratePageSize < 500 {
+		iteratePageSize = 500
+	}
+
 	options := database.IterateRepoGitserverStatusOptions{
 		// We also want to include deleted repos as they may still be cloned on disk
 		IncludeDeleted: true,
+		BatchSize:      iteratePageSize,
 	}
 	if !fullSync {
 		options.OnlyWithoutShard = true
 	}
-	err := store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
-		repoSyncStateCounter.WithLabelValues("check").Inc()
-
-		// We may have a deleted repo, we need to extract the original name both to
-		// ensure that the shard check is correct and also so that we can find the
-		// directory.
-		repo.Name = api.UndeletedRepoName(repo.Name)
-
-		// Ensure we're only dealing with repos we are responsible for.
-		addr, err := s.addrForRepo(ctx, repo.Name, gitServerAddrs)
+	for {
+		repos, nextRepo, err := store.IterateRepoGitserverStatus(ctx, options)
 		if err != nil {
 			return err
 		}
-		if !s.hostnameMatch(addr) {
-			repoSyncStateCounter.WithLabelValues("other_shard").Inc()
-			return nil
+		for _, repo := range repos {
+			repoSyncStateCounter.WithLabelValues("check").Inc()
+
+			// We may have a deleted repo, we need to extract the original name both to
+			// ensure that the shard check is correct and also so that we can find the
+			// directory.
+			repo.Name = api.UndeletedRepoName(repo.Name)
+
+			// Ensure we're only dealing with repos we are responsible for.
+			addr, err := s.addrForRepo(ctx, repo.Name, gitServerAddrs)
+			if err != nil {
+				return err
+			}
+			if !s.hostnameMatch(addr) {
+				repoSyncStateCounter.WithLabelValues("other_shard").Inc()
+				continue
+			}
+			repoSyncStateCounter.WithLabelValues("this_shard").Inc()
+
+			dir := s.dir(repo.Name)
+			cloned := repoCloned(dir)
+			_, cloning := s.locker.Status(dir)
+
+			var shouldUpdate bool
+			if repo.ShardID != s.Hostname {
+				repo.ShardID = s.Hostname
+				shouldUpdate = true
+			}
+			cloneStatus := cloneStatus(cloned, cloning)
+			if repo.CloneStatus != cloneStatus {
+				repo.CloneStatus = cloneStatus
+				shouldUpdate = true
+			}
+
+			if !shouldUpdate {
+				continue
+			}
+
+			batch = append(batch, repo.GitserverRepo)
+
+			if len(batch) >= batchSize {
+				writeBatch()
+			}
 		}
-		repoSyncStateCounter.WithLabelValues("this_shard").Inc()
 
-		dir := s.dir(repo.Name)
-		cloned := repoCloned(dir)
-		_, cloning := s.locker.Status(dir)
-
-		var shouldUpdate bool
-		if repo.ShardID != s.Hostname {
-			repo.ShardID = s.Hostname
-			shouldUpdate = true
-		}
-		cloneStatus := cloneStatus(cloned, cloning)
-		if repo.CloneStatus != cloneStatus {
-			repo.CloneStatus = cloneStatus
-			shouldUpdate = true
+		if nextRepo == 0 {
+			break
 		}
 
-		if !shouldUpdate {
-			return nil
-		}
-
-		batch = append(batch, repo.GitserverRepo)
-
-		if len(batch) >= batchSize {
-			writeBatch()
-		}
-
-		return nil
-	})
+		options.NextCursor = nextRepo
+	}
 
 	// Attempt final write
 	writeBatch()
 
-	return err
+	return nil
 }
 
 // Stop cancels the running background jobs and returns when done.
@@ -919,11 +947,12 @@ func (s *Server) tempDir(prefix string) (name string, err error) {
 }
 
 func (s *Server) ignorePath(path string) bool {
-	// We ignore any path which starts with .tmp in ReposDir
+	// We ignore any path which starts with .tmp or .p4home in ReposDir
 	if filepath.Dir(path) != s.ReposDir {
 		return false
 	}
-	return strings.HasPrefix(filepath.Base(path), tempDirName)
+	base := filepath.Base(path)
+	return strings.HasPrefix(base, tempDirName) || strings.HasPrefix(base, P4HomeName)
 }
 
 func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
@@ -1086,11 +1115,11 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// Log which which actor is accessing the repo.
-	accesslog.Record(r.Context(), repo, map[string]string{
-		"treeish": treeish,
-		"format":  format,
-		"path":    strings.Join(pathspecs, ","),
-	})
+	accesslog.Record(r.Context(), repo,
+		log.String("treeish", treeish),
+		log.String("format", format),
+		log.Strings("path", pathspecs),
+	)
 
 	if err := checkSpecArgSafety(treeish); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -1189,7 +1218,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	if honey.Enabled() || traceLogs {
 		act := actor.FromContext(ctx)
 		ev := honey.NewEvent("gitserver-search")
-		ev.SetSampleRate(honeySampleRate("", act.IsInternal()))
+		ev.SetSampleRate(honeySampleRate("", act))
 		ev.AddField("repo", args.Repo)
 		ev.AddField("revisions", args.Revisions)
 		ev.AddField("include_diff", args.IncludeDiff)
@@ -1496,7 +1525,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 // constructs and memoizes a no-op operations value (for use in tests).
 func (s *Server) ensureOperations() *operations {
 	if s.operations == nil {
-		s.operations = newOperations(&observation.TestContext)
+		s.operations = newOperations(s.ObservationCtx)
 	}
 
 	return s.operations
@@ -1523,10 +1552,10 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		cmd = req.Args[0]
 		args = args[1:]
 	}
-	accesslog.Record(r.Context(), string(req.Repo), map[string]string{
-		"cmd":  cmd,
-		"args": strings.Join(args, " "),
-	})
+	accesslog.Record(r.Context(), string(req.Repo),
+		log.String("cmd", cmd),
+		log.Strings("args", args),
+	)
 
 	s.exec(w, r, &req)
 }
@@ -1619,7 +1648,7 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			if honey.Enabled() || traceLogs || isSlow || isSlowFetch {
 				act := actor.FromContext(ctx)
 				ev := honey.NewEvent("gitserver-exec")
-				ev.SetSampleRate(honeySampleRate(cmd, act.IsInternal()))
+				ev.SetSampleRate(honeySampleRate(cmd, act))
 				ev.AddField("repo", req.Repo)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
@@ -1768,11 +1797,11 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 	//
 	// p4-exec is currently only used for fetching user based permissions information
 	// so, we don't have a repo name.
-	accesslog.Record(r.Context(), "<no-repo>", map[string]string{
-		"p4user": req.P4User,
-		"p4port": req.P4Port,
-		"args":   strings.Join(req.Args, " "),
-	})
+	accesslog.Record(r.Context(), "<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+		log.Strings("args", req.Args),
+	)
 
 	// Make sure credentials are valid before heavier operation
 	err := p4pingWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
@@ -1840,7 +1869,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 			if honey.Enabled() || traceLogs || isSlow {
 				act := actor.FromContext(ctx)
 				ev := honey.NewEvent("gitserver-p4exec")
-				ev.SetSampleRate(honeySampleRate(cmd, act.IsInternal()))
+				ev.SetSampleRate(honeySampleRate(cmd, act))
 				ev.AddField("p4port", req.P4Port)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
@@ -2417,7 +2446,11 @@ var (
 // internally. So we update our sampling to heavily downsample internal
 // rev-parse, while upping our sampling for non-internal.
 // https://ui.honeycomb.io/sourcegraph/datasets/gitserver-exec/result/67e4bLvUddg
-func honeySampleRate(cmd string, internal bool) uint {
+func honeySampleRate(cmd string, actor *actor.Actor) uint {
+	// HACK(keegan) 2022-11-02 IsInternal on sourcegraph.com is always
+	// returning false. For now I am also marking it internal if UID is not
+	// set to work around us hammering honeycomb.
+	internal := actor.IsInternal() || actor.UID == 0
 	switch {
 	case cmd == "rev-parse" && internal:
 		return 1 << 14 // 16384
@@ -2542,33 +2575,33 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	err = syncer.Fetch(ctx, remoteURL, dir, revspec)
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch")
+		return errors.Wrapf(err, "failed to fetch repo %q", repo)
 	}
 
 	removeBadRefs(ctx, dir)
 
 	if err := setHEAD(ctx, logger, dir, syncer, remoteURL); err != nil {
-		return errors.Wrap(err, "failed to ensure HEAD exists")
+		return errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo)
 	}
 
 	if err := setRepositoryType(dir, syncer.Type()); err != nil {
-		return errors.Wrap(err, `git config set "sourcegraph.type"`)
+		return errors.Wrapf(err, "failed to set repository type for repo %q", repo)
 	}
 
 	// Update the last-changed stamp on disk.
 	if err := setLastChanged(logger, dir); err != nil {
-		logger.Warn("Failed to update last changed time", log.Error(err))
+		logger.Warn("failed to update last changed time", log.Error(err))
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
 	if err := s.setLastFetched(ctx, repo); err != nil {
-		logger.Warn("failed setting last fetch in DB", log.Error(err))
+		logger.Warn("failed to set last_fetched in DB", log.Error(err))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
 	if err := s.setRepoSize(ctx, repo); err != nil {
-		logger.Warn("failed setting repo size", log.Error(err))
+		logger.Warn("failed to set repo size", log.Error(err))
 	}
 
 	return nil
@@ -2620,7 +2653,7 @@ func removeBadRefs(ctx context.Context, dir GitDir) {
 func ensureHEAD(dir GitDir) {
 	head, err := os.Stat(dir.Path("HEAD"))
 	if os.IsNotExist(err) || head.Size() == 0 {
-		os.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0600)
+		os.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0o600)
 	}
 }
 

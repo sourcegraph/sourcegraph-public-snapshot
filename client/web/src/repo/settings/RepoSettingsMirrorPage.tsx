@@ -21,7 +21,6 @@ import {
     Code,
 } from '@sourcegraph/wildcard'
 
-import { TerminalLine } from '../../auth/Terminal'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import {
@@ -267,8 +266,9 @@ export const RepoSettingsMirrorPage: React.FunctionComponent<
                 </div>
                 {repo.mirrorInfo.lastError && (
                     <Alert variant="warning">
-                        <TerminalLine>Error updating repo:</TerminalLine>
-                        <TerminalLine>{repo.mirrorInfo.lastError}</TerminalLine>
+                        {/* TODO: This should not be a list item, but it was before this was refactored. */}
+                        <li className="d-flex w-100">Error updating repo:</li>
+                        <li className="d-flex w-100">{repo.mirrorInfo.lastError}</li>
                     </Alert>
                 )}
                 <UpdateMirrorRepositoryActionContainer

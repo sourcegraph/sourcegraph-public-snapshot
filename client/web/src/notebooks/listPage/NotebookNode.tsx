@@ -9,7 +9,7 @@ import { Link, Badge, Icon } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { NotebookFields } from '../../graphql-operations'
-import { PageRoutes } from '../../routes.constants'
+import { EnterprisePageRoutes } from '../../routes.constants'
 
 import styles from './NotebookNode.module.scss'
 
@@ -40,7 +40,7 @@ export const NotebookNode: React.FunctionComponent<React.PropsWithChildren<Noteb
     return (
         <li className={classNames('py-3', styles.notebookNode)}>
             <div className="d-flex align-items-center">
-                <Link to={PageRoutes.Notebook.replace(':id', node.id)} className={styles.notebookLink}>
+                <Link to={EnterprisePageRoutes.Notebook.replace(':id', node.id)} className={styles.notebookLink}>
                     <strong>{node.title}</strong>
                 </Link>
                 {!node.public && (

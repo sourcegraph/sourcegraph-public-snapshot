@@ -5,7 +5,6 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { ListSearchContextsResult } from '@sourcegraph/search'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
-    mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
@@ -35,8 +34,8 @@ export default config
 
 const defaultProps: SearchContextMenuProps = {
     authenticatedUser: null,
+    isSourcegraphDotCom: false,
     showSearchContextManagement: false,
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(2),
     fetchSearchContexts: ({
         first,
         query,
@@ -63,6 +62,8 @@ const defaultProps: SearchContextMenuProps = {
                     description: 'Only code in version 1.5',
                     updatedAt: '2021-03-15T19:39:11Z',
                     viewerCanManage: true,
+                    viewerHasAsDefault: true,
+                    viewerHasStarred: false,
                     query: '',
                     repositories: [],
                 },
@@ -84,7 +85,6 @@ const defaultProps: SearchContextMenuProps = {
 }
 
 const emptySearchContexts = {
-    fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
 }
 

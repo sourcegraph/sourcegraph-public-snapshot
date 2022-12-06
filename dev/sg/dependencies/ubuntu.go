@@ -33,8 +33,8 @@ var Ubuntu = []category{
 			},
 			{
 				Name:  "git",
-				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.34.1"))),
-				Fix:   aptGetInstall("git", "sudo add-apt-repository ppa:git-core/ppa"),
+				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.38.1"))),
+				Fix:   aptGetInstall("git", "sudo add-apt-repository -y ppa:git-core/ppa"),
 			}, {
 				Name:  "pcre",
 				Check: checkAction(check.HasUbuntuLibrary("libpcre3-dev")),

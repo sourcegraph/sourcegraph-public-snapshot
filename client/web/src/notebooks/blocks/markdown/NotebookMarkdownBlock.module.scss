@@ -64,13 +64,9 @@
 }
 
 .output {
-    padding: 1rem;
+    // padding: 0.25rem 1rem;
     // Taken from https://www.smashingmagazine.com/2020/07/css-techniques-legibility/
     line-height: calc(1ex / 0.32);
-
-    :global(.is-read-only-notebook) & {
-        padding: 0.25rem 1rem;
-    }
 }
 
 .markdown {
@@ -81,6 +77,15 @@
     pre,
     code {
         border-radius: var(--border-radius);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        margin-top: 1rem;
     }
 }
 

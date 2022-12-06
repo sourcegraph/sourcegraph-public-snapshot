@@ -6,16 +6,17 @@ import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { CardHeader, Card } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
-import { GitCommitFields, Scalars } from '../../graphql-operations'
+import { GitCommitFields, RepositoryComparisonCommitsResult, Scalars } from '../../graphql-operations'
 import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+
+type RepositoryComparisonRepository = Extract<RepositoryComparisonCommitsResult['node'], { __typename?: 'Repository' }>
 
 function queryRepositoryComparisonCommits(args: {
     repo: Scalars['ID']
@@ -23,7 +24,7 @@ function queryRepositoryComparisonCommits(args: {
     head: string | null
     first?: number
     path?: string
-}): Observable<GQL.IGitCommitConnection> {
+}): Observable<RepositoryComparisonRepository['comparison']['commits']> {
     return queryGraphQL(
         gql`
             query RepositoryComparisonCommits($repo: ID!, $base: String, $head: String, $first: Int, $path: String) {
@@ -50,7 +51,7 @@ function queryRepositoryComparisonCommits(args: {
             if (!data || !data.node) {
                 throw createAggregateError(errors)
             }
-            const repo = data.node as GQL.IRepository
+            const repo = data.node as RepositoryComparisonRepository
             if (!repo.comparison || !repo.comparison.commits || errors) {
                 throw createAggregateError(errors)
             }
@@ -126,7 +127,9 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
         )
     }
 
-    private queryCommits = (args: { first?: number }): Observable<GQL.IGitCommitConnection> =>
+    private queryCommits = (args: {
+        first?: number
+    }): Observable<RepositoryComparisonRepository['comparison']['commits']> =>
         queryRepositoryComparisonCommits({
             ...args,
             repo: this.props.repo.id,

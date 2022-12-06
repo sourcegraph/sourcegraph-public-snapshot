@@ -1,6 +1,9 @@
 # Temporary directory for whatever you want
 .tmp/
 
+# Bazel
+bazel-*
+
 # Vim
 *.swp
 
@@ -109,7 +112,7 @@ package-lock.json
 coverage/
 out/
 client/shared/src/schema.ts
-client/shared/src/schema/*
+client/shared/src/schema/*.d.ts
 puppeteer/
 package-lock.json
 /dist
@@ -188,3 +191,6 @@ go.work.sum
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# SCIP
+index.scip

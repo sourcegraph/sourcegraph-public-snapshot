@@ -30,7 +30,6 @@ describe('Site Admin', () => {
 
     test('Overview', async () => {
         await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
-        await driver.page.waitForSelector('[data-testid="site-admin-overview-menu"', { visible: true })
         await driver.page.waitForSelector('[data-testid="product-certificate"', { visible: true })
     })
 

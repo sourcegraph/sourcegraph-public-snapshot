@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Card, Link, useObservable, useDebounce, Icon, Input, H2, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Card, Link, useObservable, useDebounce, Icon, Input, Text } from '@sourcegraph/wildcard'
 
 import {
     getDefaultInputProps,
@@ -17,8 +17,8 @@ import {
     insightRepositoriesAsyncValidator,
 } from '../../../../../components'
 import { CodeInsightsBackendContext } from '../../../../../core'
-import { useUiFeatures } from '../../../../../hooks'
 import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
+import { CodeInsightsDescription } from '../code-insights-description/CodeInsightsDescription'
 
 import { DynamicInsightPreview } from './DynamicInsightPreview'
 
@@ -42,7 +42,6 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
     const { telemetryService, ...otherProps } = props
 
     const { getFirstExampleRepository } = useContext(CodeInsightsBackendContext)
-    const { licensed } = useUiFeatures()
 
     const form = useForm<CodeInsightExampleFormValues>({
         initialValues: INITIAL_INSIGHT_VALUES,
@@ -129,53 +128,15 @@ export const DynamicCodeInsightExample: React.FunctionComponent<
                 />
             </form>
 
-            <section>
-                <H2 className={classNames(styles.cardTitle)}>
-                    Draw insights from your codebase about how different initiatives track over time
-                </H2>
-
-                <Text>
-                    Create visual dashboards with meaningful, customizable codebase signals your team can use to answer
-                    questions about how your code is changing and what’s in your code {'\u2014'} questions that were
-                    difficult or impossible to answer before.
-                </Text>
-
-                <H3 className={classNames(styles.bulletTitle)}>Use Code Insights to...</H3>
-
-                <ul>
-                    <li>Track migrations, adoption, and deprecations</li>
-                    <li>Detect versions of languages, packages, or infrastructure</li>
-                    <li>Ensure removal of security vulnerabilities</li>
-                    <li>Track code smells, ownership, and configurations</li>
-                </ul>
-
+            <div>
+                <CodeInsightsDescription />
                 <footer className={styles.footer}>
-                    {licensed ? (
-                        <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
-                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create your first insight
-                        </Button>
-                    ) : (
-                        <Button
-                            as={Link}
-                            variant="primary"
-                            to="http://about.sourcegraph.com/contact/request-code-insights-demo"
-                            target="_blank"
-                            rel="noopener"
-                            onClick={handleGetStartedClick}
-                        >
-                            Schedule a demo
-                        </Button>
-                    )}
-
-                    {!licensed && (
-                        <Button as={Link} variant="secondary" to="/insights/about#code-insights-templates">
-                            Explore use cases
-                        </Button>
-                    )}
+                    <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create your first insight
+                    </Button>
                 </footer>
-
                 <CalloutArrow className={styles.calloutBlockHorizontal} />
-            </section>
+            </div>
 
             <CalloutArrow className={styles.calloutBlockVertical} />
         </Card>

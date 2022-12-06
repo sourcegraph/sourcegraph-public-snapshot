@@ -8,8 +8,6 @@ import { map, catchError } from 'rxjs/operators'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike, asError, isErrorLike, numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { ActivationProps, percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
-import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, useObservable, Button, Link, Icon, H3, Heading } from '@sourcegraph/wildcard'
 
@@ -23,7 +21,7 @@ import { UsageChart } from '../SiteAdminUsageStatisticsPage'
 
 import styles from './SiteAdminOverviewPage.module.scss'
 
-interface Props extends ActivationProps, ThemeProps {
+interface Props extends ThemeProps {
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
 
     /** For testing only */
@@ -111,7 +109,6 @@ const fetchWeeklyActiveUsers = (): Observable<WAUsResult['site']['usageStatistic
  */
 export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     isLightTheme,
-    activation,
     overviewComponents,
     _fetchOverview = fetchOverview,
     _fetchWeeklyActiveUsers = fetchWeeklyActiveUsers,
@@ -135,10 +132,6 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
         )
     )
 
-    let setupPercentage = 0
-    if (activation) {
-        setupPercentage = percentageDone(activation.completed)
-    }
     return (
         <div className="site-admin-overview-page">
             <PageTitle title="Overview - Admin" />
@@ -150,38 +143,6 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                 </div>
             )}
             {info === undefined && <LoadingSpinner />}
-            <div className="pt-3 mb-4">
-                {activation?.completed && (
-                    <Collapsible
-                        title={
-                            <div className="p-2">
-                                {setupPercentage > 0 && setupPercentage < 100
-                                    ? 'Almost there!'
-                                    : 'Welcome to Sourcegraph'}
-                            </div>
-                        }
-                        detail={
-                            setupPercentage < 100 ? 'Complete the steps below to finish onboarding to Sourcegraph' : ''
-                        }
-                        defaultExpanded={setupPercentage < 100}
-                        className="p-0 list-group-item font-weight-normal"
-                        data-testid="site-admin-overview-menu"
-                        buttonClassName="mb-0 py-3 px-3"
-                        titleClassName={classNames('mb-0 font-weight-bold', styles.adminOverviewMenuText)}
-                        detailClassName={classNames('mb-0 font-weight-normal', styles.adminOverviewMenuText)}
-                        titleAtStart={true}
-                    >
-                        {activation.completed && (
-                            <ActivationChecklist
-                                steps={activation.steps}
-                                completed={activation.completed}
-                                buttonClassName={classNames('mb-0 font-weight-normal', styles.adminOverviewMenuText)}
-                            />
-                        )}
-                    </Collapsible>
-                )}
-            </div>
-
             <div className="list-group">
                 {info && !isErrorLike(info) && (
                     <>

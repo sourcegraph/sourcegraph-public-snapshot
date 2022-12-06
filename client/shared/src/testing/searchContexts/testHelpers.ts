@@ -1,9 +1,7 @@
 import { subDays } from 'date-fns'
-import { range } from 'lodash'
 import { Observable, of } from 'rxjs'
 
 import { Maybe, Scalars } from '../../graphql-operations'
-import { ISearchContext } from '../../schema'
 
 interface SearchContextFields {
     __typename: 'SearchContext'
@@ -15,6 +13,8 @@ interface SearchContextFields {
     autoDefined: boolean
     updatedAt: string
     viewerCanManage: boolean
+    viewerHasAsDefault: boolean
+    viewerHasStarred: boolean
     namespace: Maybe<
         | { __typename: 'User'; id: string; namespaceName: string }
         | { __typename: 'Org'; id: string; namespaceName: string }
@@ -33,26 +33,6 @@ interface ListSearchContexts {
     pageInfo: { hasNextPage: boolean; endCursor: Maybe<string> }
 }
 
-export function mockFetchAutoDefinedSearchContexts(numberContexts = 0): () => Observable<ISearchContext[]> {
-    return () =>
-        of(
-            range(0, numberContexts).map(index => ({
-                __typename: 'SearchContext',
-                id: index.toString(),
-                spec: `auto-defined-${index}`,
-                name: `auto-defined-${index}`,
-                namespace: null,
-                public: true,
-                autoDefined: true,
-                viewerCanManage: false,
-                description: 'Repositories on Sourcegraph',
-                repositories: [],
-                query: '',
-                updatedAt: subDays(new Date(), 1).toISOString(),
-            })) as ISearchContext[]
-        )
-}
-
 export function mockFetchSearchContexts({
     first,
     query,
@@ -63,7 +43,24 @@ export function mockFetchSearchContexts({
     after?: string
 }): Observable<ListSearchContexts> {
     const result: ListSearchContexts = {
-        nodes: [],
+        nodes: [
+            {
+                __typename: 'SearchContext',
+                id: '0',
+                spec: 'global',
+                name: 'global',
+                namespace: null,
+                public: true,
+                autoDefined: true,
+                viewerCanManage: false,
+                viewerHasAsDefault: false,
+                viewerHasStarred: false,
+                description: 'All code on Sourcegraph',
+                repositories: [],
+                query: '',
+                updatedAt: subDays(new Date(), 1).toISOString(),
+            },
+        ],
         pageInfo: {
             endCursor: null,
             hasNextPage: false,

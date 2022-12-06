@@ -358,63 +358,67 @@ describe('withWorkspaceRootInputRevision', () => {
 
 describe('buildSearchURLQuery', () => {
     it('builds the URL query for a regular expression search', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.regexp, false, undefined)).toBe('q=foo&patternType=regexp'))
+        expect(buildSearchURLQuery('foo', SearchPatternType.regexp, false, undefined)).toMatchInlineSnapshot(
+            '"q=foo&patternType=regexp&sm=0"'
+        ))
     it('builds the URL query for a literal search', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.standard, false, undefined)).toBe(
-            'q=foo&patternType=standard'
+        expect(buildSearchURLQuery('foo', SearchPatternType.standard, false, undefined)).toMatchInlineSnapshot(
+            '"q=foo&patternType=standard&sm=0"'
         ))
     it('handles an empty query', () =>
-        expect(buildSearchURLQuery('', SearchPatternType.regexp, false, undefined)).toBe('q=&patternType=regexp'))
+        expect(buildSearchURLQuery('', SearchPatternType.regexp, false, undefined)).toMatchInlineSnapshot(
+            '"q=&patternType=regexp&sm=0"'
+        ))
     it('handles characters that need encoding', () =>
-        expect(buildSearchURLQuery('foo bar%baz', SearchPatternType.regexp, false, undefined)).toBe(
-            'q=foo+bar%25baz&patternType=regexp'
+        expect(buildSearchURLQuery('foo bar%baz', SearchPatternType.regexp, false, undefined)).toMatchInlineSnapshot(
+            '"q=foo+bar%25baz&patternType=regexp&sm=0"'
         ))
     it('preserves / and : for readability', () =>
-        expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp, false, undefined)).toBe(
-            'q=repo:foo/bar&patternType=regexp'
+        expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp, false, undefined)).toMatchInlineSnapshot(
+            '"q=repo:foo/bar&patternType=regexp&sm=0"'
         ))
     describe('removal of patternType parameter', () => {
         it('overrides the patternType parameter at the end', () => {
-            expect(buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp, false, undefined)).toBe(
-                'q=foo&patternType=literal'
-            )
+            expect(
+                buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp, false, undefined)
+            ).toMatchInlineSnapshot('"q=foo&patternType=literal&sm=0"')
         })
         it('overrides the patternType parameter at the beginning', () => {
             expect(
                 buildSearchURLQuery('patternType:literal foo type:diff', SearchPatternType.regexp, false, undefined)
-            ).toBe('q=foo+type:diff&patternType=literal')
+            ).toMatchInlineSnapshot('"q=foo+type:diff&patternType=literal&sm=0"')
         })
         it('overrides the patternType parameter at the end with another operator', () => {
             expect(
                 buildSearchURLQuery('type:diff foo patternType:literal', SearchPatternType.regexp, false, undefined)
-            ).toBe('q=type:diff+foo&patternType=literal')
+            ).toMatchInlineSnapshot('"q=type:diff+foo&patternType=literal&sm=0"')
         })
         it('overrides the patternType parameter in the middle', () => {
             expect(
                 buildSearchURLQuery('type:diff patternType:literal foo', SearchPatternType.regexp, false, undefined)
-            ).toBe('q=type:diff+foo&patternType=literal')
+            ).toMatchInlineSnapshot('"q=type:diff+foo&patternType=literal&sm=0"')
         })
         it('overrides the patternType parameter if using a quoted value', () => {
-            expect(buildSearchURLQuery('patternType:"literal" foo', SearchPatternType.regexp, false, undefined)).toBe(
-                'q=foo&patternType=literal'
-            )
+            expect(
+                buildSearchURLQuery('patternType:"literal" foo', SearchPatternType.regexp, false, undefined)
+            ).toMatchInlineSnapshot('"q=foo&patternType=literal&sm=0"')
         })
     })
     it('builds the URL query with a case parameter if caseSensitive is true', () =>
-        expect(buildSearchURLQuery('foo', SearchPatternType.standard, true, undefined)).toBe(
-            'q=foo&patternType=standard&case=yes'
+        expect(buildSearchURLQuery('foo', SearchPatternType.standard, true, undefined)).toMatchInlineSnapshot(
+            '"q=foo&patternType=standard&case=yes&sm=0"'
         ))
     it('appends the case parameter if `case:yes` exists in the query', () =>
-        expect(buildSearchURLQuery('foo case:yes', SearchPatternType.standard, false, undefined)).toBe(
-            'q=foo&patternType=standard&case=yes'
+        expect(buildSearchURLQuery('foo case:yes', SearchPatternType.standard, false, undefined)).toMatchInlineSnapshot(
+            '"q=foo&patternType=standard&case=yes&sm=0"'
         ))
     it('removes the case parameter if using a quoted value', () =>
-        expect(buildSearchURLQuery('foo case:"yes"', SearchPatternType.standard, true, undefined)).toBe(
-            'q=foo&patternType=standard&case=yes'
-        ))
+        expect(
+            buildSearchURLQuery('foo case:"yes"', SearchPatternType.standard, true, undefined)
+        ).toMatchInlineSnapshot('"q=foo&patternType=standard&case=yes&sm=0"'))
     it('removes the case parameter case:no exists in the query and caseSensitive is true', () =>
-        expect(buildSearchURLQuery('foo case:no', SearchPatternType.standard, true, undefined)).toBe(
-            'q=foo&patternType=standard'
+        expect(buildSearchURLQuery('foo case:no', SearchPatternType.standard, true, undefined)).toMatchInlineSnapshot(
+            '"q=foo&patternType=standard&sm=0"'
         ))
 })
 

@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { identity } from 'lodash'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import * as GQL from '@sourcegraph/shared/src/schema'
+import { TreeEntryFields } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Icon } from '@sourcegraph/wildcard'
 
@@ -65,7 +65,7 @@ const TreeEntry: React.FunctionComponent<
 
 interface TreeEntriesSectionProps extends ThemeProps {
     parentPath: string
-    entries: Pick<GQL.ITreeEntry, 'name' | 'isDirectory' | 'url' | 'path'>[]
+    entries: Pick<TreeEntryFields, 'name' | 'isDirectory' | 'url' | 'path'>[]
     fileDecorationsByPath: FileDecorationsByPath
 }
 

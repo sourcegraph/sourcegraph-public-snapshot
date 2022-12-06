@@ -423,6 +423,7 @@ type RepoKVPFilter struct {
 	Key     string
 	Value   *string
 	Negated bool
+	KeyOnly bool
 }
 
 func (p Parameters) RepoHasKVPs() (res []RepoKVPFilter) {
@@ -438,6 +439,14 @@ func (p Parameters) RepoHasKVPs() (res []RepoKVPFilter) {
 		res = append(res, RepoKVPFilter{
 			Key:     pred.Key,
 			Negated: pred.Negated,
+		})
+	})
+
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasKeyPredicate) {
+		res = append(res, RepoKVPFilter{
+			Key:     pred.Key,
+			Negated: pred.Negated,
+			KeyOnly: true,
 		})
 	})
 

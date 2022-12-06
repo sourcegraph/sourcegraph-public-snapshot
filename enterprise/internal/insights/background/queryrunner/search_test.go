@@ -86,7 +86,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		checker.EnabledFunc.SetDefaultHook(func() bool {
 			return true
 		})
-		checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+		checker.EnabledForRepoIDFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
 			if id == 11 {
 				return true, nil
 			} else {
@@ -138,7 +138,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		checker.EnabledFunc.SetDefaultHook(func() bool {
 			return true
 		})
-		checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+		checker.EnabledForRepoIDFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
 			return false, errors.New("Oops")
 		})
 
@@ -425,7 +425,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 		checker.EnabledFunc.SetDefaultHook(func() bool {
 			return true
 		})
-		checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+		checker.EnabledForRepoIDFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
 			if id == 11 {
 				return true, nil
 			} else {
@@ -475,7 +475,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 		checker.EnabledFunc.SetDefaultHook(func() bool {
 			return true
 		})
-		checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
+		checker.EnabledForRepoIDFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
 			return false, errors.New("Oops")
 		})
 

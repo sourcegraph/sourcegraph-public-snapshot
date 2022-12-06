@@ -113,45 +113,6 @@ export const commonWebGraphQlResults: Partial<
         statusMessages: [],
     }),
 
-    SiteAdminActivationStatus: () => ({
-        externalServices: { totalCount: 3 },
-        repositoryStats: {
-            gitDirBytes: '1825299556',
-            indexedLinesCount: '2616264',
-        },
-        repositories: { totalCount: 9 },
-        viewerSettings: {
-            __typename: 'SettingsCascade',
-            subjects: [],
-            final: JSON.stringify({}),
-        },
-        users: { totalCount: 2 },
-        currentUser: {
-            usageStatistics: {
-                searchQueries: 171,
-                findReferencesActions: 14,
-                codeIntelligenceActions: 670,
-            },
-        },
-    }),
-    // Note this is the response not for the admin
-    ActivationStatus: () => ({
-        // externalServices: { totalCount: 3 },
-        // repositories: { totalCount: 9 },
-        // viewerSettings: {
-        //     __typename: 'SettingsCascade',
-        //     subjects: [],
-        //     final: JSON.stringify({}),
-        // },
-        // users: { totalCount: 2 },
-        currentUser: {
-            usageStatistics: {
-                searchQueries: 171,
-                findReferencesActions: 14,
-                codeIntelligenceActions: 670,
-            },
-        },
-    }),
     EventLogsData: () => ({
         node: {
             __typename: 'User',
@@ -173,42 +134,6 @@ export const commonWebGraphQlResults: Partial<
             alwaysNil: null,
         },
     }),
-    AutoDefinedSearchContexts: () => ({
-        autoDefinedSearchContexts: [
-            {
-                __typename: 'SearchContext',
-                id: '1',
-                spec: 'global',
-                name: 'global',
-                namespace: null,
-                autoDefined: true,
-                public: true,
-                description: 'All repositories on Sourcegraph',
-                updatedAt: '2021-03-15T19:39:11Z',
-                repositories: [],
-                query: '',
-                viewerCanManage: false,
-            },
-            {
-                __typename: 'SearchContext',
-                id: '2',
-                spec: '@test',
-                name: 'test',
-                namespace: {
-                    __typename: 'User',
-                    id: 'u1',
-                    namespaceName: 'test',
-                },
-                autoDefined: true,
-                public: true,
-                description: 'Your repositories on Sourcegraph',
-                updatedAt: '2021-03-15T19:39:11Z',
-                repositories: [],
-                query: '',
-                viewerCanManage: false,
-            },
-        ],
-    }),
     ListSearchContexts: () => ({
         searchContexts: {
             nodes: [],
@@ -226,11 +151,6 @@ export const commonWebGraphQlResults: Partial<
             pageInfo: { hasNextPage: false, endCursor: null },
         },
     }),
-    ExternalServicesScopes: () => ({
-        externalServices: {
-            nodes: [],
-        },
-    }),
     EvaluateFeatureFlag: () => ({
         evaluateFeatureFlag: false,
     }),
@@ -239,21 +159,6 @@ export const commonWebGraphQlResults: Partial<
     }),
     OrgFeatureFlagOverrides: () => ({
         organizationFeatureFlagOverrides: [],
-    }),
-    GetTemporarySettings: () => ({
-        temporarySettings: {
-            __typename: 'TemporarySettings',
-            contents: JSON.stringify({
-                'user.daysActiveCount': 1,
-                'user.lastDayActive': new Date().toDateString(),
-                'search.usedNonGlobalContext': true,
-            }),
-        },
-    }),
-    EditTemporarySettings: () => ({
-        editTemporarySettings: {
-            alwaysNil: null,
-        },
     }),
     HomePanelsQuery: () => ({
         node: {
@@ -264,5 +169,14 @@ export const commonWebGraphQlResults: Partial<
             collaborators: collaboratorsPayload(),
         },
         savedSearches: savedSearchesPayload(),
+    }),
+    SearchHistoryEventLogsQuery: () => ({
+        currentUser: {
+            __typename: 'User',
+            recentSearchLogs: {
+                __typename: 'EventLogsConnection',
+                nodes: [],
+            },
+        },
     }),
 }

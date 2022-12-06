@@ -198,26 +198,24 @@ func newGithubSource(
 		useGitHubApp = true
 	}
 
-	if svc.IsSiteOwned() {
-		for resource, monitor := range map[string]*ratelimit.Monitor{
-			"rest":    v3Client.RateLimitMonitor(),
-			"graphql": v4Client.RateLimitMonitor(),
-			"search":  searchClient.RateLimitMonitor(),
-		} {
-			// Copy the resource or funcs below will use the last one seen while iterating
-			// the map
-			resource := resource
-			// Copy displayName so that the funcs below don't capture the svc pointer
-			displayName := svc.DisplayName
-			monitor.SetCollector(&ratelimit.MetricsCollector{
-				Remaining: func(n float64) {
-					githubRemainingGauge.WithLabelValues(resource, displayName).Set(n)
-				},
-				WaitDuration: func(n time.Duration) {
-					githubRatelimitWaitCounter.WithLabelValues(resource, displayName).Add(n.Seconds())
-				},
-			})
-		}
+	for resource, monitor := range map[string]*ratelimit.Monitor{
+		"rest":    v3Client.RateLimitMonitor(),
+		"graphql": v4Client.RateLimitMonitor(),
+		"search":  searchClient.RateLimitMonitor(),
+	} {
+		// Copy the resource or funcs below will use the last one seen while iterating
+		// the map
+		resource := resource
+		// Copy displayName so that the funcs below don't capture the svc pointer
+		displayName := svc.DisplayName
+		monitor.SetCollector(&ratelimit.MetricsCollector{
+			Remaining: func(n float64) {
+				githubRemainingGauge.WithLabelValues(resource, displayName).Set(n)
+			},
+			WaitDuration: func(n time.Duration) {
+				githubRatelimitWaitCounter.WithLabelValues(resource, displayName).Add(n.Seconds())
+			},
+		})
 	}
 
 	return &GitHubSource{
@@ -283,6 +281,13 @@ func (s *GitHubSource) Version(ctx context.Context) (string, error) {
 	return s.v3Client.GetVersion(ctx)
 }
 
+// CheckConnection at this point assumes availability and relies on errors returned
+// from the subsequent calls. This is going to be expanded as part of issue #44683
+// to actually only return true if the source can serve requests.
+func (s *GitHubSource) CheckConnection(ctx context.Context) error {
+	return nil
+}
+
 // ListRepos returns all Github repositories accessible to all connections configured
 // in Sourcegraph via the external services configuration.
 func (s *GitHubSource) ListRepos(ctx context.Context, results chan SourceResult) {
@@ -298,8 +303,11 @@ func (s *GitHubSource) ListRepos(ctx context.Context, results chan SourceResult)
 			results <- SourceResult{Source: s, Err: res.err}
 			continue
 		}
+
+		s.logger.Debug("unfiltered", log.String("repo", res.repo.NameWithOwner))
 		if !seen[res.repo.DatabaseID] && !s.excludes(res.repo) {
 			results <- SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
+			s.logger.Debug("sent to result", log.String("repo", res.repo.NameWithOwner))
 			seen[res.repo.DatabaseID] = true
 		}
 	}
@@ -567,13 +575,13 @@ func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results ch
 	for i := len(repos) - 1; i >= 0; i-- {
 		nameWithOwner := repos[i]
 		if err := ctx.Err(); err != nil {
-			results <- &githubResult{err: err}
+			results <- &githubResult{err: errors.Wrapf(err, "context error for repository: namewithOwner=%s", nameWithOwner)}
 			return
 		}
 
 		owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 		if err != nil {
-			results <- &githubResult{err: errors.New("Invalid GitHub repository: nameWithOwner=" + nameWithOwner)}
+			results <- &githubResult{err: errors.Newf("Invalid GitHub repository: nameWithOwner=%s", nameWithOwner)}
 			return
 		}
 		var repo *github.Repository
@@ -638,12 +646,12 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 			return
 		}
 
-		repos, err := s.v3Client.ListPublicRepositories(ctx, sinceRepoID)
+		repos, hasNextPage, err := s.v3Client.ListPublicRepositories(ctx, sinceRepoID)
 		if err != nil {
 			results <- &githubResult{err: errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID)}
 			return
 		}
-		if len(repos) == 0 {
+		if !hasNextPage {
 			return
 		}
 		s.logger.Debug("github sync public", log.Int("repos", len(repos)), log.Error(err))
@@ -941,6 +949,7 @@ func (s *GitHubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 
 	// Admins normally add to end of lists, so end of list most likely has new
 	// repos => stream them first.
+	s.logger.Debug("fetching list of repos", log.Int("len", len(s.config.Repos)))
 	for end := len(s.config.Repos); end > 0; end -= batchSize {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -954,17 +963,22 @@ func (s *GitHubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 
 		repos, err := s.v4Client.GetReposByNameWithOwner(ctx, batch...)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "GetReposByNameWithOwner failed")
 		}
 
 		s.logger.Debug("github sync: GetReposByNameWithOwner", log.Strings("repos", batch))
 		for _, r := range repos {
 			if err := ctx.Err(); err != nil {
+				if r != nil {
+					err = errors.Wrapf(err, "context error for repository: %s", r.NameWithOwner)
+				}
+
 				results <- &githubResult{err: err}
 				return err
 			}
 
 			results <- &githubResult{repo: r}
+			s.logger.Debug("sent repo to result", log.String("repo", fmt.Sprintf("%+v", r)))
 		}
 	}
 

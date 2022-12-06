@@ -221,11 +221,6 @@ export class Driver {
          * 2. Redirect to /site-admin/init
          */
         await this.page.goto(this.sourcegraphBaseUrl, { waitUntil: 'networkidle0' })
-        await this.page.evaluate(() => {
-            localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
-            localStorage.setItem('has-dismissed-integrations-toast', 'true')
-            localStorage.setItem('has-dismissed-survey-toast', 'true')
-        })
 
         const url = new URL(this.page.url())
 

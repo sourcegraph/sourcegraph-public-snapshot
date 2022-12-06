@@ -15,8 +15,8 @@ import (
 func Test_manualPurgeHandler(t *testing.T) {
 	db := database.NewMockDB()
 	gsr := database.NewMockGitserverRepoStore()
-	gsr.IterateRepoGitserverStatusFunc.SetDefaultHook(func(ctx context.Context, options database.IterateRepoGitserverStatusOptions, f func(repo types.RepoGitserverStatus) error) error {
-		return nil
+	gsr.IterateRepoGitserverStatusFunc.SetDefaultHook(func(ctx context.Context, irgso database.IterateRepoGitserverStatusOptions) ([]types.RepoGitserverStatus, int, error) {
+		return []types.RepoGitserverStatus{}, 0, nil
 	})
 	db.GitserverReposFunc.SetDefaultReturn(gsr)
 

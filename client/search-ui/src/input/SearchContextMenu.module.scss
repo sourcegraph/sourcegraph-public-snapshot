@@ -1,6 +1,8 @@
 .container {
     display: flex;
     flex-direction: column;
+    width: 31rem;
+    max-width: 100%;
 }
 
 .header {
@@ -34,8 +36,6 @@
 }
 
 .list {
-    width: 31rem;
-    max-width: 100%;
     max-height: 310px;
     margin: 0;
     padding: 0.25rem 0;
@@ -105,6 +105,10 @@
     &-button {
         color: var(--link-color);
         padding: 0;
+    }
+    &-icon {
+        font-size: 1.2rem;
+        max-height: 1.29rem;
     }
 }
 

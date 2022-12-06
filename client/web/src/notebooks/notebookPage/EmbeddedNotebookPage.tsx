@@ -5,8 +5,10 @@ import { NEVER } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
-import { fetchHighlightedFileLineRanges as fetchHighlightedFileLineRangesShared } from '@sourcegraph/shared/src/backend/file'
+import {
+    FetchFileParameters,
+    fetchHighlightedFileLineRanges as fetchHighlightedFileLineRangesShared,
+} from '@sourcegraph/shared/src/backend/file'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'

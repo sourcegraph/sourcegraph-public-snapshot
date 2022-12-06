@@ -1,6 +1,6 @@
-import { useCallback, useRef, useEffect, FormEvent, useMemo, useState, FC } from 'react'
+import { useCallback, useRef, useEffect, FormEvent, useState, FC } from 'react'
 
-import { mdiClose } from '@mdi/js'
+import { mdiClose, mdiArrowRight } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
@@ -14,9 +14,10 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import {
     Badge,
     Button,
-    useObservable,
     Icon,
     ButtonLink,
+    Link,
+    Text,
     Tooltip,
     Combobox,
     ComboboxInput,
@@ -33,6 +34,7 @@ export interface SearchContextMenuProps
         TelemetryProps {
     showSearchContextManagement: boolean
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphDotCom: boolean | null
     selectSearchContextSpec: (spec: string) => void
     className?: string
     onMenuClose: (isEscapeKey?: boolean) => void
@@ -59,12 +61,12 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
         defaultSearchContextSpec,
         selectSearchContextSpec,
         getUserSearchContextNamespaces,
-        fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
         onMenuClose,
         showSearchContextManagement,
         platformContext,
         telemetryService,
+        isSourcegraphDotCom,
         className,
     } = props
 
@@ -157,16 +159,6 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
         platformContext,
     ])
 
-    const autoDefinedSearchContexts = useObservable(
-        useMemo(
-            () =>
-                fetchAutoDefinedSearchContexts({ platformContext, useMinimalFields: true }).pipe(
-                    catchError(error => [asError(error)])
-                ),
-            [fetchAutoDefinedSearchContexts, platformContext]
-        )
-    )
-
     const reset = useCallback(() => {
         selectSearchContextSpec(defaultSearchContextSpec)
         onMenuClose()
@@ -180,22 +172,6 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
         },
         [onMenuClose, selectSearchContextSpec, telemetryService]
     )
-
-    const filteredAutoDefinedSearchContexts = useMemo(
-        () =>
-            autoDefinedSearchContexts && !isErrorLike(autoDefinedSearchContexts)
-                ? autoDefinedSearchContexts.filter(context =>
-                      context.spec.toLowerCase().includes(searchFilter.toLowerCase())
-                  )
-                : [],
-        [autoDefinedSearchContexts, searchFilter]
-    )
-
-    // Merge auto-defined contexts and user-defined contexts
-    const filteredList = useMemo(() => filteredAutoDefinedSearchContexts.concat(searchContexts), [
-        filteredAutoDefinedSearchContexts,
-        searchContexts,
-    ])
 
     return (
         <Combobox openOnFocus={true} className={classNames(styles.container, className)} onSelect={handleContextSelect}>
@@ -221,7 +197,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
             </div>
             <ComboboxList ref={infiniteScrollList} data-testid="search-context-menu-list" className={styles.list}>
                 {loadingState !== 'LOADING' &&
-                    filteredList.map(context => (
+                    searchContexts.map(context => (
                         <SearchContextMenuItem
                             key={context.id}
                             spec={context.spec}
@@ -241,7 +217,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                         <small>Error occurred while loading search contexts</small>
                     </div>
                 )}
-                {loadingState === 'DONE' && filteredList.length === 0 && (
+                {loadingState === 'DONE' && searchContexts.length === 0 && (
                     <div data-testid="search-context-menu-item" className={styles.item}>
                         <small>No contexts found</small>
                     </div>
@@ -250,14 +226,49 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
                 <div ref={infiniteScrollTrigger} className={styles.infiniteScrollTrigger} />
             </ComboboxList>
             <div className={styles.footer}>
-                <Button size="sm" variant="link" className={styles.footerButton} onClick={reset}>
-                    Reset
-                </Button>
-                <span className="flex-grow-1" />
-                {showSearchContextManagement && (
-                    <ButtonLink variant="link" to="/contexts" size="sm" className={styles.footerButton}>
-                        Manage contexts
-                    </ButtonLink>
+                {isSourcegraphDotCom ? (
+                    <>
+                        <div className="d-flex col-7 px-0 mr-auto">
+                            <Icon
+                                className={classNames('text-merged mr-1', styles.footerIcon)}
+                                size="md"
+                                aria-hidden={true}
+                                svgPath={mdiArrowRight}
+                            />
+                            <Text className="mb-0">
+                                To search across your team's private repositories,{' '}
+                                <Link
+                                    to="https://signup.sourcegraph.com/?p=context"
+                                    onClick={() => telemetryService.log('ClickedOnCloudCTA')}
+                                >
+                                    try Sourcegraph Cloud
+                                </Link>
+                                .
+                            </Text>
+                        </div>
+                        <div className="d-flex flex-column align-items-end">
+                            {showSearchContextManagement && (
+                                <ButtonLink variant="link" to="/contexts" className={styles.footerButton}>
+                                    Manage contexts
+                                </ButtonLink>
+                            )}
+                            <Button variant="link" className={styles.footerButton} onClick={reset}>
+                                Reset
+                            </Button>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <Button size="sm" variant="link" className={styles.footerButton} onClick={reset}>
+                            Reset
+                        </Button>
+                        <span className="flex-grow-1" />
+                        {showSearchContextManagement && (
+                            <ButtonLink variant="link" to="/contexts" size="sm" className={styles.footerButton}>
+                                Manage contexts
+                            </ButtonLink>
+                        )}
+                    </>
                 )}
             </div>
         </Combobox>

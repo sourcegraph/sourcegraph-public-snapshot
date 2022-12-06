@@ -31,6 +31,7 @@ import {
 import { PageTitle } from '../components/PageTitle'
 import {
     RepositoriesResult,
+    RepositoryOrderBy,
     RepositoryStatsResult,
     RepositoryStatsVariables,
     SiteAdminRepositoryFields,
@@ -89,6 +90,49 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
 interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
 const FILTERS: FilteredConnectionFilter[] = [
+    {
+        id: 'order',
+        label: 'Order',
+        type: 'select',
+        values: [
+            {
+                label: 'Name (A-Z)',
+                value: 'name-asc',
+                tooltip: 'Order repositories by name in ascending order',
+                args: {
+                    orderBy: RepositoryOrderBy.REPOSITORY_NAME,
+                    descending: false,
+                },
+            },
+            {
+                label: 'Name (Z-A)',
+                value: 'name-desc',
+                tooltip: 'Order repositories by name in descending order',
+                args: {
+                    orderBy: RepositoryOrderBy.REPOSITORY_NAME,
+                    descending: true,
+                },
+            },
+            {
+                label: 'Size (largest first)',
+                value: 'size-desc',
+                tooltip: 'Order repositories by size in descending order',
+                args: {
+                    orderBy: RepositoryOrderBy.SIZE,
+                    descending: true,
+                },
+            },
+            {
+                label: 'Size (smallest first)',
+                value: 'size-asc',
+                tooltip: 'Order repositories by size in ascending order',
+                args: {
+                    orderBy: RepositoryOrderBy.SIZE,
+                    descending: false,
+                },
+            },
+        ],
+    },
     {
         id: 'status',
         label: 'Status',
@@ -189,6 +233,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that have not been cloned yet.',
+                filter: { name: 'status', value: 'not-cloned' },
             },
             {
                 value: data.repositoryStats.cloning,
@@ -196,6 +241,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: data.repositoryStats.cloning > 0 ? 'var(--success)' : 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that are currently being cloned.',
+                filter: { name: 'status', value: 'cloning' },
             },
             {
                 value: data.repositoryStats.cloned,
@@ -203,6 +249,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories that have been cloned.',
+                filter: { name: 'status', value: 'cloned' },
             },
             {
                 value: data.repositoryStats.indexed,
@@ -217,6 +264,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                 color: data.repositoryStats.failedFetch > 0 ? 'var(--warning)' : 'var(--body-color)',
                 position: 'right',
                 tooltip: 'The number of repositories where the last syncing attempt produced an error.',
+                filter: { name: 'status', value: 'failed-fetch' },
             },
         ]
     }, [data])

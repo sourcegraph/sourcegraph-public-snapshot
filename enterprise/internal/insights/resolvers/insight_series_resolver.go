@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -83,33 +85,103 @@ func (i insightsDataPointResolver) DateTime() gqlutil.DateTime {
 
 func (i insightsDataPointResolver) Value() float64 { return i.p.Value }
 
-type insightStatusResolver struct {
+type statusInfo struct {
 	totalPoints, pendingJobs, completedJobs, failedJobs int32
 	backfillQueuedAt                                    *time.Time
+	isLoading                                           bool
+	incompletedDatapoints                               []store.IncompleteDatapoint
 }
 
-func (i insightStatusResolver) TotalPoints() int32   { return i.totalPoints }
-func (i insightStatusResolver) PendingJobs() int32   { return i.pendingJobs }
-func (i insightStatusResolver) CompletedJobs() int32 { return i.completedJobs }
-func (i insightStatusResolver) FailedJobs() int32    { return i.failedJobs }
-func (i insightStatusResolver) BackfillQueuedAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(i.backfillQueuedAt)
-}
-func (i insightStatusResolver) IsLoadingData() (*bool, error) {
-	loading := i.backfillQueuedAt == nil || i.pendingJobs > 0
-	return &loading, nil
+type GetSeriesQueueStatusFunc func(ctx context.Context, seriesID string) (*queryrunner.JobsStatus, error)
+type GetSeriesBackfillsFunc func(ctx context.Context, seriesID int) ([]scheduler.SeriesBackfill, error)
+type GetIncompleteDatapointsFunc func(ctx context.Context, seriesID int) ([]store.IncompleteDatapoint, error)
+type insightStatusResolver struct {
+	getQueueStatus          GetSeriesQueueStatusFunc
+	getSeriesBackfills      GetSeriesBackfillsFunc
+	getIncompleteDatapoints GetIncompleteDatapointsFunc
+	statusOnce              sync.Once
+	series                  types.InsightViewSeries
+
+	status    statusInfo
+	statusErr error
 }
 
-func NewStatusResolver(status *queryrunner.JobsStatus, queuedAt *time.Time) *insightStatusResolver {
+func (i *insightStatusResolver) TotalPoints(ctx context.Context) (int32, error) {
+	status, err := i.calculateStatus(ctx)
+	return status.totalPoints, err
+}
+func (i *insightStatusResolver) PendingJobs(ctx context.Context) (int32, error) {
+	status, err := i.calculateStatus(ctx)
+	return status.pendingJobs, err
+}
+func (i *insightStatusResolver) CompletedJobs(ctx context.Context) (int32, error) {
+	status, err := i.calculateStatus(ctx)
+	return status.completedJobs, err
+}
+func (i *insightStatusResolver) FailedJobs(ctx context.Context) (int32, error) {
+	status, err := i.calculateStatus(ctx)
+	return status.failedJobs, err
+}
+func (i *insightStatusResolver) BackfillQueuedAt(ctx context.Context) *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(i.series.BackfillQueuedAt)
+}
+func (i *insightStatusResolver) IsLoadingData(ctx context.Context) (*bool, error) {
+	status, err := i.calculateStatus(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &status.isLoading, nil
+}
+
+func (i *insightStatusResolver) calculateStatus(ctx context.Context) (statusInfo, error) {
+	i.statusOnce.Do(func() {
+		status, statusErr := i.getQueueStatus(ctx, i.series.SeriesID)
+		if statusErr != nil {
+			i.statusErr = errors.Wrap(statusErr, "QueryJobsStatus")
+			return
+		}
+		i.status.backfillQueuedAt = i.series.BackfillQueuedAt
+		i.status.completedJobs = int32(status.Completed)
+		i.status.failedJobs = int32(status.Failed)
+		i.status.pendingJobs = int32(status.Queued + status.Processing + status.Errored)
+
+		seriesBackfills, backillErr := i.getSeriesBackfills(ctx, i.series.InsightSeriesID)
+		if backillErr != nil {
+			i.statusErr = errors.Wrap(backillErr, "LoadSeriesBackfills")
+			return
+		}
+		backfillInProgress := false
+		for n := range seriesBackfills {
+			if seriesBackfills[n].SeriesId == i.series.InsightSeriesID && !seriesBackfills[n].IsTerminalState() {
+				backfillInProgress = true
+				break
+			}
+		}
+		i.status.isLoading = i.status.backfillQueuedAt == nil || i.status.pendingJobs > 0 || backfillInProgress
+	})
+	return i.status, i.statusErr
+}
+
+func NewStatusResolver(r *baseInsightResolver, viewSeries types.InsightViewSeries) *insightStatusResolver {
+	getStatus := func(ctx context.Context, series string) (*queryrunner.JobsStatus, error) {
+		return queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, series)
+	}
+	getBackfills := func(ctx context.Context, seriesID int) ([]scheduler.SeriesBackfill, error) {
+		backfillStore := scheduler.NewBackfillStore(r.insightsDB)
+		return backfillStore.LoadSeriesBackfills(ctx, seriesID)
+	}
+	getIncompletes := func(ctx context.Context, seriesID int) ([]store.IncompleteDatapoint, error) {
+		return r.timeSeriesStore.LoadAggregatedIncompleteDatapoints(ctx, seriesID)
+	}
+	return newStatusResolver(getStatus, getBackfills, getIncompletes, viewSeries)
+}
+
+func newStatusResolver(getQueueStatus GetSeriesQueueStatusFunc, getSeriesBackfills GetSeriesBackfillsFunc, getIncompleteDatapoints GetIncompleteDatapointsFunc, series types.InsightViewSeries) *insightStatusResolver {
 	return &insightStatusResolver{
-		totalPoints: 0,
-
-		// Include errored because they'll be retried before becoming failures
-		pendingJobs: int32(status.Queued + status.Processing + status.Errored),
-
-		completedJobs:    int32(status.Completed),
-		failedJobs:       int32(status.Failed),
-		backfillQueuedAt: queuedAt,
+		getQueueStatus:          getQueueStatus,
+		getSeriesBackfills:      getSeriesBackfills,
+		series:                  series,
+		getIncompleteDatapoints: getIncompleteDatapoints,
 	}
 }
 
@@ -180,18 +252,6 @@ func intervalToMinutes(unit types.IntervalUnit, value int) float64 {
 
 func (p *precalculatedInsightSeriesResolver) Status(ctx context.Context) (graphqlbackend.InsightStatusResolver, error) {
 	return p.statusResolver, nil
-}
-
-func (p *precalculatedInsightSeriesResolver) DirtyMetadata(ctx context.Context) ([]graphqlbackend.InsightDirtyQueryResolver, error) {
-	data, err := p.metadataStore.GetDirtyQueriesAggregated(ctx, p.series.SeriesID)
-	if err != nil {
-		return nil, err
-	}
-	resolvers := make([]graphqlbackend.InsightDirtyQueryResolver, 0, len(data))
-	for _, dqa := range data {
-		resolvers = append(resolvers, &insightDirtyQueryResolver{dqa})
-	}
-	return resolvers, nil
 }
 
 type insightSeriesResolverGenerator interface {
@@ -329,11 +389,7 @@ func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r b
 		return nil, err
 	}
 
-	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, definition.SeriesID)
-	if err != nil {
-		return nil, errors.Wrap(err, "QueryJobsStatus")
-	}
-	statusResolver := NewStatusResolver(status, definition.BackfillQueuedAt)
+	statusResolver := NewStatusResolver(&r, definition)
 
 	var resolvers []graphqlbackend.InsightSeriesResolver
 
@@ -367,11 +423,7 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 		groupedByCapture[*point.Capture] = append(groupedByCapture[*point.Capture], point)
 	}
 
-	status, err := queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, definition.SeriesID)
-	if err != nil {
-		return nil, errors.Wrap(err, "QueryJobsStatus")
-	}
-	statusResolver := NewStatusResolver(status, definition.BackfillQueuedAt)
+	statusResolver := NewStatusResolver(&r, definition)
 
 	var resolvers []graphqlbackend.InsightSeriesResolver
 	for capturedValue, points := range groupedByCapture {
@@ -463,4 +515,63 @@ func streamingSeriesJustInTime(ctx context.Context, definition types.InsightView
 	}
 
 	return resolvers, nil
+}
+
+var _ graphqlbackend.TimeoutDatapointAlert = &timeoutDatapointAlertResolver{}
+var _ graphqlbackend.GenericIncompleteDatapointAlert = &genericIncompleteDatapointAlertResolver{}
+var _ graphqlbackend.IncompleteDatapointAlert = &IncompleteDataPointAlertResolver{}
+
+type IncompleteDataPointAlertResolver struct {
+	point store.IncompleteDatapoint
+}
+
+func (i *IncompleteDataPointAlertResolver) ToTimeoutDatapointAlert() (graphqlbackend.TimeoutDatapointAlert, bool) {
+	if i.point.Reason == store.ReasonTimeout {
+		return &timeoutDatapointAlertResolver{point: i.point}, true
+	}
+	return nil, false
+}
+
+func (i *IncompleteDataPointAlertResolver) ToGenericIncompleteDatapointAlert() (graphqlbackend.GenericIncompleteDatapointAlert, bool) {
+	switch i.point.Reason {
+	case store.ReasonTimeout:
+		return nil, false
+	}
+	return &genericIncompleteDatapointAlertResolver{point: i.point}, true
+}
+
+func (i *IncompleteDataPointAlertResolver) Time() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: i.point.Time}
+}
+
+type timeoutDatapointAlertResolver struct {
+	point store.IncompleteDatapoint
+}
+
+func (t *timeoutDatapointAlertResolver) Time() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: t.point.Time}
+}
+
+type genericIncompleteDatapointAlertResolver struct {
+	point store.IncompleteDatapoint
+}
+
+func (g *genericIncompleteDatapointAlertResolver) Time() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: g.point.Time}
+}
+
+func (g *genericIncompleteDatapointAlertResolver) Reason() string {
+	switch g.point.Reason {
+	default:
+		return "There was an issue during data processing that caused this point to be incomplete."
+	}
+}
+
+func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context) (resolvers []graphqlbackend.IncompleteDatapointAlert, err error) {
+	incomplete, err := i.getIncompleteDatapoints(ctx, i.series.InsightSeriesID)
+	for _, reason := range incomplete {
+		resolvers = append(resolvers, &IncompleteDataPointAlertResolver{point: reason})
+	}
+
+	return resolvers, err
 }

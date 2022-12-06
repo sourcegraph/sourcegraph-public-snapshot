@@ -144,12 +144,12 @@ func extractDB(ctx context.Context, r Runner, schemaName string) (*sql.DB, error
 	return shareableStore, nil
 }
 
-var migratorObservationContext = &observation.TestContext
+var migratorObservationCtx = &observation.TestContext
 
 func outOfBandMigrationRunner(db database.DB) *oobmigration.Runner {
-	return oobmigration.NewRunnerWithDB(db, time.Second, migratorObservationContext)
+	return oobmigration.NewRunnerWithDB(migratorObservationCtx, db, time.Second)
 }
 
 func outOfBandMigrationRunnerWithStore(store *oobmigration.Store) *oobmigration.Runner {
-	return oobmigration.NewRunner(store, time.Second, migratorObservationContext)
+	return oobmigration.NewRunner(migratorObservationCtx, store, time.Second)
 }

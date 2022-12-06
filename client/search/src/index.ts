@@ -4,7 +4,6 @@ import { memoizeObservable } from '@sourcegraph/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import {
-    fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
     getUserSearchContextNamespaces,
     fetchSearchContext,
@@ -15,6 +14,7 @@ import {
     isSearchContextAvailable,
 } from './backend'
 import { SearchPatternType } from './graphql-operations'
+import { SearchMode } from './searchQueryState'
 
 export * from './backend'
 export * from './searchQueryState'
@@ -36,13 +36,17 @@ export interface CaseSensitivityProps {
     setCaseSensitivity: (caseSensitive: boolean) => void
 }
 
+export interface SearchModeProps {
+    searchMode: SearchMode
+    setSearchMode: (searchMode: SearchMode) => void
+}
+
 export interface SearchContextProps {
     searchContextsEnabled: boolean
     defaultSearchContextSpec: string
     selectedSearchContextSpec?: string
     setSelectedSearchContextSpec: (spec: string) => void
     getUserSearchContextNamespaces: typeof getUserSearchContextNamespaces
-    fetchAutoDefinedSearchContexts: typeof fetchAutoDefinedSearchContexts
     fetchSearchContexts: typeof fetchSearchContexts
     isSearchContextSpecAvailable: typeof isSearchContextSpecAvailable
     fetchSearchContext: typeof fetchSearchContext
@@ -58,7 +62,6 @@ export type SearchContextInputProps = Pick<
     | 'defaultSearchContextSpec'
     | 'selectedSearchContextSpec'
     | 'setSelectedSearchContextSpec'
-    | 'fetchAutoDefinedSearchContexts'
     | 'fetchSearchContexts'
     | 'getUserSearchContextNamespaces'
 >

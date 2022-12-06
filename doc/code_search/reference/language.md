@@ -740,7 +740,7 @@ ComplexDiagram(
     Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
-Include results having a commit date before the specified time frame.
+Include results having a commit date before the specified time frame. Times are interpreted as UTC by default.
 Many forms are accepted for the argument, such as:
 - `november 1 2019`
 - `1 november 2019`
@@ -772,7 +772,7 @@ ComplexDiagram(
     Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
-Include results having a commit date after the specified time frame.
+Include results having a commit date after the specified time frame. Times are interpreted as UTC by default.
 Many forms are accepted for the argument, such as:
 - `november 1 2019`
 - `1 november 2019`

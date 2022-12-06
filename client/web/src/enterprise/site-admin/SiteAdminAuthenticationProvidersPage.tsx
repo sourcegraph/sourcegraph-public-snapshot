@@ -6,17 +6,17 @@ import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import * as GQL from '@sourcegraph/shared/src/schema'
 import { Badge, Link, H2, Text, AnchorLink, Button } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
+import { AuthProviderFields, AuthProvidersResult } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 interface AuthProviderNodeProps {
     /** The auth provider to display in this item. */
-    node: GQL.IAuthProvider
+    node: AuthProviderFields
 }
 
 /** Whether to show experimental auth features. */
@@ -66,7 +66,7 @@ const authProviderFragment = gql`
 
 interface Props extends RouteComponentProps<{}> {}
 
-class FilteredAuthProviderConnection extends FilteredConnection<GQL.IAuthProvider> {}
+class FilteredAuthProviderConnection extends FilteredConnection<AuthProviderFields> {}
 
 /**
  * A page displaying the auth providers in site configuration.
@@ -101,7 +101,7 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
         )
     }
 
-    private queryAuthProviders = (args: {}): Observable<GQL.IAuthProviderConnection> =>
+    private queryAuthProviders = (args: {}): Observable<AuthProvidersResult['site']['authProviders']> =>
         queryGraphQL(
             gql`
                 query AuthProviders {

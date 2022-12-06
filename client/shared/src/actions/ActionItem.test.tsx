@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import { NEVER } from 'rxjs'
 
+import { assertAriaEnabled } from '../../dev/aria-asserts'
 import { createBarrier } from '../api/integration-test/testHelpers'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { renderWithBrandedContext } from '../testing'
@@ -185,8 +186,8 @@ describe('ActionItem', () => {
         // to result in the setState call.)
         userEvent.click(screen.getByRole('button'))
 
-        // we should wait for the button to be enabled again after got errors. Otherwise it will be flaky
-        await waitFor(() => expect(screen.getByLabelText('d')).toBeEnabled())
+        // we should wait for the button to be enabled again after got errors. Otherwise, it will be flaky
+        await waitFor(() => assertAriaEnabled(screen.getByLabelText('d')))
 
         expect(asFragment()).toMatchSnapshot()
     })

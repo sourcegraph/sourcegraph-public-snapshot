@@ -9,7 +9,7 @@ import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { useQueryStringParameters } from '../../members/utils'
 
-import styles from './AppLogo.module.scss'
+import styles from './InstallGitHubAppSuccessPage.module.scss'
 
 interface GitHubAppInstallation {
     id: number

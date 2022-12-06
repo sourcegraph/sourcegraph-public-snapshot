@@ -1,13 +1,14 @@
 package webhooks
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 
 	gh "github.com/google/go-github/v43/github"
-	"github.com/inconshreveable/log15"
+	sglog "github.com/sourcegraph/log"
 
 	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -21,14 +22,56 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type BitbucketServerWebhook struct {
-	*Webhook
+var bitbucketServerEvents = []string{
+	"ping",
+	"repo:build_status",
+	"pr:activity:status",
+	"pr:activity:event",
+	"pr:activity:rescope",
+	"pr:activity:merge",
+	"pr:activity:comment",
+	"pr:activity:reviewers",
+	"pr:participant:status",
 }
 
-func NewBitbucketServerWebhook(store *store.Store, gitserverClient gitserver.Client) *BitbucketServerWebhook {
+type BitbucketServerWebhook struct {
+	*webhook
+}
+
+func NewBitbucketServerWebhook(store *store.Store, gitserverClient gitserver.Client, logger sglog.Logger) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook: &Webhook{store, gitserverClient, extsvc.TypeBitbucketServer},
+		webhook: &webhook{store, gitserverClient, logger, extsvc.TypeBitbucketServer},
 	}
+}
+
+func (h *BitbucketServerWebhook) Register(router *fewebhooks.WebhookRouter) {
+	router.Register(
+		h.handleEvent,
+		extsvc.KindBitbucketServer,
+		bitbucketServerEvents...,
+	)
+}
+
+func (h *BitbucketServerWebhook) handleEvent(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error {
+	// 🚨 SECURITY: If we've made it here, then the secret for the Bitbucket Server webhook has been validated, so we can use
+	// an internal actor on the context.
+	ctx = actor.WithInternalActor(ctx)
+
+	prs, ev := h.convertEvent(event)
+
+	var err error
+	for _, pr := range prs {
+		if pr == (PR{}) {
+			h.logger.Warn("Dropping Bitbucket Server webhook event", sglog.String("type", fmt.Sprintf("%T", event)))
+			continue
+		}
+
+		eventError := h.upsertChangesetEvent(ctx, codeHostURN, pr, ev)
+		if eventError != nil {
+			err = errors.Append(err, eventError)
+		}
+	}
+	return err
 }
 
 func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -44,26 +87,25 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	// internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())
 
-	externalServiceID, err := extractExternalServiceID(ctx, extSvc)
+	c, err := extSvc.Configuration(r.Context())
 	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
+		h.logger.Error("Could not decode external service config", sglog.Error(err))
+		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
 		return
 	}
 
-	prs, ev := h.convertEvent(e)
-
-	var m error
-	for _, pr := range prs {
-		if pr == (PR{}) {
-			log15.Warn("Dropping Bitbucket Server webhook event", "type", fmt.Sprintf("%T", e))
-			continue
-		}
-
-		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
-		if err != nil {
-			m = errors.Append(m, err)
-		}
+	config, ok := c.(*schema.BitbucketServerConnection)
+	if !ok {
+		h.logger.Error("Could not decode external service config")
+		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
+		return
 	}
+
+	codeHostURN, err := extsvc.NewCodeHostBaseURL(config.Url)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, errors.Wrap(err, "parsing code host base url"))
+	}
+	m := h.handleEvent(ctx, h.Store.DatabaseDB(), codeHostURN, e)
 	if m != nil {
 		respond(w, http.StatusInternalServerError, m)
 	}
@@ -128,7 +170,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (any, *types.Extern
 }
 
 func (h *BitbucketServerWebhook) convertEvent(theirs any) (prs []PR, ours keyer) {
-	log15.Debug("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
+	h.logger.Debug("Bitbucket Server webhook received", sglog.String("type", fmt.Sprintf("%T", theirs)))
 
 	switch e := theirs.(type) {
 	case *bitbucketserver.PullRequestActivityEvent:

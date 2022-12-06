@@ -1,40 +1,37 @@
 import {
     Annotation,
+    EditorState,
     Extension,
-    RangeSet,
     Range,
+    RangeSet,
     RangeSetBuilder,
     StateEffect,
     StateField,
-    EditorState,
 } from '@codemirror/state'
 import {
-    EditorView,
     Decoration,
-    lineNumbers,
-    ViewPlugin,
-    PluginValue,
-    ViewUpdate,
-    GutterMarker,
+    EditorView,
     gutterLineClass,
+    GutterMarker,
+    lineNumbers,
+    PluginValue,
+    ViewPlugin,
+    ViewUpdate,
 } from '@codemirror/view'
 
-import { isValidLineRange, preciseOffsetAtCoords } from './utils'
-
-/**
- * The MouseEvent uses numbers to indicate which button was pressed.
- * See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button#value
- */
-const MOUSE_MAIN_BUTTON = 0
+import { isValidLineRange, MOUSE_MAIN_BUTTON, preciseOffsetAtCoords } from './utils'
 
 /**
  * Represents the currently selected line range. null means no lines are
  * selected. Line numbers are 1-based.
  * endLine may be smaller than line
  */
-export type SelectedLineRange = { line: number; endLine?: number } | null
+export type SelectedLineRange = { line: number; character?: number; endLine?: number } | null
 
-const selectedLineDecoration = Decoration.line({ class: 'selected-line', attributes: { tabIndex: '-1' } })
+const selectedLineDecoration = Decoration.line({
+    class: 'selected-line',
+    attributes: { tabIndex: '-1', 'data-line-focusable': '' },
+})
 const selectedLineGutterMarker = new (class extends GutterMarker {
     public elementClass = 'selected-line'
 })()
@@ -119,7 +116,10 @@ const lineSelectionSource = Annotation.define<'gutter'>()
 const scrollIntoView = ViewPlugin.fromClass(
     class implements PluginValue {
         private lastSelectedLines: SelectedLineRange | null = null
-        constructor(private readonly view: EditorView) {}
+        constructor(private readonly view: EditorView) {
+            this.lastSelectedLines = this.view.state.field(selectedLines)
+            this.scrollIntoView(this.lastSelectedLines)
+        }
 
         public update(update: ViewUpdate): void {
             const currentSelectedLines = update.state.field(selectedLines)
@@ -256,6 +256,7 @@ interface SelectableLineNumbersConfig {
     onSelection: (range: SelectedLineRange) => void
     initialSelection: SelectedLineRange | null
     navigateToLineOnAnyClick: boolean
+    enableSelectionDrivenCodeNavigation?: boolean
 }
 
 /**
@@ -336,7 +337,9 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                 },
             },
         }),
-        selectOnClick(config),
+        // Disable `selectOnClick` with token selection because they interact
+        // badly with each other causing errors.
+        config.enableSelectionDrivenCodeNavigation ? [] : selectOnClick(config),
         EditorView.theme({
             '.cm-lineNumbers': {
                 cursor: 'pointer',
@@ -384,8 +387,8 @@ function normalizeLineRange(range: SelectedLineRange): SelectedLineRange {
  * of *rendered* lines, not just *visible* lines (some lines are rendered
  * outside of the editor viewport).
  */
-function shouldScrollIntoView(view: EditorView, range: SelectedLineRange): boolean {
-    if (!range) {
+export function shouldScrollIntoView(view: EditorView, range: SelectedLineRange): boolean {
+    if (!range || !isValidLineRange(range, view.state.doc)) {
         return false
     }
 
