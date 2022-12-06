@@ -81,12 +81,12 @@ export const SearchContextNode: React.FunctionComponent<React.PropsWithChildren<
                 />
             </td>
             <td className={styles.name}>
-                <Link to={`/contexts/${node.spec}`}>{node.spec}</Link>{' '}
+                <Link to={`/contexts/${node.spec}`} className={styles.spec}>
+                    {node.spec}
+                </Link>{' '}
                 <span className="d-none d-md-inline-block">{tags}</span>
             </td>
-            <td className={styles.description}>
-                {node.description ? <div className="text-muted">{node.description}</div> : null}
-            </td>
+            <td className={classNames(styles.description, 'text-muted')}>{node.description}</td>
             <td className={classNames(styles.contents, 'text-muted')}>{contents}</td>
             <td className={classNames(styles.lastUpdated, 'text-muted')}>
                 {contents && timestamp && (

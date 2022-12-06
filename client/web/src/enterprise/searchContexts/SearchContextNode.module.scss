@@ -5,8 +5,22 @@
         padding: 0.25rem 0;
         border-bottom: 1px solid var(--border-color-2);
 
-        .spec {
+        &:not(:last-of-type) {
+            padding-right: 0.5rem;
+        }
+
+        &.name.spec {
             font-weight: 500;
+        }
+
+        &.description {
+            max-width: 40%;
+        }
+
+        &.contents,
+        &.last-updated,
+        &.name {
+            white-space: nowrap;
         }
     }
 
@@ -33,6 +47,10 @@
             padding: 0;
             border-bottom: none;
 
+            &:not(:last-of-type) {
+                padding-right: 0rem;
+            }
+
             &.star {
                 grid-area: star;
                 margin-right: 0.5rem;
@@ -45,6 +63,7 @@
 
             &.description {
                 grid-area: description;
+                max-width: initial;
             }
 
             &.last-updated {
@@ -57,7 +76,8 @@
 
             &.tags {
                 grid-area: tags;
-                margin-top: 0.125rem;
+                margin-top: 0.25rem;
+                margin-bottom: 0.25rem;
             }
 
             &.actions {
