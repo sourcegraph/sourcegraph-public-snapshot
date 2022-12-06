@@ -1,4 +1,4 @@
-import React, { FC, MouseEvent, useCallback, useMemo, useState, KeyboardEvent } from 'react'
+import React, { FC, MouseEvent, useCallback, useMemo, useState } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -97,7 +97,6 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                         zeroYAxisMin={zeroYAxisMin}
                                         seriesToggleState={seriesToggleState}
                                         series={data.series}
-                                        onKeyDown={onChartKeyDown}
                                     />
                                 ) : (
                                     <BarChart
