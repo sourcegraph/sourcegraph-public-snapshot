@@ -1181,10 +1181,12 @@
                 "type": "boolean"
               }
             },
-            "examples": [{
-              "key": "",
-              "value": ""
-            }]
+            "examples": [
+              {
+                "key": "",
+                "value": ""
+              }
+            ]
           }
         }
       },

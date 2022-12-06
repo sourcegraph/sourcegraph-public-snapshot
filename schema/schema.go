@@ -1053,8 +1053,9 @@ type HTTPHeaderAuthProvider struct {
 	UsernameHeader string `json:"usernameHeader"`
 }
 type Header struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	Key       string `json:"key"`
+	Sensitive bool   `json:"sensitive,omitempty"`
+	Value     string `json:"value"`
 }
 
 // IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
@@ -1689,7 +1690,7 @@ type SMTPServerConfig struct {
 	Authentication string `json:"authentication"`
 	// Domain description: The HELO domain to provide to the SMTP server (if needed).
 	Domain string `json:"domain,omitempty"`
-	// Headers description: Additional headers to include on SMTP messages . Keys may be repeated for multiple values.
+	// Headers description: Additional headers to include on SMTP messages that cannot be configured with other 'email.smtp' fields.
 	Headers []*Header `json:"headers,omitempty"`
 	// Host description: The SMTP server host.
 	Host string `json:"host"`
