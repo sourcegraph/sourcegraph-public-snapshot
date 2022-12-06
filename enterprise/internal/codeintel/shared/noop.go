@@ -3,9 +3,9 @@ package stores
 import (
 	"context"
 	"database/sql"
-	"errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type noopDB struct{}

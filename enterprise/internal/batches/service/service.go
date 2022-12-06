@@ -52,7 +52,7 @@ func NewWithClock(store *store.Store, clock func() time.Time) *Service {
 			httpcli.NewLoggingMiddleware(logger.Scoped("sourcer", "batches sourcer")),
 		)),
 		clock:      clock,
-		operations: newOperations(store.ObservationContext()),
+		operations: newOperations(store.ObservationCtx()),
 	}
 
 	return svc
@@ -98,18 +98,18 @@ var (
 )
 
 // newOperations generates a singleton of the operations struct.
-// TODO: We should create one per observationContext.
-func newOperations(observationContext *observation.Context) *operations {
+// TODO: We should create one per observationCtx.
+func newOperations(observationCtx *observation.Context) *operations {
 	operationsOnce.Do(func() {
 		m := metrics.NewREDMetrics(
-			observationContext.Registerer,
+			observationCtx.Registerer,
 			"batches_service",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of method invocations."),
 		)
 
 		op := func(name string) *observation.Operation {
-			return observationContext.Operation(observation.Op{
+			return observationCtx.Operation(observation.Op{
 				Name:              fmt.Sprintf("batches.service.%s", name),
 				MetricLabelValues: []string{name},
 				Metrics:           m,
@@ -1603,7 +1603,6 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		IDs:          opts.Changesets,
 		EnforceAuthz: true,
 	})
-
 	if err != nil {
 		return nil, err
 	}

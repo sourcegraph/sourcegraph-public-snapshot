@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/derision-test/glock"
+	"github.com/sourcegraph/log"
 
 	workerCodeIntel "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 	internalInsights "github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
@@ -18,19 +19,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 )
 
 func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
-	codeIntelDB, err := workerCodeIntel.InitDB()
+	codeIntelDB, err := workerCodeIntel.InitRawDB(&observation.TestContext)
 	if err != nil {
 		return err
 	}
 
 	var insightsStore *basestore.Store
 	if internalInsights.IsEnabled() {
-		codeInsightsDB, err := internalInsights.InitializeCodeInsightsDB("worker-oobmigrator")
+		codeInsightsDB, err := internalInsights.InitializeCodeInsightsDB(&observation.TestContext, "worker-oobmigrator")
 		if err != nil {
 			return err
 		}
@@ -42,7 +44,7 @@ func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oo
 
 	return registerEnterpriseMigrators(runner, false, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
-		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
+		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(log.NoOp(), codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
 		keyring:        &keyring,
 	})

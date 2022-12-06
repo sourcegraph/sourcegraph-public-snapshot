@@ -7,9 +7,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/strings/slices"
+
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
 func TestRedisLoggerMiddleware_getAllValuesAfter(t *testing.T) {
@@ -34,7 +35,7 @@ func TestRedisLoggerMiddleware_getAllValuesAfter(t *testing.T) {
 	assert.Len(t, got, 2)
 }
 
-func TestRedisLoggerMiddleware_removeSensitiveHeaders(t *testing.T) {
+func TestRedisLoggerMiddleware_redactSensitiveHeaders(t *testing.T) {
 	input := http.Header{
 		"Authorization":   []string{"all values", "should be", "removed"},
 		"Bearer":          []string{"this should be kept as the risky value is only in the name"},
@@ -60,14 +61,14 @@ func TestRedisLoggerMiddleware_removeSensitiveHeaders(t *testing.T) {
 		}
 	}
 
-	cleanHeaders := removeSensitiveHeaders(input)
+	cleanHeaders := redactSensitiveHeaders(input)
 
 	if diff := cmp.Diff(cleanHeaders, want); diff != "" {
 		t.Errorf("unexpected request headers (-have +want):\n%s", diff)
 	}
 }
 
-func TestCache_DeleteFirstN(t *testing.T) {
+func TestRedisLoggerMiddleware_DeleteFirstN(t *testing.T) {
 	rcache.SetupForTest(t)
 	c := rcache.NewWithTTL("some_prefix", 1)
 
@@ -79,7 +80,7 @@ func TestCache_DeleteFirstN(t *testing.T) {
 	c.SetMulti(pairs...)
 
 	// Delete the first 4 key-value pairs
-	deleteExcessItems(c, 4)
+	_ = deleteExcessItems(c, 4)
 
 	got, listErr := c.ListKeys(context.Background())
 
@@ -92,4 +93,45 @@ func TestCache_DeleteFirstN(t *testing.T) {
 
 	assert.Contains(t, got, "key6") // 6 through 9 (4 items) should be kept
 	assert.Contains(t, got, "key9")
+}
+
+func TestRedisLoggerMiddleware_formatStackFrame(t *testing.T) {
+	tests := []struct {
+		name     string
+		function string
+		file     string
+		line     int
+		want     string
+	}{
+		{
+			name:     "Sourcegraph internal package",
+			function: "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend.(*requestTracer).TraceQuery",
+			file:     "/Users/x/github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlbackend.go",
+			line:     51,
+			want:     "cmd/frontend/graphqlbackend/graphqlbackend.go:51 (Function: (*requestTracer).TraceQuery)",
+		},
+		{
+			name:     "third-party package",
+			function: "third-party/library.f",
+			file:     "/Users/x/github.com/third-party/library/file.go",
+			line:     11,
+			want:     "third-party/library/file.go:11 (Function: f)",
+		},
+		{
+			name:     "main package",
+			function: "main.f",
+			file:     "/Users/x/file.go",
+			line:     11,
+			want:     "main/file.go:11 (Function: f)",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := formatStackFrame(test.function, test.file, test.line)
+			if got != test.want {
+				t.Errorf("got %q, want %q", got, test.want)
+			}
+		})
+	}
 }

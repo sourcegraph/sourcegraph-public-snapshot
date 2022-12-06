@@ -28,10 +28,10 @@ var totalErroredRepos = promauto.NewGauge(prometheus.GaugeOpts{
 
 func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context, rateLimiter *ratelimit.InstrumentedLimiter) {
 	for {
-		s.Logger.Info("running worker for SyncReposWithLastErrors", log.Time("time", time.Now()))
+		s.ObsvCtx.Logger.Info("running worker for SyncReposWithLastErrors", log.Time("time", time.Now()))
 		err := s.SyncReposWithLastErrors(ctx, rateLimiter)
 		if err != nil {
-			s.Logger.Error("Error syncing repos w/ errors", log.Error(err))
+			s.ObsvCtx.Logger.Error("Error syncing repos w/ errors", log.Error(err))
 		}
 
 		// Wait and run task again
@@ -53,7 +53,7 @@ func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *ratel
 		}
 		_, err = s.SyncRepo(ctx, repo, false)
 		if err != nil {
-			s.Logger.Error("error syncing repo", log.String("repo", string(repo)), log.Error(err))
+			s.ObsvCtx.Logger.Error("error syncing repo", log.String("repo", string(repo)), log.Error(err))
 		}
 		erroredRepoGauge.Inc()
 		return nil
@@ -64,7 +64,7 @@ func (s *Syncer) SyncReposWithLastErrors(ctx context.Context, rateLimiter *ratel
 func (s *Syncer) setTotalErroredRepos(ctx context.Context) {
 	totalErrored, err := s.Store.GitserverReposStore().TotalErroredCloudDefaultRepos(ctx)
 	if err != nil {
-		s.Logger.Error("error fetching count of total errored repos", log.Error(err))
+		s.ObsvCtx.Logger.Error("error fetching count of total errored repos", log.Error(err))
 		return
 	}
 	totalErroredRepos.Set(float64(totalErrored))

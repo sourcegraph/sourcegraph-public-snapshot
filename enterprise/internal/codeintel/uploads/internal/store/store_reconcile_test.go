@@ -16,7 +16,7 @@ import (
 func TestReconcileCandidates(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 	ctx := context.Background()
 
 	if _, err := db.ExecContext(ctx, `

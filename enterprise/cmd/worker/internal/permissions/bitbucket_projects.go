@@ -11,7 +11,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/log"
 
@@ -33,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -62,20 +60,20 @@ func (j *bitbucketProjectPermissionsJob) Config() []env.Config {
 
 // Routines is called by the worker service to start the worker.
 // It returns a list of goroutines that the worker service should start and manage.
-func (j *bitbucketProjectPermissionsJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	wdb, err := workerdb.InitDBWithLogger(logger)
+func (j *bitbucketProjectPermissionsJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	wdb, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 	db := edb.NewEnterpriseDB(wdb)
 
-	bbProjectMetrics := newMetricsForBitbucketProjectPermissionsQueries(logger)
+	bbProjectMetrics := newMetricsForBitbucketProjectPermissionsQueries(observationCtx.Logger)
 
 	rootContext := actor.WithInternalActor(context.Background())
 
 	return []goroutine.BackgroundRoutine{
-		newBitbucketProjectPermissionsWorker(rootContext, logger.Scoped("BitbucketProjectPermissionsWorker", ""), db, ConfigInst, bbProjectMetrics),
-		newBitbucketProjectPermissionsResetter(logger.Scoped("BitbucketProjectPermissionsResetter", ""), db, ConfigInst, bbProjectMetrics),
+		newBitbucketProjectPermissionsWorker(rootContext, observationCtx, db, ConfigInst, bbProjectMetrics),
+		newBitbucketProjectPermissionsResetter(observationCtx, db, ConfigInst, bbProjectMetrics),
 	}, nil
 }
 
@@ -354,7 +352,9 @@ func (h *bitbucketProjectPermissionsHandler) repoExists(ctx context.Context, rep
 
 // newBitbucketProjectPermissionsWorker creates a worker that reads the explicit_permissions_bitbucket_projects_jobs table and
 // executes the jobs.
-func newBitbucketProjectPermissionsWorker(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker[*types.BitbucketProjectPermissionJob] {
+func newBitbucketProjectPermissionsWorker(ctx context.Context, observationCtx *observation.Context, db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker[*types.BitbucketProjectPermissionJob] {
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BitbucketProjectPermissionsWorker", ""), observationCtx)
+
 	options := workerutil.WorkerOptions{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_worker",
 		NumHandlers:       cfg.WorkerConcurrency,
@@ -363,13 +363,17 @@ func newBitbucketProjectPermissionsWorker(ctx context.Context, logger log.Logger
 		Metrics:           metrics.workerMetrics,
 	}
 
-	return dbworker.NewWorker[*types.BitbucketProjectPermissionJob](ctx, createBitbucketProjectPermissionsStore(logger, db, cfg), &bitbucketProjectPermissionsHandler{db: db}, options)
+	store := createBitbucketProjectPermissionsStore(observationCtx, db, cfg)
+
+	return dbworker.NewWorker[*types.BitbucketProjectPermissionJob](ctx, store, &bitbucketProjectPermissionsHandler{db: db}, options)
 }
 
 // newBitbucketProjectPermissionsResetter implements resetter for the explicit_permissions_bitbucket_projects_jobs table.
 // See resetter documentation for more details. https://docs.sourcegraph.com/dev/background-information/workers#dequeueing-and-resetting-jobs
-func newBitbucketProjectPermissionsResetter(logger log.Logger, db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *dbworker.Resetter[*types.BitbucketProjectPermissionJob] {
-	workerStore := createBitbucketProjectPermissionsStore(logger, db, cfg)
+func newBitbucketProjectPermissionsResetter(observationCtx *observation.Context, db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *dbworker.Resetter[*types.BitbucketProjectPermissionJob] {
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BitbucketProjectPermissionsResetter", ""), observationCtx)
+
+	workerStore := createBitbucketProjectPermissionsStore(observationCtx, db, cfg)
 
 	options := dbworker.ResetterOptions{
 		Name:     "explicit_permissions_bitbucket_projects_jobs_worker_resetter",
@@ -380,13 +384,15 @@ func newBitbucketProjectPermissionsResetter(logger log.Logger, db edb.Enterprise
 			RecordResets:        metrics.resets,
 		},
 	}
-	return dbworker.NewResetter(logger, workerStore, options)
+	return dbworker.NewResetter(observationCtx.Logger, workerStore, options)
 }
 
 // createBitbucketProjectPermissionsStore creates a store that reads and writes to the explicit_permissions_bitbucket_projects_jobs table.
 // It is used by the worker and resetter.
-func createBitbucketProjectPermissionsStore(logger log.Logger, s basestore.ShareableStore, cfg *config) dbworkerstore.Store[*types.BitbucketProjectPermissionJob] {
-	return dbworkerstore.New(logger.Scoped("BitbucketProjectPermission.Store", ""), s.Handle(), dbworkerstore.Options[*types.BitbucketProjectPermissionJob]{
+func createBitbucketProjectPermissionsStore(observationCtx *observation.Context, s basestore.ShareableStore, cfg *config) dbworkerstore.Store[*types.BitbucketProjectPermissionJob] {
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BitbucketProjectPermission.Store", ""), observationCtx)
+
+	return dbworkerstore.New(observationCtx, s.Handle(), dbworkerstore.Options[*types.BitbucketProjectPermissionJob]{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_store",
 		TableName:         "explicit_permissions_bitbucket_projects_jobs",
 		ColumnExpressions: database.BitbucketProjectPermissionsColumnExpressions,
@@ -408,32 +414,28 @@ type bitbucketProjectPermissionsMetrics struct {
 }
 
 func newMetricsForBitbucketProjectPermissionsQueries(logger log.Logger) bitbucketProjectPermissionsMetrics {
-	observationContext := &observation.Context{
-		Logger:     logger.Scoped("routines", "bitbucket projects explicit permissions job routines"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationCtx := observation.NewContext(logger.Scoped("routines", "bitbucket projects explicit permissions job routines"))
 
 	resetFailures := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_explicit_permissions_bitbucket_project_query_reset_failures_total",
 		Help: "The number of reset failures.",
 	})
-	observationContext.Registerer.MustRegister(resetFailures)
+	observationCtx.Registerer.MustRegister(resetFailures)
 
 	resets := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_explicit_permissions_bitbucket_project_query_resets_total",
 		Help: "The number of records reset.",
 	})
-	observationContext.Registerer.MustRegister(resets)
+	observationCtx.Registerer.MustRegister(resets)
 
 	errors := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "src_explicit_permissions_bitbucket_project_query_errors_total",
 		Help: "The number of errors that occur during job.",
 	})
-	observationContext.Registerer.MustRegister(errors)
+	observationCtx.Registerer.MustRegister(errors)
 
 	return bitbucketProjectPermissionsMetrics{
-		workerMetrics: workerutil.NewMetrics(observationContext, "explicit_permissions_bitbucket_project_queries"),
+		workerMetrics: workerutil.NewMetrics(observationCtx, "explicit_permissions_bitbucket_project_queries"),
 		resets:        resets,
 		resetFailures: resetFailures,
 		errors:        errors,

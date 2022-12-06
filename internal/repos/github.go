@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -87,17 +86,6 @@ var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "The amount of time spent waiting on the rate limit",
 }, []string{"resource", "name"})
 
-// IsGitHubAppEnabled returns true if all required configuration options for
-// Sourcegraph GitHub App are filled by checking the given config.
-func IsGitHubAppEnabled(schema *schema.GitHubApp) bool {
-	return schema != nil &&
-		schema.AppID != "" &&
-		schema.PrivateKey != "" &&
-		schema.Slug != "" &&
-		schema.ClientID != "" &&
-		schema.ClientSecret != ""
-}
-
 func newGithubSource(
 	logger log.Logger,
 	externalServicesStore database.ExternalServiceStore,
@@ -170,31 +158,23 @@ func newGithubSource(
 	)
 
 	useGitHubApp := false
-	gitHubAppConfig := conf.SiteConfig().GitHubApp
-	if c.GithubAppInstallationID != "" &&
-		IsGitHubAppEnabled(gitHubAppConfig) {
-		var privateKey []byte
-		var appID string
-
-		privateKey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
-		if err != nil {
-			return nil, errors.Wrap(err, "decode private key")
-		}
-		appID = gitHubAppConfig.AppID
-
+	config, err := conf.GitHubAppConfig()
+	if err != nil {
+		return nil, err
+	}
+	if c.GithubAppInstallationID != "" && config.Configured() {
 		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
 		if err != nil {
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
 
-		installationAuther, err := database.BuildGitHubAppInstallationAuther(externalServicesStore, appID, privateKey, urn, apiURL, cli, installationID, svc)
+		installationAuther, err := database.BuildGitHubAppInstallationAuther(externalServicesStore, config.AppID, config.PrivateKey, urn, apiURL, cli, installationID, svc)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating GitHub App installation authenticator")
 		}
 
 		v3Client = github.NewV3Client(v3ClientLogger, urn, apiURL, installationAuther, cli)
 		v4Client = github.NewV4Client(urn, apiURL, installationAuther, cli)
-
 		useGitHubApp = true
 	}
 

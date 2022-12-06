@@ -42444,7 +42444,7 @@ func NewMockUserEmailsStore() *MockUserEmailsStore {
 			},
 		},
 		SetLastVerificationFunc: &UserEmailsStoreSetLastVerificationFunc{
-			defaultHook: func(context.Context, int32, string, string) (r0 error) {
+			defaultHook: func(context.Context, int32, string, string, time.Time) (r0 error) {
 				return
 			},
 		},
@@ -42531,7 +42531,7 @@ func NewStrictMockUserEmailsStore() *MockUserEmailsStore {
 			},
 		},
 		SetLastVerificationFunc: &UserEmailsStoreSetLastVerificationFunc{
-			defaultHook: func(context.Context, int32, string, string) error {
+			defaultHook: func(context.Context, int32, string, string, time.Time) error {
 				panic("unexpected invocation of MockUserEmailsStore.SetLastVerification")
 			},
 		},
@@ -43720,24 +43720,24 @@ func (c UserEmailsStoreRemoveFuncCall) Results() []interface{} {
 // SetLastVerification method of the parent MockUserEmailsStore instance is
 // invoked.
 type UserEmailsStoreSetLastVerificationFunc struct {
-	defaultHook func(context.Context, int32, string, string) error
-	hooks       []func(context.Context, int32, string, string) error
+	defaultHook func(context.Context, int32, string, string, time.Time) error
+	hooks       []func(context.Context, int32, string, string, time.Time) error
 	history     []UserEmailsStoreSetLastVerificationFuncCall
 	mutex       sync.Mutex
 }
 
 // SetLastVerification delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockUserEmailsStore) SetLastVerification(v0 context.Context, v1 int32, v2 string, v3 string) error {
-	r0 := m.SetLastVerificationFunc.nextHook()(v0, v1, v2, v3)
-	m.SetLastVerificationFunc.appendCall(UserEmailsStoreSetLastVerificationFuncCall{v0, v1, v2, v3, r0})
+func (m *MockUserEmailsStore) SetLastVerification(v0 context.Context, v1 int32, v2 string, v3 string, v4 time.Time) error {
+	r0 := m.SetLastVerificationFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.SetLastVerificationFunc.appendCall(UserEmailsStoreSetLastVerificationFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the SetLastVerification
 // method of the parent MockUserEmailsStore instance is invoked and the hook
 // queue is empty.
-func (f *UserEmailsStoreSetLastVerificationFunc) SetDefaultHook(hook func(context.Context, int32, string, string) error) {
+func (f *UserEmailsStoreSetLastVerificationFunc) SetDefaultHook(hook func(context.Context, int32, string, string, time.Time) error) {
 	f.defaultHook = hook
 }
 
@@ -43746,7 +43746,7 @@ func (f *UserEmailsStoreSetLastVerificationFunc) SetDefaultHook(hook func(contex
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *UserEmailsStoreSetLastVerificationFunc) PushHook(hook func(context.Context, int32, string, string) error) {
+func (f *UserEmailsStoreSetLastVerificationFunc) PushHook(hook func(context.Context, int32, string, string, time.Time) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -43755,19 +43755,19 @@ func (f *UserEmailsStoreSetLastVerificationFunc) PushHook(hook func(context.Cont
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *UserEmailsStoreSetLastVerificationFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32, string, string) error {
+	f.SetDefaultHook(func(context.Context, int32, string, string, time.Time) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *UserEmailsStoreSetLastVerificationFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32, string, string) error {
+	f.PushHook(func(context.Context, int32, string, string, time.Time) error {
 		return r0
 	})
 }
 
-func (f *UserEmailsStoreSetLastVerificationFunc) nextHook() func(context.Context, int32, string, string) error {
+func (f *UserEmailsStoreSetLastVerificationFunc) nextHook() func(context.Context, int32, string, string, time.Time) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -43813,6 +43813,9 @@ type UserEmailsStoreSetLastVerificationFuncCall struct {
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -43821,7 +43824,7 @@ type UserEmailsStoreSetLastVerificationFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c UserEmailsStoreSetLastVerificationFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this

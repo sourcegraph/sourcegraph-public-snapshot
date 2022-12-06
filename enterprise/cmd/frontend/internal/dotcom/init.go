@@ -39,11 +39,11 @@ var _ graphqlbackend.DotcomRootResolver = dotcomRootResolver{}
 
 func Init(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	db database.DB,
 	_ codeintel.Services,
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
-	observationContext *observation.Context,
 ) error {
 	// Only enabled on Sourcegraph.com.
 	if envvar.SourcegraphDotComMode() {

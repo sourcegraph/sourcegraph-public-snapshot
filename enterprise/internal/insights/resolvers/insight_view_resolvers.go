@@ -1185,7 +1185,11 @@ type fillSeriesStrategy func(context.Context, types.InsightSeries) error
 func makeFillSeriesStrategy(ctx context.Context, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller, scheduler *scheduler.Scheduler, insightEnqueuer *background.InsightEnqueuer) fillSeriesStrategy {
 	flags := featureflag.FromContext(ctx)
 	deprecateJustInTime := flags.GetBoolOr("code_insights_deprecate_jit", true)
-	v2BackfillEnabled := conf.Get().ExperimentalFeatures.InsightsBackfillerV2
+	v2BackfillSetting := conf.ExperimentalFeatures().InsightsBackfillerV2
+	v2BackfillEnabled := true
+	if v2BackfillSetting != nil {
+		v2BackfillEnabled = *v2BackfillSetting
+	}
 
 	return func(ctx context.Context, series types.InsightSeries) error {
 		if series.GroupBy != nil {

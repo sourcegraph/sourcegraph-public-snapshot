@@ -33,6 +33,6 @@ var batchSpecResolutionWorkerOpts = dbworkerstore.Options[*types.BatchSpecResolu
 	MaxNumRetries: batchSpecResolutionMaxNumRetries,
 }
 
-func NewBatchSpecResolutionWorkerStore(handle basestore.TransactableHandle, observationContext *observation.Context) dbworkerstore.Store[*types.BatchSpecResolutionJob] {
-	return dbworkerstore.NewWithMetrics(handle, batchSpecResolutionWorkerOpts, observationContext)
+func NewBatchSpecResolutionWorkerStore(observationCtx *observation.Context, handle basestore.TransactableHandle) dbworkerstore.Store[*types.BatchSpecResolutionJob] {
+	return dbworkerstore.New(observationCtx, handle, batchSpecResolutionWorkerOpts)
 }
