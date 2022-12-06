@@ -59,6 +59,10 @@ func constructLiveCmdLongHelp() string {
 		fmt.Fprintf(&out, "\n* %s", name)
 	}
 
+	fmt.Fprintf(&out, "\n\n")
+	fmt.Fprintf(&out, "See more information about the deployments schedule here:\n")
+	fmt.Fprintf(&out, "https://handbook.sourcegraph.com/departments/engineering/teams/dev-experience/#sourcegraph-instances-operated-by-us")
+
 	return out.String()
 }
 
