@@ -3,21 +3,16 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"encoding/csv"
 	"flag"
 	"log"
 	"net/http"
 	"os"
-	"sort"
-	"strings"
-	"sync/atomic"
 	"time"
 
 	github "github.com/google/go-github/v41/github"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/oauth2"
 
-	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -147,54 +142,6 @@ func main() {
 
 	end := time.Now()
 	writeInfo(out, "Started at %s, finished at %s", start.String(), end.String())
-}
-
-func generateUserOAuthCsv(ctx context.Context, users []*user, tokensDone int64) {
-	tg := group.NewWithResults[userToken]().WithMaxConcurrency(1000)
-	for _, u := range users {
-		currentU := u
-		tg.Go(func() userToken {
-			token := executeCreateUserImpersonationToken(ctx, currentU)
-			atomic.AddInt64(&tokensDone, 1)
-			progress.SetValue(5, float64(tokensDone))
-			return userToken{
-				login: currentU.Login,
-				token: token,
-			}
-		})
-	}
-	pairs := tg.Wait()
-
-	csvFile, err := os.Create("users.csv")
-	defer csvFile.Close()
-	if err != nil {
-		log.Fatalf("Failed creating csv: %s", err)
-	}
-
-	csvwriter := csv.NewWriter(csvFile)
-	defer csvwriter.Flush()
-
-	_ = csvwriter.Write([]string{"login", "token"})
-
-	sort.Slice(pairs, func(i, j int) bool {
-		comp := strings.Compare(pairs[i].login, pairs[j].login)
-		return comp == -1
-	})
-
-	for _, pair := range pairs {
-		if err = csvwriter.Write([]string{pair.login, pair.token}); err != nil {
-			log.Fatalln("error writing pair to file", err)
-		}
-	}
-}
-
-func executeCreateUserImpersonationToken(ctx context.Context, u *user) string {
-	auth, _, err := gh.Admin.CreateUserImpersonation(ctx, u.Login, &github.ImpersonateUserOptions{Scopes: []string{"repo", "read:org", "read:user_email"}})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return auth.GetToken()
 }
 
 func writeSuccess(out *output.Output, format string, a ...any) {
