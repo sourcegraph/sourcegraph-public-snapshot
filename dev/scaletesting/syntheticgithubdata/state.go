@@ -321,6 +321,9 @@ WHERE name = ?`
 
 func (s *state) saveTeam(t *team) error {
 	err := s.insertTeams([]string{t.Name}, &org{Login: t.Org})
+	if err != nil {
+		return err
+	}
 	s.Lock()
 	defer s.Unlock()
 

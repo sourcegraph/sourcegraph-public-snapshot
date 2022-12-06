@@ -51,7 +51,7 @@ func getGitHubRepos(ctx context.Context, orgName string) []*github.Repository {
 func getGitHubUsers(ctx context.Context) []*github.User {
 	var users []*github.User
 	var since int64
-	for true {
+	for {
 		//writeInfo(out, "Fetching user page, last ID seen is %d", since)
 		usersPage, _, err := gh.Users.ListAll(ctx, &github.UserListOptions{
 			Since:       since,
@@ -76,7 +76,7 @@ func getGitHubTeams(ctx context.Context, orgs []*org) []*github.Team {
 	var teams []*github.Team
 	var currentPage int
 	for _, o := range orgs {
-		for true {
+		for {
 			//writeInfo(out, "Fetching team page %d for org %s", currentPage, o.Login)
 			teamsPage, _, err := gh.Teams.ListTeams(ctx, o.Login, &github.ListOptions{
 				Page:    currentPage,
@@ -106,7 +106,7 @@ func getGitHubTeams(ctx context.Context, orgs []*org) []*github.Team {
 func getGitHubOrgs(ctx context.Context) []*github.Organization {
 	var orgs []*github.Organization
 	var since int64
-	for true {
+	for {
 		//writeInfo(out, "Fetching org page, last ID seen is %d", since)
 		orgsPage, _, err := gh.Organizations.ListAll(ctx, &github.OrganizationsListOptions{
 			Since:       since,

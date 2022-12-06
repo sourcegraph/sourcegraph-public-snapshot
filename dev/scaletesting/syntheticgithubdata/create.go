@@ -232,7 +232,6 @@ func (t *team) executeCreate(ctx context.Context, teamsDone *int64) {
 		return
 	}
 
-	tErr = nil
 	if existingTeam != nil {
 		t.Created = true
 		t.Failed = ""
@@ -443,9 +442,9 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, us
 					if err != nil {
 						log.Fatalf("Failed reading response body: %s", err)
 					}
-					if strings.Contains(string(body), "Repositories cannot be transferred to the original owner") {
-						//writeInfo(out, "Repository %s already owned by %s [not saved to state, current owner: %s]", r.Name, currentOrg.Login, r.Owner)
-						// The repository is already transferred but not yet saved in the state
+					// Usually this means the repository is already transferred but not yet saved in the state, but otherwise:
+					if !strings.Contains(string(body), "Repositories cannot be transferred to the original owner") {
+						log.Fatalf("Status 422, body: %s", body)
 					}
 				}
 
