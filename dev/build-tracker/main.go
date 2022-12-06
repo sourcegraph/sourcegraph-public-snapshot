@@ -1,15 +1,26 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
 
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -29,6 +40,7 @@ type Server struct {
 	store        *BuildStore
 	config       *config
 	notifyClient *NotificationClient
+	github       *github.Client
 	http         *http.Server
 }
 
@@ -77,20 +89,131 @@ func configFromEnv() (*config, error) {
 	return &c, nil
 }
 
+func (s *Server) handleRevert(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+
+	commit, ok := vars["commit"]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if len(commit) < 8 {
+		s.logger.Warn("received commith with wrong length", log.Int("length", len(commit)))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	s.logger.Info("received request to revert commit", log.String("commit", commit))
+
+	// We want return a response and continue async
+	ctx := context.Background()
+	bernash := fmt.Sprintf("build-tracker/reverts/%s", commit[:8])
+	bernashPath := strings.ReplaceAll(bernash, "/", "-")
+
+	cmd := run.Bash(ctx, fmt.Sprintf("git worktree add -b %s %s", bernash, bernashPath)).Dir("git-reverts")
+	if err := cmd.Run().Wait(); err != nil {
+		s.logger.Error("failed to add worktree", log.String("path", bernashPath), log.String("branch", bernash), log.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	//Clean up when shit goes wrong
+	defer func() {
+		cmd := run.Bash(ctx, fmt.Sprintf("git worktree remove %s --force", bernash)).Dir("git-reverts")
+		if err := cmd.Run().Wait(); err != nil {
+			s.logger.Error("failed to remove worktree", log.String("path", bernashPath), log.String("branch", bernash), log.Error(err))
+		}
+
+		// Ensure the branch is gone!
+		cmd = run.Bash(ctx, fmt.Sprintf("git branch -D %s --force", bernash)).Dir("git-reverts")
+		if err := cmd.Run().Wait(); err != nil {
+			s.logger.Error("failed to remove worktree", log.String("path", bernashPath), log.String("branch", bernash), log.Error(err))
+		}
+	}()
+
+	cwd := filepath.Join("git-reverts", bernashPath)
+	cmd = run.Bash(ctx, fmt.Sprintf("git revert %s --no-edit", commit)).Dir(cwd)
+	if out, err := cmd.Run().String(); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	} else {
+		fmt.Println(out)
+	}
+
+	cmd = run.Bash(ctx, fmt.Sprintf("git push origin %s", bernash)).Dir(cwd)
+	if out, err := cmd.Run().String(); err != nil {
+		s.logger.Error("encountered an error while trying to push revert branch", log.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	} else {
+		fmt.Println(out)
+	}
+
+	// Create Github PR
+	base := "sourcegraph"
+	body := `Test revert`
+	title := fmt.Sprintf("Revert of commit %s initiated via Build Tracker", commit)
+	pr := github.NewPullRequest{
+		Title: &title,
+		Head:  &bernash,
+		Base:  &base,
+		Body:  &body,
+	}
+
+	gpr, resp, err := s.github.PullRequests.Create(ctx, "sourcegraph", "sourcegraph", &pr)
+	if err != nil {
+		s.logger.Error("failed to create pr on github", log.String("branch", bernash))
+	}
+
+	if resp.StatusCode > 299 {
+		data, _ := io.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		s.logger.Warn("non 200 response received from github when creating revert pr", log.String("body", string(data)), log.Int("statusCode", resp.StatusCode))
+	}
+
+	fmt.Println(gpr.GetURL())
+	// send a notifcation of PR
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func newGitHubClient(logger log.Logger, token string) (*github.Client, error) {
+	ctx := context.Background()
+	println("🚨" + token)
+	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: token},
+	))
+
+	baseURL, err := url.Parse("https://github.com")
+	if err != nil {
+		return nil, err
+	}
+	baseURL.Path = "/api/v3"
+
+	return github.NewClient(tc), nil
+}
+
 // NewServer creatse a new server to listen for Buildkite webhook events.
-func NewServer(logger log.Logger, c config) *Server {
+func NewServer(logger log.Logger, c config) (*Server, error) {
 	logger = logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
+	github, err := newGitHubClient(logger, c.GithubToken)
+	if err != nil {
+		logger.Error("failed to initializing GitHub client", log.Error(err))
+		return nil, err
+	}
 	server := &Server{
 		logger:       logger,
 		store:        NewBuildStore(logger),
 		config:       &c,
 		notifyClient: NewNotificationClient(logger, c.SlackToken, c.GithubToken, c.SlackChannel),
+		github:       github,
 	}
 
 	// Register routes the the server will be responding too
 	r := mux.NewRouter()
 	r.Path("/buildkite").HandlerFunc(server.handleEvent).Methods(http.MethodPost)
 	r.Path("/healthz").HandlerFunc(server.handleHealthz).Methods(http.MethodGet)
+	r.Path("/revert/{commit}").HandlerFunc(server.handleRevert).Methods(http.MethodPost)
 
 	debug := r.PathPrefix("/-/debug").Subrouter()
 	debug.Path("/{buildNumber}").HandlerFunc(server.handleGetBuild).Methods(http.MethodGet)
@@ -100,7 +223,7 @@ func NewServer(logger log.Logger, c config) *Server {
 		Addr:    ":8080",
 	}
 
-	return server
+	return server, nil
 }
 
 func (s *Server) handleGetBuild(w http.ResponseWriter, req *http.Request) {
@@ -273,8 +396,12 @@ func main() {
 	if err != nil {
 		logger.Fatal("failed to get config from env", log.Error(err))
 	}
+	println("🤥 " + serverConf.GithubToken)
 	logger.Info("config loaded from environment", log.Object("config", log.String("SlackChannel", serverConf.SlackChannel), log.Bool("Production", serverConf.Production)))
-	server := NewServer(logger, *serverConf)
+	server, err := NewServer(logger, *serverConf)
+	if err != nil {
+		logger.Error("failed to initializing server", log.Error(err))
+	}
 
 	stopFn := server.startOldBuildCleaner(5*time.Minute, 24*time.Hour)
 	defer stopFn()
@@ -284,6 +411,20 @@ func main() {
 	} else {
 		server.logger.Info("server is in development mode!")
 	}
+
+	go func() {
+		logger.Info("initializing sourcegraph repo for reverts")
+		ctx := context.Background()
+		if stat, err := os.Stat("git-reverts"); err == nil && stat.IsDir() {
+			logger.Debug("worktree already exists", log.String("path", "git-reverts"))
+		} else {
+			logger.Debug("checking out new worktree", log.String("path", "git-reverts"))
+			cmd := run.Bash(ctx, "git clone --bare github.com:sourcegraph/sourcegraph git-reverts")
+			if err := cmd.Run().Wait(); err != nil {
+				logger.Error("problem occured creating worktree", log.Error(err))
+			}
+		}
+	}()
 
 	if err := server.http.ListenAndServe(); err != nil {
 		logger.Fatal("server exited with error", log.Error(err))
