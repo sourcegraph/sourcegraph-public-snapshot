@@ -28,7 +28,7 @@ newQuery(someArg: String!): Boolean!
 
 ### Resolvers hierarchy
 
-GraphQL queries are nested. This means that a GraphQL request text specifies which fields of the schema should be returned. On the back-end this is reflected by a tree of resolvers that step from `schemaResolver`.
+GraphQL queries can be deeply nested. This means that a GraphQL request text specifies which fields of the schema should be returned. On the back-end this is reflected by a hierarchy of resolvers that stem from `schemaResolver`. Each method represent a nesting layer and returns the resolver for the nested structure.
 
 ```go
 // cmd/frontend/graphqlbackend/graphqlbackend.go
