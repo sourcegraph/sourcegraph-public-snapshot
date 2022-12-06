@@ -75,11 +75,7 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 
 ### Fine-grained personal access tokens
 
-> NOTE: Fine-grained personal access token suport is still experimental. Some functionality may not yet work.
-
-To sync repositories using fine-grained personal access tokens read-only access on the Content permission is required for repositories.
-
-It should also be noted that fine-grained personal access tokens work a bit different than normal personal access tokens. For example, a classic personal access token can access all repositories of the owner, as well as repositories of organizations that the owner belongs to. However, for fine-grained personal access tokens, access is restricted to the owner of the token. If access to a GitHub organization's repositories is required, the GitHub organization has to be the owner of the fine-grained personal access token.
+GitHub's fine-grained personal access tokens are not yet supported.
 
 ## GitHub.com rate limits
 
