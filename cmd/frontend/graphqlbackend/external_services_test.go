@@ -380,6 +380,46 @@ func TestExternalServices(t *testing.T) {
 			}
 		`,
 		},
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+				{
+					externalServices() {
+						nodes {
+							id
+							checkConnection {
+								... on ExternalServiceAvailabilityUnknown {
+									implementationNote
+								}
+							}
+							hasAvailabilityCheck
+						}
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"externalServices": {
+						"nodes": [
+							{
+								"id":"RXh0ZXJuYWxTZXJ2aWNlOjE=",
+								"checkConnection": {
+									"implementationNote": "not implemented yet"
+								},
+								"hasAvailabilityCheck": false
+							},
+							{
+								"id":"RXh0ZXJuYWxTZXJ2aWNlOjI=",
+								"checkConnection": {
+									"implementationNote": "not implemented yet"
+								},
+								"hasAvailabilityCheck": false
+							}
+						]
+					}
+				}
+			`,
+		},
 		// Pagination
 		{
 			Schema: mustParseGraphQLSchema(t, db),

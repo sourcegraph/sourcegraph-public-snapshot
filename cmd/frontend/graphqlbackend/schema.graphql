@@ -2759,9 +2759,16 @@ type ExternalService implements Node {
     syncJobs(first: Int): ExternalServiceSyncJobConnection!
 
     """
-    External service availability
+    Checks the availability of the external service.
     """
-    availability: ExternalServiceAvailability!
+    checkConnection: ExternalServiceAvailability!
+
+    """
+    True if this external service cah perform availability check by running checkConnection.
+
+    If this is false, then checkConnection responds with ExternalServiceAvailabilityUnknown.
+    """
+    hasAvailabilityCheck: Boolean!
 }
 
 """
@@ -2770,7 +2777,10 @@ Avaiability status of an external service for diagnostic purposes.
 This is so that the UI can surface whether the external service
 can serve requests, and if not, why is the reason for that.
 """
-type ExternalServiceAvailability = ExternalServiceAvailable | ExternalServiceUnavailable | ExternalServiceAvaialbilityUnknown
+union ExternalServiceAvailability =
+      ExternalServiceAvailable
+    | ExternalServiceUnavailable
+    | ExternalServiceAvailabilityUnknown
 
 """
 Indicator that the external service was recently found to be available.
@@ -2779,7 +2789,7 @@ type ExternalServiceAvailable {
     """
     The timestamp of the last successful availability check that was performed.
     """
-    lastCheckedAt DateTime!
+    lastCheckedAt: DateTime!
 }
 
 """
@@ -2801,7 +2811,7 @@ type ExternalServiceAvailabilityUnknown {
     User-friendly textual description of the implementation status of availablity.
     This is expected to be tied to specific kinds of external services.
     """
-    implementationNote: String
+    implementationNote: String!
 }
 
 """

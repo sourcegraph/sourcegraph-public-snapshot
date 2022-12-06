@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -187,6 +188,46 @@ type externalServiceSyncJobsArgs struct {
 
 func (r *externalServiceResolver) SyncJobs(ctx context.Context, args *externalServiceSyncJobsArgs) (*externalServiceSyncJobConnectionResolver, error) {
 	return newExternalServiceSyncJobConnectionResolver(ctx, r.db, args, r.externalService.ID)
+}
+
+func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externalServiceAvaialbilityResolver, error) {
+	return &externalServiceAvaialbilityResolver{}, nil
+}
+
+func (r *externalServiceResolver) HasAvailabilityCheck(ctx context.Context) (bool, error) {
+	return false, nil
+}
+
+type externalServiceAvaialbilityResolver struct{}
+
+func (r *externalServiceAvaialbilityResolver) ToExternalServiceAvailable() (*externalServiceAvailableResolver, bool) {
+	return nil, false
+}
+
+func (r *externalServiceAvaialbilityResolver) ToExternalServiceUnavailable() (*externalServiceUnavailableResolver, bool) {
+	return nil, false
+}
+
+func (r *externalServiceAvaialbilityResolver) ToExternalServiceAvailabilityUnknown() (*externalServiceAvailabilityUnknownResolver, bool) {
+	return &externalServiceAvailabilityUnknownResolver{}, true
+}
+
+type externalServiceAvailableResolver struct{}
+
+func (r *externalServiceAvailableResolver) LastCheckedAt() (gqlutil.DateTime, error) {
+	return gqlutil.DateTime{Time: time.Now()}, errors.New("not implemented yet")
+}
+
+type externalServiceUnavailableResolver struct{}
+
+func (r *externalServiceUnavailableResolver) SuspectedReason() (string, error) {
+	return "", errors.New("not implemented yet")
+}
+
+type externalServiceAvailabilityUnknownResolver struct{}
+
+func (r *externalServiceAvailabilityUnknownResolver) ImplementationNote() (string, error) {
+	return "not implemented yet", nil
 }
 
 type externalServiceSyncJobConnectionResolver struct {
