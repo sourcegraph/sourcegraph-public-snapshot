@@ -24469,7 +24469,7 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (receiver) (rate(otelcol_receiver_accepted_spans{}[1m]))`
+Query: `sum by (receiver) (rate(otelcol_receiver_accepted_spans[1m]))`
 
 </details>
 
@@ -24495,7 +24495,7 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (receiver) (rate(otelcol_receiver_refused_spans{}[1m]))`
+Query: `sum by (receiver) (rate(otelcol_receiver_refused_spans[1m]))`
 
 </details>
 
@@ -24523,7 +24523,7 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (exporter) (rate(otelcol_exporter_sent_spans{}[1m]))`
+Query: `sum by (exporter) (rate(otelcol_exporter_sent_spans[1m]))`
 
 </details>
 
@@ -24546,7 +24546,7 @@ To see this panel, visit `/-/debug/grafana/d/otel-collector/otel-collector?viewP
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (exporter) (rate(otelcol_exporter_send_failed_spans{}[1m]))`
+Query: `sum by (exporter) (rate(otelcol_exporter_send_failed_spans[1m]))`
 
 </details>
 
