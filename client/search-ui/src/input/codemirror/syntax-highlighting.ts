@@ -1,9 +1,10 @@
 import { RangeSetBuilder } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
+import inRange from 'lodash/inRange'
+
 import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
 
 import { decoratedTokens, queryTokens } from './parsedQuery'
-import inRange from 'lodash/inRange'
 
 // Defines decorators for syntax highlighting
 const tokenDecorators: { [key: string]: Decoration } = {}
@@ -37,7 +38,7 @@ export const filterHighlight = [
     EditorView.baseTheme({
         '.sg-filter': {
             backgroundColor: 'var(--oc-blue-0)',
-            //border: '1px solid var(--oc-blue-1)',
+            // border: '1px solid var(--oc-blue-1)',
             borderRadius: '3px',
             padding: '0px',
         },
@@ -63,5 +64,3 @@ export const filterHighlight = [
         return builder.finish()
     }),
 ]
-
-inRange

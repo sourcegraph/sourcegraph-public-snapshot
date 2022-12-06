@@ -80,6 +80,7 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
               '!@sourcegraph/branded/src/*',
               '!@sourcegraph/shared/src/*',
               '!@sourcegraph/web/src/SourcegraphWebApp.scss',
+              '!@sourcegraph/search-ui/src/experimental',
             ],
             message:
               'Imports from package internals are banned. Add relevant export to the entry point of the package to import it from the outside world.',

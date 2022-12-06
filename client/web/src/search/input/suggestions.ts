@@ -1,22 +1,25 @@
+import { EditorState } from '@codemirror/state'
+import { mdiFilterOutline, mdiTextSearchVariant, mdiSourceRepository } from '@mdi/js'
 import { extendedMatch, Fzf, FzfOptions, FzfResultItem } from 'fzf'
-import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { SuggestionsRepoResult, SuggestionsRepoVariables } from 'src/graphql-operations'
+
+import { getDocumentNode, gql } from '@sourcegraph/http-client'
+import { tokenAt, tokens as queryTokens } from '@sourcegraph/search-ui'
 import {
     Group,
     Option,
-    EntryOf,
+    Target,
+    Completion,
     Source,
     FilterOption,
     SearchQueryOption,
     getEditorConfig,
-} from '@sourcegraph/search-ui/src/input/experimental'
-import { getDocumentNode, gql } from '@sourcegraph/http-client'
-import { getWebGraphQLClient } from '../../backend/graphql'
-import { SuggestionsRepoResult, SuggestionsRepoVariables } from 'src/graphql-operations'
-import { tokenAt, tokens as queryTokens } from '@sourcegraph/search-ui/src/input/codemirror'
-import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
-import { mdiFilterOutline, mdiTextSearchVariant, mdiSourceRepository } from '@mdi/js'
-import { EditorState } from '@codemirror/state'
+} from '@sourcegraph/search-ui/src/experimental'
 import { regexInsertText } from '@sourcegraph/shared/src/search/query/completion-utils'
+import { FILTERS, FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
+
+import { getWebGraphQLClient } from '../../backend/graphql'
 
 const none: any[] = []
 
@@ -33,7 +36,7 @@ const RELATED_FILTERS: Partial<Record<FilterType, (filter: Filter) => FilterType
     },
 }
 
-function toFilterCompletion(filter: FilterType, from: number, to?: number): EntryOf<'completion'> {
+function toFilterCompletion(filter: FilterType, from: number, to?: number): Completion {
     const definition = FILTERS[filter]
     const description =
         typeof definition.description === 'function' ? definition.description(false) : definition.description
@@ -51,7 +54,7 @@ function toFilterCompletion(filter: FilterType, from: number, to?: number): Entr
 
 export const filterSuggestions = (tokens: Token[], token: Token | undefined, position: number): Option[] => {
     if (!token || token.type === 'whitespace') {
-        let filters = DEFAULT_FILTERS
+        const filters = DEFAULT_FILTERS
             // Add related filters
             .concat(
                 tokens.flatMap(token =>
@@ -85,7 +88,7 @@ export const staticFilterValueSuggestions = (token?: Token): Group | null => {
     }
 
     const value = token.value
-    let options: EntryOf<'completion'>[] = resolvedFilter.definition.discreteValues(token.value, false).map(value => ({
+    let options: Completion[] = resolvedFilter.definition.discreteValues(token.value, false).map(value => ({
         type: 'completion',
         from: token.value?.range.start ?? token.range.end,
         to: token.value?.range.end,
@@ -167,7 +170,7 @@ async function dynamicRepos<T>(value: string, mapper: (item: FzfResultItem<Repo>
     return cachedRepos(cleanValue, mapper)
 }
 
-function toRepoTarget(item: FzfResultItem<Repo>): EntryOf<'target'> {
+function toRepoTarget(item: FzfResultItem<Repo>): Target {
     return {
         type: 'target',
         icon: mdiSourceRepository,
@@ -177,7 +180,7 @@ function toRepoTarget(item: FzfResultItem<Repo>): EntryOf<'target'> {
     }
 }
 
-function toRepoCompletion(item: FzfResultItem<Repo>, from: number, to?: number): EntryOf<'completion'> {
+function toRepoCompletion(item: FzfResultItem<Repo>, from: number, to?: number): Completion {
     return {
         type: 'completion',
         icon: mdiSourceRepository,
@@ -189,7 +192,7 @@ function toRepoCompletion(item: FzfResultItem<Repo>, from: number, to?: number):
     }
 }
 
-export const dynamicRepoSuggestions = async (token?: Token) => {
+export const dynamicRepoSuggestions = async (token?: Token): Promise<Target[]> => {
     if (token?.type !== 'pattern') {
         return []
     }
@@ -197,7 +200,7 @@ export const dynamicRepoSuggestions = async (token?: Token) => {
     return dynamicRepos(token.value, toRepoTarget)
 }
 
-const cachedRepoSuggestions = (token?: Token) => {
+const cachedRepoSuggestions = (token?: Token): Target[] => {
     if (token?.type !== 'pattern') {
         return []
     }
@@ -215,7 +218,7 @@ function filterValueSuggestions(token: Token | undefined): ReturnType<Source> | 
         const from = token.value?.range.start ?? token.range.end
         const to = token.value?.range.end
 
-        function valid(state: EditorState, position: number) {
+        function valid(state: EditorState, position: number): boolean {
             return token === tokenAt(state, position)
         }
 
@@ -246,7 +249,7 @@ export const suggestions: Source = (state, pos) => {
     const tokens = queryTokens(state)
     const token = tokenAt(state, pos)
 
-    function valid(state: EditorState, position: number) {
+    function valid(state: EditorState, position: number): boolean {
         return token === tokenAt(state, position)
     }
 

@@ -55,11 +55,11 @@ import {
     setQueryParseOptions,
     parsedQuery,
 } from './codemirror/parsedQuery'
+import { querySyntaxHighlighting } from './codemirror/syntax-highlighting'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 import { QueryInputProps } from './QueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
-import { querySyntaxHighlighting } from './codemirror/syntax-highlighting'
 
 export interface CodeMirrorQueryInputFacadeProps extends QueryInputProps {
     /**

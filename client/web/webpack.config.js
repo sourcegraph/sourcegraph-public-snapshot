@@ -11,7 +11,6 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const webpack = require('webpack')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 const { StatsWriterPlugin } = require('webpack-stats-plugin')
-const svelteOptions = require('../../svelte.config.js')
 
 const {
   ROOT_PATH,
@@ -28,6 +27,8 @@ const {
   getBasicCSSLoader,
   getStatoscopePlugin,
 } = require('@sourcegraph/build-config')
+
+const svelteOptions = require('../../svelte.config')
 
 const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG } = require('./dev/utils')
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')

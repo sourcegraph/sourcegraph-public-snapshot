@@ -1,8 +1,11 @@
-import { QueryState, SearchPatternType } from '@sourcegraph/search'
-import { useEffect, useState } from 'react'
-import { Source } from './suggestions'
-import CodeMirrorQueryInput from './CodeMirrorQueryInput.svelte'
+import { useEffect, useRef, useState } from 'react'
+
 import { History } from 'history'
+
+import { QueryState, SearchPatternType } from '@sourcegraph/search'
+
+import CodeMirrorQueryInput from './CodeMirrorQueryInput.svelte'
+import { Source } from './suggestions'
 
 export interface CodeMirrorQueryInputWrapperProps {
     queryState: QueryState
@@ -19,6 +22,8 @@ export interface CodeMirrorQueryInputWrapperProps {
 export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQueryInputWrapperProps> = props => {
     const [parent, setParent] = useState<HTMLDivElement | null>(null)
     const [instance, setInstance] = useState<CodeMirrorQueryInput | null>(null)
+    const instanceRef = useRef(instance)
+    instanceRef.current = instance
 
     useEffect(() => {
         if (!parent) {
@@ -30,11 +35,14 @@ export const CodeMirrorQueryInputWrapper: React.FunctionComponent<CodeMirrorQuer
         })
         setInstance(instance)
         return () => instance.$destroy()
+        // props are updated below
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [parent])
 
     useEffect(() => {
-        instance?.$set(props)
+        instanceRef.current?.$set(props)
     }, [props])
 
+    // eslint-disable-next-line react/forbid-dom-props
     return <div ref={setParent} style={{ display: 'contents' }} />
 }

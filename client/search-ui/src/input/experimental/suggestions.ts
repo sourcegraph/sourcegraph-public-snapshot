@@ -8,9 +8,10 @@ import {
     StateField,
     Transaction,
 } from '@codemirror/state'
-import { Command, EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { Command as CodeMirrorCommand, EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { History } from 'history'
 import { SvelteComponentTyped } from 'svelte'
+
 import Suggestions from './Suggestions.svelte'
 export { default as FilterSuggestion } from './FilterSuggestion.svelte'
 export { default as SearchQueryOption } from './SearchQueryOption.svelte'
@@ -31,9 +32,7 @@ export function getEditorConfig(state: EditorState): EditorConfig {
 /**
  * A source for completion/suggestion results
  */
-export interface Source {
-    (state: EditorState, position: number): SuggestionResult
-}
+export type Source = (state: EditorState, position: number) => SuggestionResult
 
 export interface SuggestionResult {
     /**
@@ -52,42 +51,40 @@ export interface SuggestionResult {
 
 export type CustomRenderer = typeof SvelteComponentTyped<{ option: Option }>
 
-export type Option =
-    | {
-          type: 'command'
-          value: string
-          apply: (view: EditorView) => void
-          matches?: Set<number>
-          // svg path
-          icon?: string
-          render?: CustomRenderer
-          description?: string
-          note?: string
-      }
-    | {
-          type: 'completion'
-          from: number
-          to?: number
-          value: string
-          insertValue?: string
-          matches?: Set<number>
-          // svg path
-          icon?: string
-          render?: CustomRenderer
-          description?: string
-      }
-    | {
-          type: 'target'
-          value: string
-          url: string
-          matches?: Set<number>
-          // svg path
-          icon?: string
-          render?: CustomRenderer
-          description?: string
-      }
-
-export type EntryOf<T> = Extract<Option, { type: T }>
+export interface Command {
+    type: 'command'
+    value: string
+    apply: (view: EditorView) => void
+    matches?: Set<number>
+    // svg path
+    icon?: string
+    render?: CustomRenderer
+    description?: string
+    note?: string
+}
+export interface Target {
+    type: 'target'
+    value: string
+    url: string
+    matches?: Set<number>
+    // svg path
+    icon?: string
+    render?: CustomRenderer
+    description?: string
+}
+export interface Completion {
+    type: 'completion'
+    from: number
+    to?: number
+    value: string
+    insertValue?: string
+    matches?: Set<number>
+    // svg path
+    icon?: string
+    render?: CustomRenderer
+    description?: string
+}
+export type Option = Command | Target | Completion
 
 export interface Group {
     title: string
@@ -117,7 +114,7 @@ class SuggestionView {
             // input.
             window.requestAnimationFrame(() => view.contentDOM.focus())
         })
-        this.view.dom.appendChild(this.root)
+        this.view.dom.append(this.root)
     }
 
     public update(update: ViewUpdate): void {
@@ -128,11 +125,11 @@ class SuggestionView {
         }
     }
 
-    private updateResults(state: SuggestionsState) {
+    private updateResults(state: SuggestionsState): void {
         this.instance.$set({ results: state.result.groups, activeRowIndex: state.selectedOption, open: state.open })
     }
 
-    public destroy() {
+    public destroy(): void {
         this.instance.$destroy()
         this.root.remove()
     }
@@ -152,17 +149,20 @@ const completionPlugin = ViewPlugin.fromClass(
             }
         }
 
-        private async startQuery(source: RegisteredSource) {
+        private startQuery(source: RegisteredSource): void {
             if (
                 source.state === RegisteredSourceState.Pending &&
                 (!this.running || this.running.timestamp !== source.timestamp)
             ) {
                 const query = (this.running = new RunningQuery(source))
-                query.source.run()?.then(result => {
-                    if (this.running === query) {
-                        this.view.dispatch({ effects: updateResultEffect.of({ source, result }) })
-                    }
-                })
+                query.source
+                    .run()
+                    ?.then(result => {
+                        if (this.running === query) {
+                            this.view.dispatch({ effects: updateResultEffect.of({ source, result }) })
+                        }
+                    })
+                    .catch(() => {})
             } else if (source.state === RegisteredSourceState.Inactive) {
                 this.running = null
             }
@@ -173,7 +173,7 @@ const completionPlugin = ViewPlugin.fromClass(
 class RunningQuery {
     constructor(public readonly source: RegisteredSource) {}
 
-    get timestamp(): number {
+    public get timestamp(): number {
         return this.source.timestamp
     }
 }
@@ -185,12 +185,13 @@ class Result {
     private entries: Option[]
 
     constructor(
-        readonly groups: Group[],
+        public readonly groups: Group[],
         public valid: (state: EditorState, position: number) => boolean = () => false
     ) {
         this.entries = groups.flatMap(group => group.entries)
     }
 
+    // eslint-disable-next-line id-length
     public at(index: number): Option | undefined {
         return this.entries[index]
     }
@@ -319,6 +320,8 @@ class SuggestionsState {
     ) {}
 
     public update(transaction: Transaction): SuggestionsState {
+        // Aliasing makes it easier to update the state
+        // eslint-disable-next-line @typescript-eslint/no-this-alias,unicorn/no-this-assignment
         let state: SuggestionsState = this
 
         const source = transaction.state.facet(suggestionSource)
@@ -404,7 +407,7 @@ const suggestionsStateField = StateField.define<SuggestionsState>({
     },
 })
 
-function moveSelection(direction: 'forward' | 'backward'): Command {
+function moveSelection(direction: 'forward' | 'backward'): CodeMirrorCommand {
     const forward = direction === 'forward'
     return view => {
         const state = view.state.field(suggestionsStateField, false)
@@ -489,7 +492,7 @@ export const suggestionSource = Facet.define<Source, Source>({
                 {
                     key: 'Mod-Space',
                     run(view) {
-                        view.dispatch({effects: startCompletion.of()})
+                        view.dispatch({ effects: startCompletion.of() })
                         return true
                     },
                 },
@@ -536,10 +539,8 @@ export const suggestionSource = Facet.define<Source, Source>({
 //  - Only handle keybindings when suggestions are open
 //  - fix "open quote problem" (stretch goal)
 
-export const suggestions = (id: string, parent: HTMLDivElement, source: Source, history: History): Extension => {
-    return [
-        suggestionsConfig.of({ history, id }),
-        suggestionSource.of(source),
-        ViewPlugin.define(view => new SuggestionView(id, view, parent)),
-    ]
-}
+export const suggestions = (id: string, parent: HTMLDivElement, source: Source, history: History): Extension => [
+    suggestionsConfig.of({ history, id }),
+    suggestionSource.of(source),
+    ViewPlugin.define(view => new SuggestionView(id, view, parent)),
+]

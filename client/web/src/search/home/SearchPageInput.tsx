@@ -16,7 +16,7 @@ import {
     SearchModeProps,
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
-import { LazyCodeMirrorQueryInput } from '@sourcegraph/search-ui/src/input/experimental'
+import { LazyCodeMirrorQueryInput } from '@sourcegraph/search-ui/src/experimental'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -34,10 +34,10 @@ import {
 } from '../../stores'
 import { ThemePreferenceProps } from '../../theme'
 import { submitSearch } from '../helpers'
+import { suggestions } from '../input/suggestions'
 import { useRecentSearches } from '../input/useRecentSearches'
 
 import styles from './SearchPageInput.module.scss'
-import { suggestions } from '../input/suggestions'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
