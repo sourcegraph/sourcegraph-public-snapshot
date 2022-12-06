@@ -11,6 +11,7 @@ import { Padding } from '../../../Popover'
 import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core'
 import { Series, SeriesLikeChart } from '../../types'
 
+import { getSortedByFirstPointSeries } from './keyboard-navigation'
 import { LineChartContent } from './LineChartContent'
 import { Point } from './types'
 import { getSeriesData, getMinMaxBoundaries } from './utils'
@@ -76,12 +77,6 @@ export interface LineChartProps<Datum> extends SeriesLikeChart<Datum>, SVGProps<
 
 const identity = <T,>(argument: T): T => argument
 const DEFAULT_LINE_CHART_PADDING = { top: 16, right: 18, bottom: 0, left: 0 }
-const TOOLTIP_NAVIGATION_MESSAGE = `
-    Press Enter to enter the arrow keys navigation mode.
-    Use left and right arrow keys to navigate through the Y axis.
-    Use up and down keys to navigate through multiple data points on the same X line.
-    Press Esc key to exit arrow keys navigation mode.
-`
 
 /**
  * Visual component that renders svg line chart with pre-defined sizes, tooltip,
@@ -103,7 +98,12 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
     } = props
 
     const [isTooltipOpen, setTooltipOpen] = useState(false)
-    const dataSeries = useMemo(() => getSeriesData({ series, stacked }), [series, stacked])
+    const dataSeries = useMemo(
+        // Sort series by their first element value in order to render series
+        // with the lowest point first, to adjust native browser focus order
+        () => getSortedByFirstPointSeries(getSeriesData({ series, stacked })),
+        [series, stacked]
+    )
 
     const { minX, maxX, minY, maxY } = useMemo(
         () => getMinMaxBoundaries({ dataSeries, zeroYAxisMin }),
@@ -150,7 +150,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
     }
 
     return (
-        <Tooltip open={isTooltipOpen} content={TOOLTIP_NAVIGATION_MESSAGE}>
+        <Tooltip open={isTooltipOpen} content="Use arrow keys to navigate through the Y/X axes.">
             <SvgRoot
                 {...attributes}
                 role="group"

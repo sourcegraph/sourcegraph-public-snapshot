@@ -132,10 +132,11 @@ export function LineChartContent<Datum>(props: LineChartContentProps<Datum>): Re
         <Group {...attributes} role="list" aria-label="Chart series">
             {stacked && <StackedArea dataSeries={activeSeries} xScale={xScale} yScale={yScale} />}
 
-            {activeSeries.map(line => (
+            {activeSeries.map((line, index) => (
                 <LineDataSeries
                     key={line.id}
                     id={line.id.toString()}
+                    seriesIndex={index}
                     xScale={xScale}
                     yScale={yScale}
                     dataset={line.data}
@@ -158,6 +159,7 @@ export function LineChartContent<Datum>(props: LineChartContentProps<Datum>): Re
                 // solve problem with z-index for SVG elements.
                 <LineDataSeries
                     id={currentSeries.id.toString()}
+                    seriesIndex={-1}
                     xScale={xScale}
                     yScale={yScale}
                     dataset={currentSeries.data}

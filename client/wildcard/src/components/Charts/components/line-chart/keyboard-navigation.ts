@@ -28,12 +28,21 @@ export function useKeyboardNavigation(props: Props): void {
 
             // Focus the first element within the chart
             if (isFocusOnTheRootElement) {
-                if (event.key === Key.Enter) {
+                if (event.key === Key.Enter || isArrowPressed(event)) {
                     const firstElementId = findTheFirstPointId(series)
                     const firstElement = element?.querySelector<HTMLElement>(`[data-id="${firstElementId}"]`)
                     firstElement?.focus()
                 }
 
+                return
+            }
+
+            // Catch shift + tab and move focus to the root element. It prevents focusing
+            // the first focusable point in case when the focus is on the second or further point
+            // of the focusable point's series or any other series after it.
+            if (event.shiftKey && event.key === Key.Tab) {
+                event.preventDefault()
+                element?.focus()
                 return
             }
 
@@ -68,7 +77,7 @@ export function useKeyboardNavigation(props: Props): void {
 }
 
 function findTheFirstPointId(series: SeriesWithData<unknown>[]): string | null {
-    const sortedSeries = getSortedSeries(series)
+    const sortedSeries = getSortedByFirstPointSeries(series)
     const nonEmptySeries = sortedSeries.find(series => series.data.length > 0)
 
     if (!nonEmptySeries) {
@@ -81,7 +90,7 @@ function findTheFirstPointId(series: SeriesWithData<unknown>[]): string | null {
 function findNextElementId(event: KeyboardEvent, currentId: string, series: SeriesWithData<any>[]): string | null {
     const [seriesId, index] = decodePointId(currentId)
 
-    const sortedSeries = getSortedSeries(series)
+    const sortedSeries = getSortedByFirstPointSeries(series)
     const currentSeriesIndex = sortedSeries.findIndex(series => series.id === seriesId)
     const currentSeries = sortedSeries[currentSeriesIndex]
     const currentPoint = currentSeries?.data[index]
@@ -257,7 +266,7 @@ function getBelowPointId(
 /**
  * Returns sorted series list by the first datum value in each series dataset.
  */
-function getSortedSeries(series: SeriesWithData<any>[]): SeriesWithData<any>[] {
+export function getSortedByFirstPointSeries(series: SeriesWithData<any>[]): SeriesWithData<any>[] {
     return [...series].sort((a, b) => getDatumValue(a.data[0]) - getDatumValue(b.data[0]))
 }
 

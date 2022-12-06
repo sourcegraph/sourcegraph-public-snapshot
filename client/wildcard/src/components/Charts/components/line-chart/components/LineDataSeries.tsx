@@ -21,6 +21,7 @@ const formatXLabel = timeFormat('%d %B %A')
 
 interface LineDataSeriesProps<D> extends SVGProps<SVGGElement> {
     id: string
+    seriesIndex: number
     xScale: ScaleTime<number, number>
     yScale: ScaleLinear<number, number>
     dataset: SeriesDatum<D>[]
@@ -34,6 +35,7 @@ interface LineDataSeriesProps<D> extends SVGProps<SVGGElement> {
 export function LineDataSeries<D>(props: LineDataSeriesProps<D>): ReactElement {
     const {
         id,
+        seriesIndex,
         xScale,
         yScale,
         dataset,
@@ -72,11 +74,14 @@ export function LineDataSeries<D>(props: LineDataSeriesProps<D>): ReactElement {
                         ? `Link point, Y value: ${datumValue}, X value: ${formattedDate}, click to view data point detail`
                         : `Data point, Y value: ${datumValue}, X value: ${formattedDate}`
 
+                    // Make focusable only the first point of the first series as a started navigation point
+                    const isPointFocusable = seriesIndex === 0 && index === 0
+
                     return (
                         <PointGlyph
                             key={pointId}
                             id={pointId}
-                            tabIndex={-1}
+                            tabIndex={isPointFocusable ? 0 : -1}
                             top={yScale(datumValue)}
                             left={xScale(datum.x)}
                             active={activePointId === pointId}
