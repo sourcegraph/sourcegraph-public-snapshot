@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 
-import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
+import { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
 import { useHistory, useLocation } from 'react-router'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
