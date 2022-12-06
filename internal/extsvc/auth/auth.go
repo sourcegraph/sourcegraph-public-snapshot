@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"golang.org/x/oauth2"
 )
 
 // Authenticator instances mutate an outbound request to add whatever headers or
@@ -58,4 +59,27 @@ type AuthenticatorWithSSH interface {
 	// authorized_keys file format. This is usually accepted by code hosts to
 	// allow access to git over SSH.
 	SSHPublicKey() (publicKey string)
+}
+
+type CacheableTokenSource struct {
+	// TokenSource is the oauth2 TokenSource that does the actual token refreshing.
+	TokenSource oauth2.TokenSource
+	// CacheToken is a hook that gets called when TokenSource refreshes a token
+	// so that the token can be stored.
+	CacheToken func(*oauth2.Token) error
+}
+
+func (cts CacheableTokenSource) Token() (*oauth2.Token, error) {
+	token, err := cts.TokenSource.Token()
+	if err != nil {
+		return nil, err
+	}
+
+	if cts.CacheToken != nil {
+		if err = cts.CacheToken(token); err != nil {
+			return nil, err
+		}
+	}
+
+	return token, nil
 }
