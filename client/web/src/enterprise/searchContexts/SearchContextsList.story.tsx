@@ -21,7 +21,7 @@ const config: Meta = {
     title: 'web/enterprise/searchContexts/SearchContextsListTab',
     decorators: [decorator],
     parameters: {
-        chromatic: { viewports: [1200], disableSnapshot: false },
+        chromatic: { viewports: [1200, 767], disableSnapshot: false },
     },
 }
 
