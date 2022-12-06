@@ -272,7 +272,7 @@ func processDocument(
 		targetRangeID precise.ID,
 		definitionResultID precise.ID,
 	) bool {
-		definitionResultChunk, ok := resultChunks[precise.HashKey(precise.ID(definitionResultID), numResultChunks)]
+		definitionResultChunk, ok := resultChunks[precise.HashKey(definitionResultID, numResultChunks)]
 		if !ok {
 			return false
 		}
