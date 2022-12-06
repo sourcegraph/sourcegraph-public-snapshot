@@ -52,7 +52,6 @@ func TestGitHubWebhooks(t *testing.T) {
 	esStore := db.ExternalServices()
 
 	u, err := db.Users().Create(context.Background(), database.NewUser{
-		Email:           "test@user.com",
 		Username:        "testuser",
 		EmailIsVerified: true,
 	})
@@ -61,13 +60,11 @@ func TestGitHubWebhooks(t *testing.T) {
 	err = db.UserExternalAccounts().Insert(ctx, u.ID, extsvc.AccountSpec{
 		ServiceType: extsvc.TypeGitHub,
 		ServiceID:   "https://github.com/",
-		ClientID:    "",
 		AccountID:   "123",
 	}, extsvc.AccountData{})
 	require.NoError(t, err)
 
-	err = db.Repos().Create(ctx, &types.Repo{
-		ID:   1,
+	repo := &types.Repo{
 		Name: "github.com/sourcegraph/sourcegraph",
 		URI:  "github.com/sourcegraph/sourcegraph",
 		ExternalRepo: api.ExternalRepoSpec{
@@ -75,7 +72,8 @@ func TestGitHubWebhooks(t *testing.T) {
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",
 		},
-	})
+	}
+	err = db.Repos().Create(ctx, repo)
 	require.NoError(t, err)
 
 	err = esStore.Upsert(ctx, &types.ExternalService{
@@ -123,10 +121,19 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 
 	ghWebhook.Register(hook.WebhookRouter)
 
+	newReq := func(t *testing.T, event string, payload []byte) *http.Request {
+		t.Helper()
+		req, err := http.NewRequest("POST", fmt.Sprintf("/.api/webhooks/%v", wh.UUID), bytes.NewBuffer(payload))
+		require.NoError(t, err)
+		req.Header.Add("X-Github-Event", event)
+		req.Header.Set("Content-Type", "application/json")
+		return req
+	}
+
 	t.Run("repository event", func(t *testing.T) {
 		webhookCalled := false
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.RepoIDs[0] == 1
+			webhookCalled = args.RepoIDs[0] == repo.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -138,10 +145,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 			},
 		})
 		require.NoError(t, err)
-		req, err := http.NewRequest("POST", fmt.Sprintf("/.api/webhooks/%v", wh.UUID), bytes.NewBuffer(payload))
-		require.NoError(t, err)
-		req.Header.Add("X-Github-Event", "repository")
-		req.Header.Set("Content-Type", "application/json")
+		req := newReq(t, "repository", payload)
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
@@ -151,7 +155,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 	t.Run("member event added", func(t *testing.T) {
 		webhookCalled := false
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.UserIDs[0] == 1
+			webhookCalled = args.UserIDs[0] == u.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -166,10 +170,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 			},
 		})
 		require.NoError(t, err)
-		req, err := http.NewRequest("POST", fmt.Sprintf("/.api/webhooks/%v", wh.UUID), bytes.NewBuffer(payload))
-		require.NoError(t, err)
-		req.Header.Add("X-Github-Event", "member")
-		req.Header.Set("Content-Type", "application/json")
+		req := newReq(t, "member", payload)
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
@@ -179,7 +180,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 	t.Run("member event removed", func(t *testing.T) {
 		webhookCalled := false
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.UserIDs[0] == 1
+			webhookCalled = args.UserIDs[0] == u.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -194,10 +195,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 			},
 		})
 		require.NoError(t, err)
-		req, err := http.NewRequest("POST", fmt.Sprintf("/.api/webhooks/%v", wh.UUID), bytes.NewBuffer(payload))
-		require.NoError(t, err)
-		req.Header.Add("X-Github-Event", "member")
-		req.Header.Set("Content-Type", "application/json")
+		req := newReq(t, "member", payload)
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
@@ -207,7 +205,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 	t.Run("organization event member added", func(t *testing.T) {
 		webhookCalled := false
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.UserIDs[0] == 1
+			webhookCalled = args.UserIDs[0] == u.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -219,10 +217,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 			}},
 		})
 		require.NoError(t, err)
-		req, err := http.NewRequest("POST", fmt.Sprintf("/.api/webhooks/%v", wh.UUID), bytes.NewBuffer(payload))
-		require.NoError(t, err)
-		req.Header.Add("X-Github-Event", "organization")
-		req.Header.Set("Content-Type", "application/json")
+		req := newReq(t, "organization", payload)
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
@@ -232,7 +227,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 	t.Run("organization event member removed", func(t *testing.T) {
 		webhookCalled := false
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.UserIDs[0] == 1
+			webhookCalled = args.UserIDs[0] == u.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -244,10 +239,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 			}},
 		})
 		require.NoError(t, err)
-		req, err := http.NewRequest("POST", fmt.Sprintf("/.api/webhooks/%v", wh.UUID), bytes.NewBuffer(payload))
-		require.NoError(t, err)
-		req.Header.Add("X-Github-Event", "organization")
-		req.Header.Set("Content-Type", "application/json")
+		req := newReq(t, "organization", payload)
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
@@ -257,7 +249,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 	t.Run("membership event added", func(t *testing.T) {
 		webhookCalled := false
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.UserIDs[0] == 1
+			webhookCalled = args.UserIDs[0] == u.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -269,10 +261,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 			},
 		})
 		require.NoError(t, err)
-		req, err := http.NewRequest("POST", fmt.Sprintf("/.api/webhooks/%v", wh.UUID), bytes.NewBuffer(payload))
-		require.NoError(t, err)
-		req.Header.Add("X-Github-Event", "membership")
-		req.Header.Set("Content-Type", "application/json")
+		req := newReq(t, "membership", payload)
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
@@ -282,7 +271,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 	t.Run("membership event removed", func(t *testing.T) {
 		webhookCalled := false
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.UserIDs[0] == 1
+			webhookCalled = args.UserIDs[0] == u.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -294,10 +283,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 			},
 		})
 		require.NoError(t, err)
-		req, err := http.NewRequest("POST", fmt.Sprintf("/.api/webhooks/%v", wh.UUID), bytes.NewBuffer(payload))
-		require.NoError(t, err)
-		req.Header.Add("X-Github-Event", "membership")
-		req.Header.Set("Content-Type", "application/json")
+		req := newReq(t, "membership", payload)
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
@@ -307,7 +293,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 	t.Run("team event added to repository", func(t *testing.T) {
 		webhookCalled := false
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.RepoIDs[0] == 1
+			webhookCalled = args.RepoIDs[0] == repo.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -319,10 +305,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 			},
 		})
 		require.NoError(t, err)
-		req, err := http.NewRequest("POST", fmt.Sprintf("/.api/webhooks/%v", wh.UUID), bytes.NewBuffer(payload))
-		require.NoError(t, err)
-		req.Header.Add("X-Github-Event", "team")
-		req.Header.Set("Content-Type", "application/json")
+		req := newReq(t, "team", payload)
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)
@@ -332,7 +315,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 	t.Run("team event removed from repository", func(t *testing.T) {
 		webhookCalled := false
 		repoupdater.MockSchedulePermsSync = func(ctx context.Context, args protocol.PermsSyncRequest) error {
-			webhookCalled = args.RepoIDs[0] == 1
+			webhookCalled = args.RepoIDs[0] == repo.ID
 			return nil
 		}
 		t.Cleanup(func() { repoupdater.MockSchedulePermsSync = nil })
@@ -344,10 +327,7 @@ VALUES (1, 1, 'https://github.com/sourcegraph/sourcegraph')
 			},
 		})
 		require.NoError(t, err)
-		req, err := http.NewRequest("POST", fmt.Sprintf("/.api/webhooks/%v", wh.UUID), bytes.NewBuffer(payload))
-		require.NoError(t, err)
-		req.Header.Add("X-Github-Event", "team")
-		req.Header.Set("Content-Type", "application/json")
+		req := newReq(t, "team", payload)
 
 		responseRecorder := httptest.NewRecorder()
 		hook.ServeHTTP(responseRecorder, req)

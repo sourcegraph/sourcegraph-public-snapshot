@@ -64,62 +64,16 @@ func (h *GitHubWebhook) handleRepositoryEvent(ctx context.Context, db database.D
 		return nil
 	}
 
-	ghRepo := e.GetRepo()
-	if ghRepo == nil {
-		return errors.New("no repo found in webhook event")
-	}
-
-	repoName, err := db.Repos().GetFirstRepoNameByCloneURL(ctx, strings.TrimSuffix(ghRepo.GetCloneURL(), ".git"))
-	if err != nil {
-		return err
-	}
-
-	repo, err := db.Repos().GetByName(ctx, repoName)
-	if err != nil {
-		return err
-	}
-
-	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-		RepoIDs: []api.RepoID{repo.ID},
-	})
-	if err != nil {
-		h.logger.Error("could not schedule permissions sync for repo", log.Error(err), log.Int("repo ID", int(repo.ID)))
-	}
-
-	return err
+	return h.getRepoAndSyncPerms(ctx, db, e)
 }
 
 func (h *GitHubWebhook) handleMemberEvent(ctx context.Context, db database.DB, e *gh.MemberEvent, codeHostURN extsvc.CodeHostBaseURL) error {
 	if e.GetAction() != "added" && e.GetAction() != "removed" {
 		return nil
 	}
-
 	user := e.GetMember()
-	if user == nil {
-		return errors.New("no user found in webhook event")
-	}
 
-	externalAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
-		ServiceID:      codeHostURN.String(),
-		AccountID:      strconv.Itoa(int(user.GetID())),
-		ExcludeExpired: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	if len(externalAccounts) == 0 {
-		return errors.Newf("no external accounts found for user with external account id %d", user.GetID())
-	}
-
-	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-		UserIDs: []int32{externalAccounts[0].UserID},
-	})
-	if err != nil {
-		h.logger.Error("could not schedule permissions sync for user", log.Error(err), log.Int("user ID", int(externalAccounts[0].UserID)))
-	}
-
-	return err
+	return h.getUserAndSyncPerms(ctx, db, user, codeHostURN)
 }
 
 func (h *GitHubWebhook) handleOrganizationEvent(ctx context.Context, db database.DB, e *gh.OrganizationEvent, codeHostURN extsvc.CodeHostBaseURL) error {
@@ -128,43 +82,28 @@ func (h *GitHubWebhook) handleOrganizationEvent(ctx context.Context, db database
 	}
 
 	user := e.GetMembership().GetUser()
-	if user == nil {
-		return errors.New("could not get user from webhook event")
-	}
 
-	externalAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
-		ServiceID:      codeHostURN.String(),
-		AccountID:      strconv.Itoa(int(user.GetID())),
-		ExcludeExpired: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	if len(externalAccounts) == 0 {
-		return errors.Newf("no external accounts found for user with external account id %d", user.GetID())
-	}
-
-	err = repoupdater.DefaultClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
-		UserIDs: []int32{externalAccounts[0].UserID},
-	})
-	if err != nil {
-		h.logger.Error("could not schedule permissions sync for user", log.Error(err), log.Int("user ID", int(externalAccounts[0].UserID)))
-	}
-
-	return err
+	return h.getUserAndSyncPerms(ctx, db, user, codeHostURN)
 }
 
 func (h *GitHubWebhook) handleMembershipEvent(ctx context.Context, db database.DB, e *gh.MembershipEvent, codeHostURN extsvc.CodeHostBaseURL) error {
 	if e.GetAction() != "added" && e.GetAction() != "removed" {
 		return nil
 	}
-
 	user := e.GetMember()
-	if user == nil {
-		return errors.New("no user found in webhook event")
+
+	return h.getUserAndSyncPerms(ctx, db, user, codeHostURN)
+}
+
+func (h *GitHubWebhook) handleTeamEvent(ctx context.Context, e *gh.TeamEvent, db database.DB) error {
+	if e.GetAction() != "added_to_repository" && e.GetAction() != "removed_from_repository" {
+		return nil
 	}
 
+	return h.getRepoAndSyncPerms(ctx, db, e)
+}
+
+func (h *GitHubWebhook) getUserAndSyncPerms(ctx context.Context, db database.DB, user *gh.User, codeHostURN extsvc.CodeHostBaseURL) error {
 	externalAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
 		ServiceID:      codeHostURN.String(),
 		AccountID:      strconv.Itoa(int(user.GetID())),
@@ -188,22 +127,10 @@ func (h *GitHubWebhook) handleMembershipEvent(ctx context.Context, db database.D
 	return err
 }
 
-func (h *GitHubWebhook) handleTeamEvent(ctx context.Context, e *gh.TeamEvent, db database.DB) error {
-	if e.GetAction() != "added_to_repository" && e.GetAction() != "removed_from_repository" {
-		return nil
-	}
-
+func (h *GitHubWebhook) getRepoAndSyncPerms(ctx context.Context, db database.DB, e interface{ GetRepo() *gh.Repository }) error {
 	ghRepo := e.GetRepo()
-	if ghRepo == nil {
-		return errors.New("no repo found in webhook event")
-	}
 
-	repoName, err := db.Repos().GetFirstRepoNameByCloneURL(ctx, strings.TrimSuffix(ghRepo.GetCloneURL(), ".git"))
-	if err != nil {
-		return err
-	}
-
-	repo, err := db.Repos().GetByName(ctx, repoName)
+	repo, err := db.Repos().GetFirstRepoByCloneURL(ctx, strings.TrimSuffix(ghRepo.GetCloneURL(), ".git"))
 	if err != nil {
 		return err
 	}
