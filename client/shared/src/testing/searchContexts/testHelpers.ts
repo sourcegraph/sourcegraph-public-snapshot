@@ -1,7 +1,7 @@
 import { subDays } from 'date-fns'
 import { Observable, of } from 'rxjs'
-import { AuthenticatedUser } from '../../auth'
 
+import { AuthenticatedUser } from '../../auth'
 import { Maybe, Scalars } from '../../graphql-operations'
 
 interface SearchContextFields {
@@ -34,15 +34,7 @@ interface ListSearchContexts {
     pageInfo: { hasNextPage: boolean; endCursor: Maybe<string> }
 }
 
-export function mockFetchSearchContexts({
-    first,
-    query,
-    after,
-}: {
-    first: number
-    query?: string
-    after?: string
-}): Observable<ListSearchContexts> {
+export function mockFetchSearchContexts(): Observable<ListSearchContexts> {
     const result: ListSearchContexts = {
         nodes: [
             {

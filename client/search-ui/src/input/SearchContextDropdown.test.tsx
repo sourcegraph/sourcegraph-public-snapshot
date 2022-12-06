@@ -99,7 +99,7 @@ describe('SearchContextDropdown', () => {
             clock.tick(50)
         })
 
-        userEvent.click(screen.getByTestId('search-context-menu-item'))
+        userEvent.click(screen.getAllByTestId('search-context-menu-item')[0])
 
         sinon.assert.calledOnce(submitSearch)
     })
