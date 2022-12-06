@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type repositoryArgs struct {
@@ -74,15 +75,22 @@ func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, err
 
 	opt.FailedFetch = args.FailedFetch
 
+	if !args.Cloned && !args.NotCloned {
+		return database.ReposListOptions{}, errors.New("excluding cloned and not cloned repos leaves an empty set")
+	}
 	if !args.Cloned {
 		opt.NoCloned = true
-	} else if !args.NotCloned {
+	}
+	if !args.NotCloned {
 		// notCloned is true by default.
 		// this condition is valid only if it has been
 		// explicitly set to false by the client.
 		opt.OnlyCloned = true
 	}
 
+	if !args.Indexed && !args.NotIndexed {
+		return database.ReposListOptions{}, errors.New("excluding indexed and not indexed repos leaves an empty set")
+	}
 	if !args.Indexed {
 		opt.NoIndexed = true
 	}

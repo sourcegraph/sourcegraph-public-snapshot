@@ -21,7 +21,7 @@ func TestTransaction(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := dbtest.NewRawDB(logger, t)
 	setupStoreTest(t, db)
-	store := testStore(db)
+	store := testStore(t, db)
 
 	// Add record outside of transaction, ensure it's visible
 	if err := store.Exec(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (1, 42)`)); err != nil {
@@ -69,7 +69,7 @@ func TestConcurrentTransactions(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := dbtest.NewRawDB(logger, t)
 	setupStoreTest(t, db)
-	store := testStore(db)
+	store := testStore(t, db)
 	ctx := context.Background()
 
 	t.Run("creating transactions concurrently does not fail", func(t *testing.T) {
@@ -137,7 +137,7 @@ func TestSavepoints(t *testing.T) {
 			// Make `NumSavepointTests` "nested transactions", where the transaction
 			// or savepoint at index `i` will be rolled back. Note that all of the
 			// actions in any savepoint after this index will also be rolled back.
-			recurSavepoints(t, testStore(db), NumSavepointTests, i)
+			recurSavepoints(t, testStore(t, db), NumSavepointTests, i)
 
 			expected := map[int]int{}
 			for j := NumSavepointTests; j > i; j-- {
@@ -152,7 +152,7 @@ func TestSetLocal(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := dbtest.NewRawDB(logger, t)
 	setupStoreTest(t, db)
-	store := testStore(db)
+	store := testStore(t, db)
 
 	_, err := store.SetLocal(context.Background(), "sourcegraph.banana", "phone")
 	if err == nil {
@@ -218,8 +218,8 @@ func recurSavepoints(t *testing.T, store *Store, index, rollbackAt int) {
 	recurSavepoints(t, tx, index-1, rollbackAt)
 }
 
-func testStore(db *sql.DB) *Store {
-	return NewWithHandle(NewHandleWithDB(db, sql.TxOptions{}))
+func testStore(t testing.TB, db *sql.DB) *Store {
+	return NewWithHandle(NewHandleWithDB(logtest.Scoped(t), db, sql.TxOptions{}))
 }
 
 func assertCounts(t *testing.T, db dbutil.DB, expectedCounts map[int]int) {

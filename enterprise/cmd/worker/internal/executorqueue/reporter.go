@@ -10,9 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func NewMetricReporter[T workerutil.Record](observationContext *observation.Context, queueName string, store store.Store[T], metricsConfig *Config) (goroutine.BackgroundRoutine, error) {
+func NewMetricReporter[T workerutil.Record](observationCtx *observation.Context, queueName string, store store.Store[T], metricsConfig *Config) (goroutine.BackgroundRoutine, error) {
 	// Emit metrics to control alerts.
-	initPrometheusMetric(observationContext, queueName, store)
+	initPrometheusMetric(observationCtx, queueName, store)
 
 	// Emit metrics to control executor auto-scaling.
 	return initExternalMetricReporters(queueName, store, metricsConfig)

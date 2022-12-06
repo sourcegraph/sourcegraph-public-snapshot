@@ -8,7 +8,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -110,7 +109,6 @@ var (
 	_ sources.ChangesetSource           = &FakeChangesetSource{}
 	_ sources.ArchivableChangesetSource = &FakeChangesetSource{}
 	_ sources.DraftChangesetSource      = &FakeChangesetSource{}
-	_ repos.Source                      = &FakeChangesetSource{}
 )
 
 func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *sources.Changeset) (bool, error) {
@@ -214,17 +212,6 @@ func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *sources.Ch
 }
 
 var fakeNotImplemented = errors.New("not implemented in FakeChangesetSource")
-
-func (s *FakeChangesetSource) ListRepos(ctx context.Context, results chan repos.SourceResult) {
-	s.ListReposCalled = true
-
-	results <- repos.SourceResult{Source: s, Err: fakeNotImplemented}
-}
-
-// CheckConnection fake impmentation is always available.
-func (s *FakeChangesetSource) CheckConnection(context.Context) error {
-	return nil
-}
 
 func (s *FakeChangesetSource) ExternalServices() types.ExternalServices {
 	s.ExternalServicesCalled = true

@@ -1,8 +1,6 @@
 package inference
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
@@ -13,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var (
@@ -23,18 +20,14 @@ var (
 )
 
 func NewService(db database.DB) *Service {
-	observationContext := &observation.Context{
-		Logger:     log.Scoped("inference.service", "inference service"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	observationCtx := observation.NewContext(log.Scoped("inference.service", "inference service"))
 
 	return newService(
+		observationCtx,
 		luasandbox.NewService(),
 		NewDefaultGitService(nil, db),
 		ratelimit.NewInstrumentedLimiter("InferenceService", rate.NewLimiter(rate.Limit(gitserverRequestRateLimit), 1)),
 		maximumFilesWithContentCount,
 		maximumFileWithContentSizeBytes,
-		observationContext,
 	)
 }

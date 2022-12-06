@@ -6,7 +6,9 @@ import { Context, ROOT_CONTEXT, trace } from '@opentelemetry/api'
 export type TraceContextRef = MutableRefObject<{ context: Context }>
 
 export const TraceContext = createContext<TraceContextRef>({ current: { context: ROOT_CONTEXT } })
-export const reactManualTracer = trace.getTracer('@sourcegraph/react-manual', '0.1')
+
+export const REACT_TRACER_NAME = '@sourcegraph/react-manual'
+export const reactManualTracer = trace.getTracer(REACT_TRACER_NAME, '0.1')
 
 export enum ReactAttributes {
     ComponentName = 'react.component.name',

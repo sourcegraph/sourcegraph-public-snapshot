@@ -18,7 +18,7 @@ func TestSetRequestLanguageSupport(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
 	db := database.NewDB(logger, sqlDB)
-	store := New(db, &observation.TestContext)
+	store := New(&observation.TestContext, db)
 
 	requests := []struct {
 		userID    int

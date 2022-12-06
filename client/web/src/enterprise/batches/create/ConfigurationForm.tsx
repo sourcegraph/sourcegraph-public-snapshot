@@ -139,7 +139,6 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                           variables: {
                               namespace: selectedNamespace.id,
                               spec: template,
-                              noCache: false,
                               batchChange: batchChangeID,
                           },
                       }).then(() => Promise.resolve(args))

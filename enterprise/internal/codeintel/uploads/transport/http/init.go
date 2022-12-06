@@ -4,9 +4,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"go.opentelemetry.io/otel"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -15,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
@@ -33,14 +29,10 @@ func GetHandler(svc *uploads.Service, db database.DB, uploadStore uploadstore.St
 			"codeintel uploads http handler",
 		)
 
-		observationContext := &observation.Context{
-			Logger:     logger,
-			Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
+		observationCtx := observation.NewContext(logger)
 
-		operations := newOperations(observationContext)
-		uploadHandlerOperations := uploadhandler.NewOperations("codeintel", observationContext)
+		operations := newOperations(observationCtx)
+		uploadHandlerOperations := uploadhandler.NewOperations(observationCtx, "codeintel")
 
 		userStore := db.Users()
 		repoStore := backend.NewRepos(logger, db, gitserver.NewClient(db))

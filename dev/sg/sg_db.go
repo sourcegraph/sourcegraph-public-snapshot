@@ -114,7 +114,7 @@ func dbAddUserAction(cmd *cli.Context) error {
 	}
 
 	// Connect to the database.
-	conn, err := connections.EnsureNewFrontendDB(postgresdsn.New("", "", conf.GetEnv), "frontend", &observation.TestContext)
+	conn, err := connections.EnsureNewFrontendDB(&observation.TestContext, postgresdsn.New("", "", conf.GetEnv), "frontend")
 	if err != nil {
 		return err
 	}
@@ -274,7 +274,7 @@ func dbResetPGExec(ctx *cli.Context) error {
 	}
 
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
+		return connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTable))
 	}
 	r, err := connections.RunnerFromDSNs(log.Scoped("migrations.runner", ""), dsnMap, "sg", storeFactory)
 	if err != nil {

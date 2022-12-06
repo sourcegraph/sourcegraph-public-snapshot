@@ -65,7 +65,6 @@ export const JetBrainsSearchBoxStory: Story = () => {
                             fetchSearchContexts={() => {
                                 throw new Error('fetchSearchContexts')
                             }}
-                            fetchAutoDefinedSearchContexts={() => NEVER}
                             getUserSearchContextNamespaces={() => []}
                             fetchStreamSuggestions={() => NEVER}
                             settingsCascade={EMPTY_SETTINGS_CASCADE}

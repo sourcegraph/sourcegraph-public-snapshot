@@ -11,11 +11,11 @@ import (
 )
 
 func NewRepositoryIndexer(
+	observationCtx *observation.Context,
 	store store.Store,
 	gitserverClient GitserverClient,
 	symbolsClient SymbolsClient,
 	interval time.Duration,
-	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	indexer := &indexer{
 		store:           store,

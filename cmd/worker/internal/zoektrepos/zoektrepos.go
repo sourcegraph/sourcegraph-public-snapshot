@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
@@ -30,8 +31,8 @@ func (j *updater) Config() []env.Config {
 	return nil
 }
 
-func (j *updater) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDBWithLogger(logger)
+func (j *updater) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	db, err := workerdb.InitDB(observationCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +40,7 @@ func (j *updater) Routines(startupCtx context.Context, logger log.Logger) ([]gor
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(context.Background(), 1*time.Hour, &handler{
 			db:     db,
-			logger: logger,
+			logger: observationCtx.Logger,
 		}),
 	}, nil
 }
@@ -49,8 +50,10 @@ type handler struct {
 	logger log.Logger
 }
 
-var _ goroutine.Handler = &handler{}
-var _ goroutine.ErrorHandler = &handler{}
+var (
+	_ goroutine.Handler      = &handler{}
+	_ goroutine.ErrorHandler = &handler{}
+)
 
 func (h *handler) Handle(ctx context.Context) error {
 	indexed, err := search.ListAllIndexed(ctx)

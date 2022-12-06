@@ -13,7 +13,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
     >
       <div />
       <section
-        class="mb-5 d-flex justify-content-center outlined"
+        class="mb-0 d-flex justify-content-center outlined"
       >
         <svg
           aria-hidden="true"
@@ -120,7 +120,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
     >
       <div />
       <section
-        class="mb-5 d-flex justify-content-center outlined"
+        class="mb-0 d-flex justify-content-center outlined"
       >
         <svg
           aria-hidden="true"
@@ -227,7 +227,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
     >
       <div />
       <section
-        class="mb-5 d-flex justify-content-center outlined"
+        class="mb-0 d-flex justify-content-center outlined"
       >
         <svg
           aria-hidden="true"
@@ -334,7 +334,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
     >
       <div />
       <section
-        class="mb-5 d-flex justify-content-center outlined"
+        class="mb-0 d-flex justify-content-center outlined"
       >
         <svg
           aria-hidden="true"
@@ -441,7 +441,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
     >
       <div />
       <section
-        class="mb-5 d-flex justify-content-center outlined"
+        class="mb-0 d-flex justify-content-center outlined"
       >
         <svg
           aria-hidden="true"

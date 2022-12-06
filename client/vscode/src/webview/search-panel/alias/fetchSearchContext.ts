@@ -54,6 +54,8 @@ const searchContextFragment = gql`
         autoDefined
         updatedAt
         viewerCanManage
+        viewerHasStarred
+        viewerHasAsDefault
         repositories {
             __typename
             repository {
@@ -138,6 +140,8 @@ export interface SearchContextFields {
     autoDefined: boolean
     updatedAt: string
     viewerCanManage: boolean
+    viewerHasAsDefault: boolean
+    viewerHasStarred: boolean
     query: string
     namespace: Maybe<
         | { __typename: 'User'; id: string; namespaceName: string }
@@ -148,13 +152,6 @@ export interface SearchContextFields {
         revisions: string[]
         repository: { __typename?: 'Repository'; name: string }
     }[]
-}
-
-export type AutoDefinedSearchContextsVariables = Exact<{ [key: string]: never }>
-
-export interface AutoDefinedSearchContextsResult {
-    __typename?: 'Query'
-    autoDefinedSearchContexts: ({ __typename?: 'SearchContext' } & SearchContextFields)[]
 }
 
 export type ListSearchContextsVariables = Exact<{

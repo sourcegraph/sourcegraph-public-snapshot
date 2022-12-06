@@ -34,10 +34,11 @@ type crateSyncerJob struct {
 	operations      *operations
 }
 
-func NewCrateSyncer(dependenciesSvc DependenciesService,
+func NewCrateSyncer(
+	observationCtx *observation.Context,
+	dependenciesSvc DependenciesService,
 	gitClient GitserverClient,
 	extSvcStore ExternalServiceStore,
-	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	// By default, sync crates every 12h, but the user can customize this interval
 	// through site-admin configuration of the RUSTPACKAGES code host.
@@ -57,7 +58,7 @@ func NewCrateSyncer(dependenciesSvc DependenciesService,
 		dependenciesSvc: dependenciesSvc,
 		gitClient:       gitClient,
 		extSvcStore:     extSvcStore,
-		operations:      newOperations(observationContext),
+		operations:      newOperations(observationCtx),
 	}
 
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {

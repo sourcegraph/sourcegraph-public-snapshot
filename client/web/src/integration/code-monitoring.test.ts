@@ -27,9 +27,6 @@ describe('Code monitoring', () => {
         })
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
-            AutoDefinedSearchContexts: () => ({
-                autoDefinedSearchContexts: [],
-            }),
             ViewerSettings: () => ({
                 viewerSettings: {
                     __typename: 'SettingsCascade',

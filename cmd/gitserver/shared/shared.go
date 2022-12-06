@@ -17,10 +17,8 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"github.com/tidwall/gjson"
-	"go.opentelemetry.io/otel"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
@@ -101,6 +99,7 @@ func Main() {
 	profiler.Init()
 
 	logger := log.Scoped("server", "the gitserver service")
+	observationCtx := observation.NewContext(logger)
 
 	if reposDir == "" {
 		logger.Fatal("SRC_REPOS_DIR is required")
@@ -114,14 +113,14 @@ func Main() {
 		logger.Fatal("SRC_REPOS_DESIRED_PERCENT_FREE is out of range", log.Error(err))
 	}
 
-	sqlDB, err := getDB()
+	sqlDB, err := getDB(observationCtx)
 	if err != nil {
 		logger.Fatal("failed to initialize database stores", log.Error(err))
 	}
 	db := database.NewDB(logger, sqlDB)
 
 	repoStore := db.Repos()
-	dependenciesSvc := dependencies.NewService(db)
+	dependenciesSvc := dependencies.NewService(observationCtx, db)
 	externalServiceStore := db.ExternalServices()
 
 	err = keyring.Init(ctx)
@@ -136,6 +135,7 @@ func Main() {
 
 	gitserver := server.Server{
 		Logger:             logger,
+		ObservationCtx:     observationCtx,
 		ReposDir:           reposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
@@ -150,12 +150,7 @@ func Main() {
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 	}
 
-	observationContext := &observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	gitserver.RegisterMetrics(db, observationContext)
+	gitserver.RegisterMetrics(observationCtx, db)
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		logger.Fatal("failed to setup temporary directory", log.Error(err))
@@ -302,7 +297,7 @@ func getPercent(p int) (int, error) {
 }
 
 // getDB initializes a connection to the database and returns a dbutil.DB
-func getDB() (*sql.DB, error) {
+func getDB(observationCtx *observation.Context) (*sql.DB, error) {
 	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
 	// user requests.
 	//
@@ -312,7 +307,7 @@ func getDB() (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	return connections.EnsureNewFrontendDB(dsn, "gitserver", &observation.TestContext)
+	return connections.EnsureNewFrontendDB(observationCtx, dsn, "gitserver")
 }
 
 func getRemoteURLFunc(

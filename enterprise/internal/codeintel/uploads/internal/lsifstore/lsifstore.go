@@ -48,15 +48,15 @@ type store struct {
 	operations *operations
 }
 
-func New(db codeintelshared.CodeIntelDB, observationContext *observation.Context) LsifStore {
-	return newStore(db, observationContext)
+func New(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) LsifStore {
+	return newStore(observationCtx, db)
 }
 
-func newStore(db codeintelshared.CodeIntelDB, observationContext *observation.Context) *store {
+func newStore(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) *store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
 		serializer: NewSerializer(),
-		operations: newOperations(observationContext),
+		operations: newOperations(observationCtx),
 	}
 }
 

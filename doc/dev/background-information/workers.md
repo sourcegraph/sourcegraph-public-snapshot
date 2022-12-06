@@ -181,7 +181,9 @@ We assume that the repository name is be necessary to process the record, meanin
 
 Next, we define the struct instance `ExampleJob` that mirrors the interesting fields of the `example_jobs_with_repository_name` view.
 
-We will additionally define an array of SQL column expressions that correspond to each field of the struct. For these expressions to be valid, we assume they will be embeddded in a query where the `example_jobs` record corresponds to a row of the `example_jobs_with_repository_name` table. Note that these expressions can be arbitrarily complex (conditional, sub-select expressions, etc).
+We will additionally define an array of SQL column expressions that correspond to each field of the struct. For these expressions to be valid, we assume they will be embedded in a query where the `example_jobs` record corresponds to a row of the `example_jobs_with_repository_name` table. Note that these expressions can be arbitrarily complex (conditional, sub-select expressions, etc).
+
+Add this to a new file at `cmd/worker/internal/example/example_job.go` or similar:
 
 ```go
 import (
@@ -230,7 +232,9 @@ var exampleJobColumns = []*sqlf.Query{
 }
 ```
 
-`ExampleJob` will need to implement the `workerutil.Record` interface to satisfy the generic bounds in `dbworker.Store` and `workerutil.Worker`:
+`ExampleJob` will need to implement the `workerutil.Record` interface to satisfy the generic bounds in `dbworker.Store` and `workerutil.Worker`.
+
+Keep on adding to `example_job.go`:
 
 ```go
 func (j *ExampleJob) RecordID() int {
@@ -240,12 +244,12 @@ func (j *ExampleJob) RecordID() int {
 
 Now, we define a function `scanExampleJob` that scans a single record (provided as a `dbutil.Scanner`) into an `*ExampleJob`. We write this method to work specifically with the SQL expressions from `exampleJobColumns`, above.
 
+(Tip: Depending on your editor, you may not need to copy the imports—they may be auto-added.)
+
 ```go
 import (
-  "database/sql"
-
+  "github.com/lib/pq"
   "github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-  "github.com/sourcegraph/sourcegraph/internal/workerutil"
   dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
@@ -287,12 +291,12 @@ Given our table definition and new scanning function, we can configure a databas
 
 ```go
 import (
-  "github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-  dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+  "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+  "github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func makeStore(logger log.Logger, dbHandle basestore.TransactableHandle) dbworkerstore.Store[*ExampleJob] {
-  return dbworkerstore.New(logger, dbHandle, store.Options[*ExampleJob]{
+func makeStore(observationCtx *observation.Context, dbHandle basestore.TransactableHandle) dbworkerstore.Store[*ExampleJob] {
+  return dbworkerstore.New(observationCtx, dbHandle, dbworkerstore.Options[*ExampleJob]{
     Name:              "example_job_worker_store",
     TableName:         "example_jobs",
     ViewName:          "example_jobs_with_repository_name example_jobs",
@@ -311,7 +315,20 @@ Notice here that we provided a table name and view name with an _alias_ back to 
 
 The type parameters will assure that the scanning function returns the expected type according to what is defined on the `dbworkerstore.Store` (and ultimately what gets passed to `dbworker.NewWorker`).
 
-#### Step 4: Write the handler
+#### Step 4: Create the store
+
+```go
+import (
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+)
+
+type MyOwnStore interface {
+	basestore.ShareableStore
+	DataForRepo(int) string
+}
+```
+
+#### Step 5: Write the handler
 
 We now have a way to dequeue jobs but no way to process them. We define our _handler_ logic, which is implemented **specifically** for the `ExampleJob` record. The type parameters ensure that the jobs passed can only be of the correct types.
 
@@ -320,10 +337,6 @@ import (
   "context"
 
   "github.com/sourcegraph/log"
-
-  "github.com/sourcegraph/sourcegraph/internal/workerutil"
-  "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-  "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type handler struct {
@@ -333,28 +346,28 @@ type handler struct {
 var _ workerutil.Handler[*ExampleJob] = &handler{}
 
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record *ExampleJob) error {
-  // Do the actual processing
   data := h.myOwnStore.DataForRepo(record.RepositoryID)
 
   return h.process(data)
 }
+
+func (h *handler) process(data string) error {
+  // Do the actual processing
+	
+  return nil
+}
 ```
 
-#### Step 5: Configure the worker and resetter
+#### Step 6: Configure the worker and resetter
 
 Now that we have all of our constituent parts ready, we can finally construct our root objects that orchestrate the consumer behavior. Here, we make constructor functions for a worker instance as well as a resetter instance.
 
 ```go
 import (
-  "context"
-
-  "github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-  "github.com/sourcegraph/sourcegraph/internal/workerutil"
   "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-  "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-func makeWorker(ctx context.Context, workerStore store.Store[*ExampleJob], myOwnStore MyOwnStore) *workerutil.Worker[*ExampleJob] {
+func makeWorker(ctx context.Context, workerStore dbworkerstore.Store[*ExampleJob], myOwnStore MyOwnStore) *workerutil.Worker[*ExampleJob] {
   handler := &handler{
     myOwnStore: myOwnStore,
   }
@@ -367,7 +380,7 @@ func makeWorker(ctx context.Context, workerStore store.Store[*ExampleJob], myOwn
   })
 }
 
-func makeResetter(logger log.Logger, workerStore store.Store[*ExampleJob]) *dbworker.Resetter[*ExampleJob] {
+func makeResetter(logger log.Logger, workerStore dbworkerstore.Store[*ExampleJob]) *dbworker.Resetter[*ExampleJob] {
   return dbworker.NewResetter[*ExampleJob](logger, workerStore, dbworker.ResetterOptions{
     Name:     "example_job_worker_resetter",
     Interval: time.Second * 30, // Check for orphaned jobs every 30 seconds
@@ -375,12 +388,12 @@ func makeResetter(logger log.Logger, workerStore store.Store[*ExampleJob]) *dbwo
 }
 ```
 
-#### Step 6: Register the worker and resetter
+#### Step 7: Register the worker and resetter
 
 The results of `makeWorker` and `makeResetter` can then be passed to `goroutine.MonitorBackgroundRoutines`.
 
-The worker and resetter may or or may execute in the same process. For example, we run all code navigation background routines in the frontend, except for our LSIF conversion worker, which runs in a separate process for resource isolation and independent scaling.
+The worker and resetter may or may not execute in the same process. For example, we run all code navigation background routines in the frontend, except for our LSIF conversion worker, which runs in a separate process for resource isolation and independent scaling.
 
-#### Step 7: Consider adding indexes
+#### Step 8: Consider adding indexes
 
 The worker depends on a few columns to dequeue records. To keep it fast, consider adding indexes on the `state` and `process_after` columns.
