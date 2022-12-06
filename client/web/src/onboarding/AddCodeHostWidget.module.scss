@@ -23,7 +23,7 @@ $background-color: var(--color-bg-1);
         width: 1rem;
         height: 1rem;
         left: 50%;
-        bottom: calc(100% - 1rem + #{$border-size}* 2.5);
+        bottom: calc(100% - 1rem + #{$border-size} * 2.5);
         background: $background-color;
         transform: rotate(45deg);
     }
