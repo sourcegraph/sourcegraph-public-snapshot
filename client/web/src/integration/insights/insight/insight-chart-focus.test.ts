@@ -78,7 +78,7 @@ describe('Code insights [Insight Card] should has a proper focus management ', (
         // Enter the arrow keys keyboard navigation mode
         await driver.page.keyboard.press(Key.Enter)
 
-        for (let lineIndex = 0; lineIndex < dataSeries.length; lineIndex++) {
+        for (let lineIndex = 0; lineIndex <= dataSeries.length - 1; lineIndex++) {
             const series = dataSeries[lineIndex]
 
             for (let pointIndex = 0; pointIndex < series.points.length; pointIndex++) {
