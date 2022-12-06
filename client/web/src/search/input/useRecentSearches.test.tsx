@@ -165,7 +165,7 @@ describe('recentSearches', () => {
             `)
         })
 
-        test('adding an existing item to recent searches de-duplicates it and puts it at the top', async () => {
+        test('adding an existing item to recent searches deduplicates it and puts it at the top', async () => {
             const { queryAllByRole, getByTestId } = render(
                 <Wrapper tempSettings={buildMockTempSettings(4)} eventLogs={buildMockEventLogs(0)} />
             )
