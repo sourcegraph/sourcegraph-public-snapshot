@@ -106,12 +106,9 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
     const updatePagination = useCallback(
         async (nextPageArgs: PaginatedConnectionQueryArguments): Promise<void> => {
             setPaginationArgs(nextPageArgs)
-            await refetch({
-                ...initialQueryVariables,
-                ...nextPageArgs,
-            })
+            await refetch(nextPageArgs as Partial<TVariables>)
         },
-        [initialQueryVariables, refetch, setPaginationArgs]
+        [refetch, setPaginationArgs]
     )
 
     const goToNextPage = useCallback(async (): Promise<void> => {
