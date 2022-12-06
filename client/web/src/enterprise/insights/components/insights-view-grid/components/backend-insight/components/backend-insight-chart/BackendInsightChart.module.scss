@@ -37,6 +37,9 @@
 .responsive-container {
     grid-area: chart;
     position: relative;
+    // Without overflow hidden parent size container measures sizes
+    // incorrectly within the chart containers.
+    overflow: hidden;
 
     &:hover,
     &:focus-within {
