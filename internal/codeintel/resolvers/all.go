@@ -3,9 +3,9 @@ package resolvers
 import (
 	"context"
 	"errors"
-	"regexp"
 	"sync"
 
+	"github.com/grafana/regexp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/microcosm-cc/bluemonday"
 	gfm "github.com/shurcooL/github_flavored_markdown"
