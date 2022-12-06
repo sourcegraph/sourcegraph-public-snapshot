@@ -55,6 +55,7 @@ The script accepts the following parameters:
 
     The script will format the disk if it has not been formatted already.
     If you choose to format and mount the disk yourself it must be mounted to `/mnt/data`
+    MUST be a separate disk than e.g. the base OS for upgrades.
 
 #### Optional
 - `-s <size>`
