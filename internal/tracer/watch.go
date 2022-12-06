@@ -45,7 +45,7 @@ func newConfWatcher(
 			// Set and log our new trace policy
 			if newPolicy != previousPolicy {
 				policy.SetTracePolicy(newPolicy)
-				logger.Info("updated TracePolicy",
+				logger.Debug("updated TracePolicy",
 					log.String("previous", string(previousPolicy)),
 					log.String("new", string(newPolicy)))
 			}
