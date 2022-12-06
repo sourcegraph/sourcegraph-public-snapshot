@@ -8,19 +8,18 @@
     export let id: string
     export let results: Group[]
     export let activeRowIndex = -1
+    export let open = false
 
     let dispatch = createEventDispatcher<{ select: Option }>()
     let container: HTMLElement
     let windowHeight: number
 
     $: maxHeight = container ? windowHeight - container.getBoundingClientRect().top - 20 : 'auto'
-
     $: flattenedRows = results.flatMap(group => group.entries)
     $: focusedItem = flattenedRows[activeRowIndex]
-    $: hasResults = results.length > 0
+    $: show = open && results.length > 0
 
     function handleSelection(event: MouseEvent) {
-        console.log(event)
         const match = (event.target as HTMLElement).closest('li[role="row"]')?.id.match(/\d+x\d+/)
         if (match) {
             const [group, option] = match[0].split('x')
@@ -41,14 +40,14 @@
 </script>
 
 <svelte:window bind:innerHeight={windowHeight} />
-{#if hasResults}
+{#if show}
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <div {id} role="grid" style="max-height: {maxHeight}px" on:mousedown={handleSelection} bind:this={container}>
         {#each results as group, groupIndex (group.title)}
             <ul role="rowgroup" aria-labelledby="{id}-{groupIndex}-label">
                 <li id="{id}-{groupIndex}-label" role="presentation">{group.title}</li>
                 {#each group.entries as option, rowIndex (option)}
-                    <li role="row" id="{id}-item-{groupIndex}x{rowIndex}" aria-selected={focusedItem === option}>
+                    <li role="row" id="{id}-{groupIndex}x{rowIndex}" aria-selected={focusedItem === option}>
                         {#if option.icon}
                             <div class="pr-1">
                                 <Icon path={option.icon} />
@@ -98,6 +97,14 @@
     [role='rowgroup'] {
         border-bottom: 1px solid var(--border-color);
         padding: 12px;
+
+        &:first-of-type {
+            padding-top: 0;
+        }
+
+        &:last-of-type {
+            border: none;
+        }
 
         &:last-of-type {
             border: none;

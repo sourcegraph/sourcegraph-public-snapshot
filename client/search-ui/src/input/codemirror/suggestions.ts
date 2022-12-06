@@ -28,12 +28,6 @@ export function getEditorConfig(state: EditorState): EditorConfig {
     return state.facet(editorConfigFacet)
 }
 
-export interface SuggestionResult {
-    result: Group[]
-    next?: () => Promise<SuggestionResult>
-    valid?: (state: EditorState, position: number) => boolean
-}
-
 /**
  * A source for completion/suggestion results
  */
@@ -41,10 +35,19 @@ export interface Source {
     (state: EditorState, position: number): SuggestionResult
 }
 
-enum RegisteredSourceState {
-    Inactive,
-    Pending,
-    Complete,
+export interface SuggestionResult {
+    /**
+     * Initial/synchronous result.
+     */
+    result: Group[]
+    /**
+     * Function to be called to load additional results if necessary.
+     */
+    next?: () => Promise<SuggestionResult>
+    /**
+     * Determines whether this result is invalidated by the new editor state.
+     */
+    valid?: (state: EditorState, position: number) => boolean
 }
 
 export type CustomRenderer = typeof SvelteComponentTyped<{ option: Option }>
@@ -104,15 +107,20 @@ class SuggestionView {
                 id,
                 results: state.result.groups,
                 activeRowIndex: state.selectedOption,
+                open: state.open,
             },
         })
         this.instance.$on('select', event => {
             applyOption(this.view, event.detail)
+            // Query input looses focus when option is selected via
+            // mousedown/click. This is a necessary hack to re-focus the query
+            // input.
+            window.requestAnimationFrame(() => view.contentDOM.focus())
         })
         this.view.dom.appendChild(this.root)
     }
 
-    update(update: ViewUpdate): void {
+    public update(update: ViewUpdate): void {
         const state = update.state.field(suggestionsStateField)
 
         if (state !== update.startState.field(suggestionsStateField)) {
@@ -120,11 +128,11 @@ class SuggestionView {
         }
     }
 
-    updateResults(state: SuggestionsState) {
-        this.instance.$set({ results: state.result.groups, activeRowIndex: state.selectedOption })
+    private updateResults(state: SuggestionsState) {
+        this.instance.$set({ results: state.result.groups, activeRowIndex: state.selectedOption, open: state.open })
     }
 
-    destroy() {
+    public destroy() {
         this.instance.$destroy()
         this.root.remove()
     }
@@ -132,22 +140,22 @@ class SuggestionView {
 
 const completionPlugin = ViewPlugin.fromClass(
     class {
-        running: RunningQuery | null = null
+        private running: RunningQuery | null = null
 
         constructor(public readonly view: EditorView) {
             this.startQuery(view.state.field(suggestionsStateField).source)
         }
 
-        update(update: ViewUpdate): void {
+        public update(update: ViewUpdate): void {
             if (update.view.hasFocus) {
                 this.startQuery(update.state.field(suggestionsStateField).source)
             }
         }
 
-        async startQuery(source: RegisteredSource) {
+        private async startQuery(source: RegisteredSource) {
             if (
                 source.state === RegisteredSourceState.Pending &&
-                (!this.running || this.running.timestamp !== source.updateTimestamp)
+                (!this.running || this.running.timestamp !== source.timestamp)
             ) {
                 const query = (this.running = new RunningQuery(source))
                 query.source.run()?.then(result => {
@@ -170,31 +178,58 @@ class RunningQuery {
     }
 }
 
-const defaultValid = () => false
-
+/**
+ * Wrapper class to make operating on groups of options easier.
+ */
 class Result {
     private entries: Option[]
+
     constructor(
         readonly groups: Group[],
-        public valid: (state: EditorState, position: number) => boolean = defaultValid
+        public valid: (state: EditorState, position: number) => boolean = () => false
     ) {
         this.entries = groups.flatMap(group => group.entries)
     }
 
-    at(index: number): Option | undefined {
+    public at(index: number): Option | undefined {
         return this.entries[index]
     }
 
-    empty(): boolean {
+    public groupRowIndex(index: number): [number, number] | undefined {
+        const option = this.entries[index]
+
+        if (!option) {
+            return undefined
+        }
+
+        for (let groupIndex = 0; groupIndex < this.groups.length; groupIndex++) {
+            const options = this.groups[groupIndex].entries
+            for (let rowIndex = 0; rowIndex < options.length; rowIndex++) {
+                if (options[rowIndex] === option) {
+                    return [groupIndex, rowIndex]
+                }
+            }
+        }
+
+        return undefined
+    }
+
+    public empty(): boolean {
         return this.length === 0
     }
 
-    get length(): number {
+    public get length(): number {
         return this.entries.length
     }
 }
 
 const emptyResult = new Result([])
+
+enum RegisteredSourceState {
+    Inactive,
+    Pending,
+    Complete,
+}
 
 /**
  * Internal wrapper around a provided source. Keeps track of the sources state
@@ -218,19 +253,23 @@ class RegisteredSource {
         }
     }
 
-    update(transaction: Transaction): RegisteredSource {
+    public update(transaction: Transaction): RegisteredSource {
         if (isUserInput(transaction)) {
             return this.query(transaction.state)
         }
+
         if (transaction.selection) {
             if (this.result.valid(transaction.state, transaction.newSelection.main.head)) {
                 return this
             }
             return this.query(transaction.state)
         }
+
+        // Handles "external" changes to the query input
         if (transaction.docChanged) {
             return new RegisteredSource(this.source, RegisteredSourceState.Inactive, emptyResult)
         }
+
         for (const effect of transaction.effects) {
             if (
                 effect.is(updateResultEffect) &&
@@ -245,10 +284,12 @@ class RegisteredSource {
                     result.next
                 )
             }
+
             if (effect.is(startCompletion)) {
                 return this.query(transaction.state)
             }
         }
+
         return this
     }
 
@@ -258,15 +299,26 @@ class RegisteredSource {
         return new RegisteredSource(this.source, nextState, new Result(result.result, result.valid), result.next)
     }
 
-    run(): Promise<SuggestionResult> | null {
+    public run(): Promise<SuggestionResult> | null {
         return this.next?.() ?? null
+    }
+
+    public get inactive(): boolean {
+        return this.state === RegisteredSourceState.Inactive
     }
 }
 
+/**
+ * Main suggestions state. Mangages of data source and selected option.
+ */
 class SuggestionsState {
-    constructor(readonly id: string, readonly source: RegisteredSource, readonly selectedOption: number) {}
+    constructor(
+        public readonly source: RegisteredSource,
+        public readonly open: boolean,
+        public readonly selectedOption: number
+    ) {}
 
-    update(transaction: Transaction): SuggestionsState {
+    public update(transaction: Transaction): SuggestionsState {
         let state: SuggestionsState = this
 
         const source = transaction.state.facet(suggestionSource)
@@ -277,8 +329,8 @@ class SuggestionsState {
         registeredSource = registeredSource.update(transaction)
         if (registeredSource !== state.source) {
             state = new SuggestionsState(
-                state.id,
                 registeredSource,
+                !registeredSource.inactive,
                 state.source.state === RegisteredSourceState.Inactive ||
                 state.source.state === RegisteredSourceState.Complete
                     ? 0
@@ -287,19 +339,22 @@ class SuggestionsState {
         }
 
         if (state.selectedOption > -1 && transaction.newDoc.length === 0) {
-            state = new SuggestionsState(state.id, state.source, -1)
+            state = new SuggestionsState(state.source, !state.source.inactive, -1)
         }
 
         for (const effect of transaction.effects) {
             if (effect.is(setSelectedEffect)) {
-                state = new SuggestionsState(state.id, state.source, effect.value)
+                state = new SuggestionsState(state.source, state.open, effect.value)
+            }
+            if (effect.is(hideCompletion)) {
+                state = new SuggestionsState(state.source, false, state.selectedOption)
             }
         }
 
         return state
     }
 
-    get result(): Result {
+    public get result(): Result {
         return this.source.result
     }
 }
@@ -308,11 +363,17 @@ function isUserInput(transaction: Transaction): boolean {
     return transaction.isUserEvent('input.type') || transaction.isUserEvent('delete.backward')
 }
 
-function arraysAreEqual<T>(a: T[], b: T[]): boolean {
-    return a.length === b.length && a.every((item, index) => item === b[index])
+interface Config {
+    id: string
+    history?: History
 }
 
-const none: any[] = []
+const suggestionsConfig = Facet.define<Config, Config>({
+    combine(configs) {
+        return configs[0] ?? {}
+    },
+})
+
 const setSelectedEffect = StateEffect.define<number>()
 const startCompletion = StateEffect.define<void>()
 const hideCompletion = StateEffect.define<void>()
@@ -320,8 +381,8 @@ const updateResultEffect = StateEffect.define<{ source: RegisteredSource; result
 const suggestionsStateField = StateField.define<SuggestionsState>({
     create() {
         return new SuggestionsState(
-            'suggestions-' + Math.floor(Math.random() * 2e6).toString(36),
             new RegisteredSource(() => ({ result: [] }), RegisteredSourceState.Inactive, emptyResult),
+            false,
             -1
         )
     },
@@ -331,10 +392,13 @@ const suggestionsStateField = StateField.define<SuggestionsState>({
     },
 
     provide(field) {
-        return EditorView.contentAttributes.compute([field], state => {
-            const result = state.field(field).result
+        return EditorView.contentAttributes.compute([field, suggestionsConfig], state => {
+            const id = state.facet(suggestionsConfig).id
+            const suggestionState = state.field(field)
+            const groupRowIndex = suggestionState.result.groupRowIndex(suggestionState.selectedOption)
             return {
-                'aria-expanded': result.empty() ? 'false' : 'true',
+                'aria-expanded': suggestionState.result.empty() ? 'false' : 'true',
+                'aria-activedescendant': groupRowIndex ? `${id}-${groupRowIndex[0]}x${groupRowIndex[1]}` : '',
             }
         })
     },
@@ -344,10 +408,10 @@ function moveSelection(direction: 'forward' | 'backward'): Command {
     const forward = direction === 'forward'
     return view => {
         const state = view.state.field(suggestionsStateField, false)
-        if (!state || state.source.result.empty()) {
+        if (!state?.open || state.result.empty()) {
             return false
         }
-        const { length } = state?.source.result
+        const { length } = state?.result
         let selected = state.selectedOption > -1 ? state.selectedOption + (forward ? 1 : -1) : forward ? 0 : length - 1
         if (selected < 0) {
             selected = length - 1
@@ -423,25 +487,15 @@ export const suggestionSource = Facet.define<Source, Source>({
                     run: moveSelection('backward'),
                 },
                 {
-                    key: 'Mod-Space',
-                    run(view) {
-                        if (!view.state.field(suggestionsStateField).open) {
-                            view.dispatch({ effects: startCompletion.of() })
-                            return true
-                        }
-                        return false
-                    },
-                },
-                {
                     key: 'Enter',
                     run(view) {
                         const state = view.state.field(suggestionsStateField)
                         const option = state.result.at(state.selectedOption)
-                        if (option) {
-                            applyOption(view, option)
-                            return true
+                        if (!state.open || !option) {
+                            return false
                         }
-                        return false
+                        applyOption(view, option)
+                        return true
                     },
                 },
                 {
@@ -449,15 +503,15 @@ export const suggestionSource = Facet.define<Source, Source>({
                     run(view) {
                         const state = view.state.field(suggestionsStateField)
                         const option = state.result.at(state.selectedOption)
-                        if (option) {
-                            applyOption(view, option)
-                            return true
+                        if (!state.open || !option) {
+                            return false
                         }
-                        return false
+                        applyOption(view, option)
+                        return true
                     },
                 },
                 {
-                    key: 'Esc',
+                    key: 'Escape',
                     run(view) {
                         if (view.state.field(suggestionsStateField).open) {
                             view.dispatch({ effects: hideCompletion.of() })
@@ -471,28 +525,13 @@ export const suggestionSource = Facet.define<Source, Source>({
     ],
 })
 
-interface Config {
-    history?: History
-}
-
-const suggestionsConfig = Facet.define<Config, Config>({
-    combine(configs) {
-        return configs[0] ?? {}
-    },
-})
-
-// TODO: Indicate current row via active-descendant
-// TODO: Fix DOM hierarchy via aria-owns
-// TODO: Query data
-// TODO: Only handle keybindings when suggestions are open
 // TODO:
-//  - Content specific headings
-//  - Value completion for repo: and file:
+//  - Only handle keybindings when suggestions are open
 //  - fix "open quote problem" (stretch goal)
 
 export const suggestions = (id: string, parent: HTMLDivElement, source: Source, history: History): Extension => {
     return [
-        suggestionsConfig.of({ history }),
+        suggestionsConfig.of({ history, id }),
         suggestionSource.of(source),
         ViewPlugin.define(view => new SuggestionView(id, view, parent)),
     ]

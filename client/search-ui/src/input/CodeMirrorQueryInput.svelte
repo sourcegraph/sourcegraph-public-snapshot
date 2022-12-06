@@ -1,35 +1,5 @@
 <svelte:options immutable={true} />
 
-<script context="module" lang="ts">
-    import { History } from 'history'
-
-    interface Config {
-        patternType: SearchPatternType
-        interpretComments: boolean
-        isLightTheme: boolean
-        placeholder: string
-        onChange: (querySate: QueryState) => void
-        onSubmit?: () => void
-        suggestionsContainer: HTMLDivElement | null
-        suggestionSource?: Source
-        history: History
-    }
-
-    function resizeObserver(node: HTMLElement) {
-        const resizeObserver = new ResizeObserver(entries => {
-            node.dispatchEvent(new CustomEvent('resize'))
-        })
-
-        resizeObserver.observe(node)
-
-        return {
-            destroy() {
-                resizeObserver.unobserve(node)
-            },
-        }
-    }
-</script>
-
 <script lang="ts">
     import { defaultKeymap, historyKeymap, history as codemirrorHistory } from '@codemirror/commands'
 
@@ -44,6 +14,7 @@
     import { singleLine } from './codemirror'
     import { mdiClose } from '@mdi/js'
     import Icon from './codemirror/Icon.svelte'
+    import { History } from 'history'
 
     export let isLightTheme: boolean
     export let patternType: SearchPatternType
@@ -55,12 +26,42 @@
     export let suggestionSource: Source | undefined = undefined
     export let history: History
 
+    interface Config {
+        patternType: SearchPatternType
+        interpretComments: boolean
+        isLightTheme: boolean
+        placeholder: string
+        onChange: (querySate: QueryState) => void
+        onSubmit?: () => void
+        suggestionsContainer: HTMLDivElement | null
+        suggestionSource?: Source
+        history: History
+    }
+
     let editor: EditorView | null = null
     let container: HTMLDivElement | null = null
     let suggestionsContainer: HTMLDivElement | null = null
 
-    const popoverID = `searchinput-popover-${Math.floor(Math.random() * 2 ** 50)}`
+    const popoverID = `searchinput-popover-${Math.floor(Math.random() * 2e6).toString(36)}`
 
+    // Helper function to observe the current size of an element. This is used
+    // to create an appropriately sized placeholder element.
+    function resizeObserver(node: HTMLElement) {
+        const resizeObserver = new ResizeObserver(() => {
+            node.dispatchEvent(new CustomEvent('resize'))
+        })
+
+        resizeObserver.observe(node)
+
+        return {
+            destroy() {
+                resizeObserver.unobserve(node)
+            },
+        }
+    }
+
+    // Helper function to update extensions dependent on props. Used when
+    // creating the editor and to update it when the props change.
     function configureExtensions({
         patternType,
         interpretComments,
@@ -126,7 +127,8 @@
         return extensions
     }
 
-    // For simplicity we will recompute all extensions when input changes.
+    // For simplicity we will recompute all extensions when input changes using
+    // this ocmpartment
     const extensionsCompartment = new Compartment()
 
     function createEditor(parent: HTMLDivElement, extensions: Extension) {
@@ -188,10 +190,16 @@
         editor?.destroy()
     })
 
+    // Used to set placeholder height to the same height as the input.
+    let height: number
+    function onResize(event: Event) {
+        height = (event.target as HTMLElement).clientHeight
+    }
+
     // Update editor content whenever query state changes
     $: updateValueIfNecessary(queryState)
 
-    // Update extension configuration
+    // Update editor configuration whenever one of these props changes
     $: updateEditor(
         configureExtensions({
             patternType,
@@ -206,7 +214,7 @@
         })
     )
 
-    // Update editor configuration whenever one of these props changes
+    // Create editor when container element is available
     $: if (container) {
         createEditor(
             container,
@@ -226,12 +234,25 @@
 
     $: hasValue = queryState.query.length > 0
 
-    // Used to set placeholder height to the same height as the input.
-    let height: number
-    function onResize(event: Event) {
-        height = (event.target as HTMLElement).clientHeight
+    function focus() {
+        editor?.contentDOM.focus()
+    }
+
+    function handleGlobalShortcut(event: KeyboardEvent) {
+        if (
+            !event.defaultPrevented &&
+            container &&
+            event.target &&
+            !container.contains(event.target as Node) &&
+            event.key === '/'
+        ) {
+            focus()
+            event.preventDefault()
+        }
     }
 </script>
+
+<svelte:window on:keydown={handleGlobalShortcut} />
 
 <div class="container">
     <div class="spacer" style="height: {height}px" />
@@ -239,9 +260,16 @@
         <div class="focus-container" use:resizeObserver on:resize={onResize}>
             <div bind:this={container} style="display: contents" />
             <!-- TODO: Consider making this a CodeMirror extension -->
-            {#if hasValue}
-                <button type="button" on:click={() => onChange({ query: '' })}><Icon path={mdiClose} /></button>
-            {/if}
+            <button
+                type="button"
+                class:showWhenFocused={hasValue}
+                on:click={() => {
+                    console.log('clear')
+                    onChange({ query: '' })
+                }}><Icon path={mdiClose} /></button
+            >
+            <!-- A temporary solution for rendering a global shortcut button. Should probably be a CodeMirror extension too -->
+            <button type="button" class="global-shortcut hideWhenFocused" on:click={focus}>/</button>
         </div>
         <div bind:this={suggestionsContainer} class="suggestions" />
     </div>
@@ -279,7 +307,7 @@
         display: flex;
         background-color: var(--color-bg-1);
         border-radius: 4px;
-        margin: 12px 12px 0 12px;
+        margin: 12px;
         border: 1px solid var(--border-color-2);
         padding: 0 4px;
         min-height: 32px;
@@ -289,10 +317,25 @@
             outline: 2px solid rgba(163, 208, 255, 1);
             outline-offset: 0px;
             border-color: var(--border-active-color);
+
+            .hideWhenFocused {
+                display: none;
+            }
+
+            .showWhenFocused {
+                display: block;
+            }
+        }
+
+        .global-shortcut {
+            display: block;
+            border: 1px solid var(--border-color-2);
+            width: 24px;
         }
     }
 
     button {
+        display: none;
         align-self: flex-start;
         padding: 0.125rem 0.25rem;
         margin: 2px;

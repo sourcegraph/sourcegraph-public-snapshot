@@ -275,6 +275,7 @@ export const suggestions: Source = (state, pos) => {
     }
 
     // Default options
+    const showRepoSuggestions = !tokens.some(token => token.type === 'filter' && token.field.value === 'repo')
 
     // Add running the current query as first/initial command
     const currentQuery = state.sliceDoc()
@@ -304,26 +305,30 @@ export const suggestions: Source = (state, pos) => {
     }
 
     // Cached repos
-    const repos = cachedRepoSuggestions(token)
-    if (repos.length > 0) {
-        result.push({ title: 'Repositories', entries: repos.slice(0, 5) })
+    if (showRepoSuggestions) {
+        const repos = cachedRepoSuggestions(token)
+        if (repos.length > 0) {
+            result.push({ title: 'Repositories', entries: repos.slice(0, 5) })
+        }
     }
 
     return {
         valid,
         result,
-        next: () =>
-            dynamicRepoSuggestions(token).then(suggestions => {
-                if (suggestions.length > 0) {
-                    return {
-                        result: [
-                            ...result.filter(group => group.title !== 'Repositories'),
-                            { title: 'Repositories', entries: suggestions.slice(0, 5) },
-                        ],
-                        valid,
-                    }
-                }
-                return { result, valid }
-            }),
+        next: showRepoSuggestions
+            ? () =>
+                  dynamicRepoSuggestions(token).then(suggestions => {
+                      if (suggestions.length > 0) {
+                          return {
+                              result: [
+                                  ...result.filter(group => group.title !== 'Repositories'),
+                                  { title: 'Repositories', entries: suggestions.slice(0, 5) },
+                              ],
+                              valid,
+                          }
+                      }
+                      return { result, valid }
+                  })
+            : undefined,
     }
 }
