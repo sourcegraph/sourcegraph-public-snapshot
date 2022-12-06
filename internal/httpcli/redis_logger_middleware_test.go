@@ -7,9 +7,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/utils/strings/slices"
+
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
 func TestRedisLoggerMiddleware_getAllValuesAfter(t *testing.T) {
@@ -121,7 +122,7 @@ func TestRedisLoggerMiddleware_formatStackFrame(t *testing.T) {
 			function: "main.f",
 			file:     "/Users/x/file.go",
 			line:     11,
-			want:     "file.go:11 (Function: f)",
+			want:     "main/file.go:11 (Function: f)",
 		},
 	}
 
