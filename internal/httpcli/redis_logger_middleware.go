@@ -20,6 +20,8 @@ import (
 
 var outboundRequestsRedisCache = rcache.NewWithTTL("outbound-requests", 604800)
 
+const sourcegraphPrefix = "github.com/sourcegraph/sourcegraph/"
+
 func redisLoggerMiddleware() Middleware {
 	creatorStackFrame, _ := getFrames(4).Next()
 	return func(cli Doer) Doer {
@@ -84,7 +86,7 @@ func redisLoggerMiddleware() Middleware {
 				ResponseHeaders:    responseHeaders,
 				Duration:           duration.Seconds(),
 				ErrorMessage:       errorMessage,
-				CreationStackFrame: formatStackFrame(creatorStackFrame),
+				CreationStackFrame: formatStackFrame(creatorStackFrame.Function, creatorStackFrame.File, creatorStackFrame.Line),
 				CallStackFrame:     formatStackFrames(callerStackFrames),
 			}
 
@@ -214,22 +216,27 @@ func formatStackFrames(frames *runtime.Frames) string {
 		if !more {
 			break
 		}
-		sb.WriteString(formatStackFrame(frame))
+		sb.WriteString(formatStackFrame(frame.Function, frame.File, frame.Line))
 		sb.WriteString("\n")
 	}
 	return strings.TrimRight(sb.String(), "\n")
 }
 
-func formatStackFrame(frame runtime.Frame) string {
-	packageTreeAndFunctionName := strings.Join(strings.Split(frame.Function, "/")[3:], "/")
-	dotPieces := strings.Split(packageTreeAndFunctionName, ".")
-	packageTree := dotPieces[0]
-	functionName := dotPieces[len(dotPieces)-1]
+func formatStackFrame(function string, file string, line int) string {
+	treeAndFunc := strings.Split(function, "/")   // github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend.(*requestTracer).TraceQuery
+	pckAndFunc := treeAndFunc[len(treeAndFunc)-1] // graphqlbackend.(*requestTracer).TraceQuery
+	dotPieces := strings.Split(pckAndFunc, ".")   // ["graphqlbackend" , "(*requestTracer)", "TraceQuery"]
+	pckName := dotPieces[0]                       // graphqlbackend
+	funcName := strings.Join(dotPieces[1:], ".")  // (*requestTracer).TraceQuery
+
+	tree := strings.Join(treeAndFunc[:len(treeAndFunc)-1], "/") + "/" + pckName // github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
+	tree = strings.TrimPrefix(tree, sourcegraphPrefix)
 
 	// Reconstruct the frame file path so that we don't include the local path on the machine that built this instance
-	fileName := filepath.Join(packageTree, filepath.Base(frame.File))
+	fileName := strings.TrimPrefix(filepath.Join(tree, filepath.Base(file)), sourcegraphPrefix) // cmd/frontend/graphqlbackend/trace.go
+	fileName = strings.TrimPrefix(fileName, "/")                                                // Strip prefix `/` if there is one
 
-	return fmt.Sprintf("%s:%d (Function: %s)", fileName, frame.Line, functionName)
+	return fmt.Sprintf("%s:%d (Function: %s)", fileName, line, funcName)
 }
 
 const pcLen = 1024

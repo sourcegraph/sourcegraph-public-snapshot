@@ -2,16 +2,16 @@ package gerrit
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
-
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestProvider_FetchAccount(t *testing.T) {

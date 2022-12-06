@@ -138,7 +138,7 @@ export function sourcegraphExtensions({
         // when selection-driven navigation is enabled because it reimplements
         // hover logic in the file 'token-selection/hover.ts'.
         enableSelectionDrivenCodeNavigation ? [] : hovercardDataSource(contextObservable),
-        documentHighlightsDataSource(contextObservable),
+        enableSelectionDrivenCodeNavigation ? [] : documentHighlightsDataSource(contextObservable),
         disableDecorations ? [] : textDocumentDecorations(contextObservable),
         ViewPlugin.define(() => new SelectionManager(contextObservable)),
         disableStatusBar

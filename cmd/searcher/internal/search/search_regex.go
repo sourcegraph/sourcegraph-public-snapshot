@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"regexp/syntax"
+	"regexp/syntax" // nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"strings"
 	"time"
 	"unicode/utf8"

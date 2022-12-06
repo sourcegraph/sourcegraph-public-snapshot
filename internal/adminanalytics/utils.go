@@ -3,7 +3,6 @@ package adminanalytics
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (

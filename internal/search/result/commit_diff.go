@@ -1,16 +1,17 @@
 package result
 
 import (
-	"errors"
 	"fmt"
-	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type CommitDiffMatch struct {
