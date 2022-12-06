@@ -719,7 +719,7 @@ Go,github.com/sourcegraph/gologin,v1.0.2-0.20181110030308-c6f1b62954d8,MIT,githu
 Go,github.com/sourcegraph/gosaml2,v0.6.1-0.20210128133756-84151d087b10,Apache 2.0,github.com/sourcegraph/gosaml2,Approved
 Go,github.com/sourcegraph/httpgzip,v0.0.0-20211015085752-0bad89b3b4df,MIT,github.com/sourcegraph/httpgzip,Approved
 Go,github.com/sourcegraph/jsonx,v0.0.0-20200629203448-1a936bd500cf,MIT,github.com/sourcegraph/jsonx,Approved
-Go,github.com/sourcegraph/log,v0.0.0-20221116144936-8b7619bccc8a,Apache 2.0,github.com/sourcegraph/log,Approved
+Go,github.com/sourcegraph/log,v0.0.0-20221205074644-b7a37dee2e74,Apache 2.0,github.com/sourcegraph/log,Approved
 Go,github.com/sourcegraph/mountinfo,v0.0.0-20221027185101-272dd8baaf4a,Apache 2.0,github.com/sourcegraph/mountinfo,Approved
 Go,github.com/sourcegraph/oauth2,v0.0.0-20210825125341-77c1d99ece3c,New BSD,github.com/sourcegraph/oauth2,Approved
 Go,github.com/sourcegraph/otelsql,v0.0.0-20220905085252-74375c884fff,Apache 2.0,github.com/sourcegraph/otelsql,Approved
@@ -727,7 +727,7 @@ Go,github.com/sourcegraph/run,v0.9.0,Apache 2.0,github.com/sourcegraph/run,Appro
 Go,github.com/sourcegraph/scip,v0.2.3,Apache 2.0,github.com/sourcegraph/scip,Approved
 Go,github.com/sourcegraph/syntaxhighlight,v0.0.0-20170531221838-bd320f5d308e,New BSD,github.com/sourcegraph/syntaxhighlight,Approved
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,github.com/sourcegraph/yaml,Approved
-Go,github.com/sourcegraph/zoekt,v0.0.0-20221201083655-f32b0e172b58,Apache 2.0,github.com/sourcegraph/zoekt,Approved
+Go,github.com/sourcegraph/zoekt,v0.0.0-20221205075039-fa9e62197ecd,Apache 2.0,github.com/sourcegraph/zoekt,Approved
 Go,github.com/stretchr/testify,v1.8.1,MIT,github.com/stretchr/testify,Approved
 Go,github.com/throttled/throttled/v2,v2.9.0,New BSD,github.com/throttled/throttled,Approved
 Go,github.com/tidwall/gjson,v1.14.0,MIT,github.com/tidwall/gjson,Approved
@@ -783,14 +783,14 @@ Go,go.uber.org/automaxprocs,v1.5.1,MIT,go.uber.org/automaxprocs,Approved
 Go,go.uber.org/goleak,v1.2.0,MIT,go.uber.org/goleak,Approved
 Go,go.uber.org/multierr,v1.8.0,MIT,go.uber.org/multierr,Approved
 Go,go.uber.org/ratelimit,v0.2.0,MIT,go.uber.org/ratelimit,Approved
-Go,go.uber.org/zap,v1.23.0,MIT,go.uber.org/zap,Approved
+Go,go.uber.org/zap,v1.24.0,MIT,go.uber.org/zap,Approved
 Go,golang.org/x/crypto,v0.3.0,New BSD,golang.org/x/crypto,Approved
 Go,golang.org/x/mod,v0.7.0,New BSD,golang.org/x/mod,Approved
 Go,golang.org/x/net,v0.2.0,New BSD,golang.org/x/net,Approved
 Go,golang.org/x/sync,v0.1.0,New BSD,golang.org/x/sync,Approved
-Go,golang.org/x/sys,v0.2.0,New BSD,golang.org/x/sys,Approved
+Go,golang.org/x/sys,v0.3.0,New BSD,golang.org/x/sys,Approved
 Go,golang.org/x/term,v0.2.0,New BSD,golang.org/x/term,Approved
-Go,golang.org/x/text,v0.4.0,New BSD,golang.org/x/text,Approved
+Go,golang.org/x/text,v0.5.0,New BSD,golang.org/x/text,Approved
 Go,golang.org/x/time,v0.2.0,New BSD,golang.org/x/time,Approved
 Go,golang.org/x/xerrors,v0.0.0-20220907171357-04be3eba64a2,New BSD,golang.org/x/xerrors,Approved
 Go,gonum.org/v1/gonum,v0.11.0,"MIT,New BSD",gonum.org/v1/gonum,Approved
