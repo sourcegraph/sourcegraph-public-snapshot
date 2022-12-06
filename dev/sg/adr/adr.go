@@ -6,9 +6,10 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/grafana/regexp"
 )
 
 type ArchitectureDecisionRecord struct {
