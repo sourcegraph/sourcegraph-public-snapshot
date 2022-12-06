@@ -265,17 +265,12 @@ type Options[T workerutil.Record] struct {
 // implementation details.
 type ResultsetScanFn[T workerutil.Record] func(rows *sql.Rows, err error) ([]T, error)
 
-// New creates a new store with the given database handle and options.
-func New[T workerutil.Record](logger log.Logger, handle basestore.TransactableHandle, options Options[T]) Store[T] {
-	return NewWithMetrics(handle, options, observation.ContextWithLogger(logger))
+func New[T workerutil.Record](observationCtx *observation.Context, handle basestore.TransactableHandle, options Options[T]) Store[T] {
+	return newStore(observationCtx, handle, options)
 }
 
-func NewWithMetrics[T workerutil.Record](handle basestore.TransactableHandle, options Options[T], observationContext *observation.Context) Store[T] {
-	return newStore(handle, options, observationContext)
-}
-
-func newStore[T workerutil.Record](handle basestore.TransactableHandle, options Options[T], observationContext *observation.Context) *store[T] {
-	logger := observationContext.Logger
+func newStore[T workerutil.Record](observationCtx *observation.Context, handle basestore.TransactableHandle, options Options[T]) *store[T] {
+	logger := observationCtx.Logger
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/dbworker/store:newStore")
 	}
@@ -326,7 +321,7 @@ func newStore[T workerutil.Record](handle basestore.TransactableHandle, options 
 		options:                         options,
 		columnReplacer:                  strings.NewReplacer(replacements...),
 		modifiedColumnExpressionMatches: modifiedColumnExpressionMatches,
-		operations:                      newOperations(options.Name, observationContext),
+		operations:                      newOperations(observationCtx, options.Name),
 		logger:                          logger,
 	}
 }

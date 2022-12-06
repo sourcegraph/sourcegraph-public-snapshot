@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -62,49 +63,63 @@ type ListProjectsArgs struct {
 	Fork      bool
 }
 
-// ListProjectsResponse defines a response struct returned from ListProjects method calls.
-type ListProjectsResponse struct {
+// listProjectsResponse defines a response struct returned from ListProjects method calls.
+type listProjectsResponse struct {
 	*Pagination `json:"pagination"`
 	Projects    []*Project `json:"projects"`
 }
 
-func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) (*ListProjectsResponse, error) {
-	qs := make(url.Values)
-
-	if opts.Cursor == nil {
-		opts.Cursor = &Pagination{PerPage: 100, Page: 1}
+func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) *iterator.Iterator[*Project] {
+	cursor := opts.Cursor
+	if cursor == nil {
+		cursor = &Pagination{PerPage: 100, Page: 1}
 	}
 
-	opts.Cursor.EncodeTo(qs)
-	for _, tag := range opts.Tags {
-		if tag != "" {
-			qs.Add("tags", tag)
+	return iterator.New(func() ([]*Project, error) {
+		if cursor == nil {
+			return nil, nil
 		}
-	}
 
-	if opts.Pattern != "" {
-		qs.Set("pattern", opts.Pattern)
-	}
+		qs := make(url.Values)
 
-	if opts.Namespace != "" {
-		qs.Set("namespace", opts.Namespace)
-	}
+		cursor.EncodeTo(qs)
+		for _, tag := range opts.Tags {
+			if tag != "" {
+				qs.Add("tags", tag)
+			}
+		}
 
-	qs.Set("fork", strconv.FormatBool(opts.Fork))
+		if opts.Pattern != "" {
+			qs.Set("pattern", opts.Pattern)
+		}
 
-	u := url.URL{Path: "api/0/projects", RawQuery: qs.Encode()}
+		if opts.Namespace != "" {
+			qs.Set("namespace", opts.Namespace)
+		}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
+		qs.Set("fork", strconv.FormatBool(opts.Fork))
 
-	var resp ListProjectsResponse
-	if _, err = c.do(ctx, req, &resp); err != nil {
-		return nil, err
-	}
+		u := url.URL{Path: "api/0/projects", RawQuery: qs.Encode()}
 
-	return &resp, nil
+		req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+		if err != nil {
+			return nil, err
+		}
+
+		var resp listProjectsResponse
+		if _, err = c.do(ctx, req, &resp); err != nil {
+			return nil, err
+		}
+
+		cursor = resp.Pagination
+		if cursor.Next == "" {
+			cursor = nil
+		} else {
+			cursor.Page++
+		}
+
+		return resp.Projects, nil
+	})
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {

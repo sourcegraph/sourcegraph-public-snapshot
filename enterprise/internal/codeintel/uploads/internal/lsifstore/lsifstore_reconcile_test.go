@@ -16,8 +16,8 @@ import (
 
 func TestIDsWithMeta(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
-	store := New(codeIntelDB, &observation.TestContext)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 
 	if _, err := codeIntelDB.ExecContext(ctx, `
@@ -62,8 +62,8 @@ func TestIDsWithMeta(t *testing.T) {
 
 func TestReconcileCandidates(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
-	store := newStore(codeIntelDB, &observation.TestContext)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := newStore(&observation.TestContext, codeIntelDB)
 
 	ctx := context.Background()
 	now := time.Unix(1587396557, 0).UTC()

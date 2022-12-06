@@ -2,8 +2,7 @@ package resolvers
 
 import (
 	"context"
-	"errors"
-	"regexp"
+	"regexp" // nolint:depguard // regexps are passed to bluemonday, which expects the std ones
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RootResolver interface {

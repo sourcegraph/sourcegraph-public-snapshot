@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -36,18 +35,17 @@ import (
 // Init initializes the app endpoints.
 func Init(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	db database.DB,
 	codeIntelServices codeintel.Services,
-	conf conftypes.UnifiedWatchable,
+	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
-	observationContext *observation.Context,
 ) error {
-	var privateKey []byte
-	var err error
-	var appID string
-
-	gitHubAppConfig := conf.SiteConfig().GitHubApp
-	if !repos.IsGitHubAppEnabled(gitHubAppConfig) {
+	config, err := conf.GitHubAppConfig()
+	if err != nil {
+		return errors.Wrap(err, "getting GitHubApp config")
+	}
+	if !config.Configured() {
 		enterpriseServices.NewGitHubAppSetupHandler = func() http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
@@ -56,13 +54,8 @@ func Init(
 		}
 		return nil
 	}
-	privateKey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
-	if err != nil {
-		return errors.Wrap(err, "decode private key")
-	}
-	appID = gitHubAppConfig.AppID
 
-	auther, err := github.NewGitHubAppAuthenticator(appID, privateKey)
+	auther, err := github.NewGitHubAppAuthenticator(config.AppID, config.PrivateKey)
 	if err != nil {
 		return errors.Wrap(err, "new authenticator with GitHub App")
 	}

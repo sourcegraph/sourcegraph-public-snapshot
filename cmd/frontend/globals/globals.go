@@ -152,7 +152,7 @@ func WatchBranding() {
 
 		if before := Branding(); !reflect.DeepEqual(before, after) {
 			SetBranding(after)
-			log15.Info(
+			log15.Debug(
 				"globals.Branding",
 				"updated", true,
 				"before", before,

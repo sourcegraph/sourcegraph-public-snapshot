@@ -36,13 +36,13 @@ type indexSchedulerJob struct {
 var m = new(metrics.SingletonREDMetrics)
 
 func NewScheduler(
+	observationCtx *observation.Context,
 	uploadSvc UploadService,
 	policiesSvc PoliciesService,
 	policyMatcher PolicyMatcher,
 	indexEnqueuer IndexEnqueuer,
 	interval time.Duration,
 	config IndexSchedulerConfig,
-	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	job := indexSchedulerJob{
 		uploadSvc:     uploadSvc,
@@ -53,7 +53,7 @@ func NewScheduler(
 
 	metrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationContext.Registerer,
+			observationCtx.Registerer,
 			"codeintel_autoindexing_background",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of method invocations."),
@@ -62,7 +62,7 @@ func NewScheduler(
 
 	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
 		return job.handleScheduler(ctx, config.RepositoryProcessDelay, config.RepositoryBatchSize, config.PolicyBatchSize, config.InferenceConcurrency)
-	}), observationContext.Operation(observation.Op{
+	}), observationCtx.Operation(observation.Op{
 		Name:              "codeintel.indexing.HandleIndexSchedule",
 		MetricLabelValues: []string{"HandleIndexSchedule"},
 		Metrics:           metrics,

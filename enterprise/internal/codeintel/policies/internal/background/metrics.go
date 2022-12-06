@@ -10,14 +10,14 @@ type matcherMetrics struct {
 	numPoliciesUpdated prometheus.Counter
 }
 
-func newMetrics(observationContext *observation.Context) *matcherMetrics {
+func newMetrics(observationCtx *observation.Context) *matcherMetrics {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
 			Help: help,
 		})
 
-		observationContext.Registerer.MustRegister(counter)
+		observationCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 

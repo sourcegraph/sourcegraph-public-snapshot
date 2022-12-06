@@ -72,18 +72,18 @@ import (
 // insights across all user settings, and determine for which dates they do not have data and attempt
 // to backfill them by enqueueing work for executing searches with `before:` and `after:` filter
 // ranges.
-func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store, ffs database.FeatureFlagStore, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func newInsightHistoricalEnqueuer(ctx context.Context, observationCtx *observation.Context, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store, ffs database.FeatureFlagStore) goroutine.BackgroundRoutine {
 	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
+		observationCtx.Registerer,
 		"insights_historical_enqueuer",
 		metrics.WithCountHelp("Total number of insights historical enqueuer executions"),
 	)
-	operation := observationContext.Operation(observation.Op{
+	operation := observationCtx.Operation(observation.Op{
 		Name:    "HistoricalEnqueuer.Run",
 		Metrics: metrics,
 	})
 
-	repoStore := database.NewDBWith(observationContext.Logger, workerBaseStore).Repos()
+	repoStore := database.NewDBWith(observationCtx.Logger, workerBaseStore).Repos()
 
 	iterator := discovery.NewAllReposIterator(
 		repoStore,
@@ -96,7 +96,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 			Help:      "Counter of the number of repositories analyzed and queued for processing for insights.",
 		})
 
-	enq := globalBackfiller(observationContext.Logger, workerBaseStore, dataSeriesStore, insightsStore)
+	enq := globalBackfiller(observationCtx.Logger, workerBaseStore, dataSeriesStore, insightsStore)
 	maxTime := time.Now().Add(-1 * 365 * 24 * time.Hour)
 	enq.analyzer.frameFilter = compression.NewHistoricalFilter(true, maxTime, edb.NewInsightsDBWith(insightsStore))
 	enq.repoIterator = iterator.ForEach
@@ -143,7 +143,6 @@ func NewScopedBackfiller(workerBaseStore *basestore.Store, insightsStore *store.
 			return err
 		},
 	}
-
 }
 
 func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []itypes.InsightSeries) error {
@@ -219,7 +218,6 @@ func (s *ScopedBackfiller) ScopedBackfill(ctx context.Context, definitions []ity
 }
 
 func baseAnalyzer(frontend database.DB, statistics statistics) backfillAnalyzer {
-
 	limiter := limiter.HistoricalWorkRate()
 
 	return backfillAnalyzer{

@@ -24,7 +24,7 @@ type rootResolver struct {
 	operations *operations
 }
 
-func NewRootResolver(svc CodeNavService, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserver GitserverClient, maxIndexSearch, hunkCacheSize int, observationContext *observation.Context) (resolverstubs.CodeNavServiceResolver, error) {
+func NewRootResolver(observationCtx *observation.Context, svc CodeNavService, autoindexingSvc AutoIndexingService, uploadSvc UploadsService, policiesSvc PolicyService, gitserver GitserverClient, maxIndexSearch, hunkCacheSize int) (resolverstubs.CodeNavServiceResolver, error) {
 	hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func NewRootResolver(svc CodeNavService, autoindexingSvc AutoIndexingService, up
 		uploadSvc:                      uploadSvc,
 		policiesSvc:                    policiesSvc,
 		gitserver:                      gitserver,
-		operations:                     newOperations(observationContext),
+		operations:                     newOperations(observationCtx),
 		hunkCache:                      hunkCache,
 		maximumIndexesPerMonikerSearch: maxIndexSearch,
 	}, nil

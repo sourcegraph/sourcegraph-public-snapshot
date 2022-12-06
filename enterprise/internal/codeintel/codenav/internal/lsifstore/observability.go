@@ -26,10 +26,10 @@ type operations struct {
 
 var m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationContext *observation.Context) *operations {
+func newOperations(observationCtx *observation.Context) *operations {
 	metrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationContext.Registerer,
+			observationCtx.Registerer,
 			"codeintel_codenav_lsifstore",
 			metrics.WithLabels("op"),
 			metrics.WithCountHelp("Total number of method invocations."),
@@ -37,7 +37,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	})
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.codenav.lsifstore.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
@@ -48,7 +48,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	// own opentracing spans. This allows us to more granularly track
 	// the latency for parts of a request without noising up Prometheus.
 	subOp := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name: fmt.Sprintf("codeintel.lsifstore.%s", name),
 		})
 	}

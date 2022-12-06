@@ -8,27 +8,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func NewService(db database.DB) *Service {
-	return newService(store.New(db, scopedContext("store")), scopedContext("service"))
+func NewService(observationCtx *observation.Context, db database.DB) *Service {
+	return newService(scopedContext("service", observationCtx), store.New(scopedContext("store", observationCtx), db))
 }
 
 type serviceDependencies struct {
-	db database.DB
+	db             database.DB
+	observationCtx *observation.Context
 }
 
 // TestService creates a new dependencies service with noop observation contexts.
 func TestService(db database.DB, gitserver GitserverClient) *Service {
-	store := store.New(db, &observation.TestContext)
+	store := store.New(&observation.TestContext, db)
 
-	return newService(store, &observation.TestContext)
+	return newService(&observation.TestContext, store)
 }
 
-func scopedContext(component string) *observation.Context {
-	return observation.ScopedContext("codeintel", "dependencies", component)
+func scopedContext(component string, parent *observation.Context) *observation.Context {
+	return observation.ScopedContext("codeintel", "dependencies", component, parent)
 }
 
-func CrateSyncerJob(dependenciesSvc background.DependenciesService, gitserverClient background.GitserverClient, extSvcStore background.ExternalServiceStore, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func CrateSyncerJob(observationCtx *observation.Context, dependenciesSvc background.DependenciesService, gitserverClient background.GitserverClient, extSvcStore background.ExternalServiceStore) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		background.NewCrateSyncer(dependenciesSvc, gitserverClient, extSvcStore, observationContext),
+		background.NewCrateSyncer(observationCtx, dependenciesSvc, gitserverClient, extSvcStore),
 	}
 }

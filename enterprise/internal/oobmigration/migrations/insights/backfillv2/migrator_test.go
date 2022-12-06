@@ -203,8 +203,10 @@ type testCase struct {
 	want   autogold.Value
 }
 
-type makeSeriesFunc func(id string, createdAt time.Time, backfillQueuedAt *time.Time, jit bool, repos []string, generationMethod string, captureGroup bool, groupBy *string) InsightSeries
-type makeBackfillFunc func(series InsightSeries, state string) error
+type (
+	makeSeriesFunc   func(id string, createdAt time.Time, backfillQueuedAt *time.Time, jit bool, repos []string, generationMethod string, captureGroup bool, groupBy *string) InsightSeries
+	makeBackfillFunc func(series InsightSeries, state string) error
+)
 
 func makeNewSeries(t *testing.T, ctx context.Context, store basestore.ShareableStore, clock glock.Clock) func(id string, createdAt time.Time, backfillQueuedAt *time.Time, jit bool, repos []string, generationMethod string, captureGroup bool, groupBy *string) InsightSeries {
 	return func(id string, createdAt time.Time, backfillQueuedAt *time.Time, jit bool, repos []string, generationMethod string, captureGroup bool, groupBy *string) InsightSeries {
@@ -248,6 +250,7 @@ func newGroupBySeries(ms makeSeriesFunc, id string, createdAt time.Time, backfil
 	gb := "repo"
 	return ms(id, createdAt, backfillQueuedAt, jit, []string{repo}, "mapping-compute", true, &gb)
 }
+
 func newLangStats(ms makeSeriesFunc, id string, createdAt time.Time, backfillQueuedAt *time.Time, repo string) InsightSeries {
 	return ms(id, createdAt, backfillQueuedAt, true, []string{repo}, "language-stats", false, nil)
 }
@@ -257,7 +260,7 @@ func TestBackfillV2Migrator(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	db := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	clock := glock.NewMockClockAt(time.Date(2022, time.April, 15, 1, 0, 0, 0, time.UTC))
 	store := basestore.NewWithHandle(db.Handle())
 	migrator := NewMigrator(store, clock, 1)
@@ -380,15 +383,16 @@ func TestBackfillV2Migrator(t *testing.T) {
 			}),
 		},
 	}
-	caesNoMigrate := []testCase{{
-		series: newLangStats(ms, "j", recent, nil, "repoA"),
-		want: autogold.Want("Recent Lang Stats insight", SeriesValidate{
-			SeriesID: "j", CreatedAt: "2022-04-05 01:00:00",
-			NextRecordingAfter: "2022-04-07 01:00:00",
-			NextSnapshotAfter:  "2022-04-06 00:00:00",
-			JustInTime:         true,
-		}),
-	},
+	caesNoMigrate := []testCase{
+		{
+			series: newLangStats(ms, "j", recent, nil, "repoA"),
+			want: autogold.Want("Recent Lang Stats insight", SeriesValidate{
+				SeriesID: "j", CreatedAt: "2022-04-05 01:00:00",
+				NextRecordingAfter: "2022-04-07 01:00:00",
+				NextSnapshotAfter:  "2022-04-06 00:00:00",
+				JustInTime:         true,
+			}),
+		},
 		{
 			series: newGroupBySeries(ms, "k", recent, &recent, false, "repoA"),
 			want: autogold.Want("Recent Group By insight", SeriesValidate{
@@ -434,13 +438,12 @@ func TestBackfillV2Migrator(t *testing.T) {
 			c.want.Equal(t, got)
 		})
 	}
-
 }
 
 func TestBackfillV2MigratorNoInsights(t *testing.T) {
 	t.Setenv("DISABLE_CODE_INSIGHTS", "true")
 	logger := logtest.Scoped(t)
-	db := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
+	db := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	clock := glock.NewMockClockAt(time.Date(2022, time.April, 15, 1, 0, 0, 0, time.UTC))
 	store := basestore.NewWithHandle(db.Handle())
 	migrator := NewMigrator(store, clock, 1)
@@ -458,5 +461,4 @@ func TestBackfillV2MigratorNoInsights(t *testing.T) {
 
 	// ensure that since insights is disabled it says it's done
 	assertProgress(1, false)
-
 }

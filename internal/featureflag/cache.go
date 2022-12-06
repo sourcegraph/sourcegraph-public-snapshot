@@ -1,7 +1,6 @@
 package featureflag
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -9,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
