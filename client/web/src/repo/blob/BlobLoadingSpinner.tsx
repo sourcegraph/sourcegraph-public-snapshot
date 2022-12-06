@@ -40,7 +40,8 @@ export function BlobLoadingSpinner(): JSX.Element {
                                 It’s taking much longer than expected to load this file. Try{' '}
                                 <Link to={location.pathname} onClick={reload}>
                                     reloading the page
-                                </Link>.
+                                </Link>
+                                .
                             </>
                         ) : afterSixSec ? (
                             'Loading a whole lot of bits and bytes here...'
