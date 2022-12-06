@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
+// validate calculates statistics regarding orgs, teams, users, and repos on the GitHub instance.
 func validate(ctx context.Context) {
 	localTeams, err := store.loadTeams()
 	if err != nil {
