@@ -190,25 +190,25 @@ func (r *externalServiceResolver) SyncJobs(ctx context.Context, args *externalSe
 	return newExternalServiceSyncJobConnectionResolver(ctx, r.db, args, r.externalService.ID)
 }
 
-func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externalServiceAvaialbilityResolver, error) {
-	return &externalServiceAvaialbilityResolver{}, nil
+func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externalServiceAvailabilityResolver, error) {
+	return &externalServiceAvailabilityResolver{}, nil
 }
 
-func (r *externalServiceResolver) HasAvailabilityCheck(ctx context.Context) (bool, error) {
+func (r *externalServiceResolver) HasConnectionCheck(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-type externalServiceAvaialbilityResolver struct{}
+type externalServiceAvailabilityResolver struct{}
 
-func (r *externalServiceAvaialbilityResolver) ToExternalServiceAvailable() (*externalServiceAvailableResolver, bool) {
+func (r *externalServiceAvailabilityResolver) ToExternalServiceAvailable() (*externalServiceAvailableResolver, bool) {
 	return nil, false
 }
 
-func (r *externalServiceAvaialbilityResolver) ToExternalServiceUnavailable() (*externalServiceUnavailableResolver, bool) {
+func (r *externalServiceAvailabilityResolver) ToExternalServiceUnavailable() (*externalServiceUnavailableResolver, bool) {
 	return nil, false
 }
 
-func (r *externalServiceAvaialbilityResolver) ToExternalServiceAvailabilityUnknown() (*externalServiceAvailabilityUnknownResolver, bool) {
+func (r *externalServiceAvailabilityResolver) ToExternalServiceAvailabilityUnknown() (*externalServiceAvailabilityUnknownResolver, bool) {
 	return &externalServiceAvailabilityUnknownResolver{}, true
 }
 

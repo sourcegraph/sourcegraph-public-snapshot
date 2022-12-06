@@ -392,7 +392,7 @@ func TestExternalServices(t *testing.T) {
 									implementationNote
 								}
 							}
-							hasAvailabilityCheck
+							hasConnectionCheck
 						}
 					}
 				}
@@ -406,14 +406,14 @@ func TestExternalServices(t *testing.T) {
 								"checkConnection": {
 									"implementationNote": "not implemented yet"
 								},
-								"hasAvailabilityCheck": false
+								"hasConnectionCheck": false
 							},
 							{
 								"id":"RXh0ZXJuYWxTZXJ2aWNlOjI=",
 								"checkConnection": {
 									"implementationNote": "not implemented yet"
 								},
-								"hasAvailabilityCheck": false
+								"hasConnectionCheck": false
 							}
 						]
 					}

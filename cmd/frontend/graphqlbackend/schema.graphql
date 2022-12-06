@@ -2768,7 +2768,7 @@ type ExternalService implements Node {
 
     If this is false, then checkConnection responds with ExternalServiceAvailabilityUnknown.
     """
-    hasAvailabilityCheck: Boolean!
+    hasConnectionCheck: Boolean!
 }
 
 """
