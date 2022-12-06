@@ -15,7 +15,6 @@ import (
 )
 
 func TestConvertLSIF(t *testing.T) {
-	t.Skip("Flaky, see https://github.com/sourcegraph/sourcegraph/issues/45251")
 	gzipped, err := os.Open("./testdata/dump1.lsif.gz")
 	if err != nil {
 		t.Fatalf("unexpected error reading test file: %s", err)
@@ -56,8 +55,8 @@ func TestConvertLSIF(t *testing.T) {
 				Symbols: []*scip.SymbolInformation{
 					{Symbol: "lsif . 42 . `12`.", Documentation: []string{"```go\ntext A\n```"}},
 					{Symbol: "lsif . 42 . `14`.", Documentation: []string{"```go\ntext A\n```"}},
-					{Symbol: "lsif . 42 . `15`.", Documentation: []string{""}},
-					{Symbol: "scheme A . pkg A v0.1.0 `ident A`.", Documentation: []string{""}},
+					{Symbol: "lsif . 42 . `15`.", Documentation: nil},
+					{Symbol: "scheme A . pkg A v0.1.0 `ident A`.", Documentation: nil},
 					{Symbol: "scheme B . pkg B v1.2.3 `ident B`.", Documentation: []string{"```go\ntext A\n```"}},
 				},
 			},
@@ -78,7 +77,7 @@ func TestConvertLSIF(t *testing.T) {
 				},
 				Symbols: []*scip.SymbolInformation{
 					{Symbol: "lsif . 42 . `13`.", Documentation: []string{"```go\ntext B\n```"}},
-					{Symbol: "lsif . 42 . `15`.", Documentation: []string{""}},
+					{Symbol: "lsif . 42 . `15`.", Documentation: nil},
 				},
 			},
 		},

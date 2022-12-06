@@ -29,7 +29,7 @@ func ConvertLSIFDocument(
 	var (
 		n                           = len(document.Ranges)
 		occurrences                 = make([]*scip.Occurrence, 0, n)
-		documentationBySymbolName   = make(map[string]string, n)
+		documentationBySymbolName   = make(map[string]map[string]struct{}, n)
 		implementationsBySymbolName = make(map[string]map[string]struct{}, n)
 	)
 
@@ -53,7 +53,10 @@ func ConvertLSIFDocument(
 		occurrences = append(occurrences, rangeOccurrences...)
 
 		for _, symbol := range symbols {
-			documentationBySymbolName[symbol.name] = symbol.documentation
+			if _, ok := documentationBySymbolName[symbol.name]; !ok {
+				documentationBySymbolName[symbol.name] = map[string]struct{}{}
+			}
+			documentationBySymbolName[symbol.name][symbol.documentation] = struct{}{}
 
 			for _, other := range symbol.implementationRelationships {
 				if _, ok := implementationsBySymbolName[symbol.name]; !ok {
@@ -72,10 +75,18 @@ func ConvertLSIFDocument(
 
 	// Aggregate symbol information to store documentation and implementation relationships
 	symbols := make([]*scip.SymbolInformation, 0, len(documentationBySymbolName))
-	for symbolName, documentation := range documentationBySymbolName {
+	for symbolName, documentationSet := range documentationBySymbolName {
+		var documentation []string
+		for doc := range documentationSet {
+			if doc != "" {
+				documentation = append(documentation, doc)
+			}
+		}
+		sort.Strings(documentation)
+
 		symbols = append(symbols, &scip.SymbolInformation{
 			Symbol:        symbolName,
-			Documentation: []string{documentation},
+			Documentation: documentation,
 		})
 	}
 

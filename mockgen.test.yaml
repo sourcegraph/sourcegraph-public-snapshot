@@ -170,6 +170,7 @@
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore
       interfaces:
         - LSIFStore
+        - SymbolWriter
     - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
       interfaces:
         - Store
