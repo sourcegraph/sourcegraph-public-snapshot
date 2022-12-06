@@ -125,15 +125,15 @@ func newAuthzProvider(
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
 
-		privateKey, appID, ok, err := conf.GitHubAppConfig()
+		config, err := conf.GitHubAppConfig()
 		if err != nil {
 			return nil, err
 		}
-		if !ok {
+		if !config.Configured() {
 			return nil, errors.Errorf("connection contains an GitHub App installation ID while GitHub App for Sourcegraph is not enabled")
 		}
 
-		return newAppProvider(db, c.ExternalService, c.GitHubConnection.URN, baseURL, appID, privateKey, installationID, nil)
+		return newAppProvider(db, c.ExternalService, c.GitHubConnection.URN, baseURL, config.AppID, config.PrivateKey, installationID, nil)
 	}
 
 	// Disable by default for now

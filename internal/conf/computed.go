@@ -82,27 +82,39 @@ func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, e
 }
 
 func GitHubAppEnabled() bool {
-	_, _, ok, _ := GitHubAppConfig()
-	return ok
+	cfg, _ := GitHubAppConfig()
+	return cfg.Configured()
 }
 
-func GitHubAppConfig() (privateKey []byte, appID string, set bool, err error) {
+type GitHubAppConfiguration struct {
+	PrivateKey   []byte
+	AppID        string
+	Slug         string
+	ClientID     string
+	ClientSecret string
+}
+
+func (c GitHubAppConfiguration) Configured() bool {
+	return c.AppID != "" && len(c.PrivateKey) != 0 && c.Slug != "" && c.ClientID != "" && c.ClientSecret != ""
+}
+
+func GitHubAppConfig() (config GitHubAppConfiguration, err error) {
 	cfg := Get().GitHubApp
 	if cfg == nil {
-		return nil, "", false, nil
+		return GitHubAppConfiguration{}, nil
 	}
 
-	configured := cfg.AppID != "" && cfg.PrivateKey != "" && cfg.Slug != "" && cfg.ClientID != "" && cfg.ClientSecret != ""
-	if !configured {
-		return nil, "", false, nil
-	}
-
-	privateKey, err = base64.StdEncoding.DecodeString(cfg.PrivateKey)
+	privateKey, err := base64.StdEncoding.DecodeString(cfg.PrivateKey)
 	if err != nil {
-		return nil, "", false, errors.Wrap(err, "decoding GitHub app private key failed")
+		return GitHubAppConfiguration{}, errors.Wrap(err, "decoding GitHub app private key failed")
 	}
-	appID = cfg.AppID
-	return privateKey, appID, true, nil
+	return GitHubAppConfiguration{
+		PrivateKey:   privateKey,
+		AppID:        cfg.AppID,
+		Slug:         cfg.Slug,
+		ClientID:     cfg.ClientID,
+		ClientSecret: cfg.ClientSecret,
+	}, nil
 }
 
 type AccessTokenAllow string

@@ -41,15 +41,11 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	var privateKey []byte
-	var err error
-	var appID string
-
-	privateKey, appID, ok, err := conf.GitHubAppConfig()
+	config, err := conf.GitHubAppConfig()
 	if err != nil {
 		return errors.Wrap(err, "getting GitHubApp config")
 	}
-	if !ok {
+	if !config.Configured() {
 		enterpriseServices.NewGitHubAppSetupHandler = func() http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
@@ -59,7 +55,7 @@ func Init(
 		return nil
 	}
 
-	auther, err := github.NewGitHubAppAuthenticator(appID, privateKey)
+	auther, err := github.NewGitHubAppAuthenticator(config.AppID, config.PrivateKey)
 	if err != nil {
 		return errors.Wrap(err, "new authenticator with GitHub App")
 	}

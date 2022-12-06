@@ -338,18 +338,18 @@ func getRemoteURLFunc(
 		}
 
 		if svc.Kind == extsvc.KindGitHub {
-			privateKey, appID, ok, err := conf.GitHubAppConfig()
+			config, err := conf.GitHubAppConfig()
 			if err != nil {
 				return "", err
 			}
-			if ok {
+			if config.Configured() {
 				rawConfig, err := svc.Config.Decrypt(ctx)
 				if err != nil {
 					return "", err
 				}
 				installationID := gjson.Get(rawConfig, "githubAppInstallationID").Int()
 				if installationID > 0 {
-					rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, privateKey, appID, installationID, cli)
+					rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, config.PrivateKey, config.AppID, installationID, cli)
 					if err != nil {
 						return "", errors.Wrap(err, "edit GitHub App external service config token")
 					}

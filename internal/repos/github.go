@@ -157,17 +157,17 @@ func newGithubSource(
 		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, token, cli)
 	)
 
-	privateKey, appID, useGitHubApp, err := conf.GitHubAppConfig()
+	config, err := conf.GitHubAppConfig()
 	if err != nil {
 		return nil, err
 	}
-	if c.GithubAppInstallationID != "" && useGitHubApp {
+	if c.GithubAppInstallationID != "" && config.Configured() {
 		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)
 		if err != nil {
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
 
-		installationAuther, err := database.BuildGitHubAppInstallationAuther(externalServicesStore, appID, privateKey, urn, apiURL, cli, installationID, svc)
+		installationAuther, err := database.BuildGitHubAppInstallationAuther(externalServicesStore, config.AppID, config.PrivateKey, urn, apiURL, cli, installationID, svc)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating GitHub App installation authenticator")
 		}
