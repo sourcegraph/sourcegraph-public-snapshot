@@ -30,13 +30,14 @@ import (
 )
 
 func NewService(
+	observationCtx *observation.Context,
 	db database.DB,
 	codeIntelDB codeintelshared.CodeIntelDB,
 	gsc GitserverClient,
 ) *Service {
-	store := store.New(db, scopedContext("store"))
-	repoStore := backend.NewRepos(scopedContext("repos").Logger, db, gitserver.NewClient(db))
-	lsifStore := lsifstore.New(codeIntelDB, scopedContext("lsifstore"))
+	store := store.New(scopedContext("store", observationCtx), db)
+	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserver.NewClient(db))
+	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
 	policyMatcher := policiesEnterprise.NewMatcher(gsc, policiesEnterprise.RetentionExtractor, true, false)
 	locker := locker.NewWith(db, "codeintel")
 
@@ -60,6 +61,7 @@ func NewService(
 	}()
 
 	svc := newService(
+		scopedContext("service", observationCtx),
 		store,
 		repoStore,
 		lsifStore,
@@ -68,18 +70,17 @@ func NewService(
 		nil, // written in circular fashion
 		policyMatcher,
 		locker,
-		scopedContext("service"),
 	)
-	svc.policySvc = policies.NewService(db, svc, gsc)
+	svc.policySvc = policies.NewService(observationCtx, db, svc, gsc)
 
 	return svc
 }
 
 type serviceDependencies struct {
-	db                 database.DB
-	codeIntelDB        codeintelshared.CodeIntelDB
-	gsc                GitserverClient
-	observationContext *observation.Context
+	db             database.DB
+	codeIntelDB    codeintelshared.CodeIntelDB
+	gsc            GitserverClient
+	observationCtx *observation.Context
 }
 
 var (
@@ -90,11 +91,12 @@ var (
 	rankingBucketCredentialsFile = env.Get("CODEINTEL_UPLOADS_RANKING_GOOGLE_APPLICATION_CREDENTIALS_FILE", "", "The path to a service account key file with access to GCS.")
 )
 
-func scopedContext(component string) *observation.Context {
-	return observation.ScopedContext("codeintel", "uploads", component)
+func scopedContext(component string, parent *observation.Context) *observation.Context {
+	return observation.ScopedContext("codeintel", "uploads", component, parent)
 }
 
 func NewUploadProcessorJob(
+	observationCtx *observation.Context,
 	uploadSvc *Service,
 	db database.DB,
 	uploadStore uploadstore.Store,
@@ -102,13 +104,13 @@ func NewUploadProcessorJob(
 	workerBudget int64,
 	workerPollInterval time.Duration,
 	maximumRuntimePerJob time.Duration,
-	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
-	uploadsProcessorStore := dbworkerstore.NewWithMetrics(db.Handle(), store.UploadWorkerStoreOptions, observationContext)
+	uploadsProcessorStore := dbworkerstore.New(observationCtx, db.Handle(), store.UploadWorkerStoreOptions)
 
-	dbworker.InitPrometheusMetric(observationContext, uploadsProcessorStore, "codeintel", "upload", nil)
+	dbworker.InitPrometheusMetric(observationCtx, uploadsProcessorStore, "codeintel", "upload", nil)
 
 	return background.NewUploadProcessorWorker(
+		observationCtx,
 		uploadSvc.store,
 		uploadSvc.lsifstore,
 		uploadSvc.gitserverClient,
@@ -119,7 +121,6 @@ func NewUploadProcessorJob(
 		workerBudget,
 		workerPollInterval,
 		maximumRuntimePerJob,
-		observationContext,
 	)
 }
 
@@ -134,7 +135,7 @@ func NewCommittedAtBackfillerJob(uploadSvc *Service) []goroutine.BackgroundRouti
 	}
 }
 
-func NewJanitor(uploadSvc *Service, gitserverClient GitserverClient, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func NewJanitor(observationCtx *observation.Context, uploadSvc *Service, gitserverClient GitserverClient) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewJanitor(
 			uploadSvc.store,
@@ -149,24 +150,24 @@ func NewJanitor(uploadSvc *Service, gitserverClient GitserverClient, observation
 				CommitResolverMaximumCommitLag: ConfigJanitorInst.CommitResolverMaximumCommitLag,
 			},
 			glock.NewRealClock(),
-			observationContext.Logger,
-			background.NewJanitorMetrics(observationContext),
+			observationCtx.Logger,
+			background.NewJanitorMetrics(observationCtx),
 		),
 	}
 }
 
-func NewReconciler(uploadSvc *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func NewReconciler(observationCtx *observation.Context, uploadSvc *Service) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		background.NewReconciler(uploadSvc.store, uploadSvc.lsifstore, ConfigJanitorInst.Interval, ConfigJanitorInst.ReconcilerBatchSize, observationContext),
+		background.NewReconciler(observationCtx, uploadSvc.store, uploadSvc.lsifstore, ConfigJanitorInst.Interval, ConfigJanitorInst.ReconcilerBatchSize),
 	}
 }
 
-func NewResetters(db database.DB, observationContext *observation.Context) []goroutine.BackgroundRoutine {
-	metrics := background.NewResetterMetrics(observationContext)
-	uploadsResetterStore := dbworkerstore.NewWithMetrics(db.Handle(), store.UploadWorkerStoreOptions, observationContext)
+func NewResetters(observationCtx *observation.Context, db database.DB) []goroutine.BackgroundRoutine {
+	metrics := background.NewResetterMetrics(observationCtx)
+	uploadsResetterStore := dbworkerstore.New(observationCtx, db.Handle(), store.UploadWorkerStoreOptions)
 
 	return []goroutine.BackgroundRoutine{
-		background.NewUploadResetter(uploadsResetterStore, ConfigJanitorInst.Interval, observationContext.Logger.Scoped("uploadResetter", ""), metrics),
+		background.NewUploadResetter(observationCtx.Logger, uploadsResetterStore, ConfigJanitorInst.Interval, metrics),
 	}
 }
 
@@ -183,9 +184,10 @@ func NewCommitGraphUpdater(uploadSvc *Service) []goroutine.BackgroundRoutine {
 	}
 }
 
-func NewExpirationTasks(uploadSvc *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func NewExpirationTasks(observationCtx *observation.Context, uploadSvc *Service) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewUploadExpirer(
+			observationCtx,
 			uploadSvc.store,
 			uploadSvc.policySvc,
 			uploadSvc.policyMatcher,
@@ -198,18 +200,17 @@ func NewExpirationTasks(uploadSvc *Service, observationContext *observation.Cont
 				CommitBatchSize:        ConfigExpirationInst.CommitBatchSize,
 				PolicyBatchSize:        ConfigExpirationInst.PolicyBatchSize,
 			},
-			observationContext,
 		),
 	}
 }
 
-func NewGraphExporters(uploadSvc *Service, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func NewGraphExporters(observationCtx *observation.Context, uploadSvc *Service) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewRankingGraphExporter(
+			observationCtx,
 			uploadSvc,
 			ConfigExportInst.NumRankingRoutines,
 			ConfigExportInst.RankingInterval,
-			observationContext,
 		),
 	}
 }

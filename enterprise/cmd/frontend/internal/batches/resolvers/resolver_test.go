@@ -442,7 +442,6 @@ func TestCreateChangesetSpec(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -566,7 +565,6 @@ func TestApplyBatchChange(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -683,7 +681,6 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -853,7 +850,6 @@ func TestCreateBatchChange(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -935,7 +931,6 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1244,7 +1239,6 @@ func TestMoveBatchChange(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1512,7 +1506,6 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1662,7 +1655,6 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1747,7 +1739,6 @@ func TestCreateChangesetComments(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1858,7 +1849,6 @@ func TestReenqueueChangesets(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1970,7 +1960,6 @@ func TestMergeChangesets(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2082,7 +2071,6 @@ func TestCloseChangesets(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2216,7 +2204,6 @@ func TestPublishChangesets(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2317,7 +2304,6 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 
 	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
-
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -27,12 +27,12 @@ type rootResolver struct {
 	operations   *operations
 }
 
-func NewRootResolver(autoindexSvc AutoIndexingService, uploadSvc UploadsService, policySvc PolicyService, observationContext *observation.Context) resolverstubs.AutoindexingServiceResolver {
+func NewRootResolver(observationCtx *observation.Context, autoindexSvc AutoIndexingService, uploadSvc UploadsService, policySvc PolicyService) resolverstubs.AutoindexingServiceResolver {
 	return &rootResolver{
 		autoindexSvc: autoindexSvc,
 		uploadSvc:    uploadSvc,
 		policySvc:    policySvc,
-		operations:   newOperations(observationContext),
+		operations:   newOperations(observationCtx),
 	}
 }
 

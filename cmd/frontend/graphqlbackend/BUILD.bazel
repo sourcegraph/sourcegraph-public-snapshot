@@ -1,6 +1,6 @@
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 
-package(default_visibility = ["//client/shared/src:__pkg__"])
+package(default_visibility = ["//client/shared/dev:__pkg__"])
 
 js_library(
     name = "graphql_schema",

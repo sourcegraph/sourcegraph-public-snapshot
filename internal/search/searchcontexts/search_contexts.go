@@ -544,7 +544,7 @@ func GetRepositoryRevisions(ctx context.Context, db database.DB, searchContextID
 }
 
 func IsAutoDefinedSearchContext(searchContext *types.SearchContext) bool {
-	return searchContext.ID == 0
+	return searchContext.Autodefined
 }
 
 func IsInstanceLevelSearchContext(searchContext *types.SearchContext) bool {
@@ -561,15 +561,15 @@ func IsGlobalSearchContext(searchContext *types.SearchContext) bool {
 }
 
 func GetUserSearchContext(userID int32, name string) *types.SearchContext {
-	return &types.SearchContext{Name: name, Public: true, Description: "All repositories you've added to Sourcegraph", NamespaceUserID: userID}
+	return &types.SearchContext{Name: name, Public: true, Description: "All repositories you've added to Sourcegraph", NamespaceUserID: userID, Autodefined: true}
 }
 
 func GetOrganizationSearchContext(orgID int32, name string, displayName string) *types.SearchContext {
-	return &types.SearchContext{Name: name, Public: false, Description: fmt.Sprintf("All repositories %s organization added to Sourcegraph", displayName), NamespaceOrgID: orgID}
+	return &types.SearchContext{Name: name, Public: false, Description: fmt.Sprintf("All repositories %s organization added to Sourcegraph", displayName), NamespaceOrgID: orgID, Autodefined: true}
 }
 
 func GetGlobalSearchContext() *types.SearchContext {
-	return &types.SearchContext{Name: GlobalSearchContextName, Public: true, Description: "All repositories on Sourcegraph"}
+	return &types.SearchContext{Name: GlobalSearchContextName, Public: true, Description: "All repositories on Sourcegraph", Autodefined: true}
 }
 
 func GetSearchContextSpec(searchContext *types.SearchContext) string {
@@ -586,4 +586,16 @@ func GetSearchContextSpec(searchContext *types.SearchContext) string {
 		}
 		return searchContextSpecPrefix + namespaceName + "/" + searchContext.Name
 	}
+}
+
+func CreateSearchContextStarForUser(ctx context.Context, db database.DB, searchContext *types.SearchContext, userID int32) error {
+	return db.SearchContexts().CreateSearchContextStarForUser(ctx, userID, searchContext.ID)
+}
+
+func DeleteSearchContextStarForUser(ctx context.Context, db database.DB, searchContext *types.SearchContext, userID int32) error {
+	return db.SearchContexts().DeleteSearchContextStarForUser(ctx, userID, searchContext.ID)
+}
+
+func SetDefaultSearchContextForUser(ctx context.Context, db database.DB, searchContext *types.SearchContext, userID int32) error {
+	return db.SearchContexts().SetUserDefaultSearchContextID(ctx, userID, searchContext.ID)
 }

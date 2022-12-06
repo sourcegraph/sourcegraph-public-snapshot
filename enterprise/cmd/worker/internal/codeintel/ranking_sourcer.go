@@ -3,8 +3,6 @@ package codeintel
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 
@@ -31,14 +29,14 @@ func (j *rankingSourcerJob) Config() []env.Config {
 	}
 }
 
-func (j *rankingSourcerJob) Routines(startupCtx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices()
+func (j *rankingSourcerJob) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+	services, err := codeintel.InitServices(observationCtx)
 	if err != nil {
 		return nil, err
 	}
 
 	return append(
-		ranking.NewIndexer(services.RankingService, observation.ContextWithLogger(logger)),
-		ranking.NewPageRankLoader(services.RankingService, observation.ContextWithLogger(logger))...,
+		ranking.NewIndexer(observationCtx, services.RankingService),
+		ranking.NewPageRankLoader(observationCtx, services.RankingService)...,
 	), nil
 }

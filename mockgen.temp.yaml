@@ -106,3 +106,4 @@
   path: github.com/sourcegraph/sourcegraph/cmd/frontend/backend
   interfaces:
     - UserEmailsService
+    - ReposService

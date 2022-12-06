@@ -419,3 +419,60 @@ func TestUpdateInsight(t *testing.T) {
 		}
 	})
 }
+
+func TestSaveInsightAsNewView(t *testing.T) {
+	dataSeries := map[string]any{
+		"query": "lang:go",
+		"options": map[string]string{
+			"label":     "insights",
+			"lineColor": "blue",
+		},
+		"repositoryScope": map[string]any{
+			"repositories": []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
+		},
+		"timeScope": map[string]any{
+			"stepInterval": map[string]any{
+				"unit":  "MONTH",
+				"value": 4,
+			},
+		},
+	}
+	insight, err := client.CreateSearchInsight("save insight as new view insight", dataSeries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if insight.InsightViewId == "" {
+		t.Fatal("Did not get an insight view ID")
+	}
+	defer func() {
+		if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
+			t.Fatalf("couldn't disable insight series: %v", err)
+		}
+	}()
+
+	input := map[string]any{
+		"insightViewId": insight.InsightViewId,
+		"options": map[string]any{
+			"title": "new view of my insight",
+		},
+	}
+	insightSeries, err := client.SaveInsightAsNewView(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(insightSeries) != 1 {
+		t.Fatalf("Got incorrect number of series, expected 1 got %v", len(insightSeries))
+	}
+	defer func() {
+		if err := client.DeleteInsightView(insightSeries[0].InsightViewId); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	if insightSeries[0].InsightViewId == insight.InsightViewId {
+		t.Error("should have created a new insight")
+	}
+	if insightSeries[0].SeriesId != insight.SeriesId {
+		t.Error("same series should be attached to new view")
+	}
+}

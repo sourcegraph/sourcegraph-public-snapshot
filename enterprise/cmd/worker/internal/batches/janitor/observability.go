@@ -16,33 +16,33 @@ type metrics struct {
 	batchSpecWorkspaceExecutionWorkerResetterMetrics dbworker.ResetterMetrics
 }
 
-func NewMetrics(observationContext *observation.Context) *metrics {
+func NewMetrics(observationCtx *observation.Context) *metrics {
 	return &metrics{
-		reconcilerWorkerResetterMetrics:                  makeResetterMetrics(observationContext, "batch_changes_reconciler"),
-		bulkProcessorWorkerResetterMetrics:               makeResetterMetrics(observationContext, "batch_changes_bulk_processor"),
-		batchSpecResolutionWorkerResetterMetrics:         makeResetterMetrics(observationContext, "batch_changes_batch_spec_resolution_worker_resetter"),
-		batchSpecWorkspaceExecutionWorkerResetterMetrics: makeResetterMetrics(observationContext, "batch_spec_workspace_execution_worker_resetter"),
+		reconcilerWorkerResetterMetrics:                  makeResetterMetrics(observationCtx, "batch_changes_reconciler"),
+		bulkProcessorWorkerResetterMetrics:               makeResetterMetrics(observationCtx, "batch_changes_bulk_processor"),
+		batchSpecResolutionWorkerResetterMetrics:         makeResetterMetrics(observationCtx, "batch_changes_batch_spec_resolution_worker_resetter"),
+		batchSpecWorkspaceExecutionWorkerResetterMetrics: makeResetterMetrics(observationCtx, "batch_spec_workspace_execution_worker_resetter"),
 	}
 }
 
-func makeResetterMetrics(observationContext *observation.Context, workerName string) dbworker.ResetterMetrics {
+func makeResetterMetrics(observationCtx *observation.Context, workerName string) dbworker.ResetterMetrics {
 	resetFailures := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: fmt.Sprintf("src_%s_reset_failures_total", workerName),
 		Help: "The number of reset failures.",
 	})
-	observationContext.Registerer.MustRegister(resetFailures)
+	observationCtx.Registerer.MustRegister(resetFailures)
 
 	resets := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: fmt.Sprintf("src_%s_resets_total", workerName),
 		Help: "The number of records reset.",
 	})
-	observationContext.Registerer.MustRegister(resets)
+	observationCtx.Registerer.MustRegister(resets)
 
 	errors := prometheus.NewCounter(prometheus.CounterOpts{
 		Name: fmt.Sprintf("src_%s_reset_errors_total", workerName),
 		Help: "The number of errors that occur when resetting records.",
 	})
-	observationContext.Registerer.MustRegister(errors)
+	observationCtx.Registerer.MustRegister(errors)
 	return dbworker.ResetterMetrics{
 		RecordResets:        resets,
 		RecordResetFailures: resetFailures,

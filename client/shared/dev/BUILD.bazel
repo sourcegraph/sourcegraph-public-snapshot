@@ -1,4 +1,4 @@
-load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_run_binary")
+load("@aspect_rules_js//js:defs.bzl", "js_binary")
 
 js_binary(
     name = "generate_graphql_schema",
@@ -13,14 +13,15 @@ js_binary(
         "//cmd/frontend/graphqlbackend:graphql_schema",
     ],
     entry_point = "generateGraphQlSchema.js",
+    visibility = ["//client/shared:__pkg__"],
 )
 
-js_run_binary(
-    name = "graphql_schema",
-    outs = ["schema.ts"],
-    args = [
-        "schema.ts",
+js_binary(
+    name = "generate_schema",
+    data = [
+        "//:node_modules/json-schema-to-typescript",
+        "//:node_modules/mz",
     ],
-    chdir = package_name(),
-    tool = ":generate_graphql_schema",
+    entry_point = "generateSchema.js",
+    visibility = ["//client/shared:__pkg__"],
 )

@@ -54,8 +54,8 @@ var (
 
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
 // when external services are changed, added or removed.
-func NewSyncRegistry(ctx context.Context, bstore SyncStore, cf *httpcli.Factory, observationContext *observation.Context) *SyncRegistry {
-	logger := observationContext.Logger.Scoped("SyncRegistry", "starts a syncer for each code host and updates them")
+func NewSyncRegistry(ctx context.Context, observationCtx *observation.Context, bstore SyncStore, cf *httpcli.Factory) *SyncRegistry {
+	logger := observationCtx.Logger.Scoped("SyncRegistry", "starts a syncer for each code host and updates them")
 	ctx, cancel := context.WithCancel(ctx)
 	return &SyncRegistry{
 		ctx:            ctx,
@@ -65,7 +65,7 @@ func NewSyncRegistry(ctx context.Context, bstore SyncStore, cf *httpcli.Factory,
 		httpFactory:    cf,
 		priorityNotify: make(chan []int64, 500),
 		syncers:        make(map[string]*changesetSyncer),
-		metrics:        makeMetrics(observationContext),
+		metrics:        makeMetrics(observationCtx),
 	}
 }
 
@@ -285,7 +285,7 @@ type syncerMetrics struct {
 	behindSchedule          *prometheus.GaugeVec
 }
 
-func makeMetrics(observationContext *observation.Context) *syncerMetrics {
+func makeMetrics(observationCtx *observation.Context) *syncerMetrics {
 	metrics := &syncerMetrics{
 		syncs: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Name: "src_repoupdater_changeset_syncer_syncs",
@@ -314,12 +314,12 @@ func makeMetrics(observationContext *observation.Context) *syncerMetrics {
 			Help: "The number of changesets behind schedule",
 		}, []string{"codehost"}),
 	}
-	observationContext.Registerer.MustRegister(metrics.syncs)
-	observationContext.Registerer.MustRegister(metrics.priorityQueued)
-	observationContext.Registerer.MustRegister(metrics.syncDuration)
-	observationContext.Registerer.MustRegister(metrics.computeScheduleDuration)
-	observationContext.Registerer.MustRegister(metrics.scheduleSize)
-	observationContext.Registerer.MustRegister(metrics.behindSchedule)
+	observationCtx.Registerer.MustRegister(metrics.syncs)
+	observationCtx.Registerer.MustRegister(metrics.priorityQueued)
+	observationCtx.Registerer.MustRegister(metrics.syncDuration)
+	observationCtx.Registerer.MustRegister(metrics.computeScheduleDuration)
+	observationCtx.Registerer.MustRegister(metrics.scheduleSize)
+	observationCtx.Registerer.MustRegister(metrics.behindSchedule)
 
 	return metrics
 }

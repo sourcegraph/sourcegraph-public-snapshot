@@ -505,7 +505,7 @@ changesetTemplate:
 		}
 	})
 
-	t.Run("caching enabled but no diff in cache entry", func(t *testing.T) {
+	t.Run("no diff in cache entry", func(t *testing.T) {
 		workspace := buildWorkspace("caching-enabled-no-diff")
 
 		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
@@ -547,54 +547,7 @@ changesetTemplate:
 		}
 	})
 
-	t.Run("caching disabled", func(t *testing.T) {
-		workspace := buildWorkspace("caching-disabled")
-
-		batchSpec := createBatchSpec(t, true, bt.TestRawBatchSpecYAML)
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult, secretValue, nil)
-
-		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
-		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
-			t.Fatalf("proces failed: %s", err)
-		}
-
-		have, _, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
-		if err != nil {
-			t.Fatalf("listing workspaces failed: %s", err)
-		}
-
-		assertWorkspacesEqual(t, have, []*btypes.BatchSpecWorkspace{
-			{
-				RepoID:             repos[0].ID,
-				BatchSpecID:        batchSpec.ID,
-				ChangesetSpecIDs:   []int64{},
-				Branch:             "refs/heads/main",
-				Commit:             "caching-disabled",
-				FileMatches:        []string{},
-				Path:               "",
-				OnlyFetchWorkspace: true,
-				CachedResultFound:  false,
-			},
-		})
-
-		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
-			UserID: batchSpec.UserID,
-			Keys:   []string{entry.Key},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(reloadedEntries) != 1 {
-			t.Fatal("cache entry not found")
-		}
-		reloadedEntry := reloadedEntries[0]
-		if !reloadedEntry.LastUsedAt.IsZero() {
-			t.Fatalf("cache entry LastUsedAt updated, but should not be used: %s", reloadedEntry.LastUsedAt)
-		}
-	})
-
-	t.Run("caching enabled but workspace is ignored", func(t *testing.T) {
+	t.Run("workspace is ignored", func(t *testing.T) {
 		workspace := buildWorkspace("caching-enabled-ignored")
 		workspace.Ignored = true
 
@@ -624,7 +577,7 @@ changesetTemplate:
 		}
 	})
 
-	t.Run("caching enabled but workspace is unsupported", func(t *testing.T) {
+	t.Run("workspace is unsupported", func(t *testing.T) {
 		workspace := buildWorkspace("caching-enabled-ignored")
 		workspace.Unsupported = true
 
@@ -858,7 +811,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Importing(t *testing.T) {
 	clock := func() time.Time { return now }
 	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	var testSpecYAML = `
+	testSpecYAML := `
 name: my-unique-name
 importChangesets:
   - repository: ` + string(repos[0].Name) + `
@@ -916,7 +869,7 @@ func TestBatchSpecWorkspaceCreatorProcess_NoDiff(t *testing.T) {
 	clock := func() time.Time { return now }
 	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	var testSpecYAML = `
+	testSpecYAML := `
 name: my-unique-name
 importChangesets:
   - repository: ` + string(repos[0].Name) + `

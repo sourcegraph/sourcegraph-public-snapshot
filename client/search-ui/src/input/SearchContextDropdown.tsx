@@ -50,7 +50,6 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
         showSearchContextManagement,
         selectedSearchContextSpec,
         setSelectedSearchContextSpec,
-        fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
         submitSearch,
         className,
@@ -168,7 +167,6 @@ export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {
                     {...props}
                     showSearchContextManagement={showSearchContextManagement}
                     selectSearchContextSpec={selectSearchContextSpec}
-                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                     fetchSearchContexts={fetchSearchContexts}
                     className={menuClassName}
                     onMenuClose={handleMenuClose}

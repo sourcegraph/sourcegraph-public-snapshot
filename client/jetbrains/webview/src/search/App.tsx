@@ -3,13 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Observable, of, Subscription } from 'rxjs'
 
 import { requestGraphQLCommon } from '@sourcegraph/http-client'
-import {
-    fetchAutoDefinedSearchContexts,
-    fetchSearchContexts,
-    getUserSearchContextNamespaces,
-    QueryState,
-    SearchPatternType,
-} from '@sourcegraph/search'
+import { fetchSearchContexts, getUserSearchContextNamespaces, QueryState, SearchPatternType } from '@sourcegraph/search'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
@@ -269,7 +263,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             setSelectedSearchContextSpec={contextSpec => onSubmit({ contextSpec })}
                             selectedSearchContextSpec={lastSearch.selectedSearchContextSpec}
                             fetchSearchContexts={fetchSearchContexts}
-                            fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                             getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                             fetchStreamSuggestions={fetchStreamSuggestionsWithStaticUrl}
                             settingsCascade={settingsCascade}

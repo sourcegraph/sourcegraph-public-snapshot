@@ -17,6 +17,12 @@
       "type": "boolean",
       "group": "Search"
     },
+    "search.index.enabled": {
+      "description": "REMOVED.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Search"
+    },
     "search.index.symbols.enabled": {
       "description": "Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.",
       "type": "boolean",

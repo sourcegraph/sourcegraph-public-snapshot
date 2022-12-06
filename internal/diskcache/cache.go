@@ -60,7 +60,7 @@ type store struct {
 // It can optionally be configured with a background timeout
 // (with `diskcache.WithBackgroundTimeout`), a pre-evict callback
 // (with `diskcache.WithBeforeEvict`) and with a configured observation context
-// (with `diskcache.WithObservationContext`).
+// (with `diskcache.WithobservationCtx`).
 func NewStore(dir, component string, opts ...StoreOpt) Store {
 	s := &store{
 		dir:       dir,
@@ -88,7 +88,7 @@ func WithBeforeEvict(f func(string, observation.TraceLogger)) func(*store) {
 	return func(s *store) { s.beforeEvict = f }
 }
 
-func WithObservationContext(ctx *observation.Context) func(*store) {
+func WithobservationCtx(ctx *observation.Context) func(*store) {
 	return func(s *store) { s.observe = newOperations(ctx, s.component) }
 }
 
@@ -114,7 +114,7 @@ func (s *store) Open(ctx context.Context, key []string, fetcher Fetcher) (file *
 		if err != nil {
 			return err
 		}
-		file, err := os.OpenFile(path, os.O_WRONLY, 0600)
+		file, err := os.OpenFile(path, os.O_WRONLY, 0o600)
 		if err != nil {
 			readCloser.Close()
 			return errors.Wrap(err, "failed to open temporary archive cache item")
@@ -241,7 +241,7 @@ func doFetch(ctx context.Context, path string, fetcher FetcherWithPath, trace ob
 	_ = os.Remove(path)
 
 	// Fetch since we still can't open up the file
-	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return nil, errors.Wrap(err, "could not create archive cache dir")
 	}
 
@@ -249,7 +249,7 @@ func doFetch(ctx context.Context, path string, fetcher FetcherWithPath, trace ob
 	// partially written file. We ensure the file is writeable and truncate
 	// it.
 	tmpPath := path + ".part"
-	f, err = os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	f, err = os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temporary archive cache item")
 	}

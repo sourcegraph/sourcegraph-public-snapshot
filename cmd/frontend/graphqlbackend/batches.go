@@ -110,7 +110,7 @@ type DeleteBatchSpecArgs struct {
 
 type ExecuteBatchSpecArgs struct {
 	BatchSpec graphql.ID
-	NoCache   bool
+	NoCache   *bool
 	AutoApply bool
 }
 
@@ -363,6 +363,7 @@ type BatchSpecResolver interface {
 
 	AllowIgnored() *bool
 	AllowUnsupported() *bool
+	NoCache() *bool
 
 	ViewerCanRetry(context.Context) (bool, error)
 

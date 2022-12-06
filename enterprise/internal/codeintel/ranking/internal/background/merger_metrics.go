@@ -11,14 +11,14 @@ type mergerMetrics struct {
 	numInputRowsProcessed  prometheus.Counter
 }
 
-func newMergerMetrics(observationContext *observation.Context) *mergerMetrics {
+func newMergerMetrics(observationCtx *observation.Context) *mergerMetrics {
 	counter := func(name, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
 			Name: name,
 			Help: help,
 		})
 
-		observationContext.Registerer.MustRegister(counter)
+		observationCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 

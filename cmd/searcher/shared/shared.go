@@ -15,12 +15,10 @@ import (
 	"syscall"
 	"time"
 
-	"go.opentelemetry.io/otel"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/keegancsmith/tmpfriend"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
@@ -56,12 +54,12 @@ var (
 
 const port = "3181"
 
-func frontendDB() (database.DB, error) {
+func frontendDB(observationCtx *observation.Context) (database.DB, error) {
 	logger := log.Scoped("frontendDB", "")
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "searcher", &observation.TestContext)
+	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "searcher")
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +106,7 @@ func shutdownOnSignal(ctx context.Context, server *http.Server) error {
 // FD.
 func setupTmpDir() error {
 	tmpRoot := filepath.Join(cacheDir, ".searcher.tmp")
-	if err := os.MkdirAll(tmpRoot, 0755); err != nil {
+	if err := os.MkdirAll(tmpRoot, 0o755); err != nil {
 		return err
 	}
 	if !tmpfriend.IsTmpFriendDir(tmpRoot) {
@@ -140,14 +138,10 @@ func run(logger log.Logger) error {
 		return errors.Wrap(err, "failed to setup TMPDIR")
 	}
 
-	storeObservationContext := &observation.Context{
-		// Explicitly don't scope Store logger under the parent logger
-		Logger:     log.Scoped("Store", "searcher archives store"),
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
+	// Explicitly don't scope Store logger under the parent logger
+	storeObservationCtx := observation.NewContext(log.Scoped("Store", "searcher archives store"))
 
-	db, err := frontendDB()
+	db, err := frontendDB(observation.NewContext(log.Scoped("db", "server frontend db")))
 	if err != nil {
 		return errors.Wrap(err, "failed to connect to frontend database")
 	}
@@ -178,12 +172,12 @@ func run(logger log.Logger) error {
 					Pathspecs: pathspecs,
 				})
 			},
-			FilterTar:          search.NewFilter,
-			Path:               filepath.Join(cacheDir, "searcher-archives"),
-			MaxCacheSizeBytes:  cacheSizeBytes,
-			Log:                storeObservationContext.Logger,
-			ObservationContext: storeObservationContext,
-			DB:                 db,
+			FilterTar:         search.NewFilter,
+			Path:              filepath.Join(cacheDir, "searcher-archives"),
+			MaxCacheSizeBytes: cacheSizeBytes,
+			Log:               storeObservationCtx.Logger,
+			ObservationCtx:    storeObservationCtx,
+			DB:                db,
 		},
 
 		Indexed: sharedsearch.Indexed(),

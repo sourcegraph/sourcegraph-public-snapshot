@@ -44,8 +44,8 @@ type CommitIndexer struct {
 	clock             func() time.Time
 }
 
-func NewCommitIndexer(background context.Context, base database.DB, insights edb.InsightsDB, clock func() time.Time, observationContext *observation.Context) *CommitIndexer {
-	//TODO(insights): add a setting for historical index length
+func NewCommitIndexer(background context.Context, observationCtx *observation.Context, base database.DB, insights edb.InsightsDB, clock func() time.Time) *CommitIndexer {
+	// TODO(insights): add a setting for historical index length
 	startTime := time.Now().AddDate(-1, 0, 0)
 
 	repoStore := base.Repos()
@@ -65,7 +65,7 @@ func NewCommitIndexer(background context.Context, base database.DB, insights edb
 
 	limiter := ratelimit.NewInstrumentedLimiter("CommitIndexer", rate.NewLimiter(10, 1))
 
-	operations := newOperations(observationContext)
+	operations := newOperations(observationCtx)
 
 	indexer := CommitIndexer{
 		db:                base,
@@ -86,13 +86,13 @@ func NewCommitIndexer(background context.Context, base database.DB, insights edb
 	return &indexer
 }
 
-func NewCommitIndexerWorker(ctx context.Context, base database.DB, insights edb.InsightsDB, clock func() time.Time, observationContext *observation.Context) goroutine.BackgroundRoutine {
-	indexer := NewCommitIndexer(ctx, base, insights, clock, observationContext)
+func NewCommitIndexerWorker(ctx context.Context, observationCtx *observation.Context, base database.DB, insights edb.InsightsDB, clock func() time.Time) goroutine.BackgroundRoutine {
+	indexer := NewCommitIndexer(ctx, observationCtx, base, insights, clock)
 
-	return indexer.Handler(ctx, observationContext)
+	return indexer.Handler(ctx, observationCtx)
 }
 
-func (i *CommitIndexer) Handler(ctx context.Context, observationContext *observation.Context) goroutine.BackgroundRoutine {
+func (i *CommitIndexer) Handler(ctx context.Context, observationCtx *observation.Context) goroutine.BackgroundRoutine {
 	intervalMinutes := conf.Get().InsightsCommitIndexerInterval
 	if intervalMinutes <= 0 {
 		intervalMinutes = 60
@@ -136,7 +136,6 @@ func (i *CommitIndexer) indexRepository(name string, id api.RepoID) error {
 		}
 	}
 	return nil
-
 }
 
 func (i *CommitIndexer) indexNextWindow(name string, id api.RepoID, windowDuration int) (moreWindows bool, err error) {
