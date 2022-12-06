@@ -14,16 +14,20 @@ type operations struct {
 	indexRepository   *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
-	m := metrics.NewREDMetrics(
-		observationContext.Registerer,
-		"codeintel_ranking",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
+var m = new(metrics.SingletonREDMetrics)
+
+func newOperations(observationCtx *observation.Context) *operations {
+	m := m.Get(func() *metrics.REDMetrics {
+		return metrics.NewREDMetrics(
+			observationCtx.Registerer,
+			"codeintel_ranking",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+	})
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.ranking.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           m,

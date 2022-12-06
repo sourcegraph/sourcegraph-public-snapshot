@@ -17,6 +17,7 @@ type LsifStore interface {
 	GetUploadDocumentsForPath(ctx context.Context, bundleID int, pathPattern string) ([]string, int, error)
 	DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error)
 
+	InsertMetadata(ctx context.Context, uploadID int, meta ProcessedMetadata) error
 	NewSymbolWriter(ctx context.Context, uploadID int) (SymbolWriter, error)
 	InsertSCIPDocument(ctx context.Context, uploadID int, documentPath string, hash []byte, rawSCIPPayload []byte) (int, error)
 
@@ -47,11 +48,15 @@ type store struct {
 	operations *operations
 }
 
-func New(db codeintelshared.CodeIntelDB, observationContext *observation.Context) LsifStore {
+func New(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) LsifStore {
+	return newStore(observationCtx, db)
+}
+
+func newStore(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) *store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
 		serializer: NewSerializer(),
-		operations: newOperations(observationContext),
+		operations: newOperations(observationCtx),
 	}
 }
 

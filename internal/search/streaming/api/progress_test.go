@@ -45,6 +45,7 @@ func TestSearchProgress(t *testing.T) {
 			MatchCount:          1,
 			ElapsedMilliseconds: 0,
 			RepositoriesCount:   intPtr(5),
+			BackendsMissing:     1,
 			ExcludedArchived:    1,
 			ExcludedForks:       5,
 			Timedout:            []api.RepoID{1},

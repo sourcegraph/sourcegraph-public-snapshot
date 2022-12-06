@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -43,6 +42,7 @@ type Service struct {
 }
 
 func newService(
+	observationCtx *observation.Context,
 	store store.Store,
 	repoStore RepoStore,
 	lsifstore lsifstore.LsifStore,
@@ -51,12 +51,8 @@ func newService(
 	policySvc PolicyService,
 	policyMatcher PolicyMatcher,
 	locker Locker,
-	observationContext *observation.Context,
 ) *Service {
-	workerutilStore := store.WorkerutilStore(observationContext)
-
-	// TODO - move this to metric reporter?
-	dbworker.InitPrometheusMetric(observationContext, workerutilStore, "codeintel", "upload", nil)
+	workerutilStore := store.WorkerutilStore(observationCtx)
 
 	return &Service{
 		store:           store,
@@ -68,8 +64,8 @@ func newService(
 		policySvc:       policySvc,
 		policyMatcher:   policyMatcher,
 		locker:          locker,
-		logger:          observationContext.Logger,
-		operations:      newOperations(observationContext),
+		logger:          observationCtx.Logger,
+		operations:      newOperations(observationCtx),
 		clock:           glock.NewRealClock(),
 	}
 }

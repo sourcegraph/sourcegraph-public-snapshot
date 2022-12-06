@@ -28,7 +28,7 @@ func TestDeleteLSIFUpload(t *testing.T) {
 	mockAutoIndexingService := NewMockAutoIndexingService()
 	mockAutoIndexingService.GetUnsafeDBFunc.SetDefaultReturn(db)
 
-	rootResolver := NewRootResolver(mockUploadService, mockAutoIndexingService, mockPolicyService, &observation.TestContext)
+	rootResolver := NewRootResolver(&observation.TestContext, mockUploadService, mockAutoIndexingService, mockPolicyService)
 
 	if _, err := rootResolver.DeleteLSIFUpload(context.Background(), &struct{ ID graphql.ID }{id}); err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -53,7 +53,7 @@ func TestDeleteLSIFUploadUnauthenticated(t *testing.T) {
 	mockAutoIndexingService := NewMockAutoIndexingService()
 	mockAutoIndexingService.GetUnsafeDBFunc.SetDefaultReturn(db)
 
-	rootResolver := NewRootResolver(mockUploadService, mockAutoIndexingService, mockPolicyService, &observation.TestContext)
+	rootResolver := NewRootResolver(&observation.TestContext, mockUploadService, mockAutoIndexingService, mockPolicyService)
 
 	if _, err := rootResolver.DeleteLSIFUpload(context.Background(), &struct{ ID graphql.ID }{id}); err != auth.ErrNotAuthenticated {
 		t.Errorf("unexpected error. want=%q have=%q", auth.ErrNotAuthenticated, err)

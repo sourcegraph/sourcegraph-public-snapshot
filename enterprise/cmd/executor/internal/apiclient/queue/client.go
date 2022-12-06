@@ -61,7 +61,7 @@ type ResourceOptions struct {
 	DiskSpace string
 }
 
-func New(options Options, metricsGatherer prometheus.Gatherer, observationContext *observation.Context) (*Client, error) {
+func New(observationCtx *observation.Context, options Options, metricsGatherer prometheus.Gatherer) (*Client, error) {
 	client, err := apiclient.NewBaseClient(options.BaseClientOptions)
 	if err != nil {
 		return nil, err
@@ -71,7 +71,7 @@ func New(options Options, metricsGatherer prometheus.Gatherer, observationContex
 		client:          client,
 		logger:          log.Scoped("executor-api-queue-client", "The API client adapter for executors to use dbworkers over HTTP"),
 		metricsGatherer: metricsGatherer,
-		operations:      newOperations(observationContext),
+		operations:      newOperations(observationCtx),
 	}, nil
 }
 

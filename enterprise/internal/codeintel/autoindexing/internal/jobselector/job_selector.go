@@ -40,7 +40,7 @@ func NewJobSelector(
 
 var (
 	overrideScript                           = os.Getenv("SRC_CODEINTEL_INFERENCE_OVERRIDE_SCRIPT")
-	MaximumIndexJobsPerInferredConfiguration = env.MustGetInt("PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_INDEX_JOBS_PER_INFERRED_CONFIGURATION", 25, "Repositories with a number of inferred auto-index jobs exceeding this threshold will not be auto-indexed.")
+	MaximumIndexJobsPerInferredConfiguration = env.MustGetInt("PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_INDEX_JOBS_PER_INFERRED_CONFIGURATION", 50, "Repositories with a number of inferred auto-index jobs exceeding this threshold will not be auto-indexed.")
 )
 
 // InferIndexJobsFromRepositoryStructure collects the result of InferIndexJobs over all registered recognizers.

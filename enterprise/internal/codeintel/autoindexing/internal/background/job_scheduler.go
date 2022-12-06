@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -34,23 +33,16 @@ type indexSchedulerJob struct {
 	indexEnqueuer IndexEnqueuer
 }
 
-var backgroundMetrics = memo.NewMemoizedConstructorWithArg(func(observationContext *observation.Context) (*metrics.REDMetrics, error) {
-	return metrics.NewREDMetrics(
-		observationContext.Registerer,
-		"codeintel_autoindexing_background",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	), nil
-})
+var m = new(metrics.SingletonREDMetrics)
 
 func NewScheduler(
+	observationCtx *observation.Context,
 	uploadSvc UploadService,
 	policiesSvc PoliciesService,
 	policyMatcher PolicyMatcher,
 	indexEnqueuer IndexEnqueuer,
 	interval time.Duration,
 	config IndexSchedulerConfig,
-	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	job := indexSchedulerJob{
 		uploadSvc:     uploadSvc,
@@ -59,11 +51,18 @@ func NewScheduler(
 		indexEnqueuer: indexEnqueuer,
 	}
 
-	metrics, _ := backgroundMetrics.Init(observationContext)
+	metrics := m.Get(func() *metrics.REDMetrics {
+		return metrics.NewREDMetrics(
+			observationCtx.Registerer,
+			"codeintel_autoindexing_background",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+	})
 
 	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), interval, goroutine.HandlerFunc(func(ctx context.Context) error {
 		return job.handleScheduler(ctx, config.RepositoryProcessDelay, config.RepositoryBatchSize, config.PolicyBatchSize, config.InferenceConcurrency)
-	}), observationContext.Operation(observation.Op{
+	}), observationCtx.Operation(observation.Op{
 		Name:              "codeintel.indexing.HandleIndexSchedule",
 		MetricLabelValues: []string{"HandleIndexSchedule"},
 		Metrics:           metrics,

@@ -644,7 +644,7 @@ type ExperimentalFeatures struct {
 	// InsightsAlternateLoadingStrategy description: Use an in-memory strategy of loading Code Insights. Should only be used for benchmarking on large instances, not for customer use currently.
 	InsightsAlternateLoadingStrategy bool `json:"insightsAlternateLoadingStrategy,omitempty"`
 	// InsightsBackfillerV2 description: Use v2 of the insights backfiller which backfills a series at a time.
-	InsightsBackfillerV2 bool `json:"insightsBackfillerV2,omitempty"`
+	InsightsBackfillerV2 *bool `json:"insightsBackfillerV2,omitempty"`
 	// JvmPackages description: Allow adding JVM package host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
 	// NpmPackages description: Allow adding npm package code host connections
@@ -1773,7 +1773,7 @@ type Settings struct {
 	BasicCodeIntelUnindexedSearchTimeout float64 `json:"basicCodeIntel.unindexedSearchTimeout,omitempty"`
 	// CodeHostUseNativeTooltips description: Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).
 	CodeHostUseNativeTooltips bool `json:"codeHost.useNativeTooltips,omitempty"`
-	// CodeIntelBlobKeyboardNavigation description: Supported methods of keyboard navigation within the file blob. Note: `token` navigation is only supported when precise code intelligence is available
+	// CodeIntelBlobKeyboardNavigation description: DEPRECATED. Use 'experimentalFeatures.codeNavigation':'link-driven' instead.
 	CodeIntelBlobKeyboardNavigation string `json:"codeIntel.blobKeyboardNavigation,omitempty"`
 	// CodeIntelDisableRangeQueries description: Whether to fetch multiple precise definitions and references on hover.
 	CodeIntelDisableRangeQueries bool `json:"codeIntel.disableRangeQueries,omitempty"`
@@ -1891,6 +1891,8 @@ type SettingsExperimentalFeatures struct {
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CodeMonitoringWebHooks description: Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.
 	CodeMonitoringWebHooks *bool `json:"codeMonitoringWebHooks,omitempty"`
+	// CodeNavigation description: What kind of experimental code navigation UX to enable. The most recommended option is 'selection-driven'.
+	CodeNavigation *string `json:"codeNavigation,omitempty"`
 	// CoolCodeIntel description: Use the (cool) experimental reference panel for code intelligence.
 	CoolCodeIntel *bool `json:"coolCodeIntel,omitempty"`
 	// CopyQueryButton description: DEPRECATED: This feature is now permanently enabled. Enables displaying the copy query button in the search bar when hovering over the global navigation bar.
@@ -2230,13 +2232,15 @@ type SiteConfiguration struct {
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// ProductResearchPageEnabled description: Enables users access to the product research page in their settings.
 	ProductResearchPageEnabled *bool `json:"productResearchPage.enabled,omitempty"`
+	// RedactOutboundRequestHeaders description: Enables redacting sensitive information from outbound requests. Important: We only respect this setting in development environments. In production, we always redact outbound requests.
+	RedactOutboundRequestHeaders *bool `json:"redactOutboundRequestHeaders,omitempty"`
 	// RepoConcurrentExternalServiceSyncers description: The number of concurrent external service syncers that can run.
 	RepoConcurrentExternalServiceSyncers int `json:"repoConcurrentExternalServiceSyncers,omitempty"`
 	// RepoListUpdateInterval description: Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
 	// RepoPurgeWorker description: Configuration for repository purge worker.
 	RepoPurgeWorker *RepoPurgeWorker `json:"repoPurgeWorker,omitempty"`
-	// SearchIndexEnabled description: Whether indexed search is enabled. If : unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.
+	// SearchIndexEnabled description: REMOVED.
 	SearchIndexEnabled *bool `json:"search.index.enabled,omitempty"`
 	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`

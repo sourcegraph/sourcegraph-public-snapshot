@@ -2,7 +2,6 @@ package lsifstore
 
 import (
 	"context"
-	"errors"
 	"sort"
 
 	"github.com/keegancsmith/sqlf"
@@ -11,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // MaximumRangesDefinitionLocations is the maximum limit when querying definition locations for a

@@ -15,6 +15,7 @@ type operations struct {
 	scanDocuments             *observation.Operation
 	scanResultChunks          *observation.Operation
 	scanLocations             *observation.Operation
+	insertMetadata            *observation.Operation
 	insertSCIPDocument        *observation.Operation
 	writeMeta                 *observation.Operation
 	writeDocuments            *observation.Operation
@@ -24,16 +25,20 @@ type operations struct {
 	writeImplementations      *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewREDMetrics(
-		observationContext.Registerer,
-		"codeintel_uploads_lsifstore",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
+var m = new(metrics.SingletonREDMetrics)
+
+func newOperations(observationCtx *observation.Context) *operations {
+	metrics := m.Get(func() *metrics.REDMetrics {
+		return metrics.NewREDMetrics(
+			observationCtx.Registerer,
+			"codeintel_uploads_lsifstore",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+	})
 
 	op := func(name string) *observation.Operation {
-		return observationContext.Operation(observation.Op{
+		return observationCtx.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.uploads.lsifstore.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           metrics,
@@ -48,6 +53,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		scanDocuments:             op("ScanDocuments"),
 		scanResultChunks:          op("ScanResultChunks"),
 		scanLocations:             op("ScanLocations"),
+		insertMetadata:            op("InsertMetadata"),
 		insertSCIPDocument:        op("InsertSCIPDocument"),
 		writeMeta:                 op("WriteMeta"),
 		writeDocuments:            op("WriteDocuments"),

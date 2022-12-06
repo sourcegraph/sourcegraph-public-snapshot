@@ -271,20 +271,14 @@ func withSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSo
 	return nil, ErrMissingCredentials
 }
 
-// loadExternalService looks up all external services that are connected to the given repo.
-// Global external services are preferred over user-owned external services.
-// If no external service matching the given criteria is found, an error is returned.
+// loadExternalService looks up all external services that are connected to the
+// given repo and returns the first one ordered by id descending. If no external
+// service matching the given criteria is found, an error is returned.
 func loadExternalService(ctx context.Context, s database.ExternalServiceStore, opts database.ExternalServicesListOptions) (*types.ExternalService, error) {
 	es, err := s.List(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
-
-	// Sort the external services so user owned external service go last.
-	// This also retains the initial ORDER BY ID DESC.
-	sort.SliceStable(es, func(i, j int) bool {
-		return es[i].NamespaceUserID == 0 && es[i].ID > es[j].ID
-	})
 
 	for _, e := range es {
 		cfg, err := e.Configuration(ctx)

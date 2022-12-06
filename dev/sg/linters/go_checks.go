@@ -91,8 +91,6 @@ func lintLoggingLibraries() *linter {
 			"cmd/frontend/internal/app/otlpadapter",
 			// Not worth fixing the deprecated package
 			"cmd/frontend/internal/usagestatsdeprecated",
-			// Valid usage of "log" package as a CLI
-			"enterprise/internal/cloud/sign_site_config.go",
 			// Search core needs direct usage of zap for our temporary metrics collection.
 			// See https://github.com/sourcegraph/sourcegraph/pull/45229 for more information.
 			"internal/search/backend/metered_searcher.go",

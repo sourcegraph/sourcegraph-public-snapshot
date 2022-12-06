@@ -66,6 +66,7 @@ import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob, fetchStencil } from './backend'
 import { Blob, BlobInfo } from './Blob'
+import { BlobLoadingSpinner } from './BlobLoadingSpinner'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { BlobPanel } from './panel/BlobPanel'
@@ -119,13 +120,25 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
     const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+    const experimentalCodeNavigation = useExperimentalFeatures(features => features.codeNavigation)
     const enableLazyBlobSyntaxHighlighting = useExperimentalFeatures(
         features => features.enableLazyBlobSyntaxHighlighting ?? false
     )
-    const enableTokenKeyboardNavigation =
+
+    // Before we introduced experimentaFeatures.codeNavigation='link-driven', we
+    // used a non-experimental name codeIntel.blobKeyboardNavigation='token',
+    // which was a mistake because the feature was very experimental in nature.
+    // To correct the mistake, we moved the setting under 'experimentalFeatures'
+    // and updated the description of 'codeIntel.blobKeyboardNavigation' to say
+    // it has moved to experimentaFeatures.codeNavigation='link-driven'.
+    const isLegacyLinkDrivenFeatureFlagEnabled =
         props.codeIntelligenceEnabled &&
         isSettingsValid(props.settingsCascade) &&
         props.settingsCascade.final['codeIntel.blobKeyboardNavigation'] === 'token'
+    const enableSelectionDrivenCodeNavigation = experimentalCodeNavigation === 'selection-driven'
+    const enableLinkDrivenCodeNavigation =
+        !enableSelectionDrivenCodeNavigation &&
+        (isLegacyLinkDrivenFeatureFlagEnabled || experimentalCodeNavigation === 'link-driven')
 
     const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
         props.location.search,
@@ -288,13 +301,11 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         )
     )
 
-    /**
-     * Fetches stencil ranges for the current document.
-     * Used to provide keyboard navigation within the blob view.
-     */
+    // Fetches stencil ranges for the current document.  Only used for
+    // link-driven keyboard navigatio.
     const stencil = useObservable(
         useMemo(() => {
-            if (!enableTokenKeyboardNavigation) {
+            if (!enableLinkDrivenCodeNavigation) {
                 return of(undefined)
             }
 
@@ -303,7 +314,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                 revision,
                 filePath,
             })
-        }, [enableTokenKeyboardNavigation, filePath, repoName, revision])
+        }, [enableLinkDrivenCodeNavigation, filePath, repoName, revision])
     )
 
     const blobInfoOrError = enableLazyBlobSyntaxHighlighting
@@ -431,11 +442,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
         return (
             <div className={styles.placeholder}>
                 {alwaysRender}
-                {!enableLazyBlobSyntaxHighlighting && (
-                    <div className="d-flex mt-3 justify-content-center">
-                        <LoadingSpinner />
-                    </div>
-                )}
+                {!enableLazyBlobSyntaxHighlighting && <BlobLoadingSpinner />}
             </div>
         )
     }
@@ -569,7 +576,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<BlobPageP
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameDecorations}
                         overrideBrowserSearchKeybinding={true}
-                        tokenKeyboardNavigation={enableTokenKeyboardNavigation}
+                        enableLinkDrivenCodeNavigation={enableLinkDrivenCodeNavigation}
+                        enableSelectionDrivenCodeNavigation={enableSelectionDrivenCodeNavigation}
                     />
                 </TraceSpanProvider>
             )}

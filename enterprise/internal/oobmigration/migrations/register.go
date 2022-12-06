@@ -4,29 +4,35 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/derision-test/glock"
+	"github.com/sourcegraph/log"
+
 	workerCodeIntel "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 	internalInsights "github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/iam"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights"
+	insightsBackfiller "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights/backfillv2"
+	insightsrecordingtimes "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights/recording_times"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 )
 
 func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
-	codeIntelDB, err := workerCodeIntel.InitDB()
+	codeIntelDB, err := workerCodeIntel.InitRawDB(&observation.TestContext)
 	if err != nil {
 		return err
 	}
 
 	var insightsStore *basestore.Store
 	if internalInsights.IsEnabled() {
-		codeInsightsDB, err := internalInsights.InitializeCodeInsightsDB("worker-oobmigrator")
+		codeInsightsDB, err := internalInsights.InitializeCodeInsightsDB(&observation.TestContext, "worker-oobmigrator")
 		if err != nil {
 			return err
 		}
@@ -38,7 +44,7 @@ func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oo
 
 	return registerEnterpriseMigrators(runner, false, dependencies{
 		store:          basestore.NewWithHandle(db.Handle()),
-		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(codeIntelDB, sql.TxOptions{})),
+		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(log.NoOp(), codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
 		keyring:        &keyring,
 	})
@@ -93,5 +99,7 @@ func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps
 		codeintel.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000, 0),
 		codeintel.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100, 0),
 		insights.NewMigrator(deps.store, deps.insightsStore),
+		insightsrecordingtimes.NewRecordingTimesMigrator(deps.insightsStore, 500),
+		insightsBackfiller.NewMigrator(deps.insightsStore, glock.NewRealClock(), 10),
 	})
 }

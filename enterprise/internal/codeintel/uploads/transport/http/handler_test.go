@@ -119,7 +119,7 @@ func TestHandleEnqueueAuth(t *testing.T) {
 				repoStore,
 				mockUploadStore,
 				mockDBStore,
-				uploadhandler.NewOperations("test", &observation.TestContext),
+				uploadhandler.NewOperations(&observation.TestContext, "test"),
 			),
 			db.Users(),
 			authValidators,

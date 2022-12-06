@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
@@ -92,10 +91,7 @@ func init() {
 	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		if c.SiteConfig().ExternalURL == "" {
 			problems = append(problems, conf.NewSiteProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
-		} else if deploy.Type() != deploy.Dev && strings.HasPrefix(c.SiteConfig().ExternalURL, "http://") {
-			problems = append(problems, conf.NewSiteProblem("Your connection is not private. We recommend [configuring Sourcegraph to use HTTPS/SSL](https://docs.sourcegraph.com/admin/http_https_configuration)"))
 		}
-
 		return problems
 	})
 

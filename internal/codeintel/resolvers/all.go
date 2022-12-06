@@ -2,8 +2,7 @@ package resolvers
 
 import (
 	"context"
-	"errors"
-	"regexp"
+	"regexp" // nolint:depguard // regexps are passed to bluemonday, which expects the std ones
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RootResolver interface {
@@ -71,6 +71,7 @@ type CodeIntelRepositorySummaryResolver interface {
 	RecentIndexes() []LSIFIndexesWithRepositoryNamespaceResolver
 	LastUploadRetentionScan() *gqlutil.DateTime
 	LastIndexScan() *gqlutil.DateTime
+	AvailableIndexers() []InferredAvailableIndexersResolver
 }
 
 type LSIFIndexConnectionResolver interface {
@@ -655,4 +656,36 @@ type PreviewRepositoryFilterArgs struct {
 	graphqlutil.ConnectionArgs
 	Patterns []string
 	After    *string
+}
+
+type InferredAvailableIndexersResolver interface {
+	Roots() []string
+	Index() string
+	URL() string
+}
+
+type inferredAvailableIndexersResolver struct {
+	roots []string
+	index string
+	url   string
+}
+
+func NewInferredAvailableIndexersResolver(index string, roots []string, url string) InferredAvailableIndexersResolver {
+	return &inferredAvailableIndexersResolver{
+		index: index,
+		roots: roots,
+		url:   url,
+	}
+}
+
+func (r *inferredAvailableIndexersResolver) Roots() []string {
+	return r.roots
+}
+
+func (r *inferredAvailableIndexersResolver) Index() string {
+	return r.index
+}
+
+func (r *inferredAvailableIndexersResolver) URL() string {
+	return r.url
 }

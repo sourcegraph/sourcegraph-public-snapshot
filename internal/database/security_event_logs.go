@@ -120,7 +120,7 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 			result, err := jsonc.Edit(
 				event.marshalArgumentAsJSON(),
 				true,
-				"sourcegraph_operator",
+				EventLogsSourcegraphOperatorKey,
 			)
 			event.Argument = json.RawMessage(result)
 			if err != nil {

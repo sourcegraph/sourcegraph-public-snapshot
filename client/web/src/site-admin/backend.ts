@@ -288,7 +288,7 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
 }
 
 export const OUTBOUND_REQUESTS = gql`
-    query OutboundRequests($after: ID) {
+    query OutboundRequests($after: String) {
         outboundRequests(after: $after) {
             nodes {
                 id
@@ -305,10 +305,10 @@ export const OUTBOUND_REQUESTS = gql`
                     name
                     values
                 }
-                duration
+                durationMs
                 errorMessage
                 creationStackFrame
-                callStackFrame
+                callStack
             }
         }
     }

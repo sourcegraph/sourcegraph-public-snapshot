@@ -70,8 +70,6 @@ func Main(enterpriseInit EnterpriseInit) {
 	// NOTE: Internal actor is required to have full visibility of the repo table
 	// 	(i.e. bypass repository authorization).
 	ctx := actor.WithInternalActor(context.Background())
-	env.Lock()
-	env.HandleHelpFlag()
 
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
@@ -91,6 +89,8 @@ func Main(enterpriseInit EnterpriseInit) {
 	profiler.Init()
 
 	logger := log.Scoped("service", "repo-updater service")
+	// TODO: remove NoOp
+	observationCtx := observation.NewContext(log.NoOp())
 
 	// Signals health of startup
 	ready := make(chan struct{})
@@ -108,7 +108,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := connections.EnsureNewFrontendDB(dsn, "repo-updater", &observation.TestContext)
+	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "repo-updater")
 	if err != nil {
 		logger.Fatal("failed to initialize database store", log.Error(err))
 	}
@@ -139,12 +139,13 @@ func Main(enterpriseInit EnterpriseInit) {
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.GetService(db)), repos.ObservedSource(sourcerLogger, m))
+		src = repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(observationCtx, db)), repos.ObservedSource(sourcerLogger, m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
 	server := &repoupdater.Server{
 		Logger:                logger,
+		ObservationCtx:        observationCtx,
 		Store:                 store,
 		Scheduler:             updateScheduler,
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
@@ -165,14 +166,13 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	syncer := &repos.Syncer{
-		Logger:  logger.Scoped("syncer", "repo syncer"),
 		Sourcer: src,
 		Store:   store,
 		// We always want to listen on the Synced channel since external service syncing
 		// happens on both Cloud and non Cloud instances.
-		Synced:     make(chan repos.Diff),
-		Now:        clock,
-		Registerer: prometheus.DefaultRegisterer,
+		Synced:  make(chan repos.Diff),
+		Now:     clock,
+		ObsvCtx: observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationCtx),
 	}
 
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer, server.ChangesetSyncRegistry)
@@ -222,7 +222,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		otel.GetTracerProvider(),
 	)(server.Handler())
 
-	globals.WatchExternalURL(nil)
+	globals.WatchExternalURL()
 
 	debugDumpers["repos"] = updateScheduler
 	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(debugDumpers)
@@ -343,7 +343,7 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 			http.Error(w, "limit must be less than 10000", http.StatusBadRequest)
 			return
 		}
-		var perSecond = 1.0 // Default value
+		perSecond := 1.0 // Default value
 		perSecondParam := r.FormValue("perSecond")
 		if perSecondParam != "" {
 			perSecond, err = strconv.ParseFloat(perSecondParam, 64)

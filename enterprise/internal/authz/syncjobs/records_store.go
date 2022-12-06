@@ -54,10 +54,10 @@ func (r *RecordsStore) Watch(c conftypes.WatchableSiteConfig) {
 		if ttlMinutes > 0 {
 			ttlSeconds := ttlMinutes * 60
 			r.cache = rcache.NewWithTTL(syncJobsRecordsPrefix, ttlSeconds)
-			r.logger.Info("enabled records store cache", log.Int("ttlSeconds", ttlSeconds))
+			r.logger.Debug("enabled records store cache", log.Int("ttlSeconds", ttlSeconds))
 		} else {
 			r.cache = noopCache{}
-			r.logger.Info("disabled records store cache")
+			r.logger.Debug("disabled records store cache")
 		}
 	})
 }

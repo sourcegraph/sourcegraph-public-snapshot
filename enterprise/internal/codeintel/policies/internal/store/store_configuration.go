@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -14,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // GetConfigurationPolicies retrieves the set of configuration policies matching the the given options.

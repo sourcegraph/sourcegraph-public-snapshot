@@ -32,6 +32,7 @@ import (
 )
 
 func NewUploadProcessorWorker(
+	observationCtx *observation.Context,
 	store store.Store,
 	lsifstore lsifstore.LsifStore,
 	gitserverClient GitserverClient,
@@ -42,11 +43,11 @@ func NewUploadProcessorWorker(
 	workerBudget int64,
 	workerPollInterval time.Duration,
 	maximumRuntimePerJob time.Duration,
-	observationContext *observation.Context,
 ) *workerutil.Worker[codeinteltypes.Upload] {
 	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := NewUploadProcessorHandler(
+		observationCtx,
 		store,
 		lsifstore,
 		gitserverClient,
@@ -55,10 +56,9 @@ func NewUploadProcessorWorker(
 		uploadStore,
 		workerConcurrency,
 		workerBudget,
-		observationContext,
 	)
 
-	metrics := workerutil.NewMetrics(observationContext, "codeintel_upload_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true }))
+	metrics := workerutil.NewMetrics(observationCtx, "codeintel_upload_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true }))
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
 		Name:                 "precise_code_intel_upload_worker",
@@ -90,6 +90,7 @@ var (
 )
 
 func NewUploadProcessorHandler(
+	observationCtx *observation.Context,
 	store store.Store,
 	lsifstore lsifstore.LsifStore,
 	gitserverClient GitserverClient,
@@ -98,9 +99,8 @@ func NewUploadProcessorHandler(
 	uploadStore uploadstore.Store,
 	numProcessorRoutines int,
 	budgetMax int64,
-	observationContext *observation.Context,
 ) workerutil.Handler[codeinteltypes.Upload] {
-	operations := newOperations(observationContext)
+	operations := newOperations(observationCtx)
 
 	return &handler{
 		store:           store,

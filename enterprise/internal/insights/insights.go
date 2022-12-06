@@ -43,13 +43,13 @@ func IsEnabled() bool {
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
 func Init(
 	ctx context.Context,
+	observationCtx *observation.Context,
 	db database.DB,
 	_ codeintel.Services,
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
-	observationContext *observation.Context,
 ) error {
-	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver(db, observationContext)
+	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver(observationCtx, db)
 
 	if !IsEnabled() {
 		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
@@ -59,7 +59,7 @@ func Init(
 		}
 		return nil
 	}
-	rawInsightsDB, err := InitializeCodeInsightsDB("frontend")
+	rawInsightsDB, err := InitializeCodeInsightsDB(observationCtx, "frontend")
 	if err != nil {
 		return err
 	}
@@ -72,14 +72,14 @@ func Init(
 // database migrations before returning. It is safe to call from multiple services/containers (in
 // which case, one's migration will win and the other caller will receive an error and should exit
 // and restart until the other finishes.)
-func InitializeCodeInsightsDB(app string) (edb.InsightsDB, error) {
+func InitializeCodeInsightsDB(observationCtx *observation.Context, app string) (edb.InsightsDB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeInsightsDSN
 	})
-	db, err := connections.EnsureNewCodeInsightsDB(dsn, app, &observation.TestContext)
+	db, err := connections.EnsureNewCodeInsightsDB(observationCtx, dsn, app)
 	if err != nil {
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}
 
-	return edb.NewInsightsDB(db), nil
+	return edb.NewInsightsDB(db, observationCtx.Logger), nil
 }

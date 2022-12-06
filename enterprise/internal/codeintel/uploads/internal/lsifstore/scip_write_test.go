@@ -13,10 +13,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+func TestInsertMetadata(t *testing.T) {
+	logger := logtest.Scoped(t)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, codeIntelDB)
+	ctx := context.Background()
+
+	if err := store.InsertMetadata(ctx, 42, ProcessedMetadata{
+		TextDocumentEncoding: "UTF8",
+		ToolName:             "scip-test",
+		ToolVersion:          "0.1.0",
+		ToolArguments:        []string{"-p", "src"},
+		ProtocolVersion:      1,
+	}); err != nil {
+		t.Fatalf("failed to insert metadata: %s", err)
+	}
+}
+
 func TestInsertSCIPDocument(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
-	store := New(codeIntelDB, &observation.TestContext)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 
 	if _, err := store.InsertSCIPDocument(
@@ -59,8 +76,8 @@ func TestInsertSCIPDocument(t *testing.T) {
 
 func TestWriteSCIPSymbols(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(dbtest.NewDB(logger, t))
-	store := New(codeIntelDB, &observation.TestContext)
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 
 	uploadID := 24

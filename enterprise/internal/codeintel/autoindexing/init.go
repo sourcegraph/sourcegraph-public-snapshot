@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
@@ -22,63 +21,52 @@ var (
 	DependencyIndexingJobWorkerStoreOptions = background.DependencyIndexingJobWorkerStoreOptions
 )
 
-// GetService creates or returns an already-initialized autoindexing service.
-// If the service is not yet initialized, it will use the provided dependencies.
-func GetService(
+func NewService(
+	observationCtx *observation.Context,
 	db database.DB,
 	uploadSvc UploadService,
 	depsSvc DependenciesService,
 	policiesSvc PoliciesService,
 	gitserver GitserverClient,
 ) *Service {
-	svc, _ := initServiceMemo.Init(serviceDependencies{
-		db,
-		uploadSvc,
-		depsSvc,
-		policiesSvc,
-		gitserver,
-	})
+	store := store.New(scopedContext("store", observationCtx), db)
+	symbolsClient := symbols.DefaultClient
+	repoUpdater := repoupdater.DefaultClient
+	inferenceSvc := inference.NewService(db)
+
+	svc := newService(scopedContext("service", observationCtx), store, uploadSvc, inferenceSvc, repoUpdater, gitserver, symbolsClient)
 
 	return svc
 }
 
 type serviceDependencies struct {
-	db          database.DB
-	uploadSvc   UploadService
-	depsSvc     DependenciesService
-	policiesSvc PoliciesService
-	gitserver   GitserverClient
+	db             database.DB
+	uploadSvc      UploadService
+	depsSvc        DependenciesService
+	policiesSvc    PoliciesService
+	gitserver      GitserverClient
+	observationCtx *observation.Context
 }
 
-var initServiceMemo = memo.NewMemoizedConstructorWithArg(func(deps serviceDependencies) (*Service, error) {
-	store := store.New(deps.db, scopedContext("store"))
-	symbolsClient := symbols.DefaultClient
-	repoUpdater := repoupdater.DefaultClient
-	inferenceSvc := inference.NewService(deps.db)
-
-	svc := newService(store, deps.uploadSvc, inferenceSvc, repoUpdater, deps.gitserver, symbolsClient, scopedContext("service"))
-
-	return svc, nil
-})
-
-func scopedContext(component string) *observation.Context {
-	return observation.ScopedContext("codeintel", "autoindexing", component)
+func scopedContext(component string, observationCtx *observation.Context) *observation.Context {
+	return observation.ScopedContext("codeintel", "autoindexing", component, observationCtx)
 }
 
-func NewResetters(db database.DB, observationContext *observation.Context) []goroutine.BackgroundRoutine {
-	metrics := background.NewResetterMetrics(observationContext)
-	indexStore := dbworkerstore.NewWithMetrics(db.Handle(), background.IndexWorkerStoreOptions, observationContext)
-	dependencyIndexingStore := dbworkerstore.NewWithMetrics(db.Handle(), background.DependencyIndexingJobWorkerStoreOptions, observationContext)
+func NewResetters(observationCtx *observation.Context, db database.DB) []goroutine.BackgroundRoutine {
+	metrics := background.NewResetterMetrics(observationCtx)
+	indexStore := dbworkerstore.New(observationCtx, db.Handle(), background.IndexWorkerStoreOptions)
+	dependencyIndexingStore := dbworkerstore.New(observationCtx, db.Handle(), background.DependencyIndexingJobWorkerStoreOptions)
 
 	return []goroutine.BackgroundRoutine{
-		background.NewIndexResetter(ConfigCleanupInst.Interval, indexStore, observationContext.Logger.Scoped("indexResetter", ""), metrics),
-		background.NewDependencyIndexResetter(ConfigCleanupInst.Interval, dependencyIndexingStore, observationContext.Logger.Scoped("dependencyIndexResetter", ""), metrics),
+		background.NewIndexResetter(observationCtx.Logger.Scoped("indexResetter", ""), ConfigCleanupInst.Interval, indexStore, metrics),
+		background.NewDependencyIndexResetter(observationCtx.Logger.Scoped("dependencyIndexResetter", ""), ConfigCleanupInst.Interval, dependencyIndexingStore, metrics),
 	}
 }
 
-func NewJanitorJobs(autoindexingSvc *Service, gitserver GitserverClient, observationContext *observation.Context) []goroutine.BackgroundRoutine {
+func NewJanitorJobs(observationCtx *observation.Context, autoindexingSvc *Service, gitserver GitserverClient) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewJanitor(
+			observationCtx,
 			ConfigCleanupInst.Interval,
 			autoindexingSvc.store, gitserver, glock.NewRealClock(),
 			background.JanitorConfig{
@@ -88,20 +76,20 @@ func NewJanitorJobs(autoindexingSvc *Service, gitserver GitserverClient, observa
 				FailedIndexBatchSize:           ConfigCleanupInst.FailedIndexBatchSize,
 				FailedIndexMaxAge:              ConfigCleanupInst.FailedIndexMaxAge,
 			},
-			observationContext,
 		),
 	}
 }
 
 func NewIndexSchedulers(
+	observationCtx *observation.Context,
 	uploadSvc UploadService,
 	policiesSvc PoliciesService,
 	policyMatcher PolicyMatcher,
 	autoindexingSvc *Service,
-	observationContext *observation.Context,
 ) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
 		background.NewScheduler(
+			observationCtx,
 			uploadSvc, policiesSvc, policyMatcher, autoindexingSvc.indexEnqueuer,
 			ConfigIndexingInst.SchedulerInterval,
 			background.IndexSchedulerConfig{
@@ -110,7 +98,6 @@ func NewIndexSchedulers(
 				PolicyBatchSize:        ConfigIndexingInst.PolicyBatchSize,
 				InferenceConcurrency:   ConfigIndexingInst.InferenceConcurrency,
 			},
-			observationContext,
 		),
 
 		background.NewOnDemandScheduler(
@@ -123,15 +110,15 @@ func NewIndexSchedulers(
 }
 
 func NewDependencyIndexSchedulers(
+	observationCtx *observation.Context,
 	db database.DB,
 	uploadSvc UploadService,
 	depsSvc DependenciesService,
 	autoindexingSvc *Service,
 	repoUpdater RepoUpdaterClient,
-	observationContext *observation.Context,
 ) []goroutine.BackgroundRoutine {
-	dependencySyncStore := dbworkerstore.NewWithMetrics(db.Handle(), background.DependencySyncingJobWorkerStoreOptions, observationContext)
-	dependencyIndexingStore := dbworkerstore.NewWithMetrics(db.Handle(), background.DependencyIndexingJobWorkerStoreOptions, observationContext)
+	dependencySyncStore := dbworkerstore.New(observationCtx, db.Handle(), background.DependencySyncingJobWorkerStoreOptions)
+	dependencyIndexingStore := dbworkerstore.New(observationCtx, db.Handle(), background.DependencyIndexingJobWorkerStoreOptions)
 
 	externalServiceStore := db.ExternalServices()
 	repoStore := db.Repos()
@@ -140,13 +127,13 @@ func NewDependencyIndexSchedulers(
 	return []goroutine.BackgroundRoutine{
 		background.NewDependencySyncScheduler(
 			dependencySyncStore,
-			uploadSvc, depsSvc, autoindexingSvc.store, externalServiceStore, workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor"),
+			uploadSvc, depsSvc, autoindexingSvc.store, externalServiceStore, workerutil.NewMetrics(observationCtx, "codeintel_dependency_index_processor"),
 			ConfigDependencyIndexInst.DependencyIndexerSchedulerPollInterval,
 		),
 		background.NewDependencyIndexingScheduler(
 			dependencyIndexingStore,
 			uploadSvc, repoStore, externalServiceStore, gitserverRepoStore, autoindexingSvc.indexEnqueuer, repoUpdater,
-			workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing"),
+			workerutil.NewMetrics(observationCtx, "codeintel_dependency_index_queueing"),
 			ConfigDependencyIndexInst.DependencyIndexerSchedulerPollInterval,
 			ConfigDependencyIndexInst.DependencyIndexerSchedulerConcurrency,
 		),

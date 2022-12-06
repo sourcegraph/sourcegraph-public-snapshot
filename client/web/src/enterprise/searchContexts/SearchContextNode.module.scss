@@ -1,38 +1,74 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
-.search-context-node {
-    display: flex;
-    align-items: center;
+.row {
+    td {
+        padding: 0.25rem 0;
+        border-bottom: 1px solid var(--border-color-2);
 
-    &:first-child {
-        border-top: 1px solid var(--border-color-2);
+        .spec {
+            font-weight: 500;
+        }
     }
-    border-bottom: 1px solid var(--border-color-2);
 
-    @media (--xs-breakpoint-down) {
-        flex-direction: column;
-        align-items: flex-start;
+    @media (--sm-breakpoint-down) {
+        margin-left: -1rem;
+        margin-right: -1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        border-bottom: 1px solid var(--border-color);
+
+        padding-bottom: 0.75rem;
+        margin-bottom: 0.75rem;
+
+        display: grid;
+        grid-template-columns: auto auto 1fr auto;
+        grid-template-rows: auto auto auto auto;
+        grid-template-areas:
+            'star name        name        actions'
+            'star tags        tags        actions'
+            'star description description description'
+            'star contents    updated     updated';
+
+        td {
+            padding: 0;
+            border-bottom: none;
+
+            &.star {
+                grid-area: star;
+            }
+
+            &.name {
+                grid-area: name;
+            }
+
+            &.description {
+                grid-area: description;
+            }
+
+            &.last-updated {
+                grid-area: updated;
+            }
+
+            &.contents {
+                grid-area: contents;
+            }
+
+            &.tags {
+                grid-area: tags;
+            }
+
+            &.actions {
+                grid-area: actions;
+            }
+        }
     }
 }
 
-.left {
-    /* Enables responsive ellipsis text truncation */
-    min-width: 0;
-    max-width: 100%;
+.button {
+    color: var(--icon-color);
+    font-size: 1rem;
 
-    &-description {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-}
-
-.right {
-    font-size: 0.75rem;
-    margin-left: 1rem;
-    flex-shrink: 0;
-
-    @media (--xs-breakpoint-down) {
-        margin-left: 0;
+    &:hover {
+        background-color: var(--color-bg-2);
     }
 }

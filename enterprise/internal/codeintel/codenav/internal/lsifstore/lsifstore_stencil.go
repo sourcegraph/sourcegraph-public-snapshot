@@ -2,13 +2,13 @@ package lsifstore
 
 import (
 	"context"
-	"errors"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/types"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Stencil returns all ranges within a single document.

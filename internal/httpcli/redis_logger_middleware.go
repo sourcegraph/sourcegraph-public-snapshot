@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -27,6 +28,7 @@ func redisLoggerMiddleware() Middleware {
 			resp, err := cli.Do(req)
 			duration := time.Since(start)
 			limit := OutboundRequestLogLimit()
+			shouldRedactSensitiveHeaders := !deploy.IsDev(deploy.Type()) || RedactOutboundRequestHeaders()
 
 			// Feature is turned off, do not log
 			if limit == 0 {
@@ -56,26 +58,34 @@ func redisLoggerMiddleware() Middleware {
 				}
 			}
 
+			// Redact sensitive headers
+			requestHeaders := req.Header
+			responseHeaders := resp.Header
+			if shouldRedactSensitiveHeaders {
+				requestHeaders = redactSensitiveHeaders(requestHeaders)
+				responseHeaders = redactSensitiveHeaders(responseHeaders)
+			}
+
 			// Create log item
 			var errorMessage string
 			if err != nil {
 				errorMessage = err.Error()
 			}
 			key := time.Now().UTC().Format("2006-01-02T15_04_05.999999999")
-			callerStackFrame, _ := getFrames(4).Next() // Caller of the caller of redisLoggerMiddleware
+			callerStackFrames := getFrames(4) // Starts at the caller of the caller of redisLoggerMiddleware
 			logItem := types.OutboundRequestLogItem{
 				ID:                 key,
 				StartedAt:          start,
 				Method:             req.Method,
 				URL:                req.URL.String(),
-				RequestHeaders:     removeSensitiveHeaders(req.Header),
+				RequestHeaders:     requestHeaders,
 				RequestBody:        string(requestBody),
 				StatusCode:         int32(resp.StatusCode),
-				ResponseHeaders:    removeSensitiveHeaders(resp.Header),
+				ResponseHeaders:    responseHeaders,
 				Duration:           duration.Seconds(),
 				ErrorMessage:       errorMessage,
 				CreationStackFrame: formatStackFrame(creatorStackFrame),
-				CallStackFrame:     formatStackFrame(callerStackFrame),
+				CallStackFrame:     formatStackFrames(callerStackFrames),
 			}
 
 			// Serialize log item
@@ -89,7 +99,7 @@ func redisLoggerMiddleware() Middleware {
 			outboundRequestsRedisCache.Set(key, logItemJson)
 
 			// Delete excess items
-			if deleteErr := deleteExcessItems(outboundRequestsRedisCache, limit); deleteErr != nil {
+			if deleteErr := deleteExcessItems(outboundRequestsRedisCache, int(limit)); deleteErr != nil {
 				middlewareErrors = errors.Append(middlewareErrors,
 					errors.Wrap(deleteErr, "delete excess items"))
 			}
@@ -114,20 +124,22 @@ func deleteExcessItems(c *rcache.Cache, limit int) error {
 	return nil
 }
 
-// GetAllOutboundRequestLogItemsAfter returns all outbound request log items after the given key,
+// GetOutboundRequestLogItems returns all outbound request log items after the given key,
 // in ascending order, trimmed to maximum {limit} items. Example for `after`: "2021-01-01T00_00_00.000000".
-func GetAllOutboundRequestLogItemsAfter(ctx context.Context, after string) ([]*types.OutboundRequestLogItem, error) {
+func GetOutboundRequestLogItems(ctx context.Context, after string) ([]*types.OutboundRequestLogItem, error) {
 	var limit = OutboundRequestLogLimit()
 
 	if limit == 0 {
 		return []*types.OutboundRequestLogItem{}, nil
 	}
 
-	rawItems, err := getAllValuesAfter(ctx, outboundRequestsRedisCache, after, limit)
+	// Get values from Redis
+	rawItems, err := getAllValuesAfter(ctx, outboundRequestsRedisCache, after, int(limit))
 	if err != nil {
 		return nil, err
 	}
 
+	// Convert raw Redis store items to log items
 	items := make([]*types.OutboundRequestLogItem, 0, len(rawItems))
 	for _, rawItem := range rawItems {
 		var item types.OutboundRequestLogItem
@@ -183,7 +195,7 @@ func getAllValuesAfter(ctx context.Context, c *rcache.Cache, after string, limit
 	return c.GetMulti(keys...), nil
 }
 
-func removeSensitiveHeaders(headers http.Header) http.Header {
+func redactSensitiveHeaders(headers http.Header) http.Header {
 	var cleanHeaders = make(http.Header)
 	for name, values := range headers {
 		if IsRiskyHeader(name, values) {
@@ -193,6 +205,19 @@ func removeSensitiveHeaders(headers http.Header) http.Header {
 		}
 	}
 	return cleanHeaders
+}
+
+func formatStackFrames(frames *runtime.Frames) string {
+	var sb strings.Builder
+	for {
+		frame, more := frames.Next()
+		if !more {
+			break
+		}
+		sb.WriteString(formatStackFrame(frame))
+		sb.WriteString("\n")
+	}
+	return strings.TrimRight(sb.String(), "\n")
 }
 
 func formatStackFrame(frame runtime.Frame) string {
