@@ -107,8 +107,16 @@ env:
   # This setting will be going away soon
   DISABLE_CNCF: notonmybox
 
-  # Code Insights uses a separate database to architecturally isolate the component from the rest of Sourcegraph.
-  CODEINSIGHTS_PGDATASOURCE: postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE
+  # Point code insights to the `frontend` database in development
+  CODEINSIGHTS_PGPORT: $PGPORT
+  CODEINSIGHTS_PGHOST: $PGHOST
+  CODEINSIGHTS_PGUSER: $PGUSER
+  CODEINSIGHTS_PGPASSWORD: $PGPASSWORD
+  CODEINSIGHTS_PGDATABASE: $PGDATABASE
+  CODEINSIGHTS_PGSSLMODE: $PGSSLMODE
+  CODEINSIGHTS_PGDATASOURCE: $PGDATASOURCE
+
+  # Disable code insights by default
   DB_STARTUP_TIMEOUT: 120s # codeinsights-db needs more time to start in some instances.
   DISABLE_CODE_INSIGHTS_HISTORICAL: true
   DISABLE_CODE_INSIGHTS: true

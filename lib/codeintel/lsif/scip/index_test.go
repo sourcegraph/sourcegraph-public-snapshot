@@ -15,6 +15,7 @@ import (
 )
 
 func TestConvertLSIF(t *testing.T) {
+	t.Skip("Flaky, see https://github.com/sourcegraph/sourcegraph/issues/45251")
 	gzipped, err := os.Open("./testdata/dump1.lsif.gz")
 	if err != nil {
 		t.Fatalf("unexpected error reading test file: %s", err)

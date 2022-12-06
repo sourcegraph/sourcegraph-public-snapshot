@@ -34,7 +34,7 @@ func TestRedisLoggerMiddleware_getAllValuesAfter(t *testing.T) {
 	assert.Len(t, got, 2)
 }
 
-func TestRedisLoggerMiddleware_removeSensitiveHeaders(t *testing.T) {
+func TestRedisLoggerMiddleware_redactSensitiveHeaders(t *testing.T) {
 	input := http.Header{
 		"Authorization":   []string{"all values", "should be", "removed"},
 		"Bearer":          []string{"this should be kept as the risky value is only in the name"},
@@ -60,7 +60,7 @@ func TestRedisLoggerMiddleware_removeSensitiveHeaders(t *testing.T) {
 		}
 	}
 
-	cleanHeaders := removeSensitiveHeaders(input)
+	cleanHeaders := redactSensitiveHeaders(input)
 
 	if diff := cmp.Diff(cleanHeaders, want); diff != "" {
 		t.Errorf("unexpected request headers (-have +want):\n%s", diff)
@@ -79,7 +79,7 @@ func TestCache_DeleteFirstN(t *testing.T) {
 	c.SetMulti(pairs...)
 
 	// Delete the first 4 key-value pairs
-	deleteExcessItems(c, 4)
+	_ = deleteExcessItems(c, 4)
 
 	got, listErr := c.ListKeys(context.Background())
 
