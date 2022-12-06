@@ -114,9 +114,9 @@ type Mutation {
     deleteWebhook(id: ID!): EmptyResponse!
 
     """
-    Updates a webhook with given ID. Empty strings are not updated. Secret can be null.
+    Updates a webhook with given ID. Null values aren't updated.
     """
-    updateWebhook(id: ID!, name: String!, codeHostKind: String!, codeHostURN: String!, secret: String): Webhook!
+    updateWebhook(id: ID!, name: String, codeHostKind: String, codeHostURN: String, secret: String): Webhook!
 
     """
     Adds a external service. Only site admins may perform this mutation.

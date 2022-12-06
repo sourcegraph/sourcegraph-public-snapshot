@@ -675,7 +675,7 @@ func TestUpdateWebhook(t *testing.T) {
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
 	db.UsersFunc.SetDefaultReturn(users)
 	id := marshalWebhookID(42)
-	mutateStr := `mutation UpdateWebhook($id: ID!, $name: String!, $codeHostKind: String!, $codeHostURN: String!, $secret: String) {
+	mutateStr := `mutation UpdateWebhook($id: ID!, $name: String, $codeHostKind: String, $codeHostURN: String, $secret: String) {
                 updateWebhook(id: $id, name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
                     name
                     id
@@ -701,8 +701,8 @@ func TestUpdateWebhook(t *testing.T) {
 		Variables: map[string]any{
 			"id":           string(id),
 			"name":         "new name",
-			"codeHostKind": "",
-			"codeHostURN":  "",
+			"codeHostKind": nil,
+			"codeHostURN":  nil,
 			"secret":       nil,
 		},
 	})
@@ -725,8 +725,8 @@ func TestUpdateWebhook(t *testing.T) {
 		Variables: map[string]any{
 			"id":           string(id),
 			"name":         "new name",
-			"codeHostKind": "",
-			"codeHostURN":  "",
+			"codeHostKind": nil,
+			"codeHostURN":  nil,
 			"secret":       nil,
 		},
 	})
@@ -754,8 +754,8 @@ func TestUpdateWebhook(t *testing.T) {
 		Variables: map[string]any{
 			"id":           string(id),
 			"name":         "new name",
-			"codeHostKind": "",
-			"codeHostURN":  "",
+			"codeHostKind": nil,
+			"codeHostURN":  nil,
 			"secret":       nil,
 		},
 	})
@@ -778,7 +778,7 @@ func TestUpdateWebhook(t *testing.T) {
 		Variables: map[string]any{
 			"id":           string(id),
 			"name":         "new name",
-			"codeHostKind": "",
+			"codeHostKind": nil,
 			"codeHostURN":  "https://example.github.com",
 			"secret":       nil,
 		},
@@ -801,7 +801,7 @@ func TestUpdateWebhook(t *testing.T) {
 		Variables: map[string]any{
 			"id":           string(id),
 			"name":         "new name",
-			"codeHostKind": "",
+			"codeHostKind": nil,
 			"codeHostURN":  "https://example.github.com",
 			"secret":       nil,
 		},
