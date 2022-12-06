@@ -27,7 +27,6 @@ type config struct {
 	orgAdmin       string
 	action         string
 	resume         string
-	retry          int
 	generateTokens bool
 }
 
@@ -54,12 +53,11 @@ func main() {
 	flag.StringVar(&cfg.githubPassword, "github.password", "", "(required) password of the GitHub user to authenticate with")
 	flag.IntVar(&cfg.userCount, "user.count", 100, "Amount of users to create or delete")
 	flag.IntVar(&cfg.teamCount, "team.count", 20, "Amount of teams to create or delete")
-	flag.IntVar(&cfg.subOrgCount, "suborg.count", 10, "Amount of sub-orgs to create or delete")
-	flag.StringVar(&cfg.orgAdmin, "org.admin", "", "Login of admin of orgs")
+	flag.IntVar(&cfg.subOrgCount, "suborg.count", 1, "Amount of sub-orgs to create or delete")
+	flag.StringVar(&cfg.orgAdmin, "org.admin", "", "(required) Login of admin of orgs")
 	flag.StringVar(&cfg.reposSourceOrg, "repos.sourceOrgName", "blank200k", "The org that contains the imported repositories to transfer")
 
-	flag.IntVar(&cfg.retry, "retry", 5, "Retries count")
-	flag.StringVar(&cfg.action, "action", "create", "Whether to 'create' or 'delete' users")
+	flag.StringVar(&cfg.action, "action", "create", "Whether to 'create', 'delete', or 'validate' the synthetic data")
 	flag.StringVar(&cfg.resume, "resume", "state.db", "Temporary state to use to resume progress if interrupted")
 	flag.BoolVar(&cfg.generateTokens, "generateTokens", false, "Generate new impersonation OAuth tokens for users")
 
