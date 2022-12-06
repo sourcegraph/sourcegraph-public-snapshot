@@ -47,8 +47,10 @@ type Handlers struct {
 	BatchesChangesFileGetHandler    http.Handler
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
-	NewCodeIntelUploadHandler       enterprise.NewCodeIntelUploadHandler
 	NewComputeStreamHandler         enterprise.NewComputeStreamHandler
+
+	NewCodeIntelUploadScipAvailableHandler http.Handler
+	NewCodeIntelUploadHandler              enterprise.NewCodeIntelUploadHandler
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -115,6 +117,8 @@ func NewHandler(
 	m.Get(apirouter.BatchesFileExists).Handler(trace.Route(handlers.BatchesChangesFileExistsHandler))
 	m.Get(apirouter.BatchesFileUpload).Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
+	m.Get(apirouter.SCIPUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
+	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(handlers.NewCodeIntelUploadScipAvailableHandler))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
 
 	if envvar.SourcegraphDotComMode() {
@@ -156,6 +160,7 @@ func NewInternalHandler(
 	db database.DB,
 	schema *graphql.Schema,
 	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
+	newCodeIntelUploadScipAvailableHandler http.Handler,
 	rankingService enterprise.RankingService,
 	newComputeStreamHandler enterprise.NewComputeStreamHandler,
 	rateLimitWatcher graphqlbackend.LimitWatcher,
@@ -210,6 +215,8 @@ func NewInternalHandler(
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))
 
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
+	m.Get(apirouter.SCIPUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
+	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(newCodeIntelUploadScipAvailableHandler))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
