@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { mdiInformationOutline, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
@@ -9,8 +9,9 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
 import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
-import { Alert, Button, Container, Icon, Input, LoadingSpinner, RadioButton, Tooltip } from '@sourcegraph/wildcard'
+import { Alert, Button, Container, Icon, Input, RadioButton, Tooltip } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import {
     BatchChangeFields,
     CreateBatchSpecFromRawResult,
@@ -31,6 +32,10 @@ import styles from './ConfigurationForm.module.scss'
 const NAME_PATTERN = /^[\w.-]+$/
 
 type ConfigurationFormProps = {
+    /**
+     * The currently signed-in user.
+     */
+    authenticatedUser: AuthenticatedUser | null
     /**
      * When set, apply a template to the batch spec before redirecting to the edit page.
      */
@@ -71,6 +76,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     renderTemplate,
     insightTitle,
     initialNamespaceID,
+    authenticatedUser,
 }) => {
     const [createEmptyBatchChange, { loading: batchChangeLoading, error: batchChangeError }] = useMutation<
         CreateEmptyBatchChangeResult,
@@ -81,24 +87,20 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
         CreateBatchSpecFromRawVariables
     >(CREATE_BATCH_SPEC_FROM_RAW)
 
-    const { namespaces, defaultSelectedNamespace, loading: namespaceLoading, error: namespaceError } = useNamespaces(
+    const { namespaces, defaultSelectedNamespace } = useNamespaces(
+        authenticatedUser,
         batchChange?.namespace.id || initialNamespaceID
     )
 
     // When creating a batch change we want to disable the `Create` button, to avoid user's clicking
     // on it again.
     const isButtonDisabled = batchChangeLoading || batchSpecLoading
-    const error = batchChangeError || batchSpecError || namespaceError
+    const error = batchChangeError || batchSpecError
 
     // The namespace selected for creating the new batch change under.
     const [selectedNamespace, setSelectedNamespace] = useState<
         Pick<SettingsUserSubject, 'id'> | Pick<SettingsOrgSubject, 'id'>
     >(defaultSelectedNamespace)
-
-    // This updates the defaultSelectedNamespace after the graphql query in the `useNamespace` hook is done.
-    useEffect(() => {
-        setSelectedNamespace(defaultSelectedNamespace)
-    }, [defaultSelectedNamespace])
 
     const [nameInput, setNameInput] = useState(batchChange?.name || '')
     const [isNameValid, setIsNameValid] = useState<boolean>()
@@ -151,10 +153,6 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
             )
             // We destructure and surface the error from `useMutation` instead.
             .catch(noop)
-    }
-
-    if (namespaceLoading) {
-        return <LoadingSpinner />
     }
 
     return (

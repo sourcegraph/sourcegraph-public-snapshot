@@ -10,7 +10,6 @@ import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { useQuery } from '@sourcegraph/http-client'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Badge, Icon, LoadingSpinner } from '@sourcegraph/wildcard'
@@ -47,8 +46,7 @@ import layoutStyles from '../Layout.module.scss'
 import styles from './ExecuteBatchSpecPage.module.scss'
 
 export interface AuthenticatedExecuteBatchSpecPageProps
-    extends SettingsCascadeProps<Settings>,
-        ThemeProps,
+    extends ThemeProps,
         TelemetryProps,
         RouteComponentProps<{}> {
     batchChange: { name: string; namespace: Scalars['ID'] }
@@ -112,8 +110,7 @@ export const AuthenticatedExecuteBatchSpecPage: React.FunctionComponent<
 }
 
 interface ExecuteBatchSpecPageContentProps
-    extends SettingsCascadeProps<Settings>,
-        ThemeProps,
+    extends ThemeProps,
         TelemetryProps,
         RouteComponentProps<{}> {
     authenticatedUser: AuthenticatedUser
@@ -138,7 +135,6 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
 > = React.memo(function MemoizedExecuteBatchSpecContent({
     isLightTheme,
     match,
-    settingsCascade,
     telemetryService,
     authenticatedUser,
     batchChange,
@@ -223,7 +219,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                     render={() => (
                         <>
                             <TabBar activeTabKey="configuration" tabsConfig={tabsConfig} matchURL={executionURL} />
-                            <ConfigurationForm isReadOnly={true} batchChange={batchChange} />
+                            <ConfigurationForm isReadOnly={true} batchChange={batchChange} authenticatedUser={authenticatedUser} />
                         </>
                     )}
                     exact={true}

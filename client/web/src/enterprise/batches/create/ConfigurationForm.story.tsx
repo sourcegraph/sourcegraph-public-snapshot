@@ -2,18 +2,13 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import {
-    EMPTY_SETTINGS_CASCADE,
-    SettingsOrgSubject,
-    SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
+import { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
 import { GET_LICENSE_AND_USAGE_INFO } from '../list/backend'
 import { getLicenseAndUsageInfoResult } from '../list/testData'
 
-import { GET_ORGANIZATIONS } from './backend'
 import { ConfigurationForm } from './ConfigurationForm'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
@@ -30,37 +25,22 @@ const config: Meta = {
 
 export default config
 
-const FIXTURE_ORG: SettingsOrgSubject = {
-    __typename: 'Org',
-    name: 'sourcegraph',
-    displayName: 'Sourcegraph',
-    id: 'a',
-    viewerCanAdminister: true,
-}
-
-const FIXTURE_USER: SettingsUserSubject = {
-    __typename: 'User',
-    username: 'alice',
-    displayName: 'alice',
-    id: 'b',
-    viewerCanAdminister: true,
-}
-
-const SETTINGS_CASCADE = {
-    ...EMPTY_SETTINGS_CASCADE,
-    subjects: [
-        { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
-        { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
-    ],
-}
-
 const MOCK_ORGANIZATION = {
     __typename: 'Org',
     name: 'acme-corp',
     displayName: 'ACME Corporation',
     id: 'acme-corp-id',
-    viewerCanAdminister: true,
 }
+
+const mockAuthenticatedUser = {
+    __typename: 'User',
+    username: 'alice',
+    displayName: 'alice',
+    id: 'b',
+    organizations: {
+        nodes: [MOCK_ORGANIZATION],
+    },
+} as AuthenticatedUser
 
 const buildMocks = (isLicensed = true, hasBatchChanges = true) =>
     new WildcardMockLink([
@@ -69,25 +49,13 @@ const buildMocks = (isLicensed = true, hasBatchChanges = true) =>
             result: { data: getLicenseAndUsageInfoResult(isLicensed, hasBatchChanges) },
             nMatches: Number.POSITIVE_INFINITY,
         },
-        {
-            request: { query: getDocumentNode(GET_ORGANIZATIONS), variables: MATCH_ANY_PARAMETERS },
-            result: {
-                data: {
-                    organizations: {
-                        totalCount: 1,
-                        nodes: [MOCK_ORGANIZATION],
-                    },
-                },
-            },
-            nMatches: Number.POSITIVE_INFINITY,
-        },
     ])
 
 export const NewBatchChange: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks()}>
-                <ConfigurationForm {...props} />
+                <ConfigurationForm authenticatedUser={mockAuthenticatedUser} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -99,7 +67,7 @@ export const NewOrgBatchChange: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks()}>
-                <ConfigurationForm {...props} initialNamespaceID={MOCK_ORGANIZATION.id} />
+                <ConfigurationForm {...props} initialNamespaceID={MOCK_ORGANIZATION.id} authenticatedUser={mockAuthenticatedUser} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -113,6 +81,7 @@ export const ExistingBatchChange: Story = () => (
             <MockedTestProvider link={buildMocks()}>
                 <ConfigurationForm
                     {...props}
+                    authenticatedUser={mockAuthenticatedUser}
                     isReadOnly={true}
                     batchChange={{
                         name: 'My existing batch change',
@@ -140,6 +109,7 @@ export const LicenseAlert: Story = () => (
                 <ConfigurationForm
                     {...props}
                     isReadOnly={true}
+                    authenticatedUser={mockAuthenticatedUser}
                     batchChange={{
                         name: 'My existing batch change',
                         namespace: {

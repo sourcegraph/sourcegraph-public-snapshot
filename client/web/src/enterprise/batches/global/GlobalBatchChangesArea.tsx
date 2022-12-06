@@ -80,7 +80,7 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
             </Route>
             {!isSourcegraphDotCom && (
                 <Route path={`${match.url}/create`} exact={true}>
-                    <CreateBatchChangePage headingElement="h1" {...props} />
+                    <CreateBatchChangePage headingElement="h1" {...props} authenticatedUser={authenticatedUser} />
                 </Route>
             )}
             <Route component={NotFoundPage} key="hardcoded-key" />
