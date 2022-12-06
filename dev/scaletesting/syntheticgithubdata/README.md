@@ -7,6 +7,7 @@ A CLI tool that seeds a GitHub Enterprise instance with synthetic organisations,
 `go run ./dev/scaletesting/syntheticgithubdata [flags...]`
 
 ### Mandatory flags
+
 - `github.url`: GitHub base URL for the destination GHE instance
 - `github.login`: GitHub user to authenticate with
 - `github.password`: password of the GitHub user to authenticate with
@@ -14,6 +15,7 @@ A CLI tool that seeds a GitHub Enterprise instance with synthetic organisations,
 - `org.admin`: Username of the admin user
 
 ### Optional flags
+
 - `user.count`: Amount of users to create or delete (default: `100`)
 - `team.count`: Amount of teams to create or delete (default: `20`)
 - `suborg.count`: Amount of sub-orgs to create or delete (default: `1`)
