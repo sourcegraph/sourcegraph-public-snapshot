@@ -16,6 +16,8 @@ import { LineChartContent } from './LineChartContent'
 import { Point } from './types'
 import { getSeriesData, getMinMaxBoundaries } from './utils'
 
+import styles from './LineChart.module.scss'
+
 /**
  * Returns a formatted time text. It's used primary for X axis tick's text nodes.
  * Number of month day + short name of month.
@@ -159,6 +161,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 xScale={xScale}
                 yScale={yScale}
                 padding={padding}
+                className={styles.root}
                 onFocus={handleSvgFocus}
                 onBlur={() => setTooltipOpen(false)}
             >
