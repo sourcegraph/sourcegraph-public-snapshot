@@ -100,7 +100,7 @@ func (i *CommitIndexer) Handler(ctx context.Context, observationCtx *observation
 	interval := time.Minute * time.Duration(intervalMinutes)
 
 	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, interval,
-		goroutine.NewHandlerWithErrorMessage("insights.commit_indexer_handler", "TODO", func(ctx context.Context) error {
+		goroutine.NewHandlerWithErrorMessage("insights.commit_indexer_handler", "updates index of repo commits", func(ctx context.Context) error {
 			return i.indexAll(ctx)
 		}), i.operations.worker)
 }
