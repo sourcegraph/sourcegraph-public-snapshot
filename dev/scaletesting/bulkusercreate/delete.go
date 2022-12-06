@@ -104,7 +104,7 @@ func delete(ctx context.Context, cfg config) {
 			writeInfo(out, "Deleted %d out of %d users", i, usersToDelete)
 		}
 		g.Go(func() {
-			executeDeleteUser(ctx, currentUser)
+			currentUser.executeDelete(ctx)
 		})
 	}
 
@@ -115,7 +115,7 @@ func delete(ctx context.Context, cfg config) {
 			writeInfo(out, "Deleted %d out of %d teams", i, teamsToDelete)
 		}
 		g.Go(func() {
-			executeDeleteTeam(ctx, currentTeam)
+			currentTeam.executeDelete(ctx)
 		})
 	}
 	g.Wait()
@@ -129,69 +129,69 @@ func delete(ctx context.Context, cfg config) {
 	//g.Wait()
 }
 
-// executeDeleteTeam deletes the team from the GitHub instance.
-func executeDeleteTeam(ctx context.Context, currentTeam *team) {
-	existingTeam, resp, grErr := gh.Teams.GetTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
+// executeDelete deletes the team from the GitHub instance.
+func (t *team) executeDelete(ctx context.Context) {
+	existingTeam, resp, grErr := gh.Teams.GetTeamBySlug(ctx, t.Org, t.Name)
 
 	if grErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "Failed to get team %s, reason: %s\n", currentTeam.Name, grErr)
+		writeFailure(out, "Failed to get team %s, reason: %s\n", t.Name, grErr)
 	}
 
 	grErr = nil
 	if existingTeam != nil {
-		_, grErr = gh.Teams.DeleteTeamBySlug(ctx, currentTeam.Org, currentTeam.Name)
+		_, grErr = gh.Teams.DeleteTeamBySlug(ctx, t.Org, t.Name)
 		if grErr != nil {
-			writeFailure(out, "Failed to delete team %s, reason: %s\n", currentTeam.Name, grErr)
-			currentTeam.Failed = grErr.Error()
-			if grErr = store.saveTeam(currentTeam); grErr != nil {
+			writeFailure(out, "Failed to delete team %s, reason: %s\n", t.Name, grErr)
+			t.Failed = grErr.Error()
+			if grErr = store.saveTeam(t); grErr != nil {
 				log.Fatal(grErr)
 			}
 			return
 		}
 	}
 
-	if grErr = store.deleteTeam(currentTeam); grErr != nil {
+	if grErr = store.deleteTeam(t); grErr != nil {
 		log.Fatal(grErr)
 	}
 
-	writeSuccess(out, "Deleted team %s", currentTeam.Name)
+	writeSuccess(out, "Deleted team %s", t.Name)
 }
 
-// executeDeleteUser deletes the user from the instance.
-func executeDeleteUser(ctx context.Context, currentUser *user) {
-	existingUser, resp, grErr := gh.Users.Get(ctx, currentUser.Login)
+// executeDelete deletes the user from the instance.
+func (u *user) executeDelete(ctx context.Context) {
+	existingUser, resp, grErr := gh.Users.Get(ctx, u.Login)
 
 	if grErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "Failed to get user %s, reason: %s\n", currentUser.Login, grErr)
+		writeFailure(out, "Failed to get user %s, reason: %s\n", u.Login, grErr)
 		return
 	}
 
 	grErr = nil
 	if existingUser != nil {
-		_, grErr = gh.Admin.DeleteUser(ctx, currentUser.Login)
+		_, grErr = gh.Admin.DeleteUser(ctx, u.Login)
 
 		if grErr != nil {
-			writeFailure(out, "Failed to delete user with login %s, reason: %s\n", currentUser.Login, grErr)
-			currentUser.Failed = grErr.Error()
-			if grErr = store.saveUser(currentUser); grErr != nil {
+			writeFailure(out, "Failed to delete user with login %s, reason: %s\n", u.Login, grErr)
+			u.Failed = grErr.Error()
+			if grErr = store.saveUser(u); grErr != nil {
 				log.Fatal(grErr)
 			}
 			return
 		}
 	}
 
-	currentUser.Created = false
-	currentUser.Failed = ""
-	if grErr = store.deleteUser(currentUser); grErr != nil {
+	u.Created = false
+	u.Failed = ""
+	if grErr = store.deleteUser(u); grErr != nil {
 		log.Fatal(grErr)
 	}
 
-	writeSuccess(out, "Deleted user %s", currentUser.Login)
+	writeSuccess(out, "Deleted user %s", u.Login)
 }
 
-// executeDeleteTeamMembershipsForTeam deletes the memberships for a given team.
-func executeDeleteTeamMembershipsForTeam(ctx context.Context, org string, team string) {
-	teamMembers, _, err := gh.Teams.ListTeamMembersBySlug(ctx, org, team, &github.TeamListTeamMembersOptions{
+// executeDeleteMemberships deletes the memberships for a given team.
+func (t *team) executeDeleteMemberships(ctx context.Context) {
+	teamMembers, _, err := gh.Teams.ListTeamMembersBySlug(ctx, t.Org, t.Name, &github.TeamListTeamMembersOptions{
 		Role:        "member",
 		ListOptions: github.ListOptions{PerPage: 100},
 	})
@@ -200,11 +200,11 @@ func executeDeleteTeamMembershipsForTeam(ctx context.Context, org string, team s
 		log.Fatal(err)
 	}
 
-	writeInfo(out, "Deleting %d memberships for team %s", len(teamMembers), team)
+	writeInfo(out, "Deleting %d memberships for team %s", len(teamMembers), t.Name)
 	for _, member := range teamMembers {
-		_, err = gh.Teams.RemoveTeamMembershipBySlug(ctx, org, team, *member.Login)
+		_, err = gh.Teams.RemoveTeamMembershipBySlug(ctx, t.Org, t.Name, *member.Login)
 		if err != nil {
-			log.Printf("Failed to remove membership from team %s for user %s: %s", team, *member.Login, err)
+			log.Printf("Failed to remove membership from team %s for user %s: %s", t.Name, *member.Login, err)
 		}
 	}
 }
