@@ -28,7 +28,6 @@ type Map struct {
 
 	init      sync.Once
 	discofunk func(chan endpoints) // I like to know who is in my party!
-	logger    log.Logger
 }
 
 // endpoints represents a list of a service's endpoints as discovered through
@@ -60,7 +59,7 @@ func New(logger log.Logger, urlspec string) *Map {
 	if !strings.HasPrefix(urlspec, "k8s+") {
 		return Static(strings.Fields(urlspec)...)
 	}
-	return K8S(logger, urlspec)
+	return K8S(urlspec)
 }
 
 // Static returns an Endpoint map which consistently hashes over endpoints.
@@ -172,7 +171,7 @@ func (m *Map) discover() {
 }
 
 func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
-	logger := m.logger.Scoped("sendpoint", "A kubernetes endpoint that represents a service")
+	logger := log.Scoped("endpoint", "A kubernetes endpoint that represents a service")
 	for eps := range ch {
 
 		logger.Info(

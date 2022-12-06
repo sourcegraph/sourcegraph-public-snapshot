@@ -23,19 +23,20 @@ import (
 
 // K8S returns a Map for the given k8s urlspec (e.g. k8s+http://searcher), starting
 // service discovery in the background.
-func K8S(logger log.Logger, urlspec string) *Map {
+func K8S(urlspec string) *Map {
+
+	logger := log.Scoped("k8s", "service discovery via k8s")
 
 	return &Map{
 		urlspec:   urlspec,
-		discofunk: k8sDiscovery(urlspec, namespace(), loadClient),
-		logger:    log.Scoped("k8s", "service discovery via k8s"),
+		discofunk: k8sDiscovery(logger, urlspec, namespace(), loadClient),
 	}
 }
 
 // k8sDiscovery does service discovery of the given k8s urlspec (e.g. k8s+http://searcher),
 // publishing endpoint changes to the given disco channel. It's started by endpoint.K8S as a
 // go-routine.
-func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientset, error)) func(chan endpoints) {
+func k8sDiscovery(logger log.Logger, urlspec, ns string, clientFactory func() (*kubernetes.Clientset, error)) func(chan endpoints) {
 	return func(disco chan endpoints) {
 		u, err := parseURL(urlspec)
 		if err != nil {
@@ -66,7 +67,7 @@ func k8sDiscovery(urlspec, ns string, clientFactory func() (*kubernetes.Clientse
 
 		handle := func(obj any) {
 			eps := k8sEndpoints(u, obj)
-			u.Logger.Info(
+			logger.Info(
 				"endpoints k8s discovered",
 				log.String("urlspec", urlspec),
 				log.String("service", u.Service),
@@ -140,7 +141,6 @@ type k8sURL struct {
 	Service   string
 	Namespace string
 	Kind      string
-	Logger    log.Logger
 }
 
 func (u *k8sURL) endpointURL(endpoint string) string {
