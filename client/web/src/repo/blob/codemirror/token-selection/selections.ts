@@ -12,7 +12,7 @@ import { isSelectionInsideDocument } from '../utils'
 
 import { definitionCache, goToDefinitionAtOccurrence } from './definition'
 import { hoverAtOccurrence, hoverCache, setHoveredOccurrenceEffect } from './hover'
-import { documentHighlightsForOccurrence } from './document-highlights'
+import { showDocumentHighlightsForOccurrence } from './document-highlights'
 
 export const tokenSelectionTheme = EditorView.theme({
     '.cm-token-selection-definition-ready': {
@@ -98,7 +98,7 @@ export const warmupOccurrence = (view: EditorView, occurrence: Occurrence): void
 
 export const selectOccurrence = (view: EditorView, occurrence: Occurrence): void => {
     warmupOccurrence(view, occurrence)
-    documentHighlightsForOccurrence(view, occurrence)
+    showDocumentHighlightsForOccurrence(view, occurrence)
     selectRange(view, occurrence.range)
     view.dispatch({ effects: setHoveredOccurrenceEffect.of(occurrence) })
 }
