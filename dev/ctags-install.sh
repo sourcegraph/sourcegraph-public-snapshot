@@ -20,6 +20,14 @@ fi
 
 tmpdir=$(mktemp -d -t sg.ctags-install.XXXXXX)
 
+function print_build_tips() {
+  echo "---------------------------------------------"
+  echo "Please make sure that libjansson is installed"
+  echo "  MacOs: brew install jansson"
+  echo "  Ubuntu: apt-get install libjansson-dev"
+  echo "---------------------------------------------"
+}
+
 function ctrl_c() {
   rm -f "$tmpdir" &>/dev/null
   printf "[-] Installation cancelled.\n"
@@ -39,20 +47,32 @@ function build_ctags {
 
   curl --retry 5 "https://codeload.github.com/universal-ctags/ctags/tar.gz/$CTAGS_VERSION" | tar xz -C "$tmpdir"
   cd "${tmpdir}/ctags-${CTAGS_VERSION}"
+  set +e
   ./autogen.sh
+  exit_code="$?"
+  if [ "$exit_code" != "0" ]; then
+    print_build_tips
+    exit "$exit_code"
+  fi
   ./configure --program-prefix=universal- --enable-json
+  exit_code="$?"
+  if [ "$exit_code" != "0" ]; then
+    print_build_tips
+    exit "$exit_code"
+  fi
   make -j"$NUMCPUS" --load-average="$NUMCPUS"
+  exit_code="$?"
+  if [ "$exit_code" != "0" ]; then
+    print_build_tips
+    exit "$exit_code"
+  fi
+  set -e
   cp ./ctags "$TARGET"
 }
 
 if [ ! -f "${TARGET}" ]; then 
   echo "Installing universal-ctags $CTAGS_VERSION"
-  echo "Please make sure that libjansson is installed"
-  echo "  MacOs: brew install jansson"
-  echo "  Ubuntu: apt-get install libjansson-dev"
-  echo "---------------------------------------------"
-
-  build_ctags
+  build_ctags 
 else
   echo "universal-ctags $CTAGS_VERSION is already available at $TARGET"
 fi
