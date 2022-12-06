@@ -102,7 +102,7 @@ export const staticFilterValueSuggestions = (token?: Token): Group | null => {
     }
 
     // TODO: Determine appropriate title
-    return options.length > 0 ? { title: '', entries: options } : null
+    return options.length > 0 ? { title: '', options } : null
 }
 
 function starTiebraker(a: { item: { stars: number } }, b: { item: { stars: number } }): number {
@@ -227,11 +227,11 @@ function filterValueSuggestions(token: Token | undefined): ReturnType<Source> | 
                 const repos: Option[] = cachedRepos(value, item => toRepoCompletion(item, from, to)).slice(0, 25)
                 return {
                     valid,
-                    result: [{ title: 'Repositories', entries: repos }],
+                    result: [{ title: 'Repositories', options: repos }],
                     next: () =>
                         dynamicRepos(value, item => toRepoCompletion(item, from, to)).then(entries => ({
                             valid,
-                            result: [{ title: 'Repositories', entries: entries.slice(0, 25) }],
+                            result: [{ title: 'Repositories', options: entries.slice(0, 25) }],
                         })),
                 }
             }
@@ -269,7 +269,7 @@ export const suggestions: Source = (state, pos) => {
     if (currentQuery.trim() !== '') {
         result.push({
             title: '',
-            entries: [
+            options: [
                 {
                     type: 'command',
                     icon: mdiTextSearchVariant,
@@ -288,14 +288,14 @@ export const suggestions: Source = (state, pos) => {
     const completions = [...filterSuggestions(tokens, token, pos)]
 
     if (completions.length > 0) {
-        result.push({ title: 'Narrow your search', entries: completions.slice(0, 5) })
+        result.push({ title: 'Narrow your search', options: completions.slice(0, 5) })
     }
 
     // Cached repos
     if (showRepoSuggestions) {
         const repos = cachedRepoSuggestions(token)
         if (repos.length > 0) {
-            result.push({ title: 'Repositories', entries: repos.slice(0, 5) })
+            result.push({ title: 'Repositories', options: repos.slice(0, 5) })
         }
     }
 
@@ -309,7 +309,7 @@ export const suggestions: Source = (state, pos) => {
                           return {
                               result: [
                                   ...result.filter(group => group.title !== 'Repositories'),
-                                  { title: 'Repositories', entries: suggestions.slice(0, 5) },
+                                  { title: 'Repositories', options: suggestions.slice(0, 5) },
                               ],
                               valid,
                           }

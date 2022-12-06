@@ -13,8 +13,6 @@ import { History } from 'history'
 import { SvelteComponentTyped } from 'svelte'
 
 import Suggestions from './Suggestions.svelte'
-export { default as FilterSuggestion } from './FilterSuggestion.svelte'
-export { default as SearchQueryOption } from './SearchQueryOption.svelte'
 
 // Temporary solution to make some editor settings available to other extensions
 interface EditorConfig {
@@ -88,7 +86,7 @@ export type Option = Command | Target | Completion
 
 export interface Group {
     title: string
-    entries: Option[]
+    options: Option[]
 }
 
 class SuggestionView {
@@ -182,29 +180,29 @@ class RunningQuery {
  * Wrapper class to make operating on groups of options easier.
  */
 class Result {
-    private entries: Option[]
+    private allOptions: Option[]
 
     constructor(
         public readonly groups: Group[],
         public valid: (state: EditorState, position: number) => boolean = () => false
     ) {
-        this.entries = groups.flatMap(group => group.entries)
+        this.allOptions = groups.flatMap(group => group.options)
     }
 
     // eslint-disable-next-line id-length
     public at(index: number): Option | undefined {
-        return this.entries[index]
+        return this.allOptions[index]
     }
 
     public groupRowIndex(index: number): [number, number] | undefined {
-        const option = this.entries[index]
+        const option = this.allOptions[index]
 
         if (!option) {
             return undefined
         }
 
         for (let groupIndex = 0; groupIndex < this.groups.length; groupIndex++) {
-            const options = this.groups[groupIndex].entries
+            const options = this.groups[groupIndex].options
             for (let rowIndex = 0; rowIndex < options.length; rowIndex++) {
                 if (options[rowIndex] === option) {
                     return [groupIndex, rowIndex]
@@ -220,7 +218,7 @@ class Result {
     }
 
     public get length(): number {
-        return this.entries.length
+        return this.allOptions.length
     }
 }
 
@@ -536,7 +534,6 @@ export const suggestionSource = Facet.define<Source, Source>({
 })
 
 // TODO:
-//  - Only handle keybindings when suggestions are open
 //  - fix "open quote problem" (stretch goal)
 
 export const suggestions = (id: string, parent: HTMLDivElement, source: Source, history: History): Extension => [

@@ -15,7 +15,7 @@
     let windowHeight: number
 
     $: maxHeight = container ? windowHeight - container.getBoundingClientRect().top - 20 : 'auto'
-    $: flattenedRows = results.flatMap(group => group.entries)
+    $: flattenedRows = results.flatMap(group => group.options)
     $: focusedItem = flattenedRows[activeRowIndex]
     $: show = open && results.length > 0
 
@@ -23,7 +23,7 @@
         const match = (event.target as HTMLElement).closest('li[role="row"]')?.id.match(/\d+x\d+/)
         if (match) {
             const [group, option] = match[0].split('x')
-            dispatch('select', results[+group].entries[+option])
+            dispatch('select', results[+group].options[+option])
         }
     }
 
@@ -46,7 +46,7 @@
         {#each results as group, groupIndex (group.title)}
             <ul role="rowgroup" aria-labelledby="{id}-{groupIndex}-label">
                 <li id="{id}-{groupIndex}-label" role="presentation">{group.title}</li>
-                {#each group.entries as option, rowIndex (option)}
+                {#each group.options as option, rowIndex (option)}
                     <li role="row" id="{id}-{groupIndex}x{rowIndex}" aria-selected={focusedItem === option}>
                         {#if option.icon}
                             <div class="pr-1">
