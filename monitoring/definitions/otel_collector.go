@@ -24,7 +24,7 @@ func OtelCollector() *monitoring.Dashboard {
 							Description: "spans received per receiver per minute",
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("receiver: {{receiver}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum by (receiver) (rate(otelcol_receiver_accepted_spans{}[1m]))",
+							Query:       "sum by (receiver) (rate(otelcol_receiver_accepted_spans[1m]))",
 							NoAlert:     true,
 							Interpretation: `
 								Shows the rate of spans accepted by the configured reveiver
@@ -43,7 +43,7 @@ func OtelCollector() *monitoring.Dashboard {
 							Description: "spans refused per receiver",
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("receiver: {{receiver}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum by (receiver) (rate(otelcol_receiver_refused_spans{}[1m]))",
+							Query:       "sum by (receiver) (rate(otelcol_receiver_refused_spans[1m]))",
 							Warning:     monitoring.Alert().Greater(1).For(5 * time.Minute),
 							NextSteps:   "Check logs of the collector and configuration of the receiver",
 							Interpretation: `
@@ -67,7 +67,7 @@ func OtelCollector() *monitoring.Dashboard {
 							Description: "spans exported per exporter per minute",
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum by (exporter) (rate(otelcol_exporter_sent_spans{}[1m]))",
+							Query:       "sum by (exporter) (rate(otelcol_exporter_sent_spans[1m]))",
 							NoAlert:     true,
 							Interpretation: `
 								Shows the rate of spans being sent by the exporter
@@ -82,7 +82,7 @@ func OtelCollector() *monitoring.Dashboard {
 							Description: "span export failures by exporter",
 							Panel:       monitoring.Panel().Unit(monitoring.Number).LegendFormat("exporter: {{exporter}}"),
 							Owner:       monitoring.ObservableOwnerDevOps,
-							Query:       "sum by (exporter) (rate(otelcol_exporter_send_failed_spans{}[1m]))",
+							Query:       "sum by (exporter) (rate(otelcol_exporter_send_failed_spans[1m]))",
 							Warning:     monitoring.Alert().Greater(1).For(5 * time.Minute),
 							NextSteps:   "Check the configuration of the exporter and if the service being exported is up",
 							Interpretation: `
